@@ -6,7 +6,6 @@ import { log } from './log';
 
 import * as Promise from 'bluebird';
 import { spawn } from 'child_process';
-import { app as appIn, remote } from 'electron';
 import * as fs from 'fs-extra-promise';
 import * as _ from 'lodash';
 import * as path from 'path';
@@ -213,7 +212,6 @@ export function objDiff(lhs: any, rhs: any): any {
  * @param args
  */
 export function spawnSelf(args: string[]) {
-  const app = appIn || remote.app;
   if (process.execPath.endsWith('electron.exe')) {
     // development version
     args = [path.resolve(__dirname, '..', '..')].concat(args);

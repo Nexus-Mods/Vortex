@@ -19,7 +19,6 @@ function externalsDirect(): webpack.ExternalsObjectElement {
     'node',
     'path',
     'react',
-    'react-act',
     'react-bootstrap',
     'react-dnd',
     'react-dnd-html5-backend',
@@ -27,6 +26,7 @@ function externalsDirect(): webpack.ExternalsObjectElement {
     'react-i18next',
     'react-layout-pane',
     'react-redux',
+    'redux-act',
     'ref',
     'request',
     'semver',
@@ -35,6 +35,7 @@ function externalsDirect(): webpack.ExternalsObjectElement {
     'vortex-api',
     'vortex-parse-ini',
     'winreg',
+    'winston',
   ].reduce((prev, key) => {
     prev[key] = key;
     return prev;
