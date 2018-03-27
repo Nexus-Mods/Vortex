@@ -199,6 +199,15 @@
     }
   ], [
     {
+      "type": "build-copy",
+      "name": "common-interpreters",
+      "path": "extensions/common-interpreters",
+      "removeModules": ["vortex-api"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
+      "copyTo": "{BUILD_DIR}/bundledPlugins/common-interpreters"
+    }
+  ], [
+    {
       "type": "electron-rebuild",
       "condition": "buildType !== 'out'",
       "name": "exe-version-rebuild",
