@@ -586,6 +586,9 @@ class DownloadManager {
         throw new ProcessCanceled('no download urls');
       }
       if (Array.isArray(download.urls)) {
+        if (download.urls.length === 0) {
+          throw new ProcessCanceled('no download urls');
+        }
         job.url = download.urls[0];
         this.startJob(download, job);
       } else {
