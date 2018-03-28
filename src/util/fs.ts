@@ -42,7 +42,6 @@ export {
   moveAsync,
   openSync,
   openAsync,
-  readFileAsync,
   readFileSync,
   readlinkAsync,
   readJSONSync,
@@ -76,9 +75,11 @@ function genWrapperAsync<T extends (...args) => any>(func: T): T {
 const mkdirAsync = genWrapperAsync(fs.mkdirAsync);
 const utimesAsync = genWrapperAsync(fs.utimesAsync);
 const readdirAsync = genWrapperAsync(fs.readdirAsync);
+const readFileAsync = genWrapperAsync(fs.readFileAsync);
 export {
   mkdirAsync,
   readdirAsync,
+  readFileAsync,
   utimesAsync,
 };
 
