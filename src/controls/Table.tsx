@@ -3,6 +3,7 @@ import {setAttributeFilter, setAttributeSort,
 import FlexLayout from '../controls/FlexLayout';
 import {IActionDefinition} from '../types/IActionDefinition';
 import {IAttributeState} from '../types/IAttributeState';
+import { II18NProps } from '../types/II18NProps';
 import {IRowState, IState, ITableState} from '../types/IState';
 import {ITableAttribute} from '../types/ITableAttribute';
 import {SortDirection} from '../types/SortDirection';
@@ -31,7 +32,6 @@ import * as SplitPane from 'react-split-pane';
 import * as Redux from 'redux';
 import { createSelector } from 'reselect';
 import { IconButton } from './TooltipControls';
-import { II18NProps } from '../types/II18NProps';
 
 export type ChangeDataHandler = (rowId: string, attributeId: string, newValue: any) => void;
 
@@ -987,15 +987,23 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
   }
 
   private selectAll() {
-    const { calculatedValues } = this.state;
+    const { sortedRows, rowState } = this.state;
 
-    const rowState = {};
-    Object.keys(calculatedValues).forEach(key => {
-      rowState[key] = (this.state.rowState[key] === undefined)
+    const newState = {};
+    // first, disable what's currently selected
+    Object.keys(rowState).forEach(key => {
+      if (rowState[key].selected) {
+        newState[key] = { selected: { $set: false } };
+      }
+    });
+
+    // then (re-)enable all visible selections
+    sortedRows.map(row => row.id).forEach(key => {
+      newState[key] = (newState[key] === undefined)
         ? { $set: { selected: true } }
         : { selected: { $set: true } };
     });
-    this.setState(update(this.state, { rowState }), this.onRowStateChanged);
+    this.setState(update(this.state, { rowState: newState }), this.onRowStateChanged);
   }
 
   private selectTo(rowId: string) {
