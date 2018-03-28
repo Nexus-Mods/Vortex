@@ -80,6 +80,9 @@ export function extend(registerFunc: (...args) => void) {
             }
           });
         }
+        if (this.props.staticElements !== nextProps.staticElements) {
+          this.mObjects = undefined;
+        }
       }
 
       public render(): JSX.Element {
