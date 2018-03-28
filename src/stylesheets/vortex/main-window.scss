@@ -32,7 +32,7 @@
   // when the window titlebar is disabled, make the main toolbar region
   // the area where the user can drag the window around
   &.toolbar-app-region {
-    height: 104px;
+    height: 105px;
     -webkit-app-region: drag;
 
     .main-toolbar-right {
