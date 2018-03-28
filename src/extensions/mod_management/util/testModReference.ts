@@ -46,7 +46,9 @@ function testRef(mod: IModLookupInfo, ref: IReference): boolean {
   }
 
   // right version?
-  if ((ref.versionMatch !== undefined) && truthy(mod.version)) {
+  if ((ref.versionMatch !== undefined)
+      && (ref.versionMatch !== '*')
+      && truthy(mod.version)) {
     if (semver.valid(mod.version)) {
       // this is a bit crappy by semvish: it will report a version like 1.2 as valid,
       // but calling "satisfies('1.2', '1.2', true)" returns false.
