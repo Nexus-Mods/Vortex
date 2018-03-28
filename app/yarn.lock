@@ -2059,7 +2059,11 @@ msbuild@^1.0.1:
     colors "*"
     events "*"
 
-nan@2, nan@^2.0.9, nan@^2.3.2, nan@^2.4.0, nan@^2.8.0:
+nan@2:
+  version "2.10.0"
+  resolved "https://registry.yarnpkg.com/nan/-/nan-2.10.0.tgz#96d0cd610ebd58d4b4de9cc0c6828cda99c7548f"
+
+nan@^2.0.9, nan@^2.3.2, nan@^2.4.0, nan@^2.8.0:
   version "2.8.0"
   resolved "https://registry.yarnpkg.com/nan/-/nan-2.8.0.tgz#ed715f3fe9de02b57a5e6252d90a96675e1f085a"
 
@@ -3487,8 +3491,8 @@ void-elements@^2.0.1:
   resolved "https://registry.yarnpkg.com/void-elements/-/void-elements-2.0.1.tgz#c066afb582bb1cb4128d60ea92392e94d5e9dbec"
 
 vortex-parse-ini@Nexus-Mods/vortex-parse-ini:
-  version "0.1.1"
-  resolved "https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/d51e51dc7afd45cc176ed27d51fd2987480a659f"
+  version "0.1.2"
+  resolved "https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/6a98c35f5d3d77519859b0b1a9544b4b06342a1f"
   dependencies:
     bluebird "^3.5.0"
     ffi "^2.2.0"
