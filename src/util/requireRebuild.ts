@@ -22,6 +22,7 @@ const winExp = /A dynamic link library \(DLL\) initialization routine failed./;
 const noBindingsExp = /Could not locate the bindings file/;
 const noModuleExp = /Cannot find module/;
 const fckingNodeSassExp = /Node Sass could not find a binding for your current environment/;
+const edgeExp = /The edge module has not been pre-compiled/;
 
 // modules that we will build even if they haven't been build yet
 const initBuild = [
@@ -43,6 +44,7 @@ function patchedLoad(orig) {
           && !winExp.test(err.message)
           && !noBindingsExp.test(err.message)
           && !fckingNodeSassExp.test(err.message)
+          && !edgeExp.test(err.message)
           && (!noModuleExp.test(err.message) || (initBuild.indexOf(request) === -1))) {
         throw err;
       }
