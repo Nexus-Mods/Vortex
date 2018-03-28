@@ -526,6 +526,8 @@ function cleanupIncompleteInstalls(api: IExtensionApi) {
   });
 }
 
+let blockDeploy: Promise<void> = Promise.resolve();
+
 function once(api: IExtensionApi) {
   const store: Redux.Store<any> = api.store;
 
@@ -541,8 +543,11 @@ function once(api: IExtensionApi) {
 
   const updateModDeployment = genUpdateModDeployment();
   const deploymentTimer = new Debouncer(
-      (manual: boolean, profileId, progressCB) =>
-        updateModDeployment(api, manual, profileId, progressCB), 2000);
+      (manual: boolean, profileId, progressCB) => {
+        blockDeploy = blockDeploy
+          .then(() => updateModDeployment(api, manual, profileId, progressCB));
+        return blockDeploy;
+      }, 2000);
 
   api.events.on('deploy-mods', (callback: (err: Error) => void, profileId?: string,
                                 progressCB?: (text: string, percent: number) => void) => {
@@ -555,9 +560,9 @@ function once(api: IExtensionApi) {
   });
 
   api.events.on('purge-mods', (callback: (err: Error) => void) => {
-    purgeMods(api)
+    blockDeploy = blockDeploy.then(() => purgeMods(api)
       .then(() => callback(null))
-      .catch(err => callback(err));
+      .catch(err => callback(err)));
   });
 
   api.events.on('await-activation', (callback: (err: Error) => void) => {
