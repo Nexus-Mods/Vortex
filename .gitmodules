@@ -71,5 +71,5 @@
 	path = api
 	url = https://github.com/Nexus-Mods/vortex-api
 [submodule "extensions\\common-interpreters"]
-	path = extensions\\common-interpreters
+	path = extensions/common-interpreters
 	url = https://github.com/Nexus-Mods/extension-common-interpreters.git
