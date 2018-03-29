@@ -401,6 +401,12 @@ function createEndorsedIcon(store: Redux.Store<any>, mod: IMod, t: I18next.Trans
    || (endorsed === undefined && isNexusMod)) {
     endorsed = 'Undecided';
   }
+
+  if (getSafe(mod.attributes, ['author'], undefined)
+      === getSafe(store.getState(), ['session', 'nexus', 'userInfo', 'name'], undefined)) {
+    endorsed = undefined;
+  }
+
   const gameMode = getSafe(mod.attributes, ['downloadGame'], undefined)
                 || activeGameId(store.getState());
   if (endorsed !== undefined) {
