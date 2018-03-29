@@ -422,6 +422,10 @@
     "executable": {
       "path": "{nucleo}/files-folders/32px_exe",
       "rmFill": true
+    },
+    "author": {
+      "path": "{nucleo}/business-finance/{nucleo_simple}_business-contact-85",
+      "rmFill": true
     }
   }
 }

@@ -132,6 +132,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   private modNameAttribute: ITableAttribute;
   private modVersionAttribute: ITableAttribute;
   private modVersionDetailAttribute: ITableAttribute;
+  private modAuthorAttribute: ITableAttribute<IModWithState>;
   private mModsWithState: { [id: string]: IModWithState };
   private mGroupedMods: { [id: string]: IModWithState[] } = {};
   private mPrimaryMods: { [id: string]: IModWithState } = {};
@@ -295,6 +296,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
                 this.modEnabledAttribute,
                 this.modNameAttribute,
                 this.modVersionAttribute,
+                this.modAuthorAttribute,
                 this.modVersionDetailAttribute,
                 INSTALL_TIME,
               ]}
@@ -569,6 +571,18 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       filter: new VersionFilter(),
     };
 
+    this.modAuthorAttribute = {
+      id: 'author',
+      name: 'Author',
+      description: 'Author of the mod',
+      icon: 'author',
+      calc: mod => getSafe(mod.attributes, ['author'], ''),
+      placement: 'both',
+      isToggleable: true,
+      isDefaultVisible: false,
+      isSortable: true,
+      edit: {},
+    };
   }
 
   private updateModsWithState(newProps: IProps): Promise<void> {
