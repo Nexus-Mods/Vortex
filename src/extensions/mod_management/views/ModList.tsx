@@ -163,6 +163,9 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         icon: 'delete',
         title: 'Remove',
         action: this.removeSelected,
+        condition: instanceId => (typeof(instanceId) === 'string')
+            ? (['downloaded', 'installed'].indexOf(this.mModsWithState[instanceId].state) !== -1)
+            : true,
         hotKey: { code: 46 },
       },
       {
@@ -797,7 +800,9 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       });
     })
       .then(() => Promise.map(modIds, key =>
-        ((mods[key] !== undefined) && truthy(mods[key].installationPath))
+        ((mods[key] !== undefined)
+         && truthy(mods[key].installationPath)
+         && (['downloaded', 'installed'].indexOf(mods[key].state) !== -1))
           ? fs.removeAsync(path.join(installPath, mods[key].installationPath))
               .catch(err => {
                 this.context.api.showErrorNotification('Failed to remove mod', err);
@@ -812,8 +817,12 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     let removeMods: boolean;
     let removeArchive: boolean;
 
-    const modNames = modIds
+    const filteredIds = modIds
       .filter(modId => this.mModsWithState[modId] !== undefined)
+      .filter(modId =>
+        ['downloaded', 'installed'].indexOf(this.mModsWithState[modId].state) !== -1);
+
+    const modNames = filteredIds
       .map(modId => {
         let name = modName(this.mModsWithState[modId], {
           version: true,
@@ -826,7 +835,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
     onShowDialog('question', 'Confirm deletion', {
       message: t('Do you really want to delete this mod?',
-        { count: modIds.length, replace: { count: modIds.length } })
+        { count: filteredIds.length, replace: { count: filteredIds.length } })
         + '\n' + modNames.join('\n'),
       checkboxes: [
         { id: 'mod', text: t('Remove Mod'), value: true },
@@ -837,8 +846,8 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         removeMods = result.action === 'Remove' && result.input.mod;
         removeArchive = result.action === 'Remove' && result.input.archive;
 
-        return (removeMods ? this.removeMods(modIds) : Promise.resolve())
-          .then(() => modIds.forEach(key => {
+        return (removeMods ? this.removeMods(filteredIds) : Promise.resolve())
+          .then(() => filteredIds.forEach(key => {
             if (removeMods) {
               onRemoveMod(gameMode, key);
             }

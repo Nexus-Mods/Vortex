@@ -79,12 +79,14 @@ export function onGameModeActivated(
     }
   }
 
-  const knownMods = Object.keys(getSafe(state, ['persistent', 'mods', newGame], {}));
-  refreshMods(instPath, knownMods, (mod: IMod) => {
+  const knownMods: { [modId: string]: IMod } = getSafe(state, ['persistent', 'mods', newGame], {});
+  refreshMods(instPath, Object.keys(knownMods), (mod: IMod) => {
     api.store.dispatch(addMod(newGame, mod));
   }, (modNames: string[]) => {
     modNames.forEach((name: string) => {
-      api.store.dispatch(removeMod(newGame, name));
+      if (['downloaded', 'installed'].indexOf(knownMods[name].state) !== -1) {
+        api.store.dispatch(removeMod(newGame, name));
+      }
     });
   })
     .then(() => {
@@ -103,12 +105,15 @@ export function onPathsChanged(api: IExtensionApi,
   const state = store.getState();
   const gameMode = activeGameId(state);
   if (previous[gameMode] !== current[gameMode]) {
-    const knownMods = Object.keys(state.persistent.mods[gameMode]);
-    refreshMods(installPath(state), knownMods, (mod: IMod) =>
+    const knownMods = state.persistent.mods[gameMode];
+    refreshMods(installPath(state), Object.keys(knownMods), (mod: IMod) =>
       api.store.dispatch(addMod(gameMode, mod))
       , (modNames: string[]) => {
-        modNames.forEach((name: string) =>
-          api.store.dispatch(removeMod(gameMode, name)));
+        modNames.forEach((name: string) => {
+          if (['downloaded', 'installed'].indexOf(knownMods[name].state) !== -1) {
+            api.store.dispatch(removeMod(gameMode, name));
+          }
+        });
       })
       .then(() => null)
       .catch((err: Error) => {
@@ -165,6 +170,12 @@ export function onRemoveMod(api: IExtensionApi,
                             callback?: (error: Error) => void) {
   const store = api.store;
   const state: IState = store.getState();
+
+  const modState = getSafe(state, ['persistent', 'mods', gameMode, modId, 'state'], undefined);
+  if (['downloaded', 'installed'].indexOf(modState) === -1) {
+      callback(new ProcessCanceled('Can\'t delete mod during download or install'));
+      return;
+  }
 
   // we need to remove the mod from activation, otherwise me might leave orphaned
   // links in the mod directory
