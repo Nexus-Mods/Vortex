@@ -3,6 +3,7 @@ import { connect } from '../util/ComponentEx';
 import { extend, IExtensibleProps } from '../util/ExtensionProvider';
 import { truthy } from '../util/util';
 
+import * as _ from 'lodash';
 import * as React from 'react';
 import { setInterval } from 'timers';
 
@@ -21,12 +22,14 @@ interface IExtensionProps {
 }
 
 interface IConnectedProps {
-  [bannerIdx: number]: {
-    [key: string]: any,
+  bannerProps: {
+    [bannerIdx: number]: {
+      [key: string]: any,
+    };
   };
 }
 
-type IProps = IBaseProps & IExtensionProps & React.HTMLAttributes<any>;
+type IProps = IBaseProps & IConnectedProps & IExtensionProps & React.HTMLAttributes<any>;
 
 class Banner extends React.Component<IProps, {}> {
   private mRef: Element;
@@ -38,10 +41,10 @@ class Banner extends React.Component<IProps, {}> {
   }
 
   public render(): JSX.Element {
-    const { className, objects, style } = this.props;
+    const { bannerProps, className, objects, style } = this.props;
 
     this.mBanners = objects.filter((obj, idx) =>
-      (obj.options.condition === undefined) || obj.options.condition(this.props[idx]));
+      (obj.options.condition === undefined) || obj.options.condition(bannerProps[idx]));
 
     const classes = className !== undefined ? className.split(' ') : [];
     classes.push('banner');
@@ -90,17 +93,26 @@ function registerBanner(instanceProps: IBaseProps,
 
 export type ExportType = IBaseProps & IExtensibleProps & React.HTMLAttributes<any> & any;
 
+let lastBannerProps: { [idx: number]: any };
+
 function mapStateToProps(state: any, ownProps: IProps): IConnectedProps {
-  return (ownProps.objects || []).reduce((prev: any, banner: IBannerDefinition, idx: number) => {
-    const props = banner.options.props;
-    if (props !== undefined) {
-      prev[idx] = Object.keys(props).reduce((propsPrev: any, key: string) => {
-        propsPrev[key] = props[key](state);
-        return propsPrev;
-      }, {});
-    }
-    return prev;
+  const bannerProps = (ownProps.objects || []).reduce(
+    (prev: any, banner: IBannerDefinition, idx: number) => {
+      const props = banner.options.props;
+      if (props !== undefined) {
+        prev[idx] = Object.keys(props).reduce((propsPrev: any, key: string) => {
+          propsPrev[key] = props[key](state);
+          return propsPrev;
+        }, {});
+      }
+      return prev;
   }, {});
+  if (!_.isEqual(lastBannerProps, bannerProps)) {
+    lastBannerProps = bannerProps;
+  }
+  return {
+    bannerProps: lastBannerProps,
+  };
 }
 
 export default

@@ -4,17 +4,36 @@
 
 /** dummy */
 import * as path from 'path';
+import * as util from 'util';
 import winstonT = require('winston');
 
-let logger: winstonT.LoggerInstance = null;
+function IPCTransport(options: winstonT.TransportOptions) {
+  this.name = 'IPCTransport';
+  this.level = 'debug';
+}
+
+let logger: typeof winstonT = null;
 
 // magic: when we're in the main process, this uses the logger from winston
 // (which appears to be a singleton). In the renderer processes we connect
 // to the main-process logger through ipc
 if ((process as any).type === 'renderer') {
   // tslint:disable-next-line:no-var-requires
-  const { remote } = require('electron');
-  logger = remote.getGlobal('logger');
+  const { ipcRenderer } = require('electron');
+  IPCTransport.prototype.log =
+    (level: string, message: string, meta: any[], callback: winstonT.LogCallback) => {
+      ipcRenderer.send('log-message', level, message, meta);
+      callback(null);
+  };
+
+  // tslint:disable-next-line:no-var-requires
+  logger = require('winston');
+  util.inherits(IPCTransport, logger.Transport);
+  logger.configure({
+    transports: [
+      new IPCTransport({}),
+    ],
+  });
 } else {
   // when being required from extensions, don't re-require the winston module
   // because the "singleton" is implemented abusing the require-cache
@@ -25,6 +44,11 @@ if ((process as any).type === 'renderer') {
   } else {
     logger = (global as any).logger;
   }
+  // tslint:disable-next-line:no-var-requires
+  const { ipcMain } = require('electron');
+  ipcMain.on('log-message',
+    (event, level: LogLevel, message: string, metadata?: any[]) =>
+      logger.log(level, message, metadata));
 }
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';

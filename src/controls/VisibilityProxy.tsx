@@ -38,8 +38,7 @@ class VisibilityProxy extends React.Component<any, IState> {
       VisibilityProxy.sObservers.set(container || null,
           new IntersectionObserver(VisibilityProxy.callback, {
         root: container,
-        rootMargin: '240px 0px 240px 0px',
-        threshold: [0.5],
+        rootMargin: '360px 0px 360px 0px',
       } as any));
     }
     return VisibilityProxy.sObservers.get(container);
