@@ -294,7 +294,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
                     onClick={this.handleChangeIcon}
                   >
                     <ToolIcon
-                      imageUrl={this.props.tool.iconPath}
+                      imageUrl={tool.iconPath}
                       imageId={this.state.imageId}
                       valid={true}
                     />
@@ -444,6 +444,9 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
 
     return fs.statAsync(filePath)
       .catch(err => Promise.reject(new ProcessCanceled('invalid file')))
+      .then(stats => stats.isDirectory()
+          ? Promise.reject(new ProcessCanceled('is a directory'))
+          : Promise.resolve())
       .then(() => fs.ensureDirAsync(path.dirname(destPath)))
       .then(() => (path.extname(filePath) === '.exe')
         ? new Promise<void>((resolve, reject) => {
@@ -458,7 +461,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
         : fs.copyAsync(filePath, destPath))
       .then(() => {
         this.clearCache();
-        this.forceUpdate();
+        this.nextState.tool.iconPath = destPath;
       })
       .catch((err) => {
         if ((err !== null) && !(err instanceof ProcessCanceled)) {
