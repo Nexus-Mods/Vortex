@@ -7910,8 +7910,8 @@ tunnel-agent@~0.4.1:
   resolved "https://registry.yarnpkg.com/tunnel-agent/-/tunnel-agent-0.4.3.tgz#6373db76909fe570e08d73583365ed828a74eeeb"
 
 turbowalk@Nexus-Mods/node-turbowalk:
-  version "1.0.0"
-  resolved "https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/d9e673df0ded0e091b8c813b8a7517bc82fb1706"
+  version "1.0.1"
+  resolved "https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/90d2cbd7dc099f8f84bc813c1e0727e6cd02a1ad"
   dependencies:
     autogypi "^0.2.2"
     nan "^2.8.0"
