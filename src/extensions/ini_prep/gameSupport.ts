@@ -23,6 +23,13 @@ const gameSupport = {
     ],
     iniFormat: 'winapi',
   },
+  skyrimvr: {
+    iniFiles: [
+      path.join('{mygames}', 'Skyrim VR', 'Skyrim.ini'),
+      path.join('{mygames}', 'Skyrim VR', 'SkyrimPrefs.ini'),
+    ],
+    iniFormat: 'winapi',
+  },
   fallout3: {
     iniFiles: [
       path.join('{mygames}', 'Fallout3', 'Fallout.ini'),

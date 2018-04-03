@@ -25,6 +25,7 @@ function extenderForGame(gameId: string) {
     oblivion: 'obse',
     skyrim: 'skse',
     skyrimse: 'skse64',
+    skyrimvr: 'skse64',
     fallout3: 'fose',
     falloutnv: 'nvse',
     fallout4: 'f4se',

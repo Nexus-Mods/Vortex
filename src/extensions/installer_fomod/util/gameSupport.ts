@@ -172,6 +172,19 @@ const gameSupport: { [gameId: string]: IGameSupport } = {
       'dragonborn.esm',
     ],
   },
+  skyrimvr: {
+    iniPath: bethIni('Skyrim VR', 'Skyrim'),
+    stopPatterns: stopPatterns('skyrimse'),
+    pluginPath: 'Data',
+    nativePlugins: [
+      'skyrim.esm',
+      'skyrimvr.esm',
+      'update.esm',
+      'dawnguard.esm',
+      'hearthfires.esm',
+      'dragonborn.esm',
+    ],
+  },
   witcher2: {
     stopPatterns: stopPatterns('witcher2'),
   },
