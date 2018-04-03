@@ -124,6 +124,7 @@ function startDownload(api: IExtensionApi, nxmurl: string): Promise<string> {
         id: url.fileId.toString(),
         type: 'success',
         title: api.translate('Download finished'),
+        group: 'download-finished',
         message: nexusFileInfo.name,
         actions: [
           {

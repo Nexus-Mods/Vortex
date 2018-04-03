@@ -89,6 +89,11 @@ export interface INotification {
    */
   displayMS?: number;
   /**
+   * if set, notifications with the same group will be grouped together and shown as
+   * one entry that can be expanded.
+   */
+  group?: string;
+  /**
    * if set, no Dismiss button is provided automatically
    */
   noDismiss?: boolean;

@@ -13,7 +13,8 @@ interface IActionProps {
   notificationId: string;
   notificationProcess: string;
   title: string;
-  action: number;
+  actionIdx: number;
+  actionFunc: () => void;
   onDismiss: () => void;
 }
 
@@ -24,20 +25,28 @@ class Action extends React.Component<IActionProps, {}> {
   }
 
   private trigger = () => {
-    const { action, notificationId, notificationProcess, onDismiss } = this.props;
-    fireNotificationAction(notificationId, notificationProcess, action, onDismiss);
+    const { actionFunc, actionIdx, notificationId, notificationProcess, onDismiss } = this.props;
+    if (actionFunc !== undefined) {
+      // renderer-only action
+      actionFunc();
+    } else {
+      // could be in renderer or browser
+      fireNotificationAction(notificationId, notificationProcess, actionIdx, onDismiss);
+    }
   }
 }
 
 export interface IProps {
   t: I18next.TranslationFunction;
+  collapsed: number;
   params: INotification & { process?: string };
+  onExpand: (groupId: string) => void;
   onDismiss: (id: string) => void;
 }
 
 class Notification extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
-    const { t } = this.props;
+    const { t, collapsed } = this.props;
     const { actions, message, noDismiss, title, type } = this.props.params;
 
     const lines = message.split('\n');
@@ -55,7 +64,16 @@ class Notification extends ComponentEx<IProps, {}> {
         </div>
         <div className='notification-buttons'>
           {actions !== undefined ? actions.map(this.renderAction) : null}
-          {!noDismiss ? <Button onClick={this.dismiss}>{t('Dismiss')}</Button> : null}
+          {!noDismiss ? (
+            <Button onClick={this.dismiss}>
+              {(collapsed > 1) ? t('Dismiss All') : t('Dismiss')}
+            </Button>
+          ) : null}
+          {(collapsed > 1) ? (
+            <Button onClick={this.expand}>
+              {t('{{ count }} More', { count: collapsed - 1 })}
+            </Button>
+           ) : null}
         </div>
       </div>
     );
@@ -69,10 +87,15 @@ class Notification extends ComponentEx<IProps, {}> {
         title={action.title}
         notificationId={this.props.params.id}
         notificationProcess={this.props.params.process}
-        action={idx}
+        actionIdx={idx}
+        actionFunc={action.action}
         onDismiss={this.dismiss}
       />
     );
+  }
+
+  private expand = () => {
+    this.props.onExpand(this.props.params.group);
   }
 
   private typeToStyle(type: NotificationType) {

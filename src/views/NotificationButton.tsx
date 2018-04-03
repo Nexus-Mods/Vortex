@@ -23,8 +23,18 @@ interface IActionProps {
 
 type IProps = IBaseProps & IActionProps & IConnectedProps;
 
-class NotificationButton extends ComponentEx<IProps, {}> {
+interface IComponentState {
+  expand: string;
+}
+
+class NotificationButton extends ComponentEx<IProps, IComponentState> {
   private mRef: any = null;
+
+  constructor(props: IProps) {
+    super(props);
+
+    this.initState({ expand: undefined });
+  }
 
   public componentWillReceiveProps(newProps: IProps) {
     if ((this.props.notifications !== newProps.notifications)
@@ -34,7 +44,9 @@ class NotificationButton extends ComponentEx<IProps, {}> {
         this.mRef.hide();
       } else {
         const oldIds = new Set(this.props.notifications.map(not => not.id));
-        const newId = newProps.notifications.find(not => !oldIds.has(not.id));
+        const newId = newProps.notifications.find(not =>
+          (['success', 'info'].indexOf(not.type) === -1) && !oldIds.has(not.id),
+        );
         if (newId !== undefined) {
           // if a new notification was added, show, to ensure user sees it
           this.mRef.show();
@@ -46,7 +58,13 @@ class NotificationButton extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
     const { t, id, notifications } = this.props;
 
-    const items = [].concat(notifications).sort(this.inverseSort).map(this.renderNotification);
+    const collapsed: { [groupId: string]: number } = {};
+
+    const items = [].concat(notifications)
+      .reduce((prev: INotification[], notification: INotification) =>
+            this.groupNotifications(prev, notification, collapsed), [])
+      .sort(this.inverseSort)
+      .map(notification => this.renderNotification(notification, collapsed));
 
     const popover = (
       <Popover id='notifications-popover' arrowOffsetLeft={64}>
@@ -64,13 +82,37 @@ class NotificationButton extends ComponentEx<IProps, {}> {
         trigger='click'
         placement='bottom'
         shouldUpdatePosition={true}
+        onExit={this.unExpand}
       >
         <Button id='notifications-button'>
           <Icon name='notifications' />
-          {items.length === 0 ? null : <Badge>{items.length}</Badge>}
+          {items.length === 0 ? null : <Badge>{notifications.length}</Badge>}
         </Button>
       </MyOverlayTrigger>
     );
+  }
+
+  private groupNotifications = (previous: INotification[],
+                                notification: INotification,
+                                collapsed: { [groupId: string]: number }) => {
+    if ((notification.group !== undefined) && (notification.group !== this.state.expand)) {
+      if (collapsed[notification.group] === undefined) {
+        previous.push(notification);
+        collapsed[notification.group] = 0;
+      }
+      collapsed[notification.group]++;
+    } else {
+      previous.push(notification);
+    }
+    return previous;
+  }
+
+  private expand = (groupId: string) => {
+    this.nextState.expand = groupId;
+  }
+
+  private unExpand = () => {
+    this.nextState.expand = undefined;
   }
 
   private setRef = ref => {
@@ -88,12 +130,34 @@ class NotificationButton extends ComponentEx<IProps, {}> {
     return lhs.id < rhs.id ? 1 : (lhs.id > rhs.id ? -1 : 0);
   }
 
-  private renderNotification = (notification: INotification) => {
-    const { t, onDismiss } = this.props;
+  private renderNotification = (notification: INotification,
+                                collapsed: { [groupId: string]: number }) => {
+    const { t } = this.props;
 
     const translated: INotification = { ...notification };
     translated.message = t(translated.message);
-    return <Notification t={t} key={notification.id} params={translated} onDismiss={onDismiss} />;
+    return (
+      <Notification
+        t={t}
+        key={notification.id}
+        params={translated}
+        collapsed={collapsed[notification.group]}
+        onExpand={this.expand}
+        onDismiss={this.dismiss}
+      />
+    );
+  }
+
+  private dismiss = (notificationId: string) => {
+    const { notifications, onDismiss } = this.props;
+    const noti = notifications.find(iter => iter.id === notificationId);
+    if ((noti.group === undefined) || (noti.group === this.state.expand)) {
+      onDismiss(notificationId);
+    } else {
+      notifications.filter(iter => iter.group === noti.group).forEach(iter => {
+        onDismiss(iter.id);
+      });
+    }
   }
 }
 

@@ -188,6 +188,7 @@ class InstallContext implements IInstallContext {
         return {
           type: 'success',
           message: `${id} installed`,
+          group: 'mod-installed',
           displayMS: isEnabled ? 4000 : undefined,
           actions: isEnabled ? [] : [
             {
