@@ -1,16 +1,12 @@
 import reducer from '../reducers/index';
 import { IPersistor, PersistingType } from '../types/IExtensionContext';
 import { IState } from '../types/IState';
-import { IStorage } from '../types/IStorage';
 
 import ExtensionManager from './ExtensionManager';
 import * as fs from './fs';
-import LevelPersist from './LevelPersist';
-import LevelStorage from './LevelStorage';
 import { log } from './log';
 import ReduxPersistor from './ReduxPersistor';
 import {reduxSanity, StateError} from './reduxSanity';
-import StorageLogger from './StorageLogger';
 
 import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
