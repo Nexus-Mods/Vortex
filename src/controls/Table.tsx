@@ -117,10 +117,11 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
   private mLastUpdateState: IProps = undefined;
   private mNextUpdateState: IProps = undefined;
   private mUpdateInProgress: boolean = false;
+  private mNextState: IComponentState = undefined;
 
   constructor(props: IProps) {
     super(props);
-    this.state = {
+    this.mNextState = this.state = {
       lastSelected: undefined,
       calculatedValues: undefined,
       splitMax: 9999,
@@ -166,6 +167,17 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
         || (newProps.objects !== this.props.objects)) {
       const { attributeState, objects } = newProps;
       this.mVisibleAttributes = this.visibleAttributes(objects, attributeState);
+    }
+
+    if (newProps.data !== this.props.data) {
+      Object.keys(this.mRowRefs).forEach(key => {
+        if (newProps.data[key] === undefined) {
+          delete this.mRowRefs[key];
+        }
+        if (this.state.lastSelected === key) {
+          this.updateState(update(this.mNextState, { lastSelected: { $set: undefined } }));
+        }
+      });
     }
 
     if ((newProps.data !== this.props.data)
@@ -326,14 +338,14 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
 
   private toggleDetails = () => {
     const { detailsOpen } = this.state;
-    this.setState(update(this.state, { detailsOpen: { $set: !detailsOpen } }));
+    this.updateState(update(this.mNextState, { detailsOpen: { $set: !detailsOpen } }));
   }
 
   private setRowState(rowIds: string[]) {
     const { data } = this.props;
     const filteredRowIds = rowIds.filter(id =>
       (this.state.calculatedValues[id] !== undefined) && (data[id] !== undefined));
-    this.setState(update(this.state, { rowIdsDelayed: { $set: filteredRowIds } }));
+    this.updateState(update(this.mNextState, { rowIdsDelayed: { $set: filteredRowIds } }));
     this.mDetailTimer = null;
   }
 
@@ -588,7 +600,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
 
     const attrState = this.getAttributeStates(props);
 
-    this.setState(update(this.state, {
+    this.updateState(update(this.mNextState, {
       sortedRows: {
         $set: this.sortedRows(attrState, this.mVisibleAttributes, filtered, language),
       },
@@ -639,7 +651,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
   }
 
   private setRowHighlight = (rowId: string, highlighted: boolean) => {
-    this.setState(setSafe(this.state, ['rowState', rowId, 'highlighted'], highlighted));
+    this.updateState(setSafe(this.mNextState, ['rowState', rowId, 'highlighted'], highlighted));
   }
 
   private scrollToItem = (item: HTMLElement, smooth: boolean) => {
@@ -692,7 +704,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
     );
 
     if (maxWidth !== this.state.splitMax) {
-      this.setState(update(this.state, {
+      this.updateState(update(this.mNextState, {
         splitMax: { $set: maxWidth },
       }));
     }
@@ -738,7 +750,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
     }).then(() =>
       // once everything is recalculated, update the cache
       new Promise<void>((resolve, reject) => {
-        this.setState(update(this.state, {
+        this.updateState(update(this.mNextState, {
           calculatedValues: { $set: newValues },
         }), () => resolve());
       }))
@@ -771,7 +783,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
         }
       }
     });
-    this.setState(update(this.state, { rowState: changes }), this.onRowStateChanged);
+    this.updateState(update(this.mNextState, { rowState: changes }), this.onRowStateChanged);
   }
 
   private standardSort(lhs: any, rhs: any): number {
@@ -936,7 +948,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
 
     const now = new Date().getTime();
     if (click && (this.state.lastSelected === rowId) && ((now - this.mLastSelectOnly) < 500)) {
-      this.setState(update(this.state, {
+      this.updateState(update(this.mNextState, {
         detailsOpen: { $set: !this.state.detailsOpen },
         rowState,
       }), this.onRowStateChanged);
@@ -944,7 +956,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
       if (click) {
         this.mLastSelectOnly = now;
       }
-      this.setState(update(this.state, {
+      this.updateState(update(this.mNextState, {
         lastSelected: { $set: rowId },
         rowState,
       }), this.onRowStateChanged);
@@ -955,7 +967,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
     const { tableId } = this.props;
     const wasSelected = getSafe(this.state.rowState, [rowId, 'selected'], undefined);
     if (!wasSelected) {
-      this.setState(update(this.state, {
+      this.updateState(update(this.mNextState, {
         lastSelected: { $set: rowId },
         rowState: { [rowId]:
           wasSelected === undefined
@@ -963,7 +975,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
             : { selected: { $set: !wasSelected } },
         }}), this.onRowStateChanged);
     } else {
-      this.setState(update(this.state, {
+      this.updateState(update(this.mNextState, {
         rowState: { [rowId]: { selected: { $set: !wasSelected } } },
       }), this.onRowStateChanged);
     }
@@ -983,7 +995,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
         newState[key] = { selected: { $set: false } };
       }
     });
-    this.setState(update(this.state, { rowState: newState }), this.onRowStateChanged);
+    this.updateState(update(this.mNextState, { rowState: newState }), this.onRowStateChanged);
   }
 
   private selectAll() {
@@ -1003,7 +1015,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
         ? { $set: { selected: true } }
         : { selected: { $set: true } };
     });
-    this.setState(update(this.state, { rowState: newState }), this.onRowStateChanged);
+    this.updateState(update(this.mNextState, { rowState: newState }), this.onRowStateChanged);
   }
 
   private selectTo(rowId: string) {
@@ -1035,7 +1047,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
         ? { $set: { selected: selection.has(iterId) } }
         : { selected: { $set: selection.has(iterId) } };
     });
-    this.setState(update(this.state, { rowState }), this.onRowStateChanged);
+    this.updateState(update(this.mNextState, { rowState }), this.onRowStateChanged);
   }
 
   private visibleAttributes(attributes: ITableAttribute[],
@@ -1088,6 +1100,11 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
   private useMultiSelect() {
     // default to true
     return this.props.multiSelect !== false;
+  }
+
+  private updateState(newState: IComponentState, callback?: () => void) {
+    this.mNextState = newState;
+    this.setState(newState, callback);
   }
 }
 
