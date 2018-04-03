@@ -12,6 +12,7 @@ import ToolbarIcon from '../../../controls/ToolbarIcon';
 import { IActionDefinition } from '../../../types/IActionDefinition';
 import { IComponentContext } from '../../../types/IComponentContext';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
+import { IState } from '../../../types/IState';
 import { ITableAttribute } from '../../../types/ITableAttribute';
 import { Placeholder } from '../../../util/asyncRequire';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
@@ -42,6 +43,7 @@ import * as React from 'react';
 import { Button, Panel } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { generate as shortid } from 'shortid';
+import { setDownloadTime } from '../actions/state';
 
 const PanelX: any = Panel;
 
@@ -68,6 +70,7 @@ interface IConnectedProps {
 }
 
 interface IActionProps {
+  onSetAttribute: (id: string, time: number) => void;
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
                  actions: DialogActions) => Promise<IDialogResult>;
   onShowError: (message: string, details?: string | Error,
@@ -235,7 +238,12 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
           return null;
         }
         return fs.statAsync(path.join(this.props.downloadPath, attributes.localPath))
-        .then(stat => Promise.resolve(stat.mtime))
+        .then(stat => {
+          const { downloads, onSetAttribute } = this.props;
+          const id = Object.keys(downloads).find(key => downloads[key] === attributes);
+          onSetAttribute(id, stat.mtimeMs);
+          return Promise.resolve(stat.mtime);
+        })
         .catch(() => undefined);
       },
       placement: 'both',
@@ -585,7 +593,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
   }
 }
 
-function mapStateToProps(state: any): IConnectedProps {
+function mapStateToProps(state: IState): IConnectedProps {
   return {
     gameMode: activeGameId(state),
     knownGames: state.session.gameMode.known,
@@ -596,6 +604,7 @@ function mapStateToProps(state: any): IConnectedProps {
 
 function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
+    onSetAttribute: (id, time) => dispatch(setDownloadTime(id, time)),
     onShowDialog: (type, title, content, actions) =>
       dispatch(showDialog(type, title, content, actions)),
     onShowError: (message: string, details?: string | Error,

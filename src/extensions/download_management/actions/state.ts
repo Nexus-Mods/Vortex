@@ -80,3 +80,6 @@ export const setDownloadModInfo = safeCreateAction('SET_DOWNLOAD_MODINFO',
 
 export const setDownloadInstalled = safeCreateAction('SET_DOWNLOAD_INSTALLED',
   (id: string, gameId: string, modId: string) => ({ id, gameId, modId }));
+
+export const setDownloadTime = safeCreateAction('SET_DOWNLOAD_TIME',
+  (id: string, time: number) => ({ id, time }));

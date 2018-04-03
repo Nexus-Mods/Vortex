@@ -422,7 +422,7 @@ class DownloadManager {
                 urls: string[],
                 received: number,
                 size: number,
-                started: Date,
+                started: number,
                 chunks: IChunk[],
                 progressCB: ProgressCallback): Promise<IDownloadResult> {
     return new Promise<IDownloadResult>((resolve, reject) => {
@@ -435,7 +435,7 @@ class DownloadManager {
         lastProgressSent: 0,
         received,
         size,
-        started,
+        started: new Date(started),
         chunks: [],
         progressCB,
         finishCB: resolve,

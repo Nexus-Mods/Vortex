@@ -34,7 +34,7 @@ export const stateReducer: IReducerSpec = {
         chunks: [],
         localPath: undefined,
         fileMD5: undefined,
-        fileTime: new Date(),
+        fileTime: Date.now(),
       });
     },
     [action.downloadProgress as any]: (state, payload) => {
@@ -83,7 +83,10 @@ export const stateReducer: IReducerSpec = {
       if (getSafe<string>(state, [ 'files', payload.id, 'state' ], 'unknown') !== 'init') {
         return state;
       }
-      return setOrNop(state, [ 'files', payload.id, 'state' ], 'started');
+      return merge(state, [ 'files', payload.id ], {
+        state: 'started',
+        startTime: Date.now(),
+      });
     },
     [action.finishDownload as any]: (state, payload) => {
       if (state.files[payload.id] === undefined) {
@@ -92,10 +95,13 @@ export const stateReducer: IReducerSpec = {
       return merge(state, [ 'files', payload.id ], {
         state: payload.state,
         failCause: payload.failCause,
-        fileTime: new Date(),
+        fileTime: Date.now(),
         chunks: [],
       });
     },
+    [action.setDownloadTime as any]: (state, payload) => merge(state, ['files', payload.id], {
+      fileTime: payload.time,
+    }),
     [action.pauseDownload as any]: (state, payload) => {
       if (['finished', 'failed'].indexOf(
           getSafe(state, [ 'files', payload.id, 'state' ], undefined)) !== -1) {
@@ -129,7 +135,7 @@ export const stateReducer: IReducerSpec = {
         game: payload.game,
         localPath: payload.localPath,
         size: payload.fileSize,
-        fileTime: new Date(),
+        fileTime: Date.now(),
         urls: [],
         modInfo: {},
         chunks: [],
