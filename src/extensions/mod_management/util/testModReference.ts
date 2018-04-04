@@ -39,7 +39,8 @@ function testRef(mod: IModLookupInfo, ref: IReference): boolean {
       }
     } else {
       const baseName = path.basename(mod.fileName, path.extname(mod.fileName));
-      if (!minimatch(baseName, ref.fileExpression)) {
+      if ((baseName !== ref.fileExpression) &&
+          !minimatch(baseName, ref.fileExpression)) {
         return false;
       }
     }
