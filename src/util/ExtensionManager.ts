@@ -784,7 +784,11 @@ class ExtensionManager {
   }
 
   private modLookupId(detail: ILookupDetails): string {
-    return `${detail.fileMD5}_${detail.filePath}_${detail.fileSize}_${detail.gameId}`;
+    const fileName = detail.filePath !== undefined
+      ? path.basename(detail.filePath, path.extname(detail.filePath))
+      : undefined;
+    return `${detail.fileMD5}_${fileName}`
+         + `_${detail.fileSize}_${detail.gameId}`;
   }
 
   private lookupModMeta = (detail: ILookupDetails): Promise<ILookupResult[]> => {
@@ -821,6 +825,13 @@ class ExtensionManager {
   }
 
   private saveModMeta = (modInfo: IModInfo): Promise<void> => {
+    const lookupId = this.modLookupId({
+      fileMD5: modInfo.fileMD5,
+      filePath: modInfo.fileName,
+      fileSize: modInfo.fileSizeBytes,
+      gameId: modInfo.gameId,
+    });
+    delete this.mModDBCache[lookupId];
     return this.getModDB()
       .then(modDB => {
         return new Promise<void>((resolve, reject) => {
