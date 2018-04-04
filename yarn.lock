@@ -5590,9 +5590,10 @@ next-tick@1:
   resolved "https://registry.yarnpkg.com/next-tick/-/next-tick-1.0.0.tgz#ca86d1fe8828169b0120208e3dc8424b9db8342c"
 
 nexus-api@Nexus-Mods/node-nexus-api:
-  version "0.2.1"
-  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/6405d9fbbf607051f59c56986c56739a0eeefbe1"
+  version "0.3.0"
+  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/9d1c93b163dd186ca07a4e18ae8923c34f4bb3dc"
   dependencies:
+    request "^2.85.0"
     string-template "^1.0.0"
 
 node-7z@Nexus-Mods/node-7z:
@@ -7022,6 +7023,33 @@ request@2.81.0:
     tough-cookie "~2.3.0"
     tunnel-agent "^0.6.0"
     uuid "^3.0.0"
+
+request@^2.85.0:
+  version "2.85.0"
+  resolved "https://registry.yarnpkg.com/request/-/request-2.85.0.tgz#5a03615a47c61420b3eb99b7dba204f83603e1fa"
+  dependencies:
+    aws-sign2 "~0.7.0"
+    aws4 "^1.6.0"
+    caseless "~0.12.0"
+    combined-stream "~1.0.5"
+    extend "~3.0.1"
+    forever-agent "~0.6.1"
+    form-data "~2.3.1"
+    har-validator "~5.0.3"
+    hawk "~6.0.2"
+    http-signature "~1.2.0"
+    is-typedarray "~1.0.0"
+    isstream "~0.1.2"
+    json-stringify-safe "~5.0.1"
+    mime-types "~2.1.17"
+    oauth-sign "~0.8.2"
+    performance-now "^2.1.0"
+    qs "~6.5.1"
+    safe-buffer "^5.1.1"
+    stringstream "~0.0.5"
+    tough-cookie "~2.3.3"
+    tunnel-agent "^0.6.0"
+    uuid "^3.1.0"
 
 request@~2.79.0:
   version "2.79.0"
