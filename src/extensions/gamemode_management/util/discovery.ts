@@ -192,7 +192,7 @@ function walk(searchPath: string,
         progress.setStepCount(estimatedDirectories);
         progress.completed(lastCompleted, doneCount);
       }
-    }, { terminators: true });
+    }, { terminators: true, skipLinks: true });
 }
 
 function verifyToolDir(tool: ITool, testPath: string): Promise<void> {
