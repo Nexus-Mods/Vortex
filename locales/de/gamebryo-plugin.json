@@ -1,13 +1,13 @@
 {
-  "Autosort enabled (using LOOT)": "Automatisches sortieren aktiviert (nutzt LOOT)",
-  "Autosort disabled (using LOOT)": "Automatisches sortieren deaktiviert (nutzt LOOT)",
+  "Autosort enabled (using LOOT)": "Automatisches Sortieren aktiviert (nutzt LOOT)",
+  "Autosort disabled (using LOOT)": "Automatisches Sortieren deaktiviert (nutzt LOOT)",
   "Sort now": "Jetzt sortieren",
   "Name": "Name",
   "Flags": "Eigenschaften",
   "Load Order": "Ladereihenfolge",
   "Mod Index": "Mod Index",
-  "Loaded by the engine, can't be configured": "Kann nicht konfiguriert wird da direkt von Engine geladen",
-  "Requires cleaning (LOOT)": "Benötigt Säuberung (LOOT)",
+  "Loaded by the engine, can't be configured": "Wird von der Engine direkt geladen und kann daher nicht konfiguriert werden",
+  "Requires cleaning (LOOT)": "Benötigt Reinigung (LOOT)",
   "Master": "Master",
   "Save": "Speichern"
 }
