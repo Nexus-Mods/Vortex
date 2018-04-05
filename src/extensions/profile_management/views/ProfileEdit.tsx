@@ -13,6 +13,7 @@ import {Checkbox, FormControl, ListGroupItem, Panel} from 'react-bootstrap';
 
 export interface IEditState {
   edit: IProfile;
+  features: IProfileFeature[];
 }
 
 export interface IEditProps {
@@ -33,20 +34,36 @@ export interface IEditProps {
 class ProfileEdit extends ComponentEx<IEditProps, IEditState> {
   constructor(props: IEditProps) {
     super(props);
+    const features = props.features.filter(feature => feature.supported());
+
     this.state = props.profile !== undefined
-      ? { edit: { ...props.profile } }
-      : { edit: {
+      ? {
+        edit: { ...props.profile },
+        features,
+      }
+      : {
+        edit: {
           id: props.profileId,
           gameId: props.gameId,
           modState: {},
           name: '',
           lastActivated: 0,
-        } };
+        },
+        features,
+      };
+  }
+
+  public componentWillReceiveProps(newProps: IEditProps) {
+    if (this.props.gameId !== newProps.gameId) {
+      this.setState(update(this.state, {
+        features: newProps.features.filter(feature => feature.supported()),
+      }));
+    }
   }
 
   public render(): JSX.Element {
-    const { t, features, onCancelEdit, profile, profileId } = this.props;
-    const { edit } = this.state;
+    const { t, onCancelEdit, profile, profileId } = this.props;
+    const { edit, features } = this.state;
     const inputControl = (
       <FormControl
         autoFocus
