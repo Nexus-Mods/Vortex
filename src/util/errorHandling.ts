@@ -15,6 +15,7 @@ import {
 import * as fs from 'fs-extra-promise';
 import NexusT from 'nexus-api';
 import opn = require('opn');
+import * as os from 'os';
 import * as path from 'path';
 import {} from 'uuid';
 
@@ -31,7 +32,7 @@ function createReport(type: string, error: IError, version: string) {
     `#### System
 | | |
 |------------ | -------------|
-|Platform | ${process.platform} |
+|Platform | ${process.platform} ${os.release()} |
 |Architecture | ${process.arch} |
 |Application Version | ${version} |`,
     `#### Message
@@ -59,12 +60,15 @@ export function genHash(error: IError) {
   const { createHash } = require('crypto');
   const hash = createHash('md5');
   if (error.stack !== undefined) {
-    // when we have a stack we don't want local paths in the part that is hashed,
-    // otherwise it will definitively be different between each user. This should
-    // remove file names from the stack while keeping function names.
+    // this attempts to remove everything "dynamic" about the error message so that
+    // the hash is only calculated on the static part so we can group them
     const hashStack = error.stack
       .split('\n')
-      .map(line => line.replace(/\([^)]*\)$/, ''))
+      .map(line => line
+        // remove the file names from stack lines because they contain local paths
+         .replace(/\([^)]*\)$/, '')
+         // remove everything in quotes to get file names and such out of the error message
+         .replace(/'[^']*'/, '').replace(/"[^"]*"/, ''))
       .join('\n');
     return hash.update(hashStack).digest('hex');
   } else {

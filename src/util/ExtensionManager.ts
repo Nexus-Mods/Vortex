@@ -341,14 +341,7 @@ class ExtensionManager {
     this.mEventEmitter = eventEmitter;
     this.mInterpreters = {};
     this.mApi = {
-      showErrorNotification:
-        (message: string, details: string | Error | any) => {
-        if (typeof(details) === 'string') {
-          dialog.showErrorBox(message, details);
-        } else {
-          dialog.showErrorBox(message, details.message);
-        }
-      },
+      showErrorNotification: this.showErrorBox,
       selectFile: this.selectFile,
       selectExecutable: this.selectExecutable,
       selectDir: this.selectDir,
@@ -473,7 +466,12 @@ class ExtensionManager {
           const errMessage = typeof(details) === 'string'
             ? details
             : details.message + '\n' + details.stack;
-          ipc.send('show-error-notification', message, errMessage);
+          try {
+            ipc.send('show-error-notification', message, errMessage);
+          } catch (err) {
+            // this may happen if the ipc has already been destroyed
+            this.showErrorBox(message, details);
+          }
         };
     this.mApi.events = new EventProxy(ipc);
   }
@@ -656,6 +654,14 @@ class ExtensionManager {
       this.mReduxWatcher.watch(watchPath, changeHandler);
     }
     this.mWatches[key].push(callback);
+  }
+
+  private showErrorBox = (message: string, details: string | Error | any) => {
+    if (typeof (details) === 'string') {
+      dialog.showErrorBox(message, details);
+    } else {
+      dialog.showErrorBox(message, details.message);
+    }
   }
 
   /**
