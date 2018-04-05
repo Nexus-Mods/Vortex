@@ -211,7 +211,14 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       .then((sameVolume: boolean) => {
         const func = sameVolume ? fs.renameAsync : fs.copyAsync;
         return fs.readdirAsync(oldPath)
-          .map((file: string) => func(path.join(oldPath, file), path.join(newPath, file)))
+          .map((fileName: string) =>
+            func(path.join(oldPath, fileName), path.join(newPath, fileName))
+            .catch(err => (err.code === 'EXDEV')
+                // EXDEV implies we tried to rename when source and destination are
+                // not in fact on the same volume. This is what comparing the stat.dev
+                // was supposed to prevent.
+                ? fs.copyAsync(path.join(oldPath, fileName), path.join(newPath, fileName))
+                : Promise.reject(err)))
           .then(() => fs.removeAsync(oldPath));
       });
   }
