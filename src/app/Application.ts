@@ -240,7 +240,17 @@ class Application {
   private multiUserPath() {
     if (process.platform === 'win32') {
       const muPath = path.join(process.env.ProgramData, 'vortex');
-      fs.ensureDirSync(muPath);
+      try {
+        fs.ensureDirSync(muPath);
+      } catch (err) {
+        // not sure why this would happen, ensureDir isn't supposed to report a problem if
+        // the directory exists, but there was a single report of EEXIST in this place.
+        // Probably a bug related to the filesystem used in C:\ProgramData, we had similar
+        // problems with OneDrive paths
+        if (err.code !== 'EEXIST') {
+          throw err;
+        }
+      }
       return muPath;
     } else {
       log('error', 'Multi-User mode not implemented outside windows');
