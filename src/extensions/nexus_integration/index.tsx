@@ -58,6 +58,7 @@ import * as Redux from 'redux';
 import { generate as shortid } from 'shortid';
 import * as util from 'util';
 import * as WebSocket from 'ws';
+import { DownloadIsHTML } from '../download_management/DownloadManager';
 
 type IModWithState = IMod & IProfileMod;
 
@@ -558,6 +559,7 @@ function once(api: IExtensionApi) {
   const registerFunc = () => {
     api.registerProtocol('nxm', (url: string) => {
       startDownload(api, url)
+      .catch(DownloadIsHTML, err => undefined)
       .catch(err => {
         api.showErrorNotification('Failed to start download', err);
       });
@@ -668,6 +670,7 @@ function once(api: IExtensionApi) {
         .then(downloadId => {
           api.events.emit('start-install-download', downloadId);
         })
+        .catch(DownloadIsHTML, err => undefined)
         .catch(err => {
           api.showErrorNotification('failed to start download', err);
         });

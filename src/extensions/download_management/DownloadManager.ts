@@ -764,10 +764,11 @@ class DownloadManager {
           } else if ((download.headers !== undefined)
                      && (contentType.parse(download.headers['content-type']).type === 'text/html')
                      && (!download.tempName.toLowerCase().endsWith('.html'))) {
-            finalPath = download.tempName + '.html';
-            log('debug', 'renaming redirected download',
-              { from: download.tempName, to: finalPath });
-            return fs.renameAsync(download.tempName, finalPath);
+            // don't keep html files. It's possible handleHTML already deleted it though
+            return fs.removeAsync(download.tempName)
+              .catch(err => (err.code !== 'ENOENT')
+                  ? Promise.reject(err)
+                  : Promise.resolve());
           }
         })
         .then(() => {

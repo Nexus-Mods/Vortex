@@ -44,6 +44,7 @@ import { Button, Panel } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { generate as shortid } from 'shortid';
 import { setDownloadTime } from '../actions/state';
+import { DownloadIsHTML } from '../DownloadManager';
 
 const PanelX: any = Panel;
 
@@ -441,7 +442,8 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
   private startDownload = (url: string) => {
     this.context.api.events.emit('start-download', [url], {}, undefined, (err) => {
       if (err !== undefined) {
-        if (err instanceof UserCanceled) {
+        if ((err instanceof UserCanceled)
+            || (err instanceof DownloadIsHTML)) {
           // nop
         } else if (err instanceof ProcessCanceled) {
           this.context.api.sendNotification({
@@ -581,7 +583,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
     if (type === 'urls') {
       dlPaths.forEach(url => this.context.api.events.emit('start-download', [url], {}, undefined,
         (error: Error) => {
-        if (error !== null) {
+        if ((error !== null) && !(error instanceof DownloadIsHTML)) {
           this.context.api.showErrorNotification('Failed to start download', error, {
             allowReport: !(error instanceof ProcessCanceled),
           });
