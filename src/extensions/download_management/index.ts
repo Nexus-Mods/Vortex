@@ -302,6 +302,13 @@ function init(context: IExtensionContextExt): boolean {
                 });
               }
               log('info', 'imported archives', {count: downloadPaths.length});
+            })
+            .catch(err => {
+              context.api.sendNotification({
+                type: 'warning',
+                title: err.code === 'ENOENT' ? 'File doesn\'t exist' : err.message,
+                message: dlPath,
+              });
             });
       });
     });
