@@ -34,7 +34,6 @@ export {
   closeSync,
   createReadStream,
   createWriteStream,
-  ensureDirSync,
   fsyncAsync,
   linkAsync,
   linkSync,
@@ -83,6 +82,15 @@ export {
   renameAsync,
   utimesAsync,
 };
+
+export function ensureDirSync(dirPath: string) {
+  try {
+    fs.ensureDirSync(dirPath);
+  } catch (err) {
+    err.stack = err.stack + '\n' + (new Error().stack);
+    throw err;
+  }
+}
 
 export function ensureFileAsync(filePath: string): Promise<void> {
   return (fs as any).ensureFileAsync(filePath);
