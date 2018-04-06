@@ -263,6 +263,9 @@ function genUpdateModDeployment() {
     let profile = profileId !== undefined
       ? getSafe(state, ['persistent', 'profiles', profileId], undefined)
       : activeProfile(state);
+    if (profile === undefined) {
+      return Promise.reject(new Error('Profile missing'));
+    }
     const instPath = resolvePath('install', state.settings.mods.paths, profile.gameId);
     const gameDiscovery =
       getSafe(state, ['settings', 'gameMode', 'discovered', profile.gameId], undefined);
