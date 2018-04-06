@@ -248,5 +248,17 @@
   "Profile machen es möglich, schnell zwischen mehreren Mod-Setups für ein einziges Spiel zu wechseln. Das ist hilfreich, wenn man mehrere Playthroughs gleichzeitig spielt oder mehrere Leute auf einem PC dasselbe Spiel spielen.\n\nFür alle Profile sind dieselben Mods \"verfügbar\", aber jedes Profil hat eine eigene Auswahl davon \"aktiviert\".\n\nJe nach Spiel können verschiedene Profile auch verschiedene Plugins, Speicherstände, Spieleinstellungen etc. besitzen.",
   "When you install a mod through Vortex it is stored in a separate directory and has no immediate effect on the game. We call the process of actually placing the files into the game directory \"deployment\".\n\nBy default, deployment happens automatically after you enable/disable a mod.\nIf you want more control you can disable this automation and will then have to manually click a button to start the deployment.\n\nPlease note that parts of Vortex (i.e. the list of plugins for TES games) will only reflect the \"deployed\" state.":
   "Wenn Sie mit Vortex eine Mod installieren, wird sie zunächst in einem separaten Verzeichnis gespeichert, ohne das Spiel zu verändern. Den Vorgang, bei dem die Mod in das Verzeichnis des Spiels platziert wird, nennt man \"Deployment\".\n\nStandardmäßig findet das Deployment statt, sobald Sie eine Mod aktivieren oder deaktivieren.\nWenn Sie mehr Einfluss darauf nehmen möchten, können Sie dies deaktivieren und das Deployment manuell auf Knopfdruck durchführen.\n\nBitte nehmen Sie zur Kenntnis, das Bestandteile von Vortex(z.B. die Liste der Plugins für Elder Scrolls-Spiele) immer nur den Zustand nach dem Deployment anzeigen.",
-  "Choose which widgets to show": "Auswählen, welche Widgets angezeigt werden sollen"
+  "Choose which widgets to show": "Auswählen, welche Widgets angezeigt werden sollen",
+  "Multi-User Mode": "Mehrere Benutzer",
+  "By default, every user account on your system has its own \"instance\" of Vortex with their own settings, mods, profiles and so on.\n\nIf you want to share these things between all users of your PC, you can toggle to \"Shared\" mode. In this mode all data will be stored in a global location and available to all users on this system.\n\nPlease note that this includes login credentials for Nexus Mods and other, potentially confidential, pieces of information you enter in Vortex.\n\nThis switch is not destructive. The data stored with your user account is not touched while you're in shared mode, so you can toggle back and forth.":
+  "Standardmäßig speichert Vortex für jedes Benutzerkonto Daten wie Einstellungen, Mods, Profile etc. separat.\n\nWenn Sie diese Daten für alle Benutzerkonten gemeinsam speichern möchten, wählen Sie \"Gemeinsame Daten\". Dadurch werden alle Daten in einem globalen Verzeichnis gespeichert und sind für jedes Benutzerkonto verfügbar.\n\nAchtung: zu diesen Daten gehören auch die Login-Informationen Ihres Nexus-Accounts und andere Informationen, die Sie in Vortex eingeben.\n\nWenn Sie \"Gemeinsame Daten\" auswählen, hat das keinen Einfluss Ihre separat gespeicherten Daten, sodass Sie diese Einstellung verändern können.",
+  "Shared": "Gemeinsame Daten",
+  "Per-User": "Separate Daten",
+  "Update": "Updates",
+  "You can choose to either receive automatic updates only after they went through some community testing (Stable) or to always get the newest features (Beta).":
+  "Wählen Sie \"Stabil\", wenn Sie Updates erst erhalten möchten, nachdem diese von der Community getestet worden sind, oder \"Beta\", wenn Sie möglichst schnell neue Features wollen.",
+  "None": "Keine",
+  "Update Channel": "Update-Kanal",
+  "Paths": "Pfade",
+  "No deployment method available": "Keine Deploymentmethoden verfügbar"
 }
