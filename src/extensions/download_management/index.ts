@@ -145,7 +145,7 @@ function watchDownloads(api: IExtensionApi, downloadPath: string,
         log('warn', 'failed to watch mod directory', { downloadPath, error });
     });
   } catch (err) {
-    api.showErrorNotification('failed to watch download directory', err);
+    api.showErrorNotification('Failed to watch download directory', err);
   }
 }
 

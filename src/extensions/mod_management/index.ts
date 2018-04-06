@@ -162,7 +162,7 @@ function purgeMods(api: IExtensionApi): Promise<void> {
       .then(() => activator.purge(instPath, modPaths[typeId]))
       .then(() => saveActivation(typeId, state.app.instanceId, modPaths[typeId], [])))
   .catch(UserCanceled, () => undefined)
-  .catch(err => api.showErrorNotification('failed to purge mods', err))
+  .catch(err => api.showErrorNotification('Failed to purge mods', err))
   .finally(() => api.dismissNotification(notificationId));
 }
 
