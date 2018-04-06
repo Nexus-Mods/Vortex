@@ -79,7 +79,7 @@
   "Chrome has to be closed, otherwise this fix has no effect.": "Chrome muss geschlossen sein, sonst hat dieser Fix keinen Effekt.",
   "Nothing changed": "Keine Änderungen vorgenommen",
   "No change was necessary": "Es waren keine Änderungen nötig",
-  "Failed to fix NXM handling in Chrome": "Konnte Behandlung von NXM-Links in Chrome nicht reparieren",
+  "Failed to fix NXM handling in Chrome": "Konnte Verwaltung von NXM-Links in Chrome nicht reparieren",
   "Report": "Melden",
   "Success": "Erfolg",
   "Fix was applied": "Erfolgreich repariert",
