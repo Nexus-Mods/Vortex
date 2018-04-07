@@ -4,22 +4,21 @@
 
 # has to be 2.7
 $python_ver = "2.7.14"
-# current tls
+# current lts
 $node_ver = "8.9.4"
 # newest version available
 $git_ver = "2.15.1"
 
-trap [Exception] { 
-   write-host "We have an error!"; 
-   if ($_.Exception.InnerException) {
-       write-error $("ERROR: " + $_.Exception.InnerException.Message);
-   } else {
-       write-error $("ERROR: " + $_.Exception.Message); 
-   }
-   sleep 30;
-   break; 
+trap [Exception] {
+  write-host "We have an error!"
+  if ($_.Exception.InnerException) {
+    write-error $("ERROR: " + $_.Exception.InnerException.Message)
+  } else {
+    write-error $("ERROR: " + $_.Exception.Message)
+  }
+  sleep 30
+  break
 }
-
 
 [System.Reflection.Assembly]::LoadWithPartialName("System.windows.forms")
 
@@ -96,4 +95,3 @@ Write-Output "Build vortex"
 cd vortex
 & yarn install
 & yarn run build
-
