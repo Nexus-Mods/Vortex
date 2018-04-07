@@ -49,25 +49,25 @@ $node_exe = "node-v$node_ver-x64.msi"
 $git_exe = "Git-$git_ver-64-bit.exe"
 
 Write-Output "Downloading c++ build tools"
-if(![System.IO.File]::Exists("downloads/visualcppbuildtools_full.exe")) {
+if(![System.IO.File]::Exists($path + "/downloads/visualcppbuildtools_full.exe")) {
   $wc.DownloadFile("https://download.microsoft.com/download/5/f/7/5f7acaeb-8363-451f-9425-68a90f98b238/visualcppbuildtools_full.exe", $path + "/downloads/visualcppbuildtools_full.exe")
   & "downloads/visualcppbuildtools_full.exe"
 }
 
 Write-Output "Downloading python $python_ver"
-if(![System.IO.File]::Exists("downloads/$python_exe")) {
+if(![System.IO.File]::Exists($path + "/downloads/$python_exe")) {
   $wc.DownloadFile("https://www.python.org/ftp/python/$python_ver/$python_exe", $path + "/downloads/$python_exe")
   & "downloads/$python_exe"
 }
 
 Write-Output "Downloading node.js"
-if(![System.IO.File]::Exists("downloads/$node_exe")) {
+if(![System.IO.File]::Exists($path + "/downloads/$node_exe")) {
   $wc.DownloadFile("https://nodejs.org/dist/v$node_ver/$node_exe", $path + "/downloads/$node_exe")
   & "downloads/$node_exe"
 }
 
 Write-Output "Downloading git"
-if(![System.IO.File]::Exists("downloads/$git_exe")) {
+if(![System.IO.File]::Exists($path + "/downloads/$git_exe")) {
   $wc.DownloadFile("https://github.com/git-for-windows/git/releases/download/v$git_ver.windows.1/$git_exe", $path + "/downloads/$git_exe")
   & "downloads/$git_exe"
 }
