@@ -7,7 +7,7 @@ $python_ver = "2.7.14"
 # current lts
 $node_ver = "8.11.1"
 # newest version available
-$git_ver = "2.16.2"
+$git_ver = "2.17.0"
 
 trap [Exception] {
   write-host "We have an error!"
@@ -46,7 +46,7 @@ $python_exe = "python-$python_ver.amd64.msi"
 
 $node_exe = "node-v$node_ver-x64.msi"
 
-$git_exe = "Git-$git_ver.2-64-bit.exe"
+$git_exe = "Git-$git_ver-64-bit.exe"
 
 Write-Output "Downloading c++ build tools"
 if(![System.IO.File]::Exists("downloads/visualcppbuildtools_full.exe")) {
@@ -68,7 +68,7 @@ if(![System.IO.File]::Exists("downloads/$node_exe")) {
 
 Write-Output "Downloading git"
 if(![System.IO.File]::Exists("downloads/$git_exe")) {
-  $wc.DownloadFile("https://github.com/git-for-windows/git/releases/download/v$git_ver.windows.2/$git_exe", $path + "/downloads/$git_exe")
+  $wc.DownloadFile("https://github.com/git-for-windows/git/releases/download/v$git_ver.windows.1/$git_exe", $path + "/downloads/$git_exe")
   & "downloads/$git_exe"
 }
 
