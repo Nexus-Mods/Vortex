@@ -11,7 +11,11 @@ $git_ver = "2.15.1"
 
 trap [Exception] { 
    write-host "We have an error!"; 
-   write-error $("ERROR: " + $_.Exception.Message); 
+   if ($_.Exception.InnerException) {
+       write-error $("ERROR: " + $_.Exception.InnerException.Message);
+   } else {
+       write-error $("ERROR: " + $_.Exception.Message); 
+   }
    sleep 30;
    break; 
 }
