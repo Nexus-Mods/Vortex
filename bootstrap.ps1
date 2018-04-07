@@ -5,9 +5,9 @@
 # has to be 2.7
 $python_ver = "2.7.14"
 # current lts
-$node_ver = "8.9.4"
+$node_ver = "8.11.1"
 # newest version available
-$git_ver = "2.15.1"
+$git_ver = "2.16.2"
 
 trap [Exception] {
   write-host "We have an error!"
