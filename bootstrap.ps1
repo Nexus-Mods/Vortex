@@ -38,6 +38,8 @@ cd $path
 
 Write-Output "Downloading dependencies. There is no feedback during downloads!"
 
+[Net.ServicePointManager]::SecurityProtocol += [Net.SecurityProtocolType]::Tls12
+
 $wc = New-Object System.Net.WebClient
 
 New-Item -ItemType Directory -Force -Path downloads
