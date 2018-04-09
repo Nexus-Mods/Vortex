@@ -16,7 +16,7 @@ import testModReference from '../extensions/mod_management/util/testModReference
 import { Archive } from './archives';
 import AsyncComponent from './AsyncComponent';
 import copyRecursive from './copyRecursive';
-import { NotSupportedError, ProcessCanceled, UserCanceled } from './CustomErrors';
+import { NotSupportedError, ProcessCanceled, SetupError, UserCanceled } from './CustomErrors';
 import Debouncer from './Debouncer';
 import delayed from './delayed';
 import runElevated from './elevated';
@@ -66,6 +66,7 @@ export {
   runElevated,
   runThreaded,
   setdefault,
+  SetupError,
   sortMods,
   steam,
   ISteamEntry,

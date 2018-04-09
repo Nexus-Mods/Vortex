@@ -14,6 +14,7 @@ interface IAttributesContext {
 
 function renderLoadFailure(t: I18next.TranslationFunction, fail: IExtensionLoadFailure) {
   const pattern = getSafe({
+    'unsupported-version': 'Not compatible with this version of Vortex',
     'unsupported-api': 'Unsupported API',
     dependency: 'Depends on {{dependencyId}}',
   }, [ fail.id ], 'Unknown error');

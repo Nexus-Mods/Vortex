@@ -13,7 +13,7 @@ function setupAutoUpdate(api: IExtensionApi) {
   const state: IState = api.store.getState();
 
   autoUpdater.on('error', (err) => {
-    api.showErrorNotification('checking for update failed', err);
+    api.showErrorNotification('Checking for update failed', err);
   });
 
   autoUpdater.on('update-available', () => {
@@ -55,13 +55,13 @@ function setupAutoUpdate(api: IExtensionApi) {
         autoUpdater.allowPrerelease = channel === 'beta';
         autoUpdater.checkForUpdates()
         .catch(err => {
-          api.showErrorNotification('checking for update failed', err, {
+          api.showErrorNotification('Checking for update failed', err, {
             allowReport: false,
           });
         });
       }
     } catch (err) {
-      api.showErrorNotification('checking for update failed', err);
+      api.showErrorNotification('Checking for update failed', err);
       return;
     }
   });

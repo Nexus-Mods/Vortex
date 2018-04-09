@@ -7,7 +7,7 @@ import {
 } from '../../types/IExtensionContext';
 import {IGame} from '../../types/IGame';
 import { IState } from '../../types/IState';
-import {ProcessCanceled, UserCanceled} from '../../util/CustomErrors';
+import {ProcessCanceled, SetupError, UserCanceled} from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import LazyComponent from '../../util/LazyComponent';
 import local from '../../util/local';
@@ -313,7 +313,7 @@ function resetSearchPaths(api: IExtensionApi) {
       api.showErrorNotification(
           'Failed to determine list of disk drives. ' +
               'Please review the settings before scanning for games.',
-          error);
+          error, { allowReport: false });
       store.dispatch(addSearchPath('C:'));
       return;
     }
@@ -488,7 +488,8 @@ function init(context: IExtensionContext): boolean {
         .catch((err) => {
           if (err instanceof UserCanceled) {
             // nop
-          } else if (err instanceof ProcessCanceled) {
+          } else if ((err instanceof ProcessCanceled)
+                    || (err instanceof SetupError)) {
             showError(store.dispatch, 'Failed to set game mode',
                       err.message, false, undefined, false);
           } else {

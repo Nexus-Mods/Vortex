@@ -21,6 +21,7 @@ import { IDialogResult, showDialog } from '../../actions/notifications';
 import { setProgress } from '../../actions/session';
 import { IExtensionContext } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
+import { SetupError } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
@@ -36,6 +37,8 @@ import { IProfileFeature } from './types/IProfileFeature';
 import Connector from './views/Connector';
 import ProfileView from './views/ProfileView';
 import TransferDialog from './views/TransferDialog';
+
+import { getGame } from '../gamemode_management';
 
 import { activeGameId, activeProfile } from './selectors';
 import { syncFromProfile, syncToProfile } from './sync';
@@ -253,8 +256,20 @@ function init(context: IExtensionContextExt): boolean {
 
             const profile = state.persistent.profiles[current];
             if ((profile === undefined) && (current !== undefined)) {
-              showError(store.dispatch, 'Tried to set invalid profile', current);
-              return Promise.resolve();
+              return Promise.reject('Tried to set invalid profile');
+            }
+
+            if (profile !== undefined) {
+              const game = getGame(profile.gameId);
+              if (game === undefined) {
+                showError(store.dispatch,
+                  'Game no longer supported, please install the game extension',
+                  game.name, false, undefined, false);
+              }
+              const discovery = state.settings.gameMode.discovered[profile.gameId];
+              // only calling to check if it works, some game extensions might discover
+              // a setup-error when trying to resolve the mod path
+              game.getModPaths(discovery.path);
             }
 
             let queue: Promise<void> = Promise.resolve();
@@ -303,15 +318,18 @@ function init(context: IExtensionContextExt): boolean {
                   store.dispatch(setCurrentProfile(gameId, current));
                   store.dispatch(setProfileActivated(current));
                   return null;
-                })
-                .catch((err: Error) => {
-                  showError(store.dispatch, 'Failed to set profile', err);
-                  // this is very bad. If we're not able to update to the new profile
-                  // we'd leave the client in an unusable state here. instead, reset
-                  // the profile to unset
-                  store.dispatch(setCurrentProfile(undefined, undefined));
-                  store.dispatch(setNextProfile(undefined));
                 });
+          })
+          .catch(SetupError, err => {
+            showError(store.dispatch, 'Failed to set profile', err.message,
+                      false, undefined, false);
+            store.dispatch(setCurrentProfile(undefined, undefined));
+            store.dispatch(setNextProfile(undefined));
+          })
+          .catch(err => {
+            showError(store.dispatch, 'Failed to set profile', err);
+            store.dispatch(setCurrentProfile(undefined, undefined));
+            store.dispatch(setNextProfile(undefined));
           });
         });
 

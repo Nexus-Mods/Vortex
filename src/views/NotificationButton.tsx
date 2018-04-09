@@ -44,9 +44,7 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
         this.mRef.hide();
       } else {
         const oldIds = new Set(this.props.notifications.map(not => not.id));
-        const newId = newProps.notifications.find(not =>
-          (['success', 'info'].indexOf(not.type) === -1) && !oldIds.has(not.id),
-        );
+        const newId = newProps.notifications.find(not => !oldIds.has(not.id));
         if (newId !== undefined) {
           // if a new notification was added, show, to ensure user sees it
           this.mRef.show();
@@ -135,6 +133,7 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
     const { t } = this.props;
 
     const translated: INotification = { ...notification };
+    translated.title = translated.title !== undefined ? t(translated.title) : undefined;
     translated.message = t(translated.message);
     return (
       <Notification

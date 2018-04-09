@@ -174,9 +174,10 @@ function renderCustomError(err: any): string {
       .join('\n');
 }
 
-function renderError(err: string | Error | any): { message: string, text?: string, wrap: boolean } {
+function renderError(err: string | Error | any):
+    { message?: string, text?: string, wrap: boolean } {
   if (typeof(err) === 'string') {
-    return { message: err, wrap: true };
+    return { text: err, wrap: true };
   } else if (err instanceof Error) {
     if ((err as any).code === 'EPERM') {
       return {

@@ -2,7 +2,7 @@
 
 To build from source you have two choices.
 
-Automatic (mosty):
+Automatic (mostly):
 - download _bootstrap.ps1_ and run as a powershell script
   - in the dialog that shows up, select a build directory (should be a clean/new one)
   - this script will try to download and install all dependencies, then check out and build vortex
@@ -12,7 +12,7 @@ Manual:
 - Before you can build vortex you need to download and install a couple of dependencies.
   - node.js
     * download installer from https://nodejs.org and run
-    * version doesn't matter much, latest tls should be fine
+    * version doesn't matter much, latest lts should be fine
   - yarn
     * install through npm _"npm install --global yarn"_
   - git

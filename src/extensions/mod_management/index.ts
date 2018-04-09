@@ -162,7 +162,7 @@ function purgeMods(api: IExtensionApi): Promise<void> {
       .then(() => activator.purge(instPath, modPaths[typeId]))
       .then(() => saveActivation(typeId, state.app.instanceId, modPaths[typeId], [])))
   .catch(UserCanceled, () => undefined)
-  .catch(err => api.showErrorNotification('failed to purge mods', err))
+  .catch(err => api.showErrorNotification('Failed to purge mods', err))
   .finally(() => api.dismissNotification(notificationId));
 }
 
@@ -263,6 +263,9 @@ function genUpdateModDeployment() {
     let profile = profileId !== undefined
       ? getSafe(state, ['persistent', 'profiles', profileId], undefined)
       : activeProfile(state);
+    if (profile === undefined) {
+      return Promise.reject(new Error('Profile missing'));
+    }
     const instPath = resolvePath('install', state.settings.mods.paths, profile.gameId);
     const gameDiscovery =
       getSafe(state, ['settings', 'gameMode', 'discovered', profile.gameId], undefined);
