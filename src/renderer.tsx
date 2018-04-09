@@ -301,7 +301,15 @@ store.subscribe(() => {
     currentLanguage = newLanguage;
     changeLanguage(newLanguage, (err, t) => {
       if (err !== undefined) {
-        showError(store.dispatch, 'failed to activate language', err);
+        if (Array.isArray(err)) {
+          // don't show ENOENT errors because it shouldn't really matter
+          const filtErr = err.filter(iter => iter.code !== 'ENOENT');
+          if (filtErr.length > 0) {
+            showError(store.dispatch, 'failed to activate language', err);
+          }
+        } else {
+          showError(store.dispatch, 'failed to activate language', err);
+        }
       }
     });
   }

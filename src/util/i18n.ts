@@ -1,14 +1,16 @@
+import * as fs from './fs';
 import { log } from './log';
 
+import * as Promise from 'bluebird';
+import { app as appIn, remote } from 'electron';
 import * as I18next from 'i18next';
 import FSBackend = require('i18next-node-fs-backend');
 
 import * as path from 'path';
 
-const dirName = path.dirname(path.dirname(__dirname));
+const app = remote !== undefined ? remote.app : appIn;
 
-const basePath = path.normalize(path.join(dirName, 'locales'));
-log('info', 'reading localizations', basePath);
+const dirName = path.dirname(path.dirname(__dirname));
 
 let debugging = false;
 let currentLanguage = 'en';
@@ -26,6 +28,51 @@ export interface IInitResult {
   error?: Error;
 }
 
+class MultiBackend {
+  private static type = 'backend';
+  private mOptions: any;
+  private mBundled: FSBackend;
+  private mUser: FSBackend;
+  private mLangUser: { [language: string]: boolean } = {};
+
+  constructor(services, options) {
+    this.mBundled = new FSBackend(services);
+    this.mUser = new FSBackend(services);
+    this.init(services, options);
+  }
+
+  public init(services, options) {
+    this.mOptions = options;
+    if (options !== undefined) {
+      this.mBundled.init(services, {
+        loadPath: path.join(options.bundled, '{{lng}}', '{{ns}}.json'),
+        jsonIndent: 2,
+      });
+      this.mUser.init(services, {
+        loadPath: path.join(options.user, '{{lng}}', '{{ns}}.json'),
+        jsonIndent: 2,
+      });
+    }
+  }
+
+  public read(language: string, namespace: string, callback) {
+    const backend = this.langUser(language) ? this.mUser : this.mBundled;
+    backend.read(language, namespace, callback);
+  }
+
+  private langUser(language: string) {
+    if (this.mLangUser[language] === undefined) {
+      try {
+        fs.statSync(path.join(this.mOptions.user, language));
+        this.mLangUser[language] = true;
+      } catch (err) {
+        this.mLangUser[language] = false;
+      }
+    }
+    return this.mLangUser[language];
+  }
+}
+
 /**
  * initialize the internationalization library
  *
@@ -35,8 +82,9 @@ export interface IInitResult {
  */
 function init(language: string): Promise<IInitResult> {
   currentLanguage = language;
+
   return new Promise<IInitResult>((resolve, reject) => {
-    const res: I18next.i18n = I18next.use(FSBackend).init(
+    const res: I18next.i18n = I18next.use(MultiBackend).init(
         {
           lng: language,
           fallbackLng: 'en',
@@ -64,8 +112,8 @@ function init(language: string): Promise<IInitResult> {
           },
 
           backend: {
-            loadPath: path.join(basePath, '{{lng}}', '{{ns}}.json'),
-            addPath: path.join(basePath, '{{lng}}', '{{ns}}.missing.json'),
+            bundled: path.normalize(path.join(dirName, 'locales')),
+            user: path.normalize(path.join(app.getPath('userData'), 'locales')),
           },
         },
         (error, tFunc) => {
@@ -75,8 +123,9 @@ function init(language: string): Promise<IInitResult> {
           }
           resolve({i18n: res, tFunc});
         });
-    res.on('languageChanged',
-           (newLanguage: string) => { currentLanguage = newLanguage; });
+    res.on('languageChanged', (newLanguage: string) => {
+      currentLanguage = newLanguage;
+    });
   });
 }
 
