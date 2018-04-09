@@ -805,6 +805,9 @@ class DownloadManager {
    * @returns {Promise<string>}
    */
   private unusedName(destination: string, fileName: string): Promise<string> {
+    if (fileName === '') {
+      fileName = 'unnamed';
+    }
     return new Promise<string>((resolve, reject) => {
       let fd = null;
       let counter = 0;

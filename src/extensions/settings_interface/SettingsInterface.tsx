@@ -69,30 +69,44 @@ class SettingsInterface extends ComponentEx<IProps, IState> {
   }
 
   public componentDidMount() {
-    const localesPath = path.normalize(path.join(__dirname, '..', '..', '..', 'locales'));
+    const bundledLanguages = path.normalize(path.join(__dirname, '..', '..', '..', 'locales'));
+    const userLanguages = path.normalize(path.join(remote.app.getPath('userData'), 'locales'));
 
-    readdirAsync(localesPath)
-    .then(files => {
-      const locales = files.map(key => {
-        let language;
-        let country;
+    Promise.join(readdirAsync(bundledLanguages), readdirAsync(userLanguages).catch(err => []))
+      .then(fileLists => Array.from(new Set([].concat(...fileLists))))
+      .then(files => {
+        const locales = files.map(key => {
+          let language;
+          let country;
 
-        if (key.includes('-')) {
-          const [languageKey, countryKey] = key.split('-');
-          language = nativeLanguageName(languageKey);
-          country = nativeCountryName(countryKey);
-        } else {
-          language = nativeLanguageName(key);
-        }
-        return { key, language, country }; });
+          if (key.includes('-')) {
+            const [languageKey, countryKey] = key.split('-');
+            language = nativeLanguageName(languageKey);
+            country = nativeCountryName(countryKey);
+          } else {
+            language = nativeLanguageName(key);
+          }
+          return { key, language, country };
+        });
 
-      this.setState(update(this.state, {
-        languages: { $set: locales },
-      }));
-    })
+        this.setState(update(this.state, {
+          languages: { $set: locales },
+        }));
+      })
     .catch(err => {
       log('warn', 'failed to read locales', err);
     });
+  }
+
+  public componentWillReceiveProps(newProps: IProps) {
+    if (this.state.languages.find(lang => lang.key === newProps.currentLanguage) === undefined) {
+      this.setState(update(this.state, {
+        languages: { $push: [{
+          key: newProps.currentLanguage,
+          language: nativeLanguageName(newProps.currentLanguage),
+        }] },
+      }));
+    }
   }
 
   public render(): JSX.Element {
