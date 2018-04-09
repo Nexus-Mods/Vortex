@@ -49,8 +49,6 @@ export {
   statSync,
   symlinkAsync,
   watch,
-  writeAsync,
-  writeFileAsync,
   writeSync,
 } from 'fs-extra-promise';
 
@@ -74,6 +72,8 @@ const mkdirAsync = genWrapperAsync(fs.mkdirAsync);
 const utimesAsync = genWrapperAsync(fs.utimesAsync);
 const readdirAsync = genWrapperAsync(fs.readdirAsync);
 const readFileAsync = genWrapperAsync(fs.readFileAsync);
+const writeAsync = genWrapperAsync(fs.writeAsync);
+const writeFileAsync = genWrapperAsync(fs.writeFileAsync);
 const renameAsync = genWrapperAsync(fs.renameAsync);
 export {
   mkdirAsync,
@@ -81,6 +81,8 @@ export {
   readFileAsync,
   renameAsync,
   utimesAsync,
+  writeAsync,
+  writeFileAsync,
 };
 
 export function ensureDirSync(dirPath: string) {
