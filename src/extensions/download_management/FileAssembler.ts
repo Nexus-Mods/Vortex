@@ -25,6 +25,9 @@ class FileAssembler {
     //   and it's already complicated enough
     try {
       const stats = fs.statSync(fileName);
+      if (stats.isDirectory()) {
+        throw new Error(`Download target ${fileName} is a directory`);
+      }
       this.mTotalSize = stats.size;
       exists = true;
     } catch (err) {
