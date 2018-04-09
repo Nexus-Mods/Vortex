@@ -208,7 +208,7 @@ function move(api: IExtensionApi, source: string, destination: string): Promise<
       addLocalDownload(id, gameMode, path.basename(destination), stats.size);
     })
     .catch(err => {
-      log('info', 'failed to copy', {err});
+      log('info', 'failed to copy', {error: err.message});
     });
 }
 
@@ -280,10 +280,11 @@ function init(context: IExtensionContextExt): boolean {
     context.api.events.on('import-downloads', (downloadPaths: string[]) => {
       const downloadPath = downloadPathSelector(context.api.store.getState());
       let hadDirs = false;
+      console.log('import', downloadPaths);
       Promise.map(downloadPaths, dlPath => {
         const fileName = path.basename(dlPath);
         const destination = path.join(downloadPath, fileName);
-        fs.statAsync(dlPath)
+        return fs.statAsync(dlPath)
             .then(stats => {
               if (stats.isDirectory()) {
                 hadDirs = true;
@@ -310,7 +311,8 @@ function init(context: IExtensionContextExt): boolean {
                 message: dlPath,
               });
             });
-      });
+      })
+      .then(() => console.log('done'));
     });
 
     {

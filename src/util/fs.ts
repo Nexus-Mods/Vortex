@@ -115,7 +115,14 @@ export function copyAsync(src: string, dest: string,
                           options?: RegExp |
                               ((src: string, dest: string) => boolean) |
                               fs.CopyOptions): Promise<void> {
-  return copyInt(src, dest, options || undefined, new Error().stack, NUM_RETRIES);
+  // fs.copy in fs-extra has a bug where it doesn't correctly avoid copying files onto themselves
+  return Promise.join(fs.statAsync(src),
+                      fs.statAsync(dest)
+                .catch(err => err.code === 'ENOENT' ? Promise.resolve({}) : Promise.reject(err)))
+    .then((stats: fs.Stats[]) => (stats[0].ino === stats[1].ino)
+        ? Promise.reject(new Error('Source and destination are the same file.'))
+        : Promise.resolve())
+    .then(() => copyInt(src, dest, options || undefined, new Error().stack, NUM_RETRIES));
 }
 
 function copyInt(
