@@ -27,6 +27,7 @@ export interface IBaseProps {
   orientation?: 'horizontal' | 'vertical';
   collapse?: boolean | 'force';
   dropdown?: boolean;
+  filter?: (action: IActionDefinition) => boolean;
   icon?: string;
 }
 
@@ -319,13 +320,19 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
         return <p>{icon.title}</p>;
       }
 
+      const buttonType = forceButtonType || this.props.buttonType;
+      const hasIcon = (buttonType === undefined)
+        || ['icon', 'both', 'menu'].indexOf(buttonType) !== -1;
+      const hasText = (buttonType === undefined)
+        || ['text', 'both', 'menu'].indexOf(buttonType) !== -1;
+
       return (
         <ToolbarIcon
           key={id}
           id={id}
           instanceId={instanceIds}
-          icon={icon.icon}
-          text={icon.title}
+          icon={hasIcon ? icon.icon : undefined}
+          text={hasText ? icon.title : undefined}
           onClick={icon.action}
           placement={tooltipPlacement}
         />
@@ -354,6 +361,8 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
     const staticProps = {
       ...unknownProps,
       key: id,
+      buttonType: this.props.buttonType,
+      orientation: this.props.orientation,
     };
     if (icon.props !== undefined) {
       const addProps = icon.props();
@@ -364,7 +373,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
   }
 
   private iconsToShow(): Array<IActionDefinition & { show: boolean | string }> {
-    const { instanceId, objects } = this.props;
+    const { filter, instanceId, objects } = this.props;
     const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
     const checkCondition = (def: IActionDefinition): boolean | string => {
       if (def.condition === undefined) {
@@ -382,7 +391,8 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
           ...iter,
           show: checkCondition(iter),
         }))
-      .filter(iter => iter.show !== false);
+      .filter(iter => iter.show !== false)
+      .filter(iter => (filter === undefined) || filter(iter));
   }
 
   private triggerDefault = (evt: React.MouseEvent<any>) => {

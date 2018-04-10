@@ -65,7 +65,9 @@ function updateModAttributes(dispatch: Redux.Dispatch<any>,
                              gameId: string,
                              mod: IMod,
                              modInfo: IModInfo) {
-  update(dispatch, gameId, mod, 'endorsed', modInfo.endorsement.endorse_status);
+  if (modInfo.endorsement !== undefined) {
+    update(dispatch, gameId, mod, 'endorsed', modInfo.endorsement.endorse_status);
+  }
   update(dispatch, gameId, mod, 'description', modInfo.description);
   update(dispatch, gameId, mod, 'pictureUrl', modInfo.picture_url);
 }
@@ -156,7 +158,9 @@ export function retrieveModInfo(
   // if the endorsement state is unknown, request it
   return Promise.resolve(nexus.getModInfo(parseInt(nexusModId, 10), convertGameId(gameId)))
     .then((modInfo: IModInfo) => {
-      updateModAttributes(store.dispatch, gameId, mod, modInfo);
+      if (modInfo !== undefined) {
+        updateModAttributes(store.dispatch, gameId, mod, modInfo);
+      }
     })
     .catch((err: NexusError) => {
       showError(store.dispatch, 'An error occurred looking up the mod',

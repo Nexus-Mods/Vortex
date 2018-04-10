@@ -378,8 +378,15 @@ function init(context: IExtensionContext): boolean {
     });
   };
 
+  context.registerGameInfoProvider('game-path', 0, 1000,
+    ['path'], (game: IGame & IDiscoveryResult) => (game.path === undefined)
+      ? Promise.resolve({})
+      : Promise.resolve({
+        path: { title: 'Path', value: path.normalize(game.path), type: 'url' },
+      }));
+
   context.registerGameInfoProvider('main', 0, 86400000,
-    ['path', 'size', 'size_nolinks'], queryGameInfo);
+    ['size', 'size_nolinks'], queryGameInfo);
 
   const openGameFolder = (instanceIds: string[]) => {
     const discoveredGames = context.api.store.getState().settings.gameMode.discovered;
@@ -430,7 +437,15 @@ function init(context: IExtensionContext): boolean {
   context.registerAction('game-discovered-buttons', 110, 'open-ext', {},
                          context.api.translate('Open Mod Folder'),
                          openModFolder);
-  context.registerAction('game-undiscovered-buttons', 115, 'browse', {},
+  context.registerAction('game-managed-buttons', 120, 'browse', {},
+    context.api.translate('Manually Set Location'),
+    (instanceIds: string[]) => { browseGameLocation(context.api, instanceIds[0]); });
+
+  context.registerAction('game-discovered-buttons', 120, 'browse', {},
+    context.api.translate('Manually Set Location'),
+    (instanceIds: string[]) => { browseGameLocation(context.api, instanceIds[0]); });
+
+  context.registerAction('game-undiscovered-buttons', 50, 'browse', {},
     context.api.translate('Manually Set Location'),
     (instanceIds: string[]) => { browseGameLocation(context.api, instanceIds[0]); });
 

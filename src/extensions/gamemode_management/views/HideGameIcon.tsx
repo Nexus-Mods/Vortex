@@ -30,11 +30,13 @@ class HideGameIcon extends ComponentEx<IProps, {}> {
     const { buttonType, instanceId, gamesDiscovered } = this.props;
     const t = this.context.api.translate;
     const hidden = getSafe(gamesDiscovered, [instanceId, 'hidden'], false);
+    const icon = hidden ? 'show' : 'hide';
+    const text = hidden ? t('Show') : t('Hide');
     return (
       <ToolbarIcon
         id={`hide-${instanceId}`}
-        icon={hidden ? 'show' : 'hide'}
-        text={hidden ? t('Show') : t('Hide')}
+        icon={(['icon', 'both'].indexOf(buttonType) !== -1) ? icon : undefined}
+        text={(['text', 'both'].indexOf(buttonType) !== -1) ? text : undefined}
         onClick={this.toggleHidden}
       />
     );
