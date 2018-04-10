@@ -66,23 +66,22 @@ class GameInfoPopover extends ComponentEx<IProps, { loading: boolean }> {
     const keysToRender = Object.keys(gameInfo).filter(key => gameInfo[key].value !== null);
 
     return (
-      <Table>
-        <tbody>
-          {keysToRender.map(this.renderGameInfo)}
-          {loading ? <tr><td><Spinner /></td></tr> : null}
-        </tbody>
-      </Table>
+      <div className='game-info-grid'>
+        {keysToRender.map(this.renderGameInfo)}
+      </div>
     );
   }
 
-  private renderGameInfo = (key: string): JSX.Element => {
+  private renderGameInfo = (key: string) => {
     const { t, gameInfo } = this.props;
-    return (
-      <tr key={key}>
-        <td>{t(gameInfo[key].title)}</td>
-        <td>{this.renderValue(gameInfo[key].value, gameInfo[key].type || 'string')}</td>
-      </tr>
-    );
+    return [
+      <div key={`${key}-title`} className='game-info-title'>{t(gameInfo[key].title)}</div>,
+      (
+        <div key={`${key}-value`} className='game-info-value'>
+          {this.renderValue(gameInfo[key].value, gameInfo[key].type || 'string')}
+        </div>
+      ),
+    ];
   }
 
   private renderValue = (value: any, type: string) => {

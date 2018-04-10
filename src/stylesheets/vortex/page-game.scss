@@ -10,7 +10,31 @@
 }
 
 .popover-game-info {
-  max-width: 500px;
+  max-width: 800px;
+  .popover-content {
+    display: flex;
+    > * {
+      padding: 0 $half-gutter;
+    }
+    .btn-group-vertical {
+      justify-content: space-around;
+      border-right: 1px solid $border-color;
+      button {
+        margin: 4px 0;
+      }
+    }
+  }
+}
+
+.game-info-grid {
+  display: grid;
+  grid-template-columns: 40% 60%;
+  grid-row-gap: 4px;
+  width: 100%;
+}
+
+.game-info-value {
+  word-wrap: break-word;
 }
 
 .mod-installing {

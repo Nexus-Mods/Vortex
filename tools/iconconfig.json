@@ -426,6 +426,10 @@
     "author": {
       "path": "{nucleo}/business-finance/{nucleo_simple}_business-contact-85",
       "rmFill": true
+    },
+    "game-menu": {
+      "path": "{fa}/plus-square",
+      "rmFill": true
     }
   }
 }
