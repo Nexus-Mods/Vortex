@@ -197,6 +197,8 @@ textarea {
   &:focus {
     @include box-shadow(none);
   }
+
+  border-color: $border-color;
 }
 
 .btn-group-vertical {
