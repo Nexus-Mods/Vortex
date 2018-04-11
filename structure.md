@@ -1,4 +1,4 @@
-# Project structrue
+# Project structure
 
 - **/**: project base directory. contains mostly configuration on the top level
   - *package.json*: project file for development
@@ -25,7 +25,7 @@
   - **build/**: contains assets for the packaging process (i.e. application icon)
   - **app/**: staging directory for production build
     - *package.json*: project file for production
-  - **dist/**: production builds (unpacked and instellers, created during packaging)
+  - **dist/**: production builds (unpacked and installers, created during packaging)
   - **out/**: development build (created during build)
   - **doc/**: api documentation (created by *npm run doc*)
   - **node_modules/**: dependencies (created by *npm install*)
@@ -36,7 +36,7 @@
 
 # npm tasks
 
-- install: download&install dependencies, also downloads typings
+- install: download & install dependencies, also downloads typings
 - test: run test suite
 - doc: create api documentation
 - start: compiles typescript, updates all assets, then starts the program in
