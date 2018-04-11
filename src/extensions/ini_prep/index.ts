@@ -183,15 +183,28 @@ function main(context: IExtensionContext) {
       const state: IState = context.api.store.getState();
       ensureIniBackups(gameMode, state.settings.gameMode.discovered[gameMode])
       .catch(err => {
-        context.api.showErrorNotification(
-          'Failed to create backups of the ini files for this game.',
-          {
-            Warning:
-              'To avoid data loss, ini tweaks are not going to be applied in this session.\n' +
-              'Please fix the problem and restart Vortex.',
-            Reason: err.message,
-          });
         deactivated = true;
+        if ((err.code === 'EINVAL') && (err.path.toLowerCase().indexOf('onedrive') !== -1)) {
+          context.api.showErrorNotification(
+            'Failed to create backups of the ini files for this game.',
+            'Due to Microsoft using undocumented functionality for the new feature '
+            + '"OneDrive Files on Demand" the Node.js framework we use can not currently '
+            + 'work correctly on those drives. '
+            + `We therefore can't apply ini tweaks to '${err.path}'.\n`
+            + 'Please disable this feature and restart Vortex.\n'
+            + 'Please keep an eye out on Vortex Changelogs so you know when this is fixed.', {
+              allowReport: false,
+            });
+        } else {
+          context.api.showErrorNotification(
+            'Failed to create backups of the ini files for this game.',
+            {
+              Warning:
+                'To avoid data loss, ini tweaks are not going to be applied in this session.\n' +
+                'Please fix the problem and restart Vortex.',
+              Reason: err.message,
+            });
+        }
       });
     });
 

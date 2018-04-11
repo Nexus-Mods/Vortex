@@ -473,7 +473,12 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
     downloadIds.forEach((downloadId: string) => {
       this.context.api.events.emit('resume-download', downloadId, (err) => {
         if (err !== null) {
-          if (err.message === 'Moved Permanently') {
+          if (err instanceof ProcessCanceled) {
+            this.props.onShowError('Failed to resume download',
+                                   'Sorry, this download is missing info necessary to resume. '
+                                   + 'Please try restarting it.',
+                                   undefined, false);
+          } else if (err.message === 'Moved Permanently') {
             this.props.onShowError('Failed to resume download', 'The url is no longer valid',
               undefined, false);
           } else {
