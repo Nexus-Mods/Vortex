@@ -24,6 +24,9 @@ function walk(target: string,
   let allFileNames: string[];
 
   return fs.readdirAsync(target)
+    .catch(err => (err.code === 'ENOENT')
+      ? Promise.resolve([])
+      : Promise.reject(err))
     .then((fileNames: string[]) => {
       allFileNames = fileNames;
       return Promise.map(fileNames, (statPath: string) =>
