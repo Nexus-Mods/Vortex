@@ -65,6 +65,7 @@ a[role=menuitem] svg {
     border-bottom: 1px solid transparent;
     margin-right: 0px;
     margin-bottom: -2px;
+    padding-bottom: 6px;
   }
 }
 
@@ -83,6 +84,11 @@ a[role=menuitem] svg {
   padding: 6px $gutter-width;
   font-family: $font-family-headings;
   font-size: large;
+
+  &:hover {
+    border-color: $border-color;
+    padding-bottom: 5px;
+  }
 }
 
 
