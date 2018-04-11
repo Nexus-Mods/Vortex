@@ -40,7 +40,7 @@ Manual:
   * _"yarn run start"_ to run
 - For production
   * _"yarn dist"_ to build (this will take a while)
-  * Find the installer and an alread unpacked version in dist
+  * Find the installer and an already unpacked version in _dist_
 
 ### If something goes wrong:
 
