@@ -111,6 +111,7 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
           collapse={false}
           buttonType='text'
           orientation='vertical'
+          filter={this.lowPriorityButtons}
         />
         <GameInfoPopover
           t={t}
@@ -122,7 +123,7 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
     );
 
     return [(
-      <div className='hover-content'>
+      <div key='primary-buttons' className='hover-content'>
         <IconBar
           id={`game-thumbnail-${game.id}`}
           className='buttons'
@@ -137,6 +138,7 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
       </div>
     ), (
       <OverlayTrigger
+        key='info-overlay'
         overlay={gameInfoPopover}
         triggerRef={this.setRef}
         getBounds={getBounds || this.getWindowBounds}
@@ -156,9 +158,11 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
     )];
   }
 
-  private priorityButtons = (action: IActionDefinition) => {
-    return action.position < 100;
-  }
+  private priorityButtons = (action: IActionDefinition) =>
+    action.position < 100
+
+  private lowPriorityButtons = (action: IActionDefinition) =>
+    action.position >= 100
 
   private getWindowBounds = (): ClientRect => {
     return {
