@@ -77,7 +77,10 @@ function isCaseSensitive(testPath: string): Promise<boolean> {
         log('debug', 'file system case-sensitive', { testPath });
         return true;
       }
-    });
+    })
+    .catch(err => (err.code === 'EPERM')
+      ? Promise.resolve(process.platform !== 'win32')
+      : Promise.reject(err));
 }
 
 /**
@@ -111,7 +114,10 @@ function getNormalizeFunc(testPath: string, parameters?: INormalizeParameters): 
     })
     .catch(err => {
       if (err.code === 'ENOENT') {
-        return getNormalizeFunc(path.dirname(testPath));
+        const parent = path.dirname(testPath);
+        return (parent === testPath)
+          ? Promise.reject(err)
+          : getNormalizeFunc(parent);
       } else {
         return Promise.reject(err);
       }
