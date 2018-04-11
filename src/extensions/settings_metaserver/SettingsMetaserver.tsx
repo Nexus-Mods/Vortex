@@ -200,7 +200,7 @@ class ServerList extends React.Component<IListProps, IListState> {
             key='input-add-metaserver'
             groupId='settings-buttons'
             icon='add'
-            tooltip={t('Add a metaserver')}
+            tooltip={t('Add a Meta Server')}
             onConfirmed={onAddMetaserver}
           />
         </ListGroupItem>
@@ -276,8 +276,8 @@ class SettingsMetaserver extends ComponentEx<IProps, IState> {
       <form>
         <FormGroup>
           <ControlLabel>
-            {t('Meta server')}
-            <More id='more-metaserver' name={t('Meta Server')}>
+            {t('Meta Servers')}
+            <More id='more-metaserver' name={t('Meta Servers')}>
               {getText('meta-server', t)}
             </More>
           </ControlLabel>

@@ -144,7 +144,7 @@ class SettingsInterface extends ComponentEx<IProps, IState> {
                 checked={customTitlebar}
                 onToggle={this.toggleCustomTitlebar}
               >
-                {t('Custom Window Titlebar')}
+                {t('Custom window titlebar')}
               </Toggle>
             </div>
           </div>
@@ -158,7 +158,7 @@ class SettingsInterface extends ComponentEx<IProps, IState> {
                 onToggle={this.toggleAdvanced}
               >
                 {t('Enable advanced mode')}
-                <More id='more-advanced-settings' name={t('Advanced')}>
+                <More id='more-advanced-settings' name={t('Advanced Mode')}>
                   {getText('advanced', t)}
                 </More>
               </Toggle>
@@ -168,7 +168,7 @@ class SettingsInterface extends ComponentEx<IProps, IState> {
                 checked={profilesVisible}
                 onToggle={this.toggleProfiles}
               >
-                {t('Enable Profile management')}
+                {t('Enable profile management')}
                 <More id='more-profile-settings' name={t('Profiles')}>
                   {getTextProfiles('profiles', t)}
                 </More>

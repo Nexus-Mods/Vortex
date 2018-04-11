@@ -404,7 +404,7 @@ function init(context: IExtensionContext): boolean {
     }
   };
 
-  context.registerAction('game-icons', 100, 'refresh', {}, 'Quickscan', () => {
+  context.registerAction('game-icons', 100, 'refresh', {}, 'Quick Scan', () => {
     if ($.gameModeManager !== undefined) {
       $.gameModeManager.startQuickDiscovery()
       .then((gameIds: string[]) => {

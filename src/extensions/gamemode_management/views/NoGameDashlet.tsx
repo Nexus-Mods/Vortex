@@ -54,7 +54,7 @@ class Dashlet extends ComponentEx<IProps, IComponentState> {
       <div>
         <h3 className='dashlet-game-title'>{t('Welcome to Vortex')}</h3>
         <span>{ t('As this is the first time you start Vortex, please pick a game to manage. ' +
-                  'Afterwards please check the ToDo List below.') }</span>
+                  'Afterwards please check the To Do List below.') }</span>
         <div style={{ display: 'flex' }} ref={this.setRef}>
           <div style={{ overflowX: 'hidden', position: 'relative' }}>
             <div style={{ display: 'inline-flex' }} ref={this.setInnerRef}>
