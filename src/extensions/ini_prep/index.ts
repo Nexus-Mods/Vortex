@@ -47,7 +47,7 @@ function genIniFormat(format: string) {
 }
 
 function applyDelta(data: any, delta: any) {
-  if (typeof(delta) !== 'object') {
+  if ((typeof(delta) !== 'object') || (delta === null)) {
     return;
   }
 
