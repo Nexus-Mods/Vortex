@@ -11,12 +11,14 @@
  * - ignoring ENOENT error when deleting a file.
  */
 
+import { UserCanceled } from './CustomErrors';
 import { delayed } from './delayed';
 import runElevated from './elevated';
 
 import * as Promise from 'bluebird';
 import { dialog as dialogIn, remote } from 'electron';
 import * as fs from 'fs-extra-promise';
+import * as I18next from 'i18next';
 import ipc = require('node-ipc');
 import * as path from 'path';
 import { getUserId } from 'permissions';
@@ -207,6 +209,28 @@ function rmdirInt(dirPath: string, stack: string, tries: number): Promise<void> 
     });
 }
 
+function elevated(func: () => void, parameters: any): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    const id = shortid();
+    ipc.serve(`__fs_elevated_${id}`, () => {
+      runElevated(`__fs_elevated_${id}`, func, parameters)
+        .catch(reject);
+    });
+    ipc.server.on('socket.disconnected', () => {
+      ipc.server.stop();
+      resolve();
+    });
+    ipc.server.on('error', ipcErr => {
+      reject(new Error(ipcErr));
+    });
+    ipc.server.on('disconnect', () => {
+      ipc.server.stop();
+      resolve();
+    });
+    ipc.server.start();
+  });
+}
+
 export function ensureDirWritableAsync(dirPath: string,
                                        confirm: () => Promise<void>): Promise<void> {
   return fs.ensureDirAsync(dirPath)
@@ -218,34 +242,63 @@ export function ensureDirWritableAsync(dirPath: string,
     .catch(err => {
       if (err.code === 'EPERM') {
         return confirm()
-          .then(() => new Promise<void>((resolve, reject) => {
-              const id = shortid();
-              const userId = getUserId();
-              ipc.serve(`__fs_elevated_${id}`, () => undefined);
-              ipc.server.start();
-              ipc.server.on('socket.disconnected', () => {
-                ipc.server.stop();
-                resolve();
-              });
-              ipc.server.on('error', ipcErr => {
-                reject(ipcErr);
-              });
-              ipc.server.on('disconnect', () => {
-                ipc.server.stop();
-                resolve();
-              });
+          .then(() => {
+            const userId = getUserId();
+            return elevated(() => {
+              // tslint:disable-next-line:no-shadowed-variable
+              const fs = require('fs-extra-promise');
+              const { allow } = require('permissions');
+              return fs.ensureDirAsync(dirPath)
+                .then(() => {
+                  return allow(dirPath, userId, 'rwx');
+                });
+            }, { dirPath, userId });
+          });
+      } else {
+        return Promise.reject(err);
+      }
+    });
+}
 
-              runElevated(`__fs_elevated_${id}`, (ipcClient) => {
+export function forcePerm<T>(t: I18next.TranslationFunction, op: () => Promise<T>): Promise<T> {
+  return op()
+    .catch(err => {
+      if (err.code === 'EPERM') {
+        const choice = dialog.showMessageBox(
+          remote !== undefined ? remote.getCurrentWindow() : null, {
+          message: t('Vortex needs to access a file it doesn\'t have permission to.\n'
+                   + 'If your account has admin rights Vortex can unlock the file for you. '
+                   + 'Windows will show an UAC dialog.',
+            { replace: { fileName: err.path } }),
+          buttons: [
+            'Cancel',
+            'Give permission',
+          ],
+          noLink: true,
+          title: 'Access denied',
+          type: 'warning',
+          detail: err.path,
+        });
+        if (choice === 1) {
+          let filePath = err.path;
+          const userId = getUserId();
+          return fs.statAsync(err.path)
+            .catch((statErr) => {
+              if (statErr.code === 'ENOENT') {
+                filePath = path.dirname(filePath);
+              }
+              return Promise.resolve();
+            })
+            .then(() => elevated(() => {
                 // tslint:disable-next-line:no-shadowed-variable
                 const fs = require('fs-extra-promise');
                 const { allow } = require('permissions');
-                return fs.ensureDirAsync(dirPath)
-                  .then(() => {
-                    return allow(dirPath, userId, 'rwx');
-                  });
-              }, { dirPath, userId })
-              .catch(reject);
-          }));
+                return allow(filePath, userId, 'rwx');
+              }, { filePath, userId }))
+            .then(() => forcePerm(t, op));
+        } else {
+          return Promise.reject(new UserCanceled());
+        }
       } else {
         return Promise.reject(err);
       }

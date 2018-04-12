@@ -103,13 +103,15 @@ function elevatedMain(baseDir: string, moduleRoot: string, ipcPath: string,
     ipc.of[ipcPath].on('quit', () => {
       process.exit(0);
     });
-    Promise.resolve().then(() => main(ipc.of[ipcPath]))
-    .catch(error => {
-      ipc.of[ipcPath].emit('error', error);
-    })
-    .then(() => {
-      ipc.disconnect(ipcPath);
-    });
+    Promise.resolve()
+      .then(() => main(ipc.of[ipcPath]))
+      .catch(error => {
+        ipc.of[ipcPath].emit('error', error.message);
+        return new Promise((resolve) => setTimeout(resolve, 200));
+      })
+      .then(() => {
+        ipc.disconnect(ipcPath);
+      });
   });
 }
 
