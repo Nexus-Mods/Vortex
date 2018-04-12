@@ -123,7 +123,8 @@ class DeploymendMethod extends LinkingDeployment {
       }
       return fs.readlinkAsync(iterPath)
       .then((symlinkPath) => {
-        if (!path.relative(installPath, symlinkPath).startsWith('..')) {
+        const relPath = path.relative(installPath, symlinkPath);
+        if (!relPath.startsWith('..') && !path.isAbsolute(relPath)) {
           return fs.removeAsync(symlinkPath);
         }
       });
