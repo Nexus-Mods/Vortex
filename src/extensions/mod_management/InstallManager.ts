@@ -533,7 +533,7 @@ class InstallManager {
                               `Installer name: ${path.basename(archivePath)}\n` +
                               `MD5 checksum: ${hashResult.md5sum}\n`,
                     },
-                    ['installer']));
+                    ['installer'], api.store.getState()));
     const showUnsupportedDialog = () => api.store.dispatch(showDialog(
         'info', 'Installer unsupported',
         {

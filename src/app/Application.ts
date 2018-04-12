@@ -5,7 +5,7 @@ import commandLine, {IParameters} from '../util/commandLine';
 import { ProcessCanceled } from '../util/CustomErrors';
 import { } from '../util/delayed';
 import * as develT from '../util/devel';
-import { terminate } from '../util/errorHandling';
+import { terminate, toError } from '../util/errorHandling';
 import ExtensionManagerT from '../util/ExtensionManager';
 import * as fs from '../util/fs';
 import lazyRequire from '../util/lazyRequire';
@@ -110,6 +110,12 @@ class Application {
     });
   }
 
+  private genHandleError() {
+    return (error: any) => {
+      terminate(toError(error), this.mStore.getState());
+    };
+  }
+
   private regularStart(args: IParameters): Promise<void> {
     let splash: SplashScreenT;
 
@@ -125,6 +131,15 @@ class Application {
           splash = splashIn;
           return this.createStore();
         })
+        .then(() => {
+          // as soon as we have a store, install an extended error handler that has
+          // access to application state
+          const handleError = this.genHandleError();
+          process.removeAllListeners('uncaughtException');
+          process.removeAllListeners('unhandledRejection');
+          process.on('uncaughtException', handleError);
+          process.on('unhandledRejection', handleError);
+        })
         .then(() => this.initDevel())
         .then(() => this.startUi())
         .then(() => this.createTray())
@@ -136,7 +151,7 @@ class Application {
             message: 'Startup failed',
             details: err.message,
             stack: err.stack,
-          });
+          }, this.mStore !== undefined ? this.mStore.getState() : {});
         });
   }
 

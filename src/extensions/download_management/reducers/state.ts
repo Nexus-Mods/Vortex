@@ -23,7 +23,7 @@ export const stateReducer: IReducerSpec = {
                    + 'would destroy user data. The action was: \'initDownload\' '
                    + 'with id \'' + payload.id + '\'.'
                    + 'This is a bug in the calling code, please report id.',
-        });
+        }, {});
         return state;
       }
       return setSafe(state, [ 'files', payload.id ], {

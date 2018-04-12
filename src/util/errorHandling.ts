@@ -1,7 +1,10 @@
 import { IError } from '../types/IError';
+import { IState } from '../types/IState';
 
-import {log} from './log';
-import { spawnSelf } from './util';
+import ExtensionManager from './ExtensionManager';
+import { log } from './log';
+import { getSafe } from './storeHelper';
+import { spawnSelf, truthy } from './util';
 
 import * as Promise from 'bluebird';
 import { spawn } from 'child_process';
@@ -76,11 +79,14 @@ export function genHash(error: IError) {
   }
 }
 
-export function createErrorReport(type: string, error: IError, labels: string[] = []) {
+export function createErrorReport(type: string, error: IError, labels: string[],
+                                  state: any) {
   const app = appIn || remote.app;
   const reportPath = path.join(app.getPath('userData'), 'crashinfo.json');
   fs.writeFileSync(reportPath, JSON.stringify({
-    type, error, labels}));
+    type, error, labels: labels || [],
+    reporterId: getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], undefined),
+  }));
   spawnSelf(['--report', reportPath]);
 }
 
@@ -132,30 +138,41 @@ function githubReport(hash: string, type: string, error: IError, labels: string[
 }
 */
 
-function nexusReport(hash: string, type: string, error: IError, labels: string[]): Promise<void> {
+function nexusReport(hash: string, type: string, error: IError, labels: string[],
+                     apiKey: string): Promise<void> {
   const app = appIn || remote.app;
   const Nexus: typeof NexusT = require('nexus-api').default;
 
   const referenceId = require('uuid').v4();
-  const nexus = new Nexus(undefined, '');
+  const nexus = new Nexus(undefined, apiKey);
   return Promise.resolve(nexus.sendFeedback(
     createReport(type, error, app.getVersion()),
     undefined,
-    true,
+    false,
     hash,
     referenceId))
-  .then(() =>
-    opn(`https://www.nexusmods.com/crash-report/?key=${referenceId}`).catch(err => undefined))
+  .then(() => opn(`https://www.nexusmods.com/crash-report/?key=${referenceId}`)
+      .catch(err => undefined))
   .then(() => undefined);
 }
 
-export function sendReport(fileName: string): Promise<void> {
+let fallbackAPIKey: string;
+
+export function setApiKey(key: string) {
+  fallbackAPIKey = key;
+}
+
+export function sendReportFile(fileName: string): Promise<void> {
   return fs.readFileAsync(fileName)
     .then(reportData => {
-    const {type, error, labels} = JSON.parse(reportData.toString());
-    const hash = genHash(error);
-    return nexusReport(hash, type, error, labels);
+      const {type, error, labels, reporterId} = JSON.parse(reportData.toString());
+      return sendReport(type, error, labels, reporterId);
   });
+}
+
+export function sendReport(type: string, error: IError, labels: string[], reporterId?: string) {
+  const hash = genHash(error);
+  return nexusReport(hash, type, error, labels, reporterId || fallbackAPIKey);
 }
 
 /**
@@ -167,7 +184,7 @@ export function sendReport(fileName: string): Promise<void> {
  * @export
  * @param {ITermination} error
  */
-export function terminate(error: IError) {
+export function terminate(error: IError, state: any) {
   const app = appIn || remote.app;
   const dialog = dialogIn || remote.dialog;
 
@@ -190,7 +207,7 @@ export function terminate(error: IError) {
 
     if (action === 2) {
       // Report
-      createErrorReport('Crash', error, ['bug', 'crash']);
+      createErrorReport('Crash', error, ['bug', 'crash'], state);
     } else if (action === 0) {
       // Ignore
       action = dialog.showMessageBox(null, {
@@ -233,4 +250,63 @@ export function terminate(error: IError) {
   }
 
   app.exit(1);
+}
+
+function findExtensionName(stack: string): string {
+  if (stack === undefined) {
+    return undefined;
+  }
+  const stackSplit = stack.split('\n').filter(line => line.match(/^[ ]*at /));
+  const extPaths = ExtensionManager.getExtensionPaths();
+  const expression = `(${extPaths.join('|').replace(/\\/g, '\\\\')})[\\\\/]([^\\\\/]*)`;
+  const re = new RegExp(expression);
+
+  let extension: string;
+  stackSplit.find((line: string) => {
+    // regular expression to parse the extension name from the path in the last
+    // line of the stack trace. if there is one.
+    const match = line.match(re);
+    if (match !== null) {
+      extension = match[2];
+      return true;
+    }
+    return false;
+  });
+  return extension;
+}
+
+function makeDetails(error: any): IError {
+  const result: IError = {
+    message: 'Unknown',
+    extension: findExtensionName(error.stack),
+  };
+
+  if ((error.message === undefined) && (error.stack === undefined)) {
+    // no Error object
+    result.message = require('util').inspect(error);
+  } else {
+    result.message = error.message;
+    if (truthy(error.URL)) {
+      result.message += `(request: ${error.URL})`;
+    }
+    result.stack = error.stack;
+  }
+
+  return result;
+}
+
+export function toError(input: any): IError {
+  switch (typeof input) {
+    case 'object': {
+      return (input.message === undefined) && (input.stack === undefined) ?
+                    {message: require('util').inspect(input)} :
+                    {message: input.message, stack: input.stack};
+    }
+    case 'string': {
+      return { message: input };
+    }
+    default: {
+      return { message: input as string };
+    }
+  }
 }

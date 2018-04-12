@@ -6,6 +6,7 @@ import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext'
 import { IModTable, IState } from '../../types/IState';
 import { ITableAttribute } from '../../types/ITableAttribute';
 import Debouncer from '../../util/Debouncer';
+import { setApiKey } from '../../util/errorHandling';
 import * as fs from '../../util/fs';
 import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
@@ -570,8 +571,9 @@ function once(api: IExtensionApi) {
     const state = api.store.getState();
 
     const Nexus: typeof NexusT = require('nexus-api').default;
-    nexus = new Nexus(activeGameId(state),
-      getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], ''), 30000);
+    const apiKey = getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], '');
+    nexus = new Nexus(activeGameId(state), apiKey, 30000);
+    setApiKey(apiKey);
 
     const gameMode = activeGameId(state);
     api.store.dispatch(setUpdatingMods(gameMode, false));
@@ -723,6 +725,7 @@ function once(api: IExtensionApi) {
   api.onStateChange(['confidential', 'account', 'nexus', 'APIKey'],
     (oldValue: string, newValue: string) => {
       nexus.setKey(newValue);
+      setApiKey(newValue);
       api.store.dispatch(setUserInfo(undefined));
       if (newValue !== undefined) {
         validateKey(api, newValue);
