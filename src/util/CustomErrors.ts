@@ -14,6 +14,13 @@ export class ProcessCanceled extends Error {
   }
 }
 
+export class DataInvalid extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = this.constructor.name;
+  }
+}
+
 export class UserCanceled extends Error {
   constructor() {
     super('canceled by user');

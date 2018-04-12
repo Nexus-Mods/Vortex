@@ -2,7 +2,7 @@ import { showDialog } from '../../actions/notifications';
 import { IDialogResult } from '../../types/IDialog';
 import { IExtensionApi } from '../../types/IExtensionContext';
 import {IState} from '../../types/IState';
-import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
+import { DataInvalid, ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import { createErrorReport } from '../../util/errorHandling';
 import * as fs from '../../util/fs';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
@@ -320,6 +320,16 @@ class InstallManager {
                   'Installation failed',
                   `The archive ${path.basename(archivePath)} is damaged and couldn't be installed. `
                   + 'This is most likely fixed by re-downloading the file.', false);
+              }
+            });
+        } else if (err instanceof DataInvalid) {
+          return prom
+            .then(() => {
+              if (installContext !== undefined) {
+                installContext.reportError(
+                  'Installation failed',
+                  `The installer ${path.basename(archivePath)} is invalid and couldn't be `
+                  + 'installed. Please inform the mod author.', false);
               }
             });
         } else {
