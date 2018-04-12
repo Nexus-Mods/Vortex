@@ -20,7 +20,7 @@ $table-bg:                      $brand-menu;
 $table-bg-accent:               #e9e9e9;
 $table-bg-hover:                $gray-lighter;
 $table-bg-active:               $table-bg-hover;
-$table-border-color:            $text-color;
+$table-border-color:            $border-color;
 
 //== Buttons
 $btn-font-weight:                normal;
@@ -341,7 +341,7 @@ $modal-content-fallback-border-color:          $gray-light;
 
 $modal-backdrop-bg:           #000;
 $modal-backdrop-opacity:      .5;
-$modal-header-border-color:   $gray-darker;
+$modal-header-border-color:   $border-color;
 $modal-footer-border-color:   $modal-header-border-color;
 
 $modal-lg:                    900px;

@@ -16,7 +16,7 @@ trap [Exception] {
   } else {
     write-error $("ERROR: " + $_.Exception.Message)
   }
-  sleep 30
+  Read-Host 'Press Enter to exit' | Out-Null
   break
 }
 

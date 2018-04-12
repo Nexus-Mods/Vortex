@@ -232,11 +232,11 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
                   <IconButton
                     id='start-discovery'
                     icon={discovery.running ? 'stop' : 'search'}
-                    tooltip={discovery.running ? t('Stop search') : t('Search for games')}
+                    tooltip={discovery.running ? t('Stop Search') : t('Search for Games')}
                     onClick={discovery.running ? this.stopDiscovery : this.startDiscovery}
                     disabled={discovery.running}
                   >
-                    {discovery.running ? t('Stop search') : t('Search for games')}
+                    {discovery.running ? t('Stop Search') : t('Search for Games')}
                   </IconButton>
                 </FlexLayout.Fixed>
               </div>

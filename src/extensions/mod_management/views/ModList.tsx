@@ -171,7 +171,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       },
       {
         icon: 'refresh',
-        title: 'Check for update',
+        title: 'Check for Update',
         action: this.checkForUpdate,
         condition: instanceId => {
           const { mods } = this.props;
@@ -357,7 +357,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           onClick={sources[0].onBrowse}
           bsStyle='ghost'
         >
-          {t('Get more mods')}
+          {t('Get More Mods')}
         </Button>
       );
     }
@@ -365,7 +365,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     const title = (
       <div style={{ display: 'inline' }}>
         <Icon name='add' />
-        {t('Get more mods')}
+        {t('Get More Mods')}
       </div>
     );
 

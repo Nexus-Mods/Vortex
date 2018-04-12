@@ -24,7 +24,7 @@ function getText(id: string, t: I18next.TranslationFunction) {
         + 'For this reason, please always use keys in the applications they were intended for.');
     case 'chrome-fix': return t(
       'Chrome requires a change to a configuration file to allow an external program to handle '
-      + 'links where chrome doesn\'t know the protocol. This is the case for the green "Download '
+      + 'links where Chrome doesn\'t know the protocol. This is the case for the green "Download '
       + 'with Manager" buttons on Nexus.\n\n'
       + 'We can apply this change for you, but only if all instances of Chrome are closed, '
       + 'otherwise it will look like it worked but the change is reset when chrome closes.\n\n'

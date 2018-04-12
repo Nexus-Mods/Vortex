@@ -63,8 +63,8 @@ class Settings extends ComponentEx<IProps, {}> {
           </Toggle>
           {process.platform === 'linux' ? <HelpBlock>Not supported on Linux</HelpBlock> : null}
           <div style={{ marginTop: 15 }}>
-            {t('Fix nexusmods-links in Chrome '
-              + '(Only required for Chrome. Requires Chrome to be closed)')}
+            {t('Fix nexusmods.com links in Chrome '
+              + '(only required for Chrome, requires Chrome to be closed)')}
             <More id='more-chrome-fix' name={t('Chrome Fix')}>{getText('chrome-fix', t)}</More>
             <Button
               tooltip={t('Fix')}
@@ -72,7 +72,7 @@ class Settings extends ComponentEx<IProps, {}> {
               onClick={this.chromeFix}
               style={{ marginLeft: 5 }}
             >
-              {t('Fix now')}
+              {t('Fix Now')}
             </Button>
           </div>
         </FormGroup>

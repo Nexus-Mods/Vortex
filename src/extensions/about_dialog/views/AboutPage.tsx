@@ -76,7 +76,7 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
           source={ownLicenseText}
         />
       ) : (
-        <div className='third-party-box'><div><h4>{t('Third-party libraries')}</h4></div>
+        <div className='third-party-box'><div><h4>{t('Third-Party Libraries')}</h4></div>
         <div className='about-panel'>
           {moduleList.map(this.renderModule)}
         </div>
@@ -92,11 +92,11 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
               <Media.Left><Image src={imgPath} /></Media.Left>
               <Media.Body>
                 <h2 className='media-heading'>Vortex {remote.app.getVersion()}</h2>
-                <p>&#169;2017 Black Tree Gaming Ltd.</p>
+                <p>&#169; 2017 Black Tree Gaming Ltd.</p>
                 <p>
-                  {t('Released under')}
+                  {t('Released under the')}
                   {' '}<a onClick={this.showOwnLicense}>GPL-3</a>{' '}
-                  {t('License')}
+                  {t('license')}
                 </p>
               </Media.Body>
             </Media>

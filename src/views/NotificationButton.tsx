@@ -66,7 +66,7 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
 
     const popover = (
       <Popover id='notifications-popover' arrowOffsetLeft={64}>
-        {items.length > 0 ? items : t('No Notifications')}
+        {items.length > 0 ? items : t('No notifications')}
       </Popover>
     );
 

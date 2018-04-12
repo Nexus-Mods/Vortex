@@ -7,6 +7,7 @@
 
 .Select-control {
   display: inline-table;
+  border-color: $border-color;
 }
 
 .Select-placeholder,
@@ -42,6 +43,7 @@
   }
   .Select-control {
     height: 20px;
+    border-color: $border-color
   }
   .Select-input {
     height: 20px;
@@ -62,5 +64,6 @@
   }
   .Select-menu-outer {
     margin-top: 0px;
+    border-color: $border-color;
   }
 }

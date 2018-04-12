@@ -463,7 +463,7 @@ function genValidActivatorCheck(api: IExtensionApi) {
         short: 'Mods can\'t be deployed.',
         long: 'With the current settings, mods can\'t be deployed.\n'
           + 'Please read the following error messages from the deployment '
-          + 'plugins and fix one of them.\nAt least the "hardlink deployment" '
+          + 'plugins and fix one of them.\nAt least the "hard link deployment" '
           + 'can usually be made to work.\n\n[list]'
           + messages.join('\n')
           + '[/list]',

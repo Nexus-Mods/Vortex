@@ -68,6 +68,13 @@ a[role=menuitem] svg {
   }
 }
 
+.nav-tabs>li:not(.active)>a {
+  &:hover {
+    border-color: $border-color;
+    padding-bottom: 5px;
+  }
+}
+
 .nav-tabs>li {
   margin-right: 0px;
   margin-top: 1px;
@@ -197,6 +204,8 @@ textarea {
   &:focus {
     @include box-shadow(none);
   }
+
+  border-color: $border-color;
 }
 
 .btn-group-vertical {
@@ -278,4 +287,8 @@ textarea {
 
 .input-group-btn:last-child > .btn-primary {
   margin-left: 5px;
+}
+
+hr {
+  border-top-color: $border-color
 }
