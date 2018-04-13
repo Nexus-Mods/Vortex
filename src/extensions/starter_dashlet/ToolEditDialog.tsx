@@ -473,6 +473,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
   private toEditStarter(input: IStarterInfo): IEditStarterInfo {
     const temp: any = { ...input };
     temp.commandLine = temp.commandLine.join(' ');
+    temp.environment = { ...input.environment };
     return temp;
   }
 
