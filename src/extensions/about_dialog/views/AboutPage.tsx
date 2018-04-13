@@ -1,4 +1,5 @@
 import Icon from '../../../controls/Icon';
+import More from '../../../controls/More';
 import { ComponentEx, translate } from '../../../util/ComponentEx';
 import * as fs from '../../../util/fs';
 import {log} from '../../../util/log';
@@ -7,10 +8,12 @@ import MainPage from '../../../views/MainPage';
 import { ILicense } from '../types/ILicense';
 
 import { remote } from 'electron';
+import * as i18next from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
 import { Button, Image, Media, Modal, Panel } from 'react-bootstrap';
 import * as ReactMarkdown from 'react-markdown';
+import * as RequestT from 'request';
 
 let modules = {};
 let ownLicenseText: string = '';
@@ -34,6 +37,9 @@ interface IComponentState {
   selectedLicense: string;
   licenseText: string;
   ownLicense: boolean;
+  releaseDate: Date;
+  changelog: string;
+  tag: string;
 }
 
 type IProps = IBaseProps;
@@ -47,11 +53,37 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
       selectedLicense: undefined,
       licenseText: undefined,
       ownLicense: false,
+      releaseDate: undefined,
+      changelog: undefined,
+      tag: undefined,
     });
   }
 
   public componentDidMount() {
     this.mMounted = true;
+
+    const appVersion = remote.app.getVersion();
+    if (appVersion === '0.0.1') {
+      this.nextState.tag = 'Development';
+    } else {
+      const request: typeof RequestT = require('request');
+      request.get(`https://api.github.com/repos/Nexus-Mods/Vortex/releases`, {
+        headers: { 'User-Agent': 'Vortex' },
+      }, (error, response, body) => {
+        if ((error === null) && this.mMounted) {
+          const releases = JSON.parse(body);
+          const thisVersion = 'v' + remote.app.getVersion();
+          const thisRelease = releases.find(rel => rel.tag_name === thisVersion);
+          if (thisRelease !== undefined) {
+            this.nextState.releaseDate = new Date(thisRelease.published_at);
+            this.nextState.changelog = thisRelease.body;
+            this.nextState.tag = thisRelease.prerelease ? 'Beta' : undefined;
+          } else {
+            this.nextState.tag = 'Unknown';
+          }
+        }
+      });
+    }
   }
 
   public componentWillUnmount() {
@@ -60,7 +92,7 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
 
   public render(): JSX.Element {
     const { t, shown } = this.props;
-    const { ownLicense } = this.state;
+    const { changelog, ownLicense, tag, releaseDate } = this.state;
 
     const moduleList = Object.keys(modules).map(key => ({ key, ...modules[key] }));
 
@@ -91,13 +123,25 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
             <Media style={{ marginBottom: 5, display: 'block' }}>
               <Media.Left><Image src={imgPath} /></Media.Left>
               <Media.Body>
-                <h2 className='media-heading'>Vortex {remote.app.getVersion()}</h2>
-                <p>&#169;2017 Black Tree Gaming Ltd.</p>
+                <h2 className='media-heading'>
+                  Vortex {remote.app.getVersion()}
+                  {(tag !== undefined) ? ' ' + tag : ''}
+                </h2>
+                <p>&#169;2018 Black Tree Gaming Ltd.</p>
                 <p>
                   {t('Released under')}
                   {' '}<a onClick={this.showOwnLicense}>GPL-3</a>{' '}
                   {t('License')}
                 </p>
+                {(releaseDate !== undefined) ? (
+                  <div>
+                    {t('Released on {{date}}', { replace:
+                      { date: releaseDate.toLocaleDateString(i18next.language) } })}
+                    <More id='about-vortex-changelog' name='changelog'>
+                      {changelog}
+                    </More>
+                 </div>
+                 ) : null}
               </Media.Body>
             </Media>
             <p><strong>Electron</strong> {(process.versions as any).electron}</p>
