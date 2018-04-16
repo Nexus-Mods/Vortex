@@ -1,6 +1,8 @@
 import {IExtensionApi} from '../../types/IExtensionContext';
 import {IDiscoveryResult, IState, IStatePaths} from '../../types/IState';
+import { ProcessCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
+import {log} from '../../util/log';
 import {showError} from '../../util/message';
 import {getSafe} from '../../util/storeHelper';
 import {truthy} from '../../util/util';
@@ -28,7 +30,6 @@ import {currentActivator, installPath} from './selectors';
 
 import * as Promise from 'bluebird';
 import * as path from 'path';
-import { ProcessCanceled } from '../../util/api';
 
 export function onGameModeActivated(
     api: IExtensionApi, activators: IDeploymentMethod[], newGame: string) {
@@ -41,6 +42,10 @@ export function onGameModeActivated(
   const gameId = activeGameId(state);
   const gameDiscovery = state.settings.gameMode.discovered[gameId];
   const game = getGame(gameId);
+
+  if ((gameDiscovery === undefined) || (gameDiscovery.path === undefined)) {
+    return;
+  }
 
   const instPath = installPath(state);
 
