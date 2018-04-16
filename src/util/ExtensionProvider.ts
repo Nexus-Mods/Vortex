@@ -33,7 +33,7 @@ export class ExtensionProvider extends React.Component<IExtensionProps, {}> {
 
 export interface IExtensibleProps {
   group?: string;
-  staticElements: any[];
+  staticElements?: any[];
 }
 
 /**

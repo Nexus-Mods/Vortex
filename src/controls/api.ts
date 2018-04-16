@@ -1,3 +1,5 @@
+import ActionContextMenu from './ActionContextMenu';
+import ActionDropdown from './ActionDropdown';
 import Advanced from './Advanced';
 import Banner from './Banner';
 import Dropzone from './Dropzone';
@@ -19,7 +21,8 @@ import ToolbarIcon from './ToolbarIcon';
 import * as tooltip from './TooltipControls';
 import Webview from './Webview';
 
-export {Advanced, Banner, Dropzone, FlexLayout, FormFeedback, FormInput,
-        ChangeDataHandler, Icon, IconBar, ITableRowAction, Modal, More, Table,
-        TableDateTimeFilter, TableNumericFilter, TableTextFilter,
-        Spinner, Steps, makeGetSelection, Toggle, ToolbarIcon, tooltip, Webview};
+export {
+  ActionContextMenu, ActionDropdown, Advanced, Banner, Dropzone, FlexLayout, FormFeedback,
+  FormInput, ChangeDataHandler, Icon, IconBar, ITableRowAction, Modal, More, Table,
+  TableDateTimeFilter, TableNumericFilter, TableTextFilter,
+  Spinner, Steps, makeGetSelection, Toggle, ToolbarIcon, tooltip, Webview};

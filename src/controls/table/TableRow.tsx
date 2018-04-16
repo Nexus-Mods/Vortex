@@ -1,5 +1,7 @@
 import { IEditChoice, ITableAttribute } from '../../types/ITableAttribute';
 
+import ContextMenu from '../ActionContextMenu';
+import ActionDropdown from '../ActionDropdown';
 import Dropdown from '../Dropdown';
 import ExtensionGate from '../ExtensionGate';
 import Icon from '../Icon';
@@ -12,7 +14,7 @@ import { TD, TR } from './MyTable';
 
 import * as I18next from 'i18next';
 import * as React from 'react';
-import { DropdownMenu, FormControl, MenuItem, SplitButton } from 'react-bootstrap';
+import { FormControl, MenuItem, SplitButton } from 'react-bootstrap';
 
 interface ICellProps {
   language: string;
@@ -164,13 +166,28 @@ export interface IRowProps {
   onHighlight: (rowId: string, highlight: boolean) => void;
 }
 
-class TableRow extends React.Component<IRowProps, {}> {
-  public shouldComponentUpdate(nextProps: IRowProps) {
+interface IRowState {
+  visible: boolean;
+  context?: { x: number, y: number };
+}
+
+class TableRow extends React.Component<IRowProps, IRowState> {
+  constructor(props: IRowProps) {
+    super(props);
+    this.state = {
+      visible: false,
+      context: undefined,
+    };
+  }
+
+  public shouldComponentUpdate(nextProps: IRowProps, nextState: IRowState) {
     return (this.props.data !== nextProps.data)
       || (this.props.rawData !== nextProps.rawData)
       || (this.props.selected !== nextProps.selected)
       || (this.props.highlighted !== nextProps.highlighted)
-      || (this.props.attributes !== nextProps.attributes);
+      || (this.props.attributes !== nextProps.attributes)
+      || (this.state.visible !== nextState.visible)
+      || (this.state.context !== nextState.context);
   }
 
   public render(): JSX.Element {
@@ -192,8 +209,9 @@ class TableRow extends React.Component<IRowProps, {}> {
         key={data.__id}
         className={classes.join(' ')}
         onClick={onClick}
+        onContextMenu={this.onContext}
         ref={domRef}
-        style={{ display: 'table-row' }}
+        style={{ display: 'table-row', position: 'relative' }}
 
         startVisible={this.props.initVisible}
         container={this.props.container}
@@ -237,15 +255,22 @@ class TableRow extends React.Component<IRowProps, {}> {
           key='action-cell'
           className={`table-${tableId} cell-actions`}
         >
-          <IconBar
+          <ContextMenu
+            id={`${tableId}-${data.__id}-action-context`}
+            group={`${tableId}-action-icons`}
+            instanceId={data.__id}
+            className='table-actions'
+            staticElements={actions}
+            visible={this.state.visible}
+            position={this.state.context}
+            onHide={this.onHideContext}
+          />
+          <ActionDropdown
             id={`${tableId}-${data.__id}-action-icons`}
             group={`${tableId}-action-icons`}
             instanceId={data.__id}
             className='table-actions'
             staticElements={actions}
-            collapse
-            dropdown
-            pullRight
           />
         </TD>);
     } else {
@@ -327,6 +352,14 @@ class TableRow extends React.Component<IRowProps, {}> {
       />
     );
   }
+
+  private onContext = (event: React.MouseEvent<any>) => {
+    this.setState({ visible: true, context: { x: event.clientX, y: event.clientY } });
+  }
+
+  private onHideContext = () => {
+    this.setState({ visible: false });
+  }
 }
 
-export default TableRow;
+export default TableRow as React.ComponentClass<IRowProps>;
