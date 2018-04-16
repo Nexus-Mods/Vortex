@@ -46,9 +46,11 @@ if ((process as any).type === 'renderer') {
   }
   // tslint:disable-next-line:no-var-requires
   const { ipcMain } = require('electron');
-  ipcMain.on('log-message',
-    (event, level: LogLevel, message: string, metadata?: any[]) =>
-      logger.log(level, message, metadata));
+  if (ipcMain !== undefined) {
+    ipcMain.on('log-message',
+      (event, level: LogLevel, message: string, metadata?: any[]) =>
+        logger.log(level, message, metadata));
+  } // otherwise we're not in electron
 }
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';

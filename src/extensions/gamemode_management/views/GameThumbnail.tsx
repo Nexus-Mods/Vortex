@@ -2,7 +2,11 @@ import Icon from '../../../controls/Icon';
 import IconBar from '../../../controls/IconBar';
 import OverlayTrigger from '../../../controls/OverlayTrigger';
 import { IconButton } from '../../../controls/TooltipControls';
+import { IActionDefinition } from '../../../types/api';
+import { IProfile, IState } from '../../../types/IState';
 import { connect, PureComponentEx } from '../../../util/ComponentEx';
+import { getSafe } from '../../../util/storeHelper';
+import { countIf } from '../../../util/util';
 
 import { IGameStored } from '../types/IGameStored';
 
@@ -13,9 +17,6 @@ import * as I18next from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
 import { Button, Panel, Popover } from 'react-bootstrap';
-import { IProfile, IState } from '../../../types/IState';
-import { getSafe } from '../../../util/storeHelper';
-import { countIf } from '../../../util/util';
 
 export interface IBaseProps {
   t: I18next.TranslationFunction;
@@ -97,10 +98,21 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
     );
   }
 
-  private renderMenu(): JSX.Element {
+  private renderMenu(): JSX.Element[] {
     const { t, container, game, getBounds, onRefreshGameInfo, type } = this.props;
     const gameInfoPopover = (
       <Popover id={`popover-info-${game.id}`} className='popover-game-info' >
+        <IconBar
+          id={`game-thumbnail-${game.id}`}
+          className='buttons'
+          group={`game-${type}-buttons`}
+          instanceId={game.id}
+          staticElements={[]}
+          collapse={false}
+          buttonType='text'
+          orientation='vertical'
+          filter={this.lowPriorityButtons}
+        />
         <GameInfoPopover
           t={t}
           game={game}
@@ -110,8 +122,8 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
       </Popover>
     );
 
-    return (
-      <div className='hover-content'>
+    return [(
+      <div key='primary-buttons' className='hover-content'>
         <IconBar
           id={`game-thumbnail-${game.id}`}
           className='buttons'
@@ -119,28 +131,38 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
           instanceId={game.id}
           staticElements={[]}
           collapse={false}
+          buttonType='text'
           orientation='vertical'
+          filter={this.priorityButtons}
         />
-        <OverlayTrigger
-          overlay={gameInfoPopover}
-          triggerRef={this.setRef}
-          getBounds={getBounds || this.getWindowBounds}
-          container={container}
-          orientation='horizontal'
-          shouldUpdatePosition={true}
-          trigger='click'
-          rootClose={true}
-        >
-          <IconButton
-            id={`btn-info-${game.id}`}
-            icon='details'
-            className='game-thumbnail-info btn-embed'
-            tooltip={t('Show Details')}
-          />
-        </OverlayTrigger>
       </div>
-    );
+    ), (
+      <OverlayTrigger
+        key='info-overlay'
+        overlay={gameInfoPopover}
+        triggerRef={this.setRef}
+        getBounds={getBounds || this.getWindowBounds}
+        container={container}
+        orientation='horizontal'
+        shouldUpdatePosition={true}
+        trigger='click'
+        rootClose={true}
+      >
+        <IconButton
+          id={`btn-info-${game.id}`}
+          icon='game-menu'
+          className='game-thumbnail-info btn-embed'
+          tooltip={t('Show Details')}
+        />
+      </OverlayTrigger>
+    )];
   }
+
+  private priorityButtons = (action: IActionDefinition) =>
+    action.position < 100
+
+  private lowPriorityButtons = (action: IActionDefinition) =>
+    action.position >= 100
 
   private getWindowBounds = (): ClientRect => {
     return {

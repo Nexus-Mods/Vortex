@@ -37,7 +37,7 @@ process.env.SASS_BINARY_PATH = path.resolve(
 import { addNotification } from './actions/notifications';
 import reducer from './reducers/index';
 import { IError } from './types/IError';
-import { terminate } from './util/errorHandling';
+import { terminate, toError } from './util/errorHandling';
 import ExtensionManager from './util/ExtensionManager';
 import { ExtensionProvider } from './util/ExtensionProvider';
 import GlobalNotifications from './util/GlobalNotifications';
@@ -107,68 +107,8 @@ function sanityCheckCB(err: StateError) {
     'An invalid state change was prevented, this was probably caused by a bug', err);
 }
 
-function findExtensionName(stack: string): string {
-  if (stack === undefined) {
-    return undefined;
-  }
-  const stackSplit = stack.split('\n').filter(line => line.match(/^[ ]*at /));
-  const extPaths = ExtensionManager.getExtensionPaths();
-  const expression = `(${extPaths.join('|').replace(/\\/g, '\\\\')})[\\\\/]([^\\\\/]*)`;
-  const re = new RegExp(expression);
-
-  let extension: string;
-  stackSplit.find((line: string) => {
-    // regular expression to parse the extension name from the path in the last
-    // line of the stack trace. if there is one.
-    const match = line.match(re);
-    if (match !== null) {
-      extension = match[2];
-      return true;
-    }
-    return false;
-  });
-  return extension;
-}
-
-function makeDetails(error: any): IError {
-  const result: IError = {
-    message: 'Unknown',
-    extension: findExtensionName(error.stack),
-  };
-
-  if ((error.message === undefined) && (error.stack === undefined)) {
-    // no Error object
-    result.message = require('util').inspect(error);
-  } else {
-    result.message = error.message;
-    if (truthy(error.URL)) {
-      result.message += `(request: ${error.URL})`;
-    }
-    result.stack = error.stack;
-  }
-
-  return result;
-}
-
 const terminateFromError = (error: any) => {
-  let details: IError;
-
-  switch (typeof error) {
-    case 'object': {
-      details = makeDetails(error);
-      break;
-    }
-    case 'string': {
-      details = { message: error };
-      break;
-    }
-    default: {
-      details = { message: error };
-      break;
-    }
-  }
-
-  terminate(details);
+  terminate(toError(error), store !== undefined ? store.getState() : {});
 };
 
 function getMessageString(error: any): string {
@@ -301,7 +241,15 @@ store.subscribe(() => {
     currentLanguage = newLanguage;
     changeLanguage(newLanguage, (err, t) => {
       if (err !== undefined) {
-        showError(store.dispatch, 'failed to activate language', err);
+        if (Array.isArray(err)) {
+          // don't show ENOENT errors because it shouldn't really matter
+          const filtErr = err.filter(iter => iter.code !== 'ENOENT');
+          if (filtErr.length > 0) {
+            showError(store.dispatch, 'failed to activate language', err);
+          }
+        } else {
+          showError(store.dispatch, 'failed to activate language', err);
+        }
       }
     });
   }
@@ -325,7 +273,7 @@ function renderer() {
           terminate({
             message: 'failed to parse UI theme',
             details: err,
-          });
+          }, store.getState());
         }))
     .then(() => {
       initApplicationMenu(extensions);

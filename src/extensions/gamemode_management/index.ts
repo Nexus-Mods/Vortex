@@ -7,7 +7,7 @@ import {
 } from '../../types/IExtensionContext';
 import {IGame} from '../../types/IGame';
 import { IState } from '../../types/IState';
-import {ProcessCanceled, UserCanceled} from '../../util/CustomErrors';
+import {ProcessCanceled, SetupError, UserCanceled} from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import LazyComponent from '../../util/LazyComponent';
 import local from '../../util/local';
@@ -313,7 +313,7 @@ function resetSearchPaths(api: IExtensionApi) {
       api.showErrorNotification(
           'Failed to determine list of disk drives. ' +
               'Please review the settings before scanning for games.',
-          error);
+          error, { allowReport: false });
       store.dispatch(addSearchPath('C:'));
       return;
     }
@@ -378,8 +378,15 @@ function init(context: IExtensionContext): boolean {
     });
   };
 
+  context.registerGameInfoProvider('game-path', 0, 1000,
+    ['path'], (game: IGame & IDiscoveryResult) => (game.path === undefined)
+      ? Promise.resolve({})
+      : Promise.resolve({
+        path: { title: 'Path', value: path.normalize(game.path), type: 'url' },
+      }));
+
   context.registerGameInfoProvider('main', 0, 86400000,
-    ['path', 'size', 'size_nolinks'], queryGameInfo);
+    ['size', 'size_nolinks'], queryGameInfo);
 
   const openGameFolder = (instanceIds: string[]) => {
     const discoveredGames = context.api.store.getState().settings.gameMode.discovered;
@@ -430,7 +437,15 @@ function init(context: IExtensionContext): boolean {
   context.registerAction('game-discovered-buttons', 110, 'open-ext', {},
                          context.api.translate('Open Mod Folder'),
                          openModFolder);
-  context.registerAction('game-undiscovered-buttons', 115, 'browse', {},
+  context.registerAction('game-managed-buttons', 120, 'browse', {},
+    context.api.translate('Manually Set Location'),
+    (instanceIds: string[]) => { browseGameLocation(context.api, instanceIds[0]); });
+
+  context.registerAction('game-discovered-buttons', 120, 'browse', {},
+    context.api.translate('Manually Set Location'),
+    (instanceIds: string[]) => { browseGameLocation(context.api, instanceIds[0]); });
+
+  context.registerAction('game-undiscovered-buttons', 50, 'browse', {},
     context.api.translate('Manually Set Location'),
     (instanceIds: string[]) => { browseGameLocation(context.api, instanceIds[0]); });
 
@@ -488,7 +503,8 @@ function init(context: IExtensionContext): boolean {
         .catch((err) => {
           if (err instanceof UserCanceled) {
             // nop
-          } else if (err instanceof ProcessCanceled) {
+          } else if ((err instanceof ProcessCanceled)
+                    || (err instanceof SetupError)) {
             showError(store.dispatch, 'Failed to set game mode',
                       err.message, false, undefined, false);
           } else {

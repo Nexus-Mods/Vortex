@@ -5,7 +5,7 @@ import {
   ProgressDelegate,
 } from '../../types/IExtensionContext';
 import {IState} from '../../types/IState';
-import { UserCanceled } from '../../util/CustomErrors';
+import { DataInvalid, ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import lazyRequire from '../../util/lazyRequire';
 import { log } from '../../util/log';
@@ -48,6 +48,8 @@ function transformError(err: any): Error {
     } else {
       return new Error(err);
     }
+  } else if (err.StackTrace.indexOf('XNodeValidator.ValidationCallback') !== -1) {
+    return new DataInvalid('Invalid installer script: ' + err.message);
   } else {
     return new Error('unknown error: ' + util.inspect(err));
   }

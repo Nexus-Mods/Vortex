@@ -7,10 +7,10 @@ import * as React from 'react';
 export interface IToolbarIconProps {
   id?: string;
   instanceId?: string[];
-  text: string;
+  text?: string;
   placement?: 'top' | 'right' | 'bottom' | 'left';
   iconSet?: string;
-  icon: string;
+  icon?: string;
   onClick?: (ids: string[]) => void;
   pulse?: boolean;
   disabled?: boolean;
@@ -30,8 +30,8 @@ class ToolbarIcon extends React.PureComponent<IToolbarIconProps, {}> {
         disabled={disabled}
         className={className}
       >
-        <Icon set={iconSet} name={icon} pulse={pulse} />
-        <div className='button-text'>{text}</div>
+        {icon !== undefined ? <Icon set={iconSet} name={icon} pulse={pulse} /> : null}
+        {text !== undefined ? <div className='button-text'>{text}</div> : null}
         {this.props.children}
       </Button>
     );

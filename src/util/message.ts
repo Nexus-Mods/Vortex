@@ -4,7 +4,7 @@ import {
   showDialog,
 } from '../actions/notifications';
 
-import { createErrorReport } from './errorHandling';
+import { createErrorReport, sendReport, toError } from './errorHandling';
 
 import { log } from './log';
 
@@ -121,17 +121,7 @@ export function showError<S>(dispatch: Redux.Dispatch<S>,
   if (allowReport) {
     actions.push({
       label: 'Report',
-      action: () => {
-        const stack = details instanceof Error ? details.stack : undefined;
-        const repDetails = details instanceof Error ? undefined : err.message;
-        return createErrorReport('Error',
-                                 {
-                                   message,
-                                   stack,
-                                   details: repDetails,
-                                 },
-                                 ['bug']);
-      },
+      action: () => sendReport('error', toError(details), ['error'], ''),
     });
   }
 
@@ -174,13 +164,14 @@ function renderCustomError(err: any): string {
       .join('\n');
 }
 
-function renderError(err: string | Error | any): { message: string, text?: string, wrap: boolean } {
+function renderError(err: string | Error | any):
+    { message?: string, text?: string, wrap: boolean } {
   if (typeof(err) === 'string') {
-    return { message: err, wrap: true };
+    return { text: err, wrap: true };
   } else if (err instanceof Error) {
     if ((err as any).code === 'EPERM') {
       return {
-        text: 'A file Vortex needs to access is write protected.\n'
+        text: 'A file that Vortex needs to access is write protected.\n'
             + 'When you configure directories and access rights you need to ensure Vortex can '
             + 'still access data directories.\n'
             + 'This is usually not a bug in Vortex.',

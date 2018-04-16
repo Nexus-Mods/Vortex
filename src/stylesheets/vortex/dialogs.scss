@@ -75,5 +75,6 @@
   > .dialog-content-text {
     flex: 0 0 0;
     margin-bottom: $half-gutter;
+    white-space: pre-wrap;
   }
 }

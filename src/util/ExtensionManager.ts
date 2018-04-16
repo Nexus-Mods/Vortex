@@ -22,6 +22,7 @@ import { INotification } from '../types/INotification';
 import { IExtensionLoadFailure, IExtensionState } from '../types/IState';
 
 import { Archive } from './archives';
+import runElevated from './elevated';
 import lazyRequire from './lazyRequire';
 import { log } from './log';
 import { showError } from './message';
@@ -46,8 +47,8 @@ import * as Redux from 'redux';
 import { types as ratypes } from 'redux-act';
 import ReduxWatcher = require('redux-watcher');
 import * as rimraf from 'rimraf';
+import * as semver from 'semver';
 import { generate as shortid } from 'shortid';
-import runElevated from './elevated';
 
 let app = appIn;
 let dialog = dialogIn;
@@ -160,7 +161,15 @@ class ContextProxyHandler implements ProxyHandler<any> {
     };
 
     this.getCalls('requireExtension').forEach(call => {
-      (testValid as any)(call.extension, ...call.arguments);
+      testValid(call.extension, ...call.arguments);
+    });
+
+    this.getCalls('requireVersion').forEach(call => {
+      if ((process.env.NODE_ENV !== 'development')
+          && !semver.satisfies(app.getVersion(), ...call.arguments)) {
+        setdefault(incompatibleExtensions, call.extension, []).push(
+          { id: 'unsupported-version' });
+      }
     });
 
     if (Object.keys(incompatibleExtensions).length > 0) {
@@ -245,6 +254,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
       registerActionCheck: undefined,
       registerMerge: undefined,
       registerInterpreter: undefined,
+      requireVersion: undefined,
       requireExtension: undefined,
       api: undefined,
       once: undefined,
@@ -349,6 +359,7 @@ class ExtensionManager {
       translate: (input, options?) => {
         return this.mTranslator !== undefined ? this.mTranslator.t(input, options) : input;
       },
+      getI18n: () => this.mTranslator,
       getPath: this.getPath,
       onStateChange: (statePath: string[], callback: StateChangeCallback) => undefined,
       registerProtocol: this.registerProtocol,

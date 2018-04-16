@@ -231,7 +231,12 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     const oldInstallPath = resolvePath('install', this.props.paths, gameMode);
     const oldDownloadPath = resolvePath('download', this.props.paths, gameMode);
 
-    const vortexPath = remote.app.getAppPath();
+    let vortexPath = remote.app.getAppPath();
+    if (path.basename(vortexPath) === 'app.asar') {
+      // in asar builds getAppPath returns the path of the asar so need to go up 2 levels
+      // (resources/app.asar)
+      vortexPath = path.dirname(path.dirname(vortexPath));
+    }
     if (isChildPath(newInstallPath, vortexPath) || isChildPath(newDownloadPath, vortexPath)) {
       return onShowDialog('error', 'Invalid paths selected', {
                   text: 'You can not put mods and downloads into the vortex application directory. '

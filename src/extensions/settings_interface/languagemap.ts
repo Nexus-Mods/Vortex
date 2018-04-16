@@ -259,7 +259,7 @@ const languageMap = {
   },
   ie: {
     name: 'Interlingue',
-    nativeName: 'Originally called Occidental; then Interlingue after WWII',
+    nativeName: 'Interlingue',
   },
   ga: {
     name: 'Irish',
@@ -383,7 +383,7 @@ const languageMap = {
   },
   lu: {
     name: 'Luba-Katanga',
-    nativeName: '',
+    nativeName: 'Luba-Katanga',
   },
   lv: {
     name: 'Latvian',

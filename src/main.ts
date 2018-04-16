@@ -17,7 +17,7 @@ import Application from './app/Application';
 
 import { IError } from './types/IError';
 import commandLine from './util/commandLine';
-import { sendReport, terminate } from './util/errorHandling';
+import { sendReportFile, terminate, toError } from './util/errorHandling';
 // ensures tsc includes this dependency
 import {} from './util/extensionRequire';
 import { log } from './util/log';
@@ -41,31 +41,17 @@ process.env.Path = process.env.Path + path.delimiter + __dirname;
 let application: Application;
 
 const handleError = (error: any) => {
-  let details: IError;
-
-  switch (typeof error) {
-    case 'object': {
-      details = (error.message === undefined) && (error.stack === undefined) ?
-                    {message: require('util').inspect(error)} :
-                    {message: error.message, stack: error.stack};
-                 } break;
-    case 'string': {
-      details = {message: error as string};
-                 } break;
-    default: {
-      details = {message: error};
-           } break;
-  }
-
-  terminate(details);
+  terminate(toError(error), {});
 };
 
 function main() {
   const mainArgs = commandLine(process.argv);
 
   if (mainArgs.report) {
-    return sendReport(mainArgs.report)
-    .then(() => app.quit());
+    return sendReportFile(mainArgs.report)
+    .then(() => {
+      app.quit();
+    });
   }
 
   if (mainArgs.run !== undefined) {

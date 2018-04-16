@@ -27,7 +27,6 @@ function queryGameInfo(game: IGame & IDiscoveryResult): Promise<{ [key: string]:
   })
   .then(() => {
     return {
-      path: {title: 'Path', value: path.normalize(game.path), type: 'url'},
       size: {title: 'Space Used', value: totalSize, type: 'bytes'},
       size_nolinks: {
         title: 'Space Used (without links)',
