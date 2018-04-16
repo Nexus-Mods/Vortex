@@ -395,5 +395,5 @@
   "Checking dependencies": "Überprüfe Abhängigkeiten",
   "Description": "Beschreibung",
   "Write your own notes on this mod": "Mache Dir eigene Notizen zu dieser Mod",
-  "Drop {{ accept }}": "Hier {{ accept }} ablegen"
+  "Drop {{ accept }}": "{{ accept }} hier ablegen"
 }
