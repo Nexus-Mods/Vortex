@@ -297,7 +297,7 @@ class InstallManager {
         if (installContext !== undefined) {
           // context doesn't have to be set if we canceled early
           prom = prom.then(() => installContext.finishInstallCB(
-                               canceled ? 'canceled' : 'failed'));
+            canceled ? 'canceled' : 'failed', undefined, err.message));
         }
 
         if (err === undefined) {

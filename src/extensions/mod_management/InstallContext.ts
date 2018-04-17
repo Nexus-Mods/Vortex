@@ -47,6 +47,7 @@ class InstallContext implements IInstallContext {
   private mGameId: string;
   private mArchiveId: string;
   private mInstallOutcome: InstallOutcome;
+  private mFailReason: string;
   private mIsEnabled: (modId: string) => boolean;
 
   constructor(gameMode: string, api: IExtensionApi) {
@@ -133,7 +134,7 @@ class InstallContext implements IInstallContext {
     this.mArchiveId = archiveId;
   }
 
-  public finishInstallCB(outcome: InstallOutcome, info?: any): void {
+  public finishInstallCB(outcome: InstallOutcome, info?: any, reason?: string): void {
     log('info', 'finish mod install', {
       id: this.mIndicatorId,
       outcome: this.mInstallOutcome,
@@ -156,6 +157,7 @@ class InstallContext implements IInstallContext {
       }
       this.mSetDownloadInstalled(this.mArchiveId, this.mGameId, this.mAddedId);
     } else {
+      this.mFailReason = reason;
       if (this.mAddedId !== undefined) {
         this.mRemoveMod(this.mAddedId);
       }
@@ -204,12 +206,15 @@ class InstallContext implements IInstallContext {
         };
       case 'canceled': return {
         type: 'info',
-        message: 'Installation canceled',
-        displayMS: 2000,
+        title: 'Installation canceled',
+        message: this.mFailReason,
+        replace: { id },
+        displayMS: 4000,
       };
       default: return {
         type: 'error',
-        message: '{{id}} failed to install',
+        title: '{{id}} failed to install',
+        message: this.mFailReason,
         replace: { id },
       };
     }

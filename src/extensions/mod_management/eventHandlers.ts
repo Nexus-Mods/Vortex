@@ -277,8 +277,19 @@ export function onStartInstallDownload(api: IExtensionApi,
       });
     return;
   }
-  const inPaths = state.settings.mods.paths;
+
   const gameId = download.game || activeGameId(state);
+  if (!truthy(download.localPath)) {
+    api.events.emit('refresh-downloads', gameId, () => {
+      api.showErrorNotification('Download invalid',
+      'Sorry, the meta data for this download is incomplete. Vortex has '
+      + 'tried to refreshed that data, please try again.',
+      { allowReport: false });
+    });
+    return;
+  }
+
+  const inPaths = state.settings.mods.paths;
   const downloadPath: string = resolvePath('download', inPaths, gameId);
   if (downloadPath === undefined) {
     api.showErrorNotification('Unknown Game',

@@ -1,5 +1,6 @@
 import {IExtensionApi} from '../../../types/IExtensionContext';
 import {IGame} from '../../../types/IGame';
+import {ProcessCanceled} from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
 import {log} from '../../../util/log';
 import {getSafe} from '../../../util/storeHelper';
@@ -46,7 +47,7 @@ export class Context extends DelegateBase {
                 ['settings', 'gameMode', 'discovered', gameId], undefined);
     this.gameInfo = getGame(this.gameId);
     if (this.gameDiscovery === undefined) {
-      throw new Error(`game (${gameId}) not installed`);
+      throw new ProcessCanceled('Game not installed');
     }
   }
 

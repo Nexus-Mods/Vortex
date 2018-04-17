@@ -41,6 +41,7 @@ import {createSelector} from 'reselect';
 import {generate as shortid} from 'shortid';
 import { delayed } from '../../util/delayed';
 import { activeGameId } from '../../util/selectors';
+import resolvePath from '../mod_management/util/resolvePath';
 
 const app = remote !== undefined ? remote.app : appIn;
 
@@ -149,14 +150,19 @@ function watchDownloads(api: IExtensionApi, downloadPath: string,
   }
 }
 
-function updateDownloadPath(api: IExtensionApi) {
+function updateDownloadPath(api: IExtensionApi, gameId?: string) {
   const { store } = api;
 
-  const currentDownloadPath = selectors.downloadPath(store.getState());
+  const state: IState = store.getState();
 
   const downloads: {[id: string]: IDownload} =
-      store.getState().persistent.downloads.files;
-  const gameId: string = selectors.activeGameId(store.getState());
+      state.persistent.downloads.files;
+
+  if (gameId === undefined) {
+    gameId = selectors.activeGameId(state);
+  }
+  const currentDownloadPath = resolvePath('download', state.settings.mods.paths, gameId);
+
   const knownDLs =
       Object.keys(downloads)
           .filter((dlId: string) => downloads[dlId].game === gameId)
@@ -169,7 +175,7 @@ function updateDownloadPath(api: IExtensionApi) {
       }, {});
 
   const downloadChangeHandler = genDownloadChangeHandler(api.store, nameIdMap);
-  refreshDownloads(currentDownloadPath, knownDLs,
+  return refreshDownloads(currentDownloadPath, knownDLs,
                    (fileName: string) => {
                      fs.statAsync(path.join(currentDownloadPath, fileName))
                          .then((stats: fs.Stats) => {
@@ -192,9 +198,7 @@ function updateDownloadPath(api: IExtensionApi) {
 }
 
 function genGameModeActivated(api: IExtensionApi) {
-  return () => {
-    updateDownloadPath(api);
-  };
+  return () => updateDownloadPath(api);
 }
 
 function move(api: IExtensionApi, source: string, destination: string): Promise<void> {
@@ -275,6 +279,20 @@ function init(context: IExtensionContextExt): boolean {
 
     context.api.events.on('enable-download-watch', (enabled: boolean) => {
       watchEnabled = enabled;
+    });
+
+    context.api.events.on('refresh-downloads', (gameId: string, callback: (err) => void) => {
+      updateDownloadPath(context.api, gameId)
+        .then(() => {
+          if (callback !== undefined) {
+            callback(null);
+           }
+        })
+        .catch(err => {
+          if (callback !== undefined) {
+            callback(err);
+          }
+        });
     });
 
     context.api.events.on('import-downloads', (downloadPaths: string[]) => {
