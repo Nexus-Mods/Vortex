@@ -133,8 +133,10 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
     const { t } = this.props;
 
     const translated: INotification = { ...notification };
-    translated.title = translated.title !== undefined ? t(translated.title) : undefined;
-    translated.message = t(translated.message);
+    translated.title = translated.title !== undefined
+      ? t(translated.title, { replace: translated.replace })
+      : undefined;
+    translated.message = t(translated.message, { replace: translated.replace });
     return (
       <Notification
         t={t}

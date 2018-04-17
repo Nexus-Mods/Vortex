@@ -223,6 +223,7 @@ export interface IErrorOptions {
   id?: string;
   isHTML?: boolean;
   allowReport?: boolean;
+  replace?: { [key: string]: string };
 }
 
 /**

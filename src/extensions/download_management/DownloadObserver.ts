@@ -170,7 +170,9 @@ export class DownloadObserver {
             details.url = err.request;
           }
           log('warn', 'download failed', {message: details.message, err: util.inspect(err)});
-          showError(this.mStore.dispatch, 'Download failed', details, false, undefined, false);
+          showError(this.mStore.dispatch, 'Download failed', details, {
+            allowReport: false,
+          });
           this.mStore.dispatch(finishDownload(id, 'failed', {message: details.message}));
           if (callback !== undefined) {
             callback(err, id);
@@ -245,8 +247,8 @@ export class DownloadObserver {
       fs.removeAsync(path.join(dlPath, download.localPath))
           .then(() => { this.mStore.dispatch(removeDownload(downloadId)); })
           .catch(err => {
-            showError(this.mStore.dispatch, 'Failed to remove file', err, false,
-                      undefined, ['EBUSY', 'EPERM'].indexOf(err.code) === -1);
+            showError(this.mStore.dispatch, 'Failed to remove file', err, {
+                      allowReport: ['EBUSY', 'EPERM'].indexOf(err.code) === -1 });
           });
     } else {
       this.mStore.dispatch(removeDownload(downloadId));

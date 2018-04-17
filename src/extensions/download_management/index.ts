@@ -280,7 +280,6 @@ function init(context: IExtensionContextExt): boolean {
     context.api.events.on('import-downloads', (downloadPaths: string[]) => {
       const downloadPath = downloadPathSelector(context.api.store.getState());
       let hadDirs = false;
-      console.log('import', downloadPaths);
       Promise.map(downloadPaths, dlPath => {
         const fileName = path.basename(dlPath);
         const destination = path.join(downloadPath, fileName);
@@ -311,8 +310,7 @@ function init(context: IExtensionContextExt): boolean {
                 message: dlPath,
               });
             });
-      })
-      .then(() => console.log('done'));
+      });
     });
 
     {

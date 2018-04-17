@@ -435,10 +435,7 @@ class ExtensionManager {
     };
     this.mApi.showErrorNotification =
       (message: string, details: string | Error | any, options?: IErrorOptions) => {
-      showError(store.dispatch, message, details,
-        (options !== undefined) && (options.isHTML === true),
-        (options !== undefined) ? options.id : undefined,
-        (options === undefined) || (options.allowReport !== false));
+      showError(store.dispatch, message, details, options);
     };
 
     this.mApi.showDialog =

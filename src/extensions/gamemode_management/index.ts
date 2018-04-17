@@ -506,7 +506,7 @@ function init(context: IExtensionContext): boolean {
           } else if ((err instanceof ProcessCanceled)
                     || (err instanceof SetupError)) {
             showError(store.dispatch, 'Failed to set game mode',
-                      err.message, false, undefined, false);
+                      err.message, { allowReport: false });
           } else {
             showError(store.dispatch, 'Failed to set game mode', err);
           }
@@ -537,12 +537,10 @@ function init(context: IExtensionContext): boolean {
 
             context.api.sendNotification({
               type: 'info',
-              message: t('Switched game mode: {{mode}}',
-                {
-                  replace: {
-                    mode: game.name,
-                  },
-                }),
+              message: 'Switched game mode: {{mode}}',
+              replace: {
+                mode: game.name,
+              },
               displayMS: 4000,
             });
           }

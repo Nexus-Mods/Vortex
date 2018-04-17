@@ -176,7 +176,7 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
     if (APIKEY === '') {
       showError(api.store.dispatch,
         'An error occurred retrieving categories',
-        'You are not logged in to Nexus Mods!', undefined, undefined, false);
+        'You are not logged in to Nexus Mods!', { allowReport: false });
     } else {
 
       let gameId;
@@ -211,7 +211,7 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
             delete detail.noReport;
           }
           showError(api.store.dispatch, 'An error occurred retrieving categories', detail,
-                    false, undefined, allowReport);
+                    { allowReport });
         });
     }
   });
@@ -280,7 +280,7 @@ function endorseModImpl(
   if (APIKEY === '') {
     showError(store.dispatch,
       'An error occurred endorsing a mod',
-      'You are not logged in to Nexus Mods!', undefined, undefined, false);
+      'You are not logged in to Nexus Mods!', { allowReport: false });
     return;
   }
 
@@ -318,7 +318,7 @@ function endorseModImpl(
           delete detail.noReport;
         }
         showError(store.dispatch, 'An error occurred endorsing a mod', detail,
-                  false, undefined, allowReport);
+                  { allowReport });
       }
     });
 }
@@ -524,13 +524,13 @@ function validateKey(api: IExtensionApi, key: string): Promise<void> {
       showError(api.store.dispatch,
         'API Key validation timed out',
         'Server didn\'t respond to validation request, web-based '
-        + 'features will be unavailable', false, undefined, false);
+        + 'features will be unavailable', { allowReport: false });
       api.store.dispatch(setUserInfo(null));
     })
     .catch(NexusError, err => {
       showError(api.store.dispatch,
         'Failed to validate API Key',
-        errorFromNexusError(err), false, undefined, false);
+        errorFromNexusError(err), { allowReport: false });
       api.store.dispatch(setUserInfo(null));
     })
     .catch(err => {
@@ -546,11 +546,11 @@ function validateKey(api: IExtensionApi, key: string): Promise<void> {
         });
         showError(api.store.dispatch,
           'Connection to Nexus API timed out, please check your internet connection',
-          undefined, false, undefined, false);
+          undefined, { allowReport: false });
       } else {
         showError(api.store.dispatch,
           'Failed to validate API Key',
-          err.message, false, undefined, false);
+          err.message, { allowReport: false });
       }
       api.store.dispatch(setUserInfo(null));
     });
@@ -602,7 +602,7 @@ function once(api: IExtensionApi) {
     if (APIKEY === '') {
       showError(api.store.dispatch,
         'An error occurred checking for mod updates',
-        'You are not logged in to Nexus Mods!', undefined, undefined, false);
+        'You are not logged in to Nexus Mods!', { allowReport: false });
     } else {
       api.store.dispatch(setUpdatingMods(gameId, true));
       checkModVersionsImpl(api.store, gameId, mods)
@@ -610,7 +610,7 @@ function once(api: IExtensionApi) {
           if (errorMessages.length !== 0) {
             showError(api.store.dispatch,
               'Checking for mod updates succeeded but there were errors',
-              errorMessages.join('\n\n'), false, undefined, false);
+              errorMessages.join('\n\n'), { allowReport: false });
           }
         })
         .catch(err => {
@@ -630,7 +630,7 @@ function once(api: IExtensionApi) {
     if (APIKEY === '') {
       showError(api.store.dispatch,
         'An error occurred endorsing a mod',
-        'You are not logged in to Nexus Mods!', undefined, undefined, false);
+        'You are not logged in to Nexus Mods!', { allowReport: false });
     } else {
       endorseModImpl(api, gameId, modId, endorsedStatus);
     }

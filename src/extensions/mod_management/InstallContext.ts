@@ -59,7 +59,7 @@ class InstallContext implements IInstallContext {
     this.mDismissNotification = (id) =>
       dispatch(dismissNotification(id));
     this.mShowError = (message, details?, allowReport?) =>
-      showError(dispatch, message, details, false, undefined, allowReport);
+      showError(dispatch, message, details, { allowReport });
     this.mSetModState = (id, state) =>
       dispatch(setModState(gameMode, id, state));
     this.mSetModAttribute = (id, key, value) => {
@@ -93,7 +93,8 @@ class InstallContext implements IInstallContext {
     log('info', 'start mod install', { id });
     this.mAddNotification({
       id: 'install_' + id,
-      message: 'Installing ' + id,
+      message: 'Installing {{ id }}',
+      replace: { id },
       type: 'activity',
     });
     this.mIndicatorId = id;
@@ -187,7 +188,8 @@ class InstallContext implements IInstallContext {
       case 'success':
         return {
           type: 'success',
-          message: `${id} installed`,
+          message: '{{id}} installed',
+          replace: { id },
           group: 'mod-installed',
           displayMS: isEnabled ? 4000 : undefined,
           actions: isEnabled ? [] : [
@@ -207,7 +209,8 @@ class InstallContext implements IInstallContext {
       };
       default: return {
         type: 'error',
-        message: `${id} failed to install`,
+        message: '{{id}} failed to install',
+        replace: { id },
       };
     }
   }

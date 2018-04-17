@@ -71,6 +71,11 @@ export interface INotification {
    */
   message: string;
   /**
+   * replacement parameters for the localisation of title and message (the same
+   * replacement dictionary will be used for both)
+   */
+  replace?: { [key: string]: string };
+  /**
    * the duration to display the message. If this is undefined, the
    * message has to be dismissed by the user.
    * Giving a duration may be convenient for the user but it is impossible to

@@ -616,7 +616,7 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
       dispatch(showDialog(type, title, content, actions)),
     onShowError: (message: string, details?: string | Error,
                   notificationId?: string, allowReport?: boolean) =>
-      showError(dispatch, message, details, false, notificationId, allowReport),
+      showError(dispatch, message, details, { id: notificationId, allowReport }),
   };
 }
 

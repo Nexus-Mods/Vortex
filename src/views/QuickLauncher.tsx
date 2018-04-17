@@ -268,7 +268,7 @@ function mapStateToProps(state: any): IConnectedProps {
 function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
     onShowError: (message: string, details?: string | Error, allowReport?: boolean) =>
-      showError(dispatch, message, details, false, undefined, allowReport),
+      showError(dispatch, message, details, { allowReport }),
     onShowDialog: (type, title, content, actions) =>
       dispatch(showDialog(type, title, content, actions)),
   };

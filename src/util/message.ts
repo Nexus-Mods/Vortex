@@ -96,14 +96,17 @@ export function showInfo<S>(dispatch: Redux.Dispatch<S>, message: string, id?: s
 export function showError<S>(dispatch: Redux.Dispatch<S>,
                              message: string,
                              details?: string | Error | any,
-                             isHTML: boolean = false,
-                             id?: string,
-                             allowReport: boolean = true) {
+                             options?: {
+                              replace?: { [key: string]: string },
+                              isHTML?: boolean,
+                              id?: string,
+                              allowReport?: boolean,
+                            }) {
   const err = renderError(details);
 
   log('error', message, err.message);
 
-  const content = isHTML ? {
+  const content = ((options !== undefined) && options.isHTML) ? {
     htmlText: err.message,
     options: {
       wrap: false,
@@ -118,7 +121,7 @@ export function showError<S>(dispatch: Redux.Dispatch<S>,
 
   const actions: IDialogAction[] = [];
 
-  if (allowReport) {
+  if ((options === undefined) || (options.allowReport !== false)) {
     actions.push({
       label: 'Report',
       action: () => sendReport('error', toError(details), ['error'], ''),
@@ -128,9 +131,10 @@ export function showError<S>(dispatch: Redux.Dispatch<S>,
   actions.push({ label: 'Close', default: true });
 
   dispatch(addNotification({
-    id,
+    id: (options !== undefined) ? options.id : undefined,
     type: 'error',
     message,
+    replace: (options !== undefined) ? options.replace : undefined,
     actions: details !== undefined ? [{
       title: 'More',
       action: (dismiss: () => void) => {

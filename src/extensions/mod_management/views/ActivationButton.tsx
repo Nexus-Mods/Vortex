@@ -83,7 +83,7 @@ function mapStateToProps(state: IState, ownProps: IProps): IConnectedProps {
 function mapDispatchToProps(dispatch: Redux.Dispatch<IState>): IActionProps {
   return {
     onShowError: (message: string, details?: string, allowReport?: boolean) =>
-      showError(dispatch, message, details, false, undefined, allowReport),
+      showError(dispatch, message, details, { allowReport }),
   };
 }
 
