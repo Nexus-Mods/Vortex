@@ -264,7 +264,8 @@ function renderer() {
       ({ i18n, tFunc, error } = res);
       extensions.setTranslation(i18n);
       if (error !== undefined) {
-        showError(store.dispatch, 'failed to initialize localization', error);
+        showError(store.dispatch, 'failed to initialize localization', error,
+                  { allowReport: false });
       }
       return extensions.doOnce();
     })

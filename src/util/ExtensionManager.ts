@@ -717,7 +717,8 @@ class ExtensionManager {
         ...options,
         properties: ['openFile'],
       };
-      dialog.showOpenDialog(null, fullOptions, (fileNames: string[]) => {
+      const win = remote !== undefined ? remote.getCurrentWindow() : null;
+      dialog.showOpenDialog(win, fullOptions, (fileNames: string[]) => {
         if ((fileNames !== undefined) && (fileNames.length > 0)) {
           resolve(fileNames[0]);
         } else {
@@ -739,7 +740,8 @@ class ExtensionManager {
           { name: 'Python', extensions: ['py'] },
         ],
       };
-      dialog.showOpenDialog(null, fullOptions, (fileNames: string[]) => {
+      const win = remote !== undefined ? remote.getCurrentWindow() : null;
+      dialog.showOpenDialog(win, fullOptions, (fileNames: string[]) => {
         if ((fileNames !== undefined) && (fileNames.length > 0)) {
           resolve(fileNames[0]);
         } else {
@@ -755,7 +757,8 @@ class ExtensionManager {
         ...options,
         properties: ['openDirectory'],
       };
-      dialog.showOpenDialog(null, fullOptions, (fileNames: string[]) => {
+      const win = remote !== undefined ? remote.getCurrentWindow() : null;
+      dialog.showOpenDialog(win, fullOptions, (fileNames: string[]) => {
         if ((fileNames !== undefined) && (fileNames.length > 0)) {
           resolve(fileNames[0]);
         } else {

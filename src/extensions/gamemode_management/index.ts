@@ -218,7 +218,7 @@ function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
 
   return new Promise<void>((resolve, reject) => {
     if (discovery !== undefined) {
-      remote.dialog.showOpenDialog(null, {
+      remote.dialog.showOpenDialog(remote.getCurrentWindow(), {
         properties: ['openDirectory'],
         defaultPath: discovery.path,
       }, (fileNames: string[]) => {
@@ -244,7 +244,7 @@ function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
         }
       });
     } else {
-      remote.dialog.showOpenDialog(null, {
+      remote.dialog.showOpenDialog(remote.getCurrentWindow(), {
         properties: ['openDirectory'],
       }, (fileNames: string[]) => {
         if (fileNames !== undefined) {

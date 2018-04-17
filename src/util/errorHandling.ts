@@ -187,6 +187,7 @@ export function sendReport(type: string, error: IError, labels: string[], report
 export function terminate(error: IError, state: any) {
   const app = appIn || remote.app;
   const dialog = dialogIn || remote.dialog;
+  const win = remote !== undefined ? remote.getCurrentWindow() : null;
 
   log('error', 'unrecoverable error', error);
 
@@ -195,7 +196,7 @@ export function terminate(error: IError, state: any) {
     if (error.details) {
       detail = error.details + '\n' + detail;
     }
-    let action = dialog.showMessageBox(null, {
+    let action = dialog.showMessageBox(win, {
       type: 'error',
       buttons: ['Ignore', 'Quit', 'Report and Quit'],
       defaultId: 2,
@@ -210,7 +211,7 @@ export function terminate(error: IError, state: any) {
       createErrorReport('Crash', error, ['bug', 'crash'], state);
     } else if (action === 0) {
       // Ignore
-      action = dialog.showMessageBox(null, {
+      action = dialog.showMessageBox(win, {
         type: 'error',
         buttons: ['Quit', 'I won\'t whine'],
         title: 'Are you sure?',
@@ -226,7 +227,7 @@ export function terminate(error: IError, state: any) {
       }
     }
     if (error.extension !== undefined) {
-      action = dialog.showMessageBox(null, {
+      action = dialog.showMessageBox(win, {
         type: 'error',
         buttons: ['Disable', 'Keep'],
         title: 'Extension crashed',
