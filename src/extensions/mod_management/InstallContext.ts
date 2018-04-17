@@ -1,4 +1,5 @@
 import { addNotification, dismissNotification } from '../../actions/notifications';
+import { IExtensionApi } from '../../types/IExtensionContext';
 import { INotification } from '../../types/INotification';
 import { IState } from '../../types/IState';
 import { log } from '../../util/log';
@@ -24,7 +25,6 @@ import { IInstallContext, InstallOutcome } from './types/IInstallContext';
 import * as Promise from 'bluebird';
 import * as path from 'path';
 import * as Redux from 'redux';
-import { IExtensionApi } from '../../types/IExtensionContext';
 
 type IOnAddMod = (mod: IMod) => void;
 type IOnAddNotification = (notification: INotification) => void;
@@ -34,7 +34,8 @@ class InstallContext implements IInstallContext {
   private mRemoveMod: (modId: string) => void;
   private mAddNotification: (notification: INotification) => void;
   private mDismissNotification: (id: string) => void;
-  private mShowError: (message: string, details?: string | Error, allowReport?: boolean) => void;
+  private mShowError: (message: string, details?: string | Error, allowReport?: boolean,
+                       replace?: { [key: string]: string }) => void;
   private mSetModState: (id: string, state: ModState) => void;
   private mSetModAttribute: (id: string, key: string, value: any) => void;
   private mSetModInstallationPath: (id: string, installPath: string) => void;
@@ -59,8 +60,8 @@ class InstallContext implements IInstallContext {
       dispatch(addNotification(notification));
     this.mDismissNotification = (id) =>
       dispatch(dismissNotification(id));
-    this.mShowError = (message, details?, allowReport?) =>
-      showError(dispatch, message, details, { allowReport });
+    this.mShowError = (message, details?, allowReport?, replace?) =>
+      showError(dispatch, message, details, { allowReport, replace });
     this.mSetModState = (id, state) =>
       dispatch(setModState(gameMode, id, state));
     this.mSetModAttribute = (id, key, value) => {
@@ -175,9 +176,10 @@ class InstallContext implements IInstallContext {
     this.mSetModType(id, modType);
   }
 
-  public reportError(message: string, details?: string | Error, allowReport?: boolean): void {
+  public reportError(message: string, details?: string | Error, allowReport?: boolean,
+                     replace?: { [key: string]: string }): void {
     log('error', 'install error', { message, details });
-    this.mShowError(message, details, allowReport);
+    this.mShowError(message, details, allowReport, replace);
   }
 
   public progressCB(percent: number, file: string): void {
@@ -210,12 +212,14 @@ class InstallContext implements IInstallContext {
         message: this.mFailReason,
         replace: { id },
         displayMS: 4000,
+        localize: { message: false },
       };
       default: return {
         type: 'error',
         title: '{{id}} failed to install',
         message: this.mFailReason,
         replace: { id },
+        localize: { message: false },
       };
     }
   }

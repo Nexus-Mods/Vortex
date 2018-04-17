@@ -318,8 +318,9 @@ class InstallManager {
               if (installContext !== undefined) {
                 installContext.reportError(
                   'Installation failed',
-                  `The archive ${path.basename(archivePath)} is damaged and couldn't be installed. `
-                  + 'This is most likely fixed by re-downloading the file.', false);
+                  `The archive {{ installerPath }} is damaged and couldn't be installed. `
+                  + 'This is most likely fixed by re-downloading the file.', false,
+                  { installerPath: path.basename(archivePath) });
               }
             });
         } else if (err instanceof DataInvalid) {
@@ -328,8 +329,11 @@ class InstallManager {
               if (installContext !== undefined) {
                 installContext.reportError(
                   'Installation failed',
-                  `The installer ${path.basename(archivePath)} is invalid and couldn't be `
-                  + 'installed. Please inform the mod author.', false);
+                  `The installer {{ installerPath }} is invalid and couldn't be `
+                  + 'installed:\n{{ message }}\nPlease inform the mod author.\n',
+                  false, {
+                    installerPath: path.basename(archivePath),
+                    message: err.message });
               }
             });
         } else {
@@ -343,7 +347,10 @@ class InstallManager {
               if (installContext !== undefined) {
                 installContext.reportError(
                     'Installation failed',
-                    `The installer "${id}" failed: ${errMessage}`, err.code !== 'EPERM');
+                    `The installer "{{ id }}" failed: {{ message }}`, err.code !== 'EPERM', {
+                      id,
+                      message: errMessage,
+                    });
               }
               if (callback !== undefined) {
                 callback(err, modId);

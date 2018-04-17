@@ -106,8 +106,8 @@ export interface ITableAttribute<T = any> {
   /**
    * when using external data (not part of the data passed to the table) in calc or customRenderer,
    * set this parameter.
-   * This function gets called with a callback that then needs to be called whenever the external data
-   * (any of it) changes to cause a rerender.
+   * This function gets called with a callback that then needs to be called whenever the external
+   * data (any of it) changes to cause a rerender.
    */
   externalData?: (onChanged: () => void) => void;
   /**

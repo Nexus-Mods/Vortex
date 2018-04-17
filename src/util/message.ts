@@ -1,6 +1,7 @@
 import {
   addNotification,
   IDialogAction,
+  IDialogContent,
   showDialog,
 } from '../actions/notifications';
 
@@ -106,7 +107,7 @@ export function showError<S>(dispatch: Redux.Dispatch<S>,
 
   log('error', message, err.message);
 
-  const content = ((options !== undefined) && options.isHTML) ? {
+  const content: IDialogContent = ((options !== undefined) && options.isHTML) ? {
     htmlText: err.message,
     options: {
       wrap: false,
@@ -117,6 +118,7 @@ export function showError<S>(dispatch: Redux.Dispatch<S>,
     options: {
       wrap: err.wrap,
     },
+    parameters: (options !== undefined) ? options.replace : undefined,
   };
 
   const actions: IDialogAction[] = [];
