@@ -437,6 +437,8 @@ class InstallManager {
 
   private queryContinue(api: IExtensionApi,
                         errors: string[]): Promise<void> {
+    const terminal = errors.find(err => err.indexOf('Can not open the file as archive') !== -1);
+
     return new Promise<void>((resolve, reject) => {
       api.store.dispatch(showDialog('error', api.translate('Archive damaged'), {
         bbcode: api.translate('Encountered errors extracting this archive. Please verify this '
@@ -445,8 +447,9 @@ class InstallManager {
         options: { translated: true },
       }, [
           { label: 'Cancel', action: () => reject(new UserCanceled()) },
+      ].concat(terminal ? [] : [
           { label: 'Continue', action: () => resolve() },
-        ]));
+        ])));
     });
   }
 
