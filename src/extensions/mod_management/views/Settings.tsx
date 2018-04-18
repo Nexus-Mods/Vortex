@@ -220,7 +220,10 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                 ? fs.copyAsync(path.join(oldPath, fileName), path.join(newPath, fileName))
                 : Promise.reject(err)))
           .then(() => fs.removeAsync(oldPath));
-      });
+      })
+      .catch(err => (err.code === 'ENOENT')
+        ? Promise.resolve()
+        : Promise.reject(err));
   }
 
   private applyPaths = () => {
