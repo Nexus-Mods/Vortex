@@ -50,6 +50,7 @@ interface IComponentState {
 class Dashboard extends ComponentEx<IProps, IComponentState> {
   private mUpdateTimer: NodeJS.Timer;
   private mLayoutDebouncer: Debouncer;
+  private mWindow: Electron.BrowserWindow;
 
   constructor(props: IProps) {
     super(props);
@@ -64,6 +65,8 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
       }
       return null;
     }, 500);
+    // assuming this doesn't change?
+    this.mWindow = remote.getCurrentWindow();
   }
 
   public componentDidMount() {
@@ -134,7 +137,7 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
     //   it should be possible to make this unnecessary with makeReactive, but that requires
     //   testing
     this.mUpdateTimer = setTimeout(() => {
-      if (remote.getCurrentWindow().isFocused()) {
+      if (this.mWindow.isFocused()) {
         this.nextState.counter++;
       }
       this.startUpdateCycle();

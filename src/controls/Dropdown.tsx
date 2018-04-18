@@ -9,6 +9,19 @@ export interface IBaseProps {
 
 export type IProps = IBaseProps & typeof Dropdown.prototype.props;
 
+export class DummyMenu extends React.Component<{}, {}> {
+  public static defaultProps = {
+    bsRole: (Dropdown.Menu as any).defaultProps.bsRole,
+  };
+  public render(): JSX.Element {
+    return <div/>;
+  }
+
+  public focusNext() {
+    // nop
+  }
+}
+
 /**
  * An enhanced dropdown that adjusts placement of the popover based on the
  * position within the container, so it doesn't get cut off (as long as the
@@ -36,10 +49,14 @@ class MyDropdown extends React.Component<IProps, { up: boolean }> {
   }
 
   public render(): JSX.Element {
-    const relayProps: any = _.omit(this.props, ['container', 'dropup', 'onToggle']);
+    const relayProps: any = _.omit(this.props, ['container', 'dropup', 'onToggle', 'children']);
+    const filt = this.mOpen
+      ? this.props.children
+      : React.Children.map(this.props.children,
+          child => (child as any).props.bsRole === 'menu' ? <DummyMenu /> : child);
     return (
       <Dropdown dropup={this.state.up} onToggle={this.onToggle} {...relayProps}>
-        {this.props.children}
+        {filt}
       </Dropdown>
       );
   }
@@ -58,14 +75,13 @@ class MyDropdown extends React.Component<IProps, { up: boolean }> {
   }
 
   private onToggle = (isOpen: boolean) => {
+    this.mOpen = isOpen;
     if (isOpen) {
       const bounds = this.bounds;
       const newUp = this.mNode.getBoundingClientRect().bottom > (bounds.top + bounds.height / 2);
-      if (newUp !== this.state.up) {
-        this.setState({ up: newUp });
-      }
+      // force redraw to ensure the menu gets rendered too
+      this.setState({ up: newUp });
     }
-    this.mOpen = isOpen;
 
     if (this.props.onToggle) {
       this.props.onToggle.apply(this, arguments);

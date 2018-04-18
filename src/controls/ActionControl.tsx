@@ -80,7 +80,7 @@ class ActionControl extends React.Component<IProps, {}> {
  * @param {*} action the action to call on click
  * @returns
  */
-function registerAction(instanceProps: IActionControlProps & IExtensibleProps,
+function registerAction(instanceGroup: string,
                         group: string,
                         position: number,
                         iconOrComponent: string | React.ComponentClass<any>,
@@ -89,7 +89,7 @@ function registerAction(instanceProps: IActionControlProps & IExtensibleProps,
                         actionOrCondition?: (instanceIds?: string[]) => void | boolean,
                         condition?: () => boolean | string,
                         ): any {
-  if (instanceProps.group === group) {
+  if (instanceGroup === group) {
     if (typeof(iconOrComponent) === 'string') {
       return { type: 'simple', icon: iconOrComponent, title: titleOrProps,
                position, action: actionOrCondition, options, condition };
@@ -103,4 +103,4 @@ function registerAction(instanceProps: IActionControlProps & IExtensibleProps,
 }
 
 export default
-  extend(registerAction)(ActionControl) as React.ComponentClass<IActionControlProps>;
+  extend(registerAction, 'group')(ActionControl) as React.ComponentClass<IActionControlProps>;

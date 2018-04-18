@@ -50,7 +50,7 @@ class DialogContainer extends React.Component<IProps, {}> {
   }
 }
 
-function registerDialog(instanceProps, id: string, component: React.ComponentClass<any>,
+function registerDialog(instanceGroup: undefined, id: string, component: React.ComponentClass<any>,
                         props?: PropsCallback): IExtDialog {
   return { id, component, props };
 }

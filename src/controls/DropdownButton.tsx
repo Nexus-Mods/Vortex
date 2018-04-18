@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { DropdownButton, SplitButton } from 'react-bootstrap';
+import { Dropdown, DropdownButton, SplitButton } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
 
 export interface IBaseProps {
@@ -20,6 +20,7 @@ export type IProps = IBaseProps & typeof DropdownButton.prototype.props;
  */
 class MyDropdownButton extends React.Component<IProps, { up: boolean, right: boolean }> {
   private mNode: Element;
+  private mOpen: boolean = false;
 
   constructor(props: IProps) {
     super(props);
@@ -36,9 +37,14 @@ class MyDropdownButton extends React.Component<IProps, { up: boolean, right: boo
 
   public render(): JSX.Element {
     const { up, right } = this.state;
-    const relayProps: any = _.omit(this.props, ['container', 'dropup', 'onToggle', 'split']);
+    const relayProps: any =
+      _.omit(this.props, ['container', 'dropup', 'onToggle', 'split', 'children']);
     const Comp = this.props.split ? SplitButton : DropdownButton;
-    return <Comp dropup={up} pullRight={right} onToggle={this.onToggle} {...relayProps} />;
+    return (
+      <Comp dropup={up} pullRight={right} onToggle={this.onToggle} {...relayProps}>
+        {this.mOpen ? this.props.children : null}
+      </Comp>
+    );
   }
 
   private get bounds(): ClientRect {
@@ -55,14 +61,13 @@ class MyDropdownButton extends React.Component<IProps, { up: boolean, right: boo
   }
 
   private onToggle = (isOpen: boolean) => {
+    this.mOpen = isOpen;
     if (isOpen) {
       const bounds = this.bounds;
       const nodeBounds = this.mNode.getBoundingClientRect();
       const newUp = nodeBounds.bottom > (bounds.top + bounds.height / 2);
       const newRight = nodeBounds.right > (bounds.left + bounds.width / 2);
-      if ((newUp !== this.state.up) || (newRight !== this.state.right)) {
-        this.setState({ up: newUp, right: newRight });
-      }
+      this.setState({ up: newUp, right: newRight });
     }
 
     if (this.props.onToggle) {

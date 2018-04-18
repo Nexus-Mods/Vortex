@@ -79,12 +79,12 @@ class Banner extends React.Component<IProps, {}> {
   }
 }
 
-function registerBanner(instanceProps: IBaseProps,
+function registerBanner(instanceGroup: string,
                         group: string,
                         component: React.ComponentClass<any>,
                         options: IBannerOptions,
                         ): IBannerDefinition {
-  if (instanceProps.group === group) {
+  if (instanceGroup === group) {
     return { component, options };
   } else {
     return undefined;
@@ -116,6 +116,6 @@ function mapStateToProps(state: any, ownProps: IProps): IConnectedProps {
 }
 
 export default
-  extend(registerBanner)(
+  extend(registerBanner, 'group')(
     connect(mapStateToProps)(
       Banner as any)) as React.ComponentClass<ExportType>;

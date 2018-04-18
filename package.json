@@ -202,7 +202,7 @@
     "react-overlays": "^0.8.3",
     "react-redux": "^5.0.6",
     "react-safe-html": "TanninOne/react-safe-html",
-    "react-select": "1.0.0-rc.10",
+    "react-select": "^1.2.1",
     "react-sortable-tree": "^1.4.0",
     "react-split-pane": "^0.1.66",
     "react-transition-group": "^2.2.1",

@@ -41,6 +41,7 @@ class CategoryFilterComponent extends React.Component<IProps, {}> {
         options={options}
         value={filter}
         onChange={this.changeFilter}
+        autosize={false}
       />
     );
   }

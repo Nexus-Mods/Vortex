@@ -7,7 +7,7 @@ import { II18NProps } from '../types/II18NProps';
 import {IRowState, IState, ITableState} from '../types/IState';
 import {ITableAttribute} from '../types/ITableAttribute';
 import {SortDirection} from '../types/SortDirection';
-import {connect, extend, PureComponentEx, translate} from '../util/ComponentEx';
+import {ComponentEx, connect, extend, translate} from '../util/ComponentEx';
 import Debouncer from '../util/Debouncer';
 import {IExtensibleProps} from '../util/ExtensionProvider';
 import { log } from '../util/log';
@@ -86,6 +86,8 @@ interface IComponentState {
   sortedRows: any[];
   detailsOpen: boolean;
   rowIdsDelayed: string[];
+  rowVisibility: { [id: string]: boolean };
+  scrolling: boolean;
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps & IExtensionProps & II18NProps;
@@ -97,7 +99,7 @@ type IProps = IBaseProps & IConnectedProps & IActionProps & IExtensionProps & II
  * - toggleable columns
  * - a detail-pane that gives additional detail on the (last) selected row
  */
-class SuperTable extends PureComponentEx<IProps, IComponentState> {
+class SuperTable extends ComponentEx<IProps, IComponentState> {
   // minimum distance of the focused item to the table header when navigating with the
   // keyboard
   private static SCROLL_OFFSET = 100;
@@ -118,6 +120,9 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
   private mNextUpdateState: IProps = undefined;
   private mUpdateInProgress: boolean = false;
   private mNextState: IComponentState = undefined;
+  private mNextVisibility: { [id: string]: boolean } = {};
+  private mWillSetVisibility: boolean = false;
+  private mScrollTimer: NodeJS.Timer;
 
   constructor(props: IProps) {
     super(props);
@@ -129,11 +134,13 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
       sortedRows: undefined,
       detailsOpen: false,
       rowIdsDelayed: [],
+      rowVisibility: {},
+      scrolling: false,
     };
     this.mVisibleAttributes = this.visibleAttributes(props.objects, props.attributeState);
     this.updateCalculatedValues(props)
-    .then(run => {
-      if (run) {
+    .then(didRun => {
+      if (didRun) {
         this.refreshSorted(this.mNextUpdateState);
         this.updateSelection(this.mNextUpdateState);
       }
@@ -184,11 +191,13 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
         || (newProps.dataId !== this.props.dataId)
         || (newProps.objects !== this.props.objects)) {
       this.updateCalculatedValues(newProps)
-      .then(run => {
-        if (run) {
+      .then(changedColumns => {
+        const changedSort = changedColumns.find(col =>
+          this.isSortColumn(this.props.attributeState[col]));
+        if (changedSort !== undefined) {
           this.refreshSorted(this.mNextUpdateState);
-          this.updateSelection(this.mNextUpdateState);
         }
+        this.updateSelection(this.mNextUpdateState);
         return null;
       });
     } else if ((newProps.attributeState !== this.props.attributeState)
@@ -214,6 +223,11 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
 
     const rowIds = Object.keys(rowState).filter(rowId => rowState[rowId].selected);
 
+    const scrollOffset = this.mScrollRef !== undefined ? this.mScrollRef.scrollTop : 0;
+    const headerStyle = this.state.scrolling
+                  ? { display: 'none' }
+                  : { transform: `translate(0, ${scrollOffset}px)` };
+
     return (
       <div id={`table-${tableId}`} className='table-container'>
         <div className='table-container-inner'>
@@ -229,7 +243,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
               {showHeader === false ? null : <THead
                 className='table-header'
                 domRef={this.setHeadRef}
-                style={{ transform: 'translate(0, 0)' }}
+                style={headerStyle}
               >
                 <TR>
                   {this.mVisibleAttributes.map(this.renderHeaderField)}
@@ -307,7 +321,8 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
 
     return (
       <TBody domRef={this.setBodyRef}>
-        {sortedRows.map((row, idx) => this.renderRow(row, idx < 40, visibleAttributes))}
+        {sortedRows.map((row, idx) =>
+          this.renderRow(row, visibleAttributes))}
       </TBody>
     );
   }
@@ -445,7 +460,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
       && (attributeState.sortDirection !== 'none');
   }
 
-  private renderRow(data: any, initVisible: boolean,
+  private renderRow(data: any,
                     visibleAttributes: ITableAttribute[]): JSX.Element {
     const { t, actions, attributeState, language, tableId } = this.props;
     const { calculatedValues, rowState } = this.state;
@@ -479,7 +494,8 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
         highlighted={getSafe(rowState, [data.id, 'highlighted'], false)}
         domRef={this.setRowRef}
         container={this.mScrollRef}
-        initVisible={initVisible}
+        visible={this.state.rowVisibility[data.id] === true}
+        onSetVisible={this.setRowVisible}
         onHighlight={this.setRowHighlight}
       />
     );
@@ -650,6 +666,21 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
     }
   }
 
+  private setRowVisible = (rowId: string, visible: boolean) => {
+    this.mNextVisibility[rowId] = visible;
+    this.triggerUpdateVisibility();
+  }
+
+  private triggerUpdateVisibility() {
+    if (!this.mWillSetVisibility) {
+      this.mWillSetVisibility = true;
+      window.requestAnimationFrame(() => {
+        this.mWillSetVisibility = false;
+        this.updateState(setSafe(this.mNextState, ['rowVisibility'], this.mNextVisibility));
+      });
+    }
+  }
+
   private setRowHighlight = (rowId: string, highlighted: boolean) => {
     this.updateState(setSafe(this.mNextState, ['rowState', rowId, 'highlighted'], highlighted));
   }
@@ -676,10 +707,14 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
   }
 
   private translateHeader = (event) => {
-    if ((this.mHeadRef !== undefined) && (this.mHeadRef !== null)) {
-      const transform = `translate(0, ${event.target.scrollTop}px)`;
-      this.mHeadRef.style.transform = transform;
+    if (!this.state.scrolling) {
+      this.updateState(setSafe(this.mNextState, ['scrolling'], true));
+    } else {
+      clearTimeout(this.mScrollTimer);
     }
+    this.mScrollTimer = setTimeout(() => {
+      this.updateState(setSafe(this.mNextState, ['scrolling'], false));
+    }, 200);
   }
 
   private mainPaneRef = (ref) => {
@@ -710,14 +745,18 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
     }
   }
 
-  private updateCalculatedValues(props: IProps, forceUpdateId?: string): Promise<boolean> {
+  private updateCalculatedValues(props: IProps, forceUpdateId?: string): Promise<string[]> {
     this.mNextUpdateState = props;
     if (this.mUpdateInProgress) {
-      return Promise.resolve(true);
+      return Promise.resolve([]);
     }
     this.mUpdateInProgress = true;
 
     const { t, data, objects } = props;
+
+    // keep track of which columns had data changed so that we can later figure out if
+    // sorting needs to be updated
+    const changedColumns = new Set<string>();
 
     const oldData = this.mLastUpdateState || {};
     let newValues: ILookupCalculated = this.state.calculatedValues || {};
@@ -727,6 +766,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
       const delta: any = {};
 
       return Promise.map(objects, (attribute: ITableAttribute) => {
+        // avoid recalculating if the source data hasn't changed
         if (!attribute.isVolatile
             && (attribute.id !== forceUpdateId)
             && (oldData[rowId] === data[rowId])) {
@@ -735,6 +775,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
         return Promise.resolve(attribute.calc(data[rowId], t))
           .then(newValue => {
             if (!_.isEqual(newValue, getSafe(newValues, [rowId, attribute.id], undefined))) {
+              changedColumns.add(attribute.id);
               delta[attribute.id] = newValue;
             }
             return null;
@@ -761,7 +802,7 @@ class SuperTable extends PureComponentEx<IProps, IComponentState> {
         // another update was queued while this was active
         return this.updateCalculatedValues(this.mNextUpdateState);
       } else {
-        return Promise.resolve(true);
+        return Promise.resolve(Array.from(changedColumns));
       }
     })
     .catch(err => {
@@ -1134,8 +1175,8 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<IState>): IActionProps {
 }
 
 function registerTableAttribute(
-    instanceProps: IBaseProps, group: string, attribute: ITableAttribute) {
-  if (instanceProps.tableId === group) {
+    instanceGroup: string, group: string, attribute: ITableAttribute) {
+  if (instanceGroup === group) {
     return attribute;
   } else {
     return undefined;
@@ -1157,6 +1198,6 @@ export function makeGetSelection(tableId: string) {
 
 export default
   translate(['common'], { wait: false })(
-    extend(registerTableAttribute)(
+    extend(registerTableAttribute, 'tableId')(
       connect(mapStateToProps, mapDispatchToProps)(
         SuperTable))) as React.ComponentClass<IBaseProps & IExtensibleProps>;

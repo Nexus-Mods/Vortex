@@ -33,6 +33,7 @@ class OptionsFilterComponent extends React.Component<IProps & IBoundProps, {}> {
         options={optionsSane}
         value={filter}
         onChange={multi ? this.changeFilterMulti : this.changeFilter}
+        autosize={false}
       />
     );
   }

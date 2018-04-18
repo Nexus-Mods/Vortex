@@ -113,4 +113,4 @@ $scrollbar-width:        8px;
 // impacts scroll performance quite considerably, even when using the mouse.
 // For most users, disabling this is probably fine but I guess we should
 // make it a configuration or theme option
-$touch-action: manipulation;
+$touch-action: none;
