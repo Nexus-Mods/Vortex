@@ -1,6 +1,6 @@
 import {IValidateKeyData} from '../types/IValidateKeyData';
 
-import Nexus, {IValidateKeyResponse} from 'nexus-api';
+import {IValidateKeyResponse} from 'nexus-api';
 
 // transform the server response into the format we store internally
 function transformUserInfo(input: IValidateKeyResponse): IValidateKeyData {

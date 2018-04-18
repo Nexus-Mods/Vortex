@@ -3,7 +3,7 @@ import { log } from '../../../util/log';
 
 import { ICategoryDictionary } from '../../category_management/types/IcategoryDictionary';
 
-import Nexus, { ICategory } from 'nexus-api';
+import NexusT, { ICategory } from 'nexus-api';
 
 interface IGameInfo {
   categories: ICategory[];
@@ -13,13 +13,13 @@ interface IGameInfo {
  * retrieve the categories by the server call
  *
  * @param {string} activeGameId
- * @param {Nexus} nexus
+ * @param {NexusT} nexus
  * @return {ICategoryDictionary} res
  *
  */
 function retrieveCategoryList(
   activeGameId: string,
-  nexus: Nexus,
+  nexus: NexusT,
 ): Promise<ICategoryDictionary> {
   return new Promise<ICategoryDictionary>((resolve, reject) => {
     nexus.getGameInfo(activeGameId)

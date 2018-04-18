@@ -2,7 +2,7 @@ import * as fs from '../../../util/fs';
 import { log } from '../../../util/log';
 
 import * as Promise from 'bluebird';
-import Nexus from 'nexus-api';
+import NexusT from 'nexus-api';
 import ZipT = require('node-7z');
 import { tmpName } from 'tmp';
 
@@ -32,7 +32,7 @@ function zipFiles(files: string[]): Promise<string> {
         .then(() => tmpPath));
 }
 
-function submitFeedback(nexus: Nexus, message: string, feedbackFiles: string[],
+function submitFeedback(nexus: NexusT, message: string, feedbackFiles: string[],
                         anonymous: boolean, hash: string): Promise<void> {
   let archive: string;
   return zipFiles(feedbackFiles)

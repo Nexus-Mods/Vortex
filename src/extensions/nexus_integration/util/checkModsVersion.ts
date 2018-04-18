@@ -7,13 +7,13 @@ import { IMod } from '../../mod_management/types/IMod';
 
 import * as Promise from 'bluebird';
 import * as I18next from 'i18next';
-import Nexus, { IFileInfo, IFileUpdate, IModFiles, IModInfo, NexusError } from 'nexus-api';
+import NexusT, { IFileInfo, IFileUpdate, IModFiles, IModInfo, NexusError } from 'nexus-api';
 import * as Redux from 'redux';
 
 /**
  * check if there is a newer mod version on the server
  *
- * @param {Nexus} nexus
+ * @param {NexusT} nexus
  * @param {string} gameId
  * @param {string} modId
  * @param {number} newestFileId
@@ -22,7 +22,7 @@ import * as Redux from 'redux';
  * @return {Promise<IFileInfo>} updatedMod
  *
  */
-export function checkModVersion(dispatch: Redux.Dispatch<any>, nexus: Nexus,
+export function checkModVersion(dispatch: Redux.Dispatch<any>, nexus: NexusT,
                                 gameId: string, mod: IMod): Promise<void> {
   const nexusModId: number =
       parseInt(getSafe(mod.attributes, ['modId'], undefined), 10);
@@ -146,7 +146,7 @@ function errorFromNexus(err: NexusError): Error {
 }
 
 export function retrieveModInfo(
-  nexus: Nexus,
+  nexus: NexusT,
   store: Redux.Store<any>,
   gameId: string,
   mod: IMod,

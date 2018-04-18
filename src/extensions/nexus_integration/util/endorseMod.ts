@@ -1,18 +1,18 @@
 import * as Promise from 'bluebird';
-import Nexus from 'nexus-api';
+import NexusT from 'nexus-api';
 
 /**
  * endorse the mod by the server call
  *
  * @param {string} activeGameId
- * @param {Nexus} nexus
+ * @param {NexusT} nexus
  * @param {string} endorseStatus
  * @param {string} modId,
  * @return {boolean} isEndorsed
  *
  */
 
-function endorseMod(nexus: Nexus, gameId: string, nexusModId: number,
+function endorseMod(nexus: NexusT, gameId: string, nexusModId: number,
                     version: string, endorseStatus: string): Promise<string> {
   if (endorseStatus === 'Undecided' || endorseStatus === 'Abstained' ||
       endorseStatus === '') {
