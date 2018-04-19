@@ -31,7 +31,7 @@ import { downloadPath as downloadPathSelector } from '../../mod_management/selec
 
 import { IDownload } from '../types/IDownload';
 
-import { FILE_NAME, FILE_SIZE, PROGRESS } from '../downloadAttributes';
+import { FILE_NAME, FILE_SIZE, LOGICAL_NAME, PROGRESS } from '../downloadAttributes';
 
 import DownloadGraph from './DownloadGraph';
 
@@ -374,6 +374,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
                       data={filtered}
                       staticElements={[
                         FILE_NAME,
+                        LOGICAL_NAME,
                         this.fileTimeColumn,
                         this.gameColumn,
                         FILE_SIZE,

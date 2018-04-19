@@ -30,16 +30,30 @@ function nameFromUrl(input: string) {
 export const FILE_NAME: ITableAttribute = {
   id: 'filename',
   name: 'Filename',
-  description: 'Name of the download',
+  description: 'Filename of the download',
   icon: '',
   calc: (attributes: IDownload) =>
     attributes.localPath
-    || nameFromUrl(getSafe(attributes, ['urls', 0], undefined))
-    || getSafe(attributes, ['modInfo', 'name'], undefined),
+    || nameFromUrl(getSafe(attributes, ['urls', 0], undefined)),
   placement: 'both',
-  isToggleable: false,
+  isToggleable: true,
   edit: {},
   isSortable: true,
+  filter: new TextFilter(true),
+};
+
+export const LOGICAL_NAME: ITableAttribute = {
+  id: 'logicalname',
+  name: 'Name',
+  description: 'Readable Name',
+  icon: '',
+  calc: (attributes: IDownload) =>
+    getSafe(attributes, ['modInfo', 'name'], attributes.localPath),
+  placement: 'both',
+  isToggleable: true,
+  edit: {},
+  isSortable: true,
+  isDefaultVisible: false,
   filter: new TextFilter(true),
 };
 
