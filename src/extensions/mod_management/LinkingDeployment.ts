@@ -373,7 +373,8 @@ abstract class LinkingActivator implements IDeploymentMethod {
       added: _.difference(keysAfter, keysBefore),
       removed: _.difference(keysBefore, keysAfter),
       sourceChanged: keysBoth.filter((key: string) => before[key].source !== after[key].source),
-      contentChanged: keysBoth.filter((key: string) => before[key].time !== after[key].time),
+      contentChanged: keysBoth.filter((key: string) =>
+         (before[key].time !== after[key].time) && (before[key].source === after[key].source)),
     };
   }
 
