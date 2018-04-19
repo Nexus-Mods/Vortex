@@ -82,7 +82,7 @@ function calc(props) {
   const {download} = props;
   const {state, received, size} = download;
 
-  if (state === 'init') {
+  if (state === 'started') {
     return (received / Math.max(size, 1));
   } else {
     return state;

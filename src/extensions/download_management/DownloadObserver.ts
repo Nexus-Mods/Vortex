@@ -220,8 +220,7 @@ export class DownloadObserver {
       // avoid updating too frequently because it causes ui updates
       const now = new Date().getTime();
       const newPerc = Math.floor((received * 100) / total);
-      if ((chunks === undefined)
-          && ((now - lastUpdateTick < 200) || (newPerc === lastUpdatePerc))) {
+      if (((now - lastUpdateTick) < 1000) || (newPerc === lastUpdatePerc)) {
         return;
       }
       lastUpdateTick = now;

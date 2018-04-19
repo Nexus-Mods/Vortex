@@ -205,7 +205,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
 
     this.fileTimeColumn = {
       id: 'filetime',
-      name: 'File Time',
+      name: 'Downloaded',
       description: 'Time the file was last modified',
       icon: 'calendar-plus-o',
       customRenderer: (attributes: IDownload, detail: boolean, t) => {

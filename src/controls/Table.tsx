@@ -88,6 +88,8 @@ interface IComponentState {
   rowIdsDelayed: string[];
   rowVisibility: { [id: string]: boolean };
   scrolling: boolean;
+  singleRowActions: ITableRowAction[];
+  multiRowActions: ITableRowAction[];
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps & IExtensionProps & II18NProps;
@@ -136,6 +138,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       rowIdsDelayed: [],
       rowVisibility: {},
       scrolling: false,
+      singleRowActions: this.singleRowActions(props),
+      multiRowActions: this.multiRowActions(props),
     };
     this.mVisibleAttributes = this.visibleAttributes(props.objects, props.attributeState);
     this.updateCalculatedValues(props)
@@ -176,6 +180,13 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       this.mVisibleAttributes = this.visibleAttributes(objects, attributeState);
     }
 
+    if (newProps.actions !== this.props.actions) {
+      this.updateState(update(this.mNextState, {
+        singleRowActions: this.singleRowActions(newProps),
+        multiRowActions: this.multiRowActions(newProps),
+      }));
+    }
+
     if (newProps.data !== this.props.data) {
       Object.keys(this.mRowRefs).forEach(key => {
         if (newProps.data[key] === undefined) {
@@ -192,11 +203,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         || (newProps.objects !== this.props.objects)) {
       this.updateCalculatedValues(newProps)
       .then(changedColumns => {
-        const changedSort = changedColumns.find(col =>
-          this.isSortColumn(this.props.attributeState[col]));
-        if (changedSort !== undefined) {
-          this.refreshSorted(this.mNextUpdateState);
-        }
+        this.refreshSorted(this.mNextUpdateState);
         this.updateSelection(this.mNextUpdateState);
         return null;
       });
@@ -209,13 +216,11 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
   public render(): JSX.Element {
     const { t, actions, objects, showHeader, showDetails, splitPos, tableId } = this.props;
-    const { detailsOpen, rowState, splitMax } = this.state;
+    const { detailsOpen, rowState, singleRowActions, splitMax } = this.state;
 
     let hasActions = false;
     if (actions !== undefined) {
-      const rowActions = actions.filter((action) =>
-        action.singleRowAction === undefined || action.singleRowAction);
-      hasActions = rowActions.length > 0;
+      hasActions = singleRowActions.length > 0;
     }
 
     const actionHeader = this.renderTableActions(hasActions);
@@ -266,14 +271,11 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
   private renderFooter(): JSX.Element {
     const { t, actions } = this.props;
-    const { rowState } = this.state;
-
-    const multiActions = actions.filter(
-      (action) => action.multiRowAction === undefined || action.multiRowAction);
+    const { multiRowActions, rowState } = this.state;
 
     const selected = Object.keys(rowState).filter(key => rowState[key].selected);
 
-    if ((multiActions.length === 0) || (selected.length < 2)) {
+    if ((multiRowActions.length === 0) || (selected.length < 2)) {
       return null;
     }
 
@@ -284,7 +286,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       <div className='table-footer-placeholder'>
         <div className='table-footer'>
           <IconBar className='menubar'>
-            {multiActions.map((action, idx) =>
+            {multiRowActions.map((action, idx) =>
               <ToolbarIcon
                 key={idx}
                 icon={action.icon}
@@ -463,7 +465,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private renderRow(data: any,
                     visibleAttributes: ITableAttribute[]): JSX.Element {
     const { t, actions, attributeState, language, tableId } = this.props;
-    const { calculatedValues, rowState } = this.state;
+    const { calculatedValues, rowState, singleRowActions } = this.state;
 
     if (calculatedValues[data.id] === undefined) {
       return null;
@@ -473,9 +475,6 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
     const sortAttribute: ITableAttribute = attributes.find(attribute =>
       this.isSortColumn(attributeState[attribute.id]));
-
-    const rowActions = actions.filter(
-      (action) => (action.singleRowAction === undefined) || action.singleRowAction);
 
     return (
       <TableRow
@@ -487,7 +486,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         rawData={data.data}
         attributes={visibleAttributes}
         sortAttribute={sortAttribute !== undefined ? sortAttribute.id : undefined}
-        actions={rowActions}
+        actions={singleRowActions}
         language={language}
         onClick={this.selectRow}
         selected={getSafe(rowState, [data.id, 'selected'], false)}
@@ -634,6 +633,16 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       }, {});
   }
 
+  private singleRowActions(props: IProps) {
+    return props.actions.filter(
+      (action) => (action.singleRowAction === undefined) || action.singleRowAction);
+  }
+
+  private multiRowActions(props: IProps) {
+    return props.actions.filter(
+      (action) => (action.multiRowAction === undefined) || action.multiRowAction);
+  }
+
   private selectRelative = (delta: number): string => {
     const { lastSelected, sortedRows } = this.state;
     if ((lastSelected === undefined) || (sortedRows === undefined)) {
@@ -758,7 +767,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     // sorting needs to be updated
     const changedColumns = new Set<string>();
 
-    const oldData = this.mLastUpdateState || {};
+    const oldState = this.mLastUpdateState || { data: {} };
     let newValues: ILookupCalculated = this.state.calculatedValues || {};
 
     // recalculate each attribute in each row
@@ -769,7 +778,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         // avoid recalculating if the source data hasn't changed
         if (!attribute.isVolatile
             && (attribute.id !== forceUpdateId)
-            && (oldData[rowId] === data[rowId])) {
+            && (oldState.data[rowId] === data[rowId])) {
           return Promise.resolve();
         }
         return Promise.resolve(attribute.calc(data[rowId], t))
@@ -780,21 +789,34 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
             }
             return null;
           });
-      }).then(() => {
+      })
+      .then(() => {
         if (Object.keys(delta).length > 0) {
           delta.__id = rowId;
-          newValues = (newValues[rowId] === undefined)
-            ? update(newValues, { [rowId]: { $set: delta } })
-            : update(newValues, { [rowId]: { $merge: delta } });
+          if (newValues[rowId] === undefined) {
+            newValues[rowId] = delta;
+          } else {
+            newValues = update(newValues, { [rowId]: { $merge: delta } });
+          }
         }
       });
-    }).then(() =>
+    })
+    .then(() => Promise.map(Object.keys(oldState.data), rowId => {
+      if (data[rowId] === undefined) {
+        delete newValues[rowId];
+      }
+    }))
+    .then(() =>
       // once everything is recalculated, update the cache
       new Promise<void>((resolve, reject) => {
         this.updateState(update(this.mNextState, {
           calculatedValues: { $set: newValues },
         }), () => resolve());
       }))
+    .then(() => {
+      const { rowState } = this.state;
+      return this.updateDetailIds(Object.keys(rowState).filter(id => rowState[id].selected));
+    })
     .then(() => {
       this.mUpdateInProgress = false;
       this.mLastUpdateState = props;
