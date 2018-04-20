@@ -197,6 +197,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
       controls.push((
         <div
           key='dialog-content-html'
+          className='dialog-content-html'
           dangerouslySetInnerHTML={{ __html: content.htmlText }}
         />
       ));

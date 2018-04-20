@@ -105,10 +105,10 @@ export function showError<S>(dispatch: Redux.Dispatch<S>,
                             }) {
   const err = renderError(details);
 
-  log('error', message, err.message);
+  log('error', message, err);
 
   const content: IDialogContent = ((options !== undefined) && options.isHTML) ? {
-    htmlText: err.message,
+    htmlText: err.message || err.text,
     options: {
       wrap: false,
     },
