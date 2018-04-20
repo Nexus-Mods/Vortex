@@ -87,7 +87,6 @@ interface IComponentState {
   detailsOpen: boolean;
   rowIdsDelayed: string[];
   rowVisibility: { [id: string]: boolean };
-  scrolling: boolean;
   singleRowActions: ITableRowAction[];
   multiRowActions: ITableRowAction[];
 }
@@ -137,7 +136,6 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       detailsOpen: false,
       rowIdsDelayed: [],
       rowVisibility: {},
-      scrolling: false,
       singleRowActions: this.singleRowActions(props),
       multiRowActions: this.multiRowActions(props),
     };
@@ -229,9 +227,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     const rowIds = Object.keys(rowState).filter(rowId => rowState[rowId].selected);
 
     const scrollOffset = this.mScrollRef !== undefined ? this.mScrollRef.scrollTop : 0;
-    const headerStyle = this.state.scrolling
-                  ? { display: 'none' }
-                  : { transform: `translate(0, ${scrollOffset}px)` };
+    const headerStyle = { transform: `translate(0, ${scrollOffset}px)` };
 
     return (
       <div id={`table-${tableId}`} className='table-container'>
@@ -716,14 +712,12 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private translateHeader = (event) => {
-    if (!this.state.scrolling) {
-      this.updateState(setSafe(this.mNextState, ['scrolling'], true));
-    } else {
-      clearTimeout(this.mScrollTimer);
-    }
-    this.mScrollTimer = setTimeout(() => {
-      this.updateState(setSafe(this.mNextState, ['scrolling'], false));
-    }, 200);
+    window.requestAnimationFrame(() => {
+      if ((this.mHeadRef !== undefined) && (this.mHeadRef !== null)) {
+        const transform = `translate(0, ${event.target.scrollTop}px)`;
+        this.mHeadRef.style.transform = transform;
+      }
+    });
   }
 
   private mainPaneRef = (ref) => {
