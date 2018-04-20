@@ -92,46 +92,48 @@ export class Context extends DelegateBase {
         log('debug', 'checkIfFileExists called', util.inspect(fileName));
         const state = this.api.store.getState();
 
-        let modPath = this.gameInfo.queryModPath(this.gameDiscovery.path);
-        if (!path.isAbsolute(modPath)) {
-          modPath = path.join(this.gameDiscovery.path, modPath);
-        }
-        const fullFilePath = path.join(modPath, fileName);
-
-        fs.statAsync(fullFilePath)
-            .reflect()
-            .then((stat) => callback(null, stat.isFulfilled()));
+        const fullPath = this.resolveFilePath(fileName);
+        fs.statAsync(fullPath)
+          .then(() => callback(null, true))
+          .catch(() => callback(null, false));
       }
 
   public getExistingDataFile =
       (fileName: string, callback: (err, res: any) => void) => {
         log('debug', 'getExistingDataFile called', util.inspect(fileName));
         const state = this.api.store.getState();
-        const fullFilePath = path.join(
-          this.gameInfo.queryModPath(this.gameDiscovery.path), fileName);
 
-        fs.readFileAsync(fullFilePath)
-            .then((readBytes) => callback(null, readBytes))
-            .catch(() => callback(null, null));
+        const fullPath = this.resolveFilePath(fileName);
+
+        fs.readFileAsync(fullPath)
+          .then(data => callback(null, data))
+          .catch(err => callback(err, null));
       }
 
   public getExistingDataFileList =
       (searchOptions: any[], callback: (err, res: string[]) => void) => {
         log('debug', 'getExistingDataFileList called', util.inspect(searchOptions[0]));
         const state = this.api.store.getState();
-        const fullFilePath = path.join(
-          this.gameInfo.queryModPath(this.gameDiscovery.path), searchOptions[0]);
 
+        const fullPath = this.resolveFilePath(searchOptions[0]);
         if (searchOptions[2] === true) {
-          this.readDirRecursive(fullFilePath, searchOptions[1])
+          this.readDirRecursive(fullPath, searchOptions[1])
             .then((fileList) => callback(null, fileList))
-            .catch(() => callback(null, null));
+            .catch(err => callback(err, null));
         } else {
-          fs.readdirAsync(fullFilePath)
+          fs.readdirAsync(fullPath)
             .then((fileList) => callback(null, fileList))
-            .catch(() => callback(null, null));
+            .catch(err => callback(err, null));
         }
       }
+
+  private resolveFilePath(filePath: string): string {
+    let modPath = this.gameInfo.queryModPath(this.gameDiscovery.path);
+    if (!path.isAbsolute(modPath)) {
+      modPath = path.join(this.gameDiscovery.path, modPath);
+    }
+    return path.join(modPath, filePath);
+}
 
   private readDirRecursive = (rootFolder: string,
                               filter: string): Promise<string[]> => {
