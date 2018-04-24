@@ -336,7 +336,7 @@ function init(context: IExtensionContext): boolean {
     ['session', 'discovery'],
     ], (discovery: any) => discovery.running);
 
-  context.registerMainPage('game', 'Games', LazyComponent('./views/GamePicker', __dirname), {
+  context.registerMainPage('game', 'Games', LazyComponent(() => require('./views/GamePicker')), {
     hotkey: 'G',
     group: 'global',
     props: () => ({
@@ -345,7 +345,7 @@ function init(context: IExtensionContext): boolean {
     }),
     activity,
   });
-  context.registerSettings('Games', LazyComponent('./views/Settings', __dirname), () => ({
+  context.registerSettings('Games', LazyComponent(() => require('./views/Settings')), () => ({
     onResetSearchPaths: () => resetSearchPaths(context.api),
   }));
   context.registerReducer(['session', 'discovery'], discoveryReducer);

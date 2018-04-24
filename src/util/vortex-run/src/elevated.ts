@@ -85,11 +85,12 @@ function elevatedMain(baseDir: string, moduleRoot: string, ipcPath: string,
   };
   process.on('uncaughtException', handleError);
   process.on('unhandledRejection', handleError);
-  const elevatedPath = require('path');
+  // tslint:disable-next-line:no-shadowed-variable
+  const path = require('path');
   const requireOrig = require;
   const newRequire: any = (id: string): any => {
     if (id.startsWith('.')) {
-      return requireOrig(elevatedPath.join(baseDir, id));
+      return requireOrig(path.join(baseDir, id));
     } else {
       return requireOrig(id);
     }

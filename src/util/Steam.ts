@@ -1,14 +1,12 @@
 import * as Promise from 'bluebird';
-import Registry = require('winreg');
+import * as Registry from 'winreg';
 
 import * as fs from './fs';
 import { log } from './log';
 import { getSafe } from './storeHelper';
 
-import * as path from 'path';
-
 import { app as appIn, remote } from 'electron';
-
+import * as path from 'path';
 import { parse } from 'simple-vdf';
 
 const app = (remote !== undefined) ? remote.app : appIn;

@@ -1,12 +1,10 @@
-import reqResolve = require('resolve');
+import * as reqResolve from 'resolve';
 
-export default function<T>(moduleId: string, basedir?: string, exportId?: string): T {
+export default function<T>(delayed: () => T, exportId?: string): T {
   const handler = {
     get(target, name) {
       if (target.mod === undefined) {
-        const modulePath = reqResolve.sync(
-            moduleId, basedir !== undefined ? {basedir} : undefined);
-        target.mod = require(modulePath);
+        target.mod = delayed();
       }
       if (exportId !== undefined) {
         return target.mod[exportId][name];

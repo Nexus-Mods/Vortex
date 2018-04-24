@@ -11,6 +11,7 @@ import * as _ from 'lodash';
 import * as path from 'path';
 import * as Redux from 'redux';
 import { file } from 'tmp';
+import getVortexPath from './getVortexPath';
 
 /**
  * count the elements in an array for which the predicate matches
@@ -214,7 +215,7 @@ export function objDiff(lhs: any, rhs: any): any {
 export function spawnSelf(args: string[]) {
   if (process.execPath.endsWith('electron.exe')) {
     // development version
-    args = [path.resolve(__dirname, '..', '..')].concat(args);
+    args = [getVortexPath('package')].concat(args);
   }
   spawn(process.execPath, args, {
     detached: true,

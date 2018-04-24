@@ -1,4 +1,4 @@
-node_modules
+node_modules/*
 typings
 dist
 dist_custom
@@ -10,6 +10,7 @@ coverage
 .vscode/.BROWSE.VC.DB*
 *.VC.db
 app/bundledPlugins
+src/util/vortex-run/lib
 
 # User-specific files
 *.suo

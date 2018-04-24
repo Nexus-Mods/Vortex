@@ -6,6 +6,7 @@ import * as _ from 'lodash';
 import * as sass from 'node-sass';
 import * as path from 'path';
 import { IExtensionApi } from '../types/IExtensionContext';
+import getVortexPath from './getVortexPath';
 
 const app = appIn || remote.app;
 
@@ -94,16 +95,13 @@ class StyleManager {
     // development builds are always versioned as 0.0.1
     const isDevel: boolean = app.getVersion() === '0.0.1';
 
-    const basePath = asarUnpacked(__dirname);
-    const assetsPath = path.resolve(basePath, '..', 'assets', 'css');
-    const modulesPath = isDevel
-      ? path.resolve(basePath, '..', '..', 'node_modules')
-      : path.resolve(basePath, '..', 'node_modules');
+    const assetsPath = path.join(getVortexPath('assets'), 'css');
+    const modulesPath = getVortexPath('modules_unpacked');
 
     return new Promise<void>((resolve, reject) => {
       sass.render({
         outFile: path.join(assetsPath, 'theme.css'),
-        includePaths: [assetsPath, asarUnpacked(modulesPath)],
+        includePaths: [assetsPath, modulesPath],
         data: sassIndex,
         outputStyle: isDevel ? 'expanded' : 'compressed',
       },

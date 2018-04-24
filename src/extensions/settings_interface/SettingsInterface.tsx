@@ -6,6 +6,7 @@ import Toggle from '../../controls/Toggle';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../types/IDialog';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import { readdirAsync } from '../../util/fs';
+import getVortexPath from '../../util/getVortexPath';
 import { log } from '../../util/log';
 import { spawnSelf } from '../../util/util';
 
@@ -69,7 +70,7 @@ class SettingsInterface extends ComponentEx<IProps, IState> {
   }
 
   public componentDidMount() {
-    const bundledLanguages = path.normalize(path.join(__dirname, '..', '..', '..', 'locales'));
+    const bundledLanguages = getVortexPath('locales');
     const userLanguages = path.normalize(path.join(remote.app.getPath('userData'), 'locales'));
 
     Promise.join(readdirAsync(bundledLanguages), readdirAsync(userLanguages).catch(err => []))

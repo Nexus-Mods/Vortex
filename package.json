@@ -9,7 +9,7 @@
     "url": "https://github.com/Nexus-Mods/Vortex"
   },
   "vortex": {
-    "electron": "1.8.2"
+    "electron": "1.8.4"
   },
   "scripts": {
     "_assets_out": "node InstallAssets.js out",
@@ -20,8 +20,10 @@
     "subprojects_app": "yarn run _update_submodules && node BuildSubprojects.js app",
     "build_api": "cd api && yarn run build",
     "build_rest": "yarn run _assets_out && yarn run build_api && yarn run subprojects",
+    "build_dist": "webpack --config webpack.main.config.js && webpack --config webpack.renderer.config.js",
+    "package": "electron-builder --config electron-builder-oneclick.json && electron-builder --config electron-builder-advanced.json",
     "predist": "yarn run --non-interactive build_api && yarn run --non-interactive _install_app && yarn run --non-interactive subprojects_app && yarn run --non-interactive _assets_app",
-    "dist": "electron-builder --config electron-builder-oneclick.json && electron-builder --config electron-builder-advanced.json",
+    "dist": "yarn run build_dist && yarn run package",
     "ci": "yarn run predist && electron-builder --config electron-builder-ci.json",
     "start": "cross-env NODE_ENV=development electron .",
     "clean": "yarn add rm-local-modules && rm-local-modules && yarn install --check-files",
@@ -126,7 +128,7 @@
     "copyfiles": "^1.2.0",
     "cross-env": "^5.1.0",
     "devtron": "^1.4.0",
-    "electron": "1.8.2",
+    "electron": "1.8.4",
     "electron-builder": "^20.0.4",
     "electron-debug": "^1.4.0",
     "electron-download-tf": "^4.3.4",
@@ -228,11 +230,16 @@
     "simple-vdf": "^1.1.0",
     "string-template": "^1.0.0",
     "tmp": "0.0.33",
+    "ts-loader": "^4.2.0",
     "turbowalk": "Nexus-Mods/node-turbowalk",
-    "typescript": "2.6.2",
+    "typescript": "^2.8.3",
+    "uglify-js": "^3.3.21",
     "uuid": "^3.1.0",
     "vortex-parse-ini": "Nexus-Mods/vortex-parse-ini",
-    "webpack": "^3.8.1",
+    "vortex-run": "link:src/util/vortex-run",
+    "webpack": "^4.6.0",
+    "webpack-cli": "^2.0.14",
+    "webpack-node-externals": "^1.7.2",
     "winreg": "^1.2.4",
     "winston": "^2.4.0",
     "ws": "^4.0.0",

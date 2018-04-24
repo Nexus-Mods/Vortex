@@ -26,7 +26,7 @@ import { FormControl } from 'react-bootstrap';
 import * as SortableTreeT from 'react-sortable-tree';
 import * as Redux from 'redux';
 
-const tree = lazyRequire<typeof SortableTreeT>('react-sortable-tree');
+const tree = lazyRequire<typeof SortableTreeT>(() => require('react-sortable-tree'));
 
 const nop = () => undefined;
 

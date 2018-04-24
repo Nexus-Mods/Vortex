@@ -4,34 +4,24 @@
 
 if (process.env.NODE_ENV === 'development') {
   // tslint:disable-next-line:no-var-requires
-  const rebuildRequire = require('./util/requireRebuild').default;
-  rebuildRequire();
-}
-
-import timeRequire from './util/timeRequire';
-let stopTime = timeRequire();
-
-if (process.env.NODE_ENV === 'production') {
-  // TODO: the following hacks should, supposedly increase react
-  //  performance by avoiding unnecessary "if (process.env.NODE_ENV === )"
-  //  calls and speeding up the rest by turning process.env into a static
-  //  object.
-  //  I have not yet made any benchmarks to verify that
-  // tslint:disable-next-line:no-var-requires no-submodule-imports
-  require('react/dist/react.min.js');
-  require.cache[require.resolve('react')] =
-    require.cache[require.resolve('react/dist/react.min.js')];
-
-  process.env = JSON.parse(JSON.stringify(process.env));
-} else {
-  // development environment
+  // const rebuildRequire = require('./util/requireRebuild').default;
+  // rebuildRequire();
   process.traceProcessWarnings = true;
+} else {
+  // webpack will replace every occurrence of process.env.NODE_ENV in its endeavour to eliminate
+  // dead code. It doesn't however set the environment variable itself for externals and the
+  // replacement means I can't set the actual environment variable directly anymore because
+  // "process.env.NODE_ENV = 'production'" would be converted to 'production' = 'production' at
+  // build time. So FU very much webpack
+  const key = 'NODE_ENV';
+  process.env[key] = 'production';
 }
+
+import getVortexPath from './util/getVortexPath';
 
 import * as path from 'path';
 
-process.env.SASS_BINARY_PATH = path.resolve(
-  path.dirname(path.dirname(require.resolve('node-sass'))), 'bin',
+process.env.SASS_BINARY_PATH = path.resolve(getVortexPath('modules'), 'node-sass', 'bin',
   `${process.platform}-${process.arch}-${process.versions.modules}`, 'node-sass.node');
 
 import { addNotification } from './actions/notifications';
@@ -68,8 +58,6 @@ import { getSafe } from './util/storeHelper';
 import { truthy } from './util/util';
 
 log('debug', 'renderer process started', { pid: process.pid });
-
-stopTime();
 
 const tempPath = path.join(remote.app.getPath('userData'), 'temp');
 remote.app.setPath('temp', tempPath);
@@ -129,19 +117,6 @@ const ignoredExceptions = new RegExp('(' + [
   'Cannot read property \'__reactInternalInstance.*\' of null',
 ].join('|') + ')');
 
-/*
-process.on('uncaughtException' as any, (error: any) => {
-  if (getMessageString(error).match(ignoredExceptions)) {
-    return;
-  } else if ((error.stack !== undefined)
-          && ((error.stack.indexOf('clickstream.js') !== -1)
-              || (error.stack.indexOf('cloudfront.net/w.js') !== -1))) {
-    // ignore errors from clickstream
-    return;
-  }
-  terminateFromError(error);
-});
-*/
 window.addEventListener('error', (evt: any) => {
   const {error} = evt;
   if ((error !== undefined)
@@ -164,8 +139,6 @@ window.addEventListener('unhandledrejection', (evt: any) => {
 });
 
 const eventEmitter: NodeJS.EventEmitter = new EventEmitter();
-
-stopTime = timeRequire();
 
 let enhancer = null;
 
@@ -197,7 +170,6 @@ let tFunc = (input, options) => input;
 const store: Store<any> = createStore(reducer(extReducers), enhancer);
 extensions.setStore(store);
 extensions.applyExtensionsOfExtensions();
-stopTime();
 log('debug', 'renderer connected to store');
 
 let startupFinished: () => void;

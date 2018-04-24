@@ -14,10 +14,13 @@ import getText from '../texts';
 
 import { remote } from 'electron';
 import * as update from 'immutability-helper';
-import opn = require('opn');
+import {} from 'opn';
 import * as React from 'react';
 import { ControlLabel, FormControl, FormGroup, HelpBlock, Image, Modal } from 'react-bootstrap';
 import * as Redux from 'redux';
+
+// tslint:disable-next-line:no-var-requires
+const opn = require('opn');
 
 export interface IBaseProps {
   visible: boolean;

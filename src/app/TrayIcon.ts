@@ -1,6 +1,8 @@
+import { IExtensionApi } from '../types/api';
+import getVortexPath from '../util/getVortexPath';
+
 import { app, Menu, NativeImage, Tray } from 'electron';
 import * as path from 'path';
-import { IExtensionApi } from '../types/api';
 
 class TrayIcon {
   private mTrayIcon: Electron.Tray;
@@ -10,7 +12,7 @@ class TrayIcon {
   constructor(api: IExtensionApi) {
     this.mApi = api;
     this.mImagePath = path.resolve(
-        __dirname, '..', 'assets', 'images',
+        getVortexPath('assets'), 'images',
         process.platform === 'win32' ? 'vortex.ico' : 'vortex.png');
     this.mTrayIcon = new Tray(this.mImagePath);
 
@@ -28,7 +30,7 @@ class TrayIcon {
   }
 
   private showNotification(title: string, content: string) {
-    const icon = path.resolve(__dirname, '..', 'assets', 'images', 'vortex.png');
+    const icon = path.join(getVortexPath('assets'), 'images', 'vortex.png');
     this.mTrayIcon.displayBalloon({
       title,
       content,

@@ -1,4 +1,4 @@
-import program = require('commander');
+import * as program from 'commander';
 import { app } from 'electron';
 
 export interface IParameters {

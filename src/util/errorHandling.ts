@@ -17,10 +17,13 @@ import {
 } from 'electron';
 import * as fs from 'fs-extra-promise';
 import NexusT from 'nexus-api';
-import opn = require('opn');
+import {} from 'opn';
 import * as os from 'os';
 import * as path from 'path';
 import {} from 'uuid';
+
+// tslint:disable-next-line:no-var-requires
+const opn = require('opn');
 
 // could be a bit more dynamic but how often is this going to change?
 const repo = 'Nexus-Mods/Vortex';

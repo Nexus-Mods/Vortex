@@ -13,16 +13,16 @@
 
 import { UserCanceled } from './CustomErrors';
 import { delayed } from './delayed';
-import runElevated from './elevated';
 
 import * as Promise from 'bluebird';
 import { dialog as dialogIn, remote } from 'electron';
 import * as fs from 'fs-extra-promise';
 import * as I18next from 'i18next';
-import ipc = require('node-ipc');
+import * as ipc from 'node-ipc';
 import * as path from 'path';
 import { getUserId } from 'permissions';
 import { generate as shortid } from 'shortid';
+import { runElevated } from 'vortex-run';
 
 const dialog = remote !== undefined ? remote.dialog : dialogIn;
 

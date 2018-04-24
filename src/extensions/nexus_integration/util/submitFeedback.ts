@@ -3,7 +3,7 @@ import { log } from '../../../util/log';
 
 import * as Promise from 'bluebird';
 import NexusT from 'nexus-api';
-import ZipT = require('node-7z');
+import ZipT from 'node-7z';
 import { tmpName } from 'tmp';
 
 export class TimeoutError extends Error {

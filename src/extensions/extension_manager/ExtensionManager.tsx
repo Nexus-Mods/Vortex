@@ -6,6 +6,7 @@ import { IExtensionLoadFailure, IExtensionState, IState } from '../../types/ISta
 import { ITableAttribute } from '../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import * as fs from '../../util/fs';
+import getVortexPath from '../../util/getVortexPath';
 import { getSafe } from '../../util/storeHelper';
 import { spawnSelf } from '../../util/util';
 import MainPage from '../../views/MainPage';
@@ -235,7 +236,7 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
   }
 
   private readExtensions() {
-    const bundledPath = path.resolve(__dirname, '..', '..', 'bundledPlugins');
+    const bundledPath = getVortexPath('bundledPlugins');
     const extensionsPath = path.join(remote.app.getPath('userData'), 'plugins');
     const extensions: { [extId: string]: IExtension } = {};
 

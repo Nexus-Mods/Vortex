@@ -1,4 +1,5 @@
 import {delayed} from '../util/delayed';
+import getVortexPath from '../util/getVortexPath';
 
 class SplashScreen {
   private mWindow: Electron.BrowserWindow = null;
@@ -53,7 +54,7 @@ class SplashScreen {
           sandbox: false,
         },
       });
-      this.mWindow.loadURL(`${__dirname}/../splash.html`);
+      this.mWindow.loadURL(`${getVortexPath('base')}/splash.html`);
       this.mWindow.once('ready-to-show', onReady);
     });
   }

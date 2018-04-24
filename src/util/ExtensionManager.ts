@@ -22,7 +22,6 @@ import { INotification } from '../types/INotification';
 import { IExtensionLoadFailure, IExtensionState } from '../types/IState';
 
 import { Archive } from './archives';
-import runElevated from './elevated';
 import lazyRequire from './lazyRequire';
 import { log } from './log';
 import { showError } from './message';
@@ -41,14 +40,19 @@ import * as fs from 'fs';
 import * as I18next from 'i18next';
 import { IHashResult, ILookupResult, IModInfo, IReference } from 'modmeta-db';
 import * as modmetaT from 'modmeta-db';
-const modmeta = lazyRequire<typeof modmetaT>('modmeta-db');
+const modmeta = lazyRequire<typeof modmetaT>(() => require('modmeta-db'));
 import * as path from 'path';
 import * as Redux from 'redux';
 import { types as ratypes } from 'redux-act';
-import ReduxWatcher = require('redux-watcher');
+import {} from 'redux-watcher';
 import * as rimraf from 'rimraf';
 import * as semver from 'semver';
 import { generate as shortid } from 'shortid';
+import { dynreq, runElevated } from 'vortex-run';
+import getVortexPath from './getVortexPath';
+
+// tslint:disable-next-line:no-var-requires
+const ReduxWatcher = require('redux-watcher');
 
 let app = appIn;
 let dialog = dialogIn;
@@ -56,10 +60,6 @@ let dialog = dialogIn;
 if (remote !== undefined) {
   app = remote.app;
   dialog = remote.dialog;
-}
-
-function asarUnpacked(input: string): string {
-  return input.replace('app.asar' + path.sep, 'app.asar.unpacked' + path.sep);
 }
 
 type DeployResult = 'auto' | 'yes' | 'skip' | 'cancel';
@@ -320,7 +320,7 @@ class ExtensionManager {
     // load the bundled ones last so a user can replace them
     return [
       path.join(app.getPath('userData'), 'plugins'),
-      asarUnpacked(path.resolve(__dirname, '..', 'bundledPlugins')),
+      getVortexPath('bundledPlugins'),
     ];
   }
 
@@ -773,7 +773,7 @@ class ExtensionManager {
     if (process.execPath.endsWith('electron.exe')) {
       // make it work when using the development version
       app.setAsDefaultProtocolClient(protocol, process.execPath,
-                                     [ path.resolve(__dirname, '..', '..'), '-d' ]);
+                                     [ getVortexPath('package'), '-d' ]);
     } else {
       app.setAsDefaultProtocolClient(protocol, process.execPath, [ '-d' ]);
     }
@@ -789,7 +789,7 @@ class ExtensionManager {
     if (process.execPath.endsWith('electron.exe')) {
       // make it work when using the development version
       app.removeAsDefaultProtocolClient(protocol, process.execPath,
-                                        [ path.resolve(__dirname, '..', '..') ]);
+                                        [ getVortexPath('package') ]);
     } else {
       app.removeAsDefaultProtocolClient(protocol);
     }
@@ -978,7 +978,7 @@ class ExtensionManager {
     if (fs.existsSync(indexPath)) {
       return {
         name: path.basename(extensionPath),
-        initFunc: require(indexPath).default,
+        initFunc: dynreq(indexPath).default,
         path: extensionPath,
       };
     } else {

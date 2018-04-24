@@ -10,7 +10,7 @@ import {reduxSanity, StateError} from './reduxSanity';
 
 import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
-import levelup = require('levelup');
+import * as levelup from 'levelup';
 import * as path from 'path';
 import * as Redux from 'redux';
 import { applyMiddleware, compose, createStore } from 'redux';
@@ -68,9 +68,7 @@ export function extendStore(store: Redux.Store<IState>,
   let queue = Promise.resolve();
   extensions.apply('registerPersistor', (hive: string, persistor: IPersistor,
                                          debounce?: number) => {
-    queue = queue.then(() => {
-      insertPersistor(hive, persistor);
-    });
+    queue = queue.then(() => insertPersistor(hive, persistor));
   });
   return queue;
 }

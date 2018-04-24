@@ -1,7 +1,6 @@
 import {IExtensionApi, IExtensionContext} from '../../types/IExtensionContext';
 import {ProcessCanceled, UserCanceled} from '../../util/CustomErrors';
 import { delayed } from '../../util/delayed';
-import * as elevatedT from '../../util/elevated';
 import * as fs from '../../util/fs';
 import lazyRequire from '../../util/lazyRequire';
 import { log } from '../../util/log';
@@ -17,15 +16,13 @@ import walk from './walk';
 
 import * as Promise from 'bluebird';
 import * as I18next from 'i18next';
-import ipc = require('node-ipc');
+import * as ipc from 'node-ipc';
 import * as path from 'path';
+import { runElevated } from 'vortex-run';
 
 import { remoteCode } from './remoteCode';
 
 ipc.config.logger = (message) => log('debug', 'ipc message', { message });
-
-const elevated =
-    lazyRequire<typeof elevatedT>('../../util/elevated', __dirname);
 
 class DeploymentMethod extends LinkingDeployment {
   public id: string;
@@ -208,7 +205,7 @@ class DeploymentMethod extends LinkingDeployment {
       ipc.server.on('error', err => {
         log('error', 'Failed to start symlink activator', err);
       });
-      return elevated.default(ipcPath, remoteCode, {}, __dirname)
+      return runElevated(ipcPath, remoteCode, {}, __dirname)
         .then(() => delayed(5000))
         .then(() => {
           if (!connected) {

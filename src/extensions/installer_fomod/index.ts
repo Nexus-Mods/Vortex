@@ -7,6 +7,7 @@ import {
 import {IState} from '../../types/IState';
 import { DataInvalid, ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
+import getVortexPath from '../../util/getVortexPath';
 import lazyRequire from '../../util/lazyRequire';
 import { log } from '../../util/log';
 import {truthy} from '../../util/util';
@@ -24,20 +25,14 @@ import InstallerDialog from './views/InstallerDialog';
 
 import * as Promise from 'bluebird';
 import * as edgeT from 'edge';
-const edge = lazyRequire<typeof edgeT>('edge');
+const edge = lazyRequire<typeof edgeT>(() => require('edge'));
 import * as path from 'path';
 import * as util from 'util';
 
 let testSupportedLib;
 let installLib;
 
-function dirname() {
-  return __dirname.replace('app.asar' + path.sep, 'app.asar.unpacked' + path.sep);
-}
-
-const basePath = process.env.NODE_ENV === 'development'
-      ? path.resolve(dirname(), '..', '..', '..', 'node_modules', 'fomod-installer', 'dist')
-      : path.resolve(dirname(), '..', '..', 'node_modules', 'fomod-installer', 'dist');
+const basePath = path.join(getVortexPath('modules'), 'fomod-installer', 'dist');
 
 function transformError(err: any): Error {
   if (typeof(err) === 'string') {

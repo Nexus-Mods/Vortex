@@ -4,7 +4,7 @@ import { getSafe } from '../../../util/storeHelper';
 
 import { app as appIn, remote } from 'electron';
 import * as path from 'path';
-import format = require('string-template');
+import * as format from 'string-template';
 
 const app = remote !== undefined ? remote.app : appIn;
 

@@ -11,8 +11,8 @@ import FileAssembler from './FileAssembler';
 import SpeedCalculator from './SpeedCalculator';
 
 import * as Promise from 'bluebird';
-import contentDisposition = require('content-disposition');
-import contentType = require('content-type');
+import * as contentDisposition from 'content-disposition';
+import * as contentType from 'content-type';
 import { remote } from 'electron';
 import * as http from 'http';
 import * as https from 'https';

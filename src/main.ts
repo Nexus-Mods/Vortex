@@ -2,16 +2,13 @@
  * entry point for the main process
  */
 
-import {} from './util/requireRebuild';
-
-if (process.env.NODE_ENV === 'development') {
-  // tslint:disable-next-line:no-var-requires
-  const rebuildRequire = require('./util/requireRebuild').default;
-  rebuildRequire();
+if (process.env.NODE_ENV !== 'development') {
+  // see renderer.ts for why this is so ugly
+  const key = 'NODE_ENV';
+  process.env[key] = 'production';
 }
 
-import timeRequire from './util/timeRequire';
-const stopTime = timeRequire();
+import {} from './util/requireRebuild';
 
 import Application from './app/Application';
 
@@ -22,10 +19,8 @@ import { sendReportFile, terminate, toError } from './util/errorHandling';
 import {} from './util/extensionRequire';
 import { log } from './util/log';
 
-import { app, crashReporter, dialog } from 'electron';
+import { app, dialog } from 'electron';
 import * as path from 'path';
-
-stopTime();
 
 /*
 crashReporter.start({

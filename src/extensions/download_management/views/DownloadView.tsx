@@ -14,7 +14,6 @@ import { IComponentContext } from '../../../types/IComponentContext';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
 import { IState } from '../../../types/IState';
 import { ITableAttribute } from '../../../types/ITableAttribute';
-import { Placeholder } from '../../../util/asyncRequire';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { ProcessCanceled, UserCanceled } from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';

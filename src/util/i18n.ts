@@ -4,13 +4,12 @@ import { log } from './log';
 import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import * as I18next from 'i18next';
-import FSBackend = require('i18next-node-fs-backend');
+import * as FSBackend from 'i18next-node-fs-backend';
 
 import * as path from 'path';
+import getVortexPath from './getVortexPath';
 
 const app = remote !== undefined ? remote.app : appIn;
-
-const dirName = path.dirname(path.dirname(__dirname));
 
 let debugging = false;
 let currentLanguage = 'en';
@@ -112,7 +111,7 @@ function init(language: string): Promise<IInitResult> {
           },
 
           backend: {
-            bundled: path.normalize(path.join(dirName, 'locales')),
+            bundled: getVortexPath('locales'),
             user: path.normalize(path.join(app.getPath('userData'), 'locales')),
           },
         },
