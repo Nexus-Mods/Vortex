@@ -54,7 +54,8 @@ export type CheckFunction = () => Promise<ITestResult>;
 export type RegisterSettings =
   (title: string,
    element: React.ComponentClass<any> | React.StatelessComponent<any>,
-   props?: PropsCallback) => void;
+   props?: PropsCallback,
+   visible?: () => boolean) => void;
 
 export type RegisterAction =
   (group: string,

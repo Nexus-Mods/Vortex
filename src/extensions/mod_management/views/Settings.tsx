@@ -109,7 +109,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     if (game === undefined) {
       return (
         <EmptyPlaceholder
-          icon='sliders'
+          icon='settings'
           text={t('Please select a game to manage first')}
           subtext={t('Settings on this page can be set for each game individually.')}
         />
