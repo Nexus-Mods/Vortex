@@ -214,5 +214,12 @@
       "module": "node-sass",
       "sources": ["node_modules/node-sass/build/Release/binding.node"]
     }
+  ], [
+    {
+      "type": "electron-rebuild",
+      "name": "edge-rebuild",
+      "module": "edge",
+      "sources": ["node_modules/edge/build/Release/binding.node"]
+    }
   ]
 ]
