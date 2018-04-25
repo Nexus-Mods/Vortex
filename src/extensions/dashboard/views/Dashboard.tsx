@@ -50,7 +50,7 @@ interface IComponentState {
 class Dashboard extends ComponentEx<IProps, IComponentState> {
   private mUpdateTimer: NodeJS.Timer;
   private mLayoutDebouncer: Debouncer;
-  private mWindow: Electron.BrowserWindow;
+  private mWindowFocused: boolean = true;
 
   constructor(props: IProps) {
     super(props);
@@ -66,7 +66,10 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
       return null;
     }, 500);
     // assuming this doesn't change?
-    this.mWindow = remote.getCurrentWindow();
+    const window = remote.getCurrentWindow();
+    this.mWindowFocused = window.isFocused();
+    window.on('focus', () => { this.mWindowFocused = true; });
+    window.on('blur', () => { this.mWindowFocused = false; });
   }
 
   public componentDidMount() {
@@ -136,8 +139,9 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
     //   in a way that doesn't properly signal for an update.
     //   it should be possible to make this unnecessary with makeReactive, but that requires
     //   testing
+
     this.mUpdateTimer = setTimeout(() => {
-      if (this.mWindow.isFocused()) {
+      if (this.mWindowFocused) {
         this.nextState.counter++;
       }
       this.startUpdateCycle();
