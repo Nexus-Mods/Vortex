@@ -3,7 +3,7 @@ import * as path from 'path';
 
 const app = remote !== undefined ? remote.app : appIn;
 
-export type AppPath = 'base' | 'assets' | 'modules' | 'modules_unpacked'
+export type AppPath = 'base' | 'assets' | 'assets_unpacked' | 'modules' | 'modules_unpacked'
                     | 'bundledPlugins' | 'locales' | 'package';
 
 /**
@@ -32,6 +32,11 @@ function getModulesPath(unpacked: boolean): string {
   }
   const asarPath = unpacked && isAsar ? basePath + '.unpacked' : basePath;
   return path.join(asarPath, 'node_modules');
+}
+
+function getAssets(unpacked: boolean): string {
+  const asarPath = unpacked && isAsar ? basePath + '.unpacked' : basePath;
+  return path.join(asarPath, 'assets');
 }
 
 function getBundledPluginsPath(): string {
@@ -69,7 +74,8 @@ function getVortexPath(id: AppPath): string {
   switch (id) {
     case 'base': return basePath;
     case 'package': return getPackagePath();
-    case 'assets': return path.join(basePath, 'assets');
+    case 'assets': return getAssets(false);
+    case 'assets_unpacked': return getAssets(true);
     case 'modules': return getModulesPath(false);
     case 'modules_unpacked': return getModulesPath(true);
     case 'bundledPlugins': return getBundledPluginsPath();

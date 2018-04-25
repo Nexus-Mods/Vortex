@@ -95,7 +95,7 @@ class StyleManager {
     // development builds are always versioned as 0.0.1
     const isDevel: boolean = app.getVersion() === '0.0.1';
 
-    const assetsPath = path.join(getVortexPath('assets'), 'css');
+    const assetsPath = path.join(getVortexPath('assets_unpacked'), 'css');
     const modulesPath = getVortexPath('modules_unpacked');
 
     return new Promise<void>((resolve, reject) => {
