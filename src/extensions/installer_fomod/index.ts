@@ -32,7 +32,7 @@ import * as util from 'util';
 let testSupportedLib;
 let installLib;
 
-const basePath = path.join(getVortexPath('modules'), 'fomod-installer', 'dist');
+const basePath = path.join(getVortexPath('modules_unpacked'), 'fomod-installer', 'dist');
 
 function transformError(err: any): Error {
   if (typeof(err) === 'string') {
