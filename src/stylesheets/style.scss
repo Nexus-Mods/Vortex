@@ -618,3 +618,27 @@ div:hover > .hover-expand {
 
 // /HIDPI
 /////////
+
+////////////////////////////////////////////////////////
+// only used to make scss variables available at runtime
+
+$colors: ( white: $white, gray-lighter: $gray-lighter, gray-light: $gray-light,
+          gray: $gray, gray-dark: $gray-dark, gray-darker: $gray-darker,
+            brand-primary: $brand-primary, brand-highlight: $brand-highlight,
+            brand-success: $brand-success, brand-info: $brand-info,
+            brand-warning: $brand-warning, brand-danger: $brand-danger,
+            brand-bg: $brand-bg, brand-menu: $brand-menu,
+            brand-clickable: $brand-clickable, brand-secondary: $brand-secondary,
+            text-color: $text-color, text-color-disabled: $text-color-disabled
+            );
+
+#variables {
+  .color {
+    @each $id,
+    $col in $colors {
+      .#{$id} {
+        color: $col;
+      }
+    }
+  }
+}
