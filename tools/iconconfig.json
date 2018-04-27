@@ -430,6 +430,10 @@
     "game-menu": {
       "path": "{fa}/plus-square",
       "rmFill": true
+    },
+    "groups": {
+      "path": "{nucleo}/design-development/{nucleo_simple}_layers",
+      "rmFill": true
     }
   }
 }

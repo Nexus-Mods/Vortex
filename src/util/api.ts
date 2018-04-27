@@ -32,7 +32,7 @@ import ReduxProp from './ReduxProp';
 import relativeTime from './relativeTime';
 import steam, { ISteamEntry } from './Steam';
 import runThreaded from './thread';
-import { bytesToString, copyFileAtomic, isNullOrWhitespace,
+import { bytesToString, copyFileAtomic, isNullOrWhitespace, objDiff,
          removePersistent, setdefault } from './util';
 import walk from './walk';
 
@@ -57,6 +57,7 @@ export {
   makeReactive,
   Normalize,
   NotSupportedError,
+  objDiff,
   ProcessCanceled,
   ReduxProp,
   relativeTime,
