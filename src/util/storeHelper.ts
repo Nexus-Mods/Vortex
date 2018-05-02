@@ -210,9 +210,10 @@ export function pushSafe<T>(state: T, path: Array<(string | number)>, value: any
 export function addUniqueSafe<T>(state: T, path: Array<(string | number)>, value: any): T {
   const copy = setDefaultArray(state, path, []);
   const arr = getSafe(copy, path, undefined);
-  if (arr.indexOf(value) === -1) {
-    arr.push(value);
+  if (arr.indexOf(value) !== -1) {
+    return state;
   }
+  arr.push(value);
   return copy;
 }
 
