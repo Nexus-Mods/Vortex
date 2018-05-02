@@ -3,10 +3,11 @@ import { mount, shallow } from 'enzyme';
 import * as React from 'react';
 
 function register(val) {
+  require('fs').writeFileSync('c:\\temp\\test3.txt', 'register');
   return 42;
 }
 
-let applyCalled;
+let applyCalled = 'bla';
 let MockComponent = () => <div>Dummy</div>;
 let WrapperComponent = extend(register)(MockComponent);
 
@@ -21,7 +22,6 @@ describe('extend', () => {
   let instance, wrapper;
 
   beforeEach(() => {
-    applyCalled = undefined;
     wrapper = shallow(<WrapperComponent />, {
       context: {
         extensions: dummyExtension
