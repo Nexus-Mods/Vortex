@@ -19,12 +19,12 @@ describe('dismissNotification', () => {
   let notification = { id: '42', message: 'test', type: 'info' };
   let input = { notifications: [ notification ] };
   it('removes the notification', () => {
-    let result = notificationsReducer.reducers.DISMISS_NOTIFICATION(input, '42');
+    let result = notificationsReducer.reducers.STOP_NOTIFICATION(input, '42');
     expect(result.notifications.length).toBe(0);
   });
 
   it('does nothing on an invalid id', () => {
-    let result = notificationsReducer.reducers.DISMISS_NOTIFICATION(input, '43');
+    let result = notificationsReducer.reducers.STOP_NOTIFICATION(input, '43');
     expect(result.notifications).toContain(notification);
   });
 });

@@ -109,6 +109,33 @@ describe('pushSafe', () => {
   });
 });
 
+describe('addUniqueSafe', () => {
+  it('leaves the original unmodified', () => {
+    let input = {};
+    helper.addUniqueSafe(input, [ 'someList' ], 'a');
+    expect(input).toEqual({});
+  });
+  it('inserts to a list if not present yet', () => {
+    let input = { someList: ['a'] };
+    let res = helper.addUniqueSafe(input, [ 'someList' ], 'b');
+    expect(res).toEqual({ someList: ['a', 'b'] });
+  });
+  it('returns original list of value exists', () => {
+    let input = { someList: ['a'] };
+    let res = helper.addUniqueSafe(input, [ 'someList' ], 'a');
+    expect(res).toEqual(input);
+  });
+  it('sets the value even if node missing', () => {
+    let res = helper.addUniqueSafe({}, [ 'someList' ], 'a');
+    expect(res).toEqual({ someList: ['a'] });
+  });
+  it('works with numeric path component', () => {
+    let input = { tl: [ { a: [ 1, 2 ] } ] };
+    let res = helper.addUniqueSafe(input, [ 'tl', 0, 'a' ], 3);
+    expect(res).toEqual({ tl: [ { a: [ 1, 2, 3 ] } ] });
+  });
+});
+
 describe('removeValue', () => {
   it('leaves the original unmodified', () => {
     let input = { someList: ['a', 'b', 'c'] };

@@ -1,4 +1,5 @@
 import { stateReducer } from '../src/extensions/download_management/reducers/state';
+import * as _ from 'lodash';
 
 jest.mock('../src/util/errorHandling', () => ({
   terminate: jest.genMockFunction(),
@@ -12,6 +13,8 @@ describe('addLocalDownload', () => {
     let result = stateReducer.reducers.ADD_LOCAL_DOWNLOAD(input,
       { id: 'newid', game: 'game', localPath: 'localPath', fileSize: 42 }
     );
+
+    _.unset(result, ['files', 'newid', 'fileTime']);
     expect(result).toEqual({ files: { newid:
       { state: 'finished', game: 'game', localPath: 'localPath', size: 42, chunks: [], urls: [], modInfo: {} }
     } });
@@ -35,9 +38,9 @@ describe('downloadProgress', () => {
   });
   it('sets the state to started', () => {
     const input = { files: { id: { state: 'init', received: 0, size: 43 } } };
-    const result = stateReducer.reducers.DOWNLOAD_PROGRESS(input, { id: 'id', received: 0, total: 43 });
+    const result = stateReducer.reducers.DOWNLOAD_PROGRESS(input, { id: 'id', received: 1, total: 43 });
     expect(result).toEqual({ files: { id:
-      { state: 'started', received: 0, size: 43 }
+      { state: 'started', received: 1, size: 43 }
     } });
   });
   it('does nothing if the id is unknown', () => {
@@ -51,12 +54,14 @@ describe('finishDownload', () => {
   it('finishes a download', () => {
     const input = { files: { id: { state: 'started' } } };
     const result = stateReducer.reducers.FINISH_DOWNLOAD(input, { id: 'id', state: 'finished' });
-    expect(result).toEqual({ files: { id: { state: 'finished' } } });
+    _.unset(result, ['files', 'id', 'fileTime']);
+    expect(result).toEqual({ files: { id: { chunks: [], failCause: undefined, state: 'finished' } } });
   });
   it('stores failure reason', () => {
     const input = { files: { id: { state: 'started' } } };
     const result = stateReducer.reducers.FINISH_DOWNLOAD(input, { id: 'id', state: 'failed', failCause: 'because error' });
-    expect(result).toEqual({ files: { id: { state: 'failed', failCause: 'because error' } } });
+    _.unset(result, ['files', 'id', 'fileTime']);
+    expect(result).toEqual({ files: { id: { chunks: [], state: 'failed', failCause: 'because error' } } });
   });
   it('does nothing if the id is unknown', () => {
     const input = { files: { id: { state: 'started' } } };
@@ -69,7 +74,10 @@ describe('initDownload', () => {
   it('initialises a download', () => {
     const input = { files: {} };
     const result = stateReducer.reducers.INIT_DOWNLOAD(input, { id: 'id', urls: ['url1', 'url2'], modInfo: { key: 'value' }, game: 'game' });
-    expect(result).toEqual({ files: { id: { chunks: [], state: 'init', urls: ['url1', 'url2'], modInfo: { key: 'value' }, game: 'game' } } });
+    _.unset(result, ['files', 'id', 'fileTime']);
+    expect(result).toEqual({ files: { id: {
+      chunks: [], state: 'init', urls: ['url1', 'url2'], modInfo: { key: 'value' }, game: 'game', fileMD5: undefined, localPath: undefined,
+    } } });
   });
   it('terminates if the id exists', () => {
     const input = { files: { id: { state: 'started' } } };
@@ -87,7 +95,7 @@ describe('pauseDownload', () => {
   it('resumes a paused download', () => {
     const input = { files: { id: { state: 'paused', received: 1, size: 2 } } };
     const result = stateReducer.reducers.PAUSE_DOWNLOAD(input, { id: 'id', paused: false });
-    expect(result).toEqual({ files: { id: { chunks: [], state: 'started', received: 1, size: 2 } } });
+    expect(result).toEqual({ files: { id: { state: 'started', received: 1, size: 2 } } });
   });
   it('does nothing if the id is unknown', () => {
     const input = { files: { id: { state: 'started', received: 1, size: 2 } } };
@@ -160,7 +168,7 @@ describe('startDownload', () => {
   it('sets the download state as started', () => {
     const input = { files: { id: { state: 'init' } } };
     const result = stateReducer.reducers.START_DOWNLOAD(input, { id: 'id' });
-    expect(result).toEqual({ files: { id: { state: 'started' } } });
+    expect(result.files.id.state).toEqual('started');
   });
   it('does nothing if the download is already finished', () => {
     const input = { files: { id: { state: 'finished' } } };
@@ -175,7 +183,8 @@ describe('startDownload', () => {
   it('does nothing if the id is unknown', () => {
     const input = { files: { id: { state: 'paused' } } };
     const result = stateReducer.reducers.START_DOWNLOAD(input, { id: 'differentid' });
-    expect(result).toBe(input);
+    _.unset(result, ['startTime']);
+    expect(result).toEqual(input);
   });
 });
 

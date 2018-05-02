@@ -10,6 +10,7 @@ describe('loadCategories', () => {
     }
     let action = actions.loadCategories('test', categories);
     expect(action).toEqual({
+      error: false, 
       type: 'LOAD_CATEGORIES',
       payload: { gameId: 'test', gameCategories: categories },
     });
@@ -19,6 +20,7 @@ describe('loadCategories', () => {
 describe('renameCategory', () => {
   it('creates the correct action', () => {
     expect(actions.renameCategory('test', 'cat1', 'New Name')).toEqual({
+      error: false,
       type: 'RENAME_CATEGORY',
       payload: { gameId: 'test', categoryId: 'cat1', name: 'New Name' },
     });
