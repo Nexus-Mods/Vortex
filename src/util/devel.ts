@@ -12,22 +12,22 @@ import * as Promise from 'bluebird';
 export function installDevelExtensions(): Promise<void> {
   return new Promise<void>((resolved, reject) => {
     if (process.env.NODE_ENV === 'development') {
-      const installExtension = require('electron-devtools-installer');
+      const installExtension = require('electron-devtools-installer').default;
       const {
         REACT_DEVELOPER_TOOLS,
         REACT_PERF,
         REDUX_DEVTOOLS } = require('electron-devtools-installer');
 
       try {
-        installExtension.default(REACT_DEVELOPER_TOOLS)
+        installExtension(REACT_DEVELOPER_TOOLS.id)
           .then((name) => log('info', 'Added Extension', name))
           .catch((err) => log('error', 'An error occurred: ', { error: err.message }));
 
-        installExtension.default(REACT_PERF)
+        installExtension(REACT_PERF.id)
           .then((name) => log('info', 'Added Extension', name))
           .catch((err) => log('error', 'An error occurred: ', { error: err.message }));
 
-        installExtension.default(REDUX_DEVTOOLS)
+        installExtension(REDUX_DEVTOOLS.id)
           .then((name) => log('info', 'Added Extension', name))
           .catch((err) => log('error', 'An error occurred: ', { error: err.message }));
       } catch (e) {
