@@ -1,3 +1,7 @@
+/**
+ * Helper functions when working with immutable state (or immutable objects in general)
+ */
+
 import { IGameStored } from '../extensions/gamemode_management/types/IGameStored';
 
 import { activeGameId } from './selectors';
@@ -187,17 +191,28 @@ function setDefaultArray<T>(state: T, path: Array<(string | number)>, fallback: 
 /**
  * push an item to an array inside state. This creates all intermediate
  * nodes and the array itself as necessary
- *
- * @export
- * @template T
- * @param {T} state
- * @param {string[]} path
- * @param {*} value
- * @returns {T}
+ * @param state immutable object to update
+ * @param path path to the item to update
+ * @param value the value to add.
  */
 export function pushSafe<T>(state: T, path: Array<(string | number)>, value: any): T {
   const copy = setDefaultArray(state, path, []);
   getSafe(copy, path, undefined).push(value);
+  return copy;
+}
+
+/**
+ * add an item to an array inside state but don't allow duplicates
+ * @param state immutable object to update
+ * @param path path to the item to update
+ * @param value the value to add.
+ */
+export function addUniqueSafe<T>(state: T, path: Array<(string | number)>, value: any): T {
+  const copy = setDefaultArray(state, path, []);
+  const arr = getSafe(copy, path, undefined);
+  if (arr.indexOf(value) === -1) {
+    arr.push(value);
+  }
   return copy;
 }
 
