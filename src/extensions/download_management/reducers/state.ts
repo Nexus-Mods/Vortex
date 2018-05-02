@@ -42,10 +42,12 @@ export const stateReducer: IReducerSpec = {
         return state;
       }
       const update = {
-        state: payload.received > 0 ? 'started' : 'init',
         received: payload.received,
         size: payload.total,
       };
+      if (state.files[payload.id].state === 'init') {
+        update['state'] = payload.received > 0 ? 'started' : 'init';
+      }
       if (payload.chunks !== undefined) {
         update['chunks'] = payload.chunks;
       }
