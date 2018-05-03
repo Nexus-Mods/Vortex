@@ -134,6 +134,7 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
           buttonType='text'
           orientation='vertical'
           filter={this.priorityButtons}
+          clickAnywhere={true}
         />
       </div>
     ), (

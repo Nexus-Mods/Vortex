@@ -27,6 +27,7 @@ export interface IBaseProps {
   filter?: (action: IActionDefinition) => boolean;
   icon?: string;
   pullRight?: boolean;
+  clickAnywhere?: boolean;
 }
 
 type IProps = IBaseProps & { actions?: IActionDefinitionEx[] } & React.HTMLAttributes<any>;
@@ -140,6 +141,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
   public context: { menuLayer: JSX.Element };
 
   private portalTargetRef: JSX.Element;
+  private mBackgroundClick: () => void;
 
   constructor(props: IProps) {
     super(props);
@@ -147,10 +149,16 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
     this.state = {
       open: false,
     };
+
+    this.updateBGClick();
+  }
+
+  public componentWillReceiveProps() {
+    this.updateBGClick();
   }
 
   public render(): JSX.Element {
-    const { actions, collapse, icon, id, instanceId,
+    const { actions, clickAnywhere, collapse, icon, id, instanceId,
             orientation, className, style } = this.props;
     const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
 
@@ -215,6 +223,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
           className={classes.join(' ')}
           style={style}
           vertical={orientation === 'vertical'}
+          onClick={this.mBackgroundClick}
         >
           {this.props.children}
           {actions.map(this.renderIcon)}
@@ -337,6 +346,14 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
       x: { $set: undefined },
       y: { $set: undefined },
     }));
+  }
+
+  private updateBGClick() {
+    const {actions, clickAnywhere, instanceId} = this.props;
+    const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
+    this.mBackgroundClick = ((clickAnywhere === true) && (actions.length === 1))
+      ? (() => actions[0].action(instanceIds))
+      : undefined;
   }
 }
 

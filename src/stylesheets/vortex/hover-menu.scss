@@ -11,18 +11,16 @@
   .hover-content {
     opacity: 0;
     transform: scale(0);
-    transition: opacity ease 300ms, transform ease 300ms;
-    background-color: rgba(215, 143, 70, 0.86);
+    transition: opacity ease 300ms;
+    background-color: rgba(0, 0, 0, 0.4);
     .buttons .btn {
-      background-color: $text-color;
-      color: $brand-clickable;
       border: 0px;
       display: flex;
       width: 100%;
       margin: 4px;
       &:hover {
-        background-color: darken($text-color, 10%);
-        color: $gray-darker;
+        background-color: $brand-clickable;
+        color: $text-color;
         transition-property: background-color;
         transition: ease-in-out 2ms;
       }
