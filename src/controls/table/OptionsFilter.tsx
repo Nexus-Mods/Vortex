@@ -70,6 +70,10 @@ class OptionsFilter implements ITableFilter {
       ? filtUnsane.indexOf(value) !== -1
       : filtUnsane === value;
   }
+
+  public isEmpty(filter: any): boolean {
+    return filter.length === 0;
+  }
 }
 
 export default OptionsFilter;

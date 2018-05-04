@@ -509,6 +509,10 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       const classes = [
         `header-${attribute.id}`,
       ];
+      if (truthy(filt)
+          && ((attribute.filter.isEmpty === undefined) || !attribute.filter.isEmpty(filt))) {
+        classes.push('table-filter-column');
+      }
       if (this.isSortColumn(attributeState)) {
         classes.push('table-sort-column');
       }
@@ -852,7 +856,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private filteredRows(props: IProps,
                        attributes: ITableAttribute[],
                        data: { [id: string]: any }) {
-    const { filter } = props;
+    const { advancedMode, filter } = props;
     const { calculatedValues } = this.state;
 
     if (filter === undefined) {
@@ -867,7 +871,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       }
       // return only elements for which we can't find a non-matching filter
       // (in other words: Keep only those items that match all filters)
-      return attributes.find(attribute => {
+      return !advancedMode
+          || (attributes.find(attribute => {
         if (attribute.filter === undefined) {
           return false;
         }
@@ -884,9 +889,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
           : calculatedValues[rowId][dataId];
 
         return truthy(filter[attribute.id])
-        && !attribute.filter.matches(filter[attribute.id], value,
-                                     this.context.api.store.getState());
-      }) === undefined;
+          && !attribute.filter.matches(filter[attribute.id], value,
+                                       this.context.api.store.getState());
+      }) === undefined);
     })
     .forEach(key => result[key] = data[key]);
     return result;

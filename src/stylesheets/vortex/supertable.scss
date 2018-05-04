@@ -23,6 +23,14 @@
   background-color: $brand-secondary;
 }
 
+.table-filter-column {
+  background-color: $brand-warning;
+}
+
+.table-sort-column {
+  background-color: $table-bg-active;
+}
+
 .table-main-pane {
   overflow-y: auto;
   flex: 1 1 0%;

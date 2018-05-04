@@ -81,6 +81,10 @@ class CategoryFilter implements ITableFilter {
     return allCategories.find(cat => filtList.has(cat)) !== undefined;
   }
 
+  public isEmpty(filter: any): boolean {
+    return filter.length === 0;
+  }
+
   private categoryChain(category: string, state: IState): string[] {
     const gameId = activeGameId(state);
     const categories = state.persistent.categories[gameId];

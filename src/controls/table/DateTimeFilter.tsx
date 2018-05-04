@@ -113,6 +113,10 @@ class DateTimeFilter implements ITableFilter {
       le: (lhs, rhs) => lhs <= rhs,
     }[comparison](roundToDay(input), roundToDay(new Date(value)));
   }
+
+  public isEmpty(filter: any): boolean {
+    return !truthy(filter) || !truthy(filter.value);
+  }
 }
 
 export default DateTimeFilter;

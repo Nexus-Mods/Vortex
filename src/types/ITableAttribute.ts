@@ -25,7 +25,15 @@ export interface IFilterProps {
 }
 
 export interface ITableFilter {
+  /**
+   * return true if value matches the filter
+   */
   matches: (filter: any, value: any, state: any) => boolean;
+  /**
+   * return true if the specified filter will not filter out any elements
+   * if not specified the filter will be assumed to be "empty" if it's not truthy
+   */
+  isEmpty?: (filter: any) => boolean;
   raw: string | boolean;
   component: React.ComponentClass<IFilterProps>;
   dataId?: string;
