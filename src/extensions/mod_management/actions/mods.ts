@@ -1,8 +1,7 @@
 import safeCreateAction from '../../../actions/safeCreateAction';
 
-import { IMod, ModState } from '../types/IMod';
+import { IMod, IModRule, ModState } from '../types/IMod';
 
-import { IRule } from 'modmeta-db';
 import * as reduxAct from 'redux-act';
 
 export const addMod = safeCreateAction('ADD_MOD',
@@ -45,13 +44,13 @@ export const setModType = safeCreateAction('SET_MOD_TYPE',
  * add a dependency rule for this mod
  */
 export const addModRule = safeCreateAction('ADD_MOD_RULE',
-  (gameId: string, modId: string, rule: IRule) => ({ gameId, modId, rule }));
+  (gameId: string, modId: string, rule: IModRule) => ({ gameId, modId, rule }));
 
 /**
  * remove a dependency rule from this mod
  */
 export const removeModRule = safeCreateAction('REMOVE_MOD_RULE',
-  (gameId: string, modId: string, rule: IRule) => ({ gameId, modId, rule }));
+  (gameId: string, modId: string, rule: IModRule) => ({ gameId, modId, rule }));
 
 export const setINITweakEnabled = safeCreateAction(
     'SET_TWEAK_ENABLED',

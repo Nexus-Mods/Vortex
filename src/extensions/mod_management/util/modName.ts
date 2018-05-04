@@ -6,6 +6,20 @@ export interface INameOptions {
   version: boolean;
 }
 
+export function modNameFromAttributes(mod: { [key: string]: any }, options?: INameOptions): string {
+  const fields = [];
+  fields.push(getSafe(mod, ['customFileName'],
+                      getSafe(mod, ['logicalFileName'],
+                              getSafe(mod, ['fileName'],
+                                      getSafe(mod, ['name'], '')))));
+
+  if (options !== undefined && options.version) {
+    fields.push(`(v${getSafe(mod, ['version'], '?')})`);
+  }
+
+  return fields.join(' ');
+}
+
 /**
  * determins the mod name to show to the user based on the mod attributes.
  * absolutely never use this function for anything other than showing the output
@@ -16,17 +30,7 @@ export interface INameOptions {
  * @returns {string}
  */
 function modName(mod: IMod, options?: INameOptions): string {
-  const fields = [];
-  fields.push(getSafe(mod.attributes, ['customFileName'],
-                      getSafe(mod.attributes, ['logicalFileName'],
-                              getSafe(mod.attributes, ['fileName'],
-                                      getSafe(mod.attributes, ['name'], '')))));
-
-  if (options !== undefined && options.version) {
-    fields.push(`(v${getSafe(mod.attributes, ['version'], '?')})`);
-  }
-
-  return fields.join(' ');
+  return modNameFromAttributes(mod.attributes, options);
 }
 
 export default modName;
