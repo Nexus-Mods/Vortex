@@ -17,10 +17,24 @@
 
 .table-selected {
   background-color: $table-bg-active;
+  // the following is needed so the row color takes precedence over the
+  // column color
+  .table-sort-column {
+    background-color: $table-bg-active;
+  }
+}
+
+.table-hover > .xtbody > .xtr:hover {
+  .table-sort-column {
+    background-color: $table-bg-hover;
+  }
 }
 
 .table-highlighted {
   background-color: $brand-secondary;
+  .table-sort-column {
+    background-color: $brand-secondary;
+  }
 }
 
 .table-filter-column {
@@ -28,7 +42,7 @@
 }
 
 .table-sort-column {
-  background-color: $table-bg-active;
+  background-color: darken($table-bg, 5%);
 }
 
 .table-main-pane {
