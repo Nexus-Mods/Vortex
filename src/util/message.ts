@@ -82,6 +82,13 @@ export function showInfo<S>(dispatch: Redux.Dispatch<S>, message: string, id?: s
   }));
 }
 
+export interface IErrorOptions {
+  replace?: { [key: string]: string };
+  isHTML?: boolean;
+  id?: string;
+  allowReport?: boolean;
+}
+
 /**
  * show an error notification with an optional "more" button that displays further details
  * in a modal dialog.
@@ -97,12 +104,7 @@ export function showInfo<S>(dispatch: Redux.Dispatch<S>, message: string, id?: s
 export function showError<S>(dispatch: Redux.Dispatch<S>,
                              message: string,
                              details?: string | Error | any,
-                             options?: {
-                              replace?: { [key: string]: string },
-                              isHTML?: boolean,
-                              id?: string,
-                              allowReport?: boolean,
-                            }) {
+                             options?: IErrorOptions) {
   const err = renderError(details);
 
   log('error', message, err);
