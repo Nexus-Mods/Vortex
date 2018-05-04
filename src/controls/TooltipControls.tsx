@@ -242,9 +242,11 @@ export class Icon extends React.Component<IconProps, {}> {
     delete relayProps.tooltip;
     delete relayProps.placement;
 
+    const classes = ['fake-link'].concat((this.props.className || '').split(' '));
+
     if (typeof (this.props.tooltip) === 'string') {
       return (
-        <a className='fake-link' title={this.props.tooltip}>
+        <a className={classes.join(' ')} title={this.props.tooltip}>
           <SvgIcon {...relayProps} />
         </a>
       );
@@ -258,7 +260,7 @@ export class Icon extends React.Component<IconProps, {}> {
           delayShow={300}
           delayHide={150}
         >
-          <a className='fake-link'><SvgIcon {...relayProps} /></a>
+          <a className={classes.join(' ')}><SvgIcon {...relayProps} /></a>
         </OverlayTrigger>
       );
     }

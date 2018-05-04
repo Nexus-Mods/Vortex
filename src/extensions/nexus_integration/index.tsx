@@ -56,8 +56,8 @@ import * as React from 'react';
 import { Button } from 'react-bootstrap';
 import { Interpolate } from 'react-i18next';
 import * as Redux from 'redux';
-import { generate as shortid } from 'shortid';
 import * as util from 'util';
+import {} from 'uuid';
 import * as WebSocket from 'ws';
 import { DownloadIsHTML } from '../download_management/DownloadManager';
 
@@ -686,7 +686,7 @@ function once(api: IExtensionApi) {
   });
 
   api.events.on('request-nexus-login', (callback: (err: Error) => void) => {
-    const id = shortid();
+    const id = require('uuid').v4();
     const connection =
       new WebSocket('wss://sso.nexusmods.com:8443')
         .on('open', () => {
