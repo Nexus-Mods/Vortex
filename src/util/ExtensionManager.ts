@@ -451,8 +451,8 @@ class ExtensionManager {
     if (ipcRenderer !== undefined) {
       ipcRenderer.on('send-notification',
         (event, notification) => this.mApi.sendNotification(notification));
-      ipcRenderer.on('show-error-notification',
-        (event, message, details) => this.mApi.showErrorNotification(message, details));
+      ipcRenderer.on('show-error-notification', (event, message, details, options) =>
+        this.mApi.showErrorNotification(message, details, options));
 
       store.dispatch(setExtensionLoadFailures(this.mLoadFailures));
     }
@@ -469,13 +469,13 @@ class ExtensionManager {
    */
   public setupApiMain<S>(store: Redux.Store<S>, ipc: Electron.WebContents) {
     this.mApi.showErrorNotification =
-        (message: string, details: string | Error) => {
+        (message: string, details: string | Error, options: IErrorOptions) => {
           // unfortunately it appears we can't send an error object via ipc
           const errMessage = typeof(details) === 'string'
             ? details
             : details.message + '\n' + details.stack;
           try {
-            ipc.send('show-error-notification', message, errMessage);
+            ipc.send('show-error-notification', message, errMessage, options);
           } catch (err) {
             // this may happen if the ipc has already been destroyed
             this.showErrorBox(message, details);
