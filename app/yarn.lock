@@ -3539,9 +3539,8 @@ vortex-parse-ini@Nexus-Mods/vortex-parse-ini:
     lodash "^4.17.4"
     ref "^1.3.4"
 
-"vortex-run@link:../src/util/vortex-run":
-  version "0.0.0"
-  uid ""
+"vortex-run@file:../src/util/vortex-run":
+  version "0.0.1"
 
 warning@^3.0.0:
   version "3.0.0"

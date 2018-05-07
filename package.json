@@ -238,7 +238,7 @@
     "uglify-js": "^3.3.21",
     "uuid": "^3.1.0",
     "vortex-parse-ini": "Nexus-Mods/vortex-parse-ini",
-    "vortex-run": "link:src/util/vortex-run",
+    "vortex-run": "file:src/util/vortex-run",
     "webpack": "^4.6.0",
     "webpack-cli": "^2.0.14",
     "webpack-node-externals": "^1.7.2",

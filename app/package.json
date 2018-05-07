@@ -91,7 +91,7 @@
     "turbowalk": "Nexus-Mods/node-turbowalk",
     "uuid": "^3.1.0",
     "vortex-parse-ini": "Nexus-Mods/vortex-parse-ini",
-    "vortex-run": "link:../src/util/vortex-run",
+    "vortex-run": "file:../src/util/vortex-run",
     "winreg": "^1.2.4",
     "winston": "^2.4.0",
     "ws": "^4.0.0",
