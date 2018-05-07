@@ -15,7 +15,7 @@ export type AppPath = 'base' | 'assets' | 'assets_unpacked' | 'modules' | 'modul
 let basePath = app.getAppPath();
 const isDevelopment = path.basename(basePath, '.asar') !== 'app';
 const isAsar = !isDevelopment && (path.extname(basePath) === '.asar');
-const applicationPath = (isDevelopment)
+const applicationPath = isDevelopment
   ? basePath
   : path.resolve(path.dirname(basePath), '..');
 

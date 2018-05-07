@@ -153,9 +153,7 @@ function runElevated(ipcPath: string, func: (ipc: any) => void,
         return reject(err);
       }
 
-      const projectRoot = process.env.NODE_ENV === 'development'
-        ? path.resolve(__dirname, '../../node_modules').split('\\').join('/')
-        : path.resolve(__dirname, '../node_modules').split('\\').join('/');
+      const projectRoot = path.resolve(__dirname, '../..').split('\\').join('/');
       if (moduleBase === undefined) {
         moduleBase = __dirname;
       }
