@@ -4,6 +4,7 @@ import { INotification } from '../types/INotification';
 import * as path from 'path';
 
 import { log } from '../util/log';
+import getVortexPath from './getVortexPath';
 
 declare var Notification: any;
 
@@ -58,7 +59,7 @@ class GlobalNotifications {
     try {
       this.mCurrentNotification = new Notification(notification.title, {
         tag: notification.id,
-        icon: notification.icon || path.resolve(__dirname, '..', 'assets', 'images', 'vortex.ico'),
+        icon: notification.icon || path.resolve(getVortexPath('assets'), 'images', 'vortex.ico'),
         body: notification.message,
         requireInteraction: true,
       });

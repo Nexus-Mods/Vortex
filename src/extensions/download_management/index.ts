@@ -227,13 +227,13 @@ function init(context: IExtensionContextExt): boolean {
     });
 
   context.registerMainPage('download', 'Downloads',
-                           LazyComponent('./views/DownloadView', __dirname), {
+                           LazyComponent(() => require('./views/DownloadView')), {
                              hotkey: 'D',
                              group: 'global',
                              badge: downloadCount,
                            });
 
-  context.registerSettings('Download', LazyComponent('./views/Settings', __dirname));
+  context.registerSettings('Download', LazyComponent(() => require('./views/Settings')));
 
   context.registerFooter('speed-o-meter', SpeedOMeter);
 

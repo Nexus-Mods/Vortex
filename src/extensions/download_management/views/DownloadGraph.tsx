@@ -1,5 +1,4 @@
 import {IState} from '../../../types/IState';
-import asyncRequire from '../../../util/asyncRequire';
 import {ComponentEx, connect} from '../../../util/ComponentEx';
 import { log } from '../../../util/log';
 import { bytesToString, truthy } from '../../../util/util';
@@ -40,14 +39,8 @@ class DownloadGraph extends ComponentEx<IProps, IComponentState> {
   }
 
   public componentWillMount() {
-    asyncRequire('recharts')
-    .then((rechartsIn) => {
-      recharts = rechartsIn;
-      this.forceUpdate();
-    })
-    .catch((err) => {
-      log('error', 'failed to load recharts', { err });
-    });
+    recharts = require('recharts');
+    this.forceUpdate();
   }
 
   public componentDidMount() {

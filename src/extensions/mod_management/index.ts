@@ -620,7 +620,7 @@ function init(context: IExtensionContext): boolean {
   ], (activity: string[]) => (activity !== undefined) && (activity.length > 0));
 
   context.registerMainPage('mods', 'Mods',
-    LazyComponent('./views/ModList', __dirname), {
+    LazyComponent(() => require('./views/ModList')), {
     hotkey: 'M',
     group: 'per-game',
     visible: () => activeGameId(context.api.store.getState()) !== undefined,
@@ -643,11 +643,11 @@ function init(context: IExtensionContext): boolean {
   context.registerTest('valid-activator', 'gamemode-activated', validActivatorCheck);
   context.registerTest('valid-activator', 'settings-changed', validActivatorCheck);
 
-  context.registerSettings('Mods', LazyComponent('./views/Settings', __dirname),
+  context.registerSettings('Mods', LazyComponent(() => require('./views/Settings')),
                            () => ({activators}));
 
   context.registerDialog('external-changes',
-                         LazyComponent('./views/ExternalChangeDialog', __dirname));
+                         LazyComponent(() => require('./views/ExternalChangeDialog')));
 
   context.registerReducer(['session', 'externalChanges'], externalChangesReducer);
   context.registerReducer(['settings', 'mods'], settingsReducer);

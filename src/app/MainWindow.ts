@@ -2,11 +2,14 @@ import {addNotification} from '../actions/notifications';
 import {setMaximized, setWindowPosition,  setWindowSize} from '../actions/window';
 import {IState, IWindow} from '../types/IState';
 import Debouncer from '../util/Debouncer';
+import { log } from '../util/log';
 import * as storeHelperT from '../util/storeHelper';
 
 import * as Promise from 'bluebird';
-import { screen } from 'electron';
+import { dialog, screen } from 'electron';
 import * as Redux from 'redux';
+import { terminate } from '../util/errorHandling';
+import getVortexPath from '../util/getVortexPath';
 
 class MainWindow {
   private mWindow: Electron.BrowserWindow = null;
@@ -14,6 +17,7 @@ class MainWindow {
   // store
   private mResizeDebouncer: Debouncer;
   private mMoveDebouncer: Debouncer;
+  private mShown: boolean;
 
   constructor(store: Redux.Store<IState>) {
     this.mResizeDebouncer = new Debouncer(() => {
@@ -42,12 +46,31 @@ class MainWindow {
 
     this.mWindow = new BrowserWindow(this.getWindowSettings(store.getState().settings.window));
 
-    this.mWindow.loadURL(`file://${__dirname}/../index.html`);
-    // this.mWindow.loadURL(`file://${__dirname}/../index.html?react_perf`);
+    this.mWindow.loadURL(`file://${getVortexPath('base')}/index.html`);
+    // this.mWindow.loadURL(`file://${getVortexPath('base')}/index.html?react_perf`);
 
     // opening the devtools automatically can be very useful if the renderer has
     // trouble loading the page
     // this.mWindow.webContents.openDevTools();
+    this.mWindow.webContents.on('console-message' as any,
+      (evt: Electron.Event, level: number, message: string, ...rest) => {
+        if (level !== 2) {
+          log('info', message, { rest });
+        } else {
+          setTimeout(() => {
+            if (!this.mShown) {
+              terminate({ message }, {});
+            }
+          }, 5000);
+        }
+      });
+
+    this.mWindow.webContents.on('crashed',
+      (evt, killed) => log('error', killed ? 'killed' : 'crashed'));
+
+    this.mWindow.webContents.on('did-fail-load', (evt, code, description, url) => {
+      log('error', 'failed to load page', { code, description, url });
+    });
 
     this.mWindow.webContents.session.on(
         'will-download', (event, item, webContents) => {
@@ -79,6 +102,7 @@ class MainWindow {
 
   public show(maximized: boolean) {
     const {getSafe} = require('../util/storeHelper') as typeof storeHelperT;
+    this.mShown = true;
     this.mWindow.show();
     if (maximized) {
       this.mWindow.maximize();

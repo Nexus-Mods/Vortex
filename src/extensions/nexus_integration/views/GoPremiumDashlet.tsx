@@ -1,9 +1,12 @@
+import Dashlet from '../../../controls/Dashlet';
 import { ComponentEx, translate } from '../../../util/ComponentEx';
 
-import opn = require('opn');
+import {} from 'opn';
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
-import Dashlet from '../../../controls/Dashlet';
+
+// tslint:disable-next-line:no-var-requires
+const opn = require('opn');
 
 class GoPremiumDashlet extends ComponentEx<{}, {}> {
   public render(): JSX.Element {

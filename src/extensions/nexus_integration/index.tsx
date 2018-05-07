@@ -50,7 +50,7 @@ import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import * as I18next from 'i18next';
 import NexusT, { IDownloadURL, IFileInfo, IModInfo, NexusError as NexusErrorT } from 'nexus-api';
-import opn = require('opn');
+import {} from 'opn';
 import * as path from 'path';
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
@@ -60,6 +60,9 @@ import * as util from 'util';
 import {} from 'uuid';
 import * as WebSocket from 'ws';
 import { DownloadIsHTML } from '../download_management/DownloadManager';
+
+// tslint:disable-next-line:no-var-requires
+const opn = require('opn');
 
 type IModWithState = IMod & IProfileMod;
 
@@ -687,29 +690,34 @@ function once(api: IExtensionApi) {
 
   api.events.on('request-nexus-login', (callback: (err: Error) => void) => {
     const id = require('uuid').v4();
-    const connection =
-      new WebSocket('wss://sso.nexusmods.com:8443')
-        .on('open', () => {
-      connection.send(JSON.stringify({
-        id, appid: 'Vortex',
-      }));
-      opn(`https://www.nexusmods.com/sso?id=${id}`).catch(err => undefined);
-    })
-    .on('message', data => {
-      if (data.toString() !== 'Oh, Hi!') {
+    const connection = new WebSocket('wss://sso.nexusmods.com:8443')
+      .on('open', () => {
+        connection.send(JSON.stringify({
+          id, appid: 'Vortex',
+        }), err => {
+          if (err) {
+            api.showErrorNotification('Failed to start login', err);
+            connection.close();
+          }
+        });
+        opn(`https://www.nexusmods.com/sso?id=${id}`).catch(err => undefined);
+      })
+      .on('message', data => {
+        if (data.toString() !== 'Oh, Hi!') {
+          connection.close();
+          api.store.dispatch(setUserAPIKey(data.toString()));
+          remote.getCurrentWindow().setAlwaysOnTop(true);
+          remote.getCurrentWindow().show();
+          remote.getCurrentWindow().setAlwaysOnTop(false);
+          callback(null);
+        }
+      })
+      .on('error', error => {
+        api.showErrorNotification('Failed to connect to nexusmods.com', error, {
+          allowReport: false,
+        });
         connection.close();
-        api.store.dispatch(setUserAPIKey(data.toString()));
-        remote.getCurrentWindow().setAlwaysOnTop(true);
-        remote.getCurrentWindow().show();
-        remote.getCurrentWindow().setAlwaysOnTop(false);
-        callback(null);
-      }
-    })
-    .on('error', error => {
-      api.showErrorNotification('Failed to connect to nexusmods.com', error, {
-        allowReport: false,
       });
-     });
   });
 
   api.onStateChange(['settings', 'nexus', 'associateNXM'],
@@ -780,7 +788,7 @@ function goBuyPremium() {
 
 function init(context: IExtensionContextExt): boolean {
   context.registerAction('application-icons', 200, LoginIcon, {}, () => ({ nexus }));
-  context.registerSettings('Download', LazyComponent('./views/Settings', __dirname));
+  context.registerSettings('Download', LazyComponent(() => require('./views/Settings')));
   context.registerReducer(['confidential', 'account', 'nexus'], accountReducer);
   context.registerReducer(['settings', 'nexus'], settingsReducer);
   context.registerReducer(['session', 'nexus'], sessionReducer);

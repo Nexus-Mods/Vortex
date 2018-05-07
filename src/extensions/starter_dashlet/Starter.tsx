@@ -6,7 +6,6 @@ import Icon from '../../controls/Icon';
 import Spinner from '../../controls/Spinner';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../types/IDialog';
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
-import asyncRequire, { Placeholder } from '../../util/asyncRequire';
 import { ComponentEx, connect } from '../../util/ComponentEx';
 import { UserCanceled } from '../../util/CustomErrors';
 import { log } from '../../util/log';
@@ -30,7 +29,7 @@ import { setPrimaryTool } from './actions';
 
 import ToolButton from './ToolButton';
 import ToolEditDialogT from './ToolEditDialog';
-let ToolEditDialog: typeof ToolEditDialogT = Placeholder as any;
+let ToolEditDialog: typeof ToolEditDialogT;
 
 import * as Promise from 'bluebird';
 import * as update from 'immutability-helper';
@@ -82,13 +81,10 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
   public componentDidMount() {
     this.mRef = ReactDOM.findDOMNode(this);
     this.mIsMounted = true;
-    asyncRequire('./ToolEditDialog', __dirname)
-      .then(moduleIn => {
-        ToolEditDialog = moduleIn.default;
-        if (this.mIsMounted) {
-          this.forceUpdate();
-        }
-      });
+    ToolEditDialog = require('./ToolEditDialog').default;
+    if (this.mIsMounted) {
+      this.forceUpdate();
+    }
   }
 
   public componentWillUnmount() {

@@ -14,13 +14,11 @@ import resolvePath from '../extensions/mod_management/util/resolvePath';
 import sortMods from '../extensions/mod_management/util/sort';
 import testModReference from '../extensions/mod_management/util/testModReference';
 import { Archive } from './archives';
-import AsyncComponent from './AsyncComponent';
 import copyRecursive from './copyRecursive';
 import { DataInvalid, NotSupportedError, ProcessCanceled,
          SetupError, UserCanceled } from './CustomErrors';
 import Debouncer from './Debouncer';
 import delayed from './delayed';
-import runElevated from './elevated';
 import { terminate } from './errorHandling';
 import { extend } from './ExtensionProvider';
 import getNormalizeFunc, { Normalize } from './getNormalizeFunc';
@@ -31,14 +29,14 @@ import makeReactive from './makeReactive';
 import ReduxProp from './ReduxProp';
 import relativeTime from './relativeTime';
 import steam, { ISteamEntry } from './Steam';
-import runThreaded from './thread';
 import { bytesToString, copyFileAtomic, isNullOrWhitespace, objDiff,
          removePersistent, setdefault } from './util';
 import walk from './walk';
 
+import { runElevated, runThreaded } from 'vortex-run';
+
 export {
   Archive,
-  AsyncComponent,
   bytesToString,
   copyFileAtomic,
   copyRecursive,

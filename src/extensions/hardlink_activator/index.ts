@@ -82,7 +82,7 @@ class DeploymentMethod extends LinkingDeployment {
     } catch (err) {
       // this can happen when managing the the game for the first time
       log('info', 'failed to stat. directory missing?', {
-        dir1: installPath(state), dir2: modPaths[typeId],
+        dir1: installPath(state) || 'undefined', dir2: modPaths[typeId],
         err: util.inspect(err),
       });
       return 'Game not fully initialized yet, this should disappear soon.';

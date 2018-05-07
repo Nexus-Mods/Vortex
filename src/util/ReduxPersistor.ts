@@ -125,7 +125,7 @@ class ReduxPersistor<T> {
           : Promise.resolve()))
       .then(() => undefined);
     } else {
-      persistor.setItem(statePath, this.serialize(newState));
+      return persistor.setItem(statePath, this.serialize(newState));
     }
   }
 

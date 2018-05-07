@@ -32,7 +32,7 @@ import { allow } from 'permissions';
 import * as Redux from 'redux';
 import * as uuidT from 'uuid';
 
-const uuid = lazyRequire<typeof uuidT>('uuid');
+const uuid = lazyRequire<typeof uuidT>(() => require('uuid'));
 
 function last(array: any[]): any {
   if (array.length === 0) {

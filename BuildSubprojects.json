@@ -210,39 +210,6 @@
     {
       "type": "electron-rebuild",
       "condition": "buildType !== 'out'",
-      "name": "exe-version-rebuild",
-      "module": "exe-version",
-      "sources": ["node_modules/exe-version/src/*", "node_modules/exe-version/binding.gyp", "node_modules/exe-version/*.js",
-                  "node_modules/exe-version/package.json"]
-    }
-  ], [
-    {
-      "type": "electron-rebuild",
-      "condition": "buildType !== 'out'",
-      "name": "icon-extract-rebuild",
-      "module": "icon-extract",
-      "sources": ["node_modules/icon-extract/build/Release/IconExtractor.node"]
-    }
-  ], [
-    {
-      "type": "electron-rebuild",
-      "condition": "buildType !== 'out'",
-      "name": "ffi-rebuild",
-      "module": "ffi",
-      "sources": ["node_modules/ffi/src/*", "node_modules/ffi/package.json"]
-    }
-  ], [
-    {
-      "type": "electron-rebuild",
-      "condition": "buildType !== 'out'",
-      "name": "ref-rebuild",
-      "module": "ref",
-      "sources": ["node_modules/ref/src/*", "node_modules/ref/package.json"]
-    }
-  ], [
-    {
-      "type": "electron-rebuild",
-      "condition": "buildType !== 'out'",
       "name": "node-sass-rebuild",
       "module": "node-sass",
       "sources": ["node_modules/node-sass/build/Release/binding.node"]
@@ -253,54 +220,6 @@
       "name": "edge-rebuild",
       "module": "edge",
       "sources": ["node_modules/edge/build/Release/binding.node"]
-    }
-  ], [
-    {
-      "type": "electron-rebuild",
-      "condition": "buildType !== 'out'",
-      "name": "leveldown-rebuild",
-      "module": "leveldown",
-      "sources": ["node_modules/leveldown/build/Release/leveldown.node"]
-    }
-  ], [
-    {
-      "type": "electron-rebuild",
-      "condition": "buildType !== 'out'",
-      "name": "drivelist-rebuild",
-      "module": "drivelist",
-      "sources": ["node_modules/drivelist/build/Release/drivelist.node"]
-    }
-  ], [
-    {
-      "type": "electron-rebuild",
-      "condition": "buildType !== 'out'",
-      "name": "libxmljs-rebuild",
-      "module": "libxmljs",
-      "sources": ["node_modules/libxmljs/build/Release/xmljs.node"]
-    }
-  ], [
-    {
-      "type": "electron-rebuild",
-      "condition": "buildType !== 'out'",
-      "name": "turbowalk-rebuild",
-      "module": "turbowalk",
-      "sources": ["node_modules/turbowalk/build/Release/turbowalk.node"]
-    }
-  ], [
-    {
-      "type": "electron-rebuild",
-      "condition": "buildType !== 'out'",
-      "name": "permissions-rebuild",
-      "module": "permissions",
-      "sources": ["node_modules/permissions/build/Release/permissions.node"]
-    }
-  ], [
-    {
-      "type": "electron-rebuild",
-      "condition": "buildType !== 'out'",
-      "name": "crash-dump-rebuild",
-      "module": "crash-dump",
-      "sources": ["node_modules/crash-dump/build/Release/crash-dump.node"]
     }
   ]
 ]

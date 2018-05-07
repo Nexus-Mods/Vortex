@@ -34,7 +34,7 @@ import deriveModInstallName from './modIdManager';
 import * as Promise from 'bluebird';
 import * as I18next from 'i18next';
 import { IHashResult, ILookupResult, IReference, IRule } from 'modmeta-db';
-import ZipT = require('node-7z');
+import * as ZipT from 'node-7z';
 import * as os from 'os';
 import * as path from 'path';
 import * as Redux from 'redux';

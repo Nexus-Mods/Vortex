@@ -1,17 +1,5 @@
 {
-  "spawn": [
-    {
-      "executable": "tsc",
-      "arguments": [
-        "-p",
-        ".",
-        "--outDir", "app"
-      ],
-      "target": [
-        "app"
-      ]
-    }
-  ],
+  "spawn": [],
   "copy": [
     {
       "srcPath": "./LICENSE.md",

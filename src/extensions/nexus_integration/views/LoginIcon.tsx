@@ -11,10 +11,13 @@ import LoginDialog from './LoginDialog';
 
 import * as update from 'immutability-helper';
 import NexusT from 'nexus-api';
-import opn = require('opn');
+import {} from 'opn';
 import * as React from 'react';
 import { ControlLabel, Form, FormGroup, Image } from 'react-bootstrap';
 import * as Redux from 'redux';
+
+// tslint:disable-next-line:no-var-requires
+const opn = require('opn');
 
 export interface IBaseProps {
   nexus: NexusT;
