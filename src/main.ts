@@ -2,6 +2,9 @@
  * entry point for the main process
  */
 
+import * as sourceMapSupport from 'source-map-support';
+sourceMapSupport.install();
+
 if (process.env.NODE_ENV !== 'development') {
   // see renderer.ts for why this is so ugly
   const key = 'NODE_ENV';
