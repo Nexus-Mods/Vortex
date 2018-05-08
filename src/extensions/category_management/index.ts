@@ -5,6 +5,7 @@ import { showError } from '../../util/message';
 import { activeGameId } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 
+import { setDownloadModInfo } from '../download_management/actions/state';
 import { setModAttribute } from '../mod_management/actions/mods';
 import { IModWithState } from '../mod_management/types/IModProps';
 
@@ -71,13 +72,17 @@ function init(context: IExtensionContext): boolean {
     calc: (mod: IModWithState) =>
       resolveCategoryPath(getModCategory(mod), context.api.store.getState()),
     edit: {
-      readOnly: (mod: IModWithState) => mod.state === 'downloaded',
       choices: () => getCategoryChoices(context.api.store.getState()),
       onChangeValue: (rows: IModWithState[], newValue: any) => {
         const gameMode = activeGameId(context.api.store.getState());
         rows.forEach(row => {
-          context.api.store.dispatch(
-              setModAttribute(gameMode, row.id, 'category', newValue));
+          if (row.state === 'downloaded') {
+            context.api.store.dispatch(
+              setDownloadModInfo(row.id, 'custom.category', newValue));
+          } else {
+            context.api.store.dispatch(
+                setModAttribute(gameMode, row.id, 'category', newValue));
+          }
         });
       },
     },

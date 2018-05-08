@@ -89,6 +89,12 @@ function attributeExtractor(input: any) {
   });
 }
 
+function attributeExtractorCustom(input: any) {
+  return Promise.resolve({
+    category: getSafe(input, ['download', 'modInfo', 'custom', 'category'], undefined),
+  });
+}
+
 function genDownloadChangeHandler(store: Redux.Store<any>,
                                   nameIdMap: { [name: string]: string }) {
   const currentDownloadPath = selectors.downloadPath(store.getState());
@@ -245,6 +251,7 @@ function init(context: IExtensionContextExt): boolean {
   };
 
   context.registerAttributeExtractor(150, attributeExtractor);
+  context.registerAttributeExtractor(25, attributeExtractorCustom);
 
   context.once(() => {
     const DownloadManagerImpl: typeof DownloadManager = require('./DownloadManager').default;

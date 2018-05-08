@@ -1,4 +1,4 @@
-import { IState } from '../../../types/IState';
+import { IDownload, IState } from '../../../types/IState';
 import { IFilterProps, ITableFilter } from '../../../types/ITableAttribute';
 import { connect } from '../../../util/ComponentEx';
 import { getSafe } from '../../../util/storeHelper';
@@ -6,28 +6,72 @@ import { truthy } from '../../../util/util';
 
 import { ICategoryDictionary } from '../../category_management/types/ICategoryDictionary';
 import { IMod } from '../../mod_management/types/IMod';
+import filterModInfo from '../../mod_management/util/filterModInfo';
 import { activeGameId } from '../../profile_management/selectors';
 
+import * as Promise from 'bluebird';
+import * as _ from 'lodash';
 import * as React from 'react';
 import Select from 'react-select';
 
 interface IConnectedProps {
+  gameId: string;
   categories: ICategoryDictionary;
   mods: { [modId: string]: IMod };
+  downloads: { [archiveId: string]: IDownload };
 }
 
 type IProps = IFilterProps & IConnectedProps;
 
-class CategoryFilterComponent extends React.Component<IProps, {}> {
+interface IComponentState {
+  archiveCategories: { [archiveId: string]: string };
+}
+
+class CategoryFilterComponent extends React.Component<IProps, IComponentState> {
+  constructor(props: IProps) {
+    super(props);
+    this.state = {
+      archiveCategories: {},
+    };
+  }
+
+  public componentWillMount() {
+    this.updateState([], this.props, true);
+  }
+
+  public componentWillReceiveProps(newProps: IProps) {
+    if (this.props.downloads !== newProps.downloads) {
+
+      const before = Object.keys(this.props.downloads)
+        .filter(dlId => this.props.downloads[dlId].game === this.props.gameId);
+
+      this.updateState(before, newProps, false);
+    }
+  }
+
   public render(): JSX.Element {
-    const { filter, categories, mods } = this.props;
+    const { filter, categories, downloads, mods } = this.props;
+    const { archiveCategories } = this.state;
 
-    const usedCategories = new Set(
-        Object.keys(mods || {})
-          .map(modId => mods[modId].attributes['category'])
-          .filter(category => category !== undefined));
+    const installedArchives = new Set<string>();
+    const modCategories = new Set<string>();
+    Object.keys(mods || {}).forEach(modId => {
+      const mod = mods[modId];
+      if (mod.attributes['category'] !== undefined) {
+        modCategories.add(mod.attributes['category'].toString());
+      }
+      if (mod.archiveId !== undefined) {
+        installedArchives.add(mod.archiveId);
+      }
+    });
 
-    const options = Array.from(usedCategories)
+    Object.keys(archiveCategories).forEach(archiveId => {
+      if (!installedArchives.has(archiveId)) {
+        modCategories.add(archiveCategories[archiveId]);
+      }
+    });
+
+    const options = Array.from(modCategories)
       .filter(id => getSafe(categories, [id], undefined) !== undefined)
       .map(id => ({
         value: id.toString(),
@@ -46,6 +90,29 @@ class CategoryFilterComponent extends React.Component<IProps, {}> {
     );
   }
 
+  private updateState(before: string[], props: IProps, force: boolean) {
+    const archiveCategories = { ...this.state.archiveCategories };
+    const after = Object.keys(props.downloads)
+      .filter(dlId => props.downloads[dlId].game === props.gameId);
+    const removed: string[] = _.difference(before, after);
+    // remove disappeared downloads
+    removed.forEach(archiveId => { delete archiveCategories[archiveId]; });
+    // update added or changed downloads
+    const filtered = force ? after : after.filter(
+      archiveId => this.props.downloads[archiveId] !== props.downloads[archiveId]);
+
+    Promise.map(filtered, archiveId =>
+      filterModInfo({ download: props.downloads[archiveId] }, undefined)
+        .then(info => {
+          if (info.category !== undefined) {
+            archiveCategories[archiveId] = info.category;
+          }
+        }))
+      .then(() => {
+        this.setState({ archiveCategories });
+      });
+  }
+
   private changeFilter = (value: Array<{ value: string, label: string }>) => {
     const { attributeId, onSetFilter } = this.props;
     onSetFilter(attributeId, value.map(val => val.value));
@@ -55,8 +122,10 @@ class CategoryFilterComponent extends React.Component<IProps, {}> {
 function mapStateToProps(state: IState): IConnectedProps {
   const gameId = activeGameId(state);
   return {
+    gameId,
     categories: state.persistent.categories[gameId],
     mods: state.persistent.mods[gameId],
+    downloads: state.persistent.downloads.files,
   };
 }
 
