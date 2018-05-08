@@ -13,8 +13,10 @@ import { IDeployedFile, IDeploymentMethod } from '../mod_management/types/IDeplo
 import * as Promise from 'bluebird';
 import * as I18next from 'i18next';
 import * as path from 'path';
-import turbowalk from 'turbowalk';
+import turbowalk, { IEntry } from 'turbowalk';
 import * as util from 'util';
+
+const LNK_EXT = '.vortex_lnk';
 
 export class FileFound extends Error {
   constructor(name) {
@@ -25,34 +27,28 @@ export class FileFound extends Error {
 
 class DeploymentMethod extends LinkingDeployment {
   private mDirCache: Set<string>;
+  private mLnkExpression = new RegExp(LNK_EXT + '$');
 
   constructor(api: IExtensionApi) {
     super(
-        'hardlink_activator', 'Hardlink deployment',
-        'Deploys mods by setting hard links in the destination directory.',
+        'move_activator', 'Move deployment (Experimental!)',
+        'Deploys mods by actually moving files to the destination directory.',
         api);
   }
 
   public detailedDescription(t: I18next.TranslationFunction): string {
     return t(
-      'File Systems store files in two parts: \n'
-      + ' - an index entry that contains the file name, '
-      + 'access rights, change and creating times and so on\n'
-      + ' - the actual file data\n'
-      + 'Hard Links work by creating a second index entry referencing '
-      + 'the same data as the original. The second index is '
-      + 'a full-fledged index, so there is no differentiation between "original" and "link" '
-      + 'after the link was created.\n'
+      'This deployment method doesn\'t use links but actually moves files to the destination '
+      + 'directory.\nFor every deployed file it creates a lnk file in the source location to '
+      + 'allow clean undeployment.\n'
       + 'Advantages:\n'
-      + ' - perfect compatibility with all applications\n'
+      + ' - perfect game compatibility\n'
       + ' - no performance penalty\n'
-      + ' - Wide OS and FS support\n'
+      + ' - perfect OS/FS support\n'
       + 'Disadvantages:\n'
-      + ' - mods have to be on the same partition as the game\n'
-      + ' - Due to fact hard links are so "compatible", a lot of applications will act '
-      + 'as if original and link were separate files. This includes some backup solutions, tools '
-      + 'that measure used disk space and so on, so it will often look like the link was actually '
-      + 'a copy.');
+      + ' - if mods aren\'t on the same partition as the game this will be extremely slow\n'
+      + ' - purging from a different vortex instance won\'t be possible\n'
+      + ' - easier to break since the game directory contains real files.');
   }
 
   public isSupported(state: any, gameId: string, typeId: string): string {
@@ -67,14 +63,14 @@ class DeploymentMethod extends LinkingDeployment {
     try {
       fs.accessSync(modPaths[typeId], fs.constants.W_OK);
     } catch (err) {
-      log('info', 'hardlink deployment not supported due to lack of write access',
+      log('info', 'move deployment not supported due to lack of write access',
           { typeId, path: modPaths[typeId] });
       return `Can\'t write to output directory: ${modPaths[typeId]}`;
     }
 
     try {
       if (fs.statSync(installPath(state)).dev !== fs.statSync(modPaths[typeId]).dev) {
-        // hard links work only on the same drive
+        // actually we could support this but it would be so slow it wouldn't make sense
         return 'Works only if mods are installed on the same drive as the game. '
           + 'You can go to settings and change the mod directory to the same drive '
           + 'as the game.';
@@ -107,69 +103,95 @@ class DeploymentMethod extends LinkingDeployment {
     const inos = new Set<number>();
     const deleteIfEmpty: string[] = [];
 
-    // find ids of all files in our mods directory
+    let links: IEntry[] = [];
+
+    // find lnk files in our mods directory
     return turbowalk(installationPath,
-                     entries => {
-                       entries.forEach(entry => {
-                         if (entry.linkCount > 1) {
-                           inos.add(entry.id);
-                         }
-                       });
-                     },
-                     {
-                       details: true,
-                     })
-        // now remove all files in the game directory that have the same id
-        .then(() => {
-          let queue = Promise.resolve();
-          return turbowalk(dataPath, entries => {
-            queue = queue
-              .then(() => Promise.map(entries,
-                entry => (entry.linkCount > 1) && inos.has(entry.id)
-                  ? fs.unlinkAsync(entry.filePath)
-                    .catch(err =>
-                      log('warn', 'failed to remove', entry.filePath))
-                  : Promise.resolve())
-              .then(() => undefined));
-          }, {details: true})
-          .then(() => queue);
-        });
+      entries => {
+        links = links.concat(entries.filter(entry => path.extname(entry.filePath) === LNK_EXT));
+      },
+      {
+        details: true,
+      })
+      .then(() => Promise.map(links, entry => this.restoreLink(entry.filePath)));
   }
 
   protected linkFile(linkPath: string, sourcePath: string): Promise<void> {
+    if (path.extname(sourcePath) === LNK_EXT) {
+      // sanity check, don't link the links
+      return Promise.resolve();
+    }
     return this.ensureDir(path.dirname(linkPath))
         .then((created: any) => {
-          let tagDir: Promise<void>;
-          if (created !== null) {
-            tagDir = fs.writeFileAsync(
+          const tagDir = (created !== null)
+            ? fs.writeFileAsync(
                 path.join(created, LinkingDeployment.TAG_NAME),
                 'This directory was created by Vortex deployment and will be removed ' +
-                    'during purging if it\'s empty');
-          } else {
-            tagDir = Promise.resolve();
-          }
-          return tagDir.then(() => fs.linkAsync(sourcePath, linkPath))
-              .catch(err => {
-                if (err.code !== 'EEXIST') {
-                  throw err;
-                }
-              });
+                    'during purging if it\'s empty')
+            : Promise.resolve();
+
+          return tagDir.then(() => this.createLink(sourcePath, linkPath));
         });
   }
 
-  protected unlinkFile(linkPath: string): Promise<void> {
-    return fs.unlinkAsync(linkPath);
+  protected unlinkFile(linkPath: string, sourcePath: string): Promise<void> {
+    return this.restoreLink(sourcePath + LNK_EXT);
   }
 
   protected isLink(linkPath: string, sourcePath: string): Promise<boolean> {
-    return fs.lstatAsync(linkPath).then(linkStats => linkStats.nlink === 1
-        ? false
-        : fs.lstatAsync(sourcePath)
-            .then(sourceStats => linkStats.ino === sourceStats.ino));
+    return fs.readFileAsync(sourcePath + LNK_EXT, { encoding: 'utf-8' })
+      .then(data => {
+        const dat = JSON.parse(data);
+        return dat.target === linkPath;
+      });
   }
 
   protected canRestore(): boolean {
     return true;
+  }
+
+  protected stat(filePath: string): Promise<fs.Stats> {
+    return fs.statAsync(filePath)
+      .catch(err => err.code === 'ENOENT'
+        ? this.statVortexLink(filePath)
+        : Promise.reject(err));
+  }
+
+  protected statLink(filePath: string): Promise<fs.Stats> {
+    return fs.lstatAsync(filePath);
+  }
+
+  private statVortexLink(filePath: string): Promise<fs.Stats> {
+    console.log('svl', filePath);
+    return fs.readFileAsync(filePath + LNK_EXT, { encoding: 'utf-8' })
+      .then(data => {
+        console.log('data', data);
+        const dat = JSON.parse(data);
+        return fs.statAsync(dat.target);
+      });
+  }
+
+  private createLink(sourcePath: string, linkPath: string): Promise<void> {
+    const linkInfo = JSON.stringify({
+      target: linkPath,
+    });
+    return fs.writeFileAsync(sourcePath + LNK_EXT, linkInfo, { encoding: 'utf-8' })
+      .then(() => fs.renameAsync(sourcePath, linkPath));
+  }
+
+  private restoreLink(linkPath: string): Promise<void> {
+    console.log('restore link', linkPath);
+    return fs.readFileAsync(linkPath, { encoding: 'utf-8' })
+      .then(data => {
+        const dat = JSON.parse(data);
+        const outPath = linkPath.replace(this.mLnkExpression, '');
+        return fs.renameAsync(dat.target, outPath)
+          .catch(err => (err.code === 'ENOENT')
+              // file was deleted. Well, the user is the boss...
+              ? Promise.resolve()
+              : Promise.reject(err))
+          .then(() => fs.removeAsync(linkPath));
+      });
   }
 
   private ensureDir(dirPath: string): Promise<void> {

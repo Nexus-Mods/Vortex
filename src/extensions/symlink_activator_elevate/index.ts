@@ -18,6 +18,7 @@ import * as Promise from 'bluebird';
 import * as I18next from 'i18next';
 import * as ipc from 'node-ipc';
 import * as path from 'path';
+import { generate as shortid } from 'shortid';
 import { runElevated } from 'vortex-run';
 
 import { remoteCode } from './remoteCode';
@@ -165,7 +166,7 @@ class DeploymentMethod extends LinkingDeployment {
   private startElevated(): Promise<void> {
     this.mOpenRequests = {};
     this.mDone = null;
-    const ipcPath: string = 'vortex_elevate_symlink';
+    const ipcPath: string = `vortex_elevate_symlink_${shortid()}`;
 
     return new Promise<void>((resolve, reject) => {
       let connected: boolean = false;

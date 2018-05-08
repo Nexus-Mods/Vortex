@@ -127,7 +127,9 @@ abstract class LinkingActivator implements IDeploymentMethod {
                        key => {
                          const outputPath = path.join(
                              dataPath, previousDeployment[key].relPath);
-                         return this.unlinkFile(outputPath)
+                         const sourcePath = path.join(installationPath,
+                             previousDeployment[key].source, previousDeployment[key].relPath);
+                         return this.unlinkFile(outputPath, sourcePath)
                              .catch(err => {
                                if (err.code !== 'ENOENT') {
                                  return Promise.reject(err);
@@ -267,13 +269,13 @@ abstract class LinkingActivator implements IDeploymentMethod {
       let destDeleted: boolean = false;
       let destTime: Date;
 
-      return fs.statAsync(fileModPath)
+      return this.stat(fileModPath)
         .catch(err => {
           // can't stat source, probably the file was deleted
           sourceDeleted = true;
           return Promise.resolve();
         })
-        .then(() => fs.lstatAsync(fileDataPath))
+        .then(() => this.statLink(fileDataPath))
         .catch(err => {
           // can't stat destination, probably the file was deleted
           destDeleted = true;
@@ -321,7 +323,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
   }
 
   protected abstract linkFile(linkPath: string, sourcePath: string): Promise<void>;
-  protected abstract unlinkFile(linkPath: string): Promise<void>;
+  protected abstract unlinkFile(linkPath: string, sourcePath: string): Promise<void>;
   protected abstract purgeLinks(installPath: string, dataPath: string): Promise<void>;
   protected abstract isLink(linkPath: string, sourcePath: string): Promise<boolean>;
   /**
@@ -330,6 +332,14 @@ abstract class LinkingActivator implements IDeploymentMethod {
    * data isn't gone after removing the original) and false for everything else
    */
   protected abstract canRestore(): boolean;
+
+  protected stat(filePath: string): Promise<fs.Stats> {
+    return fs.statAsync(filePath);
+  }
+
+  protected statLink(filePath: string): Promise<fs.Stats> {
+    return fs.lstatAsync(filePath);
+  }
 
   private deployFile(key: string, installPathStr: string, dataPath: string,
                      replace: boolean): Promise<IDeployedFile> {

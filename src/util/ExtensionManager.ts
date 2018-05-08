@@ -1044,6 +1044,7 @@ class ExtensionManager {
       'symlink_activator',
       'symlink_activator_elevate',
       'hardlink_activator',
+      'move_activator',
       'updater',
       'installer_fomod',
       'installer_nested_fomod',
