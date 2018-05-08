@@ -20,6 +20,7 @@ import * as path from 'path';
 import * as React from 'react';
 import { DropdownButton, MenuItem } from 'react-bootstrap';
 import * as Redux from 'redux';
+import { truthy } from '../util/util';
 
 export interface IBaseProps {
   t: I18next.TranslationFunction;
@@ -151,7 +152,9 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
 
     const managedGamesIds = Array.from(new Set<string>(Object.keys(profiles)
       .map(profileId => profiles[profileId].gameId)
-      .filter(gameId => !getSafe(discoveredGames, [gameId, 'hidden'], false))));
+      .filter(gameId =>
+        !getSafe(discoveredGames, [gameId, 'hidden'], false)
+        && truthy(getSafe(discoveredGames, [gameId, 'path'], undefined)))));
 
     return managedGamesIds.reduce((prev, gameId) => {
       const game = knownGames.find(iter => iter.id === gameId);
