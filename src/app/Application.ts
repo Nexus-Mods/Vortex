@@ -108,6 +108,21 @@ class Application {
         this.regularStart(args);
       }
     });
+
+    app.on('web-contents-created', (event: Electron.Event, contents: Electron.WebContents) => {
+      contents.on('will-attach-webview', this.attachWebView);
+    });
+  }
+
+  private attachWebView = (event: Electron.Event,
+                           webPreferences: Electron.WebPreferences & { preloadURL: string },
+                           params) => {
+    // disallow creation of insecure webviews
+
+    delete webPreferences.preload;
+    delete webPreferences.preloadURL;
+
+    webPreferences.nodeIntegration = false;
   }
 
   private genHandleError() {
