@@ -1,9 +1,9 @@
-export function remoteCode(ipcClient) {
+export function remoteCode(ipcClient, req) {
   return new Promise<void>((resolve, reject) => {
     const TAG_NAME = '__delete_if_empty';
 
-    const fs = require('fs-extra-promise');
-    const path = require('path');
+    const fs = req('fs-extra-promise');
+    const path = req('path');
 
     ipcClient.on('link-file', (payload) => {
       const {source, destination, num} = payload;

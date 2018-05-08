@@ -78,7 +78,7 @@ function execInfo(scriptPath: string) {
 }
 
 function elevatedMain(moduleRoot: string, ipcPath: string,
-                      main: (ipc) => Promise<void>) {
+                      main: (ipc, req) => Promise<void>) {
   const handleError = (error: any) => {
     // tslint:disable-next-line:no-console
     console.error('Elevated code failed', error.stack);
@@ -96,7 +96,7 @@ function elevatedMain(moduleRoot: string, ipcPath: string,
       process.exit(0);
     });
     Promise.resolve()
-      .then(() => main(ipc.of[ipcPath]))
+      .then(() => main(ipc.of[ipcPath], require))
       .catch(error => {
         ipc.of[ipcPath].emit('error', error.message);
         return new Promise((resolve) => setTimeout(resolve, 200));
@@ -112,8 +112,6 @@ function elevatedMain(moduleRoot: string, ipcPath: string,
  * This is quite a hack because obviously windows doesn't allow us to elevate a
  * running process so instead we have to store the function code into a file and start a
  * new node process elevated to execute that script.
- * The code can import from node_modules but not relative modules. Since the application
- * is (web)packed for production, individual files are not available for import
  *
  * IMPORTANT As a consequence the function can not bind any parameters
  *
@@ -121,12 +119,16 @@ function elevatedMain(moduleRoot: string, ipcPath: string,
  *                 communicate with the elevated process (as stdin/stdout can not be)
  *                 redirected
  * @param {Function} func The closure to run in the elevated process. Try to avoid
- *                        'fancy' code.
+ *                        'fancy' code. This function receives two parameters, one is an ipc stream,
+ *                        connected to the path specified in the first parameter.
+ *                        The second function is a require function which you need to use instead of
+ *                        the global require. Regular require calls will not work in production
+ *                        builds
  * @param {Object} args arguments to be passed into the elevated process
  * @returns {Promise<any>} a promise that will be resolved as soon as the process is started
  *                         (which happens after the user confirmed elevation)
  */
-function runElevated(ipcPath: string, func: (ipc: any) => void,
+function runElevated(ipcPath: string, func: (ipc: any, req: (id: string) => any) => void,
                      args?: any): Promise<any> {
   initTypes();
   if (shell32 === undefined) {
