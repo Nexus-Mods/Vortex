@@ -72,8 +72,10 @@ class DeploymentMethod extends LinkingDeployment {
       return `Can\'t write to output directory: ${modPaths[typeId]}`;
     }
 
+    const installationPath = installPath(state);
+
     try {
-      if (fs.statSync(installPath(state)).dev !== fs.statSync(modPaths[typeId]).dev) {
+      if (fs.statSync(installationPath).dev !== fs.statSync(modPaths[typeId]).dev) {
         // hard links work only on the same drive
         return 'Works only if mods are installed on the same drive as the game. '
           + 'You can go to settings and change the mod directory to the same drive '
@@ -86,6 +88,18 @@ class DeploymentMethod extends LinkingDeployment {
         err: util.inspect(err),
       });
       return 'Game not fully initialized yet, this should disappear soon.';
+    }
+
+    const canary = path.join(installationPath, '__vortex_canary.txt');
+    try {
+      fs.writeFileSync(canary, 'Should only exist temporarily, feel free to delete');
+      fs.linkSync(canary, canary + '.link');
+      fs.removeSync(canary + '.link');
+      fs.removeSync(canary);
+    } catch (err) {
+      fs.removeSync(canary);
+      fs.removeSync(canary + '.link');
+      return 'Filesystem doesn\'t support hard links';
     }
 
     return undefined;
