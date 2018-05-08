@@ -51,6 +51,7 @@ export {
   statSync,
   symlinkAsync,
   watch,
+  writeFileSync,
   writeSync,
 } from 'fs-extra-promise';
 

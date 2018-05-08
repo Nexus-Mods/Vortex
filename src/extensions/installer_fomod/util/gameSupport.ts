@@ -191,6 +191,10 @@ const gameSupport: { [gameId: string]: IGameSupport } = {
   kingdomcomedeliverance: {
     stopPatterns: stopPatterns('kingdomcomedeliverance'),
   },
+  subnautica: {
+    stopPatterns: stopPatterns('subnautica'),
+    pluginPath: 'QMods',
+  },
 };
 
 export function getIniFilePath(gameMode: string) {
