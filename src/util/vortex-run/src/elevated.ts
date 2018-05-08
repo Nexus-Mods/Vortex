@@ -77,7 +77,7 @@ function execInfo(scriptPath: string) {
   });
 }
 
-function elevatedMain(baseDir: string, moduleRoot: string, ipcPath: string,
+function elevatedMain(moduleRoot: string, ipcPath: string,
                       main: (ipc) => Promise<void>) {
   const handleError = (error: any) => {
     // tslint:disable-next-line:no-console
@@ -88,15 +88,6 @@ function elevatedMain(baseDir: string, moduleRoot: string, ipcPath: string,
   // tslint:disable-next-line:no-shadowed-variable
   const path = require('path');
   const requireOrig = require;
-  const newRequire: any = (id: string): any => {
-    if (id.startsWith('.')) {
-      return requireOrig(path.join(baseDir, id));
-    } else {
-      return requireOrig(id);
-    }
-  };
-  newRequire.requireActual = newRequire;
-  require = newRequire;
   (module as any).paths.push(moduleRoot);
   // tslint:disable-next-line:no-shadowed-variable
   const ipc = require('node-ipc');
@@ -121,7 +112,8 @@ function elevatedMain(baseDir: string, moduleRoot: string, ipcPath: string,
  * This is quite a hack because obviously windows doesn't allow us to elevate a
  * running process so instead we have to store the function code into a file and start a
  * new node process elevated to execute that script.
- * Through some hackery the base path for relative requires can be set.
+ * The code can import from node_modules but not relative modules. Since the application
+ * is (web)packed for production, individual files are not available for import
  *
  * IMPORTANT As a consequence the function can not bind any parameters
  *
@@ -131,13 +123,11 @@ function elevatedMain(baseDir: string, moduleRoot: string, ipcPath: string,
  * @param {Function} func The closure to run in the elevated process. Try to avoid
  *                        'fancy' code.
  * @param {Object} args arguments to be passed into the elevated process
- * @param {string} moduleBase base directory for all relative require call. If undefined,
- *                 the directory of this very file (elevated.js) will be used.
  * @returns {Promise<any>} a promise that will be resolved as soon as the process is started
  *                         (which happens after the user confirmed elevation)
  */
 function runElevated(ipcPath: string, func: (ipc: any) => void,
-                     args?: any, moduleBase?: string): Promise<any> {
+                     args?: any): Promise<any> {
   initTypes();
   if (shell32 === undefined) {
     if (process.platform === 'win32') {
@@ -154,17 +144,12 @@ function runElevated(ipcPath: string, func: (ipc: any) => void,
       }
 
       const projectRoot = path.resolve(__dirname, '../..').split('\\').join('/');
-      if (moduleBase === undefined) {
-        moduleBase = __dirname;
-      }
-      moduleBase = moduleBase.split('\\').join('/');
 
       let mainBody = elevatedMain.toString();
       mainBody = mainBody.slice(mainBody.indexOf('{') + 1, mainBody.lastIndexOf('}'));
 
       let prog: string = `
         let moduleRoot = '${projectRoot}';\n
-        let baseDir = '${moduleBase}';\n
         let ipcPath = '${ipcPath}';\n
       `;
 

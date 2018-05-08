@@ -2,7 +2,6 @@ export function remoteCode(ipcClient) {
   return new Promise<void>((resolve, reject) => {
     const TAG_NAME = '__delete_if_empty';
 
-    const walk = require('./walk').default;
     const fs = require('fs-extra-promise');
     const path = require('path');
 

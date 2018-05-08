@@ -206,7 +206,7 @@ class DeploymentMethod extends LinkingDeployment {
       ipc.server.on('error', err => {
         log('error', 'Failed to start symlink activator', err);
       });
-      return runElevated(ipcPath, remoteCode, {}, __dirname)
+      return runElevated(ipcPath, remoteCode, {})
         .then(() => delayed(5000))
         .then(() => {
           if (!connected) {
