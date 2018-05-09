@@ -2,6 +2,7 @@ import { showDialog } from '../../../actions/notifications';
 import DropdownButton from '../../../controls/DropdownButton';
 import Dropzone, { DropType } from '../../../controls/Dropzone';
 import EmptyPlaceholder from '../../../controls/EmptyPlaceholder';
+import FlexLayout from '../../../controls/FlexLayout';
 import Icon from '../../../controls/Icon';
 import IconBar from '../../../controls/IconBar';
 import SuperTable, { ITableRowAction } from '../../../controls/Table';
@@ -14,6 +15,7 @@ import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../
 import { IState } from '../../../types/IState';
 import { ITableAttribute } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, extend, translate } from '../../../util/ComponentEx';
+import { UserCanceled } from '../../../util/CustomErrors';
 import Debouncer from '../../../util/Debouncer';
 import * as fs from '../../../util/fs';
 import { activeGameId, activeProfile } from '../../../util/selectors';
@@ -54,8 +56,6 @@ import { Button, ButtonGroup, Jumbotron, MenuItem, Panel } from 'react-bootstrap
 import * as ReactDOM from 'react-dom';
 import * as Redux from 'redux';
 import * as semver from 'semver';
-import { FlexLayout } from '../../../index';
-import { UserCanceled } from '../../../util/CustomErrors';
 
 const PanelX: any = Panel;
 
@@ -73,8 +73,8 @@ class VersionOption extends React.PureComponent<IVersionOptionProps, {}> {
   public render(): JSX.Element {
     const { t, modId, altId, mod } = this.props;
     return (
-      <div>
-        {mod.attributes['version']}
+      <a className='version-option'>
+        <div>{mod.attributes['version']}</div>
         <IconButton
           id={`btn-remove-${modId}-${altId}`}
           className='btn-embed'
@@ -82,11 +82,12 @@ class VersionOption extends React.PureComponent<IVersionOptionProps, {}> {
           tooltip={t('remove')}
           onClick={this.remove}
         />
-      </div>
+      </a>
     );
   }
 
-  private remove = () => {
+  private remove = (evt) => {
+    evt.preventDefault();
     this.props.onRemove(this.props.altId);
   }
 }
@@ -215,8 +216,15 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       },
     ];
 
-    this.mUpdateDebouncer = new Debouncer(
-      (newProps) => this.updateModsWithState(newProps), 100);
+    this.mUpdateDebouncer = new Debouncer((newProps) => {
+        this.updateModsWithState(newProps)
+          .then(() => {
+            if (this.mIsMounted) {
+              this.forceUpdate();
+            }
+          });
+        return null;
+      }, 500);
 
     this.state = {
       bounds: { top: 0, bottom: 0, height: 0, width: 0, left: 0, right: 0 },
@@ -240,16 +248,16 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     this.mIsMounted = false;
   }
 
+  public shouldComponentUpdate(newProps: IProps, newState: IComponentState) {
+    return false;
+  }
+
   public componentWillReceiveProps(newProps: IProps) {
     if ((this.props.gameMode !== newProps.gameMode)
         || (this.props.mods !== newProps.mods)
         || (this.props.modState !== newProps.modState)
         || (this.props.downloads !== newProps.downloads)) {
-      this.mUpdateDebouncer.schedule(() => {
-        if (this.mIsMounted) {
-          this.forceUpdate();
-        }
-      }, newProps);
+      this.mUpdateDebouncer.schedule(undefined, newProps);
     }
   }
 
@@ -416,7 +424,6 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           className='dropdown-version'
           title={mod.attributes['version'] || ''}
           id={`version-dropdown-${mod.id}`}
-          onSelect={this.selectVersion}
           container={this.mRef}
         >
           {alternatives.map(altId => this.renderVersionOptions(mod.id, altId))}
@@ -460,7 +467,13 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   private renderVersionOptions(modId: string, altId: string): JSX.Element {
     const { t } = this.props;
     return (
-      <MenuItem eventKey={{ modId, altId }} key={altId}>
+      <li
+        role='presentation'
+        key={altId}
+        data-modid={modId}
+        data-altid={altId}
+        onClick={this.selectVersionClick}
+      >
         <VersionOption
           t={t}
           key={altId}
@@ -469,7 +482,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           mod={this.mModsWithState[altId]}
           onRemove={this.removeMod}
         />
-      </MenuItem>
+      </li>
     );
   }
 
@@ -566,6 +579,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       customRenderer: this.renderVersion,
       placement: 'table',
       isToggleable: true,
+      isVolatile: true,
       edit: {},
       isSortable: false,
       filter: new VersionFilter(),
@@ -721,7 +735,8 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   private changeModEnabled = (mod: IModWithState, value: any) => {
     const { profileId } = this.props;
 
-    if (this.mModsWithState[mod.id].state === 'installing') {
+    if ((this.mModsWithState[mod.id] === undefined)
+        || (this.mModsWithState[mod.id].state === 'installing')) {
       // can't change state while installing
       return;
     }
@@ -754,16 +769,35 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     this.mGroupedMods = groupedMods;
   }
 
-  private selectVersion = (evt) => {
+  private selectVersionClick = (event) => {
+    if (event.isDefaultPrevented()) {
+      return;
+    }
+    this.selectVersion({
+      modId: event.currentTarget.getAttribute('data-modid'),
+      altId: event.currentTarget.getAttribute('data-altid'),
+    });
+  }
+
+  private selectVersion = (evtKey) => {
     const { profileId, onSetModEnabled } = this.props;
-    const { modId, altId } = evt;
+    const { modId, altId } = evtKey;
 
     if (modId === altId) {
       return;
     }
 
     onSetModEnabled(profileId, modId, false);
-    onSetModEnabled(profileId, altId, true);
+    if ((this.mModsWithState[altId] !== undefined)
+        && (this.mModsWithState[altId].state === 'downloaded')) {
+      this.context.api.events.emit('start-install-download', altId, (err, id) => {
+        if (err === null) {
+          onSetModEnabled(profileId, id, true);
+        }
+      });
+    } else {
+      onSetModEnabled(profileId, altId, true);
+    }
 
     this.context.api.events.emit('mods-enabled', [modId], false);
     this.context.api.events.emit('mods-enabled', [altId], true);
@@ -834,6 +868,11 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       .filter(modId =>
         ['downloaded', 'installed'].indexOf(this.mModsWithState[modId].state) !== -1);
 
+    if (filteredIds.length === 0) {
+      return;
+    }
+
+    let allArchives = true;
     const modNames = filteredIds
       .map(modId => {
         let name = modName(this.mModsWithState[modId], {
@@ -841,18 +880,24 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         });
         if (this.mModsWithState[modId].state === 'downloaded') {
           name += ' ' + t('(Archive only)');
+        } else {
+          allArchives = false;
         }
         return name;
     });
+
+    const checkboxes = allArchives
+      ? [ { id: 'archive', text: t('Remove Archive'), value: true } ]
+      : [
+        { id: 'mod', text: t('Remove Mod'), value: true },
+        { id: 'archive', text: t('Remove Archive'), value: false },
+      ];
 
     onShowDialog('question', 'Confirm deletion', {
       message: t('Do you really want to delete this mod?',
         { count: filteredIds.length, replace: { count: filteredIds.length } })
         + '\n' + modNames.join('\n'),
-      checkboxes: [
-        { id: 'mod', text: t('Remove Mod'), value: true },
-        { id: 'archive', text: t('Remove Archive'), value: false },
-      ],
+      checkboxes,
     }, [ { label: 'Cancel' }, { label: 'Remove' } ])
     .then((result: IDialogResult) => {
         removeMods = result.action === 'Remove' && result.input.mod;
