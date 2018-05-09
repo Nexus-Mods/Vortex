@@ -2,14 +2,14 @@ import {addNotification} from '../actions/notifications';
 import {setMaximized, setWindowPosition,  setWindowSize} from '../actions/window';
 import {IState, IWindow} from '../types/IState';
 import Debouncer from '../util/Debouncer';
+import { terminate } from '../util/errorHandling';
+import getVortexPath from '../util/getVortexPath';
 import { log } from '../util/log';
 import * as storeHelperT from '../util/storeHelper';
 
 import * as Promise from 'bluebird';
 import { dialog, screen } from 'electron';
 import * as Redux from 'redux';
-import { terminate } from '../util/errorHandling';
-import getVortexPath from '../util/getVortexPath';
 
 class MainWindow {
   private mWindow: Electron.BrowserWindow = null;
@@ -65,8 +65,16 @@ class MainWindow {
         }
       });
 
-    this.mWindow.webContents.on('crashed',
-      (evt, killed) => log('error', killed ? 'killed' : 'crashed'));
+    this.mWindow.webContents.on('crashed', (evt, killed) => {
+      log('error', killed ? 'killed' : 'crashed');
+      if (!killed) {
+        store.dispatch(addNotification({
+          type: 'error',
+          message: 'Vortex restarted after a crash, sorry about that.',
+        }));
+        this.mWindow.loadURL(`file://${getVortexPath('base')}/index.html`);
+      }
+    });
 
     this.mWindow.webContents.on('did-fail-load', (evt, code, description, url) => {
       log('error', 'failed to load page', { code, description, url });
