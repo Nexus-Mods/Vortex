@@ -49,6 +49,10 @@ class Notification extends ComponentEx<IProps, {}> {
     const { t, collapsed } = this.props;
     const { actions, message, noDismiss, title, type } = this.props.params;
 
+    if (message === undefined) {
+      return null;
+    }
+
     const lines = message.split('\n');
 
     const styleName = this.typeToStyle(type);
