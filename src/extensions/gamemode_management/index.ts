@@ -318,8 +318,10 @@ function resetSearchPaths(api: IExtensionApi) {
       return;
     }
     for (const disk of disks.sort()) {
-      // 'system' drives are the non-removable ones
-      if (disk.system) {
+      // note: isRemovable is set correctly on windows, on MacOS (and presumably linux)
+      // it will, as of this writing, be null. The isSystem flag should suffice as a
+      // filter though.
+      if (disk.isSystem && !disk.isRemovable) {
         if (disk.mountpoints) {
           disk.mountpoints.forEach(
               mp => { store.dispatch(addSearchPath(mp.path)); });

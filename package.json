@@ -167,7 +167,7 @@
     "d3": "4.11.0",
     "dnd-core": "^2.5.4",
     "draggabilly": "^2.1.1",
-    "drivelist": "^5.2.6",
+    "drivelist": "^6.1.8",
     "edge": "^7.10.1",
     "electron-devtools-installer": "^2.2.1",
     "electron-updater": "^2.21.10",
