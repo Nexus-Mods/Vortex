@@ -1,5 +1,6 @@
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
+import { delayed } from '../../util/delayed';
 import * as fs from '../../util/fs';
 import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
@@ -9,6 +10,7 @@ import { getSafe } from '../../util/storeHelper';
 import { sum, truthy } from '../../util/util';
 
 import { downloadPath as downloadPathSelector } from '../mod_management/selectors';
+import resolvePath from '../mod_management/util/resolvePath';
 
 import {
   addLocalDownload,
@@ -20,6 +22,7 @@ import {
   setDownloadFilePath,
   setDownloadHashByFile,
   setDownloadInterrupted,
+  setDownloadModInfo,
   setDownloadSpeed,
 } from './actions/state';
 import { settingsReducer } from './reducers/settings';
@@ -35,13 +38,11 @@ import observe, { DownloadObserver } from './DownloadObserver';
 
 import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
+import * as _ from 'lodash';
 import * as path from 'path';
 import * as Redux from 'redux';
 import {createSelector} from 'reselect';
 import {generate as shortid} from 'shortid';
-import { delayed } from '../../util/delayed';
-import { activeGameId } from '../../util/selectors';
-import resolvePath from '../mod_management/util/resolvePath';
 
 const app = remote !== undefined ? remote.app : appIn;
 
@@ -84,6 +85,7 @@ function attributeExtractor(input: any) {
     fileMD5: getSafe(input, ['download', 'fileMD5'], undefined),
     fileSize: getSafe(input, ['download', 'size'], undefined),
     source: getSafe(input, ['download', 'modInfo', 'source'], undefined),
+    version: getSafe(input, ['download', 'modInfo', 'version'], undefined),
     logicalFileName: getSafe(input, ['download', 'modInfo', 'name'], undefined),
     downloadGame: getSafe(input, ['download', 'game'], undefined),
   });
@@ -183,20 +185,19 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
 
   const downloadChangeHandler = genDownloadChangeHandler(api.store, nameIdMap);
   return refreshDownloads(currentDownloadPath, knownDLs,
-                   (fileName: string) => {
-                     fs.statAsync(path.join(currentDownloadPath, fileName))
-                         .then((stats: fs.Stats) => {
-                           const dlId = shortid();
-                           api.store.dispatch(addLocalDownload(
-                               dlId, gameId, fileName, stats.size));
-                           nameIdMap[fileName] = dlId;
-                         });
-                   },
-                   (modNames: string[]) => {
-                     modNames.forEach((name: string) => {
-                       api.store.dispatch(removeDownload(nameIdMap[name]));
-                     });
-                   })
+        (fileName: string) => {
+          fs.statAsync(path.join(currentDownloadPath, fileName))
+            .then((stats: fs.Stats) => {
+              const dlId = shortid();
+              store.dispatch(addLocalDownload(dlId, gameId, fileName, stats.size));
+              nameIdMap[fileName] = dlId;
+            });
+        },
+        (modNames: string[]) => {
+          modNames.forEach((name: string) => {
+            api.store.dispatch(removeDownload(nameIdMap[name]));
+          });
+        })
     .then(() => {
       manager.setDownloadPath(currentDownloadPath);
       watchDownloads(api, currentDownloadPath, downloadChangeHandler);
@@ -210,7 +211,7 @@ function genGameModeActivated(api: IExtensionApi) {
 
 function move(api: IExtensionApi, source: string, destination: string): Promise<void> {
   const store = api.store;
-  const gameMode = activeGameId(store.getState());
+  const gameMode = selectors.activeGameId(store.getState());
 
   return fs.copyAsync(source, destination)
     .then(() => fs.statAsync(destination))
@@ -268,13 +269,37 @@ function init(context: IExtensionContextExt): boolean {
     });
 
     context.api.onStateChange(['settings', 'mods', 'paths'], (prev, cur) => {
-      const gameMode = activeGameId(store.getState());
+      const gameMode = selectors.activeGameId(store.getState());
       if ((getSafe(prev, [gameMode, 'base'], undefined)
            !== getSafe(cur, [gameMode, 'base'], undefined))
           || (getSafe(prev, [gameMode, 'download'], undefined)
            !== getSafe(cur, [gameMode, 'download'], undefined))) {
         updateDownloadPath(context.api);
       }
+    });
+
+    context.api.onStateChange(['persistent', 'downloads', 'files'],
+        (prev: { [dlId: string]: IDownload }, cur: { [dlId: string]: IDownload }) => {
+      // when files are added without mod info, query the meta database
+      const added = _.difference(Object.keys(cur), Object.keys(prev));
+      console.log('downloads added', added);
+      const filtered = added.filter(
+        dlId => (cur[dlId].state === 'finished') && (Object.keys(cur[dlId].modInfo).length === 0)
+      );
+
+      const state = context.api.store.getState();
+
+      Promise.map(filtered, dlId => {
+        const downloadPath = resolvePath('download', state.settings.mods.paths, cur[dlId].game);
+        context.api.lookupModMeta({ filePath: path.join(downloadPath, cur[dlId].localPath) })
+          .then(result => {
+            const info = result[0].value;
+            store.dispatch(setDownloadModInfo(dlId, 'game', info.gameId));
+            store.dispatch(setDownloadModInfo(dlId, 'version', info.fileVersion));
+            store.dispatch(setDownloadModInfo(dlId, 'name',
+              info.logicalFileName || info.fileName));
+          });
+      });
     });
 
     context.api.events.on('gamemode-activated', genGameModeActivated(context.api));
