@@ -9,6 +9,9 @@ if (process.env.NODE_ENV !== 'development') {
   // see renderer.ts for why this is so ugly
   const key = 'NODE_ENV';
   process.env[key] = 'production';
+  // tslint:disable-next-line:no-var-requires
+  const rebuildRequire = require('./util/requireRebuild').default;
+  rebuildRequire();
 }
 
 import {} from './util/requireRebuild';
@@ -24,15 +27,6 @@ import { log } from './util/log';
 
 import { app, dialog } from 'electron';
 import * as path from 'path';
-
-/*
-crashReporter.start({
-  productName: 'Vortex',
-  companyName: 'Black Tree Gaming Ltd.',
-  submitURL: 'https://localhost',
-  uploadToServer: false,
-});
-*/
 
 process.env.Path = process.env.Path + path.delimiter + __dirname;
 

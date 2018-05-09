@@ -7,8 +7,8 @@ sourceMapSupport.install();
 
 if (process.env.NODE_ENV === 'development') {
   // tslint:disable-next-line:no-var-requires
-  // const rebuildRequire = require('./util/requireRebuild').default;
-  // rebuildRequire();
+  const rebuildRequire = require('./util/requireRebuild').default;
+  rebuildRequire();
   process.traceProcessWarnings = true;
 } else {
   // webpack will replace every occurrence of process.env.NODE_ENV in its endeavour to eliminate
@@ -42,7 +42,7 @@ import { reduxSanity, StateError } from './util/reduxSanity';
 import MainWindow from './views/MainWindow';
 
 import * as Promise from 'bluebird';
-import { crashReporter, ipcRenderer, remote } from 'electron';
+import { ipcRenderer, remote } from 'electron';
 import { EventEmitter } from 'events';
 import { changeLanguage } from 'i18next';
 import * as React from 'react';
@@ -64,16 +64,6 @@ log('debug', 'renderer process started', { pid: process.pid });
 
 const tempPath = path.join(remote.app.getPath('userData'), 'temp');
 remote.app.setPath('temp', tempPath);
-
-/*
-doesn't work atm, see https://github.com/electron/electron/issues/11626
-
-crashReporter.start({
-  productName: 'Vortex',
-  companyName: 'Black Tree Gaming Ltd.',
-  submitURL: 'http://localhost',
-  uploadToServer: false,
-});*/
 
 crashDump(path.join(remote.app.getPath('temp'), 'dumps', `crash-renderer-${Date.now()}.dmp`));
 
