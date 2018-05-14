@@ -51,11 +51,21 @@ let manager: DownloadManager;
 
 const protocolHandlers: IProtocolHandlers = {};
 
+const archiveExtLookup = new Set<string>([
+  '.zip', '.z01', '.7z', '.rar', '.r00', '.001', '.bz2', '.bzip2', '.gz', '.gzip',
+  '.xz', '.z',
+]);
+
+function knownArchiveExt(filePath: string): boolean {
+  return archiveExtLookup.has(path.extname(filePath).toLowerCase());
+}
+
 function refreshDownloads(downloadPath: string, knownDLs: string[],
                           onAddDownload: (name: string) => void,
                           onRemoveDownloads: (name: string[]) => void) {
   return fs.ensureDirAsync(downloadPath)
     .then(() => fs.readdirAsync(downloadPath))
+    .filter((filePath: string) => knownArchiveExt(filePath))
     .filter((filePath: string) =>
       fs.statAsync(path.join(downloadPath, filePath))
       .then(stat => !stat.isDirectory()).catch(() => false))
@@ -107,6 +117,9 @@ function genDownloadChangeHandler(store: Redux.Store<any>,
     }
     if (evt === 'rename') {
       const filePath = path.join(currentDownloadPath, fileName);
+      if (!knownArchiveExt(filePath)) {
+        return;
+      }
       // if the file was added, wait a moment, then add it to the store if it doesn't
       // exist yet. This is necessary because we can't know if it wasn't vortex
       // itself that added the file.
@@ -128,7 +141,7 @@ function genDownloadChangeHandler(store: Redux.Store<any>,
         }
       })
       .catch(err => {
-        if (err.code === 'ENOENT') {
+        if ((err.code === 'ENOENT') && (nameIdMap[fileName] !== undefined)) {
           // if the file was deleted, remove it from state. This does nothing if
           // the download was already removed so that's fine
           store.dispatch(removeDownload(nameIdMap[fileName]));
@@ -282,10 +295,8 @@ function init(context: IExtensionContextExt): boolean {
         (prev: { [dlId: string]: IDownload }, cur: { [dlId: string]: IDownload }) => {
       // when files are added without mod info, query the meta database
       const added = _.difference(Object.keys(cur), Object.keys(prev));
-      console.log('downloads added', added);
       const filtered = added.filter(
-        dlId => (cur[dlId].state === 'finished') && (Object.keys(cur[dlId].modInfo).length === 0)
-      );
+        dlId => (cur[dlId].state === 'finished') && (Object.keys(cur[dlId].modInfo).length === 0));
 
       const state = context.api.store.getState();
 
@@ -293,11 +304,13 @@ function init(context: IExtensionContextExt): boolean {
         const downloadPath = resolvePath('download', state.settings.mods.paths, cur[dlId].game);
         context.api.lookupModMeta({ filePath: path.join(downloadPath, cur[dlId].localPath) })
           .then(result => {
-            const info = result[0].value;
-            store.dispatch(setDownloadModInfo(dlId, 'game', info.gameId));
-            store.dispatch(setDownloadModInfo(dlId, 'version', info.fileVersion));
-            store.dispatch(setDownloadModInfo(dlId, 'name',
-              info.logicalFileName || info.fileName));
+            if (result.length > 0) {
+              const info = result[0].value;
+              store.dispatch(setDownloadModInfo(dlId, 'game', info.gameId));
+              store.dispatch(setDownloadModInfo(dlId, 'version', info.fileVersion));
+              store.dispatch(setDownloadModInfo(dlId, 'name',
+                info.logicalFileName || info.fileName));
+            }
           });
       });
     });
