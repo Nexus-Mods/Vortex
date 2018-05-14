@@ -68,8 +68,13 @@ function updateModAttributes(dispatch: Redux.Dispatch<any>,
   if (modInfo.endorsement !== undefined) {
     update(dispatch, gameId, mod, 'endorsed', modInfo.endorsement.endorse_status);
   }
+  if (mod.attributes['category'] === undefined) {
+    update(dispatch, gameId, mod, 'category', modInfo.category_id);
+  }
+  update(dispatch, gameId, mod, 'shortDescription', modInfo.summary);
   update(dispatch, gameId, mod, 'description', modInfo.description);
   update(dispatch, gameId, mod, 'pictureUrl', modInfo.picture_url);
+  update(dispatch, gameId, mod, 'author', modInfo.author);
 }
 
 function updateLatestFileAttributes(dispatch: Redux.Dispatch<any>,
