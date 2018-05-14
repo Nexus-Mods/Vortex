@@ -63,7 +63,7 @@ function execInfo(scriptPath) {
         hProcess: ref.alloc(voidPtr),
     });
 }
-function elevatedMain(baseDir, moduleRoot, ipcPath, main) {
+function elevatedMain(moduleRoot, ipcPath, main) {
     const handleError = (error) => {
         // tslint:disable-next-line:no-console
         console.error('Elevated code failed', error.stack);
@@ -73,16 +73,6 @@ function elevatedMain(baseDir, moduleRoot, ipcPath, main) {
     // tslint:disable-next-line:no-shadowed-variable
     const path = require('path');
     const requireOrig = require;
-    const newRequire = (id) => {
-        if (id.startsWith('.')) {
-            return requireOrig(path.join(baseDir, id));
-        }
-        else {
-            return requireOrig(id);
-        }
-    };
-    newRequire.requireActual = newRequire;
-    require = newRequire;
     module.paths.push(moduleRoot);
     // tslint:disable-next-line:no-shadowed-variable
     const ipc = require('node-ipc');
@@ -91,7 +81,7 @@ function elevatedMain(baseDir, moduleRoot, ipcPath, main) {
             process.exit(0);
         });
         Promise.resolve()
-            .then(() => main(ipc.of[ipcPath]))
+            .then(() => main(ipc.of[ipcPath], require))
             .catch(error => {
             ipc.of[ipcPath].emit('error', error.message);
             return new Promise((resolve) => setTimeout(resolve, 200));
@@ -106,7 +96,6 @@ function elevatedMain(baseDir, moduleRoot, ipcPath, main) {
  * This is quite a hack because obviously windows doesn't allow us to elevate a
  * running process so instead we have to store the function code into a file and start a
  * new node process elevated to execute that script.
- * Through some hackery the base path for relative requires can be set.
  *
  * IMPORTANT As a consequence the function can not bind any parameters
  *
@@ -114,14 +103,16 @@ function elevatedMain(baseDir, moduleRoot, ipcPath, main) {
  *                 communicate with the elevated process (as stdin/stdout can not be)
  *                 redirected
  * @param {Function} func The closure to run in the elevated process. Try to avoid
- *                        'fancy' code.
+ *                        'fancy' code. This function receives two parameters, one is an ipc stream,
+ *                        connected to the path specified in the first parameter.
+ *                        The second function is a require function which you need to use instead of
+ *                        the global require. Regular require calls will not work in production
+ *                        builds
  * @param {Object} args arguments to be passed into the elevated process
- * @param {string} moduleBase base directory for all relative require call. If undefined,
- *                 the directory of this very file (elevated.js) will be used.
  * @returns {Promise<any>} a promise that will be resolved as soon as the process is started
  *                         (which happens after the user confirmed elevation)
  */
-function runElevated(ipcPath, func, args, moduleBase) {
+function runElevated(ipcPath, func, args) {
     initTypes();
     if (shell32 === undefined) {
         if (process.platform === 'win32') {
@@ -136,18 +127,11 @@ function runElevated(ipcPath, func, args, moduleBase) {
             if (err) {
                 return reject(err);
             }
-            const projectRoot = process.env.NODE_ENV === 'development'
-                ? path.resolve(global__dirname, '../../node_modules').split('\\').join('/')
-                : path.resolve(__dirname, '../node_modules').split('\\').join('/');
-            if (moduleBase === undefined) {
-                moduleBase = __dirname;
-            }
-            moduleBase = moduleBase.split('\\').join('/');
+            const projectRoot = path.resolve(__dirname, '../..').split('\\').join('/');
             let mainBody = elevatedMain.toString();
             mainBody = mainBody.slice(mainBody.indexOf('{') + 1, mainBody.lastIndexOf('}'));
             let prog = `
         let moduleRoot = '${projectRoot}';\n
-        let baseDir = '${moduleBase}';\n
         let ipcPath = '${ipcPath}';\n
       `;
             if (args !== undefined) {
