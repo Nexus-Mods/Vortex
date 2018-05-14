@@ -67,7 +67,7 @@ class CategoryFilterComponent extends React.Component<IProps, IComponentState> {
 
     Object.keys(archiveCategories).forEach(archiveId => {
       if (!installedArchives.has(archiveId)) {
-        modCategories.add(archiveCategories[archiveId]);
+        modCategories.add(archiveCategories[archiveId].toString());
       }
     });
 
