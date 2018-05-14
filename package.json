@@ -14,10 +14,9 @@
   "scripts": {
     "_assets_out": "node InstallAssets.js out",
     "_assets_app": "node InstallAssets.js app",
-    "_update_submodules": "git submodule foreach git pull origin master || exit /b 0",
     "_install_app": "cd app && rm-local-modules && yarn install --non-interactive --check-files",
     "subprojects": "node BuildSubprojects.js out",
-    "subprojects_app": "yarn run _update_submodules && node BuildSubprojects.js app",
+    "subprojects_app": "node BuildSubprojects.js app",
     "build_api": "cd api && yarn run build",
     "build_rest": "yarn run _assets_out && yarn run build_api && yarn run subprojects",
     "build_dist": "webpack --config webpack.main.config.js && webpack --config webpack.renderer.config.js",
