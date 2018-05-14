@@ -50,6 +50,7 @@ class InstallContext implements IInstallContext {
   private mInstallOutcome: InstallOutcome;
   private mFailReason: string;
   private mIsEnabled: (modId: string) => boolean;
+  private mLastProgress: number = 0;
 
   constructor(gameMode: string, api: IExtensionApi) {
     const store: Redux.Store<any> = api.store;
@@ -93,9 +94,11 @@ class InstallContext implements IInstallContext {
 
   public startIndicator(id: string): void {
     log('info', 'start mod install', { id });
+    this.mLastProgress = 0;
     this.mAddNotification({
       id: 'install_' + id,
-      message: 'Installing {{ id }}',
+      title: 'Installing {{ id }}',
+      message: 'Preparing',
       replace: { id },
       type: 'activity',
     });
@@ -116,6 +119,21 @@ class InstallContext implements IInstallContext {
         this.outcomeNotification(
           this.mInstallOutcome, this.mIndicatorId, this.mIsEnabled(this.mAddedId)));
     });
+  }
+
+  public setProgress(percent?: number) {
+    if ((percent - this.mLastProgress) >= 2) {
+      this.mLastProgress = percent;
+      this.mAddNotification({
+        id: 'install_' + this.mIndicatorId,
+        title: 'Installing {{ id }}',
+        message: percent !== undefined ? 'Extracting' : 'Installing',
+        progress: percent,
+        replace: { id: this.mIndicatorId },
+        type: 'activity',
+
+      });
+    }
   }
 
   public startInstallCB(id: string, gameId: string, archiveId: string): void {

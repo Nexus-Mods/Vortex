@@ -2118,8 +2118,8 @@ nexus-api@Nexus-Mods/node-nexus-api:
     string-template "^1.0.0"
 
 node-7z@Nexus-Mods/node-7z:
-  version "0.6.2"
-  resolved "https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/3625b9af10f7a5b00cc8c3ac1858b9219fb41582"
+  version "0.7.0"
+  resolved "https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/d320043e0b468125fa263ba79b042743cf33c7f8"
   dependencies:
     "7z-bin" Nexus-Mods/7z-bin
     bluebird "^3.4.7"

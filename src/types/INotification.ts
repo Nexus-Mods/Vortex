@@ -46,6 +46,11 @@ export interface INotification {
   type: NotificationType;
 
   /**
+   * progress in percent (0-100). If set, the notification is a progress indicator
+   */
+  progress?: number;
+
+  /**
    * path to an icon/image to display in the notification.
    * 'global' notifications displayed outside the window will always display an
    * icon so the user can tell which application it is from.
