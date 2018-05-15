@@ -128,7 +128,7 @@ export function showError<S>(dispatch: Redux.Dispatch<S>,
   if ((options === undefined) || (options.allowReport !== false)) {
     actions.push({
       label: 'Report',
-      action: () => sendReport('error', toError(details), ['error'], ''),
+      action: () => sendReport('error', toError(details, options), ['error'], ''),
     });
   }
 

@@ -16,11 +16,13 @@ import {
   shell,
 } from 'electron';
 import * as fs from 'fs-extra-promise';
+import { t } from 'i18next';
 import NexusT from 'nexus-api';
 import {} from 'opn';
 import * as os from 'os';
 import * as path from 'path';
 import {} from 'uuid';
+import { IErrorOptions } from '../types/api';
 
 // tslint:disable-next-line:no-var-requires
 const opn = require('opn');
@@ -299,15 +301,21 @@ function makeDetails(error: any): IError {
   return result;
 }
 
-export function toError(input: any): IError {
+export function toError(input: any, options?: IErrorOptions): IError {
   switch (typeof input) {
     case 'object': {
-      return (input.message === undefined) && (input.stack === undefined) ?
-                    {message: require('util').inspect(input)} :
-                    {message: input.message, stack: input.stack};
+      if ((input.message === undefined) && (input.stack === undefined)) {
+        // not an error object, what is this??
+        return { message: require('util').inspect(input) };
+      }
+      const message = input.message !== undefined
+        ? t(input.message, { replace: (options || {}).replace, lng: 'en' })
+        : undefined;
+      return {message, stack: input.stack};
     }
     case 'string': {
-      return { message: input };
+      const message = t(input, { replace: (options || {}).replace, lng: 'en' });
+      return { message };
     }
     default: {
       return { message: input as string };
