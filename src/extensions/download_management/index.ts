@@ -54,6 +54,7 @@ const protocolHandlers: IProtocolHandlers = {};
 const archiveExtLookup = new Set<string>([
   '.zip', '.z01', '.7z', '.rar', '.r00', '.001', '.bz2', '.bzip2', '.gz', '.gzip',
   '.xz', '.z',
+  '.fomod',
 ]);
 
 function knownArchiveExt(filePath: string): boolean {
