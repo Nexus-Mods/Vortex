@@ -379,7 +379,7 @@ class InstallManager {
                        gameId: string, installContext: IInstallContext): Promise<IInstallResult> {
     const fileList: string[] = [];
     const progress = (files: string[], percent: number) => {
-      if (percent !== undefined) {
+      if ((percent !== undefined) && (installContext !== undefined)) {
         installContext.setProgress(percent);
       }
     };
@@ -390,7 +390,9 @@ class InstallManager {
           ? Promise.reject(new ArchiveBrokenError())
           : Promise.reject(err))
         .then(({ code, errors }: {code: number, errors: string[] }) => {
-          installContext.setProgress();
+          if (installContext !== undefined) {
+            installContext.setProgress();
+          }
           if (code !== 0) {
             const critical = errors.find(this.isCritical);
             if (critical !== undefined) {
