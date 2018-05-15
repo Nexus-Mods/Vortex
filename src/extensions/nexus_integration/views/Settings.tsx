@@ -47,7 +47,24 @@ interface IActionProps {
 
 type IProps = IBaseProps & IActionProps & IConnectedProps;
 
-class Settings extends ComponentEx<IProps, {}> {
+interface IComponentState {
+  helpText: string;
+}
+
+class Settings extends ComponentEx<IProps, IComponentState> {
+  constructor(props: IProps) {
+    super(props);
+
+    this.state = { helpText: '' };
+  }
+
+  public componentWillMount() {
+    getText('chrome-fix', this.props.t)
+    .then(text => {
+      this.setState({ helpText: text });
+    });
+  }
+
   public render(): JSX.Element {
     const { t, associated } = this.props;
 
@@ -65,7 +82,9 @@ class Settings extends ComponentEx<IProps, {}> {
           <div style={{ marginTop: 15 }}>
             {t('Fix nexusmods-links in Chrome '
               + '(Only required for Chrome. Requires Chrome to be closed)')}
-            <More id='more-chrome-fix' name={t('Chrome Fix')}>{getText('chrome-fix', t)}</More>
+            <More id='more-chrome-fix' name={t('Chrome Fix')}>
+              {this.state.helpText}
+            </More>
             <Button
               tooltip={t('Fix')}
               id='chrome-download-fix'

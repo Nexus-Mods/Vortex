@@ -15,7 +15,7 @@ export interface IProps {
   validate?: (value: any) => ValidationState;
 }
 
-export interface IComponentState {
+interface IComponentState {
   cachedValue: string;
 }
 

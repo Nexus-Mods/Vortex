@@ -1,10 +1,11 @@
 import chromePath from './util/chromePath';
 
+import * as Promise from 'bluebird';
 import { remote } from 'electron';
 import * as I18next from 'i18next';
 import * as path from 'path';
 
-function getText(id: string, t: I18next.TranslationFunction) {
+function getText(id: string, t: I18next.TranslationFunction): Promise<string> {
   switch (id) {
     case 'apikey':
       return t(
@@ -22,7 +23,7 @@ function getText(id: string, t: I18next.TranslationFunction) {
         + 'other users, we can identify the application as the offender, instead of seeing '
         + 'just the ips/accounts responsible for the traffic.\n\n'
         + 'For this reason, please always use keys in the applications they were intended for.');
-    case 'chrome-fix': return t(
+    case 'chrome-fix': return chromePath().then(resolvedPath => t(
       'Chrome requires a change to a configuration file to allow an external program to handle '
       + 'links where chrome doesn\'t know the protocol. This is the case for the green "Download '
       + 'with Manager" buttons on Nexus.\n\n'
@@ -31,11 +32,11 @@ function getText(id: string, t: I18next.TranslationFunction) {
       + 'To clarify: we\'re only enabling support for nxm:// links as used on nexusmods, '
       + 'we\'re not changing anything else.\n\n'
       + 'If you\'d rather do this manually close Chrome, open the file '
-      + chromePath()
+      + resolvedPath
       + ', find the section "exclude_schemes" below "protocol_handlers" and add\n'
       + '"nxm": false,\n'
       + 'below the line \'"nntp": true,\'. Make sure you don\'t break the format of the file, '
-      + 'it will not accept any incorrect or missing symbols anywhere.');
+      + 'it will not accept any incorrect or missing symbols anywhere.'));
     default: return undefined;
   }
 }

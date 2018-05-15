@@ -23,7 +23,10 @@ function chromePath(): Promise<string> {
           ? dat.profile.last_used
           : 'Default';
         return path.join(userData, prof, 'Preferences');
-      });
+      })
+      .catch(err => (['ENOENT', 'EBUSY', 'EPERM'].indexOf(err.code) !== -1)
+        ? Promise.resolve(path.join(userData, 'Default', 'Preferences'))
+        : Promise.reject(err));
   } else {
     return Promise.resolve((process.platform === 'linux')
       ? path.resolve(appPath, 'google-chrome', 'Local State')
