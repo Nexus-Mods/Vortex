@@ -95,4 +95,4 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
   }
 }
 
-export default FormInput;
+export default FormInput as React.ComponentClass<IProps>;

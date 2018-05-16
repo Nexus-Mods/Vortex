@@ -78,7 +78,7 @@ function execInfo(scriptPath: string) {
 }
 
 function elevatedMain(moduleRoot: string, ipcPath: string,
-                      main: (ipc, req) => Promise<void>) {
+                      main: (ipc, req: NodeRequireFunction) => Promise<void>) {
   const handleError = (error: any) => {
     // tslint:disable-next-line:no-console
     console.error('Elevated code failed', error.stack);
@@ -128,7 +128,7 @@ function elevatedMain(moduleRoot: string, ipcPath: string,
  * @returns {Promise<any>} a promise that will be resolved as soon as the process is started
  *                         (which happens after the user confirmed elevation)
  */
-function runElevated(ipcPath: string, func: (ipc: any, req: (id: string) => any) => void,
+function runElevated(ipcPath: string, func: (ipc: any, req: NodeRequireFunction) => void,
                      args?: any): Promise<any> {
   initTypes();
   if (shell32 === undefined) {
