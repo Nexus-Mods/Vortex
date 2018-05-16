@@ -924,9 +924,21 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         .filter(row => row.data !== undefined);
     }
 
-    let sortFunction = sortAttribute.sortFunc;
-    if (sortFunction === undefined) {
-      sortFunction = this.standardSort;
+    let sortFunction;
+    if (sortAttribute.sortFunc !== undefined) {
+      sortFunction = (lhsId: string, rhsId: string) =>
+        sortAttribute.sortFunc(
+          calculatedValues[lhsId][sortAttribute.id],
+          calculatedValues[rhsId][sortAttribute.id],
+          locale);
+    } else if (sortAttribute.sortFuncRaw !== undefined) {
+      sortFunction = (lhsId: string, rhsId: string) =>
+        sortAttribute.sortFuncRaw(data[lhsId], data[rhsId], locale);
+    } else {
+      sortFunction = (lhsId: string, rhsId: string) =>
+        this.standardSort(
+          calculatedValues[lhsId][sortAttribute.id],
+          calculatedValues[rhsId][sortAttribute.id]);
     }
 
     const descending = attributeState[sortAttribute.id].sortDirection === 'desc';
@@ -935,14 +947,14 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
     return dataIds.sort((lhsId: string, rhsId: string): number => {
       let res = 0;
-      if (calculatedValues[lhsId][sortAttribute.id] === undefined) {
+      if (sortAttribute.sortFuncRaw !== undefined) {
+        res = sortFunction(lhsId, rhsId);
+      } else if (calculatedValues[lhsId][sortAttribute.id] === undefined) {
         res = calculatedValues[rhsId][sortAttribute.id] === undefined ? 0 : -1;
       } else if (calculatedValues[rhsId][sortAttribute.id] === undefined) {
         res = 1;
       } else {
-        res = sortFunction(calculatedValues[lhsId][sortAttribute.id],
-          calculatedValues[rhsId][sortAttribute.id],
-          locale);
+        res = sortFunction(lhsId, rhsId);
       }
 
       if (descending) {

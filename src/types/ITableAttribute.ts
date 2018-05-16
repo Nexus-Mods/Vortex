@@ -147,10 +147,16 @@ export interface ITableAttribute<T = any> {
   calc?: (object: T, t: I18next.TranslationFunction) => any | Promise<any>;
   /**
    * custom function for sorting by this attribute. The parameters passed in (lhs and rhs) are
-   * by calc (cached). Return <0 if lhs is smaller than rhs, >0 if it's bigger and =0 if they are
-   * equal.
+   * the output of calc (cached). Return <0 if lhs is smaller than rhs, >0 if it's bigger and
+   * =0 if they are equal.
    */
   sortFunc?: (lhs: any, rhs: any, locale: string) => number;
+  /**
+   * custom function for sorting by this attribute. The parameters passed in (lhs and rhs) are
+   * the objects to compare. Return <0 if lhs is smaller than rhs, >0 if it's bigger and
+   * =0 if they are equal.
+   */
+  sortFuncRaw?: (lhs: T, rhs: T, locale: string) => number;
   /**
    * does this attribute support displaying and editing multiple values? defaults to false.
    * If this is false the attribute is not displayed with multiple items selected. If this is true,
