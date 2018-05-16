@@ -9,6 +9,12 @@ import { activeGameId } from './selectors';
 import * as Promise from 'bluebird';
 import * as Redux from 'redux';
 
+function clone<T>(input: T): T {
+  return Array.isArray(input)
+    ? [].concat(input)
+    : { ...(input as any) };
+}
+
 /**
  * return an item from state or the fallback if the path doesn't lead
  * to an item.
@@ -96,8 +102,8 @@ export function setOrNop<T>(state: T, path: string[], value: any): T {
   } else {
     if (state.hasOwnProperty(firstElement)) {
       const temp = setOrNop(result[firstElement], path.slice(1), value);
-      if (temp !== state[firstElement]) {
-        result = { ...(state as any) };
+      if (temp !== result[firstElement]) {
+        result = clone(result);
         result[firstElement] = temp;
       }
     }
@@ -127,8 +133,8 @@ export function changeOrNop<T>(state: T, path: Array<(string | number)>, value: 
   } else {
     if (state.hasOwnProperty(firstElement)) {
       const temp = changeOrNop(result[firstElement], path.slice(1), value);
-      if (temp !== state[firstElement]) {
-        result = { ...(state as any) };
+      if (temp !== result[firstElement]) {
+        result = clone(result);
         result[firstElement] = temp;
       }
     }
@@ -159,8 +165,8 @@ export function deleteOrNop<T>(state: T, path: Array<(string | number)>): T {
   } else {
     if (result.hasOwnProperty(firstElement)) {
       const temp = deleteOrNop(result[firstElement], path.slice(1));
-      if (temp !== state[firstElement]) {
-        result = { ...(state as any) };
+      if (temp !== result[firstElement]) {
+        result = clone(result);
         result[firstElement] = temp;
       }
     }

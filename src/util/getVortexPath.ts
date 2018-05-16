@@ -11,8 +11,11 @@ export type AppPath = 'base' | 'assets' | 'assets_unpacked' | 'modules' | 'modul
  * development: node_modules\electron\dist\resources\default_app.asar
  * production (with asar): Vortex\resources\app.asar
  * production (without asar): Vortex\resources\app
+ *
+ * when running from unit tests, app may not be defined at all, in that case we use __dirname
+ * after all
  */
-let basePath = app.getAppPath();
+let basePath = app !== undefined ? app.getAppPath() : path.resolve(__dirname, '..', '..');
 const isDevelopment = path.basename(basePath, '.asar') !== 'app';
 const isAsar = !isDevelopment && (path.extname(basePath) === '.asar');
 const applicationPath = isDevelopment

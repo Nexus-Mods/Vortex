@@ -35,7 +35,7 @@ jest.mock('fs', () => ({
 }));
 
 
-import runElevated from '../src/util/elevated';
+import runElevated from '../src/util/vortex-run/elevated';
 
 function dummy() {
   console.log('DUMMY FUNCTION');
