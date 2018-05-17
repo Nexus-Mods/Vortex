@@ -99,7 +99,8 @@ export function onGameModeActivated(
       return null;
     })
     .catch((err: Error) => {
-      showError(store.dispatch, 'Failed to refresh mods', err);
+      showError(store.dispatch, 'Failed to refresh mods', err,
+                { allowReport: (err as any).code !== 'ENOENT' });
     });
 }
 
