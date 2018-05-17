@@ -140,10 +140,10 @@ class DeploymentMethod extends LinkingDeployment {
 
   protected isLink(linkPath: string, sourcePath: string): Promise<boolean> {
     return fs.readFileAsync(sourcePath + LNK_EXT, { encoding: 'utf-8' })
-      .then(data => {
-        const dat = JSON.parse(data);
-        return dat.target === linkPath;
-      });
+      .then(data => JSON.parse(data).target === linkPath)
+      .catch(err => (err.code === 'ENOENT')
+        ? Promise.resolve(false)
+        : Promise.reject(err));
   }
 
   protected canRestore(): boolean {
@@ -162,10 +162,8 @@ class DeploymentMethod extends LinkingDeployment {
   }
 
   private statVortexLink(filePath: string): Promise<fs.Stats> {
-    console.log('svl', filePath);
     return fs.readFileAsync(filePath + LNK_EXT, { encoding: 'utf-8' })
       .then(data => {
-        console.log('data', data);
         const dat = JSON.parse(data);
         return fs.statAsync(dat.target);
       });
@@ -180,7 +178,6 @@ class DeploymentMethod extends LinkingDeployment {
   }
 
   private restoreLink(linkPath: string): Promise<void> {
-    console.log('restore link', linkPath);
     return fs.readFileAsync(linkPath, { encoding: 'utf-8' })
       .then(data => {
         const dat = JSON.parse(data);
