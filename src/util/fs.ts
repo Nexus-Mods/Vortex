@@ -31,25 +31,15 @@ export { constants, FSWatcher, Stats, WriteStream } from 'fs';
 // simple re-export of functions we don't touch (yet)
 export {
   accessSync,
-  chmodAsync,
-  closeAsync,
   closeSync,
   createReadStream,
   createWriteStream,
-  fsyncAsync,
-  linkAsync,
   linkSync,
-  lstatAsync,
-  moveAsync,
   openSync,
-  openAsync,
   readFileSync,
-  readlinkAsync,
   readJSONSync,
   removeSync,
-  statAsync,
   statSync,
-  symlinkAsync,
   watch,
   writeSync,
 } from 'fs-extra-promise';
@@ -70,18 +60,39 @@ function genWrapperAsync<T extends (...args) => any>(func: T): T {
   return res as T;
 }
 
+const chmodAsync = genWrapperAsync(fs.chmodAsync);
+const closeAsync = genWrapperAsync(fs.closeAsync);
+const fsyncAsync = genWrapperAsync(fs.fsyncAsync);
+const linkAsync = genWrapperAsync(fs.linkAsync);
+const lstatAsync = genWrapperAsync(fs.lstatAsync);
 const mkdirAsync = genWrapperAsync(fs.mkdirAsync);
-const utimesAsync = genWrapperAsync(fs.utimesAsync);
+const moveAsync = genWrapperAsync(fs.moveAsync);
+const openAsync = genWrapperAsync(fs.openAsync);
 const readdirAsync = genWrapperAsync(fs.readdirAsync);
 const readFileAsync = genWrapperAsync(fs.readFileAsync);
+const readlinkAsync = genWrapperAsync(fs.readlinkAsync);
+const renameAsync = genWrapperAsync(fs.renameAsync);
+const statAsync = genWrapperAsync(fs.statAsync);
+const symlinkAsync = genWrapperAsync(fs.symlinkAsync);
+const utimesAsync = genWrapperAsync(fs.utimesAsync);
 const writeAsync = genWrapperAsync(fs.writeAsync);
 const writeFileAsync = genWrapperAsync(fs.writeFileAsync);
-const renameAsync = genWrapperAsync(fs.renameAsync);
+
 export {
+  chmodAsync,
+  closeAsync,
+  fsyncAsync,
+  linkAsync,
+  lstatAsync,
   mkdirAsync,
+  moveAsync,
+  openAsync,
+  readlinkAsync,
   readdirAsync,
   readFileAsync,
   renameAsync,
+  statAsync,
+  symlinkAsync,
   utimesAsync,
   writeAsync,
   writeFileAsync,
