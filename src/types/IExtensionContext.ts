@@ -240,7 +240,7 @@ export type GameInfoQuery = (game: any) => Promise<{ [key: string]: IGameDetail 
 export interface IMergeFilter {
   // files to use as basis for merge, will be copied to the merge
   // directory during deployment (from in (absolute) to out (relative to working directory)
-  baseFiles: Array<{ in: string, out: string }>;
+  baseFiles: () => Array<{ in: string, out: string }>;
   // filter function, needs to match all files (relative paths) in the mod to consider
   // for merging
   filter: (fileName: string) => boolean;

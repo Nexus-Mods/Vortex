@@ -152,7 +152,7 @@ function mergeMods(api: IExtensionApi,
             const relPath = path.relative(modPath, fileEntry.filePath);
             mergedFiles.push(relPath);
             return fs.ensureDirAsync(realDest)
-              .then(() => Promise.map(merger.match.baseFiles,
+              .then(() => Promise.map(merger.match.baseFiles(),
                 file => fs.copyAsync(file.in, path.join(realDest, file.out)).catch(err =>
                   // source file missing isn't really a big deal, treat as empty
                   (err.code === 'ENOENT')
