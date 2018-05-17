@@ -1,4 +1,4 @@
-import * as Promise from 'bluebird';
+import * as Bluebird from 'bluebird';
 import {} from 'ffi';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -78,7 +78,7 @@ function execInfo(scriptPath: string) {
 }
 
 function elevatedMain(baseDir: string, moduleRoot: string, ipcPath: string,
-                      main: (ipc) => Promise<void>) {
+                      main: (ipc) => void | Promise<void> | Bluebird<void>) {
   const handleError = (error: any) => {
     // tslint:disable-next-line:no-console
     console.error('Elevated code failed', error.stack);
@@ -99,18 +99,21 @@ function elevatedMain(baseDir: string, moduleRoot: string, ipcPath: string,
   (module as any).paths.push(moduleRoot);
   // tslint:disable-next-line:no-shadowed-variable
   const ipc = require('node-ipc');
+  ipc.config.maxRetries = 5;
+  ipc.config.stopRetrying = 5;
   ipc.connectTo(ipcPath, ipcPath, () => {
     ipc.of[ipcPath].on('quit', () => {
       process.exit(0);
     });
     Promise.resolve()
-      .then(() => main(ipc.of[ipcPath]))
+      .then(() => Promise.resolve(main(ipc.of[ipcPath])))
       .catch(error => {
         ipc.of[ipcPath].emit('error', error.message);
         return new Promise((resolve) => setTimeout(resolve, 200));
       })
       .then(() => {
         ipc.disconnect(ipcPath);
+        process.exit(0);
       });
   });
 }
@@ -132,11 +135,11 @@ function elevatedMain(baseDir: string, moduleRoot: string, ipcPath: string,
  * @param {Object} args arguments to be passed into the elevated process
  * @param {string} moduleBase base directory for all relative require call. If undefined,
  *                 the directory of this very file (elevated.js) will be used.
- * @returns {Promise<any>} a promise that will be resolved as soon as the process is started
+ * @returns {Bluebird<any>} a promise that will be resolved as soon as the process is started
  *                         (which happens after the user confirmed elevation)
  */
-function runElevated(ipcPath: string, func: (ipc: any) => void,
-                     args?: any, moduleBase?: string): Promise<any> {
+function runElevated(ipcPath: string, func: (ipc: any) => void | Promise<void> | Bluebird<void>,
+                     args?: any, moduleBase?: string): Bluebird<any> {
   initTypes();
   if (shell32 === undefined) {
     if (process.platform === 'win32') {
@@ -146,7 +149,7 @@ function runElevated(ipcPath: string, func: (ipc: any) => void,
       });
     }
   }
-  return new Promise((resolve, reject) => {
+  return new Bluebird((resolve, reject) => {
     tmp.file((err: any, tmpPath: string, fd: number, cleanup: () => void) => {
       if (err) {
         return reject(err);

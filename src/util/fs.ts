@@ -14,6 +14,7 @@
 import { UserCanceled } from './CustomErrors';
 import { delayed } from './delayed';
 import runElevated from './elevated';
+import { globalT } from './i18n';
 
 import * as Promise from 'bluebird';
 import { dialog as dialogIn, remote } from 'electron';
@@ -48,14 +49,99 @@ const NUM_RETRIES = 3;
 const RETRY_DELAY_MS = 100;
 const RETRY_ERRORS = new Set(['EPERM', 'EBUSY', 'EUNKNOWN']);
 
+function unlockConfirm(filePath): Promise<boolean> {
+  if (dialog === undefined) {
+    return Promise.resolve(false);
+  }
+
+  const { t } = require('i18next');
+  const choice = dialog.showMessageBox(
+    remote !== undefined ? remote.getCurrentWindow() : null,
+    {
+      title: 'File busy',
+      message: globalT('Vortex needs to access "{{ fileName }}" it doesn\'t have permission to.\n'
+        + 'If your account has admin rights Vortex can unlock the file for you. '
+        + 'Windows will show an UAC dialog.',
+        { replace: { fileName: filePath } }),
+      buttons: [
+        'Cancel',
+        'Give permission',
+      ],
+      type: 'warning',
+      noLink: true,
+    });
+  return (choice === 0)
+    ? Promise.reject(new UserCanceled())
+    : Promise.resolve(true);
+
+}
+
+function busyRetry(filePath: string): Promise<boolean> {
+  if (dialog === undefined) {
+    return Promise.resolve(false);
+  }
+
+  const choice = dialog.showMessageBox(
+    remote !== undefined ? remote.getCurrentWindow() : null,
+    {
+      title: 'File busy',
+      message: globalT(
+        'Vortex needs to access "{{ filePath }}" but it\'s open in another application. '
+        + 'Please close the file in all other applications and then retry', {
+          replace: { filePath} }),
+      buttons: [
+        'Cancel',
+        'Retry',
+      ],
+      type: 'warning',
+      noLink: true,
+    });
+  return (choice === 0)
+    ? Promise.reject(new UserCanceled())
+    : Promise.resolve(true);
+}
+
+function errorRepeat(code: string, filePath: string): Promise<boolean> {
+  if (code === 'EBUSY') {
+    return busyRetry(filePath);
+  } else if (code === 'EPERM') {
+    return unlockConfirm(filePath)
+      .then(doUnlock => {
+        if (doUnlock) {
+          const userId = getUserId();
+          return elevated(() => {
+            // tslint:disable-next-line:no-shadowed-variable
+            const fs = require('fs-extra-promise');
+            const { allow } = require('permissions');
+            return allow(filePath, userId, 'rwx');
+          }, { filePath, userId })
+            .then(() => true);
+        } else {
+          return Promise.resolve(false);
+        }
+      });
+  } else {
+    return Promise.resolve(false);
+  }
+}
+
+function errorHandler(error: NodeJS.ErrnoException, stack: string): Promise<void> {
+  return errorRepeat(error.code, error.path)
+    .then(repeat => {
+      if (repeat) {
+        return Promise.resolve();
+      } else {
+        error.stack = error.message + '\n' + stack;
+        return Promise.reject(error);
+      }
+    });
+}
 function genWrapperAsync<T extends (...args) => any>(func: T): T {
   const res = (...args) => {
     const stack = new Error().stack;
     return func(...args)
-      .catch(err => {
-        err.stack = err.message + '\n' + stack;
-        throw err;
-      });
+      .catch(err => errorHandler(err, stack)
+        .then(() => res(...args)));
   };
   return res as T;
 }
@@ -140,65 +226,46 @@ export function copyAsync(src: string, dest: string,
         const err = new Error('Source and destination are the same file.');
         err.stack = err.message + '\n' + stack;
         return Promise.reject(err);
-      }  else {
-        Promise.resolve();
+      } else {
+        return Promise.resolve();
       }
     })
-    .then(() => copyInt(src, dest, options || undefined, stack, NUM_RETRIES));
+    .then(() => copyInt(src, dest, options || undefined, stack));
 }
 
 function copyInt(
     src: string, dest: string,
     options: RegExp | ((src: string, dest: string) => boolean) | fs.CopyOptions,
-    stack: string,
-    tries: number) {
+    stack: string) {
   return fs.copyAsync(src, dest, options)
-      .catch((err: NodeJS.ErrnoException) => {
-        if (RETRY_ERRORS.has(err.code) && (tries > 0)) {
-          return delayed(RETRY_DELAY_MS)
-            .then(() => copyInt(src, dest, options, stack, tries - 1));
-        }
-        err.stack = err.message + '\n' + stack;
-        throw err;
-      });
+    .catch((err: NodeJS.ErrnoException) =>
+      errorHandler(err, stack).then(() => copyInt(src, dest, options, stack)));
 }
 
 export function removeAsync(dirPath: string): Promise<void> {
-  return removeInt(dirPath, new Error().stack, NUM_RETRIES);
+  return removeInt(dirPath, new Error().stack);
 }
 
-function removeInt(dirPath: string, stack: string, tries: number): Promise<void> {
+function removeInt(dirPath: string, stack: string): Promise<void> {
   return fs.removeAsync(dirPath)
-    .catch((err: NodeJS.ErrnoException) => {
-      if (err.code === 'ENOENT') {
+    .catch((err: NodeJS.ErrnoException) => (err.code === 'ENOENT')
         // don't mind if a file we wanted deleted was already gone
-        return Promise.resolve();
-      } else if (RETRY_ERRORS.has(err.code) && (tries > 0)) {
-          return delayed(RETRY_DELAY_MS)
-            .then(() => removeInt(dirPath, stack, tries - 1));
-      }
-      err.stack = err.message + '\n' + stack;
-      throw err;
-    });
+        ? Promise.resolve()
+        : errorHandler(err, stack)
+          .then(() => removeInt(dirPath, stack)));
 }
 
 export function unlinkAsync(dirPath: string): Promise<void> {
-  return unlinkInt(dirPath, new Error().stack, NUM_RETRIES);
+  return unlinkInt(dirPath, new Error().stack);
 }
 
-function unlinkInt(dirPath: string, stack: string, tries: number): Promise<void> {
+function unlinkInt(dirPath: string, stack: string): Promise<void> {
   return fs.unlinkAsync(dirPath)
-    .catch((err: NodeJS.ErrnoException) => {
-      if (err.code === 'ENOENT') {
+    .catch((err: NodeJS.ErrnoException) => (err.code === 'ENOENT')
         // don't mind if a file we wanted deleted was already gone
-        return Promise.resolve();
-      } else if (RETRY_ERRORS.has(err.code) && (tries > 0)) {
-          return delayed(RETRY_DELAY_MS)
-            .then(() => unlinkInt(dirPath, stack, tries - 1));
-      }
-      err.stack = err.message + '\n' + stack;
-      throw err;
-    });
+        ? Promise.resolve()
+        : errorHandler(err, stack)
+          .then(() => unlinkInt(dirPath, stack)));
 }
 
 export function rmdirAsync(dirPath: string): Promise<void> {
@@ -220,7 +287,7 @@ function rmdirInt(dirPath: string, stack: string, tries: number): Promise<void> 
     });
 }
 
-function elevated(func: () => void, parameters: any): Promise<void> {
+function elevated(func: () => Promise<void>, parameters: any): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     const id = shortid();
     ipc.serve(`__fs_elevated_${id}`, () => {
@@ -277,7 +344,7 @@ export function forcePerm<T>(t: I18next.TranslationFunction, op: () => Promise<T
       if (err.code === 'EPERM') {
         const choice = dialog.showMessageBox(
           remote !== undefined ? remote.getCurrentWindow() : null, {
-          message: t('Vortex needs to access a file it doesn\'t have permission to.\n'
+          message: t('Vortex needs to access "{{ fileName }}" doesn\'t have permission to.\n'
                    + 'If your account has admin rights Vortex can unlock the file for you. '
                    + 'Windows will show an UAC dialog.',
             { replace: { fileName: err.path } }),
