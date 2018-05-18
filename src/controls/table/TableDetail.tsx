@@ -136,7 +136,7 @@ class DetailCell extends React.Component<ICellProps, {}> {
     if (readOnly) {
       return (
         <FormControl.Static>
-          {currentChoice !== undefined ? currentChoice.text : null}
+          {currentChoice !== undefined ? currentChoice.text : t('<Nothing>')}
         </FormControl.Static>
       );
     } else {
