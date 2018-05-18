@@ -42,7 +42,7 @@ import * as rimraf from 'rimraf';
 
 export class ArchiveBrokenError extends Error {
   constructor() {
-    super('ArchiveBroken');
+    super('Archive is broken');
 
     this.name = this.constructor.name;
   }
