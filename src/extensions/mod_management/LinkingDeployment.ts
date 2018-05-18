@@ -213,8 +213,13 @@ abstract class LinkingActivator implements IDeploymentMethod {
             }));
           }
 
-          return Object.keys(this.mContext.previousDeployment)
-              .map(key => this.mContext.previousDeployment[key]);
+          const context = this.mContext;
+          this.mContext = undefined;
+          return Object.keys(context.previousDeployment)
+              .map(key => context.previousDeployment[key]);
+        })
+        .tapCatch(() => {
+          this.mContext = undefined;
         });
   }
 
