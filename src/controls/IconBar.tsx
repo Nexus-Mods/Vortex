@@ -299,6 +299,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
           instanceId={instanceIds}
           icon={hasIcon ? icon.icon : undefined}
           text={hasText ? icon.title : undefined}
+          tooltip={icon.title}
           onClick={icon.action}
           placement={tooltipPlacement}
         />
