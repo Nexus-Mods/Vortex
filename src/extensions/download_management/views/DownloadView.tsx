@@ -451,6 +451,12 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
             type: 'warning',
             message: err.message,
           });
+        } else if (err.code === 'ECONNRESET') {
+          this.props.onShowError('Failed to download', 'Server refused connection',
+            undefined, false);
+        } else if (err.code === 'ENOSPC') {
+          this.props.onShowError('Failed to download', 'The disk is full',
+            undefined, false);
         } else {
           this.context.api.showErrorNotification('Failed to start download', err);
         }
@@ -475,18 +481,21 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
       this.context.api.events.emit('resume-download', downloadId, (err) => {
         if (err !== null) {
           if (err instanceof ProcessCanceled) {
-            this.props.onShowError('Failed to resume download',
+            this.props.onShowError('Failed to download',
                                    'Sorry, this download is missing info necessary to resume. '
                                    + 'Please try restarting it.',
                                    undefined, false);
           } else if ((err.message === 'Moved Permanently') || (err.message === 'Forbidden')) {
-            this.props.onShowError('Failed to resume download', 'The url is no longer valid',
+            this.props.onShowError('Failed to download', 'The url is no longer valid',
               undefined, false);
           } else if (err.code === 'ECONNRESET') {
-            this.props.onShowError('Failed to resume download', 'Server refused connection',
+            this.props.onShowError('Failed to download', 'Server refused connection',
+              undefined, false);
+          } else if (err.code === 'ENOSPC') {
+            this.props.onShowError('Failed to download', 'The disk is full',
               undefined, false);
           } else {
-            this.props.onShowError('Failed to resume download', err);
+            this.props.onShowError('Failed to download', err);
           }
         }
       });
