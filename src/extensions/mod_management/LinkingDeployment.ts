@@ -1,8 +1,10 @@
 import {addNotification} from '../../actions/notifications';
 import {IExtensionApi} from '../../types/IExtensionContext';
+import { ProcessCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import getNormalizeFunc, {Normalize} from '../../util/getNormalizeFunc';
 import {log} from '../../util/log';
+import { getSafe } from '../../util/storeHelper';
 
 import {
   IDeployedFile,
@@ -16,7 +18,6 @@ import * as I18next from 'i18next';
 import * as _ from 'lodash';
 import * as path from 'path';
 import turbowalk from 'turbowalk';
-import { getSafe } from '../../util/storeHelper';
 
 interface IDeployment {
   [relPath: string]: IDeployedFile;
@@ -25,6 +26,11 @@ interface IDeployment {
 // TODO: guess I need to pull this out of the linking activator as the deployment
 //   code needs to know about these files when merging archives
 export const BACKUP_TAG = '.vortex_backup';
+
+interface IDeploymentContext {
+  previousDeployment: IDeployment;
+  newDeployment: IDeployment;
+}
 
 /**
  * base class for mod activators that use some form of file-based linking
@@ -37,10 +43,10 @@ abstract class LinkingActivator implements IDeploymentMethod {
   public name: string;
   public description: string;
 
-  private mPreviousDeployment: IDeployment = {};
-  private mNewDeployment: IDeployment = {};
   private mApi: IExtensionApi;
   private mNormalize: Normalize;
+
+  private mContext: IDeploymentContext;
 
   constructor(id: string, name: string, description: string, api: IExtensionApi) {
     this.id = id;
@@ -69,16 +75,21 @@ abstract class LinkingActivator implements IDeploymentMethod {
   }
 
   public prepare(dataPath: string, clean: boolean, lastDeployment: IDeployedFile[]): Promise<void> {
+    if (this.mContext !== undefined) {
+      return Promise.reject(new ProcessCanceled('Deployment in progress'));
+    }
     return getNormalizeFunc(dataPath, { unicode: false, separators: false, relative: false })
       .then(func => {
         this.mNormalize = func;
-        this.mPreviousDeployment = {};
-        this.mNewDeployment = {};
+        this.mContext = {
+          newDeployment: {},
+          previousDeployment: {},
+        };
         lastDeployment.forEach(file => {
           const key = this.mNormalize(file.relPath);
-          this.mPreviousDeployment[key] = file;
+          this.mContext.previousDeployment[key] = file;
           if (!clean) {
-            this.mNewDeployment[key] = file;
+            this.mContext.newDeployment[key] = file;
           }
         });
       });
@@ -97,12 +108,9 @@ abstract class LinkingActivator implements IDeploymentMethod {
 
     let errorCount: number = 0;
 
-    const newDeployment = this.mNewDeployment;
-    const previousDeployment = this.mPreviousDeployment;
-
     // unlink all files that were removed or changed
     ({added, removed, sourceChanged, contentChanged} =
-         this.diffActivation(previousDeployment, newDeployment));
+         this.diffActivation(this.mContext.previousDeployment, this.mContext.newDeployment));
     log('debug', 'deployment', {
       added: added.length,
       removed: removed.length,
@@ -126,7 +134,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
     return Promise.map([].concat(removed, sourceChanged, contentChanged),
                        key => {
                          const outputPath = path.join(
-                             dataPath, previousDeployment[key].relPath);
+                             dataPath, this.mContext.previousDeployment[key].relPath);
                          return this.unlinkFile(outputPath)
                              .catch(err => {
                                if (err.code !== 'ENOENT') {
@@ -140,17 +148,18 @@ abstract class LinkingActivator implements IDeploymentMethod {
                                              .catch(() => undefined))
                              .then(() => {
                                progress();
-                               delete previousDeployment[key];
+                               delete this.mContext.previousDeployment[key];
                              })
                              .catch(err => {
                                log('warn', 'failed to unlink', {
-                                 path: previousDeployment[key].relPath,
+                                 path: this.mContext.previousDeployment[key].relPath,
                                  error: err.message,
                                });
                                // need to make sure the deployment manifest
                                // reflects the actual state, otherwise we may
                                // leave files orphaned
-                               newDeployment[key] = previousDeployment[key];
+                               this.mContext.newDeployment[key] =
+                                this.mContext.previousDeployment[key];
                                let idx = sourceChanged.indexOf(key);
                                if (idx !== -1) {
                                  sourceChanged.splice(idx, 1);
@@ -170,8 +179,8 @@ abstract class LinkingActivator implements IDeploymentMethod {
                   key => this.deployFile(key, installationPath, dataPath, false)
                              .catch(err => {
                                log('warn', 'failed to link', {
-                                 link: newDeployment[key].relPath,
-                                 source: newDeployment[key].source,
+                                 link: this.mContext.newDeployment[key].relPath,
+                                 source: this.mContext.newDeployment[key].source,
                                  error: err.message,
                                });
                                ++errorCount;
@@ -184,8 +193,8 @@ abstract class LinkingActivator implements IDeploymentMethod {
                       this.deployFile(key, installationPath, dataPath, true)
                           .catch(err => {
                             log('warn', 'failed to link', {
-                              link: newDeployment[key].relPath,
-                              source: newDeployment[key].source,
+                              link: this.mContext.newDeployment[key].relPath,
+                              source: this.mContext.newDeployment[key].source,
                               error: err.message,
                             });
                             ++errorCount;
@@ -204,8 +213,8 @@ abstract class LinkingActivator implements IDeploymentMethod {
             }));
           }
 
-          return Object.keys(previousDeployment)
-              .map(key => previousDeployment[key]);
+          return Object.keys(this.mContext.previousDeployment)
+              .map(key => this.mContext.previousDeployment[key]);
         });
   }
 
@@ -217,7 +226,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
         if (!entry.isDirectory && !blackList.has(relPath)) {
           // mods are activated in order of ascending priority so
           // overwriting is fine here
-          this.mNewDeployment[this.mNormalize(relPath)] = {
+          this.mContext.newDeployment[this.mNormalize(relPath)] = {
             relPath,
             source: sourceName,
             target: dataPath,
@@ -235,7 +244,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
       entries.forEach(entry => {
         if (!entry.isDirectory) {
           const relPath: string = path.relative(sourceBase, entry.filePath);
-          delete this.mNewDeployment[this.mNormalize(relPath)];
+          delete this.mContext.newDeployment[this.mNormalize(relPath)];
         }
       });
     });
@@ -333,11 +342,11 @@ abstract class LinkingActivator implements IDeploymentMethod {
 
   private deployFile(key: string, installPathStr: string, dataPath: string,
                      replace: boolean): Promise<IDeployedFile> {
-    const fullPath = path.join(installPathStr, this.mNewDeployment[key].source,
-                               this.mNewDeployment[key].relPath);
+    const fullPath = path.join(installPathStr, this.mContext.newDeployment[key].source,
+                               this.mContext.newDeployment[key].relPath);
     const fullOutputPath =
-        path.join(dataPath, this.mNewDeployment[key].target || '',
-                  this.mNewDeployment[key].relPath);
+        path.join(dataPath, this.mContext.newDeployment[key].target || '',
+                  this.mContext.newDeployment[key].relPath);
 
     const backupProm: Promise<void> = replace
       ? Promise.resolve(undefined)
@@ -354,8 +363,8 @@ abstract class LinkingActivator implements IDeploymentMethod {
     return backupProm
       .then(() => this.linkFile(fullOutputPath, fullPath))
       .then(() => {
-        this.mPreviousDeployment[key] = this.mNewDeployment[key];
-        return this.mNewDeployment[key];
+        this.mContext.previousDeployment[key] = this.mContext.newDeployment[key];
+        return this.mContext.newDeployment[key];
       });
   }
 
