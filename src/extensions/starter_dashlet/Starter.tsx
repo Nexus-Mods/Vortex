@@ -303,7 +303,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
       this.startTool(tools[0]);
     } else {
       const info = tools.find(iter => iter.id === primaryTool);
-      this.startTool(info);
+      this.startTool(info || tools[0]);
     }
   }
 
