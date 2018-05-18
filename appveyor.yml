@@ -9,6 +9,9 @@ cache: '%LOCALAPPDATA%\Yarn'
 build_script:
 - cmd: >-
     yarn run ci
+test_script:
+- cmd: >-
+    yarn run test
 artifacts:
 - path: dist\Vortex Setup *.exe
   name: Setup
