@@ -8,6 +8,7 @@ import {
 import { createErrorReport, sendReport, toError } from './errorHandling';
 
 import { log } from './log';
+import { truthy } from './util';
 
 import * as Redux from 'redux';
 import * as ReduxThunk from 'redux-thunk';
@@ -109,7 +110,7 @@ export function showError<S>(dispatch: Redux.Dispatch<S>,
 
   log('error', message, err);
 
-  const content: IDialogContent = ((options !== undefined) && options.isHTML) ? {
+  const content: IDialogContent = (truthy(options) && options.isHTML) ? {
     htmlText: err.message || err.text,
     options: {
       wrap: false,

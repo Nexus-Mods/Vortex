@@ -452,7 +452,7 @@ class ExtensionManager {
       ipcRenderer.on('send-notification',
         (event, notification) => this.mApi.sendNotification(notification));
       ipcRenderer.on('show-error-notification', (event, message, details, options) =>
-        this.mApi.showErrorNotification(message, details, options));
+        this.mApi.showErrorNotification(message, details, options || undefined));
 
       store.dispatch(setExtensionLoadFailures(this.mLoadFailures));
     }
