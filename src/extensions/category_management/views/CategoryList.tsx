@@ -1,4 +1,5 @@
 import { showDialog } from '../../../actions/notifications';
+import ActionDropdown from '../../../controls/ActionDropdown';
 import Icon from '../../../controls/Icon';
 import IconBar from '../../../controls/IconBar';
 import { Button, IconButton } from '../../../controls/TooltipControls';
@@ -431,7 +432,8 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
     return {
       buttons: [
         (
-          <IconBar
+          <ActionDropdown
+            className='category-buttons'
             group='category-icons'
             staticElements={actions}
             instanceId={rowInfo.node.categoryId}
