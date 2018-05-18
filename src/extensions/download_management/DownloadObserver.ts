@@ -229,7 +229,7 @@ export class DownloadObserver {
     return (received: number, total: number, chunks: IChunk[],
             urls?: string[], updatedFilePath?: string) => {
       // avoid updating too frequently because it causes ui updates
-      const now = new Date().getTime();
+      const now = Date.now();
       const newPerc = Math.floor((received * 100) / total);
       if (((now - lastUpdateTick) < 1000) || (newPerc === lastUpdatePerc)) {
         return;

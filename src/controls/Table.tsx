@@ -1008,7 +1008,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       ? { $set: { selected: true } }
       : { selected: { $set: true } };
 
-    const now = new Date().getTime();
+    const now = Date.now();
     if (click && (this.state.lastSelected === rowId) && ((now - this.mLastSelectOnly) < 500)) {
       this.updateState(update(this.mNextState, {
         detailsOpen: { $set: !this.state.detailsOpen },

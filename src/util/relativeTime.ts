@@ -8,7 +8,7 @@ const SEC_PER_MONTH = SEC_PER_DAY * 30;
 const SEC_PER_YEAR = SEC_PER_DAY * 365;
 
 function relativeTime(date: Date, t: I18next.TranslationFunction): string {
-  let deltaSec = (new Date().getTime() - date.getTime()) / 1000;
+  let deltaSec = (Date.now() - date.getTime()) / 1000;
 
   if (isNaN(deltaSec)) {
     deltaSec = 0;

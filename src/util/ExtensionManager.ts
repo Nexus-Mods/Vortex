@@ -1005,9 +1005,9 @@ class ExtensionManager {
           // bundled one if this one fails to load which could be convenient but also massively
           // confusing.
           loadedExtensions.add(name);
-          const before = new Date().getTime();
+          const before = Date.now();
           const ext = this.loadDynamicExtension(path.join(extensionsPath, name));
-          const loadTime = new Date().getTime() - before;
+          const loadTime = Date.now() - before;
           log('debug', 'loaded extension', { name, loadTime });
           return ext;
         } catch (err) {
