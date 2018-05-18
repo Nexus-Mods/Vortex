@@ -157,6 +157,9 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
   private dismiss = (notificationId: string) => {
     const { notifications, onDismiss } = this.props;
     const noti = notifications.find(iter => iter.id === notificationId);
+    if (noti === undefined) {
+      return;
+    }
     if ((noti.group === undefined) || (noti.group === this.state.expand)) {
       onDismiss(notificationId);
     } else {
