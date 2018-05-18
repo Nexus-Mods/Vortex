@@ -479,8 +479,11 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
                                    'Sorry, this download is missing info necessary to resume. '
                                    + 'Please try restarting it.',
                                    undefined, false);
-          } else if (err.message === 'Moved Permanently') {
+          } else if ((err.message === 'Moved Permanently') || (err.message === 'Forbidden')) {
             this.props.onShowError('Failed to resume download', 'The url is no longer valid',
+              undefined, false);
+          } else if (err.code === 'ECONNRESET') {
+            this.props.onShowError('Failed to resume download', 'Server refused connection',
               undefined, false);
           } else {
             this.props.onShowError('Failed to resume download', err);
