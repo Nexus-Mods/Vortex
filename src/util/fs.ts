@@ -223,14 +223,19 @@ export function copyAsync(src: string, dest: string,
                 .catch(err => err.code === 'ENOENT' ? Promise.resolve({}) : Promise.reject(err)))
     .then((stats: fs.Stats[]) => {
       if (stats[0].ino === stats[1].ino) {
-        const err = new Error('Source and destination are the same file.');
+        const err = new Error(
+          `Source "${src}" and destination "${dest}" are the same file (id ${stats[0].ino}).`);
         err.stack = err.message + '\n' + stack;
         return Promise.reject(err);
       } else {
         return Promise.resolve();
       }
     })
-    .then(() => copyInt(src, dest, options || undefined, stack));
+    .then(() => copyInt(src, dest, options || undefined, stack))
+    .catch(err => {
+      err.stack = err.message + '\n' + stack;
+      return Promise.reject(err);
+    });
 }
 
 function copyInt(

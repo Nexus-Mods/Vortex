@@ -140,10 +140,9 @@ function bakeSettings(t: TranslationFunction, gameMode: string, discovery: IDisc
         .catch(err => {
           if (err.code === 'ENOENT') {
             // source file missing isn't really a big deal, treat as empty
-            return Promise.join([
+            return Promise.join(
               fs.ensureFileAsync(iniFileName + '.base'),
-              fs.ensureFileAsync(iniFileName + '.baked'),
-            ]);
+              fs.ensureFileAsync(iniFileName + '.baked'));
           } else {
             return Promise.reject(err);
           }
