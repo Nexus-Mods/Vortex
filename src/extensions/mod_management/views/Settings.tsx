@@ -1,24 +1,26 @@
 import { showDialog } from '../../../actions/notifications';
 import EmptyPlaceholder from '../../../controls/EmptyPlaceholder';
+import FlexLayout from '../../../controls/FlexLayout';
 import Icon from '../../../controls/Icon';
 import More from '../../../controls/More';
 import Spinner from '../../../controls/Spinner';
 import { Button } from '../../../controls/TooltipControls';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
-import { IStatePaths } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { UserCanceled } from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
 import { showError } from '../../../util/message';
 import { activeGameId } from '../../../util/selectors';
 import { getSafe, setSafe } from '../../../util/storeHelper';
+import { isChildPath } from '../../../util/util';
+import { setDownloadPath } from '../../download_management/actions/settings';
 import { getGame } from '../../gamemode_management';
 import { currentGame, currentGameDiscovery } from '../../gamemode_management/selectors';
 import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../../gamemode_management/types/IGameStored';
-import { setActivator, setPath } from '../actions/settings';
+import { setActivator, setInstallPath } from '../actions/settings';
 import { IDeploymentMethod } from '../types/IDeploymentMethod';
-import resolvePath, { pathDefaults, PathKey } from '../util/resolvePath';
+import getInstallPath, { getInstallPathPattern } from '../util/getInstallPath';
 import getSupportedActivators from '../util/supportedActivators';
 
 import getText from '../texts';
@@ -34,7 +36,6 @@ import {
   HelpBlock, InputGroup, Jumbotron, Modal, Panel,
 } from 'react-bootstrap';
 import * as Redux from 'redux';
-import { isChildPath } from '../../../util/util';
 
 interface IBaseProps {
   activators: IDeploymentMethod[];
@@ -44,13 +45,13 @@ interface IConnectedProps {
   game: IGameStored;
   discovery: IDiscoveryResult;
   gameMode: string;
-  paths: { [gameId: string]: IStatePaths };
+  installPath: string;
   currentActivator: string;
   state: any;
 }
 
 interface IActionProps {
-  onSetPath: (gameMode: string, key: string, path: string) => void;
+  onSetInstallPath: (gameMode: string, path: string) => void;
   onSetActivator: (gameMode: string, id: string) => void;
   onShowDialog: (
     type: DialogType,
@@ -62,7 +63,7 @@ interface IActionProps {
 }
 
 interface IComponentState {
-  paths: { [gameId: string]: IStatePaths };
+  installPath: string;
   busy: string;
   supportedActivators: IDeploymentMethod[];
   currentActivator: string;
@@ -73,38 +74,37 @@ type IProps = IBaseProps & IActionProps & IConnectedProps;
 const nop = () => undefined;
 
 class Settings extends ComponentEx<IProps, IComponentState> {
-  private mPathChangeCBs: { [key: string]: (evt: any) => void } = {};
-  private mBrowseCBs: { [key: string]: () => void } = {};
-
-  constructor(props) {
+  constructor(props: IProps) {
     super(props);
-    this.state = {
-      paths: { ...this.props.paths },
+    this.initState({
       busy: undefined,
       supportedActivators: [],
       currentActivator: props.currentActivator,
-    };
+      installPath: props.installPath,
+    });
   }
 
   public componentWillMount() {
-    this.setState(update(this.state, {
-      supportedActivators: { $set: this.supportedActivators() },
-    }));
+    this.nextState.supportedActivators = this.supportedActivators();
+  }
+
+  public componentWillReceiveProps(newProps: IProps) {
+    if (this.props.installPath !== newProps.installPath) {
+      this.nextState.installPath = newProps.installPath;
+    }
   }
 
   public componentDidUpdate(prevProps: IProps, prevState: IComponentState) {
     if ((this.props.gameMode !== prevProps.gameMode)
-        || !_.isEqual(this.props.paths, prevProps.paths)) {
-      this.setState(update(this.state, {
-        supportedActivators: { $set: this.supportedActivators() },
-        currentActivator: { $set: this.props.currentActivator },
-      }));
+        || (this.props.installPath !== prevProps.installPath)) {
+      this.nextState.supportedActivators = this.supportedActivators();
+      this.nextState.currentActivator = this.props.currentActivator;
     }
   }
 
   public render(): JSX.Element {
     const { t, activators, discovery, game, gameMode } = this.props;
-    const { currentActivator, paths, supportedActivators } = this.state;
+    const { currentActivator, installPath, supportedActivators } = this.state;
 
     if (game === undefined) {
       return (
@@ -118,30 +118,23 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
     const gameName = getSafe(discovery, ['name'], getSafe(game, ['name'], undefined));
 
-    const label = t('Settings for {{name}}', {
-      replace: {
-        name: game.name,
-      },
-    });
-
     const PanelX: any = Panel;
-
-    const footer = this.renderFooter();
 
     return (
       <form>
-        <FormControl.Static componentClass='h4'>{label}</FormControl.Static>
         <Panel>
           <PanelX.Body>
-            <ControlLabel>
-              {t('Paths')}
-              <More id='more-paths' name={t('Paths')} >
-                {getText('paths', t)}
-              </More>
-            </ControlLabel>
-            {this.renderPathCtrl(paths, t('Base Path'), 'base')}
-            {this.renderPathCtrl(paths, t('Download Path'), 'download')}
-            {this.renderPathCtrl(paths, t('Install Path'), 'install')}
+            <FlexLayout.Fixed>
+              {this.renderPathCtrl(t('Install Path ({{name}})', { replace: { name: game.name } }))}
+            </FlexLayout.Fixed>
+            <FlexLayout.Fixed>
+              <BSButton
+                disabled={this.pathsChanged()}
+                onClick={this.applyPaths}
+              >
+                {t('Apply')}
+              </BSButton>
+            </FlexLayout.Fixed>
             <Modal show={this.state.busy !== undefined} onHide={nop}>
               <Modal.Body>
                 <Jumbotron>
@@ -151,14 +144,6 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               </Modal.Body>
             </Modal>
           </PanelX.Body>
-          {footer !== null ? (
-            <PanelX.Footer style={{ display: 'flex', alignItems: 'center' }}>
-              <div style={{ flex: '1 1 0' }}>
-                {t('Applying changes will cause files to be moved to the new location.')}
-              </div>
-              {footer}
-            </PanelX.Footer>)
-            : null}
         </Panel>
         <hr />
         <Panel>
@@ -188,22 +173,18 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
   private pathsChanged() {
     const { gameMode } = this.props;
-    return (resolvePath('download', this.props.paths, gameMode)
-            !== resolvePath('download', this.state.paths, gameMode))
-      || (resolvePath('install', this.props.paths, gameMode)
-          !== resolvePath('install', this.state.paths, gameMode));
+    return this.props.installPath !== this.state.installPath;
   }
 
   private pathsAbsolute() {
     const { gameMode } = this.props;
-    return path.isAbsolute(resolvePath('download', this.state.paths, gameMode))
-        && path.isAbsolute(resolvePath('install', this.state.paths, gameMode));
+    return path.isAbsolute(getInstallPath(this.state.installPath, gameMode));
   }
 
-  private transferPath(pathKey: PathKey) {
+  private transferPath() {
     const { gameMode } = this.props;
-    const oldPath = resolvePath(pathKey, this.props.paths, gameMode);
-    const newPath = resolvePath(pathKey, this.state.paths, gameMode);
+    const oldPath = getInstallPath(this.props.installPath, gameMode);
+    const newPath = getInstallPath(this.state.installPath, gameMode);
 
     return Promise.join(fs.statAsync(oldPath), fs.statAsync(newPath),
       (statOld: fs.Stats, statNew: fs.Stats) =>
@@ -227,12 +208,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private applyPaths = () => {
-    const { t, gameMode, onSetPath, onShowDialog, onShowError } = this.props;
-    const newInstallPath: string = resolvePath('install', this.state.paths, gameMode);
-    const newDownloadPath: string = resolvePath('download', this.state.paths, gameMode);
-
-    const oldInstallPath = resolvePath('install', this.props.paths, gameMode);
-    const oldDownloadPath = resolvePath('download', this.props.paths, gameMode);
+    const { t, gameMode, onSetInstallPath, onShowDialog, onShowError } = this.props;
+    const newInstallPath: string = getInstallPath(this.state.installPath, gameMode);
+    const oldInstallPath: string = getInstallPath(this.props.installPath, gameMode);
 
     let vortexPath = remote.app.getAppPath();
     if (path.basename(vortexPath) === 'app.asar') {
@@ -240,9 +218,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       // (resources/app.asar)
       vortexPath = path.dirname(path.dirname(vortexPath));
     }
-    if (isChildPath(newInstallPath, vortexPath) || isChildPath(newDownloadPath, vortexPath)) {
+    if (isChildPath(newInstallPath, vortexPath)) {
       return onShowDialog('error', 'Invalid paths selected', {
-                  text: 'You can not put mods and downloads into the vortex application directory. '
+                  text: 'You can not put mods into the vortex application directory. '
                   + 'This directory gets removed during updates so you would lose all your '
                   + 'files on the next update.',
       }, [ { label: 'Close' } ]);
@@ -252,21 +230,15 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       ? this.purgeActivation()
       : Promise.resolve();
 
-    this.setState(setSafe(this.state, ['busy'], t('Moving')));
+    this.nextState.busy = t('Moving');
     return purgePromise
-      .then(() => Promise.join(fs.ensureDirWritableAsync(newInstallPath, this.confirmElevate),
-                               fs.ensureDirWritableAsync(newDownloadPath, this.confirmElevate)))
+      .then(() => fs.ensureDirWritableAsync(newInstallPath, this.confirmElevate))
       .then(() => {
         let queue = Promise.resolve();
         let fileCount = 0;
         if (oldInstallPath !== newInstallPath) {
           queue = queue
             .then(() => fs.readdirAsync(newInstallPath))
-            .then(files => { fileCount += files.length; });
-        }
-        if (oldDownloadPath !== newDownloadPath) {
-          queue = queue
-            .then(() => fs.readdirAsync(newDownloadPath))
             .then(files => { fileCount += files.length; });
         }
         // ensure the destination directories are empty
@@ -281,29 +253,15 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         }));
       })
       .then(() => {
-        if (oldDownloadPath !== newDownloadPath) {
-          this.setState(setSafe(this.state, ['busy'], t('Moving download directory')));
-          this.context.api.events.emit('enable-download-watch', false);
-          return this.transferPath('download')
-            .then(() => {
-              this.context.api.events.emit('enable-download-watch', true);
-            });
-        } else {
-          return Promise.resolve();
-        }
-      })
-      .then(() => {
         if (oldInstallPath !== newInstallPath) {
-          this.setState(setSafe(this.state, ['busy'], t('Moving mod directory')));
-          return this.transferPath('install');
+          this.nextState.busy = t('Moving mod directory');
+          return this.transferPath();
         } else {
           return Promise.resolve();
         }
       })
       .then(() => {
-        onSetPath(gameMode, 'base', this.state.paths[gameMode].base);
-        onSetPath(gameMode, 'download', this.state.paths[gameMode].download);
-        onSetPath(gameMode, 'install', this.state.paths[gameMode].install);
+        onSetInstallPath(gameMode, this.state.installPath);
       })
       .catch(UserCanceled, () => null)
       .catch((err) => {
@@ -316,7 +274,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         }
       })
       .finally(() => {
-        this.setState(setSafe(this.state, ['busy'], undefined));
+        this.nextState.busy = undefined;
       });
   }
 
@@ -336,16 +294,16 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private purgeActivation(): Promise<void> {
-    const { activators, currentActivator, discovery, gameMode, paths } = this.props;
+    const { activators, currentActivator, discovery, gameMode, installPath } = this.props;
 
     const oldActivator = activators.find(iter => iter.id === currentActivator);
-    const installPath = resolvePath('install', paths, gameMode);
+    const resolvedPath = getInstallPath(installPath, gameMode);
     const game = getGame(gameMode);
     const modPaths = game.getModPaths(discovery.path);
 
     return oldActivator !== undefined
       ? Promise.mapSeries(Object.keys(modPaths),
-                          typeId => oldActivator.purge(installPath, modPaths[typeId]))
+                          typeId => oldActivator.purge(resolvedPath, modPaths[typeId]))
         .then(() => undefined)
       : Promise.resolve();
   }
@@ -359,87 +317,53 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     });
   }
 
-  private renderFooter() {
-    const { t } = this.props;
-
-    if (!this.pathsChanged()) {
-      return null;
-    }
-
-    if (!this.pathsAbsolute()) {
-      return (
-        <Alert bsStyle='warning'>
-          {t('Paths have to be absolute')}
-        </Alert>
-      );
-    }
-
-    return (
-      <div className='button-group'>
-        <Button
-          id='btn-settings-apply'
-          tooltip={t('Apply Changes. This will cause files to be moved to the new location.')}
-          onClick={this.applyPaths}
-        >
-          {t('Apply')}
-        </Button>
-      </div>
-    );
-  }
-
-  private renderPathCtrl(paths: any, label: string, pathKey: PathKey): JSX.Element {
+  private renderPathCtrl(label: string): JSX.Element {
     const { t, gameMode } = this.props;
-
-    if (this.mPathChangeCBs[pathKey] === undefined) {
-      this.mPathChangeCBs[pathKey] = (evt) => this.changePathEvt(pathKey, evt);
-    }
-    if (this.mBrowseCBs[pathKey] === undefined) {
-      this.mBrowseCBs[pathKey] = () => this.browsePath(pathKey);
-    }
-
-    const gamePaths = {
-      ...pathDefaults,
-      ...paths[gameMode],
-    };
+    const { installPath } = this.state;
 
     return (
       <FormGroup>
-        <ControlLabel>{label}</ControlLabel>
+        <ControlLabel>
+          {label}
+          <More id='more-paths' name={t('Paths')} >
+            {getText('paths', t)}
+          </More>
+        </ControlLabel>
         <InputGroup>
           <FormControl
-            value={gamePaths[pathKey]}
+            value={getInstallPathPattern(installPath)}
             placeholder={label}
-            onChange={this.mPathChangeCBs[pathKey]}
+            onChange={this.changePathEvt}
           />
           <InputGroup.Button className='inset-btn'>
             <Button
               tooltip={t('Browse')}
-              onClick={this.mBrowseCBs[pathKey]}
+              onClick={this.browsePath}
             >
               <Icon name='browse' />
             </Button>
           </InputGroup.Button>
         </InputGroup>
-        <HelpBlock>{resolvePath(pathKey, paths, gameMode)}</HelpBlock>
+        <HelpBlock>{getInstallPath(installPath, gameMode)}</HelpBlock>
       </FormGroup>
     );
   }
 
-  private changePathEvt = (key: string, evt) => {
+  private changePathEvt = (evt) => {
     const target: HTMLInputElement = evt.target as HTMLInputElement;
-    this.changePath(key, target.value);
+    this.changePath(target.value);
   }
 
-  private changePath = (key: string, value: string) => {
+  private changePath = (value: string) => {
     const { gameMode } = this.props;
-    this.setState(setSafe(this.state, ['paths', gameMode, key], value));
+    this.nextState.installPath = value;
   }
 
-  private browsePath = (key: string) => {
+  private browsePath = () => {
     this.context.api.selectDir({})
       .then((selectedPath: string) => {
         if (selectedPath) {
-          this.changePath(key, selectedPath);
+          this.changePath(selectedPath);
         }
       });
   }
@@ -506,7 +430,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
   private selectActivator = (evt) => {
     const target: HTMLSelectElement = evt.target as HTMLSelectElement;
-    this.setState(setSafe(this.state, ['currentActivator'], target.value));
+    this.nextState.currentActivator = target.value;
   }
 }
 
@@ -520,7 +444,7 @@ function mapStateToProps(state: any): IConnectedProps {
     discovery,
     game,
     gameMode,
-    paths: state.settings.mods.paths,
+    installPath: state.settings.mods.installPath[gameMode],
     currentActivator: getSafe(state, ['settings', 'mods', 'activator', gameMode], undefined),
     state,
   };
@@ -528,9 +452,9 @@ function mapStateToProps(state: any): IConnectedProps {
 
 function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
-    onSetPath: (gameMode: string, key: string, newPath: string): void => {
+    onSetInstallPath: (gameMode: string, newPath: string): void => {
       if (newPath !== undefined) {
-        dispatch(setPath(gameMode, key, newPath));
+        dispatch(setInstallPath(gameMode, newPath));
       }
     },
     onSetActivator: (gameMode: string, id: string): void => {

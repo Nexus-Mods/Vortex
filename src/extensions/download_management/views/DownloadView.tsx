@@ -21,12 +21,11 @@ import { getCurrentLanguage } from '../../../util/i18n';
 import { log } from '../../../util/log';
 import { showError } from '../../../util/message';
 import relativeTime from '../../../util/relativeTime';
-import { activeGameId } from '../../../util/selectors';
+import * as selectors from '../../../util/selectors';
 import { setSafe } from '../../../util/storeHelper';
 import MainPage from '../../../views/MainPage';
 
 import { IGameStored } from '../../gamemode_management/types/IGameStored';
-import { downloadPath as downloadPathSelector } from '../../mod_management/selectors';
 
 import { IDownload } from '../types/IDownload';
 
@@ -602,10 +601,10 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
 
 function mapStateToProps(state: IState): IConnectedProps {
   return {
-    gameMode: activeGameId(state),
+    gameMode: selectors.activeGameId(state),
     knownGames: state.session.gameMode.known,
     downloads: state.persistent.downloads.files,
-    downloadPath: downloadPathSelector(state),
+    downloadPath: selectors.downloadPath(state),
   };
 }
 

@@ -1,5 +1,5 @@
 import {IExtensionApi} from '../../types/IExtensionContext';
-import {IDiscoveryResult, IState, IStatePaths} from '../../types/IState';
+import {IDiscoveryResult, IState} from '../../types/IState';
 import { ProcessCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import {log} from '../../util/log';
@@ -21,8 +21,8 @@ import {setModEnabled} from '../profile_management/actions/profiles';
 import {IProfile} from '../profile_management/types/IProfile';
 
 import allTypesSupported from './util/allTypesSupported';
+import getInstallPath from './util/getInstallPath';
 import refreshMods from './util/refreshMods';
-import resolvePath from './util/resolvePath';
 import supportedActivators from './util/supportedActivators';
 
 import InstallManager from './InstallManager';
@@ -30,6 +30,7 @@ import {currentActivator, installPath} from './selectors';
 
 import * as Promise from 'bluebird';
 import * as path from 'path';
+import getDownloadPath from '../download_management/util/getDownloadPath';
 
 export function onGameModeActivated(
     api: IExtensionApi, activators: IDeploymentMethod[], newGame: string) {
@@ -104,8 +105,8 @@ export function onGameModeActivated(
 }
 
 export function onPathsChanged(api: IExtensionApi,
-                               previous: { [gameId: string]: IStatePaths },
-                               current: { [gameId: string]: IStatePaths }) {
+                               previous: { [gameId: string]: string },
+                               current: { [gameId: string]: string }) {
   const store = api.store;
   const state = store.getState();
   const gameMode = activeGameId(state);
@@ -150,7 +151,7 @@ function undeploy(api: IExtensionApi,
     return Promise.reject(callback(new ProcessCanceled('no activator')));
   }
 
-  const installationPath = resolvePath('install', state.settings.mods.paths, gameMode);
+  const installationPath = getInstallPath(state.settings.mods.installPath[gameMode], gameMode);
 
   if (discovery === undefined) {
     // if the game hasn't been discovered we can't deploy, but that's not really a problem
@@ -199,7 +200,7 @@ export function onRemoveMod(api: IExtensionApi,
 
   store.dispatch(setModEnabled(profileId, modId, false));
 
-  const installationPath = resolvePath('install', state.settings.mods.paths, gameMode);
+  const installationPath = getInstallPath(state.settings.mods.installPath[gameMode], gameMode);
 
   let mod: IMod;
 
@@ -250,7 +251,7 @@ export function onAddMod(api: IExtensionApi, gameId: string,
   const store = api.store;
   const state: IState = store.getState();
 
-  const installationPath = resolvePath('install', state.settings.mods.paths, gameId);
+  const installationPath = getInstallPath(state.settings.mods.installPath[gameId], gameId);
 
   store.dispatch(addMod(gameId, mod));
   fs.mkdirAsync(path.join(installationPath, mod.installationPath))
@@ -267,7 +268,7 @@ export function onStartInstallDownload(api: IExtensionApi,
                                        downloadId: string,
                                        callback?: (error, id: string) => void) {
   const store = api.store;
-  const state = store.getState();
+  const state: IState = store.getState();
   const download: IDownload = state.persistent.downloads.files[downloadId];
   if (download === undefined) {
     api.showErrorNotification('Unknown Download',
@@ -289,8 +290,7 @@ export function onStartInstallDownload(api: IExtensionApi,
     return;
   }
 
-  const inPaths = state.settings.mods.paths;
-  const downloadPath: string = resolvePath('download', inPaths, gameId);
+  const downloadPath: string = getDownloadPath(state.settings.downloads.path, gameId);
   if (downloadPath === undefined) {
     api.showErrorNotification('Unknown Game',
       'Failed to determine installation directory. This shouldn\'t have happened', {

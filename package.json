@@ -110,6 +110,7 @@
     "@types/reselect": "2.2.0",
     "@types/resolve": "^0.0.4",
     "@types/rimraf": "^2.0.2",
+    "@types/semver": "^5.5.0",
     "@types/shortid": "^0.0.29",
     "@types/tmp": "^0.0.33",
     "@types/uuid": "^3.4.3",

@@ -10,7 +10,7 @@ import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult'
 import {INI_TWEAKS_PATH} from '../mod_management/InstallManager';
 import {IMod} from '../mod_management/types/IMod';
 import {IModWithState} from '../mod_management/types/IModProps';
-import resolvePath from '../mod_management/util/resolvePath';
+import getInstallPath from '../mod_management/util/getInstallPath';
 import {activeGameId} from '../profile_management/selectors';
 
 import {iniFiles, iniFormat} from './gameSupport';
@@ -103,8 +103,8 @@ function getBaseFile(input: string): string {
 }
 
 function bakeSettings(t: TranslationFunction, gameMode: string, discovery: IDiscoveryResult,
-                      mods: IMod[], paths: any): Promise<void> {
-  const modsPath = resolvePath('install', paths, gameMode);
+                      mods: IMod[], state: IState): Promise<void> {
+  const modsPath = getInstallPath(state.settings.mods.installPath[gameMode], gameMode);
   const format = iniFormat(gameMode);
   if (format === undefined) {
     return Promise.resolve();
@@ -219,9 +219,8 @@ function main(context: IExtensionContext) {
       }
       const state: IState = context.api.store.getState();
       const discovery: IDiscoveryResult = state.settings.gameMode.discovered[gameId];
-      const paths = state.settings.mods.paths;
       discoverSettingsChanges(gameId, discovery)
-        .then(() => bakeSettings(context.api.translate, gameId, discovery, mods, paths))
+        .then(() => bakeSettings(context.api.translate, gameId, discovery, mods, state))
         .then(() => callback(null))
         .catch(err => callback(err));
     });

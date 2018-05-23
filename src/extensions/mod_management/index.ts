@@ -6,9 +6,10 @@ import {
   MergeTest,
 } from '../../types/IExtensionContext';
 import {IGame} from '../../types/IGame';
-import {IState, IStatePaths} from '../../types/IState';
+import {IState} from '../../types/IState';
 import { ITableAttribute, Placement } from '../../types/ITableAttribute';
 import {ITestResult} from '../../types/ITestResult';
+import { getInstallPath } from '../../util/api';
 import { UserCanceled } from '../../util/CustomErrors';
 import Debouncer from '../../util/Debouncer';
 import * as fs from '../../util/fs';
@@ -53,7 +54,6 @@ import allTypesSupported from './util/allTypesSupported';
 import * as basicInstaller from './util/basicInstaller';
 import { NoDeployment } from './util/exceptions';
 import { registerAttributeExtractor } from './util/filterModInfo';
-import resolvePath from './util/resolvePath';
 import sortMods from './util/sort';
 import supportedActivators from './util/supportedActivators';
 import ActivationButton from './views/ActivationButton';
@@ -259,14 +259,15 @@ function genUpdateModDeployment() {
         progressCB(text, percent);
       }
     };
-    const state = api.store.getState();
+    const state: IState = api.store.getState();
     let profile = profileId !== undefined
       ? getSafe(state, ['persistent', 'profiles', profileId], undefined)
       : activeProfile(state);
     if (profile === undefined) {
       return Promise.reject(new Error('Profile missing'));
     }
-    const instPath = resolvePath('install', state.settings.mods.paths, profile.gameId);
+    const instPath = getInstallPath(
+      state.settings.mods.installPath[profile.gameId], profile.gameId);
     const gameDiscovery =
       getSafe(state, ['settings', 'gameMode', 'discovered', profile.gameId], undefined);
     const game = getGame(profile.gameId);
@@ -498,13 +499,13 @@ function cleanupIncompleteInstalls(api: IExtensionApi) {
   const store: Redux.Store<IState> = api.store;
 
   const { mods } = store.getState().persistent;
-  const { paths } = store.getState().settings.mods;
 
   Object.keys(mods).forEach(gameId => {
     Object.keys(mods[gameId]).forEach(modId => {
       const mod = mods[gameId][modId];
       if (mod.state === 'installing') {
-        const fullPath = path.join(resolvePath('install', paths, gameId), mod.installationPath);
+        const instPath = installPath(store.getState());
+        const fullPath = path.join(instPath, mod.installationPath);
         log('warn', 'mod was not installed completelely and will be removed', { mod, fullPath });
         // this needs to be synchronous because once is synchronous and we have to complete this
         // before the application fires the gamemode-changed event because at that point we
@@ -536,8 +537,8 @@ function once(api: IExtensionApi) {
 
   if (installManager === undefined) {
     installManager = new InstallManager(
-        (gameId: string) => resolvePath(
-            'install', store.getState().settings.mods.paths, gameId));
+        (gameId: string) => getInstallPath(
+            store.getState().settings.mods.installPath[gameId], gameId));
     installers.forEach((installer: IInstaller) => {
       installManager.addInstaller(installer.priority, installer.testSupported,
                                   installer.install);
@@ -582,7 +583,7 @@ function once(api: IExtensionApi) {
       (newMode: string) => onGameModeActivated(api, activators, newMode));
 
   api.onStateChange(
-      ['settings', 'mods', 'paths'],
+      ['settings', 'mods', 'installPath'],
       (previous, current) => onPathsChanged(api, previous, current));
 
   api.events.on('start-install', (archivePath: string,

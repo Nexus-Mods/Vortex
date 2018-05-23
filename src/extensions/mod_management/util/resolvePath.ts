@@ -1,4 +1,3 @@
-import { IStatePaths } from '../../../types/IState';
 import makeCI from '../../../util/makeCaseInsensitive';
 import { getSafe } from '../../../util/storeHelper';
 
@@ -18,7 +17,7 @@ export const pathDefaults = {
 
 let userData;
 
-function resolvePath(key: PathKey, paths: {[gameId: string]: IStatePaths},
+function resolvePath(key: PathKey, paths: {[gameId: string]: any},
                      gameMode: string): string {
   if (gameMode === undefined) {
     return undefined;

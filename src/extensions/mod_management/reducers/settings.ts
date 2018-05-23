@@ -1,16 +1,16 @@
 import { IReducerSpec } from '../../../types/IExtensionContext';
 import { setSafe } from '../../../util/storeHelper';
 
-import { setActivator, setPath, setUpdatingMods } from '../actions/settings';
+import { setActivator, setInstallPath, setUpdatingMods } from '../actions/settings';
 
 /**
  * reducer for changes to settings regarding mods
  */
 export const settingsReducer: IReducerSpec = {
   reducers: {
-    [setPath as any]: (state, payload) => {
-      const { gameId, key, path } = payload;
-      return setSafe(state, ['paths', gameId, key], path);
+    [setInstallPath as any]: (state, payload) => {
+      const { gameId, path } = payload;
+      return setSafe(state, ['installPath', gameId], path);
     },
     [setActivator as any]: (state, payload) => {
       const { gameId, activatorId } = payload;
@@ -22,7 +22,7 @@ export const settingsReducer: IReducerSpec = {
     },
   },
   defaults: {
-    paths: {},
+    installPath: {},
     modlistState: {},
     activator: {},
     updatingMods: {},

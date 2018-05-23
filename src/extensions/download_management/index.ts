@@ -9,9 +9,6 @@ import * as selectors from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { sum, truthy } from '../../util/util';
 
-import { downloadPath as downloadPathSelector } from '../mod_management/selectors';
-import resolvePath from '../mod_management/util/resolvePath';
-
 import {
   addLocalDownload,
   downloadProgress,
@@ -29,6 +26,7 @@ import { settingsReducer } from './reducers/settings';
 import { stateReducer } from './reducers/state';
 import { IDownload } from './types/IDownload';
 import { IProtocolHandlers } from './types/ProtocolHandlers';
+import getDownloadPath from './util/getDownloadPath';
 import {} from './views/DownloadView';
 import {} from './views/Settings';
 import SpeedOMeter from './views/SpeedOMeter';
@@ -184,7 +182,7 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
   if (gameId === undefined) {
     gameId = selectors.activeGameId(state);
   }
-  const currentDownloadPath = resolvePath('download', state.settings.mods.paths, gameId);
+  const currentDownloadPath = getDownloadPath(state.settings.downloads.path, gameId);
 
   const knownDLs =
       Object.keys(downloads)
@@ -212,11 +210,11 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
             api.store.dispatch(removeDownload(nameIdMap[name]));
           });
         })
-    .then(() => {
-      manager.setDownloadPath(currentDownloadPath);
-      watchDownloads(api, currentDownloadPath, downloadChangeHandler);
-      api.events.emit('downloads-refreshed');
-    });
+      .then(() => {
+        manager.setDownloadPath(currentDownloadPath);
+        watchDownloads(api, currentDownloadPath, downloadChangeHandler);
+        api.events.emit('downloads-refreshed');
+      });
 }
 
 function genGameModeActivated(api: IExtensionApi) {
@@ -299,18 +297,20 @@ function init(context: IExtensionContextExt): boolean {
       const filtered = added.filter(
         dlId => (cur[dlId].state === 'finished') && (Object.keys(cur[dlId].modInfo).length === 0));
 
-      const state = context.api.store.getState();
+      const state: IState = context.api.store.getState();
 
       Promise.map(filtered, dlId => {
-        const downloadPath = resolvePath('download', state.settings.mods.paths, cur[dlId].game);
+        const downloadPath = getDownloadPath(state.settings.downloads.path, cur[dlId].game);
         context.api.lookupModMeta({ filePath: path.join(downloadPath, cur[dlId].localPath) })
           .then(result => {
             if (result.length > 0) {
               const info = result[0].value;
               store.dispatch(setDownloadModInfo(dlId, 'game', info.gameId));
               store.dispatch(setDownloadModInfo(dlId, 'version', info.fileVersion));
-              store.dispatch(setDownloadModInfo(dlId, 'name',
-                info.logicalFileName || info.fileName));
+              if (info.logicalFileName || info.fileName) {
+                store.dispatch(setDownloadModInfo(dlId, 'name',
+                  info.logicalFileName || info.fileName));
+              }
             }
           });
       });
@@ -343,7 +343,7 @@ function init(context: IExtensionContextExt): boolean {
     });
 
     context.api.events.on('import-downloads', (downloadPaths: string[]) => {
-      const downloadPath = downloadPathSelector(context.api.store.getState());
+      const downloadPath = selectors.downloadPath(context.api.store.getState());
       let hadDirs = false;
       Promise.map(downloadPaths, dlPath => {
         const fileName = path.basename(dlPath);
@@ -397,7 +397,7 @@ function init(context: IExtensionContextExt): boolean {
         if (!truthy(downloads[id].urls)) {
           // download was interrupted before receiving urls, has to be canceled
           log('info', 'download removed because urls were never retrieved', { id });
-          const downloadPath = downloadPathSelector(context.api.store.getState());
+          const downloadPath = selectors.downloadPath(context.api.store.getState());
           if ((downloadPath !== undefined) && (downloads[id].localPath !== undefined)) {
             fs.removeAsync(path.join(downloadPath, downloads[id].localPath))
               .then(() => {

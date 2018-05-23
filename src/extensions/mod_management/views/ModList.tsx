@@ -24,6 +24,7 @@ import { truthy } from '../../../util/util';
 import MainPage from '../../../views/MainPage';
 
 import { IDownload } from '../../download_management/types/IDownload';
+import getDownloadPath from '../../download_management/util/getDownloadPath';
 import { setModEnabled } from '../../profile_management/actions/profiles';
 import { IProfileMod } from '../../profile_management/types/IProfile';
 
@@ -35,7 +36,6 @@ import filterModInfo from '../util/filterModInfo';
 import groupMods from '../util/modGrouping';
 import modName from '../util/modName';
 import modUpdateState, { UpdateState } from '../util/modUpdateState';
-import resolvePath from '../util/resolvePath';
 import VersionFilter from '../util/VersionFilter';
 import VersionChangelogButton from '../views/VersionChangelogButton';
 import VersionIconButton from '../views/VersionIconButton';
@@ -954,8 +954,7 @@ const empty = {};
 function mapStateToProps(state: IState): IConnectedProps {
   const profile = activeProfile(state);
   const gameMode = activeGameId(state);
-  const downloadPath = resolvePath('download',
-      state.settings.mods.paths, gameMode);
+  const downloadPath = getDownloadPath(state.settings.downloads.path, gameMode);
 
   return {
     mods: getSafe(state, ['persistent', 'mods', gameMode], empty),
