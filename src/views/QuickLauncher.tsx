@@ -8,6 +8,7 @@ import ToolIcon from '../extensions/starter_dashlet/ToolIcon';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../types/IDialog';
 import { IDiscoveredTool } from '../types/IDiscoveredTool';
 import { ComponentEx, connect } from '../util/ComponentEx';
+import { MissingInterpreter } from '../util/CustomErrors';
 import { log } from '../util/log';
 import { showError } from '../util/message';
 import { activeGameId, currentGame, currentGameDiscovery } from '../util/selectors';
@@ -209,6 +210,14 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
         onShowError('Failed to run tool', {
           error: 'File is not executable, please check the configuration for this tool.',
         }, false);
+      } else if (err instanceof MissingInterpreter) {
+        const par = {
+          error: err.message,
+        };
+        if (err.url !== undefined) {
+          par['Download url'] = err.url;
+        }
+        onShowError('Failed to run tool', par, false);
       } else {
         onShowError('Failed to run tool', {
           executable: starter.exePath,

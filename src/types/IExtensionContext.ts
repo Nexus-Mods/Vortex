@@ -805,8 +805,15 @@ export interface IExtensionContext {
   /**
    * register an interpreter to be used to run files of the specified type when starting with
    * IExtensionApi.runExecutable
+   * @param {string} extension File extension to handle
+   * @param {string} apply A filter function that will receive the run parameters as provided by
+   *                       the user (with the script as the executable) and should return adjusted
+   *                       parameters that will actually invoke the right interpreter.
+   *                       If the interpreter is not installed/found, please throw a
+   *                       "MissingInterpreter" exception so Vortex can show a nicer error message
    */
-  registerInterpreter: (extension: string, apply: (call: IRunParameters) => IRunParameters) => void;
+  registerInterpreter:
+    (extension: string, apply: (call: IRunParameters) => IRunParameters) => void;
 
   /**
    * specify that a certain range of versions of vortex is required

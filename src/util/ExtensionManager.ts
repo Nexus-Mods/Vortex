@@ -932,7 +932,11 @@ class ExtensionManager {
     (executable: string, args: string[], options: IRunOptions): Promise<void> => {
       const interpreter = this.mInterpreters[path.extname(executable).toLowerCase()];
       if (interpreter !== undefined) {
-        ({ executable, args, options } = interpreter({ executable, args, options }));
+        try {
+          ({ executable, args, options } = interpreter({ executable, args, options }));
+        } catch (err) {
+          return Promise.reject(err);
+        }
       }
       return (options.suggestDeploy === true ? this.checkDeploy() : Promise.resolve(true))
       .then(cont => cont ? new Promise<void>((resolve, reject) => {
