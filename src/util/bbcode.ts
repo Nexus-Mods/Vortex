@@ -34,7 +34,7 @@ function transformSymbol(fullMatch, symbol: string): string {
 
 function renderBBCode(input: string): React.ReactChild[] {
   if (input === undefined) {
-    return '';
+    return [''];
   }
 
   return bbcode.toReact(input.replace(/<br *\/?>/g, '[br][/br]')
