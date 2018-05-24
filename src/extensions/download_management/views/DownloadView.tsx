@@ -404,14 +404,6 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
         <MainPage.Body>
           {content}
         </MainPage.Body>
-        <MainPage.Overlay>
-          <IconBar
-            group='download-icons'
-            staticElements={this.staticButtons}
-            style={{ width: '100%', display: 'flex' }}
-            orientation='vertical'
-          />
-        </MainPage.Overlay>
       </MainPage>
     );
   }

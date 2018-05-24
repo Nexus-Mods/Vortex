@@ -12,8 +12,6 @@ export const sessionReducer: IReducerSpec = {
       setSafe(state, [ 'displayGroups', payload.groupId ], payload.itemId),
     [actions.setDialogVisible as any]: (state, payload) =>
       setSafe(state, [ 'visibleDialog' ], payload.dialogId),
-    [actions.setOverlayOpen as any]: (state, payload) =>
-      setSafe(state, [ 'overlayOpen' ], payload.open),
     [actions.setSettingsPage as any]: (state, payload) =>
       setSafe(state, [ 'settingsPage' ], payload.pageId),
     [actions.startActivity as any]: (state, payload) =>

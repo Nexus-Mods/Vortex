@@ -15,12 +15,6 @@ export const setDialogVisible = safeCreateAction('SET_DIALOG_VISIBLE',
 export const setSettingsPage = safeCreateAction('SET_SETTINGS_PAGE',
   (pageId: string) => ({ pageId }));
 
-/**
- * open the overlay for the current page
- */
-export const setOverlayOpen = safeCreateAction('SET_OVERLAY_OPEN',
-  (open: boolean) => ({ open }));
-
 export const setOpenMainPage = safeCreateAction('SET_OPEN_MAINPAGE',
   (page: string, secondary: boolean) => ({ page, secondary }));
 

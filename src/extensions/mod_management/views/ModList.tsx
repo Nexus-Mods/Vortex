@@ -337,13 +337,6 @@ class ModList extends ComponentEx<IProps, IComponentState> {
             </FlexLayout.Fixed>
           </FlexLayout>
         </MainPage.Body>
-        <MainPage.Overlay>
-          <IconBar
-            group='mod-icons'
-            staticElements={this.staticButtons}
-            orientation='vertical'
-          />
-        </MainPage.Overlay>
       </MainPage>
     );
   }
