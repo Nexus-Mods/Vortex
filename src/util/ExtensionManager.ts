@@ -42,6 +42,7 @@ import * as I18next from 'i18next';
 import { IHashResult, ILookupResult, IModInfo, IReference } from 'modmeta-db';
 import * as modmetaT from 'modmeta-db';
 const modmeta = lazyRequire<typeof modmetaT>('modmeta-db');
+import * as nodeIPC from 'node-ipc';
 import * as path from 'path';
 import * as Redux from 'redux';
 import { types as ratypes } from 'redux-act';
@@ -963,8 +964,10 @@ class ExtensionManager {
               }
           });
         } catch (err) {
+          const ipcPath = shortid();
+          this.startIPC(ipcPath);
           if (err.errno === 'EACCES') {
-            return resolve(runElevated(shortid(), runElevatedCustomTool, {
+            return resolve(runElevated(ipcPath, runElevatedCustomTool, {
               toolPath: executable,
               toolCWD: cwd,
               parameters: args,
@@ -975,6 +978,26 @@ class ExtensionManager {
           }
         }
       }) : Promise.resolve());
+  }
+
+  private startIPC(ipcPath: string) {
+    const ipcServer = new (nodeIPC as any).IPC();
+    ipcServer.serve(ipcPath, () => null);
+    ipcServer.server.start();
+    ipcServer.server.on('connect', () => {
+      log('debug', 'ipc client connected');
+    });
+    ipcServer.server.on('socket.disconnected', () => {
+      log('debug', 'socket disconnect');
+      ipcServer.server.stop();
+    });
+    ipcServer.server.on('log', (data: any) => {
+      log(data.level, data.message, data.meta);
+    });
+    ipcServer.server.on('finished', () => null);
+    ipcServer.server.on('error', nodeIPCErr => {
+      log('error', 'ipcServer err', nodeIPCErr);
+    });
   }
 
   private loadDynamicExtension(extensionPath: string): IRegisteredExtension {

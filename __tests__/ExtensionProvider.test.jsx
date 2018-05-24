@@ -3,7 +3,6 @@ import { mount, shallow } from 'enzyme';
 import * as React from 'react';
 
 function register(val) {
-  require('fs').writeFileSync('c:\\temp\\test3.txt', 'register');
   return 42;
 }
 

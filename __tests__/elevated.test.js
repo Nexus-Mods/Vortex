@@ -39,6 +39,7 @@ import runElevated from '../src/util/elevated';
 
 function dummy() {
   console.log('DUMMY FUNCTION');
+  return 1;
 }
 
 describe('runElevated', () => {

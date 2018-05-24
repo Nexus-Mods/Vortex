@@ -144,7 +144,10 @@ function runElevated(ipcPath: string, func: (ipc: any) => void | Promise<void> |
   if (shell32 === undefined) {
     if (process.platform === 'win32') {
       const ffi = require('ffi');
+      const ref = require('ref');
       shell32 = new ffi.Library('Shell32', {
+        ShellExecuteA: [ref.types.int32, [voidPtr, ref.types.CString, ref.types.CString,
+                                ref.types.CString, ref.types.CString, ref.types.int32]],
         ShellExecuteExA: ['bool', [SHELLEXECUTEINFOPtr]],
       });
     }
@@ -193,6 +196,22 @@ function runElevated(ipcPath: string, func: (ipc: any) => void | Promise<void> |
 
         const runInfo = execInfo(tmpPath);
 
+        // we can't call GetLastError through node-ffi so when using ShellExecuteExA we won't be
+        // able to get an error code. With ShellExecuteA we can
+        shell32.ShellExecuteA.async(null, 'runas', process.execPath, `--run ${tmpPath}`,
+                                    path.dirname(process.execPath), 5, (execErr: any, res: any) => {
+          setTimeout(cleanup, 5000);
+          if (execErr) {
+            reject(execErr);
+          } else {
+            if (res > 32) {
+              resolve(res);
+            } else {
+              reject(new Error(`ShellExecute failed, errorcode ${res}`));
+            }
+          }
+        });
+        /* TODO: remove this code if there is no problem with ShellExecuteA
         shell32.ShellExecuteExA.async(runInfo.ref(), (execErr: any, res: any) => {
           // this is reached after the user confirmed the UAC dialog but before node
           // has read the script source so we have to give a little time for that to
@@ -208,6 +227,7 @@ function runElevated(ipcPath: string, func: (ipc: any) => void | Promise<void> |
             }
           }
         });
+        */
       });
     });
   });

@@ -15,7 +15,6 @@ import {
   downloadProgress,
   finishDownload,
   initDownload,
-  pauseDownload,
   removeDownload,
   setDownloadFilePath,
   setDownloadHashByFile,
