@@ -281,6 +281,10 @@ class DetailBox extends ComponentEx<IDetailProps, {}> {
   public render(): JSX.Element {
     const { t, attributes, onToggleShow, rowData, rowIds, show } = this.props;
 
+    if (rowData[rowIds[0]] === undefined) {
+      return null;
+    }
+
     const detailList = attributes
       .filter(obj =>
         (obj.isVolatile || (rowData[rowIds[0]][obj.id] !== undefined))
