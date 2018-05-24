@@ -2,6 +2,10 @@ version: 1.0.{build}
 clone_depth: 1
 environment:
   nodejs_version: 8
+platform:
+  - x64
+configuration:
+  - Release
 install:
 - ps: Install-Product node $env:nodejs_version
 - yarn install
