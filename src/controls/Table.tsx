@@ -545,7 +545,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
   private handleKeyDown = (evt: React.KeyboardEvent<any>) => {
     const { multiSelect } = this.props;
-    const { lastSelected }  = this.state;
+    const { lastSelected, sortedRows }  = this.state;
 
     if (evt.target !== this.mScrollRef) {
       return;
@@ -560,10 +560,15 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     // accurate under the assumption all lines have the same height
     let visibleLineCount = 0;
     if (this.mRowRefs[lastSelected] !== undefined) {
-      const selectedNode = ReactDOM.findDOMNode(this.mRowRefs[lastSelected]);
-      visibleLineCount = this.mScrollRef.clientHeight / selectedNode.clientHeight;
-      // account for the header. quite inaccurate.
-      visibleLineCount -= 2;
+      // the previously selected row might no longer be visible, which would cause
+      // an exception when trying to find the associated dom node
+      const lastIdx = sortedRows.findIndex(item => item.id === lastSelected);
+      if (lastIdx !== -1) {
+        const selectedNode = ReactDOM.findDOMNode(this.mRowRefs[lastSelected]);
+        visibleLineCount = this.mScrollRef.clientHeight / selectedNode.clientHeight;
+        // account for the header. quite inaccurate.
+        visibleLineCount -= 2;
+      }
     }
 
     let offset = 0;
