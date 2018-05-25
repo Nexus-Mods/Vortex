@@ -136,6 +136,7 @@ class DownloadWorker {
           .on('data', (data: Buffer) => {
             this.handleData(data);
           })
+          .on('error', err => this.handleError(err))
           .on('end', () => {
             this.handleComplete();
             this.mRequest.abort();
@@ -143,7 +144,7 @@ class DownloadWorker {
       });
 
       this.mRequest
-        .on('error', (err) => this.handleError(err))
+        .on('error', err => this.handleError(err))
         .end();
      });
   }

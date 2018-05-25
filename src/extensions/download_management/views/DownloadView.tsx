@@ -444,7 +444,12 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
             message: err.message,
           });
         } else if (err.code === 'ECONNRESET') {
-          this.props.onShowError('Failed to download', 'Server refused connection',
+          this.props.onShowError('Failed to download', 'Server closed the connection, please '
+                                + 'check your internet connection',
+            undefined, false);
+        } else if (err.code === 'ETIMEDOUT') {
+          this.props.onShowError('Failed to download', 'Connection timed out, please check '
+                                + 'your internet connection',
             undefined, false);
         } else if (err.code === 'ENOSPC') {
           this.props.onShowError('Failed to download', 'The disk is full',
@@ -481,7 +486,12 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
             this.props.onShowError('Failed to download', 'The url is no longer valid',
               undefined, false);
           } else if (err.code === 'ECONNRESET') {
-            this.props.onShowError('Failed to download', 'Server refused connection',
+            this.props.onShowError('Failed to download', 'Server closed the connection, please '
+                                  + 'check your internet connection',
+              undefined, false);
+          } else if (err.code === 'ETIMEDOUT') {
+            this.props.onShowError('Failed to download', 'Connection timed out, please check '
+                                  + 'your internet connection',
               undefined, false);
           } else if (err.code === 'ENOSPC') {
             this.props.onShowError('Failed to download', 'The disk is full',
