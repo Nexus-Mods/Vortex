@@ -9,6 +9,7 @@ import { IStatePaths } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { UserCanceled } from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
+import { log } from '../../../util/log';
 import { showError } from '../../../util/message';
 import { activeGameId } from '../../../util/selectors';
 import { getSafe, setSafe } from '../../../util/storeHelper';
@@ -211,14 +212,16 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       .then((sameVolume: boolean) => {
         const func = sameVolume ? fs.renameAsync : fs.copyAsync;
         return fs.readdirAsync(oldPath)
-          .map((fileName: string) =>
-            func(path.join(oldPath, fileName), path.join(newPath, fileName))
-            .catch(err => (err.code === 'EXDEV')
+          .map((fileName: string) => {
+            log('debug', 'transfer ' + pathKey, { fileName });
+            return func(path.join(oldPath, fileName), path.join(newPath, fileName))
+              .catch(err => (err.code === 'EXDEV')
                 // EXDEV implies we tried to rename when source and destination are
                 // not in fact on the same volume. This is what comparing the stat.dev
                 // was supposed to prevent.
                 ? fs.copyAsync(path.join(oldPath, fileName), path.join(newPath, fileName))
-                : Promise.reject(err)))
+                : Promise.reject(err));
+          }, { concurrency: 5 })
           .then(() => fs.removeAsync(oldPath));
       })
       .catch(err => (err.code === 'ENOENT')
