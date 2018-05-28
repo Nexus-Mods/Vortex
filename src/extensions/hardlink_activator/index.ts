@@ -176,10 +176,14 @@ class DeploymentMethod extends LinkingDeployment {
   }
 
   protected isLink(linkPath: string, sourcePath: string): Promise<boolean> {
-    return fs.lstatAsync(linkPath).then(linkStats => linkStats.nlink === 1
-        ? false
+    return fs.lstatAsync(linkPath)
+      .then(linkStats => linkStats.nlink === 1
+        ? Promise.resolve(false)
         : fs.lstatAsync(sourcePath)
-            .then(sourceStats => linkStats.ino === sourceStats.ino));
+            .then(sourceStats => linkStats.ino === sourceStats.ino))
+      .catch(err => (err.code === 'ENOENT')
+        ? Promise.resolve(false)
+        : Promise.reject(err));
   }
 
   protected canRestore(): boolean {

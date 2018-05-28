@@ -22,7 +22,7 @@ interface IDeployment {
   [relPath: string]: IDeployedFile;
 }
 
-// TODO: guess I need to pull this out of the linking activator as the activation
+// TODO: guess I need to pull this out of the linking activator as the deployment
 //   code needs to know about these files when merging archives
 export const BACKUP_TAG = '.vortex_backup';
 
@@ -351,26 +351,20 @@ abstract class LinkingActivator implements IDeploymentMethod {
 
     const backupProm: Promise<void> = replace
       ? Promise.resolve(undefined)
-      : fs.renameAsync(fullOutputPath, fullOutputPath + BACKUP_TAG)
-        .catch(err => {
-          // if the backup fails because there is nothing to backup, that's great,
-          // that's the most common outcome. Otherwise we failed to backup an existing
-          // file, so continuing could cause data loss
-          if (err.code === 'ENOENT') {
-            return Promise.resolve(undefined);
-          } else if (err.code === 'EBUSY') {
-            return Promise.delay(100).then(
-              () => fs.renameAsync(fullOutputPath, fullOutputPath + BACKUP_TAG));
-          } else {
-            Promise.reject(err);
-          }
-        });
+      : this.isLink(fullOutputPath, fullPath)
+        ? Promise.resolve(undefined)
+        : fs.renameAsync(fullOutputPath, fullOutputPath + BACKUP_TAG)
+          .catch(err => (err.code === 'ENOENT')
+            // if the backup fails because there is nothing to backup, that's great,
+            // that's the most common outcome. Otherwise we failed to backup an existing
+            // file, so continuing could cause data loss
+            ? Promise.resolve(undefined)
+            : Promise.reject(err));
 
     return backupProm
       .then(() => this.linkFile(fullOutputPath, fullPath))
       .then(() => {
-        this.mPreviousDeployment[key] =
-                this.mNewDeployment[key];
+        this.mPreviousDeployment[key] = this.mNewDeployment[key];
         return this.mNewDeployment[key];
       });
   }
