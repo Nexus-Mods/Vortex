@@ -140,7 +140,7 @@ function refreshGameInfo(store: Redux.Store<IState>, gameId: string): Promise<vo
 
   const gameInfo = store.getState().persistent.gameMode.gameInfo[gameId] || {};
 
-  const now = new Date().getTime();
+  const now = Date.now();
 
   // find keys we need to update and which providers we have to query for that
   const missingKeys = Object.keys(expectedKeys).filter(key =>

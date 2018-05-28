@@ -17,7 +17,6 @@ import {
   downloadProgress,
   finishDownload,
   initDownload,
-  pauseDownload,
   removeDownload,
   setDownloadFilePath,
   setDownloadHashByFile,
@@ -216,6 +215,10 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
       manager.setDownloadPath(currentDownloadPath);
       watchDownloads(api, currentDownloadPath, downloadChangeHandler);
       api.events.emit('downloads-refreshed');
+    })
+    .catch(err => {
+      api.showErrorNotification('Failed to read downloads directory',
+          err, { allowReport: err.code !== 'ENOENT' });
     });
 }
 

@@ -43,7 +43,7 @@ import { IInstallContext } from './types/IInstallContext';
 
 export class ArchiveBrokenError extends Error {
   constructor() {
-    super('ArchiveBroken');
+    super('Archive is broken');
 
     this.name = this.constructor.name;
   }

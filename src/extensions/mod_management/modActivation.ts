@@ -40,6 +40,12 @@ function deployMods(api: IExtensionApi,
                     subDir: (mod: IMod) => string,
                     progressCB?: (name: string, progress: number) => void,
                    ): Promise<IDeployedFile[]> {
+  if (typeof (destinationPath) !== 'string') {
+    // TODO: This is for debugging a specific problem and can probably removed afterwards
+    return Promise.reject(new Error(
+      `Invalid mod path for game "${gameId}" type "${typeId}": `
+      + `"${require('util').inspect(destinationPath)}"`));
+  }
   return method.prepare(destinationPath, true, lastActivation)
     .then(() => Promise.each(mods, (mod, idx, length) => {
       try {

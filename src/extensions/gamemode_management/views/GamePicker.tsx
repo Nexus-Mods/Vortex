@@ -243,13 +243,6 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
             </FlexLayout.Fixed>
           </FlexLayout>
         </MainPage.Body>
-        <MainPage.Overlay>
-          <IconBar
-            group='game-icons'
-            staticElements={this.buttons}
-            orientation='vertical'
-          />
-        </MainPage.Overlay>
       </MainPage>
     );
   }

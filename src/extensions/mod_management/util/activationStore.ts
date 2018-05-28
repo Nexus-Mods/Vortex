@@ -41,7 +41,8 @@ function repairManifest(input: IDeploymentManifest): IDeploymentManifest {
   }
 
   input.files = input.files.reduce((prev: IDeployedFile[], file: IDeployedFile) => {
-    if ((file.relPath !== undefined) && (file.relPath !== null)
+    if ((file !== null)
+      && (file.relPath !== undefined) && (file.relPath !== null)
       && (file.source !== undefined) && (file.source !== null)
       && (file.time !== undefined) && (file.time !== null)) {
         prev.push(file);

@@ -10,11 +10,12 @@ module.exports = {
     let keys = Object.keys(exp);
     for (var i = 0; i < keys.length; ++i) {
       result[keys[i]] = {
-        async: (par, callback) => {
+        async: (...args) => {
+          const callback = args[args.length - 1];
           if (error) {
             return callback(error);
           }
-          return callback(null, 0);
+          return callback(null, 42);
         }
       };
     }

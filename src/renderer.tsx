@@ -114,6 +114,11 @@ window.addEventListener('error', (evt: any) => {
   const {error} = evt;
   if ((error !== undefined)
       && (error.stack !== undefined)
+      // TODO: socket hang up should trigger another error that we catch
+      //  unfortunately I don't know yet if this is caused by mod download
+      //  or vortex update check or api requests and why it's unhandled but
+      //  reports indicate it's probably the api
+      && (error.message === 'socket hang up')
       && (error.stack.indexOf('invokeGuardedCallbackDev') !== -1)) {
     return true;
   }

@@ -174,9 +174,15 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         {/* this.renderChangedSources(t('These mods were modified'), 'valchange', vc) */}
-        {this.renderChangedSources(t('File content modified'), 'refchange', rc)}
-        {this.renderChangedSources(t('Source files were deleted'), 'srcdeleted', sd)}
-        {this.renderChangedSources(t('Links were deleted'), 'deleted', d)}
+        {this.renderChangedSources(t('File content modified '
+          + '("Apply" will save the changed, "Undo" will restore the original content)'),
+          'refchange', rc)}
+        {this.renderChangedSources(t('Source files were deleted '
+          + '("Apply" will permanenly remove the files, "Undo" will restore them)'),
+          'srcdeleted', sd)}
+        {this.renderChangedSources(t('Links were deleted '
+          + '("Apply" will permanently remove the files, "Undo" will restore them)'),
+          'deleted', d)}
       </div>
     );
   }
@@ -188,9 +194,15 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         {/* this.renderChangedFile(t('These files were modified'), 'valchange', valChanged) */}
-        {this.renderChangedFile(t('File content modified'), 'refchange', refChanged)}
-        {this.renderChangedFile(t('Source files were deleted'), 'srcdeleted', srcDeleted)}
-        {this.renderChangedFile(t('Links were deleted'), 'deleted', deleted)}
+        {this.renderChangedFile(t('File content modified'
+          + '("Apply" will save the changed, "Undo" will restore the original content)'),
+          'refchange', refChanged)}
+        {this.renderChangedFile(t('Source files were deleted'
+          + '("Apply" will permanenly remove the files, "Undo" will restore them)'),
+          'srcdeleted', srcDeleted)}
+        {this.renderChangedFile(t('Links were deleted'
+          + '("Apply" will permanently remove the files, "Undo" will restore them)'),
+          'deleted', deleted)}
       </div>
     );
   }

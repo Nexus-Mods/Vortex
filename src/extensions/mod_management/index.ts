@@ -9,7 +9,7 @@ import {IGame} from '../../types/IGame';
 import {IState, IStatePaths} from '../../types/IState';
 import { ITableAttribute, Placement } from '../../types/ITableAttribute';
 import {ITestResult} from '../../types/ITestResult';
-import { UserCanceled } from '../../util/CustomErrors';
+import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import Debouncer from '../../util/Debouncer';
 import * as fs from '../../util/fs';
 import LazyComponent from '../../util/LazyComponent';
@@ -400,6 +400,7 @@ function genUpdateModDeployment() {
           }));
       })
       .catch(UserCanceled, () => undefined)
+      .catch(ProcessCanceled, () => undefined)
       .catch(err => api.showErrorNotification('Failed to deploy mods', err))
       .finally(() => api.dismissNotification(notificationId));
   };

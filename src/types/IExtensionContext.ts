@@ -240,7 +240,7 @@ export type GameInfoQuery = (game: any) => Promise<{ [key: string]: IGameDetail 
 export interface IMergeFilter {
   // files to use as basis for merge, will be copied to the merge
   // directory during deployment (from in (absolute) to out (relative to working directory)
-  baseFiles: Array<{ in: string, out: string }>;
+  baseFiles: () => Array<{ in: string, out: string }>;
   // filter function, needs to match all files (relative paths) in the mod to consider
   // for merging
   filter: (fileName: string) => boolean;
@@ -805,8 +805,15 @@ export interface IExtensionContext {
   /**
    * register an interpreter to be used to run files of the specified type when starting with
    * IExtensionApi.runExecutable
+   * @param {string} extension File extension to handle
+   * @param {string} apply A filter function that will receive the run parameters as provided by
+   *                       the user (with the script as the executable) and should return adjusted
+   *                       parameters that will actually invoke the right interpreter.
+   *                       If the interpreter is not installed/found, please throw a
+   *                       "MissingInterpreter" exception so Vortex can show a nicer error message
    */
-  registerInterpreter: (extension: string, apply: (call: IRunParameters) => IRunParameters) => void;
+  registerInterpreter:
+    (extension: string, apply: (call: IRunParameters) => IRunParameters) => void;
 
   /**
    * specify that a certain range of versions of vortex is required

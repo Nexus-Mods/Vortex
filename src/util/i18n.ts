@@ -13,6 +13,7 @@ const app = remote !== undefined ? remote.app : appIn;
 
 let debugging = false;
 let currentLanguage = 'en';
+let globalTFunc: I18next.TranslationFunction = str => str;
 
 interface ITranslationEntry {
   lng: string;
@@ -120,6 +121,7 @@ function init(language: string): Promise<IInitResult> {
             const trans = str => str;
             return resolve({i18n: res, tFunc: trans, error});
           }
+          globalTFunc = tFunc;
           resolve({i18n: res, tFunc});
         });
     res.on('languageChanged', (newLanguage: string) => {
@@ -130,6 +132,10 @@ function init(language: string): Promise<IInitResult> {
 
 export function getCurrentLanguage() {
   return currentLanguage;
+}
+
+export function globalT(key: string | string[], options: I18next.TranslationOptions) {
+  return globalTFunc(key, options);
 }
 
 export function debugTranslations(enable?: boolean) {

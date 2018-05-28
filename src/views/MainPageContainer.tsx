@@ -14,7 +14,6 @@ export interface IBaseProps {
   page: IMainPage;
   active: boolean;
   secondary: boolean;
-  overlayPortal: () => HTMLElement;
 }
 
 export interface IMainPageContext {
@@ -33,7 +32,6 @@ const nop = () => undefined;
 class MainPageContainer extends ComponentEx<IBaseProps, IComponentState> {
   public static childContextTypes: React.ValidationMap<any> = {
     api: PropTypes.object.isRequired,
-    overlayPortal: PropTypes.func,
     headerPortal: PropTypes.func,
     page: PropTypes.string,
   };
@@ -50,10 +48,9 @@ class MainPageContainer extends ComponentEx<IBaseProps, IComponentState> {
   }
 
   public getChildContext() {
-    const { active, overlayPortal, page } = this.props;
+    const { active, page } = this.props;
     return {
       api: this.context.api,
-      overlayPortal: this.props.overlayPortal,
       headerPortal: () => this.headerRef,
       page: page.title,
     };

@@ -136,6 +136,7 @@ class DownloadWorker {
           .on('data', (data: Buffer) => {
             this.handleData(data);
           })
+          .on('error', err => this.handleError(err))
           .on('end', () => {
             this.handleComplete();
             this.mRequest.abort();
@@ -143,7 +144,7 @@ class DownloadWorker {
       });
 
       this.mRequest
-        .on('error', (err) => this.handleError(err))
+        .on('error', err => this.handleError(err))
         .end();
      });
   }
@@ -213,7 +214,8 @@ class DownloadWorker {
           this.mJob.completionCB();
         }
         this.abort(false);
-    });
+      })
+      .catch(err => this.handleError(err));
   }
 
   private handleResponse(response: http.IncomingMessage) {
@@ -311,7 +313,11 @@ class DownloadWorker {
 
     const bufferLength = this.bufferLength;
     if (bufferLength >= DownloadWorker.BUFFER_SIZE) {
-      this.writeBuffer().then(() => null);
+      this.writeBuffer()
+        .then(() => null)
+        .catch(err => {
+          this.handleError(err);
+        });
     }
     this.mProgressCB(data.length);
   }
@@ -763,7 +769,7 @@ class DownloadManager {
             });
           } else if ((download.headers !== undefined)
                      && (contentType.parse(download.headers['content-type']).type === 'text/html')
-                     && (!download.tempName.toLowerCase().endsWith('.html'))) {
+                     && !download.tempName.toLowerCase().endsWith('.html')) {
             // don't keep html files. It's possible handleHTML already deleted it though
             return fs.removeAsync(download.tempName)
               .catch(err => (err.code !== 'ENOENT')
