@@ -2663,8 +2663,8 @@ cpx@^1.5.0:
     subarg "^1.0.0"
 
 crash-dump@Nexus-Mods/node-crash-dump:
-  version "1.0.0"
-  resolved "https://codeload.github.com/Nexus-Mods/node-crash-dump/tar.gz/faf8345ec796fec246773cf36e75b3df7bdc3f80"
+  version "1.0.1"
+  resolved "https://codeload.github.com/Nexus-Mods/node-crash-dump/tar.gz/de762265ea07970356e917c86034cef40c470af4"
   dependencies:
     autogypi "^0.2.2"
     nan "^2.8.0"
@@ -3916,8 +3916,8 @@ evp_bytestokey@^1.0.0, evp_bytestokey@^1.0.3:
     safe-buffer "^5.1.1"
 
 exe-version@Nexus-Mods/node-exe-version:
-  version "1.0.0"
-  resolved "https://codeload.github.com/Nexus-Mods/node-exe-version/tar.gz/ce39faff66515223dbef71d57c517c0cc6e3bcb4"
+  version "1.0.1"
+  resolved "https://codeload.github.com/Nexus-Mods/node-exe-version/tar.gz/49e4391eee432fd0993c70120f803d9aa88cde6f"
   dependencies:
     autogypi "^0.2.2"
     nan "^2.8.0"
@@ -7577,8 +7577,8 @@ performance-now@^2.1.0:
   resolved "https://registry.yarnpkg.com/performance-now/-/performance-now-2.1.0.tgz#6309f4e0e5fa913ec1c69307ae364b4b377c9e7b"
 
 permissions@Nexus-Mods/node-permissions:
-  version "1.1.0"
-  resolved "https://codeload.github.com/Nexus-Mods/node-permissions/tar.gz/46836e32f4328d6ca9549e7d031342ef5c445cb5"
+  version "1.1.1"
+  resolved "https://codeload.github.com/Nexus-Mods/node-permissions/tar.gz/353f73fb663ea0feb50986155f8c00a1c91e7c22"
   dependencies:
     autogypi "^0.2.2"
     nbind "^0.3.15"
@@ -9889,10 +9889,11 @@ tunnel-agent@~0.4.1:
   resolved "https://registry.yarnpkg.com/tunnel-agent/-/tunnel-agent-0.4.3.tgz#6373db76909fe570e08d73583365ed828a74eeeb"
 
 turbowalk@Nexus-Mods/node-turbowalk:
-  version "1.0.0"
-  resolved "https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/d9e673df0ded0e091b8c813b8a7517bc82fb1706"
+  version "1.0.1"
+  resolved "https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/94bb5ebb0768f0f2b374a6223d22fb3d4ff09e1d"
   dependencies:
     autogypi "^0.2.2"
+    fs-extra-promise "^1.0.1"
     nan "^2.8.0"
     node-gyp "^3.4.0"
 

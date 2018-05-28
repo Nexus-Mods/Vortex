@@ -1,7 +1,7 @@
 
 import { log } from '../../../util/log';
 
-import { ICategoryDictionary } from '../../category_management/types/IcategoryDictionary';
+import { ICategoryDictionary } from '../../category_management/types/ICategoryDictionary';
 
 import NexusT, { ICategory } from 'nexus-api';
 

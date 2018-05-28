@@ -15,7 +15,7 @@ import {truthy} from '../../util/util';
 import resolvePath from '../mod_management/util/resolvePath';
 
 import { endDialog, setInstallerDataPath } from './actions/installerUI';
-import Core from './delegates/core';
+import Core from './delegates/Core';
 import { installerUIReducer } from './reducers/installerUI';
 import {
   getPluginPath,

@@ -15,7 +15,7 @@ import { activeGameId } from '../../util/selectors';
 import { currentGame, getSafe } from '../../util/storeHelper';
 import { decodeHTML, truthy } from '../../util/util';
 
-import { ICategoryDictionary } from '../category_management/types/IcategoryDictionary';
+import { ICategoryDictionary } from '../category_management/types/ICategoryDictionary';
 import { IGameStored } from '../gamemode_management/types/IGameStored';
 import { setModAttribute } from '../mod_management/actions/mods';
 import { setUpdatingMods } from '../mod_management/actions/settings';
