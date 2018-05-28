@@ -81,7 +81,6 @@ export interface ILookupCalculated {
 interface IComponentState {
   lastSelected?: string;
   calculatedValues?: ILookupCalculated;
-  splitMax: number;
   rowState: { [id: string]: IRowState };
   sortedRows: any[];
   detailsOpen: boolean;
@@ -130,7 +129,6 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     this.mNextState = this.state = {
       lastSelected: undefined,
       calculatedValues: undefined,
-      splitMax: 9999,
       rowState: {},
       sortedRows: undefined,
       detailsOpen: false,
@@ -214,7 +212,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
   public render(): JSX.Element {
     const { t, actions, objects, showHeader, showDetails, splitPos, tableId } = this.props;
-    const { detailsOpen, rowState, singleRowActions, splitMax } = this.state;
+    const { detailsOpen, rowState, singleRowActions } = this.state;
 
     let hasActions = false;
     if (actions !== undefined) {
@@ -740,21 +738,6 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     // translate the header so that it remains in view during scrolling
     ref.addEventListener('scroll', this.translateHeader);
     this.mScrollRef = ref;
-  }
-
-  private changeSplitPos = value => {
-    this.mSplitDebouncer.schedule(undefined, value);
-    const totalWidth = this.mSplitContainer.splitPane.offsetWidth;
-    const maxWidth = Math.min(
-      totalWidth * 0.5,
-      totalWidth - 700,
-    );
-
-    if (maxWidth !== this.state.splitMax) {
-      this.updateState(update(this.mNextState, {
-        splitMax: { $set: maxWidth },
-      }));
-    }
   }
 
   private updateCalculatedValues(props: IProps, forceUpdateId?: string): Promise<string[]> {
