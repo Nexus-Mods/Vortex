@@ -1,4 +1,5 @@
 import { showDialog } from '../../../actions/notifications';
+import ActionDropdown from '../../../controls/ActionDropdown';
 import Icon from '../../../controls/Icon';
 import IconBar from '../../../controls/IconBar';
 import { Button, IconButton } from '../../../controls/TooltipControls';
@@ -218,12 +219,9 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
   private applyExpand(treeData: ICategoriesTree[], showEmpty: boolean,
                       expanded: Set<string>,
                       categories: ICategoryDictionary): ICategoriesTree[] {
-    let filtered: Set<string>;
-    if (showEmpty) {
-      filtered = new Set(Object.keys(categories));
-    } else {
-      filtered = new Set(this.getNonEmptyCategories(treeData, []));
-    }
+    const filtered: Set<string> = new Set((showEmpty)
+      ? Object.keys(categories)
+      : this.getNonEmptyCategories(treeData, []));
 
     return treeData.map(obj => {
       if (!filtered.has(obj.categoryId)) {
@@ -434,11 +432,11 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
     return {
       buttons: [
         (
-          <IconBar
+          <ActionDropdown
+            className='category-buttons'
             group='category-icons'
             staticElements={actions}
             instanceId={rowInfo.node.categoryId}
-            dropdown
           />
         ),
       ],

@@ -1,4 +1,4 @@
-import { setDialogVisible, setOpenMainPage, setOverlayOpen } from '../actions/session';
+import { setDialogVisible, setOpenMainPage } from '../actions/session';
 import { setTabsMinimized } from '../actions/window';
 import Banner from '../controls/Banner';
 import FlexLayout from '../controls/FlexLayout';
@@ -21,7 +21,6 @@ import Dialog from './Dialog';
 import DialogContainer from './DialogContainer';
 import DNDContainer from './DNDContainer';
 import MainFooter from './MainFooter';
-import MainOverlay from './MainOverlay';
 import MainPageContainer from './MainPageContainer';
 import NotificationButton from './NotificationButton';
 import PageButton from './PageButton';
@@ -63,7 +62,6 @@ export interface IMainWindowState {
 
 export interface IConnectedProps {
   tabsMinimized: boolean;
-  overlayOpen: boolean;
   visibleDialog: string;
   mainPage: string;
   secondaryPage: string;
@@ -78,7 +76,6 @@ export interface IConnectedProps {
 
 export interface IActionProps {
   onSetTabsMinimized: (minimized: boolean) => void;
-  onSetOverlayOpen: (open: boolean) => void;
   onSetOpenMainPage: (page: string, secondary: boolean) => void;
   onHideDialog: () => void;
 }
@@ -102,7 +99,6 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
   private menuLayer: JSX.Element = null;
 
-  private overlayRef: HTMLElement = null;
   private headerRef: HTMLElement = null;
   private sidebarRef: HTMLElement = null;
   private sidebarTimer: NodeJS.Timer;
@@ -171,7 +167,6 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
   public shouldComponentUpdate(nextProps: IProps, nextState: IMainWindowState) {
     return this.props.visibleDialog !== nextProps.visibleDialog
-      || this.props.overlayOpen !== nextProps.overlayOpen
       || this.props.tabsMinimized !== nextProps.tabsMinimized
       || this.props.mainPage !== nextProps.mainPage
       || this.props.secondaryPage !== nextProps.secondaryPage
@@ -297,7 +292,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   }
 
   private renderBody() {
-    const { t, objects, overlayOpen, tabsMinimized } = this.props;
+    const { t, objects, tabsMinimized } = this.props;
 
     const sbClass = tabsMinimized ? 'sidebar-compact' : 'sidebar-expanded';
 
@@ -332,10 +327,6 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
             <DNDContainer style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
               {pages}
             </DNDContainer>
-            <MainOverlay
-              open={overlayOpen}
-              overlayRef={this.setOverlayRef}
-            />
           </FlexLayout.Flex>
         </FlexLayout>
       </FlexLayout.Flex>
@@ -369,12 +360,6 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       </div>
     );
   }
-
-  private setOverlayRef = ref => {
-    this.overlayRef = ref;
-  }
-
-  private getOverlayRef = () => this.overlayRef;
 
   private setHeaderRef = ref => {
     this.headerRef = ref;
@@ -427,17 +412,12 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
         page={page}
         active={active}
         secondary={secondaryPage === page.id}
-        overlayPortal={this.getOverlayRef}
       />
     );
   }
 
   private setMenuLayer = (ref) => {
     this.menuLayer = ref;
-  }
-
-  private toggleOverlay = () => {
-    this.props.onSetOverlayOpen(!this.props.overlayOpen);
   }
 
   private handleClickPage = (evt: React.MouseEvent<any>) => {
@@ -454,9 +434,6 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   }
 
   private setMainPage = (pageId: string, secondary: boolean) => {
-    if (this.props.mainPage !== pageId) {
-      this.props.onSetOverlayOpen(false);
-    }
     // set the page as "loaded", set it as the shown page next frame.
     // this way it gets rendered as hidden once and can then "transition"
     // to visible
@@ -506,7 +483,6 @@ function emptyFunc() {
 function mapStateToProps(state: IState): IConnectedProps {
   return {
     tabsMinimized: getSafe(state, ['settings', 'window', 'tabsMinimized'], false),
-    overlayOpen: state.session.base.overlayOpen,
     visibleDialog: state.session.base.visibleDialog,
     mainPage: state.session.base.mainPage,
     secondaryPage: state.session.base.secondaryPage,
@@ -523,7 +499,6 @@ function mapStateToProps(state: IState): IConnectedProps {
 function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   return {
     onSetTabsMinimized: (minimized: boolean) => dispatch(setTabsMinimized(minimized)),
-    onSetOverlayOpen: (open: boolean) => dispatch(setOverlayOpen(open)),
     onSetOpenMainPage:
       (page: string, secondary: boolean) => dispatch(setOpenMainPage(page, secondary)),
     onHideDialog: () => dispatch(setDialogVisible(undefined)),
@@ -531,7 +506,7 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
 }
 
 function registerMainPage(
-  instanceProps: IBaseProps,
+  instanceGroup: undefined,
   icon: string,
   title: string,
   component: React.ComponentClass<any> | React.StatelessComponent<any>,

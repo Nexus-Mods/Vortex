@@ -6,7 +6,7 @@ function register(val) {
   return 42;
 }
 
-let applyCalled;
+let applyCalled = 'bla';
 let MockComponent = () => <div>Dummy</div>;
 let WrapperComponent = extend(register)(MockComponent);
 
@@ -21,7 +21,6 @@ describe('extend', () => {
   let instance, wrapper;
 
   beforeEach(() => {
-    applyCalled = undefined;
     wrapper = shallow(<WrapperComponent />, {
       context: {
         extensions: dummyExtension

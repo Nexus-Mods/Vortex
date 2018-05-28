@@ -337,13 +337,6 @@ class ModList extends ComponentEx<IProps, IComponentState> {
             </FlexLayout.Fixed>
           </FlexLayout>
         </MainPage.Body>
-        <MainPage.Overlay>
-          <IconBar
-            group='mod-icons'
-            staticElements={this.staticButtons}
-            orientation='vertical'
-          />
-        </MainPage.Overlay>
       </MainPage>
     );
   }
@@ -633,13 +626,11 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           const download = newProps.downloads[mod.archiveId];
           // complete attributes that we don't otherwise find for downloads
           newModsWithState[mod.archiveId] = {
-            ...mod.info,
             id: mod.archiveId,
             state: 'downloaded',
             archiveId: mod.archiveId,
             attributes: {
               ...mod.info,
-              customFileName: mod.info.fileName || download.localPath,
               installTime: download.fileTime,
               wasInstalled: download.installed !== undefined,
             },

@@ -33,7 +33,7 @@ export class ExtensionProvider extends React.Component<IExtensionProps, {}> {
 
 export interface IExtensibleProps {
   group?: string;
-  staticElements: any[];
+  staticElements?: any[];
 }
 
 /**
@@ -44,9 +44,20 @@ export interface IExtensibleProps {
  * @param {(React.ComponentClass<P & IExtensionProps>)} ComponentToWrap the component to wrap
  * @returns {React.ComponentClass<P>} the wrapper component
  */
-export function extend(registerFunc: (...args) => void) {
+export function extend(registerFunc: (...args) => void, groupProp?: string) {
   const ExtensionManagerImpl: typeof ExtensionManager = require('./ExtensionManager').default;
   ExtensionManagerImpl.registerUIAPI(registerFunc.name);
+  const extensions: { [group: string]: any } = {};
+
+  const updateExtensions = (props: any, context: any) => {
+    extensions[props[groupProp]] = [];
+    context.extensions.apply(registerFunc.name, (...args) => {
+      const res = registerFunc(props[groupProp], ...args);
+      if (res !== undefined) {
+        extensions[props[groupProp]].push(res);
+      }
+    });
+  };
 
   return <P, S>(ComponentToWrap: React.ComponentClass<P>): any => {
     // tslint:disable-next-line:class-name
@@ -56,29 +67,19 @@ export function extend(registerFunc: (...args) => void) {
       };
 
       public context: IExtensionProps;
-      private mExtensions: any[];
       private mObjects: any[];
 
       public componentWillMount(): void {
-        this.mExtensions = [];
-        this.context.extensions.apply(registerFunc.name, (...args) => {
-          const res = registerFunc(this.props, ...args);
-          if (res !== undefined) {
-            this.mExtensions.push(res);
-          }
-        });
+        if (extensions[this.props[groupProp]] === undefined) {
+          updateExtensions(this.props, this.context);
+        }
       }
 
       public componentWillReceiveProps(nextProps: any) {
-        if (this.props.group !== nextProps.group) {
-          this.mExtensions = [];
-          this.mObjects = undefined;
-          this.context.extensions.apply(registerFunc.name, (...args) => {
-            const res = registerFunc(nextProps, ...args);
-            if (res !== undefined) {
-              this.mExtensions.push(res);
-            }
-          });
+        if (this.props[groupProp] !== nextProps[groupProp]) {
+          if (extensions[nextProps[groupProp]] === undefined) {
+            updateExtensions(nextProps, this.context);
+          }
         }
         if (this.props.staticElements !== nextProps.staticElements) {
           this.mObjects = undefined;
@@ -89,7 +90,7 @@ export function extend(registerFunc: (...args) => void) {
         const { children, staticElements } = this.props;
 
         if (this.mObjects === undefined) {
-          this.mObjects = [].concat(staticElements || [], this.mExtensions || []);
+          this.mObjects = [].concat(staticElements || [], extensions[this.props[groupProp]] || []);
         }
 
         const wrapProps: any = {

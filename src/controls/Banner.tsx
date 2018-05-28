@@ -70,21 +70,21 @@ class Banner extends React.Component<IProps, {}> {
 
   private cycle = () => {
     if (truthy(this.mRef)) {
-      this.mRef.childNodes.item(this.mCurrentBanner).attributes.removeNamedItem('class');
+      (this.mRef.childNodes.item(this.mCurrentBanner) as any).attributes.removeNamedItem('class');
       this.mCurrentBanner = (this.mCurrentBanner + 1) % this.mBanners.length;
       const attr = document.createAttribute('class');
       attr.value = 'active';
-      this.mRef.childNodes.item(this.mCurrentBanner).attributes.setNamedItem(attr);
+      (this.mRef.childNodes.item(this.mCurrentBanner) as any).attributes.setNamedItem(attr);
     }
   }
 }
 
-function registerBanner(instanceProps: IBaseProps,
+function registerBanner(instanceGroup: string,
                         group: string,
                         component: React.ComponentClass<any>,
                         options: IBannerOptions,
                         ): IBannerDefinition {
-  if (instanceProps.group === group) {
+  if (instanceGroup === group) {
     return { component, options };
   } else {
     return undefined;
@@ -116,6 +116,6 @@ function mapStateToProps(state: any, ownProps: IProps): IConnectedProps {
 }
 
 export default
-  extend(registerBanner)(
+  extend(registerBanner, 'group')(
     connect(mapStateToProps)(
       Banner as any)) as React.ComponentClass<ExportType>;

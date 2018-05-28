@@ -1,4 +1,5 @@
 import { addNotification, dismissNotification } from '../../actions/notifications';
+import { IExtensionApi } from '../../types/IExtensionContext';
 import { INotification } from '../../types/INotification';
 import { IState } from '../../types/IState';
 import { log } from '../../util/log';
@@ -24,7 +25,6 @@ import { IInstallContext, InstallOutcome } from './types/IInstallContext';
 import * as Promise from 'bluebird';
 import * as path from 'path';
 import * as Redux from 'redux';
-import { IExtensionApi } from '../../types/IExtensionContext';
 
 type IOnAddMod = (mod: IMod) => void;
 type IOnAddNotification = (notification: INotification) => void;
@@ -34,7 +34,8 @@ class InstallContext implements IInstallContext {
   private mRemoveMod: (modId: string) => void;
   private mAddNotification: (notification: INotification) => void;
   private mDismissNotification: (id: string) => void;
-  private mShowError: (message: string, details?: string | Error, allowReport?: boolean) => void;
+  private mShowError: (message: string, details?: string | Error, allowReport?: boolean,
+                       replace?: { [key: string]: string }) => void;
   private mSetModState: (id: string, state: ModState) => void;
   private mSetModAttribute: (id: string, key: string, value: any) => void;
   private mSetModInstallationPath: (id: string, installPath: string) => void;
@@ -47,6 +48,7 @@ class InstallContext implements IInstallContext {
   private mGameId: string;
   private mArchiveId: string;
   private mInstallOutcome: InstallOutcome;
+  private mFailReason: string;
   private mIsEnabled: (modId: string) => boolean;
 
   constructor(gameMode: string, api: IExtensionApi) {
@@ -58,8 +60,8 @@ class InstallContext implements IInstallContext {
       dispatch(addNotification(notification));
     this.mDismissNotification = (id) =>
       dispatch(dismissNotification(id));
-    this.mShowError = (message, details?, allowReport?) =>
-      showError(dispatch, message, details, false, undefined, allowReport);
+    this.mShowError = (message, details?, allowReport?, replace?) =>
+      showError(dispatch, message, details, { allowReport, replace });
     this.mSetModState = (id, state) =>
       dispatch(setModState(gameMode, id, state));
     this.mSetModAttribute = (id, key, value) => {
@@ -93,7 +95,8 @@ class InstallContext implements IInstallContext {
     log('info', 'start mod install', { id });
     this.mAddNotification({
       id: 'install_' + id,
-      message: 'Installing ' + id,
+      message: 'Installing {{ id }}',
+      replace: { id },
       type: 'activity',
     });
     this.mIndicatorId = id;
@@ -132,7 +135,7 @@ class InstallContext implements IInstallContext {
     this.mArchiveId = archiveId;
   }
 
-  public finishInstallCB(outcome: InstallOutcome, info?: any): void {
+  public finishInstallCB(outcome: InstallOutcome, info?: any, reason?: string): void {
     log('info', 'finish mod install', {
       id: this.mIndicatorId,
       outcome: this.mInstallOutcome,
@@ -155,6 +158,7 @@ class InstallContext implements IInstallContext {
       }
       this.mSetDownloadInstalled(this.mArchiveId, this.mGameId, this.mAddedId);
     } else {
+      this.mFailReason = reason;
       if (this.mAddedId !== undefined) {
         this.mRemoveMod(this.mAddedId);
       }
@@ -172,9 +176,10 @@ class InstallContext implements IInstallContext {
     this.mSetModType(id, modType);
   }
 
-  public reportError(message: string, details?: string | Error, allowReport?: boolean): void {
+  public reportError(message: string, details?: string | Error, allowReport?: boolean,
+                     replace?: { [key: string]: string }): void {
     log('error', 'install error', { message, details });
-    this.mShowError(message, details, allowReport);
+    this.mShowError(message, details, allowReport, replace);
   }
 
   public progressCB(percent: number, file: string): void {
@@ -187,7 +192,8 @@ class InstallContext implements IInstallContext {
       case 'success':
         return {
           type: 'success',
-          message: `${id} installed`,
+          message: '{{id}} installed',
+          replace: { id },
           group: 'mod-installed',
           displayMS: isEnabled ? 4000 : undefined,
           actions: isEnabled ? [] : [
@@ -202,12 +208,18 @@ class InstallContext implements IInstallContext {
         };
       case 'canceled': return {
         type: 'info',
-        message: 'Installation canceled',
-        displayMS: 2000,
+        title: 'Installation canceled',
+        message: this.mFailReason,
+        replace: { id },
+        displayMS: 4000,
+        localize: { message: false },
       };
       default: return {
         type: 'error',
-        message: `${id} failed to install`,
+        title: '{{id}} failed to install',
+        message: this.mFailReason,
+        replace: { id },
+        localize: { message: false },
       };
     }
   }

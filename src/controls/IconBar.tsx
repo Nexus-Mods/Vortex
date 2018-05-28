@@ -1,10 +1,8 @@
-import { IActionDefinition, IActionOptions } from '../types/IActionDefinition';
-import { extend, IExtensibleProps } from '../util/ExtensionProvider';
-import { truthy } from '../util/util';
+import { IActionDefinition } from '../types/IActionDefinition';
+import { IExtensibleProps } from '../util/ExtensionProvider';
 
+import ActionControl, { IActionControlProps, IActionDefinitionEx } from './ActionControl';
 import Dropdown from './Dropdown';
-import DropdownButton from './DropdownButton';
-import DynamicProps from './DynamicProps';
 import Icon from './Icon';
 import ToolbarIcon from './ToolbarIcon';
 import { IconButton } from './TooltipControls';
@@ -20,26 +18,19 @@ export type ButtonType = 'text' | 'icon' | 'both' | 'menu';
 
 export interface IBaseProps {
   className?: string;
-  group: string;
+  group?: string;
   instanceId?: string | string[];
   tooltipPlacement?: 'top' | 'right' | 'bottom' | 'left';
   buttonType?: ButtonType;
   orientation?: 'horizontal' | 'vertical';
   collapse?: boolean | 'force';
-  dropdown?: boolean;
   filter?: (action: IActionDefinition) => boolean;
   icon?: string;
+  pullRight?: boolean;
+  clickAnywhere?: boolean;
 }
 
-export interface IExtensionProps {
-  objects: IActionDefinition[];
-}
-
-type IProps = IBaseProps & IExtensionProps & React.HTMLAttributes<any>;
-
-function iconSort(lhs: IActionDefinition, rhs: IActionDefinition): number {
-  return (lhs.position || 100) - (rhs.position || 100);
-}
+type IProps = IBaseProps & { actions?: IActionDefinitionEx[] } & React.HTMLAttributes<any>;
 
 // takes the props of a Popover. ignores the arrow, applies the absolute
 // position
@@ -54,14 +45,6 @@ function Positioner(props: any): JSX.Element {
       <div className='menu-content'>{children}</div>
     </div>
   );
-}
-
-interface IPortalMenuProps {
-  open: boolean;
-  target: JSX.Element;
-  children?: React.ReactNode[];
-  onClose: () => void;
-  onClick: (evt: any) => void;
 }
 
 interface IPortalMenuProps {
@@ -111,7 +94,7 @@ function genTooltip(show: boolean | string): string {
 
 interface IMenuActionProps {
   id: string;
-  action: IActionDefinition & { show: boolean | string };
+  action: IActionDefinitionEx;
   instanceId: string | string[];
 }
 
@@ -141,12 +124,8 @@ class MenuAction extends React.PureComponent<IMenuActionProps, {}> {
   }
 }
 
-function arrayType<T>(x: T[]): T {
-  return null;
-}
-
 /**
- * represents an extensible row of icons/buttons
+ * represents an extensible row of icons/buttons/actions
  * In the simplest form this is simply a bunch of buttons that will run
  * an action if clicked, but an icon can also be more dynamic (i.e. rendering
  * dynamic content or having multiple states)
@@ -161,7 +140,8 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
 
   public context: { menuLayer: JSX.Element };
 
-  private buttonRef: JSX.Element;
+  private portalTargetRef: JSX.Element;
+  private mBackgroundClick: () => void;
 
   constructor(props: IProps) {
     super(props);
@@ -169,48 +149,33 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
     this.state = {
       open: false,
     };
+
+    this.updateBGClick();
+  }
+
+  public componentWillReceiveProps() {
+    this.updateBGClick();
   }
 
   public render(): JSX.Element {
-    const { collapse, dropdown, icon, id, instanceId,
-            objects, orientation, className, style } = this.props;
+    const { actions, clickAnywhere, collapse, icon, id, instanceId,
+            orientation, className, style } = this.props;
     const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
-
-    const icons = this.iconsToShow();
 
     const classes: string[] = [];
     if (className) {
       classes.push(className);
     }
 
-    if (dropdown) {
-      const sorted = icons.sort(iconSort);
-      const title: any = (
-        <div
-          data-value={sorted[0].title}
-          onClick={sorted[0].show ? this.triggerDefault : undefined}
-          title={genTooltip(sorted[0].show)}
-        >
-          <Icon name={sorted[0].icon} />
-          {sorted[0].title}
-        </div>
-      );
-      return (
-        <DropdownButton
-          id={`${id}-menu`}
-          split
-          title={title}
-        >
-          {sorted.slice(1).map((iter, idx) => this.renderMenuItem(iter, idx))}
-        </DropdownButton>
-      );
-    } else if (collapse) {
+    const sorted = actions.sort((lhs, rhs) => lhs.position - rhs.position);
+
+    if (collapse) {
       classes.push('btngroup-collapsed');
 
       const collapsed: IActionDefinition[] = [];
       const unCollapsed: IActionDefinition[] = [];
 
-      icons.forEach(action => {
+      sorted.forEach(action => {
         if ((collapse === 'force')
             || ((action.options === undefined) || !action.options.noCollapse)) {
           collapsed.push(action);
@@ -224,20 +189,20 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
           <IconButton
             id={`btn-menu-${id}`}
             className='btn-embed'
-            onClick={this.toggleCollapsed}
+            onClick={this.toggleOpen}
             tooltip={''}
             icon={icon || 'menu'}
             rotateId={`dots-iconbar-${id}`}
             stroke
-            ref={this.setButtonRef}
+            ref={this.setPortalTargetRef}
           />
           <PortalMenu
             open={this.state.open}
-            target={this.buttonRef}
-            onClose={this.toggleCollapsed}
-            onClick={this.toggleCollapsed}
+            target={this.portalTargetRef}
+            onClose={this.toggleOpen}
+            onClick={this.toggleOpen}
           >
-            {this.state.open ? collapsed.sort(iconSort).map(this.renderMenuItem) : null}
+            {this.state.open ? collapsed.map(this.renderMenuItem) : null}
           </PortalMenu>
         </div>
           );
@@ -249,7 +214,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
           style={style}
         >
           {moreButton}
-          {unCollapsed.sort(iconSort).map((iter, idx) => (
+          {unCollapsed.map((iter, idx) => (
             <div key={idx}>{this.renderIcon(iter, idx)}</div>))}
         </ButtonGroup>
       );
@@ -260,9 +225,10 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
           className={classes.join(' ')}
           style={style}
           vertical={orientation === 'vertical'}
+          onClick={this.mBackgroundClick}
         >
           {this.props.children}
-          {icons.sort(iconSort).map(this.renderIcon)}
+          {sorted.map(this.renderIcon)}
         </ButtonGroup>
       );
     }
@@ -333,6 +299,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
           instanceId={instanceIds}
           icon={hasIcon ? icon.icon : undefined}
           text={hasText ? icon.title : undefined}
+          tooltip={icon.title}
           onClick={icon.action}
           placement={tooltipPlacement}
         />
@@ -372,88 +339,42 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
     }
   }
 
-  private iconsToShow(): Array<IActionDefinition & { show: boolean | string }> {
-    const { filter, instanceId, objects } = this.props;
-    const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
-    const checkCondition = (def: IActionDefinition): boolean | string => {
-      if (def.condition === undefined) {
-        return true;
-      }
-      try {
-        return def.condition(instanceIds);
-      } catch (err) {
-        return `Error: ${err.message}`;
-      }
-    };
-
-    return objects
-      .map((iter): IActionDefinition & { show: boolean | string } => ({
-          ...iter,
-          show: checkCondition(iter),
-        }))
-      .filter(iter => iter.show !== false)
-      .filter(iter => (filter === undefined) || filter(iter));
+  private setPortalTargetRef = (ref) => {
+    this.portalTargetRef = ref;
   }
 
-  private triggerDefault = (evt: React.MouseEvent<any>) => {
-    const { instanceId, objects } = this.props;
-    const title = evt.currentTarget.attributes.getNamedItem('data-value').value;
-    const action = objects.find(iter =>
-      iter.title === evt.currentTarget.attributes.getNamedItem('data-value').value);
-    if (action !== undefined) {
-      const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
-      action.action(instanceIds);
-    }
-  }
-
-  private setButtonRef = (ref) => {
-    this.buttonRef = ref;
-  }
-
-  private toggleCollapsed = () => {
+  private toggleOpen = () => {
     this.setState(update(this.state, {
       open: { $set: !this.state.open },
+      x: { $set: undefined },
+      y: { $set: undefined },
     }));
   }
-}
 
-/**
- * called to register an extension icon. Please note that this function is called once for every
- * icon bar in the ui for each icon. Only the bar with matching group name should accept the icon
- * by returning a descriptor object.
- *
- * @param {IconBar} instance the bar to test against. Please note that this is not actually an
- *                           IconBar instance but the Wrapper, as the bar itself is not yet
- *                           registered, but all props are there
- * @param {string} group name of the icon group this icon wants to be registered with
- * @param {string} icon name of the icon to use
- * @param {string} title title of the icon
- * @param {*} action the action to call on click
- * @returns
- */
-function registerAction(instanceProps: IBaseProps,
-                        group: string,
-                        position: number,
-                        iconOrComponent: string | React.ComponentClass<any>,
-                        options: IActionOptions,
-                        titleOrProps?: string | (() => any),
-                        actionOrCondition?: (instanceIds?: string[]) => void | boolean,
-                        condition?: () => boolean | string,
-                        ): any {
-  if (instanceProps.group === group) {
-    if (typeof(iconOrComponent) === 'string') {
-      return { type: 'simple', icon: iconOrComponent, title: titleOrProps,
-               position, action: actionOrCondition, options, condition };
-    } else {
-      return { type: 'ext', component: iconOrComponent, props: titleOrProps,
-               position, condition: actionOrCondition, options };
-    }
-  } else {
-    return undefined;
+  private updateBGClick() {
+    const {actions, clickAnywhere, instanceId} = this.props;
+    const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
+    this.mBackgroundClick = ((clickAnywhere === true) && (actions.length === 1))
+      ? (() => actions[0].action(instanceIds))
+      : undefined;
   }
 }
 
-export type ExportType = IBaseProps & IExtensibleProps & React.HTMLAttributes<any> & any;
+type ExportType = IBaseProps & IActionControlProps & IExtensibleProps & React.HTMLAttributes<any>;
 
-export default
-  extend(registerAction)(IconBar) as React.ComponentClass<ExportType>;
+class ActionIconBar extends React.Component<ExportType> {
+  private static ACTION_PROPS = ['filter', 'group', 'instanceId', 'staticElements'];
+  public render() {
+    const actionProps: IActionControlProps =
+      _.pick(this.props, ActionIconBar.ACTION_PROPS) as IActionControlProps;
+    const barProps: IBaseProps =
+      _.omit(this.props, ActionIconBar.ACTION_PROPS) as any;
+    return (
+      <ActionControl {...actionProps}>
+        <IconBar {...barProps} />
+      </ActionControl>
+    );
+  }
+}
+
+export default ActionIconBar as React.ComponentClass<ExportType>;

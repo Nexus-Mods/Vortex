@@ -149,7 +149,7 @@ export class FormPathItem extends React.Component<IFormPathProps, {}> {
 
   private handleChangePath = () => {
     const {directory, extensions, onChangeValue, stateKey, value} = this.props;
-    remote.dialog.showOpenDialog(null, {
+    remote.dialog.showOpenDialog(remote.getCurrentWindow(), {
       defaultPath: value,
       properties: [ directory ? 'openDirectory' : 'openFile' ],
       filters: extensions !== undefined ? [

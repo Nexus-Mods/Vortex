@@ -4,6 +4,7 @@ import * as actions from '../src/extensions/gamemode_management/actions/settings
 describe('discoveryProgress', () => {
   it('creates the correct action', () => {
     expect(discoveryActions.discoveryProgress(0, 42, 'dir')).toEqual({
+      error: false,
       type: 'DISCOVERY_PROGRESS',
       payload: { idx: 0, percent: 42, directory: 'dir' },
     });
@@ -13,6 +14,7 @@ describe('discoveryProgress', () => {
 describe('setToolVisible', () => {
   it('creates the correct action', () => {
     expect(actions.setToolVisible('gameId1', 'toolId1', true)).toEqual({
+      error: false,
       type: 'SET_TOOL_VISIBLE',
       payload: { gameId: 'gameId1', toolId: 'toolId1', visible: true },
     });
@@ -22,6 +24,7 @@ describe('setToolVisible', () => {
 describe('setGameHidden', () => {
   it('creates the correct action', () => {
     expect(actions.setGameHidden('gameId1', true)).toEqual({
+      error: false,
       type: 'SET_GAME_HIDDEN',
       payload: { gameId: 'gameId1', hidden: true },
     });
@@ -39,6 +42,7 @@ describe('setGameParameters', () => {
     };
 
     expect(actions.setGameParameters('gameId1', parameters)).toEqual({
+      error: false,
       type: 'SET_GAME_PARAMETERS',
       payload: { gameId: 'gameId1', parameters },
     });
@@ -57,6 +61,7 @@ describe('addDiscoveredGame', () => {
     };
 
     expect(actions.addDiscoveredGame('gameId1', result)).toEqual({
+      error: false,
       type: 'ADD_DISCOVERED_GAME',
       payload: { id: 'gameId1', result },
     });
@@ -74,6 +79,7 @@ describe('addDiscoveredTool', () => {
     };
 
     expect(actions.addDiscoveredTool('gameId1', 'toolId1', result)).toEqual({
+      error: false,
       type: 'ADD_DISCOVERED_TOOL',
       payload: { gameId: 'gameId1', toolId: 'toolId1', result },
     });

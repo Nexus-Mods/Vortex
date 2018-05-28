@@ -42,7 +42,7 @@ import * as rimraf from 'rimraf';
 
 export class ArchiveBrokenError extends Error {
   constructor() {
-    super('ArchiveBroken');
+    super('Archive is broken');
 
     this.name = this.constructor.name;
   }
@@ -297,7 +297,7 @@ class InstallManager {
         if (installContext !== undefined) {
           // context doesn't have to be set if we canceled early
           prom = prom.then(() => installContext.finishInstallCB(
-                               canceled ? 'canceled' : 'failed'));
+            canceled ? 'canceled' : 'failed', undefined, err.message));
         }
 
         if (err === undefined) {
@@ -318,8 +318,9 @@ class InstallManager {
               if (installContext !== undefined) {
                 installContext.reportError(
                   'Installation failed',
-                  `The archive ${path.basename(archivePath)} is damaged and couldn't be installed. `
-                  + 'This is most likely fixed by re-downloading the file.', false);
+                  `The archive {{ installerPath }} is damaged and couldn't be installed. `
+                  + 'This is most likely fixed by re-downloading the file.', false,
+                  { installerPath: path.basename(archivePath) });
               }
             });
         } else if (err instanceof DataInvalid) {
@@ -328,8 +329,11 @@ class InstallManager {
               if (installContext !== undefined) {
                 installContext.reportError(
                   'Installation failed',
-                  `The installer ${path.basename(archivePath)} is invalid and couldn't be `
-                  + 'installed. Please inform the mod author.', false);
+                  `The installer {{ installerPath }} is invalid and couldn't be `
+                  + 'installed:\n{{ message }}\nPlease inform the mod author.\n',
+                  false, {
+                    installerPath: path.basename(archivePath),
+                    message: err.message });
               }
             });
         } else {
@@ -343,7 +347,10 @@ class InstallManager {
               if (installContext !== undefined) {
                 installContext.reportError(
                     'Installation failed',
-                    `The installer "${id}" failed: ${errMessage}`, err.code !== 'EPERM');
+                    `The installer "{{ id }}" failed: {{ message }}`, err.code !== 'EPERM', {
+                      id,
+                      message: errMessage,
+                    });
               }
               if (callback !== undefined) {
                 callback(err, modId);
@@ -437,6 +444,8 @@ class InstallManager {
 
   private queryContinue(api: IExtensionApi,
                         errors: string[]): Promise<void> {
+    const terminal = errors.find(err => err.indexOf('Can not open the file as archive') !== -1);
+
     return new Promise<void>((resolve, reject) => {
       api.store.dispatch(showDialog('error', api.translate('Archive damaged'), {
         bbcode: api.translate('Encountered errors extracting this archive. Please verify this '
@@ -445,8 +454,9 @@ class InstallManager {
         options: { translated: true },
       }, [
           { label: 'Cancel', action: () => reject(new UserCanceled()) },
+      ].concat(terminal ? [] : [
           { label: 'Continue', action: () => resolve() },
-        ]));
+        ])));
     });
   }
 

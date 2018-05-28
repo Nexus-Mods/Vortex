@@ -140,7 +140,7 @@ function refreshGameInfo(store: Redux.Store<IState>, gameId: string): Promise<vo
 
   const gameInfo = store.getState().persistent.gameMode.gameInfo[gameId] || {};
 
-  const now = new Date().getTime();
+  const now = Date.now();
 
   // find keys we need to update and which providers we have to query for that
   const missingKeys = Object.keys(expectedKeys).filter(key =>
@@ -218,7 +218,7 @@ function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
 
   return new Promise<void>((resolve, reject) => {
     if (discovery !== undefined) {
-      remote.dialog.showOpenDialog(null, {
+      remote.dialog.showOpenDialog(remote.getCurrentWindow(), {
         properties: ['openDirectory'],
         defaultPath: discovery.path,
       }, (fileNames: string[]) => {
@@ -244,7 +244,7 @@ function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
         }
       });
     } else {
-      remote.dialog.showOpenDialog(null, {
+      remote.dialog.showOpenDialog(remote.getCurrentWindow(), {
         properties: ['openDirectory'],
       }, (fileNames: string[]) => {
         if (fileNames !== undefined) {
@@ -506,7 +506,7 @@ function init(context: IExtensionContext): boolean {
           } else if ((err instanceof ProcessCanceled)
                     || (err instanceof SetupError)) {
             showError(store.dispatch, 'Failed to set game mode',
-                      err.message, false, undefined, false);
+                      err.message, { allowReport: false });
           } else {
             showError(store.dispatch, 'Failed to set game mode', err);
           }
@@ -537,12 +537,10 @@ function init(context: IExtensionContext): boolean {
 
             context.api.sendNotification({
               type: 'info',
-              message: t('Switched game mode: {{mode}}',
-                {
-                  replace: {
-                    mode: game.name,
-                  },
-                }),
+              message: 'Switched game mode: {{mode}}',
+              replace: {
+                mode: game.name,
+              },
               displayMS: 4000,
             });
           }

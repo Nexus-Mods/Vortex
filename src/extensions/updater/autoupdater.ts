@@ -13,7 +13,28 @@ function setupAutoUpdate(api: IExtensionApi) {
   const state: IState = api.store.getState();
 
   autoUpdater.on('error', (err) => {
-    api.showErrorNotification('Checking for update failed', err);
+    if ((err.cmd !== undefined) && err.cmd.startsWith('powershell.exe')) {
+      api.showErrorNotification(
+        'Checking for update failed',
+        'Failed to verify the signature of the update file. This is probably caused '
+        + 'by an outdated version of powershell or security settings that prevent Vortex from '
+        + 'running it.\n'
+        + 'You could try updating powershell, otherwise please disable automatic updates '
+        + 'and update Vortex manually.',
+        { allowReport: false });
+    } else if (err.message === 'Unexpected end of JSON input') {
+      api.showErrorNotification(
+        'Checking for update failed',
+        'Failed to verify the signature of the update file, please try again later.',
+        { allowReport: false });
+    } else if (err.message === 'net::ERR_CONNECTION_RESET') {
+      api.showErrorNotification(
+        'Checking for update failed',
+        'This was probably a temporary network problem, please try again later.',
+        { allowReport: false });
+    } else {
+      api.showErrorNotification('Checking for update failed', err, { allowReport: false });
+    }
   });
 
   autoUpdater.on('update-available', () => {
@@ -54,6 +75,11 @@ function setupAutoUpdate(api: IExtensionApi) {
       if ((channel !== 'none') && (process.env.NODE_ENV !== 'development')) {
         autoUpdater.allowPrerelease = channel === 'beta';
         autoUpdater.checkForUpdates()
+        .then(check => {
+          check.downloadPromise.catch(err => {
+            log('warn', 'Checking for update failed', err);
+          });
+        })
         .catch(err => {
           log('warn', 'Checking for update failed', err);
         });

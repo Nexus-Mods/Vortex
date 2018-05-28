@@ -14,12 +14,8 @@ export interface IProps {
   container?: HTMLElement;
   placeholder: () => React.ReactNode;
   content: () => React.ReactNode;
-  startVisible: boolean;
-}
-
-export interface IState {
   visible: boolean;
-  visibleTime: number;
+  setVisible: (visible: boolean) => void;
 }
 
 /**
@@ -28,7 +24,7 @@ export interface IState {
  * @class VisibilityProxy
  * @extends {React.Component<IProps, IState>}
  */
-class VisibilityProxy extends React.Component<any, IState> {
+class VisibilityProxy extends React.PureComponent<any, {}> {
   // need to use maps because the keys aren't PODs
   private static sObservers: Map<Element, IntersectionObserver> = new Map();
   private static sInstances: Map<Element, (visible: boolean) => void> = new Map();
@@ -38,7 +34,7 @@ class VisibilityProxy extends React.Component<any, IState> {
       VisibilityProxy.sObservers.set(container || null,
           new IntersectionObserver(VisibilityProxy.callback, {
         root: container,
-        rootMargin: '360px 0px 360px 0px',
+        rootMargin: '90px 0px 90px 0px',
       } as any));
     }
     return VisibilityProxy.sObservers.get(container);
@@ -65,13 +61,8 @@ class VisibilityProxy extends React.Component<any, IState> {
     VisibilityProxy.getObserver(container).unobserve(target);
   }
 
-  constructor(props: IProps) {
-    super(props);
-    this.state = {
-      visible: props.startVisible,
-      visibleTime: 0,
-    };
-  }
+  private mLastVisible: boolean = false;
+  private mVisibleTime: number = 0;
 
   public componentDidMount() {
     const node = ReactDOM.findDOMNode(this) as HTMLElement;
@@ -84,9 +75,10 @@ class VisibilityProxy extends React.Component<any, IState> {
       //   became visible less than a second ago. Since the observer is flank triggered
       //   this may cause items to be rendered even though they don't have to but this
       //   is a performance optimisation anyway, nothing breaks.
-      if ((this.state.visible !== visible) &&
-          (visible || (now - this.state.visibleTime) > 1000.0)) {
-        this.setState({ visible, visibleTime: now });
+      if ((this.mLastVisible !== visible) &&
+          (visible || (now - this.mVisibleTime) > 1000.0)) {
+        this.mLastVisible = visible;
+        this.props.setVisible(visible);
       }
     });
   }
@@ -97,11 +89,14 @@ class VisibilityProxy extends React.Component<any, IState> {
 
   public render(): JSX.Element {
     return (
-      <div {..._.omit(this.props, ['container', 'placeholder', 'content', 'startVisible'])}>{
-        (this.state.visible)
+      <div
+        {..._.omit(this.props, ['container', 'placeholder', 'content', 'visible', 'setVisible'])}
+      >{
+        (this.props.visible)
           ? this.props.content()
           : this.props.placeholder()
-      }</div>
+      }
+      </div>
     );
   }
 }

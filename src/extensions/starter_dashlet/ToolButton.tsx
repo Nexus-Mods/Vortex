@@ -52,7 +52,8 @@ class ToolButton extends PureComponentEx<IProps, IToolButtonState> {
         title: props.t('Make primary'),
         icon: 'bookmark',
         action: this.setPrimaryTool,
-        condition: () => truthy(this.props.starter.exePath),
+        condition: () => truthy(this.props.starter.exePath)
+          ? true : props.t('Not configured'),
       },
       {
         title: props.t('Edit'),
@@ -69,7 +70,7 @@ class ToolButton extends PureComponentEx<IProps, IToolButtonState> {
   }
 
   public componentDidMount() {
-    this.mImageId = new Date().getTime();
+    this.mImageId = Date.now();
   }
 
   public render() {

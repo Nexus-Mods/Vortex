@@ -36,8 +36,8 @@ class SettingsUpdate extends ComponentEx<IProps, {}> {
             value={updateChannel}
           >
             <option value='stable'>{t('Stable')}</option>
-            <option value='beta'>{t('Beta')}</option>
-            <option value='none'>{t('None')}</option>
+            <option value='beta'>{t('Testing')}</option>
+            <option value='none'>{t('No automatic updates')}</option>
           </FormControl>
         </FormGroup>
       </form>

@@ -1,6 +1,8 @@
 import { IEditChoice, ITableAttribute } from '../../types/ITableAttribute';
 
-import Dropdown from '../Dropdown';
+import ContextMenu from '../ActionContextMenu';
+import ActionDropdown from '../ActionDropdown';
+import Dropdown, { DummyMenu } from '../Dropdown';
 import ExtensionGate from '../ExtensionGate';
 import Icon from '../Icon';
 import IconBar from '../IconBar';
@@ -12,7 +14,7 @@ import { TD, TR } from './MyTable';
 
 import * as I18next from 'i18next';
 import * as React from 'react';
-import { DropdownMenu, FormControl, MenuItem, SplitButton } from 'react-bootstrap';
+import { FormControl, MenuItem, SplitButton } from 'react-bootstrap';
 
 interface ICellProps {
   language: string;
@@ -27,11 +29,19 @@ interface ICellProps {
   right: boolean;
 }
 
-class TableCell extends React.Component<ICellProps, {}> {
-  public shouldComponentUpdate(newProps: ICellProps) {
+class TableCell extends React.Component<ICellProps, { isOpen: boolean }> {
+  constructor(props: ICellProps) {
+    super(props);
+    this.state = {
+      isOpen: false,
+    };
+  }
+
+  public shouldComponentUpdate(newProps: ICellProps, newState: { isOpen: boolean }) {
     return this.props.rawData !== newProps.rawData
         || this.props.data !== newProps.data
-        || this.props.language !== newProps.language;
+        || this.props.language !== newProps.language
+        || this.state.isOpen !== newState.isOpen;
   }
 
   public render(): JSX.Element {
@@ -64,6 +74,7 @@ class TableCell extends React.Component<ICellProps, {}> {
             id={`dropdown-${tableId}-${attribute.id}`}
             container={container}
             pullRight={right}
+            onToggle={this.openChoice}
           >
             <Button
               id={`btn-${tableId}-${attribute.id}`}
@@ -81,11 +92,13 @@ class TableCell extends React.Component<ICellProps, {}> {
               className={`toggle-${tableId}-${attribute.id} `
                 + `toggle-${tableId}-${attribute.id}-${key}`}
             />
-            <Dropdown.Menu
-              onSelect={this.changeCell}
-            >
-              {choices.filter(choice => choice.visible !== false).map(this.renderChoice)}
-            </Dropdown.Menu>
+            {this.state.isOpen
+              ? (<Dropdown.Menu
+                onSelect={this.changeCell}
+              >
+                {choices.filter(choice => choice.visible !== false).map(this.renderChoice)}
+              </Dropdown.Menu>)
+              : <DummyMenu /> }
           </Dropdown>
         );
       }
@@ -124,6 +137,10 @@ class TableCell extends React.Component<ICellProps, {}> {
     attribute.edit.onChangeValue(rawData, key);
   }
 
+  private openChoice = (isOpen: boolean) => {
+    this.setState({ isOpen });
+  }
+
   private renderChoice = (choice: IEditChoice): JSX.Element => {
     const { t, attribute, tableId } = this.props;
     return (
@@ -160,17 +177,34 @@ export interface IRowProps {
   highlighted: boolean;
   domRef?: (ref) => void;
   container: HTMLElement;
-  initVisible: boolean;
+  visible: boolean;
+  onSetVisible: (rowId: string, visible: boolean) => void;
   onHighlight: (rowId: string, highlight: boolean) => void;
 }
 
-class TableRow extends React.Component<IRowProps, {}> {
-  public shouldComponentUpdate(nextProps: IRowProps) {
-    return (this.props.data !== nextProps.data)
+interface IRowState {
+  contextVisible: boolean;
+  context?: { x: number, y: number };
+}
+
+class TableRow extends React.Component<IRowProps, IRowState> {
+  constructor(props: IRowProps) {
+    super(props);
+    this.state = {
+      contextVisible: false,
+      context: undefined,
+    };
+  }
+
+  public shouldComponentUpdate(nextProps: IRowProps, nextState: IRowState) {
+    return (this.props.visible !== nextProps.visible)
+      || (this.props.data !== nextProps.data)
       || (this.props.rawData !== nextProps.rawData)
       || (this.props.selected !== nextProps.selected)
       || (this.props.highlighted !== nextProps.highlighted)
-      || (this.props.attributes !== nextProps.attributes);
+      || (this.props.attributes !== nextProps.attributes)
+      || (this.state.contextVisible !== nextState.contextVisible)
+      || (this.state.context !== nextState.context);
   }
 
   public render(): JSX.Element {
@@ -192,10 +226,12 @@ class TableRow extends React.Component<IRowProps, {}> {
         key={data.__id}
         className={classes.join(' ')}
         onClick={onClick}
+        onContextMenu={this.onContext}
         ref={domRef}
-        style={{ display: 'table-row' }}
+        style={{ display: 'table-row', position: 'relative' }}
 
-        startVisible={this.props.initVisible}
+        visible={this.props.visible}
+        setVisible={this.setVisible}
         container={this.props.container}
         placeholder={this.renderPlaceholder}
         content={this.renderRow}
@@ -237,21 +273,32 @@ class TableRow extends React.Component<IRowProps, {}> {
           key='action-cell'
           className={`table-${tableId} cell-actions`}
         >
-          <IconBar
+          <ContextMenu
+            id={`${tableId}-${data.__id}-action-context`}
+            group={`${tableId}-action-icons`}
+            instanceId={data.__id}
+            className='table-actions'
+            staticElements={actions}
+            visible={this.state.contextVisible}
+            position={this.state.context}
+            onHide={this.onHideContext}
+          />
+          <ActionDropdown
             id={`${tableId}-${data.__id}-action-icons`}
             group={`${tableId}-action-icons`}
             instanceId={data.__id}
             className='table-actions'
             staticElements={actions}
-            collapse
-            dropdown
-            pullRight
           />
         </TD>);
     } else {
       res.push(<TD key='no-action' />);
     }
     return res;
+  }
+
+  private setVisible = (visible: boolean) => {
+    this.props.onSetVisible(this.props.data.__id, visible);
   }
 
   private selectDefaultAction = (event) => {
@@ -327,6 +374,14 @@ class TableRow extends React.Component<IRowProps, {}> {
       />
     );
   }
+
+  private onContext = (event: React.MouseEvent<any>) => {
+    this.setState({ contextVisible: true, context: { x: event.clientX, y: event.clientY } });
+  }
+
+  private onHideContext = () => {
+    this.setState({ contextVisible: false });
+  }
 }
 
-export default TableRow;
+export default TableRow as React.ComponentClass<IRowProps>;

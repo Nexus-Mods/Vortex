@@ -136,7 +136,7 @@ class DetailCell extends React.Component<ICellProps, {}> {
     if (readOnly) {
       return (
         <FormControl.Static>
-          {currentChoice !== undefined ? currentChoice.text : null}
+          {currentChoice !== undefined ? currentChoice.text : t('<Nothing>')}
         </FormControl.Static>
       );
     } else {
@@ -280,6 +280,10 @@ class DetailBox extends ComponentEx<IDetailProps, {}> {
 
   public render(): JSX.Element {
     const { t, attributes, onToggleShow, rowData, rowIds, show } = this.props;
+
+    if (rowData[rowIds[0]] === undefined) {
+      return null;
+    }
 
     const detailList = attributes
       .filter(obj =>

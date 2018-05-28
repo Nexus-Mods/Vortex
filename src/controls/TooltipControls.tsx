@@ -23,21 +23,22 @@ export type ButtonProps = ITooltipProps & typeof BootstrapButton.prototype.props
  */
 export class Button extends React.PureComponent<ButtonProps, {}> {
   public render() {
+    const { tooltip } = this.props;
     const relayProps: any = { ...this.props };
     delete relayProps.tooltip;
     delete relayProps.placement;
 
-    if (typeof (this.props.tooltip) === 'string') {
+    if ((tooltip === undefined) || (typeof (this.props.tooltip) === 'string')) {
       return (
         <BootstrapButton {...relayProps} title={this.props.tooltip}>
           {this.props.children}
         </BootstrapButton>
       );
     } else {
-      const tooltip = <Popover id={this.props.id}>{this.props.tooltip}</Popover>;
+      const tooltipCtrl = <Popover id={this.props.id}>{this.props.tooltip}</Popover>;
       return (
         <OverlayTrigger
-          overlay={tooltip}
+          overlay={tooltipCtrl}
           placement={this.props.placement || 'bottom'}
           delayShow={300}
           delayHide={150}
@@ -242,9 +243,11 @@ export class Icon extends React.Component<IconProps, {}> {
     delete relayProps.tooltip;
     delete relayProps.placement;
 
+    const classes = ['fake-link'].concat((this.props.className || '').split(' '));
+
     if (typeof (this.props.tooltip) === 'string') {
       return (
-        <a className='fake-link' title={this.props.tooltip}>
+        <a className={classes.join(' ')} title={this.props.tooltip}>
           <SvgIcon {...relayProps} />
         </a>
       );
@@ -258,7 +261,7 @@ export class Icon extends React.Component<IconProps, {}> {
           delayShow={300}
           delayHide={150}
         >
-          <a className='fake-link'><SvgIcon {...relayProps} /></a>
+          <a className={classes.join(' ')}><SvgIcon {...relayProps} /></a>
         </OverlayTrigger>
       );
     }

@@ -1,26 +1,5 @@
 import { tableReducer } from '../src/reducers/tables';
 
-describe('selectRows', () => {
-  it('marks rows selected', () => {
-    let input = { };
-    let result = tableReducer.reducers.SELECT_ROWS(input,
-      { tableId: 'test', rowIds: ['row1', 'row2'], selected: true });
-    expect(result.test.rows).toEqual({ row1: { selected: true }, row2: { selected: true } });
-  });
-  it('removes unselected rows', () => {
-    let input = { test: { rows: { row1: { selected: true }, row2: { selected: true } } } };
-    let result = tableReducer.reducers.SELECT_ROWS(input,
-      { tableId: 'test', rowIds: ['row1', 'row2'], selected: false });
-    expect(result.test.rows).toEqual({ });
-  });
-  it('leaves other tables alone', () => {
-    let input = { test1: { rows: { row1: { selected: true }, row2: { selected: true } } } };
-    let result = tableReducer.reducers.SELECT_ROWS(input,
-      { tableId: 'test2', rowIds: ['row1', 'row2'], selected: false });
-    expect(result).toEqual(input);
-  });
-});
-
 describe('setAttributeVisible', () => {
   it('marks attribute visible', () => {
     let input = {};

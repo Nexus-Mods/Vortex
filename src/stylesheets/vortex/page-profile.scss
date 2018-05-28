@@ -50,7 +50,7 @@
       outline: $border-width*2 solid $brand-primary;
     }
     &.disabled {
-      background-color: $gray-dark;
+      background-color: $gray;
     }
     &:hover {
       background-color: darken($gray-light, 10%);

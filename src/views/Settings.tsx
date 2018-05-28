@@ -1,4 +1,5 @@
 import { setSettingsPage } from '../actions/session';
+import EmptyPlaceholder from '../controls/EmptyPlaceholder';
 import { PropsCallback } from '../types/IExtensionContext';
 import { IState } from '../types/IState';
 import { ComponentEx, connect, extend, translate } from '../util/ComponentEx';
@@ -13,6 +14,7 @@ interface ISettingsPage {
   title: string;
   component: React.ComponentClass<any>;
   props: PropsCallback;
+  visible: () => boolean;
 }
 
 interface ICombinedSettingsPage {
@@ -72,11 +74,24 @@ class Settings extends ComponentEx<IProps, {}> {
   private renderTab = (page: ICombinedSettingsPage): JSX.Element => {
     const { t } = this.props;
 
+    const elements = page.elements.filter(ele => (ele.visible === undefined) || ele.visible());
+
+    const content = (elements.length > 0)
+      ? (
+        <div>
+          {elements.map(this.renderTabElement)}
+        </div>
+      ) : (
+        <EmptyPlaceholder
+          icon='settings'
+          text={t('Nothing to configure.')}
+          subtext={t('Other games may require settings here.')}
+        />
+      );
+
     return (
       <Tab key={page.title} eventKey={page.title} title={t(page.title)}>
-        <div>
-          {page.elements.map(this.renderTabElement)}
-        </div>
+        {content}
       </Tab>
     );
   }
@@ -99,11 +114,12 @@ class Settings extends ComponentEx<IProps, {}> {
   }
 }
 
-function registerSettings(instanceProps: ISettingsProps,
+function registerSettings(instanceGroup: undefined,
                           title: string,
                           component: React.ComponentClass<any>,
-                          props: PropsCallback): ISettingsPage {
-  return { title, component, props };
+                          props: PropsCallback,
+                          visible: () => boolean): ISettingsPage {
+  return { title, component, props, visible };
 }
 
 function mapStateToProps(state: IState): IConnectedProps {

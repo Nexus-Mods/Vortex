@@ -47,3 +47,16 @@ export class HTTPError extends Error {
     return this.mBody;
   }
 }
+
+export class MissingInterpreter extends Error {
+  private mURL: string;
+  constructor(message: string, url?: string) {
+    super(message);
+    this.name = this.constructor.name;
+    this.mURL = url;
+  }
+
+  public get url(): string {
+    return this.mURL;
+  }
+}

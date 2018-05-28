@@ -283,7 +283,7 @@ function main(args) {
           return processProject(project, buildType, feedback);
         })
         .then(() => {
-          buildState[project.name] = new Date().getTime();
+          buildState[project.name] = Date.now();
           return fs.writeJSONAsync(buildStateName, buildState);
         })
         .catch((err) => {

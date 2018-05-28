@@ -276,7 +276,7 @@ class SettingsMetaserver extends ComponentEx<IProps, IState> {
       <form>
         <FormGroup>
           <ControlLabel>
-            {t('Meta server')}
+            {t('Meta Server')}
             <More id='more-metaserver' name={t('Meta Server')}>
               {getText('meta-server', t)}
             </More>

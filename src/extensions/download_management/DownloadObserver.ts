@@ -98,6 +98,30 @@ export class DownloadObserver {
     }
   }
 
+  private translateError(err: any): { message: string, url?: string } {
+    const details: any = {
+      message: err.message,
+    };
+    if (err.http_headers !== undefined) {
+      if (err.http_headers.nexuserror !== undefined) {
+        details.message = err.http_headers.nexuserrorinfo;
+      } else if (err.http_headers.status !== undefined) {
+        details.message = err.http_headers.status;
+      }
+    } else if (err.code !== undefined) {
+      if (err.code === 'ENOSPC') {
+        details.message = 'The disk is full';
+      } else if (err.code === 'ECONNRESET') {
+        details.message = 'Server refused the connection';
+      }
+    }
+
+    if (err.request !== undefined) {
+      details.url = err.request;
+    }
+    return details;
+  }
+
   private handleStartDownload(urls: string[] | URLFunc,
                               modInfo: any,
                               fileName: string,
@@ -154,24 +178,13 @@ export class DownloadObserver {
             fs.removeAsync(path.join(downloadPath, filePath));
           }
         })
-        .catch((err) => {
-          const details: any = {
-            message: err.message,
-          };
-          if (err.http_headers !== undefined) {
-            if (err.http_headers.nexuserror !== undefined) {
-              details.message = err.http_headers.nexuserrorinfo;
-            } else if (err.http_headers.status !== undefined) {
-              details.message = err.http_headers.status;
-            }
-          }
-
-          if (err.request !== undefined) {
-            details.url = err.request;
-          }
+        .catch((err: any) => {
+          const details: { message: string, url?: string } = this.translateError(err);
           log('warn', 'download failed', {message: details.message, err: util.inspect(err)});
-          showError(this.mStore.dispatch, 'Download failed', details, false, undefined, false);
-          this.mStore.dispatch(finishDownload(id, 'failed', {message: details.message}));
+          showError(this.mStore.dispatch, 'Download failed', details, {
+            allowReport: false,
+          });
+          this.mStore.dispatch(finishDownload(id, 'failed', { message: details.message }));
           if (callback !== undefined) {
             callback(err, id);
           }
@@ -216,10 +229,9 @@ export class DownloadObserver {
     return (received: number, total: number, chunks: IChunk[],
             urls?: string[], updatedFilePath?: string) => {
       // avoid updating too frequently because it causes ui updates
-      const now = new Date().getTime();
+      const now = Date.now();
       const newPerc = Math.floor((received * 100) / total);
-      if ((chunks === undefined)
-          && ((now - lastUpdateTick < 200) || (newPerc === lastUpdatePerc))) {
+      if (((now - lastUpdateTick) < 1000) || (newPerc === lastUpdatePerc)) {
         return;
       }
       lastUpdateTick = now;
@@ -245,8 +257,8 @@ export class DownloadObserver {
       fs.removeAsync(path.join(dlPath, download.localPath))
           .then(() => { this.mStore.dispatch(removeDownload(downloadId)); })
           .catch(err => {
-            showError(this.mStore.dispatch, 'Failed to remove file', err, false,
-                      undefined, ['EBUSY', 'EPERM'].indexOf(err.code) === -1);
+            showError(this.mStore.dispatch, 'Failed to remove file', err, {
+                      allowReport: ['EBUSY', 'EPERM'].indexOf(err.code) === -1 });
           });
     } else {
       this.mStore.dispatch(removeDownload(downloadId));
@@ -288,6 +300,10 @@ export class DownloadObserver {
             this.handleDownloadFinished(downloadId, callback, res);
           })
           .catch(err => {
+            const details = this.translateError(err);
+
+            this.mStore.dispatch(finishDownload(downloadId, 'failed',
+                                                { message: details.message }));
             if (callback !== undefined) {
               callback(err, null);
             }

@@ -183,7 +183,7 @@ export function objDiff(lhs: any, rhs: any): any {
 
   if ((typeof(lhs) === 'object') && (typeof(rhs) === 'object')) {
     Object.keys(lhs || {}).forEach(key => {
-      if ((rhs[key] === undefined)) {
+      if ((rhs[key] === undefined) && (lhs[key] !== undefined)) {
         res['-' + key] = lhs[key];
       } else {
         const sub = objDiff(lhs[key], rhs[key]);
@@ -196,7 +196,7 @@ export function objDiff(lhs: any, rhs: any): any {
       }
     });
     Object.keys(rhs || {}).forEach(key => {
-      if ((lhs[key] === undefined)) {
+      if ((lhs[key] === undefined) && (rhs[key] !== undefined)) {
         res['+' + key] = rhs[key];
       }
     });

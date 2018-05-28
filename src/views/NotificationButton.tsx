@@ -133,8 +133,15 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
     const { t } = this.props;
 
     const translated: INotification = { ...notification };
-    translated.title = translated.title !== undefined ? t(translated.title) : undefined;
-    translated.message = t(translated.message);
+    translated.title = ((translated.title !== undefined)
+      && ((notification.localize === undefined) || (notification.localize.title !== false)))
+      ? t(translated.title, { replace: translated.replace })
+      : translated.title;
+    translated.message =
+      ((notification.localize === undefined) || (notification.localize.message !== false))
+      ? t(translated.message, { replace: translated.replace })
+      : translated.message;
+
     return (
       <Notification
         t={t}
@@ -150,6 +157,9 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
   private dismiss = (notificationId: string) => {
     const { notifications, onDismiss } = this.props;
     const noti = notifications.find(iter => iter.id === notificationId);
+    if (noti === undefined) {
+      return;
+    }
     if ((noti.group === undefined) || (noti.group === this.state.expand)) {
       onDismiss(notificationId);
     } else {

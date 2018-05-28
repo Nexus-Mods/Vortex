@@ -48,7 +48,9 @@ function transformError(err: any): Error {
     } else {
       return new Error(err);
     }
-  } else if (err.StackTrace.indexOf('XNodeValidator.ValidationCallback') !== -1) {
+  } else if ((err.StackTrace.indexOf('XNodeValidator.ValidationCallback') !== -1)
+             || (err.StackTrace.indexOf('XmlTextReaderImpl.ParseXmlDeclaration') !== -1)
+             || (err.StackTrace.indexOf('XmlScriptType.GetXmlScriptVersion') !== -1)) {
     return new DataInvalid('Invalid installer script: ' + err.message);
   } else {
     return new Error('unknown error: ' + util.inspect(err));

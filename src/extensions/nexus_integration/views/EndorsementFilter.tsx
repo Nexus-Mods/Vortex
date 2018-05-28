@@ -20,6 +20,7 @@ export class EndorsementFilterComponent extends React.Component<IFilterProps, {}
         options={currentFilters}
         value={filter || ''}
         onChange={this.changeFilter}
+        autosize={false}
       />
     );
   }

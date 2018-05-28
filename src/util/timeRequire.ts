@@ -10,12 +10,12 @@ const Module = require('module');
 function timedRequire(orig) {
   return function (id) {
     callCount = callCount + 1;
-    let before = new Date().getTime();
+    let before = Date.now();
     let totalBefore = total;
     let countBefore = callCount;
 
     let res = orig.apply(this, arguments);
-    let fullDuration = new Date().getTime() - before;
+    let fullDuration = Date.now() - before;
     let countDiff = callCount - countBefore;
 
     let selfDuration = fullDuration - (total - totalBefore);
@@ -41,12 +41,12 @@ export default function() {
     return () => undefined;
   }
 
-  let start = new Date().getTime();
+  let start = Date.now();
   const orig = Module.prototype.require;
   Module.prototype.require = timedRequire(orig);
   return () => {
     Module.prototype.require = orig;
-    console.log('total time', new Date().getTime() - start, total);
+    console.log('total time', Date.now() - start, total);
     console.log('# requires', reqCount);
     console.log(
         'requires:\n',

@@ -8,7 +8,7 @@ import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
 import asyncRequire, { Placeholder } from '../../util/asyncRequire';
 import { ComponentEx, connect } from '../../util/ComponentEx';
-import { UserCanceled } from '../../util/CustomErrors';
+import { MissingInterpreter, UserCanceled } from '../../util/CustomErrors';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import { activeGameId } from '../../util/selectors';
@@ -303,7 +303,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
       this.startTool(tools[0]);
     } else {
       const info = tools.find(iter => iter.id === primaryTool);
-      this.startTool(info);
+      this.startTool(info || tools[0]);
     }
   }
 
@@ -327,6 +327,14 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
           onShowError('Failed to run tool', {
             error: 'File is not executable, please check the configuration for this tool.',
           }, false);
+        } else if (err instanceof MissingInterpreter) {
+          const par = {
+            Error: err.message,
+          };
+          if (err.url !== undefined) {
+            par['Download url'] = err.url;
+          }
+          onShowError('Failed to run tool', par, false);
         } else {
           onShowError('Failed to run tool', {
             executable: info.exePath,
@@ -428,7 +436,7 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
       dispatch(setToolVisible(gameId, toolId, visible));
     },
     onShowError: (message: string, details?: any, allowReport?: boolean) =>
-      showError(dispatch, message, details, false, undefined, allowReport),
+      showError(dispatch, message, details, { allowReport }),
     onShowDialog: (type, title, content, actions) =>
       dispatch(showDialog(type, title, content, actions)),
     onMakePrimary: (gameId: string, toolId: string) => dispatch(setPrimaryTool(gameId, toolId)),

@@ -42,6 +42,7 @@ import * as I18next from 'i18next';
 import { IHashResult, ILookupResult, IModInfo, IReference } from 'modmeta-db';
 import * as modmetaT from 'modmeta-db';
 const modmeta = lazyRequire<typeof modmetaT>('modmeta-db');
+import * as nodeIPC from 'node-ipc';
 import * as path from 'path';
 import * as Redux from 'redux';
 import { types as ratypes } from 'redux-act';
@@ -435,10 +436,7 @@ class ExtensionManager {
     };
     this.mApi.showErrorNotification =
       (message: string, details: string | Error | any, options?: IErrorOptions) => {
-      showError(store.dispatch, message, details,
-        (options !== undefined) && (options.isHTML === true),
-        (options !== undefined) ? options.id : undefined,
-        (options === undefined) || (options.allowReport !== false));
+      showError(store.dispatch, message, details, options);
     };
 
     this.mApi.showDialog =
@@ -454,8 +452,8 @@ class ExtensionManager {
     if (ipcRenderer !== undefined) {
       ipcRenderer.on('send-notification',
         (event, notification) => this.mApi.sendNotification(notification));
-      ipcRenderer.on('show-error-notification',
-        (event, message, details) => this.mApi.showErrorNotification(message, details));
+      ipcRenderer.on('show-error-notification', (event, message, details, options) =>
+        this.mApi.showErrorNotification(message, details, options || undefined));
 
       store.dispatch(setExtensionLoadFailures(this.mLoadFailures));
     }
@@ -472,13 +470,13 @@ class ExtensionManager {
    */
   public setupApiMain<S>(store: Redux.Store<S>, ipc: Electron.WebContents) {
     this.mApi.showErrorNotification =
-        (message: string, details: string | Error) => {
+        (message: string, details: string | Error, options: IErrorOptions) => {
           // unfortunately it appears we can't send an error object via ipc
           const errMessage = typeof(details) === 'string'
             ? details
             : details.message + '\n' + details.stack;
           try {
-            ipc.send('show-error-notification', message, errMessage);
+            ipc.send('show-error-notification', message, errMessage, options);
           } catch (err) {
             // this may happen if the ipc has already been destroyed
             this.showErrorBox(message, details);
@@ -720,7 +718,8 @@ class ExtensionManager {
         ...options,
         properties: ['openFile'],
       };
-      dialog.showOpenDialog(null, fullOptions, (fileNames: string[]) => {
+      const win = remote !== undefined ? remote.getCurrentWindow() : null;
+      dialog.showOpenDialog(win, fullOptions, (fileNames: string[]) => {
         if ((fileNames !== undefined) && (fileNames.length > 0)) {
           resolve(fileNames[0]);
         } else {
@@ -742,7 +741,8 @@ class ExtensionManager {
           { name: 'Python', extensions: ['py'] },
         ],
       };
-      dialog.showOpenDialog(null, fullOptions, (fileNames: string[]) => {
+      const win = remote !== undefined ? remote.getCurrentWindow() : null;
+      dialog.showOpenDialog(win, fullOptions, (fileNames: string[]) => {
         if ((fileNames !== undefined) && (fileNames.length > 0)) {
           resolve(fileNames[0]);
         } else {
@@ -758,7 +758,8 @@ class ExtensionManager {
         ...options,
         properties: ['openDirectory'],
       };
-      dialog.showOpenDialog(null, fullOptions, (fileNames: string[]) => {
+      const win = remote !== undefined ? remote.getCurrentWindow() : null;
+      dialog.showOpenDialog(win, fullOptions, (fileNames: string[]) => {
         if ((fileNames !== undefined) && (fileNames.length > 0)) {
           resolve(fileNames[0]);
         } else {
@@ -932,7 +933,11 @@ class ExtensionManager {
     (executable: string, args: string[], options: IRunOptions): Promise<void> => {
       const interpreter = this.mInterpreters[path.extname(executable).toLowerCase()];
       if (interpreter !== undefined) {
-        ({ executable, args, options } = interpreter({ executable, args, options }));
+        try {
+          ({ executable, args, options } = interpreter({ executable, args, options }));
+        } catch (err) {
+          return Promise.reject(err);
+        }
       }
       return (options.suggestDeploy === true ? this.checkDeploy() : Promise.resolve(true))
       .then(cont => cont ? new Promise<void>((resolve, reject) => {
@@ -959,8 +964,10 @@ class ExtensionManager {
               }
           });
         } catch (err) {
+          const ipcPath = shortid();
+          this.startIPC(ipcPath);
           if (err.errno === 'EACCES') {
-            return resolve(runElevated(shortid(), runElevatedCustomTool, {
+            return resolve(runElevated(ipcPath, runElevatedCustomTool, {
               toolPath: executable,
               toolCWD: cwd,
               parameters: args,
@@ -971,6 +978,26 @@ class ExtensionManager {
           }
         }
       }) : Promise.resolve());
+  }
+
+  private startIPC(ipcPath: string) {
+    const ipcServer = new (nodeIPC as any).IPC();
+    ipcServer.serve(ipcPath, () => null);
+    ipcServer.server.start();
+    ipcServer.server.on('connect', () => {
+      log('debug', 'ipc client connected');
+    });
+    ipcServer.server.on('socket.disconnected', () => {
+      log('debug', 'socket disconnect');
+      ipcServer.server.stop();
+    });
+    ipcServer.server.on('log', (data: any) => {
+      log(data.level, data.message, data.meta);
+    });
+    ipcServer.server.on('finished', () => null);
+    ipcServer.server.on('error', nodeIPCErr => {
+      log('error', 'ipcServer err', nodeIPCErr);
+    });
   }
 
   private loadDynamicExtension(extensionPath: string): IRegisteredExtension {
@@ -1005,9 +1032,9 @@ class ExtensionManager {
           // bundled one if this one fails to load which could be convenient but also massively
           // confusing.
           loadedExtensions.add(name);
-          const before = new Date().getTime();
+          const before = Date.now();
           const ext = this.loadDynamicExtension(path.join(extensionsPath, name));
-          const loadTime = new Date().getTime() - before;
+          const loadTime = Date.now() - before;
           log('debug', 'loaded extension', { name, loadTime });
           return ext;
         } catch (err) {

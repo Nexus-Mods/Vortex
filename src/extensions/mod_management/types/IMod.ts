@@ -1,4 +1,4 @@
-import { IRule } from 'modmeta-db';
+import { IReference, IRule } from 'modmeta-db';
 
 export type ModState =
   'downloading' | 'downloaded' | 'installing' | 'installed';
@@ -27,4 +27,12 @@ export interface IMod {
   rules?: IRule[];
   // list of enabled ini tweaks
   enabledINITweaks?: string[];
+}
+
+export interface IModReference extends IReference {
+  id?: string;
+}
+
+export interface IModRule extends IRule {
+  reference: IModReference;
 }

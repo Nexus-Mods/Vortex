@@ -9,6 +9,7 @@ import { IStatePaths } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { UserCanceled } from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
+import { log } from '../../../util/log';
 import { showError } from '../../../util/message';
 import { activeGameId } from '../../../util/selectors';
 import { getSafe, setSafe } from '../../../util/storeHelper';
@@ -109,7 +110,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     if (game === undefined) {
       return (
         <EmptyPlaceholder
-          icon='sliders'
+          icon='settings'
           text={t('Please select a game to manage first')}
           subtext={t('Settings on this page can be set for each game individually.')}
         />
@@ -211,16 +212,21 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       .then((sameVolume: boolean) => {
         const func = sameVolume ? fs.renameAsync : fs.copyAsync;
         return fs.readdirAsync(oldPath)
-          .map((fileName: string) =>
-            func(path.join(oldPath, fileName), path.join(newPath, fileName))
-            .catch(err => (err.code === 'EXDEV')
+          .map((fileName: string) => {
+            log('debug', 'transfer ' + pathKey, { fileName });
+            return func(path.join(oldPath, fileName), path.join(newPath, fileName))
+              .catch(err => (err.code === 'EXDEV')
                 // EXDEV implies we tried to rename when source and destination are
                 // not in fact on the same volume. This is what comparing the stat.dev
                 // was supposed to prevent.
                 ? fs.copyAsync(path.join(oldPath, fileName), path.join(newPath, fileName))
-                : Promise.reject(err)))
+                : Promise.reject(err));
+          }, { concurrency: 5 })
           .then(() => fs.removeAsync(oldPath));
-      });
+      })
+      .catch(err => (err.code === 'ENOENT')
+        ? Promise.resolve()
+        : Promise.reject(err));
   }
 
   private applyPaths = () => {
@@ -536,7 +542,7 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
     onShowDialog: (type, title, content, actions) =>
       dispatch(showDialog(type, title, content, actions)),
     onShowError: (message: string, details: string | Error, allowReport): void => {
-      showError(dispatch, message, details, false, undefined, allowReport);
+      showError(dispatch, message, details, { allowReport });
     },
   };
 }

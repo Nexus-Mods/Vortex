@@ -92,11 +92,11 @@ function refreshProfile(store: Redux.Store<any>, profile: IProfile,
         if (direction === 'import') {
           return syncToProfile(currentProfilePath, profileFiles[gameId],
             (error, detail, allowReport) =>
-              showError(store.dispatch, error, detail, false, undefined, allowReport));
+              showError(store.dispatch, error, detail, { allowReport }));
         } else {
           return syncFromProfile(currentProfilePath, profileFiles[gameId],
             (error, detail, allowReport) =>
-              showError(store.dispatch, error, detail, false, undefined, allowReport));
+              showError(store.dispatch, error, detail, { allowReport }));
         }
       })
       .catch((err: Error) => {
@@ -264,7 +264,7 @@ function init(context: IExtensionContextExt): boolean {
               if (game === undefined) {
                 showError(store.dispatch,
                   'Game no longer supported, please install the game extension',
-                  game.name, false, undefined, false);
+                  game.name, { allowReport: false });
               }
               const discovery = state.settings.gameMode.discovered[profile.gameId];
               // only calling to check if it works, some game extensions might discover
@@ -322,7 +322,7 @@ function init(context: IExtensionContextExt): boolean {
           })
           .catch(SetupError, err => {
             showError(store.dispatch, 'Failed to set profile', err.message,
-                      false, undefined, false);
+                      { allowReport: false });
             store.dispatch(setCurrentProfile(undefined, undefined));
             store.dispatch(setNextProfile(undefined));
           })

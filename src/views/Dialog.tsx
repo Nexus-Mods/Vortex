@@ -162,7 +162,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     if (content.text) {
       controls.push((
         <div key='dialog-content-text' className='dialog-content-text'>
-          {t(content.text)}
+          {t(content.text, { replace: content.parameters })}
         </div>
       ));
     }
@@ -197,6 +197,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
       controls.push((
         <div
           key='dialog-content-html'
+          className='dialog-content-html'
           dangerouslySetInnerHTML={{ __html: content.htmlText }}
         />
       ));

@@ -3,6 +3,7 @@ import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 
 import * as Promise from 'bluebird';
+import * as fsFast from 'fs-extra-promise';
 import * as path from 'path';
 
 /**
@@ -26,7 +27,7 @@ class FileAssembler {
     try {
       const stats = fs.statSync(fileName);
       if (stats.isDirectory()) {
-        throw new Error(`Download target ${fileName} is a directory`);
+        throw new Error(`Download target is a directory`);
       }
       this.mTotalSize = stats.size;
       exists = true;
@@ -53,7 +54,7 @@ class FileAssembler {
             // writing at an offset beyond the file limit
             // works on windows and linux.
             // I'll assume it means it will work on MacOS too...
-            : fs.writeAsync(this.mFD, data, 0, data.length, offset))
+            : fsFast.writeAsync(this.mFD, data, 0, data.length, offset))
         .then((bytesWritten: any) => {
           this.mWritten += bytesWritten;
           if (this.mWritten - this.mLastLogged > 1024 * 1024) {

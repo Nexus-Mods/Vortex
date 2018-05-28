@@ -1,4 +1,4 @@
-import * as Promise from 'bluebird';
+import * as Bluebird from 'bluebird';
 import {} from 'ffi';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -78,7 +78,7 @@ function execInfo(scriptPath: string) {
 }
 
 function elevatedMain(baseDir: string, moduleRoot: string, ipcPath: string,
-                      main: (ipc) => Promise<void>) {
+                      main: (ipc) => void | Promise<void> | Bluebird<void>) {
   const handleError = (error: any) => {
     // tslint:disable-next-line:no-console
     console.error('Elevated code failed', error.stack);
@@ -99,18 +99,21 @@ function elevatedMain(baseDir: string, moduleRoot: string, ipcPath: string,
   (module as any).paths.push(moduleRoot);
   // tslint:disable-next-line:no-shadowed-variable
   const ipc = require('node-ipc');
+  ipc.config.maxRetries = 5;
+  ipc.config.stopRetrying = 5;
   ipc.connectTo(ipcPath, ipcPath, () => {
     ipc.of[ipcPath].on('quit', () => {
       process.exit(0);
     });
     Promise.resolve()
-      .then(() => main(ipc.of[ipcPath]))
+      .then(() => Promise.resolve(main(ipc.of[ipcPath])))
       .catch(error => {
         ipc.of[ipcPath].emit('error', error.message);
         return new Promise((resolve) => setTimeout(resolve, 200));
       })
       .then(() => {
         ipc.disconnect(ipcPath);
+        process.exit(0);
       });
   });
 }
@@ -132,21 +135,24 @@ function elevatedMain(baseDir: string, moduleRoot: string, ipcPath: string,
  * @param {Object} args arguments to be passed into the elevated process
  * @param {string} moduleBase base directory for all relative require call. If undefined,
  *                 the directory of this very file (elevated.js) will be used.
- * @returns {Promise<any>} a promise that will be resolved as soon as the process is started
+ * @returns {Bluebird<any>} a promise that will be resolved as soon as the process is started
  *                         (which happens after the user confirmed elevation)
  */
-function runElevated(ipcPath: string, func: (ipc: any) => void,
-                     args?: any, moduleBase?: string): Promise<any> {
+function runElevated(ipcPath: string, func: (ipc: any) => void | Promise<void> | Bluebird<void>,
+                     args?: any, moduleBase?: string): Bluebird<any> {
   initTypes();
   if (shell32 === undefined) {
     if (process.platform === 'win32') {
       const ffi = require('ffi');
+      const ref = require('ref');
       shell32 = new ffi.Library('Shell32', {
+        ShellExecuteA: [ref.types.int32, [voidPtr, ref.types.CString, ref.types.CString,
+                                ref.types.CString, ref.types.CString, ref.types.int32]],
         ShellExecuteExA: ['bool', [SHELLEXECUTEINFOPtr]],
       });
     }
   }
-  return new Promise((resolve, reject) => {
+  return new Bluebird((resolve, reject) => {
     tmp.file((err: any, tmpPath: string, fd: number, cleanup: () => void) => {
       if (err) {
         return reject(err);
@@ -190,6 +196,22 @@ function runElevated(ipcPath: string, func: (ipc: any) => void,
 
         const runInfo = execInfo(tmpPath);
 
+        // we can't call GetLastError through node-ffi so when using ShellExecuteExA we won't be
+        // able to get an error code. With ShellExecuteA we can
+        shell32.ShellExecuteA.async(null, 'runas', process.execPath, `--run ${tmpPath}`,
+                                    path.dirname(process.execPath), 5, (execErr: any, res: any) => {
+          setTimeout(cleanup, 5000);
+          if (execErr) {
+            reject(execErr);
+          } else {
+            if (res > 32) {
+              resolve(res);
+            } else {
+              reject(new Error(`ShellExecute failed, errorcode ${res}`));
+            }
+          }
+        });
+        /* TODO: remove this code if there is no problem with ShellExecuteA
         shell32.ShellExecuteExA.async(runInfo.ref(), (execErr: any, res: any) => {
           // this is reached after the user confirmed the UAC dialog but before node
           // has read the script source so we have to give a little time for that to
@@ -205,6 +227,7 @@ function runElevated(ipcPath: string, func: (ipc: any) => void,
             }
           }
         });
+        */
       });
     });
   });

@@ -16,7 +16,8 @@ import testModReference from '../extensions/mod_management/util/testModReference
 import { Archive } from './archives';
 import AsyncComponent from './AsyncComponent';
 import copyRecursive from './copyRecursive';
-import { NotSupportedError, ProcessCanceled, SetupError, UserCanceled } from './CustomErrors';
+import { DataInvalid, MissingInterpreter, NotSupportedError, ProcessCanceled,
+         SetupError, UserCanceled } from './CustomErrors';
 import Debouncer from './Debouncer';
 import delayed from './delayed';
 import runElevated from './elevated';
@@ -31,7 +32,7 @@ import ReduxProp from './ReduxProp';
 import relativeTime from './relativeTime';
 import steam, { ISteamEntry } from './Steam';
 import runThreaded from './thread';
-import { bytesToString, copyFileAtomic, isNullOrWhitespace,
+import { bytesToString, copyFileAtomic, isNullOrWhitespace, objDiff,
          removePersistent, setdefault } from './util';
 import walk from './walk';
 
@@ -41,6 +42,7 @@ export {
   bytesToString,
   copyFileAtomic,
   copyRecursive,
+  DataInvalid,
   Debouncer,
   delayed,
   deriveModInstallName as deriveInstallName,
@@ -53,8 +55,10 @@ export {
   LazyComponent,
   lazyRequire,
   makeReactive,
+  MissingInterpreter,
   Normalize,
   NotSupportedError,
+  objDiff,
   ProcessCanceled,
   ReduxProp,
   relativeTime,

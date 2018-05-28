@@ -19,8 +19,21 @@ class Debouncer {
   private mRunning: boolean = false;
   private mReschedule: 'no' | 'yes' | 'immediately' = 'no';
   private mArgs: any[] = [];
+  private mResetting: boolean;
 
-  constructor(func: (...args: any[]) => Error | Promise<void>, debounceMS: number) {
+  /**
+   * constructor
+   * @param func the function to call when the timer expired
+   * @param debounceMS the (minimum) time between two calls
+   * @param reset if true (the default) the time is reset with every
+   *              time schedule gets called. This means if the debouncer
+   *              is triggered regularly in less than debounceMS it never
+   *              gets run.
+   */
+  constructor(func: (...args: any[]) => Error | Promise<void>,
+              debounceMS: number,
+              reset?: boolean) {
+    this.mResetting = reset !== false;
     this.mFunc = func;
     this.mDebounceMS = debounceMS;
   }
@@ -33,8 +46,9 @@ class Debouncer {
    *             parameters will be used
    */
   public schedule(callback?: (err: Error) => void, ...args: any[]) {
-    if (this.mTimer !== undefined) {
+    if ((this.mTimer !== undefined) && this.mResetting) {
       clearTimeout(this.mTimer);
+      this.mTimer = undefined;
     }
 
     if ((callback !== undefined) && (callback !== null)) {
@@ -47,7 +61,7 @@ class Debouncer {
       if (this.mReschedule !== 'immediately') {
         this.mReschedule = 'yes';
       }
-    } else {
+    } else if (this.mTimer === undefined) {
       this.startTimer();
     }
   }

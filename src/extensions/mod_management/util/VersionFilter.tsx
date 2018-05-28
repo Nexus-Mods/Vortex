@@ -18,6 +18,7 @@ export class VersionFilterComponent extends React.Component<IFilterProps, {}> {
         options={options}
         value={filter}
         onChange={this.changeFilter}
+        autosize={false}
       />
     );
   }

@@ -82,7 +82,7 @@ class SpeedCalculator {
   }
 
   private now(): number {
-    return Math.floor(new Date().getTime() / 1000);
+    return Math.floor(Date.now() / 1000);
   }
 }
 

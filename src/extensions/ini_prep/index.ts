@@ -140,10 +140,9 @@ function bakeSettings(t: TranslationFunction, gameMode: string, discovery: IDisc
         .catch(err => {
           if (err.code === 'ENOENT') {
             // source file missing isn't really a big deal, treat as empty
-            return Promise.join([
+            return Promise.join(
               fs.ensureFileAsync(iniFileName + '.base'),
-              fs.ensureFileAsync(iniFileName + '.baked'),
-            ]);
+              fs.ensureFileAsync(iniFileName + '.baked'));
           } else {
             return Promise.reject(err);
           }
@@ -193,10 +192,11 @@ function main(context: IExtensionContext) {
             'Due to Microsoft using undocumented functionality for the new feature '
             + '"OneDrive Files on Demand" the Node.js framework we use can not currently '
             + 'work correctly on those drives. '
-            + `We therefore can't apply ini tweaks to '${err.path}'.\n`
+            + `We therefore can't apply ini tweaks to '{{ filePath }}'.\n`
             + 'Please disable this feature and restart Vortex.\n'
             + 'Please keep an eye out on Vortex Changelogs so you know when this is fixed.', {
               allowReport: false,
+              replace: { filePath: err.path },
             });
         } else {
           context.api.showErrorNotification(

@@ -15,7 +15,6 @@ import {
   downloadProgress,
   finishDownload,
   initDownload,
-  pauseDownload,
   removeDownload,
   setDownloadFilePath,
   setDownloadHashByFile,
@@ -41,6 +40,7 @@ import {createSelector} from 'reselect';
 import {generate as shortid} from 'shortid';
 import { delayed } from '../../util/delayed';
 import { activeGameId } from '../../util/selectors';
+import resolvePath from '../mod_management/util/resolvePath';
 
 const app = remote !== undefined ? remote.app : appIn;
 
@@ -83,6 +83,7 @@ function attributeExtractor(input: any) {
     fileMD5: getSafe(input, ['download', 'fileMD5'], undefined),
     fileSize: getSafe(input, ['download', 'size'], undefined),
     source: getSafe(input, ['download', 'modInfo', 'source'], undefined),
+    logicalFileName: getSafe(input, ['download', 'modInfo', 'name'], undefined),
     downloadGame: getSafe(input, ['download', 'game'], undefined),
   });
 }
@@ -149,14 +150,19 @@ function watchDownloads(api: IExtensionApi, downloadPath: string,
   }
 }
 
-function updateDownloadPath(api: IExtensionApi) {
+function updateDownloadPath(api: IExtensionApi, gameId?: string) {
   const { store } = api;
 
-  const currentDownloadPath = selectors.downloadPath(store.getState());
+  const state: IState = store.getState();
 
   const downloads: {[id: string]: IDownload} =
-      store.getState().persistent.downloads.files;
-  const gameId: string = selectors.activeGameId(store.getState());
+      state.persistent.downloads.files;
+
+  if (gameId === undefined) {
+    gameId = selectors.activeGameId(state);
+  }
+  const currentDownloadPath = resolvePath('download', state.settings.mods.paths, gameId);
+
   const knownDLs =
       Object.keys(downloads)
           .filter((dlId: string) => downloads[dlId].game === gameId)
@@ -169,7 +175,7 @@ function updateDownloadPath(api: IExtensionApi) {
       }, {});
 
   const downloadChangeHandler = genDownloadChangeHandler(api.store, nameIdMap);
-  refreshDownloads(currentDownloadPath, knownDLs,
+  return refreshDownloads(currentDownloadPath, knownDLs,
                    (fileName: string) => {
                      fs.statAsync(path.join(currentDownloadPath, fileName))
                          .then((stats: fs.Stats) => {
@@ -188,13 +194,15 @@ function updateDownloadPath(api: IExtensionApi) {
       manager.setDownloadPath(currentDownloadPath);
       watchDownloads(api, currentDownloadPath, downloadChangeHandler);
       api.events.emit('downloads-refreshed');
+    })
+    .catch(err => {
+      api.showErrorNotification('Failed to read downloads directory',
+          err, { allowReport: err.code !== 'ENOENT' });
     });
 }
 
 function genGameModeActivated(api: IExtensionApi) {
-  return () => {
-    updateDownloadPath(api);
-  };
+  return () => updateDownloadPath(api);
 }
 
 function move(api: IExtensionApi, source: string, destination: string): Promise<void> {
@@ -277,10 +285,23 @@ function init(context: IExtensionContextExt): boolean {
       watchEnabled = enabled;
     });
 
+    context.api.events.on('refresh-downloads', (gameId: string, callback: (err) => void) => {
+      updateDownloadPath(context.api, gameId)
+        .then(() => {
+          if (callback !== undefined) {
+            callback(null);
+           }
+        })
+        .catch(err => {
+          if (callback !== undefined) {
+            callback(err);
+          }
+        });
+    });
+
     context.api.events.on('import-downloads', (downloadPaths: string[]) => {
       const downloadPath = downloadPathSelector(context.api.store.getState());
       let hadDirs = false;
-      console.log('import', downloadPaths);
       Promise.map(downloadPaths, dlPath => {
         const fileName = path.basename(dlPath);
         const destination = path.join(downloadPath, fileName);
@@ -311,8 +332,7 @@ function init(context: IExtensionContextExt): boolean {
                 message: dlPath,
               });
             });
-      })
-      .then(() => console.log('done'));
+      });
     });
 
     {

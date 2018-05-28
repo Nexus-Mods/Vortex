@@ -1,12 +1,21 @@
+version: 1.0.{build}
+clone_depth: 1
 environment:
-  nodejs_version: "8"
-
-cache:
- - "%LOCALAPPDATA%\\Yarn"
-
+  nodejs_version: 8
+platform:
+  - x64
+configuration:
+  - Release
 install:
-  - ps: Install-Product node $env:nodejs_version
-  - yarn install
-
-build:
-  - yarn dist
+- ps: Install-Product node $env:nodejs_version
+- yarn install
+cache: '%LOCALAPPDATA%\Yarn'
+build_script:
+- cmd: >-
+    yarn run ci
+test_script:
+- cmd: >-
+    yarn run test
+artifacts:
+- path: dist\Vortex Setup *.exe
+  name: Setup

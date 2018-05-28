@@ -5,7 +5,7 @@ import Toggle from '../../../controls/Toggle';
 import { Button } from '../../../controls/TooltipControls';
 import { DialogActions, DialogType, IDialogContent } from '../../../types/IDialog';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { showError } from '../../../util/message';
+import { IErrorOptions, showError } from '../../../util/message';
 import { setAssociatedWithNXMURLs } from '../actions/settings';
 
 import chromeAllowScheme from '../util/chromeAllowScheme';
@@ -41,7 +41,7 @@ interface IActionProps {
   onAssociate: (associate: boolean) => void;
   onDialog: (type: DialogType, title: string,
              content: IDialogContent, actions: DialogActions) => void;
-  onShowError: (message: string, details: string | Error) => void;
+  onShowError: (message: string, details: string | Error, options?: IErrorOptions) => void;
   onShowInfo: (message: string) => void;
 }
 
@@ -83,7 +83,7 @@ class Settings extends ComponentEx<IProps, {}> {
   private chromeFix = () => {
     const { onDialog, onShowError } = this.props;
     onDialog('info', 'Is Chrome running?', {
-      message: 'Chrome has to be closed, otherwise this fix has no effect.',
+      text: 'Chrome has to be closed, otherwise this fix has no effect.',
     }, [
         { label: 'Cancel' },
         {
@@ -92,16 +92,26 @@ class Settings extends ComponentEx<IProps, {}> {
               .then((changed: boolean) => {
                 if (changed) {
                   onDialog('success', 'Success', {
-                    message: 'Fix was applied',
+                    text: 'Fix was applied.',
                   }, [ { label: 'Close' } ]);
                 } else {
                   onDialog('info', 'Nothing changed', {
-                    message: 'No change was necessary',
+                    text: 'No change was necessary.',
                   }, [ { label: 'Close' } ]);
                 }
               })
-              .catch((err: Error) => {
-                onShowError('Failed to fix NXM handling in Chrome', err);
+              .catch(err => {
+                if (err.code === 'ENOENT') {
+                  onShowError(
+                    'Failed to fix NXM handling in Chrome',
+                    'Could not determine the chrome preferences file to fix. '
+                    + 'Please read the help text for this fix and apply '
+                    + 'it manually.',
+                    { allowReport: false },
+                  );
+                } else {
+                  onShowError('Failed to fix NXM handling in Chrome.', err);
+                }
               });
           },
         },
@@ -134,8 +144,8 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
                content: IDialogContent, actions: DialogActions) => {
       dispatch(showDialog(type, title, content, actions));
     },
-    onShowError: (message: string, details: string | Error) => {
-      showError(dispatch, message, details);
+    onShowError: (message: string, details: string | Error, options: IErrorOptions) => {
+      showError(dispatch, message, details, options);
     },
     onShowInfo: (message: string) => dispatch(addNotification({
       type: 'info',

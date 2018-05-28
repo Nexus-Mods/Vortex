@@ -193,7 +193,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
     super(props);
     this.initState({
       tool: this.toEditStarter(props.tool),
-      imageId: new Date().getTime(),
+      imageId: Date.now(),
     });
     this.mUpdateImageDebouncer = new Debouncer((imagePath: string) => {
       return this.useImage(imagePath);
@@ -371,7 +371,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
   }
 
   private clearCache() {
-    this.nextState.imageId = new Date().getTime();
+    this.nextState.imageId = Date.now();
   }
 
   private handleChange = (field: string, value: any): void => {

@@ -33,6 +33,7 @@ class OptionsFilterComponent extends React.Component<IProps & IBoundProps, {}> {
         options={optionsSane}
         value={filter}
         onChange={multi ? this.changeFilterMulti : this.changeFilter}
+        autosize={false}
       />
     );
   }
@@ -68,6 +69,10 @@ class OptionsFilter implements ITableFilter {
     return (this.mMulti)
       ? filtUnsane.indexOf(value) !== -1
       : filtUnsane === value;
+  }
+
+  public isEmpty(filter: any): boolean {
+    return filter.length === 0;
   }
 }
 

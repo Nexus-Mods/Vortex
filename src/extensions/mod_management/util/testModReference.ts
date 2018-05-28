@@ -1,10 +1,12 @@
 import { truthy } from '../../../util/util';
 
+import { IMod, IModReference } from '../types/IMod';
+
+import { modNameFromAttributes } from './modName';
+
 import * as minimatch from 'minimatch';
-import { IReference } from 'modmeta-db';
 import * as path from 'path';
 import * as semver from 'semvish';
-import { IMod } from '../types/IMod';
 
 export interface IModLookupInfo {
   id: string;
@@ -17,10 +19,15 @@ export interface IModLookupInfo {
   version: string;
 }
 
-function testRef(mod: IModLookupInfo, ref: IReference): boolean {
+function testRef(mod: IModLookupInfo, ref: IModReference): boolean {
   // if reference is by file hash, use only that
   if ((ref.fileMD5 !== undefined)
       && (mod.fileMD5 !== ref.fileMD5)) {
+    return false;
+  }
+
+  if ((ref.id !== undefined)
+    && (ref.id !== mod.id)) {
     return false;
   }
 
@@ -68,9 +75,13 @@ function testRef(mod: IModLookupInfo, ref: IReference): boolean {
   return true;
 }
 
-export function testModReference(mod: IMod | IModLookupInfo, reference: IReference) {
+export function testModReference(mod: IMod | IModLookupInfo, reference: IModReference) {
   if ((mod as any).attributes) {
-    return testRef((mod as IMod).attributes as IModLookupInfo, reference);
+    const lookup: IModLookupInfo = {
+      id: mod.id,
+      ...(mod as IMod).attributes,
+    } as any;
+    return testRef(lookup, reference);
   } else {
     return testRef(mod as IModLookupInfo, reference);
   }

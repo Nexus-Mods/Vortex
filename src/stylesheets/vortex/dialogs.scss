@@ -77,4 +77,8 @@
     margin-bottom: $half-gutter;
     white-space: pre-wrap;
   }
+
+  > .dialog-content-html {
+    white-space: pre-wrap;
+  }
 }
