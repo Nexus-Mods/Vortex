@@ -10229,7 +10229,7 @@ vortex-parse-ini@Nexus-Mods/vortex-parse-ini:
     ref "^1.3.4"
 
 "vortex-run@file:src/util/vortex-run":
-  version "0.0.3"
+  version "0.0.4"
 
 walker@~1.0.5:
   version "1.0.7"
