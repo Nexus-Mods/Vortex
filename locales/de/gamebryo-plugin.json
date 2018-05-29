@@ -11,5 +11,6 @@
   "Master": "Master",
   "Save": "Speichern",
   "Autosort enabled": "Automatisches Sortieren aktiv",
-  "Loads after:": "Lädt nach:"
+  "Loads after:": "Lädt nach:",
+  "load after {{ reference }}": "Nach {{ reference }} laden"
 }
