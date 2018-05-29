@@ -141,7 +141,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
   public context: { menuLayer: JSX.Element };
 
   private portalTargetRef: JSX.Element;
-  private mBackgroundClick: () => void;
+  private mBackgroundClick: (evt: React.MouseEvent<ButtonGroup>) => void;
 
   constructor(props: IProps) {
     super(props);
@@ -355,7 +355,13 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
     const {actions, clickAnywhere, instanceId} = this.props;
     const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
     this.mBackgroundClick = ((clickAnywhere === true) && (actions.length === 1))
-      ? (() => actions[0].action(instanceIds))
+      ? ((evt: React.MouseEvent<ButtonGroup>) => {
+        // don't trigger if the button itself was clicked
+        if (!evt.isDefaultPrevented()) {
+          evt.preventDefault();
+          actions[0].action(instanceIds);
+        }
+      })
       : undefined;
   }
 }
