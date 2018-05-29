@@ -9,6 +9,7 @@ import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult'
 import LinkingDeployment from '../mod_management/LinkingDeployment';
 import { installPath } from '../mod_management/selectors';
 import { IDeployedFile, IDeploymentMethod } from '../mod_management/types/IDeploymentMethod';
+import resolvePath from '../mod_management/util/resolvePath';
 
 import * as Promise from 'bluebird';
 import * as I18next from 'i18next';
@@ -53,9 +54,11 @@ class DeploymentMethod extends LinkingDeployment {
 
   public isSupported(state: any, gameId: string, typeId: string): string {
     const discovery: IDiscoveryResult = state.settings.gameMode.discovered[gameId];
-    if (discovery === undefined) {
+    if ((discovery === undefined) || (discovery.path === undefined)) {
       return 'No game discovery';
     }
+
+    const instPath = resolvePath('install', state.settings.mods.paths, gameId);
 
     const game: IGame = getGame(gameId);
     const modPaths = game.getModPaths(discovery.path);
@@ -69,7 +72,7 @@ class DeploymentMethod extends LinkingDeployment {
     }
 
     try {
-      if (fs.statSync(installPath(state)).dev !== fs.statSync(modPaths[typeId]).dev) {
+      if (fs.statSync(instPath).dev !== fs.statSync(modPaths[typeId]).dev) {
         // actually we could support this but it would be so slow it wouldn't make sense
         return 'Works only if mods are installed on the same drive as the game. '
           + 'You can go to settings and change the mod directory to the same drive '
@@ -78,7 +81,7 @@ class DeploymentMethod extends LinkingDeployment {
     } catch (err) {
       // this can happen when managing the the game for the first time
       log('info', 'failed to stat. directory missing?', {
-        dir1: installPath(state) || 'undefined', dir2: modPaths[typeId],
+        dir1: instPath || 'undefined', dir2: modPaths[typeId],
         err: util.inspect(err),
       });
       return 'Game not fully initialized yet, this should disappear soon.';

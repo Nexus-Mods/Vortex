@@ -80,6 +80,7 @@ function runCheck(api: IExtensionApi, check: ICheckEntry): Promise<void> {
         id: check.id,
         event,
         err: err.message,
+        stack: err.stack,
       });
     });
 }

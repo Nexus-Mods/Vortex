@@ -299,6 +299,10 @@ function removeDisapearedGames(api: IExtensionApi): Promise<void> {
             });
 
             api.store.dispatch(setGamePath(gameId, undefined));
+            const gameMode = activeGameId(state);
+            if (gameMode === gameId) {
+              api.store.dispatch(setNextProfile(undefined));
+            }
           });
     }).then(() => undefined);
 }
@@ -550,8 +554,14 @@ function init(context: IExtensionContext): boolean {
         });
       });
 
-    changeGameMode(undefined, activeGameId(store.getState()), undefined)
-    .then(() => null);
+    {
+      const gameMode = activeGameId(store.getState());
+      const discovery = store.getState().settings.gameMode.discovered[gameMode];
+      if ((discovery !== undefined) && (discovery.path !== undefined)) {
+        changeGameMode(undefined, gameMode, undefined)
+          .then(() => null);
+      }
+    }
   });
 
   return true;

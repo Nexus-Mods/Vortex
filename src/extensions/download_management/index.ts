@@ -182,6 +182,9 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
 
   if (gameId === undefined) {
     gameId = selectors.activeGameId(state);
+    if (gameId === undefined) {
+      return Promise.resolve();
+    }
   }
   const currentDownloadPath = resolvePath('download', state.settings.mods.paths, gameId);
 

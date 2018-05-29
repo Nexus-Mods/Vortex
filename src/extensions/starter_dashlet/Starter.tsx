@@ -304,6 +304,9 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
   }
 
   private startTool = (info: StarterInfo) => {
+    if (info === undefined) {
+      return;
+    }
     this.context.api.runExecutable(info.exePath, info.commandLine, {
       cwd: info.workingDirectory,
       env: info.environment,

@@ -452,7 +452,11 @@ function genValidActivatorCheck(api: IExtensionApi) {
     if (game === undefined) {
       return resolve(undefined);
     }
-    const modPaths = game.getModPaths(currentGameDiscovery(state).path);
+    const discovery = currentGameDiscovery(state);
+    if ((discovery === undefined) || (discovery.path === undefined)) {
+      return resolve(undefined);
+    }
+    const modPaths = game.getModPaths(discovery.path);
 
     const messages = activators.map((activator) => {
       const supported = allTypesSupported(activator, state, gameId, Object.keys(modPaths));
