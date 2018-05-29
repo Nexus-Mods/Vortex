@@ -195,6 +195,9 @@ const gameSupport: { [gameId: string]: IGameSupport } = {
     stopPatterns: stopPatterns('subnautica'),
     pluginPath: 'QMods',
   },
+  stateofdecay: {
+    stopPatterns: stopPatterns('stateofdecay'),
+  },
 };
 
 export function getIniFilePath(gameMode: string) {
