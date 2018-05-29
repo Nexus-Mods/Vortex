@@ -137,6 +137,12 @@ function undeploy(api: IExtensionApi,
   const state: IState = store.getState();
 
   const discovery = state.settings.gameMode.discovered[gameMode];
+
+  if ((discovery === undefined) || (discovery.path === undefined)) {
+    // if the game hasn't been discovered we can't deploy, but that's not really a problem
+    return Promise.resolve(callback(null));
+  }
+
   const game = getGame(gameMode);
   const modPaths = game.getModPaths(discovery.path);
   const modTypes = Object.keys(modPaths);
@@ -152,11 +158,6 @@ function undeploy(api: IExtensionApi,
   }
 
   const installationPath = resolvePath('install', state.settings.mods.paths, gameMode);
-
-  if (discovery === undefined) {
-    // if the game hasn't been discovered we can't deploy, but that's not really a problem
-    return Promise.resolve(callback(null));
-  }
 
   const dataPath = modPaths[mod.type || ''];
   return loadActivation(api, mod.type, dataPath)
