@@ -215,10 +215,10 @@ store.subscribe(() => {
           // don't show ENOENT errors because it shouldn't really matter
           const filtErr = err.filter(iter => iter.code !== 'ENOENT');
           if (filtErr.length > 0) {
-            showError(store.dispatch, 'failed to activate language', err);
+            showError(store.dispatch, 'failed to activate language', err, { allowReport: false });
           }
         } else {
-          showError(store.dispatch, 'failed to activate language', err);
+          showError(store.dispatch, 'failed to activate language', err, { allowReport: false });
         }
       }
     });
