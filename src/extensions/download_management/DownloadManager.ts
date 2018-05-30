@@ -777,6 +777,9 @@ class DownloadManager {
                   : Promise.resolve());
           }
         })
+        .catch(err => {
+          download.failedCB(err);
+        })
         .then(() => {
           const unfinishedChunks = download.chunks
             .filter(chunk => chunk.state === 'paused')
