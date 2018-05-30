@@ -39,6 +39,7 @@ export interface ISteam {
  * @class Steam
  */
 class Steam implements ISteam {
+  public static GameNotFound = GameNotFound;
   private mBaseFolder: Promise<string>;
   private mCache: ISteamEntry[];
 
@@ -84,7 +85,7 @@ class Steam implements ISteam {
       .then(entries => entries.find(entry => re.test(entry.name)))
       .then(entry => {
         if (entry === undefined) {
-          return Promise.reject(new GameNotFound(namePattern));
+          return Promise.reject(new Steam.GameNotFound(namePattern));
         } else {
           return Promise.resolve(entry);
         }

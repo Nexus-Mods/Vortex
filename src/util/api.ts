@@ -28,7 +28,7 @@ import lazyRequire from './lazyRequire';
 import makeReactive from './makeReactive';
 import ReduxProp from './ReduxProp';
 import relativeTime from './relativeTime';
-import steam, { ISteamEntry } from './Steam';
+import steam, { GameNotFound, ISteamEntry } from './Steam';
 import { bytesToString, copyFileAtomic, isNullOrWhitespace, objDiff,
          removePersistent, setdefault } from './util';
 import walk from './walk';
