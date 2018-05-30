@@ -55,6 +55,8 @@ class Application {
 
     ipcMain.on('show-window', () => this.showMainWindow());
 
+    app.commandLine.appendSwitch('js-flags', '--max-old-space-size=4096');
+
     this.mBasePath = app.getPath('userData');
     fs.ensureDirSync(this.mBasePath);
 
