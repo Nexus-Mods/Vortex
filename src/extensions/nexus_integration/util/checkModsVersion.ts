@@ -153,24 +153,25 @@ function errorFromNexus(err: NexusError): Error {
 export function retrieveModInfo(
   nexus: NexusT,
   store: Redux.Store<any>,
-  gameId: string,
+  gameMode: string,
   mod: IMod,
   t: I18next.TranslationFunction): Promise<void> {
   const nexusModId: string = getSafe(mod.attributes, ['modId'], undefined);
   if ((nexusModId === undefined) || (nexusModId.length === 0)) {
     return Promise.resolve();
   }
+  const gameId = getSafe(mod.attributes, ['downloadGame'], gameMode);
   // if the endorsement state is unknown, request it
   return Promise.resolve(nexus.getModInfo(parseInt(nexusModId, 10), convertGameId(gameId)))
     .then((modInfo: IModInfo) => {
       if (modInfo !== undefined) {
-        updateModAttributes(store.dispatch, gameId, mod, modInfo);
+        updateModAttributes(store.dispatch, gameMode, mod, modInfo);
       }
     })
     .catch((err: NexusError) => {
       showError(store.dispatch, 'An error occurred looking up the mod',
         errorFromNexus(err), { allowReport: false });
       // prevent this error from coming up every time the icon is re-rendered
-      store.dispatch(setModAttribute(gameId, mod.id, 'endorsed', 'Undecided'));
+      store.dispatch(setModAttribute(gameMode, mod.id, 'endorsed', 'Undecided'));
     });
 }

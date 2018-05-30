@@ -30,7 +30,7 @@ import { accountReducer } from './reducers/account';
 import { sessionReducer } from './reducers/session';
 import { settingsReducer } from './reducers/settings';
 import { checkModVersion, retrieveModInfo } from './util/checkModsVersion';
-import { convertGameId, toNXMId } from './util/convertGameId';
+import { convertGameId, convertGameIdReverse, toNXMId } from './util/convertGameId';
 import sendEndorseMod from './util/endorseMod';
 import retrieveCategoryList from './util/retrieveCategories';
 import submitFeedback from './util/submitFeedback';
@@ -49,7 +49,8 @@ import NXMUrl from './NXMUrl';
 import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import * as I18next from 'i18next';
-import NexusT, { IDownloadURL, IFileInfo, IModInfo, NexusError as NexusErrorT } from 'nexus-api';
+import NexusT, { IDownloadURL, IFileInfo, IGameListEntry, IModInfo,
+                 NexusError as NexusErrorT } from 'nexus-api';
 import {} from 'opn';
 import * as path from 'path';
 import * as React from 'react';
@@ -70,6 +71,7 @@ const UPDATE_CHECK_DELAY = 60 * 60 * 1000;
 
 let nexus: NexusT;
 let endorseMod: (gameId: string, modId: string, endorsedState: string) => void;
+let nexusGames: IGameListEntry[] = [];
 
 export interface IExtensionContextExt extends IExtensionContext {
   registerDownloadProtocol: (
@@ -508,6 +510,43 @@ function genModIdAttribute(api: IExtensionApi): ITableAttribute {
   };
 }
 
+function genGameAttribute(api: IExtensionApi): ITableAttribute<IMod> {
+  return {
+    id: 'downloadGame',
+    name: 'Game Section',
+    description: 'NexusMods Game Section',
+    calc: mod => {
+      const gameId = convertGameId(mod.attributes['downloadGame']
+                           || activeGameId(api.store.getState()));
+      const gameEntry = nexusGames.find(game => game.domain_name === gameId);
+      return (gameEntry !== undefined)
+        ? gameEntry.name
+        : gameId;
+    },
+    placement: 'detail',
+    help: api.translate(
+      'If you\'ve downloaded this mod from a different game section than you\'re, '
+      + 'set this to the game the mod was intended for.\n\n'
+      + 'So if you manually downloaded this mod from the Skyrim section and installed it for '
+      + 'Skyrim Special Edition, set this to "Skyrim".\n\n'
+      + 'Otherwise, please don\'t change this, it is required to be correct so '
+      + 'Vortex can retrieve the correct mod information (including update info).'),
+    edit: {
+      choices: () => nexusGames.sort().map(game => ({ key: game.domain_name, text: game.name })),
+      onChangeValue: (mods, value) => {
+        const gameMode = activeGameId(api.store.getState());
+        if (!Array.isArray(mods)) {
+          mods = [mods];
+        }
+        mods.forEach(mod => {
+          api.store.dispatch(setModAttribute(
+            gameMode, mod.id, 'downloadGame', convertGameIdReverse(value)));
+        });
+      },
+    },
+  };
+}
+
 function errorFromNexusError(err: NexusErrorT): string {
   switch (err.statusCode) {
     case 401: return 'Login was refused, please review your API key.';
@@ -580,6 +619,11 @@ function once(api: IExtensionApi) {
 
     const gameMode = activeGameId(state);
     api.store.dispatch(setUpdatingMods(gameMode, false));
+
+    nexus.getGames()
+      .then(games => {
+        nexusGames = games.sort((lhs, rhs) => lhs.name.localeCompare(rhs.name));
+      });
 
     endorseMod = (gameId: string, modId: string, endorsedStatus: string) =>
       endorseModImpl(api, gameId, modId, endorsedStatus);
@@ -755,8 +799,12 @@ function once(api: IExtensionApi) {
       Object.keys(newModTable[gameMode]).forEach(modId => {
         const lastPath = [lastGameMode, modId, 'attributes', 'modId'];
         const newPath = [gameMode, modId, 'attributes', 'modId'];
-        if (getSafe(lastModTable, lastPath, undefined)
-            !== getSafe(newModTable, newPath, undefined)) {
+        const lastDLGamePath = [lastGameMode, modId, 'attributes', 'downloadGame'];
+        const newDLGamePath = [gameMode, modId, 'attributes', 'downloadGame'];
+        if ((getSafe(lastModTable, lastPath, undefined)
+              !== getSafe(newModTable, newPath, undefined))
+           || (getSafe(lastModTable, lastDLGamePath, undefined)
+              !== getSafe(newModTable, newDLGamePath, undefined))) {
           return retrieveModInfo(nexus, api.store,
             gameMode, newModTable[gameMode][modId], api.translate)
             .then(() => {
@@ -859,6 +907,7 @@ function init(context: IExtensionContextExt): boolean {
     () => retrieveCategories(context.api, true));
 
   context.registerTableAttribute('mods', genEndorsedAttribute(context.api));
+  context.registerTableAttribute('mods', genGameAttribute(context.api));
   context.registerTableAttribute('mods', genModIdAttribute(context.api));
 
   context.registerDashlet('Nexus Account', 3, 1, 0, DashboardBanner, undefined, undefined, {
