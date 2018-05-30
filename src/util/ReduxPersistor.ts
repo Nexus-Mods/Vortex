@@ -67,7 +67,7 @@ class ReduxPersistor<T> {
   }
 
   private deserialize(input: string): any {
-    if (input.length === 0) {
+    if ((input === undefined) || (input.length === 0)) {
       return '';
     } else {
       return JSON.parse(input);
