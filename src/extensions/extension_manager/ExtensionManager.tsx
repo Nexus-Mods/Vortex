@@ -170,7 +170,8 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
       ? Promise.map(extPaths, extPath => installExtension(extPath)
           .then(() => { success = true; })
           .catch(err => {
-            this.context.api.showErrorNotification('Failed to install extension', err);
+            this.context.api.showErrorNotification('Failed to install extension', err,
+                                                   { allowReport: false });
           }))
       : Promise.map(extPaths, url => new Promise<void>((resolve, reject) => {
         this.context.api.events.emit('start-download', {}, undefined,
@@ -181,7 +182,8 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
             success = true;
           })
           .catch(err => {
-            this.context.api.showErrorNotification('Failed to install extension', err);
+            this.context.api.showErrorNotification('Failed to install extension', err,
+                                                   { allowReport: false });
           })
           .finally(() => {
             resolve();
