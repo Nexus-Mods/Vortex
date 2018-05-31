@@ -3,8 +3,8 @@
 
 
 "7z-bin@Nexus-Mods/7z-bin":
-  version "16.4.0"
-  resolved "https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/cc0f8a3ef780d2f7aae8ea365a7103a1d246b873"
+  version "18.5.0"
+  resolved "https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/ee15f48c181b02d6a51f085580b758d9e8b398b9"
 
 "@types/inline-style-prefixer@^3.0.0":
   version "3.0.1"
@@ -2110,8 +2110,8 @@ nexus-api@Nexus-Mods/node-nexus-api:
     string-template "^1.0.0"
 
 node-7z@Nexus-Mods/node-7z:
-  version "0.6.2"
-  resolved "https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/3625b9af10f7a5b00cc8c3ac1858b9219fb41582"
+  version "0.7.0"
+  resolved "https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/d320043e0b468125fa263ba79b042743cf33c7f8"
   dependencies:
     "7z-bin" Nexus-Mods/7z-bin
     bluebird "^3.4.7"
