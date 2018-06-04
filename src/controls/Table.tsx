@@ -180,8 +180,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
     if (newProps.actions !== this.props.actions) {
       this.updateState(update(this.mNextState, {
-        singleRowActions: this.singleRowActions(newProps),
-        multiRowActions: this.multiRowActions(newProps),
+        singleRowActions: { $set: this.singleRowActions(newProps) },
+        multiRowActions: { $set: this.multiRowActions(newProps) },
       }));
     }
 
