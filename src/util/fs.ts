@@ -13,7 +13,6 @@
 
 import { UserCanceled } from './CustomErrors';
 import { delayed } from './delayed';
-import { globalT } from './i18n';
 
 import * as Promise from 'bluebird';
 import { dialog as dialogIn, remote } from 'electron';
@@ -50,27 +49,27 @@ const NUM_RETRIES = 3;
 const RETRY_DELAY_MS = 100;
 const RETRY_ERRORS = new Set(['EPERM', 'EBUSY', 'EUNKNOWN']);
 
-function unlockConfirm(filePath): Promise<boolean> {
+function unlockConfirm(filePath: string): Promise<boolean> {
   if (dialog === undefined) {
     return Promise.resolve(false);
   }
 
-  const { t } = require('i18next');
+  const options: Electron.MessageBoxOptions = {
+    title: 'Access denied',
+    message: `Vortex needs to access "${filePath}" but doesn\'t have permission to.\n`
+      + 'If your account has admin rights Vortex can unlock the file for you.'
+      + ' Windows will show an UAC dialog.',
+    buttons: [
+      'Cancel',
+      'Give permission',
+    ],
+    type: 'warning',
+    noLink: true,
+  };
+
   const choice = dialog.showMessageBox(
     remote !== undefined ? remote.getCurrentWindow() : null,
-    {
-      title: 'File busy',
-      message: globalT('Vortex needs to access "{{ fileName }}" it doesn\'t have permission to.\n'
-        + 'If your account has admin rights Vortex can unlock the file for you. '
-        + 'Windows will show an UAC dialog.',
-        { replace: { fileName: filePath } }),
-      buttons: [
-        'Cancel',
-        'Give permission',
-      ],
-      type: 'warning',
-      noLink: true,
-    });
+    options);
   return (choice === 0)
     ? Promise.reject(new UserCanceled())
     : Promise.resolve(true);
@@ -82,21 +81,21 @@ function busyRetry(filePath: string): Promise<boolean> {
     return Promise.resolve(false);
   }
 
-  const choice = dialog.showMessageBox(
-    remote !== undefined ? remote.getCurrentWindow() : null,
-    {
+  const options: Electron.MessageBoxOptions = {
       title: 'File busy',
-      message: globalT(
-        'Vortex needs to access "{{ filePath }}" but it\'s open in another application. '
-        + 'Please close the file in all other applications and then retry', {
-          replace: { filePath} }),
+      message: `Vortex needs to access "${filePath}" but it\'s open in another application. `
+             + 'Please close the file in all other applications and then retry',
       buttons: [
         'Cancel',
         'Retry',
       ],
       type: 'warning',
       noLink: true,
-    });
+    };
+
+  const choice = dialog.showMessageBox(
+    remote !== undefined ? remote.getCurrentWindow() : null,
+    options);
   return (choice === 0)
     ? Promise.reject(new UserCanceled())
     : Promise.resolve(true);
@@ -375,7 +374,8 @@ export function forcePerm<T>(t: I18next.TranslationFunction, op: () => Promise<T
       if (err.code === 'EPERM') {
         const choice = dialog.showMessageBox(
           remote !== undefined ? remote.getCurrentWindow() : null, {
-          message: t('Vortex needs to access "{{ fileName }}" doesn\'t have permission to.\n'
+          title: 'Access denied',
+          message: t('Vortex needs to access "{{ fileName }}" but doesn\'t have permission to.\n'
                    + 'If your account has admin rights Vortex can unlock the file for you. '
                    + 'Windows will show an UAC dialog.',
             { replace: { fileName: err.path } }),
@@ -384,7 +384,6 @@ export function forcePerm<T>(t: I18next.TranslationFunction, op: () => Promise<T
             'Give permission',
           ],
           noLink: true,
-          title: 'Access denied',
           type: 'warning',
           detail: err.path,
         });
