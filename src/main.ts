@@ -10,7 +10,6 @@ if (process.env.NODE_ENV !== 'development') {
   const key = 'NODE_ENV';
   process.env[key] = 'production';
 } else {
-  console.log('require rebuild');
   // tslint:disable-next-line:no-var-requires
   const rebuildRequire = require('./util/requireRebuild').default;
   rebuildRequire();

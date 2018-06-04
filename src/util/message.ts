@@ -5,7 +5,7 @@ import {
   showDialog,
 } from '../actions/notifications';
 
-import { createErrorReport, sendReport, toError } from './errorHandling';
+import { sendReport, toError } from './errorHandling';
 
 import { log } from './log';
 import { truthy } from './util';
