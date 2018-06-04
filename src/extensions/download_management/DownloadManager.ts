@@ -650,6 +650,15 @@ class DownloadManager {
               urls,
               download.tempName);
           return synced;
+        })
+        .catch(err => {
+          for (const chunk of download.chunks) {
+            if (chunk.state === 'running') {
+              this.mBusyWorkers[chunk.workerId].cancel();
+            }
+          }
+          download.failedCB(err);
+          return Promise.resolve(false);
         });
     };
 
