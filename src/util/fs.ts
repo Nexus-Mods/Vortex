@@ -23,7 +23,7 @@ import * as ipc from 'node-ipc';
 import * as path from 'path';
 import { getUserId } from 'permissions';
 import { generate as shortid } from 'shortid';
-import { runElevated } from 'vortex-run';
+import { runElevated, Win32Error } from 'vortex-run';
 
 const dialog = remote !== undefined ? remote.dialog : dialogIn;
 
@@ -295,23 +295,48 @@ function rmdirInt(dirPath: string, stackErr: Error, tries: number): Promise<void
 
 function elevated(func: () => Promise<void>, parameters: any): Promise<void> {
   return new Promise<void>((resolve, reject) => {
+    const ipcInst = new ipc.IPC();
     const id = shortid();
-    ipc.serve(`__fs_elevated_${id}`, () => {
+    let resolved = false;
+    ipcInst.serve(`__fs_elevated_${id}`, () => {
       runElevated(`__fs_elevated_${id}`, func, parameters)
-        .catch(reject);
+        .catch(Win32Error, err => {
+          if (err.code === 5) {
+            // this code is returned when the user rejected the UAC dialog. Not currently
+            // aware of another case
+            reject(new UserCanceled());
+          } else {
+            reject(new Error(`OS error ${err.message} (${err.code})`));
+          }
+        })
+        .catch(err => {
+          if (!resolved) {
+            resolved = true;
+            reject(err);
+          }
+        });
     });
-    ipc.server.on('socket.disconnected', () => {
-      ipc.server.stop();
-      resolve();
+    ipcInst.server.on('socket.disconnected', () => {
+      ipcInst.server.stop();
+      if (!resolved) {
+        resolved = true;
+        resolve();
+      }
     });
-    ipc.server.on('error', ipcErr => {
-      reject(new Error(ipcErr));
+    ipcInst.server.on('error', ipcErr => {
+      if (!resolved) {
+        resolved = true;
+        reject(new Error(ipcErr));
+      }
     });
-    ipc.server.on('disconnect', () => {
-      ipc.server.stop();
-      resolve();
+    ipcInst.server.on('disconnect', () => {
+      ipcInst.server.stop();
+      if (!resolved) {
+        resolved = true;
+        resolve();
+      }
     });
-    ipc.server.start();
+    ipcInst.server.start();
   });
 }
 

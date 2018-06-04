@@ -14,6 +14,19 @@ let voidPtr: refT.Type;
 let SHELLEXECUTEINFOPtr: refT.Type;
 let shell32;
 
+export class Win32Error extends Error {
+  private mCode: number;
+  constructor(message: string, code: number) {
+    super(message);
+    this.name = this.constructor.name;
+    this.mCode = code;
+  }
+
+  public get code(): number {
+    return this.mCode;
+  }
+}
+
 function initTypes() {
   if (DUMMYUNIONNAME !== undefined) {
     return;
@@ -195,7 +208,7 @@ function runElevated(ipcPath: string, func: (ipc: any, req: NodeRequireFunction)
             if (res > 32) {
               resolve(res);
             } else {
-              reject(new Error(`ShellExecute failed, errorcode ${res}`));
+              reject(new Win32Error('ShellExecute failed', res));
             }
           }
         });

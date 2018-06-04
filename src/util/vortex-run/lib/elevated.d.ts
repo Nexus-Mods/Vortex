@@ -1,6 +1,11 @@
 /// <reference types="node" />
 /// <reference types="bluebird" />
 import * as Bluebird from 'bluebird';
+export declare class Win32Error extends Error {
+    private mCode;
+    constructor(message: string, code: number);
+    readonly code: number;
+}
 /**
  * run a function as an elevated process (windows only!).
  * This is quite a hack because obviously windows doesn't allow us to elevate a

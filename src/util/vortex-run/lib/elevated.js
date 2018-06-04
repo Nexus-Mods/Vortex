@@ -9,6 +9,17 @@ let SHELLEXECUTEINFO;
 let voidPtr;
 let SHELLEXECUTEINFOPtr;
 let shell32;
+class Win32Error extends Error {
+    constructor(message, code) {
+        super(message);
+        this.name = this.constructor.name;
+        this.mCode = code;
+    }
+    get code() {
+        return this.mCode;
+    }
+}
+exports.Win32Error = Win32Error;
 function initTypes() {
     if (DUMMYUNIONNAME !== undefined) {
         return;
@@ -169,7 +180,7 @@ function runElevated(ipcPath, func, args) {
                             resolve(res);
                         }
                         else {
-                            reject(new Error(`ShellExecute failed, errorcode ${res}`));
+                            reject(new Win32Error('ShellExecute failed', res));
                         }
                     }
                 });
