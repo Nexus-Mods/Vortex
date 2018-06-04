@@ -3,8 +3,8 @@
 
 
 "7z-bin@Nexus-Mods/7z-bin":
-  version "16.4.0"
-  resolved "https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/cc0f8a3ef780d2f7aae8ea365a7103a1d246b873"
+  version "18.5.0"
+  resolved "https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/ee15f48c181b02d6a51f085580b758d9e8b398b9"
 
 "@types/inline-style-prefixer@^3.0.0":
   version "3.0.1"
@@ -3593,7 +3593,7 @@ vortex-parse-ini@Nexus-Mods/vortex-parse-ini:
     ref "^1.3.4"
 
 "vortex-run@file:../src/util/vortex-run":
-  version "0.0.3"
+  version "0.0.4"
 
 warning@^3.0.0:
   version "3.0.0"
