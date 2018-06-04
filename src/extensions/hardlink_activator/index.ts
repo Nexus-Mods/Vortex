@@ -1,6 +1,5 @@
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
 import { IGame } from '../../types/IGame';
-import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 import { activeGameId } from '../../util/selectors';
 
@@ -11,6 +10,7 @@ import { IDeployedFile, IDeploymentMethod } from '../mod_management/types/IDeplo
 import resolvePath from '../mod_management/util/resolvePath';
 
 import * as Promise from 'bluebird';
+import * as fs from 'fs-extra-promise';
 import * as I18next from 'i18next';
 import * as path from 'path';
 import turbowalk from 'turbowalk';

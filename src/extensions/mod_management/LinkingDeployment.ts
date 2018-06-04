@@ -1,7 +1,6 @@
 import {addNotification} from '../../actions/notifications';
 import {IExtensionApi} from '../../types/IExtensionContext';
 import { ProcessCanceled } from '../../util/CustomErrors';
-import * as fs from '../../util/fs';
 import getNormalizeFunc, {Normalize} from '../../util/getNormalizeFunc';
 import {log} from '../../util/log';
 import { getSafe } from '../../util/storeHelper';
@@ -14,6 +13,7 @@ import {
 import {IMod} from './types/IMod';
 
 import * as Promise from 'bluebird';
+import * as fs from 'fs-extra-promise';
 import * as I18next from 'i18next';
 import * as _ from 'lodash';
 import * as path from 'path';
@@ -139,13 +139,11 @@ abstract class LinkingActivator implements IDeploymentMethod {
                            this.mContext.previousDeployment[key].source,
                            this.mContext.previousDeployment[key].relPath);
                          return this.unlinkFile(outputPath, sourcePath)
-                             .catch(err => {
-                               if (err.code !== 'ENOENT') {
-                                 return Promise.reject(err);
-                               }
+                             .catch(err => (err.code !== 'ENOENT')
                                // treat an ENOENT error for the unlink as if it was a success.
                                // The end result either way is the link doesn't exist now.
-                             })
+                                ? Promise.reject(err)
+                                : Promise.resolve())
                              .then(() => fs.renameAsync(outputPath + BACKUP_TAG,
                                                         outputPath)
                                              .catch(() => undefined))
