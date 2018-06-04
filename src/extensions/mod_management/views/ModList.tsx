@@ -588,6 +588,8 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       isToggleable: true,
       isDefaultVisible: false,
       isSortable: true,
+      sortFunc: (lhs: string, rhs: string) =>
+        lhs.localeCompare(rhs, this.props.language, { caseFirst: 'false' }),
       edit: {},
     };
   }
