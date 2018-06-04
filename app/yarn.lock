@@ -1171,8 +1171,8 @@ follow-redirects@>=1.2.0:
     debug "^3.1.0"
 
 fomod-installer@Nexus-Mods/fomod-installer:
-  version "0.0.2"
-  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/bedd5887cb486b0888f1ccc4ae36d47c3db9e1e0"
+  version "0.0.3"
+  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/db4b141c9e4b62e5aa67ca41fb96da2c1c111ec5"
   dependencies:
     copyfiles "^1.0.0"
     msbuild "^1.0.1"
