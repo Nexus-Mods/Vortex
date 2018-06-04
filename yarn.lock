@@ -7583,8 +7583,8 @@ performance-now@^2.1.0:
   resolved "https://registry.yarnpkg.com/performance-now/-/performance-now-2.1.0.tgz#6309f4e0e5fa913ec1c69307ae364b4b377c9e7b"
 
 permissions@Nexus-Mods/node-permissions:
-  version "1.1.1"
-  resolved "https://codeload.github.com/Nexus-Mods/node-permissions/tar.gz/353f73fb663ea0feb50986155f8c00a1c91e7c22"
+  version "1.1.2"
+  resolved "https://codeload.github.com/Nexus-Mods/node-permissions/tar.gz/0e04ade9b414f8265c23bd0f69df008fb9b3cedc"
   dependencies:
     autogypi "^0.2.2"
     nbind "^0.3.15"
