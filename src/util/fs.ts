@@ -139,9 +139,9 @@ function errorHandler(error: NodeJS.ErrnoException, stack: string): Promise<void
 }
 function genWrapperAsync<T extends (...args) => any>(func: T): T {
   const res = (...args) => {
-    const stack = new Error().stack;
+    const stackErr = new Error();
     return func(...args)
-      .catch(err => errorHandler(err, stack)
+      .catch(err => errorHandler(err, stackErr.stack)
         .then(() => res(...args)));
   };
   return res as T;
@@ -199,7 +199,7 @@ export function ensureFileAsync(filePath: string): Promise<void> {
 }
 
 export function ensureDirAsync(dirPath: string): Promise<void> {
-  const stack = new Error().stack;
+  const stackErr = new Error();
   return fs.ensureDirAsync(dirPath)
     .catch(err => {
       // ensureDir isn't supposed to cause EEXIST errors as far as I understood
@@ -208,7 +208,7 @@ export function ensureDirAsync(dirPath: string): Promise<void> {
       if (err.code === 'EEXIST') {
         return Promise.resolve();
       }
-      err.stack = err.message + '\n' + stack;
+      err.stack = err.message + '\n' + stackErr.stack;
       return Promise.reject(err);
     });
 }
@@ -217,7 +217,7 @@ export function copyAsync(src: string, dest: string,
                           options?: RegExp |
                               ((src: string, dest: string) => boolean) |
                               fs.CopyOptions): Promise<void> {
-  const stack = new Error().stack;
+  const stackErr = new Error();
   // fs.copy in fs-extra has a bug where it doesn't correctly avoid copying files onto themselves
   return Promise.join(fs.statAsync(src),
                       fs.statAsync(dest)
@@ -225,16 +225,16 @@ export function copyAsync(src: string, dest: string,
     .then((stats: fs.Stats[]) => {
       if (stats[0].ino === stats[1].ino) {
         const err = new Error(
-          `Source "${src}" and destination "${dest}" are the same file (id ${stats[0].ino}).`);
-        err.stack = err.message + '\n' + stack;
+          `Source "${src}" and destination "${dest}" are the same file (id "${stats[0].ino}").`);
+        err.stack = err.message + '\n' + stackErr.stack;
         return Promise.reject(err);
       } else {
         return Promise.resolve();
       }
     })
-    .then(() => copyInt(src, dest, options || undefined, stack))
+    .then(() => copyInt(src, dest, options || undefined, stackErr))
     .catch(err => {
-      err.stack = err.message + '\n' + stack;
+      err.stack = err.message + '\n' + stackErr.stack;
       return Promise.reject(err);
     });
 }
@@ -242,43 +242,43 @@ export function copyAsync(src: string, dest: string,
 function copyInt(
     src: string, dest: string,
     options: RegExp | ((src: string, dest: string) => boolean) | fs.CopyOptions,
-    stack: string) {
+    stackErr: Error) {
   return fs.copyAsync(src, dest, options)
     .catch((err: NodeJS.ErrnoException) =>
-      errorHandler(err, stack).then(() => copyInt(src, dest, options, stack)));
+      errorHandler(err, stackErr.stack).then(() => copyInt(src, dest, options, stackErr)));
 }
 
 export function removeAsync(dirPath: string): Promise<void> {
-  return removeInt(dirPath, new Error().stack);
+  return removeInt(dirPath, new Error());
 }
 
-function removeInt(dirPath: string, stack: string): Promise<void> {
+function removeInt(dirPath: string, stackErr: Error): Promise<void> {
   return fs.removeAsync(dirPath)
     .catch((err: NodeJS.ErrnoException) => (err.code === 'ENOENT')
         // don't mind if a file we wanted deleted was already gone
         ? Promise.resolve()
-        : errorHandler(err, stack)
-          .then(() => removeInt(dirPath, stack)));
+        : errorHandler(err, stackErr.stack)
+          .then(() => removeInt(dirPath, stackErr)));
 }
 
 export function unlinkAsync(dirPath: string): Promise<void> {
-  return unlinkInt(dirPath, new Error().stack);
+  return unlinkInt(dirPath, new Error());
 }
 
-function unlinkInt(dirPath: string, stack: string): Promise<void> {
+function unlinkInt(dirPath: string, stackErr: Error): Promise<void> {
   return fs.unlinkAsync(dirPath)
     .catch((err: NodeJS.ErrnoException) => (err.code === 'ENOENT')
         // don't mind if a file we wanted deleted was already gone
         ? Promise.resolve()
-        : errorHandler(err, stack)
-          .then(() => unlinkInt(dirPath, stack)));
+        : errorHandler(err, stackErr.stack)
+          .then(() => unlinkInt(dirPath, stackErr)));
 }
 
 export function rmdirAsync(dirPath: string): Promise<void> {
-  return rmdirInt(dirPath, new Error().stack, NUM_RETRIES);
+  return rmdirInt(dirPath, new Error(), NUM_RETRIES);
 }
 
-function rmdirInt(dirPath: string, stack: string, tries: number): Promise<void> {
+function rmdirInt(dirPath: string, stackErr: Error, tries: number): Promise<void> {
   return fs.rmdirAsync(dirPath)
     .catch((err: NodeJS.ErrnoException) => {
       if (err.code === 'ENOENT') {
@@ -286,9 +286,9 @@ function rmdirInt(dirPath: string, stack: string, tries: number): Promise<void> 
         return Promise.resolve();
       } else if (RETRY_ERRORS.has(err.code) && (tries > 0)) {
           return delayed(RETRY_DELAY_MS)
-            .then(() => rmdirInt(dirPath, stack, tries - 1));
+            .then(() => rmdirInt(dirPath, stackErr, tries - 1));
       }
-      err.stack = err.message + '\n' + stack;
+      err.stack = err.message + '\n' + stackErr.stack;
       throw err;
     });
 }

@@ -1,6 +1,7 @@
 import {addNotification} from '../../actions/notifications';
 import {IExtensionApi} from '../../types/IExtensionContext';
 import { ProcessCanceled } from '../../util/CustomErrors';
+import * as fs from '../../util/fs';
 import getNormalizeFunc, {Normalize} from '../../util/getNormalizeFunc';
 import {log} from '../../util/log';
 import { getSafe } from '../../util/storeHelper';
@@ -13,7 +14,6 @@ import {
 import {IMod} from './types/IMod';
 
 import * as Promise from 'bluebird';
-import * as fs from 'fs-extra-promise';
 import * as I18next from 'i18next';
 import * as _ from 'lodash';
 import * as path from 'path';
@@ -356,11 +356,12 @@ abstract class LinkingActivator implements IDeploymentMethod {
 
   private deployFile(key: string, installPathStr: string, dataPath: string,
                      replace: boolean): Promise<IDeployedFile> {
-    const fullPath = path.join(installPathStr, this.mContext.newDeployment[key].source,
-                               this.mContext.newDeployment[key].relPath);
+    const fullPath =
+      [installPathStr, this.mContext.newDeployment[key].source,
+        this.mContext.newDeployment[key].relPath].join(path.sep);
     const fullOutputPath =
-        path.join(dataPath, this.mContext.newDeployment[key].target || '',
-                  this.mContext.newDeployment[key].relPath);
+      [dataPath, this.mContext.newDeployment[key].target || '',
+        this.mContext.newDeployment[key].relPath].join(path.sep);
 
     const backupProm: Promise<void> = replace
       ? Promise.resolve(undefined)
