@@ -227,6 +227,9 @@ abstract class LinkingActivator implements IDeploymentMethod {
   public activate(sourcePath: string, sourceName: string, dataPath: string,
                   blackList: Set<string>): Promise<void> {
     return turbowalk(sourcePath, entries => {
+      if (this.mContext === undefined) {
+        return;
+      }
       entries.forEach(entry => {
         const relPath: string = path.relative(sourcePath, entry.filePath);
         if (!entry.isDirectory && !blackList.has(relPath)) {
@@ -247,6 +250,9 @@ abstract class LinkingActivator implements IDeploymentMethod {
                     mod: IMod): Promise<void> {
     const sourceBase = path.join(installPath, mod.installationPath);
     return turbowalk(sourceBase, entries => {
+      if (this.mContext === undefined) {
+        return;
+      }
       entries.forEach(entry => {
         if (!entry.isDirectory) {
           const relPath: string = path.relative(sourceBase, entry.filePath);
