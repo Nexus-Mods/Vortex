@@ -15,6 +15,7 @@ import {
 import walk from './walk';
 
 import * as Promise from 'bluebird';
+import { app as appIn, remote } from 'electron';
 import * as I18next from 'i18next';
 import * as ipc from 'node-ipc';
 import * as path from 'path';
@@ -22,6 +23,8 @@ import { generate as shortid } from 'shortid';
 import { runElevated } from 'vortex-run';
 
 import { remoteCode } from './remoteCode';
+
+const app = appIn || remote.app;
 
 ipc.config.logger = (message) => log('debug', 'ipc message', { message });
 
@@ -113,6 +116,9 @@ class DeploymentMethod extends LinkingDeployment {
       // Mods for this games use some file types that have issues working with symbolic links
       return 'Doesn\'t work with ' + gameName(state, gameId);
     }
+    if (this.ensureAdmin()) {
+      return 'No need to use the elevated variant, use the regular symlink deployment';
+    }
     return undefined;
   }
 
@@ -161,6 +167,20 @@ class DeploymentMethod extends LinkingDeployment {
 
   protected canRestore(): boolean {
     return false;
+  }
+
+  private ensureAdmin(): boolean {
+    const userData = app.getPath('userData');
+    // any file we know exists
+    const srcFile = path.join(userData, 'Cookies');
+    const destFile = path.join(userData, '__link_test');
+    try {
+      fs.linkSync(srcFile, destFile);
+      fs.removeSync(destFile);
+      return true;
+    } catch (err) {
+      return false;
+    }
   }
 
   private startElevated(): Promise<void> {
