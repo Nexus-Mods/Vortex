@@ -318,6 +318,9 @@ function init(context: IExtensionContextExt): boolean {
               store.dispatch(setDownloadModInfo(dlId, 'name',
                 info.logicalFileName || info.fileName));
             }
+          })
+          .catch(err => {
+            log('warn', 'failed to look up mod info', err.message);
           });
       });
     });

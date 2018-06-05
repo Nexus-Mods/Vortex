@@ -46,6 +46,7 @@ function sortMods(gameId: string, mods: IMod[], api: IExtensionApi): Promise<str
                 fileSize: mod.attributes['size'],
                 gameId,
               })
+        .catch(() => [])
         .then((metaInfo: ILookupResult[]) => {
           const rules = [].concat(
             getSafe(metaInfo, [0, 'value', 'rules'], []),

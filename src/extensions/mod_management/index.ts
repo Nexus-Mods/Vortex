@@ -593,10 +593,13 @@ function once(api: IExtensionApi) {
   api.events.on('start-install', (archivePath: string,
                                   callback?: (error, id: string) => void) => {
     genHash(archivePath)
-    .then(hashResult => {
-      installManager.install(null, archivePath, activeGameId(store.getState()),
-                             api, { download: { modInfo: { fileMD5: hashResult.md5sum } } },
-                             true, false, callback);
+      .then(hashResult => {
+        installManager.install(null, archivePath, activeGameId(store.getState()),
+          api, { download: { modInfo: { fileMD5: hashResult.md5sum } } },
+          true, false, callback);
+      })
+      .catch(err => {
+        callback(err, undefined);
       });
   });
 
