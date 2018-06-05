@@ -1,8 +1,10 @@
 import {IPersistor} from '../types/IExtensionContext';
+import { terminate } from '../util/errorHandling';
 
 import * as Promise from 'bluebird';
 import * as _ from 'lodash';
 import * as Redux from 'redux';
+import { addNotification } from '../actions/notifications';
 
 function insert(target: any, key: string[], value: any) {
   try {
@@ -83,7 +85,14 @@ class ReduxPersistor<T> {
     const newState = this.mStore.getState();
     if (oldState !== newState) {
       this.mPersistedState = newState;
-      this.storeDiffHive(oldState, newState);
+      this.storeDiffHive(oldState, newState)
+        .catch(err => {
+          // this should really never go wrong
+          terminate({
+            message: 'Failed to store application state',
+            stack: err.stack,
+          }, undefined);
+        });
     }
   }
 
@@ -111,21 +120,25 @@ class ReduxPersistor<T> {
       return Promise.resolve();
     }
 
-    if (this.doRecurse(oldState)) {
-      const oldkeys = Object.keys(oldState);
-      const newkeys = Object.keys(newState);
+    try {
+      if (this.doRecurse(oldState)) {
+        const oldkeys = Object.keys(oldState || {});
+        const newkeys = Object.keys(newState || {});
 
-      return Promise.mapSeries(oldkeys,
-        key => (newState[key] === undefined)
-          ? this.remove(persistor, [].concat(statePath, key), oldState[key])
-          : this.storeDiff(persistor, [].concat(statePath, key), oldState[key], newState[key]))
-      .then(() => Promise.mapSeries(newkeys,
-        key => (oldState[key] === undefined)
-          ? this.add(persistor, [].concat(statePath, key), newState[key])
-          : Promise.resolve()))
-      .then(() => undefined);
-    } else {
-      return persistor.setItem(statePath, this.serialize(newState));
+        return Promise.mapSeries(oldkeys,
+          key => (newState[key] === undefined)
+            ? this.remove(persistor, [].concat(statePath, key), oldState[key])
+            : this.storeDiff(persistor, [].concat(statePath, key), oldState[key], newState[key]))
+          .then(() => Promise.mapSeries(newkeys,
+            key => (oldState[key] === undefined)
+              ? this.add(persistor, [].concat(statePath, key), newState[key])
+              : Promise.resolve()))
+          .then(() => undefined);
+      } else {
+        return persistor.setItem(statePath, this.serialize(newState || {}));
+      }
+    } catch (err) {
+      return Promise.reject(err);
     }
   }
 
