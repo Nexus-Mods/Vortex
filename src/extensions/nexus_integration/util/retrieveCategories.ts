@@ -46,7 +46,7 @@ function retrieveCategoryList(
       },
     )
       .catch((err) => {
-        log('error', 'An error occurred retrieving the Game Info', { err: err.message });
+        log('error', 'Failed to retrieve game information', { err: err.message });
         reject(err);
       });
   });

@@ -149,7 +149,7 @@ function nexusReport(hash: string, type: string, error: IError, labels: string[]
   const Nexus: typeof NexusT = require('nexus-api').default;
 
   const referenceId = require('uuid').v4();
-  const nexus = new Nexus(undefined, apiKey);
+  const nexus = new Nexus(undefined, apiKey, app.getVersion());
   return Promise.resolve(nexus.sendFeedback(
     createReport(type, error, app.getVersion()),
     undefined,

@@ -201,10 +201,10 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
               message: 'Timeout retrieving categories from server, please try again later.',
             });
             return;
-          } else if (err.code === 'ECONNRESET') {
+          } else if (['ECONNRESET', 'ECONNREFUSED'].indexOf(err.code) !== -1) {
             api.sendNotification({
               type: 'warning',
-              message: 'The server reset the connection, please try again later.',
+              message: 'The server refused the connection, please try again later.',
             });
             return;
           }
@@ -215,7 +215,7 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
             allowReport = false;
             delete detail.noReport;
           }
-          showError(api.store.dispatch, 'An error occurred retrieving categories', detail,
+          showError(api.store.dispatch, 'Failed to retrieve categories', detail,
                     { allowReport });
         });
     }
@@ -516,6 +516,9 @@ function genGameAttribute(api: IExtensionApi): ITableAttribute<IMod> {
     name: 'Game Section',
     description: 'NexusMods Game Section',
     calc: mod => {
+      if (mod.attributes['source'] !== 'nexus') {
+        return undefined;
+      }
       const gameId = convertGameId(mod.attributes['downloadGame']
                            || activeGameId(api.store.getState()));
       const gameEntry = nexusGames.find(game => game.domain_name === gameId);
@@ -614,8 +617,7 @@ function once(api: IExtensionApi) {
 
     const Nexus: typeof NexusT = require('nexus-api').default;
     const apiKey = getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], '');
-    nexus = new Nexus(activeGameId(state), apiKey, 30000);
-    setApiKey(apiKey);
+    nexus = new Nexus(activeGameId(state), apiKey, remote.app.getVersion(), 30000);
 
     const gameMode = activeGameId(state);
     api.store.dispatch(setUpdatingMods(gameMode, false));
@@ -623,6 +625,9 @@ function once(api: IExtensionApi) {
     nexus.getGames()
       .then(games => {
         nexusGames = games.sort((lhs, rhs) => lhs.name.localeCompare(rhs.name));
+      })
+      .catch(err => {
+        nexusGames = [];
       });
 
     endorseMod = (gameId: string, modId: string, endorsedStatus: string) =>
