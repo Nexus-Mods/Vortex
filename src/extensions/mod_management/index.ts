@@ -419,6 +419,9 @@ function genModsSourceAttribute(api: IExtensionApi): ITableAttribute {
     isDefaultVisible: false,
     supportsMultiple: true,
     calc: (mod: IMod) => {
+      if (mod.attributes === undefined) {
+        return 'None';
+      }
       const source = modSources.find(iter => iter.id === mod.attributes['source']);
       return source !== undefined ? source.name : 'None';
     },
