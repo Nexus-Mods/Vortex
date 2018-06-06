@@ -101,11 +101,11 @@ class Application {
 
     app.on('ready', () => {
       if (args.get) {
-        this.handleGet(args.get);
+        this.handleGet(args.get, args.shared);
       } else if (args.set) {
-        this.handleSet(args.set);
+        this.handleSet(args.set, args.shared);
       } else if (args.del) {
-        this.handleDel(args.del);
+        this.handleDel(args.del, args.shared);
       } else {
         this.regularStart(args);
       }
@@ -183,15 +183,20 @@ class Application {
     return statePath.match(/(\\.|[^.])+/g).map(input => input.replace(/\\(.)/, '$1'));
   }
 
-  private handleGet(getPath: string | boolean): Promise<void> {
+  private handleGet(getPath: string | boolean, shared: boolean): Promise<void> {
     if (typeof(getPath) === 'boolean') {
       fs.writeSync(1, 'Usage: vortex --get <path>\n');
       app.quit();
       return;
     }
 
-    const vortexPath = process.env.NODE_ENV === 'development' ? 'vortex_devel' : 'vortex';
-    const dbpath = path.join(process.env['APPDATA'], vortexPath, currentStatePath);
+    const vortexPath = process.env.NODE_ENV === 'development'
+        ? 'vortex_devel'
+        : 'vortex';
+
+    const dbpath = shared
+      ? path.join(process.env.ProgramData, 'vortex', currentStatePath)
+      : path.join(process.env['APPDATA'], vortexPath, currentStatePath);
     const pathArray = this.splitPath(getPath);
 
     let persist: LevelPersist;
@@ -213,15 +218,20 @@ class Application {
       });
   }
 
-  private handleSet(setParameters: string[]): Promise<void> {
+  private handleSet(setParameters: string[], shared: boolean): Promise<void> {
     if (setParameters.length !== 2) {
       process.stdout.write('Usage: vortex --set <path>=<value>\n');
       app.quit();
       return;
     }
 
-    const vortexPath = process.env.NODE_ENV === 'development' ? 'vortex_devel' : 'vortex';
-    const dbpath = path.join(process.env['APPDATA'], vortexPath, currentStatePath);
+    const vortexPath = process.env.NODE_ENV === 'development'
+        ? 'vortex_devel'
+        : 'vortex';
+
+    const dbpath = shared
+      ? path.join(process.env.ProgramData, 'vortex', currentStatePath)
+      : path.join(process.env['APPDATA'], vortexPath, currentStatePath);
     const pathArray = this.splitPath(setParameters[0]);
 
     let persist: LevelPersist;
@@ -245,9 +255,14 @@ class Application {
       });
   }
 
-  private handleDel(delPath: string): Promise<void> {
-    const vortexPath = process.env.NODE_ENV === 'development' ? 'vortex_devel' : 'vortex';
-    const dbpath = path.join(process.env['APPDATA'], vortexPath, currentStatePath);
+  private handleDel(delPath: string, shared: boolean): Promise<void> {
+    const vortexPath = process.env.NODE_ENV === 'development'
+        ? 'vortex_devel'
+        : 'vortex';
+
+    const dbpath = shared
+      ? path.join(process.env.ProgramData, 'vortex', currentStatePath)
+      : path.join(process.env['APPDATA'], vortexPath, currentStatePath);
     const pathArray = this.splitPath(delPath);
 
     let persist: LevelPersist;
