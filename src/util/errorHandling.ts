@@ -76,9 +76,14 @@ export function genHash(error: IError) {
         // remove the file names from stack lines because they contain local paths
          .replace(/\([^)]*\)$/, '')
          // remove everything in quotes to get file names and such out of the error message
-         .replace(/'[^']*'/, '').replace(/"[^"]*"/, ''))
-      .join('\n');
-    return hash.update(hashStack).digest('hex');
+         .replace(/'[^']*'/, '').replace(/"[^"]*"/, ''));
+    const idx = hashStack.findIndex(
+      line => line.indexOf('Promise._settlePromiseFromHandler') !== -1);
+    if (idx !== -1) {
+      hashStack.splice(idx);
+    }
+
+    return hash.update(hashStack.join('\n')).digest('hex');
   } else {
     return hash.update(error.message).digest('hex');
   }
