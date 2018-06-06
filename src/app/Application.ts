@@ -252,6 +252,8 @@ class Application {
 
     let persist: LevelPersist;
 
+    let found = false;
+
     return LevelPersist.create(dbpath)
       .then(persistIn => {
         persist = persistIn;
@@ -261,9 +263,14 @@ class Application {
       .map((key: string[]) => {
         // tslint:disable-next-line:no-console
         console.log('removing', key.join('.'));
+        found = true;
         return persist.removeItem(key);
       })
-      .then(() => { process.stdout.write('removed\n'); })
+      .then(() => {
+        if (!found) {
+          process.stdout.write('not found\n');
+        }
+      })
       .catch(err => { process.stderr.write(err.message + '\n'); })
       .finally(() => {
         app.quit();

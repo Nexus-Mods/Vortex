@@ -6,10 +6,13 @@ import * as _ from 'lodash';
 import * as Redux from 'redux';
 import { addNotification } from '../actions/notifications';
 
-function insert(target: any, key: string[], value: any) {
+function insert(target: any, key: string[], value: any, hive: string) {
   try {
     key.reduce((prev, keySegment: string, idx: number, fullKey: string[]) => {
       if (idx === fullKey.length - 1) {
+        // this could cause an exception if prev isn't an object, but only if
+        // we previously stored incorrect data. We'd want to fix the error that
+        // caused that, so we allow the exception to bubble up
         prev[keySegment] = value;
         return prev;
       } else {
@@ -20,7 +23,9 @@ function insert(target: any, key: string[], value: any) {
       }
     }, target);
   } catch (err) {
-    throw err;
+    const newErr = new Error(`Failed to load application state ${hive}.${key.join('.')}`);
+    newErr.stack = err.stack;
+    throw newErr;
   }
 }
 
@@ -56,7 +61,7 @@ class ReduxPersistor<T> {
       .then(kvPairs => {
         const res: any = {};
         kvPairs.forEach(pair => {
-          insert(res, pair.key, pair.value);
+          insert(res, pair.key, pair.value, hive);
         });
         this.mHydrating.add(hive);
         this.mStore.dispatch({
@@ -96,7 +101,7 @@ class ReduxPersistor<T> {
     }
   }
 
-  private doRecurse(state: any): boolean {
+  private isObject(state: any): boolean {
     return (state !== null) && (typeof(state) === 'object') && !Array.isArray(state);
   }
 
@@ -121,21 +126,25 @@ class ReduxPersistor<T> {
     }
 
     try {
-      if (this.doRecurse(oldState)) {
-        const oldkeys = Object.keys(oldState || {});
-        const newkeys = Object.keys(newState || {});
+      if (this.isObject(oldState) && this.isObject(newState)) {
+        const oldkeys = Object.keys(oldState);
+        const newkeys = Object.keys(newState);
 
         return Promise.mapSeries(oldkeys,
           key => (newState[key] === undefined)
+              // keys that exist in oldState but not newState
             ? this.remove(persistor, [].concat(statePath, key), oldState[key])
+              // keys that exist in both
             : this.storeDiff(persistor, [].concat(statePath, key), oldState[key], newState[key]))
           .then(() => Promise.mapSeries(newkeys,
             key => (oldState[key] === undefined)
+                // keys that exist in newState but not oldState
               ? this.add(persistor, [].concat(statePath, key), newState[key])
+                // keys that exist in both - already handled above
               : Promise.resolve()))
           .then(() => undefined);
       } else {
-        return persistor.setItem(statePath, this.serialize(newState || {}));
+        return persistor.setItem(statePath, this.serialize(newState));
       }
     } catch (err) {
       return Promise.reject(err);
@@ -143,7 +152,7 @@ class ReduxPersistor<T> {
   }
 
   private remove(persistor: IPersistor, statePath: string[], state: any): Promise<void> {
-    return this.doRecurse(state)
+    return this.isObject(state)
       ? Promise.mapSeries(Object.keys(state), key =>
           this.remove(persistor, [].concat(statePath, key), state[key]))
         .then(() => undefined)
@@ -151,7 +160,7 @@ class ReduxPersistor<T> {
   }
 
   private add(persistor: IPersistor, statePath: string[], state: any): Promise<void> {
-    return this.doRecurse(state)
+    return this.isObject(state)
       ? Promise.mapSeries(Object.keys(state), key =>
           this.add(persistor, [].concat(statePath, key), state[key]))
         .then(() => undefined)
