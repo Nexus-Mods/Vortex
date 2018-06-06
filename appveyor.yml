@@ -7,7 +7,7 @@ platform:
 configuration:
   - Release
 install:
-- ps: Install-Product node $env:nodejs_version
+- ps: Install-Product node $env:nodejs_version x64
 - yarn install
 cache: '%LOCALAPPDATA%\Yarn'
 build_script:
