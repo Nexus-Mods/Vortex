@@ -9,7 +9,7 @@ import { terminate, toError } from '../util/errorHandling';
 import ExtensionManagerT from '../util/ExtensionManager';
 import * as fs from '../util/fs';
 import lazyRequire from '../util/lazyRequire';
-import LevelPersist from '../util/LevelPersist';
+import LevelPersist, { DatabaseLocked } from '../util/LevelPersist';
 import {log, setLogPath, setupLogging} from '../util/log';
 import { showError } from '../util/message';
 import ReduxPersistor from '../util/ReduxPersistor';
@@ -162,7 +162,14 @@ class Application {
         .then(() => this.createTray())
         // end initialization
         .then(() => splash.fadeOut())
-        .catch(ProcessCanceled, () => undefined)
+        .catch(ProcessCanceled, () => {
+          app.quit();
+        })
+        .catch(DatabaseLocked, () => {
+          dialog.showErrorBox('Startup failed', 'Vortex seems to be running already. '
+            + 'If you can\'t see it, please check the task manager.');
+          app.quit();
+        })
         .catch((err) => {
           terminate({
             message: 'Startup failed',
