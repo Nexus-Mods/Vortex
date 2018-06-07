@@ -30,20 +30,35 @@ export interface IActionDefinitionEx extends IActionDefinition {
  *
  * @class IconBar
  */
-class ActionControl extends React.Component<IProps, {}> {
+class ActionControl extends React.Component<IProps, { actions: IActionDefinitionEx[] }> {
+  constructor(props: IProps) {
+    super(props);
+    this.state = {
+      actions: this.actionsToShow(props),
+    };
+  }
+
+  public componentWillReceiveProps(newProps: IProps) {
+    if ((this.props.filter !== newProps.filter)
+        || (this.props.instanceId !== newProps.instanceId)
+        || (this.props.objects !== newProps.objects)) {
+      this.setState({ actions: this.actionsToShow(newProps) });
+    }
+  }
+
   public render() {
     const { children, instanceId, objects } = this.props;
     return React.cloneElement(React.Children.only(children), {
       instanceId,
-      actions: this.actionsToShow(),
+      actions: this.state.actions,
     });
   }
 
   private iconSort = (lhs: IActionDefinition, rhs: IActionDefinition): number =>
     (lhs.position || 100) - (rhs.position || 100)
 
-  private actionsToShow(): IActionDefinitionEx[] {
-    const { filter, instanceId, objects } = this.props;
+  private actionsToShow(props: IProps): IActionDefinitionEx[] {
+    const { filter, instanceId, objects } = props;
     const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
     const checkCondition = (def: IActionDefinition): boolean | string => {
       if (def.condition === undefined) {

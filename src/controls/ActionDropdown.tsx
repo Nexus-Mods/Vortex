@@ -67,7 +67,7 @@ class MenuAction extends React.PureComponent<IMenuActionProps, {}> {
  * @class IconBar
  * @extends {ComponentEx<IProps, {}>}
  */
-class DropdownMenu extends React.Component<IProps, {}> {
+class DropdownMenu extends React.PureComponent<IProps, {}> {
   public render(): JSX.Element {
     const { actions, id, instanceId, className, style } = this.props;
     const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
