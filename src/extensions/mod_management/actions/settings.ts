@@ -20,3 +20,6 @@ export const setActivator = safeCreateAction('SET_ACTIVATOR',
  */
 export const setUpdatingMods = safeCreateAction('SET_UPDATING_MODS',
   (gameId: string, updatingMods: boolean) => ({ gameId, updatingMods }));
+
+export const setShowModDropzone = safeCreateAction('SET_SHOW_MOD_DROPZONE',
+  show => show);

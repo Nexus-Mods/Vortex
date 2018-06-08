@@ -1,5 +1,6 @@
 import { showDialog } from '../../../actions/notifications';
 import Banner from '../../../controls/Banner';
+import CollapseIcon from '../../../controls/CollapseIcon';
 import Dropzone, { DropType } from '../../../controls/Dropzone';
 import EmptyPlaceholder from '../../../controls/EmptyPlaceholder';
 import FlexLayout from '../../../controls/FlexLayout';
@@ -28,9 +29,12 @@ import MainPage from '../../../views/MainPage';
 import { IGameStored } from '../../gamemode_management/types/IGameStored';
 import { downloadPath as downloadPathSelector } from '../../mod_management/selectors';
 
+import { setShowDLDropzone, setShowDLGraph } from '../actions/settings';
+import { setDownloadTime } from '../actions/state';
 import { IDownload } from '../types/IDownload';
 
 import { FILE_NAME, FILE_SIZE, LOGICAL_NAME, PROGRESS } from '../downloadAttributes';
+import { DownloadIsHTML } from '../DownloadManager';
 
 import DownloadGraph from './DownloadGraph';
 
@@ -42,8 +46,7 @@ import * as React from 'react';
 import { Button, Panel } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { generate as shortid } from 'shortid';
-import { setDownloadTime } from '../actions/state';
-import { DownloadIsHTML } from '../DownloadManager';
+import { IconButton } from '../../../controls/TooltipControls';
 
 const PanelX: any = Panel;
 
@@ -67,6 +70,8 @@ interface IConnectedProps {
   gameMode: string;
   knownGames: IGameStored[];
   downloadPath: string;
+  showDropzone: boolean;
+  showGraph: boolean;
 }
 
 interface IActionProps {
@@ -75,6 +80,8 @@ interface IActionProps {
                  actions: DialogActions) => Promise<IDialogResult>;
   onShowError: (message: string, details?: string | Error,
                 notificationId?: string, allowReport?: boolean) => void;
+  onShowDropzone: (show: boolean) => void;
+  onShowGraph: (show: boolean) => void;
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
@@ -162,6 +169,8 @@ function downloadTime(download: IDownload) {
     ? new Date(download.fileTime)
     : undefined;
 }
+
+const nop = () => null;
 
 class DownloadView extends ComponentEx<IProps, IComponentState> {
   public context: IComponentContext;
@@ -326,11 +335,14 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
       || this.props.gameMode !== nextProps.gameMode
       || this.props.knownGames !== nextProps.knownGames
       || this.props.secondary !== nextProps.secondary
-      || this.state.viewAll !== nextState.viewAll;
+      || this.props.showDropzone !== nextProps.showDropzone
+      || this.props.showGraph !== nextProps.showGraph
+      || this.state.viewAll !== nextState.viewAll
+    ;
   }
 
   public render(): JSX.Element {
-    const { t, downloads, gameMode, secondary } = this.props;
+    const { t, downloads, gameMode, secondary, showGraph } = this.props;
     const { viewAll } = this.state;
 
     let content = null;
@@ -361,12 +373,25 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
         <FlexLayout type='column'>
           {secondary ? null : <Banner group='downloads' />}
           <FlexLayout.Flex>
-            <Panel className='download-panel'>
-              <PanelX.Body>
+            <PanelX className='download-panel' >
+              {secondary ? null : (
+                <PanelX
+                  className='download-graph-panel'
+                  expanded={showGraph}
+                  onToggle={nop}
+                >
+                  <PanelX.Body collapsible={true}>
+                    <DownloadGraph />
+                  </PanelX.Body>
+                  <CollapseIcon
+                    position='bottomright'
+                    onClick={this.toggleGraph}
+                    visible={showGraph}
+                  />
+                </PanelX>
+              )}
+            <PanelX.Body>
                 <FlexLayout type='column'>
-                  <FlexLayout.Fixed>
-                    {secondary ? null : <DownloadGraph />}
-                  </FlexLayout.Fixed>
                   <FlexLayout.Flex>
                     <SuperTable
                       tableId='downloads'
@@ -381,7 +406,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
                       ]}
                       actions={this.actions}
                     />
-                  </FlexLayout.Flex>
+                      </FlexLayout.Flex>
                   <FlexLayout.Fixed style={{ textAlign: 'center' }}>
                     <Button bsStyle='ghost' onClick={this.toggleViewAll} >
                       {viewAll ? t('View not-yet-installed Downloads') : t('View All Downloads')}
@@ -389,7 +414,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
                   </FlexLayout.Fixed>
                 </FlexLayout>
               </PanelX.Body>
-            </Panel>
+            </PanelX>
           </FlexLayout.Flex>
           <FlexLayout.Fixed>
             {secondary ? null : this.renderDropzone()}
@@ -408,23 +433,44 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderDropzone(): JSX.Element {
-    const { t } = this.props;
+    const { t, showDropzone } = this.props;
     return (
-      <Panel className='download-drop-panel'>
-        <PanelX.Body>
-          <Dropzone
-            accept={['urls', 'files']}
-            drop={this.dropDownload}
-            dialogHint={t('Enter download URL')}
-            icon='folder-download'
-          />
-        </PanelX.Body>
-      </Panel>
+      <PanelX
+        className='download-drop-panel'
+        expanded={showDropzone}
+        onToggle={nop}
+      >
+        <PanelX.Collapse>
+          <PanelX.Body collapsible>
+            <Dropzone
+              accept={['urls', 'files']}
+              drop={this.dropDownload}
+              dialogHint={t('Enter download URL')}
+              icon='folder-download'
+            />
+          </PanelX.Body>
+        </PanelX.Collapse>
+        <CollapseIcon
+          position='topright'
+          onClick={this.toggleDropzone}
+          visible={showDropzone}
+        />
+      </PanelX>
     );
   }
 
   private toggleViewAll = () => {
     this.nextState.viewAll = !this.state.viewAll;
+  }
+
+  private toggleDropzone = () => {
+    const { showDropzone, onShowDropzone } = this.props;
+    onShowDropzone(!showDropzone);
+  }
+
+  private toggleGraph = () => {
+    const { showGraph, onShowGraph } = this.props;
+    onShowGraph(!showGraph);
   }
 
   private getDownload(downloadId: string): IDownload {
@@ -620,6 +666,8 @@ function mapStateToProps(state: IState): IConnectedProps {
     knownGames: state.session.gameMode.known,
     downloads: state.persistent.downloads.files,
     downloadPath: downloadPathSelector(state),
+    showDropzone: state.settings.downloads.showDropzone,
+    showGraph: state.settings.downloads.showGraph,
   };
 }
 
@@ -631,6 +679,8 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
     onShowError: (message: string, details?: string | Error,
                   notificationId?: string, allowReport?: boolean) =>
       showError(dispatch, message, details, { id: notificationId, allowReport }),
+    onShowDropzone: (show: boolean) => dispatch(setShowDLDropzone(show)),
+    onShowGraph: (show: boolean) => dispatch(setShowDLGraph(show)),
   };
 }
 

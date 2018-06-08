@@ -161,6 +161,8 @@ export interface ISettingsDownloads {
   minChunkSize: number;
   maxChunks: number;
   maxParallelDownloads: number;
+  showDropzone: boolean;
+  showGraph: boolean;
 }
 
 export interface IStatePaths {
@@ -173,6 +175,7 @@ export interface ISettingsMods {
   paths: { [gameId: string]: IStatePaths };
   modlistState: { [id: string]: IAttributeState };
   activator: { [gameId: string]: string };
+  showDropzone: boolean;
 }
 
 export interface ISettingsUpdate {

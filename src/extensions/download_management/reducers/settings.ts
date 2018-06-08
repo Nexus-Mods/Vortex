@@ -8,13 +8,18 @@ import * as actions from '../actions/settings';
  */
 export const settingsReducer: IReducerSpec = {
   reducers: {
-    [actions.setMaxDownloads as any]: (state, payload) => {
-      return setSafe(state, [ 'maxParallelDownloads' ], payload);
-    },
+    [actions.setMaxDownloads as any]: (state, payload) =>
+      setSafe(state, ['maxParallelDownloads'], payload),
+    [actions.setShowDLDropzone as any]: (state, payload) =>
+      setSafe(state, ['showDropzone'], payload),
+    [actions.setShowDLGraph as any]: (state, payload) =>
+      setSafe(state, ['showGraph'], payload),
   },
   defaults: {
     minChunkSize: 1024 * 1024,
     maxChunks: 4,
     maxParallelDownloads: 1,
+    showDropzone: true,
+    showGraph: true,
   },
 };

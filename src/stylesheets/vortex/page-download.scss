@@ -5,13 +5,22 @@
 .download-panel {
   height: 100%;
   background-color: $brand-bg;
+  display: flex;
+  flex-direction: column;
   > .panel-body {
     height: 100%;
+    padding-right: 0;
+    padding-top: $gutter-width;
   }
 }
 
+.download-graph-panel {
+  position: relative;
+  border: 0 0 1px 0;
+  height: auto;
+}
+
 #table-downloads {
-  padding-top: $half-gutter;
   .header-game {
     min-width: 80px;
   }
@@ -64,4 +73,8 @@
     // use up remaining space
     width: 100%;
   }
+}
+
+.progressbar-progress {
+  transition: width ease 1s;
 }
