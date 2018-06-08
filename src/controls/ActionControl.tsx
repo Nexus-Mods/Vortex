@@ -1,6 +1,7 @@
 import { IActionDefinition, IActionOptions } from '../types/IActionDefinition';
 import { extend, IExtensibleProps } from '../util/ExtensionProvider';
 
+import * as _ from 'lodash';
 import * as React from 'react';
 
 export interface IActionControlProps {
@@ -39,9 +40,12 @@ class ActionControl extends React.Component<IProps, { actions: IActionDefinition
   }
 
   public componentWillReceiveProps(newProps: IProps) {
-    if ((this.props.filter !== newProps.filter)
-        || (this.props.instanceId !== newProps.instanceId)
-        || (this.props.objects !== newProps.objects)) {
+    // TODO: since we can't know how the condition callback is implemented,
+    //   there is no way to determine, based on props, whether the actions
+    //   to be shown need to be updated.
+    //   this here is inefficient and could technically still miss updates
+    const newActions = this.actionsToShow(newProps);
+    if (!_.isEqual(newActions, this.state.actions)) {
       this.setState({ actions: this.actionsToShow(newProps) });
     }
   }
