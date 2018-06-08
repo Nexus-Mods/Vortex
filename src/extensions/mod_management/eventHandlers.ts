@@ -112,7 +112,7 @@ export function onPathsChanged(api: IExtensionApi,
   const gameMode = activeGameId(state);
   if (previous[gameMode] !== current[gameMode]) {
     const knownMods = state.persistent.mods[gameMode];
-    refreshMods(installPath(state), Object.keys(knownMods), (mod: IMod) =>
+    refreshMods(installPath(state), Object.keys(knownMods || {}), (mod: IMod) =>
       api.store.dispatch(addMod(gameMode, mod))
       , (modNames: string[]) => {
         modNames.forEach((name: string) => {
