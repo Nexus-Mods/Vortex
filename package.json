@@ -205,6 +205,7 @@
     "react-markdown": "^2.5.0",
     "react-overlays": "^0.8.3",
     "react-redux": "^5.0.6",
+    "react-resize-detector": "^2.3.0",
     "react-safe-html": "TanninOne/react-safe-html",
     "react-select": "^1.2.1",
     "react-sortable-tree": "^1.4.0",
