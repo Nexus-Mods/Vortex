@@ -37,12 +37,13 @@ import * as nodeURL from 'url';
 import * as util from 'util';
 
 function progressUpdate(store: Redux.Store<any>, dlId: string, received: number,
-                        total: number, chunks: IChunk[], urls: string[], filePath?: string) {
+                        total: number, chunks: IChunk[], urls: string[], filePath: string,
+                        smallUpdate: boolean) {
   if (store.getState().persistent.downloads.files[dlId] === undefined) {
     // progress for a download that's no longer active
     return;
   }
-  if ((total !== 0) || (chunks !== undefined)) {
+  if (((total !== 0) && !smallUpdate) || (chunks !== undefined)) {
     store.dispatch(downloadProgress(dlId, received, total, chunks, urls));
   }
   if ((filePath !== undefined) &&
@@ -194,8 +195,10 @@ export class DownloadObserver {
   private handleDownloadFinished(id: string,
                                  callback: (error: Error, id: string) => void,
                                  res: IDownloadResult) {
-    const filePath = res.filePath;
-    this.mStore.dispatch(setDownloadFilePath(id, path.basename(res.filePath)));
+    const fileName = path.basename(res.filePath);
+    if (truthy(fileName)) {
+      this.mStore.dispatch(setDownloadFilePath(id, fileName));
+    }
     log('debug', 'unfinished chunks', { chunks: res.unfinishedChunks });
     if (res.unfinishedChunks.length > 0) {
       this.mStore.dispatch(pauseDownload(id, true, res.unfinishedChunks));
@@ -227,16 +230,17 @@ export class DownloadObserver {
     let lastUpdateTick = 0;
     let lastUpdatePerc = 0;
     return (received: number, total: number, chunks: IChunk[],
-            urls?: string[], updatedFilePath?: string) => {
+            urls?: string[], filePath?: string) => {
       // avoid updating too frequently because it causes ui updates
       const now = Date.now();
       const newPerc = Math.floor((received * 100) / total);
-      if (((now - lastUpdateTick) < 1000) || (newPerc === lastUpdatePerc)) {
-        return;
+      const small = ((now - lastUpdateTick) < 1000) || (newPerc === lastUpdatePerc);
+      if (!small) {
+        lastUpdateTick = now;
+        lastUpdatePerc = newPerc;
       }
-      lastUpdateTick = now;
-      lastUpdatePerc = newPerc;
-      progressUpdate(this.mStore, id, received, total, chunks, urls, updatedFilePath);
+      progressUpdate(this.mStore, id, received, total, chunks,
+                     urls, filePath, small);
     };
   }
 

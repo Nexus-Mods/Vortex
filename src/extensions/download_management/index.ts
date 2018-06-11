@@ -1,5 +1,6 @@
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
+import { getNormalizeFunc } from '../../util/api';
 import { delayed } from '../../util/delayed';
 import * as fs from '../../util/fs';
 import LazyComponent from '../../util/LazyComponent';
@@ -61,6 +62,7 @@ function knownArchiveExt(filePath: string): boolean {
 }
 
 function refreshDownloads(downloadPath: string, knownDLs: string[],
+                          normalize: (input: string) => string,
                           onAddDownload: (name: string) => void,
                           onRemoveDownloads: (name: string[]) => void) {
   return fs.ensureDirAsync(downloadPath)
@@ -69,6 +71,7 @@ function refreshDownloads(downloadPath: string, knownDLs: string[],
     .filter((filePath: string) =>
       fs.statAsync(path.join(downloadPath, filePath))
       .then(stat => !stat.isDirectory()).catch(() => false))
+    .map((downloadName: string) => normalize(downloadName))
     .then((downloadNames: string[]) => {
       const addedDLs = downloadNames.filter((name: string) => knownDLs.indexOf(name) === -1);
       const removedDLs = knownDLs.filter((name: string) => downloadNames.indexOf(name) === -1);
@@ -188,11 +191,6 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
   }
   const currentDownloadPath = resolvePath('download', state.settings.mods.paths, gameId);
 
-  const knownDLs =
-      Object.keys(downloads)
-          .filter((dlId: string) => downloads[dlId].game === gameId)
-          .map((dlId: string) => downloads[dlId].localPath);
-
   const nameIdMap: {[name: string]: string} =
       Object.keys(downloads).reduce((prev, value) => {
         prev[downloads[value].localPath] = value;
@@ -200,7 +198,14 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
       }, {});
 
   const downloadChangeHandler = genDownloadChangeHandler(api.store, nameIdMap);
-  return refreshDownloads(currentDownloadPath, knownDLs,
+  return getNormalizeFunc(currentDownloadPath, {separators: false, relative: false})
+      .then(normalize => {
+        const knownDLs =
+          Object.keys(downloads)
+            .filter((dlId: string) => downloads[dlId].game === gameId)
+            .map((dlId: string) => normalize(downloads[dlId].localPath));
+
+        return refreshDownloads(currentDownloadPath, knownDLs, normalize,
         (fileName: string) => {
           fs.statAsync(path.join(currentDownloadPath, fileName))
             .then((stats: fs.Stats) => {
@@ -213,7 +218,8 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
           modNames.forEach((name: string) => {
             api.store.dispatch(removeDownload(nameIdMap[name]));
           });
-        })
+        });
+      })
     .then(() => {
       manager.setDownloadPath(currentDownloadPath);
       watchDownloads(api, currentDownloadPath, downloadChangeHandler);
@@ -273,6 +279,12 @@ function init(context: IExtensionContextExt): boolean {
 
   context.registerAttributeExtractor(150, attributeExtractor);
   context.registerAttributeExtractor(25, attributeExtractorCustom);
+  context.registerActionCheck('SET_DOWNLOAD_FILEPATH', (state, action: any) => {
+    if (action.payload === '') {
+      return 'Attempt to set invalid file name for a download';
+    }
+    return undefined;
+  });
 
   context.once(() => {
     const DownloadManagerImpl: typeof DownloadManager = require('./DownloadManager').default;
