@@ -5,6 +5,7 @@ import * as fs from '../../util/fs';
 import getNormalizeFunc, {Normalize} from '../../util/getNormalizeFunc';
 import {log} from '../../util/log';
 import { getSafe } from '../../util/storeHelper';
+import { truthy } from '../../util/util';
 
 import {
   IDeployedFile,
@@ -263,6 +264,9 @@ abstract class LinkingActivator implements IDeploymentMethod {
   }
 
   public purge(installPath: string, dataPath: string): Promise<void> {
+    if (!truthy(dataPath)) {
+      return Promise.reject(new Error('invalid data path'));
+    }
     // purge
     return this.purgeLinks(installPath, dataPath)
       .then(() => this.postPurge(dataPath, false))

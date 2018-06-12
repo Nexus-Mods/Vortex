@@ -72,7 +72,9 @@ export function onGameModeActivated(
       const modPaths = game.getModPaths(gameDiscovery.path);
       const purgePromise = oldActivator !== undefined
         ? Promise.mapSeries(Object.keys(modPaths),
-            typeId => oldActivator.purge(instPath, modPaths[typeId])).then(() => undefined)
+            typeId => oldActivator.purge(instPath, modPaths[typeId]))
+              .then(() => undefined)
+              .catch(err => api.showErrorNotification('failed to purge', err))
         : Promise.resolve();
 
       purgePromise.then(() => {
