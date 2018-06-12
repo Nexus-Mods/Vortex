@@ -62,6 +62,9 @@ class Steam implements ISteam {
                   // the registry keys really...
                   log('info', 'steam not found', { error: err.message });
                   resolve(undefined);
+                } else if (result === null) {
+                  log('info', 'steam not found');
+                  resolve(undefined);
                 } else {
                   resolve(result.value);
                 }
@@ -143,8 +146,6 @@ class Steam implements ISteam {
           steamPaths.push(steamObj[`BaseInstallFolder_${counter}`]);
           ++counter;
         }
-
-        log('debug', 'steam base folders', { steamPaths });
 
         return Promise.all(Promise.map(steamPaths, steamPath => {
           const steamAppsPath = path.join(steamPath, 'steamapps');
