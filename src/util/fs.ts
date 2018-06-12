@@ -109,10 +109,10 @@ function errorRepeat(code: string, filePath: string): Promise<boolean> {
       .then(doUnlock => {
         if (doUnlock) {
           const userId = getUserId();
-          return elevated(() => {
+          return elevated((ipcPath, req: NodeRequireFunction) => {
             // tslint:disable-next-line:no-shadowed-variable
-            const fs = require('fs-extra-promise');
-            const { allow } = require('permissions');
+            const fs = req('fs-extra-promise');
+            const { allow } = req('permissions');
             return allow(filePath, userId, 'rwx');
           }, { filePath, userId })
             .then(() => true);
@@ -292,7 +292,8 @@ function rmdirInt(dirPath: string, stackErr: Error, tries: number): Promise<void
     });
 }
 
-function elevated(func: () => Promise<void>, parameters: any): Promise<void> {
+function elevated(func: (ipc, req: NodeRequireFunction) => Promise<void>,
+                  parameters: any): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     const ipcInst = new ipc.IPC();
     const id = shortid();
@@ -352,14 +353,12 @@ export function ensureDirWritableAsync(dirPath: string,
         return confirm()
           .then(() => {
             const userId = getUserId();
-            return elevated(() => {
+            return elevated((ipcPath, req: NodeRequireFunction) => {
               // tslint:disable-next-line:no-shadowed-variable
-              const fs = require('fs-extra-promise');
-              const { allow } = require('permissions');
+              const fs = req('fs-extra-promise');
+              const { allow } = req('permissions');
               return fs.ensureDirAsync(dirPath)
-                .then(() => {
-                  return allow(dirPath, userId, 'rwx');
-                });
+                .then(() => allow(dirPath, userId, 'rwx'));
             }, { dirPath, userId });
           });
       } else {
@@ -397,10 +396,9 @@ export function forcePerm<T>(t: I18next.TranslationFunction, op: () => Promise<T
               }
               return Promise.resolve();
             })
-            .then(() => elevated(() => {
+            .then(() => elevated((ipcPath, req: NodeRequireFunction) => {
                 // tslint:disable-next-line:no-shadowed-variable
-                const fs = require('fs-extra-promise');
-                const { allow } = require('permissions');
+                const { allow } = req('permissions');
                 return allow(filePath, userId, 'rwx');
               }, { filePath, userId }))
             .then(() => forcePerm(t, op));
