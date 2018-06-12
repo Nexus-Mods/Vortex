@@ -71,10 +71,8 @@ function isCaseSensitive(testPath: string): Promise<boolean> {
           && stats[2].isFulfilled()
           && (stats[0].value().ino === stats[1].value().ino)
           && (stats[0].value().ino === stats[2].value().ino)) {
-        log('debug', 'file system case-insensitive', { testPath });
         return false;
       } else {
-        log('debug', 'file system case-sensitive', { testPath });
         return true;
       }
     })

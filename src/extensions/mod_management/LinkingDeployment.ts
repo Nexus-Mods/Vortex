@@ -4,7 +4,6 @@ import { ProcessCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import getNormalizeFunc, {Normalize} from '../../util/getNormalizeFunc';
 import {log} from '../../util/log';
-import { getSafe } from '../../util/storeHelper';
 import { truthy } from '../../util/util';
 
 import {
@@ -100,8 +99,6 @@ abstract class LinkingActivator implements IDeploymentMethod {
                   dataPath: string,
                   installationPath: string,
                   progressCB?: (files: number, total: number) => void): Promise<IDeployedFile[]> {
-    const state = this.mApi.store.getState();
-
     let added: string[];
     let removed: string[];
     let sourceChanged: string[];
@@ -121,12 +118,10 @@ abstract class LinkingActivator implements IDeploymentMethod {
 
     const total = added.length + removed.length + sourceChanged.length + contentChanged.length;
     let count = 0;
-    let lastReported = 0;
     const progress = () => {
       if (progressCB !== undefined) {
         ++count;
         if ((count % 1000) === 0) {
-          lastReported = count;
           progressCB(count, total);
         }
       }

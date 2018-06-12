@@ -15,16 +15,15 @@ import { IAttributeState } from '../../../types/IAttributeState';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
 import { IState } from '../../../types/IState';
 import { ITableAttribute } from '../../../types/ITableAttribute';
-import { ComponentEx, connect, extend, translate } from '../../../util/ComponentEx';
+import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { UserCanceled } from '../../../util/CustomErrors';
 import Debouncer from '../../../util/Debouncer';
 import * as fs from '../../../util/fs';
 import { activeGameId, activeProfile } from '../../../util/selectors';
-import { getSafe, setSafe } from '../../../util/storeHelper';
+import { getSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
 import MainPage from '../../../views/MainPage';
 
-import { IDownload } from '../../download_management/types/IDownload';
 import { setModEnabled } from '../../profile_management/actions/profiles';
 import { IProfileMod } from '../../profile_management/types/IProfile';
 

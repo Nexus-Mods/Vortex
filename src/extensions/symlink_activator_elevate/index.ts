@@ -2,7 +2,6 @@ import {IExtensionApi, IExtensionContext} from '../../types/IExtensionContext';
 import {ProcessCanceled, UserCanceled} from '../../util/CustomErrors';
 import { delayed } from '../../util/delayed';
 import * as fs from '../../util/fs';
-import lazyRequire from '../../util/lazyRequire';
 import { log } from '../../util/log';
 import { activeGameId, gameName } from '../../util/selectors';
 
@@ -48,17 +47,17 @@ class DeploymentMethod extends LinkingDeployment {
     this.mElevatedClient = null;
 
     this.mWaitForUser = () => new Promise<void>((resolve, reject) => api.sendNotification({
-      type: 'info',
-      message: 'Deployment requires elevation',
-      noDismiss: true,
-      actions: [{
-        title: 'Elevate',
-        action: dismiss => { dismiss(); resolve(); },
-      }, {
-        title: 'Cancel',
-        action: dismiss => { dismiss(); reject(new UserCanceled()); },
-      }],
-    }));
+        type: 'info',
+        message: 'Deployment requires elevation',
+        noDismiss: true,
+        actions: [{
+          title: 'Elevate',
+          action: dismiss => { dismiss(); resolve(); },
+        }, {
+          title: 'Cancel',
+          action: dismiss => { dismiss(); reject(new UserCanceled()); },
+        }],
+      }));
   }
 
   public detailedDescription(t: I18next.TranslationFunction): string {
