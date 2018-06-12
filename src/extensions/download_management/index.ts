@@ -1,7 +1,6 @@
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
-import { getNormalizeFunc } from '../../util/api';
-import { delayed } from '../../util/delayed';
+import { getNormalizeFunc, UserCanceled } from '../../util/api';
 import * as fs from '../../util/fs';
 import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
@@ -15,11 +14,7 @@ import resolvePath from '../mod_management/util/resolvePath';
 
 import {
   addLocalDownload,
-  downloadProgress,
-  finishDownload,
-  initDownload,
   removeDownload,
-  setDownloadFilePath,
   setDownloadHashByFile,
   setDownloadInterrupted,
   setDownloadModInfo,
@@ -41,7 +36,6 @@ import { app as appIn, remote } from 'electron';
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as Redux from 'redux';
-import {createSelector} from 'reselect';
 import {generate as shortid} from 'shortid';
 
 const app = remote !== undefined ? remote.app : appIn;
@@ -64,8 +58,9 @@ function knownArchiveExt(filePath: string): boolean {
 function refreshDownloads(downloadPath: string, knownDLs: string[],
                           normalize: (input: string) => string,
                           onAddDownload: (name: string) => void,
-                          onRemoveDownloads: (name: string[]) => void) {
-  return fs.ensureDirAsync(downloadPath)
+                          onRemoveDownloads: (name: string[]) => void,
+                          confirmElevation: () => Promise<void>) {
+  return fs.ensureDirWritableAsync(downloadPath, confirmElevation)
     .then(() => fs.readdirAsync(downloadPath))
     .filter((filePath: string) => knownArchiveExt(filePath))
     .filter((filePath: string) =>
@@ -206,19 +201,33 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
             .map((dlId: string) => normalize(downloads[dlId].localPath));
 
         return refreshDownloads(currentDownloadPath, knownDLs, normalize,
-        (fileName: string) => {
-          fs.statAsync(path.join(currentDownloadPath, fileName))
-            .then((stats: fs.Stats) => {
-              const dlId = shortid();
-              store.dispatch(addLocalDownload(dlId, gameId, fileName, stats.size));
-              nameIdMap[fileName] = dlId;
+          (fileName: string) => {
+            fs.statAsync(path.join(currentDownloadPath, fileName))
+              .then((stats: fs.Stats) => {
+                const dlId = shortid();
+                store.dispatch(addLocalDownload(dlId, gameId, fileName, stats.size));
+                nameIdMap[fileName] = dlId;
+              });
+          },
+          (modNames: string[]) => {
+            modNames.forEach((name: string) => {
+              api.store.dispatch(removeDownload(nameIdMap[name]));
             });
-        },
-        (modNames: string[]) => {
-          modNames.forEach((name: string) => {
-            api.store.dispatch(removeDownload(nameIdMap[name]));
+          },
+          () => new Promise((resolve, reject) => {
+            api.showDialog('question', 'Access Denied', {
+              text: 'The download directory is not writable to your user account.\n'
+                + 'If you have admin rights on this system, Vortex can change the permissions '
+                + 'to allow it write access.',
+            }, [
+                { label: 'Cancel', action: () => reject(new UserCanceled()) },
+                { label: 'Allow access', action: () => resolve() },
+              ]);
+          }))
+          .catch(UserCanceled, () => null)
+          .catch(err => {
+            api.showErrorNotification('Failed to refresh download directory', err);
           });
-        });
       })
     .then(() => {
       manager.setDownloadPath(currentDownloadPath);
