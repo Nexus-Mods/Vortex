@@ -375,7 +375,25 @@ function genUpdateModDeployment() {
             progress('Starting deployment', 35);
             const deployProgress =
               (name, percent) => progress(t('Deploying: ') + name, 50 + percent / 2);
-            return Promise.each(Object.keys(modPaths),
+
+            const undiscovered = Object.keys(modPaths).filter(typeId => !truthy(modPaths[typeId]));
+            let prom = Promise.resolve();
+            if (undiscovered.length !== 0) {
+              prom = api.showDialog('error', 'Deployment target unknown', {
+                text: 'The deployment directory for some mod type(s) ({{ types }}) '
+                    + 'is unknown. Mods of these types will not be deployed. '
+                    + 'Maybe this/these type(s) require further configuration or '
+                    + 'external tools.',
+                parameters: {
+                  types: undiscovered.join(', '),
+                },
+              }, [ { label: 'Cancel' }, { label: 'Ignore' } ])
+              .then(result => (result.action === 'Cancel')
+                  ? Promise.reject(new UserCanceled())
+                  : Promise.resolve());
+            }
+            return prom.then(() => Promise.each(
+                Object.keys(modPaths).filter(typeId => undiscovered.indexOf(typeId) === -1),
                 typeId => deployMods(api,
                                      game.id,
                                      instPath, modPaths[typeId],
@@ -384,8 +402,8 @@ function genUpdateModDeployment() {
                                      typeId, new Set(mergedFileMap[typeId]),
                                      genSubDirFunc(game),
                                      deployProgress)
-              .then(newActivation =>
-                saveActivation(typeId, state.app.instanceId, modPaths[typeId], newActivation)));
+                .then(newActivation =>
+                  saveActivation(typeId, state.app.instanceId, modPaths[typeId], newActivation))));
           })
           .then(() => {
             progress('Preparing game settings', 100);
