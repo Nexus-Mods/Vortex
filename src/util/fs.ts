@@ -125,22 +125,26 @@ function errorRepeat(code: string, filePath: string): Promise<boolean> {
   }
 }
 
-function errorHandler(error: NodeJS.ErrnoException, stack: string): Promise<void> {
+function errorHandler(error: NodeJS.ErrnoException, stackErr: Error): Promise<void> {
   return errorRepeat(error.code, error.path)
     .then(repeat => {
       if (repeat) {
         return Promise.resolve();
       } else {
-        error.stack = error.message + '\n' + stack;
+        error.stack = error.message + '\n' + stackErr.stack;
         return Promise.reject(error);
       }
+    })
+    .catch(err => {
+      err.stack = err.message + '\n' + stackErr.stack;
+      return Promise.reject(err);
     });
 }
 function genWrapperAsync<T extends (...args) => any>(func: T): T {
   const res = (...args) => {
     const stackErr = new Error();
     return func(...args)
-      .catch(err => errorHandler(err, stackErr.stack)
+      .catch(err => errorHandler(err, stackErr)
         .then(() => res(...args)));
   };
   return res as T;
@@ -218,8 +222,7 @@ export function copyAsync(src: string, dest: string,
                               fs.CopyOptions): Promise<void> {
   const stackErr = new Error();
   // fs.copy in fs-extra has a bug where it doesn't correctly avoid copying files onto themselves
-  return Promise.join(fs.statAsync(src),
-                      fs.statAsync(dest)
+  return Promise.join(fs.statAsync(src), fs.statAsync(dest)
                 .catch(err => err.code === 'ENOENT' ? Promise.resolve({}) : Promise.reject(err)))
     .then((stats: fs.Stats[]) => {
       if (stats[0].ino === stats[1].ino) {
@@ -244,7 +247,7 @@ function copyInt(
     stackErr: Error) {
   return fs.copyAsync(src, dest, options)
     .catch((err: NodeJS.ErrnoException) =>
-      errorHandler(err, stackErr.stack).then(() => copyInt(src, dest, options, stackErr)));
+      errorHandler(err, stackErr).then(() => copyInt(src, dest, options, stackErr)));
 }
 
 export function removeAsync(dirPath: string): Promise<void> {
@@ -256,7 +259,7 @@ function removeInt(dirPath: string, stackErr: Error): Promise<void> {
     .catch((err: NodeJS.ErrnoException) => (err.code === 'ENOENT')
         // don't mind if a file we wanted deleted was already gone
         ? Promise.resolve()
-        : errorHandler(err, stackErr.stack)
+        : errorHandler(err, stackErr)
           .then(() => removeInt(dirPath, stackErr)));
 }
 
@@ -269,7 +272,7 @@ function unlinkInt(dirPath: string, stackErr: Error): Promise<void> {
     .catch((err: NodeJS.ErrnoException) => (err.code === 'ENOENT')
         // don't mind if a file we wanted deleted was already gone
         ? Promise.resolve()
-        : errorHandler(err, stackErr.stack)
+        : errorHandler(err, stackErr)
           .then(() => unlinkInt(dirPath, stackErr)));
 }
 
