@@ -247,10 +247,19 @@ function genUpdateModDeployment() {
 
   return (api: IExtensionApi, manual: boolean, profileId?: string,
           progressCB?: (text: string, percent: number) => void): Promise<void> => {
+    let notificationId: string;
+
     const progress = (text: string, percent: number) => {
       if (progressCB !== undefined) {
         progressCB(text, percent);
       }
+      api.sendNotification({
+        id: notificationId,
+        type: 'activity',
+        message: text,
+        title: t('Deploying'),
+        progress: percent,
+      });
     };
     const state = api.store.getState();
     let profile = profileId !== undefined
@@ -281,8 +290,6 @@ function genUpdateModDeployment() {
 
     const mods = state.persistent.mods[profile.gameId] || {};
     const modList: IMod[] = Object.keys(mods).map((key: string) => mods[key]);
-
-    let notificationId: string;
 
     const gate = manual ? Promise.resolve() : activator.userGate();
 
