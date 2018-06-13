@@ -11,7 +11,7 @@ let SHELLEXECUTEINFOPtr;
 let shell32;
 class Win32Error extends Error {
     constructor(message, code) {
-        super(message);
+        super(`${message} (${code})`);
         this.name = this.constructor.name;
         this.mCode = code;
     }
@@ -82,8 +82,6 @@ function elevatedMain(moduleRoot, ipcPath, main) {
     process.on('uncaughtException', handleError);
     process.on('unhandledRejection', handleError);
     // tslint:disable-next-line:no-shadowed-variable
-    const path = require('path');
-    const requireOrig = require;
     module.paths.push(moduleRoot);
     // tslint:disable-next-line:no-shadowed-variable
     const ipc = require('node-ipc');
@@ -167,7 +165,6 @@ function runElevated(ipcPath, func, args) {
                     cleanup();
                     return reject(writeErr);
                 }
-                const runInfo = execInfo(tmpPath);
                 // we can't call GetLastError through node-ffi so when using ShellExecuteExA we won't be
                 // able to get an error code. With ShellExecuteA we can
                 shell32.ShellExecuteA.async(null, 'runas', process.execPath, `--run ${tmpPath}`, path.dirname(process.execPath), 5, (execErr, res) => {
@@ -185,6 +182,8 @@ function runElevated(ipcPath, func, args) {
                     }
                 });
                 /* TODO: remove this code if there is no problem with ShellExecuteA
+                const runInfo = execInfo(tmpPath);
+        
                 shell32.ShellExecuteExA.async(runInfo.ref(), (execErr: any, res: any) => {
                   // this is reached after the user confirmed the UAC dialog but before node
                   // has read the script source so we have to give a little time for that to
