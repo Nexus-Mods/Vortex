@@ -276,12 +276,13 @@ abstract class LinkingActivator implements IDeploymentMethod {
                          installPath: string,
                          dataPath: string,
                          activation: IDeployedFile[]): Promise<IFileChange[]> {
-    const state = this.mApi.store.getState();
-
     const nonLinks: IFileChange[] = [];
 
     return Promise.map(activation, fileEntry => {
-      const fileDataPath = [dataPath, fileEntry.relPath].join(path.sep);
+      const fileDataPath = (truthy(fileEntry.target)
+        ? [dataPath, fileEntry.target, fileEntry.relPath]
+        : [dataPath, fileEntry.relPath]
+        ).join(path.sep);
       const fileModPath = [installPath, fileEntry.source, fileEntry.relPath].join(path.sep);
       let sourceDeleted: boolean = false;
       let destDeleted: boolean = false;
@@ -294,7 +295,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
           return Promise.resolve();
         })
         .then(() => this.statLink(fileDataPath))
-        .catch(err => {
+        .catch(() => {
           // can't stat destination, probably the file was deleted
           destDeleted = true;
           return Promise.resolve(undefined);
