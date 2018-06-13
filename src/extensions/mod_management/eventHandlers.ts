@@ -165,7 +165,8 @@ function undeploy(api: IExtensionApi,
       ? activator.deactivate(installationPath, dataPath, mod)
       : Promise.resolve())
     .then(() => activator.finalize(gameMode, dataPath, installationPath))
-    .then(newActivation => saveActivation(mod.type, state.app.instanceId, dataPath, newActivation));
+    .then(newActivation => saveActivation(mod.type, state.app.instanceId, dataPath, newActivation))
+    .catch(ProcessCanceled, () => null);
 }
 
 export function onRemoveMod(api: IExtensionApi,
