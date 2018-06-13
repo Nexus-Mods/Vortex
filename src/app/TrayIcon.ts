@@ -48,6 +48,9 @@ class TrayIcon {
 
   private showNotification(title: string, content: string) {
     const icon = path.join(getVortexPath('assets'), 'images', 'vortex.png');
+    if ((title === undefined) || (content === undefined)) {
+      return;
+    }
     this.mTrayIcon.displayBalloon({
       title,
       content,
