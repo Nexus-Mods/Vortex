@@ -11,12 +11,11 @@ import OptionsFilter from '../../../controls/table/OptionsFilter';
 import TextFilter from '../../../controls/table/TextFilter';
 import { IconButton } from '../../../controls/TooltipControls';
 import { IActionDefinition } from '../../../types/IActionDefinition';
-import { IAttributeState } from '../../../types/IAttributeState';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
 import { IState } from '../../../types/IState';
 import { ITableAttribute } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { UserCanceled } from '../../../util/CustomErrors';
+import { ProcessCanceled, UserCanceled } from '../../../util/CustomErrors';
 import Debouncer from '../../../util/Debouncer';
 import * as fs from '../../../util/fs';
 import { activeGameId, activeProfile } from '../../../util/selectors';
@@ -96,10 +95,6 @@ class VersionOption extends React.PureComponent<IVersionOptionProps, {}> {
 interface IBaseProps {
   globalOverlay: JSX.Element;
   modSources: IModSource[];
-}
-
-interface IAttributeStateMap {
-  [attributeId: string]: IAttributeState;
 }
 
 interface IConnectedProps extends IModProps {
@@ -253,7 +248,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     this.mIsMounted = false;
   }
 
-  public shouldComponentUpdate(newProps: IProps, newState: IComponentState) {
+  public shouldComponentUpdate() {
     return false;
   }
 
@@ -719,6 +714,9 @@ class ModList extends ComponentEx<IProps, IComponentState> {
             if (err instanceof UserCanceled) {
               // the user knows that he cancelled, no need to notify
               return;
+            } else if (err instanceof ProcessCanceled) {
+              return this.context.api.showErrorNotification('Failed to remove mod', err.message,
+                { allowReport: false });
             } else {
               return this.context.api.showErrorNotification('Failed to remove mod', err);
             }
@@ -868,7 +866,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   }
 
   private removeSelected = (modIds: string[]) => {
-    const { t, gameMode, installPath, onRemoveMod, onShowDialog, mods } = this.props;
+    const { t, gameMode, onRemoveMod, onShowDialog } = this.props;
 
     let removeMods: boolean;
     let removeArchive: boolean;
