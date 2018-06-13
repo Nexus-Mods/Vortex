@@ -293,7 +293,9 @@ class EventProxy extends EventEmitter {
   }
 
   public emit(eventName: string, ...args) {
-    if (!super.emit(eventName, args) && (this.mTarget !== undefined)) {
+    if (!super.emit(eventName, args)
+        && (this.mTarget !== undefined)
+        && !this.mTarget.isDestroyed()) {
       // relay all events this process didn't handle itself to the connected
       // process
       this.mTarget.send('relay-event', eventName, ...args);
