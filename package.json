@@ -23,7 +23,7 @@
     "package": "electron-builder --config electron-builder-oneclick.json && electron-builder --config electron-builder-advanced.json",
     "predist": "yarn run --non-interactive build_api && yarn run --non-interactive _install_app && yarn run --non-interactive subprojects_app && yarn run --non-interactive _assets_app",
     "dist": "yarn run build_dist && yarn run package",
-    "ci": "yarn run predist && electron-builder --config electron-builder-ci.json",
+    "ci": "yarn run predist && yarn run build_dist && electron-builder --config electron-builder-ci.json",
     "start": "cross-env NODE_ENV=development electron .",
     "clean": "yarn add rm-local-modules && rm-local-modules && yarn install --check-files",
     "preinstall": "git submodule update --init --recursive",
