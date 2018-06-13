@@ -57,8 +57,8 @@ function unlockConfirm(filePath: string): Promise<boolean> {
   const options: Electron.MessageBoxOptions = {
     title: 'Access denied',
     message: `Vortex needs to access "${filePath}" but doesn\'t have permission to.\n`
-      + 'If your account has admin rights Vortex can unlock the file for you.'
-      + ' Windows will show an UAC dialog.',
+      + 'If your account has admin rights Vortex can unlock the file for you. '
+      + 'Windows will show an UAC dialog.',
     buttons: [
       'Cancel',
       'Give permission',
@@ -110,8 +110,6 @@ function errorRepeat(code: string, filePath: string): Promise<boolean> {
         if (doUnlock) {
           const userId = getUserId();
           return elevated((ipcPath, req: NodeRequireFunction) => {
-            // tslint:disable-next-line:no-shadowed-variable
-            const fs = req('fs-extra-promise');
             const { allow } = req('permissions');
             return allow(filePath, userId, 'rwx');
           }, { filePath, userId })
@@ -126,7 +124,7 @@ function errorRepeat(code: string, filePath: string): Promise<boolean> {
 }
 
 function errorHandler(error: NodeJS.ErrnoException, stackErr: Error): Promise<void> {
-  return errorRepeat(error.code, error.path)
+  return errorRepeat(error.code, (error as any).dest || error.path)
     .then(repeat => {
       if (repeat) {
         return Promise.resolve();
