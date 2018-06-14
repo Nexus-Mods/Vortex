@@ -1,5 +1,4 @@
 import * as fs from '../../../util/fs';
-import { log } from '../../../util/log';
 
 import * as Promise from 'bluebird';
 import NexusT from 'nexus-api';
@@ -21,7 +20,7 @@ function zipFiles(files: string[]): Promise<string> {
   const task: ZipT = new Zip();
 
   return new Promise<string>((resolve, reject) => {
-    const filePath = tmpName({
+    tmpName({
       postfix: '.7z',
     }, (err, tmpPath: string) => (err !== null)
       ? reject(err)
@@ -32,13 +31,13 @@ function zipFiles(files: string[]): Promise<string> {
         .then(() => tmpPath));
 }
 
-function submitFeedback(nexus: NexusT, message: string, feedbackFiles: string[],
+function submitFeedback(nexus: NexusT, title: string, message: string, feedbackFiles: string[],
                         anonymous: boolean, hash: string): Promise<void> {
   let archive: string;
   return zipFiles(feedbackFiles)
     .then(tmpPath => {
       archive = tmpPath;
-      return nexus.sendFeedback(message, tmpPath, anonymous, hash);
+      return nexus.sendFeedback(title, message, tmpPath, anonymous, hash);
     })
     .then(() => {
       if (archive !== undefined) {

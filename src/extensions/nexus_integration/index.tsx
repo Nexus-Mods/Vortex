@@ -689,9 +689,9 @@ function once(api: IExtensionApi) {
   });
 
   api.events.on('submit-feedback',
-    (message: string, hash: string, feedbackFiles: string[],
+    (title: string, message: string, hash: string, feedbackFiles: string[],
      anonymous: boolean, callback: (err: Error) => void) => {
-      submitFeedback(nexus, message, feedbackFiles, anonymous, hash)
+      submitFeedback(nexus, title, message, feedbackFiles, anonymous, hash)
         .then(() => callback(null))
         .catch(err => callback(err));
     });

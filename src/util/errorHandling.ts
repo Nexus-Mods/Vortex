@@ -32,7 +32,7 @@ const repo = 'Nexus-Mods/Vortex';
 const repoURL = 'https://github.com/' + repo;
 
 function createTitle(type: string, error: IError, hash: string) {
-  return `${type}: ${error.message} (hash: ${hash})`;
+  return `${type}: ${error.message}`;
 }
 
 function createReport(type: string, error: IError, version: string) {
@@ -157,6 +157,7 @@ function nexusReport(hash: string, type: string, error: IError, labels: string[]
   const referenceId = require('uuid').v4();
   const nexus = new Nexus(undefined, apiKey, app.getVersion());
   return Promise.resolve(nexus.sendFeedback(
+    createTitle(type, error, hash),
     createReport(type, error, app.getVersion()),
     undefined,
     false,
