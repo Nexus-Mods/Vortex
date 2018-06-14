@@ -59,6 +59,9 @@ function applyDelta(data: any, delta: any) {
     } else if (key[0] === '+') {
       data[key.slice(1)] = delta[key];
     } else {
+      if (data[key] === undefined) {
+        data[key] = {};
+      }
       applyDelta(data[key], delta[key]);
     }
   });
