@@ -4,12 +4,10 @@ import CollapseIcon from '../../../controls/CollapseIcon';
 import Dropzone, { DropType } from '../../../controls/Dropzone';
 import EmptyPlaceholder from '../../../controls/EmptyPlaceholder';
 import FlexLayout from '../../../controls/FlexLayout';
-import IconBar from '../../../controls/IconBar';
 import InputButton from '../../../controls/InputButton';
 import SuperTable, { ITableRowAction } from '../../../controls/Table';
 import DateTimeFilter from '../../../controls/table/DateTimeFilter';
 import GameFilter from '../../../controls/table/GameFilter';
-import ToolbarIcon from '../../../controls/ToolbarIcon';
 import { IActionDefinition } from '../../../types/IActionDefinition';
 import { IComponentContext } from '../../../types/IComponentContext';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
@@ -19,11 +17,9 @@ import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { ProcessCanceled, UserCanceled } from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
 import { getCurrentLanguage } from '../../../util/i18n';
-import { log } from '../../../util/log';
 import { showError } from '../../../util/message';
 import relativeTime from '../../../util/relativeTime';
 import { activeGameId } from '../../../util/selectors';
-import { setSafe } from '../../../util/storeHelper';
 import MainPage from '../../../views/MainPage';
 
 import { IGameStored } from '../../gamemode_management/types/IGameStored';
@@ -41,24 +37,11 @@ import DownloadGraph from './DownloadGraph';
 import * as Promise from 'bluebird';
 import * as I18next from 'i18next';
 import * as path from 'path';
-import * as PropTypes from 'prop-types';
 import * as React from 'react';
 import { Button, Panel } from 'react-bootstrap';
 import * as Redux from 'redux';
-import { generate as shortid } from 'shortid';
-import { IconButton } from '../../../controls/TooltipControls';
 
 const PanelX: any = Panel;
-
-function objectFilter(obj: any, filter: (key: string, value: any) => boolean) {
-  const result = {};
-  for (const key in obj) {
-    if (obj.hasOwnProperty(key) && filter(key, obj[key])) {
-      result[key] = obj[key];
-    }
-  }
-  return result;
-}
 
 export interface IBaseProps {
   active: boolean;
@@ -88,13 +71,6 @@ type IProps = IBaseProps & IConnectedProps & IActionProps;
 
 interface IComponentState {
   viewAll: boolean;
-}
-
-interface IAllGamesButtonProps {
-  id: string;
-  buttonType: 'icon' | 'text' | 'both';
-  onClick: () => void;
-  t: (input: string) => string;
 }
 
 interface IFileTimeProps {
@@ -133,7 +109,7 @@ class FileTime extends ComponentEx<IFileTimeProps, { mtime: Date }> {
   }
 
   public render(): JSX.Element {
-    const { t, detail, download, language, time } = this.props;
+    const { t, detail, language, time } = this.props;
 
     const mtime = time || this.state.mtime;
 
@@ -174,7 +150,6 @@ const nop = () => null;
 
 class DownloadView extends ComponentEx<IProps, IComponentState> {
   public context: IComponentContext;
-  private staticButtons: IActionDefinition[];
   private gameColumn: ITableAttribute;
   private fileTimeColumn: ITableAttribute;
   private actions: ITableRowAction[];
@@ -261,20 +236,6 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
       isSortable: true,
       filter: new DateTimeFilter(),
     };
-
-    this.staticButtons = [
-      {
-        component: InputButton,
-        props: () => ({
-          id: 'input-download-url',
-          groupId: 'download-buttons',
-          key: 'input-download-url',
-          icon: 'download',
-          tooltip: 'Download URL',
-          onConfirmed: this.startDownload,
-        }),
-      },
-    ];
 
     this.actions = [
       {
@@ -441,7 +402,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
         onToggle={nop}
       >
         <PanelX.Collapse>
-          <PanelX.Body collapsible>
+          <PanelX.Body>
             <Dropzone
               accept={['urls', 'files']}
               drop={this.dropDownload}
@@ -475,35 +436,6 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
 
   private getDownload(downloadId: string): IDownload {
     return this.props.downloads[downloadId];
-  }
-
-  private startDownload = (url: string) => {
-    this.context.api.events.emit('start-download', [url], {}, undefined, (err) => {
-      if (err !== undefined) {
-        if ((err instanceof UserCanceled)
-            || (err instanceof DownloadIsHTML)) {
-          // nop
-        } else if (err instanceof ProcessCanceled) {
-          this.context.api.sendNotification({
-            type: 'warning',
-            message: err.message,
-          });
-        } else if (err.code === 'ECONNRESET') {
-          this.props.onShowError('Failed to download', 'Server closed the connection, please '
-                                + 'check your internet connection',
-            undefined, false);
-        } else if (err.code === 'ETIMEDOUT') {
-          this.props.onShowError('Failed to download', 'Connection timed out, please check '
-                                + 'your internet connection',
-            undefined, false);
-        } else if (err.code === 'ENOSPC') {
-          this.props.onShowError('Failed to download', 'The disk is full',
-            undefined, false);
-        } else {
-          this.context.api.showErrorNotification('Failed to start download', err);
-        }
-      }
-    });
   }
 
   private pause = (downloadIds: string[]) => {

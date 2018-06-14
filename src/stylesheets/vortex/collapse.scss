@@ -4,6 +4,7 @@ $collapseicon-offset: 0;
   position: absolute;
   visibility: visible !important;
   padding: 0;
+  line-height: 1;
 
   &.collapseicon-show {
     margin-top: $panel-body-padding;
