@@ -71,7 +71,8 @@ class FileAssembler {
             : resolve(synced))
         .catch(ProcessCanceled, () => {
           resolve(false);
-        });
+        })
+        .catch(err => reject(err));
       });
   }
 

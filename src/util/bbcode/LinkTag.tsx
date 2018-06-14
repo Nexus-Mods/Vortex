@@ -1,6 +1,9 @@
 import { Tag } from 'bbcode-to-react';
-import opn = require('opn');
+import {} from 'opn';
 import * as React from 'react';
+
+// tslint:disable-next-line:no-var-requires
+const opn = require('opn');
 
 class LinkTag extends Tag {
   public toHTML() {

@@ -76,7 +76,7 @@ class ErrorBoundary extends ComponentEx<IErrorBoundaryProps, IErrorBoundaryState
     if (onHide !== undefined) {
       onHide();
     }
-    events.emit('report-feedback', `Component rendering error
+    events.emit('report-feedback', error.stack.split('\n')[0], `Component rendering error
 
 Vortex Version: ${remote.app.getVersion()},
 

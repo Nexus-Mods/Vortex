@@ -1,5 +1,4 @@
 import {IState} from '../../../types/IState';
-import asyncRequire from '../../../util/asyncRequire';
 import {ComponentEx, connect} from '../../../util/ComponentEx';
 import { log } from '../../../util/log';
 import { bytesToString, truthy } from '../../../util/util';
@@ -9,6 +8,7 @@ import {IDownload} from '../types/IDownload';
 
 import * as I18next from 'i18next';
 import * as React from 'react';
+import ResizeDetector from 'react-resize-detector';
 import * as rechartsT from 'recharts';
 let recharts: typeof rechartsT;
 
@@ -40,24 +40,15 @@ class DownloadGraph extends ComponentEx<IProps, IComponentState> {
   }
 
   public componentWillMount() {
-    asyncRequire('recharts')
-    .then((rechartsIn) => {
-      recharts = rechartsIn;
-      this.forceUpdate();
-    })
-    .catch((err) => {
-      log('error', 'failed to load recharts', { err });
-    });
+    recharts = require('recharts');
+    this.forceUpdate();
   }
 
   public componentDidMount() {
-    this.updateDimensions();
-    window.addEventListener('resize', this.updateDimensions);
     this.mIsMounted = true;
   }
 
   public componentWillUnmount() {
-    window.removeEventListener('resize', this.updateDimensions);
     this.mIsMounted = false;
   }
 
@@ -101,8 +92,13 @@ class DownloadGraph extends ComponentEx<IProps, IComponentState> {
             wrapperStyle={{ backgroundColor: '', border: '' }}
           /> */}
         </recharts.AreaChart>
+        <ResizeDetector handleWidth handleHeight onResize={this.onResize}/>
       </div>
     );
+  }
+
+  private onResize = (width: number, height: number) => {
+    this.nextState.width = width;
   }
 
   private byteRound(input: number): number {
@@ -110,15 +106,11 @@ class DownloadGraph extends ComponentEx<IProps, IComponentState> {
     return Math.ceil(input / roundVal) * roundVal;
   }
 
-  private updateDimensions = () => {
-    if (truthy(this.mRef) && this.mIsMounted) {
-      this.nextState.width = this.mRef.clientWidth;
-    }
-  }
-
   private setRef = (ref: HTMLDivElement) => {
     this.mRef = ref;
-    this.updateDimensions();
+    if (truthy(ref)) {
+      this.onResize(ref.clientWidth, ref.clientHeight);
+    }
   }
 
   private valueFormatter = (value: number) => {

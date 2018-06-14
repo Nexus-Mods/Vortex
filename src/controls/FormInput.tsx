@@ -15,7 +15,7 @@ export interface IProps {
   validate?: (value: any) => ValidationState;
 }
 
-export interface IComponentState {
+interface IComponentState {
   cachedValue: string;
 }
 
@@ -95,4 +95,4 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
   }
 }
 
-export default FormInput;
+export default FormInput as React.ComponentClass<IProps>;

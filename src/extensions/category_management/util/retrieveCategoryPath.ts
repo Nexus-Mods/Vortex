@@ -52,7 +52,7 @@ export function resolveCategoryPath(category: string, state: IState) {
  */
 export function resolveCategoryName(category: string, state: IState) {
   if (!truthy(category)) {
-    return null;
+    return '';
   }
 
   const gameId: string = activeGameId(state);

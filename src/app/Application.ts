@@ -9,7 +9,7 @@ import { terminate, toError } from '../util/errorHandling';
 import ExtensionManagerT from '../util/ExtensionManager';
 import * as fs from '../util/fs';
 import lazyRequire from '../util/lazyRequire';
-import LevelPersist from '../util/LevelPersist';
+import LevelPersist, { DatabaseLocked } from '../util/LevelPersist';
 import {log, setLogPath, setupLogging} from '../util/log';
 import { showError } from '../util/message';
 import ReduxPersistor from '../util/ReduxPersistor';
@@ -32,7 +32,7 @@ import { allow } from 'permissions';
 import * as Redux from 'redux';
 import * as uuidT from 'uuid';
 
-const uuid = lazyRequire<typeof uuidT>('uuid');
+const uuid = lazyRequire<typeof uuidT>(() => require('uuid'));
 
 function last(array: any[]): any {
   if (array.length === 0) {
@@ -54,6 +54,8 @@ class Application {
     this.mArgs = args;
 
     ipcMain.on('show-window', () => this.showMainWindow());
+
+    app.commandLine.appendSwitch('js-flags', '--max-old-space-size=4096');
 
     this.mBasePath = app.getPath('userData');
     fs.ensureDirSync(this.mBasePath);
@@ -99,15 +101,30 @@ class Application {
 
     app.on('ready', () => {
       if (args.get) {
-        this.handleGet(args.get);
+        this.handleGet(args.get, args.shared);
       } else if (args.set) {
-        this.handleSet(args.set);
+        this.handleSet(args.set, args.shared);
       } else if (args.del) {
-        this.handleDel(args.del);
+        this.handleDel(args.del, args.shared);
       } else {
         this.regularStart(args);
       }
     });
+
+    app.on('web-contents-created', (event: Electron.Event, contents: Electron.WebContents) => {
+      contents.on('will-attach-webview', this.attachWebView);
+    });
+  }
+
+  private attachWebView = (event: Electron.Event,
+                           webPreferences: Electron.WebPreferences & { preloadURL: string },
+                           params) => {
+    // disallow creation of insecure webviews
+
+    delete webPreferences.preload;
+    delete webPreferences.preloadURL;
+
+    webPreferences.nodeIntegration = false;
   }
 
   private genHandleError() {
@@ -145,7 +162,14 @@ class Application {
         .then(() => this.createTray())
         // end initialization
         .then(() => splash.fadeOut())
-        .catch(ProcessCanceled, () => undefined)
+        .catch(ProcessCanceled, () => {
+          app.quit();
+        })
+        .catch(DatabaseLocked, () => {
+          dialog.showErrorBox('Startup failed', 'Vortex seems to be running already. '
+            + 'If you can\'t see it, please check the task manager.');
+          app.quit();
+        })
         .catch((err) => {
           terminate({
             message: 'Startup failed',
@@ -159,15 +183,20 @@ class Application {
     return statePath.match(/(\\.|[^.])+/g).map(input => input.replace(/\\(.)/, '$1'));
   }
 
-  private handleGet(getPath: string | boolean): Promise<void> {
+  private handleGet(getPath: string | boolean, shared: boolean): Promise<void> {
     if (typeof(getPath) === 'boolean') {
       fs.writeSync(1, 'Usage: vortex --get <path>\n');
       app.quit();
       return;
     }
 
-    const vortexPath = process.env.NODE_ENV === 'development' ? 'vortex_devel' : 'vortex';
-    const dbpath = path.join(process.env['APPDATA'], vortexPath, currentStatePath);
+    const vortexPath = process.env.NODE_ENV === 'development'
+        ? 'vortex_devel'
+        : 'vortex';
+
+    const dbpath = shared
+      ? path.join(process.env.ProgramData, 'vortex', currentStatePath)
+      : path.join(process.env['APPDATA'], vortexPath, currentStatePath);
     const pathArray = this.splitPath(getPath);
 
     let persist: LevelPersist;
@@ -189,15 +218,20 @@ class Application {
       });
   }
 
-  private handleSet(setParameters: string[]): Promise<void> {
+  private handleSet(setParameters: string[], shared: boolean): Promise<void> {
     if (setParameters.length !== 2) {
       process.stdout.write('Usage: vortex --set <path>=<value>\n');
       app.quit();
       return;
     }
 
-    const vortexPath = process.env.NODE_ENV === 'development' ? 'vortex_devel' : 'vortex';
-    const dbpath = path.join(process.env['APPDATA'], vortexPath, currentStatePath);
+    const vortexPath = process.env.NODE_ENV === 'development'
+        ? 'vortex_devel'
+        : 'vortex';
+
+    const dbpath = shared
+      ? path.join(process.env.ProgramData, 'vortex', currentStatePath)
+      : path.join(process.env['APPDATA'], vortexPath, currentStatePath);
     const pathArray = this.splitPath(setParameters[0]);
 
     let persist: LevelPersist;
@@ -221,12 +255,19 @@ class Application {
       });
   }
 
-  private handleDel(delPath: string): Promise<void> {
-    const vortexPath = process.env.NODE_ENV === 'development' ? 'vortex_devel' : 'vortex';
-    const dbpath = path.join(process.env['APPDATA'], vortexPath, currentStatePath);
+  private handleDel(delPath: string, shared: boolean): Promise<void> {
+    const vortexPath = process.env.NODE_ENV === 'development'
+        ? 'vortex_devel'
+        : 'vortex';
+
+    const dbpath = shared
+      ? path.join(process.env.ProgramData, 'vortex', currentStatePath)
+      : path.join(process.env['APPDATA'], vortexPath, currentStatePath);
     const pathArray = this.splitPath(delPath);
 
     let persist: LevelPersist;
+
+    let found = false;
 
     return LevelPersist.create(dbpath)
       .then(persistIn => {
@@ -237,9 +278,14 @@ class Application {
       .map((key: string[]) => {
         // tslint:disable-next-line:no-console
         console.log('removing', key.join('.'));
+        found = true;
         return persist.removeItem(key);
       })
-      .then(() => { process.stdout.write('removed\n'); })
+      .then(() => {
+        if (!found) {
+          process.stdout.write('not found\n');
+        }
+      })
       .catch(err => { process.stderr.write(err.message + '\n'); })
       .finally(() => {
         app.quit();

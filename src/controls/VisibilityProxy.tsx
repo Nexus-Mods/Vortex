@@ -1,4 +1,4 @@
-import update = require('immutability-helper');
+import * as update from 'immutability-helper';
 import * as _ from 'lodash';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
@@ -34,7 +34,7 @@ class VisibilityProxy extends React.PureComponent<any, {}> {
       VisibilityProxy.sObservers.set(container || null,
           new IntersectionObserver(VisibilityProxy.callback, {
         root: container,
-        rootMargin: '90px 0px 90px 0px',
+        rootMargin: '180px 0px 180px 0px',
       } as any));
     }
     return VisibilityProxy.sObservers.get(container);

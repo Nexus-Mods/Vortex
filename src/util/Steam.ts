@@ -1,14 +1,12 @@
 import * as Promise from 'bluebird';
-import Registry = require('winreg');
+import * as Registry from 'winreg';
 
 import * as fs from './fs';
 import { log } from './log';
 import { getSafe } from './storeHelper';
 
-import * as path from 'path';
-
 import { app as appIn, remote } from 'electron';
-
+import * as path from 'path';
 import { parse } from 'simple-vdf';
 
 const app = (remote !== undefined) ? remote.app : appIn;
@@ -41,6 +39,7 @@ export interface ISteam {
  * @class Steam
  */
 class Steam implements ISteam {
+  public static GameNotFound = GameNotFound;
   private mBaseFolder: Promise<string>;
   private mCache: ISteamEntry[];
 
@@ -62,6 +61,9 @@ class Steam implements ISteam {
                   // those who do have it. Well, it's their own fault for breaking
                   // the registry keys really...
                   log('info', 'steam not found', { error: err.message });
+                  resolve(undefined);
+                } else if (result === null) {
+                  log('info', 'steam not found');
                   resolve(undefined);
                 } else {
                   resolve(result.value);
@@ -86,7 +88,7 @@ class Steam implements ISteam {
       .then(entries => entries.find(entry => re.test(entry.name)))
       .then(entry => {
         if (entry === undefined) {
-          return Promise.reject(new GameNotFound(namePattern));
+          return Promise.reject(new Steam.GameNotFound(namePattern));
         } else {
           return Promise.resolve(entry);
         }
@@ -144,8 +146,6 @@ class Steam implements ISteam {
           steamPaths.push(steamObj[`BaseInstallFolder_${counter}`]);
           ++counter;
         }
-
-        log('debug', 'steam base folders', { steamPaths });
 
         return Promise.all(Promise.map(steamPaths, steamPath => {
           const steamAppsPath = path.join(steamPath, 'steamapps');

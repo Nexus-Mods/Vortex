@@ -11,8 +11,8 @@ import FileAssembler from './FileAssembler';
 import SpeedCalculator from './SpeedCalculator';
 
 import * as Promise from 'bluebird';
-import contentDisposition = require('content-disposition');
-import contentType = require('content-type');
+import * as contentDisposition from 'content-disposition';
+import * as contentType from 'content-type';
 import { remote } from 'electron';
 import * as http from 'http';
 import * as https from 'https';
@@ -617,6 +617,8 @@ class DownloadManager {
   private startJob(download: IRunningDownload, job: IDownloadJob) {
     if (download.assembler === undefined) {
       try {
+        download.progressCB(download.received, download.size, undefined,
+                            undefined, download.tempName);
         download.assembler = new FileAssembler(download.tempName);
       } catch (err) {
         if (err.code === 'EBUSY') {
@@ -650,6 +652,15 @@ class DownloadManager {
               urls,
               download.tempName);
           return synced;
+        })
+        .catch(err => {
+          for (const chunk of download.chunks) {
+            if (chunk.state === 'running') {
+              this.mBusyWorkers[chunk.workerId].cancel();
+            }
+          }
+          download.failedCB(err);
+          return Promise.resolve(false);
         });
     };
 
@@ -765,6 +776,7 @@ class DownloadManager {
             .then((resolvedPath: string) => {
               finalPath = resolvedPath;
               log('debug', 'renaming download', { from: download.tempName, to: resolvedPath });
+              download.progressCB(download.size, download.size, undefined, undefined, resolvedPath);
               return fs.renameAsync(download.tempName, resolvedPath);
             });
           } else if ((download.headers !== undefined)
@@ -776,6 +788,9 @@ class DownloadManager {
                   ? Promise.reject(err)
                   : Promise.resolve());
           }
+        })
+        .catch(err => {
+          download.failedCB(err);
         })
         .then(() => {
           const unfinishedChunks = download.chunks

@@ -2,7 +2,7 @@ import * as fs from '../../util/fs';
 
 import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
-import ZipT = require('node-7z');
+import * as ZipT from 'node-7z';
 import * as path from 'path';
 import * as rimraf from 'rimraf';
 

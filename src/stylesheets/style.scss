@@ -70,7 +70,7 @@
   }
 
   >.xtbody>.xtr>.xtd {
-    vertical-align: left;
+    vertical-align: middle;
   }
 
   >.xthead>.xtr>.xth,
@@ -375,6 +375,7 @@ div:hover > .hover-expand {
 @import "vortex/banner";
 @import "vortex/bbcode";
 @import "vortex/charts";
+@import "vortex/collapse";
 @import "vortex/dashlet";
 @import "vortex/dashlet-rss";
 @import "vortex/dialogs";
@@ -436,28 +437,6 @@ div:hover > .hover-expand {
 
 /////////////////////////
 // specific table columns
-
-.mod-update {
-  &.warning {
-    color: $brand-warning;
-  }
-
-  &.download {
-    color: $brand-warning;
-  }
-
-  &.ban {
-    color: $brand-danger;
-  }
-
-  &.bug {
-    color: $brand-danger;
-  }
-
-  .icon-button {
-    margin-left: 0.4em !important;
-  }
-}
 
 .cell-enabled, .header-enabled {
   text-align: center;

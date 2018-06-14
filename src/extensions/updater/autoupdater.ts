@@ -76,9 +76,11 @@ function setupAutoUpdate(api: IExtensionApi) {
         autoUpdater.allowPrerelease = channel === 'beta';
         autoUpdater.checkForUpdates()
         .then(check => {
-          check.downloadPromise.catch(err => {
-            log('warn', 'Checking for update failed', err);
-          });
+          if (check.downloadPromise !== undefined) {
+            check.downloadPromise.catch(err => {
+              log('warn', 'Checking for update failed', err);
+            });
+          }
         })
         .catch(err => {
           log('warn', 'Checking for update failed', err);

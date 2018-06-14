@@ -5,10 +5,13 @@ import { ComponentEx, translate } from '../../util/ComponentEx';
 
 import rss, {IFeedMessage} from './rss';
 
-import opn = require('opn');
+import {} from 'opn';
 import * as React from 'react';
 import { Alert, ListGroup, ListGroupItem } from 'react-bootstrap';
 import { getSafe } from '../../util/storeHelper';
+
+// tslint:disable-next-line:no-var-requires
+const opn = require('opn');
 
 export interface IExtra {
   attribute: string;

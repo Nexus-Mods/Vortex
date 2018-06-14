@@ -55,6 +55,11 @@ const notificationActions = local<{ [id: string]: NotificationFunc[] }>('notific
 export function fireNotificationAction(notiId: string, notiProcess: string,
                                        action: number, dismiss: NotificationDismiss) {
   if (notiProcess === process.type) {
+    if (notificationActions[notiId] === undefined) {
+      // this can happen if vortex was restarted and so the notification is still in the store but
+      // the callbacks are no longer available.
+      return;
+    }
     const func = notificationActions[notiId][action];
     if (func !== undefined) {
       func(dismiss);

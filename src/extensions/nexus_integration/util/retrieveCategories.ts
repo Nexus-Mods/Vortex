@@ -1,7 +1,7 @@
 
 import { log } from '../../../util/log';
 
-import { ICategoryDictionary } from '../../category_management/types/IcategoryDictionary';
+import { ICategoryDictionary } from '../../category_management/types/ICategoryDictionary';
 
 import NexusT, { ICategory } from 'nexus-api';
 
@@ -46,7 +46,7 @@ function retrieveCategoryList(
       },
     )
       .catch((err) => {
-        log('error', 'An error occurred retrieving the Game Info', { err: err.message });
+        log('error', 'Failed to retrieve game information', { err: err.message });
         reject(err);
       });
   });

@@ -14,6 +14,19 @@ let voidPtr: refT.Type;
 let SHELLEXECUTEINFOPtr: refT.Type;
 let shell32;
 
+export class Win32Error extends Error {
+  private mCode: number;
+  constructor(message: string, code: number) {
+    super(`${message} (${code})`);
+    this.name = this.constructor.name;
+    this.mCode = code;
+  }
+
+  public get code(): number {
+    return this.mCode;
+  }
+}
+
 function initTypes() {
   if (DUMMYUNIONNAME !== undefined) {
     return;
@@ -77,25 +90,16 @@ function execInfo(scriptPath: string) {
   });
 }
 
-function elevatedMain(baseDir: string, moduleRoot: string, ipcPath: string,
-                      main: (ipc) => void | Promise<void> | Bluebird<void>) {
+function elevatedMain(moduleRoot: string, ipcPath: string,
+                      main: (ipc, req: NodeRequireFunction) =>
+                        void | Promise<void> | Bluebird<void>) {
   const handleError = (error: any) => {
     // tslint:disable-next-line:no-console
     console.error('Elevated code failed', error.stack);
   };
   process.on('uncaughtException', handleError);
   process.on('unhandledRejection', handleError);
-  const elevatedPath = require('path');
-  const requireOrig = require;
-  const newRequire: any = (id: string): any => {
-    if (id.startsWith('.')) {
-      return requireOrig(elevatedPath.join(baseDir, id));
-    } else {
-      return requireOrig(id);
-    }
-  };
-  newRequire.requireActual = newRequire;
-  require = newRequire;
+  // tslint:disable-next-line:no-shadowed-variable
   (module as any).paths.push(moduleRoot);
   // tslint:disable-next-line:no-shadowed-variable
   const ipc = require('node-ipc');
@@ -106,7 +110,7 @@ function elevatedMain(baseDir: string, moduleRoot: string, ipcPath: string,
       process.exit(0);
     });
     Promise.resolve()
-      .then(() => Promise.resolve(main(ipc.of[ipcPath])))
+      .then(() => Promise.resolve(main(ipc.of[ipcPath], require)))
       .catch(error => {
         ipc.of[ipcPath].emit('error', error.message);
         return new Promise((resolve) => setTimeout(resolve, 200));
@@ -123,7 +127,6 @@ function elevatedMain(baseDir: string, moduleRoot: string, ipcPath: string,
  * This is quite a hack because obviously windows doesn't allow us to elevate a
  * running process so instead we have to store the function code into a file and start a
  * new node process elevated to execute that script.
- * Through some hackery the base path for relative requires can be set.
  *
  * IMPORTANT As a consequence the function can not bind any parameters
  *
@@ -131,15 +134,18 @@ function elevatedMain(baseDir: string, moduleRoot: string, ipcPath: string,
  *                 communicate with the elevated process (as stdin/stdout can not be)
  *                 redirected
  * @param {Function} func The closure to run in the elevated process. Try to avoid
- *                        'fancy' code.
+ *                        'fancy' code. This function receives two parameters, one is an ipc stream,
+ *                        connected to the path specified in the first parameter.
+ *                        The second function is a require function which you need to use instead of
+ *                        the global require. Regular require calls will not work in production
+ *                        builds
  * @param {Object} args arguments to be passed into the elevated process
- * @param {string} moduleBase base directory for all relative require call. If undefined,
- *                 the directory of this very file (elevated.js) will be used.
  * @returns {Bluebird<any>} a promise that will be resolved as soon as the process is started
- *                         (which happens after the user confirmed elevation)
+ *                          (which happens after the user confirmed elevation)
  */
-function runElevated(ipcPath: string, func: (ipc: any) => void | Promise<void> | Bluebird<void>,
-                     args?: any, moduleBase?: string): Bluebird<any> {
+function runElevated(ipcPath: string, func: (ipc: any, req: NodeRequireFunction) =>
+                        void | Promise<void> | Bluebird<void>,
+                     args?: any): Bluebird<any> {
   initTypes();
   if (shell32 === undefined) {
     if (process.platform === 'win32') {
@@ -158,20 +164,13 @@ function runElevated(ipcPath: string, func: (ipc: any) => void | Promise<void> |
         return reject(err);
       }
 
-      const projectRoot = process.env.NODE_ENV === 'development'
-        ? path.resolve(__dirname, '../../node_modules').split('\\').join('/')
-        : path.resolve(__dirname, '../node_modules').split('\\').join('/');
-      if (moduleBase === undefined) {
-        moduleBase = __dirname;
-      }
-      moduleBase = moduleBase.split('\\').join('/');
+      const projectRoot = path.resolve(__dirname, '../..').split('\\').join('/');
 
       let mainBody = elevatedMain.toString();
       mainBody = mainBody.slice(mainBody.indexOf('{') + 1, mainBody.lastIndexOf('}'));
 
       let prog: string = `
         let moduleRoot = '${projectRoot}';\n
-        let baseDir = '${moduleBase}';\n
         let ipcPath = '${ipcPath}';\n
       `;
 
@@ -194,8 +193,6 @@ function runElevated(ipcPath: string, func: (ipc: any) => void | Promise<void> |
           return reject(writeErr);
         }
 
-        const runInfo = execInfo(tmpPath);
-
         // we can't call GetLastError through node-ffi so when using ShellExecuteExA we won't be
         // able to get an error code. With ShellExecuteA we can
         shell32.ShellExecuteA.async(null, 'runas', process.execPath, `--run ${tmpPath}`,
@@ -207,11 +204,13 @@ function runElevated(ipcPath: string, func: (ipc: any) => void | Promise<void> |
             if (res > 32) {
               resolve(res);
             } else {
-              reject(new Error(`ShellExecute failed, errorcode ${res}`));
+              reject(new Win32Error('ShellExecute failed', res));
             }
           }
         });
         /* TODO: remove this code if there is no problem with ShellExecuteA
+        const runInfo = execInfo(tmpPath);
+
         shell32.ShellExecuteExA.async(runInfo.ref(), (execErr: any, res: any) => {
           // this is reached after the user confirmed the UAC dialog but before node
           // has read the script source so we have to give a little time for that to

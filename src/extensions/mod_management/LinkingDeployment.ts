@@ -4,7 +4,7 @@ import { ProcessCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import getNormalizeFunc, {Normalize} from '../../util/getNormalizeFunc';
 import {log} from '../../util/log';
-import { getSafe } from '../../util/storeHelper';
+import { truthy } from '../../util/util';
 
 import {
   IDeployedFile,
@@ -99,8 +99,6 @@ abstract class LinkingActivator implements IDeploymentMethod {
                   dataPath: string,
                   installationPath: string,
                   progressCB?: (files: number, total: number) => void): Promise<IDeployedFile[]> {
-    const state = this.mApi.store.getState();
-
     let added: string[];
     let removed: string[];
     let sourceChanged: string[];
@@ -120,12 +118,10 @@ abstract class LinkingActivator implements IDeploymentMethod {
 
     const total = added.length + removed.length + sourceChanged.length + contentChanged.length;
     let count = 0;
-    let lastReported = 0;
     const progress = () => {
       if (progressCB !== undefined) {
         ++count;
         if ((count % 1000) === 0) {
-          lastReported = count;
           progressCB(count, total);
         }
       }
@@ -135,14 +131,15 @@ abstract class LinkingActivator implements IDeploymentMethod {
                        key => {
                          const outputPath = path.join(
                              dataPath, this.mContext.previousDeployment[key].relPath);
-                         return this.unlinkFile(outputPath)
-                             .catch(err => {
-                               if (err.code !== 'ENOENT') {
-                                 return Promise.reject(err);
-                               }
+                         const sourcePath = path.join(installationPath,
+                           this.mContext.previousDeployment[key].source,
+                           this.mContext.previousDeployment[key].relPath);
+                         return this.unlinkFile(outputPath, sourcePath)
+                             .catch(err => (err.code !== 'ENOENT')
                                // treat an ENOENT error for the unlink as if it was a success.
                                // The end result either way is the link doesn't exist now.
-                             })
+                                ? Promise.reject(err)
+                                : Promise.resolve())
                              .then(() => fs.renameAsync(outputPath + BACKUP_TAG,
                                                         outputPath)
                                              .catch(() => undefined))
@@ -226,6 +223,9 @@ abstract class LinkingActivator implements IDeploymentMethod {
   public activate(sourcePath: string, sourceName: string, dataPath: string,
                   blackList: Set<string>): Promise<void> {
     return turbowalk(sourcePath, entries => {
+      if (this.mContext === undefined) {
+        return;
+      }
       entries.forEach(entry => {
         const relPath: string = path.relative(sourcePath, entry.filePath);
         if (!entry.isDirectory && !blackList.has(relPath)) {
@@ -246,6 +246,9 @@ abstract class LinkingActivator implements IDeploymentMethod {
                     mod: IMod): Promise<void> {
     const sourceBase = path.join(installPath, mod.installationPath);
     return turbowalk(sourceBase, entries => {
+      if (this.mContext === undefined) {
+        return;
+      }
       entries.forEach(entry => {
         if (!entry.isDirectory) {
           const relPath: string = path.relative(sourceBase, entry.filePath);
@@ -256,6 +259,9 @@ abstract class LinkingActivator implements IDeploymentMethod {
   }
 
   public purge(installPath: string, dataPath: string): Promise<void> {
+    if (!truthy(dataPath)) {
+      return Promise.reject(new Error('invalid data path'));
+    }
     // purge
     return this.purgeLinks(installPath, dataPath)
       .then(() => this.postPurge(dataPath, false))
@@ -270,25 +276,26 @@ abstract class LinkingActivator implements IDeploymentMethod {
                          installPath: string,
                          dataPath: string,
                          activation: IDeployedFile[]): Promise<IFileChange[]> {
-    const state = this.mApi.store.getState();
-
     const nonLinks: IFileChange[] = [];
 
     return Promise.map(activation, fileEntry => {
-      const fileDataPath = [dataPath, fileEntry.relPath].join(path.sep);
+      const fileDataPath = (truthy(fileEntry.target)
+        ? [dataPath, fileEntry.target, fileEntry.relPath]
+        : [dataPath, fileEntry.relPath]
+        ).join(path.sep);
       const fileModPath = [installPath, fileEntry.source, fileEntry.relPath].join(path.sep);
       let sourceDeleted: boolean = false;
       let destDeleted: boolean = false;
       let destTime: Date;
 
-      return fs.statAsync(fileModPath)
+      return this.stat(fileModPath)
         .catch(err => {
           // can't stat source, probably the file was deleted
           sourceDeleted = true;
           return Promise.resolve();
         })
-        .then(() => fs.lstatAsync(fileDataPath))
-        .catch(err => {
+        .then(() => this.statLink(fileDataPath))
+        .catch(() => {
           // can't stat destination, probably the file was deleted
           destDeleted = true;
           return Promise.resolve(undefined);
@@ -335,7 +342,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
   }
 
   protected abstract linkFile(linkPath: string, sourcePath: string): Promise<void>;
-  protected abstract unlinkFile(linkPath: string): Promise<void>;
+  protected abstract unlinkFile(linkPath: string, sourcePath: string): Promise<void>;
   protected abstract purgeLinks(installPath: string, dataPath: string): Promise<void>;
   protected abstract isLink(linkPath: string, sourcePath: string): Promise<boolean>;
   /**
@@ -345,13 +352,22 @@ abstract class LinkingActivator implements IDeploymentMethod {
    */
   protected abstract canRestore(): boolean;
 
+  protected stat(filePath: string): Promise<fs.Stats> {
+    return fs.statAsync(filePath);
+  }
+
+  protected statLink(filePath: string): Promise<fs.Stats> {
+    return fs.lstatAsync(filePath);
+  }
+
   private deployFile(key: string, installPathStr: string, dataPath: string,
                      replace: boolean): Promise<IDeployedFile> {
-    const fullPath = path.join(installPathStr, this.mContext.newDeployment[key].source,
-                               this.mContext.newDeployment[key].relPath);
+    const fullPath =
+      [installPathStr, this.mContext.newDeployment[key].source,
+        this.mContext.newDeployment[key].relPath].join(path.sep);
     const fullOutputPath =
-        path.join(dataPath, this.mContext.newDeployment[key].target || '',
-                  this.mContext.newDeployment[key].relPath);
+      [dataPath, this.mContext.newDeployment[key].target || '',
+        this.mContext.newDeployment[key].relPath].join(path.sep);
 
     const backupProm: Promise<void> = replace
       ? Promise.resolve(undefined)

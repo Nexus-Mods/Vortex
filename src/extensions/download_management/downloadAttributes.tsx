@@ -48,7 +48,7 @@ export const LOGICAL_NAME: ITableAttribute = {
   description: 'Readable Name',
   icon: '',
   calc: (attributes: IDownload) =>
-    getSafe(attributes, ['modInfo', 'name'], attributes.localPath),
+    getSafe(attributes, ['modInfo', 'name'], '') || attributes.localPath,
   placement: 'both',
   isToggleable: true,
   edit: {},

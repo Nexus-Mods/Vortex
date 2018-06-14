@@ -3,7 +3,7 @@ import LazyComponent from '../../util/LazyComponent';
 import {} from './SettingsVortex';
 
 function init(context: IExtensionContext): boolean {
-  context.registerSettings('Vortex', LazyComponent('./SettingsVortex', __dirname));
+  context.registerSettings('Vortex', LazyComponent(() => require('./SettingsVortex')));
 
   return true;
 }

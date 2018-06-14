@@ -31,3 +31,34 @@
 .mod-drop-panel {
   margin-top: $half-gutter;
 }
+
+.version-option {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  svg {
+    margin: 0 !important;
+  }
+}
+
+.mod-update {
+  &.warning {
+    color: $brand-warning;
+  }
+
+  &.download {
+    color: $brand-warning;
+  }
+
+  &.ban {
+    color: $brand-danger;
+  }
+
+  &.bug {
+    color: $brand-danger;
+  }
+
+  .icon-button {
+    margin-left: 0.4em !important;
+  }
+}

@@ -1,14 +1,13 @@
 import * as React from 'react';
-import reqResolve = require('resolve');
+import * as reqResolve from 'resolve';
 
-export default function<T>(moduleId: string, basedir?: string) {
+export default function<T>(load: () => any) {
   let mod: {
     default: React.ComponentClass<any>,
   };
   return (props) => {
     if (mod === undefined) {
-      const options = basedir !== undefined ? { basedir } : undefined;
-      mod = require(reqResolve.sync(moduleId, options));
+      mod = load();
     }
     return <mod.default {...props} />;
   };

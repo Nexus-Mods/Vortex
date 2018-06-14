@@ -1,8 +1,12 @@
 import ExtensionManager from './ExtensionManager';
 
 import {app as appIn, remote} from 'electron';
-import Module = require('module');
+import {} from 'module';
 import * as path from 'path';
+import { dynreq } from 'vortex-run';
+
+// tslint:disable-next-line:no-var-requires
+const Module = require('module');
 
 const app = appIn || remote.app;
 
@@ -24,7 +28,7 @@ function extensionRequire(orig) {
     if (extensionPaths.find(iter => this.filename.startsWith(iter)) !== undefined) {
       let res;
       try {
-        res = require.main.require(id);
+        res = dynreq.main.require(id);
       } catch (err) {
         // nop, leave res undefined so orig gets tried
       }

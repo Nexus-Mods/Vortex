@@ -38,7 +38,7 @@
 }
 
 .table-filter-column {
-  background-color: $brand-warning;
+  background-color: $brand-warning !important;
 }
 
 .table-sort-column {
@@ -86,14 +86,13 @@
 
 .table-details-pane {
   contain: content;
-  height: 100%;
   overflow-y: auto;
   padding: 0px;
   background-color: $brand-menu;
   transition: max-width 300ms;
   border-right-width: 0px;
   position: absolute;
-  right: 0;
+  right: 1px;
   top: 0;
   bottom: 0;
 

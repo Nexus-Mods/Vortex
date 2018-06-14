@@ -16,18 +16,23 @@ import {
   shell,
 } from 'electron';
 import * as fs from 'fs-extra-promise';
+import { t } from 'i18next';
 import NexusT from 'nexus-api';
-import opn = require('opn');
+import {} from 'opn';
 import * as os from 'os';
 import * as path from 'path';
 import {} from 'uuid';
+import { IErrorOptions } from '../types/api';
+
+// tslint:disable-next-line:no-var-requires
+const opn = require('opn');
 
 // could be a bit more dynamic but how often is this going to change?
 const repo = 'Nexus-Mods/Vortex';
 const repoURL = 'https://github.com/' + repo;
 
 function createTitle(type: string, error: IError, hash: string) {
-  return `${type}: ${error.message} (hash: ${hash})`;
+  return `${type}: ${error.message}`;
 }
 
 function createReport(type: string, error: IError, version: string) {
@@ -71,9 +76,15 @@ export function genHash(error: IError) {
         // remove the file names from stack lines because they contain local paths
          .replace(/\([^)]*\)$/, '')
          // remove everything in quotes to get file names and such out of the error message
-         .replace(/'[^']*'/, '').replace(/"[^"]*"/, ''))
-      .join('\n');
-    return hash.update(hashStack).digest('hex');
+         .replace(/'[^']*'/, '').replace(/"[^"]*"/, ''));
+    const idx = hashStack.findIndex(
+      line => (line.indexOf('Promise._settlePromiseFromHandler') !== -1)
+           || (line.indexOf('MappingPromiseArray._promiseFulfilled') !== -1));
+    if (idx !== -1) {
+      hashStack.splice(idx);
+    }
+
+    return hash.update(hashStack.join('\n')).digest('hex');
   } else {
     return hash.update(error.message).digest('hex');
   }
@@ -144,16 +155,17 @@ function nexusReport(hash: string, type: string, error: IError, labels: string[]
   const Nexus: typeof NexusT = require('nexus-api').default;
 
   const referenceId = require('uuid').v4();
-  const nexus = new Nexus(undefined, apiKey);
+  const nexus = new Nexus(undefined, apiKey, app.getVersion());
   return Promise.resolve(nexus.sendFeedback(
+    createTitle(type, error, hash),
     createReport(type, error, app.getVersion()),
     undefined,
     false,
     hash,
     referenceId))
   .then(() => opn(`https://www.nexusmods.com/crash-report/?key=${referenceId}`)
-      .catch(err => undefined))
-  .then(() => undefined);
+  .then(() => undefined)
+  .catch(err => undefined));
 }
 
 let fallbackAPIKey: string;
@@ -296,15 +308,21 @@ function makeDetails(error: any): IError {
   return result;
 }
 
-export function toError(input: any): IError {
+export function toError(input: any, options?: IErrorOptions): IError {
   switch (typeof input) {
     case 'object': {
-      return (input.message === undefined) && (input.stack === undefined) ?
-                    {message: require('util').inspect(input)} :
-                    {message: input.message, stack: input.stack};
+      if ((input.message === undefined) && (input.stack === undefined)) {
+        // not an error object, what is this??
+        return { message: require('util').inspect(input) };
+      }
+      const message = input.message !== undefined
+        ? t(input.message, { replace: (options || {}).replace, lng: 'en' })
+        : undefined;
+      return {message, stack: input.stack};
     }
     case 'string': {
-      return { message: input };
+      const message = t(input, { replace: (options || {}).replace, lng: 'en' });
+      return { message };
     }
     default: {
       return { message: input as string };

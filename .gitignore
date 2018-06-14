@@ -1,4 +1,4 @@
-node_modules
+node_modules/*
 typings
 dist
 dist_custom
@@ -19,6 +19,7 @@ auto.gypi
 auto-top.gypi
 npm-debug.log*
 .DS_Store
+yarn-error.log
 
 # temporary fonts directory used during font-svg generation
 /fonts/

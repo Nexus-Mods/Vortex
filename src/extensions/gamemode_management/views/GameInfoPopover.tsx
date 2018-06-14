@@ -7,9 +7,12 @@ import { IGameStored } from '../types/IGameStored';
 
 import * as Promise from 'bluebird';
 import * as I18next from 'i18next';
-import opn = require('opn');
+import {} from 'opn';
 import * as React from 'react';
 import { Table } from 'react-bootstrap';
+
+// tslint:disable-next-line:no-var-requires
+const opn = require('opn');
 
 export interface IBaseProps {
   t: I18next.TranslationFunction;

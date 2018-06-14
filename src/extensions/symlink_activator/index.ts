@@ -150,6 +150,7 @@ class DeploymendMethod extends LinkingDeployment {
     try {
       fs.linkSync(srcFile, destFile);
       fs.removeSync(destFile);
+      return true;
     } catch (err) {
       return false;
     }

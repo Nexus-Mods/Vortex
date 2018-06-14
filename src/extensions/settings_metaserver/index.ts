@@ -4,7 +4,7 @@ import settingsReducer from './reducers';
 import {} from './SettingsMetaserver';
 
 function init(context: IExtensionContext): boolean {
-  context.registerSettings('Download', LazyComponent('./SettingsMetaserver', __dirname));
+  context.registerSettings('Download', LazyComponent(() => require('./SettingsMetaserver')));
   context.registerReducer(['settings', 'metaserver'], settingsReducer);
 
   return true;

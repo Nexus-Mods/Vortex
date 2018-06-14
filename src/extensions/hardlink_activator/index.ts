@@ -7,8 +7,8 @@ import { activeGameId } from '../../util/selectors';
 import { getGame } from '../gamemode_management';
 import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
 import LinkingDeployment from '../mod_management/LinkingDeployment';
-import { installPath } from '../mod_management/selectors';
 import { IDeployedFile, IDeploymentMethod } from '../mod_management/types/IDeploymentMethod';
+import resolvePath from '../mod_management/util/resolvePath';
 
 import * as Promise from 'bluebird';
 import * as I18next from 'i18next';
@@ -44,7 +44,7 @@ class DeploymentMethod extends LinkingDeployment {
       + 'a full-fledged index, so there is no differentiation between "original" and "link" '
       + 'after the link was created.\n'
       + 'Advantages:\n'
-      + ' - perfect compatibility\n'
+      + ' - perfect compatibility with all applications\n'
       + ' - no performance penalty\n'
       + ' - Wide OS and FS support\n'
       + 'Disadvantages:\n'
@@ -67,13 +67,15 @@ class DeploymentMethod extends LinkingDeployment {
     try {
       fs.accessSync(modPaths[typeId], fs.constants.W_OK);
     } catch (err) {
-      log('info', 'hardlink activator not supported due to lack of write access',
+      log('info', 'hardlink deployment not supported due to lack of write access',
           { typeId, path: modPaths[typeId] });
       return `Can\'t write to output directory: ${modPaths[typeId]}`;
     }
 
+    const installationPath = resolvePath('install', state.settings.mods.paths, gameId);
+
     try {
-      if (fs.statSync(installPath(state)).dev !== fs.statSync(modPaths[typeId]).dev) {
+      if (fs.statSync(installationPath).dev !== fs.statSync(modPaths[typeId]).dev) {
         // hard links work only on the same drive
         return 'Works only if mods are installed on the same drive as the game. '
           + 'You can go to settings and change the mod directory to the same drive '
@@ -82,10 +84,22 @@ class DeploymentMethod extends LinkingDeployment {
     } catch (err) {
       // this can happen when managing the the game for the first time
       log('info', 'failed to stat. directory missing?', {
-        dir1: installPath(state), dir2: modPaths[typeId],
+        dir1: installationPath || 'undefined', dir2: modPaths[typeId],
         err: util.inspect(err),
       });
       return 'Game not fully initialized yet, this should disappear soon.';
+    }
+
+    const canary = path.join(installationPath, '__vortex_canary.txt');
+    try {
+      fs.writeFileSync(canary, 'Should only exist temporarily, feel free to delete');
+      fs.linkSync(canary, canary + '.link');
+      fs.removeSync(canary + '.link');
+      fs.removeSync(canary);
+    } catch (err) {
+      fs.removeSync(canary);
+      fs.removeSync(canary + '.link');
+      return 'Filesystem doesn\'t support hard links';
     }
 
     return undefined;

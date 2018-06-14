@@ -5,6 +5,7 @@ import { showError } from '../../util/message';
 import { activeGameId } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 
+import { setDownloadModInfo } from '../download_management/actions/state';
 import { setModAttribute } from '../mod_management/actions/mods';
 import { IModWithState } from '../mod_management/types/IModProps';
 
@@ -13,7 +14,7 @@ import { showCategoriesDialog } from './actions/session';
 import {categoryReducer} from './reducers/category';
 import { sessionReducer } from './reducers/session';
 import { allCategories } from './selectors';
-import { ICategoryDictionary } from './types/IcategoryDictionary';
+import { ICategoryDictionary } from './types/ICategoryDictionary';
 import { ICategoriesTree } from './types/ITrees';
 import CategoryFilter from './util/CategoryFilter';
 import { resolveCategoryName, resolveCategoryPath } from './util/retrieveCategoryPath';
@@ -25,7 +26,7 @@ import * as Redux from 'redux';
 export { resolveCategoryName, resolveCategoryPath };
 
 function getModCategory(mod: IModWithState) {
-  return mod.attributes['category'];
+  return getSafe(mod, ['attributes', 'category'], undefined);
 }
 
 function getCategoryChoices(state: IState) {
@@ -71,13 +72,17 @@ function init(context: IExtensionContext): boolean {
     calc: (mod: IModWithState) =>
       resolveCategoryPath(getModCategory(mod), context.api.store.getState()),
     edit: {
-      readOnly: (mod: IModWithState) => mod.state === 'downloaded',
       choices: () => getCategoryChoices(context.api.store.getState()),
       onChangeValue: (rows: IModWithState[], newValue: any) => {
         const gameMode = activeGameId(context.api.store.getState());
         rows.forEach(row => {
-          context.api.store.dispatch(
-              setModAttribute(gameMode, row.id, 'category', newValue));
+          if (row.state === 'downloaded') {
+            context.api.store.dispatch(
+              setDownloadModInfo(row.id, 'custom.category', newValue));
+          } else {
+            context.api.store.dispatch(
+                setModAttribute(gameMode, row.id, 'category', newValue));
+          }
         });
       },
     },

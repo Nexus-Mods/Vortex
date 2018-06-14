@@ -5,10 +5,13 @@ import { setMaxDownloads } from '../actions/settings';
 
 import getText from '../texts';
 
-import opn = require('opn');
+import {} from 'opn';
 import * as React from 'react';
 import { Button, ControlLabel, FormControl, FormGroup } from 'react-bootstrap';
 import * as Redux from 'redux';
+
+// tslint:disable-next-line:no-var-requires
+const opn = require('opn');
 
 interface IConnectedProps {
   parallelDownloads: number;

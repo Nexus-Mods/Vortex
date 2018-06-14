@@ -5,7 +5,7 @@
 /** dummy */
 import * as path from 'path';
 import * as util from 'util';
-import winstonT = require('winston');
+import * as winstonT from 'winston';
 
 function IPCTransport(options: winstonT.TransportOptions) {
   this.name = 'IPCTransport';

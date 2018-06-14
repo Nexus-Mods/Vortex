@@ -34,11 +34,12 @@ import deriveModInstallName from './modIdManager';
 import * as Promise from 'bluebird';
 import * as I18next from 'i18next';
 import { IHashResult, ILookupResult, IReference, IRule } from 'modmeta-db';
-import ZipT = require('node-7z');
+import * as ZipT from 'node-7z';
 import * as os from 'os';
 import * as path from 'path';
 import * as Redux from 'redux';
 import * as rimraf from 'rimraf';
+import { IInstallContext } from './types/IInstallContext';
 
 export class ArchiveBrokenError extends Error {
   constructor() {
@@ -244,7 +245,7 @@ class InstallManager {
         destinationPath = path.join(this.mGetInstallPath(installGameId), modId);
         tempPath = destinationPath + '.installing';
         return this.installInner(api, archivePath,
-          tempPath, destinationPath, installGameId);
+          tempPath, destinationPath, installGameId, installContext);
       })
       .then(result => {
         installContext.setInstallPathCB(modId, destinationPath);
@@ -341,13 +342,14 @@ class InstallManager {
           const errMessage = typeof err === 'string' ? err : err.message + '\n' + err.stack;
 
           return prom
-            .then(() => genHash(archivePath))
+            .then(() => genHash(archivePath).catch(() => ({})))
             .then((hashResult: IHashResult) => {
               const id = `${path.basename(archivePath)} (md5: ${hashResult.md5sum})`;
               if (installContext !== undefined) {
                 installContext.reportError(
                     'Installation failed',
-                    `The installer "{{ id }}" failed: {{ message }}`, err.code !== 'EPERM', {
+                    `The installer "{{ id }}" failed: {{ message }}`,
+                    ['EPERM', 'ENOENT'].indexOf(err.code) === -1, {
                       id,
                       message: errMessage,
                     });
@@ -375,15 +377,23 @@ class InstallManager {
    */
   private installInner(api: IExtensionApi, archivePath: string,
                        tempPath: string, destinationPath: string,
-                       gameId: string): Promise<IInstallResult> {
+                       gameId: string, installContext: IInstallContext): Promise<IInstallResult> {
     const fileList: string[] = [];
+    const progress = (files: string[], percent: number) => {
+      if ((percent !== undefined) && (installContext !== undefined)) {
+        installContext.setProgress(percent);
+      }
+    };
     return this.mTask.extractFull(archivePath, tempPath, {ssc: false},
-                                  () => undefined,
+                                  progress,
                                   () => this.queryPassword(api.store))
         .catch((err: Error) => this.isCritical(err.message)
           ? Promise.reject(new ArchiveBrokenError())
           : Promise.reject(err))
         .then(({ code, errors }: {code: number, errors: string[] }) => {
+          if (installContext !== undefined) {
+            installContext.setProgress();
+          }
           if (code !== 0) {
             const critical = errors.find(this.isCritical);
             if (critical !== undefined) {
@@ -543,6 +553,7 @@ class InstallManager {
     const {genHash} = require('modmeta-db');
     const makeReport = () =>
         genHash(archivePath)
+            .catch(err => ({}))
             .then(
                 (hashResult: IHashResult) => createErrorReport(
                     'Installer failed',
@@ -597,7 +608,8 @@ class InstallManager {
     return Promise.each(submodule,
       mod => {
         const tempPath = destinationPath + '.' + mod.key + '.installing';
-        return this.installInner(api, mod.path, tempPath, destinationPath, gameId)
+        return this.installInner(api, mod.path, tempPath, destinationPath,
+                                 gameId, undefined)
           .then((resultInner) => this.processInstructions(
             api, mod.path, tempPath, destinationPath,
             gameId, mod.key, resultInner))
