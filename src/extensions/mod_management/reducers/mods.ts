@@ -97,6 +97,10 @@ export const modsReducer: IReducerSpec = {
         ? pushSafe(state, [gameId, modId, 'enabledINITweaks'], tweak)
         : removeValue(state, [gameId, modId, 'enabledINITweaks'], tweak);
     },
+    [actions.setFileOverride as any]: (state, payload) => {
+      const { gameId, modId, files }  = payload;
+      return setSafe(state, [gameId, modId, 'fileOverrides'], files);
+    },
   },
   defaults: {
   },

@@ -56,3 +56,9 @@ export const setINITweakEnabled = safeCreateAction(
     'SET_TWEAK_ENABLED',
     (gameId: string, modId: string, tweak: string, enabled: boolean) =>
         ({gameId, modId, tweak, enabled}));
+
+/**
+ * set list of files that will always be provided by this mod, no matter the deployment order
+ */
+export const setFileOverride = safeCreateAction('SET_FILE_OVERRIDE',
+  (gameId: string, modId: string, files: string[]) => ({ gameId, modId, files }));

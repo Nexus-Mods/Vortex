@@ -74,25 +74,24 @@ abstract class LinkingActivator implements IDeploymentMethod {
     return this.description;
   }
 
-  public prepare(dataPath: string, clean: boolean, lastDeployment: IDeployedFile[]): Promise<void> {
+  public prepare(dataPath: string, clean: boolean, lastDeployment: IDeployedFile[],
+                 normalize: Normalize): Promise<void> {
     if (this.mContext !== undefined) {
       return Promise.reject(new ProcessCanceled('Deployment in progress'));
     }
-    return getNormalizeFunc(dataPath, { unicode: false, separators: false, relative: false })
-      .then(func => {
-        this.mNormalize = func;
-        this.mContext = {
-          newDeployment: {},
-          previousDeployment: {},
-        };
-        lastDeployment.forEach(file => {
-          const key = this.mNormalize(file.relPath);
-          this.mContext.previousDeployment[key] = file;
-          if (!clean) {
-            this.mContext.newDeployment[key] = file;
-          }
-        });
-      });
+
+    this.mNormalize = normalize;
+    this.mContext = {
+      newDeployment: {},
+      previousDeployment: {},
+    };
+    lastDeployment.forEach(file => {
+      const key = this.mNormalize(file.relPath);
+      this.mContext.previousDeployment[key] = file;
+      if (!clean) {
+        this.mContext.newDeployment[key] = file;
+      }
+    });
   }
 
   public finalize(gameId: string,
@@ -228,10 +227,11 @@ abstract class LinkingActivator implements IDeploymentMethod {
       }
       entries.forEach(entry => {
         const relPath: string = path.relative(sourcePath, entry.filePath);
-        if (!entry.isDirectory && !blackList.has(relPath)) {
+        const relPathNorm = this.mNormalize(relPath);
+        if (!entry.isDirectory && !blackList.has(relPathNorm)) {
           // mods are activated in order of ascending priority so
           // overwriting is fine here
-          this.mContext.newDeployment[this.mNormalize(relPath)] = {
+          this.mContext.newDeployment[relPathNorm] = {
             relPath,
             source: sourceName,
             target: dataPath,

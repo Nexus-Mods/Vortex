@@ -28,6 +28,7 @@ import {currentActivator, installPath} from './selectors';
 
 import * as Promise from 'bluebird';
 import * as path from 'path';
+import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
 
 export function onGameModeActivated(
     api: IExtensionApi, activators: IDeploymentMethod[], newGame: string) {
@@ -159,8 +160,13 @@ function undeploy(api: IExtensionApi,
   const installationPath = resolvePath('install', state.settings.mods.paths, gameMode);
 
   const dataPath = modPaths[mod.type || ''];
-  return loadActivation(api, mod.type, dataPath)
-    .then(lastActivation => activator.prepare(dataPath, false, lastActivation))
+  let normalize: Normalize;
+  return getNormalizeFunc(dataPath)
+    .then(norm => {
+      normalize = norm;
+      return loadActivation(api, mod.type, dataPath);
+    })
+    .then(lastActivation => activator.prepare(dataPath, false, lastActivation, normalize))
     .then(() => (mod !== undefined)
       ? activator.deactivate(installationPath, dataPath, mod)
       : Promise.resolve())

@@ -442,6 +442,10 @@
     "showhide-up": {
       "path": "{nucleo}/arrows/{nucleo_simple}_stre-up",
       "rmFill": true
+    },
+    "override": {
+      "path": "{nucleo}/user interface/{nucleo_simple}_alert-exc",
+      "rmFill": true
     }
   }
 }

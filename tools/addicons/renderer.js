@@ -13,6 +13,7 @@ const configPath = path.resolve(__dirname, '..', 'iconconfig.json');
 const locations = [
   '{nucleo}/arrows/{nucleo_simple}_',
   '{nucleo}/ui/{nucleo_simple}_',
+  '{nucleo}/user interface/{nucleo_simple}_',
   '{nucleo}/animals-nature/{nucleo_simple}_',
   '{nucleo}/business-finance/{nucleo_simple}_',
   '{nucleo}/clothes-accessories/{nucleo_simple}_',

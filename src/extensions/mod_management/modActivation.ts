@@ -1,4 +1,5 @@
 import { IExtensionApi } from '../../types/IExtensionContext';
+import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
 import { log } from '../../util/log';
 import { truthy } from '../../util/util';
 
@@ -30,21 +31,34 @@ function deployMods(api: IExtensionApi,
                     method: IDeploymentMethod,
                     lastActivation: IDeployedFile[],
                     typeId: string,
-                    merged: Set<string>,
+                    skipFiles: Set<string>,
                     subDir: (mod: IMod) => string,
                     progressCB?: (name: string, progress: number) => void,
                    ): Promise<IDeployedFile[]> {
   if (!truthy(destinationPath)) {
     return Promise.resolve([]);
   }
-  return method.prepare(destinationPath, true, lastActivation)
+
+  let skipFilesNormalized: Set<string>;
+  let normalize: Normalize;
+  return getNormalizeFunc(destinationPath)
+    .then(norm => {
+      normalize = norm;
+      skipFilesNormalized = new Set(Array.from(skipFiles).map(norm));
+      return method.prepare(destinationPath, true, lastActivation, norm);
+    })
     .then(() => Promise.each(mods, (mod, idx, length) => {
       try {
         if (progressCB !== undefined) {
           progressCB(renderModName(mod), Math.round((idx * 50) / length));
         }
         return method.activate(path.join(installationPath, mod.installationPath),
-                               mod.installationPath, subDir(mod), merged);
+                               mod.installationPath, subDir(mod), skipFilesNormalized)
+          .then(() => {
+            if (mod.fileOverrides !== undefined) {
+              mod.fileOverrides.forEach(file => skipFilesNormalized.add(normalize(file)));
+            }
+          });
       } catch (err) {
         log('error', 'failed to deploy mod', {err: err.message, id: mod.id});
       }
