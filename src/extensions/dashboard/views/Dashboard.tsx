@@ -68,16 +68,20 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
     // assuming this doesn't change?
     const window = remote.getCurrentWindow();
     this.mWindowFocused = window.isFocused();
-    window.on('focus', () => { this.mWindowFocused = true; });
-    window.on('blur', () => { this.mWindowFocused = false; });
   }
 
   public componentDidMount() {
     this.startUpdateCycle();
+    const window = remote.getCurrentWindow();
+    window.on('focus', () => { this.mWindowFocused = true; });
+    window.on('blur', () => { this.mWindowFocused = false; });
   }
 
   public componentWillUnmount() {
     clearTimeout(this.mUpdateTimer);
+    const window = remote.getCurrentWindow();
+    window.removeListener('focus', this.onFocus);
+    window.removeListener('blur', this.onBlur);
   }
 
   public componentWillReceiveProps(nextProps: IProps) {
@@ -133,6 +137,10 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
   private onChangeLayout = (layout: string[]) => {
     this.mLayoutDebouncer.schedule(undefined, layout);
   }
+
+  private onFocus = () => { this.mWindowFocused = true; };
+
+  private onBlur = () => { this.mWindowFocused = false; };
 
   private startUpdateCycle = () => {
     // TODO: this is a hack needed so dashlets get updated even if they get props passed in

@@ -109,7 +109,7 @@ class MainPageContainer extends ComponentEx<IBaseProps, IComponentState> {
   private report = () => {
     const { events } = this.context.api;
     const { error, errorInfo } = this.state;
-    events.emit('report-feedback', `Component rendering error
+    events.emit('report-feedback', error.stack.split('\n')[0], `Component rendering error
 
 Vortex Version: ${remote.app.getVersion()},
 

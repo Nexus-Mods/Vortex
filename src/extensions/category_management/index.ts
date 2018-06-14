@@ -26,7 +26,7 @@ import * as Redux from 'redux';
 export { resolveCategoryName, resolveCategoryPath };
 
 function getModCategory(mod: IModWithState) {
-  return mod.attributes['category'];
+  return getSafe(mod, ['attributes', 'category'], undefined);
 }
 
 function getCategoryChoices(state: IState) {

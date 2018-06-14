@@ -143,7 +143,14 @@ class DeploymentMethod extends LinkingDeployment {
 
   protected isLink(linkPath: string, sourcePath: string): Promise<boolean> {
     return fs.readFileAsync(sourcePath + LNK_EXT, { encoding: 'utf-8' })
-      .then(data => JSON.parse(data).target === linkPath)
+      .then(data => {
+        try {
+          return JSON.parse(data).target === linkPath;
+        } catch (err) {
+          log('error', 'invalid link', data);
+          return false;
+        }
+      })
       .catch(err => (err.code === 'ENOENT')
         ? Promise.resolve(false)
         : Promise.reject(err));
@@ -167,8 +174,16 @@ class DeploymentMethod extends LinkingDeployment {
   private statVortexLink(filePath: string): Promise<fs.Stats> {
     return fs.readFileAsync(filePath + LNK_EXT, { encoding: 'utf-8' })
       .then(data => {
-        const dat = JSON.parse(data);
-        return fs.statAsync(dat.target);
+        try {
+          const dat = JSON.parse(data);
+          return fs.statAsync(dat.target);
+        } catch (err) {
+          log('error', 'invalid link', data);
+          const error: any = new Error('Invalid link');
+          error.code = 'ENOENT';
+          error.path = filePath;
+          return Promise.reject(error);
+        }
       });
   }
 
@@ -183,14 +198,22 @@ class DeploymentMethod extends LinkingDeployment {
   private restoreLink(linkPath: string): Promise<void> {
     return fs.readFileAsync(linkPath, { encoding: 'utf-8' })
       .then(data => {
-        const dat = JSON.parse(data);
-        const outPath = linkPath.replace(this.mLnkExpression, '');
-        return fs.renameAsync(dat.target, outPath)
-          .catch(err => (err.code === 'ENOENT')
+        try {
+          const dat = JSON.parse(data);
+          const outPath = linkPath.replace(this.mLnkExpression, '');
+          return fs.renameAsync(dat.target, outPath)
+            .catch(err => (err.code === 'ENOENT')
               // file was deleted. Well, the user is the boss...
               ? Promise.resolve()
               : Promise.reject(err))
-          .then(() => fs.removeAsync(linkPath));
+            .then(() => fs.removeAsync(linkPath));
+        } catch (err) {
+          log('error', 'invalid link', data);
+          const error: any = new Error('Invalid link');
+          error.code = 'ENOENT';
+          error.path = linkPath;
+          return Promise.reject(error);
+        }
       });
   }
 

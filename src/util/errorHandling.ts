@@ -32,7 +32,7 @@ const repo = 'Nexus-Mods/Vortex';
 const repoURL = 'https://github.com/' + repo;
 
 function createTitle(type: string, error: IError, hash: string) {
-  return `${type}: ${error.message} (hash: ${hash})`;
+  return `${type}: ${error.message}`;
 }
 
 function createReport(type: string, error: IError, version: string) {
@@ -78,7 +78,8 @@ export function genHash(error: IError) {
          // remove everything in quotes to get file names and such out of the error message
          .replace(/'[^']*'/, '').replace(/"[^"]*"/, ''));
     const idx = hashStack.findIndex(
-      line => line.indexOf('Promise._settlePromiseFromHandler') !== -1);
+      line => (line.indexOf('Promise._settlePromiseFromHandler') !== -1)
+           || (line.indexOf('MappingPromiseArray._promiseFulfilled') !== -1));
     if (idx !== -1) {
       hashStack.splice(idx);
     }
@@ -156,14 +157,15 @@ function nexusReport(hash: string, type: string, error: IError, labels: string[]
   const referenceId = require('uuid').v4();
   const nexus = new Nexus(undefined, apiKey, app.getVersion());
   return Promise.resolve(nexus.sendFeedback(
+    createTitle(type, error, hash),
     createReport(type, error, app.getVersion()),
     undefined,
     false,
     hash,
     referenceId))
   .then(() => opn(`https://www.nexusmods.com/crash-report/?key=${referenceId}`)
-      .catch(err => undefined))
-  .then(() => undefined);
+  .then(() => undefined)
+  .catch(err => undefined));
 }
 
 let fallbackAPIKey: string;

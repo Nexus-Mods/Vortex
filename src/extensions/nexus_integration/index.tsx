@@ -558,14 +558,13 @@ function errorFromNexusError(err: NexusErrorT): string {
 }
 
 function validateKey(api: IExtensionApi, key: string): Promise<void> {
-  const state = api.store.getState();
   const { NexusError, TimeoutError } = require('nexus-api');
 
   return Promise.resolve(nexus.validateKey(key))
     .then(userInfo => {
       api.store.dispatch(setUserInfo(transformUserInfo(userInfo)));
     })
-    .catch(TimeoutError, err => {
+    .catch(TimeoutError, () => {
       showError(api.store.dispatch,
         'API Key validation timed out',
         'Server didn\'t respond to validation request, web-based '
@@ -689,9 +688,9 @@ function once(api: IExtensionApi) {
   });
 
   api.events.on('submit-feedback',
-    (message: string, hash: string, feedbackFiles: string[],
+    (title: string, message: string, hash: string, feedbackFiles: string[],
      anonymous: boolean, callback: (err: Error) => void) => {
-      submitFeedback(nexus, message, feedbackFiles, anonymous, hash)
+      submitFeedback(nexus, title, message, feedbackFiles, anonymous, hash)
         .then(() => callback(null))
         .catch(err => callback(err));
     });
@@ -702,7 +701,8 @@ function once(api: IExtensionApi) {
 
   api.events.on('mod-update', (gameId, modId, fileId) => {
     const state: IState = api.store.getState();
-    if (!getSafe(state, ['session', 'nexus', 'userInfo', 'isPremium'], false)) {
+    if (!getSafe(state, ['session', 'nexus', 'userInfo', 'isPremium'], false)
+      && !getSafe(state, ['session', 'nexus', 'userInfo', 'isSupporter'], false)) {
       // nexusmods can't let users download files directly from client, without
       // showing ads
       opn(['https://www.nexusmods.com', convertGameId(gameId), 'mods', modId].join('/'))
@@ -856,9 +856,9 @@ function init(context: IExtensionContextExt): boolean {
       </div>);
   }, {
     props: {
-      isPremium: state => getSafe(state, ['session', 'nexus', 'userInfo', 'isPremium'], undefined),
+      isPremium: state => getSafe(state, ['session', 'nexus', 'userInfo', 'isPremium'], false),
     },
-    condition: (props: any): boolean => props.isPremium === false,
+    condition: (props: any): boolean => !props.isPremium,
   });
 
   context.registerBanner('main-toolbar', () => {
@@ -874,14 +874,12 @@ function init(context: IExtensionContextExt): boolean {
       </div>);
   }, {
     props: {
-      isPremium: state => getSafe(state, ['session', 'nexus', 'userInfo', 'isPremium'], undefined),
+      isPremium: state => getSafe(state, ['session', 'nexus', 'userInfo', 'isPremium'], false),
+      isSupporter: state =>
+        getSafe(state, ['session', 'nexus', 'userInfo', 'isSupporter'], false),
     },
-    condition: (props: any): boolean => props.isPremium === false,
+    condition: (props: any): boolean => !props.isPremium && !props.isSupporter,
   });
-
-  const logInDialog = () => {
-    context.api.store.dispatch(setDialogVisible('login-dialog'));
-  };
 
   const associateNXM = () => {
     const state: any = context.api.store.getState();
@@ -921,7 +919,9 @@ function init(context: IExtensionContextExt): boolean {
   });
 
   context.registerDashlet('Go Premium', 1, 2, 200, GoPremiumDashlet, (state: IState) =>
-    getSafe(state, ['session', 'nexus', 'userInfo', 'isPremium'], undefined) !== true, undefined, {
+    (getSafe(state, ['session', 'nexus', 'userInfo', 'isPremium'], undefined) !== true)
+    && (getSafe(state, ['session', 'nexus', 'userInfo', 'isSupporter'], undefined) !== true),
+    undefined, {
     fixed: false,
     closable: false,
   });

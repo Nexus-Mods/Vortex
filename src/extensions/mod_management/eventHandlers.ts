@@ -1,22 +1,20 @@
 import {IExtensionApi} from '../../types/IExtensionContext';
-import {IDiscoveryResult, IState, IStatePaths} from '../../types/IState';
+import {IState, IStatePaths} from '../../types/IState';
 import { ProcessCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
-import {log} from '../../util/log';
 import {showError} from '../../util/message';
 import {getSafe} from '../../util/storeHelper';
 import {truthy} from '../../util/util';
 
 import {IDownload} from '../download_management/types/IDownload';
-import {activeGameId, activeProfile} from '../profile_management/selectors';
-import {addMod, removeMod} from './actions/mods';
+import {activeGameId} from '../profile_management/selectors';
+import {addMod, removeMod, setModState} from './actions/mods';
 import {setActivator} from './actions/settings';
 import {IDeploymentMethod} from './types/IDeploymentMethod';
 import {IMod} from './types/IMod';
 import {loadActivation, saveActivation} from './util/activationStore';
 
 import {getGame} from '../gamemode_management/index';
-import {currentGameDiscovery} from '../gamemode_management/selectors';
 import {setModEnabled} from '../profile_management/actions/profiles';
 import {IProfile} from '../profile_management/types/IProfile';
 
@@ -72,7 +70,9 @@ export function onGameModeActivated(
       const modPaths = game.getModPaths(gameDiscovery.path);
       const purgePromise = oldActivator !== undefined
         ? Promise.mapSeries(Object.keys(modPaths),
-            typeId => oldActivator.purge(instPath, modPaths[typeId])).then(() => undefined)
+            typeId => oldActivator.purge(instPath, modPaths[typeId]))
+              .then(() => undefined)
+              .catch(err => api.showErrorNotification('failed to purge', err))
         : Promise.resolve();
 
       purgePromise.then(() => {
@@ -112,7 +112,7 @@ export function onPathsChanged(api: IExtensionApi,
   const gameMode = activeGameId(state);
   if (previous[gameMode] !== current[gameMode]) {
     const knownMods = state.persistent.mods[gameMode];
-    refreshMods(installPath(state), Object.keys(knownMods), (mod: IMod) =>
+    refreshMods(installPath(state), Object.keys(knownMods || {}), (mod: IMod) =>
       api.store.dispatch(addMod(gameMode, mod))
       , (modNames: string[]) => {
         modNames.forEach((name: string) => {
@@ -131,8 +131,7 @@ export function onPathsChanged(api: IExtensionApi,
 function undeploy(api: IExtensionApi,
                   activators: IDeploymentMethod[],
                   gameMode: string,
-                  mod: IMod,
-                  callback?: (error: Error) => void): Promise<void> {
+                  mod: IMod): Promise<void> {
   const store = api.store;
   const state: IState = store.getState();
 
@@ -140,7 +139,7 @@ function undeploy(api: IExtensionApi,
 
   if ((discovery === undefined) || (discovery.path === undefined)) {
     // if the game hasn't been discovered we can't deploy, but that's not really a problem
-    return Promise.resolve(callback(null));
+    return Promise.resolve();
   }
 
   const game = getGame(gameMode);
@@ -154,7 +153,7 @@ function undeploy(api: IExtensionApi,
     : activators.find(act => allTypesSupported(act, state, gameMode, modTypes) === undefined);
 
   if (activator === undefined) {
-    return Promise.reject(callback(new ProcessCanceled('no activator')));
+    return Promise.reject(new ProcessCanceled('No deployment method active'));
   }
 
   const installationPath = resolvePath('install', state.settings.mods.paths, gameMode);
@@ -167,7 +166,7 @@ function undeploy(api: IExtensionApi,
       : Promise.resolve())
     .then(() => activator.finalize(gameMode, dataPath, installationPath))
     .then(newActivation => saveActivation(mod.type, state.app.instanceId, dataPath, newActivation))
-    .catch(err => callback(err));
+    .catch(ProcessCanceled, () => null);
 }
 
 export function onRemoveMod(api: IExtensionApi,
@@ -224,18 +223,26 @@ export function onRemoveMod(api: IExtensionApi,
     return;
   }
 
-  // remove from state first, otherwise if the deletion takes some time it will appear as if nothing
-  // happened
-  store.dispatch(removeMod(gameMode, mod.id));
+  // TODO: no indication anything is happening until undeployment was successful.
+  //   we used to remove the mod right away but then if undeployment failed the mod was gone
+  //   anyway
 
-  (wasEnabled ? undeploy(api, activators, gameMode, mod, callback) : Promise.resolve())
+  (wasEnabled ? undeploy(api, activators, gameMode, mod) : Promise.resolve())
   .then(() => truthy(mod)
     ? fs.removeAsync(path.join(installationPath, mod.installationPath))
         .catch(err => err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err))
     : Promise.resolve())
   .then(() => {
+    store.dispatch(removeMod(gameMode, mod.id));
     if (callback !== undefined) {
       callback(null);
+    }
+  })
+  .catch(ProcessCanceled, (err) => {
+    if (callback !== undefined) {
+      callback(err);
+    } else {
+      api.showErrorNotification('Failed to remove mod', err.message, { allowReport: false });
     }
   })
   .catch(err => {

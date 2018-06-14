@@ -1,6 +1,6 @@
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
-import { delayed } from '../../util/delayed';
+import { getNormalizeFunc, UserCanceled } from '../../util/api';
 import * as fs from '../../util/fs';
 import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
@@ -14,11 +14,7 @@ import resolvePath from '../mod_management/util/resolvePath';
 
 import {
   addLocalDownload,
-  downloadProgress,
-  finishDownload,
-  initDownload,
   removeDownload,
-  setDownloadFilePath,
   setDownloadHashByFile,
   setDownloadInterrupted,
   setDownloadModInfo,
@@ -40,7 +36,6 @@ import { app as appIn, remote } from 'electron';
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as Redux from 'redux';
-import {createSelector} from 'reselect';
 import {generate as shortid} from 'shortid';
 
 const app = remote !== undefined ? remote.app : appIn;
@@ -61,14 +56,17 @@ function knownArchiveExt(filePath: string): boolean {
 }
 
 function refreshDownloads(downloadPath: string, knownDLs: string[],
+                          normalize: (input: string) => string,
                           onAddDownload: (name: string) => void,
-                          onRemoveDownloads: (name: string[]) => void) {
-  return fs.ensureDirAsync(downloadPath)
+                          onRemoveDownloads: (name: string[]) => void,
+                          confirmElevation: () => Promise<void>) {
+  return fs.ensureDirWritableAsync(downloadPath, confirmElevation)
     .then(() => fs.readdirAsync(downloadPath))
     .filter((filePath: string) => knownArchiveExt(filePath))
     .filter((filePath: string) =>
       fs.statAsync(path.join(downloadPath, filePath))
       .then(stat => !stat.isDirectory()).catch(() => false))
+    .map((downloadName: string) => normalize(downloadName))
     .then((downloadNames: string[]) => {
       const addedDLs = downloadNames.filter((name: string) => knownDLs.indexOf(name) === -1);
       const removedDLs = knownDLs.filter((name: string) => downloadNames.indexOf(name) === -1);
@@ -188,11 +186,6 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
   }
   const currentDownloadPath = resolvePath('download', state.settings.mods.paths, gameId);
 
-  const knownDLs =
-      Object.keys(downloads)
-          .filter((dlId: string) => downloads[dlId].game === gameId)
-          .map((dlId: string) => downloads[dlId].localPath);
-
   const nameIdMap: {[name: string]: string} =
       Object.keys(downloads).reduce((prev, value) => {
         prev[downloads[value].localPath] = value;
@@ -200,20 +193,42 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
       }, {});
 
   const downloadChangeHandler = genDownloadChangeHandler(api.store, nameIdMap);
-  return refreshDownloads(currentDownloadPath, knownDLs,
-        (fileName: string) => {
-          fs.statAsync(path.join(currentDownloadPath, fileName))
-            .then((stats: fs.Stats) => {
-              const dlId = shortid();
-              store.dispatch(addLocalDownload(dlId, gameId, fileName, stats.size));
-              nameIdMap[fileName] = dlId;
+  return getNormalizeFunc(currentDownloadPath, {separators: false, relative: false})
+      .then(normalize => {
+        const knownDLs =
+          Object.keys(downloads)
+            .filter((dlId: string) => downloads[dlId].game === gameId)
+            .map((dlId: string) => normalize(downloads[dlId].localPath));
+
+        return refreshDownloads(currentDownloadPath, knownDLs, normalize,
+          (fileName: string) => {
+            fs.statAsync(path.join(currentDownloadPath, fileName))
+              .then((stats: fs.Stats) => {
+                const dlId = shortid();
+                store.dispatch(addLocalDownload(dlId, gameId, fileName, stats.size));
+                nameIdMap[fileName] = dlId;
+              });
+          },
+          (modNames: string[]) => {
+            modNames.forEach((name: string) => {
+              api.store.dispatch(removeDownload(nameIdMap[name]));
             });
-        },
-        (modNames: string[]) => {
-          modNames.forEach((name: string) => {
-            api.store.dispatch(removeDownload(nameIdMap[name]));
+          },
+          () => new Promise((resolve, reject) => {
+            api.showDialog('question', 'Access Denied', {
+              text: 'The download directory is not writable to your user account.\n'
+                + 'If you have admin rights on this system, Vortex can change the permissions '
+                + 'to allow it write access.',
+            }, [
+                { label: 'Cancel', action: () => reject(new UserCanceled()) },
+                { label: 'Allow access', action: () => resolve() },
+              ]);
+          }))
+          .catch(UserCanceled, () => null)
+          .catch(err => {
+            api.showErrorNotification('Failed to refresh download directory', err);
           });
-        })
+      })
     .then(() => {
       manager.setDownloadPath(currentDownloadPath);
       watchDownloads(api, currentDownloadPath, downloadChangeHandler);
@@ -273,6 +288,12 @@ function init(context: IExtensionContextExt): boolean {
 
   context.registerAttributeExtractor(150, attributeExtractor);
   context.registerAttributeExtractor(25, attributeExtractorCustom);
+  context.registerActionCheck('SET_DOWNLOAD_FILEPATH', (state, action: any) => {
+    if (action.payload === '') {
+      return 'Attempt to set invalid file name for a download';
+    }
+    return undefined;
+  });
 
   context.once(() => {
     const DownloadManagerImpl: typeof DownloadManager = require('./DownloadManager').default;

@@ -11,7 +11,6 @@ import { UserCanceled } from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
 import { log } from '../../../util/log';
 import { showError } from '../../../util/message';
-import { activeGameId } from '../../../util/selectors';
 import { getSafe, setSafe } from '../../../util/storeHelper';
 import { getGame } from '../../gamemode_management';
 import { currentGame, currentGameDiscovery } from '../../gamemode_management/selectors';
@@ -104,7 +103,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, activators, discovery, game, gameMode } = this.props;
+    const { t, discovery, game } = this.props;
     const { currentActivator, paths, supportedActivators } = this.state;
 
     if (game === undefined) {
@@ -257,8 +256,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
     this.setState(setSafe(this.state, ['busy'], t('Moving')));
     return purgePromise
-      .then(() => Promise.join(fs.ensureDirWritableAsync(newInstallPath, this.confirmElevate),
-                               fs.ensureDirWritableAsync(newDownloadPath, this.confirmElevate)))
+      .then(() => Promise.join(fs.ensureDirAsync(newInstallPath),
+                               fs.ensureDirAsync(newDownloadPath)))
       .then(() => {
         let queue = Promise.resolve();
         let fileCount = 0;
@@ -312,7 +311,10 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       .catch((err) => {
         if (err !== null) {
           if (err.code === 'EPERM') {
-            onShowError('Directories are locked', err, false);
+            onShowError(
+              'Directories are not writable',
+              'You need to select directories that the current user account can write to!',
+              false);
           } else {
             onShowError('Failed to move directories', err, true);
           }
@@ -323,23 +325,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       });
   }
 
-  private confirmElevate = (): Promise<void> => {
-    const { t, onShowDialog } = this.props;
-    return onShowDialog('question', 'Access denied', {
-      text: 'This directory is not writable to the current windows user account. '
-          + 'Vortex can try to create the directory as administrator but it will '
-          + 'then have to give access to it to all logged in users.',
-    }, [
-      { label: 'Cancel' },
-      { label: 'Create as Administrator' },
-    ])
-    .then(result => (result.action === 'Cancel')
-      ? Promise.reject(new UserCanceled())
-      : Promise.resolve());
-  }
-
   private purgeActivation(): Promise<void> {
-    const { activators, currentActivator, discovery, gameMode, paths } = this.props;
+    const { activators, currentActivator, discovery, gameMode, paths, onShowError } = this.props;
 
     const oldActivator = activators.find(iter => iter.id === currentActivator);
     const installPath = resolvePath('install', paths, gameMode);
@@ -348,7 +335,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
     return oldActivator !== undefined
       ? Promise.mapSeries(Object.keys(modPaths),
-                          typeId => oldActivator.purge(installPath, modPaths[typeId]))
+                          typeId => oldActivator.purge(installPath, modPaths[typeId])
+                            .catch(err => onShowError('Purge failed', err, false)))
         .then(() => undefined)
       : Promise.resolve();
   }

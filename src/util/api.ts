@@ -45,6 +45,7 @@ export {
   delayed,
   deriveModInstallName as deriveInstallName,
   extend,
+  GameNotFound,
   getCurrentLanguage,
   getGame,
   getGames,

@@ -377,6 +377,9 @@ export function searchDiscovery(
             onFile(filePath, files, normalize, discoveredGames, onDiscoveredGame, onDiscoveredTool);
           return walk(searchPath, matchList, onFileCB, progressObj, normalize);
         })
+        .catch(err => (err.code === 'ENOENT')
+          ? Promise.resolve()
+          : Promise.reject(err))
         .then(() => {
           progressObj.completed(searchPath);
           return null;

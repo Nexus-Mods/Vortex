@@ -617,6 +617,8 @@ class DownloadManager {
   private startJob(download: IRunningDownload, job: IDownloadJob) {
     if (download.assembler === undefined) {
       try {
+        download.progressCB(download.received, download.size, undefined,
+                            undefined, download.tempName);
         download.assembler = new FileAssembler(download.tempName);
       } catch (err) {
         if (err.code === 'EBUSY') {
@@ -774,6 +776,7 @@ class DownloadManager {
             .then((resolvedPath: string) => {
               finalPath = resolvedPath;
               log('debug', 'renaming download', { from: download.tempName, to: resolvedPath });
+              download.progressCB(download.size, download.size, undefined, undefined, resolvedPath);
               return fs.renameAsync(download.tempName, resolvedPath);
             });
           } else if ((download.headers !== undefined)

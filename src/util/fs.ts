@@ -57,8 +57,8 @@ function unlockConfirm(filePath: string): Promise<boolean> {
   const options: Electron.MessageBoxOptions = {
     title: 'Access denied',
     message: `Vortex needs to access "${filePath}" but doesn\'t have permission to.\n`
-      + 'If your account has admin rights Vortex can unlock the file for you.'
-      + ' Windows will show an UAC dialog.',
+      + 'If your account has admin rights Vortex can unlock the file for you. '
+      + 'Windows will show an UAC dialog.',
     buttons: [
       'Cancel',
       'Give permission',
@@ -109,10 +109,8 @@ function errorRepeat(code: string, filePath: string): Promise<boolean> {
       .then(doUnlock => {
         if (doUnlock) {
           const userId = getUserId();
-          return elevated(() => {
-            // tslint:disable-next-line:no-shadowed-variable
-            const fs = require('fs-extra-promise');
-            const { allow } = require('permissions');
+          return elevated((ipcPath, req: NodeRequireFunction) => {
+            const { allow } = req('permissions');
             return allow(filePath, userId, 'rwx');
           }, { filePath, userId })
             .then(() => true);
@@ -125,22 +123,26 @@ function errorRepeat(code: string, filePath: string): Promise<boolean> {
   }
 }
 
-function errorHandler(error: NodeJS.ErrnoException, stack: string): Promise<void> {
-  return errorRepeat(error.code, error.path)
+function errorHandler(error: NodeJS.ErrnoException, stackErr: Error): Promise<void> {
+  return errorRepeat(error.code, (error as any).dest || error.path)
     .then(repeat => {
       if (repeat) {
         return Promise.resolve();
       } else {
-        error.stack = error.message + '\n' + stack;
+        error.stack = error.message + '\n' + stackErr.stack;
         return Promise.reject(error);
       }
+    })
+    .catch(err => {
+      err.stack = err.message + '\n' + stackErr.stack;
+      return Promise.reject(err);
     });
 }
 function genWrapperAsync<T extends (...args) => any>(func: T): T {
   const res = (...args) => {
     const stackErr = new Error();
     return func(...args)
-      .catch(err => errorHandler(err, stackErr.stack)
+      .catch(err => errorHandler(err, stackErr)
         .then(() => res(...args)));
   };
   return res as T;
@@ -218,8 +220,7 @@ export function copyAsync(src: string, dest: string,
                               fs.CopyOptions): Promise<void> {
   const stackErr = new Error();
   // fs.copy in fs-extra has a bug where it doesn't correctly avoid copying files onto themselves
-  return Promise.join(fs.statAsync(src),
-                      fs.statAsync(dest)
+  return Promise.join(fs.statAsync(src), fs.statAsync(dest)
                 .catch(err => err.code === 'ENOENT' ? Promise.resolve({}) : Promise.reject(err)))
     .then((stats: fs.Stats[]) => {
       if (stats[0].ino === stats[1].ino) {
@@ -244,7 +245,7 @@ function copyInt(
     stackErr: Error) {
   return fs.copyAsync(src, dest, options)
     .catch((err: NodeJS.ErrnoException) =>
-      errorHandler(err, stackErr.stack).then(() => copyInt(src, dest, options, stackErr)));
+      errorHandler(err, stackErr).then(() => copyInt(src, dest, options, stackErr)));
 }
 
 export function removeAsync(dirPath: string): Promise<void> {
@@ -256,7 +257,7 @@ function removeInt(dirPath: string, stackErr: Error): Promise<void> {
     .catch((err: NodeJS.ErrnoException) => (err.code === 'ENOENT')
         // don't mind if a file we wanted deleted was already gone
         ? Promise.resolve()
-        : errorHandler(err, stackErr.stack)
+        : errorHandler(err, stackErr)
           .then(() => removeInt(dirPath, stackErr)));
 }
 
@@ -269,7 +270,7 @@ function unlinkInt(dirPath: string, stackErr: Error): Promise<void> {
     .catch((err: NodeJS.ErrnoException) => (err.code === 'ENOENT')
         // don't mind if a file we wanted deleted was already gone
         ? Promise.resolve()
-        : errorHandler(err, stackErr.stack)
+        : errorHandler(err, stackErr)
           .then(() => unlinkInt(dirPath, stackErr)));
 }
 
@@ -292,7 +293,8 @@ function rmdirInt(dirPath: string, stackErr: Error, tries: number): Promise<void
     });
 }
 
-function elevated(func: () => Promise<void>, parameters: any): Promise<void> {
+function elevated(func: (ipc, req: NodeRequireFunction) => Promise<void>,
+                  parameters: any): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     const ipcInst = new ipc.IPC();
     const id = shortid();
@@ -352,14 +354,12 @@ export function ensureDirWritableAsync(dirPath: string,
         return confirm()
           .then(() => {
             const userId = getUserId();
-            return elevated(() => {
+            return elevated((ipcPath, req: NodeRequireFunction) => {
               // tslint:disable-next-line:no-shadowed-variable
-              const fs = require('fs-extra-promise');
-              const { allow } = require('permissions');
+              const fs = req('fs-extra-promise');
+              const { allow } = req('permissions');
               return fs.ensureDirAsync(dirPath)
-                .then(() => {
-                  return allow(dirPath, userId, 'rwx');
-                });
+                .then(() => allow(dirPath, userId, 'rwx'));
             }, { dirPath, userId });
           });
       } else {
@@ -397,10 +397,9 @@ export function forcePerm<T>(t: I18next.TranslationFunction, op: () => Promise<T
               }
               return Promise.resolve();
             })
-            .then(() => elevated(() => {
+            .then(() => elevated((ipcPath, req: NodeRequireFunction) => {
                 // tslint:disable-next-line:no-shadowed-variable
-                const fs = require('fs-extra-promise');
-                const { allow } = require('permissions');
+                const { allow } = req('permissions');
                 return allow(filePath, userId, 'rwx');
               }, { filePath, userId }))
             .then(() => forcePerm(t, op));

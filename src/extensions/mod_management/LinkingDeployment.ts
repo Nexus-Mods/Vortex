@@ -4,7 +4,7 @@ import { ProcessCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import getNormalizeFunc, {Normalize} from '../../util/getNormalizeFunc';
 import {log} from '../../util/log';
-import { getSafe } from '../../util/storeHelper';
+import { truthy } from '../../util/util';
 
 import {
   IDeployedFile,
@@ -99,8 +99,6 @@ abstract class LinkingActivator implements IDeploymentMethod {
                   dataPath: string,
                   installationPath: string,
                   progressCB?: (files: number, total: number) => void): Promise<IDeployedFile[]> {
-    const state = this.mApi.store.getState();
-
     let added: string[];
     let removed: string[];
     let sourceChanged: string[];
@@ -120,12 +118,10 @@ abstract class LinkingActivator implements IDeploymentMethod {
 
     const total = added.length + removed.length + sourceChanged.length + contentChanged.length;
     let count = 0;
-    let lastReported = 0;
     const progress = () => {
       if (progressCB !== undefined) {
         ++count;
         if ((count % 1000) === 0) {
-          lastReported = count;
           progressCB(count, total);
         }
       }
@@ -263,6 +259,9 @@ abstract class LinkingActivator implements IDeploymentMethod {
   }
 
   public purge(installPath: string, dataPath: string): Promise<void> {
+    if (!truthy(dataPath)) {
+      return Promise.reject(new Error('invalid data path'));
+    }
     // purge
     return this.purgeLinks(installPath, dataPath)
       .then(() => this.postPurge(dataPath, false))
@@ -277,12 +276,13 @@ abstract class LinkingActivator implements IDeploymentMethod {
                          installPath: string,
                          dataPath: string,
                          activation: IDeployedFile[]): Promise<IFileChange[]> {
-    const state = this.mApi.store.getState();
-
     const nonLinks: IFileChange[] = [];
 
     return Promise.map(activation, fileEntry => {
-      const fileDataPath = [dataPath, fileEntry.relPath].join(path.sep);
+      const fileDataPath = (truthy(fileEntry.target)
+        ? [dataPath, fileEntry.target, fileEntry.relPath]
+        : [dataPath, fileEntry.relPath]
+        ).join(path.sep);
       const fileModPath = [installPath, fileEntry.source, fileEntry.relPath].join(path.sep);
       let sourceDeleted: boolean = false;
       let destDeleted: boolean = false;
@@ -295,7 +295,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
           return Promise.resolve();
         })
         .then(() => this.statLink(fileDataPath))
-        .catch(err => {
+        .catch(() => {
           // can't stat destination, probably the file was deleted
           destDeleted = true;
           return Promise.resolve(undefined);

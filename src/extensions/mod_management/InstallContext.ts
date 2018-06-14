@@ -8,7 +8,6 @@ import { getSafe } from '../../util/storeHelper';
 
 import { setDownloadInstalled } from '../download_management/actions/state';
 import { setModEnabled } from '../profile_management/actions/profiles';
-import { activeProfile } from '../profile_management/selectors';
 
 import {
   addMod,
@@ -25,9 +24,6 @@ import { IInstallContext, InstallOutcome } from './types/IInstallContext';
 import * as Promise from 'bluebird';
 import * as path from 'path';
 import * as Redux from 'redux';
-
-type IOnAddMod = (mod: IMod) => void;
-type IOnAddNotification = (notification: INotification) => void;
 
 class InstallContext implements IInstallContext {
   private mAddMod: (mod: IMod) => void;
@@ -196,7 +192,7 @@ class InstallContext implements IInstallContext {
 
   public reportError(message: string, details?: string | Error, allowReport?: boolean,
                      replace?: { [key: string]: string }): void {
-    log('error', 'install error', { message, details });
+    log('error', 'install error', { message, details, replace });
     this.mShowError(message, details, allowReport, replace);
   }
 
