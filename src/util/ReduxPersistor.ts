@@ -2,9 +2,7 @@ import {IPersistor} from '../types/IExtensionContext';
 import { terminate } from '../util/errorHandling';
 
 import * as Promise from 'bluebird';
-import * as _ from 'lodash';
 import * as Redux from 'redux';
-import { addNotification } from '../actions/notifications';
 
 function insert(target: any, key: string[], value: any, hive: string) {
   try {
@@ -30,7 +28,6 @@ function insert(target: any, key: string[], value: any, hive: string) {
 }
 
 class ReduxPersistor<T> {
-  private mUnsubscribe: () => void;
   private mStore: Redux.Store<T>;
   private mPersistedState: T;
   private mPersistors: { [key: string]: IPersistor } = {};

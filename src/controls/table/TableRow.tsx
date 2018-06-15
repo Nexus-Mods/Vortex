@@ -5,7 +5,6 @@ import ActionDropdown from '../ActionDropdown';
 import Dropdown, { DummyMenu } from '../Dropdown';
 import ExtensionGate from '../ExtensionGate';
 import Icon from '../Icon';
-import IconBar from '../IconBar';
 import {ITableRowAction} from '../Table';
 import {Button, IconButton} from '../TooltipControls';
 import VisibilityProxy from '../VisibilityProxy';
@@ -14,7 +13,7 @@ import { TD, TR } from './MyTable';
 
 import * as I18next from 'i18next';
 import * as React from 'react';
-import { FormControl, MenuItem, SplitButton } from 'react-bootstrap';
+import { MenuItem } from 'react-bootstrap';
 
 interface ICellProps {
   language: string;
@@ -247,12 +246,7 @@ class TableRow extends React.Component<IRowProps, IRowState> {
   }
 
   private renderRow = (): React.ReactNode => {
-    const { actions, attributes, data, domRef, tableId } = this.props;
-
-    if (actions !== undefined) {
-      const rowActions = actions.filter((action) =>
-        (action.singleRowAction === undefined) || action.singleRowAction);
-    }
+    const { actions, attributes, data, tableId } = this.props;
 
     const res = attributes.map(this.renderAttribute);
     const sorted = actions

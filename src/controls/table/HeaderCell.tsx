@@ -3,13 +3,10 @@ import { ITableAttribute } from '../../types/ITableAttribute';
 import { SortDirection } from '../../types/SortDirection';
 import getAttr from '../../util/getAttr';
 
-import { IconButton } from '../TooltipControls';
-
 import { TH } from './MyTable';
 import SortIndicator from './SortIndicator';
 
 import * as I18next from 'i18next';
-import * as _ from 'lodash';
 import * as React from 'react';
 
 export interface IHeaderProps {
@@ -32,7 +29,7 @@ function nextDirection(direction: SortDirection): SortDirection {
 
 class HeaderCell extends React.Component<IHeaderProps, {}> {
   public render(): JSX.Element {
-    const { t, advancedMode, attribute, className, doFilter } = this.props;
+    const { t, attribute, className, doFilter } = this.props;
     return (
       <TH
         className={`table-header-cell ${className}`}
@@ -65,19 +62,6 @@ class HeaderCell extends React.Component<IHeaderProps, {}> {
     );
   }
 
-  private renderFilterIndicator(): JSX.Element {
-    const { t, attribute } = this.props;
-    return (
-      <IconButton
-        id={`btn-filter-${attribute.id}`}
-        className='btn-table-filter'
-        icon='filter'
-        tooltip={t('Filter')}
-        onClick={this.toggleFilter}
-      />
-    );
-  }
-
   private cycleDirection = () => {
     const { attribute, onSetSortDirection, state } = this.props;
     if (attribute.isSortable) {
@@ -89,15 +73,6 @@ class HeaderCell extends React.Component<IHeaderProps, {}> {
   private setDirection = (dir: SortDirection) => {
     const { attribute, onSetSortDirection } = this.props;
     onSetSortDirection(attribute.id, dir);
-  }
-
-  private toggleFilter = () => {
-    const { attribute, doFilter, onSetFilter } = this.props;
-    if (doFilter) {
-      onSetFilter(undefined);
-    } else {
-      onSetFilter(attribute.id, null);
-    }
   }
 }
 

@@ -1,5 +1,5 @@
 import { IDashletSettings, IState } from '../../../types/IState';
-import { ComponentEx, connect, extend, translate } from '../../../util/ComponentEx';
+import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import Debouncer from '../../../util/Debouncer';
 import MainPage from '../../../views/MainPage';
 
@@ -11,7 +11,6 @@ import PackeryItem from './PackeryItem';
 import { remote } from 'electron';
 import * as _ from 'lodash';
 import * as React from 'react';
-import * as ReactDOM from 'react-dom';
 import * as Redux from 'redux';
 import { getSafe } from '../../../util/storeHelper';
 import { IDashletProps } from '../types/IDashletProps';
@@ -34,11 +33,6 @@ interface IActionProps {
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
-
-interface IRenderedDash {
-  props: IDashletProps;
-  comp: JSX.Element;
-}
 
 interface IComponentState {
   counter: number;
@@ -73,8 +67,8 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
   public componentDidMount() {
     this.startUpdateCycle();
     const window = remote.getCurrentWindow();
-    window.on('focus', () => { this.mWindowFocused = true; });
-    window.on('blur', () => { this.mWindowFocused = false; });
+    window.on('focus', this.onFocus);
+    window.on('blur', this.onBlur);
   }
 
   public componentWillUnmount() {

@@ -1,6 +1,5 @@
 import {setAttributeFilter, setAttributeSort,
         setAttributeVisible, setSplitPos} from '../actions/tables';
-import FlexLayout from '../controls/FlexLayout';
 import {IActionDefinition} from '../types/IActionDefinition';
 import {IAttributeState} from '../types/IAttributeState';
 import { II18NProps } from '../types/II18NProps';
@@ -12,10 +11,9 @@ import Debouncer from '../util/Debouncer';
 import {IExtensibleProps} from '../util/ExtensionProvider';
 import { log } from '../util/log';
 import smoothScroll from '../util/smoothScroll';
-import { getSafe, merge, setSafe } from '../util/storeHelper';
+import { getSafe, setSafe } from '../util/storeHelper';
 import {truthy} from '../util/util';
 
-import Icon from './Icon';
 import IconBar from './IconBar';
 import HeaderCell from './table/HeaderCell';
 import { Table, TBody, TH, THead, TR } from './table/MyTable';
@@ -28,10 +26,8 @@ import * as update from 'immutability-helper';
 import * as _ from 'lodash';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import * as SplitPane from 'react-split-pane';
 import * as Redux from 'redux';
 import { createSelector } from 'reselect';
-import { IconButton } from './TooltipControls';
 
 export type ChangeDataHandler = (rowId: string, attributeId: string, newValue: any) => void;
 
@@ -440,8 +436,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderTableActions(hasActions: boolean): JSX.Element {
-    const {t, actions, tableId} = this.props;
-    const {columnToggles, rowState} = this.state;
+    const {t, tableId} = this.props;
+    const {columnToggles} = this.state;
 
     return (
       <TH className={`table-${tableId} header-action`}>
@@ -700,7 +696,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private triggerUpdateVisibility() {
     if (!this.mWillSetVisibility) {
       this.mWillSetVisibility = true;
-       window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
         this.mWillSetVisibility = false;
         this.updateState(setSafe(this.mNextState, ['rowVisibility'], this.mNextVisibility));
       });
