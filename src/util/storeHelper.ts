@@ -181,7 +181,11 @@ function setDefaultArray<T>(state: T, path: Array<(string | number)>, fallback: 
     ? state.slice()
     : { ...(state as any) };
 
-  if (path.length === 1) {
+  if (path.length === 0) {
+    return (copy !== undefined)
+      ? copy.slice()
+      : fallback;
+  } else if (path.length === 1) {
     copy[firstElement] = (!copy.hasOwnProperty(firstElement) || (copy[firstElement] === undefined))
       ? fallback
       : copy[firstElement].slice();
@@ -237,9 +241,10 @@ export function removeValue<T>(state: T, path: Array<(string | number)>, value: 
   const copy = setDefaultArray(state, path, []);
   const list = getSafe(copy, path, undefined);
   const idx = list.indexOf(value);
-  if (idx !== -1) {
-    list.splice(idx, 1);
+  if (idx === -1) {
+    return state;
   }
+  list.splice(idx, 1);
   return copy;
 }
 
