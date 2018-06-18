@@ -601,8 +601,8 @@ function validateKey(api: IExtensionApi, key: string): Promise<void> {
 }
 
 function once(api: IExtensionApi) {
-  const registerFunc = () => {
-    api.registerProtocol('nxm', (url: string) => {
+  const registerFunc = (def: boolean) => {
+    api.registerProtocol('nxm', def, (url: string) => {
       startDownload(api, url)
       .catch(DownloadIsHTML, err => undefined)
       .catch(err => {
@@ -632,9 +632,7 @@ function once(api: IExtensionApi) {
     endorseMod = (gameId: string, modId: string, endorsedStatus: string) =>
       endorseModImpl(api, gameId, modId, endorsedStatus);
 
-    if (state.settings.nexus.associateNXM) {
-      registerFunc();
-    }
+    registerFunc(state.settings.nexus.associateNXM);
 
     if (state.confidential.account.nexus.APIKey !== undefined) {
       (window as any).requestIdleCallback(() => {
@@ -773,7 +771,7 @@ function once(api: IExtensionApi) {
     (oldValue: boolean, newValue: boolean) => {
       log('info', 'associate', { oldValue, newValue });
       if (newValue === true) {
-        registerFunc();
+        registerFunc(true);
       } else {
         api.deregisterProtocol('nxm');
       }

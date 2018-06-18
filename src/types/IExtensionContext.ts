@@ -127,7 +127,7 @@ export type RegisterToDo =
      priority: number) => void;
 
 export interface IRegisterProtocol {
-  (protocol: string, callback: (url: string) => void);
+  (protocol: string, def: boolean, callback: (url: string) => void);
 }
 
 export interface IFileFilter {
@@ -401,7 +401,10 @@ export interface IExtensionApi {
   onStateChange?: (path: string[], callback: StateChangeCallback) => void;
 
   /**
-   * registers an uri protocol to be handled by this application
+   * registers an uri protocol to be handled by this application. If the "def"ault parameter
+   * is set to true, this application will also be inserted as the system wide default handler
+   * for the protocol. Use with caution, as this will overwrite the previous value, which
+   * can't be undone automatically
    *
    * @type {IRegisterProtocol}
    * @memberOf IExtensionContext

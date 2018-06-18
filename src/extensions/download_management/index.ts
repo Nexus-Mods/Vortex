@@ -301,11 +301,17 @@ function init(context: IExtensionContextExt): boolean {
 
     const store = context.api.store;
 
-    context.api.registerProtocol('http', url => {
+    // undo an earlier bug where vortex registered itself as the default http/https handler
+    // (fortunately few applications actually rely on that setting, unfortunately this meant
+    // the bug wasn't found for a long time)
+    context.api.deregisterProtocol('http');
+    context.api.deregisterProtocol('https');
+
+    context.api.registerProtocol('http', false, url => {
       context.api.events.emit('start-download', [url], {});
     });
 
-    context.api.registerProtocol('https', url => {
+    context.api.registerProtocol('https', false, url => {
       context.api.events.emit('start-download', [url], {});
     });
 

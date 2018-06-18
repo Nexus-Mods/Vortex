@@ -771,14 +771,17 @@ class ExtensionManager {
     });
   }
 
-  private registerProtocol = (protocol: string, callback: (url: string) => void) => {
+  private registerProtocol = (protocol: string, def: boolean,
+                              callback: (url: string) => void) => {
     log('info', 'register protocol', { protocol });
-    if (process.execPath.endsWith('electron.exe')) {
-      // make it work when using the development version
-      app.setAsDefaultProtocolClient(protocol, process.execPath,
-                                     [ getVortexPath('package'), '-d' ]);
-    } else {
-      app.setAsDefaultProtocolClient(protocol, process.execPath, [ '-d' ]);
+    if (def) {
+      if (process.execPath.endsWith('electron.exe')) {
+        // make it work when using the development version
+        app.setAsDefaultProtocolClient(protocol, process.execPath,
+          [getVortexPath('package'), '-d']);
+      } else {
+        app.setAsDefaultProtocolClient(protocol, process.execPath, ['-d']);
+      }
     }
     this.mProtocolHandlers[protocol] = callback;
   }
@@ -792,9 +795,9 @@ class ExtensionManager {
     if (process.execPath.endsWith('electron.exe')) {
       // make it work when using the development version
       app.removeAsDefaultProtocolClient(protocol, process.execPath,
-                                        [ getVortexPath('package') ]);
+                                        [ getVortexPath('package'), '-d' ]);
     } else {
-      app.removeAsDefaultProtocolClient(protocol);
+      app.removeAsDefaultProtocolClient(protocol, process.execPath, ['-d']);
     }
   }
 
