@@ -1,11 +1,14 @@
 import { Button } from '../../controls/TooltipControls';
-import {IFilterProps, ITableFilter} from '../../types/ITableAttribute';
+import { IFilterProps, ITableFilter } from '../../types/ITableAttribute';
 import { truthy } from '../../util/util';
 
+import * as moment from 'moment';
 import * as React from 'react';
-import { FormControl, InputGroup } from 'react-bootstrap';
+import { InputGroup } from 'react-bootstrap';
+import ReactDatePicker from 'react-datepicker';
+import { ComponentEx } from '../../util/ComponentEx';
 
-export class DateTimeFilterComponent extends React.Component<IFilterProps, {}> {
+export class DateTimeFilterComponent extends ComponentEx<IFilterProps, {}> {
   private currentComparison: 'eq' | 'ge' | 'le';
   private currentValue: Date;
   private comparisons;
@@ -34,14 +37,14 @@ export class DateTimeFilterComponent extends React.Component<IFilterProps, {}> {
   }
 
   public render(): JSX.Element {
-    const { filter, t } = this.props;
+    const { filter } = this.props;
 
     const filt = filter || { comparison: 'eq', value: '' };
 
     const currentComparison = this.comparisons[filt.comparison];
 
     return (
-        <InputGroup style={{ width: '100%' }}>
+        <InputGroup className='datetime-filter'>
           <InputGroup.Addon className='group-addon-btn'>
             <Button
               id='btn-date-direction'
@@ -52,19 +55,20 @@ export class DateTimeFilterComponent extends React.Component<IFilterProps, {}> {
               {currentComparison.symbol}
             </Button>
           </InputGroup.Addon>
-          <FormControl
-            className='form-field-compact'
-            type='Date'
-            value={filt.value}
+          <ReactDatePicker
+            selected={filt.value !== null ? moment(filt.value) : null}
             onChange={this.changeFilter}
+            locale={this.context.api.locale()}
+            isClearable={true}
+            className='datetime-picker'
           />
         </InputGroup>
     );
   }
 
-  private changeFilter = (evt) => {
+  private changeFilter = (date) => {
     const { attributeId, onSetFilter } = this.props;
-    this.currentValue = evt.currentTarget.value;
+    this.currentValue = date !== null ? date.toDate() : null;
     onSetFilter(attributeId,
       { comparison: this.currentComparison, value: this.currentValue });
   }

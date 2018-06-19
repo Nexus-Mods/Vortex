@@ -36,6 +36,9 @@ function fileId(value: IModWithState): string {
 }
 
 function fileMatch(lhs: IModWithState, rhs: IModWithState): boolean {
+  if ((lhs.attributes === undefined) || (rhs.attributes === undefined)) {
+    return false;
+  }
   if (truthy(lhs.attributes.logicalFileName) && truthy(rhs.attributes.logicalFileName)) {
     return lhs.attributes.logicalFileName === rhs.attributes.logicalFileName;
   } else if (truthy(lhs.attributes.newestFileId) && truthy(rhs.attributes.newestFileId)) {

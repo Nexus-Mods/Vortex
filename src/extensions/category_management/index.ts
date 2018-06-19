@@ -14,7 +14,7 @@ import { showCategoriesDialog } from './actions/session';
 import {categoryReducer} from './reducers/category';
 import { sessionReducer } from './reducers/session';
 import { allCategories } from './selectors';
-import { ICategoryDictionary } from './types/IcategoryDictionary';
+import { ICategoryDictionary } from './types/ICategoryDictionary';
 import { ICategoriesTree } from './types/ITrees';
 import CategoryFilter from './util/CategoryFilter';
 import { resolveCategoryName, resolveCategoryPath } from './util/retrieveCategoryPath';
@@ -26,7 +26,7 @@ import * as Redux from 'redux';
 export { resolveCategoryName, resolveCategoryPath };
 
 function getModCategory(mod: IModWithState) {
-  return mod.attributes['category'];
+  return getSafe(mod, ['attributes', 'category'], undefined);
 }
 
 function getCategoryChoices(state: IState) {

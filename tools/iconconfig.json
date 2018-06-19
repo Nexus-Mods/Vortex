@@ -434,6 +434,14 @@
     "groups": {
       "path": "{nucleo}/design-development/{nucleo_simple}_layers",
       "rmFill": true
+    },
+    "showhide-down": {
+      "path": "{nucleo}/arrows/{nucleo_simple}_stre-down",
+      "rmFill": true
+    },
+    "showhide-up": {
+      "path": "{nucleo}/arrows/{nucleo_simple}_stre-up",
+      "rmFill": true
     }
   }
 }

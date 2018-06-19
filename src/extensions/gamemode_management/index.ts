@@ -7,6 +7,7 @@ import {
 } from '../../types/IExtensionContext';
 import {IGame} from '../../types/IGame';
 import { IState } from '../../types/IState';
+import { IEditChoice, ITableAttribute } from '../../types/ITableAttribute';
 import {ProcessCanceled, SetupError, UserCanceled} from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import LazyComponent from '../../util/LazyComponent';
@@ -17,7 +18,8 @@ import ReduxProp from '../../util/ReduxProp';
 import { activeGameId } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 
-import {IDownload} from '../download_management/types/IDownload';
+import { setModType } from '../mod_management/actions/mods';
+import { IModWithState } from '../mod_management/views/CheckModVersionsButton';
 import { setNextProfile } from '../profile_management/actions/settings';
 
 import { setGameInfo } from './actions/persistent';
@@ -140,7 +142,7 @@ function refreshGameInfo(store: Redux.Store<IState>, gameId: string): Promise<vo
 
   const gameInfo = store.getState().persistent.gameMode.gameInfo[gameId] || {};
 
-  const now = new Date().getTime();
+  const now = Date.now();
 
   // find keys we need to update and which providers we have to query for that
   const missingKeys = Object.keys(expectedKeys).filter(key =>
@@ -197,18 +199,6 @@ function verifyGamePath(game: IGame, gamePath: string): Promise<void> {
   return Promise.map(game.requiredFiles || [], file =>
     fs.statAsync(path.join(gamePath, file)))
     .then(() => undefined);
-}
-
-function transformModPaths(basePath: string, input: { [type: string]: string }):
-    { [type: string]: string } {
-  return Object.keys(input).reduce((prev, type) => {
-    if (input[type] !== undefined) {
-      prev[type] = (path.isAbsolute(input[type]))
-        ? input[type]
-        : path.resolve(basePath, input[type]);
-    }
-    return prev;
-  }, {});
 }
 
 function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
@@ -299,6 +289,10 @@ function removeDisapearedGames(api: IExtensionApi): Promise<void> {
             });
 
             api.store.dispatch(setGamePath(gameId, undefined));
+            const gameMode = activeGameId(state);
+            if (gameMode === gameId) {
+              api.store.dispatch(setNextProfile(undefined));
+            }
           });
     }).then(() => undefined);
 }
@@ -333,6 +327,39 @@ function resetSearchPaths(api: IExtensionApi) {
   });
 }
 
+function genModTypeAttribute(api: IExtensionApi): ITableAttribute<IModWithState> {
+  return {
+    id: 'modType',
+    name: 'Mod Type',
+    description: 'Type of the mod (decides where it gets deployed to)',
+    placement: 'detail',
+    calc: mod => mod.type,
+    help: 'The mod type controls where (and maybe even how) a mod gets deployed. '
+      + 'Leave empty (default) unless you know what you\'re doing.',
+    supportsMultiple: true,
+    edit: {
+      choices: () => {
+        const gameMode = activeGameId(api.store.getState());
+        return modTypeExtensions
+          .filter((type: IModType) => type.isSupported(gameMode))
+          .map((type: IModType): IEditChoice =>
+            ({ key: type.typeId, text: (type.typeId || 'Default') }));
+      },
+      onChangeValue: (mods, newValue) => {
+        const gameMode = activeGameId(api.store.getState());
+        const setModId = (mod: IModWithState) => {
+          api.store.dispatch(setModType(gameMode, mod.id, newValue || ''));
+        };
+        if (Array.isArray(mods)) {
+          mods.forEach(setModId);
+        } else {
+          setModId(mods);
+        }
+      },
+    },
+  };
+}
+
 function init(context: IExtensionContext): boolean {
   const activity = new ReduxProp(context.api, [
     ['session', 'discovery'],
@@ -355,6 +382,8 @@ function init(context: IExtensionContext): boolean {
   context.registerReducer(['settings', 'gameMode'], settingsReducer);
   context.registerReducer(['persistent', 'gameMode'], persistentReducer);
   context.registerFooter('discovery-progress', ProgressFooter);
+
+  context.registerTableAttribute('mods', genModTypeAttribute(context.api));
 
   context.registerGame = (game: IGame, extensionPath: string) => {
     game.extensionPath = extensionPath;
@@ -550,8 +579,14 @@ function init(context: IExtensionContext): boolean {
         });
       });
 
-    changeGameMode(undefined, activeGameId(store.getState()), undefined)
-    .then(() => null);
+    {
+      const gameMode = activeGameId(store.getState());
+      const discovery = store.getState().settings.gameMode.discovered[gameMode];
+      if ((discovery !== undefined) && (discovery.path !== undefined)) {
+        changeGameMode(undefined, gameMode, undefined)
+          .then(() => null);
+      }
+    }
   });
 
   return true;

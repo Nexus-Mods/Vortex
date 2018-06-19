@@ -9,8 +9,8 @@ import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { UserCanceled } from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
+import { log } from '../../../util/log';
 import { showError } from '../../../util/message';
-import { activeGameId } from '../../../util/selectors';
 import { getSafe, setSafe } from '../../../util/storeHelper';
 import { isChildPath } from '../../../util/util';
 import { setDownloadPath } from '../../download_management/actions/settings';
@@ -103,8 +103,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, activators, discovery, game, gameMode } = this.props;
-    const { currentActivator, installPath, supportedActivators } = this.state;
+    const { t, discovery, game } = this.props;
+    const { currentActivator, supportedActivators } = this.state;
 
     if (game === undefined) {
       return (
@@ -125,7 +125,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         <Panel>
           <PanelX.Body>
             <FlexLayout.Fixed>
-              {this.renderPathCtrl(t('Install Path ({{name}})', { replace: { name: game.name } }))}
+              {this.renderPathCtrl(t('Install Path ({{name}})', { replace: { name: gameName } }))}
             </FlexLayout.Fixed>
             <FlexLayout.Fixed>
               <BSButton
@@ -192,14 +192,16 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       .then((sameVolume: boolean) => {
         const func = sameVolume ? fs.renameAsync : fs.copyAsync;
         return fs.readdirAsync(oldPath)
-          .map((fileName: string) =>
-            func(path.join(oldPath, fileName), path.join(newPath, fileName))
-            .catch(err => (err.code === 'EXDEV')
+          .map((fileName: string) => {
+            log('debug', 'transfer installs', { fileName });
+            return func(path.join(oldPath, fileName), path.join(newPath, fileName))
+              .catch(err => (err.code === 'EXDEV')
                 // EXDEV implies we tried to rename when source and destination are
                 // not in fact on the same volume. This is what comparing the stat.dev
                 // was supposed to prevent.
                 ? fs.copyAsync(path.join(oldPath, fileName), path.join(newPath, fileName))
-                : Promise.reject(err)))
+                : Promise.reject(err));
+          }, { concurrency: 5 })
           .then(() => fs.removeAsync(oldPath));
       })
       .catch(err => (err.code === 'ENOENT')
@@ -232,7 +234,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
     this.nextState.busy = t('Moving');
     return purgePromise
-      .then(() => fs.ensureDirWritableAsync(newInstallPath, this.confirmElevate))
+      .then(() => fs.ensureDirAsync(newInstallPath))
       .then(() => {
         let queue = Promise.resolve();
         let fileCount = 0;
@@ -267,7 +269,10 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       .catch((err) => {
         if (err !== null) {
           if (err.code === 'EPERM') {
-            onShowError('Directories are locked', err, false);
+            onShowError(
+              'Directories are not writable',
+              'You need to select directories that the current user account can write to!',
+              false);
           } else {
             onShowError('Failed to move directories', err, true);
           }
@@ -278,23 +283,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       });
   }
 
-  private confirmElevate = (): Promise<void> => {
-    const { t, onShowDialog } = this.props;
-    return onShowDialog('question', 'Access denied', {
-      text: 'This directory is not writable to the current windows user account. '
-          + 'Vortex can try to create the directory as administrator but it will '
-          + 'then have to give access to it to all logged in users.',
-    }, [
-      { label: 'Cancel' },
-      { label: 'Create as Administrator' },
-    ])
-    .then(result => (result.action === 'Cancel')
-      ? Promise.reject(new UserCanceled())
-      : Promise.resolve());
-  }
-
   private purgeActivation(): Promise<void> {
-    const { activators, currentActivator, discovery, gameMode, installPath } = this.props;
+    const { activators, currentActivator, discovery, gameMode,
+            installPath, onShowError } = this.props;
 
     const oldActivator = activators.find(iter => iter.id === currentActivator);
     const resolvedPath = getInstallPath(installPath, gameMode);
@@ -303,7 +294,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
     return oldActivator !== undefined
       ? Promise.mapSeries(Object.keys(modPaths),
-                          typeId => oldActivator.purge(resolvedPath, modPaths[typeId]))
+                          typeId => oldActivator.purge(resolvedPath, modPaths[typeId])
+                            .catch(err => onShowError('Purge failed', err, false)))
         .then(() => undefined)
       : Promise.resolve();
   }

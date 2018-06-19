@@ -37,12 +37,13 @@ import * as nodeURL from 'url';
 import * as util from 'util';
 
 function progressUpdate(store: Redux.Store<any>, dlId: string, received: number,
-                        total: number, chunks: IChunk[], urls: string[], filePath?: string) {
+                        total: number, chunks: IChunk[], urls: string[], filePath: string,
+                        smallUpdate: boolean) {
   if (store.getState().persistent.downloads.files[dlId] === undefined) {
     // progress for a download that's no longer active
     return;
   }
-  if ((total !== 0) || (chunks !== undefined)) {
+  if (((total !== 0) && !smallUpdate) || (chunks !== undefined)) {
     store.dispatch(downloadProgress(dlId, received, total, chunks, urls));
   }
   if ((filePath !== undefined) &&
@@ -96,6 +97,30 @@ export class DownloadObserver {
     } else {
       return transform(urls);
     }
+  }
+
+  private translateError(err: any): { message: string, url?: string } {
+    const details: any = {
+      message: err.message,
+    };
+    if (err.http_headers !== undefined) {
+      if (err.http_headers.nexuserror !== undefined) {
+        details.message = err.http_headers.nexuserrorinfo;
+      } else if (err.http_headers.status !== undefined) {
+        details.message = err.http_headers.status;
+      }
+    } else if (err.code !== undefined) {
+      if (err.code === 'ENOSPC') {
+        details.message = 'The disk is full';
+      } else if (err.code === 'ECONNRESET') {
+        details.message = 'Server refused the connection';
+      }
+    }
+
+    if (err.request !== undefined) {
+      details.url = err.request;
+    }
+    return details;
   }
 
   private handleStartDownload(urls: string[] | URLFunc,
@@ -155,26 +180,13 @@ export class DownloadObserver {
             fs.removeAsync(path.join(downloadPath, filePath));
           }
         })
-        .catch((err) => {
-          const details: any = {
-            message: err.message,
-          };
-          if (err.http_headers !== undefined) {
-            if (err.http_headers.nexuserror !== undefined) {
-              details.message = err.http_headers.nexuserrorinfo;
-            } else if (err.http_headers.status !== undefined) {
-              details.message = err.http_headers.status;
-            }
-          }
-
-          if (err.request !== undefined) {
-            details.url = err.request;
-          }
+        .catch((err: any) => {
+          const details: { message: string, url?: string } = this.translateError(err);
           log('warn', 'download failed', {message: details.message, err: util.inspect(err)});
           showError(this.mStore.dispatch, 'Download failed', details, {
             allowReport: false,
           });
-          this.mStore.dispatch(finishDownload(id, 'failed', {message: details.message}));
+          this.mStore.dispatch(finishDownload(id, 'failed', { message: details.message }));
           if (callback !== undefined) {
             callback(err, id);
           }
@@ -184,8 +196,10 @@ export class DownloadObserver {
   private handleDownloadFinished(id: string,
                                  callback: (error: Error, id: string) => void,
                                  res: IDownloadResult) {
-    const filePath = res.filePath;
-    this.mStore.dispatch(setDownloadFilePath(id, path.basename(res.filePath)));
+    const fileName = path.basename(res.filePath);
+    if (truthy(fileName)) {
+      this.mStore.dispatch(setDownloadFilePath(id, fileName));
+    }
     log('debug', 'unfinished chunks', { chunks: res.unfinishedChunks });
     if (res.unfinishedChunks.length > 0) {
       this.mStore.dispatch(pauseDownload(id, true, res.unfinishedChunks));
@@ -217,16 +231,17 @@ export class DownloadObserver {
     let lastUpdateTick = 0;
     let lastUpdatePerc = 0;
     return (received: number, total: number, chunks: IChunk[],
-            urls?: string[], updatedFilePath?: string) => {
+            urls?: string[], filePath?: string) => {
       // avoid updating too frequently because it causes ui updates
-      const now = new Date().getTime();
+      const now = Date.now();
       const newPerc = Math.floor((received * 100) / total);
-      if (((now - lastUpdateTick) < 1000) || (newPerc === lastUpdatePerc)) {
-        return;
+      const small = ((now - lastUpdateTick) < 1000) || (newPerc === lastUpdatePerc);
+      if (!small) {
+        lastUpdateTick = now;
+        lastUpdatePerc = newPerc;
       }
-      lastUpdateTick = now;
-      lastUpdatePerc = newPerc;
-      progressUpdate(this.mStore, id, received, total, chunks, urls, updatedFilePath);
+      progressUpdate(this.mStore, id, received, total, chunks,
+                     urls, filePath, small);
     };
   }
 
@@ -288,6 +303,10 @@ export class DownloadObserver {
             this.handleDownloadFinished(downloadId, callback, res);
           })
           .catch(err => {
+            const details = this.translateError(err);
+
+            this.mStore.dispatch(finishDownload(downloadId, 'failed',
+                                                { message: details.message }));
             if (callback !== undefined) {
               callback(err, null);
             }

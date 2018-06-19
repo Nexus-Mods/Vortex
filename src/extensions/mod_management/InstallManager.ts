@@ -43,7 +43,7 @@ import { IInstallContext } from './types/IInstallContext';
 
 export class ArchiveBrokenError extends Error {
   constructor() {
-    super('ArchiveBroken');
+    super('Archive is broken');
 
     this.name = this.constructor.name;
   }
@@ -342,13 +342,14 @@ class InstallManager {
           const errMessage = typeof err === 'string' ? err : err.message + '\n' + err.stack;
 
           return prom
-            .then(() => genHash(archivePath))
+            .then(() => genHash(archivePath).catch(() => ({})))
             .then((hashResult: IHashResult) => {
               const id = `${path.basename(archivePath)} (md5: ${hashResult.md5sum})`;
               if (installContext !== undefined) {
                 installContext.reportError(
                     'Installation failed',
-                    `The installer "{{ id }}" failed: {{ message }}`, err.code !== 'EPERM', {
+                    `The installer "{{ id }}" failed: {{ message }}`,
+                    ['EPERM', 'ENOENT'].indexOf(err.code) === -1, {
                       id,
                       message: errMessage,
                     });
@@ -552,6 +553,7 @@ class InstallManager {
     const {genHash} = require('modmeta-db');
     const makeReport = () =>
         genHash(archivePath)
+            .catch(err => ({}))
             .then(
                 (hashResult: IHashResult) => createErrorReport(
                     'Installer failed',

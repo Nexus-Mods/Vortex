@@ -10,8 +10,6 @@ import { truthy } from '../../../util/util';
 import { setUserAPIKey } from '../actions/account';
 import { IValidateKeyData } from '../types/IValidateKeyData';
 
-import getText from '../texts';
-
 import { remote } from 'electron';
 import * as update from 'immutability-helper';
 import {} from 'opn';

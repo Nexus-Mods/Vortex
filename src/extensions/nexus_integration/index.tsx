@@ -15,7 +15,7 @@ import { activeGameId } from '../../util/selectors';
 import { currentGame, getSafe } from '../../util/storeHelper';
 import { decodeHTML, truthy } from '../../util/util';
 
-import { ICategoryDictionary } from '../category_management/types/IcategoryDictionary';
+import { ICategoryDictionary } from '../category_management/types/ICategoryDictionary';
 import { IGameStored } from '../gamemode_management/types/IGameStored';
 import { setModAttribute } from '../mod_management/actions/mods';
 import { setUpdatingMods } from '../mod_management/actions/settings';
@@ -30,7 +30,7 @@ import { accountReducer } from './reducers/account';
 import { sessionReducer } from './reducers/session';
 import { settingsReducer } from './reducers/settings';
 import { checkModVersion, retrieveModInfo } from './util/checkModsVersion';
-import { convertGameId, toNXMId } from './util/convertGameId';
+import { convertGameId, convertGameIdReverse, toNXMId } from './util/convertGameId';
 import sendEndorseMod from './util/endorseMod';
 import retrieveCategoryList from './util/retrieveCategories';
 import submitFeedback from './util/submitFeedback';
@@ -49,7 +49,8 @@ import NXMUrl from './NXMUrl';
 import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import * as I18next from 'i18next';
-import NexusT, { IDownloadURL, IFileInfo, IModInfo, NexusError as NexusErrorT } from 'nexus-api';
+import NexusT, { IDownloadURL, IFileInfo, IGameListEntry, IModInfo,
+                 NexusError as NexusErrorT } from 'nexus-api';
 import {} from 'opn';
 import * as path from 'path';
 import * as React from 'react';
@@ -70,6 +71,7 @@ const UPDATE_CHECK_DELAY = 60 * 60 * 1000;
 
 let nexus: NexusT;
 let endorseMod: (gameId: string, modId: string, endorsedState: string) => void;
+let nexusGames: IGameListEntry[] = [];
 
 export interface IExtensionContextExt extends IExtensionContext {
   registerDownloadProtocol: (
@@ -199,10 +201,10 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
               message: 'Timeout retrieving categories from server, please try again later.',
             });
             return;
-          } else if (err.code === 'ECONNRESET') {
+          } else if (['ECONNRESET', 'ECONNREFUSED'].indexOf(err.code) !== -1) {
             api.sendNotification({
               type: 'warning',
-              message: 'The server reset the connection, please try again later.',
+              message: 'The server refused the connection, please try again later.',
             });
             return;
           }
@@ -213,7 +215,7 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
             allowReport = false;
             delete detail.noReport;
           }
-          showError(api.store.dispatch, 'An error occurred retrieving categories', detail,
+          showError(api.store.dispatch, 'Failed to retrieve categories', detail,
                     { allowReport });
         });
     }
@@ -508,6 +510,46 @@ function genModIdAttribute(api: IExtensionApi): ITableAttribute {
   };
 }
 
+function genGameAttribute(api: IExtensionApi): ITableAttribute<IMod> {
+  return {
+    id: 'downloadGame',
+    name: 'Game Section',
+    description: 'NexusMods Game Section',
+    calc: mod => {
+      if (mod.attributes['source'] !== 'nexus') {
+        return undefined;
+      }
+      const gameId = convertGameId(mod.attributes['downloadGame']
+                           || activeGameId(api.store.getState()));
+      const gameEntry = nexusGames.find(game => game.domain_name === gameId);
+      return (gameEntry !== undefined)
+        ? gameEntry.name
+        : gameId;
+    },
+    placement: 'detail',
+    help: api.translate(
+      'If you\'ve downloaded this mod from a different game section than you\'re, '
+      + 'set this to the game the mod was intended for.\n\n'
+      + 'So if you manually downloaded this mod from the Skyrim section and installed it for '
+      + 'Skyrim Special Edition, set this to "Skyrim".\n\n'
+      + 'Otherwise, please don\'t change this, it is required to be correct so '
+      + 'Vortex can retrieve the correct mod information (including update info).'),
+    edit: {
+      choices: () => nexusGames.sort().map(game => ({ key: game.domain_name, text: game.name })),
+      onChangeValue: (mods, value) => {
+        const gameMode = activeGameId(api.store.getState());
+        if (!Array.isArray(mods)) {
+          mods = [mods];
+        }
+        mods.forEach(mod => {
+          api.store.dispatch(setModAttribute(
+            gameMode, mod.id, 'downloadGame', convertGameIdReverse(value)));
+        });
+      },
+    },
+  };
+}
+
 function errorFromNexusError(err: NexusErrorT): string {
   switch (err.statusCode) {
     case 401: return 'Login was refused, please review your API key.';
@@ -516,14 +558,13 @@ function errorFromNexusError(err: NexusErrorT): string {
 }
 
 function validateKey(api: IExtensionApi, key: string): Promise<void> {
-  const state = api.store.getState();
   const { NexusError, TimeoutError } = require('nexus-api');
 
   return Promise.resolve(nexus.validateKey(key))
     .then(userInfo => {
       api.store.dispatch(setUserInfo(transformUserInfo(userInfo)));
     })
-    .catch(TimeoutError, err => {
+    .catch(TimeoutError, () => {
       showError(api.store.dispatch,
         'API Key validation timed out',
         'Server didn\'t respond to validation request, web-based '
@@ -560,8 +601,8 @@ function validateKey(api: IExtensionApi, key: string): Promise<void> {
 }
 
 function once(api: IExtensionApi) {
-  const registerFunc = () => {
-    api.registerProtocol('nxm', (url: string) => {
+  const registerFunc = (def: boolean) => {
+    api.registerProtocol('nxm', def, (url: string) => {
       startDownload(api, url)
       .catch(DownloadIsHTML, err => undefined)
       .catch(err => {
@@ -575,18 +616,23 @@ function once(api: IExtensionApi) {
 
     const Nexus: typeof NexusT = require('nexus-api').default;
     const apiKey = getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], '');
-    nexus = new Nexus(activeGameId(state), apiKey, 30000);
-    setApiKey(apiKey);
+    nexus = new Nexus(activeGameId(state), apiKey, remote.app.getVersion(), 30000);
 
     const gameMode = activeGameId(state);
     api.store.dispatch(setUpdatingMods(gameMode, false));
 
+    nexus.getGames()
+      .then(games => {
+        nexusGames = games.sort((lhs, rhs) => lhs.name.localeCompare(rhs.name));
+      })
+      .catch(err => {
+        nexusGames = [];
+      });
+
     endorseMod = (gameId: string, modId: string, endorsedStatus: string) =>
       endorseModImpl(api, gameId, modId, endorsedStatus);
 
-    if (state.settings.nexus.associateNXM) {
-      registerFunc();
-    }
+    registerFunc(state.settings.nexus.associateNXM);
 
     if (state.confidential.account.nexus.APIKey !== undefined) {
       (window as any).requestIdleCallback(() => {
@@ -640,9 +686,9 @@ function once(api: IExtensionApi) {
   });
 
   api.events.on('submit-feedback',
-    (message: string, hash: string, feedbackFiles: string[],
+    (title: string, message: string, hash: string, feedbackFiles: string[],
      anonymous: boolean, callback: (err: Error) => void) => {
-      submitFeedback(nexus, message, feedbackFiles, anonymous, hash)
+      submitFeedback(nexus, title, message, feedbackFiles, anonymous, hash)
         .then(() => callback(null))
         .catch(err => callback(err));
     });
@@ -653,7 +699,8 @@ function once(api: IExtensionApi) {
 
   api.events.on('mod-update', (gameId, modId, fileId) => {
     const state: IState = api.store.getState();
-    if (!getSafe(state, ['session', 'nexus', 'userInfo', 'isPremium'], false)) {
+    if (!getSafe(state, ['session', 'nexus', 'userInfo', 'isPremium'], false)
+      && !getSafe(state, ['session', 'nexus', 'userInfo', 'isSupporter'], false)) {
       // nexusmods can't let users download files directly from client, without
       // showing ads
       opn(['https://www.nexusmods.com', convertGameId(gameId), 'mods', modId].join('/'))
@@ -690,7 +737,7 @@ function once(api: IExtensionApi) {
 
   api.events.on('request-nexus-login', (callback: (err: Error) => void) => {
     const id = require('uuid').v4();
-    const connection = new WebSocket('wss://sso.nexusmods.com:8443')
+    const connection = new WebSocket('wss://sso.nexusmods.com')
       .on('open', () => {
         connection.send(JSON.stringify({
           id, appid: 'Vortex',
@@ -724,7 +771,7 @@ function once(api: IExtensionApi) {
     (oldValue: boolean, newValue: boolean) => {
       log('info', 'associate', { oldValue, newValue });
       if (newValue === true) {
-        registerFunc();
+        registerFunc(true);
       } else {
         api.deregisterProtocol('nxm');
       }
@@ -755,8 +802,12 @@ function once(api: IExtensionApi) {
       Object.keys(newModTable[gameMode]).forEach(modId => {
         const lastPath = [lastGameMode, modId, 'attributes', 'modId'];
         const newPath = [gameMode, modId, 'attributes', 'modId'];
-        if (getSafe(lastModTable, lastPath, undefined)
-            !== getSafe(newModTable, newPath, undefined)) {
+        const lastDLGamePath = [lastGameMode, modId, 'attributes', 'downloadGame'];
+        const newDLGamePath = [gameMode, modId, 'attributes', 'downloadGame'];
+        if ((getSafe(lastModTable, lastPath, undefined)
+              !== getSafe(newModTable, newPath, undefined))
+           || (getSafe(lastModTable, lastDLGamePath, undefined)
+              !== getSafe(newModTable, newDLGamePath, undefined))) {
           return retrieveModInfo(nexus, api.store,
             gameMode, newModTable[gameMode][modId], api.translate)
             .then(() => {
@@ -803,9 +854,9 @@ function init(context: IExtensionContextExt): boolean {
       </div>);
   }, {
     props: {
-      isPremium: state => getSafe(state, ['session', 'nexus', 'userInfo', 'isPremium'], undefined),
+      isPremium: state => getSafe(state, ['session', 'nexus', 'userInfo', 'isPremium'], false),
     },
-    condition: (props: any): boolean => props.isPremium === false,
+    condition: (props: any): boolean => !props.isPremium,
   });
 
   context.registerBanner('main-toolbar', () => {
@@ -821,14 +872,12 @@ function init(context: IExtensionContextExt): boolean {
       </div>);
   }, {
     props: {
-      isPremium: state => getSafe(state, ['session', 'nexus', 'userInfo', 'isPremium'], undefined),
+      isPremium: state => getSafe(state, ['session', 'nexus', 'userInfo', 'isPremium'], false),
+      isSupporter: state =>
+        getSafe(state, ['session', 'nexus', 'userInfo', 'isSupporter'], false),
     },
-    condition: (props: any): boolean => props.isPremium === false,
+    condition: (props: any): boolean => !props.isPremium && !props.isSupporter,
   });
-
-  const logInDialog = () => {
-    context.api.store.dispatch(setDialogVisible('login-dialog'));
-  };
 
   const associateNXM = () => {
     const state: any = context.api.store.getState();
@@ -859,6 +908,7 @@ function init(context: IExtensionContextExt): boolean {
     () => retrieveCategories(context.api, true));
 
   context.registerTableAttribute('mods', genEndorsedAttribute(context.api));
+  context.registerTableAttribute('mods', genGameAttribute(context.api));
   context.registerTableAttribute('mods', genModIdAttribute(context.api));
 
   context.registerDashlet('Nexus Account', 3, 1, 0, DashboardBanner, undefined, undefined, {
@@ -867,7 +917,9 @@ function init(context: IExtensionContextExt): boolean {
   });
 
   context.registerDashlet('Go Premium', 1, 2, 200, GoPremiumDashlet, (state: IState) =>
-    getSafe(state, ['session', 'nexus', 'userInfo', 'isPremium'], undefined) !== true, undefined, {
+    (getSafe(state, ['session', 'nexus', 'userInfo', 'isPremium'], undefined) !== true)
+    && (getSafe(state, ['session', 'nexus', 'userInfo', 'isSupporter'], undefined) !== true),
+    undefined, {
     fixed: false,
     closable: false,
   });

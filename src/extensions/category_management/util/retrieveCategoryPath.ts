@@ -1,10 +1,11 @@
 import {IState} from '../../../types/IState';
 import { activeGameId } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
+import { truthy } from '../../../util/util';
 
 function createCategoryDetailPath(categories: any, category: string,
                                   categoryPath: string, visited: Set<string> = new Set()) {
-  if (categories[category] === undefined) {
+  if (!truthy(categories[category])) {
     return null;
   }
   categoryPath = (categoryPath === '')
@@ -29,7 +30,7 @@ function createCategoryDetailPath(categories: any, category: string,
  * @param {Redux.Store<any>} store
  */
 export function resolveCategoryPath(category: string, state: IState) {
-  if (category === undefined) {
+  if (!truthy(category)) {
     return null;
   }
   let completePath: string = '';
@@ -50,7 +51,7 @@ export function resolveCategoryPath(category: string, state: IState) {
  * @param {Redux.Store<any>} store
  */
 export function resolveCategoryName(category: string, state: IState) {
-  if (category === undefined) {
+  if (!truthy(category)) {
     return '';
   }
 

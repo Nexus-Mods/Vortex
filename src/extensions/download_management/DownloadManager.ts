@@ -136,6 +136,7 @@ class DownloadWorker {
           .on('data', (data: Buffer) => {
             this.handleData(data);
           })
+          .on('error', err => this.handleError(err))
           .on('end', () => {
             this.handleComplete();
             this.mRequest.abort();
@@ -143,7 +144,7 @@ class DownloadWorker {
       });
 
       this.mRequest
-        .on('error', (err) => this.handleError(err))
+        .on('error', err => this.handleError(err))
         .end();
      });
   }
@@ -213,7 +214,8 @@ class DownloadWorker {
           this.mJob.completionCB();
         }
         this.abort(false);
-    });
+      })
+      .catch(err => this.handleError(err));
   }
 
   private handleResponse(response: http.IncomingMessage) {
@@ -311,7 +313,11 @@ class DownloadWorker {
 
     const bufferLength = this.bufferLength;
     if (bufferLength >= DownloadWorker.BUFFER_SIZE) {
-      this.writeBuffer().then(() => null);
+      this.writeBuffer()
+        .then(() => null)
+        .catch(err => {
+          this.handleError(err);
+        });
     }
     this.mProgressCB(data.length);
   }
@@ -472,17 +478,17 @@ class DownloadManager {
     // first, make sure not-yet-started chungs are paused, otherwise
     // they might get started as we stop running chunks as that frees
     // space in the queue
-    download.chunks.forEach((value: IDownloadJob) => {
-      if (value.state === 'init') {
-        value.state = 'finished';
+    download.chunks.forEach((chunk: IDownloadJob) => {
+      if (chunk.state === 'init') {
+        chunk.state = 'finished';
       }
     });
 
     // stop running workers
-    download.chunks.forEach((value: IDownloadJob) => {
-      if ((value.state === 'running')
-          && (this.mBusyWorkers[value.workerId] !== undefined)) {
-        this.mBusyWorkers[value.workerId].cancel();
+    download.chunks.forEach((chunk: IDownloadJob) => {
+      if ((chunk.state === 'running')
+          && (this.mBusyWorkers[chunk.workerId] !== undefined)) {
+        this.mBusyWorkers[chunk.workerId].cancel();
       }
     });
     // remove from queue
@@ -504,23 +510,23 @@ class DownloadManager {
     // first, make sure not-yet-started chungs are paused, otherwise
     // they might get started as we stop running chunks as that frees
     // space in the queue
-    download.chunks.forEach((value: IDownloadJob) => {
-      if (value.state === 'init') {
-        value.state = 'paused';
+    download.chunks.forEach((chunk: IDownloadJob) => {
+      if (chunk.state === 'init') {
+        chunk.state = 'paused';
       }
     });
 
     // stop running workers
-    download.chunks.forEach((value: IDownloadJob) => {
-      if ((value.state === 'running') && (value.size > 0)) {
+    download.chunks.forEach((chunk: IDownloadJob) => {
+      if ((chunk.state === 'running') && (chunk.size > 0)) {
         unfinishedChunks.push({
-          received: value.received,
-          offset: value.offset,
-          size: value.size,
-          url: value.url,
+          received: chunk.received,
+          offset: chunk.offset,
+          size: chunk.size,
+          url: chunk.url,
         });
-        this.mBusyWorkers[value.workerId].pause();
-        this.stopWorker(value.workerId);
+        this.mBusyWorkers[chunk.workerId].pause();
+        this.stopWorker(chunk.workerId);
       }
     });
     // remove from queue
@@ -546,7 +552,10 @@ class DownloadManager {
   private cancelDownload(download: IRunningDownload, err: Error) {
     for (const chunk of download.chunks) {
       if (chunk.state === 'running') {
-        this.mBusyWorkers[chunk.workerId].cancel();
+        if (this.mBusyWorkers[chunk.workerId] !== undefined) {
+          this.mBusyWorkers[chunk.workerId].cancel();
+        }
+        chunk.state = 'paused';
       }
     }
     download.failedCB(err);
@@ -611,6 +620,8 @@ class DownloadManager {
   private startJob(download: IRunningDownload, job: IDownloadJob) {
     if (download.assembler === undefined) {
       try {
+        download.progressCB(download.received, download.size, undefined,
+                            undefined, download.tempName);
         download.assembler = new FileAssembler(download.tempName);
       } catch (err) {
         if (err.code === 'EBUSY') {
@@ -644,6 +655,15 @@ class DownloadManager {
               urls,
               download.tempName);
           return synced;
+        })
+        .catch(err => {
+          for (const chunk of download.chunks) {
+            if (chunk.state === 'running') {
+              this.mBusyWorkers[chunk.workerId].cancel();
+            }
+          }
+          download.failedCB(err);
+          return Promise.resolve(false);
         });
     };
 
@@ -759,17 +779,21 @@ class DownloadManager {
             .then((resolvedPath: string) => {
               finalPath = resolvedPath;
               log('debug', 'renaming download', { from: download.tempName, to: resolvedPath });
+              download.progressCB(download.size, download.size, undefined, undefined, resolvedPath);
               return fs.renameAsync(download.tempName, resolvedPath);
             });
           } else if ((download.headers !== undefined)
                      && (contentType.parse(download.headers['content-type']).type === 'text/html')
-                     && (!download.tempName.toLowerCase().endsWith('.html'))) {
+                     && !download.tempName.toLowerCase().endsWith('.html')) {
             // don't keep html files. It's possible handleHTML already deleted it though
             return fs.removeAsync(download.tempName)
               .catch(err => (err.code !== 'ENOENT')
                   ? Promise.reject(err)
                   : Promise.resolve());
           }
+        })
+        .catch(err => {
+          download.failedCB(err);
         })
         .then(() => {
           const unfinishedChunks = download.chunks

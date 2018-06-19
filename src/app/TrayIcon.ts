@@ -1,5 +1,6 @@
 import { IExtensionApi } from '../types/api';
 import getVortexPath from '../util/getVortexPath';
+import { log } from '../util/log';
 
 import { app, Menu, NativeImage, Tray } from 'electron';
 import * as path from 'path';
@@ -14,11 +15,27 @@ class TrayIcon {
     this.mImagePath = path.resolve(
         getVortexPath('assets'), 'images',
         process.platform === 'win32' ? 'vortex.ico' : 'vortex.png');
+    try {
+      this.initTrayIcon();
+    } catch (err) {
+      // This appears to be caused by a bug in electron. It happens randomly,
+      // very rarely and the error message looks like it's entirely internal
+      setTimeout(() => {
+        try {
+          this.initTrayIcon();
+        } catch (err) {
+          log('error', 'failed to initialize tray icon', err.message);
+        }
+      }, 500);
+    }
+  }
+
+  private initTrayIcon() {
     this.mTrayIcon = new Tray(this.mImagePath);
 
     this.mTrayIcon.setContextMenu(Menu.buildFromTemplate([
-      {label: 'Start Game', click: () => this.startGame()},
-      {label: 'Quit', click: () => app.quit()},
+      { label: 'Start Game', click: () => this.startGame() },
+      { label: 'Quit', click: () => app.quit() },
     ]));
 
     this.mApi.events.on('show-balloon',
@@ -31,6 +48,9 @@ class TrayIcon {
 
   private showNotification(title: string, content: string) {
     const icon = path.join(getVortexPath('assets'), 'images', 'vortex.png');
+    if ((title === undefined) || (content === undefined)) {
+      return;
+    }
     this.mTrayIcon.displayBalloon({
       title,
       content,

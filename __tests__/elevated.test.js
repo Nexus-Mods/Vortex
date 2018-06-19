@@ -35,10 +35,11 @@ jest.mock('fs', () => ({
 }));
 
 
-import runElevated from '../src/util/vortex-run/elevated';
+import runElevated from '../src/util/vortex-run/src/elevated';
 
 function dummy() {
   console.log('DUMMY FUNCTION');
+  return 1;
 }
 
 describe('runElevated', () => {
@@ -60,7 +61,7 @@ describe('runElevated', () => {
     return runElevated('ipcPath', dummy).then(() => {
       expect(mockWrites.length).toBe(1);
       expect(mockWrites[0]).toContain('let moduleRoot =');
-      expect(mockWrites[0]).toContain('let baseDir =');
+      expect(mockWrites[0]).toContain('let main = function dummy');
       expect(mockWrites[0]).toContain('DUMMY FUNCTION');
     });
   });
@@ -73,7 +74,6 @@ describe('runElevated', () => {
       array: [ 1, 2, 3 ]
     }, '/module/base')
     .then(() => {
-      expect(mockWrites[0]).toContain('let baseDir = \'/module/base\'');
       expect(mockWrites[0]).toContain('let answer = 42;');
       expect(mockWrites[0]).toContain('let truth = true;');
       expect(mockWrites[0]).toContain('let str = "string";');

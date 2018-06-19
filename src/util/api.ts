@@ -16,7 +16,7 @@ import sortMods from '../extensions/mod_management/util/sort';
 import testModReference from '../extensions/mod_management/util/testModReference';
 import { Archive } from './archives';
 import copyRecursive from './copyRecursive';
-import { DataInvalid, NotSupportedError, ProcessCanceled,
+import { DataInvalid, MissingInterpreter, NotSupportedError, ProcessCanceled,
          SetupError, UserCanceled } from './CustomErrors';
 import Debouncer from './Debouncer';
 import delayed from './delayed';
@@ -29,7 +29,7 @@ import lazyRequire from './lazyRequire';
 import makeReactive from './makeReactive';
 import ReduxProp from './ReduxProp';
 import relativeTime from './relativeTime';
-import steam, { ISteamEntry } from './Steam';
+import steam, { GameNotFound, ISteamEntry } from './Steam';
 import { bytesToString, copyFileAtomic, isNullOrWhitespace, objDiff,
          removePersistent, setdefault } from './util';
 import walk from './walk';
@@ -46,6 +46,7 @@ export {
   delayed,
   deriveModInstallName as deriveInstallName,
   extend,
+  GameNotFound,
   getCurrentLanguage,
   getDownloadPath,
   getInstallPath,
@@ -56,6 +57,7 @@ export {
   LazyComponent,
   lazyRequire,
   makeReactive,
+  MissingInterpreter,
   Normalize,
   NotSupportedError,
   objDiff,

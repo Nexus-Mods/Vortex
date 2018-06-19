@@ -66,9 +66,9 @@ function applyExtensionInfo(id: string, bundled: boolean, values: any): IExtensi
 function readExtensionInfo(extensionPath: string,
                            bundled: boolean): Promise<{ id: string, info: IExtension }> {
   const id = path.basename(extensionPath);
-  return fs.readFileAsync(path.join(extensionPath, 'info.json'), {})
+  return fs.readFileAsync(path.join(extensionPath, 'info.json'), { encoding: 'utf-8' })
     .then(info => ({
-      id, info: applyExtensionInfo(id, bundled, JSON.parse(info.toString())),
+      id, info: applyExtensionInfo(id, bundled, JSON.parse(info)),
     }))
     .catch(err => ({
       id, info: applyExtensionInfo(id, bundled, {}),
@@ -170,7 +170,8 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
       ? Promise.map(extPaths, extPath => installExtension(extPath)
           .then(() => { success = true; })
           .catch(err => {
-            this.context.api.showErrorNotification('Failed to install extension', err);
+            this.context.api.showErrorNotification('Failed to install extension', err,
+                                                   { allowReport: false });
           }))
       : Promise.map(extPaths, url => new Promise<void>((resolve, reject) => {
         this.context.api.events.emit('start-download', {}, undefined,
@@ -181,7 +182,8 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
             success = true;
           })
           .catch(err => {
-            this.context.api.showErrorNotification('Failed to install extension', err);
+            this.context.api.showErrorNotification('Failed to install extension', err,
+                                                   { allowReport: false });
           })
           .finally(() => {
             resolve();

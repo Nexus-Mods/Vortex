@@ -11,6 +11,7 @@ export interface IToolbarIconProps {
   placement?: 'top' | 'right' | 'bottom' | 'left';
   iconSet?: string;
   icon?: string;
+  tooltip?: string;
   onClick?: (ids: string[]) => void;
   pulse?: boolean;
   disabled?: boolean;
@@ -19,11 +20,11 @@ export interface IToolbarIconProps {
 
 class ToolbarIcon extends React.PureComponent<IToolbarIconProps, {}> {
   public render(): JSX.Element {
-    const { className, id, text, icon, iconSet, pulse, disabled} = this.props;
+    const { className, id, text, tooltip, icon, iconSet, pulse, disabled} = this.props;
     const placement = this.props.placement || 'bottom';
     return (
       <Button
-        tooltip={text}
+        tooltip={tooltip}
         id={id}
         placement={placement}
         onClick={this.invokeAction}
@@ -37,9 +38,10 @@ class ToolbarIcon extends React.PureComponent<IToolbarIconProps, {}> {
     );
   }
 
-  private invokeAction = () => {
+  private invokeAction = (evt: React.MouseEvent<Button>) => {
     const { instanceId, onClick } = this.props;
     if (onClick !== undefined) {
+      evt.preventDefault();
       onClick(instanceId);
     }
   }

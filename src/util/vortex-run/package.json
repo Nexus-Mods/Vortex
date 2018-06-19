@@ -1,11 +1,10 @@
 {
   "name": "vortex-run",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Helpers to run code in different modes (elevated, in separate threads)",
   "main": "lib/index.js",
   "scripts": {
-    "build": "tsc -p . -d",
-    "install": "tsc -p . -d"
+    "build": "tsc -p . -d"
   },
   "typings": "lib/index.d.ts",
   "files": [

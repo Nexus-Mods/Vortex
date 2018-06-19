@@ -41,6 +41,7 @@ import * as I18next from 'i18next';
 import { IHashResult, ILookupResult, IModInfo, IReference } from 'modmeta-db';
 import * as modmetaT from 'modmeta-db';
 const modmeta = lazyRequire<typeof modmetaT>(() => require('modmeta-db'));
+import * as nodeIPC from 'node-ipc';
 import * as path from 'path';
 import * as Redux from 'redux';
 import { types as ratypes } from 'redux-act';
@@ -292,7 +293,9 @@ class EventProxy extends EventEmitter {
   }
 
   public emit(eventName: string, ...args) {
-    if (!super.emit(eventName, args) && (this.mTarget !== undefined)) {
+    if (!super.emit(eventName, args)
+        && (this.mTarget !== undefined)
+        && !this.mTarget.isDestroyed()) {
       // relay all events this process didn't handle itself to the connected
       // process
       this.mTarget.send('relay-event', eventName, ...args);
@@ -359,6 +362,7 @@ class ExtensionManager {
       translate: (input, options?) => {
         return this.mTranslator !== undefined ? this.mTranslator.t(input, options) : input;
       },
+      locale: () => this.mTranslator.language,
       getI18n: () => this.mTranslator,
       getPath: this.getPath,
       onStateChange: (statePath: string[], callback: StateChangeCallback) => undefined,
@@ -452,7 +456,7 @@ class ExtensionManager {
       ipcRenderer.on('send-notification',
         (event, notification) => this.mApi.sendNotification(notification));
       ipcRenderer.on('show-error-notification', (event, message, details, options) =>
-        this.mApi.showErrorNotification(message, details, options));
+        this.mApi.showErrorNotification(message, details, options || undefined));
 
       store.dispatch(setExtensionLoadFailures(this.mLoadFailures));
     }
@@ -768,14 +772,17 @@ class ExtensionManager {
     });
   }
 
-  private registerProtocol = (protocol: string, callback: (url: string) => void) => {
+  private registerProtocol = (protocol: string, def: boolean,
+                              callback: (url: string) => void) => {
     log('info', 'register protocol', { protocol });
-    if (process.execPath.endsWith('electron.exe')) {
-      // make it work when using the development version
-      app.setAsDefaultProtocolClient(protocol, process.execPath,
-                                     [ getVortexPath('package'), '-d' ]);
-    } else {
-      app.setAsDefaultProtocolClient(protocol, process.execPath, [ '-d' ]);
+    if (def) {
+      if (process.execPath.endsWith('electron.exe')) {
+        // make it work when using the development version
+        app.setAsDefaultProtocolClient(protocol, process.execPath,
+          [getVortexPath('package'), '-d']);
+      } else {
+        app.setAsDefaultProtocolClient(protocol, process.execPath, ['-d']);
+      }
     }
     this.mProtocolHandlers[protocol] = callback;
   }
@@ -789,9 +796,9 @@ class ExtensionManager {
     if (process.execPath.endsWith('electron.exe')) {
       // make it work when using the development version
       app.removeAsDefaultProtocolClient(protocol, process.execPath,
-                                        [ getVortexPath('package') ]);
+                                        [ getVortexPath('package'), '-d' ]);
     } else {
-      app.removeAsDefaultProtocolClient(protocol);
+      app.removeAsDefaultProtocolClient(protocol, process.execPath, ['-d']);
     }
   }
 
@@ -932,7 +939,11 @@ class ExtensionManager {
     (executable: string, args: string[], options: IRunOptions): Promise<void> => {
       const interpreter = this.mInterpreters[path.extname(executable).toLowerCase()];
       if (interpreter !== undefined) {
-        ({ executable, args, options } = interpreter({ executable, args, options }));
+        try {
+          ({ executable, args, options } = interpreter({ executable, args, options }));
+        } catch (err) {
+          return Promise.reject(err);
+        }
       }
       return (options.suggestDeploy === true ? this.checkDeploy() : Promise.resolve(true))
       .then(cont => cont ? new Promise<void>((resolve, reject) => {
@@ -959,8 +970,10 @@ class ExtensionManager {
               }
           });
         } catch (err) {
+          const ipcPath = shortid();
+          this.startIPC(ipcPath);
           if (err.errno === 'EACCES') {
-            return resolve(runElevated(shortid(), runElevatedCustomTool, {
+            return resolve(runElevated(ipcPath, runElevatedCustomTool, {
               toolPath: executable,
               toolCWD: cwd,
               parameters: args,
@@ -971,6 +984,26 @@ class ExtensionManager {
           }
         }
       }) : Promise.resolve());
+  }
+
+  private startIPC(ipcPath: string) {
+    const ipcServer = new (nodeIPC as any).IPC();
+    ipcServer.serve(ipcPath, () => null);
+    ipcServer.server.start();
+    ipcServer.server.on('connect', () => {
+      log('debug', 'ipc client connected');
+    });
+    ipcServer.server.on('socket.disconnected', () => {
+      log('debug', 'socket disconnect');
+      ipcServer.server.stop();
+    });
+    ipcServer.server.on('log', (data: any) => {
+      log(data.level, data.message, data.meta);
+    });
+    ipcServer.server.on('finished', () => null);
+    ipcServer.server.on('error', nodeIPCErr => {
+      log('error', 'ipcServer err', nodeIPCErr);
+    });
   }
 
   private loadDynamicExtension(extensionPath: string): IRegisteredExtension {
@@ -1005,9 +1038,9 @@ class ExtensionManager {
           // bundled one if this one fails to load which could be convenient but also massively
           // confusing.
           loadedExtensions.add(name);
-          const before = new Date().getTime();
+          const before = Date.now();
           const ext = this.loadDynamicExtension(path.join(extensionsPath, name));
-          const loadTime = new Date().getTime() - before;
+          const loadTime = Date.now() - before;
           log('debug', 'loaded extension', { name, loadTime });
           return ext;
         } catch (err) {

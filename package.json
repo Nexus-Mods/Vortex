@@ -9,7 +9,7 @@
     "url": "https://github.com/Nexus-Mods/Vortex"
   },
   "vortex": {
-    "electron": "2.0.0"
+    "electron": "2.0.2"
   },
   "scripts": {
     "_assets_out": "node InstallAssets.js out",
@@ -23,7 +23,7 @@
     "package": "electron-builder --config electron-builder-oneclick.json && electron-builder --config electron-builder-advanced.json",
     "predist": "yarn run --non-interactive build_api && yarn run --non-interactive _install_app && yarn run --non-interactive subprojects_app && yarn run --non-interactive _assets_app",
     "dist": "yarn run build_dist && yarn run package",
-    "ci": "yarn run predist && electron-builder --config electron-builder-ci.json",
+    "ci": "yarn run predist && yarn run build_dist && electron-builder --config electron-builder-ci.json",
     "start": "cross-env NODE_ENV=development electron .",
     "clean": "yarn add rm-local-modules && rm-local-modules && yarn install --check-files",
     "preinstall": "git submodule update --init --recursive",
@@ -86,10 +86,12 @@
     "@types/lodash": "^4.14.78",
     "@types/minimatch": "^3.0.1",
     "@types/node": "8.0.46",
+    "@types/node-ipc": "^9.1.0",
     "@types/node-uuid": "0.0.28",
     "@types/opn": "5.1.0",
     "@types/react": "16.0.34",
     "@types/react-bootstrap": "^0.31.6",
+    "@types/react-datepicker": "1.1.2",
     "@types/react-dnd": "^2.0.34",
     "@types/react-dnd-html5-backend": "^2.1.8",
     "@types/react-dom": "16.0.3",
@@ -129,9 +131,8 @@
     "copyfiles": "^1.2.0",
     "cross-env": "^5.1.0",
     "devtron": "^1.4.0",
-    "electron": "2.0.0",
+    "electron": "2.0.2",
     "electron-builder": "^20.11.1",
-    "electron-debug": "^1.4.0",
     "electron-download-tf": "^4.3.4",
     "electron-rebuild": "^1.6.0",
     "enzyme": "^3.1.0",
@@ -198,6 +199,7 @@
     "prop-types": "^15.6.0",
     "react": "^16.2.0",
     "react-bootstrap": "^0.32.0",
+    "react-datepicker": "^1.5.0",
     "react-dnd": "^2.5.4",
     "react-dnd-html5-backend": "^2.5.4",
     "react-dom": "^16.2.0",
@@ -205,6 +207,7 @@
     "react-markdown": "^2.5.0",
     "react-overlays": "^0.8.3",
     "react-redux": "^5.0.6",
+    "react-resize-detector": "^2.3.0",
     "react-safe-html": "TanninOne/react-safe-html",
     "react-select": "^1.2.1",
     "react-sortable-tree": "^1.4.0",

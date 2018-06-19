@@ -28,7 +28,7 @@ export const profilesReducer: IReducerSpec = {
         enable);
     },
     [actions.setProfileActivated as any]: (state, payload) =>
-      setSafe(state, [payload, 'lastActivated'], new Date().getTime()),
+      setSafe(state, [payload, 'lastActivated'], Date.now()),
     [actions.forgetMod as any]: (state, payload) =>
       deleteOrNop(state, [payload.profileId, 'modState', payload.modId]),
     [actions.setFeature as any]: (state, payload) => {

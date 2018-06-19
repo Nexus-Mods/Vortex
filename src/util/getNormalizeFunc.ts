@@ -71,14 +71,12 @@ function isCaseSensitive(testPath: string): Promise<boolean> {
           && stats[2].isFulfilled()
           && (stats[0].value().ino === stats[1].value().ino)
           && (stats[0].value().ino === stats[2].value().ino)) {
-        log('debug', 'file system case-insensitive', { testPath });
         return false;
       } else {
-        log('debug', 'file system case-sensitive', { testPath });
         return true;
       }
     })
-    .catch(err => (err.code === 'EPERM')
+    .catch(err => (['EPERM', 'EUNKNOWN', 'UNKNOWN'].indexOf(err.code) !== -1)
       ? Promise.resolve(process.platform !== 'win32')
       : Promise.reject(err));
 }

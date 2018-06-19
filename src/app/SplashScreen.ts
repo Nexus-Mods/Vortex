@@ -54,7 +54,7 @@ class SplashScreen {
           sandbox: false,
         },
       });
-      this.mWindow.loadURL(`${getVortexPath('base')}/splash.html`);
+      this.mWindow.loadURL(`file://${getVortexPath('base')}/splash.html`);
       this.mWindow.once('ready-to-show', onReady);
     });
   }

@@ -119,7 +119,9 @@ class MainWindow {
   }
 
   public sendExternalURL(url: string) {
-    this.mWindow.webContents.send('external-url', url);
+    if (this.mWindow !== null) {
+      this.mWindow.webContents.send('external-url', url);
+    }
   }
 
   private getWindowSettings(windowMetrics: IWindow): Electron.BrowserWindowConstructorOptions {

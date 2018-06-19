@@ -3,8 +3,8 @@
 
 
 "7z-bin@Nexus-Mods/7z-bin":
-  version "16.4.0"
-  resolved "https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/cc0f8a3ef780d2f7aae8ea365a7103a1d246b873"
+  version "18.5.0"
+  resolved "https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/ee15f48c181b02d6a51f085580b758d9e8b398b9"
 
 "7zip-bin-linux@^1.1.0":
   version "1.2.0"
@@ -397,6 +397,12 @@
   version "3.0.3"
   resolved "https://registry.yarnpkg.com/@types/minimatch/-/minimatch-3.0.3.tgz#3dca0e3f33b200fc7d1139c0cd96c1268cadfd9d"
 
+"@types/node-ipc@^9.1.0":
+  version "9.1.0"
+  resolved "https://registry.yarnpkg.com/@types/node-ipc/-/node-ipc-9.1.0.tgz#9eb54421bbdc3813b73fa99d3ff8d1c085be1d63"
+  dependencies:
+    "@types/node" "*"
+
 "@types/node-uuid@0.0.28":
   version "0.0.28"
   resolved "https://registry.yarnpkg.com/@types/node-uuid/-/node-uuid-0.0.28.tgz#41655b5ce63b2f3374c4e826b4dd21e729058e3d"
@@ -430,6 +436,13 @@
   resolved "https://registry.yarnpkg.com/@types/react-bootstrap/-/react-bootstrap-0.31.9.tgz#e54ef80cfff7ae2bfa1e94244c98c2d5f04f6b5a"
   dependencies:
     "@types/react" "*"
+
+"@types/react-datepicker@1.1.2":
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/@types/react-datepicker/-/react-datepicker-1.1.2.tgz#9efe769a8af0d5b38cb51f082f18a664b20e3d46"
+  dependencies:
+    "@types/react" "*"
+    moment ">=2.14.0"
 
 "@types/react-dnd-html5-backend@^2.1.8":
   version "2.1.8"
@@ -2667,8 +2680,8 @@ cpx@^1.5.0:
     subarg "^1.0.0"
 
 crash-dump@Nexus-Mods/node-crash-dump:
-  version "1.0.0"
-  resolved "https://codeload.github.com/Nexus-Mods/node-crash-dump/tar.gz/faf8345ec796fec246773cf36e75b3df7bdc3f80"
+  version "1.0.1"
+  resolved "https://codeload.github.com/Nexus-Mods/node-crash-dump/tar.gz/de762265ea07970356e917c86034cef40c470af4"
   dependencies:
     autogypi "^0.2.2"
     nan "^2.8.0"
@@ -3633,9 +3646,9 @@ electron-updater@^2.21.10:
     semver "^5.5.0"
     source-map-support "^0.5.5"
 
-electron@2.0.0:
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-2.0.0.tgz#e95dc7f3a089a52b8c2a52c7c9e1024db0c8d46e"
+electron@2.0.2:
+  version "2.0.2"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-2.0.2.tgz#b77e05f83419cc5ec921a2d21f35b55e4bfc3d68"
   dependencies:
     "@types/node" "^8.0.24"
     electron-download "^3.0.1"
@@ -3920,8 +3933,8 @@ evp_bytestokey@^1.0.0, evp_bytestokey@^1.0.3:
     safe-buffer "^5.1.1"
 
 exe-version@Nexus-Mods/node-exe-version:
-  version "1.0.0"
-  resolved "https://codeload.github.com/Nexus-Mods/node-exe-version/tar.gz/ce39faff66515223dbef71d57c517c0cc6e3bcb4"
+  version "1.0.1"
+  resolved "https://codeload.github.com/Nexus-Mods/node-exe-version/tar.gz/49e4391eee432fd0993c70120f803d9aa88cde6f"
   dependencies:
     autogypi "^0.2.2"
     nan "^2.8.0"
@@ -4276,8 +4289,8 @@ follow-redirects@>=1.2.0:
     debug "^3.1.0"
 
 fomod-installer@Nexus-Mods/fomod-installer:
-  version "0.0.2"
-  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/e8d8c4697468673ca26a30e0200b9d53d3b487ef"
+  version "0.0.4"
+  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/7432abb319ba3704caee44f261ec8fef0811b7d6"
   dependencies:
     copyfiles "^1.0.0"
     msbuild "^1.0.1"
@@ -6293,7 +6306,7 @@ lodash.curry@^4.0.1:
   version "4.1.1"
   resolved "https://registry.yarnpkg.com/lodash.curry/-/lodash.curry-4.1.1.tgz#248e36072ede906501d75966200a86dab8b23170"
 
-lodash.debounce@^4.0.4:
+lodash.debounce@^4.0.4, lodash.debounce@^4.0.8:
   version "4.0.8"
   resolved "https://registry.yarnpkg.com/lodash.debounce/-/lodash.debounce-4.0.8.tgz#82d79bff30a67c4005ffd5e2515300ad9ca4d7af"
 
@@ -6369,7 +6382,7 @@ lodash.sortby@^4.7.0:
   version "4.7.0"
   resolved "https://registry.yarnpkg.com/lodash.sortby/-/lodash.sortby-4.7.0.tgz#edd14c824e2cc9c1e0b0a1b42bb5210516a42438"
 
-lodash.throttle@^4.0.1:
+lodash.throttle@^4.0.1, lodash.throttle@^4.1.1:
   version "4.1.1"
   resolved "https://registry.yarnpkg.com/lodash.throttle/-/lodash.throttle-4.1.1.tgz#c23e91b710242ac70c37f1e1cda9274cc39bf2f4"
 
@@ -6746,6 +6759,10 @@ modmeta-db@Nexus-Mods/modmeta-db:
     commander "^2.9.0"
     express "^4.14.0"
 
+moment@>=2.14.0:
+  version "2.22.2"
+  resolved "https://registry.yarnpkg.com/moment/-/moment-2.22.2.tgz#3c257f9839fc0e93ff53149632239eb90783ff66"
+
 move-concurrently@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/move-concurrently/-/move-concurrently-1.0.1.tgz#be2c005fda32e0b29af1f05d7c4b33214c701f92"
@@ -6868,8 +6885,8 @@ next-tick@1:
   resolved "https://registry.yarnpkg.com/next-tick/-/next-tick-1.0.0.tgz#ca86d1fe8828169b0120208e3dc8424b9db8342c"
 
 nexus-api@Nexus-Mods/node-nexus-api:
-  version "0.3.0"
-  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/9d1c93b163dd186ca07a4e18ae8923c34f4bb3dc"
+  version "0.5.0"
+  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/3403fb2abfd4e38cc7dd7c99b3bd182e169623d1"
   dependencies:
     request "^2.85.0"
     string-template "^1.0.0"
@@ -7581,8 +7598,8 @@ performance-now@^2.1.0:
   resolved "https://registry.yarnpkg.com/performance-now/-/performance-now-2.1.0.tgz#6309f4e0e5fa913ec1c69307ae364b4b377c9e7b"
 
 permissions@Nexus-Mods/node-permissions:
-  version "1.1.0"
-  resolved "https://codeload.github.com/Nexus-Mods/node-permissions/tar.gz/46836e32f4328d6ca9549e7d031342ef5c445cb5"
+  version "1.1.2"
+  resolved "https://codeload.github.com/Nexus-Mods/node-permissions/tar.gz/0e04ade9b414f8265c23bd0f69df008fb9b3cedc"
   dependencies:
     autogypi "^0.2.2"
     nbind "^0.3.15"
@@ -7631,6 +7648,10 @@ plist@^3.0.1:
 pn@^1.0.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/pn/-/pn-1.1.0.tgz#e2f4cef0e219f463c179ab37463e4e1ecdccbafb"
+
+popper.js@^1.14.1:
+  version "1.14.3"
+  resolved "https://registry.yarnpkg.com/popper.js/-/popper.js-1.14.3.tgz#1438f98d046acf7b4d78cd502bf418ac64d4f095"
 
 posix-character-classes@^0.1.0:
   version "0.1.1"
@@ -7755,6 +7776,14 @@ prop-types-extra@^1.0.1:
 prop-types@^15.0.0, prop-types@^15.5.1, prop-types@^15.5.10, prop-types@^15.5.4, prop-types@^15.5.6, prop-types@^15.5.7, prop-types@^15.5.8, prop-types@^15.5.9, prop-types@^15.6.0:
   version "15.6.0"
   resolved "https://registry.yarnpkg.com/prop-types/-/prop-types-15.6.0.tgz#ceaf083022fc46b4a35f69e13ef75aed0d639856"
+  dependencies:
+    fbjs "^0.8.16"
+    loose-envify "^1.3.1"
+    object-assign "^4.1.1"
+
+prop-types@^15.6.1:
+  version "15.6.1"
+  resolved "https://registry.yarnpkg.com/prop-types/-/prop-types-15.6.1.tgz#36644453564255ddda391191fb3a125cbdf654ca"
   dependencies:
     fbjs "^0.8.16"
     loose-envify "^1.3.1"
@@ -7945,6 +7974,15 @@ react-bootstrap@^0.32.0:
     uncontrollable "^4.1.0"
     warning "^3.0.0"
 
+react-datepicker@^1.5.0:
+  version "1.5.0"
+  resolved "https://registry.yarnpkg.com/react-datepicker/-/react-datepicker-1.5.0.tgz#7eacd9609313189c84a21bb7421486054939a4b2"
+  dependencies:
+    classnames "^2.2.5"
+    prop-types "^15.6.0"
+    react-onclickoutside "^6.7.1"
+    react-popper "^0.9.1"
+
 react-display-name@^0.2.0:
   version "0.2.3"
   resolved "https://registry.yarnpkg.com/react-display-name/-/react-display-name-0.2.3.tgz#f50204d430c9ca819bc0bade0306e9175d8d1987"
@@ -8025,6 +8063,10 @@ react-markdown@^2.5.0:
     commonmark-react-renderer "^4.3.4"
     prop-types "^15.5.1"
 
+react-onclickoutside@^6.7.1:
+  version "6.7.1"
+  resolved "https://registry.yarnpkg.com/react-onclickoutside/-/react-onclickoutside-6.7.1.tgz#6a5b5b8b4eae6b776259712c89c8a2b36b17be93"
+
 react-overlays@^0.8.0, react-overlays@^0.8.3:
   version "0.8.3"
   resolved "https://registry.yarnpkg.com/react-overlays/-/react-overlays-0.8.3.tgz#fad65eea5b24301cca192a169f5dddb0b20d3ac5"
@@ -8035,6 +8077,13 @@ react-overlays@^0.8.0, react-overlays@^0.8.3:
     prop-types-extra "^1.0.1"
     react-transition-group "^2.2.0"
     warning "^3.0.0"
+
+react-popper@^0.9.1:
+  version "0.9.5"
+  resolved "https://registry.yarnpkg.com/react-popper/-/react-popper-0.9.5.tgz#02a24ef3eec33af9e54e8358ab70eb0e331edd05"
+  dependencies:
+    popper.js "^1.14.1"
+    prop-types "^15.6.1"
 
 react-prop-types@^0.4.0:
   version "0.4.0"
@@ -8071,6 +8120,15 @@ react-resize-detector@1.1.0:
   resolved "https://registry.yarnpkg.com/react-resize-detector/-/react-resize-detector-1.1.0.tgz#4a9831fa3caad32230478dd0185cbd2aa91a5ebf"
   dependencies:
     prop-types "^15.5.10"
+
+react-resize-detector@^2.3.0:
+  version "2.3.0"
+  resolved "https://registry.yarnpkg.com/react-resize-detector/-/react-resize-detector-2.3.0.tgz#57bad1ae26a28a62a2ddb678ba6ffdf8fa2b599c"
+  dependencies:
+    lodash.debounce "^4.0.8"
+    lodash.throttle "^4.1.1"
+    prop-types "^15.6.0"
+    resize-observer-polyfill "^1.5.0"
 
 react-safe-html@TanninOne/react-safe-html:
   version "0.4.1"
@@ -8696,6 +8754,10 @@ require-main-filename@^1.0.1:
 reselect@*, reselect@^3.0.1:
   version "3.0.1"
   resolved "https://registry.yarnpkg.com/reselect/-/reselect-3.0.1.tgz#efdaa98ea7451324d092b2b2163a6a1d7a9a2147"
+
+resize-observer-polyfill@^1.5.0:
+  version "1.5.0"
+  resolved "https://registry.yarnpkg.com/resize-observer-polyfill/-/resize-observer-polyfill-1.5.0.tgz#660ff1d9712a2382baa2cad450a4716209f9ca69"
 
 resolve-cwd@^2.0.0:
   version "2.0.0"
@@ -9893,10 +9955,11 @@ tunnel-agent@~0.4.1:
   resolved "https://registry.yarnpkg.com/tunnel-agent/-/tunnel-agent-0.4.3.tgz#6373db76909fe570e08d73583365ed828a74eeeb"
 
 turbowalk@Nexus-Mods/node-turbowalk:
-  version "1.0.0"
-  resolved "https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/d9e673df0ded0e091b8c813b8a7517bc82fb1706"
+  version "1.0.1"
+  resolved "https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/94bb5ebb0768f0f2b374a6223d22fb3d4ff09e1d"
   dependencies:
     autogypi "^0.2.2"
+    fs-extra-promise "^1.0.1"
     nan "^2.8.0"
     node-gyp "^3.4.0"
 
@@ -10233,7 +10296,7 @@ vortex-parse-ini@Nexus-Mods/vortex-parse-ini:
     ref "^1.3.4"
 
 "vortex-run@file:src/util/vortex-run":
-  version "0.0.3"
+  version "0.0.4"
 
 walker@~1.0.5:
   version "1.0.7"

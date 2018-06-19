@@ -16,7 +16,7 @@
  *      enables or disables a mod in the current profile
  */
 
-import { IDialogResult, showDialog } from '../../actions/notifications';
+import { addNotification, IDialogResult, showDialog } from '../../actions/notifications';
 
 import { setProgress } from '../../actions/session';
 import { IExtensionContext } from '../../types/IExtensionContext';
@@ -26,6 +26,7 @@ import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import { getSafe } from '../../util/storeHelper';
+import { truthy } from '../../util/util';
 
 import { forgetMod, setProfile, setProfileActivated } from './actions/profiles';
 import { setCurrentProfile, setNextProfile } from './actions/settings';
@@ -113,6 +114,20 @@ function refreshProfile(store: Redux.Store<any>, profile: IProfile,
  */
 function activateGame(store: Redux.Store<IState>, gameId: string) {
   const state: IState = store.getState();
+  if (getSafe(state, ['settings', 'gameMode', 'discovered', gameId, 'path'], undefined)
+      === undefined) {
+    store.dispatch(addNotification({
+      type: 'warning',
+      title: '{{gameId}} not enabled',
+      message: 'Game no longer discovered',
+      replace: {
+        gameId,
+      },
+    }));
+    store.dispatch(setNextProfile(undefined));
+    return;
+  }
+
   const profileId = getSafe(state, ['settings', 'profiles', 'lastActiveProfile', gameId],
     undefined);
   const profile = getSafe(state, ['persistent', 'profiles', profileId], undefined);
@@ -379,10 +394,23 @@ function init(context: IExtensionContextExt): boolean {
         });
     {
       const state: IState = store.getState();
-      if (state.settings.profiles.nextProfileId !==
-          state.settings.profiles.activeProfileId) {
+      const { activeProfileId, nextProfileId } = state.settings.profiles;
+      if (nextProfileId !== activeProfileId) {
         log('warn', 'started with a profile change in progress');
-        store.dispatch(setNextProfile(state.settings.profiles.activeProfileId || undefined));
+        store.dispatch(setNextProfile(activeProfileId || undefined));
+      }
+      // it's important we stop managing a game if it's no longer discovered
+      // because that can cause problems all over the application
+      if (truthy(activeProfileId)) {
+        const profile = state.persistent.profiles[activeProfileId];
+        if (profile === undefined) {
+          return;
+        }
+        const discovery = state.settings.gameMode.discovered[profile.gameId];
+        if ((discovery === undefined) || (discovery.path === undefined)) {
+          log('debug', 'active game no longer discovered, deactivate');
+          store.dispatch(setNextProfile(undefined));
+        }
       }
     }
   });

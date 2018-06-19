@@ -7,7 +7,7 @@ import Spinner from '../../controls/Spinner';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../types/IDialog';
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
 import { ComponentEx, connect } from '../../util/ComponentEx';
-import { UserCanceled } from '../../util/CustomErrors';
+import { MissingInterpreter, UserCanceled } from '../../util/CustomErrors';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import { activeGameId } from '../../util/selectors';
@@ -299,11 +299,14 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
       this.startTool(tools[0]);
     } else {
       const info = tools.find(iter => iter.id === primaryTool);
-      this.startTool(info);
+      this.startTool(info || tools[0]);
     }
   }
 
   private startTool = (info: StarterInfo) => {
+    if (info === undefined) {
+      return;
+    }
     this.context.api.runExecutable(info.exePath, info.commandLine, {
       cwd: info.workingDirectory,
       env: info.environment,
@@ -323,6 +326,14 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
           onShowError('Failed to run tool', {
             error: 'File is not executable, please check the configuration for this tool.',
           }, false);
+        } else if (err instanceof MissingInterpreter) {
+          const par = {
+            Error: err.message,
+          };
+          if (err.url !== undefined) {
+            par['Download url'] = err.url;
+          }
+          onShowError('Failed to run tool', par, false);
         } else {
           onShowError('Failed to run tool', {
             executable: info.exePath,

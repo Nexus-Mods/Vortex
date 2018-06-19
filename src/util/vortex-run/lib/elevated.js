@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const Promise = require("bluebird");
+const Bluebird = require("bluebird");
 const fs = require("fs");
 const path = require("path");
 const tmp = require("tmp");
@@ -9,6 +9,17 @@ let SHELLEXECUTEINFO;
 let voidPtr;
 let SHELLEXECUTEINFOPtr;
 let shell32;
+class Win32Error extends Error {
+    constructor(message, code) {
+        super(`${message} (${code})`);
+        this.name = this.constructor.name;
+        this.mCode = code;
+    }
+    get code() {
+        return this.mCode;
+    }
+}
+exports.Win32Error = Win32Error;
 function initTypes() {
     if (DUMMYUNIONNAME !== undefined) {
         return;
@@ -71,23 +82,24 @@ function elevatedMain(moduleRoot, ipcPath, main) {
     process.on('uncaughtException', handleError);
     process.on('unhandledRejection', handleError);
     // tslint:disable-next-line:no-shadowed-variable
-    const path = require('path');
-    const requireOrig = require;
     module.paths.push(moduleRoot);
     // tslint:disable-next-line:no-shadowed-variable
     const ipc = require('node-ipc');
+    ipc.config.maxRetries = 5;
+    ipc.config.stopRetrying = 5;
     ipc.connectTo(ipcPath, ipcPath, () => {
         ipc.of[ipcPath].on('quit', () => {
             process.exit(0);
         });
         Promise.resolve()
-            .then(() => main(ipc.of[ipcPath], require))
+            .then(() => Promise.resolve(main(ipc.of[ipcPath], require)))
             .catch(error => {
             ipc.of[ipcPath].emit('error', error.message);
             return new Promise((resolve) => setTimeout(resolve, 200));
         })
             .then(() => {
             ipc.disconnect(ipcPath);
+            process.exit(0);
         });
     });
 }
@@ -109,20 +121,23 @@ function elevatedMain(moduleRoot, ipcPath, main) {
  *                        the global require. Regular require calls will not work in production
  *                        builds
  * @param {Object} args arguments to be passed into the elevated process
- * @returns {Promise<any>} a promise that will be resolved as soon as the process is started
- *                         (which happens after the user confirmed elevation)
+ * @returns {Bluebird<any>} a promise that will be resolved as soon as the process is started
+ *                          (which happens after the user confirmed elevation)
  */
 function runElevated(ipcPath, func, args) {
     initTypes();
     if (shell32 === undefined) {
         if (process.platform === 'win32') {
             const ffi = require('ffi');
+            const ref = require('ref');
             shell32 = new ffi.Library('Shell32', {
+                ShellExecuteA: [ref.types.int32, [voidPtr, ref.types.CString, ref.types.CString,
+                        ref.types.CString, ref.types.CString, ref.types.int32]],
                 ShellExecuteExA: ['bool', [SHELLEXECUTEINFOPtr]],
             });
         }
     }
-    return new Promise((resolve, reject) => {
+    return new Bluebird((resolve, reject) => {
         tmp.file((err, tmpPath, fd, cleanup) => {
             if (err) {
                 return reject(err);
@@ -150,24 +165,41 @@ function runElevated(ipcPath, func, args) {
                     cleanup();
                     return reject(writeErr);
                 }
-                const runInfo = execInfo(tmpPath);
-                shell32.ShellExecuteExA.async(runInfo.ref(), (execErr, res) => {
-                    // this is reached after the user confirmed the UAC dialog but before node
-                    // has read the script source so we have to give a little time for that to
-                    // happen before we can remove the tmp file
+                // we can't call GetLastError through node-ffi so when using ShellExecuteExA we won't be
+                // able to get an error code. With ShellExecuteA we can
+                shell32.ShellExecuteA.async(null, 'runas', process.execPath, `--run ${tmpPath}`, path.dirname(process.execPath), 5, (execErr, res) => {
                     setTimeout(cleanup, 5000);
                     if (execErr) {
                         reject(execErr);
                     }
                     else {
-                        if (res) {
+                        if (res > 32) {
                             resolve(res);
                         }
                         else {
-                            reject(new Error(`ShellExecute failed, errorcode ${res}`));
+                            reject(new Win32Error('ShellExecute failed', res));
                         }
                     }
                 });
+                /* TODO: remove this code if there is no problem with ShellExecuteA
+                const runInfo = execInfo(tmpPath);
+        
+                shell32.ShellExecuteExA.async(runInfo.ref(), (execErr: any, res: any) => {
+                  // this is reached after the user confirmed the UAC dialog but before node
+                  // has read the script source so we have to give a little time for that to
+                  // happen before we can remove the tmp file
+                  setTimeout(cleanup, 5000);
+                  if (execErr) {
+                    reject(execErr);
+                  } else {
+                    if (res) {
+                      resolve(res);
+                    } else {
+                      reject(new Error(`ShellExecute failed, errorcode ${res}`));
+                    }
+                  }
+                });
+                */
             });
         });
     });

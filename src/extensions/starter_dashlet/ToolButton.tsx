@@ -70,7 +70,7 @@ class ToolButton extends PureComponentEx<IProps, IToolButtonState> {
   }
 
   public componentDidMount() {
-    this.mImageId = new Date().getTime();
+    this.mImageId = Date.now();
   }
 
   public render() {

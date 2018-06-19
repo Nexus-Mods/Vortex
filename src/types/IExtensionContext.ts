@@ -127,7 +127,7 @@ export type RegisterToDo =
      priority: number) => void;
 
 export interface IRegisterProtocol {
-  (protocol: string, callback: (url: string) => void);
+  (protocol: string, def: boolean, callback: (url: string) => void);
 }
 
 export interface IFileFilter {
@@ -240,7 +240,7 @@ export type GameInfoQuery = (game: any) => Promise<{ [key: string]: IGameDetail 
 export interface IMergeFilter {
   // files to use as basis for merge, will be copied to the merge
   // directory during deployment (from in (absolute) to out (relative to working directory)
-  baseFiles: Array<{ in: string, out: string }>;
+  baseFiles: () => Array<{ in: string, out: string }>;
   // filter function, needs to match all files (relative paths) in the mod to consider
   // for merging
   filter: (fileName: string) => boolean;
@@ -366,6 +366,11 @@ export interface IExtensionApi {
   translate: I18next.TranslationFunction;
 
   /**
+   * active locale
+   */
+  locale: () => string;
+
+  /**
    * get direct access to the i18next object managing localisation.
    * This is only needed to influence how localisation works in general,
    * to just translate a text, use "translate"
@@ -401,7 +406,10 @@ export interface IExtensionApi {
   onStateChange?: (path: string[], callback: StateChangeCallback) => void;
 
   /**
-   * registers an uri protocol to be handled by this application
+   * registers an uri protocol to be handled by this application. If the "def"ault parameter
+   * is set to true, this application will also be inserted as the system wide default handler
+   * for the protocol. Use with caution, as this will overwrite the previous value, which
+   * can't be undone automatically
    *
    * @type {IRegisterProtocol}
    * @memberOf IExtensionContext
@@ -805,8 +813,15 @@ export interface IExtensionContext {
   /**
    * register an interpreter to be used to run files of the specified type when starting with
    * IExtensionApi.runExecutable
+   * @param {string} extension File extension to handle
+   * @param {string} apply A filter function that will receive the run parameters as provided by
+   *                       the user (with the script as the executable) and should return adjusted
+   *                       parameters that will actually invoke the right interpreter.
+   *                       If the interpreter is not installed/found, please throw a
+   *                       "MissingInterpreter" exception so Vortex can show a nicer error message
    */
-  registerInterpreter: (extension: string, apply: (call: IRunParameters) => IRunParameters) => void;
+  registerInterpreter:
+    (extension: string, apply: (call: IRunParameters) => IRunParameters) => void;
 
   /**
    * specify that a certain range of versions of vortex is required

@@ -9,20 +9,27 @@
  */
 
 export function convertGameId(input: string): string {
-  const inputL = input.toLowerCase();
-  if (inputL === 'skyrimse') {
-    return 'skyrimspecialedition';
-  } else if (inputL === 'skyrimvr') {
-    return 'skyrimspecialedition';
-  } else if (inputL === 'falloutnv') {
-    return 'newvegas';
-  } else if (inputL === 'fallout4vr') {
-    return 'fallout4';
-  } else if (inputL === 'teso') {
-    return 'elderscrollsonline';
-  } else {
-    return input;
+  if (input === undefined) {
+    return undefined;
   }
+  return {
+    skyrimse: 'skyrimspecialedition',
+    skyrimvr: 'skyrimspecialedition',
+    falloutnv: 'newvegas',
+    fallout4vr: 'fallout4',
+    teso: 'elderscrollsonline',
+  }[input.toLowerCase()] || input;
+}
+
+export function convertGameIdReverse(input: string): string {
+  if (input === undefined) {
+    return undefined;
+  }
+  return {
+    skyrimspecialedition: 'skyrimse',
+    newvegas: 'falloutnv',
+    elderscrollsonline: 'teso',
+  }[input.toLowerCase()] || input;
 }
 
 export function toNXMId(input: string): string {

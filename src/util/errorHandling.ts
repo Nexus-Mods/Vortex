@@ -32,7 +32,7 @@ const repo = 'Nexus-Mods/Vortex';
 const repoURL = 'https://github.com/' + repo;
 
 function createTitle(type: string, error: IError, hash: string) {
-  return `${type}: ${error.message} (hash: ${hash})`;
+  return `${type}: ${error.message}`;
 }
 
 function createReport(type: string, error: IError, version: string) {
@@ -76,9 +76,15 @@ export function genHash(error: IError) {
         // remove the file names from stack lines because they contain local paths
          .replace(/\([^)]*\)$/, '')
          // remove everything in quotes to get file names and such out of the error message
-         .replace(/'[^']*'/, '').replace(/"[^"]*"/, ''))
-      .join('\n');
-    return hash.update(hashStack).digest('hex');
+         .replace(/'[^']*'/, '').replace(/"[^"]*"/, ''));
+    const idx = hashStack.findIndex(
+      line => (line.indexOf('Promise._settlePromiseFromHandler') !== -1)
+           || (line.indexOf('MappingPromiseArray._promiseFulfilled') !== -1));
+    if (idx !== -1) {
+      hashStack.splice(idx);
+    }
+
+    return hash.update(hashStack.join('\n')).digest('hex');
   } else {
     return hash.update(error.message).digest('hex');
   }
@@ -149,16 +155,17 @@ function nexusReport(hash: string, type: string, error: IError, labels: string[]
   const Nexus: typeof NexusT = require('nexus-api').default;
 
   const referenceId = require('uuid').v4();
-  const nexus = new Nexus(undefined, apiKey);
+  const nexus = new Nexus(undefined, apiKey, app.getVersion());
   return Promise.resolve(nexus.sendFeedback(
+    createTitle(type, error, hash),
     createReport(type, error, app.getVersion()),
     undefined,
-    false,
+    apiKey === undefined,
     hash,
     referenceId))
   .then(() => opn(`https://www.nexusmods.com/crash-report/?key=${referenceId}`)
-      .catch(err => undefined))
-  .then(() => undefined);
+  .then(() => undefined)
+  .catch(err => undefined));
 }
 
 let fallbackAPIKey: string;

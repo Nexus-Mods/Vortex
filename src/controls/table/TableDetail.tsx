@@ -67,6 +67,12 @@ class DetailCell extends React.Component<ICellProps, {}> {
 
     let content: JSX.Element = null;
 
+    if (rawData === undefined) {
+      // This shouldn't happen, rawData is just the original data object
+      // passed to the table and if that was undefined
+      return null;
+    }
+
     if (attribute.customRenderer !== undefined) {
       const values = rowIds.map(id => rawData[id]);
       if ((values.length === 0) || (values[0] === undefined)) {
@@ -136,7 +142,7 @@ class DetailCell extends React.Component<ICellProps, {}> {
     if (readOnly) {
       return (
         <FormControl.Static>
-          {currentChoice !== undefined ? currentChoice.text : null}
+          {currentChoice !== undefined ? currentChoice.text : t('<Nothing>')}
         </FormControl.Static>
       );
     } else {

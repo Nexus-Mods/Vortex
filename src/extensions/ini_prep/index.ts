@@ -59,6 +59,9 @@ function applyDelta(data: any, delta: any) {
     } else if (key[0] === '+') {
       data[key.slice(1)] = delta[key];
     } else {
+      if (data[key] === undefined) {
+        data[key] = {};
+      }
       applyDelta(data[key], delta[key]);
     }
   });
@@ -118,8 +121,7 @@ function bakeSettings(t: TranslationFunction, gameMode: string, discovery: IDisc
 
   // get a list of all tweaks we need to apply
   return Promise.each(mods, mod => {
-    const tweaksPath =
-        path.join(modsPath, mod.installationPath, INI_TWEAKS_PATH);
+    const tweaksPath = path.join(modsPath, mod.installationPath, INI_TWEAKS_PATH);
     const modTweaks = getSafe(mod, ['enabledINITweaks'], []).map(name => name.toLowerCase());
     return fs.readdirAsync(tweaksPath)
         .then(files => {
@@ -136,26 +138,28 @@ function bakeSettings(t: TranslationFunction, gameMode: string, discovery: IDisc
     // starting with the .base file for each ini, re-bake the file by applying
     // the ini tweaks
     const baseName = path.basename(iniFileName).toLowerCase();
-    return fs.forcePerm(t, () => fs.copyAsync(iniFileName + '.base', iniFileName + '.baked'))
-        .catch(err => {
-          if (err.code === 'ENOENT') {
-            // source file missing isn't really a big deal, treat as empty
-            return Promise.join([
-              fs.ensureFileAsync(iniFileName + '.base'),
-              fs.ensureFileAsync(iniFileName + '.baked'),
-            ]);
-          } else {
-            return Promise.reject(err);
-          }
-        })
-        .then(() => parser.read(iniFileName + '.baked'))
-        .then(ini => Promise.each(enabledTweaks[baseName] || [],
-          tweak => parser.read(tweak).then(patchIni => {
-            ini.data = deepMerge(ini.data, patchIni.data);
-          }))
-          .then(() => parser.write(iniFileName + '.baked', ini))
-          .then(() => fs.forcePerm(t, () => fs.copyAsync(iniFileName + '.baked',
-            iniFileName))));
+    // ensure the original ini and directory up to it exists
+    return fs.ensureFileAsync(iniFileName)
+      .then(() => fs.forcePerm(t, () =>
+        // work around a not-yet-explained problem where .baked is a link to .base
+        fs.unlinkAsync(iniFileName + '.baked')
+          .catch(err => (err.code === 'ENOENT')
+            ? Promise.resolve()
+            : Promise.reject(err)))
+        .then(() => fs.copyAsync(iniFileName + '.base', iniFileName + '.baked')
+          // base might not exist, in that case copy from the original ini
+          .catch(err => (err.code === 'ENOENT')
+            ? fs.copyAsync(iniFileName, iniFileName + '.base')
+              .then(() => fs.copyAsync(iniFileName, iniFileName + '.baked'))
+            : Promise.reject(err))))
+      .then(() => parser.read(iniFileName + '.baked'))
+      .then(ini => Promise.each(enabledTweaks[baseName] || [],
+        tweak => parser.read(tweak).then(patchIni => {
+          ini.data = deepMerge(ini.data, patchIni.data);
+        }))
+        .then(() => parser.write(iniFileName + '.baked', ini))
+        .then(() => fs.forcePerm(t, () => fs.copyAsync(iniFileName + '.baked',
+          iniFileName))));
   }))
   .then(() => undefined);
 }

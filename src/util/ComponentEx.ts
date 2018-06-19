@@ -10,11 +10,6 @@ export { translate } from 'react-i18next';
 export { connect } from 'react-redux';
 export { extend } from './ExtensionProvider';
 
-interface IProxyEntry<T> {
-  obj: T;
-  path: string[];
-}
-
 export class StateProxyHandler<T extends object> implements ProxyHandler<T> {
   private mComponent: ComponentEx<any, T> | PureComponentEx<any, T>;
   private mPath: string[];

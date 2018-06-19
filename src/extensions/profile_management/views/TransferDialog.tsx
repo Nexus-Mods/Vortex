@@ -1,7 +1,6 @@
 import { IconButton } from '../../../controls/TooltipControls';
 import { IState } from '../../../types/IState';
 import { ComponentEx } from '../../../util/ComponentEx';
-import { log } from '../../../util/log';
 import { getSafe } from '../../../util/storeHelper';
 
 import { IMod } from '../../mod_management/types/IMod';
@@ -104,22 +103,14 @@ class Editor extends ComponentEx<IProps, IComponentState> {
     this.nextState.dialog.target = temp;
   }
 
-  private changeSource = (event) => {
-    this.nextState.dialog.source = event.currentTarget.value;
-  }
-
   private toggleTransferEnabled = () => {
     this.nextState.transferEnabledMods = !this.state.transferEnabledMods;
-  }
-
-  private changeTarget = (event) => {
-    this.nextState.dialog.target = event.currentTarget.value;
   }
 
   private apply = () => {
     const { mods, onSetModEnabled, profiles } = this.props;
     const { dialog } = this.state;
-    Object.keys(mods).forEach(modId => {
+    Object.keys(mods || {}).forEach(modId => {
       onSetModEnabled(dialog.target, modId,
         getSafe(profiles, [dialog.source, 'modState', modId, 'enabled'], false));
     });

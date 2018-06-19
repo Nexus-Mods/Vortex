@@ -130,7 +130,7 @@ class StarterInfo implements IStarterInfo {
     this.name = gameDiscovery.name || game.name;
     this.exePath = path.join(gameDiscovery.path, gameDiscovery.executable || game.executable);
     this.commandLine = [];
-    this.workingDirectory = gameDiscovery.path;
+    this.workingDirectory = path.dirname(this.exePath);
     this.environment = gameDiscovery.environment || {};
     this.iconOutPath = StarterInfo.gameIconRW(this.gameId);
 

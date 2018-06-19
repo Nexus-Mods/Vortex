@@ -10,17 +10,15 @@ import {IState} from '../../types/IState';
 import { ITableAttribute, Placement } from '../../types/ITableAttribute';
 import {ITestResult} from '../../types/ITestResult';
 import { getInstallPath } from '../../util/api';
-import { UserCanceled } from '../../util/CustomErrors';
+import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import Debouncer from '../../util/Debouncer';
 import * as fs from '../../util/fs';
 import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
-import { showError } from '../../util/message';
 import ReduxProp from '../../util/ReduxProp';
 import {
   activeGameId,
   activeProfile,
-  currentActivator,
   currentGameDiscovery,
   installPath,
 } from '../../util/selectors';
@@ -28,22 +26,18 @@ import {getSafe} from '../../util/storeHelper';
 import { removePersistent, setdefault, truthy } from '../../util/util';
 
 import {setDownloadModInfo} from '../download_management/actions/state';
-import {IDownload} from '../download_management/types/IDownload';
 import {getGame} from '../gamemode_management/index';
 import {IDiscoveryResult} from '../gamemode_management/types/IDiscoveryResult';
-import {setModEnabled} from '../profile_management/actions/profiles';
 import {IProfileMod} from '../profile_management/types/IProfile';
 
 import {showExternalChanges} from './actions/externalChanges';
-import {addMod, removeMod, setModAttribute} from './actions/mods';
-import {setActivator} from './actions/settings';
+import {removeMod, setModAttribute} from './actions/mods';
 import {externalChangesReducer} from './reducers/externalChanges';
 import {modsReducer} from './reducers/mods';
 import {settingsReducer} from './reducers/settings';
 import {IDeployedFile, IDeploymentMethod, IFileChange} from './types/IDeploymentMethod';
 import {IFileEntry} from './types/IFileEntry';
 import {IFileMerge} from './types/IFileMerge';
-import {IInstruction} from './types/IInstallResult';
 import {IMod} from './types/IMod';
 import {IModSource} from './types/IModSource';
 import {InstallFunc} from './types/InstallFunc';
@@ -73,7 +67,6 @@ import * as Promise from 'bluebird';
 import { genHash } from 'modmeta-db';
 import * as path from 'path';
 import * as Redux from 'redux';
-import { generate as shortid } from 'shortid';
 
 const activators: IDeploymentMethod[] = [];
 
@@ -254,10 +247,19 @@ function genUpdateModDeployment() {
 
   return (api: IExtensionApi, manual: boolean, profileId?: string,
           progressCB?: (text: string, percent: number) => void): Promise<void> => {
+    let notificationId: string;
+
     const progress = (text: string, percent: number) => {
       if (progressCB !== undefined) {
         progressCB(text, percent);
       }
+      api.sendNotification({
+        id: notificationId,
+        type: 'activity',
+        message: text,
+        title: t('Deploying'),
+        progress: percent,
+      });
     };
     const state: IState = api.store.getState();
     let profile = profileId !== undefined
@@ -289,8 +291,6 @@ function genUpdateModDeployment() {
 
     const mods = state.persistent.mods[profile.gameId] || {};
     const modList: IMod[] = Object.keys(mods).map((key: string) => mods[key]);
-
-    let notificationId: string;
 
     const gate = manual ? Promise.resolve() : activator.userGate();
 
@@ -383,7 +383,25 @@ function genUpdateModDeployment() {
             progress('Starting deployment', 35);
             const deployProgress =
               (name, percent) => progress(t('Deploying: ') + name, 50 + percent / 2);
-            return Promise.each(Object.keys(modPaths),
+
+            const undiscovered = Object.keys(modPaths).filter(typeId => !truthy(modPaths[typeId]));
+            let prom = Promise.resolve();
+            if (undiscovered.length !== 0) {
+              prom = api.showDialog('error', 'Deployment target unknown', {
+                text: 'The deployment directory for some mod type(s) ({{ types }}) '
+                    + 'is unknown. Mods of these types will not be deployed. '
+                    + 'Maybe this/these type(s) require further configuration or '
+                    + 'external tools.',
+                parameters: {
+                  types: undiscovered.join(', '),
+                },
+              }, [ { label: 'Cancel' }, { label: 'Ignore' } ])
+              .then(result => (result.action === 'Cancel')
+                  ? Promise.reject(new UserCanceled())
+                  : Promise.resolve());
+            }
+            return prom.then(() => Promise.each(
+                Object.keys(modPaths).filter(typeId => undiscovered.indexOf(typeId) === -1),
                 typeId => deployMods(api,
                                      game.id,
                                      instPath, modPaths[typeId],
@@ -392,8 +410,8 @@ function genUpdateModDeployment() {
                                      typeId, new Set(mergedFileMap[typeId]),
                                      genSubDirFunc(game),
                                      deployProgress)
-              .then(newActivation =>
-                saveActivation(typeId, state.app.instanceId, modPaths[typeId], newActivation)));
+                .then(newActivation =>
+                  saveActivation(typeId, state.app.instanceId, modPaths[typeId], newActivation))));
           })
           .then(() => {
             progress('Preparing game settings', 100);
@@ -401,6 +419,7 @@ function genUpdateModDeployment() {
           }));
       })
       .catch(UserCanceled, () => undefined)
+      .catch(ProcessCanceled, () => undefined)
       .catch(err => api.showErrorNotification('Failed to deploy mods', err))
       .finally(() => api.dismissNotification(notificationId));
   };
@@ -419,6 +438,9 @@ function genModsSourceAttribute(api: IExtensionApi): ITableAttribute {
     isDefaultVisible: false,
     supportsMultiple: true,
     calc: (mod: IMod) => {
+      if (mod.attributes === undefined) {
+        return 'None';
+      }
       const source = modSources.find(iter => iter.id === mod.attributes['source']);
       return source !== undefined ? source.name : 'None';
     },
@@ -452,7 +474,11 @@ function genValidActivatorCheck(api: IExtensionApi) {
     if (game === undefined) {
       return resolve(undefined);
     }
-    const modPaths = game.getModPaths(currentGameDiscovery(state).path);
+    const discovery = currentGameDiscovery(state);
+    if ((discovery === undefined) || (discovery.path === undefined)) {
+      return resolve(undefined);
+    }
+    const modPaths = game.getModPaths(discovery.path);
 
     const messages = activators.map((activator) => {
       const supported = allTypesSupported(activator, state, gameId, Object.keys(modPaths));
@@ -589,10 +615,13 @@ function once(api: IExtensionApi) {
   api.events.on('start-install', (archivePath: string,
                                   callback?: (error, id: string) => void) => {
     genHash(archivePath)
-    .then(hashResult => {
-      installManager.install(null, archivePath, activeGameId(store.getState()),
-                             api, { download: { modInfo: { fileMD5: hashResult.md5sum } } },
-                             true, false, callback);
+      .then(hashResult => {
+        installManager.install(null, archivePath, activeGameId(store.getState()),
+          api, { download: { modInfo: { fileMD5: hashResult.md5sum } } },
+          true, false, callback);
+      })
+      .catch(err => {
+        callback(err, undefined);
       });
   });
 

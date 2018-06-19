@@ -1,4 +1,5 @@
 import { showDialog } from '../../../actions/notifications';
+import CollapseIcon from '../../../controls/CollapseIcon';
 import DropdownButton from '../../../controls/DropdownButton';
 import Dropzone, { DropType } from '../../../controls/Dropzone';
 import EmptyPlaceholder from '../../../controls/EmptyPlaceholder';
@@ -10,25 +11,24 @@ import OptionsFilter from '../../../controls/table/OptionsFilter';
 import TextFilter from '../../../controls/table/TextFilter';
 import { IconButton } from '../../../controls/TooltipControls';
 import { IActionDefinition } from '../../../types/IActionDefinition';
-import { IAttributeState } from '../../../types/IAttributeState';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
 import { IState } from '../../../types/IState';
 import { ITableAttribute } from '../../../types/ITableAttribute';
-import { ComponentEx, connect, extend, translate } from '../../../util/ComponentEx';
-import { UserCanceled } from '../../../util/CustomErrors';
+import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
+import { ProcessCanceled, UserCanceled } from '../../../util/CustomErrors';
 import Debouncer from '../../../util/Debouncer';
 import * as fs from '../../../util/fs';
 import { activeGameId, activeProfile } from '../../../util/selectors';
-import { getSafe, setSafe } from '../../../util/storeHelper';
+import { getSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
 import MainPage from '../../../views/MainPage';
 
-import { IDownload } from '../../download_management/types/IDownload';
 import getDownloadPath from '../../download_management/util/getDownloadPath';
 import { setModEnabled } from '../../profile_management/actions/profiles';
 import { IProfileMod } from '../../profile_management/types/IProfile';
 
 import { removeMod, setModAttribute } from '../actions/mods';
+import { setShowModDropzone } from '../actions/settings';
 import { IMod } from '../types/IMod';
 import { IModProps } from '../types/IModProps';
 import { IModSource } from '../types/IModSource';
@@ -97,16 +97,13 @@ interface IBaseProps {
   modSources: IModSource[];
 }
 
-interface IAttributeStateMap {
-  [attributeId: string]: IAttributeState;
-}
-
 interface IConnectedProps extends IModProps {
   gameMode: string;
   profileId: string;
   language: string;
   installPath: string;
   downloadPath: string;
+  showDropzone: boolean;
 }
 
 interface IActionProps {
@@ -115,6 +112,7 @@ interface IActionProps {
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
                  actions: DialogActions) => Promise<IDialogResult>;
   onRemoveMod: (gameMode: string, modId: string) => void;
+  onShowDropzone: (show: boolean) => void;
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
@@ -122,6 +120,8 @@ type IProps = IBaseProps & IConnectedProps & IActionProps;
 interface IComponentState {
   bounds: ClientRect;
 }
+
+const nop = () => null;
 
 /**
  * displays the list of mods installed for the current game.
@@ -248,7 +248,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     this.mIsMounted = false;
   }
 
-  public shouldComponentUpdate(newProps: IProps, newState: IComponentState) {
+  public shouldComponentUpdate() {
     return false;
   }
 
@@ -256,13 +256,14 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     if ((this.props.gameMode !== newProps.gameMode)
         || (this.props.mods !== newProps.mods)
         || (this.props.modState !== newProps.modState)
-        || (this.props.downloads !== newProps.downloads)) {
+        || (this.props.downloads !== newProps.downloads)
+        || (this.props.showDropzone !== newProps.showDropzone)) {
       this.mUpdateDebouncer.schedule(undefined, newProps);
     }
   }
 
   public render(): JSX.Element {
-    const { t, gameMode, modSources } = this.props;
+    const { t, gameMode, modSources, showDropzone } = this.props;
 
     if (gameMode === undefined) {
       // shouldn't happen
@@ -332,26 +333,28 @@ class ModList extends ComponentEx<IProps, IComponentState> {
               {content}
             </FlexLayout.Flex>
             <FlexLayout.Fixed>
-            <Panel className='mod-drop-panel'>
-              <PanelX.Body>
-              <Dropzone
-                accept={['files']}
-                drop={this.dropMod}
-                icon='folder-download'
-                clickable={false}
-              />
-              </PanelX.Body>
-            </Panel>
+              <PanelX
+                className='mod-drop-panel'
+                expanded={showDropzone}
+                onToggle={nop}
+              >
+                <PanelX.Body collapsible>
+                  <Dropzone
+                    accept={['files']}
+                    drop={this.dropMod}
+                    icon='folder-download'
+                    clickable={false}
+                  />
+                </PanelX.Body>
+                <CollapseIcon
+                  position='topright'
+                  onClick={this.toggleDropzone}
+                  visible={showDropzone}
+                />
+              </PanelX>
             </FlexLayout.Fixed>
           </FlexLayout>
         </MainPage.Body>
-        <MainPage.Overlay>
-          <IconBar
-            group='mod-icons'
-            staticElements={this.staticButtons}
-            orientation='vertical'
-          />
-        </MainPage.Overlay>
       </MainPage>
     );
   }
@@ -595,6 +598,8 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       isToggleable: true,
       isDefaultVisible: false,
       isSortable: true,
+      sortFunc: (lhs: string, rhs: string) =>
+        lhs.localeCompare(rhs, this.props.language, { caseFirst: 'false' }),
       edit: {},
     };
   }
@@ -709,6 +714,9 @@ class ModList extends ComponentEx<IProps, IComponentState> {
             if (err instanceof UserCanceled) {
               // the user knows that he cancelled, no need to notify
               return;
+            } else if (err instanceof ProcessCanceled) {
+              return this.context.api.showErrorNotification('Failed to remove mod', err.message,
+                { allowReport: false });
             } else {
               return this.context.api.showErrorNotification('Failed to remove mod', err);
             }
@@ -858,7 +866,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   }
 
   private removeSelected = (modIds: string[]) => {
-    const { t, gameMode, installPath, onRemoveMod, onShowDialog, mods } = this.props;
+    const { t, gameMode, onRemoveMod, onShowDialog } = this.props;
 
     let removeMods: boolean;
     let removeArchive: boolean;
@@ -938,6 +946,11 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     }
   }
 
+  private toggleDropzone = () => {
+    const { showDropzone, onShowDropzone } = this.props;
+    onShowDropzone(!showDropzone);
+  }
+
   private checkForUpdate = (modIds: string[]) => {
     const { gameMode, mods } = this.props;
 
@@ -965,6 +978,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     language: state.settings.interface.language,
     installPath: installPathSelector(state),
     downloadPath,
+    showDropzone: state.settings.mods.showDropzone,
   };
 }
 
@@ -979,6 +993,7 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
     onShowDialog:
     (type, title, content, actions) => dispatch(showDialog(type, title, content, actions)),
     onRemoveMod: (gameMode: string, modId: string) => dispatch(removeMod(gameMode, modId)),
+    onShowDropzone: (show: boolean) => dispatch(setShowModDropzone(show)),
   };
 }
 

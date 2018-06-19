@@ -37,7 +37,7 @@ module.exports = {
         sourceMap: true,
         uglifyOptions: {
           compress: true,
-          mangle: true,
+          mangle: false,
           keep_fnames: true, // required atm, name mangling breaks extensions
         }
       })

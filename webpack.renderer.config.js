@@ -43,28 +43,12 @@ module.exports = {
         sourceMap: true,
         uglifyOptions: {
           compress: true,
-          mangle: true,
+          mangle: false,
           keep_fnames: true, // required atm, name mangling breaks extensions
         }
       })
     ]
   },
   devtool: 'source-map',
-  externals: /*Object.assign(externals(), {
-    'bindings': 'bindings',
-    'crash-dump': 'crash-dump',
-    'drivelist': 'drivelist',
-    'edge': 'edge',
-    'i18next-node-fs-backend': 'i18next-node-fs-backend',
-    'icon-extract': 'icon-extract',
-    'leveldown': 'leveldown',
-    'node-sass': 'node-sass',
-    'turbowalk': 'turbowalk',
-    'vortex-run': 'vortex-run',
-    'ws': 'ws',
-  }),*/
-  /*
-  externals: ['crash-dump', 'drivelist', 'edge', 'exe-version', 'express', 'ffi', 'i18next-node-fs-backend',
-              'icon-extract', 'leveldown', 'nbind', 'node-sass', 'permission', 'ref', 'semver', 'turbowalk',
-              'vortex-parse-ini', 'vortex-run', 'winston', 'ws'],*/ nodeExternals(),
+  externals: nodeExternals(),
 };

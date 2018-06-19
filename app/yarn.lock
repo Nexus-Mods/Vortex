@@ -3,8 +3,8 @@
 
 
 "7z-bin@Nexus-Mods/7z-bin":
-  version "16.4.0"
-  resolved "https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/cc0f8a3ef780d2f7aae8ea365a7103a1d246b873"
+  version "18.5.0"
+  resolved "https://codeload.github.com/Nexus-Mods/7z-bin/tar.gz/ee15f48c181b02d6a51f085580b758d9e8b398b9"
 
 "@types/inline-style-prefixer@^3.0.0":
   version "3.0.1"
@@ -1171,8 +1171,8 @@ follow-redirects@>=1.2.0:
     debug "^3.1.0"
 
 fomod-installer@Nexus-Mods/fomod-installer:
-  version "0.0.2"
-  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/bedd5887cb486b0888f1ccc4ae36d47c3db9e1e0"
+  version "0.0.4"
+  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/7432abb319ba3704caee44f261ec8fef0811b7d6"
   dependencies:
     copyfiles "^1.0.0"
     msbuild "^1.0.1"
@@ -1856,7 +1856,7 @@ lodash.curry@^4.0.1:
   version "4.1.1"
   resolved "https://registry.yarnpkg.com/lodash.curry/-/lodash.curry-4.1.1.tgz#248e36072ede906501d75966200a86dab8b23170"
 
-lodash.debounce@^4.0.4:
+lodash.debounce@^4.0.4, lodash.debounce@^4.0.8:
   version "4.0.8"
   resolved "https://registry.yarnpkg.com/lodash.debounce/-/lodash.debounce-4.0.8.tgz#82d79bff30a67c4005ffd5e2515300ad9ca4d7af"
 
@@ -1924,7 +1924,7 @@ lodash.some@^4.4.0:
   version "4.6.0"
   resolved "https://registry.yarnpkg.com/lodash.some/-/lodash.some-4.6.0.tgz#1bb9f314ef6b8baded13b549169b2a945eb68e4d"
 
-lodash.throttle@^4.0.1:
+lodash.throttle@^4.0.1, lodash.throttle@^4.1.1:
   version "4.1.1"
   resolved "https://registry.yarnpkg.com/lodash.throttle/-/lodash.throttle-4.1.1.tgz#c23e91b710242ac70c37f1e1cda9274cc39bf2f4"
 
@@ -2111,8 +2111,8 @@ negotiator@0.6.1:
   resolved "https://registry.yarnpkg.com/negotiator/-/negotiator-0.6.1.tgz#2b327184e8992101177b28563fb5e7102acd0ca9"
 
 nexus-api@Nexus-Mods/node-nexus-api:
-  version "0.3.0"
-  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/9d1c93b163dd186ca07a4e18ae8923c34f4bb3dc"
+  version "0.5.0"
+  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/3403fb2abfd4e38cc7dd7c99b3bd182e169623d1"
   dependencies:
     request "^2.85.0"
     string-template "^1.0.0"
@@ -2380,8 +2380,8 @@ performance-now@^2.1.0:
   resolved "https://registry.yarnpkg.com/performance-now/-/performance-now-2.1.0.tgz#6309f4e0e5fa913ec1c69307ae364b4b377c9e7b"
 
 permissions@Nexus-Mods/node-permissions:
-  version "1.1.0"
-  resolved "https://codeload.github.com/Nexus-Mods/node-permissions/tar.gz/46836e32f4328d6ca9549e7d031342ef5c445cb5"
+  version "1.1.2"
+  resolved "https://codeload.github.com/Nexus-Mods/node-permissions/tar.gz/0e04ade9b414f8265c23bd0f69df008fb9b3cedc"
   dependencies:
     autogypi "^0.2.2"
     nbind "^0.3.15"
@@ -2400,6 +2400,10 @@ pinkie-promise@^2.0.0:
 pinkie@^2.0.0:
   version "2.0.4"
   resolved "https://registry.yarnpkg.com/pinkie/-/pinkie-2.0.4.tgz#72556b80cfa0d48a974e80e77248e80ed4f7f870"
+
+popper.js@^1.14.1:
+  version "1.14.3"
+  resolved "https://registry.yarnpkg.com/popper.js/-/popper.js-1.14.3.tgz#1438f98d046acf7b4d78cd502bf418ac64d4f095"
 
 prebuild-install@^2.1.0:
   version "2.4.1"
@@ -2463,6 +2467,14 @@ prop-types-extra@^1.0.1:
 prop-types@^15.0.0, prop-types@^15.5.1, prop-types@^15.5.10, prop-types@^15.5.4, prop-types@^15.5.6, prop-types@^15.5.7, prop-types@^15.5.8, prop-types@^15.5.9, prop-types@^15.6.0:
   version "15.6.0"
   resolved "https://registry.yarnpkg.com/prop-types/-/prop-types-15.6.0.tgz#ceaf083022fc46b4a35f69e13ef75aed0d639856"
+  dependencies:
+    fbjs "^0.8.16"
+    loose-envify "^1.3.1"
+    object-assign "^4.1.1"
+
+prop-types@^15.6.1:
+  version "15.6.1"
+  resolved "https://registry.yarnpkg.com/prop-types/-/prop-types-15.6.1.tgz#36644453564255ddda391191fb3a125cbdf654ca"
   dependencies:
     fbjs "^0.8.16"
     loose-envify "^1.3.1"
@@ -2584,6 +2596,15 @@ react-bootstrap@^0.32.0:
     uncontrollable "^4.1.0"
     warning "^3.0.0"
 
+react-datepicker@^1.5.0:
+  version "1.5.0"
+  resolved "https://registry.yarnpkg.com/react-datepicker/-/react-datepicker-1.5.0.tgz#7eacd9609313189c84a21bb7421486054939a4b2"
+  dependencies:
+    classnames "^2.2.5"
+    prop-types "^15.6.0"
+    react-onclickoutside "^6.7.1"
+    react-popper "^0.9.1"
+
 react-display-name@^0.2.0:
   version "0.2.3"
   resolved "https://registry.yarnpkg.com/react-display-name/-/react-display-name-0.2.3.tgz#f50204d430c9ca819bc0bade0306e9175d8d1987"
@@ -2664,6 +2685,10 @@ react-markdown@^2.5.0:
     commonmark-react-renderer "^4.3.4"
     prop-types "^15.5.1"
 
+react-onclickoutside@^6.7.1:
+  version "6.7.1"
+  resolved "https://registry.yarnpkg.com/react-onclickoutside/-/react-onclickoutside-6.7.1.tgz#6a5b5b8b4eae6b776259712c89c8a2b36b17be93"
+
 react-overlays@^0.8.0:
   version "0.8.3"
   resolved "https://registry.yarnpkg.com/react-overlays/-/react-overlays-0.8.3.tgz#fad65eea5b24301cca192a169f5dddb0b20d3ac5"
@@ -2674,6 +2699,13 @@ react-overlays@^0.8.0:
     prop-types-extra "^1.0.1"
     react-transition-group "^2.2.0"
     warning "^3.0.0"
+
+react-popper@^0.9.1:
+  version "0.9.5"
+  resolved "https://registry.yarnpkg.com/react-popper/-/react-popper-0.9.5.tgz#02a24ef3eec33af9e54e8358ab70eb0e331edd05"
+  dependencies:
+    popper.js "^1.14.1"
+    prop-types "^15.6.1"
 
 react-prop-types@^0.4.0:
   version "0.4.0"
@@ -2701,6 +2733,15 @@ react-resize-detector@1.1.0:
   resolved "https://registry.yarnpkg.com/react-resize-detector/-/react-resize-detector-1.1.0.tgz#4a9831fa3caad32230478dd0185cbd2aa91a5ebf"
   dependencies:
     prop-types "^15.5.10"
+
+react-resize-detector@^2.3.0:
+  version "2.3.0"
+  resolved "https://registry.yarnpkg.com/react-resize-detector/-/react-resize-detector-2.3.0.tgz#57bad1ae26a28a62a2ddb678ba6ffdf8fa2b599c"
+  dependencies:
+    lodash.debounce "^4.0.8"
+    lodash.throttle "^4.1.1"
+    prop-types "^15.6.0"
+    resize-observer-polyfill "^1.5.0"
 
 react-safe-html@TanninOne/react-safe-html:
   version "0.4.1"
@@ -3110,6 +3151,10 @@ require-main-filename@^1.0.1:
 reselect@^3.0.1:
   version "3.0.1"
   resolved "https://registry.yarnpkg.com/reselect/-/reselect-3.0.1.tgz#efdaa98ea7451324d092b2b2163a6a1d7a9a2147"
+
+resize-observer-polyfill@^1.5.0:
+  version "1.5.0"
+  resolved "https://registry.yarnpkg.com/resize-observer-polyfill/-/resize-observer-polyfill-1.5.0.tgz#660ff1d9712a2382baa2cad450a4716209f9ca69"
 
 resolve@~1.1.7:
   version "1.1.7"
@@ -3593,7 +3638,7 @@ vortex-parse-ini@Nexus-Mods/vortex-parse-ini:
     ref "^1.3.4"
 
 "vortex-run@file:../src/util/vortex-run":
-  version "0.0.3"
+  version "0.0.4"
 
 warning@^3.0.0:
   version "3.0.0"

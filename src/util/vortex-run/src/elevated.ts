@@ -1,4 +1,4 @@
-import * as Promise from 'bluebird';
+import * as Bluebird from 'bluebird';
 import {} from 'ffi';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -13,6 +13,19 @@ let SHELLEXECUTEINFO: structT;
 let voidPtr: refT.Type;
 let SHELLEXECUTEINFOPtr: refT.Type;
 let shell32;
+
+export class Win32Error extends Error {
+  private mCode: number;
+  constructor(message: string, code: number) {
+    super(`${message} (${code})`);
+    this.name = this.constructor.name;
+    this.mCode = code;
+  }
+
+  public get code(): number {
+    return this.mCode;
+  }
+}
 
 function initTypes() {
   if (DUMMYUNIONNAME !== undefined) {
@@ -78,7 +91,8 @@ function execInfo(scriptPath: string) {
 }
 
 function elevatedMain(moduleRoot: string, ipcPath: string,
-                      main: (ipc, req: NodeRequireFunction) => Promise<void>) {
+                      main: (ipc, req: NodeRequireFunction) =>
+                        void | Promise<void> | Bluebird<void>) {
   const handleError = (error: any) => {
     // tslint:disable-next-line:no-console
     console.error('Elevated code failed', error.stack);
@@ -86,23 +100,24 @@ function elevatedMain(moduleRoot: string, ipcPath: string,
   process.on('uncaughtException', handleError);
   process.on('unhandledRejection', handleError);
   // tslint:disable-next-line:no-shadowed-variable
-  const path = require('path');
-  const requireOrig = require;
   (module as any).paths.push(moduleRoot);
   // tslint:disable-next-line:no-shadowed-variable
   const ipc = require('node-ipc');
+  ipc.config.maxRetries = 5;
+  ipc.config.stopRetrying = 5;
   ipc.connectTo(ipcPath, ipcPath, () => {
     ipc.of[ipcPath].on('quit', () => {
       process.exit(0);
     });
     Promise.resolve()
-      .then(() => main(ipc.of[ipcPath], require))
+      .then(() => Promise.resolve(main(ipc.of[ipcPath], require)))
       .catch(error => {
         ipc.of[ipcPath].emit('error', error.message);
         return new Promise((resolve) => setTimeout(resolve, 200));
       })
       .then(() => {
         ipc.disconnect(ipcPath);
+        process.exit(0);
       });
   });
 }
@@ -125,21 +140,25 @@ function elevatedMain(moduleRoot: string, ipcPath: string,
  *                        the global require. Regular require calls will not work in production
  *                        builds
  * @param {Object} args arguments to be passed into the elevated process
- * @returns {Promise<any>} a promise that will be resolved as soon as the process is started
- *                         (which happens after the user confirmed elevation)
+ * @returns {Bluebird<any>} a promise that will be resolved as soon as the process is started
+ *                          (which happens after the user confirmed elevation)
  */
-function runElevated(ipcPath: string, func: (ipc: any, req: NodeRequireFunction) => void,
-                     args?: any): Promise<any> {
+function runElevated(ipcPath: string, func: (ipc: any, req: NodeRequireFunction) =>
+                        void | Promise<void> | Bluebird<void>,
+                     args?: any): Bluebird<any> {
   initTypes();
   if (shell32 === undefined) {
     if (process.platform === 'win32') {
       const ffi = require('ffi');
+      const ref = require('ref');
       shell32 = new ffi.Library('Shell32', {
+        ShellExecuteA: [ref.types.int32, [voidPtr, ref.types.CString, ref.types.CString,
+                                ref.types.CString, ref.types.CString, ref.types.int32]],
         ShellExecuteExA: ['bool', [SHELLEXECUTEINFOPtr]],
       });
     }
   }
-  return new Promise((resolve, reject) => {
+  return new Bluebird((resolve, reject) => {
     tmp.file((err: any, tmpPath: string, fd: number, cleanup: () => void) => {
       if (err) {
         return reject(err);
@@ -174,6 +193,22 @@ function runElevated(ipcPath: string, func: (ipc: any, req: NodeRequireFunction)
           return reject(writeErr);
         }
 
+        // we can't call GetLastError through node-ffi so when using ShellExecuteExA we won't be
+        // able to get an error code. With ShellExecuteA we can
+        shell32.ShellExecuteA.async(null, 'runas', process.execPath, `--run ${tmpPath}`,
+                                    path.dirname(process.execPath), 5, (execErr: any, res: any) => {
+          setTimeout(cleanup, 5000);
+          if (execErr) {
+            reject(execErr);
+          } else {
+            if (res > 32) {
+              resolve(res);
+            } else {
+              reject(new Win32Error('ShellExecute failed', res));
+            }
+          }
+        });
+        /* TODO: remove this code if there is no problem with ShellExecuteA
         const runInfo = execInfo(tmpPath);
 
         shell32.ShellExecuteExA.async(runInfo.ref(), (execErr: any, res: any) => {
@@ -191,6 +226,7 @@ function runElevated(ipcPath: string, func: (ipc: any, req: NodeRequireFunction)
             }
           }
         });
+        */
       });
     });
   });

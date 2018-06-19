@@ -7,8 +7,8 @@ import { activeGameId } from '../../util/selectors';
 import { getGame } from '../gamemode_management';
 import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
 import LinkingDeployment from '../mod_management/LinkingDeployment';
-import { installPath } from '../mod_management/selectors';
 import { IDeployedFile, IDeploymentMethod } from '../mod_management/types/IDeploymentMethod';
+import resolvePath from '../mod_management/util/resolvePath';
 
 import * as Promise from 'bluebird';
 import * as I18next from 'i18next';
@@ -72,7 +72,7 @@ class DeploymentMethod extends LinkingDeployment {
       return `Can\'t write to output directory: ${modPaths[typeId]}`;
     }
 
-    const installationPath = installPath(state);
+    const installationPath = resolvePath('install', state.settings.mods.paths, gameId);
 
     try {
       if (fs.statSync(installationPath).dev !== fs.statSync(modPaths[typeId]).dev) {
@@ -84,7 +84,7 @@ class DeploymentMethod extends LinkingDeployment {
     } catch (err) {
       // this can happen when managing the the game for the first time
       log('info', 'failed to stat. directory missing?', {
-        dir1: installPath(state) || 'undefined', dir2: modPaths[typeId],
+        dir1: installationPath || 'undefined', dir2: modPaths[typeId],
         err: util.inspect(err),
       });
       return 'Game not fully initialized yet, this should disappear soon.';
@@ -176,10 +176,14 @@ class DeploymentMethod extends LinkingDeployment {
   }
 
   protected isLink(linkPath: string, sourcePath: string): Promise<boolean> {
-    return fs.lstatAsync(linkPath).then(linkStats => linkStats.nlink === 1
-        ? false
+    return fs.lstatAsync(linkPath)
+      .then(linkStats => linkStats.nlink === 1
+        ? Promise.resolve(false)
         : fs.lstatAsync(sourcePath)
-            .then(sourceStats => linkStats.ino === sourceStats.ino));
+            .then(sourceStats => linkStats.ino === sourceStats.ino))
+      .catch(err => (err.code === 'ENOENT')
+        ? Promise.resolve(false)
+        : Promise.reject(err));
   }
 
   protected canRestore(): boolean {

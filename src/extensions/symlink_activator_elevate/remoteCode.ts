@@ -20,7 +20,12 @@ export function remoteCode(ipcClient, req) {
                   'This directory was created by Vortex deployment and will be removed ' +
                       'during purging if it\'s empty');
             } else {
-              return Promise.resolve();
+              // if the directory did exist there is a chance the destination file already
+              // exists
+              return fs.removeAsync(destination)
+                .catch(err => (err.code === 'ENOENT')
+                  ? Promise.resolve()
+                  : Promise.reject(err));
             }
           })
           .then(() => fs.symlinkAsync(source, destination))
