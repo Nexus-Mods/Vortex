@@ -1,6 +1,6 @@
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
-import { getNormalizeFunc, UserCanceled } from '../../util/api';
+import { getNormalizeFunc, Normalize, UserCanceled } from '../../util/api';
 import * as fs from '../../util/fs';
 import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
@@ -55,8 +55,8 @@ function knownArchiveExt(filePath: string): boolean {
 
 function refreshDownloads(downloadPath: string, knownDLs: string[],
                           normalize: (input: string) => string,
-                          onAddDownload: (name: string) => void,
-                          onRemoveDownloads: (name: string[]) => void,
+                          onAddDownload: (name: string) => Promise<void>,
+                          onRemoveDownload: (name: string) => Promise<void>,
                           confirmElevation: () => Promise<void>) {
   return fs.ensureDirWritableAsync(downloadPath, confirmElevation)
     .then(() => fs.readdirAsync(downloadPath))
@@ -64,14 +64,15 @@ function refreshDownloads(downloadPath: string, knownDLs: string[],
     .filter((filePath: string) =>
       fs.statAsync(path.join(downloadPath, filePath))
       .then(stat => !stat.isDirectory()).catch(() => false))
-    .map((downloadName: string) => normalize(downloadName))
     .then((downloadNames: string[]) => {
-      const addedDLs = downloadNames.filter((name: string) => knownDLs.indexOf(name) === -1);
-      const removedDLs = knownDLs.filter((name: string) => downloadNames.indexOf(name) === -1);
+      const dlsNormalized = downloadNames.map(normalize);
+      const addedDLs = downloadNames.filter((name: string, idx: number) =>
+        knownDLs.indexOf(dlsNormalized[idx]) === -1);
+      const removedDLs = knownDLs.filter((name: string) =>
+        dlsNormalized.indexOf(name) === -1);
 
-      return Promise.map(addedDLs, (modName: string) =>
-        onAddDownload(modName))
-        .then(() => onRemoveDownloads(removedDLs));
+      return Promise.map(addedDLs, onAddDownload)
+        .then(() => Promise.map(removedDLs, onRemoveDownload));
     });
 }
 
@@ -104,7 +105,8 @@ function attributeExtractorCustom(input: any) {
 }
 
 function genDownloadChangeHandler(store: Redux.Store<any>,
-                                  nameIdMap: { [name: string]: string }) {
+                                  nameIdMap: { [name: string]: string },
+                                  normalize: Normalize) {
   const currentDownloadPath = selectors.downloadPath(store.getState());
   const gameId: string = selectors.activeGameId(store.getState());
   return (evt: string, fileName: string) => {
@@ -131,16 +133,16 @@ function genDownloadChangeHandler(store: Redux.Store<any>,
           const dlId = shortid();
           store.dispatch(
             addLocalDownload(dlId, gameId, fileName, stats.size));
-          nameIdMap[fileName] = dlId;
+          nameIdMap[normalize(fileName)] = dlId;
         } else {
-          nameIdMap[fileName] = existingId;
+          nameIdMap[normalize(fileName)] = existingId;
         }
       })
       .catch(err => {
-        if ((err.code === 'ENOENT') && (nameIdMap[fileName] !== undefined)) {
+        if ((err.code === 'ENOENT') && (nameIdMap[normalize(fileName)] !== undefined)) {
           // if the file was deleted, remove it from state. This does nothing if
           // the download was already removed so that's fine
-          store.dispatch(removeDownload(nameIdMap[fileName]));
+          store.dispatch(removeDownload(nameIdMap[normalize(fileName)]));
         }
       });
     }
@@ -152,7 +154,6 @@ let watchEnabled: boolean = true;
 
 function watchDownloads(api: IExtensionApi, downloadPath: string,
                         onChange: (evt: string, fileName: string) => void) {
-  const { store } = api;
   if (currentWatch !== undefined) {
     currentWatch.close();
   }
@@ -184,33 +185,37 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
   }
   const currentDownloadPath = getDownloadPath(state.settings.downloads.path, gameId);
 
-  const nameIdMap: {[name: string]: string} =
-      Object.keys(downloads).reduce((prev, value) => {
-        prev[downloads[value].localPath] = value;
-        return prev;
-      }, {});
+  let nameIdMap: {[name: string]: string};
 
-  const downloadChangeHandler = genDownloadChangeHandler(api.store, nameIdMap);
+  let downloadChangeHandler: (evt: string, fileName: string) => void;
   return getNormalizeFunc(currentDownloadPath, {separators: false, relative: false})
       .then(normalize => {
+        downloadChangeHandler =
+          genDownloadChangeHandler(api.store, nameIdMap, normalize);
+        nameIdMap = Object.keys(downloads).reduce((prev, value) => {
+          if (downloads[value].localPath !== undefined) {
+            prev[normalize(downloads[value].localPath)] = value;
+          }
+          return prev;
+        }, {});
+
         const knownDLs =
           Object.keys(downloads)
             .filter((dlId: string) => downloads[dlId].game === gameId)
-            .map((dlId: string) => normalize(downloads[dlId].localPath));
+            .map(dlId => normalize(downloads[dlId].localPath));
 
         return refreshDownloads(currentDownloadPath, knownDLs, normalize,
-          (fileName: string) => {
+          (fileName: string) =>
             fs.statAsync(path.join(currentDownloadPath, fileName))
               .then((stats: fs.Stats) => {
                 const dlId = shortid();
                 store.dispatch(addLocalDownload(dlId, gameId, fileName, stats.size));
-                nameIdMap[fileName] = dlId;
-              });
-          },
-          (modNames: string[]) => {
-            modNames.forEach((name: string) => {
-              api.store.dispatch(removeDownload(nameIdMap[name]));
-            });
+                nameIdMap[normalize(fileName)] = dlId;
+              }),
+          (fileName: string) => {
+            // the fileName here is already normalized
+            api.store.dispatch(removeDownload(nameIdMap[fileName]));
+            return Promise.resolve();
           },
           () => new Promise((resolve, reject) => {
             api.showDialog('question', 'Access Denied', {
