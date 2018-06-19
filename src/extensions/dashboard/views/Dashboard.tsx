@@ -73,8 +73,8 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
   public componentDidMount() {
     this.startUpdateCycle();
     const window = remote.getCurrentWindow();
-    window.on('focus', () => { this.mWindowFocused = true; });
-    window.on('blur', () => { this.mWindowFocused = false; });
+    window.on('focus', this.onFocus);
+    window.on('blur', this.onBlur);
   }
 
   public componentWillUnmount() {
