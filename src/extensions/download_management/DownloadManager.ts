@@ -478,17 +478,17 @@ class DownloadManager {
     // first, make sure not-yet-started chungs are paused, otherwise
     // they might get started as we stop running chunks as that frees
     // space in the queue
-    download.chunks.forEach((value: IDownloadJob) => {
-      if (value.state === 'init') {
-        value.state = 'finished';
+    download.chunks.forEach((chunk: IDownloadJob) => {
+      if (chunk.state === 'init') {
+        chunk.state = 'finished';
       }
     });
 
     // stop running workers
-    download.chunks.forEach((value: IDownloadJob) => {
-      if ((value.state === 'running')
-          && (this.mBusyWorkers[value.workerId] !== undefined)) {
-        this.mBusyWorkers[value.workerId].cancel();
+    download.chunks.forEach((chunk: IDownloadJob) => {
+      if ((chunk.state === 'running')
+          && (this.mBusyWorkers[chunk.workerId] !== undefined)) {
+        this.mBusyWorkers[chunk.workerId].cancel();
       }
     });
     // remove from queue
@@ -510,23 +510,23 @@ class DownloadManager {
     // first, make sure not-yet-started chungs are paused, otherwise
     // they might get started as we stop running chunks as that frees
     // space in the queue
-    download.chunks.forEach((value: IDownloadJob) => {
-      if (value.state === 'init') {
-        value.state = 'paused';
+    download.chunks.forEach((chunk: IDownloadJob) => {
+      if (chunk.state === 'init') {
+        chunk.state = 'paused';
       }
     });
 
     // stop running workers
-    download.chunks.forEach((value: IDownloadJob) => {
-      if ((value.state === 'running') && (value.size > 0)) {
+    download.chunks.forEach((chunk: IDownloadJob) => {
+      if ((chunk.state === 'running') && (chunk.size > 0)) {
         unfinishedChunks.push({
-          received: value.received,
-          offset: value.offset,
-          size: value.size,
-          url: value.url,
+          received: chunk.received,
+          offset: chunk.offset,
+          size: chunk.size,
+          url: chunk.url,
         });
-        this.mBusyWorkers[value.workerId].pause();
-        this.stopWorker(value.workerId);
+        this.mBusyWorkers[chunk.workerId].pause();
+        this.stopWorker(chunk.workerId);
       }
     });
     // remove from queue
@@ -552,7 +552,10 @@ class DownloadManager {
   private cancelDownload(download: IRunningDownload, err: Error) {
     for (const chunk of download.chunks) {
       if (chunk.state === 'running') {
-        this.mBusyWorkers[chunk.workerId].cancel();
+        if (this.mBusyWorkers[chunk.workerId] !== undefined) {
+          this.mBusyWorkers[chunk.workerId].cancel();
+        }
+        chunk.state = 'paused';
       }
     }
     download.failedCB(err);
