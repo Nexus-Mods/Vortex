@@ -12,7 +12,6 @@ import lazyRequire from '../util/lazyRequire';
 import LevelPersist, { DatabaseLocked } from '../util/LevelPersist';
 import {log, setLogPath, setupLogging} from '../util/log';
 import { showError } from '../util/message';
-import ReduxPersistor from '../util/ReduxPersistor';
 import { StateError } from '../util/reduxSanity';
 import { allHives, createVortexStore, currentStatePath, extendStore,
          importState, insertPersistor, markImported } from '../util/store';
@@ -25,7 +24,7 @@ import TrayIconT from './TrayIcon';
 
 import * as Promise from 'bluebird';
 import crashDump from 'crash-dump';
-import {app, BrowserWindow, dialog, ipcMain} from 'electron';
+import {app, dialog, ipcMain} from 'electron';
 import * as _ from 'lodash';
 import * as path from 'path';
 import { allow } from 'permissions';

@@ -19,7 +19,6 @@ import {} from './util/requireRebuild';
 
 import Application from './app/Application';
 
-import { IError } from './types/IError';
 import commandLine from './util/commandLine';
 import { sendReportFile, terminate, toError } from './util/errorHandling';
 // ensures tsc includes this dependency

@@ -4,8 +4,6 @@ import { log } from './log';
 
 import * as Promise from 'bluebird';
 import * as levelup from 'levelup';
-import { intersection, without } from 'lodash';
-import * as path from 'path';
 
 const SEPARATOR: string = '###';
 
