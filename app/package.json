@@ -11,7 +11,7 @@
     "url": "https://github.com/Nexus-Mods/Vortex"
   },
   "vortex": {
-    "electron": "1.8.4"
+    "electron": "2.0.2"
   },
   "dependencies": {
     "bbcode-to-react": "TanninOne/bbcode-to-react",
@@ -56,6 +56,7 @@
     "react-addons-css-transition-group": "^15.6.2",
     "react-addons-shallow-compare": "^15.6.2",
     "react-bootstrap": "^0.32.0",
+    "react-datepicker": "^1.5.0",
     "react-dnd": "^2.5.4",
     "react-dnd-html5-backend": "^2.5.4",
     "react-dom": "^16.2.0",

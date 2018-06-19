@@ -9,7 +9,7 @@
     "url": "https://github.com/Nexus-Mods/Vortex"
   },
   "vortex": {
-    "electron": "2.0.0"
+    "electron": "2.0.2"
   },
   "scripts": {
     "_assets_out": "node InstallAssets.js out",
@@ -91,6 +91,7 @@
     "@types/opn": "5.1.0",
     "@types/react": "16.0.34",
     "@types/react-bootstrap": "^0.31.6",
+    "@types/react-datepicker": "1.1.2",
     "@types/react-dnd": "^2.0.34",
     "@types/react-dnd-html5-backend": "^2.1.8",
     "@types/react-dom": "16.0.3",
@@ -129,9 +130,8 @@
     "copyfiles": "^1.2.0",
     "cross-env": "^5.1.0",
     "devtron": "^1.4.0",
-    "electron": "2.0.0",
+    "electron": "2.0.2",
     "electron-builder": "^20.11.1",
-    "electron-debug": "^1.4.0",
     "electron-download-tf": "^4.3.4",
     "electron-rebuild": "^1.6.0",
     "enzyme": "^3.1.0",
@@ -198,6 +198,7 @@
     "prop-types": "^15.6.0",
     "react": "^16.2.0",
     "react-bootstrap": "^0.32.0",
+    "react-datepicker": "^1.5.0",
     "react-dnd": "^2.5.4",
     "react-dnd-html5-backend": "^2.5.4",
     "react-dom": "^16.2.0",

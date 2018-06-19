@@ -51,7 +51,7 @@ a[role=menuitem] svg {
 // pixels in the corner are colored.
 .nav-tabs>li.active {
   border: $border-width solid $nav-tabs-active-link-hover-border-color;
-  margin-right: 0px;
+  margin-right: -1px;
   margin-top: 0px;
 }
 
@@ -69,20 +69,23 @@ a[role=menuitem] svg {
 }
 
 .nav-tabs>li {
-  margin-right: 0px;
+  margin-right: -1px;
   margin-top: 1px;
 }
 
 .nav-tabs>li>a {
   border: 1px solid $border-color;
   border-bottom: 0;
-  margin-right: -1px;
+  margin-right: 0;
   text-transform: uppercase;
   display: flex;
   align-items: baseline;
   padding: 6px $gutter-width;
   font-family: $font-family-headings;
   font-size: large;
+  &:hover {
+    z-index: 1;
+  }
 }
 
 

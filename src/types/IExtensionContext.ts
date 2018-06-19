@@ -366,6 +366,11 @@ export interface IExtensionApi {
   translate: I18next.TranslationFunction;
 
   /**
+   * active locale
+   */
+  locale: () => string;
+
+  /**
    * get direct access to the i18next object managing localisation.
    * This is only needed to influence how localisation works in general,
    * to just translate a text, use "translate"

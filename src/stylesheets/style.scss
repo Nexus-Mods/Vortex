@@ -366,6 +366,29 @@ div:hover > .hover-expand {
   color: $gray;
 }
 
+.datetime-filter {
+  width: 100%;
+  >div {
+    // not sure why this is necessary, without reducing the line-height
+    // the input box takes more vertical space than it should but only when there is no content
+    line-height: 0.5;
+  }
+}
+
+.react-datepicker__close-icon::after {
+  background-color: initial;
+  z-index: 2;
+  cursor: default;
+}
+
+.react-datepicker__input-container > input {
+  @extend .form-control;
+
+  padding: 0;
+  height: 22px;
+  cursor: default;
+}
+
 // /generic control rules
 /////////////////////////
 

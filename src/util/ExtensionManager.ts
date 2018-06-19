@@ -362,6 +362,7 @@ class ExtensionManager {
       translate: (input, options?) => {
         return this.mTranslator !== undefined ? this.mTranslator.t(input, options) : input;
       },
+      locale: () => this.mTranslator.language,
       getI18n: () => this.mTranslator,
       getPath: this.getPath,
       onStateChange: (statePath: string[], callback: StateChangeCallback) => undefined,
