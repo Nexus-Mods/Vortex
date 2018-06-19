@@ -381,12 +381,17 @@ div:hover > .hover-expand {
   cursor: default;
 }
 
-.react-datepicker__input-container > input {
-  @extend .form-control;
-
-  padding: 0;
-  height: 22px;
-  cursor: default;
+.react-datepicker-wrapper {
+  width: 100%;
+  >.react-datepicker__input-container {
+    width: 100%;
+    >input {
+      @extend .form-control;
+      padding: 0;
+      height: 22px;
+      cursor: default;
+    }
+  }
 }
 
 // /generic control rules
