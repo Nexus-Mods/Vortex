@@ -26,6 +26,7 @@ import { getCurrentLanguage } from './i18n';
 import LazyComponent from './LazyComponent';
 import lazyRequire from './lazyRequire';
 import makeReactive from './makeReactive';
+import { getReduxLog } from './reduxLogger';
 import ReduxProp from './ReduxProp';
 import relativeTime from './relativeTime';
 import steam, { GameNotFound, ISteamEntry } from './Steam';
@@ -50,6 +51,7 @@ export {
   getGame,
   getGames,
   getNormalizeFunc,
+  getReduxLog,
   isNullOrWhitespace,
   LazyComponent,
   lazyRequire,

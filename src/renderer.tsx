@@ -29,7 +29,6 @@ process.env.SASS_BINARY_PATH = path.resolve(getVortexPath('modules'), 'node-sass
 
 import { addNotification } from './actions/notifications';
 import reducer from './reducers/index';
-import { IError } from './types/IError';
 import { terminate, toError } from './util/errorHandling';
 import ExtensionManager from './util/ExtensionManager';
 import { ExtensionProvider } from './util/ExtensionProvider';
@@ -57,8 +56,7 @@ import crashDump from 'crash-dump';
 
 // ensures tsc includes this dependency
 import {} from './util/extensionRequire';
-import { getSafe } from './util/storeHelper';
-import { truthy } from './util/util';
+import { reduxLogger } from './util/reduxLogger';
 
 log('debug', 'renderer process started', { pid: process.pid });
 
@@ -81,6 +79,7 @@ const filter = true;
 const middleware = [
   thunkMiddleware,
   reduxSanity(sanityCheckCB),
+  reduxLogger(),
 ];
 
 function sanityCheckCB(err: StateError) {
