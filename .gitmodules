@@ -5,7 +5,7 @@
 [submodule "extensions\\gamebryo-plugin-management"]
 	path = extensions/gamebryo-plugin-management
 	url = https://github.com/Nexus-Mods/extension-plugin-management.git
-	branch = loot_0_13
+	branch = master
 [submodule "extensions\\feedback"]
 	path = extensions/feedback
 	url = https://github.com/Nexus-Mods/extension-feedback.git
@@ -93,7 +93,7 @@
 [submodule "api"]
 	path = api
 	url = https://github.com/Nexus-Mods/vortex-api
-	branch = 0.15.0
+	branch = master
 [submodule "extensions\\common-interpreters"]
 	path = extensions/common-interpreters
 	url = https://github.com/Nexus-Mods/extension-common-interpreters.git
