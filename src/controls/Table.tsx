@@ -956,6 +956,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private selectRow = (evt: React.MouseEvent<any>) => {
+    if (evt.isDefaultPrevented()) {
+      return;
+    }
     let iter = evt.target as any;
     while (((iter !== null) && (iter !== undefined))
           && (iter.tagName !== 'BUTTON')

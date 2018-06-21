@@ -4,7 +4,6 @@ import { log } from '../../util/log';
 import { getSafe } from '../../util/storeHelper';
 
 import ExtensionGate from '../ExtensionGate';
-import FormFeedback from '../FormFeedback';
 import FormInput from '../FormInput';
 import Icon from '../Icon';
 import More from '../More';
@@ -94,7 +93,9 @@ class DetailCell extends React.Component<ICellProps, {}> {
         </FormControl.Static>
       ) : null;
     } else {
-      const values = rowIds.map(id => rowData[id][attribute.id]);
+      const values = rowIds
+        .filter(id => rowData[id] !== undefined)
+        .map(id => rowData[id][attribute.id]);
 
       if (attribute.edit.onChangeValue !== undefined) {
         const readOnlyFunc = getSafe(attribute, ['edit', 'readOnly'], (val: any) => false);
@@ -130,7 +131,7 @@ class DetailCell extends React.Component<ICellProps, {}> {
   }
 
   private renderSelect(values: any[], readOnly: boolean): JSX.Element {
-    const { t, attribute, rowIds } = this.props;
+    const { t, attribute } = this.props;
 
     const various = values.find(iter => !Object.is(iter, values[0])) !== undefined;
 
@@ -228,10 +229,6 @@ class DetailCell extends React.Component<ICellProps, {}> {
     onChangeData(rowIds, attribute.id, newValue);
   }
 
-  private changeCellEvt = (evt: React.FormEvent<any>) => {
-    this.changeCell(evt.currentTarget.value);
-  }
-
   private changeCellSelect = (value: any) => {
     if (value !== null) {
       this.changeCell(value.key);
@@ -320,32 +317,6 @@ class DetailBox extends ComponentEx<IDetailProps, {}> {
           </Button>
         </div>
       </div>
-    );
-  }
-
-  private renderHandle(): JSX.Element {
-    const { t, title, onToggleShow } = this.props;
-    // TODO: hard coded style???
-    const style = {
-      border: '1px solid #0c5886',
-      position: 'relative' as 'relative',
-    };
-    const textStyle = {
-      transform: 'rotate(-90deg)',
-      transformOrigin: 'left',
-      position: 'absolute' as 'absolute',
-      whiteSpace: 'nowrap',
-      top: '50%',
-      left: '50%',
-    };
-
-    return (
-      <Button
-        style={style}
-        onClick={onToggleShow}
-      >
-        <div style={textStyle}><Icon name='up' />{' '}{title || t('Details')}</div>
-      </Button>
     );
   }
 
