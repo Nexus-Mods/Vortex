@@ -74,7 +74,7 @@ class VersionOption extends React.PureComponent<IVersionOptionProps, {}> {
     const { t, modId, altId, mod } = this.props;
     return (
       <a className='version-option'>
-        <div>{mod.attributes['version']}</div>
+        <div>{getSafe(mod.attributes, ['version'], '')}</div>
         <IconButton
           id={`btn-remove-${modId}-${altId}`}
           className='btn-embed'
@@ -425,7 +425,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       ? (
         <DropdownButton
           className='dropdown-version'
-          title={mod.attributes['version'] || ''}
+          title={getSafe(mod.attributes, ['version'], '')}
           id={`version-dropdown-${mod.id}`}
           container={this.mRef}
         >
@@ -435,7 +435,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
     return (
       <div className={'mod-update ' + this.updateClass(updateState)}>
-        {alternatives.length === 1 ? mod.attributes['version'] : null}
+        {alternatives.length === 1 ? getSafe(mod.attributes, ['version'], null) : null}
         <ButtonGroup id={`btngroup-${mod.id}`} className='btngroup-version'>
           {versionDropdown}
           <VersionIconButton
@@ -525,7 +525,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       icon: 'check-o',
       calc: (mod: IModWithState) => {
         if (mod.state === 'downloaded') {
-          return (mod.attributes.wasInstalled)
+          return (getSafe(mod.attributes, ['wasInstalled'], false))
             ? 'Uninstalled'
             : 'Never Installed';
         } else if (mod.state === 'installing') {

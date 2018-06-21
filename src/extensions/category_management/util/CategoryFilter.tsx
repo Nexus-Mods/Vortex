@@ -50,15 +50,16 @@ class CategoryFilterComponent extends React.Component<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { filter, categories, downloads, mods } = this.props;
+    const { filter, categories, mods } = this.props;
     const { archiveCategories } = this.state;
 
     const installedArchives = new Set<string>();
     const modCategories = new Set<string>();
     Object.keys(mods || {}).forEach(modId => {
       const mod = mods[modId];
-      if (mod.attributes['category'] !== undefined) {
-        modCategories.add(mod.attributes['category'].toString());
+      const category = getSafe(mod.attributes, ['category'], undefined);
+      if (category !== undefined) {
+        modCategories.add(category.toString());
       }
       if (mod.archiveId !== undefined) {
         installedArchives.add(mod.archiveId);

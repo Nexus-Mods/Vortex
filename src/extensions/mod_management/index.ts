@@ -424,7 +424,7 @@ function genUpdateModDeployment() {
   };
 }
 
-function genModsSourceAttribute(api: IExtensionApi): ITableAttribute {
+function genModsSourceAttribute(api: IExtensionApi): ITableAttribute<IMod> {
   return {
     id: 'modSource',
     name: 'Source',
@@ -436,7 +436,7 @@ function genModsSourceAttribute(api: IExtensionApi): ITableAttribute {
     isToggleable: true,
     isDefaultVisible: false,
     supportsMultiple: true,
-    calc: (mod: IMod) => {
+    calc: mod => {
       if (mod.attributes === undefined) {
         return 'None';
       }

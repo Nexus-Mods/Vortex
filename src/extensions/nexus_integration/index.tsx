@@ -338,8 +338,9 @@ function checkModVersionsImpl(
 
   const modsList: IMod[] = Object.keys(mods)
     .map(modId => mods[modId])
-    .filter(mod => mod.attributes.source === 'nexus')
-    .filter(mod => (now - (mod.attributes.lastUpdateTime || 0)) > UPDATE_CHECK_DELAY)
+    .filter(mod => getSafe(mod.attributes, ['source'], undefined) === 'nexus')
+    .filter(mod =>
+      (now - (getSafe(mod.attributes, ['lastUpdateTime'], 0) || 0)) > UPDATE_CHECK_DELAY)
     ;
 
   log('info', 'checking mods for update (nexus)', { count: modsList.length });
@@ -471,11 +472,11 @@ function genEndorsedAttribute(api: IExtensionApi): ITableAttribute {
     description: 'Endorsement state on Nexus',
     icon: 'star',
     customRenderer: (mod: IMod, detail: boolean, t: I18next.TranslationFunction) =>
-      mod.attributes['source'] === 'nexus'
+      getSafe(mod.attributes, ['source'], undefined) === 'nexus'
         ? createEndorsedIcon(api.store, mod, t)
         : null,
     calc: (mod: IMod) =>
-      mod.attributes['source'] === 'nexus'
+      getSafe(mod.attributes, ['source'], undefined) === 'nexus'
         ? getSafe(mod.attributes, ['endorsed'], null)
         : undefined,
     placement: 'table',
@@ -493,13 +494,13 @@ function genModIdAttribute(api: IExtensionApi): ITableAttribute {
     description: 'Internal ID used by www.nexusmods.com',
     icon: 'external-link',
     customRenderer: (mod: IModWithState, detail: boolean, t: I18next.TranslationFunction) => {
-      const res = mod.attributes['source'] === 'nexus'
+      const res = getSafe(mod.attributes, ['source'], undefined) === 'nexus'
         ? renderNexusModIdDetail(api.store, mod, t)
         : null;
       return res;
     },
     calc: (mod: IMod) =>
-      mod.attributes['source'] === 'nexus'
+      getSafe(mod.attributes, ['source'], undefined) === 'nexus'
         ? getSafe(mod.attributes, ['modId'], null)
         : undefined
     ,
@@ -517,10 +518,10 @@ function genGameAttribute(api: IExtensionApi): ITableAttribute<IMod> {
     name: 'Game Section',
     description: 'NexusMods Game Section',
     calc: mod => {
-      if (mod.attributes['source'] !== 'nexus') {
+      if (getSafe(mod.attributes, ['source'], undefined) !== 'nexus') {
         return undefined;
       }
-      const gameId = convertGameId(mod.attributes['downloadGame']
+      const gameId = convertGameId(getSafe(mod.attributes, ['downloadGame'], undefined)
                            || activeGameId(api.store.getState()));
       const gameEntry = nexusGames.find(game => game.domain_name === gameId);
       return (gameEntry !== undefined)

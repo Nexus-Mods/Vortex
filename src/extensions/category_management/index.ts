@@ -32,8 +32,6 @@ function getModCategory(mod: IModWithState) {
 function getCategoryChoices(state: IState) {
   const categories: ICategoryDictionary = allCategories(state);
 
-  const language: string = state.settings.interface.language;
-
   return [ {key: '', text: ''} ].concat(
     Object.keys(categories)
       .map(id => ({ key: id, text: resolveCategoryPath(id, state) }))
