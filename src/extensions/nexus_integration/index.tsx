@@ -49,8 +49,9 @@ import NXMUrl from './NXMUrl';
 import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import * as I18next from 'i18next';
-import NexusT, { IDownloadURL, IFileInfo, IGameListEntry, IModInfo,
-                 NexusError as NexusErrorT } from 'nexus-api';
+import NexusT, { IDownloadURL, IFileInfo, IGameListEntry,
+                 IIssue, IModInfo,
+                 NexusError as NexusErrorT} from 'nexus-api';
 import {} from 'opn';
 import * as path from 'path';
 import * as React from 'react';
@@ -765,6 +766,14 @@ function once(api: IExtensionApi) {
         });
         connection.close();
       });
+  });
+
+  api.events.on('request-own-issues', (cb: (err: Error, issues?: IIssue[]) => void) => {
+    nexus.getOwnIssues()
+      .then(issues => {
+        cb(null, issues);
+      })
+      .catch(err => cb(err));
   });
 
   api.onStateChange(['settings', 'nexus', 'associateNXM'],
