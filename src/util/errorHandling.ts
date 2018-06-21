@@ -163,14 +163,17 @@ function nexusReport(hash: string, type: string, error: IError, labels: string[]
     apiKey === undefined,
     hash,
     referenceId))
-  .then(() => opn(`https://www.nexusmods.com/crash-report/?key=${referenceId}`)
+  .then(() => opn(`https://www.nexusmods.com/crash-report/?key=${referenceId}`))
   .then(() => undefined)
-  .catch(err => undefined));
+  .catch(err => {
+    log('error', 'failed to report error to nexus', err);
+  });
 }
 
 let fallbackAPIKey: string;
 
 export function setApiKey(key: string) {
+  console.log('set api key', key);
   fallbackAPIKey = key;
 }
 
