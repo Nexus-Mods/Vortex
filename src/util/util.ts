@@ -7,7 +7,6 @@ import { log } from './log';
 import * as Promise from 'bluebird';
 import { spawn } from 'child_process';
 import * as fs from 'fs-extra-promise';
-import * as _ from 'lodash';
 import * as path from 'path';
 import * as Redux from 'redux';
 import { file } from 'tmp';
@@ -50,6 +49,30 @@ export function setdefault<T>(obj: any, key: PropertyKey, def: T): T {
     obj[key] = def;
   }
   return obj[key];
+}
+
+export function writeFileAtomic(filePath: string, data: string | Buffer | Uint8Array,
+                                options?: fs.WriteFileOptions) {
+  let cleanup: () => void;
+  let tmpPath: string;
+  return new Promise<number>((resolve, reject) => {
+    file({ template: `${filePath}.XXXXXX.tmp` },
+         (err: any, genPath: string, fd: number, cleanupCB: () => void) => {
+      if (err) {
+        return reject(err);
+      }
+      cleanup = cleanupCB;
+      tmpPath = genPath;
+      resolve(fd);
+    });
+  })
+  .then(fd => fs.closeAsync(fd))
+  .then(() => fs.writeFileAsync(tmpPath, data, options))
+  .tapCatch(() => {
+    cleanup();
+  })
+  .then(() => fs.removeAsync(filePath))
+  .then(() => fs.renameAsync(tmpPath, filePath));
 }
 
 /**
