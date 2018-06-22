@@ -166,14 +166,13 @@ function nexusReport(hash: string, type: string, error: IError, labels: string[]
   .then(() => opn(`https://www.nexusmods.com/crash-report/?key=${referenceId}`))
   .then(() => undefined)
   .catch(err => {
-    log('error', 'failed to report error to nexus', err);
+    log('error', 'failed to report error to nexus', err.message);
   });
 }
 
 let fallbackAPIKey: string;
 
 export function setApiKey(key: string) {
-  console.log('set api key', key);
   fallbackAPIKey = key;
 }
 
@@ -215,7 +214,7 @@ export function terminate(error: IError, state: any) {
       type: 'error',
       buttons: ['Ignore', 'Quit', 'Report and Quit'],
       defaultId: 2,
-      title: 'An unrecoverable error occured',
+      title: 'An unrecoverable error occurred',
       message: error.message,
       detail,
       noLink: true,
@@ -259,7 +258,7 @@ export function terminate(error: IError, state: any) {
   } catch (err) {
     // if the crash occurs before the application is ready, the dialog module can't be
     // used (except for this function)
-    dialog.showErrorBox('An unrecoverable error occured',
+    dialog.showErrorBox('An unrecoverable error occurred',
       error.message + '\n' + error.details +
       '\nIf you think this is a bug, please report it to the ' +
       'issue tracker (github)');
