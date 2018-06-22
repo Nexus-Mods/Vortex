@@ -7,9 +7,9 @@ import {
 } from '../../types/IExtensionContext';
 import {IGame} from '../../types/IGame';
 import {IState} from '../../types/IState';
-import { ITableAttribute, Placement } from '../../types/ITableAttribute';
+import { ITableAttribute } from '../../types/ITableAttribute';
 import {ITestResult} from '../../types/ITestResult';
-import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
+import { ProcessCanceled, TemporaryError, UserCanceled } from '../../util/CustomErrors';
 import Debouncer from '../../util/Debouncer';
 import * as fs from '../../util/fs';
 import LazyComponent from '../../util/LazyComponent';
@@ -155,6 +155,9 @@ function purgeMods(api: IExtensionApi): Promise<void> {
       .then(() => activator.purge(instPath, modPaths[typeId]))
       .then(() => saveActivation(typeId, state.app.instanceId, modPaths[typeId], [])))
   .catch(UserCanceled, () => undefined)
+  .catch(TemporaryError, err =>
+    api.showErrorNotification('Failed to purge mods, please try again',
+                              err, { allowReport: false }))
   .catch(err => api.showErrorNotification('Failed to purge mods', err))
   .finally(() => api.dismissNotification(notificationId));
 }
@@ -419,6 +422,10 @@ function genUpdateModDeployment() {
       })
       .catch(UserCanceled, () => undefined)
       .catch(ProcessCanceled, () => undefined)
+      .catch(TemporaryError, err => {
+        api.showErrorNotification('Failed to deploy mods, please try again',
+                                  err.message, { allowReport: false });
+      })
       .catch(err => api.showErrorNotification('Failed to deploy mods', err))
       .finally(() => api.dismissNotification(notificationId));
   };

@@ -575,7 +575,7 @@ function validateKey(api: IExtensionApi, key: string): Promise<void> {
     })
     .catch(NexusError, err => {
       showError(api.store.dispatch,
-        'Failed to validate API Key',
+        'Failed to log in',
         errorFromNexusError(err), { allowReport: false });
       api.store.dispatch(setUserInfo(null));
     })
@@ -595,7 +595,7 @@ function validateKey(api: IExtensionApi, key: string): Promise<void> {
           undefined, { allowReport: false });
       } else {
         showError(api.store.dispatch,
-          'Failed to validate API Key',
+          'Failed to log in',
           err.message, { allowReport: false });
       }
       api.store.dispatch(setUserInfo(null));

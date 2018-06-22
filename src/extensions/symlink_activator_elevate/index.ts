@@ -1,5 +1,5 @@
 import {IExtensionApi, IExtensionContext} from '../../types/IExtensionContext';
-import {ProcessCanceled, UserCanceled} from '../../util/CustomErrors';
+import {ProcessCanceled, TemporaryError, UserCanceled} from '../../util/CustomErrors';
 import { delayed } from '../../util/delayed';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
@@ -226,12 +226,12 @@ class DeploymentMethod extends LinkingDeployment {
         log('error', 'Failed to start symlink activator', err);
       });
       return runElevated(ipcPath, remoteCode, {})
-        .then(() => delayed(5000))
+        .then(() => delayed(15000))
         .then(() => {
           if (!connected) {
             // still no connection, something must have gone wrong
             ipc.server.stop();
-            reject(new Error('failed to run deployment helper'));
+            reject(new TemporaryError('failed to run deployment helper'));
           }
         })
         .catch(reject);

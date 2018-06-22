@@ -1,6 +1,6 @@
 import {IExtensionApi} from '../../types/IExtensionContext';
 import {IState, IStatePaths} from '../../types/IState';
-import { ProcessCanceled } from '../../util/CustomErrors';
+import { ProcessCanceled, TemporaryError } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import {showError} from '../../util/message';
 import {getSafe} from '../../util/storeHelper';
@@ -72,7 +72,10 @@ export function onGameModeActivated(
         ? Promise.mapSeries(Object.keys(modPaths),
             typeId => oldActivator.purge(instPath, modPaths[typeId]))
               .then(() => undefined)
-              .catch(err => api.showErrorNotification('failed to purge', err))
+              .catch(TemporaryError, err =>
+                  api.showErrorNotification('Purge failed, please try again',
+                    err.message, { allowReport: false }))
+              .catch(err => api.showErrorNotification('Purge filed', err))
         : Promise.resolve();
 
       purgePromise.then(() => {
@@ -165,8 +168,7 @@ function undeploy(api: IExtensionApi,
       ? activator.deactivate(installationPath, dataPath, mod)
       : Promise.resolve())
     .then(() => activator.finalize(gameMode, dataPath, installationPath))
-    .then(newActivation => saveActivation(mod.type, state.app.instanceId, dataPath, newActivation))
-    .catch(ProcessCanceled, () => null);
+    .then(newActivation => saveActivation(mod.type, state.app.instanceId, dataPath, newActivation));
 }
 
 export function onRemoveMod(api: IExtensionApi,
@@ -236,6 +238,14 @@ export function onRemoveMod(api: IExtensionApi,
     store.dispatch(removeMod(gameMode, mod.id));
     if (callback !== undefined) {
       callback(null);
+    }
+  })
+  .catch(TemporaryError, (err) => {
+    if (callback !== undefined) {
+      callback(err);
+    } else {
+      api.showErrorNotification('Failed to undeploy mod, please try again',
+        err.message, { allowReport: false });
     }
   })
   .catch(ProcessCanceled, (err) => {
