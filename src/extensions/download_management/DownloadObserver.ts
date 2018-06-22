@@ -257,7 +257,7 @@ export class DownloadObserver {
       this.mManager.stop(downloadId);
     }
     if (truthy(download.localPath)) {
-      const dlPath = getDownloadPath(this.mStore.getState(), download.game);
+      const dlPath = getDownloadPath(this.mStore.getState().settings.downloads.path, download.game);
       fs.removeAsync(path.join(dlPath, download.localPath))
           .then(() => { this.mStore.dispatch(removeDownload(downloadId)); })
           .catch(err => {
@@ -291,7 +291,8 @@ export class DownloadObserver {
     }
     if (download.state === 'paused') {
       const gameMode = download.game;
-      const downloadPath = getDownloadPath(this.mStore.getState(), gameMode);
+      const downloadPath =
+        getDownloadPath(this.mStore.getState().settings.downloads.path, gameMode);
 
       const fullPath = path.join(downloadPath, download.localPath);
       this.mStore.dispatch(pauseDownload(downloadId, false, undefined));

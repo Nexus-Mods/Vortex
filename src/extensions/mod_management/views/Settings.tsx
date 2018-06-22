@@ -11,9 +11,8 @@ import { UserCanceled } from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
 import { log } from '../../../util/log';
 import { showError } from '../../../util/message';
-import { getSafe, setSafe } from '../../../util/storeHelper';
+import { getSafe } from '../../../util/storeHelper';
 import { isChildPath } from '../../../util/util';
-import { setDownloadPath } from '../../download_management/actions/settings';
 import { getGame } from '../../gamemode_management';
 import { currentGame, currentGameDiscovery } from '../../gamemode_management/selectors';
 import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResult';
@@ -27,8 +26,6 @@ import getText from '../texts';
 
 import * as Promise from 'bluebird';
 import { remote } from 'electron';
-import * as update from 'immutability-helper';
-import * as _ from 'lodash';
 import * as path from 'path';
 import * as React from 'react';
 import {
@@ -124,17 +121,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       <form>
         <Panel>
           <PanelX.Body>
-            <FlexLayout.Fixed>
-              {this.renderPathCtrl(t('Install Path ({{name}})', { replace: { name: gameName } }))}
-            </FlexLayout.Fixed>
-            <FlexLayout.Fixed>
-              <BSButton
-                disabled={this.pathsChanged()}
-                onClick={this.applyPaths}
-              >
-                {t('Apply')}
-              </BSButton>
-            </FlexLayout.Fixed>
+            {this.renderPathCtrl(t('Install Path ({{name}})', { replace: { name: gameName } }))}
             <Modal show={this.state.busy !== undefined} onHide={nop}>
               <Modal.Body>
                 <Jumbotron>
@@ -172,13 +159,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private pathsChanged() {
-    const { gameMode } = this.props;
     return this.props.installPath !== this.state.installPath;
-  }
-
-  private pathsAbsolute() {
-    const { gameMode } = this.props;
-    return path.isAbsolute(getInstallPath(this.state.installPath, gameMode));
   }
 
   private transferPath() {
@@ -300,15 +281,6 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       : Promise.resolve();
   }
 
-  private applyActivator = () => {
-    const { gameMode, onSetActivator } = this.props;
-    const { currentActivator } = this.state;
-
-    this.purgeActivation().then(() => {
-      onSetActivator(gameMode, currentActivator);
-    });
-  }
-
   private renderPathCtrl(label: string): JSX.Element {
     const { t, gameMode } = this.props;
     const { installPath } = this.state;
@@ -321,21 +293,36 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             {getText('paths', t)}
           </More>
         </ControlLabel>
-        <InputGroup>
-          <FormControl
-            value={getInstallPathPattern(installPath)}
-            placeholder={label}
-            onChange={this.changePathEvt}
-          />
-          <InputGroup.Button className='inset-btn'>
-            <Button
-              tooltip={t('Browse')}
-              onClick={this.browsePath}
-            >
-              <Icon name='browse' />
-            </Button>
-          </InputGroup.Button>
-        </InputGroup>
+        <FlexLayout type='row'>
+          <FlexLayout.Fixed>
+            <InputGroup>
+              <FormControl
+                className='install-path-input'
+                value={getInstallPathPattern(installPath)}
+                placeholder={label}
+                onChange={this.changePathEvt}
+              />
+              <InputGroup.Button className='inset-btn'>
+                <Button
+                  tooltip={t('Browse')}
+                  onClick={this.browsePath}
+                >
+                  <Icon name='browse' />
+                </Button>
+              </InputGroup.Button>
+            </InputGroup>
+          </FlexLayout.Fixed>
+          <FlexLayout.Fixed>
+            <InputGroup.Button>
+              <BSButton
+                disabled={!this.pathsChanged()}
+                onClick={this.applyPaths}
+              >
+                {t('Apply')}
+              </BSButton>
+            </InputGroup.Button>
+          </FlexLayout.Fixed>
+        </FlexLayout>
         <HelpBlock>{getInstallPath(installPath, gameMode)}</HelpBlock>
       </FormGroup>
     );
@@ -347,7 +334,6 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private changePath = (value: string) => {
-    const { gameMode } = this.props;
     this.nextState.installPath = value;
   }
 
@@ -365,8 +351,6 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
     let content: JSX.Element;
     let activatorIdx: number = -1;
-
-    const changed = currentActivator !== this.props.currentActivator;
 
     if ((activators !== undefined) && (activators.length > 0)) {
       if (currentActivator !== undefined) {
@@ -398,9 +382,6 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       <FormGroup validationState={activators !== undefined ? undefined : 'error'}>
         <InputGroup>
           {content}
-          <InputGroup.Button>
-            <BSButton disabled={!changed} onClick={this.applyActivator}>{t('Apply')}</BSButton>
-          </InputGroup.Button>
         </InputGroup>
         { activatorIdx !== -1 ? (
           <HelpBlock>
