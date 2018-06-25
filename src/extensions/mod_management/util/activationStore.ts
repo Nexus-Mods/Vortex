@@ -3,6 +3,7 @@ import {IExtensionApi} from '../../../types/IExtensionContext';
 import {IState} from '../../../types/IState';
 import {UserCanceled} from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
+import { truthy, writeFileAtomic } from '../../../util/util';
 
 import {IDeploymentManifest, ManifestFormat} from '../types/IDeploymentManifest';
 import {IDeployedFile} from '../types/IDeploymentMethod';
@@ -11,7 +12,6 @@ import format_1 from './manifest_formats/format_1';
 
 import * as Promise from 'bluebird';
 import * as path from 'path';
-import { truthy } from '../../../util/util';
 
 const CURRENT_VERSION = 1;
 
@@ -159,14 +159,11 @@ export function saveActivation(modType: string, instance: string,
                                gamePath: string, activation: IDeployedFile[]) {
   const typeTag = (modType !== undefined) && (modType.length > 0) ? modType + '.' : '';
   const tagFile = path.join(gamePath, `vortex.deployment.${typeTag}json`);
-  if (activation.length === 0) {
-    return fs.removeAsync(tagFile).catch(err => undefined);
-  } else {
-    return fs.writeFileAsync(tagFile, JSON.stringify(
-                                          {
-                                            instance,
-                                            files: activation,
-                                          },
-                                          undefined, 2));
-  }
+  return (activation.length === 0)
+    ? fs.removeAsync(tagFile).catch(() => undefined)
+    : writeFileAtomic(tagFile, JSON.stringify({
+        instance,
+        files: activation,
+      },
+      undefined, 2));
 }

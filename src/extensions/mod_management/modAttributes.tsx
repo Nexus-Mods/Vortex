@@ -12,7 +12,7 @@ import Description from './views/Description';
 import * as I18next from 'i18next';
 import * as React from 'react';
 
-export const PICTURE: ITableAttribute = {
+export const PICTURE: ITableAttribute<IModWithState> = {
   id: 'picture',
   description: 'A picture provided by the author',
   customRenderer: (mod: IModWithState, detail: boolean, t: I18next.TranslationFunction) => {
@@ -30,7 +30,7 @@ export const PICTURE: ITableAttribute = {
       </ZoomableImage>
     );
   },
-  calc: (mod: IModWithState) => getSafe(mod.attributes, ['pictureUrl'], ''),
+  calc: mod => getSafe(mod.attributes, ['pictureUrl'], ''),
   placement: 'detail',
   edit: {},
 };

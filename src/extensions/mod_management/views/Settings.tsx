@@ -7,7 +7,7 @@ import Spinner from '../../../controls/Spinner';
 import { Button } from '../../../controls/TooltipControls';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { UserCanceled } from '../../../util/CustomErrors';
+import { TemporaryError, UserCanceled } from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
 import { log } from '../../../util/log';
 import { showError } from '../../../util/message';
@@ -245,6 +245,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       })
       .then(() => {
         onSetInstallPath(gameMode, this.state.installPath);
+      })
+      .catch(TemporaryError, err => {
+        onShowError('Failed to move directories, please try again', err, false);
       })
       .catch(UserCanceled, () => null)
       .catch((err) => {

@@ -15,7 +15,7 @@ import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../
 import { IState } from '../../../types/IState';
 import { ITableAttribute } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { ProcessCanceled, UserCanceled } from '../../../util/CustomErrors';
+import { ProcessCanceled, TemporaryError, UserCanceled } from '../../../util/CustomErrors';
 import Debouncer from '../../../util/Debouncer';
 import * as fs from '../../../util/fs';
 import { activeGameId, activeProfile } from '../../../util/selectors';
@@ -74,7 +74,7 @@ class VersionOption extends React.PureComponent<IVersionOptionProps, {}> {
     const { t, modId, altId, mod } = this.props;
     return (
       <a className='version-option'>
-        <div>{mod.attributes['version']}</div>
+        <div>{getSafe(mod.attributes, ['version'], '')}</div>
         <IconButton
           id={`btn-remove-${modId}-${altId}`}
           className='btn-embed'
@@ -425,7 +425,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       ? (
         <DropdownButton
           className='dropdown-version'
-          title={mod.attributes['version'] || ''}
+          title={getSafe(mod.attributes, ['version'], '')}
           id={`version-dropdown-${mod.id}`}
           container={this.mRef}
         >
@@ -435,7 +435,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
     return (
       <div className={'mod-update ' + this.updateClass(updateState)}>
-        {alternatives.length === 1 ? mod.attributes['version'] : null}
+        {alternatives.length === 1 ? getSafe(mod.attributes, ['version'], null) : null}
         <ButtonGroup id={`btngroup-${mod.id}`} className='btngroup-version'>
           {versionDropdown}
           <VersionIconButton
@@ -525,7 +525,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       icon: 'check-o',
       calc: (mod: IModWithState) => {
         if (mod.state === 'downloaded') {
-          return (mod.attributes.wasInstalled)
+          return (getSafe(mod.attributes, ['wasInstalled'], false))
             ? 'Uninstalled'
             : 'Never Installed';
         } else if (mod.state === 'installing') {
@@ -714,6 +714,10 @@ class ModList extends ComponentEx<IProps, IComponentState> {
             if (err instanceof UserCanceled) {
               // the user knows that he cancelled, no need to notify
               return;
+            } else if (err instanceof TemporaryError) {
+              return this.context.api.showErrorNotification(
+                'Failed to remove mod, please try again',
+                err.message, { allowReport: false });
             } else if (err instanceof ProcessCanceled) {
               return this.context.api.showErrorNotification('Failed to remove mod', err.message,
                 { allowReport: false });

@@ -82,6 +82,11 @@ describe('setModAttribute', () => {
     let result = modsReducer.reducers.SET_MOD_ATTRIBUTE(input, { gameId: 'gameId1', modId: 'modId1', attribute: 'attribute1', value: 'new value' });
     expect(result).toEqual({ gameId1: { modId1: { 'attributes': { attribute1: 'new value' } } } });
   });
+  it('works if there were no attributes before', () => {
+    let input = { gameId1: { modId1: { } } };
+    let result = modsReducer.reducers.SET_MOD_ATTRIBUTE(input, { gameId: 'gameId1', modId: 'modId1', attribute: 'attribute1', value: 'new value' });
+    expect(result).toEqual({ gameId1: { modId1: { 'attributes': { attribute1: 'new value' } } } });
+  });
   it('fails if the game doesn\'t exist', () => {
     let input = { gameId1: { modId1: { 'attributes': { attribute1: 'value' } } } };
     let result = modsReducer.reducers.SET_MOD_ATTRIBUTE(input, { gameId: 'gameId2', modId: 'modId1', attribute: 'attribute1', value: 'new value' });

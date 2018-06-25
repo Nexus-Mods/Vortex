@@ -44,11 +44,12 @@ class GlobalNotifications {
         this.showNotification(currentNotification);
       } else {
         currentNotification = this.mKnownNotifications[0];
-        if (currentNotification !== undefined) {
+        if ((currentNotification !== undefined) && (this.mCurrentId !== currentNotification.id)) {
           log('info', 'new notification', { id: currentNotification.id });
           // Notification api broken as of electron 1.7.11
           // this.showNotification(currentNotification);
           api.events.emit('show-balloon', currentNotification.title, currentNotification.message);
+          this.mCurrentId = currentNotification.id;
         }
       }
     });

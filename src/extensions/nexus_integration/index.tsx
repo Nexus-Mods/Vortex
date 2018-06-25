@@ -49,8 +49,9 @@ import NXMUrl from './NXMUrl';
 import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import * as I18next from 'i18next';
-import NexusT, { IDownloadURL, IFileInfo, IGameListEntry, IModInfo,
-                 NexusError as NexusErrorT } from 'nexus-api';
+import NexusT, { IDownloadURL, IFileInfo, IGameListEntry,
+                 IIssue, IModInfo,
+                 NexusError as NexusErrorT} from 'nexus-api';
 import {} from 'opn';
 import * as path from 'path';
 import * as React from 'react';
@@ -337,8 +338,9 @@ function checkModVersionsImpl(
 
   const modsList: IMod[] = Object.keys(mods)
     .map(modId => mods[modId])
-    .filter(mod => mod.attributes.source === 'nexus')
-    .filter(mod => (now - (mod.attributes.lastUpdateTime || 0)) > UPDATE_CHECK_DELAY)
+    .filter(mod => getSafe(mod.attributes, ['source'], undefined) === 'nexus')
+    .filter(mod =>
+      (now - (getSafe(mod.attributes, ['lastUpdateTime'], 0) || 0)) > UPDATE_CHECK_DELAY)
     ;
 
   log('info', 'checking mods for update (nexus)', { count: modsList.length });
@@ -470,11 +472,11 @@ function genEndorsedAttribute(api: IExtensionApi): ITableAttribute {
     description: 'Endorsement state on Nexus',
     icon: 'star',
     customRenderer: (mod: IMod, detail: boolean, t: I18next.TranslationFunction) =>
-      mod.attributes['source'] === 'nexus'
+      getSafe(mod.attributes, ['source'], undefined) === 'nexus'
         ? createEndorsedIcon(api.store, mod, t)
         : null,
     calc: (mod: IMod) =>
-      mod.attributes['source'] === 'nexus'
+      getSafe(mod.attributes, ['source'], undefined) === 'nexus'
         ? getSafe(mod.attributes, ['endorsed'], null)
         : undefined,
     placement: 'table',
@@ -492,13 +494,13 @@ function genModIdAttribute(api: IExtensionApi): ITableAttribute {
     description: 'Internal ID used by www.nexusmods.com',
     icon: 'external-link',
     customRenderer: (mod: IModWithState, detail: boolean, t: I18next.TranslationFunction) => {
-      const res = mod.attributes['source'] === 'nexus'
+      const res = getSafe(mod.attributes, ['source'], undefined) === 'nexus'
         ? renderNexusModIdDetail(api.store, mod, t)
         : null;
       return res;
     },
     calc: (mod: IMod) =>
-      mod.attributes['source'] === 'nexus'
+      getSafe(mod.attributes, ['source'], undefined) === 'nexus'
         ? getSafe(mod.attributes, ['modId'], null)
         : undefined
     ,
@@ -516,10 +518,10 @@ function genGameAttribute(api: IExtensionApi): ITableAttribute<IMod> {
     name: 'Game Section',
     description: 'NexusMods Game Section',
     calc: mod => {
-      if (mod.attributes['source'] !== 'nexus') {
+      if (getSafe(mod.attributes, ['source'], undefined) !== 'nexus') {
         return undefined;
       }
-      const gameId = convertGameId(mod.attributes['downloadGame']
+      const gameId = convertGameId(getSafe(mod.attributes, ['downloadGame'], undefined)
                            || activeGameId(api.store.getState()));
       const gameEntry = nexusGames.find(game => game.domain_name === gameId);
       return (gameEntry !== undefined)
@@ -573,7 +575,7 @@ function validateKey(api: IExtensionApi, key: string): Promise<void> {
     })
     .catch(NexusError, err => {
       showError(api.store.dispatch,
-        'Failed to validate API Key',
+        'Failed to log in',
         errorFromNexusError(err), { allowReport: false });
       api.store.dispatch(setUserInfo(null));
     })
@@ -593,7 +595,7 @@ function validateKey(api: IExtensionApi, key: string): Promise<void> {
           undefined, { allowReport: false });
       } else {
         showError(api.store.dispatch,
-          'Failed to validate API Key',
+          'Failed to log in',
           err.message, { allowReport: false });
       }
       api.store.dispatch(setUserInfo(null));
@@ -617,6 +619,7 @@ function once(api: IExtensionApi) {
     const Nexus: typeof NexusT = require('nexus-api').default;
     const apiKey = getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], '');
     nexus = new Nexus(activeGameId(state), apiKey, remote.app.getVersion(), 30000);
+    setApiKey(apiKey);
 
     const gameMode = activeGameId(state);
     api.store.dispatch(setUpdatingMods(gameMode, false));
@@ -765,6 +768,14 @@ function once(api: IExtensionApi) {
         });
         connection.close();
       });
+  });
+
+  api.events.on('request-own-issues', (cb: (err: Error, issues?: IIssue[]) => void) => {
+    nexus.getOwnIssues()
+      .then(issues => {
+        cb(null, issues);
+      })
+      .catch(err => cb(err));
   });
 
   api.onStateChange(['settings', 'nexus', 'associateNXM'],

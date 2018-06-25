@@ -489,7 +489,6 @@ function init(context: IExtensionContext): boolean {
 
     const GameModeManagerImpl: typeof GameModeManager = require('./GameModeManager').default;
     $.gameModeManager = new GameModeManagerImpl(
-      context.api.getPath('userData'),
       extensionGames,
       (gameMode: string) => {
         events.emit('gamemode-activated', gameMode);

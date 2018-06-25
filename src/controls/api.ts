@@ -5,6 +5,7 @@ import Banner from './Banner';
 import ContextMenu from './ContextMenu';
 import Dashlet from './Dashlet';
 import Dropzone from './Dropzone';
+import EmptyPlaceholder from './EmptyPlaceholder';
 import FlexLayout from './FlexLayout';
 import FormFeedback from './FormFeedback';
 import FormInput from './FormInput';
@@ -24,7 +25,8 @@ import * as tooltip from './TooltipControls';
 import Webview from './Webview';
 
 export {
-  ActionContextMenu, ActionDropdown, Advanced, Banner, ContextMenu, Dashlet, Dropzone, FlexLayout,
-  FormFeedback, FormInput, ChangeDataHandler, Icon, IconBar, ITableRowAction, Modal, More, Table,
+  ActionContextMenu, ActionDropdown, Advanced, Banner, ChangeDataHandler, ContextMenu, Dashlet,
+  Dropzone, EmptyPlaceholder, FlexLayout,
+  FormFeedback, FormInput, Icon, IconBar, ITableRowAction, Modal, More, Table,
   TableDateTimeFilter, TableNumericFilter, TableTextFilter,
   Spinner, Steps, makeGetSelection, Toggle, ToolbarIcon, tooltip, Webview};

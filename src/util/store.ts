@@ -9,15 +9,12 @@ import ReduxPersistor from './ReduxPersistor';
 import {reduxSanity, StateError} from './reduxSanity';
 
 import * as Promise from 'bluebird';
-import { app as appIn, remote } from 'electron';
 import * as levelup from 'levelup';
 import * as path from 'path';
 import * as Redux from 'redux';
 import { applyMiddleware, compose, createStore } from 'redux';
 import { electronEnhancer } from 'redux-electron-store';
 import thunkMiddleware from 'redux-thunk';
-
-const app = remote !== undefined ? remote.app : appIn;
 
 let basePersistor: ReduxPersistor<IState>;
 

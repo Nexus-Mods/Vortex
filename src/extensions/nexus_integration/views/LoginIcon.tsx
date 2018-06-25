@@ -1,19 +1,15 @@
 import { setDialogVisible } from '../../../actions/session';
 import Icon from '../../../controls/Icon';
-import { Button, IconButton } from '../../../controls/TooltipControls';
+import { Button } from '../../../controls/TooltipControls';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { getSafe } from '../../../util/storeHelper';
 
 import { setUserAPIKey } from '../actions/account';
 import { IValidateKeyData } from '../types/IValidateKeyData';
 
-import LoginDialog from './LoginDialog';
-
-import * as update from 'immutability-helper';
 import NexusT from 'nexus-api';
 import {} from 'opn';
 import * as React from 'react';
-import { ControlLabel, Form, FormGroup, Image } from 'react-bootstrap';
+import { Image } from 'react-bootstrap';
 import * as Redux from 'redux';
 
 // tslint:disable-next-line:no-var-requires

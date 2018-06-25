@@ -25,6 +25,7 @@ const locations = [
   '{nucleo}/furniture/{nucleo_simple}_',
   '{nucleo}/healthcare-medical/{nucleo_simple}_',
   '{nucleo}/holidays/{nucleo_simple}_',
+  '{nucleo}/loaders/{nucleo_simple}_',
   '{nucleo}/maps-location/{nucleo_simple}_',
   '{nucleo}/multimedia/{nucleo_simple}_',
   '{nucleo}/objects/{nucleo_simple}_',

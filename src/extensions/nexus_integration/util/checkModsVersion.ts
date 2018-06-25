@@ -32,7 +32,7 @@ export function checkModVersion(dispatch: Redux.Dispatch<any>, nexus: NexusT,
   }
 
   return Promise.resolve(nexus.getModFiles(nexusModId,
-                                           convertGameId(mod.attributes['downloadGame'] || gameId)))
+    convertGameId(getSafe(mod.attributes, ['downloadGame'], undefined) || gameId)))
       .then(result => updateFileAttributes(dispatch, gameId, mod, result));
 }
 
@@ -68,7 +68,7 @@ function updateModAttributes(dispatch: Redux.Dispatch<any>,
   if (modInfo.endorsement !== undefined) {
     update(dispatch, gameId, mod, 'endorsed', modInfo.endorsement.endorse_status);
   }
-  if (mod.attributes['category'] === undefined) {
+  if (getSafe(mod.attributes, ['category'], undefined) === undefined) {
     update(dispatch, gameId, mod, 'category', modInfo.category_id);
   }
   update(dispatch, gameId, mod, 'shortDescription', modInfo.summary);
@@ -108,7 +108,7 @@ function updateFileAttributes(dispatch: Redux.Dispatch<any>,
     if ((notOld.length === 1) && (notOld[0].file_id !== fileId)) {
       fileUpdates = [{
         old_file_id: fileId,
-        old_file_name: mod.attributes['logicalFileName'],
+        old_file_name: getSafe(mod.attributes, ['logicalFileName'], undefined),
         new_file_id: notOld[0].file_id,
         new_file_name: notOld[0].file_name,
         uploaded_time: notOld[0].uploaded_time,
