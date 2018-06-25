@@ -36,7 +36,8 @@ class HeaderCell extends React.Component<IHeaderProps, {}> {
     return (this.props.attribute !== newProps.attribute)
              || !_.isEqual(this.props.state, newProps.state)
              || (this.props.doFilter !== newProps.doFilter)
-             || (this.props.advancedMode !== newProps.advancedMode);
+             || (this.props.advancedMode !== newProps.advancedMode)
+             || (this.props.children !== (newProps as any).children);
   }
 
   public render(): JSX.Element {
