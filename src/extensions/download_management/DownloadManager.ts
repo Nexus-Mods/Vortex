@@ -1,4 +1,3 @@
-import Debouncer from '../../util/Debouncer';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 import { countIf, truthy } from '../../util/util';
@@ -79,6 +78,7 @@ type FinishCallback = (paused: boolean) => void;
  */
 class DownloadWorker {
   private static BUFFER_SIZE = 256 * 1024;
+  private static BUFFER_SIZE_CAP = 4 * 1024 * 1024;
   private mJob: IDownloadJob;
   private mRequest: http.ClientRequest;
   private mProgressCB: (bytes: number) => void;
@@ -89,6 +89,7 @@ class DownloadWorker {
   private mDataHistory: Array<{ time: number, size: number }> = [];
   private mEnded: boolean = false;
   private mResponse: http.ClientResponse;
+  private mWriting: boolean = false;
 
   constructor(job: IDownloadJob,
               progressCB: (bytes: number) => void,
@@ -126,6 +127,7 @@ class DownloadWorker {
         headers: {
           Range: `bytes=${job.offset}-${job.offset + job.size}`,
           'User-Agent': this.mUserAgent,
+          'Accept-Encoding': 'gzip',
           Cookie: (cookies || []).map(cookie => `${cookie.name}=${cookie.value}`),
         },
         agent: new lib.Agent(),
@@ -313,13 +315,25 @@ class DownloadWorker {
 
     const bufferLength = this.bufferLength;
     if (bufferLength >= DownloadWorker.BUFFER_SIZE) {
-      this.writeBuffer()
-        .then(() => null)
-        .catch(err => {
-          this.handleError(err);
-        });
+      if (!this.mWriting) {
+        this.mWriting = true;
+        this.writeBuffer()
+          .catch(err => {
+            this.handleError(err);
+          })
+          .then(() => {
+            this.mWriting = false;
+            if (this.mResponse.isPaused()) {
+              this.mResponse.resume();
+            }
+          });
+        this.mProgressCB(bufferLength);
+      } else if (bufferLength >= DownloadWorker.BUFFER_SIZE_CAP) {
+        // throttle the download because we can't process input fast enough and we
+        // risk the memory usage to escalate
+        this.mResponse.pause();
+      }
     }
-    this.mProgressCB(data.length);
   }
 }
 

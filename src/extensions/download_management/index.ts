@@ -187,7 +187,7 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
   }
   const currentDownloadPath = resolvePath('download', state.settings.mods.paths, gameId);
 
-  let nameIdMap: {[name: string]: string};
+  let nameIdMap: {[name: string]: string} = {};
 
   let downloadChangeHandler: (evt: string, fileName: string) => void;
   return getNormalizeFunc(currentDownloadPath, {separators: false, relative: false})
