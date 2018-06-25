@@ -5,16 +5,15 @@ import ActionDropdown from '../ActionDropdown';
 import Dropdown, { DummyMenu } from '../Dropdown';
 import ExtensionGate from '../ExtensionGate';
 import Icon from '../Icon';
-import IconBar from '../IconBar';
 import {ITableRowAction} from '../Table';
 import {Button, IconButton} from '../TooltipControls';
 import VisibilityProxy from '../VisibilityProxy';
 
-import { TD, TR } from './MyTable';
+import { TD } from './MyTable';
 
 import * as I18next from 'i18next';
 import * as React from 'react';
-import { FormControl, MenuItem, SplitButton } from 'react-bootstrap';
+import { MenuItem } from 'react-bootstrap';
 
 interface ICellProps {
   language: string;
@@ -197,9 +196,10 @@ class TableRow extends React.Component<IRowProps, IRowState> {
   }
 
   public shouldComponentUpdate(nextProps: IRowProps, nextState: IRowState) {
+    // don't redraw if _just_ rawdata changed because the calculated data should always update
+    // too (with a delay) so updating on both events would cause two updates for every data change
     return (this.props.visible !== nextProps.visible)
       || (this.props.data !== nextProps.data)
-      || (this.props.rawData !== nextProps.rawData)
       || (this.props.selected !== nextProps.selected)
       || (this.props.highlighted !== nextProps.highlighted)
       || (this.props.attributes !== nextProps.attributes)

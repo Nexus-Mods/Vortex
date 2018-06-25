@@ -8,7 +8,7 @@ import { log } from '../util/log';
 import * as storeHelperT from '../util/storeHelper';
 
 import * as Promise from 'bluebird';
-import { dialog, screen } from 'electron';
+import { screen } from 'electron';
 import * as Redux from 'redux';
 
 class MainWindow {
