@@ -36,6 +36,7 @@
     "icon-extract": "Nexus-Mods/node-icon-extract",
     "iconv-lite": "^0.4.19",
     "immutability-helper": "^2.4.0",
+    "is-admin": "^2.1.1",
     "level-js": "^2.2.4",
     "leveldown": "1.7.2",
     "levelup": "1.3.5",
