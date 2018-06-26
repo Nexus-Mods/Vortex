@@ -1,4 +1,3 @@
-import Debouncer from '../../util/Debouncer';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 import { countIf, truthy } from '../../util/util';
@@ -336,7 +335,6 @@ class DownloadManager {
   private mBusyWorkers: { [id: number]: DownloadWorker } = {};
   private mSlowWorkers: { [id: number]: number } = {};
   private mQueue: IRunningDownload[] = [];
-  private mPaused: IRunningDownload[] = [];
   private mNextId: number = 0;
   private mSpeedCalculator: SpeedCalculator;
   private mUserAgent: string;

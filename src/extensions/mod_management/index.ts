@@ -623,7 +623,7 @@ function once(api: IExtensionApi) {
                                   callback?: (error, id: string) => void) => {
     genHash(archivePath)
       .then(hashResult => {
-        installManager.install(null, archivePath, activeGameId(store.getState()),
+        installManager.install(null, archivePath, [ activeGameId(store.getState()) ],
           api, { download: { modInfo: { fileMD5: hashResult.md5sum } } },
           true, false, callback);
       })

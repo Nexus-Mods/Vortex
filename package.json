@@ -178,6 +178,7 @@
     "fomod-installer": "Nexus-Mods/fomod-installer",
     "font-awesome": "^4.7.0",
     "fs-extra-promise": "^1.0.1",
+    "fuzzball": "^1.1.2",
     "graphlib": "^2.1.1",
     "i18next": "^10.0.3",
     "i18next-node-fs-backend": "^1.0.0",

@@ -48,12 +48,12 @@ export interface IDownload {
   localPath: string;
 
   /**
-   * id of the game to which this download applies.
+   * id of the game(s) to which this archive is compatible.
    *
    * @type {string}
    * @memberOf IDownload
    */
-  game: string;
+  game: string[];
 
   /**
    * info about the mod being downloaded. This will

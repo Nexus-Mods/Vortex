@@ -21,6 +21,7 @@ import { settingsReducer } from './reducers/settings';
 import { stateReducer } from './reducers/state';
 import { IDownload } from './types/IDownload';
 import { IProtocolHandlers } from './types/ProtocolHandlers';
+import getDownloadGames from './util/getDownloadGames';
 import getDownloadPath from './util/getDownloadPath';
 import {} from './views/DownloadView';
 import {} from './views/Settings';
@@ -202,8 +203,8 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
 
         const knownDLs =
           Object.keys(downloads)
-            .filter((dlId: string) => downloads[dlId].game === gameId)
-            .map(dlId => normalize(downloads[dlId].localPath));
+            .filter((dlId: string) => getDownloadGames(downloads[dlId])[0] === gameId)
+            .map(dlId => normalize(downloads[dlId].localPath || ''));
 
         return refreshDownloads(currentDownloadPath, knownDLs, normalize,
           (fileName: string) =>
@@ -339,7 +340,8 @@ function init(context: IExtensionContextExt): boolean {
       const state: IState = context.api.store.getState();
 
       Promise.map(filtered, dlId => {
-        const downloadPath = getDownloadPath(state.settings.downloads.path, cur[dlId].game);
+        const downloadPath = getDownloadPath(state.settings.downloads.path,
+                                             getDownloadGames(cur[dlId])[0]);
         context.api.lookupModMeta({ filePath: path.join(downloadPath, cur[dlId].localPath) })
           .then(result => {
             if (result.length > 0) {

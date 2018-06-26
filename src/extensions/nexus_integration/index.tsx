@@ -521,8 +521,11 @@ function genGameAttribute(api: IExtensionApi): ITableAttribute<IMod> {
       if (getSafe(mod.attributes, ['source'], undefined) !== 'nexus') {
         return undefined;
       }
-      const gameId = convertGameId(getSafe(mod.attributes, ['downloadGame'], undefined)
-                           || activeGameId(api.store.getState()));
+      let downloadGame = getSafe(mod.attributes, ['downloadGame'], undefined);
+      if (Array.isArray(downloadGame)) {
+        downloadGame = downloadGame[0];
+      }
+      const gameId = convertGameId(downloadGame || activeGameId(api.store.getState()));
       const gameEntry = nexusGames.find(game => game.domain_name === gameId);
       return (gameEntry !== undefined)
         ? gameEntry.name

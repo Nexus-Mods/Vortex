@@ -5,6 +5,7 @@ import { getSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
 
 import { ICategoryDictionary } from '../../category_management/types/ICategoryDictionary';
+import getDownloadGames from '../../download_management/util/getDownloadGames';
 import { IMod } from '../../mod_management/types/IMod';
 import filterModInfo from '../../mod_management/util/filterModInfo';
 import { activeGameId } from '../../profile_management/selectors';
@@ -43,7 +44,8 @@ class CategoryFilterComponent extends React.Component<IProps, IComponentState> {
     if (this.props.downloads !== newProps.downloads) {
 
       const before = Object.keys(this.props.downloads)
-        .filter(dlId => this.props.downloads[dlId].game === this.props.gameId);
+        .filter(dlId =>
+          getDownloadGames(this.props.downloads[dlId]).indexOf(this.props.gameId) !== -1);
 
       this.updateState(before, newProps, false);
     }
@@ -94,7 +96,7 @@ class CategoryFilterComponent extends React.Component<IProps, IComponentState> {
   private updateState(before: string[], props: IProps, force: boolean) {
     const archiveCategories = { ...this.state.archiveCategories };
     const after = Object.keys(props.downloads)
-      .filter(dlId => props.downloads[dlId].game === props.gameId);
+      .filter(dlId => getDownloadGames(props.downloads[dlId]).indexOf(props.gameId) !== -1);
     const removed: string[] = _.difference(before, after);
     // remove disappeared downloads
     removed.forEach(archiveId => { delete archiveCategories[archiveId]; });

@@ -23,6 +23,7 @@ import {IDownload} from './types/IDownload';
 import { IDownloadResult } from './types/IDownloadResult';
 import { ProgressCallback } from './types/ProgressCallback';
 import { IProtocolHandlers } from './types/ProtocolHandlers';
+import getDownloadGames from './util/getDownloadGames';
 import getDownloadPath from './util/getDownloadPath';
 
 import DownloadManager, { DownloadIsHTML, URLFunc } from './DownloadManager';
@@ -257,7 +258,8 @@ export class DownloadObserver {
       this.mManager.stop(downloadId);
     }
     if (truthy(download.localPath)) {
-      const dlPath = getDownloadPath(this.mStore.getState().settings.downloads.path, download.game);
+      const dlPath = getDownloadPath(
+        this.mStore.getState().settings.downloads.path, getDownloadGames(download)[0]);
       fs.removeAsync(path.join(dlPath, download.localPath))
           .then(() => { this.mStore.dispatch(removeDownload(downloadId)); })
           .catch(err => {
@@ -290,7 +292,7 @@ export class DownloadObserver {
       return;
     }
     if (download.state === 'paused') {
-      const gameMode = download.game;
+      const gameMode = getDownloadGames(download)[0];
       const downloadPath =
         getDownloadPath(this.mStore.getState().settings.downloads.path, gameMode);
 

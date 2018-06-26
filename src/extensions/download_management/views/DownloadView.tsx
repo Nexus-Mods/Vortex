@@ -25,10 +25,12 @@ import { IGameStored } from '../../gamemode_management/types/IGameStored';
 import { setShowDLDropzone, setShowDLGraph } from '../actions/settings';
 import { setDownloadTime } from '../actions/state';
 import { IDownload } from '../types/IDownload';
+import getDownloadGames from '../util/getDownloadGames';
 
 import { FILE_NAME, FILE_SIZE, LOGICAL_NAME, PROGRESS } from '../downloadAttributes';
 import { DownloadIsHTML } from '../DownloadManager';
 
+import DownloadGameList from './DownloadGameList';
 import DownloadGraph from './DownloadGraph';
 
 import * as Promise from 'bluebird';
@@ -147,8 +149,8 @@ const nop = () => null;
 
 class DownloadView extends ComponentEx<IProps, IComponentState> {
   public context: IComponentContext;
-  private gameColumn: ITableAttribute;
-  private fileTimeColumn: ITableAttribute;
+  private gameColumn: ITableAttribute<IDownload>;
+  private fileTimeColumn: ITableAttribute<IDownload>;
   private actions: ITableRowAction[];
 
   constructor(props: IProps) {
@@ -163,12 +165,36 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
     this.gameColumn = {
       id: 'game',
       name: 'Game',
-      description: 'The game this download is associated with',
+      description: 'The game(s) this download is associated with',
+      help: 'You can associate a download with multiple compatible games so it will show up '
+          + 'when managing those games as well.',
       icon: 'game',
-      calc: (attributes: IDownload) => {
-        const game = this.props.knownGames.find((ele: IGameStored) => attributes.game === ele.id);
-        return game ? this.props.t(game.shortName || game.name) : attributes.game;
+      customRenderer: (download: IDownload, detailCell: boolean,
+                       t: I18next.TranslationFunction) => {
+        const { downloads } = this.props;
+        const { store } = this.context.api;
+        // TODO: awkward!
+        const id = Object.keys(downloads).find(dlId => downloads[dlId] === download);
+        if (detailCell) {
+          return (
+            <DownloadGameList
+              t={t}
+              id={id}
+              currentGames={getDownloadGames(download)}
+              games={this.props.knownGames}
+            />);
+        } else {
+          const games = getDownloadGames(download);
+          const name = selectors.gameName(store.getState(), games[0]);
+          const more = games.length > 1 ? '...' : '';
+          return (
+            <div>
+              {name}{more}
+            </div>
+          );
+        }
       },
+      calc: (attributes: IDownload) => getDownloadGames(attributes),
       placement: 'both',
       isToggleable: true,
       edit: {},
@@ -192,7 +218,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
         const time = downloadTime(attributes);
 
         if ((time === undefined)
-            && ((attributes.game !== this.props.gameMode)
+            && ((getDownloadGames(attributes)[0] !== this.props.gameMode)
                 || (attributes.localPath === undefined))) {
           return null;
         }
@@ -214,7 +240,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
           return time;
         }
 
-        if ((attributes.game !== this.props.gameMode)
+        if ((getDownloadGames(attributes)[0] !== this.props.gameMode)
           || (attributes.localPath === undefined)) {
           return null;
         }

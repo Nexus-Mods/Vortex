@@ -29,6 +29,7 @@ import {currentActivator, installPath} from './selectors';
 import * as Promise from 'bluebird';
 import * as path from 'path';
 import getDownloadPath from '../download_management/util/getDownloadPath';
+import queryGameId from './util/queryGameId';
 
 export function onGameModeActivated(
     api: IExtensionApi, activators: IDeploymentMethod[], newGame: string) {
@@ -285,7 +286,7 @@ export function onAddMod(api: IExtensionApi, gameId: string,
 export function onStartInstallDownload(api: IExtensionApi,
                                        installManager: InstallManager,
                                        downloadId: string,
-                                       callback?: (error, id: string) => void) {
+                                       callback?: (error, id: string) => void): Promise<void> {
   const store = api.store;
   const state: IState = store.getState();
   const download: IDownload = state.persistent.downloads.files[downloadId];
@@ -295,29 +296,31 @@ export function onStartInstallDownload(api: IExtensionApi,
       + 'Please reinstall by installing the file from the downloads tab.', {
         allowReport: false,
       });
-    return;
+    return Promise.resolve();
   }
 
-  const gameId = download.game || activeGameId(state);
-  if (!truthy(download.localPath)) {
-    api.events.emit('refresh-downloads', gameId, () => {
-      api.showErrorNotification('Download invalid',
-      'Sorry, the meta data for this download is incomplete. Vortex has '
-      + 'tried to refreshed that data, please try again.',
-      { allowReport: false });
+  queryGameId(api.store, download.game)
+    .then(gameId => {
+      if (!truthy(download.localPath)) {
+        api.events.emit('refresh-downloads', gameId, () => {
+          api.showErrorNotification('Download invalid',
+            'Sorry, the meta data for this download is incomplete. Vortex has '
+            + 'tried to refreshed that data, please try again.',
+            { allowReport: false });
+        });
+        return Promise.resolve();
+      }
+
+      const downloadPath: string = getDownloadPath(state.settings.downloads.path, gameId);
+      if (downloadPath === undefined) {
+        api.showErrorNotification('Unknown Game',
+          'Failed to determine installation directory. This shouldn\'t have happened', {
+            allowReport: true,
+          });
+        return;
+      }
+      const fullPath: string = path.join(downloadPath, download.localPath);
+      installManager.install(downloadId, fullPath, download.game, api,
+        { download }, true, false, callback);
     });
-    return;
-  }
-
-  const downloadPath: string = getDownloadPath(state.settings.downloads.path, gameId);
-  if (downloadPath === undefined) {
-    api.showErrorNotification('Unknown Game',
-      'Failed to determine installation directory. This shouldn\'t have happened', {
-        allowReport: true,
-      });
-    return;
-  }
-  const fullPath: string = path.join(downloadPath, download.localPath);
-  installManager.install(downloadId, fullPath, download.game, api,
-    { download }, true, false, callback);
 }

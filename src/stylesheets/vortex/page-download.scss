@@ -78,3 +78,18 @@
 .progressbar-progress {
   transition: width ease 1s;
 }
+
+.archive-game-list {
+  max-height: 200px;
+  overflow-y: auto;
+  .primary-game {
+    font-weight: bold;
+  }
+}
+
+.game-list-container {
+  .dropdown-menu {
+    max-height: 300px;
+    overflow-y: auto;
+  }
+}
