@@ -1,5 +1,4 @@
 import { IError } from '../types/IError';
-import { IState } from '../types/IState';
 
 import ExtensionManager from './ExtensionManager';
 import { log } from './log';
@@ -7,17 +6,14 @@ import { getSafe } from './storeHelper';
 import { spawnSelf, truthy } from './util';
 
 import * as Promise from 'bluebird';
-import { spawn } from 'child_process';
 import {
   app as appIn,
-  clipboard,
   dialog as dialogIn,
   remote,
-  shell,
 } from 'electron';
 import * as fs from 'fs-extra-promise';
 import { t } from 'i18next';
-import NexusT from 'nexus-api';
+import NexusT, { IFeedbackResponse } from 'nexus-api';
 import {} from 'opn';
 import * as os from 'os';
 import * as path from 'path';
@@ -29,7 +25,6 @@ const opn = require('opn');
 
 // could be a bit more dynamic but how often is this going to change?
 const repo = 'Nexus-Mods/Vortex';
-const repoURL = 'https://github.com/' + repo;
 
 function createTitle(type: string, error: IError, hash: string) {
   return `${type}: ${error.message}`;
@@ -101,56 +96,8 @@ export function createErrorReport(type: string, error: IError, labels: string[],
   spawnSelf(['--report', reportPath]);
 }
 
-// unused code for reporting to github directly
-// TODO: remove eventually. If this gets reactivated for some reason, please replace
-//   node-rest-client with request
-/*
-function githubReport(hash: string, type: string, error: IError, labels: string[]): Promise<void> {
-  return new Promise<void>((resolve, reject) => {
-    const { Client } = require('node-rest-client') as typeof restT;
-    const client = new Client();
-    client.get(
-      `https://api.github.com/repos/${repo}/search/issues`,
-      {
-        q: hash,
-      },
-      (data, response) => {
-        const app = appIn || remote.app;
-        const dialog = dialogIn || remote.dialog;
-
-        let url: string;
-        if ((response.statusCode === 200) && (data.items.length > 0)) {
-          const action = dialog.showMessageBox(null, {
-            type: 'error',
-            buttons: ['Take me there'],
-            title: 'Already reported',
-            message: 'It appears this exact issue was already reported.',
-            noLink: true,
-          });
-          url = data.items[0].html_url;
-        } else {
-          clipboard.writeText(createReport(type, error, app.getVersion()));
-
-          const title = encodeURIComponent(createTitle(type, error, hash));
-          const body =
-            'Please paste the content of your clipboard here and describe what you did ' +
-            'when the error happened.';
-
-          const labelFragments =
-            labels.map((str: string) => `labels[]=${str}`).join('&');
-
-          url =
-            `${repoURL}/issues/new?title=${title}&${labelFragments}&body=${body}`;
-        }
-        shell.openExternal(url);
-        resolve();
-      });
-  });
-}
-*/
-
 function nexusReport(hash: string, type: string, error: IError, labels: string[],
-                     apiKey: string): Promise<void> {
+                     apiKey: string): Promise<IFeedbackResponse> {
   const app = appIn || remote.app;
   const Nexus: typeof NexusT = require('nexus-api').default;
 
@@ -163,10 +110,12 @@ function nexusReport(hash: string, type: string, error: IError, labels: string[]
     apiKey === undefined,
     hash,
     referenceId))
-  .then(() => opn(`https://www.nexusmods.com/crash-report/?key=${referenceId}`))
-  .then(() => undefined)
+  .tap(() => {
+    opn(`https://www.nexusmods.com/crash-report/?key=${referenceId}`);
+  })
   .catch(err => {
     log('error', 'failed to report error to nexus', err.message);
+    return undefined;
   });
 }
 
@@ -176,7 +125,7 @@ export function setApiKey(key: string) {
   fallbackAPIKey = key;
 }
 
-export function sendReportFile(fileName: string): Promise<void> {
+export function sendReportFile(fileName: string): Promise<IFeedbackResponse> {
   return fs.readFileAsync(fileName)
     .then(reportData => {
       const {type, error, labels, reporterId} = JSON.parse(reportData.toString());

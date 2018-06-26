@@ -1,13 +1,10 @@
 import { IDialogResult, showDialog } from '../../actions/notifications';
-import { setDialogVisible } from '../../actions/session';
-import Icon from '../../controls/Icon';
 import InputButton from '../../controls/InputButton';
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
 import { IModTable, IState } from '../../types/IState';
 import { ITableAttribute } from '../../types/ITableAttribute';
 import Debouncer from '../../util/Debouncer';
 import { setApiKey } from '../../util/errorHandling';
-import * as fs from '../../util/fs';
 import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
@@ -47,16 +44,15 @@ import { } from './views/Settings';
 import NXMUrl from './NXMUrl';
 
 import * as Promise from 'bluebird';
-import { app as appIn, remote } from 'electron';
+import { remote } from 'electron';
 import * as I18next from 'i18next';
-import NexusT, { IDownloadURL, IFileInfo, IGameListEntry,
+import NexusT, { IDownloadURL,
+                 IFeedbackResponse, IFileInfo, IGameListEntry,
                  IIssue, IModInfo,
                  NexusError as NexusErrorT} from 'nexus-api';
 import {} from 'opn';
-import * as path from 'path';
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
-import { Interpolate } from 'react-i18next';
 import * as Redux from 'redux';
 import * as util from 'util';
 import {} from 'uuid';
@@ -690,9 +686,9 @@ function once(api: IExtensionApi) {
 
   api.events.on('submit-feedback',
     (title: string, message: string, hash: string, feedbackFiles: string[],
-     anonymous: boolean, callback: (err: Error) => void) => {
+     anonymous: boolean, callback: (err: Error, respones?: IFeedbackResponse) => void) => {
       submitFeedback(nexus, title, message, feedbackFiles, anonymous, hash)
-        .then(() => callback(null))
+        .then(response => callback(null, response))
         .catch(err => callback(err));
     });
 
