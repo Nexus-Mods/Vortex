@@ -15,11 +15,14 @@ export const appReducer: IReducerSpec = {
       deleteOrNop(state, ['extensions', payload]),
     [actions.setInstanceId as any]: (state, payload) =>
       setSafe(state, ['instanceId'], payload),
+    [actions.setWarnedAdmin as any]: (state, payload) =>
+      setSafe(state, ['warnedAdmin'], payload),
   },
   defaults: {
     instanceId: undefined,
     version: '',
     extensions: {},
+    warnedAdmin: 0,
   },
   verifiers: {
     instanceId: { type: 'string' },

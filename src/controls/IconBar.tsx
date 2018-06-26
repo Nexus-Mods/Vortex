@@ -158,9 +158,8 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
   }
 
   public render(): JSX.Element {
-    const { actions, clickAnywhere, collapse, icon, id, instanceId,
+    const { actions, collapse, icon, id,
             orientation, className, style } = this.props;
-    const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
 
     const classes: string[] = [];
     if (className) {

@@ -110,6 +110,7 @@ export interface IApp {
   instanceId: string;
   version: string;
   extensions: { [id: string]: IExtensionState };
+  warnedAdmin: number;
 }
 
 /**

@@ -1,12 +1,7 @@
-import { DialogActions, DialogType,
-         IDialogContent, showDialog } from '../../../actions/notifications';
-import Advanced from '../../../controls/Advanced';
 import EmptyPlaceholder from '../../../controls/EmptyPlaceholder';
 import FlexLayout from '../../../controls/FlexLayout';
-import Icon from '../../../controls/Icon';
-import IconBar, { ButtonType } from '../../../controls/IconBar';
-import ToolbarIcon from '../../../controls/ToolbarIcon';
-import { Button, IconButton, ToggleButton } from '../../../controls/TooltipControls';
+import IconBar from '../../../controls/IconBar';
+import { IconButton, ToggleButton } from '../../../controls/TooltipControls';
 import { IActionDefinition } from '../../../types/IActionDefinition';
 import { IComponentContext } from '../../../types/IComponentContext';
 import { IDiscoveryPhase, IDiscoveryState, IState } from '../../../types/IState';
@@ -16,10 +11,9 @@ import { activeGameId } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import MainPage from '../../../views/MainPage';
 
-import { setGamePath } from '../../gamemode_management/actions/settings';
 import { IProfile } from '../../profile_management/types/IProfile';
 
-import { addDiscoveredGame, setGameHidden, setPickerLayout } from '../actions/settings';
+import { setPickerLayout } from '../actions/settings';
 import { IDiscoveryResult } from '../types/IDiscoveryResult';
 import { IGameStored } from '../types/IGameStored';
 
@@ -29,10 +23,8 @@ import ShowHiddenButton from './ShowHiddenButton';
 
 import * as Promise from 'bluebird';
 import * as update from 'immutability-helper';
-import * as PropTypes from 'prop-types';
 import * as React from 'react';
 import { Alert, ListGroup, ProgressBar, Tab, Tabs } from 'react-bootstrap';
-import * as ReactDOM from 'react-dom';
 
 function gameFromDiscovery(id: string, discovered: IDiscoveryResult): IGameStored {
   return {
@@ -62,12 +54,7 @@ interface IConnectedProps {
 }
 
 interface IActionProps {
-  onHide: (gameId: string, hidden: boolean) => void;
   onSetPickerLayout: (layout: 'list' | 'small' | 'large') => void;
-  onSetGamePath: (gameId: string, gamePath: string) => void;
-  onAddDiscoveredGame: (gameId: string, result: IDiscoveryResult) => void;
-  onShowDialog: (type: DialogType, title: string,
-                 content: IDialogContent, actions: DialogActions) => void;
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
@@ -277,8 +264,6 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
 
   private getBounds = () => this.mRef.getBoundingClientRect();
 
-  private getScrollContainer = () => this.mScrollRef;
-
   private toggleHidden = () => {
     this.setState(update(this.state, { showHidden: { $set: !this.state.showHidden } }));
   }
@@ -373,14 +358,6 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
       </div>
     );
   }
-
-  private setGamePath = (gameId: string, gamePath: string) => {
-    this.props.onSetGamePath(gameId, gamePath);
-  }
-
-  private addDiscoveredGame = (gameId: string, discovery: IDiscoveryResult) => {
-    this.props.onAddDiscoveredGame(gameId, discovery);
-  }
 }
 
 function mapStateToProps(state: IState): IConnectedProps {
@@ -396,16 +373,8 @@ function mapStateToProps(state: IState): IConnectedProps {
 
 function mapDispatchToProps(dispatch): IActionProps {
   return {
-    onHide: (gameId: string, hidden: boolean) =>
-      dispatch(setGameHidden(gameId, hidden)),
     onSetPickerLayout: (layout) =>
       dispatch(setPickerLayout(layout)),
-    onSetGamePath: (gameId: string, gamePath: string) =>
-      dispatch(setGamePath(gameId, gamePath)),
-    onAddDiscoveredGame: (gameId: string, result: IDiscoveryResult) =>
-      dispatch(addDiscoveredGame(gameId, result)),
-    onShowDialog: (type, title, content, actions) =>
-      dispatch(showDialog(type, title, content, actions)),
   };
 }
 
