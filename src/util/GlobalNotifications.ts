@@ -24,7 +24,7 @@ class GlobalNotifications {
         currentNotification = this.mKnownNotifications.find(
           (notification: INotification) => notification.id === this.mCurrentId);
         if (currentNotification === undefined) {
-          log('info', 'notification no longer exists', this.mCurrentId);
+          log('debug', 'notification no longer exists', this.mCurrentId);
           // notification no longer exists
           this.mCurrentId = undefined;
         }
@@ -32,20 +32,20 @@ class GlobalNotifications {
 
       // close notification if it was dismissed
       if ((this.mCurrentId === undefined) && (this.mCurrentNotification !== undefined)) {
-        log('info', 'close notification',
+        log('debug', 'close notification',
             { id: this.mCurrentNotification.tag, name: this.mCurrentNotification.body });
         this.mCurrentNotification.close();
         this.mCurrentNotification = undefined;
       } else if ((this.mCurrentNotification !== undefined) &&
                  (currentNotification.message !== this.mCurrentNotification.body)) {
-        log('info', 'replace notification', { id: this.mCurrentId });
+        log('debug', 'replace notification', { id: this.mCurrentId });
         this.mCurrentNotification.close();
         this.mCurrentNotification = undefined;
         this.showNotification(currentNotification);
       } else {
-        currentNotification = this.mKnownNotifications[0];
+        currentNotification = this.mKnownNotifications[this.mKnownNotifications.length - 1];
         if ((currentNotification !== undefined) && (this.mCurrentId !== currentNotification.id)) {
-          log('info', 'new notification', { id: currentNotification.id });
+          log('debug', 'new notification', { id: currentNotification.id });
           // Notification api broken as of electron 1.7.11
           // this.showNotification(currentNotification);
           api.events.emit('show-balloon', currentNotification.title, currentNotification.message);
