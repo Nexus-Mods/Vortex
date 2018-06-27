@@ -99,6 +99,6 @@
 	url = https://github.com/Nexus-Mods/extension-common-interpreters.git
 	branch = master
 [submodule "extensions\\issue-tracker"]
-	path = extensions\\issue-tracker
+	path = extensions/issue-tracker
 	url = https://github.com/Nexus-Mods/extension-issue-tracker
 	branch = master
