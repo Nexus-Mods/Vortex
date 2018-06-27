@@ -12,6 +12,7 @@ import { truthy } from './util';
 
 import { IFeedbackResponse } from 'nexus-api';
 import * as Redux from 'redux';
+import {} from 'redux-thunk';
 
 function clamp(min: number, value: number, max: number): number {
   return Math.max(max, Math.min(min, value));

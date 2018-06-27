@@ -2681,6 +2681,14 @@ cpx@^1.5.0:
     shell-quote "^1.6.1"
     subarg "^1.0.0"
 
+crash-dump@Nexus-Mods/node-crash-dump:
+  version "1.0.2"
+  resolved "https://codeload.github.com/Nexus-Mods/node-crash-dump/tar.gz/306309eda9cfea59bb66a4a1dfdf777d325a1578"
+  dependencies:
+    autogypi "^0.2.2"
+    nan "^2.8.0"
+    node-gyp "^3.6.2"
+
 create-ecdh@^4.0.0:
   version "4.0.0"
   resolved "https://registry.yarnpkg.com/create-ecdh/-/create-ecdh-4.0.0.tgz#888c723596cdf7612f6498233eebd7a35301737d"
@@ -6885,8 +6893,8 @@ next-tick@1:
   resolved "https://registry.yarnpkg.com/next-tick/-/next-tick-1.0.0.tgz#ca86d1fe8828169b0120208e3dc8424b9db8342c"
 
 nexus-api@Nexus-Mods/node-nexus-api:
-  version "0.5.1"
-  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/f04390a871d2c410256ac7e58df0a306072a6fe8"
+  version "0.5.3"
+  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/9601acf1dcdb35e77b9028f1e76f41797d1779d4"
   dependencies:
     request "^2.85.0"
     string-template "^1.0.0"

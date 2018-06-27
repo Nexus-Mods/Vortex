@@ -189,6 +189,7 @@
     "lodash": "^4.17.4",
     "minimatch": "^3.0.4",
     "modmeta-db": "Nexus-Mods/modmeta-db",
+    "moment": "^2.22.2",
     "nexus-api": "Nexus-Mods/node-nexus-api",
     "node-7z": "Nexus-Mods/node-7z",
     "node-ipc": "^9.1.1",
