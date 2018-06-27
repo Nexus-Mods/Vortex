@@ -132,6 +132,8 @@ class DownloadWorker {
         },
         agent: new lib.Agent(),
       }, (res) => {
+        log('debug', 'downloading from',
+            { address: `${res.connection.remoteAddress}:${res.connection.remotePort}` });
         this.mResponse = res;
         this.handleResponse(res);
         res
@@ -618,6 +620,7 @@ class DownloadManager {
         // actual urls may have to be resolved first
         (download.urls as URLFunc)()
           .then(urls => {
+            log('info', 'resolved download urls', { urls });
             download.urls = urls;
             job.url = download.urls[0];
             this.startJob(download, job);

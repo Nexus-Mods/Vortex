@@ -53,9 +53,11 @@ class MainWindow {
     // trouble loading the page
     // this.mWindow.webContents.openDevTools();
     this.mWindow.webContents.on('console-message' as any,
-      (evt: Electron.Event, level: number, message: string, ...rest) => {
+      (evt: Electron.Event, level: number, message: string) => {
         if (level !== 2) {
-          log('info', message, { rest });
+          // TODO: at the time of writing (electron 2.0.3) this event doesn't seem to
+          //   provide the other parameters of the message
+          log('info', message);
         } else {
           setTimeout(() => {
             if (!this.mShown) {
