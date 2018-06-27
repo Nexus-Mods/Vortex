@@ -490,7 +490,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     nextProfileId: state.settings.profiles.nextProfileId,
     progressProfile: getSafe(state.session.base, ['progress', 'profile'], undefined),
     customTitlebar: state.settings.window.customTitlebar,
-    userInfo: getSafe(state, ['session', 'nexus', 'userInfo'], undefined),
+    userInfo: getSafe(state, ['persistent', 'nexus', 'userInfo'], undefined),
     APIKey: getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], ''),
     notifications: state.session.notifications.notifications,
   };

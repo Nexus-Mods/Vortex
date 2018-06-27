@@ -71,7 +71,7 @@ function mapStateToProps(state: any): IConnectedProps {
   return {
     parallelDownloads: state.settings.downloads.maxParallelDownloads,
     // TODO: this breaks encapsulation
-    isPremium: getSafe(state, ['session', 'nexus', 'userInfo', 'isPremium'], false),
+    isPremium: getSafe(state, ['persistent', 'nexus', 'userInfo', 'isPremium'], false),
   };
 }
 

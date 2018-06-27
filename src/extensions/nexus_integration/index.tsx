@@ -409,7 +409,7 @@ function createEndorsedIcon(store: Redux.Store<any>, mod: IMod, t: I18next.Trans
   }
 
   if (getSafe(mod.attributes, ['author'], undefined)
-      === getSafe(store.getState(), ['session', 'nexus', 'userInfo', 'name'], undefined)) {
+      === getSafe(store.getState(), ['persistent', 'nexus', 'userInfo', 'name'], undefined)) {
     endorsed = undefined;
   }
 
@@ -698,8 +698,8 @@ function once(api: IExtensionApi) {
 
   api.events.on('mod-update', (gameId, modId, fileId) => {
     const state: IState = api.store.getState();
-    if (!getSafe(state, ['session', 'nexus', 'userInfo', 'isPremium'], false)
-      && !getSafe(state, ['session', 'nexus', 'userInfo', 'isSupporter'], false)) {
+    if (!getSafe(state, ['persistent', 'nexus', 'userInfo', 'isPremium'], false)
+      && !getSafe(state, ['persistent', 'nexus', 'userInfo', 'isSupporter'], false)) {
       // nexusmods can't let users download files directly from client, without
       // showing ads
       opn(['https://www.nexusmods.com', convertGameId(gameId), 'mods', modId].join('/'))
@@ -849,7 +849,7 @@ function init(context: IExtensionContextExt): boolean {
   context.registerSettings('Download', LazyComponent(() => require('./views/Settings')));
   context.registerReducer(['confidential', 'account', 'nexus'], accountReducer);
   context.registerReducer(['settings', 'nexus'], settingsReducer);
-  context.registerReducer(['session', 'nexus'], sessionReducer);
+  context.registerReducer(['persistent', 'nexus'], sessionReducer);
   context.registerDialog('login-dialog', LoginDialog, () => ({ nexus }));
   context.registerBanner('downloads', () => {
     const t = context.api.translate;
@@ -861,7 +861,7 @@ function init(context: IExtensionContextExt): boolean {
       </div>);
   }, {
     props: {
-      isPremium: state => getSafe(state, ['session', 'nexus', 'userInfo', 'isPremium'], false),
+      isPremium: state => getSafe(state, ['persistent', 'nexus', 'userInfo', 'isPremium'], false),
     },
     condition: (props: any): boolean => !props.isPremium,
   });
@@ -879,9 +879,9 @@ function init(context: IExtensionContextExt): boolean {
       </div>);
   }, {
     props: {
-      isPremium: state => getSafe(state, ['session', 'nexus', 'userInfo', 'isPremium'], false),
+      isPremium: state => getSafe(state, ['persistent', 'nexus', 'userInfo', 'isPremium'], false),
       isSupporter: state =>
-        getSafe(state, ['session', 'nexus', 'userInfo', 'isSupporter'], false),
+        getSafe(state, ['persistent', 'nexus', 'userInfo', 'isSupporter'], false),
     },
     condition: (props: any): boolean => !props.isPremium && !props.isSupporter,
   });
@@ -924,8 +924,8 @@ function init(context: IExtensionContextExt): boolean {
   });
 
   context.registerDashlet('Go Premium', 1, 2, 200, GoPremiumDashlet, (state: IState) =>
-    (getSafe(state, ['session', 'nexus', 'userInfo', 'isPremium'], undefined) !== true)
-    && (getSafe(state, ['session', 'nexus', 'userInfo', 'isSupporter'], undefined) !== true),
+    (getSafe(state, ['persistent', 'nexus', 'userInfo', 'isPremium'], undefined) !== true)
+    && (getSafe(state, ['persistent', 'nexus', 'userInfo', 'isSupporter'], undefined) !== true),
     undefined, {
     fixed: false,
     closable: false,
