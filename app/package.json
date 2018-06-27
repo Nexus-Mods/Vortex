@@ -11,7 +11,7 @@
     "url": "https://github.com/Nexus-Mods/Vortex"
   },
   "vortex": {
-    "electron": "2.0.2"
+    "electron": "2.0.3"
   },
   "dependencies": {
     "bbcode-to-react": "TanninOne/bbcode-to-react",
@@ -64,20 +64,15 @@
     "react-dom": "^16.2.0",
     "react-fontawesome": "^1.6.1",
     "react-i18next": "^6.0.6",
-    "react-layout-pane": "Nexus-Mods/react-layout-pane",
     "react-markdown": "^2.5.0",
     "react-redux": "^5.0.6",
     "react-resize-detector": "^2.3.0",
     "react-safe-html": "TanninOne/react-safe-html",
     "react-select": "^1.2.1",
     "react-sortable-tree": "^1.4.0",
-    "react-split-pane": "^0.1.66",
     "recharts": "^1.0.0-beta.0",
     "redux": "^3.7.2",
     "redux-act": "^1.7.3",
-    "redux-devtools": "^3.4.0",
-    "redux-devtools-dispatch": "^2.2.1",
-    "redux-devtools-log-monitor": "^1.3.0",
     "redux-electron-store": "^0.4.1",
     "redux-thunk": "^2.2.0",
     "redux-watcher": "^1.0.1",
@@ -99,7 +94,6 @@
     "vortex-run": "file:../src/util/vortex-run",
     "winreg": "^1.2.4",
     "winston": "^2.4.0",
-    "ws": "^4.0.0",
-    "xml2js": "^0.4.19"
+    "ws": "^4.0.0"
   }
 }

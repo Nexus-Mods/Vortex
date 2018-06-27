@@ -9,7 +9,7 @@
     "url": "https://github.com/Nexus-Mods/Vortex"
   },
   "vortex": {
-    "electron": "2.0.2"
+    "electron": "2.0.3"
   },
   "scripts": {
     "_assets_out": "node InstallAssets.js out",
@@ -130,8 +130,9 @@
     "copyfiles": "^1.2.0",
     "cross-env": "^5.1.0",
     "devtron": "^1.4.0",
-    "electron": "2.0.2",
+    "electron": "2.0.3",
     "electron-builder": "^20.11.1",
+    "electron-devtools-installer": "^2.2.1",
     "electron-download-tf": "^4.3.4",
     "electron-rebuild": "^1.6.0",
     "enzyme": "^3.1.0",
@@ -169,7 +170,6 @@
     "draggabilly": "^2.1.1",
     "drivelist": "^6.1.8",
     "edge": "^7.10.1",
-    "electron-devtools-installer": "^2.2.1",
     "electron-updater": "^2.21.10",
     "exe-version": "Nexus-Mods/node-exe-version",
     "feedparser": "^2.2.2",
@@ -212,7 +212,6 @@
     "react-safe-html": "TanninOne/react-safe-html",
     "react-select": "^1.2.1",
     "react-sortable-tree": "^1.4.0",
-    "react-split-pane": "^0.1.66",
     "react-transition-group": "^2.2.1",
     "recharts": "^1.0.0-beta.0",
     "redux": "^3.7.2",

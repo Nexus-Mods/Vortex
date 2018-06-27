@@ -24,7 +24,6 @@ function externalsDirect(): webpack.ExternalsObjectElement {
     'react-dnd-html5-backend',
     'react-dom',
     'react-i18next',
-    'react-layout-pane',
     'react-redux',
     'redux-act',
     'ref',

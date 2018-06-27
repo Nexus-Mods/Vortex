@@ -33,6 +33,14 @@
     "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\abstract-leveldown",
     "licenseFile": "node_modules\\abstract-leveldown\\LICENSE.md"
   },
+  "abstract-leveldown@2.7.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/level/abstract-leveldown",
+    "name": "abstract-leveldown",
+    "version": "2.7.2",
+    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\modmeta-db\\node_modules\\abstract-leveldown",
+    "licenseFile": "node_modules\\modmeta-db\\node_modules\\abstract-leveldown\\LICENSE.md"
+  },
   "accepts@1.3.4": {
     "licenses": "MIT",
     "repository": "https://github.com/jshttp/accepts",
@@ -320,17 +328,6 @@
     "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\brace-expansion\\node_modules\\balanced-match",
     "licenseFile": "node_modules\\brace-expansion\\node_modules\\balanced-match\\LICENSE.md"
   },
-  "base16@1.0.0": {
-    "licenses": "MIT",
-    "repository": "https://github.com/gaearon/base16-js",
-    "publisher": "Dan Abramov",
-    "email": "dan.abramov@me.com",
-    "url": "http://github.com/gaearon",
-    "name": "base16",
-    "version": "1.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\base16",
-    "licenseFile": "node_modules\\base16\\LICENSE.md"
-  },
   "bbcode-to-react@0.2.8": {
     "licenses": "MIT",
     "repository": "https://github.com/JimLiu/bbcode-to-react",
@@ -456,17 +453,6 @@
     "version": "3.3.7",
     "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\bootstrap-sass",
     "licenseFile": "node_modules\\bootstrap-sass\\LICENSE"
-  },
-  "bowser@1.9.1": {
-    "licenses": "MIT",
-    "repository": "https://github.com/ded/bowser",
-    "publisher": "Dustin Diaz",
-    "email": "dustin@dustindiaz.com",
-    "url": "http://dustindiaz.com",
-    "name": "bowser",
-    "version": "1.9.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\bowser",
-    "licenseFile": "node_modules\\bowser\\LICENSE"
   },
   "brace-expansion@1.1.8": {
     "licenses": "MIT",
@@ -818,14 +804,14 @@
     "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\core-util-is",
     "licenseFile": "node_modules\\core-util-is\\LICENSE"
   },
-  "crash-dump@1.0.0": {
+  "crash-dump@1.0.2": {
     "licenses": "GPL-3.0",
     "publisher": "Black Tree Gaming Ltd",
     "name": "crash-dump",
-    "version": "1.0.0",
+    "version": "1.0.2",
     "repository": "",
     "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\crash-dump",
-    "licenseFile": "node_modules\\crash-dump\\README.md"
+    "licenseFile": "node_modules\\crash-dump\\LICENSE.md"
   },
   "cross-spawn@3.0.1": {
     "licenses": "MIT",
@@ -837,6 +823,17 @@
     "version": "3.0.1",
     "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\cross-spawn",
     "licenseFile": "node_modules\\cross-spawn\\LICENSE"
+  },
+  "cross-spawn@5.1.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/IndigoUnited/node-cross-spawn",
+    "publisher": "IndigoUnited",
+    "email": "hello@indigounited.com",
+    "url": "http://indigounited.com",
+    "name": "cross-spawn",
+    "version": "5.1.0",
+    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\execa\\node_modules\\cross-spawn",
+    "licenseFile": "node_modules\\execa\\node_modules\\cross-spawn\\LICENSE"
   },
   "cryptiles@2.0.5": {
     "licenses": "BSD-3-Clause",
@@ -853,16 +850,6 @@
     "version": "3.1.2",
     "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\request\\node_modules\\cryptiles",
     "licenseFile": "node_modules\\request\\node_modules\\cryptiles\\LICENSE"
-  },
-  "css-in-js-utils@2.0.0": {
-    "licenses": "MIT",
-    "repository": "https://github.com/rofrischmann/css-in-js-utils",
-    "publisher": "Robin Frischmann",
-    "email": "robin@rofrischmann.de",
-    "name": "css-in-js-utils",
-    "version": "2.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\css-in-js-utils",
-    "licenseFile": "node_modules\\css-in-js-utils\\LICENSE"
   },
   "css-select@1.2.0": {
     "licenses": "BSD*",
@@ -1756,6 +1743,17 @@
     "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\exe-version",
     "licenseFile": "node_modules\\exe-version\\README.md"
   },
+  "execa@0.6.3": {
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/execa",
+    "publisher": "Sindre Sorhus",
+    "email": "sindresorhus@gmail.com",
+    "url": "sindresorhus.com",
+    "name": "execa",
+    "version": "0.6.3",
+    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\execa",
+    "licenseFile": "node_modules\\execa\\license"
+  },
   "expand-template@1.1.0": {
     "licenses": "WTFPL",
     "repository": "https://github.com/ralphtheninja/expand-template",
@@ -2099,15 +2097,6 @@
     "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\get-caller-file",
     "licenseFile": "node_modules\\get-caller-file\\README.md"
   },
-  "get-params@0.1.2": {
-    "licenses": "MIT",
-    "repository": "https://github.com/fahad19/get-params",
-    "publisher": "Fahad Ibnay Heylaal",
-    "name": "get-params",
-    "version": "0.1.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\get-params",
-    "licenseFile": "node_modules\\get-params\\README.md"
-  },
   "get-size@2.0.2": {
     "licenses": "MIT",
     "repository": "https://github.com/desandro/get-size",
@@ -2127,6 +2116,17 @@
     "version": "4.0.1",
     "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\get-stdin",
     "licenseFile": "node_modules\\get-stdin\\readme.md"
+  },
+  "get-stream@3.0.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/get-stream",
+    "publisher": "Sindre Sorhus",
+    "email": "sindresorhus@gmail.com",
+    "url": "sindresorhus.com",
+    "name": "get-stream",
+    "version": "3.0.0",
+    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\get-stream",
+    "licenseFile": "node_modules\\get-stream\\license"
   },
   "getpass@0.1.7": {
     "licenses": "MIT",
@@ -2412,16 +2412,6 @@
     "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\request\\node_modules\\http-signature",
     "licenseFile": "node_modules\\request\\node_modules\\http-signature\\LICENSE"
   },
-  "hyphenate-style-name@1.0.2": {
-    "licenses": "BSD-3-Clause",
-    "repository": "https://github.com/rexxars/hyphenate-style-name",
-    "publisher": "Espen Hovlandsdal",
-    "email": "espen@hovlandsdal.com",
-    "name": "hyphenate-style-name",
-    "version": "1.0.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\hyphenate-style-name",
-    "licenseFile": "node_modules\\hyphenate-style-name\\LICENSE"
-  },
   "i18next-node-fs-backend@1.0.0": {
     "licenses": "MIT",
     "publisher": "Jan Mühlemann",
@@ -2533,15 +2523,6 @@
     "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\ini",
     "licenseFile": "node_modules\\ini\\LICENSE"
   },
-  "inline-style-prefixer@3.0.8": {
-    "licenses": "MIT",
-    "repository": "https://github.com/rofrischmann/inline-style-prefixer",
-    "publisher": "Robin Frischmann",
-    "name": "inline-style-prefixer",
-    "version": "3.0.8",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\inline-style-prefixer",
-    "licenseFile": "node_modules\\inline-style-prefixer\\LICENSE"
-  },
   "invariant@2.2.2": {
     "licenses": "BSD-3-Clause",
     "repository": "https://github.com/zertosh/invariant",
@@ -2572,6 +2553,17 @@
     "version": "1.5.2",
     "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\ipaddr.js",
     "licenseFile": "node_modules\\ipaddr.js\\LICENSE"
+  },
+  "is-admin@2.1.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/is-admin",
+    "publisher": "Sindre Sorhus",
+    "email": "sindresorhus@gmail.com",
+    "url": "sindresorhus.com",
+    "name": "is-admin",
+    "version": "2.1.1",
+    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\is-admin",
+    "licenseFile": "node_modules\\is-admin\\license"
   },
   "is-arrayish@0.2.1": {
     "licenses": "MIT",
@@ -2993,6 +2985,14 @@
     "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\leveldown",
     "licenseFile": "node_modules\\leveldown\\LICENSE.md"
   },
+  "leveldown@1.9.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/level/leveldown",
+    "name": "leveldown",
+    "version": "1.9.0",
+    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\modmeta-db\\node_modules\\leveldown",
+    "licenseFile": "node_modules\\modmeta-db\\node_modules\\leveldown\\LICENSE.md"
+  },
   "levelup@1.3.5": {
     "licenses": "MIT",
     "repository": "https://github.com/level/levelup",
@@ -3084,17 +3084,6 @@
     "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\lodash.clonedeep",
     "licenseFile": "node_modules\\lodash.clonedeep\\LICENSE"
   },
-  "lodash.curry@4.1.1": {
-    "licenses": "MIT",
-    "repository": "https://github.com/lodash/lodash",
-    "publisher": "John-David Dalton",
-    "email": "john.david.dalton@gmail.com",
-    "url": "http://allyoucanleet.com/",
-    "name": "lodash.curry",
-    "version": "4.1.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\lodash.curry",
-    "licenseFile": "node_modules\\lodash.curry\\LICENSE"
-  },
   "lodash.debounce@4.0.8": {
     "licenses": "MIT",
     "repository": "https://github.com/lodash/lodash",
@@ -3138,17 +3127,6 @@
     "version": "4.4.0",
     "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\lodash.flatten",
     "licenseFile": "node_modules\\lodash.flatten\\LICENSE"
-  },
-  "lodash.flow@3.5.0": {
-    "licenses": "MIT",
-    "repository": "https://github.com/lodash/lodash",
-    "publisher": "John-David Dalton",
-    "email": "john.david.dalton@gmail.com",
-    "url": "http://allyoucanleet.com/",
-    "name": "lodash.flow",
-    "version": "3.5.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\lodash.flow",
-    "licenseFile": "node_modules\\lodash.flow\\LICENSE"
   },
   "lodash.foreach@4.5.0": {
     "licenses": "MIT",
@@ -3529,14 +3507,25 @@
     "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\mkdirp",
     "licenseFile": "node_modules\\mkdirp\\LICENSE"
   },
-  "modmeta-db@0.1.1": {
+  "modmeta-db@0.1.3": {
     "licenses": "GPL-3.0",
     "publisher": "Black Tree Gaming Ltd",
     "name": "modmeta-db",
-    "version": "0.1.1",
+    "version": "0.1.3",
     "repository": "",
     "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\modmeta-db",
     "licenseFile": "node_modules\\modmeta-db\\LICENSE.md"
+  },
+  "moment@2.22.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/moment/moment",
+    "publisher": "Iskren Ivov Chernev",
+    "email": "iskren.chernev@gmail.com",
+    "url": "https://github.com/ichernev",
+    "name": "moment",
+    "version": "2.22.2",
+    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\moment",
+    "licenseFile": "node_modules\\moment\\LICENSE"
   },
   "mri@1.1.0": {
     "licenses": "MIT",
@@ -3598,6 +3587,14 @@
     "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\leveldown\\node_modules\\nan",
     "licenseFile": "node_modules\\leveldown\\node_modules\\nan\\LICENSE.md"
   },
+  "nan@2.7.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/nodejs/nan",
+    "name": "nan",
+    "version": "2.7.0",
+    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\modmeta-db\\node_modules\\nan",
+    "licenseFile": "node_modules\\modmeta-db\\node_modules\\nan\\LICENSE.md"
+  },
   "nan@2.8.0": {
     "licenses": "MIT",
     "repository": "https://github.com/nodejs/nan",
@@ -3631,23 +3628,23 @@
     "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\negotiator",
     "licenseFile": "node_modules\\negotiator\\LICENSE"
   },
-  "nexus-api@0.5.0": {
+  "nexus-api@0.5.3": {
     "licenses": "UNLICENSED",
     "private": true,
     "publisher": "Black Tree Gaming Ltd.",
     "name": "nexus-api",
-    "version": "0.5.0",
+    "version": "0.5.3",
     "repository": "",
     "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\nexus-api",
     "licenseFile": "node_modules\\nexus-api\\LICENSE.md"
   },
-  "node-7z@0.7.0": {
+  "node-7z@0.7.1": {
     "licenses": "ISC",
     "repository": "https://github.com/quentinrossetti/node-7zip",
     "publisher": "Quentin Rossetti",
     "email": "quentin.rossetti@gmail.com",
     "name": "node-7z",
-    "version": "0.7.0",
+    "version": "0.7.1",
     "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\node-7z",
     "licenseFile": "node_modules\\node-7z\\LICENSE"
   },
@@ -3776,6 +3773,17 @@
     "version": "2.4.0",
     "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\normalize-package-data",
     "licenseFile": "node_modules\\normalize-package-data\\LICENSE"
+  },
+  "npm-run-path@2.0.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/npm-run-path",
+    "publisher": "Sindre Sorhus",
+    "email": "sindresorhus@gmail.com",
+    "url": "sindresorhus.com",
+    "name": "npm-run-path",
+    "version": "2.0.2",
+    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\npm-run-path",
+    "licenseFile": "node_modules\\npm-run-path\\license"
   },
   "npmlog@4.1.2": {
     "licenses": "ISC",
@@ -3923,6 +3931,17 @@
     "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\outlayer",
     "licenseFile": "node_modules\\outlayer\\README.md"
   },
+  "p-finally@1.0.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/p-finally",
+    "publisher": "Sindre Sorhus",
+    "email": "sindresorhus@gmail.com",
+    "url": "sindresorhus.com",
+    "name": "p-finally",
+    "version": "1.0.0",
+    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\p-finally",
+    "licenseFile": "node_modules\\p-finally\\license"
+  },
   "packery@2.1.1": {
     "licenses": "GPL-3.0",
     "repository": "https://github.com/metafizzy/packery",
@@ -3982,6 +4001,17 @@
     "version": "1.0.1",
     "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\path-is-absolute",
     "licenseFile": "node_modules\\path-is-absolute\\license"
+  },
+  "path-key@2.0.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/path-key",
+    "publisher": "Sindre Sorhus",
+    "email": "sindresorhus@gmail.com",
+    "url": "sindresorhus.com",
+    "name": "path-key",
+    "version": "2.0.1",
+    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\path-key",
+    "licenseFile": "node_modules\\path-key\\license"
   },
   "path-to-regexp@0.1.7": {
     "licenses": "MIT",
@@ -4207,15 +4237,6 @@
     "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\punycode",
     "licenseFile": "node_modules\\punycode\\README.md"
   },
-  "pure-color@1.3.0": {
-    "licenses": "MIT",
-    "repository": "https://github.com/WickyNilliams/pure-color",
-    "publisher": "Nick Williams",
-    "name": "pure-color",
-    "version": "1.3.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\pure-color",
-    "licenseFile": "node_modules\\pure-color\\LICENSE"
-  },
   "qs@6.3.2": {
     "licenses": "BSD-3-Clause",
     "repository": "https://github.com/ljharb/qs",
@@ -4298,17 +4319,6 @@
     "version": "15.6.2",
     "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\react-addons-shallow-compare",
     "licenseFile": "node_modules\\react-addons-shallow-compare\\LICENSE"
-  },
-  "react-base16-styling@0.5.3": {
-    "licenses": "MIT",
-    "repository": "https://github.com/alexkuz/react-base16-styling",
-    "publisher": "Alexander",
-    "email": "alexkuz@gmail.com",
-    "url": "http://kuzya.org/",
-    "name": "react-base16-styling",
-    "version": "0.5.3",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\react-base16-styling",
-    "licenseFile": "node_modules\\react-base16-styling\\LICENSE"
   },
   "react-bootstrap@0.32.0": {
     "licenses": "MIT",
@@ -4405,27 +4415,6 @@
     "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\react-input-autosize",
     "licenseFile": "node_modules\\react-input-autosize\\LICENSE"
   },
-  "react-json-tree@0.11.0": {
-    "licenses": "MIT",
-    "repository": "https://github.com/chibicode/react-json-tree",
-    "publisher": "Shu Uesugi",
-    "email": "shu@chibicode.com",
-    "url": "http://github.com/chibicode",
-    "name": "react-json-tree",
-    "version": "0.11.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\react-json-tree",
-    "licenseFile": "node_modules\\react-json-tree\\LICENSE.md"
-  },
-  "react-layout-pane@0.1.17": {
-    "licenses": "MIT",
-    "repository": "https://github.com/tomkp/react-layout-pane",
-    "publisher": "tomkp",
-    "email": "tom@tomkp.com",
-    "name": "react-layout-pane",
-    "version": "0.1.17",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\react-layout-pane",
-    "licenseFile": "node_modules\\react-layout-pane\\LICENSE"
-  },
   "react-markdown@2.5.1": {
     "licenses": "MIT",
     "repository": "https://github.com/rexxars/react-markdown",
@@ -4474,17 +4463,6 @@
     "version": "0.4.0",
     "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\react-prop-types",
     "licenseFile": "node_modules\\react-prop-types\\LICENSE"
-  },
-  "react-pure-render@1.0.2": {
-    "licenses": "MIT",
-    "repository": "https://github.com/gaearon/react-pure-render",
-    "publisher": "Dan Abramov",
-    "email": "dan.abramov@me.com",
-    "url": "http://github.com/gaearon",
-    "name": "react-pure-render",
-    "version": "1.0.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\react-pure-render",
-    "licenseFile": "node_modules\\react-pure-render\\LICENSE"
   },
   "react-redux@5.0.6": {
     "licenses": "MIT",
@@ -4554,26 +4532,6 @@
     "version": "1.5.4",
     "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\react-sortable-tree",
     "licenseFile": "node_modules\\react-sortable-tree\\LICENSE"
-  },
-  "react-split-pane@0.1.74": {
-    "licenses": "MIT",
-    "repository": "https://github.com/tomkp/react-split-pane",
-    "publisher": "tomkp",
-    "email": "tom@tomkp.com",
-    "name": "react-split-pane",
-    "version": "0.1.74",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\react-split-pane",
-    "licenseFile": "node_modules\\react-split-pane\\LICENSE"
-  },
-  "react-style-proptype@3.1.0": {
-    "licenses": "MIT",
-    "repository": "https://github.com/brigand/react-style-proptype",
-    "publisher": "Frankie Bagnardi",
-    "email": "f.bagnardi@gmail.com",
-    "name": "react-style-proptype",
-    "version": "3.1.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\react-style-proptype",
-    "licenseFile": "node_modules\\react-style-proptype\\README.md"
   },
   "react-transition-group@1.2.1": {
     "licenses": "BSD-3-Clause",
@@ -4724,61 +4682,6 @@
     "version": "1.7.3",
     "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\redux-act",
     "licenseFile": "node_modules\\redux-act\\LICENSE"
-  },
-  "redux-devtools-dispatch@2.2.1": {
-    "licenses": "MIT",
-    "repository": "https://github.com/YoruNoHikage/redux-devtools-dispatch",
-    "publisher": "Alexis Launay",
-    "email": "yorunohikage@gmail.com",
-    "url": "http://github.com/YoruNoHikage",
-    "name": "redux-devtools-dispatch",
-    "version": "2.2.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\redux-devtools-dispatch",
-    "licenseFile": "node_modules\\redux-devtools-dispatch\\LICENSE"
-  },
-  "redux-devtools-instrument@1.8.2": {
-    "licenses": "MIT",
-    "repository": "https://github.com/zalmoxisus/redux-devtools-instrument",
-    "publisher": "Dan Abramov",
-    "email": "dan.abramov@me.com",
-    "url": "http://github.com/gaearon",
-    "name": "redux-devtools-instrument",
-    "version": "1.8.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\redux-devtools-instrument",
-    "licenseFile": "node_modules\\redux-devtools-instrument\\LICENSE.md"
-  },
-  "redux-devtools-log-monitor@1.4.0": {
-    "licenses": "MIT",
-    "repository": "https://github.com/gaearon/redux-devtools-log-monitor",
-    "publisher": "Dan Abramov",
-    "email": "dan.abramov@me.com",
-    "url": "http://github.com/gaearon",
-    "name": "redux-devtools-log-monitor",
-    "version": "1.4.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\redux-devtools-log-monitor",
-    "licenseFile": "node_modules\\redux-devtools-log-monitor\\LICENSE.md"
-  },
-  "redux-devtools-themes@1.0.0": {
-    "licenses": "MIT",
-    "repository": "https://github.com/gaearon/redux-devtools-themes",
-    "publisher": "Dan Abramov",
-    "email": "dan.abramov@me.com",
-    "url": "http://github.com/gaearon",
-    "name": "redux-devtools-themes",
-    "version": "1.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\redux-devtools-themes",
-    "licenseFile": "node_modules\\redux-devtools-themes\\LICENSE.md"
-  },
-  "redux-devtools@3.4.1": {
-    "licenses": "MIT",
-    "repository": "https://github.com/gaearon/redux-devtools",
-    "publisher": "Dan Abramov",
-    "email": "dan.abramov@me.com",
-    "url": "http://github.com/gaearon",
-    "name": "redux-devtools",
-    "version": "3.4.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\redux-devtools",
-    "licenseFile": "node_modules\\redux-devtools\\LICENSE.md"
   },
   "redux-electron-store@0.4.1": {
     "licenses": "MIT",
@@ -5128,6 +5031,28 @@
     "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\setprototypeof",
     "licenseFile": "node_modules\\setprototypeof\\LICENSE"
   },
+  "shebang-command@1.2.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/kevva/shebang-command",
+    "publisher": "Kevin Martensson",
+    "email": "kevinmartensson@gmail.com",
+    "url": "github.com/kevva",
+    "name": "shebang-command",
+    "version": "1.2.0",
+    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\shebang-command",
+    "licenseFile": "node_modules\\shebang-command\\license"
+  },
+  "shebang-regex@1.0.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/shebang-regex",
+    "publisher": "Sindre Sorhus",
+    "email": "sindresorhus@gmail.com",
+    "url": "sindresorhus.com",
+    "name": "shebang-regex",
+    "version": "1.0.0",
+    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\shebang-regex",
+    "licenseFile": "node_modules\\shebang-regex\\license"
+  },
   "shortid@2.2.8": {
     "licenses": "MIT",
     "repository": "https://github.com/dylang/shortid",
@@ -5407,6 +5332,17 @@
     "version": "2.0.0",
     "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\strip-bom",
     "licenseFile": "node_modules\\strip-bom\\license"
+  },
+  "strip-eof@1.0.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/strip-eof",
+    "publisher": "Sindre Sorhus",
+    "email": "sindresorhus@gmail.com",
+    "url": "sindresorhus.com",
+    "name": "strip-eof",
+    "version": "1.0.0",
+    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\strip-eof",
+    "licenseFile": "node_modules\\strip-eof\\license"
   },
   "strip-indent@1.0.1": {
     "licenses": "MIT",
