@@ -7,6 +7,7 @@ import { getNormalizeFunc } from '../../util/api';
 import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
+import { activeGameId } from '../../util/selectors';
 
 import {
   discoveryFinished,
@@ -55,6 +56,10 @@ class GameModeManager {
 
     const gamesStored: IGameStored[] = this.mKnownGames.map(this.storeGame);
     store.dispatch(setKnownGames(gamesStored));
+    const gameMode = activeGameId(store.getState());
+    if (gameMode !== undefined) {
+      this.mOnGameModeActivated(gameMode);
+    }
   }
 
   /**
