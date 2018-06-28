@@ -88,6 +88,10 @@ export interface IExtensionContextExt extends IExtensionContext {
 }
 
 function attributeExtractor(input: any) {
+  let downloadGame: string | string[] = getSafe(input, ['download', 'game'], []);
+  if (Array.isArray(downloadGame)) {
+    downloadGame = downloadGame[0];
+  }
   return Promise.resolve({
     fileName: getSafe(input, ['download', 'localPath'], undefined),
     fileMD5: getSafe(input, ['download', 'fileMD5'], undefined),
@@ -95,7 +99,7 @@ function attributeExtractor(input: any) {
     source: getSafe(input, ['download', 'modInfo', 'source'], undefined),
     version: getSafe(input, ['download', 'modInfo', 'version'], undefined),
     logicalFileName: getSafe(input, ['download', 'modInfo', 'name'], undefined),
-    downloadGame: getSafe(input, ['download', 'game'], undefined),
+    downloadGame,
   });
 }
 
