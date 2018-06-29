@@ -9,9 +9,6 @@ import * as selectors from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { sum, truthy } from '../../util/util';
 
-import { downloadPath as downloadPathSelector } from '../mod_management/selectors';
-import resolvePath from '../mod_management/util/resolvePath';
-
 import {
   addLocalDownload,
   removeDownload,
@@ -24,6 +21,8 @@ import { settingsReducer } from './reducers/settings';
 import { stateReducer } from './reducers/state';
 import { IDownload } from './types/IDownload';
 import { IProtocolHandlers } from './types/ProtocolHandlers';
+import getDownloadGames from './util/getDownloadGames';
+import getDownloadPath from './util/getDownloadPath';
 import {} from './views/DownloadView';
 import {} from './views/Settings';
 import SpeedOMeter from './views/SpeedOMeter';
@@ -89,6 +88,10 @@ export interface IExtensionContextExt extends IExtensionContext {
 }
 
 function attributeExtractor(input: any) {
+  let downloadGame: string | string[] = getSafe(input, ['download', 'game'], []);
+  if (Array.isArray(downloadGame)) {
+    downloadGame = downloadGame[0];
+  }
   return Promise.resolve({
     fileName: getSafe(input, ['download', 'localPath'], undefined),
     fileMD5: getSafe(input, ['download', 'fileMD5'], undefined),
@@ -96,7 +99,7 @@ function attributeExtractor(input: any) {
     source: getSafe(input, ['download', 'modInfo', 'source'], undefined),
     version: getSafe(input, ['download', 'modInfo', 'version'], undefined),
     logicalFileName: getSafe(input, ['download', 'modInfo', 'name'], undefined),
-    downloadGame: getSafe(input, ['download', 'game'], undefined),
+    downloadGame,
   });
 }
 
@@ -185,7 +188,7 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
       return Promise.resolve();
     }
   }
-  const currentDownloadPath = resolvePath('download', state.settings.mods.paths, gameId);
+  const currentDownloadPath = getDownloadPath(state.settings.downloads.path, gameId);
 
   let nameIdMap: {[name: string]: string} = {};
 
@@ -204,8 +207,8 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
 
         const knownDLs =
           Object.keys(downloads)
-            .filter((dlId: string) => downloads[dlId].game === gameId)
-            .map(dlId => normalize(downloads[dlId].localPath));
+            .filter((dlId: string) => getDownloadGames(downloads[dlId])[0] === gameId)
+            .map(dlId => normalize(downloads[dlId].localPath || ''));
 
         return refreshDownloads(currentDownloadPath, knownDLs, normalize,
           (fileName: string) =>
@@ -338,18 +341,21 @@ function init(context: IExtensionContextExt): boolean {
       const filtered = added.filter(
         dlId => (cur[dlId].state === 'finished') && (Object.keys(cur[dlId].modInfo).length === 0));
 
-      const state = context.api.store.getState();
+      const state: IState = context.api.store.getState();
 
       Promise.map(filtered, dlId => {
-        const downloadPath = resolvePath('download', state.settings.mods.paths, cur[dlId].game);
+        const downloadPath = getDownloadPath(state.settings.downloads.path,
+                                             getDownloadGames(cur[dlId])[0]);
         context.api.lookupModMeta({ filePath: path.join(downloadPath, cur[dlId].localPath) })
           .then(result => {
             if (result.length > 0) {
               const info = result[0].value;
               store.dispatch(setDownloadModInfo(dlId, 'game', info.gameId));
               store.dispatch(setDownloadModInfo(dlId, 'version', info.fileVersion));
-              store.dispatch(setDownloadModInfo(dlId, 'name',
-                info.logicalFileName || info.fileName));
+              if (info.logicalFileName || info.fileName) {
+                store.dispatch(setDownloadModInfo(dlId, 'name',
+                  info.logicalFileName || info.fileName));
+              }
             }
           })
           .catch(err => {
@@ -385,7 +391,7 @@ function init(context: IExtensionContextExt): boolean {
     });
 
     context.api.events.on('import-downloads', (downloadPaths: string[]) => {
-      const downloadPath = downloadPathSelector(context.api.store.getState());
+      const downloadPath = selectors.downloadPath(context.api.store.getState());
       let hadDirs = false;
       Promise.map(downloadPaths, dlPath => {
         const fileName = path.basename(dlPath);
@@ -439,7 +445,7 @@ function init(context: IExtensionContextExt): boolean {
         if (!truthy(downloads[id].urls)) {
           // download was interrupted before receiving urls, has to be canceled
           log('info', 'download removed because urls were never retrieved', { id });
-          const downloadPath = downloadPathSelector(context.api.store.getState());
+          const downloadPath = selectors.downloadPath(context.api.store.getState());
           if ((downloadPath !== undefined) && (downloads[id].localPath !== undefined)) {
             fs.removeAsync(path.join(downloadPath, downloads[id].localPath))
               .then(() => {

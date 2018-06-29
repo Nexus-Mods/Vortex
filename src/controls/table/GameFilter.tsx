@@ -53,12 +53,12 @@ const FilterConn = connect(mapStateToProps)(
 
 class GameFilter implements ITableFilter {
   public component = FilterConn;
-  public raw = true;
+  public raw = false;
 
   public matches(filter: any, value: any, state: IState): boolean {
     return (filter === '$')
-      ? activeGameId(state) === value
-      : filter === value;
+      ? value.indexOf(activeGameId(state)) !== -1
+      : value.indexOf(filter) !== -1;
   }
 }
 

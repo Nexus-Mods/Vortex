@@ -68,15 +68,13 @@ function getText(id: string, t: I18next.TranslationFunction) {
         + 'Please make sure you have write permission to the new directories. Do NOT use your '
         + 'Vortex application directory!\n\n'
         + 'You can use "variables" to save yourself some typing:\n'
-        + ' - {BASE} is replaced with the base path from the first box.\n'
         + ' - {GAME} is replaced with the id of the game\n'
         + ' - {USERDATA} is replaced with a platform dependent data directory that is guaranteed '
         + 'to have write access.\n'
         + '\n'
-        + 'Example: If you only change the base path to "d:\\vortex_mods\\{GAME}" and your active '
-        + 'game is Skyrim then all your downloads will be located in '
-        + '"d:\\vortex_mods\\skyrim\\downloads" and all your extracted mods will be in '
-        + '"d:\\vortex_mods\\skyrim\\mods".');
+        + 'Example: If you change the path to "d:\\vortex_mods\\{GAME}" and your active '
+        + 'game is Skyrim then all your extracted mods will be in '
+        + '"d:\\vortex_mods\\skyrim".');
     }
     default:
       return undefined;

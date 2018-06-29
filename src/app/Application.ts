@@ -1,8 +1,8 @@
-import {setInstanceId, setWarnedAdmin} from '../actions/app';
+import {setApplicationVersion, setInstanceId, setWarnedAdmin} from '../actions/app';
 import {} from '../reducers/index';
 import {IState} from '../types/IState';
 import commandLine, {IParameters} from '../util/commandLine';
-import { ProcessCanceled } from '../util/CustomErrors';
+import { ProcessCanceled, UserCanceled } from '../util/CustomErrors';
 import { } from '../util/delayed';
 import * as develT from '../util/devel';
 import { terminate, toError } from '../util/errorHandling';
@@ -12,6 +12,7 @@ import lazyRequire from '../util/lazyRequire';
 import LevelPersist, { DatabaseLocked } from '../util/LevelPersist';
 import {log, setLogPath, setupLogging} from '../util/log';
 import { showError } from '../util/message';
+import migrate from '../util/migrate';
 import { StateError } from '../util/reduxSanity';
 import { allHives, createVortexStore, currentStatePath, extendStore,
          importState, insertPersistor, markImported } from '../util/store';
@@ -149,6 +150,7 @@ class Application {
           return this.createStore();
         })
         .then(() => this.warnAdmin())
+        .then(() => this.checkUpgrade())
         .then(() => {
           // as soon as we have a store, install an extended error handler that has
           // access to application state
@@ -163,6 +165,7 @@ class Application {
         .then(() => this.createTray())
         // end initialization
         .then(() => splash.fadeOut())
+        .catch(UserCanceled, () => app.exit())
         .catch(ProcessCanceled, () => {
           app.quit();
         })
@@ -218,6 +221,19 @@ class Application {
           });
         });
       });
+  }
+
+  private checkUpgrade() {
+    const state: IState = this.mStore.getState();
+    if (state.app.appVersion !== app.getVersion()) {
+      log('info', 'Vortex was updated, checking for necessary migrations');
+      return migrate(this.mStore)
+        .then(() => {
+          this.mStore.dispatch(setApplicationVersion(app.getVersion()));
+        });
+    } else {
+      return Promise.resolve();
+    }
   }
 
   private splitPath(statePath: string): string[] {

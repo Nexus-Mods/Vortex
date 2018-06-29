@@ -8,12 +8,13 @@ import { createErrorReport } from '../../util/errorHandling';
 import * as fs from '../../util/fs';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
 import { log } from '../../util/log';
-import { activeGameId, activeProfile, downloadPath, gameName } from '../../util/selectors';
+import { activeProfile, downloadPath } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { setdefault } from '../../util/util';
 import walk from '../../util/walk';
 
 import { IDownload } from '../download_management/types/IDownload';
+import getDownloadGames from '../download_management/util/getDownloadGames';
 import { getGame } from '../gamemode_management';
 import { IModType } from '../gamemode_management/types/IModType';
 import modName from '../mod_management/util/modName';
@@ -28,6 +29,7 @@ import { InstallFunc } from './types/InstallFunc';
 import { ISupportedResult, TestSupported } from './types/TestSupported';
 import gatherDependencies from './util/dependencies';
 import filterModInfo from './util/filterModInfo';
+import queryGameId from './util/queryGameId';
 
 import InstallContext from './InstallContext';
 import deriveModInstallName from './modIdManager';
@@ -134,7 +136,7 @@ class InstallManager {
   public install(
     archiveId: string,
     archivePath: string,
-    downloadGameId: string,
+    downloadGameIds: string[],
     api: IExtensionApi,
     info: any,
     processDependencies: boolean,
@@ -157,7 +159,7 @@ class InstallManager {
     let installContext: InstallContext;
 
     this.mQueue = this.mQueue
-      .then(() => this.queryGameId(api.store, downloadGameId))
+      .then(() => queryGameId(api.store, downloadGameIds))
       .then(gameId => {
         installGameId = gameId;
         if (installGameId === undefined) {
@@ -461,49 +463,6 @@ class InstallManager {
       ].concat(terminal ? [] : [
           { label: 'Continue', action: () => resolve() },
         ])));
-    });
-  }
-
-  private queryGameId(store: Redux.Store<any>,
-                      downloadGameId: string): Promise<string> {
-    const currentGameId = activeGameId(store.getState());
-    if (currentGameId === undefined) {
-      return Promise.resolve(downloadGameId);
-    }
-    return new Promise<string>((resolve, reject) => {
-      if (getSafe(store.getState(),
-                  ['settings', 'gameMode', 'discovered', downloadGameId],
-                  undefined) === undefined) {
-        const btnLabel =
-            `Install for "${gameName(store.getState(), currentGameId)}"`;
-        store.dispatch(showDialog(
-            'question', 'Game not installed',
-            {
-              message:
-                  'The game associated with this download is not discovered.',
-            },
-            [
-              { label: 'Cancel', action: () => reject(new UserCanceled()) },
-              { label: btnLabel, action: () => resolve(currentGameId) },
-            ]));
-      } else if (currentGameId !== downloadGameId) {
-        store.dispatch(showDialog(
-            'question', 'Download is for a different game',
-            {
-              message:
-                  'This download is associated with a different game than the current.' +
-                      'Which one do you want to install it for?',
-            },
-            [
-              { label: 'Cancel', action: () => reject(new UserCanceled()) },
-              { label: gameName(store.getState(), currentGameId), action:
-                  () => resolve(currentGameId) },
-              { label: gameName(store.getState(), downloadGameId), action:
-                  () => resolve(downloadGameId) },
-            ]));
-      } else {
-        resolve(downloadGameId);
-      }
     });
   }
 
@@ -932,7 +891,7 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
       const state = api.store.getState();
       const download: IDownload = state.persistent.downloads.files[downloadId];
       const fullPath: string = path.join(downloadPath(state), download.localPath);
-      this.install(downloadId, fullPath, download.game || activeGameId(state),
+      this.install(downloadId, fullPath, getDownloadGames(download),
         api, { download }, false, false, (error, id) => {
           if (error === null) {
             resolve(id);

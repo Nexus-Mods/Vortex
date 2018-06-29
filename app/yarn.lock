@@ -1259,6 +1259,15 @@ fstream@^1.0.0, fstream@^1.0.10, fstream@^1.0.2:
     mkdirp ">=0.5 0"
     rimraf "2"
 
+fuzzball@^1.1.2:
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/fuzzball/-/fuzzball-1.1.2.tgz#060aedfacd0a44138b4783e7d3ede6b9fa05b6ab"
+  dependencies:
+    heap ">=0.2.0"
+    setimmediate "^1.0.5"
+    string.fromcodepoint "^0.2.1"
+    string.prototype.codepointat "^0.2.0"
+
 gauge@~2.7.3:
   version "2.7.4"
   resolved "https://registry.yarnpkg.com/gauge/-/gauge-2.7.4.tgz#2c03405c7538c39d7eb37b317022e325fb018bf7"
@@ -1415,6 +1424,10 @@ hawk@~6.0.2:
     cryptiles "3.x.x"
     hoek "4.x.x"
     sntp "2.x.x"
+
+heap@>=0.2.0:
+  version "0.2.6"
+  resolved "https://registry.yarnpkg.com/heap/-/heap-0.2.6.tgz#087e1f10b046932fc8594dd9e6d378afc9d1e5ac"
 
 hoek@2.x.x:
   version "2.16.3"
@@ -3344,6 +3357,14 @@ string-width@^1.0.1, string-width@^1.0.2:
     code-point-at "^1.0.0"
     is-fullwidth-code-point "^1.0.0"
     strip-ansi "^3.0.0"
+
+string.fromcodepoint@^0.2.1:
+  version "0.2.1"
+  resolved "https://registry.yarnpkg.com/string.fromcodepoint/-/string.fromcodepoint-0.2.1.tgz#8d978333c0bc92538f50f383e4888f3e5619d653"
+
+string.prototype.codepointat@^0.2.0:
+  version "0.2.1"
+  resolved "https://registry.yarnpkg.com/string.prototype.codepointat/-/string.prototype.codepointat-0.2.1.tgz#004ad44c8afc727527b108cd462b4d971cd469bc"
 
 string.prototype.repeat@^0.2.0:
   version "0.2.0"

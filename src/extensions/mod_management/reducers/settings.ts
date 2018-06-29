@@ -8,9 +8,9 @@ import * as actions from '../actions/settings';
  */
 export const settingsReducer: IReducerSpec = {
   reducers: {
-    [actions.setPath as any]: (state, payload) => {
-      const { gameId, key, path } = payload;
-      return setSafe(state, ['paths', gameId, key], path);
+    [actions.setInstallPath as any]: (state, payload) => {
+      const { gameId, path } = payload;
+      return setSafe(state, ['installPath', gameId], path);
     },
     [actions.setActivator as any]: (state, payload) => {
       const { gameId, activatorId } = payload;
@@ -24,7 +24,7 @@ export const settingsReducer: IReducerSpec = {
       setSafe(state, ['showDropzone'], payload),
   },
   defaults: {
-    paths: {},
+    installPath: {},
     modlistState: {},
     activator: {},
     updatingMods: {},

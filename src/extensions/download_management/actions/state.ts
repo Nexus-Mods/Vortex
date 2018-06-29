@@ -83,3 +83,6 @@ export const setDownloadInstalled = safeCreateAction('SET_DOWNLOAD_INSTALLED',
 
 export const setDownloadTime = safeCreateAction('SET_DOWNLOAD_TIME',
   (id: string, time: number) => ({ id, time }));
+
+export const setCompatibleGames = safeCreateAction('SET_COMPATIBLE_GAMES',
+  (id: string, games: string[]) => ({ id, games }));

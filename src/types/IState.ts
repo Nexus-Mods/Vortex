@@ -109,6 +109,7 @@ export interface IExtensionState {
 export interface IApp {
   instanceId: string;
   version: string;
+  appVersion: string;
   extensions: { [id: string]: IExtensionState };
   warnedAdmin: number;
 }
@@ -162,6 +163,7 @@ export interface ISettingsDownloads {
   minChunkSize: number;
   maxChunks: number;
   maxParallelDownloads: number;
+  path: string;
   showDropzone: boolean;
   showGraph: boolean;
 }
@@ -173,7 +175,7 @@ export interface IStatePaths {
 }
 
 export interface ISettingsMods {
-  paths: { [gameId: string]: IStatePaths };
+  installPath: { [gameId: string]: string };
   modlistState: { [id: string]: IAttributeState };
   activator: { [gameId: string]: string };
   showDropzone: boolean;

@@ -4,7 +4,11 @@ import safeCreateAction from './safeCreateAction';
 
 const id = input => input;
 
-export const setStateVersion = safeCreateAction('SET_STATE_VERSION');
+export const setStateVersion = safeCreateAction('SET_STATE_VERSION',
+  version => version);
+
+export const setApplicationVersion = safeCreateAction('SET_APPLICATION_VERSION',
+  version => version);
 
 export const setExtensionEnabled = safeCreateAction('SET_EXTENSION_ENABLED',
   (extensionId: string, enabled: boolean) => ({ extensionId, enabled }));

@@ -28,7 +28,7 @@ export const stateReducer: IReducerSpec = {
       }
       return setSafe(state, [ 'files', payload.id ], {
         state: 'init',
-        game: payload.game,
+        game: [ payload.game ],
         urls: payload.urls,
         modInfo: payload.modInfo,
         chunks: [],
@@ -134,7 +134,7 @@ export const stateReducer: IReducerSpec = {
     [action.addLocalDownload as any]: (state, payload) =>
       setSafe(state, [ 'files', payload.id ], {
         state: 'finished',
-        game: payload.game,
+        game: [ payload.game ],
         localPath: payload.localPath,
         size: payload.fileSize,
         fileTime: Date.now(),
@@ -150,6 +150,8 @@ export const stateReducer: IReducerSpec = {
       setSafe(state,
         ['files', payload.id, 'installed'],
         { gameId: payload.gameId, modId: payload.modId }),
+    [action.setCompatibleGames as any]: (state, payload) =>
+      setSafe(state, ['files', payload.id, 'game'], payload.games),
   },
   defaults: {
     speed: 0,

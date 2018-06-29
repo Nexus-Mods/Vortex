@@ -1,6 +1,5 @@
 import { ButtonType } from '../../../controls/IconBar';
 import ToolbarIcon from '../../../controls/ToolbarIcon';
-import { IStatePaths } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { activeGameId } from '../../../util/selectors';
 
@@ -14,7 +13,6 @@ export interface IBaseProps {
 }
 
 interface IConnectedProps {
-  paths: IStatePaths;
   gameMode: string;
 }
 
@@ -50,7 +48,6 @@ class InstallButton extends ComponentEx<IProps, {}> {
 function mapStateToProps(state: any): IConnectedProps {
   const gameMode = activeGameId(state);
   return {
-    paths: state.settings.mods.paths[gameMode],
     gameMode,
   };
 }

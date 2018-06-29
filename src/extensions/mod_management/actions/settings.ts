@@ -6,8 +6,8 @@ import * as reduxAct from 'redux-act';
  * change a path (base, download or installation) for
  * storing things. Supports placeholders
  */
-export const setPath = safeCreateAction('SET_MOD_PATH',
-  (gameId: string, key: string, path: string) => ({ gameId, key, path }));
+export const setInstallPath = safeCreateAction('SET_MOD_PATH',
+  (gameId: string, path: string) => ({ gameId, path }));
 
 /**
  * sets the activator to use for this game

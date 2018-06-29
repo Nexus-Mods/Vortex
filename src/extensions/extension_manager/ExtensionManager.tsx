@@ -7,12 +7,12 @@ import { ITableAttribute } from '../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import * as fs from '../../util/fs';
 import getVortexPath from '../../util/getVortexPath';
+import * as selectors from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { spawnSelf } from '../../util/util';
 import MainPage from '../../views/MainPage';
 
 import { IDownload } from '../download_management/types/IDownload';
-import { downloadPath } from '../mod_management/selectors';
 
 import installExtension from './installExtension';
 import getTableAttributes from './tableAttributes';
@@ -267,15 +267,17 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
   }
 }
 
+const emptyObject = {};
+
 function mapStateToProps(state: IState): IConnectedProps {
   return {
     // TODO: don't use || {} in mapStateToProps because {} is always a new object and
     //   thus causes constant re-drawing. but when removing this, make sure no access
     //   to undefined can happen
-    extensionConfig: state.app.extensions || {},
+    extensionConfig: state.app.extensions || emptyObject,
     loadFailures: state.session.base.extLoadFailures,
     downloads: state.persistent.downloads.files,
-    downloadPath: downloadPath(state),
+    downloadPath: selectors.downloadPath(state),
   };
 }
 

@@ -352,7 +352,6 @@ class DownloadManager {
   private mBusyWorkers: { [id: number]: DownloadWorker } = {};
   private mSlowWorkers: { [id: number]: number } = {};
   private mQueue: IRunningDownload[] = [];
-  private mPaused: IRunningDownload[] = [];
   private mNextId: number = 0;
   private mSpeedCalculator: SpeedCalculator;
   private mUserAgent: string;

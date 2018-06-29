@@ -1,27 +1,20 @@
-import { IState, IStatePaths } from '../../types/IState';
+import { IState } from '../../types/IState';
 import { activeGameId } from '../../util/selectors';
 
-import resolvePath from './util/resolvePath';
+import getInstallPath from './util/getInstallPath';
 
+import * as path from 'path';
 import { createSelector } from 'reselect';
 
-export interface IPathMap {
-  [gameId: string]: IStatePaths;
-}
+const installPathPattern = (state: IState) => state.settings.mods.installPath;
 
-const paths = (state: IState) => state.settings.mods.paths;
-
-export const basePath = createSelector(
-    paths, activeGameId, (inPaths: IPathMap, inGameMode: string) =>
-      resolvePath('base', inPaths, inGameMode));
-
-export const downloadPath = createSelector(
-    paths, activeGameId, (inPaths: IPathMap, inGameMode: string) =>
-      resolvePath('download', inPaths, inGameMode));
-
-export const installPath = createSelector(
-    paths, activeGameId, (inPaths: IPathMap, inGameMode: string) =>
-      resolvePath('install', inPaths, inGameMode));
+export const installPath = createSelector(installPathPattern, activeGameId,
+    (inPaths: { [gameId: string]: string }, inGameMode: string) => {
+      if (inGameMode === undefined) {
+        return undefined;
+      }
+      return getInstallPath(inPaths[inGameMode], inGameMode);
+    });
 
 export const currentActivator =
   (state: IState): string => state.settings.mods.activator[activeGameId(state)];

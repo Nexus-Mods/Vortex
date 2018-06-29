@@ -8,7 +8,6 @@ import { getSafe } from '../../util/storeHelper';
 import { truthy } from '../../util/util';
 
 import { showURL } from '../browser/actions';
-import resolvePath from '../mod_management/util/resolvePath';
 
 import {
   downloadProgress,
@@ -24,6 +23,8 @@ import {IDownload} from './types/IDownload';
 import { IDownloadResult } from './types/IDownloadResult';
 import { ProgressCallback } from './types/ProgressCallback';
 import { IProtocolHandlers } from './types/ProtocolHandlers';
+import getDownloadGames from './util/getDownloadGames';
+import getDownloadPath from './util/getDownloadPath';
 
 import DownloadManager, { DownloadIsHTML, URLFunc } from './DownloadManager';
 
@@ -140,7 +141,9 @@ export class DownloadObserver {
         return;
       }
     }
-    const gameMode = modInfo.game || selectors.activeGameId(this.mStore.getState());
+
+    const state: IState = this.mStore.getState();
+    const gameMode = modInfo.game || selectors.activeGameId(state);
 
     if (gameMode === undefined) {
       if (callback !== undefined) {
@@ -153,8 +156,7 @@ export class DownloadObserver {
     this.mStore.dispatch(
       initDownload(id, typeof(urls) ===  'function' ? [] : urls, modInfo, gameMode));
 
-    const downloadPath = resolvePath('download',
-      this.mStore.getState().settings.mods.paths, gameMode);
+    const downloadPath = getDownloadPath(state.settings.downloads.path, gameMode);
 
     const processCB = this.genProgressCB(id);
 
@@ -166,9 +168,9 @@ export class DownloadObserver {
           this.handleDownloadFinished(id, callback, res);
         })
         .catch(DownloadIsHTML, err => {
-          const state: IState = this.mStore.getState();
+          const innerState: IState = this.mStore.getState();
           const filePath: string =
-            getSafe(state.persistent.downloads.files, [id, 'localPath'], undefined);
+            getSafe(innerState.persistent.downloads.files, [id, 'localPath'], undefined);
 
           this.mStore.dispatch(removeDownload(id));
           this.mStore.dispatch(showURL(urls[0]));
@@ -256,8 +258,8 @@ export class DownloadObserver {
       this.mManager.stop(downloadId);
     }
     if (truthy(download.localPath)) {
-      const dlPath = resolvePath('download',
-          this.mStore.getState().settings.mods.paths, download.game);
+      const dlPath = getDownloadPath(
+        this.mStore.getState().settings.downloads.path, getDownloadGames(download)[0]);
       fs.removeAsync(path.join(dlPath, download.localPath))
           .then(() => { this.mStore.dispatch(removeDownload(downloadId)); })
           .catch(err => {
@@ -290,9 +292,9 @@ export class DownloadObserver {
       return;
     }
     if (download.state === 'paused') {
-      const gameMode = download.game;
-      const downloadPath = resolvePath('download',
-        this.mStore.getState().settings.mods.paths, gameMode);
+      const gameMode = getDownloadGames(download)[0];
+      const downloadPath =
+        getDownloadPath(this.mStore.getState().settings.downloads.path, gameMode);
 
       const fullPath = path.join(downloadPath, download.localPath);
       this.mStore.dispatch(pauseDownload(downloadId, false, undefined));
