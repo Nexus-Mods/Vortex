@@ -247,12 +247,7 @@ class TableRow extends React.Component<IRowProps, IRowState> {
   }
 
   private renderRow = (): React.ReactNode => {
-    const { actions, attributes, data, domRef, tableId } = this.props;
-
-    if (actions !== undefined) {
-      const rowActions = actions.filter((action) =>
-        (action.singleRowAction === undefined) || action.singleRowAction);
-    }
+    const { actions, attributes, data, tableId } = this.props;
 
     const res = attributes.map(this.renderAttribute);
     const sorted = actions

@@ -185,13 +185,7 @@ describe('removeValue', () => {
   it('returns unmodified if the value doesn\'t exist', () => {
     let input = { someList: ['a', 'b', 'c'] };
     let res = helper.removeValue(input, ['someList'], 'd');
-    expect(res).toEqual({ someList: ['a', 'b', 'c'] });
-    // it does copy the input however
-  });
-  it('returns empty list if the node is missing', () => {
-    let input = {};
-    let res = helper.removeValue(input, ['someList'], 'a');
-    expect(res).toEqual({ someList: [] });
+    expect(res).toBe(input);
   });
   it('doesn\'t turn arrays into objects', () => {
     let input = { a: [ { x: [1, 2] } ] };

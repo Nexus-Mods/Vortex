@@ -2,7 +2,7 @@ import { showDialog } from '../../../actions/notifications';
 import ActionDropdown from '../../../controls/ActionDropdown';
 import Icon from '../../../controls/Icon';
 import IconBar from '../../../controls/IconBar';
-import { Button, IconButton } from '../../../controls/TooltipControls';
+import { IconButton } from '../../../controls/TooltipControls';
 import { IActionDefinition } from '../../../types/IActionDefinition';
 import { IComponentContext } from '../../../types/IComponentContext';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
@@ -20,8 +20,6 @@ import { ICategoriesTree } from '../types/ITrees';
 import createTreeDataObject from '../util/createTreeDataObject';
 
 import * as Promise from 'bluebird';
-import { remote } from 'electron';
-import * as path from 'path';
 import * as React from 'react';
 import { FormControl } from 'react-bootstrap';
 import * as SortableTreeT from 'react-sortable-tree';
@@ -374,7 +372,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
 
   private refreshTree(props: IProps) {
     const { t } = this.props;
-    const { categories, mods, onShowError } = props;
+    const { categories, mods } = props;
 
     if (categories !== undefined) {
       if (Object.keys(categories).length !== 0) {
@@ -391,14 +389,14 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
   private searchFinishCallback = (matches: ISearchMatch[]) => {
     const { searchFocusIndex } = this.state;
     // important: Avoid updating the state if the values haven't changed because
-    //  changeing the state causes a re-render and a re-render causes the tree to search
+    //  changing the state causes a re-render and a re-render causes the tree to search
     //  again (why?) which causes a new finish callback -> infinite loop
     if (this.state.searchFoundCount !== matches.length) {
       this.nextState.searchFoundCount = matches.length;
     }
     const newFocusIndex = matches.length > 0 ? searchFocusIndex % matches.length : 0;
     if (this.state.searchFocusIndex !== newFocusIndex) {
-    this.nextState.searchFocusIndex = newFocusIndex;
+      this.nextState.searchFocusIndex = newFocusIndex;
     }
   }
 

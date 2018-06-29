@@ -2,6 +2,7 @@ import {IExtensionApi, IExtensionContext} from '../../types/IExtensionContext';
 import {ProcessCanceled, TemporaryError, UserCanceled} from '../../util/CustomErrors';
 import { delayed } from '../../util/delayed';
 import * as fs from '../../util/fs';
+import { Normalize } from '../../util/getNormalizeFunc';
 import { log } from '../../util/log';
 import { activeGameId, gameName } from '../../util/selectors';
 
@@ -83,10 +84,11 @@ class DeploymentMethod extends LinkingDeployment {
     return this.mWaitForUser();
   }
 
-  public prepare(dataPath: string, clean: boolean, lastActivation: IDeployedFile[]): Promise<void> {
+  public prepare(dataPath: string, clean: boolean, lastActivation: IDeployedFile[],
+                 normalize: Normalize): Promise<void> {
     this.mCounter = 0;
     this.mOpenRequests = {};
-    return super.prepare(dataPath, clean, lastActivation);
+    return super.prepare(dataPath, clean, lastActivation, normalize);
   }
 
   public finalize(gameId: string, dataPath: string,

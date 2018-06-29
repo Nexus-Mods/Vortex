@@ -462,6 +462,10 @@
     "milestone": {
       "path": "{nucleo}/healthcare-medical/{nucleo_simple}_steps",
       "rmFill": true
+    },
+    "override": {
+      "path": "{nucleo}/user interface/{nucleo_simple}_alert-exc",
+      "rmFill": true
     }
   }
 }

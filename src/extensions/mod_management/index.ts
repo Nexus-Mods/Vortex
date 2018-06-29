@@ -252,17 +252,25 @@ function genUpdateModDeployment() {
           progressCB?: (text: string, percent: number) => void): Promise<void> => {
     let notificationId: string;
 
+    let lastProgress = 0;
+    let lastText: string;
+
     const progress = (text: string, percent: number) => {
       if (progressCB !== undefined) {
         progressCB(text, percent);
       }
-      api.sendNotification({
-        id: notificationId,
-        type: 'activity',
-        message: text,
-        title: t('Deploying'),
-        progress: percent,
-      });
+      if (((percent - lastProgress) > 5)
+          || (text !== lastText)) {
+        api.sendNotification({
+          id: notificationId,
+          type: 'activity',
+          message: text,
+          title: t('Deploying'),
+          progress: percent,
+        });
+        lastProgress = percent;
+        lastText = text;
+      }
     };
     const state: IState = api.store.getState();
     let profile = profileId !== undefined

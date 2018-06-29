@@ -27,6 +27,8 @@ export interface IMod {
   rules?: IRule[];
   // list of enabled ini tweaks
   enabledINITweaks?: string[];
+  // list of files that shall always be provided by this mod, no matter the deployment order
+  fileOverrides?: string[];
 }
 
 export interface IModReference extends IReference {
