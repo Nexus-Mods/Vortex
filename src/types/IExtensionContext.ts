@@ -64,7 +64,7 @@ export type RegisterAction =
    options: IActionOptions,
    titleOrProps?: string | PropsCallback,
    actionOrCondition?: (instanceIds?: string[]) => void | boolean,
-   condition?: (instanceIds?: string[]) => boolean) => void;
+   condition?: (instanceIds?: string[]) => boolean | string) => void;
 
 export type RegisterFooter =
   (id: string, element: React.ComponentClass<any>, props?: PropsCallback) => void;

@@ -7,6 +7,7 @@ import { TH } from './MyTable';
 import SortIndicator from './SortIndicator';
 
 import * as I18next from 'i18next';
+import * as _ from 'lodash';
 import * as React from 'react';
 
 export interface IHeaderProps {
