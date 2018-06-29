@@ -424,15 +424,6 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     this.setMainPage(evt.currentTarget.id, evt.ctrlKey);
   }
 
-  private hideLayer = () => this.showLayerImpl('');
-
-  private showLayerImpl(layer: string): void {
-    if (this.state.showLayer !== '') {
-      this.props.api.events.emit('hide-modal', this.state.showLayer);
-    }
-    this.updateState({ showLayer: { $set: layer } });
-  }
-
   private setMainPage = (pageId: string, secondary: boolean) => {
     // set the page as "loaded", set it as the shown page next frame.
     // this way it gets rendered as hidden once and can then "transition"
