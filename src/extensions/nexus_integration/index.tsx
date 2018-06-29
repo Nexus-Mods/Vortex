@@ -1,13 +1,10 @@
 import { IDialogResult, showDialog } from '../../actions/notifications';
-import { setDialogVisible } from '../../actions/session';
-import Icon from '../../controls/Icon';
 import InputButton from '../../controls/InputButton';
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
 import { IModTable, IState } from '../../types/IState';
 import { ITableAttribute } from '../../types/ITableAttribute';
 import Debouncer from '../../util/Debouncer';
 import { setApiKey } from '../../util/errorHandling';
-import * as fs from '../../util/fs';
 import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
@@ -47,16 +44,15 @@ import { } from './views/Settings';
 import NXMUrl from './NXMUrl';
 
 import * as Promise from 'bluebird';
-import { app as appIn, remote } from 'electron';
+import { remote } from 'electron';
 import * as I18next from 'i18next';
-import NexusT, { IDownloadURL, IFileInfo, IGameListEntry,
+import NexusT, { IDownloadURL,
+                 IFeedbackResponse, IFileInfo, IGameListEntry,
                  IIssue, IModInfo,
                  NexusError as NexusErrorT} from 'nexus-api';
 import {} from 'opn';
-import * as path from 'path';
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
-import { Interpolate } from 'react-i18next';
 import * as Redux from 'redux';
 import * as util from 'util';
 import {} from 'uuid';
@@ -413,7 +409,7 @@ function createEndorsedIcon(store: Redux.Store<any>, mod: IMod, t: I18next.Trans
   }
 
   if (getSafe(mod.attributes, ['author'], undefined)
-      === getSafe(store.getState(), ['session', 'nexus', 'userInfo', 'name'], undefined)) {
+      === getSafe(store.getState(), ['persistent', 'nexus', 'userInfo', 'name'], undefined)) {
     endorsed = undefined;
   }
 
@@ -575,7 +571,7 @@ function validateKey(api: IExtensionApi, key: string): Promise<void> {
     })
     .catch(NexusError, err => {
       showError(api.store.dispatch,
-        'Failed to validate API Key',
+        'Failed to log in',
         errorFromNexusError(err), { allowReport: false });
       api.store.dispatch(setUserInfo(null));
     })
@@ -595,7 +591,7 @@ function validateKey(api: IExtensionApi, key: string): Promise<void> {
           undefined, { allowReport: false });
       } else {
         showError(api.store.dispatch,
-          'Failed to validate API Key',
+          'Failed to log in',
           err.message, { allowReport: false });
       }
       api.store.dispatch(setUserInfo(null));
@@ -619,6 +615,7 @@ function once(api: IExtensionApi) {
     const Nexus: typeof NexusT = require('nexus-api').default;
     const apiKey = getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], '');
     nexus = new Nexus(activeGameId(state), apiKey, remote.app.getVersion(), 30000);
+    setApiKey(apiKey);
 
     const gameMode = activeGameId(state);
     api.store.dispatch(setUpdatingMods(gameMode, false));
@@ -689,9 +686,9 @@ function once(api: IExtensionApi) {
 
   api.events.on('submit-feedback',
     (title: string, message: string, hash: string, feedbackFiles: string[],
-     anonymous: boolean, callback: (err: Error) => void) => {
+     anonymous: boolean, callback: (err: Error, respones?: IFeedbackResponse) => void) => {
       submitFeedback(nexus, title, message, feedbackFiles, anonymous, hash)
-        .then(() => callback(null))
+        .then(response => callback(null, response))
         .catch(err => callback(err));
     });
 
@@ -701,8 +698,8 @@ function once(api: IExtensionApi) {
 
   api.events.on('mod-update', (gameId, modId, fileId) => {
     const state: IState = api.store.getState();
-    if (!getSafe(state, ['session', 'nexus', 'userInfo', 'isPremium'], false)
-      && !getSafe(state, ['session', 'nexus', 'userInfo', 'isSupporter'], false)) {
+    if (!getSafe(state, ['persistent', 'nexus', 'userInfo', 'isPremium'], false)
+      && !getSafe(state, ['persistent', 'nexus', 'userInfo', 'isSupporter'], false)) {
       // nexusmods can't let users download files directly from client, without
       // showing ads
       opn(['https://www.nexusmods.com', convertGameId(gameId), 'mods', modId].join('/'))
@@ -852,7 +849,7 @@ function init(context: IExtensionContextExt): boolean {
   context.registerSettings('Download', LazyComponent(() => require('./views/Settings')));
   context.registerReducer(['confidential', 'account', 'nexus'], accountReducer);
   context.registerReducer(['settings', 'nexus'], settingsReducer);
-  context.registerReducer(['session', 'nexus'], sessionReducer);
+  context.registerReducer(['persistent', 'nexus'], sessionReducer);
   context.registerDialog('login-dialog', LoginDialog, () => ({ nexus }));
   context.registerBanner('downloads', () => {
     const t = context.api.translate;
@@ -864,7 +861,7 @@ function init(context: IExtensionContextExt): boolean {
       </div>);
   }, {
     props: {
-      isPremium: state => getSafe(state, ['session', 'nexus', 'userInfo', 'isPremium'], false),
+      isPremium: state => getSafe(state, ['persistent', 'nexus', 'userInfo', 'isPremium'], false),
     },
     condition: (props: any): boolean => !props.isPremium,
   });
@@ -882,9 +879,9 @@ function init(context: IExtensionContextExt): boolean {
       </div>);
   }, {
     props: {
-      isPremium: state => getSafe(state, ['session', 'nexus', 'userInfo', 'isPremium'], false),
+      isPremium: state => getSafe(state, ['persistent', 'nexus', 'userInfo', 'isPremium'], false),
       isSupporter: state =>
-        getSafe(state, ['session', 'nexus', 'userInfo', 'isSupporter'], false),
+        getSafe(state, ['persistent', 'nexus', 'userInfo', 'isSupporter'], false),
     },
     condition: (props: any): boolean => !props.isPremium && !props.isSupporter,
   });
@@ -927,8 +924,8 @@ function init(context: IExtensionContextExt): boolean {
   });
 
   context.registerDashlet('Go Premium', 1, 2, 200, GoPremiumDashlet, (state: IState) =>
-    (getSafe(state, ['session', 'nexus', 'userInfo', 'isPremium'], undefined) !== true)
-    && (getSafe(state, ['session', 'nexus', 'userInfo', 'isSupporter'], undefined) !== true),
+    (getSafe(state, ['persistent', 'nexus', 'userInfo', 'isPremium'], undefined) !== true)
+    && (getSafe(state, ['persistent', 'nexus', 'userInfo', 'isSupporter'], undefined) !== true),
     undefined, {
     fixed: false,
     closable: false,

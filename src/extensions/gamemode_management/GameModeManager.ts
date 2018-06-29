@@ -1,4 +1,4 @@
-import { showDialog } from '../../actions/notifications';
+import { addNotification, showDialog } from '../../actions/notifications';
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
 import { IGame } from '../../types/IGame';
 import { IState } from '../../types/IState';
@@ -7,6 +7,7 @@ import { getNormalizeFunc } from '../../util/api';
 import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
+import { activeGameId } from '../../util/selectors';
 
 import {
   discoveryFinished,
@@ -19,14 +20,10 @@ import { IDiscoveryResult } from './types/IDiscoveryResult';
 import { IGameStored } from './types/IGameStored';
 import { IToolStored } from './types/IToolStored';
 import { discoverRelativeTools, quickDiscovery, searchDiscovery } from './util/discovery';
-import Progress from './util/Progress';
 
 import * as Promise from 'bluebird';
-import { remote } from 'electron';
 import * as path from 'path';
 import * as Redux from 'redux';
-
-type EmptyCB = () => void;
 
 /**
  * discovers game modes
@@ -34,18 +31,13 @@ type EmptyCB = () => void;
  * @class GameModeManager
  */
 class GameModeManager {
-  private mBasePath: string;
-  private mError: boolean;
   private mStore: Redux.Store<IState>;
   private mKnownGames: IGame[];
   private mActiveSearch: Promise<any[]>;
   private mOnGameModeActivated: (mode: string) => void;
 
-  constructor(basePath: string,
-              extensionGames: IGame[],
+  constructor(extensionGames: IGame[],
               onGameModeActivated: (mode: string) => void) {
-    this.mBasePath = basePath;
-    this.mError = false;
     this.mStore = null;
     this.mKnownGames = extensionGames;
     this.mActiveSearch = null;
@@ -64,6 +56,10 @@ class GameModeManager {
 
     const gamesStored: IGameStored[] = this.mKnownGames.map(this.storeGame);
     store.dispatch(setKnownGames(gamesStored));
+    const gameMode = activeGameId(store.getState());
+    if (gameMode !== undefined) {
+      this.mOnGameModeActivated(gameMode);
+    }
   }
 
   /**
@@ -168,6 +164,7 @@ class GameModeManager {
       searchPaths,
       this.onDiscoveredGame,
       this.onDiscoveredTool,
+      this.onError,
       progressCallback)
     .finally(() => {
       this.mStore.dispatch(discoveryFinished());
@@ -232,6 +229,14 @@ class GameModeManager {
 
   private onDiscoveredGame = (gameId: string, result: IDiscoveryResult) => {
     this.mStore.dispatch(addDiscoveredGame(gameId, result));
+  }
+
+  private onError = (title: string, message: string) => {
+    this.mStore.dispatch(addNotification({
+      type: 'error',
+      message,
+      title,
+    }));
   }
 }
 

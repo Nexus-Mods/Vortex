@@ -161,14 +161,18 @@ export function retrieveModInfo(
     return Promise.resolve();
   }
   const gameId = getSafe(mod.attributes, ['downloadGame'], gameMode);
+  const nexusIdNum = parseInt(nexusModId, 10);
   // if the endorsement state is unknown, request it
-  return Promise.resolve(nexus.getModInfo(parseInt(nexusModId, 10), convertGameId(gameId)))
+  return Promise.resolve(nexus.getModInfo(nexusIdNum, convertGameId(gameId)))
     .then((modInfo: IModInfo) => {
       if (modInfo !== undefined) {
         updateModAttributes(store.dispatch, gameMode, mod, modInfo);
       }
     })
     .catch((err: NexusError) => {
+      if (err.statusCode === 404) {
+        return;
+      }
       showError(store.dispatch, 'An error occurred looking up the mod',
         errorFromNexus(err), { allowReport: false });
       // prevent this error from coming up every time the icon is re-rendered

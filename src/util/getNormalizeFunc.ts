@@ -75,10 +75,7 @@ function isCaseSensitive(testPath: string): Promise<boolean> {
       } else {
         return true;
       }
-    })
-    .catch(err => (['EPERM', 'EUNKNOWN', 'UNKNOWN'].indexOf(err.code) !== -1)
-      ? Promise.resolve(process.platform !== 'win32')
-      : Promise.reject(err));
+    });
 }
 
 /**

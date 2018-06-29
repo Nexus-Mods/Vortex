@@ -35,6 +35,13 @@ export class SetupError extends Error {
   }
 }
 
+export class TemporaryError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = this.constructor.name;
+  }
+}
+
 export class HTTPError extends Error {
   private mBody: string;
   constructor(statusCode: number, message: string, body: string) {

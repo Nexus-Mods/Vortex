@@ -153,6 +153,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
   private gameColumn: ITableAttribute;
   private fileTimeColumn: ITableAttribute;
   private actions: ITableRowAction[];
+  private mColumns: ITableAttribute[];
 
   constructor(props: IProps) {
     super(props);
@@ -284,6 +285,14 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
         condition: this.cancelable,
       },
     ];
+    this.mColumns = [
+      FILE_NAME,
+      LOGICAL_NAME,
+      this.fileTimeColumn,
+      this.gameColumn,
+      FILE_SIZE,
+      PROGRESS,
+    ];
   }
 
   public componentWillMount() {
@@ -357,14 +366,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
                     <SuperTable
                       tableId='downloads'
                       data={filtered}
-                      staticElements={[
-                        FILE_NAME,
-                        LOGICAL_NAME,
-                        this.fileTimeColumn,
-                        this.gameColumn,
-                        FILE_SIZE,
-                        PROGRESS,
-                      ]}
+                      staticElements={this.mColumns}
                       actions={this.actions}
                     />
                       </FlexLayout.Flex>

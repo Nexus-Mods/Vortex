@@ -1,4 +1,4 @@
-import {setInstanceId} from '../actions/app';
+import {setInstanceId, setWarnedAdmin} from '../actions/app';
 import {} from '../reducers/index';
 import {IState} from '../types/IState';
 import commandLine, {IParameters} from '../util/commandLine';
@@ -25,6 +25,7 @@ import TrayIconT from './TrayIcon';
 import * as Promise from 'bluebird';
 import crashDump from 'crash-dump';
 import {app, dialog, ipcMain} from 'electron';
+import * as isAdmin from 'is-admin';
 import * as _ from 'lodash';
 import * as path from 'path';
 import { allow } from 'permissions';
@@ -147,6 +148,7 @@ class Application {
           splash = splashIn;
           return this.createStore();
         })
+        .then(() => this.warnAdmin())
         .then(() => {
           // as soon as we have a store, install an extended error handler that has
           // access to application state
@@ -176,6 +178,46 @@ class Application {
             stack: err.stack,
           }, this.mStore !== undefined ? this.mStore.getState() : {});
         });
+  }
+
+  private warnAdmin(): Promise<void> {
+    const state: IState = this.mStore.getState();
+    if (state.app.warnedAdmin > 0) {
+      return Promise.resolve();
+    }
+    return isAdmin()
+      .then(admin => {
+        if (!admin) {
+          return Promise.resolve();
+        }
+        return new Promise((resolve, reject) => {
+          dialog.showMessageBox(null, {
+            title: 'Admin rights detected',
+            message:
+              'Vortex is not intended to be run as administrator!\n'
+              + 'If you\'re doing this because you have permission problems, please '
+              + 'stop, you\'re just making it worse.\n'
+              + 'File permissions can be changed, so that the tools can be run with a '
+              + 'regular account. '
+              + 'Vortex will try its best to help you with that.\n'
+              + 'If you choose to continue I won\'t bother you again but please '
+              + 'don\'t report any permission problems to us because they are '
+              + 'of your own making.',
+            buttons: [
+              'Quit',
+              'Ignore',
+            ],
+            noLink: true,
+          }, (response: number) => {
+            if (response === 0) {
+              app.quit();
+            } else {
+              this.mStore.dispatch(setWarnedAdmin(1));
+              resolve();
+            }
+          });
+        });
+      });
   }
 
   private splitPath(statePath: string): string[] {

@@ -46,12 +46,12 @@ class ActionControl extends React.Component<IProps, { actions: IActionDefinition
     //   this here is inefficient and could technically still miss updates
     const newActions = this.actionsToShow(newProps);
     if (!_.isEqual(newActions, this.state.actions)) {
-      this.setState({ actions: this.actionsToShow(newProps) });
+      this.setState({ actions: newActions });
     }
   }
 
   public render() {
-    const { children, instanceId, objects } = this.props;
+    const { children, instanceId } = this.props;
     return React.cloneElement(React.Children.only(children), {
       instanceId,
       actions: this.state.actions,

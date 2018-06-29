@@ -103,7 +103,7 @@ class DashboardBanner extends ComponentEx<IProps, {}> {
 
 function mapStateToProps(state: any): IConnectedProps {
   return {
-    userInfo: state.session.nexus.userInfo,
+    userInfo: state.persistent.nexus.userInfo,
   };
 }
 

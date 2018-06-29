@@ -1,16 +1,11 @@
 import { DialogActions, DialogType, IDialogContent,
          IDialogResult, showDialog } from '../actions/notifications';
-import { IComponentContext } from '../types/IComponentContext';
 import { ComponentEx, connect, translate } from '../util/ComponentEx';
-import { log } from '../util/log';
-import { activeGameId, downloadPath } from '../util/selectors';
-import { getSafe } from '../util/storeHelper';
 
 import Icon from './Icon';
 
 import * as Promise from 'bluebird';
 
-import * as PropTypes from 'prop-types';
 import * as React from 'react';
 import * as Redux from 'redux';
 

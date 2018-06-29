@@ -14,3 +14,5 @@ export const removeExtension = safeCreateAction('REMOVE_EXTENSION', id);
 export const forgetExtension = safeCreateAction('FORGET_EXTENSION', id);
 
 export const setInstanceId = safeCreateAction('SET_INSTANCE_ID', id);
+
+export const setWarnedAdmin = safeCreateAction('SET_WARNED_ADMIN', id);

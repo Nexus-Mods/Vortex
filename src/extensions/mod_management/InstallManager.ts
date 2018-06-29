@@ -2,7 +2,8 @@ import { showDialog } from '../../actions/notifications';
 import { IDialogResult } from '../../types/IDialog';
 import { IExtensionApi } from '../../types/IExtensionContext';
 import {IState} from '../../types/IState';
-import { DataInvalid, ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
+import { DataInvalid, ProcessCanceled, TemporaryError,
+         UserCanceled } from '../../util/CustomErrors';
 import { createErrorReport } from '../../util/errorHandling';
 import * as fs from '../../util/fs';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
@@ -32,7 +33,6 @@ import InstallContext from './InstallContext';
 import deriveModInstallName from './modIdManager';
 
 import * as Promise from 'bluebird';
-import * as I18next from 'i18next';
 import { IHashResult, ILookupResult, IReference, IRule } from 'modmeta-db';
 import * as ZipT from 'node-7z';
 import * as os from 'os';
@@ -59,13 +59,6 @@ interface IRimrafOptions {
 type rimrafType = (path: string, options: IRimrafOptions, callback: (err?) => void) => void;
 const rimrafAsync: (path: string, options: IRimrafOptions) => Promise<void> =
   Promise.promisify(rimraf as rimrafType) as any;
-
-interface IZipEntry {
-  date: Date;
-  attr: string;
-  size: number;
-  name: string;
-}
 
 interface ISupportedInstaller {
   installer: IModInstaller;
@@ -217,7 +210,7 @@ class InstallManager {
                 return Promise.resolve();
               } else if (action === 'Replace') {
                 // we need to remove the old mod before continuing. This ensures
-                // the mod is deactivated and undeployed (as to not leave dangling
+                // the mod is deactivated and undeployed (so we're not leave dangling
                 // links) and it ensures we do a clean install of the mod
                 return new Promise<void>((resolve, reject) => {
                   api.events.emit('remove-mod', currentProfile.gameId, oldMod.id,
@@ -286,6 +279,7 @@ class InstallManager {
         // TODO: make this nicer. especially: The first check doesn't recognize UserCanceled
         //   exceptions from extensions, hence we have to do the string check (last one)
         const canceled = (err instanceof UserCanceled)
+                         || (err instanceof TemporaryError)
                          || (err instanceof ProcessCanceled)
                          || (err === null)
                          || (err.message === 'Canceled')

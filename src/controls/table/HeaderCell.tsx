@@ -31,8 +31,17 @@ function nextDirection(direction: SortDirection): SortDirection {
 }
 
 class HeaderCell extends React.Component<IHeaderProps, {}> {
+  public shouldComponentUpdate(newProps: IHeaderProps) {
+    // TODO: state is a new object every call, needs to be fixed in Table.tsx
+    return (this.props.attribute !== newProps.attribute)
+             || !_.isEqual(this.props.state, newProps.state)
+             || (this.props.doFilter !== newProps.doFilter)
+             || (this.props.advancedMode !== newProps.advancedMode)
+             || (this.props.children !== (newProps as any).children);
+  }
+
   public render(): JSX.Element {
-    const { t, advancedMode, attribute, className, doFilter } = this.props;
+    const { t, attribute, className, doFilter } = this.props;
     return (
       <TH
         className={`table-header-cell ${className}`}

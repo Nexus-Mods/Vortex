@@ -217,6 +217,15 @@
     }
   ], [
     {
+      "type": "build-copy",
+      "name": "issue-tracker",
+      "path": "extensions/issue-tracker",
+      "removeModules": ["vortex-api"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
+      "copyTo": "{BUILD_DIR}/bundledPlugins/issue-tracker"
+    }
+  ], [
+    {
       "type": "electron-rebuild",
       "condition": "buildType !== 'out'",
       "name": "node-sass-rebuild",

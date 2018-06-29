@@ -335,6 +335,7 @@ export function searchDiscovery(
     knownGames: IGame[], discoveredGames: {[id: string]: IDiscoveryResult},
     searchPaths: string[], onDiscoveredGame: DiscoveredCB,
     onDiscoveredTool: DiscoveredToolCB,
+    onError: (title: string, message: string) => void,
     progressCB: (idx: number, percent: number, label: string) => void): Promise<any> {
 
   return Promise.map(
@@ -378,8 +379,8 @@ export function searchDiscovery(
           return walk(searchPath, matchList, onFileCB, progressObj, normalize);
         })
         .catch(err => (err.code === 'ENOENT')
-          ? Promise.resolve()
-          : Promise.reject(err))
+          ? Promise.resolve(onError('A search path doesn\'t exist or is not connected', searchPath))
+          : Promise.resolve(onError(err.message, searchPath)))
         .then(() => {
           progressObj.completed(searchPath);
           return null;

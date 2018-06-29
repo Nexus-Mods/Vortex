@@ -15,7 +15,7 @@ import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../
 import { IState } from '../../../types/IState';
 import { ITableAttribute } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { ProcessCanceled, UserCanceled } from '../../../util/CustomErrors';
+import { ProcessCanceled, TemporaryError, UserCanceled } from '../../../util/CustomErrors';
 import Debouncer from '../../../util/Debouncer';
 import * as fs from '../../../util/fs';
 import { activeGameId, activeProfile } from '../../../util/selectors';
@@ -714,6 +714,10 @@ class ModList extends ComponentEx<IProps, IComponentState> {
             if (err instanceof UserCanceled) {
               // the user knows that he cancelled, no need to notify
               return;
+            } else if (err instanceof TemporaryError) {
+              return this.context.api.showErrorNotification(
+                'Failed to remove mod, please try again',
+                err.message, { allowReport: false });
             } else if (err instanceof ProcessCanceled) {
               return this.context.api.showErrorNotification('Failed to remove mod', err.message,
                 { allowReport: false });

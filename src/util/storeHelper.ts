@@ -260,7 +260,7 @@ export function removeValueIf<T extends object>(
 }
 
 /**
- * shallow merge a value into the store at the  specified location
+ * shallow merge a value into the store at the specified location
  *
  * @export
  * @template T

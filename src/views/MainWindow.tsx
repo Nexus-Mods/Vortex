@@ -424,15 +424,6 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     this.setMainPage(evt.currentTarget.id, evt.ctrlKey);
   }
 
-  private hideLayer = () => this.showLayerImpl('');
-
-  private showLayerImpl(layer: string): void {
-    if (this.state.showLayer !== '') {
-      this.props.api.events.emit('hide-modal', this.state.showLayer);
-    }
-    this.updateState({ showLayer: { $set: layer } });
-  }
-
   private setMainPage = (pageId: string, secondary: boolean) => {
     // set the page as "loaded", set it as the shown page next frame.
     // this way it gets rendered as hidden once and can then "transition"
@@ -490,7 +481,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     nextProfileId: state.settings.profiles.nextProfileId,
     progressProfile: getSafe(state.session.base, ['progress', 'profile'], undefined),
     customTitlebar: state.settings.window.customTitlebar,
-    userInfo: getSafe(state, ['session', 'nexus', 'userInfo'], undefined),
+    userInfo: getSafe(state, ['persistent', 'nexus', 'userInfo'], undefined),
     APIKey: getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], ''),
     notifications: state.session.notifications.notifications,
   };

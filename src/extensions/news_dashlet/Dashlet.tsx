@@ -1,4 +1,5 @@
 import Dashlet from '../../controls/Dashlet';
+import EmptyPlaceholder from '../../controls/EmptyPlaceholder';
 import Icon from '../../controls/Icon';
 import bbcode from '../../util/bbcode';
 import { ComponentEx, translate } from '../../util/ComponentEx';
@@ -69,8 +70,19 @@ class RSSDashlet extends ComponentEx<IProps, IComponentState> {
     return (
       <Dashlet className='dashlet-news' title={title}>
         {error !== undefined ? <Alert>{t('No messages received')}</Alert> : null}
-        {messages !== undefined ? this.renderMessages(messages) : null}
+        {((messages || []).length !== 0) ? this.renderMessages(messages) : this.renderPlaceholder()}
       </Dashlet>
+    );
+  }
+
+  private renderPlaceholder(): JSX.Element {
+    const { t } = this.props;
+    return (
+      <EmptyPlaceholder
+        icon='layout-list'
+        text={t('No news')}
+        subtext={t('*crickets chirp*')}
+      />
     );
   }
 

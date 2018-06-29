@@ -222,7 +222,7 @@ class LoginDialog extends ComponentEx<IProps, ILoginFormState> {
 function mapStateToProps(state: any): IConnectedProps {
   return {
     APIKey: state.confidential.account.nexus.APIKey,
-    userInfo: state.session.nexus.userInfo,
+    userInfo: state.persistent.nexus.userInfo,
   };
 }
 

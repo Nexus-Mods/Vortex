@@ -1,7 +1,7 @@
 import * as fs from '../../../util/fs';
 
 import * as Promise from 'bluebird';
-import NexusT from 'nexus-api';
+import NexusT, { IFeedbackResponse } from 'nexus-api';
 import ZipT from 'node-7z';
 import { tmpName } from 'tmp';
 
@@ -32,14 +32,14 @@ function zipFiles(files: string[]): Promise<string> {
 }
 
 function submitFeedback(nexus: NexusT, title: string, message: string, feedbackFiles: string[],
-                        anonymous: boolean, hash: string): Promise<void> {
+                        anonymous: boolean, hash: string): Promise<IFeedbackResponse> {
   let archive: string;
   return zipFiles(feedbackFiles)
     .then(tmpPath => {
       archive = tmpPath;
       return nexus.sendFeedback(title, message, tmpPath, anonymous, hash);
     })
-    .then(() => {
+    .finally(() => {
       if (archive !== undefined) {
         fs.removeAsync(archive);
       }

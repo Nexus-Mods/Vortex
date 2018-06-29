@@ -1,10 +1,8 @@
 import {IState} from '../../../types/IState';
 import {ComponentEx, connect} from '../../../util/ComponentEx';
-import { log } from '../../../util/log';
 import { bytesToString, truthy } from '../../../util/util';
 
 import {speedDataPoints} from '../reducers/state';
-import {IDownload} from '../types/IDownload';
 
 import * as I18next from 'i18next';
 import * as React from 'react';
@@ -18,7 +16,6 @@ interface IBaseProps {
 
 interface IConnectedProps {
   speeds: number[];
-  files: { [id: string]: IDownload };
 }
 
 type IProps = IBaseProps & IConnectedProps;
@@ -31,8 +28,6 @@ interface IComponentState {
  * download speed dashlet
  */
 class DownloadGraph extends ComponentEx<IProps, IComponentState> {
-  private mRef: HTMLDivElement;
-  private mIsMounted: boolean = false;
 
   constructor(props: IProps) {
     super(props);
@@ -44,20 +39,9 @@ class DownloadGraph extends ComponentEx<IProps, IComponentState> {
     this.forceUpdate();
   }
 
-  public componentDidMount() {
-    this.mIsMounted = true;
-  }
-
-  public componentWillUnmount() {
-    this.mIsMounted = false;
-  }
-
   public render(): JSX.Element {
-    const {t, files, speeds} = this.props;
+    const {speeds} = this.props;
     const data = this.convertData(speeds);
-
-    const activeDownloads = Object.keys(files).filter(
-      (key: string) => files[key].state === 'started');
 
     if (recharts === undefined) {
       return null;
@@ -107,7 +91,6 @@ class DownloadGraph extends ComponentEx<IProps, IComponentState> {
   }
 
   private setRef = (ref: HTMLDivElement) => {
-    this.mRef = ref;
     if (truthy(ref)) {
       this.onResize(ref.clientWidth, ref.clientHeight);
     }
@@ -117,9 +100,10 @@ class DownloadGraph extends ComponentEx<IProps, IComponentState> {
     return bytesToString(value) + '/s';
   }
 
+  /*
   private labelFormatter = (name: string) => {
     return `${speedDataPoints - parseInt(name, 10)}s ago`;
-  }
+  }*/
 
   private convertData(speeds: number[]): any {
     const padded = Array(speedDataPoints - speeds.length).fill(0).concat(speeds);
@@ -132,7 +116,6 @@ class DownloadGraph extends ComponentEx<IProps, IComponentState> {
 function mapStateToProps(state: IState): IConnectedProps {
   return {
     speeds: state.persistent.downloads.speedHistory,
-    files: state.persistent.downloads.files,
   };
 }
 

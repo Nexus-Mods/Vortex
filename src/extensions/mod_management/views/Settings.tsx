@@ -7,7 +7,7 @@ import { Button } from '../../../controls/TooltipControls';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
 import { IStatePaths } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { UserCanceled } from '../../../util/CustomErrors';
+import { TemporaryError, UserCanceled } from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
 import { log } from '../../../util/log';
 import { showError } from '../../../util/message';
@@ -307,6 +307,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         onSetPath(gameMode, 'download', this.state.paths[gameMode].download);
         onSetPath(gameMode, 'install', this.state.paths[gameMode].install);
       })
+      .catch(TemporaryError, err => {
+        onShowError('Failed to move directories, please try again', err, false);
+      })
       .catch(UserCanceled, () => null)
       .catch((err) => {
         if (err !== null) {
@@ -342,11 +345,19 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private applyActivator = () => {
-    const { gameMode, onSetActivator } = this.props;
+    const { gameMode, onSetActivator, onShowError } = this.props;
     const { currentActivator } = this.state;
 
-    this.purgeActivation().then(() => {
+    this.purgeActivation()
+    .then(() => {
       onSetActivator(gameMode, currentActivator);
+    })
+    .catch(TemporaryError, err => {
+      onShowError('Failed to purge previous deployment, please try again',
+                  err, false);
+    })
+    .catch(err => {
+      onShowError('Failed to purge previous deployment', err, true);
     });
   }
 

@@ -187,19 +187,20 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
   }
   const currentDownloadPath = resolvePath('download', state.settings.mods.paths, gameId);
 
-  let nameIdMap: {[name: string]: string};
+  let nameIdMap: {[name: string]: string} = {};
 
   let downloadChangeHandler: (evt: string, fileName: string) => void;
   return getNormalizeFunc(currentDownloadPath, {separators: false, relative: false})
       .then(normalize => {
-        downloadChangeHandler =
-          genDownloadChangeHandler(api.store, nameIdMap, normalize);
         nameIdMap = Object.keys(downloads).reduce((prev, value) => {
           if (downloads[value].localPath !== undefined) {
             prev[normalize(downloads[value].localPath)] = value;
           }
           return prev;
         }, {});
+
+        downloadChangeHandler =
+          genDownloadChangeHandler(api.store, nameIdMap, normalize);
 
         const knownDLs =
           Object.keys(downloads)

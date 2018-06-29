@@ -57,7 +57,7 @@ class FileAssembler {
             : fsFast.writeAsync(this.mFD, data, 0, data.length, offset))
         .then((bytesWritten: any) => {
           this.mWritten += bytesWritten;
-          if (this.mWritten - this.mLastLogged > 1024 * 1024) {
+          if (this.mWritten - this.mLastLogged > 16 * 1024 * 1024) {
             this.mLastLogged = this.mWritten;
             synced = true;
             return fs.fsyncAsync(this.mFD).then(() => bytesWritten);

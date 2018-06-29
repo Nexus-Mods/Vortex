@@ -2,9 +2,7 @@ import {IPersistor} from '../types/IExtensionContext';
 import { terminate } from '../util/errorHandling';
 
 import * as Promise from 'bluebird';
-import * as _ from 'lodash';
 import * as Redux from 'redux';
-import { addNotification } from '../actions/notifications';
 
 function insert(target: any, key: string[], value: any, hive: string) {
   try {
@@ -30,11 +28,11 @@ function insert(target: any, key: string[], value: any, hive: string) {
 }
 
 class ReduxPersistor<T> {
-  private mUnsubscribe: () => void;
   private mStore: Redux.Store<T>;
   private mPersistedState: T;
   private mPersistors: { [key: string]: IPersistor } = {};
   private mHydrating: Set<string> = new Set();
+  private mUpdateQueue: Promise<void> = Promise.resolve();
 
   constructor(store: Redux.Store<T>) {
     this.mStore = store;
@@ -88,6 +86,14 @@ class ReduxPersistor<T> {
   private handleChange = () => {
     const oldState = this.mPersistedState;
     const newState = this.mStore.getState();
+
+    this.mUpdateQueue = this.mUpdateQueue
+      .then(() => {
+        this.doProcessChange(oldState, newState);
+      });
+  }
+
+  private doProcessChange(oldState: any, newState: any) {
     if (oldState !== newState) {
       this.mPersistedState = newState;
       this.storeDiffHive(oldState, newState)
@@ -137,7 +143,7 @@ class ReduxPersistor<T> {
               // keys that exist in both
             : this.storeDiff(persistor, [].concat(statePath, key), oldState[key], newState[key]))
           .then(() => Promise.mapSeries(newkeys,
-            key => (oldState[key] === undefined)
+            key => ((oldState[key] === undefined) && (newState[key] !== undefined))
                 // keys that exist in newState but not oldState
               ? this.add(persistor, [].concat(statePath, key), newState[key])
                 // keys that exist in both - already handled above

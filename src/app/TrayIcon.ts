@@ -51,6 +51,7 @@ class TrayIcon {
     if ((title === undefined) || (content === undefined)) {
       return;
     }
+    log('debug', 'showing balloon', { title, content });
     this.mTrayIcon.displayBalloon({
       title,
       content,

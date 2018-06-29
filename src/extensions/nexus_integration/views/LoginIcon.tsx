@@ -111,7 +111,7 @@ class LoginIcon extends ComponentEx<IProps, {}> {
 function mapStateToProps(state: any): IConnectedProps {
   return {
     APIKey: state.confidential.account.nexus.APIKey,
-    userInfo: state.session.nexus.userInfo,
+    userInfo: state.persistent.nexus.userInfo,
   };
 }
 

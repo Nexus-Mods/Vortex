@@ -10,8 +10,9 @@ import { sendReport, toError } from './errorHandling';
 import { log } from './log';
 import { truthy } from './util';
 
+import { IFeedbackResponse } from 'nexus-api';
 import * as Redux from 'redux';
-import * as ReduxThunk from 'redux-thunk';
+import {} from 'redux-thunk';
 
 function clamp(min: number, value: number, max: number): number {
   return Math.max(max, Math.min(min, value));
@@ -83,6 +84,34 @@ export function showInfo<S>(dispatch: Redux.Dispatch<S>, message: string, id?: s
   }));
 }
 
+function genGithubUrl(issueId: number) {
+  return `https://github.com/Nexus-Mods/Vortex/issues/${issueId}`;
+}
+
+function genFeedbackText(response: IFeedbackResponse): string {
+  const lines = [
+    'Thank you for your feedback!',
+    '',
+  ];
+
+  if (response.github_issue === undefined) {
+    lines.push('Your feedback will be reviewed before it is published.');
+  } else {
+    if (response.github_issue.issue_state === 'closed') {
+      lines.push('This issue was reported before and seems to be fixed already.');
+    } else if (response.count > 1) {
+      lines.push('This is not the first report about this problem, so your report '
+               + 'was added as a comment to the existing one.');
+    } else {
+      lines.push('You were the first to report this issue.');
+    }
+    const url = genGithubUrl(response.github_issue.id);
+    lines.push(`You can review the created issue on [url]${url}[/url]`);
+  }
+
+  return lines.join('[br][/br]');
+}
+
 export interface IErrorOptions {
   replace?: { [key: string]: string };
   isHTML?: boolean;
@@ -129,7 +158,14 @@ export function showError<S>(dispatch: Redux.Dispatch<S>,
   if ((options === undefined) || (options.allowReport !== false)) {
     actions.push({
       label: 'Report',
-      action: () => sendReport('error', toError(details, options), ['error'], ''),
+      action: () => sendReport('error', toError(details, options), ['error'], '')
+        .then(response => {
+          if (response !== undefined) {
+            dispatch(showDialog('success', 'Issue reported', {
+              bbcode: genFeedbackText(response),
+            }, [ { label: 'Close' } ]));
+          }
+        }),
     });
   }
 
