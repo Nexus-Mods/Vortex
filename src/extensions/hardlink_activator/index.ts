@@ -180,7 +180,6 @@ class DeploymentMethod extends LinkingDeployment {
         ? Promise.resolve(false)
         : fs.lstatAsync(sourcePath)
             .then(sourceStats => linkStats.ino === sourceStats.ino))
-      .tap(res => console.log('is link res', linkPath, res))
       .catch(err => (err.code === 'ENOENT')
         ? Promise.resolve(false)
         : Promise.reject(err));
