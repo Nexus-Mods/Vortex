@@ -7,9 +7,9 @@ let parameters: string[];
 // tslint:disable-next-line:prefer-const
 let environment: any;
 
-function runElevatedCustomTool(ipcClient): Promise<void> {
+function runElevatedCustomTool(ipcClient, req: NodeRequireFunction): Promise<void> {
   return new Promise((resolve, reject) => {
-    const exec = require('child_process').execFile;
+    const exec = req('child_process').execFile;
     try {
       let params: string[] = [];
       if (parameters !== undefined) {
