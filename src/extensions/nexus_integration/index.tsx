@@ -13,6 +13,7 @@ import { currentGame, getSafe } from '../../util/storeHelper';
 import { decodeHTML, truthy } from '../../util/util';
 
 import { ICategoryDictionary } from '../category_management/types/ICategoryDictionary';
+import { DownloadIsHTML } from '../download_management/DownloadManager';
 import { IGameStored } from '../gamemode_management/types/IGameStored';
 import { setModAttribute } from '../mod_management/actions/mods';
 import { setUpdatingMods } from '../mod_management/actions/settings';
@@ -42,6 +43,7 @@ import NexusModIdDetail from './views/NexusModIdDetail';
 import { } from './views/Settings';
 
 import NXMUrl from './NXMUrl';
+import * as sel from './selectors';
 
 import * as Promise from 'bluebird';
 import { remote } from 'electron';
@@ -57,7 +59,6 @@ import * as Redux from 'redux';
 import * as util from 'util';
 import {} from 'uuid';
 import * as WebSocket from 'ws';
-import { DownloadIsHTML } from '../download_management/DownloadManager';
 
 // tslint:disable-next-line:no-var-requires
 const opn = require('opn');
@@ -598,14 +599,71 @@ function validateKey(api: IExtensionApi, key: string): Promise<void> {
     });
 }
 
+function requestLogin(api: IExtensionApi, callback: (err: Error) => void) {
+  const id = require('uuid').v4();
+  const connection = new WebSocket('wss://sso.nexusmods.com')
+    .on('open', () => {
+      connection.send(JSON.stringify({
+        id, appid: 'Vortex',
+      }), err => {
+        if (err) {
+          api.showErrorNotification('Failed to start login', err);
+          connection.close();
+        }
+      });
+      opn(`https://www.nexusmods.com/sso?id=${id}`).catch(err => undefined);
+    })
+    .on('message', data => {
+      connection.close();
+      api.store.dispatch(setUserAPIKey(data.toString()));
+      remote.getCurrentWindow().setAlwaysOnTop(true);
+      remote.getCurrentWindow().show();
+      remote.getCurrentWindow().setAlwaysOnTop(false);
+      callback(null);
+    })
+    .on('error', error => {
+      api.showErrorNotification('Failed to connect to nexusmods.com', error, {
+        allowReport: false,
+      });
+      connection.close();
+    });
+}
+
+function doDownload(api: IExtensionApi, url: string) {
+  return startDownload(api, url)
+  .catch(DownloadIsHTML, err => undefined)
+  .catch(err => {
+    api.showErrorNotification('Failed to start download', err);
+  });
+}
+
 function once(api: IExtensionApi) {
   const registerFunc = (def: boolean) => {
     api.registerProtocol('nxm', def, (url: string) => {
-      startDownload(api, url)
-      .catch(DownloadIsHTML, err => undefined)
-      .catch(err => {
-        api.showErrorNotification('Failed to start download', err);
+      if (sel.apiKey(api.store.getState()) === undefined) {
+        api.sendNotification({
+          type: 'info',
+          title: 'Not logged in',
+          message: 'Nexus Mods requires Vortex to be logged in for downloading',
+          actions: [
+            {
+              title: 'Log in',
+              action: (dismiss: () => void) => {
+                requestLogin(api, (err) => {
+                  if (err !== null) {
+                    api.showErrorNotification('Failed to get access key', err);
+                  } else {
+                    dismiss();
+                    doDownload(api, url);
+                  }
       });
+              },
+            },
+          ],
+    });
+      } else {
+        doDownload(api, url);
+      }
     });
   };
 
@@ -734,37 +792,7 @@ function once(api: IExtensionApi) {
     ].join('/')).catch(err => undefined);
   });
 
-  api.events.on('request-nexus-login', (callback: (err: Error) => void) => {
-    const id = require('uuid').v4();
-    const connection = new WebSocket('wss://sso.nexusmods.com')
-      .on('open', () => {
-        connection.send(JSON.stringify({
-          id, appid: 'Vortex',
-        }), err => {
-          if (err) {
-            api.showErrorNotification('Failed to start login', err);
-            connection.close();
-          }
-        });
-        opn(`https://www.nexusmods.com/sso?id=${id}`).catch(err => undefined);
-      })
-      .on('message', data => {
-        if (data.toString() !== 'Oh, Hi!') {
-          connection.close();
-          api.store.dispatch(setUserAPIKey(data.toString()));
-          remote.getCurrentWindow().setAlwaysOnTop(true);
-          remote.getCurrentWindow().show();
-          remote.getCurrentWindow().setAlwaysOnTop(false);
-          callback(null);
-        }
-      })
-      .on('error', error => {
-        api.showErrorNotification('Failed to connect to nexusmods.com', error, {
-          allowReport: false,
-        });
-        connection.close();
-      });
-  });
+  api.events.on('request-nexus-login', callback => requestLogin(api, callback));
 
   api.events.on('request-own-issues', (cb: (err: Error, issues?: IIssue[]) => void) => {
     nexus.getOwnIssues()
