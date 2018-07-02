@@ -425,7 +425,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       ? (
         <DropdownButton
           className='dropdown-version'
-          title={getSafe(mod.attributes, ['version'], '')}
+          title={getSafe(mod.attributes, ['version'], undefined) || ''}
           id={`version-dropdown-${mod.id}`}
           container={this.mRef}
         >
