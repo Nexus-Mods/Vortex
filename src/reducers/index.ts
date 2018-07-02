@@ -54,6 +54,10 @@ function verifyElement(verifier: IStateVerifier, value: any) {
       && (value === undefined)) {
     return false;
   }
+  if ((verifier.noNull === true)
+      && (value === null)) {
+    return false;
+  }
   return true;
 }
 

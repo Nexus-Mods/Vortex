@@ -56,7 +56,7 @@ export class DateTimeFilterComponent extends ComponentEx<IFilterProps, {}> {
             </Button>
           </InputGroup.Addon>
           <ReactDatePicker
-            selected={filt.value !== null ? moment(filt.value) : null}
+            selected={truthy(filt.value) ? moment(filt.value) : null}
             onChange={this.changeFilter}
             locale={this.context.api.locale()}
             isClearable={true}

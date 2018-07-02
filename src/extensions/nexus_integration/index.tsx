@@ -568,13 +568,13 @@ function validateKey(api: IExtensionApi, key: string): Promise<void> {
         'API Key validation timed out',
         'Server didn\'t respond to validation request, web-based '
         + 'features will be unavailable', { allowReport: false });
-      api.store.dispatch(setUserInfo(null));
+      api.store.dispatch(setUserInfo(undefined));
     })
     .catch(NexusError, err => {
       showError(api.store.dispatch,
         'Failed to log in',
         errorFromNexusError(err), { allowReport: false });
-      api.store.dispatch(setUserInfo(null));
+      api.store.dispatch(setUserInfo(undefined));
     })
     .catch(err => {
       // if there is an "errno", this is more of a technical problem, like
@@ -595,7 +595,7 @@ function validateKey(api: IExtensionApi, key: string): Promise<void> {
           'Failed to log in',
           err.message, { allowReport: false });
       }
-      api.store.dispatch(setUserInfo(null));
+      api.store.dispatch(setUserInfo(undefined));
     });
 }
 
@@ -656,11 +656,11 @@ function once(api: IExtensionApi) {
                     dismiss();
                     doDownload(api, url);
                   }
-      });
+                });
               },
             },
           ],
-    });
+        });
       } else {
         doDownload(api, url);
       }
@@ -695,6 +695,8 @@ function once(api: IExtensionApi) {
       (window as any).requestIdleCallback(() => {
         validateKey(api, state.confidential.account.nexus.APIKey);
       });
+    } else {
+      api.store.dispatch(setUserInfo(undefined));
     }
   }
 
