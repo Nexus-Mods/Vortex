@@ -341,6 +341,10 @@ abstract class LinkingActivator implements IDeploymentMethod {
       }, { concurrency: 200 }).then(() => Promise.resolve(nonLinks));
   }
 
+  /**
+   * create file link
+   * Note: This function is expected to replace the target file if it exists
+   */
   protected abstract linkFile(linkPath: string, sourcePath: string): Promise<void>;
   protected abstract unlinkFile(linkPath: string, sourcePath: string): Promise<void>;
   protected abstract purgeLinks(installPath: string, dataPath: string): Promise<void>;
@@ -370,16 +374,17 @@ abstract class LinkingActivator implements IDeploymentMethod {
         this.mContext.newDeployment[key].relPath].join(path.sep);
 
     const backupProm: Promise<void> = replace
-      ? Promise.resolve(undefined)
+      ? Promise.resolve()
       : this.isLink(fullOutputPath, fullPath)
-        ? Promise.resolve(undefined)
-        : fs.renameAsync(fullOutputPath, fullOutputPath + BACKUP_TAG)
-          .catch(err => (err.code === 'ENOENT')
-            // if the backup fails because there is nothing to backup, that's great,
-            // that's the most common outcome. Otherwise we failed to backup an existing
-            // file, so continuing could cause data loss
-            ? Promise.resolve(undefined)
-            : Promise.reject(err));
+        .then(link => link
+          ? Promise.resolve(undefined) // don't re-create link that's already correct
+          : fs.renameAsync(fullOutputPath, fullOutputPath + BACKUP_TAG))
+        .catch(err => (err.code === 'ENOENT')
+          // if the backup fails because there is nothing to backup, that's great,
+          // that's the most common outcome. Otherwise we failed to backup an existing
+          // file, so continuing could cause data loss
+          ? Promise.resolve(undefined)
+          : Promise.reject(err));
 
     return backupProm
       .then(() => this.linkFile(fullOutputPath, fullPath))

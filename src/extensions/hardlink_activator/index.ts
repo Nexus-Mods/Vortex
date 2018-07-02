@@ -152,23 +152,22 @@ class DeploymentMethod extends LinkingDeployment {
 
   protected linkFile(linkPath: string, sourcePath: string): Promise<void> {
     return this.ensureDir(path.dirname(linkPath))
-        .then((created: any) => {
-          let tagDir: Promise<void>;
-          if (created !== null) {
-            tagDir = fs.writeFileAsync(
-                path.join(created, LinkingDeployment.TAG_NAME),
-                'This directory was created by Vortex deployment and will be removed ' +
-                    'during purging if it\'s empty');
-          } else {
-            tagDir = Promise.resolve();
-          }
-          return tagDir.then(() => fs.linkAsync(sourcePath, linkPath))
-              .catch(err => {
-                if (err.code !== 'EEXIST') {
-                  throw err;
-                }
-              });
-        });
+      .then((created: any) => {
+        let tagDir: Promise<void>;
+        if (created !== null) {
+          tagDir = fs.writeFileAsync(
+              path.join(created, LinkingDeployment.TAG_NAME),
+              'This directory was created by Vortex deployment and will be removed ' +
+                  'during purging if it\'s empty');
+        } else {
+          tagDir = Promise.resolve();
+        }
+        return tagDir.then(() => fs.linkAsync(sourcePath, linkPath))
+            .catch(err => (err.code !== 'EEXIST')
+                ? Promise.reject(err)
+                : fs.removeAsync(linkPath)
+                  .then(() => fs.linkAsync(sourcePath, linkPath)));
+      });
   }
 
   protected unlinkFile(linkPath: string): Promise<void> {
@@ -181,6 +180,7 @@ class DeploymentMethod extends LinkingDeployment {
         ? Promise.resolve(false)
         : fs.lstatAsync(sourcePath)
             .then(sourceStats => linkStats.ino === sourceStats.ino))
+      .tap(res => console.log('is link res', linkPath, res))
       .catch(err => (err.code === 'ENOENT')
         ? Promise.resolve(false)
         : Promise.reject(err));
