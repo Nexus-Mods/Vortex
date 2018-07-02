@@ -21,6 +21,7 @@ checker.init(
       if (json[key].licenseFile) {
         json[key].licenseFile = path.relative(basePath, json[key].licenseFile);
       }
+      delete json[key].path;
       if (key.startsWith('@types')) {
         deleteKeys.push(key);
       }
