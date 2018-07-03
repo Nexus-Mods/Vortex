@@ -419,7 +419,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       ? equalMods.map(iter => iter.id)
       : [mod.id];
 
-    const updateState = modUpdateState(mod, downloadPath, mods);
+    const updateState = modUpdateState(mod.attributes);
 
     const versionDropdown = alternatives.length > 1
       ? (
