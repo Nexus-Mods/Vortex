@@ -3,7 +3,7 @@ import * as Registry from 'winreg';
 
 import * as fs from './fs';
 import { log } from './log';
-import { getSafe } from './storeHelper';
+import { getSafeCI } from './storeHelper';
 
 import { app as appIn, remote } from 'electron';
 import * as path from 'path';
@@ -141,7 +141,7 @@ class Steam implements ISteam {
 
         let counter = 1;
         const steamObj: any =
-          getSafe(configObj, ['InstallConfigStore', 'Software', 'Valve', 'Steam'], {});
+          getSafeCI(configObj, ['InstallConfigStore', 'Software', 'Valve', 'Steam'], {});
         while (steamObj.hasOwnProperty(`BaseInstallFolder_${counter}`)) {
           steamPaths.push(steamObj[`BaseInstallFolder_${counter}`]);
           ++counter;

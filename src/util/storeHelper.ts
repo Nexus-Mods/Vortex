@@ -38,6 +38,37 @@ export function getSafe<T>(state: any, path: Array<(string | number)>, fallback:
   return current;
 }
 
+/**
+ * case insensitive variant of getSafe
+ */
+export function getSafeCI<T>(state: any, path: Array<(string | number)>, fallback: T): T {
+  let current = state;
+  const getCaseCorrected = (obj: any, prop: string | number) => {
+    if (typeof(prop) === 'number') {
+      return obj[prop] !== undefined ? prop : undefined;
+    }
+    const keys = Object.keys(obj);
+    const idx = keys.map(key => key.toLowerCase()).indexOf(prop.toLowerCase());
+    if (idx === -1) {
+      return undefined;
+    }
+    return keys[idx];
+  };
+
+  for (const segment of path) {
+    if ((current === undefined) || (current === null)) {
+      return fallback;
+    }
+
+    const caseCorrected = getCaseCorrected(current, segment);
+    if (caseCorrected === undefined) {
+      return fallback;
+    }
+    current = current[caseCorrected];
+  }
+  return current;
+}
+
 export function mutateSafe<T>(state: T, path: Array<(string | number)>, value: any) {
   const firstElement = path[0];
   if (path.length === 1) {
