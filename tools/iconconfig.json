@@ -462,6 +462,14 @@
     "milestone": {
       "path": "{nucleo}/healthcare-medical/{nucleo_simple}_steps",
       "rmFill": true
+    },
+    "nav-back": {
+      "path": "{nucleo}/arrows/{nucleo_simple}_simple-left",
+      "rmFill": true
+    },
+    "nav-forward": {
+      "path": "{nucleo}/arrows/{nucleo_simple}_simple-right",
+      "rmFill": true
     }
   }
 }
