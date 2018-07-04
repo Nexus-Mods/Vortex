@@ -31,6 +31,7 @@ interface IMenuActionProps {
   id: string;
   action: IActionDefinitionEx;
   instanceId: string | string[];
+  onSelect?: () => void;
 }
 
 class MenuAction extends React.PureComponent<IMenuActionProps, {}> {
@@ -50,11 +51,12 @@ class MenuAction extends React.PureComponent<IMenuActionProps, {}> {
   }
 
   private trigger = () => {
-    const { action, instanceId } = this.props;
+    const { action, instanceId, onSelect } = this.props;
 
     const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
 
     action.action(instanceIds);
+    onSelect();
   }
 }
 
