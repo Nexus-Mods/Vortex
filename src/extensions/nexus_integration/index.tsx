@@ -713,6 +713,7 @@ function once(api: IExtensionApi) {
         'You are not logged in to Nexus Mods!', { allowReport: false });
     } else {
       api.store.dispatch(setUpdatingMods(gameId, true));
+      const start = Date.now();
       checkModVersionsImpl(api.store, gameId, mods)
         .then((errorMessages: string[]) => {
           if (errorMessages.length !== 0) {
@@ -727,7 +728,9 @@ function once(api: IExtensionApi) {
             err);
         })
         .finally(() => {
-          api.store.dispatch(setUpdatingMods(gameId, false));
+          setTimeout(() => {
+            api.store.dispatch(setUpdatingMods(gameId, false));
+          }, 2000 - (Date.now() - start));
         });
     }
   });
