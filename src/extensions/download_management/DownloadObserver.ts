@@ -196,8 +196,12 @@ export class DownloadObserver {
                                  callback: (error: Error, id: string) => void,
                                  res: IDownloadResult) {
     const fileName = path.basename(res.filePath);
+    const state: IState = this.mStore.getState();
     if (truthy(fileName)) {
+      log('debug', 'setting final download name', { id, fileName });
       this.mStore.dispatch(setDownloadFilePath(id, fileName));
+    } else {
+      log('error', 'finished download has no filename?', res);
     }
     log('debug', 'unfinished chunks', { chunks: res.unfinishedChunks });
     if (res.unfinishedChunks.length > 0) {

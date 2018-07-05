@@ -176,8 +176,18 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
 
   const state: IState = store.getState();
 
-  const downloads: {[id: string]: IDownload} =
-      state.persistent.downloads.files;
+  let downloads: {[id: string]: IDownload} = state.persistent.downloads.files;
+
+  // workaround to avoid duplicate entries in the download list. These should not
+  // exist, the following block should do nothing
+  Object.keys(downloads)
+    .filter(dlId => (downloads[dlId].state === 'finished')
+                    && !truthy(downloads[dlId].localPath))
+    .forEach(dlId => {
+      api.store.dispatch(removeDownload(dlId));
+    });
+
+  downloads = state.persistent.downloads.files;
 
   if (gameId === undefined) {
     gameId = selectors.activeGameId(state);
