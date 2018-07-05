@@ -161,8 +161,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       const { attributeState, objects } = newProps;
       this.mVisibleAttributes = this.visibleAttributes(objects, attributeState);
 
-      if (Object.keys(newProps.attributeState).find(
-        id => this.props.attributeState[id].enabled !== newProps.attributeState[id].enabled)) {
+      if (Object.keys(newProps.attributeState).find(id =>
+            (this.props.attributeState[id] === undefined)
+            || (this.props.attributeState[id].enabled !== newProps.attributeState[id].enabled))) {
         const columnToggles = this.columnToggles(newProps);
         this.updateState(update(this.mNextState, {
           columnToggles: { $set: columnToggles },
