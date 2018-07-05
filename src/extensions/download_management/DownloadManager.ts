@@ -190,7 +190,7 @@ class DownloadWorker {
 
   private abort(paused: boolean): boolean {
     if (this.mEnded) {
-      return false;
+     return false;
     }
     if (this.mRequest !== undefined) {
       this.mRequest.abort();
@@ -466,12 +466,14 @@ class DownloadManager {
         },
         promises: [],
       };
-      download.chunks = chunks.map(chunk => this.toJob(download, chunk));
+      download.chunks = (chunks || []).map(chunk => this.toJob(download, chunk));
       if (download.chunks.length > 0) {
         download.chunks[0].errorCB = (err) => { this.cancelDownload(download, err); };
+        this.mQueue.push(download);
+        this.tickQueue();
+      } else {
+        return reject(new ProcessCanceled('No unfinished chunks'));
       }
-      this.mQueue.push(download);
-      this.tickQueue();
     });
   }
 
