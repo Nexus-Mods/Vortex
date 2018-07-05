@@ -76,7 +76,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
 
   public prepare(dataPath: string, clean: boolean, lastDeployment: IDeployedFile[]): Promise<void> {
     if (this.mContext !== undefined) {
-      return Promise.reject(new ProcessCanceled('Deployment in progress'));
+      return Promise.reject(new Error('Deployment in progress'));
     }
     return getNormalizeFunc(dataPath, { unicode: false, separators: false, relative: false })
       .then(func => {
@@ -99,6 +99,10 @@ abstract class LinkingActivator implements IDeploymentMethod {
                   dataPath: string,
                   installationPath: string,
                   progressCB?: (files: number, total: number) => void): Promise<IDeployedFile[]> {
+    if (this.mContext === undefined) {
+      return Promise.reject(new Error('No deployment in progress'));
+    }
+
     let added: string[];
     let removed: string[];
     let sourceChanged: string[];
