@@ -72,6 +72,9 @@ interface IVersionOptionProps {
 class VersionOption extends React.PureComponent<IVersionOptionProps, {}> {
   public render(): JSX.Element {
     const { t, modId, altId, mod } = this.props;
+    if (mod === undefined) {
+      return null;
+    }
     return (
       <a className='version-option'>
         <div>{getSafe(mod.attributes, ['version'], '')}</div>
