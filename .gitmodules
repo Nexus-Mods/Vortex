@@ -102,3 +102,7 @@
 	path = extensions/issue-tracker
 	url = https://github.com/Nexus-Mods/extension-issue-tracker
 	branch = master
+[submodule "extensions/changelog-dashlet"]
+	path = extensions/changelog-dashlet
+	url = https://github.com/Nexus-Mods/extension-changelog-dashlet
+	branch = master
