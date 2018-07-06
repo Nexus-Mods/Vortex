@@ -274,7 +274,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     return (
       <div className='table-footer-placeholder'>
         <div className='table-footer'>
-          <IconBar className='menubar'>
+          <IconBar className='menubar' t={t}>
             {multiRowActions.map((action, idx) =>
               <ToolbarIcon
                 key={idx}
@@ -439,6 +439,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
               staticElements={columnToggles}
               collapse='force'
               icon='settings'
+              t={t}
             />
           ) : null
         }

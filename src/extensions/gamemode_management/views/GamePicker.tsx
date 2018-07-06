@@ -148,6 +148,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
             group='game-icons'
             staticElements={this.buttons}
             className='menubar'
+            t={t}
           />
           <div className='flex-fill' />
           <IconBar
@@ -155,6 +156,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
             group='gamepicker-layout-icons'
             staticElements={[]}
             className='menubar'
+            t={t}
           >
             <ToggleButton
               id='gamepicker-layout-list'

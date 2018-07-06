@@ -328,6 +328,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
             group='mod-icons'
             staticElements={this.staticButtons}
             className='menubar'
+            t={t}
           />
         </MainPage.Header>
         <MainPage.Body>

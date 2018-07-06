@@ -7,6 +7,7 @@ import Icon from './Icon';
 import ToolbarIcon from './ToolbarIcon';
 import { IconButton } from './TooltipControls';
 
+import * as I18next from 'i18next';
 import * as update from 'immutability-helper';
 import * as _ from 'lodash';
 import * as PropTypes from 'prop-types';
@@ -28,6 +29,7 @@ export interface IBaseProps {
   icon?: string;
   pullRight?: boolean;
   clickAnywhere?: boolean;
+  t: I18next.TranslationFunction;
 }
 
 type IProps = IBaseProps & { actions?: IActionDefinitionEx[] } & React.HTMLAttributes<any>;
@@ -86,9 +88,9 @@ class PortalMenu extends React.Component<IPortalMenuProps, {}> {
   }
 }
 
-function genTooltip(show: boolean | string): string {
+function genTooltip(t: I18next.TranslationFunction, show: boolean | string): string {
   return typeof (show) === 'string'
-    ? show
+    ? t(show)
     : undefined;
 }
 
@@ -96,21 +98,22 @@ interface IMenuActionProps {
   id: string;
   action: IActionDefinitionEx;
   instanceId: string | string[];
+  t: I18next.TranslationFunction;
 }
 
 class MenuAction extends React.PureComponent<IMenuActionProps, {}> {
   public render(): JSX.Element {
-    const { action, id } = this.props;
+    const { t, action, id } = this.props;
     return (
       <MenuItem
         eventKey={id}
         onSelect={this.trigger}
         disabled={action.show !== true}
-        title={genTooltip(action.show)}
+        title={genTooltip(t, action.show)}
       >
         {/*this.renderIconInner(icon, index, 'menu')*/}
         <Icon name={action.icon} />
-        <div className='button-text'>{action.title}</div>
+        <div className='button-text'>{t(action.title)}</div>
       </MenuItem>
     );
   }
@@ -235,27 +238,27 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
 
   private renderMenuItem =
     (icon: IActionDefinition & { show: boolean | string }, index: number) => {
-    const { instanceId } = this.props;
+    const { t, instanceId } = this.props;
 
     const id = `${instanceId || '1'}_${index}`;
 
     if ((icon.icon === null) && (icon.component === undefined)) {
       return (
         <MenuItem className='menu-separator-line' key={id} disabled={true}>
-          {icon.title}
+          {t(icon.title)}
         </MenuItem>
       );
     }
 
     if (icon.icon !== undefined) {
-      return <MenuAction key={id} id={id} action={icon} instanceId={instanceId} />;
+      return <MenuAction key={id} id={id} action={icon} instanceId={instanceId} t={t} />;
     } else {
       return (
         <MenuItem
           key={id}
           eventKey={id}
           disabled={icon.show !== true}
-          title={genTooltip(icon.show)}
+          title={genTooltip(t, icon.show)}
         >
           {this.renderCustomIcon(id, icon)}
         </MenuItem>
@@ -273,7 +276,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
 
   private renderIconInner = (icon: IActionDefinition, index: number,
                              forceButtonType?: ButtonType) => {
-    const { instanceId, tooltipPlacement } = this.props;
+    const { t, instanceId, tooltipPlacement } = this.props;
 
     const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
 
@@ -297,8 +300,8 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
           id={id}
           instanceId={instanceIds}
           icon={hasIcon ? icon.icon : undefined}
-          text={hasText ? icon.title : undefined}
-          tooltip={icon.title}
+          text={hasText ? t(icon.title) : undefined}
+          tooltip={t(icon.title)}
           onClick={icon.action}
           placement={tooltipPlacement}
         />

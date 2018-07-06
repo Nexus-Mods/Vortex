@@ -71,7 +71,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
   }
 
   public detailedDescription(t: I18next.TranslationFunction): string {
-    return this.description;
+    return t(this.description);
   }
 
   public prepare(dataPath: string, clean: boolean, lastDeployment: IDeployedFile[]): Promise<void> {

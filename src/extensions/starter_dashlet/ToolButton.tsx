@@ -74,7 +74,7 @@ class ToolButton extends PureComponentEx<IProps, IToolButtonState> {
   }
 
   public render() {
-    const { primary, starter } = this.props;
+    const { t, primary, starter } = this.props;
     const valid = (starter.exePath !== undefined) && (starter.exePath !== '');
 
     const classes = [
@@ -98,6 +98,7 @@ class ToolButton extends PureComponentEx<IProps, IToolButtonState> {
           instanceId={starter.id}
           staticElements={this.mStaticElements}
           collapse={true}
+          t={t}
         />
       </div>
     );
