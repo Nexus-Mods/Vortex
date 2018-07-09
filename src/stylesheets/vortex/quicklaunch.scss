@@ -24,6 +24,10 @@
     margin: auto 2em;
     text-align: left;
     font-size: larger;
+    text-shadow: 1px  1px 1px black,
+                -1px  1px 1px black,
+                 1px -1px 1px black,
+                -1px -1px 1px black
   }
 
   .tool-icon-container {
