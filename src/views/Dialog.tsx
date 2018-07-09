@@ -203,13 +203,13 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
       ));
     } else if (content.checkboxes !== undefined) {
       controls.push((
-        <div key='dialog-content-choices'>
+        <div key='dialog-content-choices' className='dialog-content-choices'>
           {content.checkboxes.map(this.renderCheckbox)}
         </div>
       ));
     } else if (content.choices !== undefined) {
       controls.push((
-        <div key='dialog-content-choices'>
+        <div key='dialog-content-choices' className='dialog-content-choices'>
           {content.choices.map(this.renderRadiobutton)}
         </div>
       ));

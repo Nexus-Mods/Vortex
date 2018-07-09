@@ -177,6 +177,7 @@ export interface ISettingsMods {
   modlistState: { [id: string]: IAttributeState };
   activator: { [gameId: string]: string };
   showDropzone: boolean;
+  confirmPurge: boolean;
 }
 
 export interface ISettingsUpdate {

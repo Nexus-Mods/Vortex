@@ -22,6 +22,8 @@ export const settingsReducer: IReducerSpec = {
     },
     [actions.setShowModDropzone as any]: (state, payload) =>
       setSafe(state, ['showDropzone'], payload),
+    [actions.setConfirmPurge as any]: (state, payload) =>
+      setSafe(state, ['confirmPurge'], payload),
   },
   defaults: {
     paths: {},
@@ -29,5 +31,6 @@ export const settingsReducer: IReducerSpec = {
     activator: {},
     updatingMods: {},
     showDropzone: true,
+    confirmPurge: true,
   },
 };
