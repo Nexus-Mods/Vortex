@@ -524,6 +524,7 @@ function attributeExtractor(input: any) {
     description: getSafe(input.meta, ['details', 'description'], undefined),
     author: getSafe(input.meta, ['details', 'author'], undefined),
     homepage: getSafe(input.meta, ['details', 'homepage'], undefined),
+    variant: getSafe(input.custom, ['variant'], undefined),
   });
 }
 

@@ -75,9 +75,15 @@ class VersionOption extends React.PureComponent<IVersionOptionProps, {}> {
     if (mod === undefined) {
       return null;
     }
+
+    const variant = getSafe(mod.attributes, ['variant'], undefined);
+
     return (
       <a className='version-option'>
-        <div>{getSafe(mod.attributes, ['version'], '')}</div>
+        <div>
+          {getSafe(mod.attributes, ['version'], '')}
+          {variant !== undefined ? ` (${variant})` : ''}
+        </div>
         <IconButton
           id={`btn-remove-${modId}-${altId}`}
           className='btn-embed'
@@ -136,6 +142,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   private modNameAttribute: ITableAttribute;
   private modVersionAttribute: ITableAttribute;
   private modVersionDetailAttribute: ITableAttribute;
+  private modVariantDetailAttribute: ITableAttribute;
   private modAuthorAttribute: ITableAttribute<IModWithState>;
   private mModsWithState: { [id: string]: IModWithState };
   private mGroupedMods: { [id: string]: IModWithState[] } = {};
@@ -310,6 +317,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
                 this.modVersionAttribute,
                 this.modAuthorAttribute,
                 this.modVersionDetailAttribute,
+                this.modVariantDetailAttribute,
                 INSTALL_TIME,
               ]}
               actions={this.modActions}
@@ -427,11 +435,16 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
     const updateState = modUpdateState(mod.attributes);
 
+    const variant = getSafe(mod.attributes, ['variant'], undefined);
+
     const versionDropdown = alternatives.length > 1
       ? (
         <DropdownButton
           className='dropdown-version'
-          title={getSafe(mod.attributes, ['version'], undefined) || ''}
+          title={
+            (getSafe(mod.attributes, ['version'], undefined) || '')
+            + (variant !== undefined ? ` (${variant})` : '')
+          }
           id={`version-dropdown-${mod.id}`}
           container={this.mRef}
         >
@@ -592,6 +605,22 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       edit: {},
       isSortable: false,
       filter: new VersionFilter(),
+    };
+
+    this.modVariantDetailAttribute = {
+      id: 'variantDetail',
+      name: 'Variant',
+      description: 'File variant',
+      help: getText('variant', this.props.t),
+      calc: (mod: IModWithState) => getSafe(mod.attributes, ['variant'], ''),
+      placement: 'detail',
+      isToggleable: false,
+      edit: {
+        readOnly: (mod: IModWithState) => mod.state === 'downloaded',
+        onChangeValue: (mod: IModWithState, value: any) =>
+          this.props.onSetModAttribute(this.props.gameMode, mod.id, 'variant', value),
+      },
+      isSortable: false,
     };
 
     this.modAuthorAttribute = {

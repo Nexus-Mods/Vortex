@@ -51,6 +51,14 @@ function getText(id: string, t: I18next.TranslationFunction) {
         'Thus "1.2.5" should definitively be more stable than "1.2.4". "1.3.0" should have all ' +
         'the bugfixes of "1.2.x" so far but it also adds features so there could be new bugs.\n' +
         'These dots are NOT decimal marks, version 1.10.0 is (much) newer than 1.3.0.');
+    case 'variant':
+      return t(
+        'If you have multiple copies of the same mod installed ' +
+        '(e.g. with different settings made) ' +
+        'they will be merged into one line on the mod list between which you can toggle. ' +
+        'Use the variant field to distinguish between them. E.g. you could have a ' +
+        '"1k" and a "2k" variant of a mod installed.',
+      );
     case 'source':
       return t(
         'The "Source" specifies where you got the mod. That source will be consulted for certain ' +
