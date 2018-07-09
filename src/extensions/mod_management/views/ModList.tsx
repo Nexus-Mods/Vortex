@@ -342,14 +342,16 @@ class ModList extends ComponentEx<IProps, IComponentState> {
                 expanded={showDropzone}
                 onToggle={nop}
               >
-                <PanelX.Body collapsible>
-                  <Dropzone
-                    accept={['files']}
-                    drop={this.dropMod}
-                    icon='folder-download'
-                    clickable={false}
-                  />
-                </PanelX.Body>
+                <PanelX.Collapse>
+                  <PanelX.Body>
+                    <Dropzone
+                      accept={['files']}
+                      drop={this.dropMod}
+                      icon='folder-download'
+                      clickable={false}
+                    />
+                  </PanelX.Body>
+                </PanelX.Collapse>
                 <CollapseIcon
                   position='topright'
                   onClick={this.toggleDropzone}

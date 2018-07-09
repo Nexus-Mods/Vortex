@@ -14,6 +14,15 @@ import { TD } from './MyTable';
 import * as I18next from 'i18next';
 import * as React from 'react';
 import { MenuItem } from 'react-bootstrap';
+import Select from 'react-select';
+
+const ValueComponent = (props) => (
+  <div className='Select-value' title={props.value.text}>
+    <span className='Select-value-label' role='option'>
+      {props.value.text}
+    </span>
+  </div>
+);
 
 interface ICellProps {
   language: string;
@@ -44,8 +53,8 @@ class TableCell extends React.Component<ICellProps, { isOpen: boolean }> {
   }
 
   public render(): JSX.Element {
-    const { t, attribute, container, data, language, onHighlight,
-            rawData, right, rowId, tableId } = this.props;
+    const { t, attribute, data, language, onHighlight,
+            rawData, rowId } = this.props;
 
     // if a custom renderer was set then rowData is the raw object
     // passed to the table by the user.
@@ -65,41 +74,7 @@ class TableCell extends React.Component<ICellProps, { isOpen: boolean }> {
       return <span>{' '}</span>;
     } else if ((attribute.edit.onChangeValue !== undefined) && attribute.edit.inline) {
       if (attribute.edit.choices !== undefined) {
-        const choices = attribute.edit.choices();
-        const currentChoice = choices.find(choice => choice.text === data);
-        const key = currentChoice !== undefined ? currentChoice.key : undefined;
-        return (
-          <Dropdown
-            id={`dropdown-${tableId}-${attribute.id}`}
-            container={container}
-            pullRight={right}
-            onToggle={this.openChoice}
-          >
-            <Button
-              id={`btn-${tableId}-${attribute.id}`}
-              className={`btn-${tableId}-${attribute.id}-${key}`}
-              key={key}
-              onClick={this.cycle}
-              onSelect={this.changeCell}
-              tooltip={attribute.description}
-            >
-              {((currentChoice !== undefined) && (currentChoice.icon !== undefined))
-                ? <Icon name={currentChoice.icon} /> : null}
-              {currentChoice !== undefined ? t(currentChoice.text) : ''}
-            </Button>
-            <Dropdown.Toggle
-              className={`toggle-${tableId}-${attribute.id} `
-                + `toggle-${tableId}-${attribute.id}-${key}`}
-            />
-            {this.state.isOpen
-              ? (<Dropdown.Menu
-                onSelect={this.changeCell}
-              >
-                {choices.filter(choice => choice.visible !== false).map(this.renderChoice)}
-              </Dropdown.Menu>)
-              : <DummyMenu /> }
-          </Dropdown>
-        );
+        return this.renderChoices(data);
       }
     } else {
       const cellType = typeof(data);
@@ -126,6 +101,77 @@ class TableCell extends React.Component<ICellProps, { isOpen: boolean }> {
     return <span>{data.toString()}</span>;
   }
 
+  private renderChoices(data: any): JSX.Element {
+    const { attribute } = this.props;
+    if (attribute.edit.actions !== false) {
+      return this.renderAction(data);
+    } else {
+      return this.renderSelect(data);
+    }
+  }
+
+  private renderAction(data: any): JSX.Element {
+    const { t, attribute, container, right, tableId } = this.props;
+
+    const choices = attribute.edit.choices();
+    const currentChoice = choices.find(choice => choice.text === data);
+    const key = currentChoice !== undefined ? currentChoice.key : undefined;
+    return (
+      <Dropdown
+        id={`dropdown-${tableId}-${attribute.id}`}
+        container={container}
+        pullRight={right}
+        onToggle={this.openChoice}
+      >
+        <Button
+          id={`btn-${tableId}-${attribute.id}`}
+          className={`btn-${tableId}-${attribute.id}-${key}`}
+          key={key}
+          onClick={this.cycle}
+          onSelect={this.changeCell}
+          tooltip={attribute.description}
+        >
+          {((currentChoice !== undefined) && (currentChoice.icon !== undefined))
+            ? <Icon name={currentChoice.icon} /> : null}
+          {currentChoice !== undefined ? t(currentChoice.text) : ''}
+        </Button>
+        <Dropdown.Toggle
+          className={`toggle-${tableId}-${attribute.id} `
+            + `toggle-${tableId}-${attribute.id}-${key}`}
+        />
+        {this.state.isOpen
+          ? (<Dropdown.Menu
+            onSelect={this.changeCell}
+          >
+            {choices.filter(choice => choice.visible !== false).map(this.renderChoice)}
+          </Dropdown.Menu>)
+          : <DummyMenu />}
+      </Dropdown>
+    );
+  }
+
+  private renderSelect(data: any): JSX.Element {
+    const { t, attribute } = this.props;
+
+    const choices = attribute.edit.choices();
+
+    const currentChoice: IEditChoice = choices.find(choice => choice.text === data);
+
+    const choiceKey = currentChoice !== undefined ? currentChoice.key : undefined;
+    return (
+      <Select
+        options={choices}
+        value={choiceKey}
+        onChange={this.changeCellSelect}
+        valueKey='key'
+        labelKey='text'
+        valueComponent={ValueComponent}
+        clearable={false}
+        searchable={false}
+      />
+    );
+  }
+
   private cycle = () => {
     const { attribute, rawData } = this.props;
     attribute.edit.onChangeValue(rawData, undefined);
@@ -134,6 +180,14 @@ class TableCell extends React.Component<ICellProps, { isOpen: boolean }> {
   private changeCell = (key) => {
     const { attribute, rawData } = this.props;
     attribute.edit.onChangeValue(rawData, key);
+  }
+
+  private changeCellSelect = (value: any) => {
+    if (value !== null) {
+      this.changeCell(value.key);
+    } else {
+      this.changeCell(undefined);
+    }
   }
 
   private openChoice = (isOpen: boolean) => {

@@ -47,6 +47,14 @@
   white-space: nowrap;
 }
 
+.xtd.table-external-change-refchange,
+.xtd.table-external-change-valchange,
+.xtd.table-external-change-deleted {
+  &.cell-action {
+    min-width: 160px;
+  }
+}
+
 #dropdown-external-change-refchange-action,
 #dropdown-external-change-valchange-action,
 #dropdown-external-change-deleted-action {
