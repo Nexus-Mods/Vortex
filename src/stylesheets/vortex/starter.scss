@@ -22,6 +22,14 @@
   .media-body {
     vertical-align: middle;
     flex-direction: row;
+    position: relative;
+    
+    .refresh-button {
+      @extend .btn-embed;
+      position: absolute;
+      top: $slim-gutter;
+      right: $slim-gutter;
+    }
   }
   
   .media-right {
