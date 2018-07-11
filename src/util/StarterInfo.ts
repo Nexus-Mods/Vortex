@@ -107,7 +107,7 @@ class StarterInfo implements IStarterInfo {
     } else {
       this.id = getSafe(toolDiscovery, ['id'], getSafe(tool, ['id'], undefined));
       this.isGame = false;
-      this.shell = tool.shell;
+      this.shell = getSafe(tool, ['shell'], false);
       this.initFromTool(this.gameId, tool, toolDiscovery);
     }
     if ((this.id === undefined) || (this.name === undefined)) {
