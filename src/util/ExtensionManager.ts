@@ -954,6 +954,7 @@ class ExtensionManager {
             cwd,
             env,
             detached: true,
+            shell: options.shell,
           };
           const child = spawn(executable, args.map(arg => arg.replace(/"/g, '')), spawnOptions);
 

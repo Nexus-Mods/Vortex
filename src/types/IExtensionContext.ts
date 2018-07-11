@@ -263,6 +263,7 @@ export interface IRunOptions {
   cwd?: string;
   env?: { [key: string]: string };
   suggestDeploy?: boolean;
+  shell?: boolean;
 }
 
 /**

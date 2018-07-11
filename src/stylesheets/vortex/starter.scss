@@ -151,4 +151,10 @@ svg.tool-icon {
   .input-group {
     width: 100%;
   }
+  .col-sm-3 > .control-label {
+    width: 100%;
+  }
+  .toggle-container {
+    padding-left: $gutter-width;
+  }
 }

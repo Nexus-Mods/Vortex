@@ -338,6 +338,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
       cwd: info.workingDirectory,
       env: info.environment,
       suggestDeploy: true,
+      shell: info.shell,
     })
       .catch(err => {
         const { onShowError } = this.props;
@@ -423,6 +424,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
       executable: undefined,
       requiredFiles: [],
       logo: undefined,
+      shell: false,
     });
     this.nextState.editTool = empty;
   }

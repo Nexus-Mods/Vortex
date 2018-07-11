@@ -24,12 +24,16 @@ export interface IFlexProps {
 
 // uses all available space for the contents but no more
 const Flex = (props: IFlexProps & React.HTMLAttributes<HTMLDivElement>) => {
+  let outerClasses = ['layout-flex'];
+  if (props.className) {
+    outerClasses = outerClasses.concat(props.className.split(' ').map(cl => cl + '-outer'));
+  }
   const classes = ['layout-flex-inner'];
   if (props.fill === true) {
     classes.push('layout-flex-fill');
   }
   return (
-    <div className='layout-flex'>
+    <div className={outerClasses.join(' ')}>
       <div
         className={appendClasses(props.className, classes)}
         {..._.omit(props, ['className', 'fill'])}
