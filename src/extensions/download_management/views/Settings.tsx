@@ -223,6 +223,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         if (err !== null) {
           if (err.code === 'EPERM') {
             onShowError('Directories are locked', err, false);
+          } else if (err.code === 'EINVAL') {
+            onShowError(
+              'Invalid path', err.message, false);
           } else {
             onShowError('Failed to move directories', err, true);
           }

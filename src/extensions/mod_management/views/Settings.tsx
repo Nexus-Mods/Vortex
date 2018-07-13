@@ -257,6 +257,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               'Directories are not writable',
               'You need to select directories that the current user account can write to!',
               false);
+          } else if (err.code === 'EINVAL') {
+            onShowError(
+              'Invalid path', err.message, false);
           } else {
             onShowError('Failed to move directories', err, true);
           }
