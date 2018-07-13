@@ -391,7 +391,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         </InputGroup>
         { activatorIdx !== -1 ? (
           <HelpBlock>
-            {activators[activatorIdx].description}
+            {t(activators[activatorIdx].description)}
             <More id='more-activator-detail' name={activators[activatorIdx].name}>
               {activators[activatorIdx].detailedDescription(t)}
             </More>

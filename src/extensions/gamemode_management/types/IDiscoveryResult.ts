@@ -28,4 +28,5 @@ export interface IDiscoveryResult {
   logo?: string;
   extensionPath?: string;
   mergeMods?: boolean;
+  shell?: boolean;
 }

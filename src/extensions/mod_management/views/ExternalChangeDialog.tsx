@@ -31,26 +31,27 @@ interface IActionProps {
 interface IPossibleAction {
   key: string;
   text: string;
+  allText: string;
 }
 
 const nop = () => undefined;
 
 const possibleActions: { [type: string]: IPossibleAction[] } = {
   refchange: [
-    { key: 'import', text: 'Apply' },
-    { key: 'drop', text: 'Undo' },
+    { key: 'import', text: 'Save change', allText: 'Save all changes' },
+    { key: 'drop', text: 'Revert change', allText: 'Revert all changes' },
   ],
   valchange: [
-    { key: 'nop', text: 'Apply' },
+    { key: 'nop', text: 'Save change', allText: 'Save all changes' },
     // TODO: implement a "restore from archive" option
   ],
   deleted: [
-    { key: 'delete', text: 'Apply' },
-    { key: 'restore', text: 'Undo' },
+    { key: 'delete', text: 'Save change', allText: 'Save all changes' },
+    { key: 'restore', text: 'Revert change', allText: 'Revert all changes' },
   ],
   srcdeleted: [
-    { key: 'drop', text: 'Apply' },
-    { key: 'import', text: 'Undo' },
+    { key: 'drop', text: 'Save change', allText: 'Save all changes' },
+    { key: 'import', text: 'Revert change', allText: 'Revert all changes' },
   ],
 };
 
@@ -175,13 +176,14 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         {/* this.renderChangedSources(t('These mods were modified'), 'valchange', vc) */}
         {this.renderChangedSources(t('File content modified '
-          + '("Apply" will save the changed, "Undo" will restore the original content)'),
+                    + '("Save" will apply the changed file from the game directory permanently, '
+                    + '"Revert" will restore the original file from the mod directory)'),
           'refchange', rc)}
         {this.renderChangedSources(t('Source files were deleted '
-          + '("Apply" will permanenly remove the files, "Undo" will restore them)'),
+          + '("Save" will remove the files permanenly, "Revert" will restore them)'),
           'srcdeleted', sd)}
         {this.renderChangedSources(t('Links were deleted '
-          + '("Apply" will permanently remove the files, "Undo" will restore them)'),
+          + '("Save" will remove the files permanently, "Revert" will restore them)'),
           'deleted', d)}
       </div>
     );
@@ -195,13 +197,14 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         {/* this.renderChangedFile(t('These files were modified'), 'valchange', valChanged) */}
         {this.renderChangedFile(t('File content modified'
-          + '("Apply" will save the changed, "Undo" will restore the original content)'),
+                    + '("Save" will apply the changed file from the game directory permanently, '
+                    + '"Revert" will restore the original file from the mod directory)'),
           'refchange', refChanged)}
         {this.renderChangedFile(t('Source files were deleted'
-          + '("Apply" will permanenly remove the files, "Undo" will restore them)'),
+          + '("Save" will remove the files permanenly, "Revert" will restore them)'),
           'srcdeleted', srcDeleted)}
         {this.renderChangedFile(t('Links were deleted'
-          + '("Apply" will permanently remove the files, "Undo" will restore them)'),
+          + '("Save" will remove the files permanently, "Revert" will restore them)'),
           'deleted', deleted)}
       </div>
     );
@@ -226,7 +229,7 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
             onClick={this.setAll[type]}
             href={'#' + action.key}
             style={{ marginRight: 10 }}
-          >{t(action.text)}
+          >{t(action.allText)}
           </a>
         ))
         }</p>
@@ -263,7 +266,7 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
             onClick={this.setAll[type]}
             href={'#' + action.key}
             style={{ marginRight: 10 }}
-          >{t(action.text)}
+          >{t(action.allText)}
           </a>
         ))
         }</p>
@@ -310,6 +313,7 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
         placement: 'table',
         edit: {
           inline: true,
+          actions: false,
           choices: () => possibleActions[type],
           onChangeValue: (source: ISourceEntry, value: any) => {
             let newAction = value;
@@ -351,6 +355,7 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
         placement: 'table',
         edit: {
           inline: true,
+          actions: false,
           choices: () => possibleActions[type],
           onChangeValue: (file: IFileEntry, value: any) => {
             if (value === undefined) {

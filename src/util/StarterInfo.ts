@@ -89,6 +89,7 @@ class StarterInfo implements IStarterInfo {
   public commandLine: string[];
   public workingDirectory: string;
   public environment: { [key: string]: string };
+  public shell: boolean;
   private mExtensionPath: string;
   private mLogoName: string;
   private mIconPathCache: string;
@@ -101,10 +102,12 @@ class StarterInfo implements IStarterInfo {
     if ((tool === undefined) && (toolDiscovery === undefined)) {
       this.id = this.gameId;
       this.isGame = true;
+      this.shell = game.shell;
       this.initFromGame(game, gameDiscovery);
     } else {
       this.id = getSafe(toolDiscovery, ['id'], getSafe(tool, ['id'], undefined));
       this.isGame = false;
+      this.shell = getSafe(tool, ['shell'], false);
       this.initFromTool(this.gameId, tool, toolDiscovery);
     }
     if ((this.id === undefined) || (this.name === undefined)) {
@@ -133,7 +136,7 @@ class StarterInfo implements IStarterInfo {
     this.workingDirectory = path.dirname(this.exePath);
     this.environment = gameDiscovery.environment || {};
     this.iconOutPath = StarterInfo.gameIconRW(this.gameId);
-
+    this.shell = gameDiscovery.shell;
     this.mLogoName = gameDiscovery.logo || game.logo;
   }
 
@@ -148,6 +151,7 @@ class StarterInfo implements IStarterInfo {
       this.workingDirectory = toolDiscovery.workingDirectory !== undefined
         ? toolDiscovery.workingDirectory
         : path.dirname(toolDiscovery.path || '');
+      this.shell = toolDiscovery.shell;
     } else {
       // defaults for undiscovered & unconfigured tools
       this.name = tool.name;
@@ -156,6 +160,7 @@ class StarterInfo implements IStarterInfo {
       this.workingDirectory = '';
       this.environment = tool.environment || {};
       this.mLogoName = tool.logo;
+      this.shell = tool.shell;
     }
     this.iconOutPath = StarterInfo.toolIconRW(gameId, this.id);
   }

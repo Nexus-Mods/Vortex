@@ -121,6 +121,9 @@ function bakeSettings(t: TranslationFunction, gameMode: string, discovery: IDisc
 
   // get a list of all tweaks we need to apply
   return Promise.each(mods, mod => {
+    if (mod.installationPath === undefined) {
+      return Promise.resolve();
+    }
     const tweaksPath = path.join(modsPath, mod.installationPath, INI_TWEAKS_PATH);
     const modTweaks = getSafe(mod, ['enabledINITweaks'], []).map(name => name.toLowerCase());
     return fs.readdirAsync(tweaksPath)

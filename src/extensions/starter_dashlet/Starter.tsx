@@ -39,11 +39,13 @@ import { Col, Grid, Media, MenuItem, Row } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
 import * as Redux from 'redux';
 import { generate as shortid } from 'shortid';
+import { IconButton } from '../../controls/TooltipControls';
 
 interface IWelcomeScreenState {
   editTool: StarterInfo;
   counter: number;
   tools: StarterInfo[];
+  discovering: boolean;
 }
 
 interface IActionProps {
@@ -75,6 +77,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
       editTool: undefined,
       counter: 1,
       tools: this.generateToolStarters(props),
+      discovering: false,
     });
   }
 
@@ -125,6 +128,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
           </Media.Left>
           <Media.Body>
             {this.renderToolIcons(game, discoveredGame)}
+            {this.renderRefresh()}
           </Media.Body>
           <Media.Right>
             {this.renderAddButton()}
@@ -137,6 +141,19 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
       <Dashlet title='' className='dashlet-starter'>
         {content}
       </Dashlet>
+    );
+  }
+
+  private renderRefresh() {
+    const { t } = this.props;
+    const { discovering } = this.state;
+    return (
+      <IconButton
+        icon={discovering ? 'spinner' : 'refresh'}
+        tooltip={t('Refresh')}
+        onClick={this.quickDiscovery}
+        className='refresh-button'
+      />
     );
   }
 
@@ -244,6 +261,16 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
     );
   }
 
+  private quickDiscovery = () => {
+    this.nextState.discovering = true;
+    const start = Date.now();
+    this.context.api.events.emit('start-quick-discovery', () => {
+      setTimeout(() => {
+        this.nextState.discovering = false;
+      }, 1000 - (Date.now() - start));
+    });
+  }
+
   private generateToolStarters(props: IStarterProps): StarterInfo[] {
     const { discoveredGames, discoveredTools, gameMode, knownGames } = props;
 
@@ -311,6 +338,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
       cwd: info.workingDirectory,
       env: info.environment,
       suggestDeploy: true,
+      shell: info.shell,
     })
       .catch(err => {
         const { onShowError } = this.props;
@@ -396,6 +424,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
       executable: undefined,
       requiredFiles: [],
       logo: undefined,
+      shell: false,
     });
     this.nextState.editTool = empty;
   }

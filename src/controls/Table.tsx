@@ -161,8 +161,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       const { attributeState, objects } = newProps;
       this.mVisibleAttributes = this.visibleAttributes(objects, attributeState);
 
-      if (Object.keys(newProps.attributeState).find(
-        id => this.props.attributeState[id].enabled !== newProps.attributeState[id].enabled)) {
+      if (Object.keys(newProps.attributeState).find(id =>
+            (this.props.attributeState[id] === undefined)
+            || (this.props.attributeState[id].enabled !== newProps.attributeState[id].enabled))) {
         const columnToggles = this.columnToggles(newProps);
         this.updateState(update(this.mNextState, {
           columnToggles: { $set: columnToggles },
@@ -273,7 +274,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     return (
       <div className='table-footer-placeholder'>
         <div className='table-footer'>
-          <IconBar className='menubar'>
+          <IconBar className='menubar' t={t}>
             {multiRowActions.map((action, idx) =>
               <ToolbarIcon
                 key={idx}
@@ -438,6 +439,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
               staticElements={columnToggles}
               collapse='force'
               icon='settings'
+              t={t}
             />
           ) : null
         }

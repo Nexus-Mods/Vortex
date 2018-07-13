@@ -45,7 +45,7 @@ export interface IDownload {
    * @type {string}
    * @memberOf IDownload
    */
-  localPath: string;
+  localPath?: string;
 
   /**
    * id of the game(s) to which this archive is compatible.
@@ -78,7 +78,7 @@ export interface IDownload {
    * @type {string}
    * @memberOf IDownload
    */
-  fileMD5: string;
+  fileMD5?: string;
 
   /**
    * MS timestamp the download was started

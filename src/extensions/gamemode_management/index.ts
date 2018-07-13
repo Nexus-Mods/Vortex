@@ -440,14 +440,18 @@ function init(context: IExtensionContext): boolean {
       $.gameModeManager.startQuickDiscovery()
       .then((gameIds: string[]) => {
         const state: IState = context.api.store.getState();
+        const discoveredGames = state.settings.gameMode.discovered;
         const knownGames = state.session.gameMode.known;
-        const message = gameIds.length === 0
+        const newGames = gameIds.filter(id =>
+          (discoveredGames[id] === undefined) || (discoveredGames[id].path === undefined));
+        const message = newGames.length === 0
           ? 'No new games found'
-          : gameIds.map(id => '- ' + knownGames.find(iter => iter.id === id).name).join('\n');
+          : newGames.map(id => '- ' + knownGames.find(iter => iter.id === id).name).join('\n');
         removeDisapearedGames(context.api);
         context.api.sendNotification({
           type: 'success',
-          message: 'Discovery completed\n' + message,
+          title: 'Discovery completed',
+          message,
         });
       });
     }
@@ -499,6 +503,14 @@ function init(context: IExtensionContext): boolean {
       removeDisapearedGames(context.api);
     });
 
+    events.on('start-quick-discovery', (cb?: (gameIds: string[]) => void) =>
+      $.gameModeManager.startQuickDiscovery()
+        .then((gameIds: string[]) => {
+          removeDisapearedGames(context.api);
+          if (cb !== undefined) {
+            cb(gameIds);
+          }
+        }));
     events.on('start-discovery', () => $.gameModeManager.startSearchDiscovery());
     events.on('cancel-discovery', () => {
       log('info', 'received cancel discovery');

@@ -119,7 +119,7 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
           <Table className='profile-details'>
             {this.renderFeatureWithValue({
               id: profile.id + 'mods',
-              label: t('Mods Installed'),
+              label: t('Mods Enabled'),
               icon: 'mods',
               type: 'number',
               supported: () => true,

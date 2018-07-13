@@ -28,7 +28,11 @@ export function remoteCode(ipcClient, req) {
                   : Promise.reject(err));
             }
           })
-          .then(() => fs.symlinkAsync(source, destination))
+          .then(() => fs.symlinkAsync(source, destination)
+              .catch(err => (err.code !== 'EEXIST')
+                  ? Promise.reject(err)
+                  : fs.removeAsync(destination)
+                    .then(() => fs.symlinkAsync(source, destination))))
           .then(() => {
             ipcClient.emit('log', {
               level: 'debug',

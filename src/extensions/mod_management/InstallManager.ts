@@ -62,6 +62,12 @@ type rimrafType = (path: string, options: IRimrafOptions, callback: (err?) => vo
 const rimrafAsync: (path: string, options: IRimrafOptions) => Promise<void> =
   Promise.promisify(rimraf as rimrafType) as any;
 
+interface IReplaceChoice {
+  id: string;
+  variant: string;
+  enable: boolean;
+}
+
 interface ISupportedInstaller {
   installer: IModInstaller;
   requiredFiles: string[];
@@ -176,25 +182,29 @@ class InstallManager {
         }
 
         modId = this.deriveInstallName(baseName, fullInfo);
+        let testModId = modId;
         // if the name is already taken, consult the user,
         // repeat until user canceled, decided to replace the existing
         // mod or provided a new, unused name
-        const checkNameLoop = () => this.checkModExists(modId, api, installGameId)
+        const checkNameLoop = () => this.checkModExists(testModId, api, installGameId)
           ? this.queryUserReplace(modId, installGameId, api)
-            .then((choice: { name: string, enable: boolean }) => {
-              modId = choice.name;
+            .then((choice: IReplaceChoice) => {
+              testModId = choice.id;
               if (choice.enable) {
                 enable = true;
               }
+              setdefault(fullInfo, 'custom', {} as any).variant = choice.variant;
               return checkNameLoop();
             })
-          : Promise.resolve(modId);
-
+          : Promise.resolve(testModId);
         return checkNameLoop();
       })
       // TODO: this is only necessary to get at the fileId and the fileId isn't
       //   even a particularly good way to discover conflicts
-      .then(() => filterModInfo(fullInfo, undefined))
+      .then(newModId => {
+        modId = newModId;
+        return filterModInfo(fullInfo, undefined);
+      })
       .then(modInfo => {
         const oldMod = (modInfo.fileId !== undefined)
           ? this.findPreviousVersionMod(modInfo.fileId, api.store, installGameId)
@@ -716,20 +726,21 @@ class InstallManager {
   }
 
   private queryUserReplace(modId: string, gameId: string, api: IExtensionApi) {
-    return new Promise<{ name: string, enable: boolean }>((resolve, reject) => {
+    return new Promise<IReplaceChoice>((resolve, reject) => {
       api.store
         .dispatch(showDialog(
           'question', 'Mod exists',
           {
-            message:
-            'This mod seems to be installed already. You can replace the ' +
-            'existing one or install the new one under a different name ' +
-            '(this name is used internally, you can still change the display name ' +
-            'to anything you want later).',
+            text:
+              'This mod seems to be installed already. You can replace the ' +
+              'existing one or install the new one under a different name. ' +
+              'If you do the latter, the new installation will appear as a variant ' +
+              'of the other mod that can be toggled through the version dropdown. ' +
+              'Use the input below to make the variant distinguishable.',
             input: [{
-              id: 'newName',
-              value: modId,
-              label: 'Name',
+              id: 'variant',
+              value: '2',
+              label: 'Variant',
             }],
             options: {
               wrap: true,
@@ -744,7 +755,11 @@ class InstallManager {
           if (result.action === 'Cancel') {
             reject(new UserCanceled());
           } else if (result.action === 'Rename') {
-            resolve({ name: result.input.newName, enable: false });
+            resolve({
+              id: modId + '+' + result.input.variant,
+              variant: result.input.variant,
+              enable: false,
+            });
           } else if (result.action === 'Replace') {
             const currentProfile = activeProfile(api.store.getState());
             const wasEnabled = (currentProfile !== undefined) && (currentProfile.gameId === gameId)
@@ -754,7 +769,7 @@ class InstallManager {
               if (err !== null) {
                 reject(err);
               } else {
-                resolve({ name: modId, enable: wasEnabled });
+                resolve({ id: modId, variant: '', enable: wasEnabled });
               }
             });
           }

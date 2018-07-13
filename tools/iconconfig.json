@@ -466,6 +466,14 @@
     "override": {
       "path": "{nucleo}/user interface/{nucleo_simple}_alert-exc",
       "rmFill": true
+    },
+    "nav-back": {
+      "path": "{nucleo}/arrows/{nucleo_simple}_simple-left",
+      "rmFill": true
+    },
+    "nav-forward": {
+      "path": "{nucleo}/arrows/{nucleo_simple}_simple-right",
+      "rmFill": true
     }
   }
 }

@@ -4,7 +4,6 @@
     "name": "7z-bin",
     "version": "18.5.0",
     "repository": "",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\7z-bin",
     "licenseFile": "node_modules\\7z-bin\\License.txt"
   },
   "abbrev@1.1.1": {
@@ -14,7 +13,6 @@
     "email": "i@izs.me",
     "name": "abbrev",
     "version": "1.1.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\abbrev",
     "licenseFile": "node_modules\\abbrev\\LICENSE"
   },
   "abstract-leveldown@0.12.4": {
@@ -22,7 +20,6 @@
     "repository": "https://github.com/rvagg/node-abstract-leveldown",
     "name": "abstract-leveldown",
     "version": "0.12.4",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\level-js\\node_modules\\abstract-leveldown",
     "licenseFile": "node_modules\\level-js\\node_modules\\abstract-leveldown\\LICENSE.md"
   },
   "abstract-leveldown@2.6.3": {
@@ -30,7 +27,6 @@
     "repository": "https://github.com/level/abstract-leveldown",
     "name": "abstract-leveldown",
     "version": "2.6.3",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\abstract-leveldown",
     "licenseFile": "node_modules\\abstract-leveldown\\LICENSE.md"
   },
   "abstract-leveldown@2.7.2": {
@@ -38,7 +34,6 @@
     "repository": "https://github.com/level/abstract-leveldown",
     "name": "abstract-leveldown",
     "version": "2.7.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\modmeta-db\\node_modules\\abstract-leveldown",
     "licenseFile": "node_modules\\modmeta-db\\node_modules\\abstract-leveldown\\LICENSE.md"
   },
   "accepts@1.3.4": {
@@ -46,7 +41,6 @@
     "repository": "https://github.com/jshttp/accepts",
     "name": "accepts",
     "version": "1.3.4",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\accepts",
     "licenseFile": "node_modules\\accepts\\LICENSE"
   },
   "addressparser@1.0.1": {
@@ -55,7 +49,6 @@
     "publisher": "Andris Reinman",
     "name": "addressparser",
     "version": "1.0.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\addressparser",
     "licenseFile": "node_modules\\addressparser\\LICENSE"
   },
   "ajv@4.11.8": {
@@ -64,7 +57,6 @@
     "publisher": "Evgeny Poberezkin",
     "name": "ajv",
     "version": "4.11.8",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\node-pre-gyp\\node_modules\\ajv",
     "licenseFile": "node_modules\\node-pre-gyp\\node_modules\\ajv\\LICENSE"
   },
   "ajv@5.5.2": {
@@ -73,7 +65,6 @@
     "publisher": "Evgeny Poberezkin",
     "name": "ajv",
     "version": "5.5.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\ajv",
     "licenseFile": "node_modules\\ajv\\LICENSE"
   },
   "amdefine@1.0.1": {
@@ -84,7 +75,6 @@
     "url": "http://github.com/jrburke",
     "name": "amdefine",
     "version": "1.0.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\amdefine",
     "licenseFile": "node_modules\\amdefine\\LICENSE"
   },
   "ansi-regex@2.1.1": {
@@ -95,7 +85,6 @@
     "url": "sindresorhus.com",
     "name": "ansi-regex",
     "version": "2.1.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\ansi-regex",
     "licenseFile": "node_modules\\ansi-regex\\license"
   },
   "ansi-styles@2.2.1": {
@@ -106,7 +95,6 @@
     "url": "sindresorhus.com",
     "name": "ansi-styles",
     "version": "2.2.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\ansi-styles",
     "licenseFile": "node_modules\\ansi-styles\\license"
   },
   "aproba@1.2.0": {
@@ -116,7 +104,6 @@
     "email": "me@re-becca.org",
     "name": "aproba",
     "version": "1.2.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\aproba",
     "licenseFile": "node_modules\\aproba\\LICENSE"
   },
   "are-we-there-yet@1.1.4": {
@@ -126,7 +113,6 @@
     "url": "http://re-becca.org",
     "name": "are-we-there-yet",
     "version": "1.1.4",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\are-we-there-yet",
     "licenseFile": "node_modules\\are-we-there-yet\\LICENSE"
   },
   "argparse@1.0.9": {
@@ -134,7 +120,6 @@
     "repository": "https://github.com/nodeca/argparse",
     "name": "argparse",
     "version": "1.0.9",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\argparse",
     "licenseFile": "node_modules\\argparse\\LICENSE"
   },
   "array-find-index@1.0.2": {
@@ -145,7 +130,6 @@
     "url": "sindresorhus.com",
     "name": "array-find-index",
     "version": "1.0.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\array-find-index",
     "licenseFile": "node_modules\\array-find-index\\license"
   },
   "array-flatten@1.1.1": {
@@ -156,7 +140,6 @@
     "url": "http://blakeembrey.me",
     "name": "array-flatten",
     "version": "1.1.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\array-flatten",
     "licenseFile": "node_modules\\array-flatten\\LICENSE"
   },
   "array-indexofobject@0.0.1": {
@@ -166,7 +149,6 @@
     "email": "danmactough@gmail.com",
     "name": "array-indexofobject",
     "version": "0.0.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\array-indexofobject",
     "licenseFile": "node_modules\\array-indexofobject\\README.md"
   },
   "asap@2.0.6": {
@@ -174,7 +156,6 @@
     "repository": "https://github.com/kriskowal/asap",
     "name": "asap",
     "version": "2.0.6",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\asap",
     "licenseFile": "node_modules\\asap\\LICENSE.md"
   },
   "asn1@0.2.3": {
@@ -184,7 +165,6 @@
     "email": "mcavage@gmail.com",
     "name": "asn1",
     "version": "0.2.3",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\asn1",
     "licenseFile": "node_modules\\asn1\\LICENSE"
   },
   "assert-plus@0.2.0": {
@@ -194,7 +174,6 @@
     "email": "mcavage@gmail.com",
     "name": "assert-plus",
     "version": "0.2.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\http-signature\\node_modules\\assert-plus",
     "licenseFile": "node_modules\\http-signature\\node_modules\\assert-plus\\README.md"
   },
   "assert-plus@1.0.0": {
@@ -204,7 +183,6 @@
     "email": "mcavage@gmail.com",
     "name": "assert-plus",
     "version": "1.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\assert-plus",
     "licenseFile": "node_modules\\assert-plus\\README.md"
   },
   "async-foreach@0.1.3": {
@@ -214,7 +192,6 @@
     "url": "http://benalman.com/",
     "name": "async-foreach",
     "version": "0.1.3",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\async-foreach",
     "licenseFile": "node_modules\\async-foreach\\README.md"
   },
   "async-limiter@1.0.0": {
@@ -223,7 +200,6 @@
     "publisher": "Samuel Reed",
     "name": "async-limiter",
     "version": "1.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\async-limiter",
     "licenseFile": "node_modules\\async-limiter\\LICENSE"
   },
   "async@1.0.0": {
@@ -232,7 +208,6 @@
     "publisher": "Caolan McMahon",
     "name": "async",
     "version": "1.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\async",
     "licenseFile": "node_modules\\async\\LICENSE"
   },
   "async@2.6.0": {
@@ -241,7 +216,6 @@
     "publisher": "Caolan McMahon",
     "name": "async",
     "version": "2.6.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\msbuild\\node_modules\\async",
     "licenseFile": "node_modules\\msbuild\\node_modules\\async\\LICENSE"
   },
   "asynckit@0.4.0": {
@@ -251,7 +225,6 @@
     "email": "iam@alexindigo.com",
     "name": "asynckit",
     "version": "0.4.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\asynckit",
     "licenseFile": "node_modules\\asynckit\\LICENSE"
   },
   "autogypi@0.2.2": {
@@ -260,7 +233,6 @@
     "publisher": "Juha Järvi",
     "name": "autogypi",
     "version": "0.2.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\autogypi",
     "licenseFile": "node_modules\\autogypi\\LICENSE"
   },
   "aws-sign2@0.6.0": {
@@ -271,7 +243,6 @@
     "url": "http://www.futurealoof.com",
     "name": "aws-sign2",
     "version": "0.6.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\aws-sign2",
     "licenseFile": "node_modules\\aws-sign2\\LICENSE"
   },
   "aws-sign2@0.7.0": {
@@ -282,7 +253,6 @@
     "url": "http://www.futurealoof.com",
     "name": "aws-sign2",
     "version": "0.7.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\request\\node_modules\\aws-sign2",
     "licenseFile": "node_modules\\request\\node_modules\\aws-sign2\\LICENSE"
   },
   "aws4@1.6.0": {
@@ -293,7 +263,6 @@
     "url": "http://github.com/mhart",
     "name": "aws4",
     "version": "1.6.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\aws4",
     "licenseFile": "node_modules\\aws4\\LICENSE"
   },
   "babel-runtime@6.26.0": {
@@ -303,7 +272,6 @@
     "email": "sebmck@gmail.com",
     "name": "babel-runtime",
     "version": "6.26.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\babel-runtime",
     "licenseFile": "node_modules\\babel-runtime\\README.md"
   },
   "balanced-match@0.4.2": {
@@ -314,7 +282,6 @@
     "url": "http://juliangruber.com",
     "name": "balanced-match",
     "version": "0.4.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\balanced-match",
     "licenseFile": "node_modules\\balanced-match\\LICENSE.md"
   },
   "balanced-match@1.0.0": {
@@ -325,7 +292,6 @@
     "url": "http://juliangruber.com",
     "name": "balanced-match",
     "version": "1.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\brace-expansion\\node_modules\\balanced-match",
     "licenseFile": "node_modules\\brace-expansion\\node_modules\\balanced-match\\LICENSE.md"
   },
   "bbcode-to-react@0.2.8": {
@@ -333,7 +299,6 @@
     "repository": "https://github.com/JimLiu/bbcode-to-react",
     "name": "bbcode-to-react",
     "version": "0.2.8",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\bbcode-to-react",
     "licenseFile": "node_modules\\bbcode-to-react\\LICENSE"
   },
   "bcrypt-pbkdf@1.0.1": {
@@ -341,7 +306,6 @@
     "name": "bcrypt-pbkdf",
     "version": "1.0.1",
     "repository": "",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\bcrypt-pbkdf",
     "licenseFile": "node_modules\\bcrypt-pbkdf\\README.md"
   },
   "bindings@1.2.1": {
@@ -352,7 +316,6 @@
     "url": "http://tootallnate.net",
     "name": "bindings",
     "version": "1.2.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\bindings",
     "licenseFile": "node_modules\\bindings\\README.md"
   },
   "bindings@1.3.0": {
@@ -363,7 +326,6 @@
     "url": "http://tootallnate.net",
     "name": "bindings",
     "version": "1.3.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\drivelist\\node_modules\\bindings",
     "licenseFile": "node_modules\\drivelist\\node_modules\\bindings\\README.md"
   },
   "bl@1.2.1": {
@@ -371,7 +333,6 @@
     "repository": "https://github.com/rvagg/bl",
     "name": "bl",
     "version": "1.2.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\bl",
     "licenseFile": "node_modules\\bl\\LICENSE.md"
   },
   "block-stream@0.0.9": {
@@ -382,7 +343,6 @@
     "url": "http://blog.izs.me/",
     "name": "block-stream",
     "version": "0.0.9",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\block-stream",
     "licenseFile": "node_modules\\block-stream\\LICENSE"
   },
   "bluebird-lst@1.0.5": {
@@ -390,8 +350,7 @@
     "repository": "https://github.com/develar/fs-extra-p",
     "publisher": "Vladimir Krivosheev",
     "name": "bluebird-lst",
-    "version": "1.0.5",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\bluebird-lst"
+    "version": "1.0.5"
   },
   "bluebird@3.5.1": {
     "licenses": "MIT",
@@ -401,7 +360,6 @@
     "url": "http://github.com/petkaantonov/",
     "name": "bluebird",
     "version": "3.5.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\bluebird",
     "licenseFile": "node_modules\\bluebird\\LICENSE"
   },
   "body-parser@1.18.2": {
@@ -409,7 +367,6 @@
     "repository": "https://github.com/expressjs/body-parser",
     "name": "body-parser",
     "version": "1.18.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\body-parser",
     "licenseFile": "node_modules\\body-parser\\LICENSE"
   },
   "boolbase@1.0.0": {
@@ -419,7 +376,6 @@
     "email": "me@feedic.com",
     "name": "boolbase",
     "version": "1.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\boolbase",
     "licenseFile": "node_modules\\boolbase\\README.md"
   },
   "boom@2.10.1": {
@@ -427,7 +383,6 @@
     "repository": "https://github.com/hapijs/boom",
     "name": "boom",
     "version": "2.10.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\boom",
     "licenseFile": "node_modules\\boom\\LICENSE"
   },
   "boom@4.3.1": {
@@ -435,7 +390,6 @@
     "repository": "https://github.com/hapijs/boom",
     "name": "boom",
     "version": "4.3.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\request\\node_modules\\boom",
     "licenseFile": "node_modules\\request\\node_modules\\boom\\LICENSE"
   },
   "boom@5.2.0": {
@@ -443,7 +397,6 @@
     "repository": "https://github.com/hapijs/boom",
     "name": "boom",
     "version": "5.2.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\request\\node_modules\\cryptiles\\node_modules\\boom",
     "licenseFile": "node_modules\\request\\node_modules\\cryptiles\\node_modules\\boom\\LICENSE"
   },
   "bootstrap-sass@3.3.7": {
@@ -451,7 +404,6 @@
     "repository": "https://github.com/twbs/bootstrap-sass",
     "name": "bootstrap-sass",
     "version": "3.3.7",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\bootstrap-sass",
     "licenseFile": "node_modules\\bootstrap-sass\\LICENSE"
   },
   "brace-expansion@1.1.8": {
@@ -462,7 +414,6 @@
     "url": "http://juliangruber.com",
     "name": "brace-expansion",
     "version": "1.1.8",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\brace-expansion",
     "licenseFile": "node_modules\\brace-expansion\\README.md"
   },
   "buffer-from@1.0.0": {
@@ -470,7 +421,6 @@
     "repository": "https://github.com/LinusU/buffer-from",
     "name": "buffer-from",
     "version": "1.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\buffer-from",
     "licenseFile": "node_modules\\buffer-from\\readme.md"
   },
   "builder-util-runtime@4.2.1": {
@@ -479,7 +429,6 @@
     "publisher": "Vladimir Krivosheev",
     "name": "builder-util-runtime",
     "version": "4.2.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\builder-util-runtime",
     "licenseFile": "node_modules\\builder-util-runtime\\readme.md"
   },
   "builtin-modules@1.1.1": {
@@ -490,7 +439,6 @@
     "url": "sindresorhus.com",
     "name": "builtin-modules",
     "version": "1.1.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\builtin-modules",
     "licenseFile": "node_modules\\builtin-modules\\license"
   },
   "bytes@3.0.0": {
@@ -501,7 +449,6 @@
     "url": "http://tjholowaychuk.com",
     "name": "bytes",
     "version": "3.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\bytes",
     "licenseFile": "node_modules\\bytes\\LICENSE"
   },
   "camelcase-keys@2.1.0": {
@@ -512,7 +459,6 @@
     "url": "http://sindresorhus.com",
     "name": "camelcase-keys",
     "version": "2.1.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\camelcase-keys",
     "licenseFile": "node_modules\\camelcase-keys\\license"
   },
   "camelcase@2.1.1": {
@@ -523,7 +469,6 @@
     "url": "http://sindresorhus.com",
     "name": "camelcase",
     "version": "2.1.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\camelcase-keys\\node_modules\\camelcase",
     "licenseFile": "node_modules\\camelcase-keys\\node_modules\\camelcase\\license"
   },
   "camelcase@3.0.0": {
@@ -534,7 +479,6 @@
     "url": "http://sindresorhus.com",
     "name": "camelcase",
     "version": "3.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\camelcase",
     "licenseFile": "node_modules\\camelcase\\license"
   },
   "caseless@0.11.0": {
@@ -544,7 +488,6 @@
     "email": "mikeal.rogers@gmail.com",
     "name": "caseless",
     "version": "0.11.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\node-sass\\node_modules\\caseless",
     "licenseFile": "node_modules\\node-sass\\node_modules\\caseless\\LICENSE"
   },
   "caseless@0.12.0": {
@@ -554,7 +497,6 @@
     "email": "mikeal.rogers@gmail.com",
     "name": "caseless",
     "version": "0.12.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\caseless",
     "licenseFile": "node_modules\\caseless\\LICENSE"
   },
   "chain-function@1.0.0": {
@@ -562,15 +504,13 @@
     "repository": "https://github.com/jquense/chain-function",
     "publisher": "jquense",
     "name": "chain-function",
-    "version": "1.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\chain-function"
+    "version": "1.0.0"
   },
   "chalk@1.1.3": {
     "licenses": "MIT",
     "repository": "https://github.com/chalk/chalk",
     "name": "chalk",
     "version": "1.1.3",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\chalk",
     "licenseFile": "node_modules\\chalk\\license"
   },
   "cheerio@0.22.0": {
@@ -581,7 +521,6 @@
     "url": "mat.io",
     "name": "cheerio",
     "version": "0.22.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\cheerio",
     "licenseFile": "node_modules\\cheerio\\Readme.md"
   },
   "chownr@1.0.1": {
@@ -592,7 +531,6 @@
     "url": "http://blog.izs.me/",
     "name": "chownr",
     "version": "1.0.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\chownr",
     "licenseFile": "node_modules\\chownr\\LICENSE"
   },
   "classnames@2.2.5": {
@@ -601,7 +539,6 @@
     "publisher": "Jed Watson",
     "name": "classnames",
     "version": "2.2.5",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\classnames",
     "licenseFile": "node_modules\\classnames\\LICENSE"
   },
   "cliui@3.2.0": {
@@ -611,7 +548,6 @@
     "email": "ben@npmjs.com",
     "name": "cliui",
     "version": "3.2.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\cliui",
     "licenseFile": "node_modules\\cliui\\LICENSE.txt"
   },
   "co@4.6.0": {
@@ -619,7 +555,6 @@
     "repository": "https://github.com/tj/co",
     "name": "co",
     "version": "4.6.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\co",
     "licenseFile": "node_modules\\co\\LICENSE"
   },
   "code-point-at@1.1.0": {
@@ -630,7 +565,6 @@
     "url": "sindresorhus.com",
     "name": "code-point-at",
     "version": "1.1.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\code-point-at",
     "licenseFile": "node_modules\\code-point-at\\license"
   },
   "colors@1.0.3": {
@@ -639,7 +573,6 @@
     "publisher": "Marak Squires",
     "name": "colors",
     "version": "1.0.3",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\colors",
     "licenseFile": "node_modules\\colors\\ReadMe.md"
   },
   "colors@1.1.2": {
@@ -648,7 +581,6 @@
     "publisher": "Marak Squires",
     "name": "colors",
     "version": "1.1.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\msbuild\\node_modules\\colors",
     "licenseFile": "node_modules\\msbuild\\node_modules\\colors\\LICENSE"
   },
   "combined-stream@1.0.5": {
@@ -659,7 +591,6 @@
     "url": "http://debuggable.com/",
     "name": "combined-stream",
     "version": "1.0.5",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\combined-stream",
     "licenseFile": "node_modules\\combined-stream\\License"
   },
   "commander@2.12.2": {
@@ -669,7 +600,6 @@
     "email": "tj@vision-media.ca",
     "name": "commander",
     "version": "2.12.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\commander",
     "licenseFile": "node_modules\\commander\\LICENSE"
   },
   "commander@2.9.0": {
@@ -679,7 +609,6 @@
     "email": "tj@vision-media.ca",
     "name": "commander",
     "version": "2.9.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\autogypi\\node_modules\\commander",
     "licenseFile": "node_modules\\autogypi\\node_modules\\commander\\LICENSE"
   },
   "commonmark-react-renderer@4.3.4": {
@@ -689,7 +618,6 @@
     "email": "espen@hovlandsdal.com",
     "name": "commonmark-react-renderer",
     "version": "4.3.4",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\commonmark-react-renderer",
     "licenseFile": "node_modules\\commonmark-react-renderer\\LICENSE"
   },
   "commonmark@0.24.0": {
@@ -698,7 +626,6 @@
     "publisher": "John MacFarlane",
     "name": "commonmark",
     "version": "0.24.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\commonmark",
     "licenseFile": "node_modules\\commonmark\\LICENSE"
   },
   "concat-map@0.0.1": {
@@ -709,7 +636,6 @@
     "url": "http://substack.net",
     "name": "concat-map",
     "version": "0.0.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\concat-map",
     "licenseFile": "node_modules\\concat-map\\LICENSE"
   },
   "console-control-strings@1.1.0": {
@@ -720,7 +646,6 @@
     "url": "http://re-becca.org/",
     "name": "console-control-strings",
     "version": "1.1.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\console-control-strings",
     "licenseFile": "node_modules\\console-control-strings\\LICENSE"
   },
   "content-disposition@0.5.2": {
@@ -728,7 +653,6 @@
     "repository": "https://github.com/jshttp/content-disposition",
     "name": "content-disposition",
     "version": "0.5.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\content-disposition",
     "licenseFile": "node_modules\\content-disposition\\LICENSE"
   },
   "content-type@1.0.4": {
@@ -738,7 +662,6 @@
     "email": "doug@somethingdoug.com",
     "name": "content-type",
     "version": "1.0.4",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\content-type",
     "licenseFile": "node_modules\\content-type\\LICENSE"
   },
   "cookie-signature@1.0.6": {
@@ -748,7 +671,6 @@
     "email": "tj@learnboost.com",
     "name": "cookie-signature",
     "version": "1.0.6",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\cookie-signature",
     "licenseFile": "node_modules\\cookie-signature\\Readme.md"
   },
   "cookie@0.3.1": {
@@ -758,7 +680,6 @@
     "email": "shtylman@gmail.com",
     "name": "cookie",
     "version": "0.3.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\cookie",
     "licenseFile": "node_modules\\cookie\\LICENSE"
   },
   "copyfiles@1.2.0": {
@@ -766,7 +687,6 @@
     "repository": "https://github.com/calvinmetcalf/copyfiles",
     "name": "copyfiles",
     "version": "1.2.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\copyfiles",
     "licenseFile": "node_modules\\copyfiles\\license.md"
   },
   "core-js@1.2.7": {
@@ -774,7 +694,6 @@
     "repository": "https://github.com/zloirock/core-js",
     "name": "core-js",
     "version": "1.2.7",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\fbjs\\node_modules\\core-js",
     "licenseFile": "node_modules\\fbjs\\node_modules\\core-js\\LICENSE"
   },
   "core-js@2.5.1": {
@@ -782,7 +701,6 @@
     "repository": "https://github.com/zloirock/core-js",
     "name": "core-js",
     "version": "2.5.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\core-js",
     "licenseFile": "node_modules\\core-js\\LICENSE"
   },
   "core-js@2.5.3": {
@@ -790,7 +708,6 @@
     "repository": "https://github.com/zloirock/core-js",
     "name": "core-js",
     "version": "2.5.3",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\babel-runtime\\node_modules\\core-js",
     "licenseFile": "node_modules\\babel-runtime\\node_modules\\core-js\\LICENSE"
   },
   "core-util-is@1.0.2": {
@@ -801,7 +718,6 @@
     "url": "http://blog.izs.me/",
     "name": "core-util-is",
     "version": "1.0.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\core-util-is",
     "licenseFile": "node_modules\\core-util-is\\LICENSE"
   },
   "crash-dump@1.0.2": {
@@ -810,7 +726,6 @@
     "name": "crash-dump",
     "version": "1.0.2",
     "repository": "",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\crash-dump",
     "licenseFile": "node_modules\\crash-dump\\LICENSE.md"
   },
   "cross-spawn@3.0.1": {
@@ -821,7 +736,6 @@
     "url": "http://indigounited.com",
     "name": "cross-spawn",
     "version": "3.0.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\cross-spawn",
     "licenseFile": "node_modules\\cross-spawn\\LICENSE"
   },
   "cross-spawn@5.1.0": {
@@ -832,7 +746,6 @@
     "url": "http://indigounited.com",
     "name": "cross-spawn",
     "version": "5.1.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\execa\\node_modules\\cross-spawn",
     "licenseFile": "node_modules\\execa\\node_modules\\cross-spawn\\LICENSE"
   },
   "cryptiles@2.0.5": {
@@ -840,7 +753,6 @@
     "repository": "https://github.com/hapijs/cryptiles",
     "name": "cryptiles",
     "version": "2.0.5",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\cryptiles",
     "licenseFile": "node_modules\\cryptiles\\LICENSE"
   },
   "cryptiles@3.1.2": {
@@ -848,7 +760,6 @@
     "repository": "https://github.com/hapijs/cryptiles",
     "name": "cryptiles",
     "version": "3.1.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\request\\node_modules\\cryptiles",
     "licenseFile": "node_modules\\request\\node_modules\\cryptiles\\LICENSE"
   },
   "css-select@1.2.0": {
@@ -858,7 +769,6 @@
     "email": "me@feedic.com",
     "name": "css-select",
     "version": "1.2.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\css-select",
     "licenseFile": "node_modules\\css-select\\LICENSE"
   },
   "css-what@2.1.0": {
@@ -869,7 +779,6 @@
     "url": "http://feedic.com",
     "name": "css-what",
     "version": "2.1.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\css-what",
     "licenseFile": "node_modules\\css-what\\LICENSE"
   },
   "currently-unhandled@0.4.1": {
@@ -880,7 +789,6 @@
     "url": "github.com/jamestalmage",
     "name": "currently-unhandled",
     "version": "0.4.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\currently-unhandled",
     "licenseFile": "node_modules\\currently-unhandled\\license"
   },
   "cycle@1.0.3": {
@@ -888,7 +796,6 @@
     "repository": "https://github.com/dscape/cycle",
     "name": "cycle",
     "version": "1.0.3",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\cycle",
     "licenseFile": "node_modules\\cycle\\README.md"
   },
   "d3-array@1.2.1": {
@@ -898,7 +805,6 @@
     "url": "http://bost.ocks.org/mike",
     "name": "d3-array",
     "version": "1.2.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\d3-array",
     "licenseFile": "node_modules\\d3-array\\LICENSE"
   },
   "d3-axis@1.0.8": {
@@ -908,7 +814,6 @@
     "url": "http://bost.ocks.org/mike",
     "name": "d3-axis",
     "version": "1.0.8",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\d3-axis",
     "licenseFile": "node_modules\\d3-axis\\LICENSE"
   },
   "d3-brush@1.0.4": {
@@ -918,7 +823,6 @@
     "url": "http://bost.ocks.org/mike",
     "name": "d3-brush",
     "version": "1.0.4",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\d3-brush",
     "licenseFile": "node_modules\\d3-brush\\LICENSE"
   },
   "d3-chord@1.0.4": {
@@ -928,7 +832,6 @@
     "url": "http://bost.ocks.org/mike",
     "name": "d3-chord",
     "version": "1.0.4",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\d3-chord",
     "licenseFile": "node_modules\\d3-chord\\LICENSE"
   },
   "d3-collection@1.0.4": {
@@ -938,7 +841,6 @@
     "url": "http://bost.ocks.org/mike",
     "name": "d3-collection",
     "version": "1.0.4",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\d3-collection",
     "licenseFile": "node_modules\\d3-collection\\LICENSE"
   },
   "d3-color@1.0.3": {
@@ -948,7 +850,6 @@
     "url": "http://bost.ocks.org/mike",
     "name": "d3-color",
     "version": "1.0.3",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\d3-color",
     "licenseFile": "node_modules\\d3-color\\LICENSE"
   },
   "d3-dispatch@1.0.3": {
@@ -958,7 +859,6 @@
     "url": "http://bost.ocks.org/mike",
     "name": "d3-dispatch",
     "version": "1.0.3",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\d3-dispatch",
     "licenseFile": "node_modules\\d3-dispatch\\LICENSE"
   },
   "d3-drag@1.2.1": {
@@ -968,7 +868,6 @@
     "url": "http://bost.ocks.org/mike",
     "name": "d3-drag",
     "version": "1.2.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\d3-drag",
     "licenseFile": "node_modules\\d3-drag\\LICENSE"
   },
   "d3-dsv@1.0.7": {
@@ -978,7 +877,6 @@
     "url": "http://bost.ocks.org/mike",
     "name": "d3-dsv",
     "version": "1.0.7",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\d3-dsv",
     "licenseFile": "node_modules\\d3-dsv\\LICENSE"
   },
   "d3-dsv@1.0.8": {
@@ -988,7 +886,6 @@
     "url": "http://bost.ocks.org/mike",
     "name": "d3-dsv",
     "version": "1.0.8",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\d3-request\\node_modules\\d3-dsv",
     "licenseFile": "node_modules\\d3-request\\node_modules\\d3-dsv\\LICENSE"
   },
   "d3-ease@1.0.3": {
@@ -998,7 +895,6 @@
     "url": "http://bost.ocks.org/mike",
     "name": "d3-ease",
     "version": "1.0.3",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\d3-ease",
     "licenseFile": "node_modules\\d3-ease\\LICENSE"
   },
   "d3-force@1.1.0": {
@@ -1008,7 +904,6 @@
     "url": "http://bost.ocks.org/mike",
     "name": "d3-force",
     "version": "1.1.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\d3-force",
     "licenseFile": "node_modules\\d3-force\\LICENSE"
   },
   "d3-format@1.2.0": {
@@ -1018,7 +913,6 @@
     "url": "http://bost.ocks.org/mike",
     "name": "d3-format",
     "version": "1.2.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\d3-format",
     "licenseFile": "node_modules\\d3-format\\LICENSE"
   },
   "d3-format@1.2.1": {
@@ -1028,7 +922,6 @@
     "url": "http://bost.ocks.org/mike",
     "name": "d3-format",
     "version": "1.2.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\d3-scale\\node_modules\\d3-format",
     "licenseFile": "node_modules\\d3-scale\\node_modules\\d3-format\\LICENSE"
   },
   "d3-geo@1.8.1": {
@@ -1038,7 +931,6 @@
     "url": "https://bost.ocks.org/mike",
     "name": "d3-geo",
     "version": "1.8.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\d3-geo",
     "licenseFile": "node_modules\\d3-geo\\LICENSE"
   },
   "d3-hierarchy@1.1.5": {
@@ -1048,7 +940,6 @@
     "url": "http://bost.ocks.org/mike",
     "name": "d3-hierarchy",
     "version": "1.1.5",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\d3-hierarchy",
     "licenseFile": "node_modules\\d3-hierarchy\\LICENSE"
   },
   "d3-interpolate@1.1.5": {
@@ -1058,7 +949,6 @@
     "url": "http://bost.ocks.org/mike",
     "name": "d3-interpolate",
     "version": "1.1.5",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\d3\\node_modules\\d3-interpolate",
     "licenseFile": "node_modules\\d3\\node_modules\\d3-interpolate\\LICENSE"
   },
   "d3-interpolate@1.1.6": {
@@ -1068,7 +958,6 @@
     "url": "http://bost.ocks.org/mike",
     "name": "d3-interpolate",
     "version": "1.1.6",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\d3-interpolate",
     "licenseFile": "node_modules\\d3-interpolate\\LICENSE"
   },
   "d3-path@1.0.5": {
@@ -1078,7 +967,6 @@
     "url": "http://bost.ocks.org/mike",
     "name": "d3-path",
     "version": "1.0.5",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\d3-path",
     "licenseFile": "node_modules\\d3-path\\LICENSE"
   },
   "d3-polygon@1.0.3": {
@@ -1088,7 +976,6 @@
     "url": "http://bost.ocks.org/mike",
     "name": "d3-polygon",
     "version": "1.0.3",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\d3-polygon",
     "licenseFile": "node_modules\\d3-polygon\\LICENSE"
   },
   "d3-quadtree@1.0.3": {
@@ -1098,7 +985,6 @@
     "url": "http://bost.ocks.org/mike",
     "name": "d3-quadtree",
     "version": "1.0.3",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\d3-quadtree",
     "licenseFile": "node_modules\\d3-quadtree\\LICENSE"
   },
   "d3-queue@3.0.7": {
@@ -1108,7 +994,6 @@
     "url": "http://bost.ocks.org/mike",
     "name": "d3-queue",
     "version": "3.0.7",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\d3-queue",
     "licenseFile": "node_modules\\d3-queue\\LICENSE"
   },
   "d3-random@1.1.0": {
@@ -1118,7 +1003,6 @@
     "url": "http://bost.ocks.org/mike",
     "name": "d3-random",
     "version": "1.1.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\d3-random",
     "licenseFile": "node_modules\\d3-random\\LICENSE"
   },
   "d3-request@1.0.6": {
@@ -1128,7 +1012,6 @@
     "url": "http://bost.ocks.org/mike",
     "name": "d3-request",
     "version": "1.0.6",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\d3-request",
     "licenseFile": "node_modules\\d3-request\\LICENSE"
   },
   "d3-scale@1.0.6": {
@@ -1138,7 +1021,6 @@
     "url": "http://bost.ocks.org/mike",
     "name": "d3-scale",
     "version": "1.0.6",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\d3-scale",
     "licenseFile": "node_modules\\d3-scale\\LICENSE"
   },
   "d3-selection@1.1.0": {
@@ -1148,7 +1030,6 @@
     "url": "https://bost.ocks.org/mike",
     "name": "d3-selection",
     "version": "1.1.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\d3\\node_modules\\d3-selection",
     "licenseFile": "node_modules\\d3\\node_modules\\d3-selection\\LICENSE"
   },
   "d3-selection@1.2.0": {
@@ -1158,7 +1039,6 @@
     "url": "https://bost.ocks.org/mike",
     "name": "d3-selection",
     "version": "1.2.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\d3-selection",
     "licenseFile": "node_modules\\d3-selection\\LICENSE"
   },
   "d3-shape@1.2.0": {
@@ -1168,7 +1048,6 @@
     "url": "http://bost.ocks.org/mike",
     "name": "d3-shape",
     "version": "1.2.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\d3-shape",
     "licenseFile": "node_modules\\d3-shape\\LICENSE"
   },
   "d3-time-format@2.0.5": {
@@ -1178,7 +1057,6 @@
     "url": "http://bost.ocks.org/mike",
     "name": "d3-time-format",
     "version": "2.0.5",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\d3-time-format",
     "licenseFile": "node_modules\\d3-time-format\\LICENSE"
   },
   "d3-time-format@2.1.1": {
@@ -1188,7 +1066,6 @@
     "url": "http://bost.ocks.org/mike",
     "name": "d3-time-format",
     "version": "2.1.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\d3-scale\\node_modules\\d3-time-format",
     "licenseFile": "node_modules\\d3-scale\\node_modules\\d3-time-format\\LICENSE"
   },
   "d3-time@1.0.7": {
@@ -1198,7 +1075,6 @@
     "url": "http://bost.ocks.org/mike",
     "name": "d3-time",
     "version": "1.0.7",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\d3\\node_modules\\d3-time",
     "licenseFile": "node_modules\\d3\\node_modules\\d3-time\\LICENSE"
   },
   "d3-time@1.0.8": {
@@ -1208,7 +1084,6 @@
     "url": "http://bost.ocks.org/mike",
     "name": "d3-time",
     "version": "1.0.8",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\d3-time",
     "licenseFile": "node_modules\\d3-time\\LICENSE"
   },
   "d3-timer@1.0.7": {
@@ -1218,7 +1093,6 @@
     "url": "http://bost.ocks.org/mike",
     "name": "d3-timer",
     "version": "1.0.7",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\d3-timer",
     "licenseFile": "node_modules\\d3-timer\\LICENSE"
   },
   "d3-transition@1.1.0": {
@@ -1228,7 +1102,6 @@
     "url": "http://bost.ocks.org/mike",
     "name": "d3-transition",
     "version": "1.1.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\d3\\node_modules\\d3-transition",
     "licenseFile": "node_modules\\d3\\node_modules\\d3-transition\\LICENSE"
   },
   "d3-transition@1.1.1": {
@@ -1238,7 +1111,6 @@
     "url": "http://bost.ocks.org/mike",
     "name": "d3-transition",
     "version": "1.1.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\d3-transition",
     "licenseFile": "node_modules\\d3-transition\\LICENSE"
   },
   "d3-voronoi@1.1.2": {
@@ -1248,7 +1120,6 @@
     "url": "http://bost.ocks.org/mike",
     "name": "d3-voronoi",
     "version": "1.1.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\d3-voronoi",
     "licenseFile": "node_modules\\d3-voronoi\\LICENSE"
   },
   "d3-zoom@1.6.0": {
@@ -1258,7 +1129,6 @@
     "url": "http://bost.ocks.org/mike",
     "name": "d3-zoom",
     "version": "1.6.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\d3-zoom",
     "licenseFile": "node_modules\\d3-zoom\\LICENSE"
   },
   "d3@4.11.0": {
@@ -1268,7 +1138,6 @@
     "url": "https://bost.ocks.org/mike",
     "name": "d3",
     "version": "4.11.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\d3",
     "licenseFile": "node_modules\\d3\\LICENSE"
   },
   "dashdash@1.14.1": {
@@ -1279,18 +1148,7 @@
     "url": "http://trentm.com",
     "name": "dashdash",
     "version": "1.14.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\dashdash",
     "licenseFile": "node_modules\\dashdash\\LICENSE.txt"
-  },
-  "debug@2.2.0": {
-    "licenses": "MIT",
-    "repository": "https://github.com/visionmedia/debug",
-    "publisher": "TJ Holowaychuk",
-    "email": "tj@vision-media.ca",
-    "name": "debug",
-    "version": "2.2.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\node-rest-client\\node_modules\\debug",
-    "licenseFile": "node_modules\\node-rest-client\\node_modules\\debug\\Readme.md"
   },
   "debug@2.6.9": {
     "licenses": "MIT",
@@ -1299,7 +1157,6 @@
     "email": "tj@vision-media.ca",
     "name": "debug",
     "version": "2.6.9",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\debug",
     "licenseFile": "node_modules\\debug\\LICENSE"
   },
   "debug@3.1.0": {
@@ -1309,7 +1166,6 @@
     "email": "tj@vision-media.ca",
     "name": "debug",
     "version": "3.1.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\drivelist\\node_modules\\debug",
     "licenseFile": "node_modules\\drivelist\\node_modules\\debug\\LICENSE"
   },
   "decamelize@1.2.0": {
@@ -1320,7 +1176,6 @@
     "url": "sindresorhus.com",
     "name": "decamelize",
     "version": "1.2.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\decamelize",
     "licenseFile": "node_modules\\decamelize\\license"
   },
   "decompress-response@3.3.0": {
@@ -1328,7 +1183,6 @@
     "repository": "https://github.com/sindresorhus/decompress-response",
     "name": "decompress-response",
     "version": "3.3.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\decompress-response",
     "licenseFile": "node_modules\\decompress-response\\license"
   },
   "deep-extend@0.4.2": {
@@ -1338,7 +1192,6 @@
     "email": "lotsmanov89@gmail.com",
     "name": "deep-extend",
     "version": "0.4.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\deep-extend",
     "licenseFile": "node_modules\\deep-extend\\LICENSE"
   },
   "deferred-leveldown@1.2.2": {
@@ -1346,7 +1199,6 @@
     "repository": "https://github.com/Level/deferred-leveldown",
     "name": "deferred-leveldown",
     "version": "1.2.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\deferred-leveldown",
     "licenseFile": "node_modules\\deferred-leveldown\\LICENSE.md"
   },
   "delayed-stream@1.0.0": {
@@ -1357,7 +1209,6 @@
     "url": "http://debuggable.com/",
     "name": "delayed-stream",
     "version": "1.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\delayed-stream",
     "licenseFile": "node_modules\\delayed-stream\\License"
   },
   "delegates@1.0.0": {
@@ -1365,7 +1216,6 @@
     "repository": "https://github.com/visionmedia/node-delegates",
     "name": "delegates",
     "version": "1.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\delegates",
     "licenseFile": "node_modules\\delegates\\License"
   },
   "depd@1.1.1": {
@@ -1375,7 +1225,6 @@
     "email": "doug@somethingdoug.com",
     "name": "depd",
     "version": "1.1.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\depd",
     "licenseFile": "node_modules\\depd\\LICENSE"
   },
   "desandro-matches-selector@2.0.2": {
@@ -1384,7 +1233,6 @@
     "publisher": "David DeSandro",
     "name": "desandro-matches-selector",
     "version": "2.0.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\desandro-matches-selector",
     "licenseFile": "node_modules\\desandro-matches-selector\\README.md"
   },
   "destroy@1.0.4": {
@@ -1395,7 +1243,6 @@
     "url": "http://jongleberry.com",
     "name": "destroy",
     "version": "1.0.4",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\destroy",
     "licenseFile": "node_modules\\destroy\\LICENSE"
   },
   "detect-libc@1.0.3": {
@@ -1405,7 +1252,6 @@
     "email": "npm@lovell.info",
     "name": "detect-libc",
     "version": "1.0.3",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\detect-libc",
     "licenseFile": "node_modules\\detect-libc\\LICENSE"
   },
   "disposables@1.0.2": {
@@ -1415,7 +1261,6 @@
     "url": "https://github.com/Reactive-Extensions/RxJS/blob/master/authors.txt",
     "name": "disposables",
     "version": "1.0.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\disposables",
     "licenseFile": "node_modules\\disposables\\LICENSE"
   },
   "dnd-core@2.5.4": {
@@ -1423,7 +1268,6 @@
     "repository": "https://github.com/react-dnd/react-dnd",
     "name": "dnd-core",
     "version": "2.5.4",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\dnd-core",
     "licenseFile": "node_modules\\dnd-core\\LICENSE"
   },
   "dom-helpers@3.3.1": {
@@ -1433,7 +1277,6 @@
     "email": "monastic.panic@gmail.com",
     "name": "dom-helpers",
     "version": "3.3.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\dom-helpers",
     "licenseFile": "node_modules\\dom-helpers\\README.md"
   },
   "dom-serializer@0.1.0": {
@@ -1443,7 +1286,6 @@
     "email": "me@feedic.com",
     "name": "dom-serializer",
     "version": "0.1.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\dom-serializer",
     "licenseFile": "node_modules\\dom-serializer\\LICENSE"
   },
   "domelementtype@1.1.3": {
@@ -1453,7 +1295,6 @@
     "email": "me@feedic.com",
     "name": "domelementtype",
     "version": "1.1.3",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\dom-serializer\\node_modules\\domelementtype",
     "licenseFile": "node_modules\\dom-serializer\\node_modules\\domelementtype\\LICENSE"
   },
   "domelementtype@1.3.0": {
@@ -1463,7 +1304,6 @@
     "email": "me@feedic.com",
     "name": "domelementtype",
     "version": "1.3.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\domelementtype",
     "licenseFile": "node_modules\\domelementtype\\LICENSE"
   },
   "domhandler@2.4.1": {
@@ -1473,7 +1313,6 @@
     "email": "me@feedic.com",
     "name": "domhandler",
     "version": "2.4.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\domhandler",
     "licenseFile": "node_modules\\domhandler\\LICENSE"
   },
   "domutils@1.5.1": {
@@ -1483,7 +1322,6 @@
     "email": "me@feedic.com",
     "name": "domutils",
     "version": "1.5.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\css-select\\node_modules\\domutils",
     "licenseFile": "node_modules\\css-select\\node_modules\\domutils\\LICENSE"
   },
   "domutils@1.6.2": {
@@ -1493,7 +1331,6 @@
     "email": "me@feedic.com",
     "name": "domutils",
     "version": "1.6.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\domutils",
     "licenseFile": "node_modules\\domutils\\LICENSE"
   },
   "draggabilly@2.1.1": {
@@ -1502,7 +1339,6 @@
     "publisher": "David DeSandro",
     "name": "draggabilly",
     "version": "2.1.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\draggabilly",
     "licenseFile": "node_modules\\draggabilly\\README.md"
   },
   "drivelist@6.1.8": {
@@ -1512,7 +1348,6 @@
     "email": "juan@resin.io",
     "name": "drivelist",
     "version": "6.1.8",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\drivelist",
     "licenseFile": "node_modules\\drivelist\\LICENSE"
   },
   "easy-stack@1.0.0": {
@@ -1521,7 +1356,6 @@
     "publisher": "Brandon Nozaki Miller",
     "name": "easy-stack",
     "version": "1.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\easy-stack",
     "licenseFile": "node_modules\\easy-stack\\licence.md"
   },
   "ecc-jsbn@0.1.1": {
@@ -1532,7 +1366,6 @@
     "url": "http://jeremie.com/",
     "name": "ecc-jsbn",
     "version": "0.1.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\ecc-jsbn",
     "licenseFile": "node_modules\\ecc-jsbn\\LICENSE"
   },
   "edge-cs@1.2.1": {
@@ -1543,7 +1376,6 @@
     "url": "http://tomasz.janczuk.org",
     "name": "edge-cs",
     "version": "1.2.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\edge-cs",
     "licenseFile": "node_modules\\edge-cs\\LICENSE.txt"
   },
   "edge@7.10.1": {
@@ -1554,7 +1386,6 @@
     "url": "http://tomasz.janczuk.org",
     "name": "edge",
     "version": "7.10.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\edge",
     "licenseFile": "node_modules\\edge\\LICENSE.txt"
   },
   "ee-first@1.1.1": {
@@ -1565,7 +1396,6 @@
     "url": "http://jongleberry.com",
     "name": "ee-first",
     "version": "1.1.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\ee-first",
     "licenseFile": "node_modules\\ee-first\\LICENSE"
   },
   "electron-is-dev@0.3.0": {
@@ -1576,7 +1406,6 @@
     "url": "sindresorhus.com",
     "name": "electron-is-dev",
     "version": "0.3.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\electron-is-dev",
     "licenseFile": "node_modules\\electron-is-dev\\license"
   },
   "electron-updater@2.21.10": {
@@ -1585,7 +1414,6 @@
     "publisher": "Vladimir Krivosheev",
     "name": "electron-updater",
     "version": "2.21.10",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\electron-updater",
     "licenseFile": "node_modules\\electron-updater\\README.md"
   },
   "emscripten-library-decorator@0.2.2": {
@@ -1594,7 +1422,6 @@
     "publisher": "Juha Järvi",
     "name": "emscripten-library-decorator",
     "version": "0.2.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\emscripten-library-decorator",
     "licenseFile": "node_modules\\emscripten-library-decorator\\LICENSE"
   },
   "encodeurl@1.0.1": {
@@ -1602,7 +1429,6 @@
     "repository": "https://github.com/pillarjs/encodeurl",
     "name": "encodeurl",
     "version": "1.0.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\encodeurl",
     "licenseFile": "node_modules\\encodeurl\\LICENSE"
   },
   "encoding@0.1.12": {
@@ -1611,7 +1437,6 @@
     "publisher": "Andris Reinman",
     "name": "encoding",
     "version": "0.1.12",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\encoding",
     "licenseFile": "node_modules\\encoding\\LICENSE"
   },
   "end-of-stream@1.4.0": {
@@ -1621,7 +1446,6 @@
     "email": "mathiasbuus@gmail.com",
     "name": "end-of-stream",
     "version": "1.4.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\end-of-stream",
     "licenseFile": "node_modules\\end-of-stream\\LICENSE"
   },
   "entities@1.1.1": {
@@ -1631,7 +1455,6 @@
     "email": "me@feedic.com",
     "name": "entities",
     "version": "1.1.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\entities",
     "licenseFile": "node_modules\\entities\\LICENSE"
   },
   "errno@0.1.6": {
@@ -1639,7 +1462,6 @@
     "repository": "https://github.com/rvagg/node-errno",
     "name": "errno",
     "version": "0.1.6",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\errno",
     "licenseFile": "node_modules\\errno\\README.md"
   },
   "error-ex@1.3.1": {
@@ -1647,7 +1469,6 @@
     "repository": "https://github.com/qix-/node-error-ex",
     "name": "error-ex",
     "version": "1.3.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\error-ex",
     "licenseFile": "node_modules\\error-ex\\LICENSE"
   },
   "escape-html@1.0.3": {
@@ -1655,7 +1476,6 @@
     "repository": "https://github.com/component/escape-html",
     "name": "escape-html",
     "version": "1.0.3",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\escape-html",
     "licenseFile": "node_modules\\escape-html\\LICENSE"
   },
   "escape-string-regexp@1.0.5": {
@@ -1666,7 +1486,6 @@
     "url": "sindresorhus.com",
     "name": "escape-string-regexp",
     "version": "1.0.5",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\escape-string-regexp",
     "licenseFile": "node_modules\\escape-string-regexp\\license"
   },
   "esprima@2.7.3": {
@@ -1676,7 +1495,6 @@
     "email": "ariya.hidayat@gmail.com",
     "name": "esprima",
     "version": "2.7.3",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\i18next-node-fs-backend\\node_modules\\esprima",
     "licenseFile": "node_modules\\i18next-node-fs-backend\\node_modules\\esprima\\LICENSE.BSD"
   },
   "esprima@4.0.0": {
@@ -1686,7 +1504,6 @@
     "email": "ariya.hidayat@gmail.com",
     "name": "esprima",
     "version": "4.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\esprima",
     "licenseFile": "node_modules\\esprima\\LICENSE.BSD"
   },
   "etag@1.8.1": {
@@ -1694,7 +1511,6 @@
     "repository": "https://github.com/jshttp/etag",
     "name": "etag",
     "version": "1.8.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\etag",
     "licenseFile": "node_modules\\etag\\LICENSE"
   },
   "ev-emitter@1.0.3": {
@@ -1703,7 +1519,6 @@
     "publisher": "David DeSandro",
     "name": "ev-emitter",
     "version": "1.0.3",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\unipointer\\node_modules\\ev-emitter",
     "licenseFile": "node_modules\\unipointer\\node_modules\\ev-emitter\\README.md"
   },
   "ev-emitter@1.1.1": {
@@ -1712,7 +1527,6 @@
     "publisher": "David DeSandro",
     "name": "ev-emitter",
     "version": "1.1.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\ev-emitter",
     "licenseFile": "node_modules\\ev-emitter\\README.md"
   },
   "event-pubsub@4.3.0": {
@@ -1721,7 +1535,6 @@
     "publisher": "Brandon Nozaki Miller",
     "name": "event-pubsub",
     "version": "4.3.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\event-pubsub",
     "licenseFile": "node_modules\\event-pubsub\\LICENSE"
   },
   "events@2.0.0": {
@@ -1732,7 +1545,6 @@
     "url": "http://jeditoolkit.com",
     "name": "events",
     "version": "2.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\events",
     "licenseFile": "node_modules\\events\\LICENSE"
   },
   "exe-version@1.0.0": {
@@ -1740,7 +1552,6 @@
     "name": "exe-version",
     "version": "1.0.0",
     "repository": "",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\exe-version",
     "licenseFile": "node_modules\\exe-version\\README.md"
   },
   "execa@0.6.3": {
@@ -1751,7 +1562,6 @@
     "url": "sindresorhus.com",
     "name": "execa",
     "version": "0.6.3",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\execa",
     "licenseFile": "node_modules\\execa\\license"
   },
   "expand-template@1.1.0": {
@@ -1761,7 +1571,6 @@
     "email": "ralphtheninja@riseup.net",
     "name": "expand-template",
     "version": "1.1.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\expand-template",
     "licenseFile": "node_modules\\expand-template\\README.md"
   },
   "express@4.16.2": {
@@ -1771,7 +1580,6 @@
     "email": "tj@vision-media.ca",
     "name": "express",
     "version": "4.16.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\express",
     "licenseFile": "node_modules\\express\\LICENSE"
   },
   "extend@3.0.1": {
@@ -1782,7 +1590,6 @@
     "url": "http://www.justmoon.net",
     "name": "extend",
     "version": "3.0.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\extend",
     "licenseFile": "node_modules\\extend\\LICENSE"
   },
   "extsprintf@1.3.0": {
@@ -1790,7 +1597,6 @@
     "repository": "https://github.com/davepacheco/node-extsprintf",
     "name": "extsprintf",
     "version": "1.3.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\extsprintf",
     "licenseFile": "node_modules\\extsprintf\\LICENSE"
   },
   "extsprintf@1.4.0": {
@@ -1798,7 +1604,6 @@
     "repository": "https://github.com/davepacheco/node-extsprintf",
     "name": "extsprintf",
     "version": "1.4.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\verror\\node_modules\\extsprintf",
     "licenseFile": "node_modules\\verror\\node_modules\\extsprintf\\LICENSE"
   },
   "eyes@0.1.8": {
@@ -1808,7 +1613,6 @@
     "name": "eyes",
     "version": "0.1.8",
     "repository": "",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\eyes",
     "licenseFile": "node_modules\\eyes\\LICENSE"
   },
   "fast-deep-equal@1.0.0": {
@@ -1817,7 +1621,6 @@
     "publisher": "Evgeny Poberezkin",
     "name": "fast-deep-equal",
     "version": "1.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\fast-deep-equal",
     "licenseFile": "node_modules\\fast-deep-equal\\LICENSE"
   },
   "fast-future@1.0.2": {
@@ -1827,7 +1630,6 @@
     "email": "david.bjorklund@gmail.com",
     "name": "fast-future",
     "version": "1.0.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\fast-future",
     "licenseFile": "node_modules\\fast-future\\LICENCE"
   },
   "fast-json-stable-stringify@2.0.0": {
@@ -1838,7 +1640,6 @@
     "url": "http://substack.net",
     "name": "fast-json-stable-stringify",
     "version": "2.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\fast-json-stable-stringify",
     "licenseFile": "node_modules\\fast-json-stable-stringify\\LICENSE"
   },
   "fast-plist@0.1.2": {
@@ -1847,7 +1648,6 @@
     "publisher": "Microsoft Corporation",
     "name": "fast-plist",
     "version": "0.1.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\fast-plist",
     "licenseFile": "node_modules\\fast-plist\\LICENSE.md"
   },
   "fbjs@0.8.16": {
@@ -1855,7 +1655,6 @@
     "repository": "https://github.com/facebook/fbjs",
     "name": "fbjs",
     "version": "0.8.16",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\fbjs",
     "licenseFile": "node_modules\\fbjs\\LICENSE"
   },
   "feedparser@2.2.8": {
@@ -1865,7 +1664,6 @@
     "email": "danmactough@gmail.com",
     "name": "feedparser",
     "version": "2.2.8",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\feedparser",
     "licenseFile": "node_modules\\feedparser\\LICENSE"
   },
   "ffi@2.2.0": {
@@ -1874,7 +1672,6 @@
     "publisher": "Rick Branson",
     "name": "ffi",
     "version": "2.2.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\ffi",
     "licenseFile": "node_modules\\ffi\\LICENSE"
   },
   "finalhandler@1.1.0": {
@@ -1884,7 +1681,6 @@
     "email": "doug@somethingdoug.com",
     "name": "finalhandler",
     "version": "1.1.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\finalhandler",
     "licenseFile": "node_modules\\finalhandler\\LICENSE"
   },
   "find-up@1.1.2": {
@@ -1895,7 +1691,6 @@
     "url": "sindresorhus.com",
     "name": "find-up",
     "version": "1.1.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\find-up",
     "licenseFile": "node_modules\\find-up\\license"
   },
   "fizzy-ui-utils@2.0.5": {
@@ -1904,19 +1699,7 @@
     "publisher": "David DeSandro",
     "name": "fizzy-ui-utils",
     "version": "2.0.5",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\fizzy-ui-utils",
     "licenseFile": "node_modules\\fizzy-ui-utils\\README.md"
-  },
-  "follow-redirects@1.3.0": {
-    "licenses": "MIT",
-    "repository": "https://github.com/olalonde/follow-redirects",
-    "publisher": "Olivier Lalonde",
-    "email": "olalonde@gmail.com",
-    "url": "http://www.syskall.com",
-    "name": "follow-redirects",
-    "version": "1.3.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\follow-redirects",
-    "licenseFile": "node_modules\\follow-redirects\\LICENSE"
   },
   "fomod-installer@0.0.4": {
     "licenses": "GPL-3.0",
@@ -1924,7 +1707,6 @@
     "name": "fomod-installer",
     "version": "0.0.4",
     "repository": "",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\fomod-installer",
     "licenseFile": "node_modules\\fomod-installer\\LICENSE.md"
   },
   "forever-agent@0.6.1": {
@@ -1935,7 +1717,6 @@
     "url": "http://www.futurealoof.com",
     "name": "forever-agent",
     "version": "0.6.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\forever-agent",
     "licenseFile": "node_modules\\forever-agent\\LICENSE"
   },
   "form-data@2.1.4": {
@@ -1946,7 +1727,6 @@
     "url": "http://debuggable.com/",
     "name": "form-data",
     "version": "2.1.4",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\form-data",
     "licenseFile": "node_modules\\form-data\\License"
   },
   "form-data@2.3.1": {
@@ -1957,7 +1737,6 @@
     "url": "http://debuggable.com/",
     "name": "form-data",
     "version": "2.3.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\request\\node_modules\\form-data",
     "licenseFile": "node_modules\\request\\node_modules\\form-data\\License"
   },
   "forwarded@0.1.2": {
@@ -1965,7 +1744,6 @@
     "repository": "https://github.com/jshttp/forwarded",
     "name": "forwarded",
     "version": "0.1.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\forwarded",
     "licenseFile": "node_modules\\forwarded\\LICENSE"
   },
   "fresh@0.5.2": {
@@ -1976,7 +1754,6 @@
     "url": "http://tjholowaychuk.com",
     "name": "fresh",
     "version": "0.5.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\fresh",
     "licenseFile": "node_modules\\fresh\\LICENSE"
   },
   "fs-extra-p@4.6.0": {
@@ -1984,7 +1761,6 @@
     "repository": "https://github.com/develar/fs-extra-p",
     "name": "fs-extra-p",
     "version": "4.6.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\fs-extra-p",
     "licenseFile": "node_modules\\fs-extra-p\\LICENSE"
   },
   "fs-extra-promise@1.0.1": {
@@ -1993,7 +1769,6 @@
     "publisher": "Overlook Motel",
     "name": "fs-extra-promise",
     "version": "1.0.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\fs-extra-promise",
     "licenseFile": "node_modules\\fs-extra-promise\\License"
   },
   "fs-extra@2.1.2": {
@@ -2003,7 +1778,6 @@
     "email": "jprichardson@gmail.com",
     "name": "fs-extra",
     "version": "2.1.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\fs-extra",
     "licenseFile": "node_modules\\fs-extra\\LICENSE"
   },
   "fs-extra@6.0.0": {
@@ -2013,7 +1787,6 @@
     "email": "jprichardson@gmail.com",
     "name": "fs-extra",
     "version": "6.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\fs-extra-p\\node_modules\\fs-extra",
     "licenseFile": "node_modules\\fs-extra-p\\node_modules\\fs-extra\\LICENSE"
   },
   "fs.realpath@1.0.0": {
@@ -2024,7 +1797,6 @@
     "url": "http://blog.izs.me/",
     "name": "fs.realpath",
     "version": "1.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\fs.realpath",
     "licenseFile": "node_modules\\fs.realpath\\LICENSE"
   },
   "fstream-ignore@1.0.5": {
@@ -2035,7 +1807,6 @@
     "url": "http://blog.izs.me/",
     "name": "fstream-ignore",
     "version": "1.0.5",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\fstream-ignore",
     "licenseFile": "node_modules\\fstream-ignore\\LICENSE"
   },
   "fstream@1.0.11": {
@@ -2046,7 +1817,6 @@
     "url": "http://blog.izs.me/",
     "name": "fstream",
     "version": "1.0.11",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\fstream",
     "licenseFile": "node_modules\\fstream\\LICENSE"
   },
   "gauge@2.7.4": {
@@ -2056,7 +1826,6 @@
     "email": "me@re-becca.org",
     "name": "gauge",
     "version": "2.7.4",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\gauge",
     "licenseFile": "node_modules\\gauge\\LICENSE"
   },
   "gaze@1.1.2": {
@@ -2066,7 +1835,6 @@
     "email": "kyle@dontkry.com",
     "name": "gaze",
     "version": "1.1.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\gaze",
     "licenseFile": "node_modules\\gaze\\README.md"
   },
   "generate-function@2.0.0": {
@@ -2075,7 +1843,6 @@
     "publisher": "Mathias Buus",
     "name": "generate-function",
     "version": "2.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\generate-function",
     "licenseFile": "node_modules\\generate-function\\README.md"
   },
   "generate-object-property@1.2.0": {
@@ -2085,7 +1852,6 @@
     "url": "@mafintosh",
     "name": "generate-object-property",
     "version": "1.2.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\generate-object-property",
     "licenseFile": "node_modules\\generate-object-property\\LICENSE"
   },
   "get-caller-file@1.0.2": {
@@ -2094,7 +1860,6 @@
     "publisher": "Stefan Penner",
     "name": "get-caller-file",
     "version": "1.0.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\get-caller-file",
     "licenseFile": "node_modules\\get-caller-file\\README.md"
   },
   "get-size@2.0.2": {
@@ -2103,7 +1868,6 @@
     "publisher": "David DeSandro",
     "name": "get-size",
     "version": "2.0.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\get-size",
     "licenseFile": "node_modules\\get-size\\README.md"
   },
   "get-stdin@4.0.1": {
@@ -2114,7 +1878,6 @@
     "url": "http://sindresorhus.com",
     "name": "get-stdin",
     "version": "4.0.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\get-stdin",
     "licenseFile": "node_modules\\get-stdin\\readme.md"
   },
   "get-stream@3.0.0": {
@@ -2125,7 +1888,6 @@
     "url": "sindresorhus.com",
     "name": "get-stream",
     "version": "3.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\get-stream",
     "licenseFile": "node_modules\\get-stream\\license"
   },
   "getpass@0.1.7": {
@@ -2135,7 +1897,6 @@
     "email": "alex.wilson@joyent.com",
     "name": "getpass",
     "version": "0.1.7",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\getpass",
     "licenseFile": "node_modules\\getpass\\LICENSE"
   },
   "github-from-package@0.0.0": {
@@ -2146,7 +1907,6 @@
     "url": "http://substack.net",
     "name": "github-from-package",
     "version": "0.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\github-from-package",
     "licenseFile": "node_modules\\github-from-package\\LICENSE"
   },
   "glob@6.0.4": {
@@ -2157,7 +1917,6 @@
     "url": "http://blog.izs.me/",
     "name": "glob",
     "version": "6.0.4",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\true-case-path\\node_modules\\glob",
     "licenseFile": "node_modules\\true-case-path\\node_modules\\glob\\LICENSE"
   },
   "glob@7.1.2": {
@@ -2168,7 +1927,6 @@
     "url": "http://blog.izs.me/",
     "name": "glob",
     "version": "7.1.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\glob",
     "licenseFile": "node_modules\\glob\\LICENSE"
   },
   "globule@1.2.0": {
@@ -2178,7 +1936,6 @@
     "url": "http://benalman.com/",
     "name": "globule",
     "version": "1.2.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\globule",
     "licenseFile": "node_modules\\globule\\LICENSE"
   },
   "graceful-fs@4.1.11": {
@@ -2186,7 +1943,6 @@
     "repository": "https://github.com/isaacs/node-graceful-fs",
     "name": "graceful-fs",
     "version": "4.1.11",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\graceful-fs",
     "licenseFile": "node_modules\\graceful-fs\\LICENSE"
   },
   "graceful-readlink@1.0.1": {
@@ -2195,7 +1951,6 @@
     "publisher": "zhiyelee",
     "name": "graceful-readlink",
     "version": "1.0.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\graceful-readlink",
     "licenseFile": "node_modules\\graceful-readlink\\LICENSE"
   },
   "graphlib@2.1.5": {
@@ -2205,7 +1960,6 @@
     "email": "cpettitt@gmail.com",
     "name": "graphlib",
     "version": "2.1.5",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\graphlib",
     "licenseFile": "node_modules\\graphlib\\LICENSE"
   },
   "har-schema@1.0.5": {
@@ -2216,7 +1970,6 @@
     "url": "https://www.ahmadnassri.com/",
     "name": "har-schema",
     "version": "1.0.5",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\node-pre-gyp\\node_modules\\har-schema",
     "licenseFile": "node_modules\\node-pre-gyp\\node_modules\\har-schema\\LICENSE"
   },
   "har-schema@2.0.0": {
@@ -2227,7 +1980,6 @@
     "url": "https://www.ahmadnassri.com/",
     "name": "har-schema",
     "version": "2.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\har-schema",
     "licenseFile": "node_modules\\har-schema\\LICENSE"
   },
   "har-validator@2.0.6": {
@@ -2238,7 +1990,6 @@
     "url": "https://www.ahmadnassri.com/",
     "name": "har-validator",
     "version": "2.0.6",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\node-sass\\node_modules\\har-validator",
     "licenseFile": "node_modules\\node-sass\\node_modules\\har-validator\\LICENSE"
   },
   "har-validator@4.2.1": {
@@ -2249,7 +2000,6 @@
     "url": "https://www.ahmadnassri.com/",
     "name": "har-validator",
     "version": "4.2.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\node-pre-gyp\\node_modules\\har-validator",
     "licenseFile": "node_modules\\node-pre-gyp\\node_modules\\har-validator\\LICENSE"
   },
   "har-validator@5.0.3": {
@@ -2260,7 +2010,6 @@
     "url": "https://www.ahmadnassri.com/",
     "name": "har-validator",
     "version": "5.0.3",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\har-validator",
     "licenseFile": "node_modules\\har-validator\\LICENSE"
   },
   "has-ansi@2.0.0": {
@@ -2271,7 +2020,6 @@
     "url": "sindresorhus.com",
     "name": "has-ansi",
     "version": "2.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\has-ansi",
     "licenseFile": "node_modules\\has-ansi\\license"
   },
   "has-unicode@2.0.1": {
@@ -2281,7 +2029,6 @@
     "email": "me@re-becca.org",
     "name": "has-unicode",
     "version": "2.0.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\has-unicode",
     "licenseFile": "node_modules\\has-unicode\\LICENSE"
   },
   "hawk@3.1.3": {
@@ -2292,7 +2039,6 @@
     "url": "http://hueniverse.com",
     "name": "hawk",
     "version": "3.1.3",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\hawk",
     "licenseFile": "node_modules\\hawk\\LICENSE"
   },
   "hawk@6.0.2": {
@@ -2303,7 +2049,6 @@
     "url": "http://hueniverse.com",
     "name": "hawk",
     "version": "6.0.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\request\\node_modules\\hawk",
     "licenseFile": "node_modules\\request\\node_modules\\hawk\\LICENSE"
   },
   "hoek@2.16.3": {
@@ -2311,7 +2056,6 @@
     "repository": "https://github.com/hapijs/hoek",
     "name": "hoek",
     "version": "2.16.3",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\hawk\\node_modules\\hoek",
     "licenseFile": "node_modules\\hawk\\node_modules\\hoek\\LICENSE"
   },
   "hoek@4.2.0": {
@@ -2319,7 +2063,6 @@
     "repository": "https://github.com/hapijs/hoek",
     "name": "hoek",
     "version": "4.2.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\hoek",
     "licenseFile": "node_modules\\hoek\\LICENSE"
   },
   "hoist-non-react-statics@1.2.0": {
@@ -2329,7 +2072,6 @@
     "email": "mridgway@yahoo-inc.com",
     "name": "hoist-non-react-statics",
     "version": "1.2.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\react-dnd-scrollzone\\node_modules\\hoist-non-react-statics",
     "licenseFile": "node_modules\\react-dnd-scrollzone\\node_modules\\hoist-non-react-statics\\LICENSE.md"
   },
   "hoist-non-react-statics@2.3.1": {
@@ -2339,7 +2081,6 @@
     "email": "mcridgway@gmail.com",
     "name": "hoist-non-react-statics",
     "version": "2.3.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\hoist-non-react-statics",
     "licenseFile": "node_modules\\hoist-non-react-statics\\LICENSE.md"
   },
   "hosted-git-info@2.5.0": {
@@ -2350,7 +2091,6 @@
     "url": "http://re-becca.org",
     "name": "hosted-git-info",
     "version": "2.5.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\hosted-git-info",
     "licenseFile": "node_modules\\hosted-git-info\\LICENSE"
   },
   "html-entities@1.2.1": {
@@ -2360,7 +2100,6 @@
     "email": "mdevils@yandex.ru",
     "name": "html-entities",
     "version": "1.2.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\html-entities",
     "licenseFile": "node_modules\\html-entities\\LICENSE"
   },
   "html-parse-stringify2@2.0.1": {
@@ -2370,7 +2109,6 @@
     "email": "ray.diciaccio@gmail.com",
     "name": "html-parse-stringify2",
     "version": "2.0.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\html-parse-stringify2",
     "licenseFile": "node_modules\\html-parse-stringify2\\README.md"
   },
   "htmlparser2@3.9.2": {
@@ -2380,7 +2118,6 @@
     "email": "me@feedic.com",
     "name": "htmlparser2",
     "version": "3.9.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\htmlparser2",
     "licenseFile": "node_modules\\htmlparser2\\LICENSE"
   },
   "http-errors@1.6.2": {
@@ -2391,7 +2128,6 @@
     "url": "http://jongleberry.com",
     "name": "http-errors",
     "version": "1.6.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\http-errors",
     "licenseFile": "node_modules\\http-errors\\LICENSE"
   },
   "http-signature@1.1.1": {
@@ -2400,7 +2136,6 @@
     "publisher": "Joyent, Inc",
     "name": "http-signature",
     "version": "1.1.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\http-signature",
     "licenseFile": "node_modules\\http-signature\\LICENSE"
   },
   "http-signature@1.2.0": {
@@ -2409,7 +2144,6 @@
     "publisher": "Joyent, Inc",
     "name": "http-signature",
     "version": "1.2.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\request\\node_modules\\http-signature",
     "licenseFile": "node_modules\\request\\node_modules\\http-signature\\LICENSE"
   },
   "i18next-node-fs-backend@1.0.0": {
@@ -2420,7 +2154,6 @@
     "name": "i18next-node-fs-backend",
     "version": "1.0.0",
     "repository": "",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\i18next-node-fs-backend",
     "licenseFile": "node_modules\\i18next-node-fs-backend\\LICENSE"
   },
   "i18next@10.2.2": {
@@ -2431,7 +2164,6 @@
     "url": "https://github.com/jamuhl",
     "name": "i18next",
     "version": "10.2.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\i18next",
     "licenseFile": "node_modules\\i18next\\LICENSE"
   },
   "icon-extract@1.0.0": {
@@ -2439,7 +2171,6 @@
     "name": "icon-extract",
     "version": "1.0.0",
     "repository": "",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\icon-extract",
     "licenseFile": "node_modules\\icon-extract\\README.md"
   },
   "iconv-lite@0.4.19": {
@@ -2449,7 +2180,6 @@
     "email": "ashtuchkin@gmail.com",
     "name": "iconv-lite",
     "version": "0.4.19",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\iconv-lite",
     "licenseFile": "node_modules\\iconv-lite\\LICENSE"
   },
   "idb-wrapper@1.7.2": {
@@ -2460,7 +2190,6 @@
     "url": "http://jensarps.de/",
     "name": "idb-wrapper",
     "version": "1.7.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\idb-wrapper",
     "licenseFile": "node_modules\\idb-wrapper\\LICENSE"
   },
   "immutability-helper@2.6.4": {
@@ -2469,7 +2198,6 @@
     "publisher": "Moshe Kolodny",
     "name": "immutability-helper",
     "version": "2.6.4",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\immutability-helper",
     "licenseFile": "node_modules\\immutability-helper\\LICENSE"
   },
   "in-publish@2.0.0": {
@@ -2479,7 +2207,6 @@
     "email": "me@re-becca.org",
     "name": "in-publish",
     "version": "2.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\in-publish",
     "licenseFile": "node_modules\\in-publish\\LICENSE"
   },
   "indent-string@2.1.0": {
@@ -2490,7 +2217,6 @@
     "url": "sindresorhus.com",
     "name": "indent-string",
     "version": "2.1.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\indent-string",
     "licenseFile": "node_modules\\indent-string\\license"
   },
   "inflight@1.0.6": {
@@ -2501,7 +2227,6 @@
     "url": "http://blog.izs.me/",
     "name": "inflight",
     "version": "1.0.6",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\inflight",
     "licenseFile": "node_modules\\inflight\\LICENSE"
   },
   "inherits@2.0.3": {
@@ -2509,7 +2234,6 @@
     "repository": "https://github.com/isaacs/inherits",
     "name": "inherits",
     "version": "2.0.3",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\inherits",
     "licenseFile": "node_modules\\inherits\\LICENSE"
   },
   "ini@1.3.5": {
@@ -2520,7 +2244,6 @@
     "url": "http://blog.izs.me/",
     "name": "ini",
     "version": "1.3.5",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\ini",
     "licenseFile": "node_modules\\ini\\LICENSE"
   },
   "invariant@2.2.2": {
@@ -2530,7 +2253,6 @@
     "email": "zertosh@gmail.com",
     "name": "invariant",
     "version": "2.2.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\invariant",
     "licenseFile": "node_modules\\invariant\\LICENSE"
   },
   "invert-kv@1.0.0": {
@@ -2541,7 +2263,6 @@
     "url": "http://sindresorhus.com",
     "name": "invert-kv",
     "version": "1.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\invert-kv",
     "licenseFile": "node_modules\\invert-kv\\readme.md"
   },
   "ipaddr.js@1.5.2": {
@@ -2551,7 +2272,6 @@
     "email": "whitequark@whitequark.org",
     "name": "ipaddr.js",
     "version": "1.5.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\ipaddr.js",
     "licenseFile": "node_modules\\ipaddr.js\\LICENSE"
   },
   "is-admin@2.1.1": {
@@ -2562,7 +2282,6 @@
     "url": "sindresorhus.com",
     "name": "is-admin",
     "version": "2.1.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\is-admin",
     "licenseFile": "node_modules\\is-admin\\license"
   },
   "is-arrayish@0.2.1": {
@@ -2572,7 +2291,6 @@
     "url": "http://github.com/qix-",
     "name": "is-arrayish",
     "version": "0.2.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\is-arrayish",
     "licenseFile": "node_modules\\is-arrayish\\LICENSE"
   },
   "is-builtin-module@1.0.0": {
@@ -2583,7 +2301,6 @@
     "url": "sindresorhus.com",
     "name": "is-builtin-module",
     "version": "1.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\is-builtin-module",
     "licenseFile": "node_modules\\is-builtin-module\\license"
   },
   "is-finite@1.0.2": {
@@ -2594,7 +2311,6 @@
     "url": "sindresorhus.com",
     "name": "is-finite",
     "version": "1.0.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\is-finite",
     "licenseFile": "node_modules\\is-finite\\license"
   },
   "is-fullwidth-code-point@1.0.0": {
@@ -2605,7 +2321,6 @@
     "url": "sindresorhus.com",
     "name": "is-fullwidth-code-point",
     "version": "1.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\is-fullwidth-code-point",
     "licenseFile": "node_modules\\is-fullwidth-code-point\\license"
   },
   "is-my-json-valid@2.17.1": {
@@ -2614,7 +2329,6 @@
     "publisher": "Mathias Buus",
     "name": "is-my-json-valid",
     "version": "2.17.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\is-my-json-valid",
     "licenseFile": "node_modules\\is-my-json-valid\\LICENSE"
   },
   "is-property@1.0.2": {
@@ -2623,7 +2337,6 @@
     "publisher": "Mikola Lysenko",
     "name": "is-property",
     "version": "1.0.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\is-property",
     "licenseFile": "node_modules\\is-property\\LICENSE"
   },
   "is-stream@1.1.0": {
@@ -2634,7 +2347,6 @@
     "url": "sindresorhus.com",
     "name": "is-stream",
     "version": "1.1.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\is-stream",
     "licenseFile": "node_modules\\is-stream\\license"
   },
   "is-typedarray@1.0.0": {
@@ -2645,7 +2357,6 @@
     "url": "http://hughsk.io/",
     "name": "is-typedarray",
     "version": "1.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\is-typedarray",
     "licenseFile": "node_modules\\is-typedarray\\LICENSE.md"
   },
   "is-utf8@0.2.1": {
@@ -2654,7 +2365,6 @@
     "publisher": "wayfind",
     "name": "is-utf8",
     "version": "0.2.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\is-utf8",
     "licenseFile": "node_modules\\is-utf8\\LICENSE"
   },
   "is-wsl@1.1.0": {
@@ -2665,7 +2375,6 @@
     "url": "sindresorhus.com",
     "name": "is-wsl",
     "version": "1.1.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\is-wsl",
     "licenseFile": "node_modules\\is-wsl\\license"
   },
   "isarray@0.0.1": {
@@ -2676,7 +2385,6 @@
     "url": "http://juliangruber.com",
     "name": "isarray",
     "version": "0.0.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\isarray",
     "licenseFile": "node_modules\\isarray\\README.md"
   },
   "isarray@1.0.0": {
@@ -2687,7 +2395,6 @@
     "url": "http://juliangruber.com",
     "name": "isarray",
     "version": "1.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\readable-stream\\node_modules\\isarray",
     "licenseFile": "node_modules\\readable-stream\\node_modules\\isarray\\README.md"
   },
   "isbuffer@0.0.0": {
@@ -2698,7 +2405,6 @@
     "url": "http://juliangruber.com",
     "name": "isbuffer",
     "version": "0.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\isbuffer",
     "licenseFile": "node_modules\\isbuffer\\README.md"
   },
   "isexe@2.0.0": {
@@ -2709,7 +2415,6 @@
     "url": "http://blog.izs.me/",
     "name": "isexe",
     "version": "2.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\isexe",
     "licenseFile": "node_modules\\isexe\\LICENSE"
   },
   "isomorphic-fetch@2.2.1": {
@@ -2719,7 +2424,6 @@
     "email": "matt@mattandre.ws",
     "name": "isomorphic-fetch",
     "version": "2.2.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\isomorphic-fetch",
     "licenseFile": "node_modules\\isomorphic-fetch\\LICENSE"
   },
   "isstream@0.1.2": {
@@ -2729,7 +2433,6 @@
     "email": "rod@vagg.org",
     "name": "isstream",
     "version": "0.1.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\isstream",
     "licenseFile": "node_modules\\isstream\\LICENSE.md"
   },
   "js-base64@2.4.0": {
@@ -2738,7 +2441,6 @@
     "publisher": "Dan Kogai",
     "name": "js-base64",
     "version": "2.4.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\js-base64",
     "licenseFile": "node_modules\\js-base64\\LICENSE.md"
   },
   "js-message@1.0.5": {
@@ -2747,7 +2449,6 @@
     "publisher": "Brandon Nozaki Miller",
     "name": "js-message",
     "version": "1.0.5",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\js-message",
     "licenseFile": "node_modules\\js-message\\licence.md"
   },
   "js-queue@2.0.0": {
@@ -2756,7 +2457,6 @@
     "publisher": "Brandon Nozaki Miller",
     "name": "js-queue",
     "version": "2.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\js-queue",
     "licenseFile": "node_modules\\js-queue\\licence.md"
   },
   "js-tokens@3.0.2": {
@@ -2765,7 +2465,6 @@
     "publisher": "Simon Lydell",
     "name": "js-tokens",
     "version": "3.0.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\js-tokens",
     "licenseFile": "node_modules\\js-tokens\\LICENSE"
   },
   "js-yaml@3.11.0": {
@@ -2775,7 +2474,6 @@
     "email": "dervus.grim@gmail.com",
     "name": "js-yaml",
     "version": "3.11.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\js-yaml",
     "licenseFile": "node_modules\\js-yaml\\LICENSE"
   },
   "js-yaml@3.5.4": {
@@ -2785,7 +2483,6 @@
     "email": "dervus.grim@gmail.com",
     "name": "js-yaml",
     "version": "3.5.4",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\i18next-node-fs-backend\\node_modules\\js-yaml",
     "licenseFile": "node_modules\\i18next-node-fs-backend\\node_modules\\js-yaml\\LICENSE"
   },
   "jsbn@0.1.1": {
@@ -2794,7 +2491,6 @@
     "publisher": "Tom Wu",
     "name": "jsbn",
     "version": "0.1.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\jsbn",
     "licenseFile": "node_modules\\jsbn\\LICENSE"
   },
   "json-schema-traverse@0.3.1": {
@@ -2803,7 +2499,6 @@
     "publisher": "Evgeny Poberezkin",
     "name": "json-schema-traverse",
     "version": "0.3.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\json-schema-traverse",
     "licenseFile": "node_modules\\json-schema-traverse\\LICENSE"
   },
   "json-schema@0.2.3": {
@@ -2815,7 +2510,6 @@
     "publisher": "Kris Zyp",
     "name": "json-schema",
     "version": "0.2.3",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\json-schema",
     "licenseFile": "node_modules\\json-schema\\README.md"
   },
   "json-stable-stringify@1.0.1": {
@@ -2826,7 +2520,6 @@
     "url": "http://substack.net",
     "name": "json-stable-stringify",
     "version": "1.0.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\json-stable-stringify",
     "licenseFile": "node_modules\\json-stable-stringify\\LICENSE"
   },
   "json-stringify-safe@5.0.1": {
@@ -2837,7 +2530,6 @@
     "url": "http://blog.izs.me",
     "name": "json-stringify-safe",
     "version": "5.0.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\json-stringify-safe",
     "licenseFile": "node_modules\\json-stringify-safe\\LICENSE"
   },
   "json5@0.5.0": {
@@ -2847,7 +2539,6 @@
     "email": "aseem.kishore@gmail.com",
     "name": "json5",
     "version": "0.5.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\json5",
     "licenseFile": "node_modules\\json5\\README.md"
   },
   "jsonfile@2.4.0": {
@@ -2857,7 +2548,6 @@
     "email": "jprichardson@gmail.com",
     "name": "jsonfile",
     "version": "2.4.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\jsonfile",
     "licenseFile": "node_modules\\jsonfile\\LICENSE"
   },
   "jsonfile@4.0.0": {
@@ -2867,7 +2557,6 @@
     "email": "jprichardson@gmail.com",
     "name": "jsonfile",
     "version": "4.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\fs-extra-p\\node_modules\\jsonfile",
     "licenseFile": "node_modules\\fs-extra-p\\node_modules\\jsonfile\\LICENSE"
   },
   "jsonify@0.0.0": {
@@ -2877,7 +2566,6 @@
     "url": "http://crockford.com/",
     "name": "jsonify",
     "version": "0.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\jsonify",
     "licenseFile": "node_modules\\jsonify\\README.markdown"
   },
   "jsonpointer@4.0.1": {
@@ -2887,7 +2575,6 @@
     "email": "jan@apache.org",
     "name": "jsonpointer",
     "version": "4.0.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\jsonpointer",
     "licenseFile": "node_modules\\jsonpointer\\LICENSE.md"
   },
   "jsprim@1.4.1": {
@@ -2895,7 +2582,6 @@
     "repository": "https://github.com/joyent/node-jsprim",
     "name": "jsprim",
     "version": "1.4.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\jsprim",
     "licenseFile": "node_modules\\jsprim\\LICENSE"
   },
   "keycode@2.1.9": {
@@ -2905,7 +2591,6 @@
     "email": "secoif@gmail.com",
     "name": "keycode",
     "version": "2.1.9",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\keycode",
     "licenseFile": "node_modules\\keycode\\LICENSE"
   },
   "lazy-val@1.0.3": {
@@ -2914,7 +2599,6 @@
     "publisher": "Vladimir Krivosheev",
     "name": "lazy-val",
     "version": "1.0.3",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\lazy-val",
     "licenseFile": "node_modules\\lazy-val\\readme.md"
   },
   "lcid@1.0.0": {
@@ -2925,7 +2609,6 @@
     "url": "sindresorhus.com",
     "name": "lcid",
     "version": "1.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\lcid",
     "licenseFile": "node_modules\\lcid\\license"
   },
   "level-codec@6.1.0": {
@@ -2933,7 +2616,6 @@
     "repository": "https://github.com/Level/codec",
     "name": "level-codec",
     "version": "6.1.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\level-codec",
     "licenseFile": "node_modules\\level-codec\\LICENSE.md"
   },
   "level-codec@7.0.1": {
@@ -2941,7 +2623,6 @@
     "repository": "https://github.com/Level/codec",
     "name": "level-codec",
     "version": "7.0.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\modmeta-db\\node_modules\\level-codec",
     "licenseFile": "node_modules\\modmeta-db\\node_modules\\level-codec\\LICENSE.md"
   },
   "level-errors@1.0.5": {
@@ -2949,7 +2630,6 @@
     "repository": "https://github.com/level/errors",
     "name": "level-errors",
     "version": "1.0.5",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\level-errors",
     "licenseFile": "node_modules\\level-errors\\LICENSE.md"
   },
   "level-errors@1.1.2": {
@@ -2957,7 +2637,6 @@
     "repository": "https://github.com/level/errors",
     "name": "level-errors",
     "version": "1.1.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\level-iterator-stream\\node_modules\\level-errors",
     "licenseFile": "node_modules\\level-iterator-stream\\node_modules\\level-errors\\LICENSE.md"
   },
   "level-iterator-stream@1.3.1": {
@@ -2965,7 +2644,6 @@
     "repository": "https://github.com/Level/iterator-stream",
     "name": "level-iterator-stream",
     "version": "1.3.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\level-iterator-stream",
     "licenseFile": "node_modules\\level-iterator-stream\\LICENSE.md"
   },
   "level-js@2.2.4": {
@@ -2974,7 +2652,6 @@
     "publisher": "max ogden",
     "name": "level-js",
     "version": "2.2.4",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\level-js",
     "licenseFile": "node_modules\\level-js\\README.md"
   },
   "leveldown@1.7.2": {
@@ -2982,7 +2659,6 @@
     "repository": "https://github.com/level/leveldown",
     "name": "leveldown",
     "version": "1.7.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\leveldown",
     "licenseFile": "node_modules\\leveldown\\LICENSE.md"
   },
   "leveldown@1.9.0": {
@@ -2990,7 +2666,6 @@
     "repository": "https://github.com/level/leveldown",
     "name": "leveldown",
     "version": "1.9.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\modmeta-db\\node_modules\\leveldown",
     "licenseFile": "node_modules\\modmeta-db\\node_modules\\leveldown\\LICENSE.md"
   },
   "levelup@1.3.5": {
@@ -2998,7 +2673,6 @@
     "repository": "https://github.com/level/levelup",
     "name": "levelup",
     "version": "1.3.5",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\levelup",
     "licenseFile": "node_modules\\levelup\\LICENSE.md"
   },
   "levelup@1.3.9": {
@@ -3006,7 +2680,6 @@
     "repository": "https://github.com/level/levelup",
     "name": "levelup",
     "version": "1.3.9",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\modmeta-db\\node_modules\\levelup",
     "licenseFile": "node_modules\\modmeta-db\\node_modules\\levelup\\LICENSE.md"
   },
   "libxmljs@0.18.7": {
@@ -3015,7 +2688,6 @@
     "publisher": "Marco Rogers",
     "name": "libxmljs",
     "version": "0.18.7",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\libxmljs",
     "licenseFile": "node_modules\\libxmljs\\LICENSE"
   },
   "load-json-file@1.1.0": {
@@ -3026,7 +2698,6 @@
     "url": "sindresorhus.com",
     "name": "load-json-file",
     "version": "1.1.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\load-json-file",
     "licenseFile": "node_modules\\load-json-file\\license"
   },
   "lodash-es@4.17.4": {
@@ -3037,7 +2708,6 @@
     "url": "http://allyoucanleet.com/",
     "name": "lodash-es",
     "version": "4.17.4",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\lodash-es",
     "licenseFile": "node_modules\\lodash-es\\LICENSE"
   },
   "lodash.assign@4.2.0": {
@@ -3048,7 +2718,6 @@
     "url": "http://allyoucanleet.com/",
     "name": "lodash.assign",
     "version": "4.2.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\lodash.assign",
     "licenseFile": "node_modules\\lodash.assign\\LICENSE"
   },
   "lodash.assignin@4.2.0": {
@@ -3059,7 +2728,6 @@
     "url": "http://allyoucanleet.com/",
     "name": "lodash.assignin",
     "version": "4.2.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\lodash.assignin",
     "licenseFile": "node_modules\\lodash.assignin\\LICENSE"
   },
   "lodash.bind@4.2.1": {
@@ -3070,7 +2738,6 @@
     "url": "http://allyoucanleet.com/",
     "name": "lodash.bind",
     "version": "4.2.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\lodash.bind",
     "licenseFile": "node_modules\\lodash.bind\\LICENSE"
   },
   "lodash.clonedeep@4.5.0": {
@@ -3081,7 +2748,6 @@
     "url": "http://allyoucanleet.com/",
     "name": "lodash.clonedeep",
     "version": "4.5.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\lodash.clonedeep",
     "licenseFile": "node_modules\\lodash.clonedeep\\LICENSE"
   },
   "lodash.debounce@4.0.8": {
@@ -3092,7 +2758,6 @@
     "url": "http://allyoucanleet.com/",
     "name": "lodash.debounce",
     "version": "4.0.8",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\lodash.debounce",
     "licenseFile": "node_modules\\lodash.debounce\\LICENSE"
   },
   "lodash.defaults@4.2.0": {
@@ -3103,7 +2768,6 @@
     "url": "http://allyoucanleet.com/",
     "name": "lodash.defaults",
     "version": "4.2.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\lodash.defaults",
     "licenseFile": "node_modules\\lodash.defaults\\LICENSE"
   },
   "lodash.filter@4.6.0": {
@@ -3114,7 +2778,6 @@
     "url": "http://allyoucanleet.com/",
     "name": "lodash.filter",
     "version": "4.6.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\lodash.filter",
     "licenseFile": "node_modules\\lodash.filter\\LICENSE"
   },
   "lodash.flatten@4.4.0": {
@@ -3125,7 +2788,6 @@
     "url": "http://allyoucanleet.com/",
     "name": "lodash.flatten",
     "version": "4.4.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\lodash.flatten",
     "licenseFile": "node_modules\\lodash.flatten\\LICENSE"
   },
   "lodash.foreach@4.5.0": {
@@ -3136,7 +2798,6 @@
     "url": "http://allyoucanleet.com/",
     "name": "lodash.foreach",
     "version": "4.5.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\lodash.foreach",
     "licenseFile": "node_modules\\lodash.foreach\\LICENSE"
   },
   "lodash.get@4.4.2": {
@@ -3147,7 +2808,6 @@
     "url": "http://allyoucanleet.com/",
     "name": "lodash.get",
     "version": "4.4.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\lodash.get",
     "licenseFile": "node_modules\\lodash.get\\LICENSE"
   },
   "lodash.has@4.5.2": {
@@ -3158,7 +2818,6 @@
     "url": "http://allyoucanleet.com/",
     "name": "lodash.has",
     "version": "4.5.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\lodash.has",
     "licenseFile": "node_modules\\lodash.has\\LICENSE"
   },
   "lodash.isequal@4.5.0": {
@@ -3169,7 +2828,6 @@
     "url": "http://allyoucanleet.com/",
     "name": "lodash.isequal",
     "version": "4.5.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\lodash.isequal",
     "licenseFile": "node_modules\\lodash.isequal\\LICENSE"
   },
   "lodash.isplainobject@4.0.6": {
@@ -3180,7 +2838,6 @@
     "url": "http://allyoucanleet.com/",
     "name": "lodash.isplainobject",
     "version": "4.0.6",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\lodash.isplainobject",
     "licenseFile": "node_modules\\lodash.isplainobject\\LICENSE"
   },
   "lodash.map@4.6.0": {
@@ -3191,7 +2848,6 @@
     "url": "http://allyoucanleet.com/",
     "name": "lodash.map",
     "version": "4.6.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\lodash.map",
     "licenseFile": "node_modules\\lodash.map\\LICENSE"
   },
   "lodash.merge@4.6.0": {
@@ -3202,7 +2858,6 @@
     "url": "http://allyoucanleet.com/",
     "name": "lodash.merge",
     "version": "4.6.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\lodash.merge",
     "licenseFile": "node_modules\\lodash.merge\\LICENSE"
   },
   "lodash.mergewith@4.6.0": {
@@ -3213,7 +2868,6 @@
     "url": "http://allyoucanleet.com/",
     "name": "lodash.mergewith",
     "version": "4.6.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\lodash.mergewith",
     "licenseFile": "node_modules\\lodash.mergewith\\LICENSE"
   },
   "lodash.pick@4.4.0": {
@@ -3224,7 +2878,6 @@
     "url": "http://allyoucanleet.com/",
     "name": "lodash.pick",
     "version": "4.4.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\lodash.pick",
     "licenseFile": "node_modules\\lodash.pick\\LICENSE"
   },
   "lodash.reduce@4.6.0": {
@@ -3235,7 +2888,6 @@
     "url": "http://allyoucanleet.com/",
     "name": "lodash.reduce",
     "version": "4.6.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\lodash.reduce",
     "licenseFile": "node_modules\\lodash.reduce\\LICENSE"
   },
   "lodash.reject@4.6.0": {
@@ -3246,7 +2898,6 @@
     "url": "http://allyoucanleet.com/",
     "name": "lodash.reject",
     "version": "4.6.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\lodash.reject",
     "licenseFile": "node_modules\\lodash.reject\\LICENSE"
   },
   "lodash.some@4.6.0": {
@@ -3257,7 +2908,6 @@
     "url": "http://allyoucanleet.com/",
     "name": "lodash.some",
     "version": "4.6.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\lodash.some",
     "licenseFile": "node_modules\\lodash.some\\LICENSE"
   },
   "lodash.throttle@4.1.1": {
@@ -3268,7 +2918,6 @@
     "url": "http://allyoucanleet.com/",
     "name": "lodash.throttle",
     "version": "4.1.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\lodash.throttle",
     "licenseFile": "node_modules\\lodash.throttle\\LICENSE"
   },
   "lodash.uniq@4.5.0": {
@@ -3279,7 +2928,6 @@
     "url": "http://allyoucanleet.com/",
     "name": "lodash.uniq",
     "version": "4.5.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\lodash.uniq",
     "licenseFile": "node_modules\\lodash.uniq\\LICENSE"
   },
   "lodash@4.17.4": {
@@ -3290,7 +2938,6 @@
     "url": "http://allyoucanleet.com/",
     "name": "lodash",
     "version": "4.17.4",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\lodash",
     "licenseFile": "node_modules\\lodash\\LICENSE"
   },
   "lodash@4.17.5": {
@@ -3301,7 +2948,6 @@
     "url": "http://allyoucanleet.com/",
     "name": "lodash",
     "version": "4.17.5",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\msbuild\\node_modules\\lodash",
     "licenseFile": "node_modules\\msbuild\\node_modules\\lodash\\LICENSE"
   },
   "loose-envify@1.3.1": {
@@ -3311,7 +2957,6 @@
     "email": "zertosh@gmail.com",
     "name": "loose-envify",
     "version": "1.3.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\loose-envify",
     "licenseFile": "node_modules\\loose-envify\\LICENSE"
   },
   "loud-rejection@1.6.0": {
@@ -3322,7 +2967,6 @@
     "url": "sindresorhus.com",
     "name": "loud-rejection",
     "version": "1.6.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\loud-rejection",
     "licenseFile": "node_modules\\loud-rejection\\license"
   },
   "lru-cache@4.1.1": {
@@ -3332,7 +2976,6 @@
     "email": "i@izs.me",
     "name": "lru-cache",
     "version": "4.1.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\lru-cache",
     "licenseFile": "node_modules\\lru-cache\\LICENSE"
   },
   "ltcdr@2.2.1": {
@@ -3342,7 +2985,6 @@
     "email": "tj@vision-media.ca",
     "name": "ltcdr",
     "version": "2.2.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\ltcdr",
     "licenseFile": "node_modules\\ltcdr\\Readme.md"
   },
   "ltgt@2.2.0": {
@@ -3353,7 +2995,6 @@
     "url": "http://dominictarr.com",
     "name": "ltgt",
     "version": "2.2.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\ltgt",
     "licenseFile": "node_modules\\ltgt\\LICENSE"
   },
   "map-obj@1.0.1": {
@@ -3364,7 +3005,6 @@
     "url": "sindresorhus.com",
     "name": "map-obj",
     "version": "1.0.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\map-obj",
     "licenseFile": "node_modules\\map-obj\\license"
   },
   "math-expression-evaluator@1.2.17": {
@@ -3374,7 +3014,6 @@
     "email": "ankitbug94@gmail.com",
     "name": "math-expression-evaluator",
     "version": "1.2.17",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\math-expression-evaluator",
     "licenseFile": "node_modules\\math-expression-evaluator\\LICENSE"
   },
   "mdurl@1.0.1": {
@@ -3382,7 +3021,6 @@
     "repository": "https://github.com/markdown-it/mdurl",
     "name": "mdurl",
     "version": "1.0.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\mdurl",
     "licenseFile": "node_modules\\mdurl\\LICENSE"
   },
   "media-typer@0.3.0": {
@@ -3392,7 +3030,6 @@
     "email": "doug@somethingdoug.com",
     "name": "media-typer",
     "version": "0.3.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\media-typer",
     "licenseFile": "node_modules\\media-typer\\LICENSE"
   },
   "meow@3.7.0": {
@@ -3403,7 +3040,6 @@
     "url": "sindresorhus.com",
     "name": "meow",
     "version": "3.7.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\meow",
     "licenseFile": "node_modules\\meow\\license"
   },
   "merge-descriptors@1.0.1": {
@@ -3414,7 +3050,6 @@
     "url": "http://jongleberry.com",
     "name": "merge-descriptors",
     "version": "1.0.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\merge-descriptors",
     "licenseFile": "node_modules\\merge-descriptors\\LICENSE"
   },
   "methods@1.1.2": {
@@ -3422,7 +3057,6 @@
     "repository": "https://github.com/jshttp/methods",
     "name": "methods",
     "version": "1.1.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\methods",
     "licenseFile": "node_modules\\methods\\LICENSE"
   },
   "mime-db@1.30.0": {
@@ -3430,7 +3064,6 @@
     "repository": "https://github.com/jshttp/mime-db",
     "name": "mime-db",
     "version": "1.30.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\mime-db",
     "licenseFile": "node_modules\\mime-db\\LICENSE"
   },
   "mime-types@2.1.17": {
@@ -3438,7 +3071,6 @@
     "repository": "https://github.com/jshttp/mime-types",
     "name": "mime-types",
     "version": "2.1.17",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\mime-types",
     "licenseFile": "node_modules\\mime-types\\LICENSE"
   },
   "mime@1.4.1": {
@@ -3449,7 +3081,6 @@
     "url": "http://github.com/broofa",
     "name": "mime",
     "version": "1.4.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\mime",
     "licenseFile": "node_modules\\mime\\LICENSE"
   },
   "mimic-response@1.0.0": {
@@ -3460,7 +3091,6 @@
     "url": "sindresorhus.com",
     "name": "mimic-response",
     "version": "1.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\mimic-response",
     "licenseFile": "node_modules\\mimic-response\\license"
   },
   "minimatch@3.0.4": {
@@ -3471,7 +3101,6 @@
     "url": "http://blog.izs.me",
     "name": "minimatch",
     "version": "3.0.4",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\minimatch",
     "licenseFile": "node_modules\\minimatch\\LICENSE"
   },
   "minimist@0.0.8": {
@@ -3482,7 +3111,6 @@
     "url": "http://substack.net",
     "name": "minimist",
     "version": "0.0.8",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\mkdirp\\node_modules\\minimist",
     "licenseFile": "node_modules\\mkdirp\\node_modules\\minimist\\LICENSE"
   },
   "minimist@1.2.0": {
@@ -3493,7 +3121,6 @@
     "url": "http://substack.net",
     "name": "minimist",
     "version": "1.2.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\minimist",
     "licenseFile": "node_modules\\minimist\\LICENSE"
   },
   "mkdirp@0.5.1": {
@@ -3504,16 +3131,14 @@
     "url": "http://substack.net",
     "name": "mkdirp",
     "version": "0.5.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\mkdirp",
     "licenseFile": "node_modules\\mkdirp\\LICENSE"
   },
-  "modmeta-db@0.1.3": {
+  "modmeta-db@0.2.0": {
     "licenses": "GPL-3.0",
     "publisher": "Black Tree Gaming Ltd",
     "name": "modmeta-db",
-    "version": "0.1.3",
+    "version": "0.2.0",
     "repository": "",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\modmeta-db",
     "licenseFile": "node_modules\\modmeta-db\\LICENSE.md"
   },
   "moment@2.22.2": {
@@ -3524,7 +3149,6 @@
     "url": "https://github.com/ichernev",
     "name": "moment",
     "version": "2.22.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\moment",
     "licenseFile": "node_modules\\moment\\LICENSE"
   },
   "mri@1.1.0": {
@@ -3535,23 +3159,13 @@
     "url": "lukeed.com",
     "name": "mri",
     "version": "1.1.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\mri",
     "licenseFile": "node_modules\\mri\\license"
-  },
-  "ms@0.7.1": {
-    "licenses": "MIT*",
-    "repository": "https://github.com/guille/ms.js",
-    "name": "ms",
-    "version": "0.7.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\node-rest-client\\node_modules\\ms",
-    "licenseFile": "node_modules\\node-rest-client\\node_modules\\ms\\LICENSE"
   },
   "ms@2.0.0": {
     "licenses": "MIT",
     "repository": "https://github.com/zeit/ms",
     "name": "ms",
     "version": "2.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\ms",
     "licenseFile": "node_modules\\ms\\license.md"
   },
   "msbuild@1.0.2": {
@@ -3560,7 +3174,6 @@
     "publisher": "jonathan haker",
     "name": "msbuild",
     "version": "1.0.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\msbuild",
     "licenseFile": "node_modules\\msbuild\\LICENSE"
   },
   "nan@2.10.0": {
@@ -3568,7 +3181,6 @@
     "repository": "https://github.com/nodejs/nan",
     "name": "nan",
     "version": "2.10.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\drivelist\\node_modules\\nan",
     "licenseFile": "node_modules\\drivelist\\node_modules\\nan\\LICENSE.md"
   },
   "nan@2.5.1": {
@@ -3576,7 +3188,6 @@
     "repository": "https://github.com/nodejs/nan",
     "name": "nan",
     "version": "2.5.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\libxmljs\\node_modules\\nan",
     "licenseFile": "node_modules\\libxmljs\\node_modules\\nan\\LICENSE.md"
   },
   "nan@2.6.2": {
@@ -3584,7 +3195,6 @@
     "repository": "https://github.com/nodejs/nan",
     "name": "nan",
     "version": "2.6.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\leveldown\\node_modules\\nan",
     "licenseFile": "node_modules\\leveldown\\node_modules\\nan\\LICENSE.md"
   },
   "nan@2.7.0": {
@@ -3592,7 +3202,6 @@
     "repository": "https://github.com/nodejs/nan",
     "name": "nan",
     "version": "2.7.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\modmeta-db\\node_modules\\nan",
     "licenseFile": "node_modules\\modmeta-db\\node_modules\\nan\\LICENSE.md"
   },
   "nan@2.8.0": {
@@ -3600,7 +3209,6 @@
     "repository": "https://github.com/nodejs/nan",
     "name": "nan",
     "version": "2.8.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\nan",
     "licenseFile": "node_modules\\nan\\LICENSE.md"
   },
   "nan@2.9.2": {
@@ -3608,7 +3216,6 @@
     "repository": "https://github.com/nodejs/nan",
     "name": "nan",
     "version": "2.9.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\nbind\\node_modules\\nan",
     "licenseFile": "node_modules\\nbind\\node_modules\\nan\\LICENSE.md"
   },
   "nbind@0.3.15": {
@@ -3617,7 +3224,6 @@
     "publisher": "Juha Järvi",
     "name": "nbind",
     "version": "0.3.15",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\nbind",
     "licenseFile": "node_modules\\nbind\\LICENSE"
   },
   "negotiator@0.6.1": {
@@ -3625,7 +3231,6 @@
     "repository": "https://github.com/jshttp/negotiator",
     "name": "negotiator",
     "version": "0.6.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\negotiator",
     "licenseFile": "node_modules\\negotiator\\LICENSE"
   },
   "nexus-api@0.5.3": {
@@ -3635,7 +3240,6 @@
     "name": "nexus-api",
     "version": "0.5.3",
     "repository": "",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\nexus-api",
     "licenseFile": "node_modules\\nexus-api\\LICENSE.md"
   },
   "node-7z@0.7.1": {
@@ -3645,7 +3249,6 @@
     "email": "quentin.rossetti@gmail.com",
     "name": "node-7z",
     "version": "0.7.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\node-7z",
     "licenseFile": "node_modules\\node-7z\\LICENSE"
   },
   "node-abi@2.1.2": {
@@ -3654,7 +3257,6 @@
     "publisher": "Lukas Geiger",
     "name": "node-abi",
     "version": "2.1.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\node-abi",
     "licenseFile": "node_modules\\node-abi\\LICENSE"
   },
   "node-abi@2.4.1": {
@@ -3663,7 +3265,6 @@
     "publisher": "Lukas Geiger",
     "name": "node-abi",
     "version": "2.4.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\drivelist\\node_modules\\node-abi",
     "licenseFile": "node_modules\\drivelist\\node_modules\\node-abi\\LICENSE"
   },
   "node-fetch@1.7.3": {
@@ -3672,7 +3273,6 @@
     "publisher": "David Frank",
     "name": "node-fetch",
     "version": "1.7.3",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\node-fetch",
     "licenseFile": "node_modules\\node-fetch\\LICENSE.md"
   },
   "node-gyp@3.6.2": {
@@ -3683,7 +3283,6 @@
     "url": "http://tootallnate.net",
     "name": "node-gyp",
     "version": "3.6.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\node-gyp",
     "licenseFile": "node_modules\\node-gyp\\LICENSE"
   },
   "node-ipc@9.1.1": {
@@ -3692,7 +3291,6 @@
     "publisher": "Brandon Nozaki Miller",
     "name": "node-ipc",
     "version": "9.1.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\node-ipc",
     "licenseFile": "node_modules\\node-ipc\\licence.md"
   },
   "node-pre-gyp@0.6.39": {
@@ -3702,17 +3300,7 @@
     "email": "dane@mapbox.com",
     "name": "node-pre-gyp",
     "version": "0.6.39",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\node-pre-gyp",
     "licenseFile": "node_modules\\node-pre-gyp\\LICENSE"
-  },
-  "node-rest-client@3.1.0": {
-    "licenses": "MIT",
-    "repository": "https://github.com/aacerox/node-rest-client",
-    "publisher": "Alejandro Alvarez Acero",
-    "name": "node-rest-client",
-    "version": "3.1.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\node-rest-client",
-    "licenseFile": "node_modules\\node-rest-client\\LICENSE"
   },
   "node-sass@4.7.2": {
     "licenses": "MIT",
@@ -3722,7 +3310,6 @@
     "url": "http://andrew.github.com",
     "name": "node-sass",
     "version": "4.7.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\node-sass",
     "licenseFile": "node_modules\\node-sass\\LICENSE"
   },
   "noms@0.0.0": {
@@ -3731,7 +3318,6 @@
     "publisher": "Calvin Metcalf",
     "name": "noms",
     "version": "0.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\noms",
     "licenseFile": "node_modules\\noms\\readme.md"
   },
   "noop-logger@0.1.1": {
@@ -3739,7 +3325,6 @@
     "repository": "https://github.com/segmentio/noop-logger",
     "name": "noop-logger",
     "version": "0.1.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\noop-logger",
     "licenseFile": "node_modules\\noop-logger\\Readme.md"
   },
   "nopt@3.0.6": {
@@ -3750,7 +3335,6 @@
     "url": "http://blog.izs.me/",
     "name": "nopt",
     "version": "3.0.6",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\nopt",
     "licenseFile": "node_modules\\nopt\\LICENSE"
   },
   "nopt@4.0.1": {
@@ -3761,7 +3345,6 @@
     "url": "http://blog.izs.me/",
     "name": "nopt",
     "version": "4.0.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\node-pre-gyp\\node_modules\\nopt",
     "licenseFile": "node_modules\\node-pre-gyp\\node_modules\\nopt\\LICENSE"
   },
   "normalize-package-data@2.4.0": {
@@ -3771,7 +3354,6 @@
     "email": "merynstol@gmail.com",
     "name": "normalize-package-data",
     "version": "2.4.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\normalize-package-data",
     "licenseFile": "node_modules\\normalize-package-data\\LICENSE"
   },
   "npm-run-path@2.0.2": {
@@ -3782,7 +3364,6 @@
     "url": "sindresorhus.com",
     "name": "npm-run-path",
     "version": "2.0.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\npm-run-path",
     "licenseFile": "node_modules\\npm-run-path\\license"
   },
   "npmlog@4.1.2": {
@@ -3793,7 +3374,6 @@
     "url": "http://blog.izs.me/",
     "name": "npmlog",
     "version": "4.1.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\npmlog",
     "licenseFile": "node_modules\\npmlog\\LICENSE"
   },
   "nth-check@1.0.1": {
@@ -3803,7 +3383,6 @@
     "email": "me@feedic.com",
     "name": "nth-check",
     "version": "1.0.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\nth-check",
     "licenseFile": "node_modules\\nth-check\\README.md"
   },
   "number-is-nan@1.0.1": {
@@ -3814,7 +3393,6 @@
     "url": "sindresorhus.com",
     "name": "number-is-nan",
     "version": "1.0.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\number-is-nan",
     "licenseFile": "node_modules\\number-is-nan\\license"
   },
   "oauth-sign@0.8.2": {
@@ -3825,7 +3403,6 @@
     "url": "http://www.futurealoof.com",
     "name": "oauth-sign",
     "version": "0.8.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\oauth-sign",
     "licenseFile": "node_modules\\oauth-sign\\LICENSE"
   },
   "object-assign@4.1.1": {
@@ -3836,7 +3413,6 @@
     "url": "sindresorhus.com",
     "name": "object-assign",
     "version": "4.1.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\object-assign",
     "licenseFile": "node_modules\\object-assign\\license"
   },
   "object-keys@0.4.0": {
@@ -3845,7 +3421,6 @@
     "publisher": "Jordan Harband",
     "name": "object-keys",
     "version": "0.4.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\object-keys",
     "licenseFile": "node_modules\\object-keys\\README.md"
   },
   "on-finished@2.3.0": {
@@ -3853,7 +3428,6 @@
     "repository": "https://github.com/jshttp/on-finished",
     "name": "on-finished",
     "version": "2.3.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\on-finished",
     "licenseFile": "node_modules\\on-finished\\LICENSE"
   },
   "once@1.4.0": {
@@ -3864,7 +3438,6 @@
     "url": "http://blog.izs.me/",
     "name": "once",
     "version": "1.4.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\once",
     "licenseFile": "node_modules\\once\\LICENSE"
   },
   "opn@5.1.0": {
@@ -3875,7 +3448,6 @@
     "url": "sindresorhus.com",
     "name": "opn",
     "version": "5.1.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\opn",
     "licenseFile": "node_modules\\opn\\license"
   },
   "os-homedir@1.0.2": {
@@ -3886,7 +3458,6 @@
     "url": "sindresorhus.com",
     "name": "os-homedir",
     "version": "1.0.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\os-homedir",
     "licenseFile": "node_modules\\os-homedir\\license"
   },
   "os-locale@1.4.0": {
@@ -3897,7 +3468,6 @@
     "url": "sindresorhus.com",
     "name": "os-locale",
     "version": "1.4.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\os-locale",
     "licenseFile": "node_modules\\os-locale\\license"
   },
   "os-tmpdir@1.0.2": {
@@ -3908,7 +3478,6 @@
     "url": "sindresorhus.com",
     "name": "os-tmpdir",
     "version": "1.0.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\os-tmpdir",
     "licenseFile": "node_modules\\os-tmpdir\\license"
   },
   "osenv@0.1.4": {
@@ -3919,7 +3488,6 @@
     "url": "http://blog.izs.me/",
     "name": "osenv",
     "version": "0.1.4",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\osenv",
     "licenseFile": "node_modules\\osenv\\LICENSE"
   },
   "outlayer@2.1.1": {
@@ -3928,7 +3496,6 @@
     "publisher": "David DeSandro",
     "name": "outlayer",
     "version": "2.1.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\outlayer",
     "licenseFile": "node_modules\\outlayer\\README.md"
   },
   "p-finally@1.0.0": {
@@ -3939,7 +3506,6 @@
     "url": "sindresorhus.com",
     "name": "p-finally",
     "version": "1.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\p-finally",
     "licenseFile": "node_modules\\p-finally\\license"
   },
   "packery@2.1.1": {
@@ -3948,7 +3514,6 @@
     "publisher": "Metafizzy",
     "name": "packery",
     "version": "2.1.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\packery",
     "licenseFile": "node_modules\\packery\\README.md"
   },
   "parse-json@2.2.0": {
@@ -3959,7 +3524,6 @@
     "url": "sindresorhus.com",
     "name": "parse-json",
     "version": "2.2.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\parse-json",
     "licenseFile": "node_modules\\parse-json\\license"
   },
   "parseurl@1.3.2": {
@@ -3967,7 +3531,6 @@
     "repository": "https://github.com/pillarjs/parseurl",
     "name": "parseurl",
     "version": "1.3.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\parseurl",
     "licenseFile": "node_modules\\parseurl\\LICENSE"
   },
   "pascalcase@0.1.1": {
@@ -3977,7 +3540,6 @@
     "url": "https://github.com/jonschlinkert",
     "name": "pascalcase",
     "version": "0.1.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\pascalcase",
     "licenseFile": "node_modules\\pascalcase\\LICENSE"
   },
   "path-exists@2.1.0": {
@@ -3988,7 +3550,6 @@
     "url": "sindresorhus.com",
     "name": "path-exists",
     "version": "2.1.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\path-exists",
     "licenseFile": "node_modules\\path-exists\\license"
   },
   "path-is-absolute@1.0.1": {
@@ -3999,7 +3560,6 @@
     "url": "sindresorhus.com",
     "name": "path-is-absolute",
     "version": "1.0.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\path-is-absolute",
     "licenseFile": "node_modules\\path-is-absolute\\license"
   },
   "path-key@2.0.1": {
@@ -4010,7 +3570,6 @@
     "url": "sindresorhus.com",
     "name": "path-key",
     "version": "2.0.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\path-key",
     "licenseFile": "node_modules\\path-key\\license"
   },
   "path-to-regexp@0.1.7": {
@@ -4018,7 +3577,6 @@
     "repository": "https://github.com/component/path-to-regexp",
     "name": "path-to-regexp",
     "version": "0.1.7",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\path-to-regexp",
     "licenseFile": "node_modules\\path-to-regexp\\LICENSE"
   },
   "path-type@1.1.0": {
@@ -4029,7 +3587,6 @@
     "url": "sindresorhus.com",
     "name": "path-type",
     "version": "1.1.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\path-type",
     "licenseFile": "node_modules\\path-type\\license"
   },
   "performance-now@0.2.0": {
@@ -4039,7 +3596,6 @@
     "email": "merynstol@gmail.com",
     "name": "performance-now",
     "version": "0.2.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\node-pre-gyp\\node_modules\\performance-now",
     "licenseFile": "node_modules\\node-pre-gyp\\node_modules\\performance-now\\license.txt"
   },
   "performance-now@2.1.0": {
@@ -4049,7 +3605,6 @@
     "email": "braveg1rl@outlook.com",
     "name": "performance-now",
     "version": "2.1.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\performance-now",
     "licenseFile": "node_modules\\performance-now\\license.txt"
   },
   "permissions@1.1.2": {
@@ -4058,7 +3613,6 @@
     "name": "permissions",
     "version": "1.1.2",
     "repository": "",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\permissions",
     "licenseFile": "node_modules\\permissions\\LICENSE.md"
   },
   "pify@2.3.0": {
@@ -4069,7 +3623,6 @@
     "url": "sindresorhus.com",
     "name": "pify",
     "version": "2.3.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\pify",
     "licenseFile": "node_modules\\pify\\license"
   },
   "pinkie-promise@2.0.1": {
@@ -4080,7 +3633,6 @@
     "url": "github.com/floatdrop",
     "name": "pinkie-promise",
     "version": "2.0.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\pinkie-promise",
     "licenseFile": "node_modules\\pinkie-promise\\license"
   },
   "pinkie@2.0.4": {
@@ -4091,7 +3643,6 @@
     "url": "github.com/floatdrop",
     "name": "pinkie",
     "version": "2.0.4",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\pinkie",
     "licenseFile": "node_modules\\pinkie\\license"
   },
   "popper.js@1.14.3": {
@@ -4101,7 +3652,6 @@
     "email": "federico.zivolo@gmail.com",
     "name": "popper.js",
     "version": "1.14.3",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\popper.js",
     "licenseFile": "node_modules\\popper.js\\README.md"
   },
   "prebuild-install@2.4.1": {
@@ -4111,7 +3661,6 @@
     "url": "@mafintosh",
     "name": "prebuild-install",
     "version": "2.4.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\prebuild-install",
     "licenseFile": "node_modules\\prebuild-install\\LICENSE"
   },
   "prebuild-install@2.5.3": {
@@ -4121,7 +3670,6 @@
     "url": "@mafintosh",
     "name": "prebuild-install",
     "version": "2.5.3",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\drivelist\\node_modules\\prebuild-install",
     "licenseFile": "node_modules\\drivelist\\node_modules\\prebuild-install\\LICENSE"
   },
   "process-nextick-args@1.0.7": {
@@ -4129,7 +3677,6 @@
     "repository": "https://github.com/calvinmetcalf/process-nextick-args",
     "name": "process-nextick-args",
     "version": "1.0.7",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\process-nextick-args",
     "licenseFile": "node_modules\\process-nextick-args\\license.md"
   },
   "process-nextick-args@2.0.0": {
@@ -4137,7 +3684,6 @@
     "repository": "https://github.com/calvinmetcalf/process-nextick-args",
     "name": "process-nextick-args",
     "version": "2.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\through2\\node_modules\\process-nextick-args",
     "licenseFile": "node_modules\\through2\\node_modules\\process-nextick-args\\license.md"
   },
   "promise@7.3.1": {
@@ -4146,7 +3692,6 @@
     "publisher": "ForbesLindesay",
     "name": "promise",
     "version": "7.3.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\promise",
     "licenseFile": "node_modules\\promise\\LICENSE"
   },
   "prop-types-extra@1.0.1": {
@@ -4156,7 +3701,6 @@
     "email": "mtscout6@gmail.com",
     "name": "prop-types-extra",
     "version": "1.0.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\prop-types-extra",
     "licenseFile": "node_modules\\prop-types-extra\\LICENSE"
   },
   "prop-types@15.6.0": {
@@ -4164,7 +3708,6 @@
     "repository": "https://github.com/reactjs/prop-types",
     "name": "prop-types",
     "version": "15.6.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\prop-types",
     "licenseFile": "node_modules\\prop-types\\LICENSE"
   },
   "prop-types@15.6.1": {
@@ -4172,7 +3715,6 @@
     "repository": "https://github.com/facebook/prop-types",
     "name": "prop-types",
     "version": "15.6.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\react-popper\\node_modules\\prop-types",
     "licenseFile": "node_modules\\react-popper\\node_modules\\prop-types\\LICENSE"
   },
   "proxy-addr@2.0.2": {
@@ -4182,7 +3724,6 @@
     "email": "doug@somethingdoug.com",
     "name": "proxy-addr",
     "version": "2.0.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\proxy-addr",
     "licenseFile": "node_modules\\proxy-addr\\LICENSE"
   },
   "prr@1.0.1": {
@@ -4193,7 +3734,6 @@
     "url": "https://github.com/rvagg",
     "name": "prr",
     "version": "1.0.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\prr",
     "licenseFile": "node_modules\\prr\\LICENSE.md"
   },
   "pseudomap@1.0.2": {
@@ -4204,7 +3744,6 @@
     "url": "http://blog.izs.me/",
     "name": "pseudomap",
     "version": "1.0.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\pseudomap",
     "licenseFile": "node_modules\\pseudomap\\LICENSE"
   },
   "pump@1.0.3": {
@@ -4214,7 +3753,6 @@
     "email": "mathiasbuus@gmail.com",
     "name": "pump",
     "version": "1.0.3",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\pump",
     "licenseFile": "node_modules\\pump\\LICENSE"
   },
   "pump@2.0.1": {
@@ -4224,7 +3762,6 @@
     "email": "mathiasbuus@gmail.com",
     "name": "pump",
     "version": "2.0.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\drivelist\\node_modules\\pump",
     "licenseFile": "node_modules\\drivelist\\node_modules\\pump\\LICENSE"
   },
   "punycode@1.4.1": {
@@ -4234,7 +3771,6 @@
     "url": "https://mathiasbynens.be/",
     "name": "punycode",
     "version": "1.4.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\punycode",
     "licenseFile": "node_modules\\punycode\\README.md"
   },
   "qs@6.3.2": {
@@ -4242,7 +3778,6 @@
     "repository": "https://github.com/ljharb/qs",
     "name": "qs",
     "version": "6.3.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\node-sass\\node_modules\\qs",
     "licenseFile": "node_modules\\node-sass\\node_modules\\qs\\LICENSE"
   },
   "qs@6.4.0": {
@@ -4250,7 +3785,6 @@
     "repository": "https://github.com/ljharb/qs",
     "name": "qs",
     "version": "6.4.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\node-pre-gyp\\node_modules\\qs",
     "licenseFile": "node_modules\\node-pre-gyp\\node_modules\\qs\\LICENSE"
   },
   "qs@6.5.1": {
@@ -4258,7 +3792,6 @@
     "repository": "https://github.com/ljharb/qs",
     "name": "qs",
     "version": "6.5.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\qs",
     "licenseFile": "node_modules\\qs\\LICENSE"
   },
   "raf@3.4.0": {
@@ -4268,7 +3801,6 @@
     "email": "chris@neversaw.us",
     "name": "raf",
     "version": "3.4.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\raf",
     "licenseFile": "node_modules\\raf\\README.md"
   },
   "range-parser@1.2.0": {
@@ -4279,7 +3811,6 @@
     "url": "http://tjholowaychuk.com",
     "name": "range-parser",
     "version": "1.2.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\range-parser",
     "licenseFile": "node_modules\\range-parser\\LICENSE"
   },
   "raw-body@2.3.2": {
@@ -4290,7 +3821,6 @@
     "url": "http://jongleberry.com",
     "name": "raw-body",
     "version": "2.3.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\raw-body",
     "licenseFile": "node_modules\\raw-body\\LICENSE"
   },
   "rc@1.2.2": {
@@ -4301,7 +3831,6 @@
     "url": "dominictarr.com",
     "name": "rc",
     "version": "1.2.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\rc",
     "licenseFile": "node_modules\\rc\\LICENSE.APACHE2"
   },
   "react-addons-css-transition-group@15.6.2": {
@@ -4309,7 +3838,6 @@
     "repository": "https://github.com/facebook/react",
     "name": "react-addons-css-transition-group",
     "version": "15.6.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\react-addons-css-transition-group",
     "licenseFile": "node_modules\\react-addons-css-transition-group\\LICENSE"
   },
   "react-addons-shallow-compare@15.6.2": {
@@ -4317,7 +3845,6 @@
     "repository": "https://github.com/facebook/react",
     "name": "react-addons-shallow-compare",
     "version": "15.6.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\react-addons-shallow-compare",
     "licenseFile": "node_modules\\react-addons-shallow-compare\\LICENSE"
   },
   "react-bootstrap@0.32.0": {
@@ -4327,7 +3854,6 @@
     "email": "stevoland@gmail.com",
     "name": "react-bootstrap",
     "version": "0.32.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\react-bootstrap",
     "licenseFile": "node_modules\\react-bootstrap\\LICENSE"
   },
   "react-datepicker@1.5.0": {
@@ -4336,7 +3862,6 @@
     "publisher": "HackerOne",
     "name": "react-datepicker",
     "version": "1.5.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\react-datepicker",
     "licenseFile": "node_modules\\react-datepicker\\LICENSE"
   },
   "react-display-name@0.2.3": {
@@ -4346,7 +3871,6 @@
     "url": "clinton.ayres@gmail.com",
     "name": "react-display-name",
     "version": "0.2.3",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\react-display-name",
     "licenseFile": "node_modules\\react-display-name\\README.md"
   },
   "react-dnd-html5-backend@2.5.4": {
@@ -4354,7 +3878,6 @@
     "repository": "https://github.com/react-dnd/react-dnd",
     "name": "react-dnd-html5-backend",
     "version": "2.5.4",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\react-dnd-html5-backend",
     "licenseFile": "node_modules\\react-dnd-html5-backend\\LICENSE"
   },
   "react-dnd-scrollzone@4.0.0": {
@@ -4365,7 +3888,6 @@
     "url": "nickclaw.com",
     "name": "react-dnd-scrollzone",
     "version": "4.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\react-dnd-scrollzone",
     "licenseFile": "node_modules\\react-dnd-scrollzone\\LICENSE"
   },
   "react-dnd@2.5.4": {
@@ -4373,7 +3895,6 @@
     "repository": "https://github.com/react-dnd/react-dnd",
     "name": "react-dnd",
     "version": "2.5.4",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\react-dnd",
     "licenseFile": "node_modules\\react-dnd\\LICENSE"
   },
   "react-dom@16.2.0": {
@@ -4381,7 +3902,6 @@
     "repository": "https://github.com/facebook/react",
     "name": "react-dom",
     "version": "16.2.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\react-dom",
     "licenseFile": "node_modules\\react-dom\\LICENSE"
   },
   "react-fontawesome@1.6.1": {
@@ -4392,7 +3912,6 @@
     "url": "danawoodman.com",
     "name": "react-fontawesome",
     "version": "1.6.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\react-fontawesome",
     "licenseFile": "node_modules\\react-fontawesome\\license"
   },
   "react-i18next@6.2.0": {
@@ -4403,7 +3922,6 @@
     "url": "https://github.com/jamuhl",
     "name": "react-i18next",
     "version": "6.2.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\react-i18next",
     "licenseFile": "node_modules\\react-i18next\\LICENSE"
   },
   "react-input-autosize@2.2.1": {
@@ -4412,7 +3930,6 @@
     "publisher": "Jed Watson",
     "name": "react-input-autosize",
     "version": "2.2.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\react-input-autosize",
     "licenseFile": "node_modules\\react-input-autosize\\LICENSE"
   },
   "react-markdown@2.5.1": {
@@ -4422,7 +3939,6 @@
     "email": "rexxars@gmail.com",
     "name": "react-markdown",
     "version": "2.5.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\react-markdown",
     "licenseFile": "node_modules\\react-markdown\\LICENSE"
   },
   "react-onclickoutside@6.7.1": {
@@ -4430,7 +3946,6 @@
     "repository": "https://github.com/Pomax/react-onclickoutside",
     "name": "react-onclickoutside",
     "version": "6.7.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\react-onclickoutside",
     "licenseFile": "node_modules\\react-onclickoutside\\README.md"
   },
   "react-overlays@0.8.3": {
@@ -4440,7 +3955,6 @@
     "email": "monastic.panic@gmail.com",
     "name": "react-overlays",
     "version": "0.8.3",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\react-overlays",
     "licenseFile": "node_modules\\react-overlays\\LICENSE"
   },
   "react-popper@0.9.5": {
@@ -4451,7 +3965,6 @@
     "url": "http://souporserious.com",
     "name": "react-popper",
     "version": "0.9.5",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\react-popper",
     "licenseFile": "node_modules\\react-popper\\LICENSE"
   },
   "react-prop-types@0.4.0": {
@@ -4461,7 +3974,6 @@
     "email": "mtscout6@gmail.com",
     "name": "react-prop-types",
     "version": "0.4.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\react-prop-types",
     "licenseFile": "node_modules\\react-prop-types\\LICENSE"
   },
   "react-redux@5.0.6": {
@@ -4472,7 +3984,6 @@
     "url": "http://github.com/gaearon",
     "name": "react-redux",
     "version": "5.0.6",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\react-redux",
     "licenseFile": "node_modules\\react-redux\\LICENSE.md"
   },
   "react-resize-detector@1.1.0": {
@@ -4483,7 +3994,6 @@
     "url": "https://github.com/maslianok",
     "name": "react-resize-detector",
     "version": "1.1.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\recharts\\node_modules\\react-resize-detector",
     "licenseFile": "node_modules\\recharts\\node_modules\\react-resize-detector\\README.md"
   },
   "react-resize-detector@2.3.0": {
@@ -4494,7 +4004,6 @@
     "url": "https://github.com/maslianok",
     "name": "react-resize-detector",
     "version": "2.3.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\react-resize-detector",
     "licenseFile": "node_modules\\react-resize-detector\\LICENSE"
   },
   "react-safe-html@0.4.1": {
@@ -4504,7 +4013,6 @@
     "email": "f.bagnardi@gmail.com",
     "name": "react-safe-html",
     "version": "0.4.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\react-safe-html",
     "licenseFile": "node_modules\\react-safe-html\\README.md"
   },
   "react-select@1.2.1": {
@@ -4513,7 +4021,6 @@
     "publisher": "Jed Watson",
     "name": "react-select",
     "version": "1.2.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\react-select",
     "licenseFile": "node_modules\\react-select\\LICENSE"
   },
   "react-smooth@1.0.0": {
@@ -4522,7 +4029,6 @@
     "publisher": "JasonHzq",
     "name": "react-smooth",
     "version": "1.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\react-smooth",
     "licenseFile": "node_modules\\react-smooth\\LICENSE"
   },
   "react-sortable-tree@1.5.4": {
@@ -4530,22 +4036,19 @@
     "repository": "https://github.com/fritz-c/react-sortable-tree",
     "name": "react-sortable-tree",
     "version": "1.5.4",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\react-sortable-tree",
     "licenseFile": "node_modules\\react-sortable-tree\\LICENSE"
   },
   "react-transition-group@1.2.1": {
     "licenses": "BSD-3-Clause",
     "repository": "https://github.com/reactjs/react-transition-group",
     "name": "react-transition-group",
-    "version": "1.2.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\react-addons-css-transition-group\\node_modules\\react-transition-group"
+    "version": "1.2.1"
   },
   "react-transition-group@2.2.1": {
     "licenses": "BSD-3-Clause",
     "repository": "https://github.com/reactjs/react-transition-group",
     "name": "react-transition-group",
     "version": "2.2.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\react-transition-group",
     "licenseFile": "node_modules\\react-transition-group\\LICENSE"
   },
   "react-virtualized@9.16.1": {
@@ -4555,7 +4058,6 @@
     "email": "brian.david.vaughn@gmail.com",
     "name": "react-virtualized",
     "version": "9.16.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\react-virtualized",
     "licenseFile": "node_modules\\react-virtualized\\LICENSE"
   },
   "react@16.2.0": {
@@ -4563,7 +4065,6 @@
     "repository": "https://github.com/facebook/react",
     "name": "react",
     "version": "16.2.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\react",
     "licenseFile": "node_modules\\react\\LICENSE"
   },
   "read-pkg-up@1.0.1": {
@@ -4574,7 +4075,6 @@
     "url": "sindresorhus.com",
     "name": "read-pkg-up",
     "version": "1.0.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\read-pkg-up",
     "licenseFile": "node_modules\\read-pkg-up\\license"
   },
   "read-pkg@1.1.0": {
@@ -4585,7 +4085,6 @@
     "url": "sindresorhus.com",
     "name": "read-pkg",
     "version": "1.1.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\read-pkg",
     "licenseFile": "node_modules\\read-pkg\\license"
   },
   "readable-stream@1.0.34": {
@@ -4596,7 +4095,6 @@
     "url": "http://blog.izs.me/",
     "name": "readable-stream",
     "version": "1.0.34",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\noms\\node_modules\\readable-stream",
     "licenseFile": "node_modules\\noms\\node_modules\\readable-stream\\LICENSE"
   },
   "readable-stream@1.1.14": {
@@ -4607,7 +4105,6 @@
     "url": "http://blog.izs.me/",
     "name": "readable-stream",
     "version": "1.1.14",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\level-iterator-stream\\node_modules\\readable-stream",
     "licenseFile": "node_modules\\level-iterator-stream\\node_modules\\readable-stream\\LICENSE"
   },
   "readable-stream@2.3.3": {
@@ -4615,7 +4112,6 @@
     "repository": "https://github.com/nodejs/readable-stream",
     "name": "readable-stream",
     "version": "2.3.3",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\readable-stream",
     "licenseFile": "node_modules\\readable-stream\\LICENSE"
   },
   "readable-stream@2.3.4": {
@@ -4623,7 +4119,6 @@
     "repository": "https://github.com/nodejs/readable-stream",
     "name": "readable-stream",
     "version": "2.3.4",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\through2\\node_modules\\readable-stream",
     "licenseFile": "node_modules\\through2\\node_modules\\readable-stream\\LICENSE"
   },
   "recharts-scale@0.3.2": {
@@ -4632,7 +4127,6 @@
     "publisher": "recharts group",
     "name": "recharts-scale",
     "version": "0.3.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\recharts-scale",
     "licenseFile": "node_modules\\recharts-scale\\LICENSE"
   },
   "recharts@1.0.0-beta.9": {
@@ -4641,7 +4135,6 @@
     "publisher": "recharts group",
     "name": "recharts",
     "version": "1.0.0-beta.9",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\recharts",
     "licenseFile": "node_modules\\recharts\\LICENSE"
   },
   "redent@1.0.0": {
@@ -4652,7 +4145,6 @@
     "url": "sindresorhus.com",
     "name": "redent",
     "version": "1.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\redent",
     "licenseFile": "node_modules\\redent\\license"
   },
   "reduce-css-calc@1.3.0": {
@@ -4661,7 +4153,6 @@
     "publisher": "Maxime Thirouin",
     "name": "reduce-css-calc",
     "version": "1.3.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\reduce-css-calc",
     "licenseFile": "node_modules\\reduce-css-calc\\LICENSE"
   },
   "reduce-function-call@1.0.2": {
@@ -4670,7 +4161,6 @@
     "publisher": "MoOx",
     "name": "reduce-function-call",
     "version": "1.0.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\reduce-function-call",
     "licenseFile": "node_modules\\reduce-function-call\\LICENSE"
   },
   "redux-act@1.7.3": {
@@ -4680,7 +4170,6 @@
     "url": "http://pauldijou.fr",
     "name": "redux-act",
     "version": "1.7.3",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\redux-act",
     "licenseFile": "node_modules\\redux-act\\LICENSE"
   },
   "redux-electron-store@0.4.1": {
@@ -4689,7 +4178,6 @@
     "publisher": "Shiranka Miskin",
     "name": "redux-electron-store",
     "version": "0.4.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\redux-electron-store",
     "licenseFile": "node_modules\\redux-electron-store\\LICENSE.md"
   },
   "redux-thunk@2.2.0": {
@@ -4699,7 +4187,6 @@
     "email": "dan.abramov@me.com",
     "name": "redux-thunk",
     "version": "2.2.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\redux-thunk",
     "licenseFile": "node_modules\\redux-thunk\\LICENSE.md"
   },
   "redux-watcher@1.0.1": {
@@ -4709,7 +4196,6 @@
     "url": "https://github.com/imsun",
     "name": "redux-watcher",
     "version": "1.0.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\redux-watcher",
     "licenseFile": "node_modules\\redux-watcher\\LICENSE"
   },
   "redux@3.7.2": {
@@ -4717,7 +4203,6 @@
     "repository": "https://github.com/reactjs/redux",
     "name": "redux",
     "version": "3.7.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\redux",
     "licenseFile": "node_modules\\redux\\LICENSE.md"
   },
   "ref-struct@1.1.0": {
@@ -4728,7 +4213,6 @@
     "url": "http://tootallnate.net",
     "name": "ref-struct",
     "version": "1.1.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\ref-struct",
     "licenseFile": "node_modules\\ref-struct\\README.md"
   },
   "ref-union@1.0.1": {
@@ -4739,7 +4223,6 @@
     "url": "http://tootallnate.net",
     "name": "ref-union",
     "version": "1.0.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\ref-union",
     "licenseFile": "node_modules\\ref-union\\README.md"
   },
   "ref@1.3.5": {
@@ -4750,7 +4233,6 @@
     "url": "http://tootallnate.net",
     "name": "ref",
     "version": "1.3.5",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\ref",
     "licenseFile": "node_modules\\ref\\README.md"
   },
   "regenerator-runtime@0.11.1": {
@@ -4760,7 +4242,6 @@
     "email": "bn@cs.stanford.edu",
     "name": "regenerator-runtime",
     "version": "0.11.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\regenerator-runtime",
     "licenseFile": "node_modules\\regenerator-runtime\\README.md"
   },
   "repeating@2.0.1": {
@@ -4771,7 +4252,6 @@
     "url": "sindresorhus.com",
     "name": "repeating",
     "version": "2.0.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\repeating",
     "licenseFile": "node_modules\\repeating\\license"
   },
   "request@2.79.0": {
@@ -4781,7 +4261,6 @@
     "email": "mikeal.rogers@gmail.com",
     "name": "request",
     "version": "2.79.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\node-sass\\node_modules\\request",
     "licenseFile": "node_modules\\node-sass\\node_modules\\request\\LICENSE"
   },
   "request@2.81.0": {
@@ -4791,7 +4270,6 @@
     "email": "mikeal.rogers@gmail.com",
     "name": "request",
     "version": "2.81.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\node-pre-gyp\\node_modules\\request",
     "licenseFile": "node_modules\\node-pre-gyp\\node_modules\\request\\LICENSE"
   },
   "request@2.83.0": {
@@ -4801,7 +4279,6 @@
     "email": "mikeal.rogers@gmail.com",
     "name": "request",
     "version": "2.83.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\request",
     "licenseFile": "node_modules\\request\\LICENSE"
   },
   "request@2.85.0": {
@@ -4811,7 +4288,6 @@
     "email": "mikeal.rogers@gmail.com",
     "name": "request",
     "version": "2.85.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\nexus-api\\node_modules\\request",
     "licenseFile": "node_modules\\nexus-api\\node_modules\\request\\LICENSE"
   },
   "require-directory@2.1.1": {
@@ -4822,7 +4298,6 @@
     "url": "http://github.com/troygoode/",
     "name": "require-directory",
     "version": "2.1.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\require-directory",
     "licenseFile": "node_modules\\require-directory\\LICENSE"
   },
   "require-main-filename@1.0.1": {
@@ -4832,7 +4307,6 @@
     "email": "ben@npmjs.com",
     "name": "require-main-filename",
     "version": "1.0.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\require-main-filename",
     "licenseFile": "node_modules\\require-main-filename\\LICENSE.txt"
   },
   "reselect@3.0.1": {
@@ -4840,7 +4314,6 @@
     "repository": "https://github.com/reactjs/reselect",
     "name": "reselect",
     "version": "3.0.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\reselect",
     "licenseFile": "node_modules\\reselect\\LICENSE"
   },
   "resize-observer-polyfill@1.5.0": {
@@ -4850,7 +4323,6 @@
     "email": "que.etc@gmail.com",
     "name": "resize-observer-polyfill",
     "version": "1.5.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\resize-observer-polyfill",
     "licenseFile": "node_modules\\resize-observer-polyfill\\LICENSE"
   },
   "resolve@1.1.7": {
@@ -4861,7 +4333,6 @@
     "url": "http://substack.net",
     "name": "resolve",
     "version": "1.1.7",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\resolve",
     "licenseFile": "node_modules\\resolve\\LICENSE"
   },
   "rimraf@2.6.2": {
@@ -4872,7 +4343,6 @@
     "url": "http://blog.izs.me/",
     "name": "rimraf",
     "version": "2.6.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\fstream\\node_modules\\rimraf",
     "licenseFile": "node_modules\\fstream\\node_modules\\rimraf\\LICENSE"
   },
   "rw@1.3.3": {
@@ -4882,7 +4352,6 @@
     "url": "http://bost.ocks.org/mike",
     "name": "rw",
     "version": "1.3.3",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\rw",
     "licenseFile": "node_modules\\rw\\LICENSE"
   },
   "safe-buffer@5.1.1": {
@@ -4893,7 +4362,6 @@
     "url": "http://feross.org",
     "name": "safe-buffer",
     "version": "5.1.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\safe-buffer",
     "licenseFile": "node_modules\\safe-buffer\\LICENSE"
   },
   "sass-graph@2.2.4": {
@@ -4902,7 +4370,6 @@
     "publisher": "xzyfer",
     "name": "sass-graph",
     "version": "2.2.4",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\sass-graph",
     "licenseFile": "node_modules\\sass-graph\\readme.md"
   },
   "sax@1.2.4": {
@@ -4913,7 +4380,6 @@
     "url": "http://blog.izs.me/",
     "name": "sax",
     "version": "1.2.4",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\sax",
     "licenseFile": "node_modules\\sax\\LICENSE"
   },
   "scss-tokenizer@0.2.3": {
@@ -4922,7 +4388,6 @@
     "publisher": "xzyfer",
     "name": "scss-tokenizer",
     "version": "0.2.3",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\scss-tokenizer",
     "licenseFile": "node_modules\\scss-tokenizer\\LICENSE"
   },
   "semver@4.3.6": {
@@ -4930,7 +4395,6 @@
     "repository": "https://github.com/npm/node-semver",
     "name": "semver",
     "version": "4.3.6",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\semvish\\node_modules\\semver",
     "licenseFile": "node_modules\\semvish\\node_modules\\semver\\LICENSE"
   },
   "semver@5.1.1": {
@@ -4938,7 +4402,6 @@
     "repository": "https://github.com/npm/node-semver",
     "name": "semver",
     "version": "5.1.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\levelup\\node_modules\\semver",
     "licenseFile": "node_modules\\levelup\\node_modules\\semver\\LICENSE"
   },
   "semver@5.3.0": {
@@ -4946,7 +4409,6 @@
     "repository": "https://github.com/npm/node-semver",
     "name": "semver",
     "version": "5.3.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\node-gyp\\node_modules\\semver",
     "licenseFile": "node_modules\\node-gyp\\node_modules\\semver\\LICENSE"
   },
   "semver@5.4.1": {
@@ -4954,7 +4416,6 @@
     "repository": "https://github.com/npm/node-semver",
     "name": "semver",
     "version": "5.4.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\semver",
     "licenseFile": "node_modules\\semver\\LICENSE"
   },
   "semver@5.5.0": {
@@ -4962,7 +4423,6 @@
     "repository": "https://github.com/npm/node-semver",
     "name": "semver",
     "version": "5.5.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\electron-updater\\node_modules\\semver",
     "licenseFile": "node_modules\\electron-updater\\node_modules\\semver\\LICENSE"
   },
   "semvish@1.1.0": {
@@ -4971,7 +4431,6 @@
     "publisher": "megawac",
     "name": "semvish",
     "version": "1.1.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\semvish",
     "licenseFile": "node_modules\\semvish\\LICENCE"
   },
   "send@0.16.1": {
@@ -4981,7 +4440,6 @@
     "email": "tj@vision-media.ca",
     "name": "send",
     "version": "0.16.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\send",
     "licenseFile": "node_modules\\send\\LICENSE"
   },
   "serve-static@1.13.1": {
@@ -4991,7 +4449,6 @@
     "email": "doug@somethingdoug.com",
     "name": "serve-static",
     "version": "1.13.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\serve-static",
     "licenseFile": "node_modules\\serve-static\\LICENSE"
   },
   "set-blocking@2.0.0": {
@@ -5001,7 +4458,6 @@
     "email": "ben@npmjs.com",
     "name": "set-blocking",
     "version": "2.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\set-blocking",
     "licenseFile": "node_modules\\set-blocking\\LICENSE.txt"
   },
   "setimmediate@1.0.5": {
@@ -5010,7 +4466,6 @@
     "publisher": "YuzuJS",
     "name": "setimmediate",
     "version": "1.0.5",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\setimmediate",
     "licenseFile": "node_modules\\setimmediate\\LICENSE.txt"
   },
   "setprototypeof@1.0.3": {
@@ -5019,7 +4474,6 @@
     "publisher": "Wes Todd",
     "name": "setprototypeof",
     "version": "1.0.3",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\http-errors\\node_modules\\setprototypeof",
     "licenseFile": "node_modules\\http-errors\\node_modules\\setprototypeof\\LICENSE"
   },
   "setprototypeof@1.1.0": {
@@ -5028,7 +4482,6 @@
     "publisher": "Wes Todd",
     "name": "setprototypeof",
     "version": "1.1.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\setprototypeof",
     "licenseFile": "node_modules\\setprototypeof\\LICENSE"
   },
   "shebang-command@1.2.0": {
@@ -5039,7 +4492,6 @@
     "url": "github.com/kevva",
     "name": "shebang-command",
     "version": "1.2.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\shebang-command",
     "licenseFile": "node_modules\\shebang-command\\license"
   },
   "shebang-regex@1.0.0": {
@@ -5050,7 +4502,6 @@
     "url": "sindresorhus.com",
     "name": "shebang-regex",
     "version": "1.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\shebang-regex",
     "licenseFile": "node_modules\\shebang-regex\\license"
   },
   "shortid@2.2.8": {
@@ -5060,7 +4511,6 @@
     "email": "dylang@gmail.com",
     "name": "shortid",
     "version": "2.2.8",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\shortid",
     "licenseFile": "node_modules\\shortid\\LICENSE"
   },
   "signal-exit@3.0.2": {
@@ -5070,7 +4520,6 @@
     "email": "ben@npmjs.com",
     "name": "signal-exit",
     "version": "3.0.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\signal-exit",
     "licenseFile": "node_modules\\signal-exit\\LICENSE.txt"
   },
   "simple-concat@1.0.0": {
@@ -5081,7 +4530,6 @@
     "url": "http://feross.org/",
     "name": "simple-concat",
     "version": "1.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\simple-concat",
     "licenseFile": "node_modules\\simple-concat\\LICENSE"
   },
   "simple-get@1.4.3": {
@@ -5092,7 +4540,6 @@
     "url": "http://feross.org/",
     "name": "simple-get",
     "version": "1.4.3",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\simple-get",
     "licenseFile": "node_modules\\simple-get\\LICENSE"
   },
   "simple-get@2.8.1": {
@@ -5103,7 +4550,6 @@
     "url": "http://feross.org/",
     "name": "simple-get",
     "version": "2.8.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\drivelist\\node_modules\\simple-get",
     "licenseFile": "node_modules\\drivelist\\node_modules\\simple-get\\LICENSE"
   },
   "simple-vdf@1.1.0": {
@@ -5113,7 +4559,6 @@
     "email": "hello@rgp.io",
     "name": "simple-vdf",
     "version": "1.1.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\simple-vdf",
     "licenseFile": "node_modules\\simple-vdf\\README.md"
   },
   "sntp@1.0.9": {
@@ -5124,7 +4569,6 @@
     "url": "http://hueniverse.com",
     "name": "sntp",
     "version": "1.0.9",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\sntp",
     "licenseFile": "node_modules\\sntp\\LICENSE"
   },
   "sntp@2.1.0": {
@@ -5135,7 +4579,6 @@
     "url": "http://hueniverse.com",
     "name": "sntp",
     "version": "2.1.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\request\\node_modules\\sntp",
     "licenseFile": "node_modules\\request\\node_modules\\sntp\\LICENSE"
   },
   "source-map-support@0.5.5": {
@@ -5143,7 +4586,6 @@
     "repository": "https://github.com/evanw/node-source-map-support",
     "name": "source-map-support",
     "version": "0.5.5",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\source-map-support",
     "licenseFile": "node_modules\\source-map-support\\LICENSE.md"
   },
   "source-map@0.4.4": {
@@ -5153,7 +4595,6 @@
     "email": "nfitzgerald@mozilla.com",
     "name": "source-map",
     "version": "0.4.4",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\scss-tokenizer\\node_modules\\source-map",
     "licenseFile": "node_modules\\scss-tokenizer\\node_modules\\source-map\\README.md"
   },
   "source-map@0.6.1": {
@@ -5163,7 +4604,6 @@
     "email": "nfitzgerald@mozilla.com",
     "name": "source-map",
     "version": "0.6.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\source-map",
     "licenseFile": "node_modules\\source-map\\LICENSE"
   },
   "spdx-correct@1.0.2": {
@@ -5174,7 +4614,6 @@
     "url": "https://kemitchell.com",
     "name": "spdx-correct",
     "version": "1.0.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\spdx-correct",
     "licenseFile": "node_modules\\spdx-correct\\LICENSE"
   },
   "spdx-expression-parse@1.0.4": {
@@ -5185,7 +4624,6 @@
     "url": "http://kemitchell.com",
     "name": "spdx-expression-parse",
     "version": "1.0.4",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\spdx-expression-parse",
     "licenseFile": "node_modules\\spdx-expression-parse\\LICENSE"
   },
   "spdx-license-ids@1.2.2": {
@@ -5195,7 +4633,6 @@
     "url": "https://github.com/shinnn",
     "name": "spdx-license-ids",
     "version": "1.2.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\spdx-license-ids",
     "licenseFile": "node_modules\\spdx-license-ids\\LICENSE"
   },
   "sprintf-js@1.0.3": {
@@ -5206,7 +4643,6 @@
     "url": "http://alexei.ro/",
     "name": "sprintf-js",
     "version": "1.0.3",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\sprintf-js",
     "licenseFile": "node_modules\\sprintf-js\\LICENSE"
   },
   "sshpk@1.13.1": {
@@ -5215,7 +4651,6 @@
     "publisher": "Joyent, Inc",
     "name": "sshpk",
     "version": "1.13.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\sshpk",
     "licenseFile": "node_modules\\sshpk\\LICENSE"
   },
   "stack-trace@0.0.10": {
@@ -5226,7 +4661,6 @@
     "url": "http://debuggable.com/",
     "name": "stack-trace",
     "version": "0.0.10",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\stack-trace",
     "licenseFile": "node_modules\\stack-trace\\License"
   },
   "statuses@1.3.1": {
@@ -5234,7 +4668,6 @@
     "repository": "https://github.com/jshttp/statuses",
     "name": "statuses",
     "version": "1.3.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\statuses",
     "licenseFile": "node_modules\\statuses\\LICENSE"
   },
   "statuses@1.4.0": {
@@ -5242,7 +4675,6 @@
     "repository": "https://github.com/jshttp/statuses",
     "name": "statuses",
     "version": "1.4.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\http-errors\\node_modules\\statuses",
     "licenseFile": "node_modules\\http-errors\\node_modules\\statuses\\LICENSE"
   },
   "stdout-stream@1.4.0": {
@@ -5250,7 +4682,6 @@
     "repository": "https://github.com/mafintosh/stdout-stream",
     "name": "stdout-stream",
     "version": "1.4.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\stdout-stream",
     "licenseFile": "node_modules\\stdout-stream\\LICENSE"
   },
   "string-template@1.0.0": {
@@ -5260,7 +4691,6 @@
     "email": "matt@mattesch.info",
     "name": "string-template",
     "version": "1.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\string-template",
     "licenseFile": "node_modules\\string-template\\LICENCE"
   },
   "string-width@1.0.2": {
@@ -5271,7 +4701,6 @@
     "url": "sindresorhus.com",
     "name": "string-width",
     "version": "1.0.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\string-width",
     "licenseFile": "node_modules\\string-width\\license"
   },
   "string.prototype.repeat@0.2.0": {
@@ -5281,7 +4710,6 @@
     "url": "http://mathiasbynens.be/",
     "name": "string.prototype.repeat",
     "version": "0.2.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\string.prototype.repeat",
     "licenseFile": "node_modules\\string.prototype.repeat\\README.md"
   },
   "string_decoder@0.10.31": {
@@ -5289,7 +4717,6 @@
     "repository": "https://github.com/rvagg/string_decoder",
     "name": "string_decoder",
     "version": "0.10.31",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\string_decoder",
     "licenseFile": "node_modules\\string_decoder\\LICENSE"
   },
   "string_decoder@1.0.3": {
@@ -5297,7 +4724,6 @@
     "repository": "https://github.com/rvagg/string_decoder",
     "name": "string_decoder",
     "version": "1.0.3",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\readable-stream\\node_modules\\string_decoder",
     "licenseFile": "node_modules\\readable-stream\\node_modules\\string_decoder\\LICENSE"
   },
   "stringstream@0.0.5": {
@@ -5308,7 +4734,6 @@
     "url": "http://github.com/mhart",
     "name": "stringstream",
     "version": "0.0.5",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\stringstream",
     "licenseFile": "node_modules\\stringstream\\LICENSE.txt"
   },
   "strip-ansi@3.0.1": {
@@ -5319,7 +4744,6 @@
     "url": "sindresorhus.com",
     "name": "strip-ansi",
     "version": "3.0.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\strip-ansi",
     "licenseFile": "node_modules\\strip-ansi\\license"
   },
   "strip-bom@2.0.0": {
@@ -5330,7 +4754,6 @@
     "url": "sindresorhus.com",
     "name": "strip-bom",
     "version": "2.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\strip-bom",
     "licenseFile": "node_modules\\strip-bom\\license"
   },
   "strip-eof@1.0.0": {
@@ -5341,7 +4764,6 @@
     "url": "sindresorhus.com",
     "name": "strip-eof",
     "version": "1.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\strip-eof",
     "licenseFile": "node_modules\\strip-eof\\license"
   },
   "strip-indent@1.0.1": {
@@ -5352,7 +4774,6 @@
     "url": "http://sindresorhus.com",
     "name": "strip-indent",
     "version": "1.0.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\strip-indent",
     "licenseFile": "node_modules\\strip-indent\\license"
   },
   "strip-json-comments@2.0.1": {
@@ -5363,7 +4784,6 @@
     "url": "sindresorhus.com",
     "name": "strip-json-comments",
     "version": "2.0.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\strip-json-comments",
     "licenseFile": "node_modules\\strip-json-comments\\license"
   },
   "supports-color@2.0.0": {
@@ -5374,7 +4794,6 @@
     "url": "sindresorhus.com",
     "name": "supports-color",
     "version": "2.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\supports-color",
     "licenseFile": "node_modules\\supports-color\\license"
   },
   "symbol-observable@1.1.0": {
@@ -5384,7 +4803,6 @@
     "email": "ben@benlesh.com",
     "name": "symbol-observable",
     "version": "1.1.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\symbol-observable",
     "licenseFile": "node_modules\\symbol-observable\\license"
   },
   "tar-fs@1.16.0": {
@@ -5393,7 +4811,6 @@
     "publisher": "Mathias Buus",
     "name": "tar-fs",
     "version": "1.16.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\tar-fs",
     "licenseFile": "node_modules\\tar-fs\\LICENSE"
   },
   "tar-pack@3.4.1": {
@@ -5401,7 +4818,6 @@
     "repository": "https://github.com/ForbesLindesay/tar-pack",
     "name": "tar-pack",
     "version": "3.4.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\tar-pack",
     "licenseFile": "node_modules\\tar-pack\\LICENSE"
   },
   "tar-stream@1.5.5": {
@@ -5411,7 +4827,6 @@
     "email": "mathiasbuus@gmail.com",
     "name": "tar-stream",
     "version": "1.5.5",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\tar-stream",
     "licenseFile": "node_modules\\tar-stream\\LICENSE"
   },
   "tar@2.2.1": {
@@ -5422,7 +4837,6 @@
     "url": "http://blog.izs.me/",
     "name": "tar",
     "version": "2.2.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\tar",
     "licenseFile": "node_modules\\tar\\LICENSE"
   },
   "through2@2.0.3": {
@@ -5433,7 +4847,6 @@
     "url": "https://github.com/rvagg",
     "name": "through2",
     "version": "2.0.3",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\through2",
     "licenseFile": "node_modules\\through2\\LICENSE.html"
   },
   "tmp@0.0.33": {
@@ -5444,7 +4857,6 @@
     "url": "http://raszi.hu/",
     "name": "tmp",
     "version": "0.0.33",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\tmp",
     "licenseFile": "node_modules\\tmp\\LICENSE"
   },
   "tough-cookie@2.3.3": {
@@ -5454,7 +4866,6 @@
     "email": "jstashewsky@salesforce.com",
     "name": "tough-cookie",
     "version": "2.3.3",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\tough-cookie",
     "licenseFile": "node_modules\\tough-cookie\\LICENSE"
   },
   "trim-newlines@1.0.0": {
@@ -5465,7 +4876,6 @@
     "url": "sindresorhus.com",
     "name": "trim-newlines",
     "version": "1.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\trim-newlines",
     "licenseFile": "node_modules\\trim-newlines\\license"
   },
   "true-case-path@1.0.2": {
@@ -5474,7 +4884,6 @@
     "publisher": "barsh",
     "name": "true-case-path",
     "version": "1.0.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\true-case-path",
     "licenseFile": "node_modules\\true-case-path\\LICENSE"
   },
   "tunnel-agent@0.4.3": {
@@ -5485,7 +4894,6 @@
     "url": "http://www.futurealoof.com",
     "name": "tunnel-agent",
     "version": "0.4.3",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\node-sass\\node_modules\\tunnel-agent",
     "licenseFile": "node_modules\\node-sass\\node_modules\\tunnel-agent\\LICENSE"
   },
   "tunnel-agent@0.6.0": {
@@ -5496,7 +4904,6 @@
     "url": "http://www.futurealoof.com",
     "name": "tunnel-agent",
     "version": "0.6.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\tunnel-agent",
     "licenseFile": "node_modules\\tunnel-agent\\LICENSE"
   },
   "turbowalk@1.0.0": {
@@ -5505,7 +4912,6 @@
     "name": "turbowalk",
     "version": "1.0.0",
     "repository": "",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\turbowalk",
     "licenseFile": "node_modules\\turbowalk\\README.md"
   },
   "tweetnacl@0.14.5": {
@@ -5514,7 +4920,6 @@
     "publisher": "TweetNaCl-js contributors",
     "name": "tweetnacl",
     "version": "0.14.5",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\tweetnacl",
     "licenseFile": "node_modules\\tweetnacl\\LICENSE"
   },
   "type-is@1.6.15": {
@@ -5522,7 +4927,6 @@
     "repository": "https://github.com/jshttp/type-is",
     "name": "type-is",
     "version": "1.6.15",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\type-is",
     "licenseFile": "node_modules\\type-is\\LICENSE"
   },
   "typedarray-to-buffer@1.0.4": {
@@ -5533,7 +4937,6 @@
     "url": "http://feross.org/",
     "name": "typedarray-to-buffer",
     "version": "1.0.4",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\typedarray-to-buffer",
     "licenseFile": "node_modules\\typedarray-to-buffer\\LICENSE"
   },
   "ua-parser-js@0.7.17": {
@@ -5544,7 +4947,6 @@
     "url": "http://faisalman.com",
     "name": "ua-parser-js",
     "version": "0.7.17",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\ua-parser-js",
     "licenseFile": "node_modules\\ua-parser-js\\readme.md"
   },
   "uid-number@0.0.6": {
@@ -5555,7 +4957,6 @@
     "url": "http://blog.izs.me/",
     "name": "uid-number",
     "version": "0.0.6",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\uid-number",
     "licenseFile": "node_modules\\uid-number\\LICENSE"
   },
   "ultron@1.1.1": {
@@ -5564,7 +4965,6 @@
     "publisher": "Arnout Kazemier",
     "name": "ultron",
     "version": "1.1.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\ultron",
     "licenseFile": "node_modules\\ultron\\LICENSE"
   },
   "uncontrollable@4.1.0": {
@@ -5574,7 +4974,6 @@
     "email": "monastic.panic@gmail.com",
     "name": "uncontrollable",
     "version": "4.1.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\uncontrollable",
     "licenseFile": "node_modules\\uncontrollable\\README.md"
   },
   "underscore.string@3.0.3": {
@@ -5582,7 +4981,6 @@
     "repository": "https://github.com/epeli/underscore.string",
     "name": "underscore.string",
     "version": "3.0.3",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\underscore.string",
     "licenseFile": "node_modules\\underscore.string\\README.markdown"
   },
   "underscore@1.8.3": {
@@ -5592,7 +4990,6 @@
     "email": "jeremy@documentcloud.org",
     "name": "underscore",
     "version": "1.8.3",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\underscore",
     "licenseFile": "node_modules\\underscore\\LICENSE"
   },
   "unidragger@2.1.0": {
@@ -5601,7 +4998,6 @@
     "publisher": "David DeSandro",
     "name": "unidragger",
     "version": "2.1.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\unidragger",
     "licenseFile": "node_modules\\unidragger\\README.md"
   },
   "unipointer@2.1.0": {
@@ -5610,7 +5006,6 @@
     "publisher": "David DeSandro",
     "name": "unipointer",
     "version": "2.1.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\unipointer",
     "licenseFile": "node_modules\\unipointer\\README.md"
   },
   "universalify@0.1.1": {
@@ -5620,7 +5015,6 @@
     "email": "opensrc@ryanzim.com",
     "name": "universalify",
     "version": "0.1.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\universalify",
     "licenseFile": "node_modules\\universalify\\LICENSE"
   },
   "unpipe@1.0.0": {
@@ -5630,7 +5024,6 @@
     "email": "doug@somethingdoug.com",
     "name": "unpipe",
     "version": "1.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\unpipe",
     "licenseFile": "node_modules\\unpipe\\LICENSE"
   },
   "unzip-response@1.0.2": {
@@ -5638,7 +5031,6 @@
     "repository": "https://github.com/sindresorhus/unzip-response",
     "name": "unzip-response",
     "version": "1.0.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\unzip-response",
     "licenseFile": "node_modules\\unzip-response\\license"
   },
   "util-deprecate@1.0.2": {
@@ -5649,7 +5041,6 @@
     "url": "http://n8.io/",
     "name": "util-deprecate",
     "version": "1.0.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\util-deprecate",
     "licenseFile": "node_modules\\util-deprecate\\LICENSE"
   },
   "utils-merge@1.0.1": {
@@ -5660,7 +5051,6 @@
     "url": "http://www.jaredhanson.net/",
     "name": "utils-merge",
     "version": "1.0.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\utils-merge",
     "licenseFile": "node_modules\\utils-merge\\LICENSE"
   },
   "uuid@3.1.0": {
@@ -5668,7 +5058,6 @@
     "repository": "https://github.com/kelektiv/node-uuid",
     "name": "uuid",
     "version": "3.1.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\uuid",
     "licenseFile": "node_modules\\uuid\\LICENSE.md"
   },
   "validate-npm-package-license@3.0.1": {
@@ -5679,7 +5068,6 @@
     "url": "https://kemitchell.com",
     "name": "validate-npm-package-license",
     "version": "3.0.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\validate-npm-package-license",
     "licenseFile": "node_modules\\validate-npm-package-license\\LICENSE"
   },
   "vary@1.1.2": {
@@ -5689,7 +5077,6 @@
     "email": "doug@somethingdoug.com",
     "name": "vary",
     "version": "1.1.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\vary",
     "licenseFile": "node_modules\\vary\\LICENSE"
   },
   "verror@1.10.0": {
@@ -5697,7 +5084,6 @@
     "repository": "https://github.com/davepacheco/node-verror",
     "name": "verror",
     "version": "1.10.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\verror",
     "licenseFile": "node_modules\\verror\\LICENSE"
   },
   "void-elements@2.0.1": {
@@ -5706,7 +5092,6 @@
     "publisher": "hemanth.hm",
     "name": "void-elements",
     "version": "2.0.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\void-elements",
     "licenseFile": "node_modules\\void-elements\\LICENSE"
   },
   "vortex-parse-ini@0.1.2": {
@@ -5715,7 +5100,6 @@
     "name": "vortex-parse-ini",
     "version": "0.1.2",
     "repository": "",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\vortex-parse-ini",
     "licenseFile": "node_modules\\vortex-parse-ini\\LICENSE.md"
   },
   "vortex-run@0.0.4": {
@@ -5723,16 +5107,14 @@
     "publisher": "Black Tree Gaming Ltd",
     "name": "vortex-run",
     "version": "0.0.4",
-    "repository": "",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\vortex-run"
+    "repository": ""
   },
-  "vortex@0.15.3": {
+  "vortex@0.15.4": {
     "licenses": "GPL-3.0",
     "repository": "https://github.com/Nexus-Mods/Vortex",
     "publisher": "Black Tree Gaming Ltd.",
     "name": "vortex",
-    "version": "0.15.3",
-    "path": "c:\\Work\\Vortex_0_15\\app",
+    "version": "0.15.4",
     "licenseFile": "LICENSE.md"
   },
   "warning@3.0.0": {
@@ -5743,7 +5125,6 @@
     "url": "http://www.freecodecamp.com",
     "name": "warning",
     "version": "3.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\warning",
     "licenseFile": "node_modules\\warning\\LICENSE.md"
   },
   "whatwg-fetch@2.0.3": {
@@ -5751,7 +5132,6 @@
     "repository": "https://github.com/github/fetch",
     "name": "whatwg-fetch",
     "version": "2.0.3",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\whatwg-fetch",
     "licenseFile": "node_modules\\whatwg-fetch\\LICENSE"
   },
   "which-module@1.0.0": {
@@ -5760,7 +5140,6 @@
     "publisher": "nexdrew",
     "name": "which-module",
     "version": "1.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\which-module",
     "licenseFile": "node_modules\\which-module\\LICENSE"
   },
   "which-pm-runs@1.0.0": {
@@ -5769,7 +5148,6 @@
     "publisher": "Zoltan Kochan",
     "name": "which-pm-runs",
     "version": "1.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\which-pm-runs",
     "licenseFile": "node_modules\\which-pm-runs\\LICENSE"
   },
   "which@1.3.0": {
@@ -5780,7 +5158,6 @@
     "url": "http://blog.izs.me",
     "name": "which",
     "version": "1.3.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\which",
     "licenseFile": "node_modules\\which\\LICENSE"
   },
   "wide-align@1.1.2": {
@@ -5791,7 +5168,6 @@
     "url": "http://re-becca.org/",
     "name": "wide-align",
     "version": "1.1.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\wide-align",
     "licenseFile": "node_modules\\wide-align\\LICENSE"
   },
   "winreg@1.2.4": {
@@ -5800,7 +5176,6 @@
     "publisher": "Paul Bottin",
     "name": "winreg",
     "version": "1.2.4",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\winreg",
     "licenseFile": "node_modules\\winreg\\README.md"
   },
   "winston@2.4.0": {
@@ -5810,7 +5185,6 @@
     "email": "charlie.robbins@gmail.com",
     "name": "winston",
     "version": "2.4.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\winston",
     "licenseFile": "node_modules\\winston\\LICENSE"
   },
   "wrap-ansi@2.1.0": {
@@ -5821,7 +5195,6 @@
     "url": "sindresorhus.com",
     "name": "wrap-ansi",
     "version": "2.1.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\wrap-ansi",
     "licenseFile": "node_modules\\wrap-ansi\\license"
   },
   "wrappy@1.0.2": {
@@ -5832,7 +5205,6 @@
     "url": "http://blog.izs.me/",
     "name": "wrappy",
     "version": "1.0.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\wrappy",
     "licenseFile": "node_modules\\wrappy\\LICENSE"
   },
   "ws@4.0.0": {
@@ -5843,29 +5215,7 @@
     "url": "http://2x.io",
     "name": "ws",
     "version": "4.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\ws",
     "licenseFile": "node_modules\\ws\\LICENSE"
-  },
-  "xml2js@0.4.19": {
-    "licenses": "MIT",
-    "repository": "https://github.com/Leonidas-from-XIV/node-xml2js",
-    "publisher": "Marek Kubica",
-    "email": "marek@xivilization.net",
-    "url": "https://xivilization.net",
-    "name": "xml2js",
-    "version": "0.4.19",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\xml2js",
-    "licenseFile": "node_modules\\xml2js\\LICENSE"
-  },
-  "xmlbuilder@9.0.4": {
-    "licenses": "MIT",
-    "repository": "https://github.com/oozcitak/xmlbuilder-js",
-    "publisher": "Ozgur Ozcitak",
-    "email": "oozcitak@gmail.com",
-    "name": "xmlbuilder",
-    "version": "9.0.4",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\xmlbuilder",
-    "licenseFile": "node_modules\\xmlbuilder\\LICENSE"
   },
   "xmlhttprequest@1.8.0": {
     "licenses": "MIT",
@@ -5874,7 +5224,6 @@
     "url": "http://driverdan.com",
     "name": "xmlhttprequest",
     "version": "1.8.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\xmlhttprequest",
     "licenseFile": "node_modules\\xmlhttprequest\\LICENSE"
   },
   "xss-filters@1.2.7": {
@@ -5884,7 +5233,6 @@
     "email": "adon@yahoo-inc.com",
     "name": "xss-filters",
     "version": "1.2.7",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\xss-filters",
     "licenseFile": "node_modules\\xss-filters\\LICENSE"
   },
   "xtend@2.1.2": {
@@ -5894,7 +5242,6 @@
     "email": "raynos2@gmail.com",
     "name": "xtend",
     "version": "2.1.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\level-js\\node_modules\\xtend",
     "licenseFile": "node_modules\\level-js\\node_modules\\xtend\\LICENCE"
   },
   "xtend@3.0.0": {
@@ -5904,7 +5251,6 @@
     "email": "raynos2@gmail.com",
     "name": "xtend",
     "version": "3.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\level-js\\node_modules\\abstract-leveldown\\node_modules\\xtend",
     "licenseFile": "node_modules\\level-js\\node_modules\\abstract-leveldown\\node_modules\\xtend\\LICENCE"
   },
   "xtend@4.0.1": {
@@ -5914,7 +5260,6 @@
     "email": "raynos2@gmail.com",
     "name": "xtend",
     "version": "4.0.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\xtend",
     "licenseFile": "node_modules\\xtend\\LICENCE"
   },
   "y18n@3.2.1": {
@@ -5924,7 +5269,6 @@
     "email": "ben@npmjs.com",
     "name": "y18n",
     "version": "3.2.1",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\y18n",
     "licenseFile": "node_modules\\y18n\\LICENSE"
   },
   "yallist@2.1.2": {
@@ -5935,7 +5279,6 @@
     "url": "http://blog.izs.me/",
     "name": "yallist",
     "version": "2.1.2",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\yallist",
     "licenseFile": "node_modules\\yallist\\LICENSE"
   },
   "yargs-parser@5.0.0": {
@@ -5945,7 +5288,6 @@
     "email": "ben@npmjs.com",
     "name": "yargs-parser",
     "version": "5.0.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\yargs-parser",
     "licenseFile": "node_modules\\yargs-parser\\LICENSE.txt"
   },
   "yargs@7.1.0": {
@@ -5953,7 +5295,6 @@
     "repository": "https://github.com/yargs/yargs",
     "name": "yargs",
     "version": "7.1.0",
-    "path": "c:\\Work\\Vortex_0_15\\app\\node_modules\\yargs",
     "licenseFile": "node_modules\\yargs\\LICENSE"
   }
 }

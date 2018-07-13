@@ -68,7 +68,7 @@
     "react-markdown": "^2.5.0",
     "react-redux": "^5.0.6",
     "react-resize-detector": "^2.3.0",
-    "react-safe-html": "TanninOne/react-safe-html",
+    "react-safe-html": "^0.6.0",
     "react-select": "^1.2.1",
     "react-sortable-tree": "^1.4.0",
     "recharts": "^1.0.0-beta.0",

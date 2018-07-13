@@ -14,7 +14,10 @@ function insert(target: any, key: string[], value: any, hive: string) {
         prev[keySegment] = value;
         return prev;
       } else {
-        if (prev[keySegment] === undefined) {
+        // Ideally there wouldn't be any null values in the state but with extensions
+        // we can't really ensure that
+        if ((prev[keySegment] === undefined)
+            || (prev[keySegment] === null)) {
           prev[keySegment] = {};
         }
         return prev[keySegment];
@@ -54,8 +57,7 @@ class ReduxPersistor<T> {
     return persistor.getAllKeys()
       .then(keys =>
         Promise.map(keys, key => persistor.getItem(key)
-          .then(value => ({ key, value: this.deserialize(value) }
-          ))))
+          .then(value => ({ key, value: this.deserialize(value) }))))
       .then(kvPairs => {
         const res: any = {};
         kvPairs.forEach(pair => {
@@ -150,7 +152,7 @@ class ReduxPersistor<T> {
               : Promise.resolve()))
           .then(() => undefined);
       } else {
-        return persistor.setItem(statePath, this.serialize(newState));
+        return this.add(persistor, statePath, newState);
       }
     } catch (err) {
       return Promise.reject(err);

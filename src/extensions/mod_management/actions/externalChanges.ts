@@ -53,10 +53,16 @@ export function showExternalChanges(changes: { [typeId: string]: IFileChange[] }
 export function confirmExternalChanges(changes: IFileEntry[], canceled: boolean) {
   return (dispatch) => {
     if (canceled) {
-      curReject(new UserCanceled());
+      if (curReject !== undefined) {
+        curReject(new UserCanceled());
+      }
     } else {
-      curResolve(changes);
+      if (curResolve !== undefined) {
+        curResolve(changes);
+      }
     }
+    curReject = undefined;
+    curResolve = undefined;
     dispatch(setExternalChanges([]));
   };
 }

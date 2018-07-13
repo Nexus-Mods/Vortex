@@ -1,5 +1,7 @@
 import { displayGroup } from '../../actions/session';
 import { FormPathItem, FormTextItem } from '../../controls/FormFields';
+import More from '../../controls/More';
+import Toggle from '../../controls/Toggle';
 import { Button, IconButton } from '../../controls/TooltipControls';
 import { IComponentContext } from '../../types/IComponentContext';
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
@@ -172,6 +174,7 @@ interface IEditStarterInfo {
   commandLine: string;
   workingDirectory: string;
   environment: { [key: string]: string };
+  shell: boolean;
 }
 
 interface IToolEditState {
@@ -195,9 +198,8 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
       tool: this.toEditStarter(props.tool),
       imageId: Date.now(),
     });
-    this.mUpdateImageDebouncer = new Debouncer((imagePath: string) => {
-      return this.useImage(imagePath);
-    }, 2000);
+    this.mUpdateImageDebouncer = new Debouncer((imagePath: string) =>
+      this.useImage(imagePath), 2000);
   }
 
   public render(): JSX.Element {
@@ -300,6 +302,18 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
                     />
                   </Button>
                 </FormControl.Static>
+              </Col>
+            </FormGroup>
+            <FormGroup>
+              <Col sm={12}>
+                <Toggle checked={tool.shell} onToggle={this.toggleShell}>
+                  {t('Run in shell')}
+                  <More id='run-in-shell' name={t('Run in shell')}>
+                    {t('If (and only if!) a tool is written as a console '
+                         + 'application, you have to enable this to allow it to run '
+                         + 'correctly.')}
+                  </More>
+                </Toggle>
               </Col>
             </FormGroup>
           </Form>
@@ -438,6 +452,10 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
     });
   }
 
+  private toggleShell = () => {
+    this.nextState.tool.shell = !this.state.tool.shell;
+  }
+
   private useImage(filePath: string): Promise<void> {
     const { tool } = this.props;
     const destPath = tool.iconOutPath;
@@ -490,6 +508,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
       environment: tool.environment,
       logo: `${tool.id}.png`,
       parameters: this.splitCommandLine(tool.commandLine),
+      shell: tool.shell,
     };
   }
 
@@ -502,6 +521,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
         iconPath: tool.iconPath,
         environment: tool.environment,
         commandLine: this.splitCommandLine(tool.commandLine),
+        shell: tool.shell,
       });
     } else {
       onAddTool(tool.gameId, tool.id, this.toToolDiscovery(tool));

@@ -115,4 +115,9 @@ export interface ITool {
    * the tool will be detected anywhere on the disk.
    */
   relative?: boolean;
+
+  /**
+   * if true, the tool will be run inside a shell
+   */
+  shell?: boolean;
 }

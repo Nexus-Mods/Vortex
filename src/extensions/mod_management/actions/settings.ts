@@ -23,3 +23,6 @@ export const setUpdatingMods = safeCreateAction('SET_UPDATING_MODS',
 
 export const setShowModDropzone = safeCreateAction('SET_SHOW_MOD_DROPZONE',
   show => show);
+
+export const setConfirmPurge = safeCreateAction('SET_CONFIRM_PURGE',
+  (confirm: boolean) => confirm);

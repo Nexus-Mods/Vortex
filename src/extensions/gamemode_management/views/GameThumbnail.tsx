@@ -112,6 +112,7 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
           buttonType='text'
           orientation='vertical'
           filter={this.lowPriorityButtons}
+          t={t}
         />
         <GameInfoPopover
           t={t}
@@ -135,6 +136,7 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
           orientation='vertical'
           filter={this.priorityButtons}
           clickAnywhere={true}
+          t={t}
         />
       </div>
     ), (

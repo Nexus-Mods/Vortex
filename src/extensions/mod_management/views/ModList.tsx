@@ -73,9 +73,18 @@ interface IVersionOptionProps {
 class VersionOption extends React.PureComponent<IVersionOptionProps, {}> {
   public render(): JSX.Element {
     const { t, modId, altId, mod } = this.props;
+    if (mod === undefined) {
+      return null;
+    }
+
+    const variant = getSafe(mod.attributes, ['variant'], undefined);
+
     return (
       <a className='version-option'>
-        <div>{getSafe(mod.attributes, ['version'], '')}</div>
+        <div>
+          {getSafe(mod.attributes, ['version'], '')}
+          {variant !== undefined ? ` (${variant})` : ''}
+        </div>
         <IconButton
           id={`btn-remove-${modId}-${altId}`}
           className='btn-embed'
@@ -134,6 +143,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   private modNameAttribute: ITableAttribute;
   private modVersionAttribute: ITableAttribute;
   private modVersionDetailAttribute: ITableAttribute;
+  private modVariantDetailAttribute: ITableAttribute;
   private modAuthorAttribute: ITableAttribute<IModWithState>;
   private mModsWithState: { [id: string]: IModWithState };
   private mGroupedMods: { [id: string]: IModWithState[] } = {};
@@ -308,6 +318,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
                 this.modVersionAttribute,
                 this.modAuthorAttribute,
                 this.modVersionDetailAttribute,
+                this.modVariantDetailAttribute,
                 INSTALL_TIME,
               ]}
               actions={this.modActions}
@@ -326,6 +337,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
             group='mod-icons'
             staticElements={this.staticButtons}
             className='menubar'
+            t={t}
           />
         </MainPage.Header>
         <MainPage.Body>
@@ -339,14 +351,16 @@ class ModList extends ComponentEx<IProps, IComponentState> {
                 expanded={showDropzone}
                 onToggle={nop}
               >
-                <PanelX.Body collapsible>
-                  <Dropzone
-                    accept={['files']}
-                    drop={this.dropMod}
-                    icon='folder-download'
-                    clickable={false}
-                  />
-                </PanelX.Body>
+                <PanelX.Collapse>
+                  <PanelX.Body>
+                    <Dropzone
+                      accept={['files']}
+                      drop={this.dropMod}
+                      icon='folder-download'
+                      clickable={false}
+                    />
+                  </PanelX.Body>
+                </PanelX.Collapse>
                 <CollapseIcon
                   position='topright'
                   onClick={this.toggleDropzone}
@@ -420,13 +434,18 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       ? equalMods.map(iter => iter.id)
       : [mod.id];
 
-    const updateState = modUpdateState(mod, downloadPath, mods);
+    const updateState = modUpdateState(mod.attributes);
+
+    const variant = getSafe(mod.attributes, ['variant'], undefined);
 
     const versionDropdown = alternatives.length > 1
       ? (
         <DropdownButton
           className='dropdown-version'
-          title={getSafe(mod.attributes, ['version'], '')}
+          title={
+            (getSafe(mod.attributes, ['version'], undefined) || '')
+            + (variant !== undefined ? ` (${variant})` : '')
+          }
           id={`version-dropdown-${mod.id}`}
           container={this.mRef}
         >
@@ -587,6 +606,22 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       edit: {},
       isSortable: false,
       filter: new VersionFilter(),
+    };
+
+    this.modVariantDetailAttribute = {
+      id: 'variantDetail',
+      name: 'Variant',
+      description: 'File variant',
+      help: getText('variant', this.props.t),
+      calc: (mod: IModWithState) => getSafe(mod.attributes, ['variant'], ''),
+      placement: 'detail',
+      isToggleable: false,
+      edit: {
+        readOnly: (mod: IModWithState) => mod.state === 'downloaded',
+        onChangeValue: (mod: IModWithState, value: any) =>
+          this.props.onSetModAttribute(this.props.gameMode, mod.id, 'variant', value),
+      },
+      isSortable: false,
     };
 
     this.modAuthorAttribute = {
@@ -942,12 +977,27 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   }
 
   private reinstall = (modIds: string | string[]) => {
-    const { mods } = this.props;
+    const { mods, modState } = this.props;
     if (Array.isArray(modIds)) {
       modIds.filter(modId => mods[modId] !== undefined).forEach(modId =>
-        this.context.api.events.emit('start-install-download', mods[modId].archiveId));
+        this.context.api.events.emit('start-install-download', mods[modId].archiveId, (err) => {
+          if (err === null) {
+            const enabled = modIds.filter(id => modState[id].enabled);
+            if (enabled.length > 0) {
+              this.context.api.events.emit('mods-enabled', enabled, true);
+            }
+          }
+        }));
     } else if (mods[modIds] !== undefined) {
-      this.context.api.events.emit('start-install-download', mods[modIds].archiveId);
+      this.context.api.events.emit('start-install-download', mods[modIds].archiveId, (err) => {
+        if (err === null) {
+          if (modState[modIds].enabled) {
+            // reinstalling an enabled mod automatically enables the new one so we also need
+            // to trigger this event
+            this.context.api.events.emit('mods-enabled', [modIds], true);
+          }
+        }
+      });
     }
   }
 

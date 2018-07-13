@@ -110,17 +110,16 @@ function attributeExtractorCustom(input: any) {
 }
 
 function genDownloadChangeHandler(store: Redux.Store<any>,
+                                  currentDownloadPath: string,
+                                  gameId: string,
                                   nameIdMap: { [name: string]: string },
                                   normalize: Normalize) {
-  const currentDownloadPath = selectors.downloadPath(store.getState());
-  const gameId: string = selectors.activeGameId(store.getState());
   return (evt: string, fileName: string) => {
-    if (!watchEnabled) {
+    if (!watchEnabled || (fileName === undefined)) {
       return;
     }
     if (evt === 'rename') {
-      const filePath = path.join(currentDownloadPath, fileName);
-      if (!knownArchiveExt(filePath)) {
+      if (!knownArchiveExt(fileName)) {
         return;
       }
       // if the file was added, wait a moment, then add it to the store if it doesn't
@@ -128,7 +127,7 @@ function genDownloadChangeHandler(store: Redux.Store<any>,
       // itself that added the file.
       // The file may also be empty atm
       Promise.delay(1000)
-      .then(() => fs.statAsync(filePath))
+      .then(() => fs.statAsync(path.join(currentDownloadPath, fileName)))
       .then(stats => {
         const state: IState = store.getState();
         const existingId: string = Object.keys(state.persistent.downloads.files)
@@ -179,8 +178,18 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
 
   const state: IState = store.getState();
 
-  const downloads: {[id: string]: IDownload} =
-      state.persistent.downloads.files;
+  let downloads: {[id: string]: IDownload} = state.persistent.downloads.files;
+
+  // workaround to avoid duplicate entries in the download list. These should not
+  // exist, the following block should do nothing
+  Object.keys(downloads)
+    .filter(dlId => (downloads[dlId].state === 'finished')
+                    && !truthy(downloads[dlId].localPath))
+    .forEach(dlId => {
+      api.store.dispatch(removeDownload(dlId));
+    });
+
+  downloads = state.persistent.downloads.files;
 
   if (gameId === undefined) {
     gameId = selectors.activeGameId(state);
@@ -203,7 +212,7 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
         }, {});
 
         downloadChangeHandler =
-          genDownloadChangeHandler(api.store, nameIdMap, normalize);
+          genDownloadChangeHandler(api.store, currentDownloadPath, gameId, nameIdMap, normalize);
 
         const knownDLs =
           Object.keys(downloads)
@@ -458,7 +467,7 @@ function init(context: IExtensionContextExt): boolean {
           let realSize =
               (downloads[id].size !== 0) ?
                   downloads[id].size -
-                      sum(downloads[id].chunks.map(chunk => chunk.size)) :
+                      sum((downloads[id].chunks || []).map(chunk => chunk.size)) :
                   0;
           if (isNaN(realSize)) {
             realSize = 0;

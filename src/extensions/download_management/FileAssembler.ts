@@ -12,12 +12,17 @@ import * as path from 'path';
  * @class FileAssembler
  */
 class FileAssembler {
+  // flush at least every few megabytes
+  private static MIN_FLUSH_SIZE = 16 * 1024 * 1024;
+  // flush at least once every few seconds
+  private static MIN_FLUSH_TIME = 5 * 1000;
 
   private mFD: number;
   private mTotalSize: number;
   private mWork: Promise<any> = Promise.resolve();
   private mWritten: number = 0;
-  private mLastLogged: number = 0;
+  private mLastFlushedTime: number = 0;
+  private mLastFlushedSize: number = 0;
 
   constructor(fileName: string) {
     let exists = false;
@@ -57,8 +62,11 @@ class FileAssembler {
             : fsFast.writeAsync(this.mFD, data, 0, data.length, offset))
         .then((bytesWritten: any) => {
           this.mWritten += bytesWritten;
-          if (this.mWritten - this.mLastLogged > 16 * 1024 * 1024) {
-            this.mLastLogged = this.mWritten;
+          const now = Date.now();
+          if ((this.mWritten - this.mLastFlushedSize > FileAssembler.MIN_FLUSH_SIZE)
+              || (now - this.mLastFlushedTime > FileAssembler.MIN_FLUSH_TIME)) {
+            this.mLastFlushedSize = this.mWritten;
+            this.mLastFlushedTime = now;
             synced = true;
             return fs.fsyncAsync(this.mFD).then(() => bytesWritten);
           } else {

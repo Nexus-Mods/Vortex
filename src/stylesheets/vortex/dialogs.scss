@@ -73,12 +73,19 @@
   }
 
   > .dialog-content-text {
-    flex: 0 0 0;
+    flex: initial;
     margin-bottom: $half-gutter;
     white-space: pre-wrap;
   }
 
   > .dialog-content-html {
     white-space: pre-wrap;
+  }
+
+  > .dialog-content-choices {
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
   }
 }

@@ -188,6 +188,13 @@ export interface ITableAttribute<T = any> {
     inline?: boolean,
 
     /**
+     * Affects how choices are displayed if you have a choice attribute
+     * if true (or undefined) then we display a dropdown box where each item immediately triggers
+     * an action. If false, render a selection box
+     */
+    actions?: boolean,
+
+    /**
      * if set, this field is a drop-down selection with the choices returned by this function.
      * Please note: the value returned by calc has to appear in the text-field of one of these
      *   choices

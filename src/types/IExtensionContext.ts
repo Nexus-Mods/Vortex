@@ -263,6 +263,7 @@ export interface IRunOptions {
   cwd?: string;
   env?: { [key: string]: string };
   suggestDeploy?: boolean;
+  shell?: boolean;
 }
 
 /**
@@ -488,6 +489,7 @@ export interface IExtensionApi {
 export interface IStateVerifier {
   type?: 'map' | 'string' | 'boolean' | 'number' | 'object';
   noUndefined?: boolean;
+  noNull?: boolean;
   elements?: { [key: string]: IStateVerifier };
   required?: boolean;
   repair?: (input: any, def: any) => any;

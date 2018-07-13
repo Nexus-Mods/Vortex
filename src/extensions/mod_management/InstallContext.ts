@@ -153,7 +153,6 @@ class InstallContext implements IInstallContext {
     log('info', 'finish mod install', {
       id: this.mIndicatorId,
       outcome: this.mInstallOutcome,
-      info,
     });
     if (outcome === 'success') {
       this.mSetModState(this.mAddedId, 'installed');

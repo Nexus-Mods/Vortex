@@ -100,8 +100,8 @@ class Dropzone extends ComponentEx<IProps, IComponentState> {
 
     const acceptList = accept.map(mode => {
       return {
-        urls: t('URL'),
-        files: t('File'),
+        urls: t('URL(s)'),
+        files: t('File(s)'),
       }[mode];
     });
 

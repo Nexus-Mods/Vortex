@@ -43,6 +43,7 @@ import MainWindow from './views/MainWindow';
 import * as Promise from 'bluebird';
 import { ipcRenderer, remote } from 'electron';
 import { EventEmitter } from 'events';
+import * as I18next from 'i18next';
 import { changeLanguage } from 'i18next';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
@@ -158,7 +159,7 @@ if (process.env.NODE_ENV === 'development') {
 // extensions are to be loaded has to be retrieved from the main process
 const extensions: ExtensionManager = new ExtensionManager(undefined, eventEmitter);
 const extReducers = extensions.getReducers();
-let tFunc = (input, options) => input;
+let tFunc: I18next.TranslationFunction = (input, options) => input;
 
 // I only want to add reducers, but redux-electron-store seems to break
 // when calling replaceReducer in the renderer
@@ -225,8 +226,8 @@ store.subscribe(() => {
 });
 
 function renderer() {
-  let i18n;
-  let error;
+  let i18n: I18next.i18n;
+  let error: Error;
 
   getI18n(store.getState().settings.interface.language)
     .then(res => {
@@ -246,6 +247,7 @@ function renderer() {
           }, store.getState());
         }))
     .then(() => {
+      log('debug', 'render with language', { language: i18n.language });
       initApplicationMenu(extensions);
       startupFinished();
       eventEmitter.emit('startup');

@@ -1,3 +1,4 @@
+import { ProcessCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 import { countIf, truthy } from '../../util/util';
@@ -17,7 +18,6 @@ import * as http from 'http';
 import * as https from 'https';
 import * as path from 'path';
 import * as url from 'url';
-import { ProcessCanceled } from '../../util/CustomErrors';
 
 export class HTTPError extends Error {
   constructor(response: http.ServerResponse) {
@@ -190,7 +190,7 @@ class DownloadWorker {
 
   private abort(paused: boolean): boolean {
     if (this.mEnded) {
-      return false;
+     return false;
     }
     if (this.mRequest !== undefined) {
       this.mRequest.abort();
@@ -409,11 +409,12 @@ class DownloadManager {
       ? fileName
       : decodeURI(path.basename(url.parse(urls[0]).pathname));
     const destPath = destinationPath || this.mDownloadPath;
+    let download: IRunningDownload;
     return fs.ensureDirAsync(destPath)
       .then(() => this.unusedName(destPath, nameTemplate || 'deferred'))
       .then((filePath: string) =>
         new Promise<IDownloadResult>((resolve, reject) => {
-          const download: IRunningDownload = {
+          download = {
             id,
             origName: nameTemplate,
             tempName: filePath,
@@ -435,7 +436,10 @@ class DownloadManager {
           progressCB(0, undefined,
                      download.chunks.map(this.toStoredChunk), undefined, filePath);
           this.tickQueue();
-        }));
+        }))
+      .finally(() => (download !== undefined) && (download.assembler !== undefined)
+          ? download.assembler.close()
+          : Promise.resolve());
   }
 
   public resume(id: string,
@@ -465,12 +469,14 @@ class DownloadManager {
         },
         promises: [],
       };
-      download.chunks = chunks.map(chunk => this.toJob(download, chunk));
+      download.chunks = (chunks || []).map(chunk => this.toJob(download, chunk));
       if (download.chunks.length > 0) {
         download.chunks[0].errorCB = (err) => { this.cancelDownload(download, err); };
+        this.mQueue.push(download);
+        this.tickQueue();
+      } else {
+        return reject(new ProcessCanceled('No unfinished chunks'));
       }
-      this.mQueue.push(download);
-      this.tickQueue();
     });
   }
 
@@ -621,6 +627,9 @@ class DownloadManager {
           .then(urls => {
             log('info', 'resolved download urls', { urls });
             download.urls = urls;
+            if (download.urls.length === 0) {
+              return Promise.reject(new ProcessCanceled('no download urls'));
+            }
             job.url = download.urls[0];
             this.startJob(download, job);
           })
@@ -652,7 +661,34 @@ class DownloadManager {
     }
     log('debug', 'start download worker',
       { name: download.tempName, workerId: job.workerId, size: job.size });
-    job.dataCB = (offset: number, data: Buffer) => {
+    job.dataCB = this.makeDataCB(download);
+
+    this.mBusyWorkers[job.workerId] = new DownloadWorker(job,
+      (bytes) => {
+        const starving = this.mSpeedCalculator.addMeasure(job.workerId, bytes);
+        if (starving) {
+          this.mSlowWorkers[job.workerId] = (this.mSlowWorkers[job.workerId] || 0) + 1;
+          // only restart slow workers within 15 minutes after starting the download,
+          // otherwise the url may have expired. There is no way to know how long the
+          // url remains valid, not even with the nexus api (at least not currently)
+          if ((this.mSlowWorkers[job.workerId] > 15)
+              && (download.started !== undefined)
+              && ((Date.now() - download.started.getTime()) < 15 * 60 * 1000)) {
+            log('debug', 'restarting slow worker', { workerId: job.workerId });
+            this.mBusyWorkers[job.workerId].restart();
+            delete this.mSlowWorkers[job.workerId];
+          }
+        } else if (starving === false) {
+          delete this.mSlowWorkers[job.workerId];
+        }
+      },
+      (pause) => this.finishChunk(download, job, pause),
+      (headers) => download.headers = headers,
+      this.mUserAgent);
+  }
+
+  private makeDataCB(download: IRunningDownload) {
+    return (offset: number, data: Buffer) => {
       if (isNaN(download.received)) {
         download.received = 0;
       }
@@ -682,29 +718,6 @@ class DownloadManager {
           return Promise.resolve(false);
         });
     };
-
-    this.mBusyWorkers[job.workerId] = new DownloadWorker(job,
-      (bytes) => {
-        const starving = this.mSpeedCalculator.addMeasure(job.workerId, bytes);
-        if (starving) {
-          this.mSlowWorkers[job.workerId] = (this.mSlowWorkers[job.workerId] || 0) + 1;
-          // only restart slow workers within 15 minutes after starting the download,
-          // otherwise the url may have expired. There is no way to know how long the
-          // url remains valid, not even with the nexus api (at least not currently)
-          if ((this.mSlowWorkers[job.workerId] > 15)
-              && (download.started !== undefined)
-              && ((Date.now() - download.started.getTime()) < 15 * 60 * 1000)) {
-            log('debug', 'restarting slow worker', { workerId: job.workerId });
-            this.mBusyWorkers[job.workerId].restart();
-            delete this.mSlowWorkers[job.workerId];
-          }
-        } else if (starving === false) {
-          delete this.mSlowWorkers[job.workerId];
-        }
-      },
-      (pause) => this.finishChunk(download, job, pause),
-      (headers) => download.headers = headers,
-      this.mUserAgent);
   }
 
   private updateDownload(download: IRunningDownload, size: number, fileName?: string) {

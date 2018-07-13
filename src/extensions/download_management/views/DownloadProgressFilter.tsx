@@ -2,6 +2,7 @@ import {IFilterProps, ITableFilter} from '../../../types/ITableAttribute';
 
 import * as React from 'react';
 import Select from 'react-select';
+import { DownloadState } from '../types/IDownload';
 
 export class DownloadSelectionFilterComponent extends React.Component<IFilterProps, {}> {
   public render(): JSX.Element {
@@ -34,14 +35,17 @@ class DownloadProgressFilter implements ITableFilter {
   public component = DownloadSelectionFilterComponent;
   public raw = false;
 
-  public matches(filter: any, value: any): boolean {
-    if (value === 'started') {
-      return filter === 'In Progress';
-    } else if (typeof(value) === 'string') {
-      return filter.toLowerCase() === value.toLowerCase();
-    } else {
-      // numerical value
+  public matches(filter: any, value: DownloadState | number): boolean {
+    if (typeof(value) === 'number') {
       return (filter === 'In Progress');
+    }
+    switch (value) {
+      case 'init':
+      case 'started':
+      case 'paused': return filter === 'In Progress';
+      case 'redirect':
+      case 'failed': return filter === 'Failed';
+      case 'finished': return filter === 'Finished';
     }
   }
 }

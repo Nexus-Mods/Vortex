@@ -18,4 +18,10 @@ export const sessionReducer: IReducerSpec = {
     userInfo: undefined,
     newestVersion: undefined,
   },
+  verifiers: {
+    userInfo: {
+      type: 'object',
+      noNull: true,
+    },
+  },
 };

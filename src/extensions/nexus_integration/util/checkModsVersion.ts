@@ -83,14 +83,12 @@ function updateLatestFileAttributes(dispatch: Redux.Dispatch<any>,
                                     file: IFileInfo) {
   update(dispatch, gameId, mod, 'newestVersion', file.version);
 
-  const fileCategories = ['MAIN', 'UPDATE', 'OPTIONAL'];
-  if (fileCategories.indexOf(file.category_name) !== -1) {
-    // if it wasn't found (meaning the file has either been removed from
-    // the page or is in category "OLD", mark the file as "updated but
-    // don't know which file)
-    update(dispatch, gameId, mod, 'newestFileId', file.file_id);
-  } else {
+  if ((file.category_name === 'OLD_VERSION') || (file.category_name === undefined)) {
+    // file was removed from mod or is old, either way there should be a new version available
+    // but we have no way of determining which it is.
     update(dispatch, gameId, mod, 'newestFileId', 'unknown');
+  } else {
+    update(dispatch, gameId, mod, 'newestFileId', file.file_id);
   }
 }
 

@@ -95,11 +95,10 @@ class DeploymendMethod extends LinkingDeployment {
             tagDir = Promise.resolve();
           }
           return tagDir.then(() => fs.symlinkAsync(sourcePath, linkPath))
-              .catch((err) => {
-                if (err.code !== 'EEXIST') {
-                  throw err;
-                }
-              });
+            .catch(err => (err.code !== 'EEXIST')
+                ? Promise.reject(err)
+                : fs.removeAsync(linkPath)
+                  .then(() => fs.symlinkAsync(sourcePath, linkPath)));
         });
   }
 

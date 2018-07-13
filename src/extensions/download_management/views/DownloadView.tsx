@@ -606,9 +606,16 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
       dlPaths.forEach(url => this.context.api.events.emit('start-download', [url], {}, undefined,
         (error: Error) => {
         if ((error !== null) && !(error instanceof DownloadIsHTML)) {
-          this.context.api.showErrorNotification('Failed to start download', error, {
-            allowReport: !(error instanceof ProcessCanceled),
+          if (error instanceof ProcessCanceled) {
+          this.context.api.showErrorNotification('Failed to start download',
+            error.message, {
+            allowReport: false,
           });
+          } else {
+            this.context.api.showErrorNotification('Failed to start download', error, {
+              allowReport: true,
+            });
+          }
         }
       }));
     } else {

@@ -257,6 +257,7 @@
     opacity: 0;
     z-index: 0;
     visibility: hidden;
+    pointer-events: none;
 
     // hack to make sure the page can fade out without looking
     // too broken while not displacing the visible page

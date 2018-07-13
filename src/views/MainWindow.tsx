@@ -271,6 +271,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
             className='application-icons'
             group='application-icons'
             staticElements={this.applicationButtons}
+            t={t}
           />
           <IconBar
             id='global-icons'
@@ -279,6 +280,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
             staticElements={this.globalButtons}
             orientation='vertical'
             collapse
+            t={t}
           />
         </div>
       </FlexLayout.Fixed>

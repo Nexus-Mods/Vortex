@@ -32,8 +32,6 @@ export const stateReducer: IReducerSpec = {
         urls: payload.urls,
         modInfo: payload.modInfo,
         chunks: [],
-        localPath: undefined,
-        fileMD5: undefined,
         fileTime: Date.now(),
       });
     },

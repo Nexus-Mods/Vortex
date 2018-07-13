@@ -226,6 +226,15 @@
     }
   ], [
     {
+      "type": "build-copy",
+      "name": "changelog-dashlet",
+      "path": "extensions/changelog-dashlet",
+      "removeModules": ["vortex-api"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
+      "copyTo": "{BUILD_DIR}/bundledPlugins/changelog-dashlet"
+    }
+  ], [
+    {
       "type": "electron-rebuild",
       "condition": "buildType !== 'out'",
       "name": "node-sass-rebuild",

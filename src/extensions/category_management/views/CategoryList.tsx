@@ -129,6 +129,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
           group='categories-icons'
           staticElements={this.mButtons}
           className='menubar categories-icons'
+          t={t}
         />
         <div className='search-category-box'>
           <div style={{ display: 'inline-block', position: 'relative' }}>

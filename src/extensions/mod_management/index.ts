@@ -301,7 +301,10 @@ function genUpdateModDeployment() {
     lastGameDiscovery = gameDiscovery;
 
     const mods = state.persistent.mods[profile.gameId] || {};
-    const modList: IMod[] = Object.keys(mods).map((key: string) => mods[key]);
+    const modList: IMod[] =
+      Object.keys(mods)
+        .map((key: string) => mods[key])
+        .filter((mod: IMod) => getSafe(modState, [mod.id, 'enabled'], false));
 
     const gate = manual ? Promise.resolve() : activator.userGate();
 
@@ -367,7 +370,6 @@ function genUpdateModDeployment() {
       .then(() => sortMods(profile.gameId, modList, api))
       .then((sortedMods: string[]) => {
         const sortedModList = modList
-          .filter(mod => getSafe(modState, [mod.id, 'enabled'], false))
           .sort((lhs: IMod, rhs: IMod) => sortedMods.indexOf(lhs.id) - sortedMods.indexOf(rhs.id));
 
         const mergedFileMap: { [modType: string]: string[] } = {};
@@ -533,6 +535,7 @@ function attributeExtractor(input: any) {
     description: getSafe(input.meta, ['details', 'description'], undefined),
     author: getSafe(input.meta, ['details', 'author'], undefined),
     homepage: getSafe(input.meta, ['details', 'homepage'], undefined),
+    variant: getSafe(input.custom, ['variant'], undefined),
   });
 }
 

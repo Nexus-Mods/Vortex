@@ -225,10 +225,12 @@ export function discoverRelativeTools(game: IGame, gamePath: string,
                                       discoveredGames: {[id: string]: IDiscoveryResult},
                                       onDiscoveredTool: DiscoveredToolCB, normalize: Normalize)
                                : Promise<void> {
-  const discoveredTools = getSafe(discoveredGames[game.id], ['tools'], {});
+  const discoveredTools: { [id: string]: IToolStored } =
+    getSafe(discoveredGames[game.id], ['tools'], {});
   const relativeTools = (game.supportedTools || [])
     .filter(tool => tool.relative === true)
-    .filter(tool => discoveredTools[tool.id] === undefined);
+    .filter(tool => (discoveredTools[tool.id] === undefined)
+                 || (discoveredTools[tool.id].executable === undefined));
 
   if (relativeTools.length === 0) {
     return Promise.resolve();

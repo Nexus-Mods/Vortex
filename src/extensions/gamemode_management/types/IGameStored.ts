@@ -11,4 +11,5 @@ export interface IGameStored {
   supportedTools?: IToolStored[];
   environment?: { [key: string]: string };
   details?: { [key: string]: any };
+  shell?: boolean;
 }

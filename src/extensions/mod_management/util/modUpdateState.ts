@@ -10,12 +10,12 @@ export type UpdateState =
   'bug-update' | 'bug-update-site' | 'bug-disable' |
   'update' | 'update-site' | 'current' | 'install';
 
-function updateState(mod: IModWithState, downloadPath: string, mods: {}): UpdateState {
-  const fileId: string = getSafe(mod.attributes, ['fileId'], undefined);
-  const version: string = getSafe(mod.attributes, ['version'], undefined);
-  const newestFileId: string = getSafe(mod.attributes, ['newestFileId'], undefined);
-  const newestVersion: string = getSafe(mod.attributes, ['newestVersion'], undefined);
-  const bugMessage: string = getSafe(mod.attributes, ['bugMessage'], undefined);
+function updateState(attributes: { [id: string]: any }): UpdateState {
+  const fileId: string = getSafe(attributes, ['fileId'], undefined);
+  const version: string = getSafe(attributes, ['version'], undefined);
+  const newestFileId: string = getSafe(attributes, ['newestFileId'], undefined);
+  const newestVersion: string = getSafe(attributes, ['newestVersion'], undefined);
+  const bugMessage: string = getSafe(attributes, ['bugMessage'], undefined);
 
   let hasUpdate = false;
   if ((newestFileId !== undefined) && (fileId !== undefined) && (newestFileId !== fileId)) {

@@ -1,5 +1,6 @@
 import { IFilterProps, ITableFilter } from '../../../types/ITableAttribute';
 
+import updateState from './modUpdateState';
 import versionClean from './versionClean';
 
 import * as React from 'react';
@@ -41,8 +42,8 @@ class VersionFilter implements ITableFilter {
   public matches(filter: any, value: any): boolean {
     if (value !== undefined) {
       if (filter === 'has-update') {
-        return (value.newestVersion !== undefined)
-          && (versionClean(value.newestVersion) !== versionClean(value.version));
+        const state = updateState(value);
+        return state !== 'current';
       } else {
         return true;
       }
