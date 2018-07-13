@@ -950,13 +950,17 @@ class ExtensionManager {
         const cwd = options.cwd || path.dirname(executable);
         const env = { ...process.env, ...options.env };
         try {
+          const runExe = options.shell
+            ? `"${executable}"`
+            : executable;
           const spawnOptions: SpawnOptions = {
             cwd,
             env,
             detached: true,
             shell: options.shell,
           };
-          const child = spawn(executable, args.map(arg => arg.replace(/"/g, '')), spawnOptions);
+          const child = spawn(runExe, args.map(arg => arg.replace(/"/g, '')),
+                              spawnOptions);
 
           child
             .on('error', err => {
@@ -969,6 +973,9 @@ class ExtensionManager {
                 // doesn't seem to affect anything
                 log('warn', 'child process exited with code: ' + code, {});
               }
+          });
+          child.stderr.on('data', chunk => {
+            log('error', executable + ': ', chunk.toString());
           });
         } catch (err) {
           const ipcPath = shortid();
