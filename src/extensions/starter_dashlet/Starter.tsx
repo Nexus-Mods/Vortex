@@ -331,44 +331,11 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
   }
 
   private startTool = (info: StarterInfo) => {
+    const { onShowError } = this.props;
     if (info === undefined) {
       return;
     }
-    this.context.api.runExecutable(info.exePath, info.commandLine, {
-      cwd: info.workingDirectory,
-      env: info.environment,
-      suggestDeploy: true,
-      shell: info.shell,
-    })
-      .catch(err => {
-        const { onShowError } = this.props;
-        if (err.errno === 'ENOENT') {
-          onShowError('Failed to run tool', {
-            executable: info.exePath,
-            error: 'Executable doesn\'t exist, please check the configuration for this tool.',
-          }, false);
-        } else if (err.errno === 'UNKNOWN') {
-          // this sucks but node.js doesn't give us too much information about what went wrong
-          // and we can't have users misconfigure their tools and then report the error they
-          // get as feedback
-          onShowError('Failed to run tool', {
-            error: 'File is not executable, please check the configuration for this tool.',
-          }, false);
-        } else if (err instanceof MissingInterpreter) {
-          const par = {
-            Error: err.message,
-          };
-          if (err.url !== undefined) {
-            par['Download url'] = err.url;
-          }
-          onShowError('Failed to run tool', par, false);
-        } else {
-          onShowError('Failed to run tool', {
-            executable: info.exePath,
-            error: err.stack,
-          });
-        }
-      });
+    StarterInfo.run(info, this.context.api, onShowError);
   }
 
   private unhide = (toolId: any) => {

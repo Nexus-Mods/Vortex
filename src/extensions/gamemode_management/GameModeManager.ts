@@ -208,6 +208,7 @@ class GameModeManager {
       executable: game.executable(),
       environment: game.environment,
       details: game.details,
+      shell: game.shell,
     };
   }
 

@@ -194,40 +194,12 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
   }
 
   private start = () => {
+    const { onShowError } = this.props;
     const { starter } = this.state;
-    this.context.api.runExecutable(starter.exePath, starter.commandLine, {
-      cwd: starter.workingDirectory,
-      env: starter.environment,
-      suggestDeploy: true,
-    }).catch(err => {
-      const { onShowError } = this.props;
-      if (err.errno === 'ENOENT') {
-        onShowError('Failed to run tool', {
-          executable: starter.exePath,
-          error: 'Executable doesn\'t exist, please check the configuration for this tool.',
-        }, false);
-      } else if (err.errno === 'UNKNOWN') {
-        // this sucks but node.js doesn't give us too much information about what went wrong
-        // and we can't have users misconfigure their tools and then report the error they
-        // get as feedback
-        onShowError('Failed to run tool', {
-          error: 'File is not executable, please check the configuration for this tool.',
-        }, false);
-      } else if (err instanceof MissingInterpreter) {
-        const par = {
-          error: err.message,
-        };
-        if (err.url !== undefined) {
-          par['Download url'] = err.url;
-        }
-        onShowError('Failed to run tool', par, false);
-      } else {
-        onShowError('Failed to run tool', {
-          executable: starter.exePath,
-          error: err.stack,
-        });
-      }
-    });
+    if (starter === undefined) {
+      return;
+    }
+    StarterInfo.run(starter, this.context.api, onShowError);
   }
 
   private makeStarter(props: IProps): StarterInfo {
