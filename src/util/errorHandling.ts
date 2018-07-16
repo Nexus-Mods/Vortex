@@ -49,6 +49,13 @@ ${error.details}
 \`\`\``);
   }
 
+  if (error.path) {
+    sections.push(`#### Path
+\`\`\`
+${error.path}
+\`\`\``);
+  }
+
   if (error.stack) {
     sections.push(`#### Stack
 \`\`\`
@@ -156,6 +163,9 @@ export function terminate(error: IError, state: any) {
 
   try {
     let detail = (error.stack || 'No stack');
+    if (error.path) {
+      detail = 'File: ' + error.path + '\n' + detail;
+    }
     if (error.details) {
       detail = error.details + '\n' + detail;
     }
