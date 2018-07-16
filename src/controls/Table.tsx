@@ -518,10 +518,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
           key={attribute.id}
           attribute={attribute}
           state={attributeState}
-          doFilter={advancedMode}
+          doFilter={true}
           onSetSortDirection={this.setSortDirection}
           onSetFilter={this.setFilter}
-          advancedMode={advancedMode}
           t={t}
         >
           {attribute.filter !== undefined ? (
