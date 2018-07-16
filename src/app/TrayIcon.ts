@@ -2,13 +2,14 @@ import { IExtensionApi } from '../types/api';
 import getVortexPath from '../util/getVortexPath';
 import { log } from '../util/log';
 
-import { app, Menu, NativeImage, Tray } from 'electron';
+import { app, BrowserWindow, Menu, Tray } from 'electron';
 import * as path from 'path';
 
 class TrayIcon {
   private mTrayIcon: Electron.Tray;
   private mApi: IExtensionApi;
   private mImagePath: string;
+  private mInitialized: boolean = false;
 
   constructor(api: IExtensionApi) {
     this.mApi = api;
@@ -30,6 +31,18 @@ class TrayIcon {
     }
   }
 
+  public get initialized() {
+    return this.mInitialized;
+  }
+
+  public setMainWindow(window: BrowserWindow) {
+    this.mTrayIcon.on('click', () => {
+      if (!window.isVisible()) {
+        window.show();
+      }
+    });
+  }
+
   private initTrayIcon() {
     this.mTrayIcon = new Tray(this.mImagePath);
 
@@ -40,6 +53,7 @@ class TrayIcon {
 
     this.mApi.events.on('show-balloon',
       (title: string, content: string) => this.showNotification(title, content));
+    this.mInitialized = true;
   }
 
   private startGame() {

@@ -162,7 +162,10 @@ class Application {
         .then(() => this.startUi())
         .then(() => this.createTray())
         // end initialization
-        .then(() => splash.fadeOut())
+        .then(() => {
+          this.connectTrayAndWindow();
+          splash.fadeOut();
+        })
         .catch(ProcessCanceled, () => {
           app.quit();
         })
@@ -337,6 +340,13 @@ class Application {
     const TrayIcon = require('./TrayIcon').default;
     this.mTray = new TrayIcon(this.mExtensions.getApi());
     return Promise.resolve();
+  }
+
+  private connectTrayAndWindow() {
+    const state: IState = this.mStore.getState();
+    if (this.mTray.initialized && state.settings.window.minimizeToTray) {
+      this.mMainWindow.setMinimizesToTray(this.mTray);
+    }
   }
 
   private multiUserPath() {
