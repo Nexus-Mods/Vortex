@@ -19,7 +19,7 @@
 import { addNotification, IDialogResult, showDialog } from '../../actions/notifications';
 
 import { setProgress } from '../../actions/session';
-import { IExtensionContext } from '../../types/IExtensionContext';
+import { IExtensionContext, IExtensionApi } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
 import { SetupError } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
@@ -153,6 +153,23 @@ function activateGame(store: Redux.Store<IState>, gameId: string) {
   }
 }
 
+function deploy(api: IExtensionApi, profileId: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    api.events.emit('deploy-mods',
+      (err: Error) => {
+        if (err === null) {
+          resolve();
+        } else {
+          reject(err);
+        }
+      }, profileId,
+      (text: string, percent: number) => {
+        api.store.dispatch(
+          setProgress('profile', 'deploying', text, percent));
+      });
+  });
+}
+
 export interface IExtensionContextExt extends IExtensionContext {
   registerProfileFile: (gameId: string, filePath: string) => void;
   registerProfileFeature: (featureId: string, type: string, icon: string, label: string,
@@ -271,7 +288,7 @@ function init(context: IExtensionContextExt): boolean {
 
             const profile = state.persistent.profiles[current];
             if ((profile === undefined) && (current !== undefined)) {
-              return Promise.reject('Tried to set invalid profile');
+              return Promise.reject('Tried to set invalid profile');;
             }
 
             if (profile !== undefined) {
@@ -292,8 +309,7 @@ function init(context: IExtensionContextExt): boolean {
             // every listener can return a cb returning a promise which will be
             // awaited before continuing.
             // It would be fun if we could cancel the profile change if one of
-            // these promises
-            // is rejected but that would only work if we could roll back
+            // these promises is rejected but that would only work if we could roll back
             // changes that happened.
             const enqueue = (cb: () => Promise<void>) => {
               queue = queue.then(cb).catch(err => Promise.resolve());
@@ -312,20 +328,10 @@ function init(context: IExtensionContextExt): boolean {
 
             sanitizeProfile(store, profile);
             return queue.then(() => refreshProfile(store, profile, 'export'))
-                .then(() => new Promise((resolve, reject) => {
-                  context.api.events.emit('deploy-mods',
-                    (err: Error) => {
-                      if (err === null) {
-                        resolve();
-                      } else {
-                        reject(err);
-                      }
-                    }, current,
-                    (text: string, percent: number) => {
-                      context.api.store.dispatch(
-                        setProgress('profile', 'deploying', text, percent));
-                    });
-                }))
+                // ensure the old profile is synchronised before we switch, otherwise me might
+                // revert some changes
+                .then(() => deploy(context.api, prev))
+                .then(() => deploy(context.api, current))
                 .then(() => {
                   context.api.store.dispatch(
                     setProgress('profile', 'deploying', undefined, undefined));
