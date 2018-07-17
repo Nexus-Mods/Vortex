@@ -30,6 +30,7 @@ export const BACKUP_TAG = '.vortex_backup';
 interface IDeploymentContext {
   previousDeployment: IDeployment;
   newDeployment: IDeployment;
+  onComplete: () => void;
 }
 
 /**
@@ -46,6 +47,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
   private mApi: IExtensionApi;
   private mNormalize: Normalize;
 
+  private mQueue: Promise<void> = Promise.resolve();
   private mContext: IDeploymentContext;
 
   constructor(id: string, name: string, description: string, api: IExtensionApi) {
@@ -75,15 +77,24 @@ abstract class LinkingActivator implements IDeploymentMethod {
   }
 
   public prepare(dataPath: string, clean: boolean, lastDeployment: IDeployedFile[]): Promise<void> {
-    if (this.mContext !== undefined) {
-      return Promise.reject(new Error('Deployment in progress'));
-    }
-    return getNormalizeFunc(dataPath, { unicode: false, separators: false, relative: false })
-      .then(func => {
-        this.mNormalize = func;
+    let queueResolve: () => void;
+    const queueProm = new Promise<void>(resolve => {
+      queueResolve = resolve;
+    });
+
+    const queue = this.mQueue;
+    this.mQueue = this.mQueue.then(() => queueProm);
+
+    return queue
+      .then(() => {
+        return getNormalizeFunc(dataPath, { unicode: false, separators: false, relative: false });
+      })
+      .then(normalize => {
+        this.mNormalize = normalize;
         this.mContext = {
           newDeployment: {},
           previousDeployment: {},
+          onComplete: queueResolve,
         };
         lastDeployment.forEach(file => {
           const key = this.mNormalize(file.relPath);
@@ -216,11 +227,14 @@ abstract class LinkingActivator implements IDeploymentMethod {
 
           const context = this.mContext;
           this.mContext = undefined;
+          context.onComplete();
           return Object.keys(context.previousDeployment)
               .map(key => context.previousDeployment[key]);
         })
         .tapCatch(() => {
+          const context = this.mContext;
           this.mContext = undefined;
+          context.onComplete();
         });
   }
 
