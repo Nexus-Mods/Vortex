@@ -113,6 +113,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private mNextState: IComponentState = undefined;
   private mNextVisibility: { [id: string]: boolean } = {};
   private mWillSetVisibility: boolean = false;
+  private mMounted: boolean = false;
 
   constructor(props: IProps) {
     super(props);
@@ -151,8 +152,13 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     });
   }
 
+  public componentDidMount() {
+    this.mMounted = true;
+  }
+
   public componentWillUnmount() {
     this.context.api.events.removeAllListeners(this.props.tableId + '-scroll-to');
+    this.mMounted = false;
   }
 
   public componentWillReceiveProps(newProps: IProps) {
@@ -1151,7 +1157,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
   private updateState(newState: IComponentState, callback?: () => void) {
     this.mNextState = newState;
-    this.setState(newState, callback);
+    if (this.mMounted) {
+      this.setState(newState, callback);
+    }
   }
 }
 

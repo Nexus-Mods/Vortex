@@ -99,6 +99,45 @@ describe('setModAttribute', () => {
   });
 });
 
+describe('setModAttributes', () => {
+  it('sets the mod attributes', () => {
+    let input = { gameId1: { modId1: { 'attributes': { attribute1: 'value' } } } };
+    let result = modsReducer.reducers.SET_MOD_ATTRIBUTES(input, { gameId: 'gameId1', modId: 'modId1', attributes: {
+      attribute1: 'new value' }});
+    expect(result).toEqual({ gameId1: { modId1: { attributes: { attribute1: 'new value' } } } });
+  });
+  it('works if there were no attributes before', () => {
+    let input = { gameId1: { modId1: { } } };
+    let result = modsReducer.reducers.SET_MOD_ATTRIBUTES(input, { gameId: 'gameId1', modId: 'modId1', attributes: {
+      attribute1: 'new value' }});
+    expect(result).toEqual({ gameId1: { modId1: { attributes: { attribute1: 'new value' } } } });
+  });
+  it('fails if the game doesn\'t exist', () => {
+    let input = { gameId1: { modId1: { 'attributes': { attribute1: 'value' } } } };
+    let result = modsReducer.reducers.SET_MOD_ATTRIBUTES(input, { gameId: 'gameId2', modId: 'modId1', attributes: {
+      attribute1: 'new value' }});
+    expect(result).toEqual({ gameId1: { modId1: { attributes: { attribute1: 'value' } } } });
+  });
+  it('affects only the right game', () => {
+    let input = { gameId1: { modId1: { 'attributes': { attribute1: 'value' } } }, gameId2: { modId1: { 'attributes': { attribute1: 'value' } } } };
+    let result = modsReducer.reducers.SET_MOD_ATTRIBUTES(input, { gameId: 'gameId1', modId: 'modId1', attributes: {
+      attribute1: 'new value' }});
+    expect(result).toEqual({ gameId1: { modId1: { 'attributes': { attribute1: 'new value' } } }, gameId2: { modId1: { 'attributes': { attribute1: 'value' } } } });
+  });
+  it('can set multiple attributes', () => {
+    let input = { gameId1: { modId1: { 'attributes': { attribute1: 'value' } } } };
+    let result = modsReducer.reducers.SET_MOD_ATTRIBUTES(input, { gameId: 'gameId1', modId: 'modId1', attributes: {
+      attribute1: 'new value', attribute2: 'value2' }});
+    expect(result).toEqual({ gameId1: { modId1: { attributes: { attribute1: 'new value', attribute2: 'value2' } } } });
+  });
+  it('doesn\'t change unaffected attributes', () => {
+    let input = { gameId1: { modId1: { 'attributes': { attribute1: 'value' } } } };
+    let result = modsReducer.reducers.SET_MOD_ATTRIBUTES(input, { gameId: 'gameId1', modId: 'modId1', attributes: {
+      attribute2: 'value2', attribute3: 'value3' }});
+    expect(result).toEqual({ gameId1: { modId1: { attributes: { attribute1: 'value', attribute2: 'value2', attribute3: 'value3' } } } });
+  });
+});
+
 describe('setModState', () => {
   it('sets the mod state', () => {
     let input = { gameId1: { modId1: { 'state': 'value' } } };

@@ -159,7 +159,7 @@ function runElevated(ipcPath: string, func: (ipc: any, req: NodeRequireFunction)
     }
   }
   return new Bluebird((resolve, reject) => {
-    tmp.file((err: any, tmpPath: string, fd: number, cleanup: () => void) => {
+    tmp.file((err: Error, tmpPath: string, fd: number, cleanup: () => void) => {
       if (err) {
         return reject(err);
       }
@@ -187,7 +187,7 @@ function runElevated(ipcPath: string, func: (ipc: any, req: NodeRequireFunction)
         ${mainBody}\n
       `;
 
-      fs.write(fd, prog, (writeErr: any, written: number, str: string) => {
+      fs.write(fd, prog, (writeErr: Error, written: number, str: string) => {
         if (writeErr) {
           cleanup();
           return reject(writeErr);

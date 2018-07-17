@@ -54,7 +54,7 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, id, notifications } = this.props;
+    const { t, notifications } = this.props;
 
     const collapsed: { [groupId: string]: number } = {};
 

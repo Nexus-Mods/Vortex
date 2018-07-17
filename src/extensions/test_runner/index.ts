@@ -30,10 +30,8 @@ import {CheckFunction, IExtensionApi, IExtensionContext} from '../../types/IExte
 import {INotificationAction} from '../../types/INotification';
 import { log } from '../../util/log';
 import { activeProfile } from '../../util/selectors';
-import { deleteOrNop, getSafe, setSafe } from '../../util/storeHelper';
+import { getSafe } from '../../util/storeHelper';
 import { setdefault } from '../../util/util';
-
-import { ITestResult } from '../../types/ITestResult';
 
 import * as Promise from 'bluebird';
 

@@ -1,4 +1,4 @@
-import { addNotification, dismissNotification } from '../../actions/notifications';
+import { addNotification, dismissNotification, updateNotification } from '../../actions/notifications';
 import { IExtensionApi } from '../../types/IExtensionContext';
 import { INotification } from '../../types/INotification';
 import { IState } from '../../types/IState';
@@ -16,6 +16,7 @@ import {
   setModInstallationPath,
   setModState,
   setModType,
+  setModAttributes,
 } from './actions/mods';
 import { IMod, ModState } from './types/IMod';
 
@@ -29,11 +30,13 @@ class InstallContext implements IInstallContext {
   private mAddMod: (mod: IMod) => void;
   private mRemoveMod: (modId: string) => void;
   private mAddNotification: (notification: INotification) => void;
+  private mUpdateNotification: (id: string, progress: number, message: string) => void;
   private mDismissNotification: (id: string) => void;
   private mShowError: (message: string, details?: string | Error, allowReport?: boolean,
                        replace?: { [key: string]: string }) => void;
   private mSetModState: (id: string, state: ModState) => void;
   private mSetModAttribute: (id: string, key: string, value: any) => void;
+  private mSetModAttributes: (id: string, attributes: { [key: string]: any }) => void;
   private mSetModInstallationPath: (id: string, installPath: string) => void;
   private mSetModType: (id: string, modType: string) => void;
   private mEnableMod: (modId: string) => void;
@@ -55,6 +58,8 @@ class InstallContext implements IInstallContext {
     this.mRemoveMod = (modId) => dispatch(removeMod(gameMode, modId));
     this.mAddNotification = (notification) =>
       dispatch(addNotification(notification));
+    this.mUpdateNotification = (id: string, progress: number, message: string) =>
+      dispatch(updateNotification(id, progress, message));
     this.mDismissNotification = (id) =>
       dispatch(dismissNotification(id));
     this.mShowError = (message, details?, allowReport?, replace?) =>
@@ -66,6 +71,16 @@ class InstallContext implements IInstallContext {
         dispatch(setModAttribute(gameMode, id, key, value));
       }
     };
+    this.mSetModAttributes = (id, attributes) => {
+      Object.keys(attributes).forEach(id => {
+        if (attributes[id] === undefined) {
+          delete attributes[id];
+        }
+      });
+      if (Object.keys(attributes).length > 0) {
+        dispatch(setModAttributes(gameMode, id, attributes));
+      }
+    }
     this.mSetModInstallationPath = (id, installPath) =>
       dispatch(setModInstallationPath(gameMode, id, installPath));
     this.mSetModType = (id, modType) =>
@@ -120,15 +135,11 @@ class InstallContext implements IInstallContext {
   public setProgress(percent?: number) {
     if ((percent - this.mLastProgress) >= 2) {
       this.mLastProgress = percent;
-      this.mAddNotification({
-        id: 'install_' + this.mIndicatorId,
-        title: 'Installing {{ id }}',
-        message: percent !== undefined ? 'Extracting' : 'Installing',
-        progress: percent,
-        replace: { id: this.mIndicatorId },
-        type: 'activity',
-
-      });
+      this.mUpdateNotification(
+        'install_' + this.mIndicatorId,
+        percent,
+        percent !== undefined ? 'Extracting' : 'Installing',
+      );
     }
   }
 
@@ -156,19 +167,19 @@ class InstallContext implements IInstallContext {
     });
     if (outcome === 'success') {
       this.mSetModState(this.mAddedId, 'installed');
-      this.mSetModAttribute(this.mAddedId, 'installTime', new Date());
-      this.mSetModAttribute(this.mAddedId, 'category', info.category);
-      this.mSetModAttribute(this.mAddedId, 'version', info.version);
-      this.mSetModAttribute(this.mAddedId, 'fileId', info.fileId);
-      this.mSetModAttribute(this.mAddedId, 'newestFileId', info.fileId);
-      this.mSetModAttribute(this.mAddedId, 'changelog', info.changelog);
-      this.mSetModAttribute(this.mAddedId, 'endorsed', undefined);
-      this.mSetModAttribute(this.mAddedId, 'bugMessage', '');
 
-      if (info !== undefined) {
-        Object.keys(info).forEach(
-          (key: string) => { this.mSetModAttribute(this.mAddedId, key, info[key]); });
-      }
+      this.mSetModAttributes(this.mAddedId, {
+        installTime: new Date(),
+        category: info.category,
+        version: info.version,
+        fileId: info.fileId,
+        newestFileId: info.fileId,
+        changelog: info.changelog,
+        endorsed: undefined,
+        bugMessage: '',
+        ...info,
+      });
+
       this.mSetDownloadInstalled(this.mArchiveId, this.mGameId, this.mAddedId);
     } else {
       this.mFailReason = reason;

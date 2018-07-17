@@ -67,6 +67,7 @@ import * as Promise from 'bluebird';
 import { genHash } from 'modmeta-db';
 import * as path from 'path';
 import * as Redux from 'redux';
+import { updateNotification } from '../../actions';
 
 const activators: IDeploymentMethod[] = [];
 
@@ -256,13 +257,7 @@ function genUpdateModDeployment() {
       if (progressCB !== undefined) {
         progressCB(text, percent);
       }
-      api.sendNotification({
-        id: notificationId,
-        type: 'activity',
-        message: text,
-        title: t('Deploying'),
-        progress: percent,
-      });
+      api.store.dispatch(updateNotification(notificationId, percent, text));
     };
     const state = api.store.getState();
     let profile = profileId !== undefined

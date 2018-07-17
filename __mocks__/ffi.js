@@ -13,7 +13,7 @@ module.exports = {
         async: (...args) => {
           const callback = args[args.length - 1];
           if (error) {
-            return callback(error);
+            return callback(new Error(error));
           }
           return callback(null, 42);
         }

@@ -35,6 +35,13 @@ export const setModAttribute = safeCreateAction('SET_MOD_ATTRIBUTE',
     ({ gameId, modId, attribute, value }));
 
 /**
+ * set multiple mod attributes at once
+ */
+export const setModAttributes = safeCreateAction('SET_MOD_ATTRIBUTES',
+  (gameId: string, modId: string, attributes: { [attribute: string]: any }) =>
+    ({ gameId, modId, attributes }));
+
+/**
  * sets the type of a mod
  */
 export const setModType = safeCreateAction('SET_MOD_TYPE',

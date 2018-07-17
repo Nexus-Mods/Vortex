@@ -1,6 +1,7 @@
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
 import { getNormalizeFunc, Normalize, UserCanceled } from '../../util/api';
+import Debouncer from '../../util/Debouncer';
 import * as fs from '../../util/fs';
 import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
@@ -19,6 +20,7 @@ import {
   setDownloadInterrupted,
   setDownloadModInfo,
   setDownloadSpeed,
+  setDownloadSpeeds,
 } from './actions/state';
 import { settingsReducer } from './reducers/settings';
 import { stateReducer } from './reducers/state';
@@ -430,12 +432,19 @@ function init(context: IExtensionContextExt): boolean {
     });
 
     {
+      let speedsDebouncer = new Debouncer(() => {
+        store.dispatch(setDownloadSpeeds(store.getState().persistent.downloads.speedHistory));
+        return null;
+      }, 10000, false);
       manager = new DownloadManagerImpl(
           selectors.downloadPath(store.getState()),
           store.getState().settings.downloads.maxParallelDownloads,
           store.getState().settings.downloads.maxChunks, (speed: number) => {
             if ((speed !== 0) || (store.getState().persistent.downloads.speed !== 0)) {
+              // this first call is only applied in the renderer for performance reasons
               store.dispatch(setDownloadSpeed(speed));
+              // this schedules the main progress to be updated
+              speedsDebouncer.schedule();
             }
           }, `Nexus Client v2.${app.getVersion()}`);
       observer =

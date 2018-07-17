@@ -1,6 +1,5 @@
 import Icon from '../../../controls/Icon';
 import { Table, TD, TR } from '../../../controls/table/MyTable';
-import { Icon as TooltipIcon, IconButton } from '../../../controls/TooltipControls';
 import { ComponentEx } from '../../../util/ComponentEx';
 import * as fs from '../../../util/fs';
 import { getSafe } from '../../../util/storeHelper';
@@ -53,12 +52,14 @@ interface IComponentState {
  * @extends {React.Component<IConnectedProps, {}>}
  */
 class ProfileItem extends ComponentEx<IProps, IComponentState> {
+  private mUserData: string;
   constructor(props: IProps) {
     super(props);
     this.initState({
       hasProfileImage: false,
       counter: 0,
     });
+    this.mUserData = remote.app.getPath('userData');
   }
 
   public componentWillMount() {
@@ -227,7 +228,7 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
   private get imagePath(): string {
     const { profile } = this.props;
     return path.join(
-      remote.app.getPath('userData'), profile.gameId, 'profiles', profile.id, 'banner.png');
+      this.mUserData, profile.gameId, 'profiles', profile.id, 'banner.png');
   }
 
   private cloneProfile = () => {

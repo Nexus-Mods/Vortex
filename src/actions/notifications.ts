@@ -22,6 +22,9 @@ const identity = input => input;
  */
 export const startNotification = safeCreateAction('ADD_NOTIFICATION', identity);
 
+export const updateNotification = safeCreateAction('UPDATE_NOTIFICATION',
+  (id: string, progress: number, message: string) => ({ id, progress, message }), () => ({ forward: false }));
+
 /**
  * dismiss a notification. Takes the id of the notification
  */
@@ -131,8 +134,10 @@ export function addNotification(notification: INotification) {
 export function dismissNotification(id: string) {
   return dispatch => new Promise<void>((resolve, reject) => {
     delete timers[id];
-    delete notificationActions[id];
-    dispatch(stopNotification(id));
+    if (notificationActions[id] !== undefined) {
+      delete notificationActions[id];
+      dispatch(stopNotification(id));
+    }
     resolve();
   });
 }

@@ -5,7 +5,7 @@ import { ComponentEx } from '../util/ComponentEx';
 
 import * as I18next from 'i18next';
 import * as React from 'react';
-import { Alert, Button } from 'react-bootstrap';
+import { Button } from 'react-bootstrap';
 import { fireNotificationAction } from '../actions';
 
 interface IActionProps {
