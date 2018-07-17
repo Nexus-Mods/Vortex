@@ -164,7 +164,7 @@ class Application {
         // end initialization
         .then(() => {
           this.connectTrayAndWindow();
-          splash.fadeOut();
+          return splash.fadeOut();
         })
         .catch(ProcessCanceled, () => {
           app.quit();

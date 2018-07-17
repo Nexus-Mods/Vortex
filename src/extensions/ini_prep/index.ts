@@ -19,7 +19,7 @@ import renderINITweaks from './TweakList';
 import * as Promise from 'bluebird';
 import { TranslationFunction } from 'i18next';
 import * as path from 'path';
-import IniParser, {IniFile, WinapiFormat} from 'vortex-parse-ini';
+import IniParser, {WinapiFormat} from 'vortex-parse-ini';
 
 function ensureIniBackups(t: TranslationFunction, gameMode: string,
                           discovery: IDiscoveryResult): Promise<void> {

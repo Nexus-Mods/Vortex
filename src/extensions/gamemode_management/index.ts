@@ -75,8 +75,7 @@ const gameExHandler = {
         };
       };
     } else if (key === 'modTypes') {
-      const applicableExtensions = modTypeExtensions.filter(ex => ex.isSupported(target.id));
-      return applicableExtensions;
+      return modTypeExtensions.filter(ex => ex.isSupported(target.id));
     } else {
       return target[key];
     }

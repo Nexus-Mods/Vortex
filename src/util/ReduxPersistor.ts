@@ -90,23 +90,22 @@ class ReduxPersistor<T> {
     const newState = this.mStore.getState();
 
     this.mUpdateQueue = this.mUpdateQueue
-      .then(() => {
-        this.doProcessChange(oldState, newState);
-      });
+      .then(() => this.doProcessChange(oldState, newState));
   }
 
   private doProcessChange(oldState: any, newState: any) {
-    if (oldState !== newState) {
-      this.mPersistedState = newState;
-      this.storeDiffHive(oldState, newState)
-        .catch(err => {
-          // this should really never go wrong
-          terminate({
-            message: 'Failed to store application state',
-            stack: err.stack,
-          }, undefined);
-        });
+    if (oldState === newState) {
+      return Promise.resolve();
     }
+    this.mPersistedState = newState;
+    return this.storeDiffHive(oldState, newState)
+      .catch(err => {
+        // this should really never go wrong
+        terminate({
+          message: 'Failed to store application state',
+          stack: err.stack,
+        }, undefined);
+      });
   }
 
   private isObject(state: any): boolean {
