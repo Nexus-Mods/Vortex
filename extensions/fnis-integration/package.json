@@ -1,0 +1,38 @@
+{
+  "name": "fnis-integration",
+  "version": "0.0.1",
+  "description": "Keeps animation data updated and local to the profile",
+  "main": "./out/index.js",
+  "repository": "",
+  "scripts": {
+    "webpack": "node ./node_modules/webpack/bin/webpack --config webpack.config.js --display-error-details --progress --profile --color",
+    "build": "npm run webpack && extractInfo"
+  },
+  "author": "Black Tree Gaming Ltd",
+  "license": "GPL-3.0",
+  "babel": {
+    "presets": [
+      "es2015"
+    ]
+  },
+  "devDependencies": {
+    "@types/bluebird": "3.5.20",
+    "@types/i18next": "^8.4.3",
+    "@types/node": "^10.3.4",
+    "@types/react-bootstrap": "^0.32.10",
+    "@types/react-dom": "^16.0.6",
+    "@types/react-i18next": "^7.6.1",
+    "@types/redux": "^3.6.0",
+    "@types/redux-thunk": "^2.1.0",
+    "@types/semver": "^5.5.0",
+    "babel-core": "^6.26.3",
+    "babel-loader": "^7.1.4",
+    "copyfiles": "^2.0.0",
+    "react-redux": "^5.0.7",
+    "redux-act": "^1.7.4",
+    "ts-loader": "^3.0.0",
+    "typescript": "^2.9.2",
+    "vortex-api": "Nexus-Mods/vortex-api#0.16.0",
+    "webpack": "^3.5.5"
+  }
+}
