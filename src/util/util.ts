@@ -71,7 +71,6 @@ export function writeFileAtomic(filePath: string, data: string | Buffer | Uint8A
   .tapCatch(() => {
     cleanup();
   })
-  .then(() => fs.removeAsync(filePath))
   .then(() => fs.renameAsync(tmpPath, filePath));
 }
 

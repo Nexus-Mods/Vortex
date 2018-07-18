@@ -193,7 +193,7 @@ class StarterInfo implements IStarterInfo {
       this.workingDirectory = toolDiscovery.workingDirectory !== undefined
         ? toolDiscovery.workingDirectory
         : path.dirname(toolDiscovery.path || '');
-      this.shell = getSafe(toolDiscovery, ['shell'], tool.shell);
+      this.shell = getSafe(toolDiscovery, ['shell'], getSafe(tool, ['shell'], undefined));
     } else {
       // defaults for undiscovered & unconfigured tools
       this.name = tool.name;
