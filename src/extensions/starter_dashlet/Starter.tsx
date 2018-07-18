@@ -4,15 +4,16 @@ import Dropdown from '../../controls/Dropdown';
 import EmptyPlaceholder from '../../controls/EmptyPlaceholder';
 import Icon from '../../controls/Icon';
 import Spinner from '../../controls/Spinner';
+import { IconButton } from '../../controls/TooltipControls';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../types/IDialog';
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
 import { ComponentEx, connect } from '../../util/ComponentEx';
-import { MissingInterpreter, UserCanceled } from '../../util/CustomErrors';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import { activeGameId } from '../../util/selectors';
-import StarterInfo from '../../util/StarterInfo';
+import StarterInfo, { IStarterInfo } from '../../util/StarterInfo';
 import { getSafe } from '../../util/storeHelper';
+import { truthy } from '../../util/util';
 
 import {
   addDiscoveredTool,
@@ -32,14 +33,12 @@ import ToolEditDialogT from './ToolEditDialog';
 let ToolEditDialog: typeof ToolEditDialogT;
 
 import * as Promise from 'bluebird';
-import * as update from 'immutability-helper';
-import * as path from 'path';
 import * as React from 'react';
-import { Col, Grid, Media, MenuItem, Row } from 'react-bootstrap';
+import { Media, MenuItem } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
 import * as Redux from 'redux';
 import { generate as shortid } from 'shortid';
-import { IconButton } from '../../controls/TooltipControls';
+import { remote } from 'electron';
 
 interface IWelcomeScreenState {
   editTool: StarterInfo;
@@ -79,6 +78,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
       tools: this.generateToolStarters(props),
       discovering: false,
     });
+    this.updateJumpList(this.state.tools);
   }
 
   public componentDidMount() {
@@ -100,6 +100,8 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
        || (nextProps.gameMode !== this.props.gameMode)
        || (nextProps.knownGames !== this.props.knownGames)) {
       this.nextState.tools = this.generateToolStarters(nextProps);
+
+      this.updateJumpList(this.nextState.tools);
    }
   }
 
@@ -119,7 +121,6 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
     } else {
       const game: IGameStored = knownGames.find((ele) => ele.id === gameMode);
       const discoveredGame = discoveredGames[gameMode];
-      const gameName = getSafe(discoveredGame, ['name'], getSafe(game, ['name'], gameMode));
       content = (
         <Media id='starter-dashlet'>
           <Media.Left>
@@ -158,16 +159,12 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
   }
 
   private renderToolIcons(game: IGameStored, discoveredGame: IDiscoveryResult): JSX.Element {
-    const { discoveredTools, primaryTool } = this.props;
+    const { discoveredTools } = this.props;
     const { tools } = this.state;
 
     if ((game === undefined) && (getSafe(discoveredGame, ['id'], undefined) === undefined)) {
       return null;
     }
-
-    const gameId = discoveredGame.id || game.id;
-    const knownTools: IToolStored[] = getSafe(game, ['supportedTools'], []);
-    const preConfTools = new Set<string>(knownTools.map(tool => tool.id));
 
     const visible = tools.filter(starter =>
       starter.isGame
@@ -244,9 +241,6 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
       return null;
     }
 
-    const isPrimary = (starter.id === primaryTool)
-      || ((primaryTool === undefined) && starter.isGame);
-
     return (
       <ToolButton
         t={t}
@@ -316,6 +310,22 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
       });
 
     return starters;
+  }
+
+  private updateJumpList(starters: IStarterInfo[]) {
+    const userTasks = starters
+      .filter(starter =>
+        (truthy(starter.exePath))
+        && (Object.keys(starter.environment).length === 0))
+      .map(starter => ({
+        arguments: starter.commandLine.join(' '),
+        description: starter.name,
+        iconIndex: 0,
+        iconPath: starter.iconPath,
+        program: starter.exePath,
+        title: starter.name,
+      }));
+    remote.app.setUserTasks(userTasks);
   }
 
   private startGame = () => {
