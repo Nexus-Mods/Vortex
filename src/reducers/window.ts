@@ -17,8 +17,6 @@ export const windowReducer: IReducerSpec = {
       setSafe(state, ['tabsMinimized'], payload),
     [actions.setCustomTitlebar as any]: (state, payload) =>
       setSafe(state, ['customTitlebar'], payload),
-    [actions.setMinimizeToTray as any]: (state, payload) =>
-      setSafe(state, ['minimizeToTray'], payload)
   },
   defaults: {
     maximized: false,
@@ -26,6 +24,5 @@ export const windowReducer: IReducerSpec = {
     size: {},
     tabsMinimized: false,
     customTitlebar: true,
-    minimizeToTray: true,
   },
 };

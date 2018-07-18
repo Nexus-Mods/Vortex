@@ -26,5 +26,3 @@ export const setMaximized = safeCreateAction('SET_MAXIMIZED', identity);
 export const setTabsMinimized = safeCreateAction('SET_TABS_MINIMIZED', identity);
 
 export const setCustomTitlebar = safeCreateAction('SET_CUSTOM_TITLEBAR', identity);
-
-export const setMinimizeToTray = safeCreateAction('SET_MINIMIZE_TO_TRAY', identity);

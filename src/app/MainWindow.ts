@@ -110,11 +110,7 @@ class MainWindow {
     });
   }
 
-  public setMinimizesToTray(tray: TrayIcon) {
-    this.mWindow.on('minimize', (event) => {
-      event.preventDefault();
-      this.mWindow.hide();
-    });
+  public connectToTray(tray: TrayIcon) {
     tray.setMainWindow(this.mWindow);
   }
 

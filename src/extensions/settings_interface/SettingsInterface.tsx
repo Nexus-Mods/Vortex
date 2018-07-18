@@ -1,5 +1,5 @@
 import { showDialog } from '../../actions/notifications';
-import { setCustomTitlebar, setMinimizeToTray } from '../../actions/window';
+import { setCustomTitlebar } from '../../actions/window';
 
 import More from '../../controls/More';
 import Toggle from '../../controls/Toggle';
@@ -50,7 +50,6 @@ interface IActionProps {
   onShowDialog: (type: DialogType, title: string,
                  content: IDialogContent, actions: DialogActions) => Promise<IDialogResult>;
   onSetCustomTitlebar: (enable: boolean) => void;
-  onSetMinimizeToTray: (enable: boolean) => void;
 }
 
 interface IState {
@@ -61,7 +60,6 @@ type IProps = IActionProps & IConnectedProps;
 
 class SettingsInterface extends ComponentEx<IProps, IState> {
   private mInitialTitlebar: boolean;
-  private mMinimizeToTray: boolean;
 
   constructor(props: IProps) {
     super(props);
@@ -70,7 +68,6 @@ class SettingsInterface extends ComponentEx<IProps, IState> {
       languages: [],
     };
     this.mInitialTitlebar = props.customTitlebar;
-    this.mMinimizeToTray = props.minimizeToTray;
   }
 
   public componentDidMount() {
@@ -118,8 +115,7 @@ class SettingsInterface extends ComponentEx<IProps, IState> {
     const { t, advanced, autoDeployment, currentLanguage,
             customTitlebar, minimizeToTray, profilesVisible } = this.props;
 
-    const needRestart = (customTitlebar !== this.mInitialTitlebar)
-                     || (minimizeToTray !== this.mMinimizeToTray);
+    const needRestart = (customTitlebar !== this.mInitialTitlebar);
 
     const restartNotification = needRestart ? (
       <HelpBlock>
@@ -151,12 +147,6 @@ class SettingsInterface extends ComponentEx<IProps, IState> {
                 onToggle={this.toggleCustomTitlebar}
               >
                 {t('Custom Window Titlebar')}
-              </Toggle>
-              <Toggle
-                checked={minimizeToTray}
-                onToggle={this.toggleMinimizeToTray}
-              >
-                {t('Minimize To Tray')}
               </Toggle>
             </div>
           </div>
@@ -231,11 +221,6 @@ class SettingsInterface extends ComponentEx<IProps, IState> {
     onSetAutoDeployment(!autoDeployment);
   }
 
-  private toggleMinimizeToTray = () => {
-    const { minimizeToTray, onSetMinimizeToTray } = this.props;
-    onSetMinimizeToTray(!minimizeToTray);
-  }
-
   private toggleProfiles = () => {
     const { t, profilesVisible, onSetProfilesVisible, onShowDialog } = this.props;
     if (profilesVisible) {
@@ -299,8 +284,6 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
       dispatch(showDialog(type, title, content, actions)),
     onSetCustomTitlebar: (enable: boolean) =>
       dispatch(setCustomTitlebar(enable)),
-    onSetMinimizeToTray: (enable: boolean) =>
-      dispatch(setMinimizeToTray(enable)),
   };
 }
 

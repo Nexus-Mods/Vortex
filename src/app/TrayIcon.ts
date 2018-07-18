@@ -37,7 +37,9 @@ class TrayIcon {
 
   public setMainWindow(window: BrowserWindow) {
     this.mTrayIcon.on('click', () => {
-      if (!window.isVisible()) {
+      if (window.isVisible()) {
+        window.hide();
+      } else {
         window.show();
       }
     });
