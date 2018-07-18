@@ -3,16 +3,13 @@ import EmptyPlaceholder from '../../controls/EmptyPlaceholder';
 import Icon from '../../controls/Icon';
 import bbcode from '../../util/bbcode';
 import { ComponentEx, translate } from '../../util/ComponentEx';
+import opn from '../../util/opn';
 
 import rss, {IFeedMessage} from './rss';
 
-import {} from 'opn';
 import * as React from 'react';
 import { Alert, ListGroup, ListGroupItem } from 'react-bootstrap';
 import { getSafe } from '../../util/storeHelper';
-
-// tslint:disable-next-line:no-var-requires
-const opn = require('opn');
 
 export interface IExtra {
   attribute: string;

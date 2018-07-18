@@ -1,17 +1,14 @@
 import More from '../../../controls/More';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
+import opn from '../../../util/opn';
 import { getSafe } from '../../../util/storeHelper';
 import { setMaxDownloads } from '../actions/settings';
 
 import getText from '../texts';
 
-import {} from 'opn';
 import * as React from 'react';
 import { Button, ControlLabel, FormControl, FormGroup } from 'react-bootstrap';
 import * as Redux from 'redux';
-
-// tslint:disable-next-line:no-var-requires
-const opn = require('opn');
 
 interface IConnectedProps {
   parallelDownloads: number;

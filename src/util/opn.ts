@@ -1,10 +1,7 @@
 import * as Promise from 'bluebird';
-import { ChildProcess } from 'child_process';
 import {} from 'ffi';
 import opn = require('opn');
 import * as refT from 'ref';
-import * as structT from 'ref-struct';
-import * as uniontypeT from 'ref-union';
 
 let voidPtr: refT.Type;
 let shell32;
@@ -44,18 +41,20 @@ function initTypes() {
 function open(target: string, wait?: boolean): Promise<void> {
   initTypes();
 
-  if (shell32 !== undefined) {
+  // TODO: can't implement wait behaviour with ShellExecute, would require ShellExecuteEx
+  //   and then we can't get at error codes because GetLastError doesn't work with ffi...
+  if ((shell32 !== undefined) && !wait) {
     return new Promise<void>((resolve, reject) => {
       shell32.ShellExecuteA.async(null, 'open', target, null,
-                                  null, 5, (execErr: any, res: any) => {
-        if (execErr !== null) {
-          return reject(execErr);
-        }
-        if (res <= 32) {
-          return reject(new Win32Error('ShellExecute failed', res));
-        }
-        return resolve();
-      });
+        null, 5, (execErr: any, res: any) => {
+          if (execErr !== null) {
+            return reject(execErr);
+          }
+          if (res <= 32) {
+            return reject(new Win32Error('ShellExecute failed', res));
+          }
+          return resolve();
+        });
     });
   } else {
     return Promise.resolve(opn(target, {
