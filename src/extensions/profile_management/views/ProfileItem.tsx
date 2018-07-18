@@ -1,5 +1,6 @@
-import Icon from '../../../controls/Icon';
+import { ActionDropdown } from '../../../controls/api';
 import { Table, TD, TR } from '../../../controls/table/MyTable';
+import { IActionDefinition } from '../../../types/api';
 import { ComponentEx } from '../../../util/ComponentEx';
 import * as fs from '../../../util/fs';
 import { getSafe } from '../../../util/storeHelper';
@@ -15,14 +16,6 @@ import { nativeImage, remote } from 'electron';
 import * as I18next from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
-import { MenuItem, SplitButton } from 'react-bootstrap';
-
-interface IActionEntry {
-  id: string;
-  icon: string;
-  text: string;
-  action: () => void;
-}
 
 export interface IProps {
   t: I18next.TranslationFunction;
@@ -126,23 +119,27 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
               supported: () => true,
               description: t('Number of Mods enabled'),
             }, enabledMods)}
+            {this.renderFeatureWithValue({
+              id: profile.id + 'id',
+              label: t('ID'),
+              icon: '',
+              type: 'string',
+              supported: () => true,
+              description: t('Internal ID of this profile'),
+            }, profile.id)}
 
             {features.map(this.renderFeature)}
           </Table>
         </div>
         <div className='profile-actions'>
-          <SplitButton
-            id={`profile-${profile.id}-actions`}
-            title={(
-              <div>
-                <Icon name={actions[0].icon} />
-                {actions[0].text}
-              </div>
-            )}
-            onClick={actions[0].action}
-          >
-            {this.renderActions(actions.slice(1))}
-          </SplitButton>
+          <ActionDropdown
+            group='profile-actions'
+            orientation='vertical'
+            className='menubar'
+            staticElements={actions}
+            buttonType='both'
+            instanceId={profile.id}
+          />
           <TransferIcon
             t={t}
             disabled={!available}
@@ -154,33 +151,23 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private getActions(): IActionEntry[] {
-    const { t, active, available, profile } = this.props;
+  private getActions(): IActionDefinition[] {
+    const { t, active, available } = this.props;
 
-    const res = [];
+    const res: IActionDefinition[] = [];
     if (!active && available) {
-      res.push({ id: 'enable', icon: 'activate', text: t('Enable'), action: this.activate });
+      res.push({ icon: 'activate', title: t('Enable'), action: this.activate });
     }
     if (available) {
-      res.push({ id: 'edit', icon: 'edit', text: t('Edit'), action: this.startEditing });
-      res.push({ id: 'clone', icon: 'clone', text: t('Clone'), action: this.cloneProfile });
+      res.push({ icon: 'edit', title: t('Edit'), action: this.startEditing });
+      res.push({ icon: 'clone', title: t('Clone'), action: this.cloneProfile });
     }
-    res.push({ id: 'remove', icon: 'remove', text: t('Remove'), action: this.removeProfile });
+    res.push({ icon: 'remove', title: t('Remove'), action: this.removeProfile });
     return res;
   }
 
-  private renderActions(actions: IActionEntry[]): JSX.Element[] {
-    const { t, active, available, profile } = this.props;
-    return actions.map(action => (
-      <MenuItem key={action.id} onClick={action.action} >
-        <Icon name={action.icon} />
-        {action.text}
-      </MenuItem>
-    ));
-  }
-
   private renderFeature = (feature: IProfileFeature): JSX.Element => {
-    const { t, profile } = this.props;
+    const { profile } = this.props;
     const value = getSafe(profile, ['features', feature.id], undefined);
     return this.renderFeatureWithValue(feature, value);
   }
