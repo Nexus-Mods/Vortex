@@ -294,19 +294,13 @@ class TableRow extends React.Component<IRowProps, IRowState> {
   }
 
   private renderPlaceholder = (): React.ReactNode => {
-    const { data, domRef } = this.props;
     return (
       <TD>{'\u00A0'}</TD>
     );
   }
 
   private renderRow = (): React.ReactNode => {
-    const { actions, attributes, data, domRef, tableId } = this.props;
-
-    if (actions !== undefined) {
-      const rowActions = actions.filter((action) =>
-        (action.singleRowAction === undefined) || action.singleRowAction);
-    }
+    const { actions, attributes, data, tableId } = this.props;
 
     const res = attributes.map(this.renderAttribute);
     const sorted = actions
@@ -320,7 +314,6 @@ class TableRow extends React.Component<IRowProps, IRowState> {
       })
       .sort((lhs, rhs) => lhs.position - rhs.position);
     if (sorted.length > 0) {
-      const def = sorted[0];
       res.push(
         <TD
           style={{ textAlign: 'center' }}
@@ -353,27 +346,6 @@ class TableRow extends React.Component<IRowProps, IRowState> {
 
   private setVisible = (visible: boolean) => {
     this.props.onSetVisible(this.props.data.__id, visible);
-  }
-
-  private selectDefaultAction = (event) => {
-    const { actions, data } = this.props;
-    const action = actions.find(iter => iter.title === event.currentTarget.value);
-    action.action([data.__id]);
-  }
-
-  private selectAction = (eventKey: any) => {
-    const { actions, data } = this.props;
-    const action = actions.find(iter => iter.title === eventKey);
-    action.action([data.__id]);
-  }
-
-  private renderDefault = (action: ITableRowAction) => {
-    return (
-      <div className='table-default-action'>
-        <Icon name={action.icon} />
-        <span>{action.title}</span>
-      </div>
-    );
   }
 
   private renderAttribute = (attribute: ITableAttribute, index: number,
