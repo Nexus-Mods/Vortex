@@ -1,15 +1,16 @@
 import Dashlet from '../../controls/Dashlet';
 import EmptyPlaceholder from '../../controls/EmptyPlaceholder';
 import Icon from '../../controls/Icon';
+import { IconButton } from '../../controls/TooltipControls';
 import bbcode from '../../util/bbcode';
 import { ComponentEx, translate } from '../../util/ComponentEx';
 import opn from '../../util/opn';
+import { getSafe } from '../../util/storeHelper';
 
 import rss, {IFeedMessage} from './rss';
 
 import * as React from 'react';
 import { Alert, ListGroup, ListGroupItem } from 'react-bootstrap';
-import { getSafe } from '../../util/storeHelper';
 
 export interface IExtra {
   attribute: string;
@@ -42,19 +43,7 @@ class RSSDashlet extends ComponentEx<IProps, IComponentState> {
 
   public componentDidMount() {
     this.mMounted = true;
-    rss(this.props.url)
-    .then(result => {
-      if (this.mMounted) {
-        this.setState({
-          messages: result.map(this.transformMessage),
-        });
-    }
-    })
-    .catch((err: Error) => {
-      this.setState({
-        error: err.message,
-      });
-    });
+    this.refresh();
   }
 
   public componentWillUnmount() {
@@ -66,6 +55,13 @@ class RSSDashlet extends ComponentEx<IProps, IComponentState> {
     const { error, messages } = this.state;
     return (
       <Dashlet className='dashlet-news' title={title}>
+        <IconButton
+          className='issues-refresh'
+          icon='refresh'
+          tooltip={t('Refresh Issues')}
+          onClick={this.refresh}
+        />
+
         {error !== undefined ? <Alert>{t('No messages received')}</Alert> : null}
         {((messages || []).length !== 0) ? this.renderMessages(messages) : this.renderPlaceholder()}
       </Dashlet>
@@ -81,6 +77,22 @@ class RSSDashlet extends ComponentEx<IProps, IComponentState> {
         subtext={t('*crickets chirp*')}
       />
     );
+  }
+
+  private refresh = () => {
+    rss(this.props.url)
+    .then(result => {
+      if (this.mMounted) {
+        this.setState({
+          messages: result.map(this.transformMessage),
+        });
+    }
+    })
+    .catch((err: Error) => {
+      this.setState({
+        error: err.message,
+      });
+    });
   }
 
   private transformMessage(input: IFeedMessage): IFeedMessage {
