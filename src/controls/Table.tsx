@@ -1072,16 +1072,16 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     const selection: Set<string> = new Set([rowId, this.state.lastSelected]);
     let selecting = false;
 
-    sortedRows.forEach((iterRow: any) => {
-      let isBracket = (iterRow.id === rowId) || (iterRow.id === this.state.lastSelected);
+    sortedRows.forEach(iterId => {
+      let isBracket = (iterId === rowId) || (iterId === this.state.lastSelected);
       if (!selecting && isBracket) {
         selecting = true;
         isBracket = rowId === this.state.lastSelected;
       }
       if (selecting) {
-        selection.add(iterRow.id);
+        selection.add(iterId);
         if (isBracket) {
-          selecting = false;
+          selecting = false;;
         }
       }
     });
