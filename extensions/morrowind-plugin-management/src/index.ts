@@ -4,7 +4,7 @@ import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 import { selectors, types, util } from 'vortex-api';
-import IniParser, { IniFile, WinapiFormat } from 'vortex-parse-ini';
+import IniParser, { WinapiFormat } from 'vortex-parse-ini';
 
 let watcher: fs.FSWatcher;
 let refresher: util.Debouncer;
@@ -96,7 +96,6 @@ function init(context: types.IExtensionContext) {
   });
 
   context.once(() => {
-    const state: types.IState = context.api.store.getState();
     context.api.events.on('gamemode-activated', (gameMode: string) => {
       if (gameMode === 'morrowind') {
         startWatch(context.api.store.getState());

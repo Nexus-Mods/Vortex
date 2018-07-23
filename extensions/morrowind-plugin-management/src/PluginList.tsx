@@ -2,9 +2,7 @@ import DraggableList from './DraggableList';
 import PluginEntry from './PluginEntry';
 
 import * as React from 'react';
-import { ListGroup, ListGroupItem, Panel } from 'react-bootstrap';
-import { DragSource, DropTarget } from 'react-dnd';
-import HTML5Backend from 'react-dnd-html5-backend';
+import { Panel } from 'react-bootstrap';
 import { translate } from 'react-i18next';
 import { ComponentEx, DNDContainer, FlexLayout, MainPage } from 'vortex-api';
 

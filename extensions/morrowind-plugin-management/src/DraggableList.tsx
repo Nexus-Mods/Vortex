@@ -193,18 +193,6 @@ class DraggableList extends ComponentEx<IProps, IState> {
   private apply = () => {
     this.props.apply(this.state.ordered);
   }
-
-  private setRef = ref => {
-    const { connectDropTarget } = this.props;
-    const node: any = ReactDOM.findDOMNode(ref);
-    connectDropTarget(node);
-  }
-
-  private updateState(props: IProps): IState {
-    return {
-      ordered: props.items,
-    };
-  }
 }
 
 const containerTarget: __ReactDnd.DropTargetSpec<IProps> = {
