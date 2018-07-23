@@ -84,6 +84,9 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
             this.nextState.tag = 'Unknown';
           }
         }
+      })
+      .on('error', err => {
+        log('warn', 'Failed to look up current Vortex releases', err.message);
       });
     }
   }

@@ -732,9 +732,8 @@ export interface IExtensionContext {
    * registers support for a game
    *
    * @param {IGame} game
-   * @param {string} extensionPath path to the extension assets
    */
-  registerGame: (game: IGame, extensionPath: string) => void;
+  registerGame: (game: IGame) => void;
 
   /**
    * registers a provider for general information about a game

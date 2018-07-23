@@ -1,14 +1,11 @@
 import { showDialog } from '../actions/notifications';
-import Icon from '../controls/Icon';
-import { Button, IconButton } from '../controls/TooltipControls';
+import { IconButton } from '../controls/TooltipControls';
 import { IDiscoveryResult } from '../extensions/gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../extensions/gamemode_management/types/IGameStored';
 import { IProfile } from '../extensions/profile_management/types/IProfile';
-import ToolIcon from '../extensions/starter_dashlet/ToolIcon';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../types/IDialog';
 import { IDiscoveredTool } from '../types/IDiscoveredTool';
 import { ComponentEx, connect } from '../util/ComponentEx';
-import { MissingInterpreter } from '../util/CustomErrors';
 import { log } from '../util/log';
 import { showError } from '../util/message';
 import { activeGameId, currentGame, currentGameDiscovery } from '../util/selectors';
@@ -17,7 +14,6 @@ import { getSafe } from '../util/storeHelper';
 
 import * as Promise from 'bluebird';
 import * as I18next from 'i18next';
-import * as path from 'path';
 import * as React from 'react';
 import { DropdownButton, MenuItem } from 'react-bootstrap';
 import * as Redux from 'redux';
@@ -81,7 +77,7 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, discoveredGames, game, knownGames, profiles } = this.props;
+    const { t, game } = this.props;
     const { gameIconCache, starter } = this.state;
 
     if (starter === undefined) {
@@ -121,7 +117,7 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderGameOption = (gameId: string) => {
-    const { t, discoveredGames } = this.props;
+    const { discoveredGames } = this.props;
     const { gameIconCache } = this.state;
 
     if ((gameIconCache === undefined) || (gameIconCache[gameId] === undefined)) {
@@ -176,21 +172,6 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
     } else {
       this.context.api.events.emit('activate-game', gameId);
     }
-  }
-
-  private queryElevate = (name: string) => {
-    const { t, onShowDialog } = this.props;
-    return onShowDialog('question', t('Requires elevation'), {
-      message: t('{{name}} needs to be run as administrator.', {
-          replace: {
-            name,
-          },
-        }),
-      options: {
-        translated: true,
-      },
-    }, [ { label: 'Cancel' }, { label: 'Run as administrator' } ])
-    .then(result => result.action === 'Run as administrator');
   }
 
   private start = () => {

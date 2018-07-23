@@ -408,6 +408,10 @@ class ExtensionManager {
     } else {
       this.mExtensionState = ipcRenderer.sendSync('__get_extension_state');
     }
+    if (remote !== undefined) {
+      const StyleManager = require('./StyleManager').default;
+      this.mStyleManager = new StyleManager(this.mApi);
+    }
     this.mExtensions = this.loadExtensions();
     this.initExtensions();
   }
@@ -690,8 +694,6 @@ class ExtensionManager {
       if (remote !== undefined) {
         // log this only once so we don't spam the log file with this
         log('info', 'init extension', {name: ext.name});
-        const StyleManager = require('./StyleManager').default;
-        this.mStyleManager = new StyleManager(this.mApi);
       }
       this.mContextProxyHandler.setExtension(ext.name, ext.path);
       try {

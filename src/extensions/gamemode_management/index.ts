@@ -384,10 +384,12 @@ function init(context: IExtensionContext): boolean {
 
   context.registerTableAttribute('mods', genModTypeAttribute(context.api));
 
-  context.registerGame = (game: IGame, extensionPath: string) => {
+  // TODO: hack, we need the extension path to get at the assets but this parameter
+  //   is only added internally and not part of the public api
+  context.registerGame = ((game: IGame, extensionPath: string) => {
     game.extensionPath = extensionPath;
     extensionGames.push(game);
-  };
+  }) as any;
 
   context.registerGameInfoProvider =
     (id: string, priority: number, expireMS: number, keys: string[], query: GameInfoQuery) => {
