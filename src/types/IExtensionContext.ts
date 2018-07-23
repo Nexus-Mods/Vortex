@@ -55,7 +55,8 @@ export type RegisterSettings =
   (title: string,
    element: React.ComponentClass<any> | React.StatelessComponent<any>,
    props?: PropsCallback,
-   visible?: () => boolean) => void;
+   visible?: () => boolean,
+   priority?: number) => void;
 
 export type RegisterAction =
   (group: string,
@@ -484,6 +485,19 @@ export interface IExtensionApi {
    * It will also automatically ask the user to authorize elevation if the executable requires it
    */
   runExecutable: (executable: string, args: string[], options: IRunOptions) => Promise<void>;
+
+  /**
+   * emit an event and allow every receiver to return a Promise. This call will only return
+   * after all these Promises are resolved.
+   * Note that errors are ignored atm, if the listener has an error to report, it has do so itself
+   */
+  emitAndAwait: (eventName: string, ...args: any[]) => Promise<void>;
+
+  /**
+   * handle an event emitted with emitAndAwait. The listener can return a promise and the emitter
+   * will only return after all promises from handlers are returned.
+   */
+  onAsync: (eventName: string, listener: (...args: any[]) => Promise<void>) => void;
 }
 
 export interface IStateVerifier {

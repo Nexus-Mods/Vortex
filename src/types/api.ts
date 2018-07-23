@@ -13,6 +13,7 @@ export * from './IState';
 export * from './ITestResult';
 export * from './ITableAttribute';
 export * from './SortDirection';
+export { IDiscoveredTool } from '../types/IDiscoveredTool';
 
 export { IDiscoveryResult } from '../extensions/gamemode_management/types/IDiscoveryResult';
 export { IGameStored } from '../extensions/gamemode_management/types/IGameStored';

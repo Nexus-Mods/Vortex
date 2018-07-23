@@ -235,6 +235,15 @@
     }
   ], [
     {
+      "type": "build-copy",
+      "name": "fnis-integration",
+      "path": "extensions/fnis-integration",
+      "removeModules": ["vortex-api"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
+      "copyTo": "{BUILD_DIR}/bundledPlugins/fnis-integration"
+    }
+  ], [
+    {
       "type": "electron-rebuild",
       "condition": "buildType !== 'out'",
       "name": "node-sass-rebuild",

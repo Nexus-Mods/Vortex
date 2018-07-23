@@ -37,7 +37,7 @@ function showCycles(api: IExtensionApi, cycles: string[][]) {
   ]));
 }
 
-function sortMods(gameId: string, mods: IMod[], api: IExtensionApi): Promise<string[]> {
+function sortMods(gameId: string, mods: IMod[], api: IExtensionApi): Promise<IMod[]> {
   const dependencies = new Graph();
 
   const modMapper = (mod: IMod) => {
@@ -76,7 +76,11 @@ function sortMods(gameId: string, mods: IMod[], api: IExtensionApi): Promise<str
       try {
         const res = alg.topsort(dependencies);
         api.dismissNotification('mod-cycle-warning');
-        return Promise.resolve(res);
+        const lookup = mods.reduce((prev, mod) => {
+          prev[mod.id] = mod;
+          return prev;
+        }, {});
+        return Promise.resolve(res.map(id => lookup[id]));
       } catch (err) {
         // exception type not included in typings
         if (err instanceof (alg.topsort as any).CycleException) {
@@ -91,7 +95,7 @@ function sortMods(gameId: string, mods: IMod[], api: IExtensionApi): Promise<str
             ],
           });
           // return unsorted
-          return Promise.resolve(mods.map(mod => mod.id));
+          return Promise.resolve(mods);
         } else {
           return Promise.reject(err);
         }

@@ -113,7 +113,7 @@ class SettingsInterface extends ComponentEx<IProps, IState> {
 
   public render(): JSX.Element {
     const { t, advanced, autoDeployment, currentLanguage,
-            customTitlebar, minimizeToTray, profilesVisible } = this.props;
+            customTitlebar, profilesVisible } = this.props;
 
     const needRestart = (customTitlebar !== this.mInitialTitlebar);
 
