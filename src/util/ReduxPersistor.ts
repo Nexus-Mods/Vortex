@@ -100,11 +100,12 @@ class ReduxPersistor<T> {
     this.mPersistedState = newState;
     return this.storeDiffHive(oldState, newState)
       .catch(err => {
-        // this should really never go wrong
+        // Only way this has ever gone wrong during alpha is when the disk
+        // is full, which is nothing we can fix.
         terminate({
           message: 'Failed to store application state',
           stack: err.stack,
-        }, undefined);
+        }, undefined, false);
       });
   }
 
