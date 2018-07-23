@@ -8,7 +8,7 @@ import {truthy} from '../../util/util';
 
 import {IDownload} from '../download_management/types/IDownload';
 import {activeGameId} from '../profile_management/selectors';
-import {addMod, removeMod, setModState} from './actions/mods';
+import {addMod, removeMod} from './actions/mods';
 import {setActivator} from './actions/settings';
 import {IDeploymentMethod} from './types/IDeploymentMethod';
 import {IMod} from './types/IMod';
@@ -41,7 +41,9 @@ export function onGameModeActivated(
   const gameDiscovery = state.settings.gameMode.discovered[gameId];
   const game = getGame(gameId);
 
-  if ((gameDiscovery === undefined) || (gameDiscovery.path === undefined)) {
+  if ((gameDiscovery === undefined)
+      || (gameDiscovery.path === undefined)
+      || (game === undefined)) {
     return;
   }
 
