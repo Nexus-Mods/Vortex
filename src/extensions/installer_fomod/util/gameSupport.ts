@@ -13,7 +13,7 @@ function toWordExp(input: string): string {
 
 const gamebryoTopLevel: string[] = ['distantlod', 'textures', 'meshes', 'music', 'shaders', 'video',
       'interface', 'fonts', 'scripts', 'facegen', 'menus', 'lodsettings', 'lsdata', 'sound',
-      'strings', 'trees', 'asi', 'tools'];
+      'strings', 'trees', 'asi', 'tools', 'calientetools'];
 
 const gamebryoPatterns: string[] = [
   '[^/]*\\.esp$',
