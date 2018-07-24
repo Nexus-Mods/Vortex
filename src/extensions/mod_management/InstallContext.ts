@@ -32,7 +32,7 @@ class InstallContext implements IInstallContext {
   private mAddNotification: (notification: INotification) => void;
   private mUpdateNotification: (id: string, progress: number, message: string) => void;
   private mDismissNotification: (id: string) => void;
-  private mShowError: (message: string, details?: string | Error, allowReport?: boolean,
+  private mShowError: (message: string, details?: any, allowReport?: boolean,
                        replace?: { [key: string]: string }) => void;
   private mSetModState: (id: string, state: ModState) => void;
   private mSetModAttribute: (id: string, key: string, value: any) => void;
@@ -200,7 +200,7 @@ class InstallContext implements IInstallContext {
     this.mSetModType(id, modType);
   }
 
-  public reportError(message: string, details?: string | Error, allowReport?: boolean,
+  public reportError(message: string, details?: any, allowReport?: boolean,
                      replace?: { [key: string]: string }): void {
     log('error', 'install error', { message, details, replace });
     this.mShowError(message, details, allowReport, replace);

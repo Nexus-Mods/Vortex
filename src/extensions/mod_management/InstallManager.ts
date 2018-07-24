@@ -297,6 +297,15 @@ class InstallManager {
                              && err.stack.startsWith('UserCanceled: canceled by user'));
         let prom = destinationPath !== undefined
           ? rimrafAsync(destinationPath, { glob: false, maxBusyTries: 1 })
+            .catch(err => {
+              installContext.reportError(
+                'Failed to clean up installation directory, please close Vortex and remove it manually',
+                {
+                  path: destinationPath,
+                  error: err.message,
+                },
+              )
+            })
           : Promise.resolve();
 
         if (installContext !== undefined) {
@@ -388,6 +397,7 @@ class InstallManager {
         installContext.setProgress(percent);
       }
     };
+    process.noAsar = true;
     return this.mTask.extractFull(archivePath, tempPath, {ssc: false},
                                   progress,
                                   () => this.queryPassword(api.store))
@@ -420,7 +430,13 @@ class InstallManager {
                            }
                            return Promise.resolve();
                          }))
-        .then(() => this.getInstaller(fileList, gameId))
+        .finally(() => {
+          process.noAsar = false;
+        })
+        .then(() => {
+          console.log('files', fileList);
+          return this.getInstaller(fileList, gameId);
+        })
         .then(supportedInstaller => {
           if (supportedInstaller === undefined) {
             throw new Error('no installer supporting this file');
