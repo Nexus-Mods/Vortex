@@ -123,28 +123,26 @@ function errorRepeat(code: string, filePath: string): Promise<boolean> {
   }
 }
 
+function restackErr(error: Error, stackErr: Error): Error {
+  error.stack = error.message + '\n' + stackErr.stack;
+  return error;
+}
+
 function errorHandler(error: NodeJS.ErrnoException, stackErr: Error): Promise<void> {
   return errorRepeat(error.code, (error as any).dest || error.path)
-    .then(repeat => {
-      if (repeat) {
-        return Promise.resolve();
-      } else {
-        error.stack = error.message + '\n' + stackErr.stack;
-        return Promise.reject(error);
-      }
-    })
-    .catch(err => {
-      err.stack = err.message + '\n' + stackErr.stack;
-      return Promise.reject(err);
-    });
+    .then(repeat => repeat
+      ? Promise.resolve()
+      : Promise.reject(restackErr(error, stackErr)))
+    .catch(err => Promise.reject(restackErr(err, stackErr)));
 }
+
 function genWrapperAsync<T extends (...args) => any>(func: T): T {
-  const res = (...args) => {
-    const stackErr = new Error();
-    return func(...args)
+  const wrapper = (stackErr: Error, ...args) => 
+    func(...args)
       .catch(err => errorHandler(err, stackErr)
-        .then(() => res(...args)));
-  };
+        .then(() => wrapper(stackErr, ...args)));
+
+  const res = (...args) => wrapper(new Error(), ...args);
   return res as T;
 }
 
@@ -159,7 +157,6 @@ const openAsync = genWrapperAsync(fs.openAsync);
 const readdirAsync = genWrapperAsync(fs.readdirAsync);
 const readFileAsync = genWrapperAsync(fs.readFileAsync);
 const readlinkAsync = genWrapperAsync(fs.readlinkAsync);
-const renameAsync = genWrapperAsync(fs.renameAsync);
 const statAsync = genWrapperAsync(fs.statAsync);
 const symlinkAsync = genWrapperAsync(fs.symlinkAsync);
 const utimesAsync = genWrapperAsync(fs.utimesAsync);
@@ -178,7 +175,6 @@ export {
   readlinkAsync,
   readdirAsync,
   readFileAsync,
-  renameAsync,
   statAsync,
   symlinkAsync,
   utimesAsync,
@@ -190,8 +186,7 @@ export function ensureDirSync(dirPath: string) {
   try {
     fs.ensureDirSync(dirPath);
   } catch (err) {
-    err.stack = err.stack + '\n' + (new Error().stack);
-    throw err;
+    throw restackErr(err, new Error());
   }
 }
 
@@ -209,8 +204,7 @@ export function ensureDirAsync(dirPath: string): Promise<void> {
       if (err.code === 'EEXIST') {
         return Promise.resolve();
       }
-      err.stack = err.message + '\n' + stackErr.stack;
-      return Promise.reject(err);
+      return Promise.reject(restackErr(err, stackErr));
     });
 }
 
@@ -226,17 +220,13 @@ export function copyAsync(src: string, dest: string,
       if (stats[0].ino === stats[1].ino) {
         const err = new Error(
           `Source "${src}" and destination "${dest}" are the same file (id "${stats[0].ino}").`);
-        err.stack = err.message + '\n' + stackErr.stack;
-        return Promise.reject(err);
+        return Promise.reject(restackErr(err, stackErr));
       } else {
         return Promise.resolve();
       }
     })
     .then(() => copyInt(src, dest, options || undefined, stackErr))
-    .catch(err => {
-      err.stack = err.message + '\n' + stackErr.stack;
-      return Promise.reject(err);
-    });
+    .catch(err => Promise.reject(restackErr(err, stackErr)));
 }
 
 function copyInt(
@@ -274,6 +264,23 @@ function unlinkInt(dirPath: string, stackErr: Error): Promise<void> {
           .then(() => unlinkInt(dirPath, stackErr)));
 }
 
+export function renameAsync(sourcePath: string, destinationPath: string): Promise<void> {
+  return renameInt(sourcePath, destinationPath, new Error());
+}
+
+function renameInt(sourcePath: string, destinationPath: string, stackErr: Error): Promise<void> {
+  return fs.renameAsync(sourcePath, destinationPath)
+    .catch((err: NodeJS.ErrnoException) => (err.code === 'EPERM')
+      ? fs.statAsync(destinationPath)
+        .then(stat => stat.isDirectory()
+          ? Promise.reject(restackErr(err, stackErr))
+          : errorHandler(err, stackErr)
+            .then(() => renameInt(sourcePath, destinationPath, stackErr)))
+        .catch(() => Promise.reject(restackErr(err, stackErr)))
+      : errorHandler(err, stackErr)
+        .then(() => renameInt(sourcePath, destinationPath, stackErr)));
+}
+
 export function rmdirAsync(dirPath: string): Promise<void> {
   return rmdirInt(dirPath, new Error(), NUM_RETRIES);
 }
@@ -288,8 +295,7 @@ function rmdirInt(dirPath: string, stackErr: Error, tries: number): Promise<void
           return delayed(RETRY_DELAY_MS)
             .then(() => rmdirInt(dirPath, stackErr, tries - 1));
       }
-      err.stack = err.message + '\n' + stackErr.stack;
-      throw err;
+      throw restackErr(err, stackErr);
     });
 }
 
