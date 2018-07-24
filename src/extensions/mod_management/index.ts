@@ -295,11 +295,6 @@ function genUpdateModDeployment() {
     // test if anything was changed by an external application
     return gate
       .then(() => {
-        // update mod state again because if the user did have to
-        // confirm, it's more intuitive
-        // if we deploy the state at the time he confirmed, not when
-        // the deployment was triggered
-        state = api.store.getState();
 
         notificationId = api.sendNotification({
           type: 'activity',
@@ -317,6 +312,10 @@ function genUpdateModDeployment() {
         // for each mod type, check if the local files were changed outside vortex
         const changes: { [typeId: string]: IFileChange[] } = {};
         log('debug', 'determine external changes');
+        // update mod state again because if the user did have to confirm,
+        // it's more intuitive if we deploy the state at the time he confirmed, not when
+        // the deployment was triggered
+        state = api.store.getState();
         profile = profileId !== undefined
           ? getSafe(state, ['persistent', 'profiles', profileId], undefined)
           : activeProfile(state);
