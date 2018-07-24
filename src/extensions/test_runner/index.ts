@@ -63,6 +63,11 @@ function runCheck(api: IExtensionApi, check: ICheckEntry): Promise<void> {
               .then(() => runCheck(api, check))
               .catch(err => api.showErrorNotification('Failed to run automatic fix', err)),
           });
+        } else {
+          actions.push({
+            title: 'Check again',
+            action: () => runCheck(api, check),
+          });
         }
         api.sendNotification({
           id,
