@@ -3,7 +3,6 @@ import { getSafe } from '../../util/storeHelper';
 import { app as appIn, remote } from 'electron';
 import * as path from 'path';
 import * as format from 'string-template';
-import { IState } from '../../types/IState';
 import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
 
 const app = appIn || remote.app;
