@@ -244,6 +244,15 @@
     }
   ], [
     {
+      "type": "build-copy",
+      "name": "test-gameversion",
+      "path": "extensions/test-gameversion",
+      "removeModules": ["vortex-api"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
+      "copyTo": "{BUILD_DIR}/bundledPlugins/test-gameversion"
+    }
+  ], [
+    {
       "type": "electron-rebuild",
       "condition": "buildType !== 'out'",
       "name": "node-sass-rebuild",

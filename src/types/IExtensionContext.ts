@@ -35,6 +35,7 @@ import * as React from 'react';
 import * as Redux from 'redux';
 import { DialogActions, IDialogAction, IDialogContent } from './api';
 import { DialogType, IDialogResult } from './IDialog';
+import { TestEvent } from '../extensions/test_runner';
 
 export { TestSupported, IInstallResult, IInstruction, IDeployedFile, IDeploymentMethod,
          IFileChange, InstallFunc, ISupportedResult, ProgressDelegate };
@@ -718,7 +719,7 @@ export interface IExtensionContext {
    *
    * @memberOf IExtensionContext
    */
-  registerTest: (id: string, event: string, check: CheckFunction) => void;
+  registerTest: (id: string, event: TestEvent, check: CheckFunction) => void;
 
   /**
    * register a handler for archive types so the content of such archives is exposed to
