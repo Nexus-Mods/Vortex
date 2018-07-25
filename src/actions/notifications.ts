@@ -134,10 +134,8 @@ export function addNotification(notification: INotification) {
 export function dismissNotification(id: string) {
   return dispatch => new Promise<void>((resolve, reject) => {
     delete timers[id];
-    if (notificationActions[id] !== undefined) {
-      delete notificationActions[id];
-      dispatch(stopNotification(id));
-    }
+    delete notificationActions[id];
+    dispatch(stopNotification(id));
     resolve();
   });
 }
