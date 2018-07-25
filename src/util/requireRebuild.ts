@@ -1,4 +1,3 @@
-import getVortexPath from './getVortexPath';
 import { log } from './log';
 
 import { spawnSync, SpawnSyncOptions } from 'child_process';
@@ -15,7 +14,24 @@ const app = appIn || remote.app;
 // tslint:disable-next-line:no-var-requires
 const Module = require('module');
 
-const packageJSON = fs.readJSONSync(path.join(getVortexPath('package'), 'package.json'));
+const loggingHandler = {
+  get: (obj, prop) => {
+    if (typeof(obj[prop]) === 'function') {
+      return function(...args) {
+        console.log(prop, args);
+        return obj[prop](...args);
+      };
+    } else {
+      return obj[prop];
+    }
+  },
+};
+
+// add module names here to get a console message for every call to a function of
+// that module (in development runs only) including arguments.
+// e.g. const modulesToLog = new Set(['https']);
+const modulesToLog = new Set([]);
+
 const cachePath = path.join(app.getPath('temp'), 'native_cache');
 fs.ensureDirSync(cachePath);
 
@@ -41,7 +57,12 @@ function patchedLoad(orig) {
   // tslint:disable-next-line:only-arrow-functions
   return function(request: string, parent: typeof Module) {
     try {
-      return orig.apply(this, arguments);
+      const res = orig.apply(this, arguments);
+      if (modulesToLog.has(request)) {
+        return new Proxy(res, loggingHandler);
+      } else {
+        return res;
+      }
     } catch (err) {
       if (!mismatchExp.test(err.message)
           && !differentVersionExp.test(err.message)

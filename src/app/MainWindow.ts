@@ -22,7 +22,7 @@ class MainWindow {
 
   constructor(store: Redux.Store<IState>) {
     this.mResizeDebouncer = new Debouncer(() => {
-      if (this.mWindow !== null) {
+      if ((this.mWindow !== null) && !this.mWindow.isMaximized()) {
         const size: number[] = this.mWindow.getSize();
         store.dispatch(setWindowSize({width: size[0], height: size[1]}));
       }
@@ -30,7 +30,7 @@ class MainWindow {
     }, 500);
 
     this.mMoveDebouncer = new Debouncer(() => {
-      if (this.mWindow !== null) {
+      if ((this.mWindow !== null) && !this.mWindow.isMaximized()) {
         const pos: number[] = this.mWindow.getPosition();
         store.dispatch(setWindowPosition({x: pos[0], y: pos[1]}));
         return null;
@@ -120,7 +120,6 @@ class MainWindow {
     if (maximized) {
       this.mWindow.maximize();
     }
-
   }
 
   public sendExternalURL(url: string) {

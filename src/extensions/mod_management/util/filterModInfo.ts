@@ -1,16 +1,7 @@
 import { AttributeExtractor } from '../../../types/IExtensionContext';
-import {getSafe} from '../../../util/storeHelper';
-import {truthy} from '../../../util/util';
 
 import * as Promise from 'bluebird';
 import * as _ from 'lodash';
-
-function transfer(info: any, key: string, source: any, path: string[]) {
-  const value = getSafe(source, path, undefined);
-  if (value !== undefined) {
-    info[key] = value;
-  }
-}
 
 const attributeExtractors: Array<{ priority: number, extractor: AttributeExtractor}> = [];
 

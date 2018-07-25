@@ -5,7 +5,11 @@ import { IGameStored } from '../extensions/gamemode_management/types/IGameStored
 import { IProfile } from '../extensions/profile_management/types/IProfile';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../types/IDialog';
 import { IDiscoveredTool } from '../types/IDiscoveredTool';
+<<<<<<< HEAD
 import { ComponentEx, connect, translate } from '../util/ComponentEx';
+=======
+import { ComponentEx, connect } from '../util/ComponentEx';
+>>>>>>> master
 import { log } from '../util/log';
 import { showError } from '../util/message';
 import { activeGameId, currentGame, currentGameDiscovery } from '../util/selectors';
@@ -79,7 +83,11 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
 
   public render(): JSX.Element {
     const { t, game } = this.props;
+<<<<<<< HEAD
     const { starter } = this.state;
+=======
+    const { gameIconCache, starter } = this.state;
+>>>>>>> master
 
     if (starter === undefined) {
       return null;

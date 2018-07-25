@@ -13,7 +13,7 @@ function toWordExp(input: string): string {
 
 const gamebryoTopLevel: string[] = ['distantlod', 'textures', 'meshes', 'music', 'shaders', 'video',
       'interface', 'fonts', 'scripts', 'facegen', 'menus', 'lodsettings', 'lsdata', 'sound',
-      'strings', 'trees', 'asi', 'tools'];
+      'strings', 'trees', 'asi', 'tools', 'calientetools'];
 
 const gamebryoPatterns: string[] = [
   '[^/]*\\.esp$',
@@ -47,6 +47,8 @@ function stopPatterns(gameMode: string) {
                               'speedtree', 'templates', 'tests'].map(toWordExp).concat(uniPatterns);
     case 'kingdomcomedeliverance':
       return ['[^/]*\\.pak$'].concat(['mod.manifest'].map(toWordExp), uniPatterns);
+    case 'pillarsofeternity2':
+      return ['manifest.json', 'thumb.png', 'localized', 'conversations', 'atlases'].map(toWordExp);
     default: return [].concat(uniPatterns);
   }
 }
@@ -197,6 +199,9 @@ const gameSupport: { [gameId: string]: IGameSupport } = {
   },
   stateofdecay: {
     stopPatterns: stopPatterns('stateofdecay'),
+  },
+  pillarsofeternity2: {
+    stopPatterns: stopPatterns('pillarsofeternity2'),
   },
 };
 

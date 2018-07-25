@@ -5,7 +5,7 @@ import FlexLayout from '../controls/FlexLayout';
 import Icon from '../controls/Icon';
 import IconBar from '../controls/IconBar';
 import Spinner from '../controls/Spinner';
-import { Button, IconButton, NavItem } from '../controls/TooltipControls';
+import { Button, NavItem } from '../controls/TooltipControls';
 import { IActionDefinition } from '../types/IActionDefinition';
 import { IComponentContext } from '../types/IComponentContext';
 import { IExtensionApi, IMainPageOptions } from '../types/IExtensionContext';
@@ -33,8 +33,7 @@ import * as update from 'immutability-helper';
 import * as _ from 'lodash';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
-import { Alert, Badge, Button as ReactButton, ControlLabel, FormGroup,
-         ListGroup, ListGroupItem, Modal, Nav, ProgressBar } from 'react-bootstrap';
+import { Button as ReactButton, Nav, ProgressBar } from 'react-bootstrap';
 // tslint:disable-next-line:no-submodule-imports
 import {addStyle} from 'react-bootstrap/lib/utils/bootstrapUtils';
 import * as Redux from 'redux';
@@ -187,8 +186,8 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   }
 
   public render(): JSX.Element {
-    const { activeProfileId, APIKey, customTitlebar, onHideDialog,
-            nextProfileId, notifications, userInfo, visibleDialog } = this.props;
+    const { activeProfileId, customTitlebar, onHideDialog,
+            nextProfileId, visibleDialog } = this.props;
     const { hidpi } = this.state;
 
     if ((activeProfileId !== nextProfileId) && truthy(nextProfileId)) {
@@ -216,14 +215,6 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
         {customTitlebar ? <WindowControls /> : null}
       </div>
     );
-  }
-
-  private login = () => {
-    this.props.api.events.emit('request-nexus-login', (err: Error) => {
-      if (err !== null) {
-        this.props.api.showErrorNotification('Failed to get access key', err);
-      }
-    });
   }
 
   private renderWait() {
@@ -398,7 +389,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   }
 
   private renderPage(page: IMainPage) {
-    const { t, mainPage, secondaryPage } = this.props;
+    const { mainPage, secondaryPage } = this.props;
     const { loadedPages } = this.state;
 
     if (loadedPages.indexOf(page.id) === -1) {

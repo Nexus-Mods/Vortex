@@ -4,21 +4,14 @@ import CollapseIcon from '../../../controls/CollapseIcon';
 import Dropzone, { DropType } from '../../../controls/Dropzone';
 import EmptyPlaceholder from '../../../controls/EmptyPlaceholder';
 import FlexLayout from '../../../controls/FlexLayout';
-import InputButton from '../../../controls/InputButton';
 import SuperTable, { ITableRowAction } from '../../../controls/Table';
-import DateTimeFilter from '../../../controls/table/DateTimeFilter';
-import GameFilter from '../../../controls/table/GameFilter';
-import { IActionDefinition } from '../../../types/IActionDefinition';
 import { IComponentContext } from '../../../types/IComponentContext';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
 import { IState } from '../../../types/IState';
 import { ITableAttribute } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { ProcessCanceled, UserCanceled } from '../../../util/CustomErrors';
-import * as fs from '../../../util/fs';
-import { getCurrentLanguage } from '../../../util/i18n';
+import { ProcessCanceled } from '../../../util/CustomErrors';
 import { showError } from '../../../util/message';
-import relativeTime from '../../../util/relativeTime';
 import { activeGameId } from '../../../util/selectors';
 import MainPage from '../../../views/MainPage';
 
@@ -29,21 +22,20 @@ import { setShowDLDropzone, setShowDLGraph } from '../actions/settings';
 import { setDownloadTime } from '../actions/state';
 import { IDownload } from '../types/IDownload';
 
-import { FILE_NAME, FILE_SIZE, LOGICAL_NAME, PROGRESS } from '../downloadAttributes';
+import createColumns from '../downloadAttributes';
 import { DownloadIsHTML } from '../DownloadManager';
 
 import DownloadGraph from './DownloadGraph';
 
 import * as Promise from 'bluebird';
 import * as I18next from 'i18next';
-import * as path from 'path';
 import * as React from 'react';
 import { Button, Panel } from 'react-bootstrap';
 import * as Redux from 'redux';
 
 const PanelX: any = Panel;
 
-export interface IBaseProps {
+export interface IDownloadViewBaseProps {
   active: boolean;
   secondary: boolean;
 }
@@ -67,176 +59,26 @@ interface IActionProps {
   onShowGraph: (show: boolean) => void;
 }
 
-type IProps = IBaseProps & IConnectedProps & IActionProps;
+export type IDownloadViewProps = IDownloadViewBaseProps & IConnectedProps & IActionProps & { t: I18next.TranslationFunction };
 
 interface IComponentState {
   viewAll: boolean;
 }
 
-interface IFileTimeProps {
-  t: I18next.TranslationFunction;
-  language: string;
-  detail: boolean;
-  download: IDownload;
-  downloadPath: string;
-  time: Date;
-}
-
-class FileTime extends ComponentEx<IFileTimeProps, { mtime: Date }> {
-  private mIsMounted: boolean = false;
-
-  constructor(props: IFileTimeProps) {
-    super(props);
-
-    this.initState({ mtime: undefined });
-  }
-
-  public componentDidMount() {
-    this.mIsMounted = true;
-    this.updateTime();
-  }
-
-  public componentWillUnmount() {
-    this.mIsMounted = false;
-  }
-
-  public componentWillReceiveProps(nextProps: IFileTimeProps) {
-    if ((nextProps.time === undefined)
-      && ((this.props.downloadPath !== nextProps.downloadPath)
-        || (this.props.download !== nextProps.download))) {
-        this.updateTime();
-      }
-  }
-
-  public render(): JSX.Element {
-    const { t, detail, language, time } = this.props;
-
-    const mtime = time || this.state.mtime;
-
-    if (mtime === undefined) {
-      return null;
-    }
-
-    if (detail) {
-      return <span>{mtime.toLocaleString(language)}</span>;
-    } else {
-      return <span>{relativeTime(mtime, t)}</span>;
-    }
-  }
-
-  private updateTime() {
-    const { download, downloadPath } = this.props;
-    if ((download.localPath === undefined) || (downloadPath === undefined)) {
-        return null;
-    } else {
-      return fs.statAsync(path.join(downloadPath, download.localPath))
-        .then((stat: fs.Stats) => {
-          if (this.mIsMounted) {
-            this.nextState.mtime = stat.mtime;
-          }
-        })
-        .catch(err => undefined);
-    }
-  }
-}
-
-function downloadTime(download: IDownload) {
-  return (download.fileTime !== undefined)
-    ? new Date(download.fileTime)
-    : undefined;
-}
-
 const nop = () => null;
 
-class DownloadView extends ComponentEx<IProps, IComponentState> {
+class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
   public context: IComponentContext;
-  private gameColumn: ITableAttribute;
-  private fileTimeColumn: ITableAttribute;
   private actions: ITableRowAction[];
-  private mColumns: ITableAttribute[];
+  private mColumns: ITableAttribute<IDownload>[];
 
-  constructor(props: IProps) {
+  constructor(props: IDownloadViewProps) {
     super(props);
     this.initState({
       viewAll: false,
     });
 
-    let lang: string;
-    let collator: Intl.Collator;
-
-    this.gameColumn = {
-      id: 'game',
-      name: 'Game',
-      description: 'The game this download is associated with',
-      icon: 'game',
-      calc: (attributes: IDownload) => {
-        const game = this.props.knownGames.find((ele: IGameStored) => attributes.game === ele.id);
-        return game ? this.props.t(game.shortName || game.name) : attributes.game;
-      },
-      placement: 'both',
-      isToggleable: true,
-      edit: {},
-      isSortable: true,
-      filter: new GameFilter(),
-      sortFunc: (lhs: string, rhs: string, locale: string): number => {
-        if ((collator === undefined) || (locale !== lang)) {
-          lang = locale;
-          collator = new Intl.Collator(locale, { sensitivity: 'base' });
-        }
-        return collator.compare(lhs, rhs);
-      },
-    };
-
-    this.fileTimeColumn = {
-      id: 'filetime',
-      name: 'Downloaded',
-      description: 'Time the file was last modified',
-      icon: 'calendar-plus-o',
-      customRenderer: (attributes: IDownload, detail: boolean, t) => {
-        const time = downloadTime(attributes);
-
-        if ((time === undefined)
-            && ((attributes.game !== this.props.gameMode)
-                || (attributes.localPath === undefined))) {
-          return null;
-        }
-        return (
-          <FileTime
-            t={t}
-            time={time}
-            download={attributes}
-            downloadPath={this.props.downloadPath}
-            detail={detail}
-            language={getCurrentLanguage()}
-          />
-        );
-      },
-      calc: (attributes: IDownload) => {
-        const time = downloadTime(attributes);
-
-        if (time !== undefined) {
-          return time;
-        }
-
-        if ((attributes.game !== this.props.gameMode)
-          || (attributes.localPath === undefined)) {
-          return null;
-        }
-        return fs.statAsync(path.join(this.props.downloadPath, attributes.localPath))
-        .then(stat => {
-          const { downloads, onSetAttribute } = this.props;
-          const id = Object.keys(downloads).find(key => downloads[key] === attributes);
-          onSetAttribute(id, stat.mtimeMs);
-          return Promise.resolve(stat.mtime);
-        })
-        .catch(() => undefined);
-      },
-      placement: 'both',
-      isToggleable: true,
-      edit: {},
-      isSortable: true,
-      filter: new DateTimeFilter(),
-    };
+    this.mColumns = createColumns(props);
 
     this.actions = [
       {
@@ -285,21 +127,13 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
         condition: this.cancelable,
       },
     ];
-    this.mColumns = [
-      FILE_NAME,
-      LOGICAL_NAME,
-      this.fileTimeColumn,
-      this.gameColumn,
-      FILE_SIZE,
-      PROGRESS,
-    ];
   }
 
   public componentWillMount() {
     this.nextState.viewAll = false;
   }
 
-  public shouldComponentUpdate(nextProps: IProps, nextState: IComponentState) {
+  public shouldComponentUpdate(nextProps: IDownloadViewProps, nextState: IComponentState) {
     return this.props.downloads !== nextProps.downloads
       || this.props.downloadPath !== nextProps.downloadPath
       || this.props.gameMode !== nextProps.gameMode
