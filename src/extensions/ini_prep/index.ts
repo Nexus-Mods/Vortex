@@ -29,7 +29,7 @@ function ensureIniBackups(t: TranslationFunction, gameMode: string,
     return Promise.map([backupFile, bakedFile],
       copy => fs.statAsync(copy)
         .catch(err =>
-          fs.forcePerm(t, () => fs.copyAsync(file, copy))
+          fs.forcePerm(t, () => fs.copyAsync(file, copy, { noSelfCopy: true }))
             .catch(copyErr => {
               if (copyErr.code === 'ENOENT') {
                 log('warn', 'ini file missing', file);
@@ -149,11 +149,11 @@ function bakeSettings(t: TranslationFunction, gameMode: string, discovery: IDisc
           .catch(err => (err.code === 'ENOENT')
             ? Promise.resolve()
             : Promise.reject(err)))
-        .then(() => fs.copyAsync(iniFileName + '.base', iniFileName + '.baked')
+        .then(() => fs.copyAsync(iniFileName + '.base', iniFileName + '.baked', { noSelfCopy: true })
           // base might not exist, in that case copy from the original ini
           .catch(err => (err.code === 'ENOENT')
             ? fs.copyAsync(iniFileName, iniFileName + '.base')
-              .then(() => fs.copyAsync(iniFileName, iniFileName + '.baked'))
+              .then(() => fs.copyAsync(iniFileName, iniFileName + '.baked', { noSelfCopy: true }))
             : Promise.reject(err))))
       .then(() => parser.read(iniFileName + '.baked'))
       .then(ini => Promise.each(enabledTweaks[baseName] || [],
@@ -162,7 +162,7 @@ function bakeSettings(t: TranslationFunction, gameMode: string, discovery: IDisc
         }))
         .then(() => parser.write(iniFileName + '.baked', ini))
         .then(() => fs.forcePerm(t, () => fs.copyAsync(iniFileName + '.baked',
-          iniFileName))));
+          iniFileName, { noSelfCopy: true }))));
   }))
   .then(() => undefined);
 }
@@ -171,8 +171,8 @@ function purgeChanges(t: TranslationFunction, gameMode: string, discovery: IDisc
   return Promise.map(
       iniFiles(gameMode, discovery),
       iniFileName =>
-          fs.forcePerm(t, () => fs.copyAsync(iniFileName + '.base', iniFileName + '.baked'))
-            .then(() => fs.forcePerm(t, () => fs.copyAsync(iniFileName + '.base', iniFileName))));
+          fs.forcePerm(t, () => fs.copyAsync(iniFileName + '.base', iniFileName + '.baked', { noSelfCopy: true }))
+            .then(() => fs.forcePerm(t, () => fs.copyAsync(iniFileName + '.base', iniFileName, { noSelfCopy: true }))));
 }
 
 function main(context: IExtensionContext) {

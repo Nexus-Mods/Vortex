@@ -208,30 +208,41 @@ export function ensureDirAsync(dirPath: string): Promise<void> {
     });
 }
 
-export function copyAsync(src: string, dest: string,
-                          options?: RegExp |
-                              ((src: string, dest: string) => boolean) |
-                              fs.CopyOptions): Promise<void> {
-  const stackErr = new Error();
-  // fs.copy in fs-extra has a bug where it doesn't correctly avoid copying files onto themselves
+function selfCopyCheck(src: string, dest: string) {
   return Promise.join(fs.statAsync(src), fs.statAsync(dest)
                 .catch(err => err.code === 'ENOENT' ? Promise.resolve({}) : Promise.reject(err)))
-    .then((stats: fs.Stats[]) => {
-      if (stats[0].ino === stats[1].ino) {
-        const err = new Error(
-          `Source "${src}" and destination "${dest}" are the same file (id "${stats[0].ino}").`);
-        return Promise.reject(restackErr(err, stackErr));
-      } else {
-        return Promise.resolve();
-      }
-    })
+    .then((stats: fs.Stats[]) => (stats[0].ino === stats[1].ino)
+        ? Promise.reject(new Error(
+          `Source "${src}" and destination "${dest}" are the same file (id "${stats[0].ino}").`))
+        : Promise.resolve());
+}
+
+/**
+ * copy file
+ * The copy function from fs-extra doesn't (at the time of writing) correctly check that a file isn't
+ * copied onto itself (it fails for links or potentially on case insensitive disks), so this makes
+ * a check based on the ino number.
+ * Unfortunately a bug in node.js (https://github.com/nodejs/node/issues/12115) prevents this check from
+ * working reliably so it can currently be disabled.
+ * @param src file to copy
+ * @param dest destination path
+ * @param options copy options (see documentation for fs)
+ */
+export function copyAsync(src: string, dest: string,
+                          options?: fs.CopyOptions & { noSelfCopy?: boolean }): Promise<void> {
+  const stackErr = new Error();
+  // fs.copy in fs-extra has a bug where it doesn't correctly avoid copying files onto themselves
+  const check = (options !== undefined) && options.noSelfCopy
+    ? Promise.resolve()
+    : selfCopyCheck(src, dest);
+  return check
     .then(() => copyInt(src, dest, options || undefined, stackErr))
     .catch(err => Promise.reject(restackErr(err, stackErr)));
 }
 
 function copyInt(
     src: string, dest: string,
-    options: RegExp | ((src: string, dest: string) => boolean) | fs.CopyOptions,
+    options: fs.CopyOptions,
     stackErr: Error) {
   return fs.copyAsync(src, dest, options)
     .catch((err: NodeJS.ErrnoException) =>
