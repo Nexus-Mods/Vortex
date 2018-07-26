@@ -112,6 +112,10 @@ export interface ITableAttribute<T = any> {
    */
   isVolatile?: boolean;
   /**
+   * Never shrink the column while scrolling, it can still grow though
+   */
+  noShrink?: boolean;
+  /**
    * when using external data (not part of the data passed to the table) in calc or customRenderer,
    * set this parameter.
    * This function gets called with a callback that then needs to be called whenever the external
