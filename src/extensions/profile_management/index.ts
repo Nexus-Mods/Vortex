@@ -154,7 +154,8 @@ function activateGame(store: Redux.Store<IState>, gameId: string) {
 }
 
 function deploy(api: IExtensionApi, profileId: string): Promise<void> {
-  if (profileId === undefined) {
+  const state: IState = api.store.getState();
+  if ((profileId === undefined) || (state.persistent.profiles[profileId] === undefined)) {
     return Promise.resolve();
   }
   return new Promise((resolve, reject) => {
