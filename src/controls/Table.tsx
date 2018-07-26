@@ -114,6 +114,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private mNextVisibility: { [id: string]: boolean } = {};
   private mWillSetVisibility: boolean = false;
   private mMounted: boolean = false;
+  private mNoShrinkColumns: { [attributeId: string]: HeaderCell } = {};
 
   constructor(props: IProps) {
     super(props);
@@ -525,6 +526,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
           doFilter={true}
           onSetSortDirection={this.setSortDirection}
           onSetFilter={this.setFilter}
+          ref={this.setHeaderCellRef}
           t={t}
         >
           {attribute.filter !== undefined ? (
@@ -539,6 +541,14 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       );
     } else {
       return null;
+    }
+  }
+
+  private setHeaderCellRef = (ref: HeaderCell) => {
+    if (ref !== null) {
+      if (ref.props.attribute.noShrink === true) {
+        this.mNoShrinkColumns[ref.props.attribute.id] = ref;
+      }
     }
   }
 
@@ -716,6 +726,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         const transform = `translate(0, ${event.target.scrollTop}px)`;
         this.mHeadRef.style.transform = transform;
       }
+    });
+    Object.keys(this.mNoShrinkColumns).forEach(colId => {
+      this.mNoShrinkColumns[colId].updateWidth();
     });
   }
 

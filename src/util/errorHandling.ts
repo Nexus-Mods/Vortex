@@ -78,7 +78,7 @@ export function genHash(error: IError) {
         // remove the file names from stack lines because they contain local paths
          .replace(/\([^)]*\)$/, '')
          // remove everything in quotes to get file names and such out of the error message
-         .replace(/'[^']*'/, '').replace(/"[^"]*"/, ''));
+         .replace(/'[^']*'/g, '').replace(/"[^"]*"/g, ''));
     const idx = hashStack.findIndex(
       line => (line.indexOf('Promise._settlePromiseFromHandler') !== -1)
            || (line.indexOf('MappingPromiseArray._promiseFulfilled') !== -1));

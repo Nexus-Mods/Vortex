@@ -566,6 +566,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         ],
         onChangeValue: this.changeModEnabled,
       },
+      noShrink: true,
       isSortable: false,
       filter: new OptionsFilter([
         { value: true, label: 'Enabled' },
