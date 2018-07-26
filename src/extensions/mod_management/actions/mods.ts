@@ -47,6 +47,9 @@ export const setModAttributes = safeCreateAction('SET_MOD_ATTRIBUTES',
 export const setModType = safeCreateAction('SET_MOD_TYPE',
   (gameId: string, modId: string, type: string) => ({ gameId, modId, type }));
 
+export const clearModRules = safeCreateAction('CLEAR_MOD_RULE',
+  (gameId: string, modId: string) => ({ gameId, modId }));
+
 /**
  * add a dependency rule for this mod
  */
