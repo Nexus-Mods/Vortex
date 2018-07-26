@@ -87,12 +87,14 @@ class RSSDashlet extends ComponentEx<IProps, IComponentState> {
         this.setState({
           messages: result.map(this.transformMessage),
         });
-    }
+      }
     })
     .catch((err: Error) => {
-      this.setState({
-        error: err.message,
-      });
+      if (this.mMounted) {
+        this.setState({
+          error: err.message,
+        });
+      }
     });
   }
 
