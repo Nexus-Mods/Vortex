@@ -202,9 +202,17 @@ function applyFileActions(sourcePath: string,
           : Promise.reject(new Error('invalid file path'))))
     .then(() => Promise.map(actionGroups['import'] || [],
       // copy the files the user wants to import
-      (entry) => fs.copyAsync(
-        path.join(outputPath, entry.filePath),
-        path.join(sourcePath, entry.source, entry.filePath))))
+      (entry) => {
+        const source = path.join(sourcePath, entry.source, entry.filePath);
+        const deployed = path.join(outputPath, entry.filePath);
+        // Very rarely we have a case where the files are links of each other
+        // (or at least node reports that) so the copy would fail.
+        // Instead of handling the errors (when we can't be sure if it's due to a bug in node.js
+        // or the files are actually identical), delete the target first, that way the copy
+        // can't fail
+        return fs.removeAsync(source)
+          .then(() => fs.copyAsync(deployed, source));
+      }))
     .then(() => {
       // remove files that the user wants to restore from
       // the activation list because then they get reinstalled.
