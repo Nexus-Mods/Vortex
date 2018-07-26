@@ -244,6 +244,7 @@
     }
   ], [
     {
+      "type": "build-copy",
       "name": "game-pillarsofeternity2",
       "path": "extensions/game-pillarsofeternity2",
       "removeModules": ["vortex-api"],
