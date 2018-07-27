@@ -1,5 +1,6 @@
 import { showError } from '../../../util/message';
 import { getSafe } from '../../../util/storeHelper';
+import { truthy } from '../../../util/util';
 import { convertGameId } from './convertGameId';
 
 import { setModAttribute } from '../../mod_management/actions/mods';
@@ -83,7 +84,7 @@ function updateLatestFileAttributes(dispatch: Redux.Dispatch<any>,
                                     file: IFileInfo) {
   update(dispatch, gameId, mod, 'newestVersion', file.version);
 
-  if ((file.category_name === 'OLD_VERSION') || (file.category_name === undefined)) {
+  if ((file.category_name === 'OLD_VERSION') || !truthy(file.category_name)) {
     // file was removed from mod or is old, either way there should be a new version available
     // but we have no way of determining which it is.
     update(dispatch, gameId, mod, 'newestFileId', 'unknown');
@@ -102,7 +103,7 @@ function updateFileAttributes(dispatch: Redux.Dispatch<any>,
   if (fileUpdates.length === 0) {
     // update not found through update-chain. If there is only a single file that
     // isn't marked as old we assume that is the right update.
-    const notOld = files.files.filter(file => file.category_id !== 4);
+    const notOld = files.files.filter(file => (file.category_id !== 4) && (file.category_id !== 6));
     if ((notOld.length === 1) && (notOld[0].file_id !== fileId)) {
       fileUpdates = [{
         old_file_id: fileId,
