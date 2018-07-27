@@ -315,7 +315,7 @@ function genUpdateModDeployment() {
           typeId => loadActivation(api, typeId, modPaths[typeId]).then(
             deployedFiles => lastDeployment[typeId] = deployedFiles));
       })
-      .then(() => api.emitAndAwait('will-deploy', lastDeployment))
+      .then(() => api.emitAndAwait('will-deploy', profileId, lastDeployment))
       .then(() => {
         // for each mod type, check if the local files were changed outside vortex
         const changes: { [typeId: string]: IFileChange[] } = {};
@@ -417,7 +417,7 @@ function genUpdateModDeployment() {
                 })))
               .then(() => {
                 progress(t('Running post-deployment events'), 99);
-                return api.emitAndAwait('did-deploy', newDeployment, (title: string) => {
+                return api.emitAndAwait('did-deploy', profileId, newDeployment, (title: string) => {
                   progress(title, 99);
                 })
               });
