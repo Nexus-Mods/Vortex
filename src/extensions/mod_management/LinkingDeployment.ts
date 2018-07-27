@@ -373,6 +373,14 @@ abstract class LinkingActivator implements IDeploymentMethod {
    */
   protected abstract canRestore(): boolean;
 
+  protected get normalize(): Normalize {
+    return this.mNormalize;
+  }
+
+  protected get context(): IDeploymentContext {
+    return this.mContext;
+  }
+
   protected stat(filePath: string): Promise<fs.Stats> {
     return fs.statAsync(filePath);
   }
@@ -387,8 +395,8 @@ abstract class LinkingActivator implements IDeploymentMethod {
       [installPathStr, this.mContext.newDeployment[key].source,
         this.mContext.newDeployment[key].relPath].join(path.sep);
     const fullOutputPath =
-      [dataPath, this.mContext.newDeployment[key].target || '',
-        this.mContext.newDeployment[key].relPath].join(path.sep);
+      [dataPath, this.mContext.newDeployment[key].target || null,
+        this.mContext.newDeployment[key].relPath].filter(i => i !== null).join(path.sep);
 
     const backupProm: Promise<void> = replace
       ? Promise.resolve()

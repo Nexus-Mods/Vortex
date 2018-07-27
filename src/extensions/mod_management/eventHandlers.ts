@@ -183,8 +183,8 @@ export function onRemoveMod(api: IExtensionApi,
 
   const modState = getSafe(state, ['persistent', 'mods', gameMode, modId, 'state'], undefined);
   if (['downloaded', 'installed'].indexOf(modState) === -1) {
-      callback(new ProcessCanceled('Can\'t delete mod during download or install'));
-      return;
+    callback(new ProcessCanceled('Can\'t delete mod during download or install'));
+    return;
   }
 
   // we need to remove the mod from activation, otherwise me might leave orphaned
@@ -199,8 +199,7 @@ export function onRemoveMod(api: IExtensionApi,
   }
 
   const profile: IProfile = getSafe(state, ['persistent', 'profiles', profileId], undefined);
-
-  const wasEnabled = getSafe(profile, ['modState', modId, 'enabled'], false);
+  const wasEnabled: boolean = getSafe(profile, ['modState', modId, 'enabled'], false);
 
   store.dispatch(setModEnabled(profileId, modId, false));
 

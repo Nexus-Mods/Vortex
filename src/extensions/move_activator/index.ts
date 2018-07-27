@@ -2,12 +2,10 @@ import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext'
 import { IGame } from '../../types/IGame';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
-import { activeGameId } from '../../util/selectors';
 
 import { getGame } from '../gamemode_management';
 import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
 import LinkingDeployment from '../mod_management/LinkingDeployment';
-import { installPath } from '../mod_management/selectors';
 import { IDeployedFile, IDeploymentMethod } from '../mod_management/types/IDeploymentMethod';
 import resolvePath from '../mod_management/util/resolvePath';
 
@@ -16,6 +14,7 @@ import * as I18next from 'i18next';
 import * as path from 'path';
 import turbowalk, { IEntry } from 'turbowalk';
 import * as util from 'util';
+import { IMod } from '../mod_management/types/IMod';
 
 const LNK_EXT = '.vortex_lnk';
 
@@ -99,6 +98,23 @@ class DeploymentMethod extends LinkingDeployment {
     .then(files => {
       this.mDirCache = undefined;
       return files;
+    });
+  }
+
+  public deactivate(installPath: string, dataPath: string,
+                    mod: IMod): Promise<void> {
+    const sourceBase = path.join(installPath, mod.installationPath);
+    return turbowalk(sourceBase, entries => {
+      if (this.context === undefined) {
+        return;
+      }
+      entries.forEach(entry => {
+        if (!entry.isDirectory && (path.extname(entry.filePath) === LNK_EXT)) {
+          const relPath: string =
+            path.relative(sourceBase, entry.filePath.substring(0, entry.filePath.length - LNK_EXT.length));
+          delete this.context.newDeployment[this.normalize(relPath)];
+        }
+      });
     });
   }
 
