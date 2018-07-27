@@ -21,6 +21,7 @@ import * as I18next from 'i18next';
 import * as ipc from 'node-ipc';
 import * as path from 'path';
 import { getUserId } from 'permissions';
+import * as rimraf from 'rimraf';
 import { generate as shortid } from 'shortid';
 import { runElevated, Win32Error } from 'vortex-run';
 
@@ -38,7 +39,6 @@ export {
   openSync,
   readFileSync,
   readJSONSync,
-  removeSync,
   statSync,
   watch,
   writeFileSync,
@@ -249,17 +249,29 @@ function copyInt(
       errorHandler(err, stackErr).then(() => copyInt(src, dest, options, stackErr)));
 }
 
+export function removeSync(dirPath: string) {
+  rimraf.sync(dirPath, { maxBusyTries: 10 });
+}
+
 export function removeAsync(dirPath: string): Promise<void> {
   return removeInt(dirPath, new Error());
 }
 
 function removeInt(dirPath: string, stackErr: Error): Promise<void> {
-  return fs.removeAsync(dirPath)
+  return new Promise<void>((resolve, reject) => {
+    rimraf(dirPath, { maxBusyTries: 10 }, err => {
+      if (err !== null) {
+        reject(err);
+      } else {
+        resolve();
+      }
+    })
+  })
     .catch((err: NodeJS.ErrnoException) => (err.code === 'ENOENT')
-        // don't mind if a file we wanted deleted was already gone
-        ? Promise.resolve()
-        : errorHandler(err, stackErr)
-          .then(() => removeInt(dirPath, stackErr)));
+      // don't mind if a file we wanted deleted was already gone
+      ? Promise.resolve()
+      : errorHandler(err, stackErr)
+        .then(() => removeInt(dirPath, stackErr)));
 }
 
 export function unlinkAsync(dirPath: string): Promise<void> {
