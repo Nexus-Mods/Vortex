@@ -9896,8 +9896,8 @@ tunnel-agent@~0.4.1:
   resolved "https://registry.yarnpkg.com/tunnel-agent/-/tunnel-agent-0.4.3.tgz#6373db76909fe570e08d73583365ed828a74eeeb"
 
 turbowalk@Nexus-Mods/node-turbowalk:
-  version "1.0.1"
-  resolved "https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/94bb5ebb0768f0f2b374a6223d22fb3d4ff09e1d"
+  version "1.1.0"
+  resolved "https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/f58a978c1e7236e17407579c6893dffb71055b99"
   dependencies:
     autogypi "^0.2.2"
     fs-extra-promise "^1.0.1"
