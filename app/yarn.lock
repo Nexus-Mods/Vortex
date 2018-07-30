@@ -174,8 +174,8 @@ balanced-match@^1.0.0:
   resolved "https://registry.yarnpkg.com/balanced-match/-/balanced-match-1.0.0.tgz#89b4d199ab2bee49de164ea02b89ce462d71b767"
 
 bbcode-to-react@TanninOne/bbcode-to-react:
-  version "0.2.8"
-  resolved "https://codeload.github.com/TanninOne/bbcode-to-react/tar.gz/fb9fb07d069e0cf0793a1db5824a8b4888bbf7b4"
+  version "0.2.9"
+  resolved "https://codeload.github.com/TanninOne/bbcode-to-react/tar.gz/6dd92afeb5083a590ba24bb6f7aaf9544e91265d"
 
 bcrypt-pbkdf@^1.0.0:
   version "1.0.2"

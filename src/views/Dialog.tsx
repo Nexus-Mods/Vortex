@@ -181,7 +181,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
 
     if (content.bbcode !== undefined) {
       controls.push((
-        <div key='dialog-content-bbcode'>
+        <div key='dialog-content-bbcode' className='dialog-content-bbcode'>
           {bbcode(content.bbcode)}
         </div>
       ));

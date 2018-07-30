@@ -78,6 +78,15 @@
     white-space: pre-wrap;
   }
 
+  > .dialog-content-bbcode {
+    table {
+      width: 100%;
+    }
+    ul {
+      margin-bottom: 0;
+    }
+  }
+
   > .dialog-content-html {
     white-space: pre-wrap;
   }
