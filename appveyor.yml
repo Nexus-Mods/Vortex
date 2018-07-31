@@ -2,6 +2,7 @@ version: 1.0.{build}
 clone_depth: 1
 environment:
   nodejs_version: 8
+  EDGE_USE_CORECLR: 0
 platform:
   - x64
 configuration:
