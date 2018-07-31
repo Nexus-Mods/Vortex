@@ -14,6 +14,7 @@ cache: '%LOCALAPPDATA%\Yarn'
 build_script:
 - cmd: >-
     set EDGE_USE_CORECLR=0
+
     yarn run ci
 test_script:
 - cmd: >-
