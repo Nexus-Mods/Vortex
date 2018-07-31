@@ -878,7 +878,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         const value = attribute.filter.raw !== false
           ? attribute.filter.raw === true
             ? data[rowId][dataId]
-            : data[rowId][attribute.filter.raw][dataId]
+            : (data[rowId][attribute.filter.raw] || {})[dataId]
           : calculatedValues[rowId][dataId];
 
         return truthy(filter[attribute.id])
