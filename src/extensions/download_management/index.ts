@@ -215,7 +215,7 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
 
         const knownDLs =
           Object.keys(downloads)
-            .filter((dlId: string) => downloads[dlId].game === gameId)
+            .filter(dlId => downloads[dlId].game === gameId)
             .map(dlId => normalize(downloads[dlId].localPath));
 
         return refreshDownloads(currentDownloadPath, knownDLs, normalize,
@@ -467,17 +467,22 @@ function init(context: IExtensionContextExt): boolean {
             store.dispatch(removeDownload(id));
           }
         } else {
-          let realSize =
-              (downloads[id].size !== 0) ?
-                  downloads[id].size -
-                      sum((downloads[id].chunks || []).map(chunk => chunk.size)) :
-                  0;
+          let realSize = (downloads[id].size !== 0)
+            ? downloads[id].size - sum((downloads[id].chunks || []).map(chunk => chunk.size))
+            : 0;
           if (isNaN(realSize)) {
             realSize = 0;
           }
           store.dispatch(setDownloadInterrupted(id, realSize));
         }
       });
+      // remove downloads that have no localPath set because they just cause trouble. They shouldn't
+      // exist at all
+      Object.keys(downloads)
+        .filter(dlId => !truthy(downloads[dlId].localPath))
+        .forEach(dlId => {
+          store.dispatch(removeDownload(dlId));
+        });
     }
   });
 
