@@ -21,7 +21,8 @@
   "nsis": {
     "perMachine": true,
     "runAfterFinish": true,
-    "menuCategory": true
+    "menuCategory": true,
+    "uninstallDisplayName": "${productName}"
   },
   "extraResources": [
     "locales"

@@ -33,7 +33,8 @@
     "runAfterFinish": true,
     "menuCategory": true,
     "oneClick": false,
-    "allowToChangeInstallationDirectory": true
+    "allowToChangeInstallationDirectory": true,
+    "uninstallDisplayName": "${productName}"
   },
   "extraResources": [
     "locales"
