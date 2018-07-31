@@ -344,7 +344,7 @@ class Application {
 
   private connectTrayAndWindow() {
     const state: IState = this.mStore.getState();
-    if (this.mTray.initialized && state.settings.window.minimizeToTray) {
+    if (this.mTray.initialized) {
       this.mMainWindow.connectToTray(this.mTray);
     }
   }
