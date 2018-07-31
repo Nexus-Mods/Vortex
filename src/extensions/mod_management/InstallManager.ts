@@ -714,7 +714,7 @@ class InstallManager {
 
     if (instructionGroups.error.length > 0) {
       api.showErrorNotification('Installer reported errors',
-        'Errors were reported processing this installer. It\'s possible the moda works (partially) anyway. '
+        'Errors were reported processing this installer. It\'s possible the mod works (partially) anyway. '
         + 'Please not that NMM tends to ignore errors so just because NMM doesn\'t '
         + 'report a problem with this installer doesn\'t mean it doesn\'t have any.\n'
         + '{{ errors }}'
