@@ -2,7 +2,6 @@ import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext'
 import { IGame } from '../../types/IGame';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
-import { activeGameId } from '../../util/selectors';
 
 import { getGame } from '../gamemode_management';
 import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';

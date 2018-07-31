@@ -1,4 +1,3 @@
-import Icon from '../../../controls/Icon';
 import More from '../../../controls/More';
 import { ComponentEx, translate } from '../../../util/ComponentEx';
 import * as fs from '../../../util/fs';
@@ -11,7 +10,7 @@ import { remote } from 'electron';
 import * as i18next from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
-import { Button, Image, Media, Modal, Panel } from 'react-bootstrap';
+import { Image, Media, Panel } from 'react-bootstrap';
 import * as ReactMarkdown from 'react-markdown';
 import * as RequestT from 'request';
 
@@ -29,7 +28,6 @@ if (remote !== undefined) {
 }
 
 export interface IBaseProps {
-  shown: boolean;
   onHide: () => void;
 }
 
@@ -46,6 +44,8 @@ type IProps = IBaseProps;
 
 class AboutPage extends ComponentEx<IProps, IComponentState> {
   private mMounted: boolean;
+  private mVersion: string;
+  private mAppPath: string;
   constructor(props) {
     super(props);
     this.mMounted = false;
@@ -57,13 +57,15 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
       changelog: undefined,
       tag: undefined,
     });
+
+    this.mVersion = remote.app.getVersion();
+    this.mAppPath = remote.app.getAppPath();
   }
 
   public componentDidMount() {
     this.mMounted = true;
 
-    const appVersion = remote.app.getVersion();
-    if (appVersion === '0.0.1') {
+    if (this.mVersion === '0.0.1') {
       this.nextState.tag = 'Development';
     } else {
       const request: typeof RequestT = require('request');
@@ -72,7 +74,7 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
       }, (error, response, body) => {
         if ((error === null) && this.mMounted) {
           const releases = JSON.parse(body);
-          const thisVersion = 'v' + remote.app.getVersion();
+          const thisVersion = 'v' + this.mVersion;
           const thisRelease = releases.find(rel => rel.tag_name === thisVersion);
           if (thisRelease !== undefined) {
             this.nextState.releaseDate = new Date(thisRelease.published_at);
@@ -82,6 +84,9 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
             this.nextState.tag = 'Unknown';
           }
         }
+      })
+      .on('error', err => {
+        log('warn', 'Failed to look up current Vortex releases', err.message);
       });
     }
   }
@@ -91,12 +96,12 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, shown } = this.props;
+    const { t } = this.props;
     const { changelog, ownLicense, tag, releaseDate } = this.state;
 
     const moduleList = Object.keys(modules).map(key => ({ key, ...modules[key] }));
 
-    const imgPath = path.resolve(remote.app.getAppPath(), 'assets', 'images', 'vortex.png');
+    const imgPath = path.resolve(this.mAppPath, 'assets', 'images', 'vortex.png');
 
     let body = null;
 
@@ -124,7 +129,7 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
               <Media.Left><Image src={imgPath} /></Media.Left>
               <Media.Body>
                 <h2 className='media-heading'>
-                  Vortex {remote.app.getVersion()}
+                  Vortex {this.mVersion}
                   {(tag !== undefined) ? ' ' + tag : ''}
                 </h2>
                 <p>&#169;2018 Black Tree Gaming Ltd.</p>
@@ -178,8 +183,8 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
     const mod: ILicense = modules[modKey];
     const license = typeof (mod.licenses) === 'string' ? mod.licenses : mod.licenses[0];
     const licenseFile = mod.licenseFile !== undefined
-      ? path.join(remote.app.getAppPath(), mod.licenseFile)
-      : path.join(remote.app.getAppPath(), 'assets', 'licenses', license + '.md');
+      ? path.join(this.mAppPath, mod.licenseFile)
+      : path.join(this.mAppPath, 'assets', 'licenses', license + '.md');
     fs.readFileAsync(licenseFile, { })
       .then(licenseText => {
         if (this.mMounted) {

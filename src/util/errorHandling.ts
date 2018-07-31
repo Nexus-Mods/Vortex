@@ -49,6 +49,13 @@ ${error.details}
 \`\`\``);
   }
 
+  if (error.path) {
+    sections.push(`#### Path
+\`\`\`
+${error.path}
+\`\`\``);
+  }
+
   if (error.stack) {
     sections.push(`#### Stack
 \`\`\`
@@ -71,7 +78,7 @@ export function genHash(error: IError) {
         // remove the file names from stack lines because they contain local paths
          .replace(/\([^)]*\)$/, '')
          // remove everything in quotes to get file names and such out of the error message
-         .replace(/'[^']*'/, '').replace(/"[^"]*"/, ''));
+         .replace(/'[^']*'/g, '').replace(/"[^"]*"/g, ''));
     const idx = hashStack.findIndex(
       line => (line.indexOf('Promise._settlePromiseFromHandler') !== -1)
            || (line.indexOf('MappingPromiseArray._promiseFulfilled') !== -1));
@@ -147,7 +154,7 @@ export function sendReport(type: string, error: IError, labels: string[], report
  * @export
  * @param {ITermination} error
  */
-export function terminate(error: IError, state: any) {
+export function terminate(error: IError, state: any, allowReport?: boolean) {
   const app = appIn || remote.app;
   const dialog = dialogIn || remote.dialog;
   const win = remote !== undefined ? remote.getCurrentWindow() : null;
@@ -155,14 +162,21 @@ export function terminate(error: IError, state: any) {
   log('error', 'unrecoverable error', error);
 
   try {
-    let detail = (error.stack || 'No stack');
+    let detail = (error.stack || '');
+    if (error.path) {
+      detail = 'File: ' + error.path + '\n' + detail;
+    }
     if (error.details) {
       detail = error.details + '\n' + detail;
     }
+    const buttons = ['Ignore', 'Quit']
+    if (allowReport !== false) {
+      buttons.push('Report and Quit');
+    }
     let action = dialog.showMessageBox(win, {
       type: 'error',
-      buttons: ['Ignore', 'Quit', 'Report and Quit'],
-      defaultId: 2,
+      buttons,
+      defaultId: buttons.length - 1,
       title: 'An unrecoverable error occurred',
       message: error.message,
       detail,

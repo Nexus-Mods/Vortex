@@ -15,6 +15,7 @@ interface ISettingsPage {
   component: React.ComponentClass<any>;
   props: PropsCallback;
   visible: () => boolean;
+  priority: number;
 }
 
 interface ICombinedSettingsPage {
@@ -74,7 +75,9 @@ class Settings extends ComponentEx<IProps, {}> {
   private renderTab = (page: ICombinedSettingsPage): JSX.Element => {
     const { t } = this.props;
 
-    const elements = page.elements.filter(ele => (ele.visible === undefined) || ele.visible());
+    const elements = page.elements
+      .filter(ele => (ele.visible === undefined) || ele.visible())
+      .sort((lhs, rhs) => lhs.priority - rhs.priority);
 
     const content = (elements.length > 0)
       ? (
@@ -118,8 +121,9 @@ function registerSettings(instanceGroup: undefined,
                           title: string,
                           component: React.ComponentClass<any>,
                           props: PropsCallback,
-                          visible: () => boolean): ISettingsPage {
-  return { title, component, props, visible };
+                          visible: () => boolean,
+                          priority?: number): ISettingsPage {
+  return { title, component, props, visible, priority: priority || 100 };
 }
 
 function mapStateToProps(state: IState): IConnectedProps {

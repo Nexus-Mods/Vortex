@@ -23,7 +23,7 @@ import { remote } from 'electron';
 import * as update from 'immutability-helper';
 import * as path from 'path';
 import * as React from 'react';
-import { Alert, Button, Checkbox, ControlLabel,
+import { Alert, Button, ControlLabel,
          FormControl, FormGroup, HelpBlock } from 'react-bootstrap';
 import * as Redux from 'redux';
 
@@ -39,6 +39,7 @@ interface IConnectedProps {
   autoDeployment: boolean;
   advanced: boolean;
   customTitlebar: boolean;
+  minimizeToTray: boolean;
 }
 
 interface IActionProps {
@@ -73,7 +74,7 @@ class SettingsInterface extends ComponentEx<IProps, IState> {
     const bundledLanguages = getVortexPath('locales');
     const userLanguages = path.normalize(path.join(remote.app.getPath('userData'), 'locales'));
 
-    Promise.join(readdirAsync(bundledLanguages), readdirAsync(userLanguages).catch(err => []))
+    Promise.join(readdirAsync(bundledLanguages), readdirAsync(userLanguages).catch(() => []))
       .then(fileLists => Array.from(new Set([].concat(...fileLists))))
       .then(files => {
         const locales = files.map(key => {
@@ -114,7 +115,7 @@ class SettingsInterface extends ComponentEx<IProps, IState> {
     const { t, advanced, autoDeployment, currentLanguage,
             customTitlebar, profilesVisible } = this.props;
 
-    const needRestart = customTitlebar !== this.mInitialTitlebar;
+    const needRestart = (customTitlebar !== this.mInitialTitlebar);
 
     const restartNotification = needRestart ? (
       <HelpBlock>
@@ -261,6 +262,7 @@ function mapStateToProps(state: any): IConnectedProps {
     advanced: state.settings.interface.advanced,
     autoDeployment: state.settings.automation.deploy,
     customTitlebar: state.settings.window.customTitlebar,
+    minimizeToTray: state.settings.window.minimizeToTray,
   };
 }
 

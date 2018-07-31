@@ -40,7 +40,6 @@ interface IEnvButtonState {
 }
 
 class EnvButton extends ComponentEx<IEnvButtonProps, IEnvButtonState> {
-
   constructor(props: IEnvButtonProps) {
     super(props);
     this.initState({ varCopy: { ...props.variable } });
@@ -95,8 +94,10 @@ class EnvButton extends ComponentEx<IEnvButtonProps, IEnvButtonState> {
         );
       } else {
         return (
-          <div>
-            <b>{varCopy.key}</b> = <b>{varCopy.value}</b>{' '}
+          <div className='env-kvpair'>
+            <div>
+              <b>{varCopy.key}</b> = <b>{varCopy.value}</b>
+            </div>
             <div className='env-edit-buttons'>
               <IconButton
                 id={`btn-edit-${varCopy.key}`}
@@ -210,6 +211,8 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
       realName = this.props.tool.name;
     }
 
+    const haveEnvironment: boolean = Object.keys(tool.environment).length > 0;
+
     return (
       <Modal show={true} onHide={onClose} id='tool-edit-dialog'>
         <Modal.Header>
@@ -275,15 +278,22 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
                 readOnly={tool.isGame}
             />
 
-            <FormGroup>
+            <FormGroup
+              validationState={haveEnvironment ? 'warning' : undefined}
+            >
+
               <Col sm={3}>
                 <ControlLabel>{t('Environment Variables')}</ControlLabel>
               </Col>
               <Col sm={9}>
                 {this.renderEnvironment(tool.environment)}
+                {haveEnvironment ? (
+                  <ControlLabel style={{ paddingTop: 0 }}>
+                    {t('Tools with environments can\'t be started from the "Tasks" list')}
+                  </ControlLabel>
+                ) : null}
               </Col>
             </FormGroup>
-
             <FormGroup>
               <Col sm={3}>
                 <ControlLabel>{t('Icon')}</ControlLabel>
@@ -421,8 +431,6 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
   }
 
   private handleChangePath = (field: 'exePath', filePath: string) => {
-    const { tool } = this.props;
-
     this.handleChange('exePath', filePath);
     if (!this.state.tool.name) {
       this.handleChange('name', path.basename(filePath, path.extname(filePath)));

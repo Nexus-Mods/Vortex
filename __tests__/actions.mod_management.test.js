@@ -70,3 +70,13 @@ describe('setModAttribute', () => {
     });
   });
 });
+
+describe('setModAttributes', () => {
+  it('creates the correct action', () => {
+    expect(modsActions.setModAttributes('gameId1', 'modId1', { attribute1: 'value1', attribute2: 'value2' })).toEqual({
+      error: false,
+      type: 'SET_MOD_ATTRIBUTES',
+      payload: { gameId: 'gameId1', modId: 'modId1', attributes: { attribute1: 'value1', attribute2: 'value2' } },
+    });
+  });
+});

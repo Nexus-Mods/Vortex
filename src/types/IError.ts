@@ -3,4 +3,5 @@ export interface IError {
   details?: string;
   stack?: string;
   extension?: string;
+  path?: string;
 }

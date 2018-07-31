@@ -7,7 +7,7 @@ let mockTmpFileReportError = undefined;
 jest.mock('tmp', () => ({
   file: (callback) => {
     if (mockTmpFileReportError) {
-      return callback(mockTmpFileReportError);
+      return callback(new Error(mockTmpFileReportError));
     }
     mockTmpFileCalls += 1;
     callback(null, '/tmp/xyz', 42, () => undefined);
@@ -20,7 +20,7 @@ let mockWriteReportError = undefined;
 jest.mock('fs', () => ({
     write: (fd, data, callback) => {
       if (mockWriteReportError) {
-        callback(mockWriteReportError);
+        callback(new Error(mockWriteReportError));
         return;
       }
       mockWrites.push(data);
@@ -88,7 +88,7 @@ describe('runElevated', () => {
       fail('expected error');
     })
     .catch((err) => {
-      expect(err).toBe('i haz error');
+      expect(err.message).toBe('i haz error');
     });
   });
 
@@ -99,7 +99,7 @@ describe('runElevated', () => {
       fail('expected error');
     })
     .catch((err) => {
-      expect(err).toBe('i haz error');
+      expect(err.message).toBe('i haz error');
     });
   });
 
@@ -110,7 +110,7 @@ describe('runElevated', () => {
       fail('expected error');
     })
     .catch((err) => {
-      expect(err).toBe('i haz error');
+      expect(err.message).toBe('i haz error');
     });
   });
 });

@@ -4,12 +4,10 @@ import {
   ISupportedResult,
   ProgressDelegate,
 } from '../../types/IExtensionContext';
-import {IState} from '../../types/IState';
-import { DataInvalid, ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
+import { DataInvalid, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import getVortexPath from '../../util/getVortexPath';
 import lazyRequire from '../../util/lazyRequire';
-import { log } from '../../util/log';
 import {truthy} from '../../util/util';
 
 import { endDialog, setInstallerDataPath } from './actions/installerUI';

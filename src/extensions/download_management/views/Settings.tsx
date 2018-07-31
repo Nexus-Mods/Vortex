@@ -9,6 +9,7 @@ import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { UserCanceled } from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
 import { showError } from '../../../util/message';
+import opn from '../../../util/opn';
 import { getSafe } from '../../../util/storeHelper';
 import { isChildPath } from '../../../util/util';
 import { setDownloadPath, setMaxDownloads } from '../actions/settings';
@@ -19,15 +20,11 @@ import getText from '../texts';
 
 import * as Promise from 'bluebird';
 import { remote } from 'electron';
-import {} from 'opn';
 import * as path from 'path';
 import * as React from 'react';
 import { Button as BSButton, ControlLabel, FormControl, FormGroup, HelpBlock, InputGroup,
          Jumbotron, Modal } from 'react-bootstrap';
 import * as Redux from 'redux';
-
-// tslint:disable-next-line:no-var-requires
-const opn = require('opn');
 
 interface IConnectedProps {
   parallelDownloads: number;

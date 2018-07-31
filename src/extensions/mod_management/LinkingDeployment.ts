@@ -1,6 +1,5 @@
 import {addNotification} from '../../actions/notifications';
 import {IExtensionApi} from '../../types/IExtensionContext';
-import { ProcessCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import getNormalizeFunc, {Normalize} from '../../util/getNormalizeFunc';
 import {log} from '../../util/log';
@@ -30,6 +29,7 @@ export const BACKUP_TAG = '.vortex_backup';
 interface IDeploymentContext {
   previousDeployment: IDeployment;
   newDeployment: IDeployment;
+  onComplete: () => void;
 }
 
 /**
@@ -46,6 +46,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
   private mApi: IExtensionApi;
   private mNormalize: Normalize;
 
+  private mQueue: Promise<void> = Promise.resolve();
   private mContext: IDeploymentContext;
 
   constructor(id: string, name: string, description: string, api: IExtensionApi) {
@@ -76,22 +77,30 @@ abstract class LinkingActivator implements IDeploymentMethod {
 
   public prepare(dataPath: string, clean: boolean, lastDeployment: IDeployedFile[],
                  normalize: Normalize): Promise<void> {
-    if (this.mContext !== undefined) {
-      return Promise.reject(new Error('Deployment in progress'));
-    }
-
-    this.mNormalize = normalize;
-    this.mContext = {
-      newDeployment: {},
-      previousDeployment: {},
-    };
-    lastDeployment.forEach(file => {
-      const key = this.mNormalize(file.relPath);
-      this.mContext.previousDeployment[key] = file;
-      if (!clean) {
-        this.mContext.newDeployment[key] = file;
-      }
+    let queueResolve: () => void;
+    const queueProm = new Promise<void>(resolve => {
+      queueResolve = resolve;
     });
+
+    const queue = this.mQueue;
+    this.mQueue = this.mQueue.then(() => queueProm);
+    this.mNormalize = normalize;
+
+    return queue
+      .then(() => {
+        this.mContext = {
+          newDeployment: {},
+          previousDeployment: {},
+          onComplete: queueResolve,
+        };
+        lastDeployment.forEach(file => {
+          const key = this.mNormalize(file.relPath);
+          this.mContext.previousDeployment[key] = file;
+          if (!clean) {
+            this.mContext.newDeployment[key] = file;
+          }
+        });
+      });
   }
 
   public finalize(gameId: string,
@@ -215,11 +224,14 @@ abstract class LinkingActivator implements IDeploymentMethod {
 
           const context = this.mContext;
           this.mContext = undefined;
+          context.onComplete();
           return Object.keys(context.previousDeployment)
               .map(key => context.previousDeployment[key]);
         })
         .tapCatch(() => {
+          const context = this.mContext;
           this.mContext = undefined;
+          context.onComplete();
         });
   }
 
@@ -360,6 +372,14 @@ abstract class LinkingActivator implements IDeploymentMethod {
    */
   protected abstract canRestore(): boolean;
 
+  protected get normalize(): Normalize {
+    return this.mNormalize;
+  }
+
+  protected get context(): IDeploymentContext {
+    return this.mContext;
+  }
+
   protected stat(filePath: string): Promise<fs.Stats> {
     return fs.statAsync(filePath);
   }
@@ -374,8 +394,8 @@ abstract class LinkingActivator implements IDeploymentMethod {
       [installPathStr, this.mContext.newDeployment[key].source,
         this.mContext.newDeployment[key].relPath].join(path.sep);
     const fullOutputPath =
-      [dataPath, this.mContext.newDeployment[key].target || '',
-        this.mContext.newDeployment[key].relPath].join(path.sep);
+      [dataPath, this.mContext.newDeployment[key].target || null,
+        this.mContext.newDeployment[key].relPath].filter(i => i !== null).join(path.sep);
 
     const backupProm: Promise<void> = replace
       ? Promise.resolve()

@@ -13,7 +13,8 @@
     "node_modules/bootstrap-sass/assets/stylesheets",
     "node_modules/react-select/scss",
     "node_modules/fomod-installer/dist",
-    "assets/css/**"
+    "assets/css/**",
+    "**/*.node"
   ],
   "appId": "com.nexusmods.vortex",
   "win": {
@@ -32,7 +33,8 @@
     "runAfterFinish": true,
     "menuCategory": true,
     "oneClick": false,
-    "allowToChangeInstallationDirectory": true
+    "allowToChangeInstallationDirectory": true,
+    "uninstallDisplayName": "${productName}"
   },
   "extraResources": [
     "locales"

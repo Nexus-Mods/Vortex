@@ -27,6 +27,7 @@ import { getCurrentLanguage } from './i18n';
 import LazyComponent from './LazyComponent';
 import lazyRequire from './lazyRequire';
 import makeReactive from './makeReactive';
+import opn from './opn';
 import { getReduxLog } from './reduxLogger';
 import ReduxProp from './ReduxProp';
 import relativeTime from './relativeTime';
@@ -63,6 +64,7 @@ export {
   Normalize,
   NotSupportedError,
   objDiff,
+  opn,
   ProcessCanceled,
   ReduxProp,
   relativeTime,

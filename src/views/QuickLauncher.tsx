@@ -1,14 +1,11 @@
 import { showDialog } from '../actions/notifications';
-import Icon from '../controls/Icon';
-import { Button, IconButton } from '../controls/TooltipControls';
+import { IconButton } from '../controls/TooltipControls';
 import { IDiscoveryResult } from '../extensions/gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../extensions/gamemode_management/types/IGameStored';
 import { IProfile } from '../extensions/profile_management/types/IProfile';
-import ToolIcon from '../extensions/starter_dashlet/ToolIcon';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../types/IDialog';
 import { IDiscoveredTool } from '../types/IDiscoveredTool';
-import { ComponentEx, connect } from '../util/ComponentEx';
-import { MissingInterpreter } from '../util/CustomErrors';
+import { ComponentEx, connect, translate } from '../util/ComponentEx';
 import { log } from '../util/log';
 import { showError } from '../util/message';
 import { activeGameId, currentGame, currentGameDiscovery } from '../util/selectors';
@@ -17,11 +14,11 @@ import { getSafe } from '../util/storeHelper';
 
 import * as Promise from 'bluebird';
 import * as I18next from 'i18next';
-import * as path from 'path';
 import * as React from 'react';
 import { DropdownButton, MenuItem } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { truthy } from '../util/util';
+import { EmptyPlaceholder } from '../controls/api';
 
 export interface IBaseProps {
   t: I18next.TranslationFunction;
@@ -81,8 +78,8 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, discoveredGames, game, knownGames, profiles } = this.props;
-    const { gameIconCache, starter } = this.state;
+    const { t, game } = this.props;
+    const { starter } = this.state;
 
     if (starter === undefined) {
       return null;
@@ -98,15 +95,7 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
           onSelect={this.changeGame}
           noCaret
         >
-          {
-            Object.keys(gameIconCache)
-              .filter(gameId => gameId !== game.id)
-              .map(gameId => (
-              <MenuItem key={gameId} eventKey={gameId}>
-                {this.renderGameOption(gameId)}
-              </MenuItem>
-              ))
-          }
+          {this.renderGameOptions()}
         </DropdownButton>
         <div className='container-quicklaunch-launch'>
           <IconButton
@@ -120,8 +109,31 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
     );
   }
 
+  private renderGameOptions() {
+    const { t, game } = this.props;
+    const { gameIconCache } = this.state;
+    if (Object.keys(gameIconCache).length === 1) {
+      return (
+        <MenuItem key='no-other-games' disabled={true}>
+          <EmptyPlaceholder
+            icon='layout-list'
+            text={t('No other games managed')}
+          />
+        </MenuItem>
+      );
+    }
+
+    return Object.keys(gameIconCache)
+      .filter(gameId => gameId !== game.id)
+      .map(gameId => (
+        <MenuItem key={gameId} eventKey={gameId}>
+          {this.renderGameOption(gameId)}
+        </MenuItem>
+      ))
+  }
+
   private renderGameOption = (gameId: string) => {
-    const { t, discoveredGames } = this.props;
+    const { discoveredGames } = this.props;
     const { gameIconCache } = this.state;
 
     if ((gameIconCache === undefined) || (gameIconCache[gameId] === undefined)) {
@@ -178,56 +190,13 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
     }
   }
 
-  private queryElevate = (name: string) => {
-    const { t, onShowDialog } = this.props;
-    return onShowDialog('question', t('Requires elevation'), {
-      message: t('{{name}} needs to be run as administrator.', {
-          replace: {
-            name,
-          },
-        }),
-      options: {
-        translated: true,
-      },
-    }, [ { label: 'Cancel' }, { label: 'Run as administrator' } ])
-    .then(result => result.action === 'Run as administrator');
-  }
-
   private start = () => {
+    const { onShowError } = this.props;
     const { starter } = this.state;
-    this.context.api.runExecutable(starter.exePath, starter.commandLine, {
-      cwd: starter.workingDirectory,
-      env: starter.environment,
-      suggestDeploy: true,
-    }).catch(err => {
-      const { onShowError } = this.props;
-      if (err.errno === 'ENOENT') {
-        onShowError('Failed to run tool', {
-          executable: starter.exePath,
-          error: 'Executable doesn\'t exist, please check the configuration for this tool.',
-        }, false);
-      } else if (err.errno === 'UNKNOWN') {
-        // this sucks but node.js doesn't give us too much information about what went wrong
-        // and we can't have users misconfigure their tools and then report the error they
-        // get as feedback
-        onShowError('Failed to run tool', {
-          error: 'File is not executable, please check the configuration for this tool.',
-        }, false);
-      } else if (err instanceof MissingInterpreter) {
-        const par = {
-          error: err.message,
-        };
-        if (err.url !== undefined) {
-          par['Download url'] = err.url;
-        }
-        onShowError('Failed to run tool', par, false);
-      } else {
-        onShowError('Failed to run tool', {
-          executable: starter.exePath,
-          error: err.stack,
-        });
-      }
-    });
+    if (starter === undefined) {
+      return;
+    }
+    StarterInfo.run(starter, this.context.api, onShowError);
   }
 
   private makeStarter(props: IProps): StarterInfo {
@@ -286,5 +255,5 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
   };
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(
-  QuickLauncher) as React.ComponentClass<IBaseProps>;
+export default translate(['common'])(connect(mapStateToProps, mapDispatchToProps)(
+  QuickLauncher)) as React.ComponentClass<IBaseProps>;

@@ -8,7 +8,7 @@ import {truthy} from '../../util/util';
 
 import {IDownload} from '../download_management/types/IDownload';
 import {activeGameId} from '../profile_management/selectors';
-import {addMod, removeMod, setModState} from './actions/mods';
+import {addMod, removeMod} from './actions/mods';
 import {setActivator} from './actions/settings';
 import {IDeploymentMethod} from './types/IDeploymentMethod';
 import {IMod} from './types/IMod';
@@ -44,7 +44,9 @@ export function onGameModeActivated(
   const gameDiscovery = state.settings.gameMode.discovered[gameId];
   const game = getGame(gameId);
 
-  if ((gameDiscovery === undefined) || (gameDiscovery.path === undefined)) {
+  if ((gameDiscovery === undefined)
+      || (gameDiscovery.path === undefined)
+      || (game === undefined)) {
     return;
   }
 
@@ -189,8 +191,8 @@ export function onRemoveMod(api: IExtensionApi,
 
   const modState = getSafe(state, ['persistent', 'mods', gameMode, modId, 'state'], undefined);
   if (['downloaded', 'installed'].indexOf(modState) === -1) {
-      callback(new ProcessCanceled('Can\'t delete mod during download or install'));
-      return;
+    callback(new ProcessCanceled('Can\'t delete mod during download or install'));
+    return;
   }
 
   // we need to remove the mod from activation, otherwise me might leave orphaned
@@ -205,8 +207,7 @@ export function onRemoveMod(api: IExtensionApi,
   }
 
   const profile: IProfile = getSafe(state, ['persistent', 'profiles', profileId], undefined);
-
-  const wasEnabled = getSafe(profile, ['modState', modId, 'enabled'], false);
+  const wasEnabled: boolean = getSafe(profile, ['modState', modId, 'enabled'], false);
 
   store.dispatch(setModEnabled(profileId, modId, false));
 

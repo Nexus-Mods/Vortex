@@ -8,6 +8,7 @@ import { setApiKey } from '../../util/errorHandling';
 import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
+import opn from '../../util/opn';
 import { activeGameId } from '../../util/selectors';
 import { currentGame, getSafe } from '../../util/storeHelper';
 import { decodeHTML, truthy } from '../../util/util';
@@ -52,16 +53,12 @@ import NexusT, { IDownloadURL,
                  IFeedbackResponse, IFileInfo, IGameListEntry,
                  IIssue, IModInfo,
                  NexusError as NexusErrorT} from 'nexus-api';
-import {} from 'opn';
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
 import * as Redux from 'redux';
 import * as util from 'util';
 import {} from 'uuid';
 import * as WebSocket from 'ws';
-
-// tslint:disable-next-line:no-var-requires
-const opn = require('opn');
 
 type IModWithState = IMod & IProfileMod;
 

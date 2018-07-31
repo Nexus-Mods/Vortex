@@ -127,6 +127,10 @@ export const stateReducer: IReducerSpec = {
       }
       return setSafe(temp, ['speedHistory'], speeds);
     },
+    [action.setDownloadSpeeds as any]: (state, payload) => {
+      const temp = setSafe(state, ['speed'], payload[payload.length - 1]);
+      return setSafe(temp, ['speedHistory'], payload);
+    },
     [action.removeDownload as any]: (state, payload) =>
       deleteOrNop(state, [ 'files', payload.id ]),
     [action.addLocalDownload as any]: (state, payload) =>

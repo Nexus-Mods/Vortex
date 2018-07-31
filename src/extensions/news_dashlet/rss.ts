@@ -16,6 +16,7 @@ export interface IFeedMessage {
   description: string;
   link: string;
   titleRendered?: React.ReactChild[];
+  descriptionShortened?: React.ReactChild;
   descriptionRendered?: React.ReactChild[];
   enclosures: IEnclosure[];
   'nexusmods:downloads'?: { '#': string };

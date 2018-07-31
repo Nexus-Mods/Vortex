@@ -567,6 +567,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         ],
         onChangeValue: this.changeModEnabled,
       },
+      noShrink: true,
       isSortable: false,
       filter: new OptionsFilter([
         { value: true, label: 'Enabled' },
@@ -982,7 +983,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       modIds.filter(modId => mods[modId] !== undefined).forEach(modId =>
         this.context.api.events.emit('start-install-download', mods[modId].archiveId, (err) => {
           if (err === null) {
-            const enabled = modIds.filter(id => modState[id].enabled);
+            const enabled = modIds.filter(id => getSafe(modState, [id, 'enabled'], false));
             if (enabled.length > 0) {
               this.context.api.events.emit('mods-enabled', enabled, true);
             }

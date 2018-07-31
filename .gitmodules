@@ -106,3 +106,15 @@
 	path = extensions/changelog-dashlet
 	url = https://github.com/Nexus-Mods/extension-changelog-dashlet
 	branch = master
+[submodule "extensions/fnis-integration"]
+	path = extensions/fnis-integration
+	url = https://github.com/Nexus-Mods/fnis-integration.git
+  branch = master
+[submodule "extensions/game-pillarsofeternity2"]
+	path = extensions/game-pillarsofeternity2
+	url = https://github.com/Nexus-Mods/game-pillarsofeternity2.git
+	branch = master
+[submodule "extensions/test-gameversion"]
+	path = extensions/test-gameversion
+	url = https://github.com/Nexus-Mods/test-gameversion.git
+	branch = master

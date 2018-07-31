@@ -10,6 +10,7 @@ import * as storeHelperT from '../util/storeHelper';
 import * as Promise from 'bluebird';
 import { screen } from 'electron';
 import * as Redux from 'redux';
+import TrayIcon from './TrayIcon';
 
 class MainWindow {
   private mWindow: Electron.BrowserWindow = null;
@@ -21,7 +22,7 @@ class MainWindow {
 
   constructor(store: Redux.Store<IState>) {
     this.mResizeDebouncer = new Debouncer(() => {
-      if (this.mWindow !== null) {
+      if ((this.mWindow !== null) && !this.mWindow.isMaximized()) {
         const size: number[] = this.mWindow.getSize();
         store.dispatch(setWindowSize({width: size[0], height: size[1]}));
       }
@@ -29,7 +30,7 @@ class MainWindow {
     }, 500);
 
     this.mMoveDebouncer = new Debouncer(() => {
-      if (this.mWindow !== null) {
+      if ((this.mWindow !== null) && !this.mWindow.isMaximized()) {
         const pos: number[] = this.mWindow.getPosition();
         store.dispatch(setWindowPosition({x: pos[0], y: pos[1]}));
         return null;
@@ -83,7 +84,7 @@ class MainWindow {
     });
 
     this.mWindow.webContents.session.on(
-        'will-download', (event, item, webContents) => {
+        'will-download', (event, item) => {
           event.preventDefault();
           this.mWindow.webContents.send('external-url', item.getURL());
           store.dispatch(addNotification({
@@ -94,8 +95,7 @@ class MainWindow {
           }));
         });
 
-    this.mWindow.webContents.on('new-window', (event, url, frameName, disposition, options,
-                                               additionalFeatures) => {
+    this.mWindow.webContents.on('new-window', (event, url, frameName, disposition) => {
       if (disposition === 'background-tab') {
         event.preventDefault();
       }
@@ -103,21 +103,23 @@ class MainWindow {
 
     this.initEventHandlers(store);
 
-    return new Promise<Electron.WebContents>((resolve, reject) => {
+    return new Promise<Electron.WebContents>((resolve) => {
       this.mWindow.once('ready-to-show', () => {
         resolve(this.mWindow.webContents);
       });
     });
   }
 
+  public connectToTray(tray: TrayIcon) {
+    tray.setMainWindow(this.mWindow);
+  }
+
   public show(maximized: boolean) {
-    const {getSafe} = require('../util/storeHelper') as typeof storeHelperT;
     this.mShown = true;
     this.mWindow.show();
     if (maximized) {
       this.mWindow.maximize();
     }
-
   }
 
   public sendExternalURL(url: string) {
@@ -155,7 +157,7 @@ class MainWindow {
     this.mWindow.on('maximize', () => { store.dispatch(setMaximized(true)); });
     this.mWindow.on('unmaximize', () => { store.dispatch(setMaximized(false)); });
     this.mWindow.on('resize', () => { this.mResizeDebouncer.schedule(); });
-    this.mWindow.on('move', (evt) => { this.mMoveDebouncer.schedule(); });
+    this.mWindow.on('move', () => { this.mMoveDebouncer.schedule(); });
   }
 }
 

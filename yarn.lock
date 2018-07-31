@@ -1764,8 +1764,8 @@ base@^0.11.1:
     pascalcase "^0.1.1"
 
 bbcode-to-react@TanninOne/bbcode-to-react:
-  version "0.2.8"
-  resolved "https://codeload.github.com/TanninOne/bbcode-to-react/tar.gz/fb9fb07d069e0cf0793a1db5824a8b4888bbf7b4"
+  version "0.2.9"
+  resolved "https://codeload.github.com/TanninOne/bbcode-to-react/tar.gz/6dd92afeb5083a590ba24bb6f7aaf9544e91265d"
 
 bcrypt-pbkdf@^1.0.0:
   version "1.0.1"
@@ -4261,8 +4261,8 @@ flush-write-stream@^1.0.0:
     readable-stream "^2.0.4"
 
 fomod-installer@Nexus-Mods/fomod-installer:
-  version "0.0.6"
-  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/76856330115e7816d09593750a47a37398ab57f4"
+  version "0.0.9"
+  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/9d2a628fdea25d8050dd3f6c0e554f3a06f107b7"
   dependencies:
     copyfiles "^1.0.0"
     msbuild "^1.0.1"
@@ -6729,8 +6729,8 @@ mkdirp@^0.3.5:
   resolved "https://registry.yarnpkg.com/mkdirp/-/mkdirp-0.3.5.tgz#de3e5f8961c88c787ee1368df849ac4413eca8d7"
 
 modmeta-db@Nexus-Mods/modmeta-db:
-  version "0.2.1"
-  resolved "https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/74141a184caac838c908a2852e19922b34c6eefb"
+  version "0.2.2"
+  resolved "https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/47957e908af7dfac5b98294358de9cc6cf7a9a41"
   dependencies:
     bluebird "^3.4.6"
     leveldown "^1.6.0"
@@ -9921,8 +9921,8 @@ tunnel-agent@~0.4.1:
   resolved "https://registry.yarnpkg.com/tunnel-agent/-/tunnel-agent-0.4.3.tgz#6373db76909fe570e08d73583365ed828a74eeeb"
 
 turbowalk@Nexus-Mods/node-turbowalk:
-  version "1.0.1"
-  resolved "https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/94bb5ebb0768f0f2b374a6223d22fb3d4ff09e1d"
+  version "1.1.0"
+  resolved "https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/f58a978c1e7236e17407579c6893dffb71055b99"
   dependencies:
     autogypi "^0.2.2"
     fs-extra-promise "^1.0.1"

@@ -219,7 +219,11 @@ class DeploymentMethod extends LinkingDeployment {
         }
       });
       ipc.server.on('socket.disconnected', () => {
-        ipc.server.stop();
+        try {
+          ipc.server.stop();
+        } catch (err) {
+          log('warn', 'Failed to close ipc server', err.message);
+        }
       });
       ipc.server.on('log', (data: any) => {
         log(data.level, data.message, data.meta);
@@ -232,7 +236,11 @@ class DeploymentMethod extends LinkingDeployment {
         .then(() => {
           if (!connected) {
             // still no connection, something must have gone wrong
-            ipc.server.stop();
+            try {
+              ipc.server.stop();
+            } catch (err) {
+              log('warn', 'Failed to close ipc server', err.message);
+            }
             reject(new TemporaryError('failed to run deployment helper'));
           }
         })
@@ -257,7 +265,13 @@ class DeploymentMethod extends LinkingDeployment {
     }
     this.mQuitTimer = setTimeout(() => {
       ipc.server.emit(this.mElevatedClient, 'quit');
-      ipc.server.stop();
+      try {
+        ipc.server.stop();
+      } catch (err) {
+        // the most likely reason here is that it's already closed
+        // and cleaned up
+        log('warn', 'Failed to close ipc server', err.message);
+      }
       this.mElevatedClient = null;
       this.mQuitTimer = undefined;
     }, 1000);

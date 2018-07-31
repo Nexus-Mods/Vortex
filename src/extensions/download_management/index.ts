@@ -1,6 +1,7 @@
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
 import { getNormalizeFunc, Normalize, UserCanceled } from '../../util/api';
+import Debouncer from '../../util/Debouncer';
 import * as fs from '../../util/fs';
 import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
@@ -16,6 +17,7 @@ import {
   setDownloadInterrupted,
   setDownloadModInfo,
   setDownloadSpeed,
+  setDownloadSpeeds,
 } from './actions/state';
 import { settingsReducer } from './reducers/settings';
 import { stateReducer } from './reducers/state';
@@ -216,7 +218,7 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
 
         const knownDLs =
           Object.keys(downloads)
-            .filter((dlId: string) => getDownloadGames(downloads[dlId])[0] === gameId)
+            .filter(dlId => getDownloadGames(downloads[dlId])[0] === gameId)
             .map(dlId => normalize(downloads[dlId].localPath || ''));
 
         return refreshDownloads(currentDownloadPath, knownDLs, normalize,
@@ -436,12 +438,19 @@ function init(context: IExtensionContextExt): boolean {
     });
 
     {
+      let speedsDebouncer = new Debouncer(() => {
+        store.dispatch(setDownloadSpeeds(store.getState().persistent.downloads.speedHistory));
+        return null;
+      }, 10000, false);
       manager = new DownloadManagerImpl(
           selectors.downloadPath(store.getState()),
           store.getState().settings.downloads.maxParallelDownloads,
           store.getState().settings.downloads.maxChunks, (speed: number) => {
             if ((speed !== 0) || (store.getState().persistent.downloads.speed !== 0)) {
+              // this first call is only applied in the renderer for performance reasons
               store.dispatch(setDownloadSpeed(speed));
+              // this schedules the main progress to be updated
+              speedsDebouncer.schedule();
             }
           }, `Nexus Client v2.${app.getVersion()}`);
       observer =
@@ -464,17 +473,22 @@ function init(context: IExtensionContextExt): boolean {
             store.dispatch(removeDownload(id));
           }
         } else {
-          let realSize =
-              (downloads[id].size !== 0) ?
-                  downloads[id].size -
-                      sum((downloads[id].chunks || []).map(chunk => chunk.size)) :
-                  0;
+          let realSize = (downloads[id].size !== 0)
+            ? downloads[id].size - sum((downloads[id].chunks || []).map(chunk => chunk.size))
+            : 0;
           if (isNaN(realSize)) {
             realSize = 0;
           }
           store.dispatch(setDownloadInterrupted(id, realSize));
         }
       });
+      // remove downloads that have no localPath set because they just cause trouble. They shouldn't
+      // exist at all
+      Object.keys(downloads)
+        .filter(dlId => !truthy(downloads[dlId].localPath))
+        .forEach(dlId => {
+          store.dispatch(removeDownload(dlId));
+        });
     }
   });
 

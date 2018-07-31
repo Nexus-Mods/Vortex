@@ -42,7 +42,7 @@ function walk(target: string,
         }
         const fullPath: string = path.join(target, allFileNames[idx]);
         cbPromises.push(callback(fullPath, stat.value()));
-        if (stat.value().isDirectory()) {
+        if (stat.value().isDirectory() && (path.extname(fullPath) !== '.asar')) {
           subDirs.push(fullPath);
         }
       });

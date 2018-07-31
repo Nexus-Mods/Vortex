@@ -299,6 +299,15 @@ class InstallManager {
                              && err.stack.startsWith('UserCanceled: canceled by user'));
         let prom = destinationPath !== undefined
           ? rimrafAsync(destinationPath, { glob: false, maxBusyTries: 1 })
+            .catch(err => {
+              installContext.reportError(
+                'Failed to clean up installation directory, please close Vortex and remove it manually',
+                {
+                  path: destinationPath,
+                  error: err.message,
+                },
+              )
+            })
           : Promise.resolve();
 
         if (installContext !== undefined) {
@@ -390,6 +399,7 @@ class InstallManager {
         installContext.setProgress(percent);
       }
     };
+    process.noAsar = true;
     return this.mTask.extractFull(archivePath, tempPath, {ssc: false},
                                   progress,
                                   () => this.queryPassword(api.store))
@@ -422,7 +432,13 @@ class InstallManager {
                            }
                            return Promise.resolve();
                          }))
-        .then(() => this.getInstaller(fileList, gameId))
+        .finally(() => {
+          process.noAsar = false;
+        })
+        .then(() => {
+          console.log('files', fileList);
+          return this.getInstaller(fileList, gameId);
+        })
         .then(supportedInstaller => {
           if (supportedInstaller === undefined) {
             throw new Error('no installer supporting this file');
@@ -656,12 +672,18 @@ class InstallManager {
     const instructionGroups = this.transformInstructions(result.instructions);
 
     if (instructionGroups.error.length > 0) {
-      api.showErrorNotification('Installer failed',
-        instructionGroups.error.map(err => err.source).join('\n'), {
+      api.showErrorNotification('Installer reported errors',
+        'Errors were reported processing this installer. It\'s possible the mod works (partially) anyway. '
+        + 'Please not that NMM tends to ignore errors so just because NMM doesn\'t '
+        + 'report a problem with this installer doesn\'t mean it doesn\'t have any.\n'
+        + '{{ errors }}'
+        , {
+          replace: {
+            errors: instructionGroups.error.map(err => err.source).join('\n'),
+          },
           allowReport: false,
-        },
+        }
       );
-      return Promise.reject(new ProcessCanceled('Installer failed'));
     }
 
     log('debug', 'installer instructions', instructionGroups);

@@ -21,6 +21,7 @@
  *      aggregated.
  *   gamemode-activated: called on startup and whenever the active game changes.
  *   profile-did-change: called on startup and whenever the active profile changes.
+ *   mod-installed: called whenever one or more mods were installed or removed
  *   mod-activated: called whenever one or more mods were activated or deactivated
  * Further event types can be triggered by extensions
  */
@@ -29,13 +30,14 @@ import {showDialog} from '../../actions/notifications';
 import {CheckFunction, IExtensionApi, IExtensionContext} from '../../types/IExtensionContext';
 import {INotificationAction} from '../../types/INotification';
 import { log } from '../../util/log';
-import { activeProfile } from '../../util/selectors';
-import { deleteOrNop, getSafe, setSafe } from '../../util/storeHelper';
+import { activeProfile, activeGameId } from '../../util/selectors';
+import { getSafe } from '../../util/storeHelper';
 import { setdefault } from '../../util/util';
 
-import { ITestResult } from '../../types/ITestResult';
-
 import * as Promise from 'bluebird';
+import * as _ from 'lodash';
+
+export type TestEvent = 'settings-changed' | 'gamemode-activated' | 'profile-did-change' | 'mod-installed' | 'mod-activated';
 
 interface ICheckEntry {
   id: string;
@@ -64,6 +66,11 @@ function runCheck(api: IExtensionApi, check: ICheckEntry): Promise<void> {
             action: () => result.automaticFix()
               .then(() => runCheck(api, check))
               .catch(err => api.showErrorNotification('Failed to run automatic fix', err)),
+          });
+        } else {
+          actions.push({
+            title: 'Check again',
+            action: () => runCheck(api, check),
           });
         }
         api.sendNotification({
@@ -125,6 +132,16 @@ function init(context: IExtensionContext): boolean {
 
     context.api.onStateChange(['settings'], () => {
       runChecks(context.api, 'settings-changed');
+    });
+
+    context.api.onStateChange(['persistent', 'mods'], (prevMods, newMods) => {
+      const gameMode = activeGameId(context.api.store.getState());
+      if (gameMode === undefined) {
+        return;
+      }
+      if (!_.isEqual(Object.keys(prevMods[gameMode]), Object.keys(newMods[gameMode]))) {
+        runChecks(context.api, 'mod-installed', 5000);
+      }
     });
 
     context.api.onStateChange(['persistent', 'profiles'], (prevProfiles, newProfiles) => {

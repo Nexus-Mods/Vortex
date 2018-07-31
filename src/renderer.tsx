@@ -77,6 +77,12 @@ Promise.config({
 // synchronized with the main process store
 
 const filter = true;
+
+function actionFilter(action) {
+  return (action.meta === undefined)
+      || (action.meta.forward !== false);
+}
+
 const middleware = [
   thunkMiddleware,
   reduxSanity(sanityCheckCB),
@@ -91,24 +97,6 @@ function sanityCheckCB(err: StateError) {
 const terminateFromError = (error: any) => {
   terminate(toError(error), store !== undefined ? store.getState() : {});
 };
-
-function getMessageString(error: any): string {
-  switch (typeof error) {
-    case 'object': return error.message;
-    case 'string': return error;
-    default: error.toString();
-  }
-}
-
-// this are error messages that are known to only appear as subsequent faults
-// to an actual bug, so we ignore these as there should be a "proper" error reported.
-// Since these are ui errors it should be fine to ignore them.
-// If you add to this list, make sure you abso-fucking-lutely know ignoring the error
-// is safe and that you don't suppress more than you intended!
-const ignoredExceptions = new RegExp('(' + [
-  'Cannot read property \'_currentElement\' of null',
-  'Cannot read property \'__reactInternalInstance.*\' of null',
-].join('|') + ')');
 
 window.addEventListener('error', (evt: any) => {
   const {error} = evt;
@@ -145,13 +133,13 @@ if (process.env.NODE_ENV === 'development') {
   const freeze = require('redux-freeze');
   enhancer = compose(
     applyMiddleware(...middleware, freeze),
-    electronEnhancer({ filter }),
+    electronEnhancer({ filter, actionFilter }),
     (window as any).__REDUX_DEVTOOLS_EXTENSION__ && (window as any).__REDUX_DEVTOOLS_EXTENSION__(),
   );
 } else {
   enhancer = compose(
     applyMiddleware(...middleware),
-    electronEnhancer({ filter }),
+    electronEnhancer({ filter, actionFilter }),
   );
 }
 

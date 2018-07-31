@@ -51,12 +51,26 @@ export const modsReducer: IReducerSpec = {
       }
       return setSafe(state, [gameId, modId, 'attributes', attribute], value);
     },
+    [actions.setModAttributes as any]: (state, payload) => {
+      const { gameId, modId, attributes } = payload;
+      if ((state[gameId] === undefined) || (state[gameId][modId] === undefined)) {
+        return state;
+      }
+      return merge(state, [gameId, modId, 'attributes'], attributes);
+    },
     [actions.setModType as any]: (state, payload) => {
       const { gameId, modId, type } = payload;
       if (getSafe(state, [gameId, modId], undefined) === undefined) {
         return state;
       }
       return setSafe(state, [gameId, modId, 'type'], type);
+    },
+    [actions.clearModRules as any]: (state, payload) => {
+      const { gameId, modId } = payload;
+      if ((state[gameId] === undefined) || (state[gameId][modId] === undefined)) {
+        return state;
+      }
+      return setSafe(state, [gameId, modId, 'rules'], []);
     },
     [actions.addModRule as any]: (state, payload) => {
       const { gameId, modId, rule } = payload;

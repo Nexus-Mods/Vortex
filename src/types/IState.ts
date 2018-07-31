@@ -46,6 +46,7 @@ export interface IWindow {
   size: IDimensions;
   tabsMinimized: boolean;
   customTitlebar: boolean;
+  minimizeToTray: boolean;
 }
 
 /**

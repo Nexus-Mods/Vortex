@@ -1,16 +1,13 @@
 import { setDialogVisible } from '../../../actions/session';
 import { IconButton } from '../../../controls/TooltipControls';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
+import opn from '../../../util/opn';
 import { setUserAPIKey } from '../actions/account';
 import { IValidateKeyData } from '../types/IValidateKeyData';
 
-import {} from 'opn';
 import * as React from 'react';
 import { Button, Image } from 'react-bootstrap';
 import * as Redux from 'redux';
-
-// tslint:disable-next-line:no-var-requires
-const opn = require('opn');
 
 interface IConnectedProps {
   userInfo: IValidateKeyData;

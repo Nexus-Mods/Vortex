@@ -1,24 +1,14 @@
 import { showDialog } from '../../../actions/notifications';
-import FormFeedback from '../../../controls/FormFeedback';
 import Icon from '../../../controls/Icon';
-import More from '../../../controls/More';
 import { Button, IconButton } from '../../../controls/TooltipControls';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { getSafe } from '../../../util/storeHelper';
-import { truthy } from '../../../util/util';
 
 import { setUserAPIKey } from '../actions/account';
 import { IValidateKeyData } from '../types/IValidateKeyData';
 
-import { remote } from 'electron';
-import * as update from 'immutability-helper';
-import {} from 'opn';
 import * as React from 'react';
-import { ControlLabel, FormControl, FormGroup, HelpBlock, Image, Modal } from 'react-bootstrap';
+import { Modal } from 'react-bootstrap';
 import * as Redux from 'redux';
-
-// tslint:disable-next-line:no-var-requires
-const opn = require('opn');
 
 export interface IBaseProps {
   visible: boolean;
@@ -59,7 +49,7 @@ class LoginDialog extends ComponentEx<IProps, ILoginFormState> {
   }
 
   public render(): JSX.Element {
-    const { t, APIKey, visible, onHide, userInfo } = this.props;
+    const { t, visible, onHide } = this.props;
     return (
       <Modal id='login-dialog' show={visible} onHide={onHide}>
         <Modal.Body>
@@ -91,80 +81,6 @@ class LoginDialog extends ComponentEx<IProps, ILoginFormState> {
     );
   }
 
-  private renderLoginForm(): JSX.Element {
-    const { APIKey, userInfo } = this.props;
-    return (
-      <form>
-        {((userInfo === undefined) || (userInfo === null))
-          ? this.renderKeyInput()
-          : this.renderAccountInfo()}
-      </form>
-    );
-  }
-
-  private renderSubmitButton(): JSX.Element {
-    const { t, APIKey, userInfo } = this.props;
-    return ((userInfo === undefined) || (userInfo === null))
-      ? (
-        <Button id='submit-apikey' tooltip={t('Submit')} onClick={this.apiKeySubmit}>
-          {t('Submit')}
-        </Button>
-      )
-      : (
-        <Button id='remove-apikey' tooltip={t('Remove Key')} onClick={this.clearAPIKey}>
-          {t('Remove Key')}
-        </Button>
-      );
-  }
-
-  private renderKeyInput() {
-    const { t } = this.props;
-    const { APIKey } = this.state;
-
-    const validation: IValidationState = this.validationState();
-    return (
-      <Button onClick={this.login} tooltip={t('Log in')}>
-        {t('Log in')}
-      </Button>
-    );
-  }
-
-  private renderAccountInfo() {
-    const { t } = this.props;
-    const { name, email, isPremium, isSupporter, profileUrl, userId } = this.props.userInfo;
-
-    return (
-      <FormGroup
-        controlId='formUserInfo'
-      >
-        <div>
-          <Image src={profileUrl || 'assets/images/noavatar.png'} width='90' height='90' rounded />
-        </div>
-        <div>
-          <ControlLabel>{t('User ID: {{userId}}', { replace: { userId } })}</ControlLabel>
-        </div>
-        <div>
-          <ControlLabel>{t('UserName: {{name}}', { replace: { name } })}</ControlLabel>
-        </div>
-        <div>
-          <ControlLabel>
-            {t('Premium: {{isPremium}}',
-              { replace: { isPremium: (isPremium ? t('YES') : t('NO')) } })}
-          </ControlLabel>
-        </div>
-        <div>
-          <ControlLabel>
-            {t('Supporter: {{isSupporter}}',
-              { replace: { isSupporter: (isSupporter ? t('YES') : t('NO')) } })}
-          </ControlLabel>
-        </div>
-        <div>
-          <ControlLabel>{t('Email: {{email}}', { replace: { email } })}</ControlLabel>
-        </div>
-      </FormGroup>
-    );
-  }
-
   private login = () => {
     const { onHide } = this.props;
     this.context.api.events.emit('request-nexus-login', (err: Error) => {
@@ -173,49 +89,6 @@ class LoginDialog extends ComponentEx<IProps, ILoginFormState> {
       }
       onHide();
     });
-  }
-
-  private openAPIKeyPage = evt => {
-    evt.preventDefault();
-    opn('https://www.nexusmods.com/users/myaccount?tab=api+access').catch(err => undefined);
-  }
-
-  private validationState(): IValidationState {
-    const { APIKey, userInfo } = this.props;
-    const { didSubmit } = this.state;
-    const editAPIKey = this.state.APIKey;
-
-    if (didSubmit && (APIKey === undefined)) {
-      return { state: 'warning', reason: 'API Key rejected' };
-    } else if ((APIKey !== undefined) && (userInfo === undefined)) {
-      return { pending: true, reason: 'Verifying...' };
-    } else if ((APIKey !== undefined) && (userInfo === null)) {
-      return { state: 'warning', reason: 'API Key not validated' };
-    } else if ((!truthy(editAPIKey) && !truthy(APIKey)) || (editAPIKey === APIKey)) {
-      return {};
-    }
-
-    return { state: 'success' };
-  }
-
-  private apiKeySubmit = () => {
-    const { onSetAPIKey } = this.props;
-    this.setState(update(this.state, { didSubmit: { $set: true } }));
-    if (this.state.APIKey === this.props.APIKey) {
-      // unset the api key first to ensure this registers as a state-change
-      onSetAPIKey(undefined);
-    }
-    onSetAPIKey(this.state.APIKey);
-  }
-
-  private clearAPIKey = () => {
-    this.props.onSetAPIKey(undefined);
-  }
-
-  private handleChangeAPIKey = (event) => {
-    this.setState(update(this.state, {
-      APIKey: { $set: event.target.value.trim() },
-    }));
   }
 }
 

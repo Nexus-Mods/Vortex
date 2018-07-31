@@ -1,18 +1,13 @@
-import Spinner from '../../../controls/Spinner';
 import { IGameInfoEntry, IState } from '../../../types/IState';
 import { ComponentEx, connect } from '../../../util/ComponentEx';
+import opn from '../../../util/opn';
 import { bytesToString } from '../../../util/util';
 
 import { IGameStored } from '../types/IGameStored';
 
 import * as Promise from 'bluebird';
 import * as I18next from 'i18next';
-import {} from 'opn';
 import * as React from 'react';
-import { Table } from 'react-bootstrap';
-
-// tslint:disable-next-line:no-var-requires
-const opn = require('opn');
 
 export interface IBaseProps {
   t: I18next.TranslationFunction;

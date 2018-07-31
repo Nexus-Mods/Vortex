@@ -33,7 +33,7 @@ import StyleManagerT from './StyleManager';
 import { setdefault } from './util';
 
 import * as Promise from 'bluebird';
-import { exec, spawn, SpawnOptions } from 'child_process';
+import { spawn, SpawnOptions } from 'child_process';
 import { app as appIn, dialog as dialogIn, ipcMain, ipcRenderer, remote } from 'electron';
 import { EventEmitter } from 'events';
 import * as fs from 'fs';
@@ -44,7 +44,6 @@ const modmeta = lazyRequire<typeof modmetaT>(() => require('modmeta-db'));
 import * as nodeIPC from 'node-ipc';
 import * as path from 'path';
 import * as Redux from 'redux';
-import { types as ratypes } from 'redux-act';
 import {} from 'redux-watcher';
 import * as rimraf from 'rimraf';
 import * as semver from 'semver';
@@ -374,6 +373,8 @@ class ExtensionManager {
       openArchive: this.openArchive,
       setStylesheet: (key, filePath) => this.mStyleManager.setSheet(key, filePath),
       runExecutable: this.runExecutable,
+      emitAndAwait: this.emitAndAwait,
+      onAsync: this.onAsync,
     };
     if (initStore !== undefined) {
       // apologies for the sync operation but this needs to happen before extensions are loaded
@@ -407,6 +408,10 @@ class ExtensionManager {
       });
     } else {
       this.mExtensionState = ipcRenderer.sendSync('__get_extension_state');
+    }
+    if (remote !== undefined) {
+      const StyleManager = require('./StyleManager').default;
+      this.mStyleManager = new StyleManager(this.mApi);
     }
     this.mExtensions = this.loadExtensions();
     this.initExtensions();
@@ -690,8 +695,6 @@ class ExtensionManager {
       if (remote !== undefined) {
         // log this only once so we don't spam the log file with this
         log('info', 'init extension', {name: ext.name});
-        const StyleManager = require('./StyleManager').default;
-        this.mStyleManager = new StyleManager(this.mApi);
       }
       this.mContextProxyHandler.setExtension(ext.name, ext.path);
       try {
@@ -973,6 +976,7 @@ class ExtensionManager {
                 // doesn't seem to affect anything
                 log('warn', 'child process exited with code: ' + code, {});
               }
+              resolve();
           });
           child.stderr.on('data', chunk => {
             log('error', executable + ': ', chunk.toString());
@@ -992,6 +996,36 @@ class ExtensionManager {
           }
         }
       }) : Promise.resolve());
+  }
+
+  private emitAndAwait = (event: string, ...args: any[]): Promise<void> => {
+    let queue = Promise.resolve();
+    const enqueue = (prom: Promise<void>) => {
+      if (prom !== undefined) {
+        queue = queue.then(() => prom.catch(err => null));
+      }
+    }
+
+    this.mEventEmitter.emit(event, ...args, enqueue);
+
+    return queue;
+  }
+
+  private onAsync = (event: string, listener: (...args) => Promise<void>) => {
+    this.mEventEmitter.on(event, (...args: any[]) => {
+      const enqueue = args.pop();
+      if ((enqueue === undefined) || (typeof(enqueue) !== 'function')) {
+        // no arguments, this is not an emitAndAwait event!
+        this.mApi.showErrorNotification('Invalid event handler', { event });
+        if (enqueue !== undefined) {
+          args.push(enqueue);
+        }
+        // call the listener anyway
+        listener(...args).then(() => null);
+      } else {
+        enqueue(listener(...args));
+      }
+    });
   }
 
   private startIPC(ipcPath: string) {
