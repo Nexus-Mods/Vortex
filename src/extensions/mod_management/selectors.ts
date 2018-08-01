@@ -9,7 +9,7 @@ import createCachedSelector from 're-reselect';
 const installPathPattern = (state: IState) => state.settings.mods.installPath;
 const gameInstallPathPattern = (state: IState, gameId: string) => state.settings.mods.installPath[gameId];
 
-export const activeInstallPath = createSelector(installPathPattern, activeGameId,
+export const installPath = createSelector(installPathPattern, activeGameId,
     (inPaths: { [gameId: string]: string }, inGameMode: string) => {
       if (inGameMode === undefined) {
         return undefined;

@@ -439,7 +439,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     gameMode: selectors.activeGameId(state),
     knownGames: state.session.gameMode.known,
     downloads: state.persistent.downloads.files,
-    downloadPath: selectors.activeDownloadPath(state),
+    downloadPath: selectors.downloadPath(state),
     showDropzone: state.settings.downloads.showDropzone,
     showGraph: state.settings.downloads.showGraph,
   };

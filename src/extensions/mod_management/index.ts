@@ -21,7 +21,7 @@ import {
   activeGameId,
   activeProfile,
   currentGameDiscovery,
-  activeInstallPath,
+  installPath,
   installPathForGame,
 } from '../../util/selectors';
 import {getSafe} from '../../util/storeHelper';
@@ -131,7 +131,7 @@ function getActivator(state: IState, gameMode?: string): IDeploymentMethod {
 
 function purgeMods(api: IExtensionApi): Promise<void> {
   const state = api.store.getState();
-  const instPath = activeInstallPath(state);
+  const instPath = installPath(state);
   const gameId = activeGameId(state);
   const gameDiscovery = currentGameDiscovery(state);
   const t = api.translate;
@@ -545,7 +545,7 @@ function cleanupIncompleteInstalls(api: IExtensionApi) {
     Object.keys(mods[gameId]).forEach(modId => {
       const mod = mods[gameId][modId];
       if (mod.state === 'installing') {
-        const instPath = activeInstallPath(store.getState());
+        const instPath = installPath(store.getState());
         const fullPath = path.join(instPath, mod.installationPath);
         log('warn', 'mod was not installed completelely and will be removed', { mod, fullPath });
         // this needs to be synchronous because once is synchronous and we have to complete this

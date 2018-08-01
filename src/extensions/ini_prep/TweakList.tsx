@@ -7,7 +7,7 @@ import { truthy } from '../../util/util';
 
 import { setINITweakEnabled } from '../mod_management/actions/mods';
 import { INI_TWEAKS_PATH } from '../mod_management/InstallManager';
-import { activeInstallPath } from '../mod_management/selectors';
+import { installPath } from '../mod_management/selectors';
 import { IMod } from '../mod_management/types/IMod';
 import { activeGameId } from '../profile_management/selectors';
 
@@ -126,7 +126,7 @@ function mapStateToProps(state: IState, ownProps: IBaseProps): IConnectedProps {
   const gameMode = activeGameId(state);
   return {
     gameMode,
-    modsPath: activeInstallPath(state),
+    modsPath: installPath(state),
     mod: getSafe(state, ['persistent', 'mods', gameMode, ownProps.modId], undefined),
   };
 }

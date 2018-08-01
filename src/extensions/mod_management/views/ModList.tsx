@@ -18,13 +18,11 @@ import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { ProcessCanceled, TemporaryError, UserCanceled } from '../../../util/CustomErrors';
 import Debouncer from '../../../util/Debouncer';
 import * as fs from '../../../util/fs';
-import { activeGameId, activeProfile } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
 import MainPage from '../../../views/MainPage';
 
 import getDownloadGames from '../../download_management/util/getDownloadGames';
-import { activeDownloadPath } from '../../download_management/selectors';
 import { setModEnabled } from '../../profile_management/actions/profiles';
 import { IProfileMod } from '../../profile_management/types/IProfile';
 
@@ -42,7 +40,7 @@ import VersionChangelogButton from '../views/VersionChangelogButton';
 import VersionIconButton from '../views/VersionIconButton';
 
 import { INSTALL_TIME, PICTURE } from '../modAttributes';
-import { activeInstallPath } from '../selectors';
+import * as selectors from '../../../util/selectors';
 import getText from '../texts';
 
 import CheckModVersionsButton from './CheckModVersionsButton';
@@ -1021,9 +1019,8 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 const empty = {};
 
 function mapStateToProps(state: IState): IConnectedProps {
-  const profile = activeProfile(state);
-  const gameMode = activeGameId(state);
-  const downloadPath = activeDownloadPath(state);
+  const profile = selectors.activeProfile(state);
+  const gameMode = selectors.activeGameId(state);
 
   return {
     mods: getSafe(state, ['persistent', 'mods', gameMode], empty),
@@ -1032,8 +1029,8 @@ function mapStateToProps(state: IState): IConnectedProps {
     gameMode,
     profileId: getSafe(profile, ['id'], undefined),
     language: state.settings.interface.language,
-    installPath: activeInstallPath(state),
-    downloadPath,
+    installPath: selectors.installPath(state),
+    downloadPath: selectors.downloadPath(state),
     showDropzone: state.settings.mods.showDropzone,
   };
 }

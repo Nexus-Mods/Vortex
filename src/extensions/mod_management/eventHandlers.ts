@@ -23,7 +23,7 @@ import refreshMods from './util/refreshMods';
 import supportedActivators from './util/supportedActivators';
 
 import InstallManager from './InstallManager';
-import {currentActivator, activeInstallPath, installPathForGame} from './selectors';
+import {currentActivator, installPath, installPathForGame} from './selectors';
 
 import * as Promise from 'bluebird';
 import * as path from 'path';
@@ -49,7 +49,7 @@ export function onGameModeActivated(
     return;
   }
 
-  const instPath = activeInstallPath(state);
+  const instPath = installPath(state);
 
   if (configuredActivator === undefined) {
     // current activator is not valid for this game. This should only occur
@@ -119,7 +119,7 @@ export function onPathsChanged(api: IExtensionApi,
   const gameMode = activeGameId(state);
   if (previous[gameMode] !== current[gameMode]) {
     const knownMods = state.persistent.mods[gameMode];
-    refreshMods(activeInstallPath(state), Object.keys(knownMods || {}), (mod: IMod) =>
+    refreshMods(installPath(state), Object.keys(knownMods || {}), (mod: IMod) =>
       api.store.dispatch(addMod(gameMode, mod))
       , (modNames: string[]) => {
         modNames.forEach((name: string) => {

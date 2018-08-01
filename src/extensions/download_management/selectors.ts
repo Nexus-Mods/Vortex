@@ -8,7 +8,7 @@ import createCachedSelector from 're-reselect';
 
 const downloadPathPattern = (state: IState) => state.settings.downloads.path;
 
-export const activeDownloadPath = createSelector(
+export const downloadPath = createSelector(
     downloadPathPattern, activeGameId, (inPath: string, inGameMode: string) =>
       getDownloadPath(inPath, inGameMode));
 

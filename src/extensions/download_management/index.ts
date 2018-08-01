@@ -401,7 +401,7 @@ function init(context: IExtensionContextExt): boolean {
     });
 
     context.api.events.on('import-downloads', (downloadPaths: string[]) => {
-      const downloadPath = selectors.activeDownloadPath(context.api.store.getState());
+      const downloadPath = selectors.downloadPath(context.api.store.getState());
       let hadDirs = false;
       Promise.map(downloadPaths, dlPath => {
         const fileName = path.basename(dlPath);
@@ -442,7 +442,7 @@ function init(context: IExtensionContextExt): boolean {
         return null;
       }, 10000, false);
       manager = new DownloadManagerImpl(
-          selectors.activeDownloadPath(store.getState()),
+          selectors.downloadPath(store.getState()),
           store.getState().settings.downloads.maxParallelDownloads,
           store.getState().settings.downloads.maxChunks, (speed: number) => {
             if ((speed !== 0) || (store.getState().persistent.downloads.speed !== 0)) {
@@ -462,7 +462,7 @@ function init(context: IExtensionContextExt): boolean {
         if (!truthy(downloads[id].urls)) {
           // download was interrupted before receiving urls, has to be canceled
           log('info', 'download removed because urls were never retrieved', { id });
-          const downloadPath = selectors.activeDownloadPath(context.api.store.getState());
+          const downloadPath = selectors.downloadPath(context.api.store.getState());
           if ((downloadPath !== undefined) && (downloads[id].localPath !== undefined)) {
             fs.removeAsync(path.join(downloadPath, downloads[id].localPath))
               .then(() => {

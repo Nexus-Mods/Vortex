@@ -277,7 +277,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     extensionConfig: state.app.extensions || emptyObject,
     loadFailures: state.session.base.extLoadFailures,
     downloads: state.persistent.downloads.files,
-    downloadPath: selectors.activeDownloadPath(state),
+    downloadPath: selectors.downloadPath(state),
   };
 }
 
