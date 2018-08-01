@@ -8,7 +8,7 @@ import { createErrorReport } from '../../util/errorHandling';
 import * as fs from '../../util/fs';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
 import { log } from '../../util/log';
-import { activeProfile, downloadPath } from '../../util/selectors';
+import { activeProfile, activeDownloadPath } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { setdefault } from '../../util/util';
 import walk from '../../util/walk';
@@ -927,7 +927,7 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
     return new Promise<string>((resolve, reject) => {
       const state = api.store.getState();
       const download: IDownload = state.persistent.downloads.files[downloadId];
-      const fullPath: string = path.join(downloadPath(state), download.localPath);
+      const fullPath: string = path.join(activeDownloadPath(state), download.localPath);
       this.install(downloadId, fullPath, getDownloadGames(download),
         api, { download }, false, false, (error, id) => {
           if (error === null) {

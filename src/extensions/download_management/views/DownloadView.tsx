@@ -5,20 +5,14 @@ import Dropzone, { DropType } from '../../../controls/Dropzone';
 import EmptyPlaceholder from '../../../controls/EmptyPlaceholder';
 import FlexLayout from '../../../controls/FlexLayout';
 import SuperTable, { ITableRowAction } from '../../../controls/Table';
-import DateTimeFilter from '../../../controls/table/DateTimeFilter';
-import GameFilter from '../../../controls/table/GameFilter';
 import { IComponentContext } from '../../../types/IComponentContext';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
 import { IState } from '../../../types/IState';
 import { ITableAttribute } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { ProcessCanceled } from '../../../util/CustomErrors';
-import * as fs from '../../../util/fs';
-import { getCurrentLanguage } from '../../../util/i18n';
 import { showError } from '../../../util/message';
-import relativeTime from '../../../util/relativeTime';
 import * as selectors from '../../../util/selectors';
-import { activeGameId } from '../../../util/selectors';
 import MainPage from '../../../views/MainPage';
 
 import { IGameStored } from '../../gamemode_management/types/IGameStored';
@@ -26,12 +20,10 @@ import { IGameStored } from '../../gamemode_management/types/IGameStored';
 import { setShowDLDropzone, setShowDLGraph } from '../actions/settings';
 import { setDownloadTime } from '../actions/state';
 import { IDownload } from '../types/IDownload';
-import getDownloadGames from '../util/getDownloadGames';
 
 import createColumns from '../downloadAttributes';
 import { DownloadIsHTML } from '../DownloadManager';
 
-import DownloadGameList from './DownloadGameList';
 import DownloadGraph from './DownloadGraph';
 
 import * as Promise from 'bluebird';
@@ -76,21 +68,14 @@ const nop = () => null;
 
 class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
   public context: IComponentContext;
-  private gameColumn: ITableAttribute<IDownload>;
-  private fileTimeColumn: ITableAttribute<IDownload>;
   private actions: ITableRowAction[];
-  private mColumns: ITableAttribute<IDownload>[];
+  private mColumns: ITableAttribute<IDownload>[] = [];
 
   constructor(props: IDownloadViewProps) {
     super(props);
     this.initState({
       viewAll: false,
     });
-
-    let lang: string;
-    let collator: Intl.Collator;
-
-    this.mColumns = createColumns(props);
 
     this.actions = [
       {
@@ -143,6 +128,8 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
 
   public componentWillMount() {
     this.nextState.viewAll = false;
+
+    this.mColumns = createColumns(this.context.api, () => this.props);
   }
 
   public shouldComponentUpdate(nextProps: IDownloadViewProps, nextState: IComponentState) {
@@ -452,7 +439,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     gameMode: selectors.activeGameId(state),
     knownGames: state.session.gameMode.known,
     downloads: state.persistent.downloads.files,
-    downloadPath: selectors.downloadPath(state),
+    downloadPath: selectors.activeDownloadPath(state),
     showDropzone: state.settings.downloads.showDropzone,
     showGraph: state.settings.downloads.showGraph,
   };

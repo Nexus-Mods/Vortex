@@ -4,23 +4,17 @@ import Advanced from '../../../controls/Advanced';
 import ToolbarIcon from '../../../controls/ToolbarIcon';
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { ProcessCanceled, UserCanceled } from '../../../util/CustomErrors';
+import { UserCanceled } from '../../../util/CustomErrors';
 import { showError } from '../../../util/message';
-import { activeGameId, activeProfile, currentGameDiscovery } from '../../../util/selectors';
+import { activeGameId } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 
-import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResult';
-import { currentActivator, installPath } from '../../mod_management/selectors';
-import { IProfileMod } from '../../profile_management/types/IProfile';
-
 import { IDeploymentMethod } from '../types/IDeploymentMethod';
-import { IMod } from '../types/IMod';
 import { NoDeployment } from '../util/exceptions';
 
 import * as Promise from 'bluebird';
 import * as React from 'react';
 import * as Redux from 'redux';
-import { generate as shortid } from 'shortid';
 import { setConfirmPurge } from '../../../actions';
 
 interface IConnectedProps {

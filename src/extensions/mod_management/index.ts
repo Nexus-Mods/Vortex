@@ -1,3 +1,4 @@
+import { updateNotification } from '../../actions/notifications';
 import { setSettingsPage } from '../../actions/session';
 import {
   IExtensionApi,
@@ -9,10 +10,10 @@ import {IGame} from '../../types/IGame';
 import {IState} from '../../types/IState';
 import { ITableAttribute } from '../../types/ITableAttribute';
 import {ITestResult} from '../../types/ITestResult';
-import { getInstallPath, getNormalizeFunc, Normalize } from '../../util/api';
 import { ProcessCanceled, TemporaryError, UserCanceled } from '../../util/CustomErrors';
 import Debouncer from '../../util/Debouncer';
 import * as fs from '../../util/fs';
+import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
 import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
 import ReduxProp from '../../util/ReduxProp';
@@ -20,7 +21,8 @@ import {
   activeGameId,
   activeProfile,
   currentGameDiscovery,
-  installPath,
+  activeInstallPath,
+  installPathForGame,
 } from '../../util/selectors';
 import {getSafe} from '../../util/storeHelper';
 import { removePersistent, setdefault, truthy } from '../../util/util';
@@ -66,7 +68,6 @@ import * as Promise from 'bluebird';
 import { genHash } from 'modmeta-db';
 import * as path from 'path';
 import * as Redux from 'redux';
-import { updateNotification } from '../../actions';
 
 const activators: IDeploymentMethod[] = [];
 
@@ -130,7 +131,7 @@ function getActivator(state: IState, gameMode?: string): IDeploymentMethod {
 
 function purgeMods(api: IExtensionApi): Promise<void> {
   const state = api.store.getState();
-  const instPath = installPath(state);
+  const instPath = activeInstallPath(state);
   const gameId = activeGameId(state);
   const gameDiscovery = currentGameDiscovery(state);
   const t = api.translate;
@@ -269,8 +270,7 @@ function genUpdateModDeployment() {
     if (profile === undefined) {
       return Promise.reject(new Error('Profile missing'));
     }
-    const instPath = getInstallPath(
-      state.settings.mods.installPath[profile.gameId], profile.gameId);
+    const instPath = installPathForGame(state, profile.gameId);
     const gameDiscovery =
       getSafe(state, ['settings', 'gameMode', 'discovered', profile.gameId], undefined);
     const game = getGame(profile.gameId);
@@ -545,7 +545,7 @@ function cleanupIncompleteInstalls(api: IExtensionApi) {
     Object.keys(mods[gameId]).forEach(modId => {
       const mod = mods[gameId][modId];
       if (mod.state === 'installing') {
-        const instPath = installPath(store.getState());
+        const instPath = activeInstallPath(store.getState());
         const fullPath = path.join(instPath, mod.installationPath);
         log('warn', 'mod was not installed completelely and will be removed', { mod, fullPath });
         // this needs to be synchronous because once is synchronous and we have to complete this
@@ -578,8 +578,7 @@ function once(api: IExtensionApi) {
 
   if (installManager === undefined) {
     installManager = new InstallManager(
-        (gameId: string) => getInstallPath(
-            store.getState().settings.mods.installPath[gameId], gameId));
+        (gameId: string) => installPathForGame(store.getState(), gameId));
     installers.forEach((installer: IInstaller) => {
       installManager.addInstaller(installer.priority, installer.testSupported,
                                   installer.install);
@@ -612,7 +611,7 @@ function once(api: IExtensionApi) {
     }
     const activator = getActivator(state, gameId);
     const dataPath = game.getModPaths(discovery.path)[mod.type || ''];
-    const installationPath = getInstallPath(state.settings.mods.installPath[gameId], gameId);
+    const installationPath = installPathForGame(state, gameId);
     
     const subdir = genSubDirFunc(game);
     let normalize: Normalize;

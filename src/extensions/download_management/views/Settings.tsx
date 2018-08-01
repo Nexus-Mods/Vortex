@@ -70,6 +70,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     const { downloadPath } = this.state;
 
     const changed = this.props.downloadPath !== downloadPath;
+    const pathPreview = getDownloadPath(downloadPath, undefined);
 
     return (
       <form>
@@ -99,7 +100,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               <BSButton disabled={!changed} onClick={this.apply}>{t('Apply')}</BSButton>
             </FlexLayout.Fixed>
           </FlexLayout>
-          <HelpBlock>{getDownloadPath(downloadPath, undefined)}</HelpBlock>
+          <HelpBlock><a data-url={pathPreview} onClick={this.openUrl}>{pathPreview}</a></HelpBlock>
           <Modal show={this.state.busy !== undefined} onHide={nop}>
             <Modal.Body>
               <Jumbotron>
@@ -136,6 +137,11 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         </FormGroup>
       </form>
     );
+  }
+
+  private openUrl = (evt) => {
+    const url = evt.currentTarget.getAttribute('data-url');
+    opn(url).catch(err => undefined);
   }
 
   private goBuyPremium = () => {

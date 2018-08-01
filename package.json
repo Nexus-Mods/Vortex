@@ -229,6 +229,7 @@
     "ref-union": "^1.0.1",
     "request": "^2.83.0",
     "reselect": "^3.0.1",
+    "re-reselect": "^2.1.0",
     "resolve": "^1.4.0",
     "rimraf": "TanninOne/rimraf",
     "semver": "^5.4.1",

@@ -6,15 +6,15 @@ import { log } from '../../util/log';
 import { getGame } from '../gamemode_management';
 import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
 import LinkingDeployment from '../mod_management/LinkingDeployment';
+import { installPathForGame } from '../mod_management/selectors';
+import { IMod } from '../mod_management/types/IMod';
 import { IDeployedFile, IDeploymentMethod } from '../mod_management/types/IDeploymentMethod';
-import resolvePath from '../mod_management/util/resolvePath';
 
 import * as Promise from 'bluebird';
 import * as I18next from 'i18next';
 import * as path from 'path';
 import turbowalk, { IEntry } from 'turbowalk';
 import * as util from 'util';
-import { IMod } from '../mod_management/types/IMod';
 
 const LNK_EXT = '.vortex_lnk';
 
@@ -57,7 +57,7 @@ class DeploymentMethod extends LinkingDeployment {
       return 'No game discovery';
     }
 
-    const instPath = resolvePath('install', state.settings.mods.paths, gameId);
+    const instPath = installPathForGame(state, gameId);
 
     const game: IGame = getGame(gameId);
     const modPaths = game.getModPaths(discovery.path);

@@ -3,21 +3,25 @@ import DateTimeFilter from '../../controls/table/DateTimeFilter';
 import GameFilter from '../../controls/table/GameFilter';
 import TextFilter from '../../controls/table/TextFilter';
 
-import { IGameStored } from '../../types/IState';
+import { IExtensionApi } from '../../types/IExtensionContext';
 import { ITableAttribute } from '../../types/ITableAttribute';
 import * as fs from '../../util/fs';
+import { getCurrentLanguage } from '../../util/i18n';
 import { getSafe } from '../../util/storeHelper';
 import { bytesToString } from '../../util/util';
+
+import { gameName } from '../gamemode_management/selectors';
 
 import DownloadProgressFilter from './views/DownloadProgressFilter';
 import FileTime from './views/FileTime';
 import { IDownload } from './types/IDownload';
+import getDownloadGames from './util/getDownloadGames';
+import DownloadGameList from './views/DownloadGameList';
 
 import * as I18next from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
 import * as url from 'url';
-import { getCurrentLanguage } from '../../util/i18n';
 import { IDownloadViewProps } from './views/DownloadView';
 
 
@@ -70,7 +74,7 @@ function nameFromUrl(input: string) {
 }
 
 
-function createColumns(props: IDownloadViewProps): ITableAttribute<IDownload>[] {
+function createColumns(api: IExtensionApi, props: () => IDownloadViewProps): ITableAttribute<IDownload>[] {
   let lang: string;
   let collator: Intl.Collator;
 
@@ -116,12 +120,36 @@ function createColumns(props: IDownloadViewProps): ITableAttribute<IDownload>[] 
     }, {
       id: 'game',
       name: 'Game',
-      description: 'The game this download is associated with',
+      description: 'The game(s) this download is associated with',
+      help: 'You can associate a download with multiple compatible games so it will show up '
+          + 'when managing those games as well.',
       icon: 'game',
-      calc: (attributes: IDownload) => {
-        const game = props.knownGames.find((ele: IGameStored) => attributes.game === ele.id);
-        return game ? props.t(game.shortName || game.name) : attributes.game;
+      customRenderer: (download: IDownload, detailCell: boolean,
+                       t: I18next.TranslationFunction) => {
+        const { downloads, knownGames } = props();
+        const { store } = api;
+        // TODO: awkward!
+        const id = Object.keys(downloads).find(dlId => downloads[dlId] === download);
+        if (detailCell) {
+          return (
+            <DownloadGameList
+              t={t}
+              id={id}
+              currentGames={getDownloadGames(download)}
+              games={knownGames}
+            />);
+        } else {
+          const games = getDownloadGames(download);
+          const name = gameName(store.getState(), games[0]);
+          const more = games.length > 1 ? '...' : '';
+          return (
+            <div>
+              {name}{more}
+            </div>
+          );
+        }
       },
+      calc: (attributes: IDownload) => getDownloadGames(attributes),
       placement: 'both',
       isToggleable: true,
       edit: {},
@@ -135,11 +163,12 @@ function createColumns(props: IDownloadViewProps): ITableAttribute<IDownload>[] 
       description: 'Time the file was last modified',
       icon: 'calendar-plus-o',
       customRenderer: (attributes: IDownload, detail: boolean, t) => {
+        const { gameMode, downloadPath } = props();
         const time = downloadTime(attributes);
 
         if ((time === undefined)
-          && ((attributes.game !== props.gameMode)
-            || (attributes.localPath === undefined))) {
+            && ((getDownloadGames(attributes)[0] !== gameMode)
+                || (attributes.localPath === undefined))) {
           return null;
         }
         return (
@@ -147,31 +176,31 @@ function createColumns(props: IDownloadViewProps): ITableAttribute<IDownload>[] 
             t={t}
             time={time}
             download={attributes}
-            downloadPath={props.downloadPath}
+            downloadPath={downloadPath}
             detail={detail}
             language={getCurrentLanguage()}
           />
         );
       },
       calc: (attributes: IDownload) => {
+        const { downloadPath, downloads, gameMode, onSetAttribute } = props();
         const time = downloadTime(attributes);
 
         if (time !== undefined) {
           return time;
         }
 
-        if ((attributes.game !== props.gameMode)
+        if ((getDownloadGames(attributes)[0] !== gameMode)
           || (attributes.localPath === undefined)) {
           return null;
         }
-        return fs.statAsync(path.join(props.downloadPath, attributes.localPath))
-          .then(stat => {
-            const { downloads, onSetAttribute } = props;
-            const id = Object.keys(downloads).find(key => downloads[key] === attributes);
-            onSetAttribute(id, stat.mtimeMs);
-            return Promise.resolve(stat.mtime);
-          })
-          .catch(() => undefined);
+        return fs.statAsync(path.join(downloadPath, attributes.localPath))
+        .then(stat => {
+          const id = Object.keys(downloads).find(key => downloads[key] === attributes);
+          onSetAttribute(id, stat.mtimeMs);
+          return Promise.resolve(stat.mtime);
+        })
+        .catch(() => undefined);
       },
       placement: 'both',
       isToggleable: true,

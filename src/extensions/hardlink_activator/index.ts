@@ -2,12 +2,12 @@ import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext'
 import { IGame } from '../../types/IGame';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
+import { installPathForGame } from '../../util/selectors';
 
 import { getGame } from '../gamemode_management';
 import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
 import LinkingDeployment from '../mod_management/LinkingDeployment';
 import { IDeployedFile, IDeploymentMethod } from '../mod_management/types/IDeploymentMethod';
-import resolvePath from '../mod_management/util/resolvePath';
 
 import * as Promise from 'bluebird';
 import * as I18next from 'i18next';
@@ -71,7 +71,7 @@ class DeploymentMethod extends LinkingDeployment {
       return `Can\'t write to output directory: ${modPaths[typeId]}`;
     }
 
-    const installationPath = resolvePath('install', state.settings.mods.paths, gameId);
+    const installationPath = installPathForGame(state, gameId);
 
     try {
       if (fs.statSync(installationPath).dev !== fs.statSync(modPaths[typeId]).dev) {

@@ -19,18 +19,17 @@ import {setModEnabled} from '../profile_management/actions/profiles';
 import {IProfile} from '../profile_management/types/IProfile';
 
 import allTypesSupported from './util/allTypesSupported';
-import getInstallPath from './util/getInstallPath';
 import refreshMods from './util/refreshMods';
 import supportedActivators from './util/supportedActivators';
 
 import InstallManager from './InstallManager';
-import {currentActivator, installPath} from './selectors';
+import {currentActivator, activeInstallPath, installPathForGame} from './selectors';
 
 import * as Promise from 'bluebird';
 import * as path from 'path';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
-import getDownloadPath from '../download_management/util/getDownloadPath';
 import queryGameId from './util/queryGameId';
+import { downloadPathForGame } from '../../util/selectors';
 
 export function onGameModeActivated(
     api: IExtensionApi, activators: IDeploymentMethod[], newGame: string) {
@@ -50,7 +49,7 @@ export function onGameModeActivated(
     return;
   }
 
-  const instPath = installPath(state);
+  const instPath = activeInstallPath(state);
 
   if (configuredActivator === undefined) {
     // current activator is not valid for this game. This should only occur
@@ -120,7 +119,7 @@ export function onPathsChanged(api: IExtensionApi,
   const gameMode = activeGameId(state);
   if (previous[gameMode] !== current[gameMode]) {
     const knownMods = state.persistent.mods[gameMode];
-    refreshMods(installPath(state), Object.keys(knownMods || {}), (mod: IMod) =>
+    refreshMods(activeInstallPath(state), Object.keys(knownMods || {}), (mod: IMod) =>
       api.store.dispatch(addMod(gameMode, mod))
       , (modNames: string[]) => {
         modNames.forEach((name: string) => {
@@ -164,7 +163,7 @@ function undeploy(api: IExtensionApi,
     return Promise.reject(new ProcessCanceled('No deployment method active'));
   }
 
-  const installationPath = getInstallPath(state.settings.mods.installPath[gameMode], gameMode);
+  const installationPath = installPathForGame(state, gameMode);
 
   const dataPath = modPaths[mod.type || ''];
   let normalize: Normalize;
@@ -211,7 +210,7 @@ export function onRemoveMod(api: IExtensionApi,
 
   store.dispatch(setModEnabled(profileId, modId, false));
 
-  const installationPath = getInstallPath(state.settings.mods.installPath[gameMode], gameMode);
+  const installationPath = installPathForGame(state, gameMode);
 
   let mod: IMod;
 
@@ -278,7 +277,7 @@ export function onAddMod(api: IExtensionApi, gameId: string,
   const store = api.store;
   const state: IState = store.getState();
 
-  const installationPath = getInstallPath(state.settings.mods.installPath[gameId], gameId);
+  const installationPath = installPathForGame(state, gameId);
 
   store.dispatch(addMod(gameId, mod));
   fs.mkdirAsync(path.join(installationPath, mod.installationPath))
@@ -318,7 +317,7 @@ export function onStartInstallDownload(api: IExtensionApi,
         return Promise.resolve();
       }
 
-      const downloadPath: string = getDownloadPath(state.settings.downloads.path, gameId);
+      const downloadPath: string = downloadPathForGame(state, gameId);
       if (downloadPath === undefined) {
         api.showErrorNotification('Unknown Game',
           'Failed to determine installation directory. This shouldn\'t have happened', {

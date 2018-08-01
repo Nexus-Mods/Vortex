@@ -7923,6 +7923,10 @@ rc@^1.1.2, rc@^1.1.7:
     minimist "^1.2.0"
     strip-json-comments "~2.0.1"
 
+re-reselect@^2.1.0:
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/re-reselect/-/re-reselect-2.1.0.tgz#dc6d04c9f60752f8e0af5bbb1bffaabcedd13928"
+
 react-base16-styling@^0.5.1:
   version "0.5.3"
   resolved "https://registry.yarnpkg.com/react-base16-styling/-/react-base16-styling-0.5.3.tgz#3858f24e9c4dd8cbd3f702f3f74d581ca2917269"

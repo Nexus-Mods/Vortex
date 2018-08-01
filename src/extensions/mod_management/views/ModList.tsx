@@ -24,7 +24,7 @@ import { truthy } from '../../../util/util';
 import MainPage from '../../../views/MainPage';
 
 import getDownloadGames from '../../download_management/util/getDownloadGames';
-import getDownloadPath from '../../download_management/util/getDownloadPath';
+import { activeDownloadPath } from '../../download_management/selectors';
 import { setModEnabled } from '../../profile_management/actions/profiles';
 import { IProfileMod } from '../../profile_management/types/IProfile';
 
@@ -42,7 +42,7 @@ import VersionChangelogButton from '../views/VersionChangelogButton';
 import VersionIconButton from '../views/VersionIconButton';
 
 import { INSTALL_TIME, PICTURE } from '../modAttributes';
-import { installPath as installPathSelector } from '../selectors';
+import { activeInstallPath } from '../selectors';
 import getText from '../texts';
 
 import CheckModVersionsButton from './CheckModVersionsButton';
@@ -53,7 +53,7 @@ import * as I18next from 'i18next';
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as React from 'react';
-import { Button, ButtonGroup, Jumbotron, MenuItem, Panel } from 'react-bootstrap';
+import { Button, ButtonGroup, MenuItem, Panel } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
 import * as Redux from 'redux';
 import * as semver from 'semver';
@@ -1023,7 +1023,7 @@ const empty = {};
 function mapStateToProps(state: IState): IConnectedProps {
   const profile = activeProfile(state);
   const gameMode = activeGameId(state);
-  const downloadPath = getDownloadPath(state.settings.downloads.path, gameMode);
+  const downloadPath = activeDownloadPath(state);
 
   return {
     mods: getSafe(state, ['persistent', 'mods', gameMode], empty),
@@ -1032,7 +1032,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     gameMode,
     profileId: getSafe(profile, ['id'], undefined),
     language: state.settings.interface.language,
-    installPath: installPathSelector(state),
+    installPath: activeInstallPath(state),
     downloadPath,
     showDropzone: state.settings.mods.showDropzone,
   };

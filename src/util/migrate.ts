@@ -1,3 +1,4 @@
+import getDownloadPath from '../extensions/download_management/util/getDownloadPath';
 import resolvePath, { pathDefaults } from '../extensions/mod_management/util/resolvePath';
 import { IState } from '../types/IState';
 
@@ -5,7 +6,6 @@ import { setDownloadPath, setInstallPath, showDialog } from '../actions';
 import * as fs from '../util/fs';
 import makeCI from '../util/makeCaseInsensitive';
 
-import { getDownloadPath } from './api';
 import { UserCanceled } from './CustomErrors';
 import { log } from './log';
 

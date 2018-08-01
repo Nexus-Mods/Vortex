@@ -24,7 +24,6 @@ import { IDownloadResult } from './types/IDownloadResult';
 import { ProgressCallback } from './types/ProgressCallback';
 import { IProtocolHandlers } from './types/ProtocolHandlers';
 import getDownloadGames from './util/getDownloadGames';
-import getDownloadPath from './util/getDownloadPath';
 
 import DownloadManager, { DownloadIsHTML, URLFunc } from './DownloadManager';
 
@@ -36,6 +35,7 @@ import {generate as shortid} from 'shortid';
 
 import * as nodeURL from 'url';
 import * as util from 'util';
+import { downloadPathForGame } from '../../util/selectors';
 
 function progressUpdate(store: Redux.Store<any>, dlId: string, received: number,
                         total: number, chunks: IChunk[], urls: string[], filePath: string,
@@ -156,7 +156,7 @@ export class DownloadObserver {
     this.mStore.dispatch(
       initDownload(id, typeof(urls) ===  'function' ? [] : urls, modInfo, gameMode));
 
-    const downloadPath = getDownloadPath(state.settings.downloads.path, gameMode);
+    const downloadPath = downloadPathForGame(state, gameMode);
 
     const processCB = this.genProgressCB(id);
 
@@ -262,8 +262,7 @@ export class DownloadObserver {
       this.mManager.stop(downloadId);
     }
     if (truthy(download.localPath)) {
-      const dlPath = getDownloadPath(
-        this.mStore.getState().settings.downloads.path, getDownloadGames(download)[0]);
+      const dlPath = downloadPathForGame(this.mStore.getState(), getDownloadGames(download)[0]);
       fs.removeAsync(path.join(dlPath, download.localPath))
           .then(() => { this.mStore.dispatch(removeDownload(downloadId)); })
           .catch(err => {
@@ -297,8 +296,7 @@ export class DownloadObserver {
     }
     if (download.state === 'paused') {
       const gameMode = getDownloadGames(download)[0];
-      const downloadPath =
-        getDownloadPath(this.mStore.getState().settings.downloads.path, gameMode);
+      const downloadPath = downloadPathForGame(this.mStore.getState(), gameMode);
 
       const fullPath = path.join(downloadPath, download.localPath);
       this.mStore.dispatch(pauseDownload(downloadId, false, undefined));

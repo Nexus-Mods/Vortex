@@ -3,6 +3,7 @@ import { IState } from '../../types/IState';
 import deepMerge from '../../util/deepMerge';
 import * as fs from '../../util/fs';
 import {log} from '../../util/log';
+import { installPathForGame } from '../../util/selectors';
 import {getSafe} from '../../util/storeHelper';
 import {objDiff, setdefault} from '../../util/util';
 
@@ -10,7 +11,6 @@ import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult'
 import {INI_TWEAKS_PATH} from '../mod_management/InstallManager';
 import {IMod} from '../mod_management/types/IMod';
 import {IModWithState} from '../mod_management/types/IModProps';
-import getInstallPath from '../mod_management/util/getInstallPath';
 import {activeGameId} from '../profile_management/selectors';
 
 import {iniFiles, iniFormat} from './gameSupport';
@@ -107,7 +107,7 @@ function getBaseFile(input: string): string {
 
 function bakeSettings(t: TranslationFunction, gameMode: string, discovery: IDiscoveryResult,
                       mods: IMod[], state: IState): Promise<void> {
-  const modsPath = getInstallPath(state.settings.mods.installPath[gameMode], gameMode);
+  const modsPath = installPathForGame(state, gameMode);
   const format = iniFormat(gameMode);
   if (format === undefined) {
     return Promise.resolve();
