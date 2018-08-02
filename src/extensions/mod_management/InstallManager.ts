@@ -40,6 +40,7 @@ import * as path from 'path';
 import * as Redux from 'redux';
 import * as rimraf from 'rimraf';
 import { IInstallContext } from './types/IInstallContext';
+import renderModName from '../mod_management/util/modName';
 
 export class ArchiveBrokenError extends Error {
   constructor() {
@@ -790,9 +791,11 @@ class InstallManager {
 
   private queryUserReplace(modId: string, gameId: string, api: IExtensionApi) {
     return new Promise<IReplaceChoice>((resolve, reject) => {
+      const state: IState = api.store.getState();
+      const mod: IMod = state.persistent.mods[gameId][modId];
       api.store
         .dispatch(showDialog(
-          'question', 'Mod exists',
+          'question', renderModName(mod, { version: false }),
           {
             text:
               'This mod seems to be installed already. You can replace the ' +
