@@ -73,7 +73,7 @@ class DetailCell extends React.Component<ICellProps, {}> {
     }
 
     if (attribute.customRenderer !== undefined) {
-      const values = rowIds.map(id => rawData[id]);
+      const values = rowIds.map(id => rawData[id]).filter(val => val !== undefined);
       if ((values.length === 0) || (values[0] === undefined)) {
         return null;
       }

@@ -698,7 +698,7 @@ class InstallManager {
       .then(() => this.processSubmodule(api, instructionGroups.submodule,
                                         destinationPath, gameId, modId))
       .then(() => this.processAttribute(api, instructionGroups.attribute, gameId, modId))
-      .then(() => this.processSetModType(api, instructionGroups.attribute, gameId, modId))
+      .then(() => this.processSetModType(api, instructionGroups.setmodtype, gameId, modId))
       ;
     }
 

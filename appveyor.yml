@@ -2,13 +2,14 @@ version: 1.0.{build}
 clone_depth: 1
 environment:
   nodejs_version: 8
+  EDGE_USE_CORECLR: 0
 platform:
   - x64
 configuration:
   - Release
 install:
 - ps: Install-Product node $env:nodejs_version x64
-- yarn install
+- set EDGE_USE_CORECLR=0 && yarn install
 cache: '%LOCALAPPDATA%\Yarn'
 build_script:
 - cmd: >-

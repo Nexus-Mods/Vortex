@@ -372,7 +372,9 @@ function renderNexusModIdDetail(
   mod: IModWithState,
   t: I18next.TranslationFunction) {
   const nexusModId: string = getSafe(mod.attributes, ['modId'], undefined);
-  const fileName: string = getSafe(mod.attributes, ['name'], undefined);
+  const fileName: string =
+    getSafe(mod.attributes, ['fileName'],
+      getSafe(mod.attributes, ['name'], undefined));
   const gameMode = activeGameId(store.getState());
   const fileGameId = getSafe(mod.attributes, ['downloadGame'], undefined)
                   || gameMode;
