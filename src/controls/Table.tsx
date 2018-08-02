@@ -864,8 +864,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       }
       // return only elements for which we can't find a non-matching filter
       // (in other words: Keep only those items that match all filters)
-      return !advancedMode
-          || (attributes.find(attribute => {
+      return (attributes.find(attribute => {
         if (attribute.filter === undefined) {
           return false;
         }
