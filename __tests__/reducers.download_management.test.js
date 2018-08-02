@@ -16,7 +16,7 @@ describe('addLocalDownload', () => {
 
     _.unset(result, ['files', 'newid', 'fileTime']);
     expect(result).toEqual({ files: { newid:
-      { state: 'finished', game: 'game', localPath: 'localPath', size: 42, chunks: [], urls: [], modInfo: {} }
+      { state: 'finished', game: ['game'], localPath: 'localPath', size: 42, chunks: [], urls: [], modInfo: {} }
     } });
   });
 });
@@ -76,7 +76,7 @@ describe('initDownload', () => {
     const result = stateReducer.reducers.INIT_DOWNLOAD(input, { id: 'id', urls: ['url1', 'url2'], modInfo: { key: 'value' }, game: 'game' });
     _.unset(result, ['files', 'id', 'fileTime']);
     expect(result).toEqual({ files: { id: {
-      chunks: [], state: 'init', urls: ['url1', 'url2'], modInfo: { key: 'value' }, game: 'game', fileMD5: undefined, localPath: undefined,
+      chunks: [], state: 'init', urls: ['url1', 'url2'], modInfo: { key: 'value' }, game: ['game'], fileMD5: undefined, localPath: undefined,
     } } });
   });
   it('terminates if the id exists', () => {

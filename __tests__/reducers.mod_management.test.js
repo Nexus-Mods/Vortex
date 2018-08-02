@@ -1,21 +1,21 @@
 import { settingsReducer } from '../src/extensions/mod_management/reducers/settings';
 import { modsReducer } from '../src/extensions/mod_management/reducers/mods';
 
-describe('setPath', () => {
-  it('sets a path (base, download or installation) for storing things', () => {
-    let input = { paths: { gameId1: { key1: 'path' } } };
-    let result = settingsReducer.reducers.SET_MOD_PATH(input, { gameId: 'gameId1', key: 'key1', path: 'New path' });
-    expect(result).toEqual({ paths: { gameId1: { key1: 'New path' } } });
+describe('setInstallPath', () => {
+  it('sets the install path for a game', () => {
+    let input = { installPath: { gameId1: 'path' } };
+    let result = settingsReducer.reducers.SET_MOD_INSTALL_PATH(input, { gameId: 'gameId1', path: 'New path' });
+    expect(result).toEqual({ installPath: { gameId1: 'New path' } });
   });
   it('creates a new game and add the new path under if the game doesn\'t exist', () => {
-    let input = { paths: { gameId1: { key1: 'path' } } };
-    let result = settingsReducer.reducers.SET_MOD_PATH(input, { gameId: 'gameId2', key: 'key1', path: 'New path' });
-    expect(result).toEqual({ paths: { gameId1: { key1: 'path' }, gameId2: { key1: 'New path' }} });
+    let input = { installPath: { gameId1: 'path' } };
+    let result = settingsReducer.reducers.SET_MOD_INSTALL_PATH(input, { gameId: 'gameId2', path: 'New path' });
+    expect(result).toEqual({ installPath: { gameId1: 'path', gameId2: 'New path' } });
   });
    it('affects only the right game', () => {
-    let input = { paths: { gameId1: { key1: 'path' }, gameId2: { key2: 'path2' } } };
-    let result = settingsReducer.reducers.SET_MOD_PATH(input, { gameId: 'gameId1', key: 'key1', path: 'New path' });
-    expect(result).toEqual({ paths: { gameId1: { key1: 'New path' }, gameId2: { key2: 'path2' } } });
+    let input = { installPath: { gameId1: 'path', gameId2: 'path2' } };
+    let result = settingsReducer.reducers.SET_MOD_INSTALL_PATH(input, { gameId: 'gameId1', path: 'New path' });
+    expect(result).toEqual({ installPath: { gameId1: 'New path', gameId2: 'path2' } });
   });
 });
 

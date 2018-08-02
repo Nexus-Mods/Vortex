@@ -3,10 +3,9 @@ import safeCreateAction from '../../../actions/safeCreateAction';
 import * as reduxAct from 'redux-act';
 
 /**
- * change a path (base, download or installation) for
- * storing things. Supports placeholders
+ * change the mod install path. Supports placeholders
  */
-export const setInstallPath = safeCreateAction('SET_MOD_PATH',
+export const setInstallPath = safeCreateAction('SET_MOD_INSTALL_PATH',
   (gameId: string, path: string) => ({ gameId, path }));
 
 /**
