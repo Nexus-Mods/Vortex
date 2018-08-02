@@ -10,6 +10,7 @@ import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { TemporaryError, UserCanceled } from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
 import { log } from '../../../util/log';
+import opn from '../../../util/opn';
 import { showError } from '../../../util/message';
 import { getSafe } from '../../../util/storeHelper';
 import { isChildPath } from '../../../util/util';
@@ -291,6 +292,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     const { t, gameMode } = this.props;
     const { installPath } = this.state;
 
+    const pathPreview = getInstallPath(installPath, gameMode);
+
     return (
       <FormGroup>
         <ControlLabel>
@@ -329,7 +332,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             </InputGroup.Button>
           </FlexLayout.Fixed>
         </FlexLayout>
-        <HelpBlock>{getInstallPath(installPath, gameMode)}</HelpBlock>
+        <HelpBlock><a data-url={pathPreview} onClick={this.openUrl}>{pathPreview}</a></HelpBlock>
       </FormGroup>
     );
   }
@@ -341,6 +344,11 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
   private changePath = (value: string) => {
     this.nextState.installPath = value;
+  }
+
+  private openUrl = (evt) => {
+    const url = evt.currentTarget.getAttribute('data-url');
+    opn(url).catch(err => undefined);
   }
 
   private browsePath = () => {

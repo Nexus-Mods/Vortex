@@ -1,10 +1,8 @@
-import Icon from './Icon';
 import Overlay from './Overlay';
 import { IconButton } from './TooltipControls';
 
 import * as React from 'react';
 import {Popover} from 'react-bootstrap';
-import * as ReactDOM from 'react-dom';
 
 export interface IProps {
   id: string;
@@ -30,7 +28,6 @@ export interface IComponentState {
  */
 class More extends React.Component<IProps, IComponentState> {
 
-  private mPopoverRef: Element;
   private mRef: Element;
 
   constructor(props: IProps) {
