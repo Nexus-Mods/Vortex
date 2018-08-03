@@ -2,7 +2,7 @@ import { showDialog } from '../../../actions/notifications';
 import ActionDropdown from '../../../controls/ActionDropdown';
 import Icon from '../../../controls/Icon';
 import IconBar from '../../../controls/IconBar';
-import { Button, IconButton } from '../../../controls/TooltipControls';
+import { IconButton } from '../../../controls/TooltipControls';
 import { IActionDefinition } from '../../../types/IActionDefinition';
 import { IComponentContext } from '../../../types/IComponentContext';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
@@ -20,8 +20,6 @@ import { ICategoriesTree } from '../types/ITrees';
 import createTreeDataObject from '../util/createTreeDataObject';
 
 import * as Promise from 'bluebird';
-import { remote } from 'electron';
-import * as path from 'path';
 import * as React from 'react';
 import { FormControl } from 'react-bootstrap';
 import * as SortableTreeT from 'react-sortable-tree';
@@ -309,7 +307,6 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
               parentCategory: parentId,
               order: 0,
             });
-            this.updateExpandedTreeData(categories);
           }
         }
       });
@@ -375,7 +372,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
 
   private refreshTree(props: IProps) {
     const { t } = this.props;
-    const { categories, mods, onShowError } = props;
+    const { categories, mods } = props;
 
     if (categories !== undefined) {
       if (Object.keys(categories).length !== 0) {
