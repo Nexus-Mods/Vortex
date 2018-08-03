@@ -20,7 +20,9 @@ class SplashScreen {
         // the window
         .then(() => delayed(500))
         .then(() => {
-          this.mWindow.close();
+          if (!this.mWindow.isDestroyed()) {
+            this.mWindow.close();
+          }
           this.mWindow = null;
         });
   }
