@@ -299,7 +299,7 @@ function renameInt(sourcePath: string, destinationPath: string, stackErr: Error)
           ? PromiseBB.reject(restackErr(err, stackErr))
           : errorHandler(err, stackErr)
             .then(() => renameInt(sourcePath, destinationPath, stackErr)))
-        .catch(() => PromiseBB.reject(restackErr(err, stackErr)))
+        .catch(newErr => PromiseBB.reject(restackErr(newErr, stackErr)))
       : errorHandler(err, stackErr)
         .then(() => renameInt(sourcePath, destinationPath, stackErr)));
 }

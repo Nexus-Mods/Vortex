@@ -898,6 +898,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
          && truthy(mods[key].installationPath)
          && (['downloaded', 'installed'].indexOf(mods[key].state) !== -1))
           ? fs.removeAsync(path.join(installPath, mods[key].installationPath))
+              .catch(UserCanceled, () => undefined)
               .catch(err => {
                 this.context.api.showErrorNotification('Failed to remove mod', err);
               })

@@ -17,6 +17,7 @@ import * as I18next from 'i18next';
 import * as _ from 'lodash';
 import * as path from 'path';
 import turbowalk from 'turbowalk';
+import { UserCanceled } from '../../util/api';
 
 interface IDeployment {
   [relPath: string]: IDeployedFile;
@@ -453,17 +454,13 @@ abstract class LinkingActivator implements IDeploymentMethod {
           // then check files. if there are any, this isn't empty. plus we
           // restore backups here
           const files = entries.filter(entry => !entry.isDirectory &&
-                                      path.basename(entry.filePath) !==
-                                          LinkingActivator.TAG_NAME);
+            path.basename(entry.filePath) !== LinkingActivator.TAG_NAME);
           if (files.length > 0) {
             empty = false;
             return Promise.map(
-                files.filter(entry =>
-                                 path.extname(entry.filePath) === BACKUP_TAG),
-                entry => fs.renameAsync(
-                    entry.filePath,
-                    entry.filePath.substr(
-                        0, entry.filePath.length - BACKUP_TAG.length)))
+                files.filter(entry => path.extname(entry.filePath) === BACKUP_TAG),
+                entry => this.restoreBackup(entry.filePath))
+              .catch(UserCanceled, () => undefined)
               .then(() => undefined);
           } else {
             return Promise.resolve();
@@ -477,6 +474,29 @@ abstract class LinkingActivator implements IDeploymentMethod {
                 .then(() => fs.rmdirAsync(baseDir))
                 .then(() => true)
           : Promise.resolve(false));
+  }
+
+  private restoreBackup(backupPath: string) {
+    const targetPath = backupPath.substr(0, backupPath.length - BACKUP_TAG.length);
+    return fs.renameAsync(backupPath, targetPath)
+      .catch(UserCanceled, cancelErr => {
+        // TODO:
+        // this dialog may show up multiple times for the same file because
+        // the purge process for different mod types may come across the same directory if
+        // the base directory of one is a parent of the base directory of another
+        // (say .../Fallout4 and .../Fallout4/data)
+        // to fix that we'd have to blacklist directories that are the base of another mod type which
+        // would speed this up in general but it feels like a lot can go wrong with that
+        return this.mApi.showDialog('question', 'Confirm', {
+          text: 'Are you sure you want to cancel? This will leave backup files '
+            + 'unrestored, you will have to clean those up manually.',
+        }, [
+            { label: 'Really cancel' },
+            { label: 'Try again' },
+          ]).then(res => (res.action === 'Really cancel')
+            ? Promise.reject(cancelErr)
+            : this.restoreBackup(backupPath));
+      });
   }
 }
 
