@@ -40,6 +40,7 @@ import * as path from 'path';
 import * as Redux from 'redux';
 import * as rimraf from 'rimraf';
 import { IInstallContext } from './types/IInstallContext';
+import renderModName from '../mod_management/util/modName';
 
 export class ArchiveBrokenError extends Error {
   constructor() {
@@ -714,7 +715,7 @@ class InstallManager {
 
     if (instructionGroups.error.length > 0) {
       api.showErrorNotification('Installer reported errors',
-        'Errors were reported processing this installer. It\'s possible the moda works (partially) anyway. '
+        'Errors were reported processing this installer. It\'s possible the mod works (partially) anyway. '
         + 'Please not that NMM tends to ignore errors so just because NMM doesn\'t '
         + 'report a problem with this installer doesn\'t mean it doesn\'t have any.\n'
         + '{{ errors }}'
@@ -739,7 +740,7 @@ class InstallManager {
       .then(() => this.processSubmodule(api, instructionGroups.submodule,
                                         destinationPath, gameId, modId))
       .then(() => this.processAttribute(api, instructionGroups.attribute, gameId, modId))
-      .then(() => this.processSetModType(api, instructionGroups.attribute, gameId, modId))
+      .then(() => this.processSetModType(api, instructionGroups.setmodtype, gameId, modId))
       ;
     }
 
@@ -790,9 +791,11 @@ class InstallManager {
 
   private queryUserReplace(modId: string, gameId: string, api: IExtensionApi) {
     return new Promise<IReplaceChoice>((resolve, reject) => {
+      const state: IState = api.store.getState();
+      const mod: IMod = state.persistent.mods[gameId][modId];
       api.store
         .dispatch(showDialog(
-          'question', 'Mod exists',
+          'question', renderModName(mod, { version: false }),
           {
             text:
               'This mod seems to be installed already. You can replace the ' +

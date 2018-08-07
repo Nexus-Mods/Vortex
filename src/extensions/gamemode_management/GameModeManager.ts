@@ -7,7 +7,6 @@ import { getNormalizeFunc } from '../../util/api';
 import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
-import { activeGameId } from '../../util/selectors';
 
 import {
   discoveryFinished,
@@ -56,10 +55,10 @@ class GameModeManager {
 
     const gamesStored: IGameStored[] = this.mKnownGames.map(this.storeGame);
     store.dispatch(setKnownGames(gamesStored));
-    const gameMode = activeGameId(store.getState());
-    if (gameMode !== undefined) {
-      this.mOnGameModeActivated(gameMode);
-    }
+    // we used to activate the game mode right here but there is another
+    // call to do this in the "once" CB of gamemode_management so it's
+    // redundant and the other call handles errors properly while this one
+    // didn't
   }
 
   /**
@@ -80,11 +79,17 @@ class GameModeManager {
       return Promise.reject(new ProcessCanceled('game mode not found'));
     }
 
-    let modPath = game.queryModPath(gameDiscovery.path);
-    if (!path.isAbsolute(modPath)) {
-      modPath = path.resolve(gameDiscovery.path, modPath);
+    let modPath;
+    try {
+      modPath = game.queryModPath(gameDiscovery.path);
+      if (!path.isAbsolute(modPath)) {
+        modPath = path.resolve(gameDiscovery.path, modPath);
+      }
+    } catch (err) {
+      return Promise.reject(err);
     }
-    return fs.statAsync(modPath)
+    return fs.statAsync(gameDiscovery.path)
+      .then(() => fs.statAsync(modPath))
       .then(() => this.ensureWritable(modPath))
       .then(() => getNormalizeFunc(gameDiscovery.path))
       .then(normalize =>

@@ -8,7 +8,6 @@ import {isNullOrWhitespace} from '../../../util/util';
 
 import {getGame} from '../../gamemode_management';
 import {IDiscoveryResult} from '../../gamemode_management/types/IDiscoveryResult';
-import {IGameStored} from '../../gamemode_management/types/IGameStored';
 
 import DelegateBase from './DelegateBase';
 
@@ -17,6 +16,7 @@ import { app as appIn, remote} from 'electron';
 import getVersion from 'exe-version';
 import * as path from 'path';
 import * as util from 'util';
+import turbowalk from 'turbowalk';
 
 const app = appIn || remote.app;
 
@@ -90,7 +90,6 @@ export class Context extends DelegateBase {
   public checkIfFileExists =
       (fileName: string, callback: (err, res: boolean) => void) => {
         log('debug', 'checkIfFileExists called', util.inspect(fileName));
-        const state = this.api.store.getState();
 
         const fullPath = this.resolveFilePath(fileName);
         fs.statAsync(fullPath)
@@ -101,8 +100,6 @@ export class Context extends DelegateBase {
   public getExistingDataFile =
       (fileName: string, callback: (err, res: any) => void) => {
         log('debug', 'getExistingDataFile called', util.inspect(fileName));
-        const state = this.api.store.getState();
-
         const fullPath = this.resolveFilePath(fileName);
 
         fs.readFileAsync(fullPath)
@@ -111,21 +108,20 @@ export class Context extends DelegateBase {
       }
 
   public getExistingDataFileList =
-      (searchOptions: any[], callback: (err, res: string[]) => void) => {
-        log('debug', 'getExistingDataFileList called', util.inspect(searchOptions[0]));
-        const state = this.api.store.getState();
+    (searchOptions: any[], callback: (err, res: string[]) => void) => {
+      log('debug', 'getExistingDataFileList called', util.inspect(searchOptions[0]));
+      const fullPath = this.resolveFilePath(searchOptions[0]);
 
-        const fullPath = this.resolveFilePath(searchOptions[0]);
-        if (searchOptions[2] === true) {
-          this.readDirRecursive(fullPath, searchOptions[1])
-            .then((fileList) => callback(null, fileList))
-            .catch(err => callback(err, null));
-        } else {
-          fs.readdirAsync(fullPath)
-            .then((fileList) => callback(null, fileList))
-            .catch(err => callback(err, null));
-        }
+      if (searchOptions[2] === true) {
+        this.readDirRecursive(fullPath, searchOptions[1])
+          .then((fileList) => callback(null, fileList))
+          .catch(err => callback(err, null));
+      } else {
+        fs.readdirAsync(fullPath)
+          .then((fileList) => callback(null, fileList))
+          .catch(err => callback(err, null));
       }
+  }
 
   private resolveFilePath(filePath: string): string {
     let modPath = this.gameInfo.queryModPath(this.gameDiscovery.path);
@@ -133,31 +129,25 @@ export class Context extends DelegateBase {
       modPath = path.join(this.gameDiscovery.path, modPath);
     }
     return path.join(modPath, filePath);
-}
+  }
 
-  private readDirRecursive = (rootFolder: string,
+  private readDirRecursive = (rootPath: string,
                               filter: string): Promise<string[]> => {
-    const fileList: string[] = [];
-    fs.readdirAsync(rootFolder)
-        .then((folderContent) => folderContent.forEach((fileName) => {
-          const subFolder = path.join(rootFolder, fileName);
-          fs.statAsync(subFolder).then((stats) => {
-            if (stats.isDirectory()) {
-              this.readDirRecursive(subFolder, filter)
-                  .then((subList) => fileList.push.apply(fileList, subList));
-            } else {
-              if (!isNullOrWhitespace(filter)) {
-                const currentFileName = path.basename(fileName);
-                if (currentFileName.indexOf(filter) > -1) {
-                  fileList.push(fileName);
-                }
-              } else {
-                fileList.push(fileName);
-              }
-            }
-          });
-        }));
-    return Promise.resolve(fileList);
+    let fileList: string[] = [];
+
+    const filterFunc = isNullOrWhitespace(filter)
+      ? () => true
+      : input => path.basename(input).indexOf(filter) !== -1;
+
+    return turbowalk(rootPath, entries => {
+      fileList = fileList.concat(
+        entries
+          .filter(iter => !iter.isDirectory)
+          .filter(filterFunc)
+          .map(iter => path.relative(rootPath, iter.filePath))
+      );
+    })
+    .then(() => fileList);
   }
 }
 

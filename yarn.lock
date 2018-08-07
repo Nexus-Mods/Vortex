@@ -1760,8 +1760,8 @@ base@^0.11.1:
     pascalcase "^0.1.1"
 
 bbcode-to-react@TanninOne/bbcode-to-react:
-  version "0.2.8"
-  resolved "https://codeload.github.com/TanninOne/bbcode-to-react/tar.gz/fb9fb07d069e0cf0793a1db5824a8b4888bbf7b4"
+  version "0.2.9"
+  resolved "https://codeload.github.com/TanninOne/bbcode-to-react/tar.gz/6dd92afeb5083a590ba24bb6f7aaf9544e91265d"
 
 bcrypt-pbkdf@^1.0.0:
   version "1.0.1"
@@ -4257,8 +4257,8 @@ flush-write-stream@^1.0.0:
     readable-stream "^2.0.4"
 
 fomod-installer@Nexus-Mods/fomod-installer:
-  version "0.0.7"
-  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/310b42f875a16593a3cffd271ebef3321f876f53"
+  version "0.0.10"
+  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/659a942510403752a5d069e0d90b5efc981d5012"
   dependencies:
     copyfiles "^1.0.0"
     msbuild "^1.0.1"
@@ -9896,8 +9896,8 @@ tunnel-agent@~0.4.1:
   resolved "https://registry.yarnpkg.com/tunnel-agent/-/tunnel-agent-0.4.3.tgz#6373db76909fe570e08d73583365ed828a74eeeb"
 
 turbowalk@Nexus-Mods/node-turbowalk:
-  version "1.0.1"
-  resolved "https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/94bb5ebb0768f0f2b374a6223d22fb3d4ff09e1d"
+  version "1.1.0"
+  resolved "https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/f58a978c1e7236e17407579c6893dffb71055b99"
   dependencies:
     autogypi "^0.2.2"
     fs-extra-promise "^1.0.1"

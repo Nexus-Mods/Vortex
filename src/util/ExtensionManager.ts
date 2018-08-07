@@ -48,8 +48,9 @@ import {} from 'redux-watcher';
 import * as rimraf from 'rimraf';
 import * as semver from 'semver';
 import { generate as shortid } from 'shortid';
-import { dynreq, runElevated } from 'vortex-run';
+import { dynreq, runElevated, Win32Error } from 'vortex-run';
 import getVortexPath from './getVortexPath';
+import { UserCanceled } from './CustomErrors';
 
 // tslint:disable-next-line:no-var-requires
 const ReduxWatcher = require('redux-watcher');
@@ -342,14 +343,12 @@ class ExtensionManager {
   private mModDBGame: string;
   private mModDBAPIKey: string;
   private mModDBCache: { [id: string]: ILookupResult[] } = {};
-  private mPid: number;
   private mContextProxyHandler: ContextProxyHandler;
   private mExtensionState: { [extId: string]: IExtensionState };
   private mLoadFailures: { [extId: string]: IExtensionLoadFailure[] };
   private mInterpreters: { [ext: string]: (input: IRunParameters) => IRunParameters };
 
   constructor(initStore?: Redux.Store<any>, eventEmitter?: NodeJS.EventEmitter) {
-    this.mPid = process.pid;
     this.mEventEmitter = eventEmitter;
     this.mInterpreters = {};
     this.mApi = {
@@ -397,7 +396,7 @@ class ExtensionManager {
 
       this.mExtensionState = initStore.getState().app.extensions;
       const extensionsPath = path.join(app.getPath('userData'), 'plugins');
-      const extensionsToRemove = Object.keys(this.mExtensionState)
+      Object.keys(this.mExtensionState)
         .filter(extId => this.mExtensionState[extId].remove)
         .forEach(extId => {
           rimraf.sync(path.join(extensionsPath, extId));
@@ -995,7 +994,10 @@ class ExtensionManager {
             return reject(err);
           }
         }
-      }) : Promise.resolve());
+      }) : Promise.resolve())
+        .catch(Win32Error, err => err.code === 5
+          ? Promise.reject(new UserCanceled())
+          : Promise.reject(err));
   }
 
   private emitAndAwait = (event: string, ...args: any[]): Promise<void> => {

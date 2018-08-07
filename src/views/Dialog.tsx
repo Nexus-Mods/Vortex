@@ -181,7 +181,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
 
     if (content.bbcode !== undefined) {
       controls.push((
-        <div key='dialog-content-bbcode'>
+        <div key='dialog-content-bbcode' className='dialog-content-bbcode'>
           {bbcode(content.bbcode)}
         </div>
       ));
@@ -204,7 +204,9 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     } else if (content.checkboxes !== undefined) {
       controls.push((
         <div key='dialog-content-choices' className='dialog-content-choices'>
-          {content.checkboxes.map(this.renderCheckbox)}
+          <div>
+            {content.checkboxes.map(this.renderCheckbox)}
+          </div>
         </div>
       ));
     } else if (content.choices !== undefined) {

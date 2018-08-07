@@ -95,7 +95,7 @@ function queryPurge(api: IExtensionApi,
                     files: IDeployedFile[]): Promise<void> {
   const t = api.translate;
   return api.store.dispatch(showDialog('info', t('Purge files from different instance?'), {
-    message: t('IMPORTANT: This game was modded by another instance of Vortex.\n\n' +
+    text: t('IMPORTANT: This game was modded by another instance of Vortex.\n\n' +
       'If you switch between different instances (or between shared and ' +
       'single-user mode) it\'s better if you purge mods before switching.\n\n' +
       'Vortex can try to clean up now but this is less reliable (*) than doing it ' +
