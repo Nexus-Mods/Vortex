@@ -139,7 +139,7 @@ function init(context: IExtensionContext): boolean {
       if (gameMode === undefined) {
         return;
       }
-      if (!_.isEqual(Object.keys(prevMods[gameMode]), Object.keys(newMods[gameMode]))) {
+      if (!_.isEqual(Object.keys(prevMods[gameMode] || {}), Object.keys(newMods[gameMode] || {}))) {
         runChecks(context.api, 'mod-installed', 5000);
       }
     });
