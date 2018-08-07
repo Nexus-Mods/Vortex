@@ -101,9 +101,6 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
     const state = this.context.api.store.getState();
 
     const layoutMap: { [key: string]: number } = {};
-    if (layout !== undefined) {
-      layout.forEach((item: string, idx: number) => layoutMap[item] = idx + 1000);
-    }
 
     const sorted = dashlets
       .filter((dash: IDashletProps) =>
@@ -115,6 +112,8 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
 
     const fixed = sorted.filter(dash => dash.fixed);
     const dynamic = sorted.filter(dash => !dash.fixed);
+
+    console.log('', dashlets, sorted, layoutMap);
 
     return (
       <MainPage id='page-dashboard' className='page-dashboard'>
