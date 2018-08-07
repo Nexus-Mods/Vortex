@@ -545,23 +545,25 @@ function cleanupIncompleteInstalls(api: IExtensionApi) {
     Object.keys(mods[gameId]).forEach(modId => {
       const mod = mods[gameId][modId];
       if (mod.state === 'installing') {
-        const fullPath = path.join(resolvePath('install', paths, gameId), mod.installationPath);
-        log('warn', 'mod was not installed completelely and will be removed', { mod, fullPath });
-        // this needs to be synchronous because once is synchronous and we have to complete this
-        // before the application fires the gamemode-changed event because at that point we
-        // create new mods from the unknown directories (especially the .installing ones)
-        try {
-          fs.removeSync(fullPath);
-        } catch (err) {
-          if (err.code !== 'ENOENT') {
-            log('error', 'failed to clean up', err);
+        if (mod.installationPath !== undefined) {
+          const fullPath = path.join(resolvePath('install', paths, gameId), mod.installationPath);
+          log('warn', 'mod was not installed completelely and will be removed', { mod, fullPath });
+          // this needs to be synchronous because once is synchronous and we have to complete this
+          // before the application fires the gamemode-changed event because at that point we
+          // create new mods from the unknown directories (especially the .installing ones)
+          try {
+            fs.removeSync(fullPath);
+          } catch (err) {
+            if (err.code !== 'ENOENT') {
+              log('error', 'failed to clean up', err);
+            }
           }
-        }
-        try {
-          fs.removeSync(fullPath + '.installing');
-        } catch (err) {
-          if (err.code !== 'ENOENT') {
-            log('error', 'failed to clean up', err);
+          try {
+            fs.removeSync(fullPath + '.installing');
+          } catch (err) {
+            if (err.code !== 'ENOENT') {
+              log('error', 'failed to clean up', err);
+            }
           }
         }
         store.dispatch(removeMod(gameId, modId));
