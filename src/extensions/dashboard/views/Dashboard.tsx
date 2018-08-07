@@ -113,8 +113,6 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
     const fixed = sorted.filter(dash => dash.fixed);
     const dynamic = sorted.filter(dash => !dash.fixed);
 
-    console.log('', dashlets, sorted, layoutMap);
-
     return (
       <MainPage id='page-dashboard' className='page-dashboard'>
         <MainPage.Body
