@@ -66,7 +66,7 @@ import * as Promise from 'bluebird';
 import { genHash } from 'modmeta-db';
 import * as path from 'path';
 import * as Redux from 'redux';
-import { updateNotification } from '../../actions';
+import { updateNotification, dismissNotification } from '../../actions';
 
 const activators: IDeploymentMethod[] = [];
 
@@ -267,7 +267,11 @@ function genUpdateModDeployment() {
       ? getSafe(state, ['persistent', 'profiles', profileId], undefined)
       : activeProfile(state);
     if (profile === undefined) {
-      return Promise.reject(new Error('Profile missing'));
+      // Used to report an exception here but I don't think this is an error, the call
+      // can be delayed so it's completely possible there is no profile active at the the time
+      // or has been deleted by then. Rare but not a bug
+      api.store.dispatch(dismissNotification(notificationId));
+      return Promise.resolve();
     }
     const instPath = resolvePath('install', state.settings.mods.paths, profile.gameId);
     const gameDiscovery =
