@@ -259,7 +259,7 @@ export class DownloadObserver {
       // need to cancel the download
       this.mManager.stop(downloadId);
     }
-    if (truthy(download.localPath)) {
+    if (truthy(download.localPath) && truthy(download.game)) {
       const dlPath = resolvePath('download',
           this.mStore.getState().settings.mods.paths, download.game);
       fs.removeAsync(path.join(dlPath, download.localPath))
