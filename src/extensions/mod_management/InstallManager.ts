@@ -247,12 +247,12 @@ class InstallManager {
         installContext.startInstallCB(modId, installGameId, archiveId);
 
         destinationPath = path.join(this.mGetInstallPath(installGameId), modId);
+        installContext.setInstallPathCB(modId, destinationPath);
         tempPath = destinationPath + '.installing';
         return this.installInner(api, archivePath,
           tempPath, destinationPath, installGameId, installContext);
       })
       .then(result => {
-        installContext.setInstallPathCB(modId, destinationPath);
         const state: IState = api.store.getState();
 
         if (state.persistent.mods[installGameId][modId].type === '') {

@@ -191,8 +191,9 @@ class InstallContext implements IInstallContext {
   }
 
   public setInstallPathCB(id: string, installPath: string) {
-    log('info', 'using install path', { id, installPath });
-    this.mSetModInstallationPath(id, path.basename(installPath));
+    const fileName = path.basename(installPath);
+    log('info', 'using install path', { id, installPath, fileName });
+    this.mSetModInstallationPath(id, fileName);
   }
 
   public setModType(id: string, modType: string) {
