@@ -6,6 +6,19 @@ export interface IProps {
   onChangeLayout: (items: string[]) => void;
 }
 
+function setEqual(lhs: Set<any>, rhs: Set<any>) {
+  // catch case where lhs is a subset or superset of rhs
+  if (lhs.size !== rhs.size) {
+    return false;
+  }
+
+  // if they are the same size and each element from lhs exists
+  // in rhs they have to be the same. This is a set (no duplicates)
+  // after all
+  return (Array.from(lhs.keys())
+    .find(lKey => !rhs.has(lKey)) === undefined);
+}
+
 /**
  * wrapper for packery
  *
@@ -14,18 +27,24 @@ export interface IProps {
  */
 class Packery extends React.Component<IProps, {}> {
   private mPackery: any;
-  private mRef: Element;
   private mLayoutTimer: NodeJS.Timer;
   private mRefreshTimer: NodeJS.Timer;
+  private mChildren: Set<string>;
+
+  constructor(props: typeof Packery.prototype.props) {
+    super(props);
+    this.mChildren = new Set(React.Children.map(props.children, (child: any) => child.key));
+  }
 
   public componentDidUpdate() {
     this.scheduleLayout();
   }
 
   public componentWillReceiveProps(nextProps: typeof Packery.prototype.props) {
+    const nextChildren = new Set(React.Children.map(nextProps.children, (child: any) => child.key));
     if ((nextProps.totalWidth !== this.props.totalWidth)
-      || (React.Children.count(nextProps.children)
-        !== React.Children.count(this.props.children))) {
+        || !setEqual(this.mChildren, nextChildren)) {
+      this.mChildren = nextChildren;
       this.scheduleRefresh();
     }
   }
@@ -49,7 +68,6 @@ class Packery extends React.Component<IProps, {}> {
   }
 
   private refContainer = (ref: Element) => {
-    this.mRef = ref;
     // gutter is manually implemented in css as a padding, that way it
     // can access variables
     const options: PackeryOptions = {
