@@ -272,8 +272,8 @@ class DeploymentMethod extends LinkingDeployment {
       clearTimeout(this.mQuitTimer);
     }
     this.mQuitTimer = setTimeout(() => {
-      ipc.server.emit(this.mElevatedClient, 'quit');
       try {
+        ipc.server.emit(this.mElevatedClient, 'quit');
         ipc.server.stop();
       } catch (err) {
         // the most likely reason here is that it's already closed
