@@ -703,21 +703,22 @@ function once(api: IExtensionApi) {
     retrieveCategories(api, isUpdate);
   });
 
-  api.events.on('check-mods-version', (gameId, mods) => {
+  api.onAsync('check-mods-version', (gameId, mods) => {
     const APIKEY = getSafe(api.store.getState(),
       ['confidential', 'account', 'nexus', 'APIKey'], '');
     if (APIKEY === '') {
       showError(api.store.dispatch,
         'An error occurred checking for mod updates',
         'You are not logged in to Nexus Mods!', { allowReport: false });
+      return Promise.resolve();
     } else {
       api.store.dispatch(setUpdatingMods(gameId, true));
       const start = Date.now();
-      checkModVersionsImpl(api.store, gameId, mods)
+      return checkModVersionsImpl(api.store, gameId, mods)
         .then((errorMessages: string[]) => {
           if (errorMessages.length !== 0) {
             showError(api.store.dispatch,
-              'Checking for mod updates succeeded but there were errors',
+              'Some mods could not be checked for updates',
               errorMessages.join('\n\n'), { allowReport: false });
           }
         })
@@ -726,10 +727,9 @@ function once(api: IExtensionApi) {
             'An error occurred checking for mod updates',
             err);
         })
+        .then(() => Promise.delay(2000 - (Date.now() - start)))
         .finally(() => {
-          setTimeout(() => {
-            api.store.dispatch(setUpdatingMods(gameId, false));
-          }, 2000 - (Date.now() - start));
+          api.store.dispatch(setUpdatingMods(gameId, false));
         });
     }
   });

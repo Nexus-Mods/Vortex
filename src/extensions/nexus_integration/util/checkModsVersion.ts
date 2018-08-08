@@ -1,3 +1,4 @@
+import { log } from '../../../util/log';
 import { showError } from '../../../util/message';
 import { getSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
@@ -172,8 +173,11 @@ export function retrieveModInfo(
       if (err.statusCode === 404) {
         return;
       }
-      showError(store.dispatch, 'An error occurred looking up the mod',
-        errorFromNexus(err), { allowReport: false });
+      log('warn', 'An error occurred looking up a mod', {
+        error: errorFromNexus(err),
+        gameId,
+        modId: nexusModId,
+      });
       // prevent this error from coming up every time the icon is re-rendered
       store.dispatch(setModAttribute(gameMode, mod.id, 'endorsed', 'Undecided'));
     });

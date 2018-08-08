@@ -51,7 +51,14 @@ class CheckVersionsButton extends ComponentEx<IProps, {}> {
   private checkModsVersion = () => {
     const { gameMode, mods } = this.props;
 
-    this.context.api.events.emit('check-mods-version', gameMode, mods);
+    this.context.api.emitAndAwait('check-mods-version', gameMode, mods)
+      .then(() => {
+        this.context.api.sendNotification({
+          type: 'success',
+          message: 'Check for mod updates complete',
+          displayMS: 5000,
+        });
+      });
   }
 }
 
