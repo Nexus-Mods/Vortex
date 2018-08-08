@@ -114,21 +114,23 @@ export const modsReducer: IReducerSpec = {
   },
   defaults: {
   },
-  /*
   verifiers: {
     _: {
       elements: {
         _: {
+          type: 'object',
+          deleteBroken: true,
           elements: {
-            archiveId: {
+            installationPath: {
               type: 'string',
-              // fixes a problem where we stored [archiveId] instead of just the archiveId
-              repair: (input) => Array.isArray(input) ? input[0] : '',
+              noUndefined: true,
+              noNull: true,
+              required: true,
+              deleteBroken: 'parent',
             },
           },
         },
       },
     },
   },
-  */
 };

@@ -687,7 +687,6 @@ function once(api: IExtensionApi) {
       });
 
   cleanupIncompleteInstalls(api);
-
 }
 
 function init(context: IExtensionContext): boolean {
