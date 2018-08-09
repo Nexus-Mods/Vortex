@@ -539,6 +539,15 @@ function attributeExtractor(input: any) {
   });
 }
 
+function upgradeExtractor(input: any) {
+  return Promise.resolve({
+    category: getSafe(input.previous, ['category'], undefined),
+    customFileName: getSafe(input.previous, ['customFileName'], undefined),
+    variant: getSafe(input.previous, ['variant'], undefined),
+    notes: getSafe(input.previous, ['notes'], undefined),
+  });
+}
+
 function cleanupIncompleteInstalls(api: IExtensionApi) {
   const store: Redux.Store<IState> = api.store;
 
@@ -737,6 +746,7 @@ function init(context: IExtensionContext): boolean {
   context.registerMerge = registerMerge;
 
   registerAttributeExtractor(100, attributeExtractor);
+  registerAttributeExtractor(200, upgradeExtractor);
 
   registerInstaller('fallback', 1000, basicInstaller.testSupported, basicInstaller.install);
 
