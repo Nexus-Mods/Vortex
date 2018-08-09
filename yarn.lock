@@ -4257,8 +4257,8 @@ flush-write-stream@^1.0.0:
     readable-stream "^2.0.4"
 
 fomod-installer@Nexus-Mods/fomod-installer:
-  version "0.0.10"
-  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/659a942510403752a5d069e0d90b5efc981d5012"
+  version "0.0.11"
+  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/61f296b5598f497f24b58cfcf77d9a4654dbf0e1"
   dependencies:
     copyfiles "^1.0.0"
     msbuild "^1.0.1"

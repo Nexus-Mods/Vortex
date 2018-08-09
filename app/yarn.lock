@@ -944,16 +944,16 @@ edge-cs@1.2.1:
   version "1.2.1"
   resolved "https://registry.yarnpkg.com/edge-cs/-/edge-cs-1.2.1.tgz#bd1a9ecdb94ef0ed40c894582046749e57045e5a"
 
-edge@^7.10.1:
-  version "7.10.1"
-  resolved "https://registry.yarnpkg.com/edge/-/edge-7.10.1.tgz#68386eac102f39724d273cc19aea30091e2b4ae4"
-  dependencies:
-    edge-cs "1.2.1"
-    nan "^2.0.9"
-
 ee-first@1.1.1:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/ee-first/-/ee-first-1.1.1.tgz#590c61156b0ae2f4f0255732a158b266bc56b21d"
+
+electron-edge-js@^8.3.6:
+  version "8.3.6"
+  resolved "https://registry.yarnpkg.com/electron-edge-js/-/electron-edge-js-8.3.6.tgz#0c12954175bc070e1da473f447a64d40f4e91204"
+  dependencies:
+    edge-cs "1.2.1"
+    nan "^2.10.0"
 
 electron-is-dev@^0.3.0:
   version "0.3.0"
@@ -1194,8 +1194,8 @@ fizzy-ui-utils@^2.0.0:
     desandro-matches-selector "^2.0.0"
 
 fomod-installer@Nexus-Mods/fomod-installer:
-  version "0.0.10"
-  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/659a942510403752a5d069e0d90b5efc981d5012"
+  version "0.0.11"
+  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/61f296b5598f497f24b58cfcf77d9a4654dbf0e1"
   dependencies:
     copyfiles "^1.0.0"
     msbuild "^1.0.1"
@@ -2091,7 +2091,7 @@ msbuild@^1.0.1:
     colors "*"
     events "*"
 
-nan@2, nan@^2.0.9, nan@^2.10.0, nan@^2.4.0, nan@^2.8.0, nan@^2.9.2, nan@~2.10.0:
+nan@2, nan@^2.10.0, nan@^2.4.0, nan@^2.8.0, nan@^2.9.2, nan@~2.10.0:
   version "2.10.0"
   resolved "https://registry.yarnpkg.com/nan/-/nan-2.10.0.tgz#96d0cd610ebd58d4b4de9cc0c6828cda99c7548f"
 
