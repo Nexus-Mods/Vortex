@@ -6,6 +6,8 @@ platform:
   - x64
 configuration:
   - Release
+init:
+ - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
 install:
 - ps: Install-Product node $env:nodejs_version x64
 - set EDGE_USE_CORECLR= && yarn install
