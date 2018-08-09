@@ -579,7 +579,7 @@ class ExtensionManager {
   }
 
   private getModDB = (): Promise<modmetaT.ModDB> => {
-    const currentGame = activeGameId(this.mApi.store.getState());
+    const gameMode = activeGameId(this.mApi.store.getState());
     const currentKey =
       getSafe(this.mApi.store.getState(),
         ['confidential', 'account', 'nexus', 'APIKey'], '');
@@ -599,7 +599,7 @@ class ExtensionManager {
     return init.then(() => {
       // reset the moddb if necessary so new settings get used
       if ((this.mModDB === undefined)
-          || (currentGame !== this.mModDBGame)
+          || (gameMode !== this.mModDBGame)
           || (currentKey !== this.mModDBAPIKey)) {
         if (this.mModDB !== undefined) {
           return this.mModDB.close()
@@ -609,24 +609,16 @@ class ExtensionManager {
         }
       }
     })
-      .then(() => {
-        if (this.mModDB === undefined) {
-          this.mModDB = new modmeta.ModDB(
-            path.join(app.getPath('userData'), 'metadb'),
-            currentGame, [
-              {
-                protocol: 'nexus',
-                url: 'https://api.nexusmods.com/v1',
-                apiKey: currentKey,
-                cacheDurationSec: 86400,
-              },
-            ], log);
-          this.mModDBGame = currentGame;
-          this.mModDBAPIKey = currentKey;
-          log('debug', 'initialised');
-        }
-        return Promise.resolve(this.mModDB);
-      })
+      .then(() => (this.mModDB !== undefined)
+        ? Promise.resolve()
+        : this.connectMetaDB(gameMode, currentKey)
+          .then(modDB => {
+            this.mModDB = modDB
+            this.mModDBGame = gameMode;
+            this.mModDBAPIKey = currentKey;
+            log('debug', 'initialised');
+          }))
+      .then(() => this.mModDB)
       .finally(() => {
         if (onDone !== undefined) {
           onDone();
@@ -634,6 +626,32 @@ class ExtensionManager {
       })
       ;
       // TODO: the fallback to nexus api should somehow be set up in nexus_integration, not here
+  }
+
+  private connectMetaDB(gameId: string, apiKey: string) {
+    const dbPath = path.join(app.getPath('userData'), 'metadb');
+    return modmeta.ModDB.create(
+      dbPath,
+      gameId, [
+        {
+          protocol: 'nexus',
+          url: 'https://api.nexusmods.com/v1',
+          apiKey,
+          cacheDurationSec: 86400,
+        },
+      ], log)
+      .catch(err => {
+        return this.mApi.showDialog('error', 'Failed to connect meta database', {
+          text: 'Please check that there is no other instance of Vortex still running.',
+          message: err.message,
+        }, [
+          { label: 'Quit' },
+          { label: 'Retry' },
+        ])
+        .then(result => (result.action === 'Quit')
+          ? app.quit()
+          : this.connectMetaDB(gameId, apiKey));
+      });
   }
 
   private stateChangeHandler = (watchPath: string[],
