@@ -271,6 +271,7 @@
   ], [
     {
       "type": "electron-rebuild",
+      "condition": "false",
       "name": "edge-rebuild",
       "module": "edge",
       "sources": ["node_modules/edge/build/Release/binding.node"]
