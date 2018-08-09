@@ -589,7 +589,10 @@ class ExtensionManager {
     let onDone: () => void;
     if (this.mModDBPromise === undefined) {
       this.mModDBPromise = new Promise<void>((resolve, reject) => {
-        onDone = resolve;
+        onDone = () => {
+          this.mModDBPromise = undefined;
+          resolve();
+        };
       });
       init = Promise.resolve();
     } else {
@@ -604,10 +607,9 @@ class ExtensionManager {
         if (this.mModDB !== undefined) {
           return this.mModDB.close()
             .then(() => this.mModDB = undefined);
-        } else {
-          return Promise.resolve();
         }
       }
+      return Promise.resolve();
     })
       .then(() => (this.mModDB !== undefined)
         ? Promise.resolve()
@@ -623,8 +625,7 @@ class ExtensionManager {
         if (onDone !== undefined) {
           onDone();
         }
-      })
-      ;
+      });
       // TODO: the fallback to nexus api should somehow be set up in nexus_integration, not here
   }
 
