@@ -22,6 +22,8 @@ import { INotification } from '../types/INotification';
 import { IExtensionLoadFailure, IExtensionState } from '../types/IState';
 
 import { Archive } from './archives';
+import { ProcessCanceled, UserCanceled } from './CustomErrors';
+import getVortexPath from './getVortexPath';
 import lazyRequire from './lazyRequire';
 import { log } from './log';
 import { showError } from './message';
@@ -30,7 +32,7 @@ import runElevatedCustomTool from './runElevatedCustomTool';
 import { activeGameId } from './selectors';
 import { getSafe } from './storeHelper';
 import StyleManagerT from './StyleManager';
-import { setdefault } from './util';
+import { setdefault, truthy } from './util';
 
 import * as Promise from 'bluebird';
 import { spawn, SpawnOptions } from 'child_process';
@@ -49,8 +51,6 @@ import * as rimraf from 'rimraf';
 import * as semver from 'semver';
 import { generate as shortid } from 'shortid';
 import { dynreq, runElevated, Win32Error } from 'vortex-run';
-import getVortexPath from './getVortexPath';
-import { UserCanceled } from './CustomErrors';
 
 // tslint:disable-next-line:no-var-requires
 const ReduxWatcher = require('redux-watcher');
@@ -958,6 +958,9 @@ class ExtensionManager {
 
   private runExecutable =
     (executable: string, args: string[], options: IRunOptions): Promise<void> => {
+      if (!truthy(executable)) {
+        return Promise.reject(new ProcessCanceled('Executable not set'));
+      }
       const interpreter = this.mInterpreters[path.extname(executable).toLowerCase()];
       if (interpreter !== undefined) {
         try {
