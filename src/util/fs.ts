@@ -260,7 +260,7 @@ export function removeAsync(dirPath: string): PromiseBB<void> {
 function removeInt(dirPath: string, stackErr: Error): PromiseBB<void> {
   return new PromiseBB<void>((resolve, reject) => {
     rimraf(dirPath, { maxBusyTries: 10 }, err => {
-      if (err !== null) {
+      if (err) {
         reject(err);
       } else {
         resolve();

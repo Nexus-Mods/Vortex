@@ -158,6 +158,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
             <EmptyPlaceholder
               icon='folder-download'
               text={t('Please select a game to manage first')}
+              fill={true}
             />
           </PanelX.Body>
         </Panel>
@@ -398,7 +399,6 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
     } else if (download.state === 'redirect') {
       onShowDialog('error', 'Received website', {
         message: t('The url lead to this website, maybe it contains a redirection?'),
-        htmlFile: download.failCause.htmlFile,
       }, [
           { label: 'Delete',
             action: () => this.context.api.events.emit('remove-download', downloadId) },

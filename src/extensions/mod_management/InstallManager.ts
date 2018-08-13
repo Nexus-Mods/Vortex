@@ -437,10 +437,7 @@ class InstallManager {
         .finally(() => {
           process.noAsar = false;
         })
-        .then(() => {
-          console.log('files', fileList);
-          return this.getInstaller(fileList, gameId);
-        })
+        .then(() => this.getInstaller(fileList, gameId))
         .then(supportedInstaller => {
           if (supportedInstaller === undefined) {
             throw new Error('no installer supporting this file');
