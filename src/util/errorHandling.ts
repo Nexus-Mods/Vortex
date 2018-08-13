@@ -77,6 +77,7 @@ export function genHash(error: IError) {
       .map(line => line
         // remove the file names from stack lines because they contain local paths
          .replace(/\([^)]*\)$/, '')
+         .replace(/at [A-Z]:\\.*\\([^\\]*)/, 'at $1')
          // remove everything in quotes to get file names and such out of the error message
          .replace(/'[^']*'/g, '').replace(/"[^"]*"/g, ''));
     const idx = hashStack.findIndex(
