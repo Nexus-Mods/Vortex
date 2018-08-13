@@ -20,6 +20,7 @@ export interface IExtra {
 
 export interface IBaseProps {
   title: string;
+  emptyText: string;
   url: string;
   maxLength: number;
   extras: IExtra[];
@@ -70,11 +71,11 @@ class RSSDashlet extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderPlaceholder(): JSX.Element {
-    const { t } = this.props;
+    const { t, emptyText } = this.props;
     return (
       <EmptyPlaceholder
         icon='layout-list'
-        text={t('No news')}
+        text={emptyText}
         subtext={t('*crickets chirp*')}
       />
     );

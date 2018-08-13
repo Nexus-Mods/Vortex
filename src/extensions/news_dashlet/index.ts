@@ -6,8 +6,10 @@ import { activeGameId } from '../profile_management/selectors';
 import RSSDashlet from './Dashlet';
 
 function init(context: IExtensionContext): boolean {
+  const t = context.api.translate;
   context.registerDashlet('News', 1, 3, 250, RSSDashlet, undefined, () => ({
-    title: context.api.translate('Latest News'),
+    title: t('Latest News'),
+    emptyText: t('No News'),
     url: 'https://www.nexusmods.com/rss/news/',
     maxLength: 400,
     extras: [
@@ -21,7 +23,8 @@ function init(context: IExtensionContext): boolean {
         const gameId =
             convertGameId(activeGameId(context.api.store.getState()));
         return {
-          title: context.api.translate('New Files'),
+          title: t('New Files'),
+          emptyText: t('No New Files'),
           url: `https://www.nexusmods.com/${gameId}/rss/newtoday/`,
           maxLength: 400,
           extras: [
