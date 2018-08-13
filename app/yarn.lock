@@ -1194,8 +1194,8 @@ fizzy-ui-utils@^2.0.0:
     desandro-matches-selector "^2.0.0"
 
 fomod-installer@Nexus-Mods/fomod-installer:
-  version "0.0.11"
-  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/61f296b5598f497f24b58cfcf77d9a4654dbf0e1"
+  version "0.0.12"
+  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/3904b8bd03c262029a0bdd02e7c887c140884e39"
   dependencies:
     copyfiles "^1.0.0"
     msbuild "^1.0.1"
