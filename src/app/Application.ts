@@ -31,6 +31,7 @@ import * as _ from 'lodash';
 import * as path from 'path';
 import { allow } from 'permissions';
 import * as Redux from 'redux';
+import * as semver from 'semver';
 import * as uuidT from 'uuid';
 
 const uuid = lazyRequire<typeof uuidT>(() => require('uuid'));
@@ -229,11 +230,36 @@ class Application {
 
   private checkUpgrade() {
     const state: IState = this.mStore.getState();
-    if (state.app.appVersion !== app.getVersion()) {
+    const lastVersion = state.app.appVersion || '0.0.0';
+    const currentVersion = app.getVersion();
+    if (currentVersion === '0.0.1') {
+      // don't warn in development builds
+      return Promise.resolve();
+    }
+    if ((semver.major(currentVersion) < semver.major(lastVersion))
+        || (semver.minor(currentVersion) < semver.minor(lastVersion))) {
+      if (dialog.showMessageBox(null, {
+        type: 'warning',
+        title: 'Downgrade detected',
+        message: 'The version of Vortex you\'re running is older than the one you previously ran. '
+               + 'While Vortex versions are backward compatible they are not forward compatible, '
+               + 'it\'s possible this version of Vortex may not run and may even '
+               + 'do irrevsible damage to your application state.\n'
+               + 'Only continue if you\'re happy to reinstall and cleanup everything manually.',
+        buttons: [
+          'Quit',
+          'Yes, I\'m mad',
+        ],
+        noLink: true,
+      }) == 0) {
+        app.quit();
+        return Promise.reject(new UserCanceled());
+      }
+    } else if (semver.gt(currentVersion, lastVersion)) {
       log('info', 'Vortex was updated, checking for necessary migrations');
       return migrate(this.mStore)
         .then(() => {
-          this.mStore.dispatch(setApplicationVersion(app.getVersion()));
+          this.mStore.dispatch(setApplicationVersion(currentVersion));
         });
     } else {
       return Promise.resolve();
