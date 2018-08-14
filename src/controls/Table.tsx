@@ -54,7 +54,6 @@ interface IConnectedProps {
   attributeState?: { [id: string]: IAttributeState };
   language: string;
   filter: { [id: string]: any };
-  advancedMode: boolean;
 }
 
 interface IActionProps {
@@ -849,7 +848,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private filteredRows(props: IProps,
                        attributes: ITableAttribute[],
                        data: { [id: string]: any }) {
-    const { advancedMode, filter } = props;
+    const { filter } = props;
     const { calculatedValues } = this.state;
 
     if (filter === undefined) {
@@ -1175,7 +1174,6 @@ function mapStateToProps(state: any, ownProps: any): IConnectedProps {
     attributeState:
       getSafe(state, ['settings', 'tables', ownProps.tableId, 'attributes'], emptyObj),
     filter: getSafe(state, ['settings', 'tables', ownProps.tableId, 'filter'], undefined),
-    advancedMode: state.settings.interface.advanced,
   };
 }
 
