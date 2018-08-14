@@ -20,7 +20,7 @@ import * as I18next from 'i18next';
 import * as ipc from 'node-ipc';
 import * as path from 'path';
 import { generate as shortid } from 'shortid';
-import { runElevated } from 'vortex-run';
+import { runElevated, Win32Error } from 'vortex-run';
 
 import { remoteCode } from './remoteCode';
 
@@ -98,6 +98,9 @@ class DeploymentMethod extends LinkingDeployment {
     });
     this.mOpenRequests = {};
     return this.startElevated()
+        .tapCatch(() => {
+          this.context.onComplete();
+        })
         .then(() => super.finalize(gameId, dataPath, installationPath))
         .then(result => this.stopElevated().then(() => result));
   }
@@ -244,6 +247,13 @@ class DeploymentMethod extends LinkingDeployment {
             reject(new TemporaryError('failed to run deployment helper'));
           }
         })
+        .tapCatch(() => {
+          ipc.server.stop();
+        })
+        .catch(Win32Error, err => (err.code === 5)
+            ? reject(new UserCanceled())
+            : reject(err)
+        )
         .catch(reject);
     });
   }
@@ -264,8 +274,8 @@ class DeploymentMethod extends LinkingDeployment {
       clearTimeout(this.mQuitTimer);
     }
     this.mQuitTimer = setTimeout(() => {
-      ipc.server.emit(this.mElevatedClient, 'quit');
       try {
+        ipc.server.emit(this.mElevatedClient, 'quit');
         ipc.server.stop();
       } catch (err) {
         // the most likely reason here is that it's already closed

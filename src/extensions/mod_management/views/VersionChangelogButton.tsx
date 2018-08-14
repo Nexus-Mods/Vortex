@@ -76,8 +76,12 @@ class VersionChangelogButton extends ComponentEx<IProps, {}> {
     }
     if (changelog.format === 'html') {
       const ReactSafeHtml: ReactSafeHtmlT = require('react-safe-html');
-      const components = ReactSafeHtml.components.makeElements({});
-      components.br = ReactSafeHtml.components.createSimpleElement('br', {});
+      let components: any = {};
+      
+      if (ReactSafeHtml.component !== undefined) {
+        components = ReactSafeHtml.components.makeElements({});
+        components.br = ReactSafeHtml.components.createSimpleElement('br', {});
+      }
 
       return <ReactSafeHtml html={changelog.content} components={components} />;
     } else {

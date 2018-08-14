@@ -3411,13 +3411,6 @@ edge-cs@1.2.1:
   version "1.2.1"
   resolved "https://registry.yarnpkg.com/edge-cs/-/edge-cs-1.2.1.tgz#bd1a9ecdb94ef0ed40c894582046749e57045e5a"
 
-edge@^7.10.1:
-  version "7.10.1"
-  resolved "https://registry.yarnpkg.com/edge/-/edge-7.10.1.tgz#68386eac102f39724d273cc19aea30091e2b4ae4"
-  dependencies:
-    edge-cs "1.2.1"
-    nan "^2.0.9"
-
 editions@^1.3.3:
   version "1.3.4"
   resolved "https://registry.yarnpkg.com/editions/-/editions-1.3.4.tgz#3662cb592347c3168eb8e498a0ff73271d67f50b"
@@ -3543,6 +3536,13 @@ electron-download@^3.0.1:
     rc "^1.1.2"
     semver "^5.3.0"
     sumchecker "^1.2.0"
+
+electron-edge-js@^8.3.6:
+  version "8.3.6"
+  resolved "https://registry.yarnpkg.com/electron-edge-js/-/electron-edge-js-8.3.6.tgz#0c12954175bc070e1da473f447a64d40f4e91204"
+  dependencies:
+    edge-cs "1.2.1"
+    nan "^2.10.0"
 
 electron-is-dev@^0.3.0:
   version "0.3.0"
@@ -4261,8 +4261,8 @@ flush-write-stream@^1.0.0:
     readable-stream "^2.0.4"
 
 fomod-installer@Nexus-Mods/fomod-installer:
-  version "0.0.10"
-  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/659a942510403752a5d069e0d90b5efc981d5012"
+  version "0.0.12"
+  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/3904b8bd03c262029a0bdd02e7c887c140884e39"
   dependencies:
     copyfiles "^1.0.0"
     msbuild "^1.0.1"
@@ -6729,8 +6729,8 @@ mkdirp@^0.3.5:
   resolved "https://registry.yarnpkg.com/mkdirp/-/mkdirp-0.3.5.tgz#de3e5f8961c88c787ee1368df849ac4413eca8d7"
 
 modmeta-db@Nexus-Mods/modmeta-db:
-  version "0.2.2"
-  resolved "https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/47957e908af7dfac5b98294358de9cc6cf7a9a41"
+  version "0.3.0"
+  resolved "https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/ea5fff7e8a8d3ac5b6b7b401c9f3130db03b258a"
   dependencies:
     bluebird "^3.4.6"
     leveldown "^1.6.0"
@@ -6786,7 +6786,7 @@ mute-stream@0.0.7:
   version "0.0.7"
   resolved "https://registry.yarnpkg.com/mute-stream/-/mute-stream-0.0.7.tgz#3075ce93bc21b8fab43e1bc4da7e8115ed1e7bab"
 
-nan@2, nan@^2.0.9, nan@^2.10.0, nan@^2.8.0:
+nan@2, nan@^2.10.0, nan@^2.8.0:
   version "2.10.0"
   resolved "https://registry.yarnpkg.com/nan/-/nan-2.10.0.tgz#96d0cd610ebd58d4b4de9cc0c6828cda99c7548f"
 
@@ -7573,8 +7573,8 @@ performance-now@^2.1.0:
   resolved "https://registry.yarnpkg.com/performance-now/-/performance-now-2.1.0.tgz#6309f4e0e5fa913ec1c69307ae364b4b377c9e7b"
 
 permissions@Nexus-Mods/node-permissions:
-  version "1.1.2"
-  resolved "https://codeload.github.com/Nexus-Mods/node-permissions/tar.gz/0e04ade9b414f8265c23bd0f69df008fb9b3cedc"
+  version "1.1.3"
+  resolved "https://codeload.github.com/Nexus-Mods/node-permissions/tar.gz/b1dcc064e5f2ec53c076349f955f0e980b6591a6"
   dependencies:
     autogypi "^0.2.2"
     nbind "^0.3.15"

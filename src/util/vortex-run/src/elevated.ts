@@ -63,33 +63,6 @@ function initTypes() {
   SHELLEXECUTEINFOPtr = ref.refType(SHELLEXECUTEINFO);
 }
 
-function execInfo(scriptPath: string) {
-  const ref = require('ref');
-
-  const instApp = ref.alloc(voidPtr);
-
-  return new SHELLEXECUTEINFO({
-    cbSize: SHELLEXECUTEINFO.size,
-    fMask: 0,
-    hwnd: null,
-    lpVerb: 'runas',
-    lpFile: process.execPath,
-    lpParameters: `--run ${scriptPath}`,
-    lpDirectory: path.dirname(process.execPath),
-    nShow: 0x01,
-    hInstApp: instApp,
-    lpIDList: null,
-    lpCLass: null,
-    hkeyClass: null,
-    dwHotKey: null,
-    DUMMYUNIONNAME: {
-      hIcon: null,
-      hMonitor: null,
-    },
-    hProcess: ref.alloc(voidPtr),
-  });
-}
-
 function elevatedMain(moduleRoot: string, ipcPath: string,
                       main: (ipc, req: NodeRequireFunction) =>
                         void | Promise<void> | Bluebird<void>) {
@@ -208,25 +181,6 @@ function runElevated(ipcPath: string, func: (ipc: any, req: NodeRequireFunction)
             }
           }
         });
-        /* TODO: remove this code if there is no problem with ShellExecuteA
-        const runInfo = execInfo(tmpPath);
-
-        shell32.ShellExecuteExA.async(runInfo.ref(), (execErr: any, res: any) => {
-          // this is reached after the user confirmed the UAC dialog but before node
-          // has read the script source so we have to give a little time for that to
-          // happen before we can remove the tmp file
-          setTimeout(cleanup, 5000);
-          if (execErr) {
-            reject(execErr);
-          } else {
-            if (res) {
-              resolve(res);
-            } else {
-              reject(new Error(`ShellExecute failed, errorcode ${res}`));
-            }
-          }
-        });
-        */
       });
     });
   });

@@ -190,7 +190,9 @@ export function onRemoveMod(api: IExtensionApi,
 
   const modState = getSafe(state, ['persistent', 'mods', gameMode, modId, 'state'], undefined);
   if (['downloaded', 'installed'].indexOf(modState) === -1) {
-    callback(new ProcessCanceled('Can\'t delete mod during download or install'));
+    if (callback !== undefined) {
+      callback(new ProcessCanceled('Can\'t delete mod during download or install'));
+    }
     return;
   }
 

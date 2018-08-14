@@ -897,6 +897,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
          && truthy(mods[key].installationPath)
          && (['downloaded', 'installed'].indexOf(mods[key].state) !== -1))
           ? fs.removeAsync(path.join(installPath, mods[key].installationPath))
+              .catch(UserCanceled, () => undefined)
               .catch(err => {
                 this.context.api.showErrorNotification('Failed to remove mod', err);
               })
@@ -1008,7 +1009,14 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   private checkForUpdate = (modIds: string[]) => {
     const { gameMode, mods } = this.props;
 
-    this.context.api.events.emit('check-mods-version', gameMode, _.pick(mods, modIds));
+    this.context.api.emitAndAwait('check-mods-version', gameMode, _.pick(mods, modIds))
+      .then(() => {
+        this.context.api.sendNotification({
+          type: 'success',
+          message: 'Check for mod updates complete',
+          displayMS: 5000,
+        });
+      });
   }
 
   private dropMod = (type: DropType, values: string[]) => {

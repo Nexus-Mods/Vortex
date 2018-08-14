@@ -101,7 +101,7 @@ class GameModeManager {
       })
       .catch(err => {
         return (err.code === 'ENOENT')
-        ? Promise.reject(new ProcessCanceled('Missing: ' + err.filename || modPath))
+        ? Promise.reject(new ProcessCanceled('Missing: ' + (err.filename || modPath)))
         : Promise.reject(err);
       });
   }
@@ -155,7 +155,7 @@ class GameModeManager {
     const progressCallback = (idx: number, percent: number, label: string) =>
             this.mStore.dispatch(discoveryProgress(idx, percent, label));
 
-    const searchPaths = this.mStore.getState().settings.gameMode.searchPaths;
+    const { searchPaths } = this.mStore.getState().settings.gameMode;
 
     if (!Array.isArray(searchPaths)) {
       throw new Error('invalid search paths: ' + require('util').inspect(searchPaths));

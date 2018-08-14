@@ -20,8 +20,8 @@ import {
 import InstallerDialog from './views/InstallerDialog';
 
 import * as Promise from 'bluebird';
-import * as edgeT from 'edge';
-const edge = lazyRequire<typeof edgeT>(() => require('edge'));
+import * as edgeT from 'electron-edge-js';
+const edge = lazyRequire<typeof edgeT>(() => require('electron-edge-js'));
 import * as path from 'path';
 import * as util from 'util';
 

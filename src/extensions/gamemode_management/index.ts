@@ -512,7 +512,13 @@ function init(context: IExtensionContext): boolean {
             cb(gameIds);
           }
         }));
-    events.on('start-discovery', () => $.gameModeManager.startSearchDiscovery());
+    events.on('start-discovery', () => {
+      try {
+        $.gameModeManager.startSearchDiscovery();
+      } catch(err) {
+        context.api.showErrorNotification('Failed to search for games', err);
+      }
+    });
     events.on('cancel-discovery', () => {
       log('info', 'received cancel discovery');
       $.gameModeManager.stopSearchDiscovery();

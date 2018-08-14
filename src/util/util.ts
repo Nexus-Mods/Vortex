@@ -2,6 +2,7 @@ import { showDialog } from '../actions/notifications';
 import { IDialogResult } from '../types/IDialog';
 import { UserCanceled } from './CustomErrors';
 import delayed from './delayed';
+import getVortexPath from './getVortexPath';
 import { log } from './log';
 
 import * as Promise from 'bluebird';
@@ -10,7 +11,6 @@ import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 import * as Redux from 'redux';
 import { file } from 'tmp';
-import getVortexPath from './getVortexPath';
 
 /**
  * count the elements in an array for which the predicate matches
@@ -69,7 +69,9 @@ export function writeFileAtomic(filePath: string, data: string | Buffer | Uint8A
   .then(fd => fs.closeAsync(fd))
   .then(() => fs.writeFileAsync(tmpPath, data, options))
   .tapCatch(() => {
-    cleanup();
+    if (cleanup !== undefined) {
+      cleanup();
+    }
   })
   .then(() => fs.renameAsync(tmpPath, filePath));
 }

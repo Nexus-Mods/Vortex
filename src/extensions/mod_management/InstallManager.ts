@@ -35,6 +35,7 @@ import InstallContext from './InstallContext';
 import deriveModInstallName from './modIdManager';
 
 import * as Promise from 'bluebird';
+import * as _ from 'lodash';
 import { IHashResult, ILookupResult, IReference, IRule } from 'modmeta-db';
 import * as ZipT from 'node-7z';
 import * as os from 'os';
@@ -42,6 +43,7 @@ import * as path from 'path';
 import * as Redux from 'redux';
 import * as rimraf from 'rimraf';
 import { IInstallContext } from './types/IInstallContext';
+import renderModName from '../mod_management/util/modName';
 
 export class ArchiveBrokenError extends Error {
   constructor() {
@@ -66,6 +68,7 @@ interface IReplaceChoice {
   id: string;
   variant: string;
   enable: boolean;
+  attributes: { [key: string]: any };
 }
 
 interface ISupportedInstaller {
@@ -194,6 +197,7 @@ class InstallManager {
                 enable = true;
               }
               setdefault(fullInfo, 'custom', {} as any).variant = choice.variant;
+              fullInfo.previous = choice.attributes;
               return checkNameLoop();
             })
           : Promise.resolve(testModId);
@@ -248,12 +252,12 @@ class InstallManager {
         installContext.startInstallCB(modId, installGameId, archiveId);
 
         destinationPath = path.join(this.mGetInstallPath(installGameId), modId);
+        installContext.setInstallPathCB(modId, destinationPath);
         tempPath = destinationPath + '.installing';
         return this.installInner(api, archivePath,
           tempPath, destinationPath, installGameId, installContext);
       })
       .then(result => {
-        installContext.setInstallPathCB(modId, destinationPath);
         const state: IState = api.store.getState();
 
         if (state.persistent.mods[installGameId][modId].type === '') {
@@ -435,10 +439,7 @@ class InstallManager {
         .finally(() => {
           process.noAsar = false;
         })
-        .then(() => {
-          console.log('files', fileList);
-          return this.getInstaller(fileList, gameId);
-        })
+        .then(() => this.getInstaller(fileList, gameId))
         .then(supportedInstaller => {
           if (supportedInstaller === undefined) {
             throw new Error('no installer supporting this file');
@@ -749,9 +750,11 @@ class InstallManager {
 
   private queryUserReplace(modId: string, gameId: string, api: IExtensionApi) {
     return new Promise<IReplaceChoice>((resolve, reject) => {
+      const state: IState = api.store.getState();
+      const mod: IMod = state.persistent.mods[gameId][modId];
       api.store
         .dispatch(showDialog(
-          'question', 'Mod exists',
+          'question', renderModName(mod, { version: false }),
           {
             text:
               'This mod seems to be installed already. You can replace the ' +
@@ -781,6 +784,7 @@ class InstallManager {
               id: modId + '+' + result.input.variant,
               variant: result.input.variant,
               enable: false,
+              attributes: {},
             });
           } else if (result.action === 'Replace') {
             const currentProfile = activeProfile(api.store.getState());
@@ -791,7 +795,12 @@ class InstallManager {
               if (err !== null) {
                 reject(err);
               } else {
-                resolve({ id: modId, variant: '', enable: wasEnabled });
+                resolve({
+                  id: modId,
+                  variant: '',
+                  enable: wasEnabled,
+                  attributes: _.omit(mod.attributes, ['version', 'fileName', 'fileVersion']),
+                });
               }
             });
           }

@@ -502,11 +502,20 @@ export interface IExtensionApi {
 }
 
 export interface IStateVerifier {
+  // the expected datatype
   type?: 'map' | 'string' | 'boolean' | 'number' | 'object';
+  // if set, can't be undefined
   noUndefined?: boolean;
+  // if set, can't be null
   noNull?: boolean;
+  // if set, look at the object elements inside
   elements?: { [key: string]: IStateVerifier };
+  // if set, this entry has to exist
   required?: boolean;
+  // if set, delete this element or an ancestor element if this one doesn't
+  // match the verifier.
+  deleteBroken?: boolean | 'parent';
+  // if set, this function is called to generate the "repaired" value
   repair?: (input: any, def: any) => any;
 }
 

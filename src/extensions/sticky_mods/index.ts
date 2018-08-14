@@ -5,16 +5,14 @@
 
 import {IExtensionApi, IExtensionContext} from '../../types/IExtensionContext';
 import {IState} from '../../types/IState';
-import LazyComponent from '../../util/LazyComponent';
 
 import renderModName from '../mod_management/util/modName';
-import {activeProfile} from '../profile_management/selectors';
 import {IProfile} from '../profile_management/types/IProfile';
 
 function testModSticky(api: IExtensionApi, previous: IProfile, current: IProfile) {
   const state: IState = api.store.getState();
 
-  const mods = state.persistent.mods[current.gameId];
+  const mods = state.persistent.mods[current.gameId] || {};
   Object.keys(previous.modState || {})
       .forEach(modId => {
         if ((mods[modId] !== undefined)

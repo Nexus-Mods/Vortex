@@ -307,7 +307,6 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
               parentCategory: parentId,
               order: 0,
             });
-            this.updateExpandedTreeData(categories);
           }
         }
       });

@@ -22,6 +22,8 @@ import { INotification } from '../types/INotification';
 import { IExtensionLoadFailure, IExtensionState } from '../types/IState';
 
 import { Archive } from './archives';
+import { ProcessCanceled, UserCanceled } from './CustomErrors';
+import getVortexPath from './getVortexPath';
 import lazyRequire from './lazyRequire';
 import { log } from './log';
 import { showError } from './message';
@@ -30,7 +32,7 @@ import runElevatedCustomTool from './runElevatedCustomTool';
 import { activeGameId } from './selectors';
 import { getSafe } from './storeHelper';
 import StyleManagerT from './StyleManager';
-import { setdefault } from './util';
+import { setdefault, truthy } from './util';
 
 import * as Promise from 'bluebird';
 import { spawn, SpawnOptions } from 'child_process';
@@ -48,8 +50,7 @@ import {} from 'redux-watcher';
 import * as rimraf from 'rimraf';
 import * as semver from 'semver';
 import { generate as shortid } from 'shortid';
-import { dynreq, runElevated } from 'vortex-run';
-import getVortexPath from './getVortexPath';
+import { dynreq, runElevated, Win32Error } from 'vortex-run';
 
 // tslint:disable-next-line:no-var-requires
 const ReduxWatcher = require('redux-watcher');
@@ -342,14 +343,12 @@ class ExtensionManager {
   private mModDBGame: string;
   private mModDBAPIKey: string;
   private mModDBCache: { [id: string]: ILookupResult[] } = {};
-  private mPid: number;
   private mContextProxyHandler: ContextProxyHandler;
   private mExtensionState: { [extId: string]: IExtensionState };
   private mLoadFailures: { [extId: string]: IExtensionLoadFailure[] };
   private mInterpreters: { [ext: string]: (input: IRunParameters) => IRunParameters };
 
   constructor(initStore?: Redux.Store<any>, eventEmitter?: NodeJS.EventEmitter) {
-    this.mPid = process.pid;
     this.mEventEmitter = eventEmitter;
     this.mInterpreters = {};
     this.mApi = {
@@ -397,7 +396,7 @@ class ExtensionManager {
 
       this.mExtensionState = initStore.getState().app.extensions;
       const extensionsPath = path.join(app.getPath('userData'), 'plugins');
-      const extensionsToRemove = Object.keys(this.mExtensionState)
+      Object.keys(this.mExtensionState)
         .filter(extId => this.mExtensionState[extId].remove)
         .forEach(extId => {
           rimraf.sync(path.join(extensionsPath, extId));
@@ -580,7 +579,7 @@ class ExtensionManager {
   }
 
   private getModDB = (): Promise<modmetaT.ModDB> => {
-    const currentGame = activeGameId(this.mApi.store.getState());
+    const gameMode = activeGameId(this.mApi.store.getState());
     const currentKey =
       getSafe(this.mApi.store.getState(),
         ['confidential', 'account', 'nexus', 'APIKey'], '');
@@ -590,7 +589,10 @@ class ExtensionManager {
     let onDone: () => void;
     if (this.mModDBPromise === undefined) {
       this.mModDBPromise = new Promise<void>((resolve, reject) => {
-        onDone = resolve;
+        onDone = () => {
+          this.mModDBPromise = undefined;
+          resolve();
+        };
       });
       init = Promise.resolve();
     } else {
@@ -600,41 +602,57 @@ class ExtensionManager {
     return init.then(() => {
       // reset the moddb if necessary so new settings get used
       if ((this.mModDB === undefined)
-          || (currentGame !== this.mModDBGame)
+          || (gameMode !== this.mModDBGame)
           || (currentKey !== this.mModDBAPIKey)) {
         if (this.mModDB !== undefined) {
           return this.mModDB.close()
             .then(() => this.mModDB = undefined);
-        } else {
-          return Promise.resolve();
         }
       }
+      return Promise.resolve();
     })
-      .then(() => {
-        if (this.mModDB === undefined) {
-          this.mModDB = new modmeta.ModDB(
-            path.join(app.getPath('userData'), 'metadb'),
-            currentGame, [
-              {
-                protocol: 'nexus',
-                url: 'https://api.nexusmods.com/v1',
-                apiKey: currentKey,
-                cacheDurationSec: 86400,
-              },
-            ], log);
-          this.mModDBGame = currentGame;
-          this.mModDBAPIKey = currentKey;
-          log('debug', 'initialised');
-        }
-        return Promise.resolve(this.mModDB);
-      })
+      .then(() => (this.mModDB !== undefined)
+        ? Promise.resolve()
+        : this.connectMetaDB(gameMode, currentKey)
+          .then(modDB => {
+            this.mModDB = modDB
+            this.mModDBGame = gameMode;
+            this.mModDBAPIKey = currentKey;
+            log('debug', 'initialised');
+          }))
+      .then(() => this.mModDB)
       .finally(() => {
         if (onDone !== undefined) {
           onDone();
         }
-      })
-      ;
+      });
       // TODO: the fallback to nexus api should somehow be set up in nexus_integration, not here
+  }
+
+  private connectMetaDB(gameId: string, apiKey: string) {
+    const dbPath = path.join(app.getPath('userData'), 'metadb');
+    return modmeta.ModDB.create(
+      dbPath,
+      gameId, [
+        {
+          protocol: 'nexus',
+          url: 'https://api.nexusmods.com/v1',
+          apiKey,
+          cacheDurationSec: 86400,
+        },
+      ], log)
+      .catch(err => {
+        return this.mApi.showDialog('error', 'Failed to connect meta database', {
+          text: 'Please check that there is no other instance of Vortex still running.',
+          message: err.message,
+        }, [
+          { label: 'Quit' },
+          { label: 'Retry' },
+        ])
+        .then(result => (result.action === 'Quit')
+          ? app.quit()
+          : this.connectMetaDB(gameId, apiKey));
+      });
   }
 
   private stateChangeHandler = (watchPath: string[],
@@ -940,6 +958,9 @@ class ExtensionManager {
 
   private runExecutable =
     (executable: string, args: string[], options: IRunOptions): Promise<void> => {
+      if (!truthy(executable)) {
+        return Promise.reject(new ProcessCanceled('Executable not set'));
+      }
       const interpreter = this.mInterpreters[path.extname(executable).toLowerCase()];
       if (interpreter !== undefined) {
         try {
@@ -995,7 +1016,10 @@ class ExtensionManager {
             return reject(err);
           }
         }
-      }) : Promise.resolve());
+      }) : Promise.resolve())
+        .catch(Win32Error, err => err.code === 5
+          ? Promise.reject(new UserCanceled())
+          : Promise.reject(err));
   }
 
   private emitAndAwait = (event: string, ...args: any[]): Promise<void> => {

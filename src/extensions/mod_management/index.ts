@@ -1,4 +1,4 @@
-import { updateNotification } from '../../actions/notifications';
+import { updateNotification, dismissNotification } from '../../actions/notifications';
 import { setSettingsPage } from '../../actions/session';
 import {
   IExtensionApi,
@@ -268,7 +268,11 @@ function genUpdateModDeployment() {
       ? getSafe(state, ['persistent', 'profiles', profileId], undefined)
       : activeProfile(state);
     if (profile === undefined) {
-      return Promise.reject(new Error('Profile missing'));
+      // Used to report an exception here but I don't think this is an error, the call
+      // can be delayed so it's completely possible there is no profile active at the the time
+      // or has been deleted by then. Rare but not a bug
+      api.store.dispatch(dismissNotification(notificationId));
+      return Promise.resolve();
     }
     const instPath = installPathForGame(state, profile.gameId);
     const gameDiscovery =
@@ -536,6 +540,15 @@ function attributeExtractor(input: any) {
   });
 }
 
+function upgradeExtractor(input: any) {
+  return Promise.resolve({
+    category: getSafe(input.previous, ['category'], undefined),
+    customFileName: getSafe(input.previous, ['customFileName'], undefined),
+    variant: getSafe(input.previous, ['variant'], undefined),
+    notes: getSafe(input.previous, ['notes'], undefined),
+  });
+}
+
 function cleanupIncompleteInstalls(api: IExtensionApi) {
   const store: Redux.Store<IState> = api.store;
 
@@ -545,24 +558,26 @@ function cleanupIncompleteInstalls(api: IExtensionApi) {
     Object.keys(mods[gameId]).forEach(modId => {
       const mod = mods[gameId][modId];
       if (mod.state === 'installing') {
-        const instPath = installPath(store.getState());
-        const fullPath = path.join(instPath, mod.installationPath);
-        log('warn', 'mod was not installed completelely and will be removed', { mod, fullPath });
-        // this needs to be synchronous because once is synchronous and we have to complete this
-        // before the application fires the gamemode-changed event because at that point we
-        // create new mods from the unknown directories (especially the .installing ones)
-        try {
-          fs.removeSync(fullPath);
-        } catch (err) {
-          if (err.code !== 'ENOENT') {
-            log('error', 'failed to clean up', err);
+        if (mod.installationPath !== undefined) {
+          const instPath = installPath(store.getState());
+          const fullPath = path.join(instPath, mod.installationPath);
+          log('warn', 'mod was not installed completelely and will be removed', { mod, fullPath });
+          // this needs to be synchronous because once is synchronous and we have to complete this
+          // before the application fires the gamemode-changed event because at that point we
+          // create new mods from the unknown directories (especially the .installing ones)
+          try {
+            fs.removeSync(fullPath);
+          } catch (err) {
+            if (err.code !== 'ENOENT') {
+              log('error', 'failed to clean up', err);
+            }
           }
-        }
-        try {
-          fs.removeSync(fullPath + '.installing');
-        } catch (err) {
-          if (err.code !== 'ENOENT') {
-            log('error', 'failed to clean up', err);
+          try {
+            fs.removeSync(fullPath + '.installing');
+          } catch (err) {
+            if (err.code !== 'ENOENT') {
+              log('error', 'failed to clean up', err);
+            }
           }
         }
         store.dispatch(removeMod(gameId, modId));
@@ -687,7 +702,6 @@ function once(api: IExtensionApi) {
       });
 
   cleanupIncompleteInstalls(api);
-
 }
 
 function init(context: IExtensionContext): boolean {
@@ -738,6 +752,7 @@ function init(context: IExtensionContext): boolean {
   context.registerMerge = registerMerge;
 
   registerAttributeExtractor(100, attributeExtractor);
+  registerAttributeExtractor(200, upgradeExtractor);
 
   registerInstaller('fallback', 1000, basicInstaller.testSupported, basicInstaller.install);
 

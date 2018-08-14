@@ -261,7 +261,7 @@ export class DownloadObserver {
       // need to cancel the download
       this.mManager.stop(downloadId);
     }
-    if (truthy(download.localPath)) {
+    if (truthy(download.localPath) && truthy(download.game)) {
       const dlPath = downloadPathForGame(this.mStore.getState(), getDownloadGames(download)[0]);
       fs.removeAsync(path.join(dlPath, download.localPath))
           .then(() => { this.mStore.dispatch(removeDownload(downloadId)); })

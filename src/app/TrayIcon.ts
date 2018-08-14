@@ -36,7 +36,13 @@ class TrayIcon {
   }
 
   public setMainWindow(window: BrowserWindow) {
+    if (this.mTrayIcon.isDestroyed()) {
+      return;
+    }
     this.mTrayIcon.on('click', () => {
+      if (window.isDestroyed()) {
+        return;
+      }
       if (window.isVisible()) {
         window.hide();
       } else {

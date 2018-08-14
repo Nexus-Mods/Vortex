@@ -2,8 +2,8 @@ import * as Promise from 'bluebird';
 import {} from 'ffi';
 import opn = require('opn');
 import * as refT from 'ref';
+import { log } from './log';
 
-let voidPtr: refT.Type;
 let shell32;
 
 export class Win32Error extends Error {
@@ -24,17 +24,20 @@ function initTypes() {
     return;
   }
 
-  const ref = require('ref');
+  try {
+    if (shell32 === undefined) {
+      const ffi = require('ffi');
+      const ref = require('ref');
+      const voidPtr: refT.Type = ref.refType(ref.types.void);
 
-  voidPtr = ref.refType(ref.types.void);
-
-  if (shell32 === undefined) {
-    const ffi = require('ffi');
-    const ref = require('ref');
-    shell32 = new ffi.Library('Shell32', {
-      ShellExecuteA: [ref.types.int32, [voidPtr, ref.types.CString, ref.types.CString,
-                                        ref.types.CString, ref.types.CString, ref.types.int32]],
-    });
+      shell32 = new ffi.Library('Shell32', {
+        ShellExecuteA: [ref.types.int32, [voidPtr, ref.types.CString, ref.types.CString,
+          ref.types.CString, ref.types.CString, ref.types.int32]],
+      });
+    }
+  } catch (err) {
+    log('warn', 'failed to set up native shellexecute call', err.message);
+    shell32 = undefined;
   }
 }
 

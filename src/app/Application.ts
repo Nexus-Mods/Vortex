@@ -524,7 +524,9 @@ class Application {
       if (retries > 0) {
         return require('../util/delayed').delayed(100).then(() => this.testShouldQuit(retries - 1));
       }
-      app.quit();
+      // exit instead of quit so events don't get triggered. Otherwise an exception may be caused
+      // by failures to require modules
+      app.exit();
       return Promise.reject(new ProcessCanceled('should quit'));
     }
 
