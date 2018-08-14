@@ -1109,6 +1109,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private visibleAttributes(attributes: ITableAttribute[],
                             attributeStates: { [id: string]: IAttributeState }): ITableAttribute[] {
     return attributes.filter((attribute: ITableAttribute) => {
+      if ((attribute.condition !== undefined) && !attribute.condition()) {
+        return false;
+      } 
       const state = this.getAttributeState(attribute, attributeStates);
       if (attribute.placement === 'detail') {
         return false;
