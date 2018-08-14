@@ -61,8 +61,12 @@ class CategoryFilterComponent extends React.Component<IProps, IComponentState> {
       const mod = mods[modId];
       let category = getSafe(mod.attributes, ['category'], undefined);
       while (category !== undefined) {
-        modCategories.add(category.toString());
-        category = categories[category].parentCategory;
+        if (categories[category] !== undefined) {
+          modCategories.add(category.toString());
+          category = categories[category].parentCategory;
+        } else {
+          category = undefined;
+        }
       }
       if (mod.archiveId !== undefined) {
         installedArchives.add(mod.archiveId);
