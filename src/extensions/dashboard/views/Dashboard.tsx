@@ -94,7 +94,10 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
 
     const state = this.context.api.store.getState();
 
-    const layoutMap: { [key: string]: number } = {};
+    const layoutMap: { [key: string]: number } = layout.reduce((prev, key, idx) => {
+      prev[key] = idx + 1;
+      return prev;
+    }, {});
 
     const sorted = dashlets
       .filter((dash: IDashletProps) =>
