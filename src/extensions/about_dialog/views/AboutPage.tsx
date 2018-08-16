@@ -73,15 +73,19 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
         headers: { 'User-Agent': 'Vortex' },
       }, (error, response, body) => {
         if ((error === null) && this.mMounted) {
-          const releases = JSON.parse(body);
-          const thisVersion = 'v' + this.mVersion;
-          const thisRelease = releases.find(rel => rel.tag_name === thisVersion);
-          if (thisRelease !== undefined) {
-            this.nextState.releaseDate = new Date(thisRelease.published_at);
-            this.nextState.changelog = thisRelease.body;
-            this.nextState.tag = thisRelease.prerelease ? 'Testing' : undefined;
-          } else {
-            this.nextState.tag = 'Unknown';
+          try {
+            const releases = JSON.parse(body);
+            const thisVersion = 'v' + this.mVersion;
+            const thisRelease = releases.find(rel => rel.tag_name === thisVersion);
+            if (thisRelease !== undefined) {
+              this.nextState.releaseDate = new Date(thisRelease.published_at);
+              this.nextState.changelog = thisRelease.body;
+              this.nextState.tag = thisRelease.prerelease ? 'Testing' : undefined;
+            } else {
+              this.nextState.tag = 'Unknown';
+            }
+          } catch (err) {
+            log('warn', 'Failed to parse release info', err.message);
           }
         }
       })
