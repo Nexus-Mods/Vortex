@@ -51,6 +51,7 @@ class Application {
   private mMainWindow: MainWindowT;
   private mExtensions: ExtensionManagerT;
   private mTray: TrayIconT;
+  private mFirstStart: boolean = false;
 
   constructor(args: IParameters) {
     this.mArgs = args;
@@ -232,8 +233,8 @@ class Application {
     const state: IState = this.mStore.getState();
     const lastVersion = state.app.appVersion || '0.0.0';
     let currentVersion = app.getVersion();
-    if (currentVersion === '0.0.1') {
-      // don't warn in development builds
+    if (this.mFirstStart || (currentVersion === '0.0.1')) {
+      // don't check version change in development builds or on first start
       return Promise.resolve();
     }
     if ((semver.major(currentVersion) < semver.major(lastVersion))
@@ -395,7 +396,6 @@ class Application {
   }
 
   private connectTrayAndWindow() {
-    const state: IState = this.mStore.getState();
     if (this.mTray.initialized) {
       this.mMainWindow.connectToTray(this.mTray);
     }
@@ -460,6 +460,7 @@ class Application {
       .then(() => insertPersistor('app', new SubPersistor(last(this.mLevelPersistors), 'app')))
       .then(() => {
         if (newStore.getState().app.instanceId === undefined) {
+          this.mFirstStart = true;
           const newId = uuid.v4();
           newStore.dispatch(setInstanceId(newId));
         }
