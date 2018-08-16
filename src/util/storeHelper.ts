@@ -213,9 +213,9 @@ function setDefaultArray<T>(state: T, path: Array<(string | number)>, fallback: 
     : { ...(state as any) };
 
   if (path.length === 0) {
-    return (copy !== undefined)
-      ? copy.slice()
-      : fallback;
+    return ((copy !== undefined) && Array.isArray(copy))
+      ? copy
+      : fallback as any;
   } else if (path.length === 1) {
     copy[firstElement] = (!copy.hasOwnProperty(firstElement) || (copy[firstElement] === undefined))
       ? fallback
