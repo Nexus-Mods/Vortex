@@ -2,7 +2,7 @@ import getDownloadPath from '../extensions/download_management/util/getDownloadP
 import resolvePath, { pathDefaults } from '../extensions/mod_management/util/resolvePath';
 import { IState } from '../types/IState';
 
-import { setDownloadPath, setInstallPath } from '../actions';
+import { setDownloadPath, setInstallPath, completeMigration } from '../actions';
 import * as fs from '../util/fs';
 import makeCI from '../util/makeCaseInsensitive';
 
@@ -16,6 +16,7 @@ import * as semver from 'semver';
 import * as format from 'string-template';
 
 interface IMigration {
+  id: string;
   minVersion: string;
   maySkip: boolean;
   doQuery: boolean;
@@ -23,31 +24,33 @@ interface IMigration {
   apply: (store: Redux.Store<IState>) => Promise<void>;
 }
 
-function selectDirectory(defaultPath: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    dialog.showOpenDialog(null, {
-      title: 'Select empty directory to store downloads',
-      properties: [ 'openDirectory', 'createDirectory', 'promptToCreate' ],
-      defaultPath: getDownloadPath(defaultPath, undefined),
-    }, (filePaths: string[]) => {
-      if ((filePaths === undefined) || (filePaths.length === 0)) {
-        return reject(new UserCanceled());
-      }
-      return fs.readdirAsync(filePaths[0])
-        .catch(err => err.code === 'ENOENT'
-          ? fs.ensureDirWritableAsync(filePaths[0], () => Promise.resolve()).then(() => [])
-          : Promise.reject(err))
-        .then(files => {
-          if (files.length > 0) {
-            dialog.showErrorBox('Invalid path selected',
-              'The directory needs to be empty');
-            selectDirectory(defaultPath).then(resolve);
-          } else {
-            resolve(filePaths[0]);
-          }
-        });
-    });
-  });
+function selectDirectory(defaultPathPattern: string): Promise<string> {
+  const defaultPath = getDownloadPath(defaultPathPattern, undefined);
+  return fs.ensureDirWritableAsync(defaultPath, () => Promise.resolve())
+    .then(() => new Promise((resolve, reject) => {
+      dialog.showOpenDialog(null, {
+        title: 'Select empty directory to store downloads',
+        properties: [ 'openDirectory', 'createDirectory', 'promptToCreate' ],
+        defaultPath,
+      }, (filePaths: string[]) => {
+        if ((filePaths === undefined) || (filePaths.length === 0)) {
+          return reject(new UserCanceled());
+        }
+        return fs.readdirAsync(filePaths[0])
+          .catch(err => err.code === 'ENOENT'
+            ? fs.ensureDirWritableAsync(filePaths[0], () => Promise.resolve()).then(() => [])
+            : Promise.reject(err))
+          .then(files => {
+            if (files.length > 0) {
+              dialog.showErrorBox('Invalid path selected',
+                'The directory needs to be empty');
+              selectDirectory(defaultPathPattern).then(resolve);
+            } else {
+              resolve(filePaths[0]);
+            }
+          });
+      });
+    }));
 }
 
 function transferPath(from: string, to: string): Promise<void> {
@@ -123,8 +126,9 @@ function updateInstallPath_0_16(store: Redux.Store<IState>): Promise<void> {
 
 const migrations: IMigration[] = [
   {
+    id: 'move-downloads-0.16',
     minVersion: '0.16.0',
-    maySkip: true,
+    maySkip: false,
     doQuery: true,
     description: 'The directory structure for downloads was changed so we need to move them. '
                 + 'You can skip this step but then all downloads will disappear from your '
@@ -133,6 +137,7 @@ const migrations: IMigration[] = [
     apply: moveDownloads_0_16,
   },
   {
+    id: 'update-install-path-0.16',
     minVersion: '0.16.0',
     maySkip: false,
     doQuery: false,
@@ -168,7 +173,8 @@ function queryContinue(err: Error): Promise<void> {
   return dialogProm(
     'error',
     'Migration failed',
-    'A migration step failed. You should quit now and resolve the cause of the issue.',
+    'A migration step failed. You should quit now and resolve the cause of the issue.\n'
+    + err.stack || err.message,
     ['Ignore', 'Quit'],
   )
   .then(selection => selection === 'Ignore'
@@ -179,10 +185,16 @@ function queryContinue(err: Error): Promise<void> {
 function migrate(store: Redux.Store<IState>): Promise<void> {
   const state = store.getState();
   const oldVersion = state.app.appVersion || '0.0.0';
-  const neccessaryMigrations = migrations.filter(mig => semver.lt(oldVersion, mig.minVersion));
+  const neccessaryMigrations = migrations
+    .filter(mig => semver.lt(oldVersion, mig.minVersion))
+    .filter(mig => state.app.migrations.indexOf(mig.id) === -1);
   return Promise.each(neccessaryMigrations, migration =>
       queryMigration(migration)
         .then((proceed: boolean) => proceed ? migration.apply(store) : Promise.resolve())
+        .then(() => {
+          store.dispatch(completeMigration(migration.id));
+          return Promise.resolve();
+        })
         .catch(err => !(err instanceof UserCanceled), (err: Error) => queryContinue(err)))
     .then(() => null);
 }

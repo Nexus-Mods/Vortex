@@ -113,6 +113,7 @@ export interface IApp {
   appVersion: string;
   extensions: { [id: string]: IExtensionState };
   warnedAdmin: number;
+  migrations: string[];
 }
 
 /**

@@ -1,6 +1,6 @@
 import * as actions from '../actions/app';
 import {IReducerSpec} from '../types/IExtensionContext';
-import {deleteOrNop, setSafe} from '../util/storeHelper';
+import {deleteOrNop, setSafe, pushSafe} from '../util/storeHelper';
 
 import {app} from 'electron';
 
@@ -19,6 +19,8 @@ export const appReducer: IReducerSpec = {
       setSafe(state, ['instanceId'], payload),
     [actions.setWarnedAdmin as any]: (state, payload) =>
       setSafe(state, ['warnedAdmin'], payload),
+    [actions.completeMigration as any]: (state, payload) =>
+      pushSafe(state, ['migrations'], payload),
   },
   defaults: {
     instanceId: undefined,
@@ -26,6 +28,7 @@ export const appReducer: IReducerSpec = {
     appVersion: '',
     extensions: {},
     warnedAdmin: 0,
+    migrations: [],
   },
   verifiers: {
     instanceId: { type: 'string' },
