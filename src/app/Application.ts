@@ -231,7 +231,7 @@ class Application {
   private checkUpgrade() {
     const state: IState = this.mStore.getState();
     const lastVersion = state.app.appVersion || '0.0.0';
-    const currentVersion = app.getVersion();
+    let currentVersion = app.getVersion();
     if (currentVersion === '0.0.1') {
       // don't warn in development builds
       return Promise.resolve();
@@ -260,6 +260,15 @@ class Application {
       return migrate(this.mStore)
         .then(() => {
           this.mStore.dispatch(setApplicationVersion(currentVersion));
+          return Promise.resolve();
+        })
+        .catch(err => !(err instanceof UserCanceled) && !(err instanceof ProcessCanceled), (err: Error) => {
+          dialog.showErrorBox(
+            'Migration failed',
+            'The migration from the previous Vortex release failed. '
+            + 'Please resolve the errors you got, then try again.');
+          app.exit(1);
+          return Promise.reject(new ProcessCanceled('Migration failed'));
         });
     } else {
       return Promise.resolve();

@@ -2,7 +2,7 @@ import getDownloadPath from '../extensions/download_management/util/getDownloadP
 import resolvePath, { pathDefaults } from '../extensions/mod_management/util/resolvePath';
 import { IState } from '../types/IState';
 
-import { setDownloadPath, setInstallPath, showDialog } from '../actions';
+import { setDownloadPath, setInstallPath } from '../actions';
 import * as fs from '../util/fs';
 import makeCI from '../util/makeCaseInsensitive';
 
@@ -33,15 +33,19 @@ function selectDirectory(defaultPath: string): Promise<string> {
       if ((filePaths === undefined) || (filePaths.length === 0)) {
         return reject(new UserCanceled());
       }
-      return fs.readdirAsync(filePaths[0]).then(files => {
-        if (files.length > 0) {
-          dialog.showErrorBox('Invalid path selected',
-            'The directory needs to be empty');
-          selectDirectory(defaultPath).then(resolve);
-        } else {
-          resolve(filePaths[0]);
-        }
-      });
+      return fs.readdirAsync(filePaths[0])
+        .catch(err => err.code === 'ENOENT'
+          ? fs.ensureDirWritableAsync(filePaths[0], () => Promise.resolve()).then(() => [])
+          : Promise.reject(err))
+        .then(files => {
+          if (files.length > 0) {
+            dialog.showErrorBox('Invalid path selected',
+              'The directory needs to be empty');
+            selectDirectory(defaultPath).then(resolve);
+          } else {
+            resolve(filePaths[0]);
+          }
+        });
     });
   });
 }
@@ -67,10 +71,28 @@ function transferPath(from: string, to: string): Promise<void> {
       : Promise.reject(err));
 }
 
+function dialogProm(type: string, title: string, message: string, options: string[]): Promise<string> {
+  return new Promise((resolve, reject) => {
+    dialog.showMessageBox(null, {
+      type,
+      buttons: options,
+      title,
+      message,
+      noLink: true,
+    }, (response: number) => {
+      return resolve(options[response]);
+    });
+  });
+
+}
+
 function moveDownloads_0_16(store: Redux.Store<IState>): Promise<void> {
   const state = store.getState();
   log('info', 'importing downloads from pre-0.16.0 version');
-  return selectDirectory(state.settings.downloads.path)
+  return dialogProm('info', 'Moving Downloads',
+                    'On the next screen, please select an empty directory where all your downloads from Vortex '
+                    + 'will be placed', ['Next'])
+    .then(() => selectDirectory(state.settings.downloads.path))
     .then(downloadPath => {
       store.dispatch(setDownloadPath(downloadPath));
       return Promise.map(Object.keys(state.settings.gameMode.discovered),
@@ -88,12 +110,13 @@ function moveDownloads_0_16(store: Redux.Store<IState>): Promise<void> {
 function updateInstallPath_0_16(store: Redux.Store<IState>): Promise<void> {
   const state = store.getState();
   const { paths } = (state.settings.mods as any);
-  return Promise.map(Object.keys(paths), gameId => {
+  return Promise.map(Object.keys(paths || {}), gameId => {
     const base = resolvePath('base', paths, gameId);
     log('info', 'set install path',
         format(paths[gameId].install || pathDefaults.install, { base }));
     store.dispatch(setInstallPath(
       gameId, format(paths[gameId].install || pathDefaults.install, makeCI({ base }))));
+    return Promise.resolve();
   })
   .then(() => null);
 }
@@ -141,13 +164,26 @@ function queryMigration(migration: IMigration): Promise<boolean> {
   });
 }
 
+function queryContinue(err: Error): Promise<void> {
+  return dialogProm(
+    'error',
+    'Migration failed',
+    'A migration step failed. You should quit now and resolve the cause of the issue.',
+    ['Ignore', 'Quit'],
+  )
+  .then(selection => selection === 'Ignore'
+    ? Promise.resolve()
+    : Promise.reject(err));
+}
+
 function migrate(store: Redux.Store<IState>): Promise<void> {
   const state = store.getState();
   const oldVersion = state.app.appVersion || '0.0.0';
   const neccessaryMigrations = migrations.filter(mig => semver.lt(oldVersion, mig.minVersion));
   return Promise.each(neccessaryMigrations, migration =>
       queryMigration(migration)
-        .then((proceed: boolean) => proceed ? migration.apply(store) : Promise.resolve()))
+        .then((proceed: boolean) => proceed ? migration.apply(store) : Promise.resolve())
+        .catch(err => !(err instanceof UserCanceled), (err: Error) => queryContinue(err)))
     .then(() => null);
 }
 
