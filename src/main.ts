@@ -67,6 +67,9 @@ function main() {
     return;
   }
 
+  process.on('uncaughtException', handleError);
+  process.on('unhandledRejection', handleError);
+
   application = new Application(mainArgs);
 
   if (process.env.NODE_ENV === 'development') {
@@ -80,9 +83,6 @@ function main() {
     app.commandLine.appendSwitch('force-device-scale-factor', '1');
   }
   */
-
-  process.on('uncaughtException', handleError);
-  process.on('unhandledRejection', handleError);
 }
 
 main();

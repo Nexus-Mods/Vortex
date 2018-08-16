@@ -158,7 +158,10 @@ export function sendReport(type: string, error: IError, labels: string[], report
 export function terminate(error: IError, state: any, allowReport?: boolean) {
   const app = appIn || remote.app;
   const dialog = dialogIn || remote.dialog;
-  const win = remote !== undefined ? remote.getCurrentWindow() : null;
+  let win = remote !== undefined ? remote.getCurrentWindow() : null;
+  if ((win !== null) && !win.isVisible()) {
+    win = null;
+  }
 
   log('error', 'unrecoverable error', error);
 

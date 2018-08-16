@@ -2,6 +2,16 @@
  * entry point for the renderer process(es)
  */
 
+const earlyErrHandler = (evt) => {
+  const {error} = evt;
+  const { remote } = require('electron');
+  remote.dialog.showErrorBox('Unhandled error', error.stack);
+  remote.app.exit(1);
+};
+
+window.addEventListener('error', earlyErrHandler);
+window.addEventListener('unhandledrejection', earlyErrHandler);
+
 import * as sourceMapSupport from 'source-map-support';
 sourceMapSupport.install();
 
@@ -94,6 +104,8 @@ function sanityCheckCB(err: StateError) {
     'An invalid state change was prevented, this was probably caused by a bug', err);
 }
 
+let store: Store<any>;
+
 const terminateFromError = (error: any) => {
   terminate(toError(error), store !== undefined ? store.getState() : {});
 };
@@ -123,6 +135,8 @@ window.addEventListener('unhandledrejection', (evt: any) => {
     || ((evt.detail !== undefined) ? evt.detail.reason : undefined)
     || evt.message);
 });
+window.removeEventListener('error', earlyErrHandler);
+window.removeEventListener('unhandledrejection', earlyErrHandler);
 
 const eventEmitter: NodeJS.EventEmitter = new EventEmitter();
 
@@ -131,10 +145,11 @@ let enhancer = null;
 if (process.env.NODE_ENV === 'development') {
   // tslint:disable-next-line:no-var-requires
   const freeze = require('redux-freeze');
+  const devtool = (window as any).__REDUX_DEVTOOLS_EXTENSION__ && (window as any).__REDUX_DEVTOOLS_EXTENSION__();
   enhancer = compose(
     applyMiddleware(...middleware, freeze),
     electronEnhancer({ filter, actionFilter }),
-    (window as any).__REDUX_DEVTOOLS_EXTENSION__ && (window as any).__REDUX_DEVTOOLS_EXTENSION__(),
+    devtool || (id => id),
   );
 } else {
   enhancer = compose(
@@ -153,7 +168,7 @@ let tFunc: I18next.TranslationFunction = (input, options) => input;
 // when calling replaceReducer in the renderer
 // (https://github.com/samiskin/redux-electron-store/issues/48)
 // store.replaceReducer(reducer(extReducers));
-const store: Store<any> = createStore(reducer(extReducers), enhancer);
+store = createStore(reducer(extReducers), enhancer);
 extensions.setStore(store);
 extensions.applyExtensionsOfExtensions();
 log('debug', 'renderer connected to store');

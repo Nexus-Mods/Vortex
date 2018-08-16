@@ -60,6 +60,9 @@ class MainWindow {
           //   provide the other parameters of the message
           log('info', message);
         } else {
+          // if an error is logged by the renderer and the window isn't shown within a reasonable time,
+          // it was probably something terminal.
+          // this isn't ideal as we don't have a stack trace of the error message here
           setTimeout(() => {
             if (!this.mShown) {
               terminate({ message }, {});
