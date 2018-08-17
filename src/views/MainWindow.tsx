@@ -29,7 +29,7 @@ import Settings from './Settings';
 import WindowControls from './WindowControls';
 
 import * as I18next from 'i18next';
-import * as update from 'immutability-helper';
+import update from 'immutability-helper';
 import * as _ from 'lodash';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
@@ -37,6 +37,7 @@ import { Button as ReactButton, Nav, ProgressBar } from 'react-bootstrap';
 // tslint:disable-next-line:no-submodule-imports
 import {addStyle} from 'react-bootstrap/lib/utils/bootstrapUtils';
 import * as Redux from 'redux';
+import { ThunkDispatch } from 'redux-thunk';
 
 addStyle(ReactButton, 'secondary');
 addStyle(ReactButton, 'ad');
@@ -480,7 +481,7 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onSetTabsMinimized: (minimized: boolean) => dispatch(setTabsMinimized(minimized)),
     onSetOpenMainPage:

@@ -6,6 +6,7 @@ import { Button, IconButton } from '../../controls/TooltipControls';
 import { IComponentContext } from '../../types/IComponentContext';
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
+import { ProcessCanceled } from '../../util/CustomErrors';
 import Debouncer from '../../util/Debouncer';
 import * as fs from '../../util/fs';
 import StarterInfo, { IStarterInfo } from '../../util/StarterInfo';
@@ -24,7 +25,7 @@ import * as React from 'react';
 import { Col, ControlLabel, Form, FormControl, FormGroup, InputGroup, ListGroup,
          ListGroupItem, Modal } from 'react-bootstrap';
 import * as Redux from 'redux';
-import { ProcessCanceled } from '../../util/CustomErrors';
+import { ThunkDispatch } from 'redux-thunk';
 
 interface IEnvButtonProps {
   t: I18next.TranslationFunction;
@@ -544,7 +545,7 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onAddTool: (gameId, toolId, result) => dispatch(addDiscoveredTool(gameId, toolId, result)),
     onEditEnv: (itemId: string) => dispatch(displayGroup('envEdit', itemId)),

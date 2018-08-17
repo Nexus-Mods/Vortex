@@ -8,6 +8,8 @@ import * as Promise from 'bluebird';
 
 import * as React from 'react';
 import * as Redux from 'redux';
+import { ThunkDispatch } from 'redux-thunk';
+import { IState } from '../types/IState';
 
 export type DropType = 'urls' | 'files';
 
@@ -245,7 +247,7 @@ function mapStateToProps(state): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onShowDialog: (type: DialogType, title: string,
                    content: IDialogContent, actions: DialogActions) =>
@@ -255,5 +257,5 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
 
 export default
   translate(['common'], { wait: false })(
-    connect(mapStateToProps, mapDispatchToProps)(
+    connect<{}, IActionProps, IBaseProps, IState>(mapStateToProps, mapDispatchToProps)(
       Dropzone)) as React.ComponentClass<IBaseProps>;

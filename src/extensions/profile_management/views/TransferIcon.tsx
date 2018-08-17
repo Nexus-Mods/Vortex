@@ -1,7 +1,6 @@
 import * as tooltip from '../../../controls/TooltipControls';
 import { IState } from '../../../types/IState';
 import { ComponentEx } from '../../../util/ComponentEx';
-import { log } from '../../../util/log';
 import * as selectors from '../selectors';
 
 import { setCreateTransfer, setSource, setTarget } from '../actions/transferSetup';
@@ -10,7 +9,7 @@ import { IProfile } from '../types/IProfile';
 import * as I18next from 'i18next';
 import * as React from 'react';
 import { Overlay, Popover } from 'react-bootstrap';
-import { DragSource, DropTarget } from 'react-dnd';
+import { DragSource, DropTarget, ConnectDragSource, ConnectDragPreview, ConnectDropTarget, DragSourceMonitor, DragSourceSpec, DropTargetSpec, DropTargetMonitor, DragSourceConnector, DropTargetConnector } from 'react-dnd';
 import { getEmptyImage } from 'react-dnd-html5-backend';
 import { findDOMNode } from 'react-dom';
 import { connect } from 'react-redux';
@@ -43,13 +42,13 @@ interface IComponentState {
 }
 
 interface IDragProps {
-  connectDragSource: __ReactDnd.ConnectDragSource;
-  connectDragPreview: __ReactDnd.ConnectDragPreview;
+  connectDragSource: ConnectDragSource;
+  connectDragPreview: ConnectDragPreview;
   isDragging: boolean;
 }
 
 interface IDropProps {
-  connectDropTarget: __ReactDnd.ConnectDropTarget;
+  connectDropTarget: ConnectDropTarget;
   isOver: boolean;
   canDrop: boolean;
   sourceId: string;
@@ -62,7 +61,8 @@ interface IDragInfo {
 }
 
 function componentCenter(component: React.Component<any, any>) {
-  const box = findDOMNode(component).getBoundingClientRect();
+  const domNode = findDOMNode(component) as Element;
+  const box = domNode.getBoundingClientRect();
   return {
     x: box.left + box.width / 2,
     y: box.top + box.height / 2,
@@ -74,7 +74,7 @@ function componentCenter(component: React.Component<any, any>) {
 // the only way to get at the cursor position. It doesn't fire events on movement though
 let cursorPosUpdater: NodeJS.Timer;
 let lastUpdatePos: { x: number, y: number } = { x: 0, y: 0 };
-function updateCursorPos(monitor: __ReactDnd.DragSourceMonitor,
+function updateCursorPos(monitor: DragSourceMonitor,
                          component: React.Component<any, any>,
                          onSetSource: (id: string, pos: { x: number, y: number }) => void,
                          onSetTarget: (id: string, pos: { x: number, y: number }) => void) {
@@ -90,15 +90,15 @@ function updateCursorPos(monitor: __ReactDnd.DragSourceMonitor,
     updateCursorPos(monitor, component, onSetSource, onSetTarget), 50);
 }
 
-const transferSource: __ReactDnd.DragSourceSpec<IProps> = {
-  beginDrag(props: IProps, monitor: __ReactDnd.DragSourceMonitor, component) {
+const transferSource: DragSourceSpec<IProps, any> = {
+  beginDrag(props: IProps, monitor: DragSourceMonitor, component) {
     props.onSetHighlightGameId(props.profile.gameId);
     updateCursorPos(monitor, component, props.onSetSource, props.onSetTarget);
     return {
       id: props.profile.id,
     };
   },
-  endDrag(props: IProps, monitor: __ReactDnd.DragSourceMonitor) {
+  endDrag(props: IProps, monitor: DragSourceMonitor) {
     props.onSetHighlightGameId(undefined);
     clearTimeout(cursorPosUpdater);
     cursorPosUpdater = undefined;
@@ -121,16 +121,16 @@ const transferSource: __ReactDnd.DragSourceSpec<IProps> = {
   },
 };
 
-const transferTarget: __ReactDnd.DropTargetSpec<IProps> = {
-  drop(props: IProps, monitor: __ReactDnd.DropTargetMonitor, component) {
+const transferTarget: DropTargetSpec<IProps> = {
+  drop(props: IProps, monitor: DropTargetMonitor, component) {
     return {
       id: props.profile.id,
     };
   },
 };
 
-function collectDrag(dragConnect: __ReactDnd.DragSourceConnector,
-                     monitor: __ReactDnd.DragSourceMonitor): IDragProps {
+function collectDrag(dragConnect: DragSourceConnector,
+                     monitor: DragSourceMonitor): IDragProps {
   return {
     connectDragSource: dragConnect.dragSource(),
     connectDragPreview: dragConnect.dragPreview(),
@@ -138,8 +138,8 @@ function collectDrag(dragConnect: __ReactDnd.DragSourceConnector,
   };
 }
 
-function collectDrop(dropConnect: __ReactDnd.DropTargetConnector,
-                     monitor: __ReactDnd.DropTargetMonitor): IDropProps {
+function collectDrop(dropConnect: DropTargetConnector,
+                     monitor: DropTargetMonitor): IDropProps {
   const item: any = monitor.getItem();
   return {
     connectDropTarget: dropConnect.dropTarget(),
@@ -273,5 +273,5 @@ function mapDispatchToProps(dispatch): IActionProps {
 }
 
 export default
-  connect(mapStateToProps, mapDispatchToProps)(
+  connect<IConnectedProps, IActionProps, IBaseProps>(mapStateToProps, mapDispatchToProps)(
       TransferIconDrag) as React.ComponentClass<IBaseProps>;

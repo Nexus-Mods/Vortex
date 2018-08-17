@@ -25,6 +25,7 @@ import * as React from 'react';
 import { Button as BSButton, ControlLabel, FormControl, FormGroup, HelpBlock, InputGroup,
          Jumbotron, Modal } from 'react-bootstrap';
 import * as Redux from 'redux';
+import { ThunkDispatch } from 'redux-thunk';
 
 interface IConnectedProps {
   parallelDownloads: number;
@@ -289,7 +290,7 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onSetDownloadPath: (newPath: string) => dispatch(setDownloadPath(newPath)),
     onSetMaxDownloads: (value: number) => dispatch(setMaxDownloads(value)),

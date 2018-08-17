@@ -1,10 +1,8 @@
 import FlexLayout from '../../../controls/FlexLayout';
 import Spinner from '../../../controls/Spinner';
-import { IconButton } from '../../../controls/TooltipControls';
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import * as fs from '../../../util/fs';
-import { log } from '../../../util/log';
 import { showError } from '../../../util/message';
 
 import { ILog, ISession } from '../types/ISession';
@@ -12,15 +10,16 @@ import { loadVortexLogs } from '../util/loadVortexLogs';
 
 import * as Promise from 'bluebird';
 import { remote } from 'electron';
-import * as update from 'immutability-helper';
+import update from 'immutability-helper';
 import * as os from 'os';
 import * as path from 'path';
 import * as React from 'react';
 import {
   Button, Checkbox, Jumbotron, ListGroup,
-  ListGroupItem, Modal, Panel,
+  ListGroupItem, Modal,
 } from 'react-bootstrap';
 import * as Redux from 'redux';
+import { ThunkDispatch } from 'redux-thunk';
 
 export interface IBaseProps {
   visible: boolean;
@@ -49,8 +48,6 @@ interface IActionProps {
 type IProps = IBaseProps & IActionProps & IConnectedProps;
 
 class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
-  private mIsMounted: boolean = false;
-
   constructor(props) {
     super(props);
     this.state = {
@@ -66,9 +63,6 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
   }
 
   public componentWillReceiveProps(nextProps: IProps) {
-    const { onShowError } = this.props;
-    const { logSessions } = this.state;
-
     if (!this.props.visible && nextProps.visible) {
       this.setState(update(this.state, {
         sessionKey: { $set: -1 },
@@ -82,17 +76,6 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
 
       this.updateLogs();
     }
-  }
-
-  public componentWillMount() {
-    const { logSessions } = this.state;
-    const { onShowError } = this.props;
-
-    this.mIsMounted = true;
-  }
-
-  public componentWillUnmount() {
-    this.mIsMounted = false;
   }
 
   public render(): JSX.Element {
@@ -341,7 +324,7 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onShowError: (message: string, details?: string | Error) =>
       showError(dispatch, message, details),
@@ -349,5 +332,5 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
 }
 
 export default translate(['common'], { wait: true })(
-  (connect(mapStateToProps, mapDispatchToProps)
-    (DiagnosticsFilesDialog))) as React.ComponentClass<{ IBaseProps }>;
+  connect<IConnectedProps, IActionProps, IBaseProps, IState>(mapStateToProps, mapDispatchToProps)
+    (DiagnosticsFilesDialog)) as React.ComponentClass<IBaseProps>;

@@ -15,13 +15,16 @@ import {
   ISupportedResult,
   TestSupported,
 } from '../extensions/mod_management/types/TestSupported';
+import { TestEvent } from '../extensions/test_runner';
 
 import { Archive } from '../util/archives';
 import ReduxProp from '../util/ReduxProp';
 import { SanityCheck } from '../util/reduxSanity';
 
+import { DialogActions, IDialogContent } from './api';
 import { IActionOptions } from './IActionDefinition';
 import { IBannerOptions } from './IBannerOptions';
+import { DialogType, IDialogResult } from './IDialog';
 import { IGame } from './IGame';
 import { INotification } from './INotification';
 import { IDiscoveryResult } from './IState';
@@ -33,12 +36,14 @@ import * as I18next from 'i18next';
 import { ILookupResult, IModInfo, IReference } from 'modmeta-db';
 import * as React from 'react';
 import * as Redux from 'redux';
-import { DialogActions, IDialogAction, IDialogContent } from './api';
-import { DialogType, IDialogResult } from './IDialog';
-import { TestEvent } from '../extensions/test_runner';
+import { ThunkDispatch } from 'redux-thunk';
 
 export { TestSupported, IInstallResult, IInstruction, IDeployedFile, IDeploymentMethod,
          IFileChange, InstallFunc, ISupportedResult, ProgressDelegate };
+
+export interface ThunkStore<S> extends Redux.Store<S> {
+  dispatch: ThunkDispatch<S, null, Redux.Action>;
+}
 
 export type PropsCallback = () => any;
 
@@ -353,7 +358,7 @@ export interface IExtensionApi {
    * @type {Redux.Store<any>}
    * @memberOf IExtensionApi
    */
-  store?: Redux.Store<any>;
+  store?: ThunkStore<any>;
 
   /**
    * event emitter

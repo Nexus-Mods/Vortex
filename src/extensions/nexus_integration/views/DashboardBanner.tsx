@@ -8,6 +8,7 @@ import { IValidateKeyData } from '../types/IValidateKeyData';
 import * as React from 'react';
 import { Button, Image } from 'react-bootstrap';
 import * as Redux from 'redux';
+import { ThunkDispatch } from 'redux-thunk';
 
 interface IConnectedProps {
   userInfo: IValidateKeyData;
@@ -104,7 +105,7 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onSetAPIKey: (APIKey: string) => dispatch(setUserAPIKey(APIKey)),
     onSetDialogVisible: (id: string) => dispatch(setDialogVisible(id)),

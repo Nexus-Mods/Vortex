@@ -70,7 +70,7 @@ export class StateProxyHandler<T extends object> implements ProxyHandler<T> {
   }
 
   private derive(obj: T, key: PropertyKey) {
-    if (typeof(obj[key]) !== 'object') {
+    if ((typeof(obj[key]) !== 'object') || (typeof key !== 'string')) {
       return obj[key];
     }
 

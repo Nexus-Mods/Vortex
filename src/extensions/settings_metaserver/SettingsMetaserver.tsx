@@ -15,9 +15,10 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import { ControlLabel, FormGroup, HelpBlock,
          ListGroup, ListGroupItem } from 'react-bootstrap';
-import {DragSource, DropTarget} from 'react-dnd';
+import {DragSource, DropTarget, DragSourceMonitor, DropTargetSpec, DragSourceSpec, DragSourceConnector, DropTargetConnector, DropTargetMonitor, ConnectDropTarget, ConnectDragSource} from 'react-dnd';
 import {findDOMNode} from 'react-dom';
 import * as Redux from 'redux';
+import { ThunkDispatch } from 'redux-thunk';
 import { generate as shortid } from 'shortid';
 
 interface IServerEntry {
@@ -40,11 +41,11 @@ interface IState {
 
 type IProps = IActionProps & IConnectedProps;
 
-const serverSource: __ReactDnd.DragSourceSpec<any> = {
+const serverSource: DragSourceSpec<any, any> = {
   beginDrag(props) {
     return { id: props.serverId };
   },
-  endDrag(props, monitor: __ReactDnd.DragSourceMonitor) {
+  endDrag(props, monitor: DragSourceMonitor) {
     if (monitor.getDropResult() === null) {
       return;
     }
@@ -58,7 +59,7 @@ const serverSource: __ReactDnd.DragSourceSpec<any> = {
   },
 };
 
-const serverTarget: __ReactDnd.DropTargetSpec<any> = {
+const serverTarget: DropTargetSpec<any> = {
   hover(props, monitor, component) {
     const source = (monitor.getItem() as any).id;
     const target = props.serverId;
@@ -66,7 +67,8 @@ const serverTarget: __ReactDnd.DropTargetSpec<any> = {
     if ((source !== target) && (target !== undefined)) {
       const cursorPos = monitor.getClientOffset();
       try {
-        const box = findDOMNode(component).getBoundingClientRect();
+        const domNode = findDOMNode(component) as Element;
+        const box = domNode.getBoundingClientRect();
 
         props.onHover(source, target, cursorPos.y > box.top + box.height / 2);
       } catch (err) {
@@ -76,16 +78,16 @@ const serverTarget: __ReactDnd.DropTargetSpec<any> = {
   },
 };
 
-function collectDrag(connector: __ReactDnd.DragSourceConnector,
-                     monitor: __ReactDnd.DragSourceMonitor) {
+function collectDrag(connector: DragSourceConnector,
+                     monitor: DragSourceMonitor) {
   return {
     connectDragSource: connector.dragSource(),
     isDragging: monitor.isDragging(),
   };
 }
 
-function collectDrop(connector: __ReactDnd.DropTargetConnector,
-                     monitor: __ReactDnd.DropTargetMonitor) {
+function collectDrop(connector: DropTargetConnector,
+                     monitor: DropTargetMonitor) {
   return {
     connectDropTarget: connector.dropTarget(),
     isOver: monitor.isOver(),
@@ -100,12 +102,12 @@ interface IRowProps {
 }
 
 interface IDragProps {
-  connectDragSource: __ReactDnd.ConnectDragSource;
+  connectDragSource: ConnectDragSource;
   isDragging: boolean;
 }
 
 interface IDropProps {
-  connectDropTarget: __ReactDnd.ConnectDropTarget;
+  connectDropTarget: ConnectDropTarget;
   isOver: boolean;
 }
 
@@ -303,7 +305,7 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onAddMetaserver: (url: string): void => {
       dispatch(addMetaserver(shortid(), url));

@@ -3,18 +3,18 @@ import Toggle from '../../../controls/Toggle';
 import { Button } from '../../../controls/TooltipControls';
 import { ITableAttribute } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { midClip, setdefault } from '../../../util/util';
+import { setdefault } from '../../../util/util';
 
 import { confirmExternalChanges, setExternalChangeAction } from '../actions/externalChanges';
 
 import { FileAction, IFileEntry } from '../types/IFileEntry';
 
 import * as I18next from 'i18next';
-import * as update from 'immutability-helper';
+import update from 'immutability-helper';
 import * as React from 'react';
-import { Collapse, Modal } from 'react-bootstrap';
+import { Modal } from 'react-bootstrap';
 import * as Redux from 'redux';
-import * as ReduxThunk from 'redux-thunk';
+import { ThunkDispatch } from 'redux-thunk';
 
 export interface IBaseProps {
 }
@@ -401,7 +401,7 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onChangeAction: (fileName: string[], action: FileAction) =>
       dispatch(setExternalChangeAction(fileName, action)),

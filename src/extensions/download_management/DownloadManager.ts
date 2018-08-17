@@ -85,7 +85,7 @@ class DownloadWorker {
   private mFinishCB: FinishCallback;
   private mHeadersCB: (headers: any) => void;
   private mUserAgent: string;
-  private mBuffers: NodeBuffer[] = [];
+  private mBuffers: Buffer[] = [];
   private mDataHistory: Array<{ time: number, size: number }> = [];
   private mEnded: boolean = false;
   private mResponse: http.ClientResponse;

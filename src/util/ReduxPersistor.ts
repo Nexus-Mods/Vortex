@@ -3,6 +3,7 @@ import { terminate } from '../util/errorHandling';
 
 import * as Promise from 'bluebird';
 import * as Redux from 'redux';
+import { log } from './log';
 
 function insert(target: any, key: string[], value: any, hive: string) {
   try {
@@ -168,6 +169,7 @@ class ReduxPersistor<T> {
   }
 
   private add(persistor: IPersistor, statePath: string[], state: any): Promise<void> {
+    log('info', 'add', { path: statePath.join('.'), state });
     return this.isObject(state)
       ? Promise.mapSeries(Object.keys(state), key =>
           this.add(persistor, [].concat(statePath, key), state[key]))

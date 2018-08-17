@@ -10,6 +10,7 @@ import { NoDeployment } from '../util/exceptions';
 
 import * as React from 'react';
 import * as Redux from 'redux';
+import { ThunkDispatch } from 'redux-thunk';
 
 interface IConnectedProps {
   activator: IDeploymentMethod;
@@ -70,7 +71,7 @@ function mapStateToProps(state: IState, ownProps: IProps): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<IState>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<IState, null, Redux.Action>): IActionProps {
   return {
     onShowError: (message: string, details?: string, allowReport?: boolean) =>
       showError(dispatch, message, details, { allowReport }),

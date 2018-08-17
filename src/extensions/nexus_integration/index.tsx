@@ -563,7 +563,7 @@ function validateKey(api: IExtensionApi, key: string): Promise<void> {
 
   return Promise.resolve(nexus.validateKey(key))
     .then(userInfo => {
-      api.store.dispatch(setUserInfo(transformUserInfo(userInfo)));
+      // api.store.dispatch(setUserInfo(transformUserInfo(userInfo)));
     })
     .catch(TimeoutError, () => {
       showError(api.store.dispatch,

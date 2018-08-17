@@ -1,5 +1,6 @@
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import DNDContainer from '../../../views/DNDContainer';
+import { IState } from '../../../types/IState';
 
 import { showCategoriesDialog } from '../actions/session';
 
@@ -48,7 +49,7 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+function mapDispatchToProps(dispatch: Redux.Dispatch): IActionProps {
   return {
     onShowSelf: (show: boolean) =>
       dispatch(showCategoriesDialog(show)),

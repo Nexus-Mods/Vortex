@@ -1,6 +1,6 @@
 import { showDialog } from '../../actions/notifications';
 import { IDialogResult } from '../../types/IDialog';
-import { IExtensionApi } from '../../types/IExtensionContext';
+import { IExtensionApi, ThunkStore } from '../../types/IExtensionContext';
 import {IState} from '../../types/IState';
 import { DataInvalid, ProcessCanceled, TemporaryError,
          UserCanceled } from '../../util/CustomErrors';
@@ -37,7 +37,7 @@ import deriveModInstallName from './modIdManager';
 import * as Promise from 'bluebird';
 import * as _ from 'lodash';
 import { IHashResult, ILookupResult, IReference, IRule } from 'modmeta-db';
-import * as ZipT from 'node-7z';
+import ZipT = require('node-7z');
 import * as os from 'os';
 import * as path from 'path';
 import * as Redux from 'redux';
@@ -493,7 +493,7 @@ class InstallManager {
     });
   }
 
-  private queryPassword(store: Redux.Store<any>): Promise<string> {
+  private queryPassword(store: ThunkStore<any>): Promise<string> {
     return new Promise<string>((resolve, reject) => {
       store
           .dispatch(showDialog(
@@ -722,7 +722,7 @@ class InstallManager {
     return mod;
   }
 
-  private userVersionChoice(oldMod: IMod, store: Redux.Store<any>): Promise<string> {
+  private userVersionChoice(oldMod: IMod, store: ThunkStore<any>): Promise<string> {
     return new Promise<string>((resolve, reject) => {
       store.dispatch(showDialog(
           'question', modName(oldMod),

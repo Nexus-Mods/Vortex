@@ -1,7 +1,7 @@
 import SvgIcon from './Icon';
 import { ButtonType } from './IconBar';
 
-import * as update from 'immutability-helper';
+import update from 'immutability-helper';
 import * as React from 'react';
 
 import { Button as BootstrapButton, NavItem as BootstrapNavItem,

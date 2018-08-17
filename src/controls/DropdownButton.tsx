@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import * as React from 'react';
-import { Dropdown, DropdownButton, SplitButton } from 'react-bootstrap';
+import { DropdownButton, SplitButton } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
 
 export interface IBaseProps {
@@ -32,7 +32,7 @@ class MyDropdownButton extends React.Component<IProps, { up: boolean, right: boo
   }
 
   public componentDidMount() {
-    this.mNode = ReactDOM.findDOMNode(this);
+    this.mNode = ReactDOM.findDOMNode(this) as Element;
   }
 
   public render(): JSX.Element {

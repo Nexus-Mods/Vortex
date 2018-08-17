@@ -52,7 +52,7 @@ class InstallContext implements IInstallContext {
   private mLastProgress: number = 0;
 
   constructor(gameMode: string, api: IExtensionApi) {
-    const store: Redux.Store<any> = api.store;
+    const store = api.store;
     const dispatch = store.dispatch;
     this.mAddMod = (mod) => dispatch(addMod(gameMode, mod));
     this.mRemoveMod = (modId) => dispatch(removeMod(gameMode, modId));

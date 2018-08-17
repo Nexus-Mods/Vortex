@@ -2,7 +2,7 @@ import { IReducerSpec } from '../../../types/IExtensionContext';
 
 import { setUserAPIKey } from '../actions/account';
 
-import * as update from 'immutability-helper';
+import update from 'immutability-helper';
 
 /**
  * reducer for changes to the authentication

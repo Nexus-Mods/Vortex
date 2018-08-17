@@ -133,7 +133,7 @@ class Steam implements ISteam {
         steamPaths.push(basePath);
         return fs.readFileAsync(path.resolve(basePath, 'config', 'config.vdf'));
       })
-      .then((data: NodeBuffer) => {
+      .then((data: Buffer) => {
         if (data === undefined) {
           return Promise.resolve([]);
         }
@@ -156,7 +156,7 @@ class Steam implements ISteam {
               return Promise.map(filtered, (name: string) =>
                 fs.readFileAsync(path.join(steamAppsPath, name)));
             })
-            .then((appsData: NodeBuffer[]) => {
+            .then((appsData: Buffer[]) => {
               return appsData.map(appData => parse(appData.toString())).map(obj =>
                 ({
                   appid: obj['AppState']['appid'],

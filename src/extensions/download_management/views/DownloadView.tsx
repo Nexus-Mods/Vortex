@@ -31,6 +31,7 @@ import * as I18next from 'i18next';
 import * as React from 'react';
 import { Button, Panel } from 'react-bootstrap';
 import * as Redux from 'redux';
+import { ThunkDispatch } from 'redux-thunk';
 
 const PanelX: any = Panel;
 
@@ -445,7 +446,7 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onSetAttribute: (id, time) => dispatch(setDownloadTime(id, time)),
     onShowDialog: (type, title, content, actions) =>

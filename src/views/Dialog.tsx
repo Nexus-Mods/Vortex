@@ -1,3 +1,4 @@
+import { ILink, triggerDialogLink } from '../actions';
 import { closeDialog } from '../actions/notifications';
 import Icon from '../controls/Icon';
 import Webview from '../controls/Webview';
@@ -11,7 +12,7 @@ import { ComponentEx, connect, translate } from '../util/ComponentEx';
 
 import { remote } from 'electron';
 import * as I18next from 'i18next';
-import * as update from 'immutability-helper';
+import update from 'immutability-helper';
 import * as React from 'react';
 import {
   Button, Checkbox, ControlLabel, FormControl, FormGroup,
@@ -19,7 +20,7 @@ import {
 } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
 import * as Redux from 'redux';
-import { ILink, triggerDialogLink } from '../actions';
+import { ThunkDispatch } from 'redux-thunk';
 
 const nop = () => undefined;
 
@@ -405,7 +406,7 @@ function mapStateToProps(state: IState): IDialogConnectedProps {
   };
 }
 
-function mapDispatchToProps<S>(dispatch: Redux.Dispatch<S>): IDialogActionProps {
+function mapDispatchToProps<S>(dispatch: ThunkDispatch<S, null, Redux.Action>): IDialogActionProps {
   return {
     onDismiss: (id: string, action: string, input: any) =>
       dispatch(closeDialog(id, action, input)),

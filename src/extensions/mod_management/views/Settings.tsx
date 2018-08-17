@@ -34,6 +34,7 @@ import {
   HelpBlock, InputGroup, Jumbotron, Modal, Panel,
 } from 'react-bootstrap';
 import * as Redux from 'redux';
+import { ThunkDispatch } from 'redux-thunk';
 
 interface IBaseProps {
   activators: IDeploymentMethod[];
@@ -437,7 +438,7 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onSetInstallPath: (gameMode: string, newPath: string): void => {
       if (newPath !== undefined) {

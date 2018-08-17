@@ -1,5 +1,6 @@
 import { addNotification, showDialog } from '../../actions/notifications';
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
+import { ThunkStore } from '../../types/IExtensionContext';
 import { IGame } from '../../types/IGame';
 import { IState } from '../../types/IState';
 import { ITool } from '../../types/ITool';
@@ -30,7 +31,7 @@ import * as Redux from 'redux';
  * @class GameModeManager
  */
 class GameModeManager {
-  private mStore: Redux.Store<IState>;
+  private mStore: ThunkStore<IState>;
   private mKnownGames: IGame[];
   private mActiveSearch: Promise<any[]>;
   private mOnGameModeActivated: (mode: string) => void;

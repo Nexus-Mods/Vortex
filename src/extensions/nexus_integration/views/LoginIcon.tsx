@@ -11,6 +11,7 @@ import NexusT from 'nexus-api';
 import * as React from 'react';
 import { Image } from 'react-bootstrap';
 import * as Redux from 'redux';
+import { ThunkDispatch } from 'redux-thunk';
 
 export interface IBaseProps {
   nexus: NexusT;
@@ -112,7 +113,7 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onSetAPIKey: (APIKey: string) => dispatch(setUserAPIKey(APIKey)),
     onShowDialog: () => dispatch(setDialogVisible('login-dialog')),

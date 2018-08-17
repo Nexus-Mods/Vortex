@@ -59,8 +59,8 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import { I18nextProvider } from 'react-i18next';
 import { Provider } from 'react-redux';
-import { applyMiddleware, compose, createStore, Store } from 'redux';
-import { electronEnhancer } from 'redux-electron-store';
+import { applyMiddleware, compose, createStore } from 'redux';
+import { forwardToMain, getInitialStateRenderer, replayActionRenderer } from 'electron-redux';
 import thunkMiddleware from 'redux-thunk';
 
 import crashDump from 'crash-dump';
@@ -68,6 +68,7 @@ import crashDump from 'crash-dump';
 // ensures tsc includes this dependency
 import {} from './util/extensionRequire';
 import { reduxLogger } from './util/reduxLogger';
+import { ThunkStore } from './types/IExtensionContext';
 
 log('debug', 'renderer process started', { pid: process.pid });
 
@@ -104,7 +105,7 @@ function sanityCheckCB(err: StateError) {
     'An invalid state change was prevented, this was probably caused by a bug', err);
 }
 
-let store: Store<any>;
+let store: ThunkStore<any>;
 
 const terminateFromError = (error: any) => {
   terminate(toError(error), store !== undefined ? store.getState() : {});
@@ -147,14 +148,18 @@ if (process.env.NODE_ENV === 'development') {
   const freeze = require('redux-freeze');
   const devtool = (window as any).__REDUX_DEVTOOLS_EXTENSION__ && (window as any).__REDUX_DEVTOOLS_EXTENSION__();
   enhancer = compose(
-    applyMiddleware(...middleware, freeze),
-    electronEnhancer({ filter, actionFilter }),
+    applyMiddleware(
+      forwardToMain,
+      ...middleware,
+      freeze),
     devtool || (id => id),
   );
 } else {
   enhancer = compose(
-    applyMiddleware(...middleware),
-    electronEnhancer({ filter, actionFilter }),
+    applyMiddleware(
+      forwardToMain,
+      ...middleware
+    ),
   );
 }
 
@@ -168,7 +173,11 @@ let tFunc: I18next.TranslationFunction = (input, options) => input;
 // when calling replaceReducer in the renderer
 // (https://github.com/samiskin/redux-electron-store/issues/48)
 // store.replaceReducer(reducer(extReducers));
-store = createStore(reducer(extReducers), enhancer);
+store = createStore(
+  reducer(extReducers),
+  getInitialStateRenderer(),
+  enhancer);
+replayActionRenderer(store);
 extensions.setStore(store);
 extensions.applyExtensionsOfExtensions();
 log('debug', 'renderer connected to store');

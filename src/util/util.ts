@@ -1,5 +1,6 @@
 import { showDialog } from '../actions/notifications';
 import { IDialogResult } from '../types/IDialog';
+import { ThunkStore } from '../types/IExtensionContext';
 import { UserCanceled } from './CustomErrors';
 import delayed from './delayed';
 import getVortexPath from './getVortexPath';
@@ -9,7 +10,6 @@ import * as Promise from 'bluebird';
 import { spawn } from 'child_process';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
-import * as Redux from 'redux';
 import { file } from 'tmp';
 
 /**
@@ -132,7 +132,7 @@ export function copyFileAtomic(srcPath: string,
       });
 }
 
-export function removePersistent(store: Redux.Store<any>, destPath: string): Promise<void> {
+export function removePersistent(store: ThunkStore<any>, destPath: string): Promise<void> {
   return fs.removeAsync(destPath)
     .catch(err => {
       if (err.code === 'ENOENT') {

@@ -4,6 +4,7 @@ import {
   IDialogContent,
   showDialog,
 } from '../actions/notifications';
+import { IState } from '../types/IState';
 
 import { sendReport, toError } from './errorHandling';
 
@@ -12,7 +13,7 @@ import { truthy } from './util';
 
 import { IFeedbackResponse } from 'nexus-api';
 import * as Redux from 'redux';
-import {} from 'redux-thunk';
+import { ThunkDispatch } from 'redux-thunk';
 
 function clamp(min: number, value: number, max: number): number {
   return Math.max(max, Math.min(min, value));
@@ -43,7 +44,7 @@ export function calcDuration(messageLength: number) {
  * @param {string} message
  * @param {string} [id]
  */
-export function showSuccess<S>(dispatch: Redux.Dispatch<S>, message: string, id?: string) {
+export function showSuccess<S>(dispatch: ThunkDispatch<IState, null, Redux.Action>, message: string, id?: string) {
   // show message for 2 to 7 seconds, depending on message length
   dispatch(addNotification({
     id,
@@ -56,7 +57,7 @@ export function showSuccess<S>(dispatch: Redux.Dispatch<S>, message: string, id?
 /**
  * show activity notification
  */
-export function showActivity<S>(dispatch: Redux.Dispatch<S>, message: string, id?: string) {
+export function showActivity<S>(dispatch: ThunkDispatch<IState, null, Redux.Action>, message: string, id?: string) {
   dispatch(addNotification({
     id,
     type: 'activity',
@@ -74,7 +75,7 @@ export function showActivity<S>(dispatch: Redux.Dispatch<S>, message: string, id
  * @param {string} message
  * @param {string} [id]
  */
-export function showInfo<S>(dispatch: Redux.Dispatch<S>, message: string, id?: string) {
+export function showInfo<S>(dispatch: ThunkDispatch<IState, null, Redux.Action>, message: string, id?: string) {
   // show message for 2 to 7 seconds, depending on message length
   dispatch(addNotification({
     id,
@@ -131,7 +132,7 @@ export interface IErrorOptions {
  *                        want string or Errors but since some node apis return non-Error objects
  *                        where Errors are expected we have to be a bit more flexible here.
  */
-export function showError<S>(dispatch: Redux.Dispatch<S>,
+export function showError<S>(dispatch: ThunkDispatch<IState, null, Redux.Action>,
                              message: string,
                              details?: string | Error | any,
                              options?: IErrorOptions) {

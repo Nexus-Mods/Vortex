@@ -13,7 +13,7 @@ import * as levelup from 'levelup';
 import * as path from 'path';
 import * as Redux from 'redux';
 import { applyMiddleware, compose, createStore } from 'redux';
-import { electronEnhancer } from 'redux-electron-store';
+import { forwardToRenderer, replayActionMain } from 'electron-redux';
 import thunkMiddleware from 'redux-thunk';
 
 let basePersistor: ReduxPersistor<IState>;
@@ -29,11 +29,14 @@ export function createVortexStore(sanityCallback: (err: StateError) => void): Re
   ];
 
   const enhancer: Redux.StoreEnhancer<IState> =
-      compose(applyMiddleware(...middleware),
-              electronEnhancer()) as Redux.StoreEnhancer<any>;
+      compose(applyMiddleware(
+          ...middleware,
+          forwardToRenderer,
+        )) as Redux.StoreEnhancer<any>;
 
-  const store = createStore<IState>(reducer([]), enhancer);
+  const store = createStore<IState, Redux.Action, any, any>(reducer([]), enhancer);
   basePersistor = new ReduxPersistor(store);
+  replayActionMain(store);
   return store;
 }
 

@@ -28,15 +28,17 @@ $thumbnail-width: 256px;
 
 .game-thumbnail {
   position: relative;
-}
+  height: auto;
+  border: 0;
 
-.game-thumbnail-primary {
-  border-color: $border-color;
-}
+  &panel-primary {
+    border-color: $border-color;
+  }
 
-.game-thumbnail-default {
-  @extend .panel-default;
-  border-color: transparent;
+  &panel-default {
+    @extend .panel-default;
+    border-color: transparent;
+  }
 }
 
 .game-thumbnail-body {

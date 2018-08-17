@@ -2,7 +2,6 @@
 /// <reference path="drivelist.d.ts" />
 /// <reference path="electron-edge.d.ts" />
 /// <reference path="node-rest-client.d.ts" />
-/// <reference path="redux-electron-store.d.ts" />
 /// <reference path="redux-devtools-dispatch.d.ts" />
 /// <reference path="redux-persist.d.ts" />
 /// <reference path="redux-watcher.d.ts" />

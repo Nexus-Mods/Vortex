@@ -9,6 +9,7 @@ import MainPage from './MainPage';
 import * as React from 'react';
 import { Panel, Tab, Tabs } from 'react-bootstrap';
 import * as Redux from 'redux';
+import { ThunkDispatch } from 'redux-thunk';
 
 interface ISettingsPage {
   title: string;
@@ -132,7 +133,7 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onSetPage: (title: string) => dispatch(setSettingsPage(title)),
   };

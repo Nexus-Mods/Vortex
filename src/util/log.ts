@@ -4,43 +4,54 @@
 
 /** dummy */
 import * as path from 'path';
-import * as util from 'util';
-import * as winstonT from 'winston';
+import * as winston from 'winston';
+import * as WinstonTransport from 'winston-transport';
 
-function IPCTransport(options: winstonT.TransportOptions) {
-  this.name = 'IPCTransport';
-  this.level = 'debug';
+class IPCTransport extends WinstonTransport {
+  private mIPC;
+  constructor(options: WinstonTransport.TransportStreamOptions) {
+    super(options)
+    this.mIPC = require('electron').ipcRenderer;
+  }
+
+  public log(info: any, next: () => void) {
+    const { level, message, ...meta } = info;
+    this.mIPC.send('log-message', level, message, meta);
+    next();
+  }
 }
 
-let logger: typeof winstonT = null;
+let logger: winston.Logger = null;
 
 // magic: when we're in the main process, this uses the logger from winston
 // (which appears to be a singleton). In the renderer processes we connect
 // to the main-process logger through ipc
 if ((process as any).type === 'renderer') {
   // tslint:disable-next-line:no-var-requires
-  const { ipcRenderer } = require('electron');
-  IPCTransport.prototype.log =
-    (level: string, message: string, meta: any[], callback: winstonT.LogCallback) => {
-      ipcRenderer.send('log-message', level, message, meta);
-      callback(null);
-  };
-
-  // tslint:disable-next-line:no-var-requires
-  logger = require('winston');
-  util.inherits(IPCTransport, logger.Transport);
-  logger.configure({
-    transports: [
-      new IPCTransport({}),
-    ],
+  logger = winston.createLogger({
+    level: 'debug',
+    transports: [ new IPCTransport({}) ],
   });
 } else {
   // when being required from extensions, don't re-require the winston module
   // because the "singleton" is implemented abusing the require-cache
   if ((global as any).logger === undefined) {
     // tslint:disable-next-line:no-var-requires
-    logger = require('winston');
-    (global as any).logger = logger;
+    (global as any).logger = logger = winston.createLogger({
+      level: 'debug',
+      format: winston.format.combine(
+        winston.format.timestamp({
+          format: 'YYYY-MM-DD HH:mm:ss'
+        }),
+        winston.format.printf(info => {
+          const { timestamp, level, message, ...rest } = info;
+          if (Object.keys(rest || {}).length === 0) {
+            return `${timestamp} - ${level}: ${message}`;
+          } else {
+            return `${timestamp} - ${level}: ${message} (${JSON.stringify(rest)})`;
+          }
+        })),
+    });
   } else {
     logger = (global as any).logger;
   }
@@ -48,8 +59,9 @@ if ((process as any).type === 'renderer') {
   const { ipcMain } = require('electron');
   if (ipcMain !== undefined) {
     ipcMain.on('log-message',
-      (event, level: LogLevel, message: string, metadata?: any[]) =>
-        logger.log(level, message, metadata));
+      (event, level: LogLevel, message: string, metadata?: any[]) => {
+        logger.log(level, message, metadata);
+      });
   } // otherwise we're not in electron
 }
 
@@ -58,15 +70,15 @@ export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 export function setLogPath(basePath: string) {
   logger.remove(logger.transports['File']);
 
-  logger.add(logger.transports['File'], {
+  logger.add(new winston.transports.File({
     filename: path.join(basePath, 'vortex.log'),
-    json: false,
     level: 'debug',
     maxsize: 1024 * 1024,
     maxFiles: 5,
     tailable: true,
-    timestamp: () => new Date().toUTCString(),
-  });
+  }));
+
+  logger.log('info', 'does it work yet?');
 }
 
 /**
@@ -76,15 +88,13 @@ export function setLogPath(basePath: string) {
  */
 export function setupLogging(basePath: string, useConsole: boolean): void {
   try {
-    logger.add(logger.transports['File'], {
+    logger.add(new winston.transports.File({
       filename: path.join(basePath, 'vortex.log'),
-      json: false,
       level: 'debug',
       maxsize: 1024 * 1024,
       maxFiles: 5,
       tailable: true,
-      timestamp: () => new Date().toUTCString(),
-    });
+    }));
 
     if (!useConsole) {
       logger.remove(logger.transports['Console']);

@@ -1,26 +1,19 @@
-import Icon from '../../../controls/Icon';
 import Spinner from '../../../controls/Spinner';
 import { IconButton } from '../../../controls/TooltipControls';
 import Webview from '../../../controls/Webview';
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import * as fs from '../../../util/fs';
-import {log} from '../../../util/log';
-import MainPage from '../../../views/MainPage';
 
 import { closeBrowser } from '../actions';
 
-import { remote } from 'electron';
-import * as path from 'path';
 import * as React from 'react';
 import { Breadcrumb, Button, Modal } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
-import * as ReactMarkdown from 'react-markdown';
 import * as Redux from 'redux';
+import { ThunkDispatch } from 'redux-thunk';
 import * as nodeUrl from 'url';
 
 export interface IBaseProps {
-  visible: boolean;
   onHide: () => void;
 }
 
@@ -86,7 +79,6 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { visible } = this.props;
     const { confirmed, loading, url } = this.state;
     return (
       <Modal id='browser-dialog' show={url !== undefined} onHide={this.close}>
@@ -166,7 +158,7 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
   private setRef = (ref: Webview) => {
     this.mRef = ref;
     if (ref !== null) {
-      this.mWebView = ReactDOM.findDOMNode(this.mRef);
+      this.mWebView = ReactDOM.findDOMNode(this.mRef) as any;
       Object.keys(this.mCallbacks).forEach(event => {
         this.mWebView.addEventListener(event, this.mCallbacks[event]);
       });
@@ -215,7 +207,7 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<IState>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<IState, null, Redux.Action>): IActionProps {
   return {
     onClose: () => dispatch(closeBrowser()),
   };

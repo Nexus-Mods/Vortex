@@ -41,7 +41,7 @@ class MyOverlayTrigger extends React.Component<IProps, { placement: string }> {
   }
 
   public componentDidMount() {
-    this.mNode = ReactDOM.findDOMNode(this);
+    this.mNode = ReactDOM.findDOMNode(this) as Element;
   }
 
   public render() {

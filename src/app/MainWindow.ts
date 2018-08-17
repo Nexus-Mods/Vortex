@@ -11,6 +11,7 @@ import * as Promise from 'bluebird';
 import { screen } from 'electron';
 import * as Redux from 'redux';
 import TrayIcon from './TrayIcon';
+import { ThunkStore } from '../types/IExtensionContext';
 
 class MainWindow {
   private mWindow: Electron.BrowserWindow = null;
@@ -39,7 +40,7 @@ class MainWindow {
     }, 500);
   }
 
-  public create(store: Redux.Store<IState>): Promise<Electron.WebContents> {
+  public create(store: ThunkStore<IState>): Promise<Electron.WebContents> {
     if (this.mWindow !== null) {
       return Promise.resolve(undefined);
     }

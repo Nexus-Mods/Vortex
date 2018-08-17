@@ -109,7 +109,7 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
       ? (
         <ReactMarkdown
           className='license-text-own'
-          disallowedTypes={['Link']}
+          disallowedTypes={['link']}
           source={ownLicenseText}
         />
       ) : (
@@ -205,7 +205,7 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
       : (
         <ReactMarkdown
           className='license-text'
-          disallowedTypes={['Link']}
+          disallowedTypes={['link']}
           source={licenseText || ''}
         />
       );

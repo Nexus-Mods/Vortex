@@ -8,8 +8,9 @@ import getText from './texts';
 
 import { remote } from 'electron';
 import * as React from 'react';
-import { Alert, Button, ControlLabel, FormControl, FormGroup, HelpBlock } from 'react-bootstrap';
+import { Alert, Button, FormControl, FormGroup, HelpBlock } from 'react-bootstrap';
 import * as Redux from 'redux';
+import { ThunkDispatch } from 'redux-thunk';
 
 interface IConnectedProps {
   multiUser: boolean;
@@ -87,7 +88,7 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onSetMultiUser: (multiUser: boolean) => dispatch(setMultiUser(multiUser)),
   };

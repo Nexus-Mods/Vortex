@@ -2,7 +2,7 @@ import { IReducerSpec } from '../../types/IExtensionContext';
 
 import { setUpdateChannel } from './actions';
 
-import * as update from 'immutability-helper';
+import update from 'immutability-helper';
 
 /**
  * reducer for changes to interface settings

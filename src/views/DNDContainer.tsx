@@ -1,14 +1,15 @@
-import { DragDropManager } from 'dnd-core';
+import { DragDropManager, createDragDropManager } from 'dnd-core';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
 import HTML5Backend from 'react-dnd-html5-backend';
 
-let globalDNDManager: DragDropManager;
+let globalDNDManager: DragDropManager<any>;
 
-function getContext(): DragDropManager {
+function getContext(): DragDropManager<any> {
   if (globalDNDManager === undefined) {
-    globalDNDManager = new DragDropManager(HTML5Backend);
+    globalDNDManager = createDragDropManager(HTML5Backend, undefined);
   }
+  
   return globalDNDManager;
 }
 

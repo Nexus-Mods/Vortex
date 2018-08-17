@@ -105,7 +105,7 @@ function processAttributes(input: any, modPath: string): Promise<any> {
     return Promise.resolve({});
   }
   return fs.readFileAsync(path.join(modPath, 'fomod', 'info.xml'))
-      .then((data: NodeBuffer) => {
+      .then((data: Buffer) => {
         let offset = 0;
         let encoding = 'utf8';
         if (data.readUInt16LE(0) === 0xFEFF) {

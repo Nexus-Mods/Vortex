@@ -3,6 +3,8 @@ import delayed from './delayed';
 import { log } from './log';
 
 import * as Promise from 'bluebird';
+import * as encode from 'encoding-down';
+import * as leveldown from 'leveldown';
 import * as levelup from 'levelup';
 
 const SEPARATOR: string = '###';
@@ -16,7 +18,7 @@ export class DatabaseLocked extends Error {
 
 function openDB(dbPath: string): Promise<levelup.LevelUp> {
   return new Promise<levelup.LevelUp>((resolve, reject) => {
-    (levelup as any)(dbPath, undefined, (err, db) => {
+    (levelup as any)(encode(leveldown(dbPath)), { keyEncoding: 'utf8', valueEncoding: 'utf8' }, (err, db) => {
       if (err !== null) {
         return reject(err);
       }
@@ -64,7 +66,9 @@ class LevelPersist implements IPersistor {
     return new Promise((resolve, reject) => {
       const keys: string[][] = [];
       this.mDB.createKeyStream()
-          .on('data', data => keys.push(data.split(SEPARATOR)))
+          .on('data', data => {
+            keys.push(data.split(SEPARATOR));
+          })
           .on('error', error => reject(error))
           .on('close', () => resolve(keys));
     });

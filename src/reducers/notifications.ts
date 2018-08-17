@@ -3,7 +3,7 @@ import { IReducerSpec } from '../types/IExtensionContext';
 
 import { pushSafe, removeValueIf, setSafe } from '../util/storeHelper';
 
-import * as update from 'immutability-helper';
+import update from 'immutability-helper';
 import { generate as shortid } from 'shortid';
 
 /**

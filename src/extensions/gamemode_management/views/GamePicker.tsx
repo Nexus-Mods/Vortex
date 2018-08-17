@@ -22,7 +22,7 @@ import GameThumbnail from './GameThumbnail';
 import ShowHiddenButton from './ShowHiddenButton';
 
 import * as Promise from 'bluebird';
-import * as update from 'immutability-helper';
+import update from 'immutability-helper';
 import * as React from 'react';
 import { Alert, ListGroup, ProgressBar, Tab, Tabs } from 'react-bootstrap';
 

@@ -1,3 +1,4 @@
+import { addNotification } from '../../../actions';
 import { showDialog } from '../../../actions/notifications';
 import Icon from '../../../controls/Icon';
 import More from '../../../controls/More';
@@ -13,9 +14,9 @@ import chromeAllowScheme from '../util/chromeAllowScheme';
 import getText from '../texts';
 
 import * as React from 'react';
-import { Checkbox, FormGroup, HelpBlock } from 'react-bootstrap';
+import { FormGroup, HelpBlock } from 'react-bootstrap';
 import * as Redux from 'redux';
-import { addNotification } from '../../../actions';
+import { ThunkDispatch } from 'redux-thunk';
 
 function nop() {
   // nop
@@ -154,7 +155,7 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onAssociate: (associate: boolean): void => {
       dispatch(setAssociatedWithNXMURLs(associate));

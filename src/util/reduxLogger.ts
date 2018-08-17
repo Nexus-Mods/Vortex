@@ -22,7 +22,7 @@ let store: Redux.Store<any>;
 export function reduxLogger() {
   return (storeIn: Redux.Store<any>) => {
     store = storeIn;
-    return <S>(next: Redux.Dispatch<S>) => {
+    return (next: Redux.Dispatch) => {
       return <A extends Redux.Action>(action: A): A => {
         if (actions.length > 0) {
           actions[actions.length - 1].after = store.getState();

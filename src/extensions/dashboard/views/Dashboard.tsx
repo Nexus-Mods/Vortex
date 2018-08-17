@@ -1,9 +1,11 @@
 import { IDashletSettings, IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import Debouncer from '../../../util/Debouncer';
+import { getSafe } from '../../../util/storeHelper';
 import MainPage from '../../../views/MainPage';
 
 import { setDashletEnabled, setLayout } from '../actions';
+import { IDashletProps } from '../types/IDashletProps';
 
 import PackeryGrid from './PackeryGrid';
 import PackeryItem from './PackeryItem';
@@ -12,8 +14,8 @@ import { remote } from 'electron';
 import * as _ from 'lodash';
 import * as React from 'react';
 import * as Redux from 'redux';
-import { getSafe } from '../../../util/storeHelper';
-import { IDashletProps } from '../types/IDashletProps';
+import { ThunkDispatch } from 'redux-thunk';
+
 
 const UPDATE_FREQUENCY_MS = 1000;
 
@@ -190,7 +192,7 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onSetLayout: (items: string[]) => dispatch(setLayout(items)),
     onSetDashletEnabled: (dashletId: string, enabled: boolean) =>

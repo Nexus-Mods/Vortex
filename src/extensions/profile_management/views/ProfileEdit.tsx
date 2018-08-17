@@ -7,7 +7,7 @@ import {getSafe, setSafe} from '../../../util/storeHelper';
 import {IProfile} from '../types/IProfile';
 import {IProfileFeature} from '../types/IProfileFeature';
 
-import * as update from 'immutability-helper';
+import update from 'immutability-helper';
 import * as React from 'react';
 import {Checkbox, FormControl, ListGroupItem, Panel} from 'react-bootstrap';
 

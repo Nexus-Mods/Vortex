@@ -82,7 +82,7 @@ function convertAttrs(attrs: IAttrMap): IAttrMap {
 
 export interface IIconProps {
   className?: string;
-  style?: { [key: string]: string | number };
+  style?: React.CSSProperties;
   set?: string;
   name: string;
   spin?: boolean;
@@ -95,14 +95,9 @@ export interface IIconProps {
   svgStyle?: string;
 }
 
-function renderPath(pathComp: IPath, idx: number) {
-  return <path key={idx} d={pathComp.path} style={pathComp.attrs} />;
-}
-
 class Icon extends React.Component<IIconProps, {}> {
   private static sCache: { [id: string]: { width: number, height: number } } = {};
   private mCurrentSize: { width: number, height: number };
-  private mTicks: number = 0;
 
   public componentWillMount() {
     this.setIcon(this.props);

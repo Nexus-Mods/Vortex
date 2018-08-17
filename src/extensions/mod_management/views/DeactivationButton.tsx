@@ -1,3 +1,4 @@
+import { setConfirmPurge } from '../../../actions';
 import { DialogActions, DialogType, IDialogContent,
          IDialogResult, showDialog} from '../../../actions/notifications';
 import Advanced from '../../../controls/Advanced';
@@ -15,7 +16,7 @@ import { NoDeployment } from '../util/exceptions';
 import * as Promise from 'bluebird';
 import * as React from 'react';
 import * as Redux from 'redux';
-import { setConfirmPurge } from '../../../actions';
+import { ThunkDispatch } from 'redux-thunk';
 
 interface IConnectedProps {
   activator: IDeploymentMethod;
@@ -115,7 +116,7 @@ function mapStateToProps(state: IState, ownProps: IProps): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onShowError: (message: string, details?: string, allowReport?: boolean) =>
       showError(dispatch, message, details, { allowReport }),

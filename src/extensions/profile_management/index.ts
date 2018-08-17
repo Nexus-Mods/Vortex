@@ -19,7 +19,7 @@
 import { addNotification, IDialogResult, showDialog } from '../../actions/notifications';
 
 import { setProgress } from '../../actions/session';
-import { IExtensionContext, IExtensionApi } from '../../types/IExtensionContext';
+import { IExtensionContext, IExtensionApi, ThunkStore } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
 import { SetupError } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
@@ -57,6 +57,7 @@ const profileFeatures: IProfileFeature[] = [];
 function profilePath(store: Redux.Store<any>, profile: IProfile): string {
   const app = appIn || remote.app;
 
+  log('debug', 'profile path', profile);
   return path.join(app.getPath('userData'), profile.gameId, 'profiles', profile.id);
 }
 
@@ -112,7 +113,7 @@ function refreshProfile(store: Redux.Store<any>, profile: IProfile,
  *
  * @param {string} gameId
  */
-function activateGame(store: Redux.Store<IState>, gameId: string) {
+function activateGame(store: ThunkStore<IState>, gameId: string) {
   const state: IState = store.getState();
   if (getSafe(state, ['settings', 'gameMode', 'discovered', gameId, 'path'], undefined)
       === undefined) {

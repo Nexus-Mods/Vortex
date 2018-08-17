@@ -33,12 +33,13 @@ import ToolEditDialogT from './ToolEditDialog';
 let ToolEditDialog: typeof ToolEditDialogT;
 
 import * as Promise from 'bluebird';
+import { remote } from 'electron';
 import * as React from 'react';
 import { Media, MenuItem } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
 import * as Redux from 'redux';
+import { ThunkDispatch } from 'redux-thunk';
 import { generate as shortid } from 'shortid';
-import { remote } from 'electron';
 
 interface IWelcomeScreenState {
   editTool: StarterInfo;
@@ -82,7 +83,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
   }
 
   public componentDidMount() {
-    this.mRef = ReactDOM.findDOMNode(this);
+    this.mRef = ReactDOM.findDOMNode(this) as Element;
     this.mIsMounted = true;
     ToolEditDialog = require('./ToolEditDialog').default;
     if (this.mIsMounted) {
@@ -432,7 +433,7 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onAddDiscoveredTool: (gameId: string, toolId: string, result: IDiscoveredTool) => {
       dispatch(addDiscoveredTool(gameId, toolId, result));

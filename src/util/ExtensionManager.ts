@@ -17,6 +17,7 @@ import {
   IRunOptions,
   IRunParameters,
   StateChangeCallback,
+  ThunkStore,
 } from '../types/IExtensionContext';
 import { INotification } from '../types/INotification';
 import { IExtensionLoadFailure, IExtensionState } from '../types/IState';
@@ -428,7 +429,7 @@ class ExtensionManager {
    *
    * @memberOf ExtensionManager
    */
-  public setStore<S>(store: Redux.Store<S>) {
+  public setStore<S>(store: ThunkStore<S>) {
     this.mReduxWatcher = new ReduxWatcher(store);
 
     this.mExtensionState = getSafe(store.getState(), ['app', 'extensions'], {});

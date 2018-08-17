@@ -1,5 +1,5 @@
 import FlexLayout from '../../../controls/FlexLayout';
-import { IGameStored } from '../../../types/IState';
+import { IGameStored, IState } from '../../../types/IState';
 import { connect, PureComponentEx } from '../../../util/ComponentEx';
 import { gameName } from '../../../util/selectors';
 
@@ -9,6 +9,8 @@ import * as fuzz from 'fuzzball';
 import * as I18next from 'i18next';
 import * as React from 'react';
 import { DropdownButton, ListGroup, ListGroupItem, MenuItem } from 'react-bootstrap';
+import * as Redux from 'redux';
+import { ThunkDispatch } from 'redux-thunk';
 
 export interface IBaseProps {
   t: I18next.TranslationFunction;
@@ -77,7 +79,7 @@ function mapStateToProps(): {} {
   return {};
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>, ownProps: IBaseProps): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<IState, null, Redux.Action>, ownProps: IBaseProps): IActionProps {
   return {
     onSetCompatibleGames: (games: string[]) => dispatch(setCompatibleGames(ownProps.id, games)),
   };

@@ -24,6 +24,7 @@ import * as React from 'react';
 import { FormControl } from 'react-bootstrap';
 import * as SortableTreeT from 'react-sortable-tree';
 import * as Redux from 'redux';
+import { ThunkDispatch } from 'redux-thunk';
 
 const tree = lazyRequire<typeof SortableTreeT>(() => require('react-sortable-tree'));
 
@@ -457,21 +458,21 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
   }
 
   private moveNode =
-    (args: { treeData: ICategoriesTree[], node: ICategoriesTree,
-             treeIndex: number, path: string[] }): void => {
+    (args: { treeData: SortableTreeT.TreeItem[], node: SortableTreeT.TreeItem,
+             treeIndex: number, path: string[] | number[] }): void => {
     const { gameMode, onSetCategory, onSetCategoryOrder } = this.props;
     if (args.path[args.path.length - 2] !== args.node.parentId) {
       onSetCategory(gameMode, args.node.categoryId, {
         name: args.node.title,
         order: args.node.order,
-        parentCategory: args.path[args.path.length - 2],
+        parentCategory: (args.path as string[])[args.path.length - 2],
       });
     } else {
       const newOrder = (base: ICategoriesTree[]): string[] => {
         return [].concat(...base.map(node =>
           [node.categoryId, ...newOrder(node.children)]));
       };
-      onSetCategoryOrder(gameMode, newOrder(args.treeData));
+      onSetCategoryOrder(gameMode, newOrder(args.treeData as ICategoriesTree[]));
     }
   }
 }
@@ -488,7 +489,7 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<IState>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<IState, null, Redux.Action>): IActionProps {
   return {
     onRenameCategory: (gameId: string, categoryId: string, newCategory: string) =>
       dispatch(renameCategory(gameId, categoryId, newCategory)),

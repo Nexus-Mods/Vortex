@@ -19,7 +19,7 @@ import { userReducer } from './user';
 import { windowReducer } from './window';
 
 import { dialog as dialogIn, remote } from 'electron';
-import * as update from 'immutability-helper';
+import update from 'immutability-helper';
 import { pick } from 'lodash';
 import { combineReducers, Reducer, ReducersMapObject } from 'redux';
 import { createReducer } from 'redux-act';

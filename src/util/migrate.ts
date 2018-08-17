@@ -12,6 +12,7 @@ import { log } from './log';
 import * as Promise from 'bluebird';
 import { dialog } from 'electron';
 import * as path from 'path';
+import * as Redux from 'redux';
 import * as semver from 'semver';
 import * as format from 'string-template';
 

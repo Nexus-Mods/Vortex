@@ -1,7 +1,6 @@
 import { IFilterProps, ITableFilter } from '../../../types/ITableAttribute';
 
 import updateState from './modUpdateState';
-import versionClean from './versionClean';
 
 import * as React from 'react';
 import Select from 'react-select';

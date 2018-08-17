@@ -20,7 +20,7 @@ import ProfileEdit from './ProfileEdit';
 import ProfileItem from './ProfileItem';
 
 import { remote } from 'electron';
-import * as update from 'immutability-helper';
+import update from 'immutability-helper';
 import * as path from 'path';
 import * as React from 'react';
 import { Button, Collapse, ListGroup, ListGroupItem, Panel } from 'react-bootstrap';

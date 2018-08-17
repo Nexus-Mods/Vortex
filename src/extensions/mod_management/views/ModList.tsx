@@ -54,6 +54,7 @@ import * as React from 'react';
 import { Button, ButtonGroup, MenuItem, Panel } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
 import * as Redux from 'redux';
+import { ThunkDispatch } from 'redux-thunk';
 import * as semver from 'semver';
 
 const PanelX: any = Panel;
@@ -248,7 +249,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
   public setBoundsRef = ref => {
     if (ref !== null) {
-      this.mRef = ReactDOM.findDOMNode(ref);
+      this.mRef = ReactDOM.findDOMNode(ref) as Element;
       this.forceUpdate();
     }
   }
@@ -1043,7 +1044,7 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onSetModAttribute: (gameMode: string, modId: string, attributeId: string, value: any) => {
       dispatch(setModAttribute(gameMode, modId, attributeId, value));

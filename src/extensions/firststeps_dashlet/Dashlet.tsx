@@ -10,6 +10,7 @@ import { IToDo } from './IToDo';
 import { TranslationFunction } from 'i18next';
 import * as React from 'react';
 import * as Redux from 'redux';
+import { ThunkDispatch } from 'redux-thunk';
 
 interface ITodoProps {
   t: TranslationFunction;
@@ -146,7 +147,7 @@ function mapStateToProps(state: any, ownProps: IBaseProps): IConnectedState {
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onDismissStep: (step: string) => dispatch(dismissStep(step)),
   };

@@ -21,7 +21,7 @@ import TableRow from './table/TableRow';
 import ToolbarIcon from './ToolbarIcon';
 
 import * as Promise from 'bluebird';
-import * as update from 'immutability-helper';
+import update from 'immutability-helper';
 import * as _ from 'lodash';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
@@ -571,7 +571,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       // an exception when trying to find the associated dom node
       const lastIdx = sortedRows.indexOf(lastSelected);
       if (lastIdx !== -1) {
-        const selectedNode = ReactDOM.findDOMNode(this.mRowRefs[lastSelected]);
+        const selectedNode = ReactDOM.findDOMNode(this.mRowRefs[lastSelected]) as Element;
         visibleLineCount = this.mScrollRef.clientHeight / selectedNode.clientHeight;
         // account for the header. quite inaccurate.
         visibleLineCount -= 2;
@@ -1180,7 +1180,7 @@ function mapStateToProps(state: any, ownProps: any): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<IState>): IActionProps {
+function mapDispatchToProps(dispatch: Redux.Dispatch): IActionProps {
   return {
     onSetAttributeVisible: (tableId: string, attributeId: string, visible: boolean) =>
       dispatch(setAttributeVisible(tableId, attributeId, visible)),

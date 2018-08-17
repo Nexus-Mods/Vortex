@@ -25,6 +25,7 @@ import * as path from 'path';
 import * as React from 'react';
 import { Alert, Button, Panel } from 'react-bootstrap';
 import * as Redux from 'redux';
+import { ThunkDispatch } from 'redux-thunk';
 
 interface IConnectedProps {
   extensionConfig: { [extId: string]: IExtensionState };
@@ -48,7 +49,7 @@ interface IComponentState {
 
 function getAllDirectories(searchPath: string): Promise<string[]> {
   return fs.readdirAsync(searchPath)
-    .filter<string>(fileName =>
+    .filter(fileName =>
       fs.statAsync(path.join(searchPath, fileName))
         .then(stat => stat.isDirectory()));
 }
@@ -281,7 +282,7 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onSetExtensionEnabled: (extId: string, enabled: boolean) =>
       dispatch(setExtensionEnabled(extId, enabled)),

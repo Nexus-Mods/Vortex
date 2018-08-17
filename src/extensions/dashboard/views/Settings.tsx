@@ -1,6 +1,7 @@
 import Toggle from '../../../controls/Toggle';
 import { IDashletSettings, IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
+import { getSafe } from '../../../util/storeHelper';
 
 import { setDashletEnabled } from '../actions';
 import { IDashletProps } from '../types/IDashletProps';
@@ -8,7 +9,7 @@ import { IDashletProps } from '../types/IDashletProps';
 import * as React from 'react';
 import { ControlLabel, FormGroup, HelpBlock } from 'react-bootstrap';
 import * as Redux from 'redux';
-import { getSafe } from '../../../util/storeHelper';
+import { ThunkDispatch } from 'redux-thunk';
 
 interface IDashletToggleProps {
   enabled: boolean;
@@ -77,7 +78,7 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onSetDashletEnabled: (dashletId: string, enabled: boolean) =>
       dispatch(setDashletEnabled(dashletId, enabled)),

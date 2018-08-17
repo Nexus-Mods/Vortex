@@ -47,7 +47,7 @@ function walk(target: string,
         }
       });
       return Promise.all(cbPromises.concat(Promise.mapSeries(subDirs, (subDir) =>
-        walk(subDir, callback))));
+                         walk(subDir, callback))));
     })
     .catch(err => {
       if ((opt.ignoreErrors !== undefined)
@@ -58,7 +58,7 @@ function walk(target: string,
         return Promise.reject(err);
       }
     })
-    .then(() => undefined);
+    .then(() => Promise.resolve());
 }
 
 export default walk;

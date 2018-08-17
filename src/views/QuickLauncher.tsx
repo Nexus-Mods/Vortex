@@ -1,4 +1,5 @@
 import { showDialog } from '../actions/notifications';
+import { EmptyPlaceholder } from '../controls/api';
 import { IconButton } from '../controls/TooltipControls';
 import { IDiscoveryResult } from '../extensions/gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../extensions/gamemode_management/types/IGameStored';
@@ -11,14 +12,14 @@ import { showError } from '../util/message';
 import { activeGameId, currentGame, currentGameDiscovery } from '../util/selectors';
 import StarterInfo from '../util/StarterInfo';
 import { getSafe } from '../util/storeHelper';
+import { truthy } from '../util/util';
 
 import * as Promise from 'bluebird';
 import * as I18next from 'i18next';
 import * as React from 'react';
 import { DropdownButton, MenuItem } from 'react-bootstrap';
 import * as Redux from 'redux';
-import { truthy } from '../util/util';
-import { EmptyPlaceholder } from '../controls/api';
+import { ThunkDispatch } from 'redux-thunk';
 
 export interface IBaseProps {
   t: I18next.TranslationFunction;
@@ -246,7 +247,7 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onShowError: (message: string, details?: string | Error, allowReport?: boolean) =>
       showError(dispatch, message, details, { allowReport }),
