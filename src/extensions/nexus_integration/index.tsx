@@ -881,6 +881,18 @@ function goBuyPremium() {
 
 function init(context: IExtensionContextExt): boolean {
   context.registerAction('application-icons', 200, LoginIcon, {}, () => ({ nexus }));
+  context.registerAction('mods-action-icons', 999, 'open-ext', {}, 'Open on Nexus Mods', instanceIds => {
+    const state: IState = context.api.store.getState();
+    const gameMode = activeGameId(state);
+    const mod: IMod = getSafe(state.persistent.mods, [gameMode, instanceIds[0]], undefined);
+    if (mod !== undefined) {
+      context.api.events.emit('open-mod-page', gameMode, mod.attributes.modId);
+    }
+  }, instanceIds => {
+    const state: IState = context.api.store.getState();
+    const gameMode = activeGameId(state);
+    return getSafe(state.persistent.mods, [gameMode, instanceIds[0], 'attributes', 'source'], undefined) === 'nexus';
+  });
   context.registerSettings('Download', LazyComponent(() => require('./views/Settings')));
   context.registerReducer(['confidential', 'account', 'nexus'], accountReducer);
   context.registerReducer(['settings', 'nexus'], settingsReducer);
