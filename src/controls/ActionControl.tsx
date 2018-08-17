@@ -58,9 +58,6 @@ class ActionControl extends React.Component<IProps, { actions: IActionDefinition
     });
   }
 
-  private iconSort = (lhs: IActionDefinition, rhs: IActionDefinition): number =>
-    (lhs.position || 100) - (rhs.position || 100)
-
   private actionsToShow(props: IProps): IActionDefinitionEx[] {
     const { filter, instanceId, objects } = props;
     const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
@@ -81,7 +78,8 @@ class ActionControl extends React.Component<IProps, { actions: IActionDefinition
           show: checkCondition(iter),
         }))
       .filter(iter => iter.show !== false)
-      .filter(iter => (filter === undefined) || filter(iter));
+      .filter(iter => (filter === undefined) || filter(iter))
+      .sort(iconSort);
   }
 }
 

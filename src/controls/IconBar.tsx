@@ -169,15 +169,13 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
       classes.push(className);
     }
 
-    const sorted = actions.sort((lhs, rhs) => lhs.position - rhs.position);
-
     if (collapse) {
       classes.push('btngroup-collapsed');
 
       const collapsed: IActionDefinition[] = [];
       const unCollapsed: IActionDefinition[] = [];
 
-      sorted.forEach(action => {
+      actions.forEach(action => {
         if ((collapse === 'force')
             || ((action.options === undefined) || !action.options.noCollapse)) {
           collapsed.push(action);
@@ -230,7 +228,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
           onClick={this.mBackgroundClick}
         >
           {this.props.children}
-          {sorted.map(this.renderIcon)}
+          {actions.map(this.renderIcon)}
         </ButtonGroup>
       );
     }

@@ -72,7 +72,6 @@ class MenuAction extends React.PureComponent<IMenuActionProps, {}> {
 class DropdownMenu extends React.PureComponent<IProps, {}> {
   public render(): JSX.Element {
     const { actions, id, instanceId, className, style } = this.props;
-    const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
 
     const classes: string[] = [];
     if (className) {
@@ -164,8 +163,7 @@ class DropdownMenu extends React.PureComponent<IProps, {}> {
   private triggerDefault = (evt: React.MouseEvent<any>) => {
     const { instanceId, actions } = this.props;
     const title = evt.currentTarget.attributes.getNamedItem('data-value').value;
-    const action = actions.find(iter =>
-      iter.title === evt.currentTarget.attributes.getNamedItem('data-value').value);
+    const action = actions.find(iter => iter.title === title);
     if (action !== undefined) {
       const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
       action.action(instanceIds);
