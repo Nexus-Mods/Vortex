@@ -15,8 +15,6 @@ import {
   ISupportedResult,
   TestSupported,
 } from '../extensions/mod_management/types/TestSupported';
-import { TestEvent } from '../extensions/test_runner';
-
 import { Archive } from '../util/archives';
 import ReduxProp from '../util/ReduxProp';
 import { SanityCheck } from '../util/reduxSanity';
@@ -747,7 +745,7 @@ export interface IExtensionContext {
    *
    * @memberOf IExtensionContext
    */
-  registerTest: (id: string, event: TestEvent, check: CheckFunction) => void;
+  registerTest: (id: string, event: string, check: CheckFunction) => void;
 
   /**
    * register a handler for archive types so the content of such archives is exposed to

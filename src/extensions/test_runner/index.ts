@@ -37,8 +37,6 @@ import { setdefault } from '../../util/util';
 import * as Promise from 'bluebird';
 import * as _ from 'lodash';
 
-export type TestEvent = 'settings-changed' | 'gamemode-activated' | 'profile-did-change' | 'mod-installed' | 'mod-activated';
-
 interface ICheckEntry {
   id: string;
   check: CheckFunction;
