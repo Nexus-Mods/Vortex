@@ -208,7 +208,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
         <div className='menu-layer' ref={this.setMenuLayer} />
         <FlexLayout id='main-window-content' type='column'>
           {this.renderToolbar()}
-          {customTitlebar ? <div className='dragbar'/> : null}
+          {customTitlebar ? <div className='dragbar' /> : null}
           {this.renderBody()}
         </FlexLayout>
         <Dialog />
@@ -512,5 +512,6 @@ function registerMainPage(
 
 export default
   extend(registerMainPage)(
-    connect(mapStateToProps, mapDispatchToProps)(MainWindow),
+    connect(mapStateToProps, mapDispatchToProps)(
+      MainWindow),
   ) as React.ComponentClass<IBaseProps>;

@@ -202,7 +202,7 @@
     "react": "^16.4.1",
     "react-bootstrap": "^0.32.1",
     "react-datepicker": "^1.5.0",
-    "react-dnd": "^5.0.0",
+    "react-dnd": "^3.0.2",
     "react-dnd-html5-backend": "^5.0.1",
     "react-dom": "^16.4.1",
     "react-i18next": "^7.9.1",
@@ -249,8 +249,7 @@
     "webpack-cli": "^3.1.0",
     "webpack-node-externals": "^1.7.2",
     "winreg": "^1.2.4",
-    "winston": "^3.0.0",
-    "winston-transport": "^4.2.0",
+    "winston": "^2.4.3",
     "ws": "^6.0.0",
     "xml2js": "^0.4.19"
   }

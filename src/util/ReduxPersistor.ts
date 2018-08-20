@@ -169,7 +169,6 @@ class ReduxPersistor<T> {
   }
 
   private add(persistor: IPersistor, statePath: string[], state: any): Promise<void> {
-    log('info', 'add', { path: statePath.join('.'), state });
     return this.isObject(state)
       ? Promise.mapSeries(Object.keys(state), key =>
           this.add(persistor, [].concat(statePath, key), state[key]))
