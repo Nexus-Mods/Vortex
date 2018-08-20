@@ -13,6 +13,7 @@
 
 import { UserCanceled } from './CustomErrors';
 import { delayed } from './delayed';
+import { log } from './log';
 
 import * as PromiseBB from 'bluebird';
 import { dialog as dialogIn, remote } from 'electron';
@@ -113,7 +114,14 @@ function errorRepeat(code: string, filePath: string): PromiseBB<boolean> {
             const { allow }: { allow: typeof allowT } = req('permissions');
             return allow(filePath, userId as any, 'rwx');
           }, { filePath, userId })
-            .then(() => true);
+            .then(() => true)
+            .catch(err => {
+              log('warn', 'Failed to acquire file access to ', {
+                filePath,
+                error: err.message
+              });
+              return true;
+            }); 
         } else {
           return PromiseBB.resolve(false);
         }
