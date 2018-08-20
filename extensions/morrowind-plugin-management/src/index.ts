@@ -22,7 +22,7 @@ function onFileChanged(event: string, fileName: string) {
 
 function startWatch(state: types.IState) {
   const discovery = state.settings.gameMode.discovered['morrowind'];
-  if (discovery === undefined) {
+  if ((discovery === undefined) || (discovery.path === undefined)) {
     // this shouldn't happen because startWatch is only called if the
     // game is activated and it has to be discovered for that
     throw new Error('Morrowind wasn\'t discovered');
