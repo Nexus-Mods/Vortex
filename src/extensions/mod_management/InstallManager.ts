@@ -918,7 +918,13 @@ class InstallManager {
           dep.download);
       }
     }))
-      .catch((err) => {
+      .catch(ProcessCanceled, err => {
+        // This indicates an error in the dependency rules so it's
+        // adequate to show an error but not as a bug in Vortex
+        api.showErrorNotification('Failed to install dependencies',
+          err.message, { allowReport: false });
+      })
+      .catch(err => {
         api.showErrorNotification('Failed to install dependencies',
           err.message);
       })
