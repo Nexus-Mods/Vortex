@@ -172,6 +172,7 @@ let tFunc: I18next.TranslationFunction = (input, options) => input;
 // I only want to add reducers, but redux-electron-store seems to break
 // when calling replaceReducer in the renderer
 // (https://github.com/samiskin/redux-electron-store/issues/48)
+// now that we're not using it any more, may want to try again
 // store.replaceReducer(reducer(extReducers));
 store = createStore(
   reducer(extReducers),
