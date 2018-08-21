@@ -41,7 +41,7 @@ interface IState {
 
 type IProps = IActionProps & IConnectedProps;
 
-const serverSource: DragSourceSpec<any, any> = {
+const serverSource: DragSourceSpec<any, any, any, any> = {
   beginDrag(props) {
     return { id: props.serverId };
   },
@@ -59,7 +59,7 @@ const serverSource: DragSourceSpec<any, any> = {
   },
 };
 
-const serverTarget: DropTargetSpec<any> = {
+const serverTarget: DropTargetSpec<any, any, any> = {
   hover(props, monitor, component) {
     const source = (monitor.getItem() as any).id;
     const target = props.serverId;
@@ -149,7 +149,7 @@ const type = 'settings-metaserver-row';
 const ServerRowDrag =
   DropTarget(type, serverTarget, collectDrop)(
     DragSource(type, serverSource, collectDrag)(
-      ServerRow));
+      ServerRow)) as any;
 
 interface IListProps {
   t: I18next.TranslationFunction;

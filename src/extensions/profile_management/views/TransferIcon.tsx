@@ -90,7 +90,7 @@ function updateCursorPos(monitor: DragSourceMonitor,
     updateCursorPos(monitor, component, onSetSource, onSetTarget), 50);
 }
 
-const transferSource: DragSourceSpec<IProps, any> = {
+const transferSource: DragSourceSpec<IProps, any, any, any> = {
   beginDrag(props: IProps, monitor: DragSourceMonitor, component) {
     props.onSetHighlightGameId(props.profile.gameId);
     updateCursorPos(monitor, component, props.onSetSource, props.onSetTarget);
@@ -121,7 +121,7 @@ const transferSource: DragSourceSpec<IProps, any> = {
   },
 };
 
-const transferTarget: DropTargetSpec<IProps> = {
+const transferTarget: DropTargetSpec<IProps, any, any> = {
   drop(props: IProps, monitor: DropTargetMonitor, component) {
     return {
       id: props.profile.id,

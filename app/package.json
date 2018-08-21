@@ -60,8 +60,8 @@
     "react-addons-shallow-compare": "^15.6.2",
     "react-bootstrap": "^0.32.1",
     "react-datepicker": "^1.6.0",
-    "react-dnd": "^5.0.0",
-    "react-dnd-html5-backend": "^5.0.1",
+    "react-dnd": "^3.0.2",
+    "react-dnd-html5-backend": "^3.0.2",
     "react-dom": "^16.4.2",
     "react-fontawesome": "^1.6.1",
     "react-i18next": "^7.10.1",
@@ -95,7 +95,7 @@
     "vortex-parse-ini": "Nexus-Mods/vortex-parse-ini",
     "vortex-run": "file:../src/util/vortex-run",
     "winreg": "^1.2.4",
-    "winston": "^3.0.0",
+    "winston": "^2.4.3",
     "ws": "^6.0.0"
   }
 }

@@ -262,6 +262,10 @@ function main(args) {
   const globalFeedback = new ProcessFeedback('global');
 
   const buildType = args._[0];
+
+  process.env.NODE_ENV = (buildType === 'app')
+    ? 'production' : 'development';
+
   const buildStateName = `./BuildState_${buildType}.json`;
   let buildState;
 

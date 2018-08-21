@@ -5,7 +5,7 @@
 [submodule "extensions\\gamebryo-plugin-management"]
 	path = extensions/gamebryo-plugin-management
 	url = https://github.com/Nexus-Mods/extension-plugin-management.git
-	branch = master
+	branch = 0.16.0
 [submodule "extensions\\feedback"]
 	path = extensions/feedback
 	url = https://github.com/Nexus-Mods/extension-feedback.git
@@ -45,7 +45,7 @@
 [submodule "extensions\\meta-editor"]
 	path = extensions/meta-editor
 	url = https://github.com/Nexus-Mods/extension-metaeditor.git
-	branch = master
+	branch = single_dl_dir
 [submodule "extensions\\mo-import"]
 	path = extensions/mo-import
 	url = https://github.com/Nexus-Mods/extension-mo-import.git
@@ -57,7 +57,7 @@
 [submodule "extensions\\mod-highlights"]
 	path = extensions/mod-highlight
 	url = https://github.com/Nexus-Mods/extension-mod-highlights.git
-	branch = master
+	branch = 0.16.0
 [submodule "extensions\\modtype-dinput"]
 	path = extensions/modtype-dinput
 	url = https://github.com/Nexus-Mods/extension-modtype-dinput.git
@@ -109,7 +109,7 @@
 [submodule "extensions/fnis-integration"]
 	path = extensions/fnis-integration
 	url = https://github.com/Nexus-Mods/fnis-integration.git
-  branch = master
+  branch = single_dl_dir
 [submodule "extensions/game-pillarsofeternity2"]
 	path = extensions/game-pillarsofeternity2
 	url = https://github.com/Nexus-Mods/game-pillarsofeternity2.git
