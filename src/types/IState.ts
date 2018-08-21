@@ -145,8 +145,13 @@ export interface ISettingsInterface {
   language: string;
   advanced: boolean;
   profilesVisible: boolean;
+  desktopNotifications: boolean;
   dashboardLayout: string[];
   dashletSettings: { [dashletId: string]: IDashletSettings };
+}
+
+export interface ISettingsAutomation {
+  deploy: boolean;
 }
 
 export interface ISettingsProfiles {
@@ -190,6 +195,7 @@ export interface ISettingsUpdate {
 
 export interface ISettings {
   interface: ISettingsInterface;
+  automation: ISettingsAutomation;
   gameMode: ISettingsGameMode;
   profiles: ISettingsProfiles;
   window: IWindow;

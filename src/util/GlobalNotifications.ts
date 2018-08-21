@@ -5,6 +5,7 @@ import * as path from 'path';
 
 import { log } from '../util/log';
 import getVortexPath from './getVortexPath';
+import { IState } from '../types/IState';
 
 declare var Notification: any;
 
@@ -12,6 +13,7 @@ class GlobalNotifications {
   private mCurrentId: string;
   private mCurrentNotification: any;
   private mKnownNotifications: INotification[];
+  private mIsEnabled: () => boolean;
 
   constructor(api: IExtensionApi) {
     api.onStateChange([ 'session', 'notifications', 'global_notifications' ],
@@ -44,7 +46,9 @@ class GlobalNotifications {
         this.showNotification(currentNotification);
       } else {
         currentNotification = this.mKnownNotifications[this.mKnownNotifications.length - 1];
-        if ((currentNotification !== undefined) && (this.mCurrentId !== currentNotification.id)) {
+        if ((currentNotification !== undefined)
+            && (this.mCurrentId !== currentNotification.id)
+            && (this.mIsEnabled())) {
           log('debug', 'new notification', { id: currentNotification.id });
           // Notification api broken as of electron 1.7.11
           // this.showNotification(currentNotification);
@@ -53,6 +57,8 @@ class GlobalNotifications {
         }
       }
     });
+
+    this.mIsEnabled = () => (api.store.getState() as IState).settings.interface.desktopNotifications;
   }
 
   private showNotification(notification: INotification): void {

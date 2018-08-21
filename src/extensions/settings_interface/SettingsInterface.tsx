@@ -4,6 +4,7 @@ import { setCustomTitlebar } from '../../actions/window';
 import More from '../../controls/More';
 import Toggle from '../../controls/Toggle';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../types/IDialog';
+import { IState } from '../../types/IState';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import { readdirAsync } from '../../util/fs';
 import getVortexPath from '../../util/getVortexPath';
@@ -14,7 +15,7 @@ import getTextModManagement from '../mod_management/texts';
 import getTextProfiles from '../profile_management/texts';
 
 import { setAutoDeployment } from './actions/automation';
-import { setAdvancedMode, setLanguage, setProfilesVisible } from './actions/interface';
+import { setAdvancedMode, setLanguage, setProfilesVisible, setDesktopNotifications } from './actions/interface';
 import { nativeCountryName, nativeLanguageName } from './languagemap';
 import getText from './texts';
 
@@ -41,6 +42,7 @@ interface IConnectedProps {
   advanced: boolean;
   customTitlebar: boolean;
   minimizeToTray: boolean;
+  desktopNotifications: boolean;
 }
 
 interface IActionProps {
@@ -51,15 +53,16 @@ interface IActionProps {
   onShowDialog: (type: DialogType, title: string,
                  content: IDialogContent, actions: DialogActions) => Promise<IDialogResult>;
   onSetCustomTitlebar: (enable: boolean) => void;
+  onSetDesktopNotifications: (enabled: boolean) => void;
 }
 
-interface IState {
+interface IComponentState {
   languages: ILanguage[];
 }
 
 type IProps = IActionProps & IConnectedProps;
 
-class SettingsInterface extends ComponentEx<IProps, IState> {
+class SettingsInterface extends ComponentEx<IProps, IComponentState> {
   private mInitialTitlebar: boolean;
 
   constructor(props: IProps) {
@@ -114,7 +117,7 @@ class SettingsInterface extends ComponentEx<IProps, IState> {
 
   public render(): JSX.Element {
     const { t, advanced, autoDeployment, currentLanguage,
-            customTitlebar, profilesVisible } = this.props;
+            customTitlebar, desktopNotifications, profilesVisible } = this.props;
 
     const needRestart = (customTitlebar !== this.mInitialTitlebar);
 
@@ -148,6 +151,14 @@ class SettingsInterface extends ComponentEx<IProps, IState> {
                 onToggle={this.toggleCustomTitlebar}
               >
                 {t('Custom Window Titlebar')}
+              </Toggle>
+            </div>
+            <div>
+              <Toggle
+                checked={desktopNotifications !== false}
+                onToggle={this.toggleDesktopNotifications}
+              >
+                {t('Enable Desktop Notifications')}
               </Toggle>
             </div>
           </div>
@@ -222,6 +233,11 @@ class SettingsInterface extends ComponentEx<IProps, IState> {
     onSetAutoDeployment(!autoDeployment);
   }
 
+  private toggleDesktopNotifications = () => {
+    const { desktopNotifications, onSetDesktopNotifications } = this.props;
+    onSetDesktopNotifications(!desktopNotifications);
+  }
+
   private toggleProfiles = () => {
     const { t, profilesVisible, onSetProfilesVisible, onShowDialog } = this.props;
     if (profilesVisible) {
@@ -256,11 +272,12 @@ class SettingsInterface extends ComponentEx<IProps, IState> {
   }
 }
 
-function mapStateToProps(state: any): IConnectedProps {
+function mapStateToProps(state: IState): IConnectedProps {
   return {
     currentLanguage: state.settings.interface.language,
     profilesVisible: state.settings.interface.profilesVisible,
     advanced: state.settings.interface.advanced,
+    desktopNotifications: state.settings.interface.desktopNotifications,
     autoDeployment: state.settings.automation.deploy,
     customTitlebar: state.settings.window.customTitlebar,
     minimizeToTray: state.settings.window.minimizeToTray,
@@ -285,6 +302,9 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
       dispatch(showDialog(type, title, content, actions)),
     onSetCustomTitlebar: (enable: boolean) =>
       dispatch(setCustomTitlebar(enable)),
+    onSetDesktopNotifications: (enabled: boolean) => {
+      dispatch(setDesktopNotifications(enabled));
+    },
   };
 }
 
