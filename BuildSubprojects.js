@@ -263,7 +263,7 @@ function main(args) {
 
   const buildType = args._[0];
 
-  process.env.NODE_ENV = (buildType === 'app')
+  process.env.TARGET_ENV = (buildType === 'app')
     ? 'production' : 'development';
 
   const buildStateName = `./BuildState_${buildType}.json`;

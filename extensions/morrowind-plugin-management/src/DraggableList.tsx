@@ -66,7 +66,7 @@ function collectDrop(connect: DropTargetConnector,
   };
 }
 
-const entrySource: DragSourceSpec<IItemProps, any> = {
+const entrySource: DragSourceSpec<IItemProps, any, any, any> = {
   beginDrag(props: IItemProps) {
     return {
       index: props.index,
@@ -80,7 +80,7 @@ const entrySource: DragSourceSpec<IItemProps, any> = {
   },
 };
 
-const entryTarget: DropTargetSpec<IItemProps> = {
+const entryTarget: DropTargetSpec<IItemProps, any, any> = {
   hover(props: IItemProps, monitor: DropTargetMonitor, component) {
     const { containerId, index, item, take } = (monitor.getItem() as any);
     const hoverIndex = props.index;
@@ -195,7 +195,7 @@ class DraggableList extends ComponentEx<IProps, IState> {
   }
 }
 
-const containerTarget: DropTargetSpec<IProps> = {
+const containerTarget: DropTargetSpec<IProps, any, any> = {
 
   hover(props: IProps, monitor: DropTargetMonitor, component) {
     const { containerId, index, item, take } = (monitor.getItem() as any);
