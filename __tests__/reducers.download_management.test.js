@@ -2,7 +2,7 @@ import { stateReducer } from '../src/extensions/download_management/reducers/sta
 import * as _ from 'lodash';
 
 jest.mock('../src/util/errorHandling', () => ({
-  terminate: jest.genMockFunction(),
+  terminate: jest.fn(),
 }));
 
 const { terminate } = require('../src/util/errorHandling');
