@@ -7875,12 +7875,6 @@ redux-devtools@^3.4.1:
     prop-types "^15.5.7"
     redux-devtools-instrument "^1.0.1"
 
-redux-electron-store@^0.6.2:
-  version "0.6.2"
-  resolved "https://registry.yarnpkg.com/redux-electron-store/-/redux-electron-store-0.6.2.tgz#91c98a1fe2930a819d6a3ea943ecaf55cb10e4f6"
-  dependencies:
-    lodash "^4.13.1"
-
 redux-freeze@^0.1.5:
   version "0.1.5"
   resolved "https://registry.yarnpkg.com/redux-freeze/-/redux-freeze-0.1.5.tgz#71af3b6d52cd4de1b1d3b66f3c8533682720ded1"
@@ -8557,6 +8551,13 @@ source-map-support@^0.5.8:
     buffer-from "^1.0.0"
     source-map "^0.6.0"
 
+source-map-support@^0.5.9:
+  version "0.5.9"
+  resolved "https://registry.yarnpkg.com/source-map-support/-/source-map-support-0.5.9.tgz#41bc953b2534267ea2d605bccfa7bfa3111ced5f"
+  dependencies:
+    buffer-from "^1.0.0"
+    source-map "^0.6.0"
+
 source-map-url@^0.4.0:
   version "0.4.0"
   resolved "https://registry.yarnpkg.com/source-map-url/-/source-map-url-0.4.0.tgz#3e935d7ddd73631b97659956d55128e87b5084a3"
@@ -9190,8 +9191,8 @@ tunnel-agent@^0.6.0:
     safe-buffer "^5.0.1"
 
 turbowalk@Nexus-Mods/node-turbowalk:
-  version "1.1.0"
-  resolved "https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/f58a978c1e7236e17407579c6893dffb71055b99"
+  version "1.2.0"
+  resolved "https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/047fc3de411d3c10a5c9f5ce36650b3ed4b282af"
   dependencies:
     autogypi "^0.2.2"
     fs-extra-promise "^1.0.1"

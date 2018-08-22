@@ -209,7 +209,6 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
               </div>
             </FlexLayout.Flex>
             <FlexLayout.Fixed>
-              <Alert bsStyle='warning'>Bug: Search can't be cancelled once started</Alert>
               <div className='discovery-progress-container'>
                 <FlexLayout.Flex>
                   <ProgressBar>
@@ -223,7 +222,6 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
                     icon={discovery.running ? 'stop' : 'search'}
                     tooltip={discovery.running ? t('Stop search') : t('Search for games')}
                     onClick={discovery.running ? this.stopDiscovery : this.startDiscovery}
-                    disabled={discovery.running}
                   >
                     {discovery.running ? t('Stop search') : t('Search for games')}
                   </IconButton>
