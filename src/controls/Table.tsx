@@ -311,10 +311,6 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       return <TBody />;
     }
 
-    // TODO: forcing the first 40 items to be visible. Would be nicer to have a more dynamic
-    //   estimate of the number of items that will be visible, but there is no reliable way
-    //   to know the size without rendering
-
     return (
       <TBody>
         {sortedRows.map((row, idx) =>
