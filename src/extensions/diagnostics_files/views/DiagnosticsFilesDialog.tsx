@@ -2,6 +2,7 @@ import FlexLayout from '../../../controls/FlexLayout';
 import Spinner from '../../../controls/Spinner';
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
+import { isOutdated } from '../../../util/errorHandling';
 import * as fs from '../../../util/fs';
 import { showError } from '../../../util/message';
 
@@ -209,7 +210,7 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
         <Button onClick={this.copyToClipboard}>
           {t('Copy to Clipboard')}
         </Button>
-        {errors.length > 0 ? (
+        {(!isOutdated() && (errors.length > 0)) ? (
           <Button
             id={`report-log-${sessionIdx}`}
             onClick={this.reportLog}

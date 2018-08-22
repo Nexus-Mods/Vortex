@@ -39,7 +39,7 @@ process.env.SASS_BINARY_PATH = path.resolve(getVortexPath('modules'), 'node-sass
 
 import { addNotification } from './actions/notifications';
 import reducer from './reducers/index';
-import { terminate, toError } from './util/errorHandling';
+import { terminate, toError, setOutdated } from './util/errorHandling';
 import ExtensionManager from './util/ExtensionManager';
 import { ExtensionProvider } from './util/ExtensionProvider';
 import GlobalNotifications from './util/GlobalNotifications';
@@ -180,6 +180,7 @@ store = createStore(
   enhancer);
 replayActionRenderer(store);
 extensions.setStore(store);
+setOutdated(extensions.getApi());
 extensions.applyExtensionsOfExtensions();
 log('debug', 'renderer connected to store');
 

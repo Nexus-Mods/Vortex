@@ -1,6 +1,5 @@
 import { IError } from '../types/IError';
 
-import ExtensionManager from './ExtensionManager';
 import { log } from './log';
 import { getSafe } from './storeHelper';
 import { spawnSelf, truthy } from './util';
@@ -17,8 +16,9 @@ import NexusT, { IFeedbackResponse } from 'nexus-api';
 import {} from 'opn';
 import * as os from 'os';
 import * as path from 'path';
+import * as semver from 'semver';
 import {} from 'uuid';
-import { IErrorOptions } from '../types/api';
+import { IErrorOptions, IExtensionApi } from '../types/api';
 
 // tslint:disable-next-line:no-var-requires
 const opn = require('opn');
@@ -128,9 +128,27 @@ function nexusReport(hash: string, type: string, error: IError, labels: string[]
 }
 
 let fallbackAPIKey: string;
+let outdated: boolean = false;
 
 export function setApiKey(key: string) {
   fallbackAPIKey = key;
+}
+
+export function setOutdated(api: IExtensionApi) {
+  if (process.env.NODE_ENV === 'development') {
+    return;
+  }
+  const state = api.store.getState();
+  const app = appIn || remote.app;
+  const version = app.getVersion();
+  outdated = semver.lt(version, state.persistent.nexus.newestVersion);
+  api.onStateChange(['persistent', 'nexus', 'newestVersion'], (prev, next) => {
+    outdated = semver.lt(version, next);
+  });
+}
+
+export function isOutdated(): boolean {
+  return outdated;
 }
 
 export function sendReportFile(fileName: string): Promise<IFeedbackResponse> {
@@ -174,7 +192,7 @@ export function terminate(error: IError, state: any, allowReport?: boolean) {
       detail = error.details + '\n' + detail;
     }
     const buttons = ['Ignore', 'Quit']
-    if (allowReport !== false) {
+    if ((allowReport !== false) && !outdated) {
       buttons.push('Report and Quit');
     }
     let action = dialog.showMessageBox(win, {
@@ -232,49 +250,6 @@ export function terminate(error: IError, state: any, allowReport?: boolean) {
   }
 
   app.exit(1);
-}
-
-function findExtensionName(stack: string): string {
-  if (stack === undefined) {
-    return undefined;
-  }
-  const stackSplit = stack.split('\n').filter(line => line.match(/^[ ]*at /));
-  const extPaths = ExtensionManager.getExtensionPaths();
-  const expression = `(${extPaths.join('|').replace(/\\/g, '\\\\')})[\\\\/]([^\\\\/]*)`;
-  const re = new RegExp(expression);
-
-  let extension: string;
-  stackSplit.find((line: string) => {
-    // regular expression to parse the extension name from the path in the last
-    // line of the stack trace. if there is one.
-    const match = line.match(re);
-    if (match !== null) {
-      extension = match[2];
-      return true;
-    }
-    return false;
-  });
-  return extension;
-}
-
-function makeDetails(error: any): IError {
-  const result: IError = {
-    message: 'Unknown',
-    extension: findExtensionName(error.stack),
-  };
-
-  if ((error.message === undefined) && (error.stack === undefined)) {
-    // no Error object
-    result.message = require('util').inspect(error);
-  } else {
-    result.message = error.message;
-    if (truthy(error.URL)) {
-      result.message += `(request: ${error.URL})`;
-    }
-    result.stack = error.stack;
-  }
-
-  return result;
 }
 
 export function toError(input: any, options?: IErrorOptions): IError {

@@ -6,7 +6,7 @@ import {
 } from '../actions/notifications';
 import { IState } from '../types/IState';
 
-import { sendReport, toError } from './errorHandling';
+import { sendReport, toError, isOutdated } from './errorHandling';
 
 import { log } from './log';
 import { truthy } from './util';
@@ -156,7 +156,7 @@ export function showError<S>(dispatch: ThunkDispatch<IState, null, Redux.Action>
 
   const actions: IDialogAction[] = [];
 
-  if ((options === undefined) || (options.allowReport !== false)) {
+  if (!isOutdated() && ((options === undefined) || (options.allowReport !== false))) {
     actions.push({
       label: 'Report',
       action: () => sendReport('error', toError(details, options), ['error'], '')

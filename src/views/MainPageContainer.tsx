@@ -2,7 +2,7 @@ import FlexLayout from '../controls/FlexLayout';
 import Icon from '../controls/Icon';
 import { IMainPage } from '../types/IMainPage';
 import { ComponentEx, translate } from '../util/ComponentEx';
-import { genHash } from '../util/errorHandling';
+import { genHash, isOutdated } from '../util/errorHandling';
 import { log } from '../util/log';
 
 import { remote } from 'electron';
@@ -48,7 +48,7 @@ class MainPageContainer extends ComponentEx<IBaseProps, IComponentState> {
   }
 
   public getChildContext() {
-    const { active, page } = this.props;
+    const { page } = this.props;
     return {
       api: this.context.api,
       headerPortal: () => this.headerRef,
@@ -77,7 +77,7 @@ class MainPageContainer extends ComponentEx<IBaseProps, IComponentState> {
             <Icon className='render-failure-icon' name='sad' />
             <div className='render-failure-text'>{t('Failed to render.')}</div>
             <div className='render-failure-buttons'>
-              <Button onClick={this.report}>{t('Report')}</Button>
+              {isOutdated() ? null : <Button onClick={this.report}>{t('Report')}</Button>}
               <Button onClick={this.retryRender}>{t('Retry')}</Button>
             </div>
           </Alert>

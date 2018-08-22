@@ -5,7 +5,7 @@ import commandLine, {IParameters} from '../util/commandLine';
 import { ProcessCanceled, UserCanceled } from '../util/CustomErrors';
 import { } from '../util/delayed';
 import * as develT from '../util/devel';
-import { terminate, toError } from '../util/errorHandling';
+import { terminate, toError, setOutdated } from '../util/errorHandling';
 import ExtensionManagerT from '../util/ExtensionManager';
 import * as fs from '../util/fs';
 import lazyRequire from '../util/lazyRequire';
@@ -77,6 +77,7 @@ class Application {
     this.mMainWindow = new MainWindow(this.mStore);
     return this.mMainWindow.create(this.mStore).then(webContents => {
       this.mExtensions.setupApiMain(this.mStore, webContents);
+      setOutdated(this.mExtensions.getApi());
       return this.applyArguments(this.mArgs);
     });
   }

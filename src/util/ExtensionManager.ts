@@ -52,6 +52,7 @@ import * as rimraf from 'rimraf';
 import * as semver from 'semver';
 import { generate as shortid } from 'shortid';
 import { dynreq, runElevated, Win32Error } from 'vortex-run';
+import { isOutdated } from './errorHandling';
 
 // tslint:disable-next-line:no-var-requires
 const ReduxWatcher = require('redux-watcher');
@@ -374,6 +375,7 @@ class ExtensionManager {
       setStylesheet: (key, filePath) => this.mStyleManager.setSheet(key, filePath),
       runExecutable: this.runExecutable,
       emitAndAwait: this.emitAndAwait,
+      isOutdated: () => isOutdated(),
       onAsync: this.onAsync,
     };
     if (initStore !== undefined) {
@@ -756,6 +758,7 @@ class ExtensionManager {
 
   private selectExecutable(options: IOpenOptions) {
     return new Promise<string>((resolve, reject) => {
+      // TODO: make the filter list dynamic based on the list of registered interpreters?
       const fullOptions: Electron.OpenDialogOptions = {
         ...options,
         properties: ['openFile'],

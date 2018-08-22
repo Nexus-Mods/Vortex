@@ -502,6 +502,12 @@ export interface IExtensionApi {
    * will only return after all promises from handlers are returned.
    */
   onAsync: (eventName: string, listener: (...args: any[]) => Promise<void>) => void;
+
+  /**
+   * returns true if the running version of Vortex is considered outdated. This is mostly used
+   * to determine if feedback should be sent to Nexus Mods.
+   */
+  isOutdated: () => boolean;
 }
 
 export interface IStateVerifier {

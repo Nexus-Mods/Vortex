@@ -33,7 +33,6 @@ import { convertGameId, convertGameIdReverse, toNXMId } from './util/convertGame
 import sendEndorseMod from './util/endorseMod';
 import retrieveCategoryList from './util/retrieveCategories';
 import submitFeedback from './util/submitFeedback';
-import transformUserInfo from './util/transformUserInfo';
 import DashboardBanner from './views/DashboardBanner';
 import EndorsementFilter from './views/EndorsementFilter';
 import EndorseModButton from './views/EndorseModButton';
