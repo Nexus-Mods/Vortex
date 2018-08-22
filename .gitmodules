@@ -9,7 +9,7 @@
 [submodule "extensions\\feedback"]
 	path = extensions/feedback
 	url = https://github.com/Nexus-Mods/extension-feedback.git
-	branch = master
+	branch = 0.16.0
 [submodule "extensions\\gamebryo-archive-invalidation"]
 	path = extensions/gamebryo-archive-invalidation
 	url = https://github.com/Nexus-Mods/extension-archive-invalidation.git
