@@ -1,44 +1,24 @@
 import { setSettingsPage } from '../../actions/session';
 import Icon from '../../controls/Icon';
-import More from '../../controls/More';
 import Spinner from '../../controls/Spinner';
 import { IExtensionApi, ToDoType } from '../../types/IExtensionContext';
 import * as selectors from '../../util/selectors';
 
-import getTextModManagement from '../mod_management/texts';
-import getTextProfiles from '../profile_management/texts';
-import getTextSettingsApplication from '../settings_application/texts';
 import { setProfilesVisible } from '../settings_interface/actions/interface';
 
 import { IToDo } from './IToDo';
 
 import { TranslationFunction } from 'i18next';
 import * as React from 'react';
-import { Interpolate } from 'react-i18next';
 
 function todos(api: IExtensionApi): IToDo[] {
   const onSetSettingsPage = (pageId: string) => {
     api.store.dispatch(setSettingsPage(pageId));
   };
 
-  const openGameSettings = () => {
-    api.events.emit('show-main-page', 'application_settings');
-    onSetSettingsPage('Games');
-  };
-
-  const openModsSettings = () => {
-    api.events.emit('show-main-page', 'application_settings');
-    onSetSettingsPage('Mods');
-  };
-
   const openInterfaceSettings = () => {
     api.events.emit('show-main-page', 'application_settings');
     onSetSettingsPage('Interface');
-  };
-
-  const openVortexSettings = () => {
-    api.events.emit('show-main-page', 'application_settings');
-    onSetSettingsPage('Vortex');
   };
 
   const startManualSearch = () => {

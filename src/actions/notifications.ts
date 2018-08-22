@@ -79,13 +79,14 @@ export function fireNotificationAction(notiId: string, notiProcess: string,
 if (ipcMain !== undefined) {
   ipcMain.on('fire-notification-action',
              (event: Electron.Event, notiId: string, action: number) => {
-    event.returnValue = false;
     const func = notificationActions[notiId][action];
+    let res = false;
     if (func !== undefined) {
       func(() => {
-        event.returnValue = true;
+        res = true;
       });
     }
+    event.returnValue = res;
   });
 }
 
