@@ -13,6 +13,10 @@ function queryGameId(store: ThunkStore<any>, downloadGameIds: string[]): Promise
   const state: IState = store.getState();
   const gameMode = activeGameId(state);
 
+  if (!Array.isArray(downloadGameIds)) {
+    downloadGameIds = [ downloadGameIds ];
+  }
+
   if (downloadGameIds.indexOf(gameMode) !== -1) {
     // the managed game is compatible to the archive so use that
     return Promise.resolve(gameMode);

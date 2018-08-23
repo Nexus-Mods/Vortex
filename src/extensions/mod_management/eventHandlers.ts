@@ -313,7 +313,7 @@ export function onStartInstallDownload(api: IExtensionApi,
         api.events.emit('refresh-downloads', gameId, () => {
           api.showErrorNotification('Download invalid',
             'Sorry, the meta data for this download is incomplete. Vortex has '
-            + 'tried to refreshed that data, please try again.',
+            + 'tried to refresh that data, please try again.',
             { allowReport: false });
         });
         return Promise.resolve();
@@ -329,6 +329,6 @@ export function onStartInstallDownload(api: IExtensionApi,
       }
       const fullPath: string = path.join(downloadPath, download.localPath);
       installManager.install(downloadId, fullPath, download.game, api,
-        { download }, true, false, callback);
+        { download }, true, false, callback, gameId);
     });
 }

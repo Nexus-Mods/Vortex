@@ -141,6 +141,7 @@ class InstallManager {
    *                                      of others and tries to install those too
    * @param {boolean} enable if true, enable the mod after installation
    * @param {Function} callback callback once this is finished
+   * @param {boolean} forceGameId set if the user has already been queried which game to install the mod for
    */
   public install(
     archiveId: string,
@@ -150,7 +151,8 @@ class InstallManager {
     info: any,
     processDependencies: boolean,
     enable: boolean,
-    callback?: (error: Error, id: string) => void) {
+    callback: (error: Error, id: string) => void,
+    forceGameId?: string) {
 
     if (this.mTask === undefined) {
       const Zip: typeof ZipT = require('node-7z');
@@ -168,7 +170,9 @@ class InstallManager {
     let installContext: InstallContext;
 
     this.mQueue = this.mQueue
-      .then(() => queryGameId(api.store, downloadGameIds))
+      .then(() => forceGameId !== undefined
+        ? Promise.resolve(forceGameId)
+        : queryGameId(api.store, downloadGameIds))
       .then(gameId => {
         installGameId = gameId;
         if (installGameId === undefined) {
