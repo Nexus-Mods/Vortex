@@ -14,6 +14,8 @@ import Icon from './Icon';
 import IconBar from './IconBar';
 import Modal from './Modal';
 import More from './More';
+import Overlay from './Overlay';
+import OverlayTrigger from './OverlayTrigger';
 import Spinner from './Spinner';
 import Steps from './Steps';
 import Table, {ChangeDataHandler, ITableRowAction, makeGetSelection} from './Table';
@@ -29,5 +31,5 @@ export {
   ActionContextMenu, ActionDropdown, Advanced, Banner, ChangeDataHandler, ContextMenu, Dashlet,
   Dropdown, Dropzone, EmptyPlaceholder,
   FlexLayout, FormFeedback, FormInput, Icon, IconBar, ITableRowAction, Modal,
-  More, Table, TableDateTimeFilter, TableNumericFilter, TableTextFilter,
+  More, Overlay, OverlayTrigger, Table, TableDateTimeFilter, TableNumericFilter, TableTextFilter,
   Spinner, Steps, makeGetSelection, Toggle, ToolbarIcon, tooltip, Webview};

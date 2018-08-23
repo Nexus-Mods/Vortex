@@ -118,3 +118,7 @@
 	path = extensions/test-gameversion
 	url = https://github.com/Nexus-Mods/test-gameversion.git
 	branch = master
+[submodule "extensions/documentation"]
+	path = extensions/documentation
+	url = https://github.com/Nexus-Mods/extension-documentation.git
+  branch = master
