@@ -171,7 +171,9 @@ function watchDownloads(api: IExtensionApi, downloadPath: string,
         log('warn', 'failed to watch mod directory', { downloadPath, error });
     });
   } catch (err) {
-    api.showErrorNotification('Failed to watch download directory', err);
+    api.showErrorNotification('Can\'t watch the download directory for changes', err, {
+      allowReport: false,
+    });
   }
 }
 
@@ -246,7 +248,9 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
           }))
           .catch(UserCanceled, () => null)
           .catch(err => {
-            api.showErrorNotification('Failed to refresh download directory', err);
+            api.showErrorNotification('Failed to refresh download directory', err, {
+              allowReport: err.code !== 'EPERM',
+            });
           });
       })
     .then(() => {

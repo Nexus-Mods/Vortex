@@ -1,5 +1,5 @@
 import { IState } from '../../types/IState';
-import {ProcessCanceled} from '../../util/CustomErrors';
+import {ProcessCanceled, UserCanceled} from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import {log} from '../../util/log';
 import {showError} from '../../util/message';
@@ -180,6 +180,9 @@ export class DownloadObserver {
           if (filePath !== undefined) {
             fs.removeAsync(path.join(downloadPath, filePath));
           }
+        })
+        .catch(UserCanceled, () => {
+          this.mStore.dispatch(removeDownload(id));
         })
         .catch((err: any) => {
           const details: { message: string, url?: string } = this.translateError(err);

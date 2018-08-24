@@ -319,7 +319,8 @@ export function onStartInstallDownload(api: IExtensionApi,
         return Promise.resolve();
       }
 
-      const downloadPath: string = downloadPathForGame(state, gameId);
+      const downloadGame: string = Array.isArray(download.game) ? download.game[0] : download.game;
+      const downloadPath: string = downloadPathForGame(state, downloadGame);
       if (downloadPath === undefined) {
         api.showErrorNotification('Unknown Game',
           'Failed to determine installation directory. This shouldn\'t have happened', {
