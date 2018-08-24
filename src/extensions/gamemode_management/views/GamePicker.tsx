@@ -248,7 +248,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
         min={0}
         max={100 * Object.keys(discovery.phases).length}
         now={phase.progress}
-        label={phase.directory}
+        label={<span>{phase.directory}</span>}
       />
     );
   }

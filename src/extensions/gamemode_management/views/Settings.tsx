@@ -28,7 +28,6 @@ interface IPathProps {
 class SearchPathEntry extends ComponentEx<IPathProps, {}> {
   public render() {
     const { searchPath, t } = this.props;
-    console.log('search path', searchPath);
     return (
       <ListGroupItem>
         <span>{searchPath}</span>
