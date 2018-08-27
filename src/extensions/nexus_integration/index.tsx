@@ -33,6 +33,7 @@ import { convertGameId, convertGameIdReverse, toNXMId } from './util/convertGame
 import sendEndorseMod from './util/endorseMod';
 import retrieveCategoryList from './util/retrieveCategories';
 import submitFeedback from './util/submitFeedback';
+import transformUserInfo from './util/transformUserInfo';
 import DashboardBanner from './views/DashboardBanner';
 import EndorsementFilter from './views/EndorsementFilter';
 import EndorseModButton from './views/EndorseModButton';
@@ -562,7 +563,7 @@ function validateKey(api: IExtensionApi, key: string): Promise<void> {
 
   return Promise.resolve(nexus.validateKey(key))
     .then(userInfo => {
-      // api.store.dispatch(setUserInfo(transformUserInfo(userInfo)));
+      api.store.dispatch(setUserInfo(transformUserInfo(userInfo)));
     })
     .catch(TimeoutError, () => {
       showError(api.store.dispatch,

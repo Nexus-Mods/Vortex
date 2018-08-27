@@ -28,12 +28,6 @@ interface IActionProps {
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
 
-interface IValidationState {
-  state?: 'success' | 'warning' | 'error';
-  reason?: string;
-  pending?: boolean;
-}
-
 interface ILoginFormState {
   APIKey: string;
   didSubmit: boolean;
