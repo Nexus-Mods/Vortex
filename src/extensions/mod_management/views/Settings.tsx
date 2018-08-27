@@ -289,6 +289,23 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       : Promise.resolve();
   }
 
+  private applyActivator = () => {
+    const { gameMode, onSetActivator, onShowError } = this.props;
+    const { currentActivator } = this.state;
+
+    this.purgeActivation()
+    .then(() => {
+      onSetActivator(gameMode, currentActivator);
+    })
+    .catch(TemporaryError, err => {
+      onShowError('Failed to purge previous deployment, please try again',
+                  err, false);
+    })
+    .catch(err => {
+      onShowError('Failed to purge previous deployment', err, true);
+    });
+  }
+
   private renderPathCtrl(label: string): JSX.Element {
     const { t, gameMode } = this.props;
     const { installPath } = this.state;
@@ -367,6 +384,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     let content: JSX.Element;
     let activatorIdx: number = -1;
 
+    const changed = currentActivator !== this.props.currentActivator;
+
     if ((activators !== undefined) && (activators.length > 0)) {
       if (currentActivator !== undefined) {
         activatorIdx = activators.findIndex((activator) => activator.id === currentActivator);
@@ -397,6 +416,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       <FormGroup validationState={activators !== undefined ? undefined : 'error'}>
         <InputGroup>
           {content}
+          <InputGroup.Button>
+            <BSButton disabled={!changed} onClick={this.applyActivator}>{t('Apply')}</BSButton>
+          </InputGroup.Button>
         </InputGroup>
         { activatorIdx !== -1 ? (
           <HelpBlock>
