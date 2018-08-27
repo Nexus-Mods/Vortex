@@ -296,7 +296,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
   }
 
   private renderIconGroup = (icons: IActionDefinition[], index: number) => {
-    const { t, instanceId, tooltipPlacement } = this.props;
+    const { t, instanceId, orientation, buttonType } = this.props;
 
     const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
 
@@ -308,6 +308,8 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
         id={id}
         instanceId={instanceIds}
         icons={icons}
+        buttonType={buttonType}
+        orientation={orientation}
       />
     );
   }

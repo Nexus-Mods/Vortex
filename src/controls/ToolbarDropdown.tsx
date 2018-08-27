@@ -1,4 +1,5 @@
 import Icon from './Icon';
+import { ButtonType } from './IconBar';
 
 import * as React from 'react';
 import { IActionDefinition } from '../types/api';
@@ -35,6 +36,8 @@ export interface IToolbarDropdownProps {
   instanceId: string[];
   icons: IActionDefinition[];
   className?: string;
+  buttonType: ButtonType;
+  orientation: 'vertical' | 'horizontal';
 }
 
 class ToolbarDropdown extends React.PureComponent<IToolbarDropdownProps, {}> {
@@ -59,13 +62,18 @@ class ToolbarDropdown extends React.PureComponent<IToolbarDropdownProps, {}> {
   }
 
   private renderTitle(shared: string): JSX.Element {
-    const { icons } = this.props;
+    const { icons, buttonType } = this.props;
+    const hasIcon = (buttonType === undefined)
+      || ['icon', 'both', 'menu'].indexOf(buttonType) !== -1;
+    const hasText = (buttonType === undefined)
+      || ['text', 'both', 'menu'].indexOf(buttonType) !== -1;
+
     return (
       <div>
-        <Icon name={icons[0].icon} />
-        <div className='button-text'>
+        {hasIcon ? <Icon name={icons[0].icon} /> : null }
+        {hasText ? (<div className='button-text'>
           {shared}...
-        </div>
+        </div>) : null}
       </div>
     );
   }

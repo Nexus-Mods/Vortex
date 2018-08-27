@@ -132,6 +132,10 @@
       "path": "{nucleo}/holidays/{nucleo_simple}_favourite-31",
       "rmFill": true
     },
+    "plugin-light": {
+      "path": "{nucleo}/animals-nature/{nucleo_simple}_leaf-81",
+      "rmFill": true
+    },
     "plugin-clean": {
       "path": "{nucleo}/design-development/{nucleo_simple}_spray-2",
       "rmFill": true
