@@ -67,6 +67,7 @@ import { genHash } from 'modmeta-db';
 import * as path from 'path';
 import * as Redux from 'redux';
 import { updateNotification, dismissNotification } from '../../actions';
+import { IDeploymentManifest } from './types/IDeploymentManifest';
 
 const activators: IDeploymentMethod[] = [];
 
@@ -417,7 +418,14 @@ function genUpdateModDeployment() {
                                      deployProgress)
                 .then(newActivation => {
                   newDeployment[typeId] = newActivation;
-                  return saveActivation(typeId, state.app.instanceId, modPaths[typeId], newActivation);
+                  return doSaveActivation(api, typeId, modPaths[typeId], newActivation)
+                    .catch(err => api.showDialog('error', 'Saving manifest failed', {
+                      text: 'Saving the manifest failed (see error below). This could lead to errors '
+                          + 'later on, ',
+                      message: err.message,
+                    }, [
+
+                    ]));
                 })))
               .then(() => {
                 progress(t('Running post-deployment events'), 99);
@@ -440,6 +448,23 @@ function genUpdateModDeployment() {
       .catch(err => api.showErrorNotification('Failed to deploy mods', err))
       .finally(() => api.dismissNotification(notificationId));
   };
+}
+
+function doSaveActivation(api: IExtensionApi, typeId: string, modPath: string, files: IDeployedFile[]) {
+  const state: IState = api.store.getState();
+  return saveActivation(typeId, state.app.instanceId, modPath, files)
+    .catch(err => api.showDialog('error', 'Saving manifest failed', {
+      text: 'Saving the manifest failed (see error below). This could lead to errors '
+        + '(e.g. orphaned files in the game directory, external changes not being detected). '
+        + 'later on, please either retry or immediately "purge" after this and try deploying again.',
+      message: err.stack,
+    }, [
+      { label: 'Retry' },
+      { label: 'Ignore' },
+    ])
+    .then(result => (result.action === 'Retry') 
+      ? doSaveActivation(api, typeId, modPath, files)
+      : Promise.resolve()));
 }
 
 function genModsSourceAttribute(api: IExtensionApi): ITableAttribute<IMod> {
@@ -636,7 +661,7 @@ function once(api: IExtensionApi) {
           : activator.deactivate(installationPath, dataPath, mod)
         : Promise.resolve())
       .then(() => activator.finalize(gameId, dataPath, installationPath))
-      .then(newActivation => saveActivation(mod.type, state.app.instanceId, dataPath, newActivation));
+      .then(newActivation => doSaveActivation(api, mod.type, dataPath, newActivation));
   });
 
   api.events.on('schedule-deploy-mods', (callback: (err: Error) => void, profileId?: string,

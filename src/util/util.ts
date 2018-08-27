@@ -7,6 +7,7 @@ import { log } from './log';
 
 import * as Promise from 'bluebird';
 import { spawn } from 'child_process';
+import { createHash } from 'crypto';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
 import * as Redux from 'redux';
@@ -51,10 +52,17 @@ export function setdefault<T>(obj: any, key: PropertyKey, def: T): T {
   return obj[key];
 }
 
-export function writeFileAtomic(filePath: string, data: string | Buffer | Uint8Array,
+function checksum(input: string | Buffer): string {
+  return createHash('md5')
+    .update(input, 'utf8')
+    .digest('hex');
+}
+
+export function writeFileAtomic(filePath: string, data: string | Buffer,
                                 options?: fs.WriteFileOptions) {
   let cleanup: () => void;
   let tmpPath: string;
+  const hash = checksum(data);
   return new Promise<number>((resolve, reject) => {
     file({ template: `${filePath}.XXXXXX.tmp` },
          (err: any, genPath: string, fd: number, cleanupCB: () => void) => {
@@ -73,6 +81,10 @@ export function writeFileAtomic(filePath: string, data: string | Buffer | Uint8A
       cleanup();
     }
   })
+  .then(() => fs.readFileAsync(tmpPath))
+  .then(data => (checksum(data) !== hash)
+      ? Promise.reject(new Error('Write failed, checksums differ'))
+      : Promise.resolve())
   .then(() => fs.renameAsync(tmpPath, filePath));
 }
 
