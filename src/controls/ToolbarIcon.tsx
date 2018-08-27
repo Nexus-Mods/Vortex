@@ -1,5 +1,4 @@
 import Icon from './Icon';
-import { ButtonType } from './IconBar';
 import { Button } from './TooltipControls';
 
 import * as React from 'react';

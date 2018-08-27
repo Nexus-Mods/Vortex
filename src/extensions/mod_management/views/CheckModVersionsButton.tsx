@@ -25,7 +25,7 @@ type IProps = IBaseProps & IConnectedProps;
 
 class CheckVersionsButton extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
-    const { t, buttonType, updateRunning } = this.props;
+    const { t, updateRunning } = this.props;
 
     if (updateRunning) {
       return (

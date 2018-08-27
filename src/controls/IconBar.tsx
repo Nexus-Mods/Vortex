@@ -1,10 +1,12 @@
 import { IActionDefinition } from '../types/IActionDefinition';
 import { IExtensibleProps } from '../util/ExtensionProvider';
+import { setdefault } from '../util/util';
 
 import ActionControl, { IActionControlProps, IActionDefinitionEx } from './ActionControl';
 import Dropdown from './Dropdown';
 import Icon from './Icon';
 import ToolbarIcon from './ToolbarIcon';
+import ToolbarDropdown from './ToolbarDropdown';
 import { IconButton } from './TooltipControls';
 
 import * as I18next from 'i18next';
@@ -25,6 +27,7 @@ export interface IBaseProps {
   buttonType?: ButtonType;
   orientation?: 'horizontal' | 'vertical';
   collapse?: boolean | 'force';
+  groupByIcon?: boolean;
   filter?: (action: IActionDefinition) => boolean;
   icon?: string;
   pullRight?: boolean;
@@ -219,6 +222,14 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
         </ButtonGroup>
       );
     } else {
+      const grouped = actions.reduce((prev, action, idx) => {
+        if (action.icon !== undefined) {
+          setdefault(prev, action.icon, []).push(action);
+        } else {
+          prev[idx.toString()] = [action];
+        }
+        return prev;
+      }, {});
       return (
         <ButtonGroup
           id={id}
@@ -228,7 +239,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
           onClick={this.mBackgroundClick}
         >
           {this.props.children}
-          {actions.map(this.renderIcon)}
+          {Object.keys(grouped).map(key => grouped[key]).map(this.renderIcons)}
         </ButtonGroup>
       );
     }
@@ -270,6 +281,35 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
       return null;
     }
     return this.renderIconInner(icon, index);
+  }
+
+  private renderIcons = (icons: IActionDefinition[], index: number) => {
+    if (icons.length === 1) {
+      if ((icons[0].icon === null) && (icons[0].component === undefined)) {
+        // skip text-only elements in this mode
+        return null;
+      }
+      return this.renderIconInner(icons[0], index);
+    } else {
+      return this.renderIconGroup(icons, index);
+    }
+  }
+
+  private renderIconGroup = (icons: IActionDefinition[], index: number) => {
+    const { t, instanceId, tooltipPlacement } = this.props;
+
+    const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
+
+    const id = `${instanceId || '1'}_${index}`;
+
+    return (
+      <ToolbarDropdown
+        key={id}
+        id={id}
+        instanceId={instanceIds}
+        icons={icons}
+      />
+    );
   }
 
   private renderIconInner = (icon: IActionDefinition, index: number,

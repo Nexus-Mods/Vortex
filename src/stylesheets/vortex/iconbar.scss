@@ -40,3 +40,12 @@
 .icon-menu-positioner {
   z-index: $zindex-menu-layer;
 }
+
+.toolbar-dropdown {
+  height: 100%;
+  flex-direction: row !important;
+  svg {
+    margin-right: 0;
+    
+  }
+}
