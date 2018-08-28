@@ -1,4 +1,4 @@
-import reducer from '../reducers/index';
+import reducer, { Decision } from '../reducers/index';
 import { IPersistor, PersistingType } from '../types/IExtensionContext';
 import { IState } from '../types/IState';
 
@@ -9,6 +9,7 @@ import ReduxPersistor from './ReduxPersistor';
 import {reduxSanity, StateError} from './reduxSanity';
 
 import * as Promise from 'bluebird';
+import { dialog } from 'electron';
 import * as levelup from 'levelup';
 import * as path from 'path';
 import * as Redux from 'redux';
@@ -22,6 +23,16 @@ const IMPORTED_TAG = 'imported__do_not_delete.txt';
 
 export const currentStatePath = 'state.v2';
 
+export function querySanitize(): Decision {
+  const response = dialog.showMessageBox(null, {
+    message:
+        'Application state is invalid. I can try to repair it but you may lose data',
+    buttons: ['Quit', 'Ignore', 'Repair'],
+  });
+
+  return [Decision.QUIT, Decision.IGNORE, Decision.SANITIZE][response];
+}
+
 export function createVortexStore(sanityCallback: (err: StateError) => void): Redux.Store<IState> {
   const middleware = [
     thunkMiddleware,
@@ -34,7 +45,7 @@ export function createVortexStore(sanityCallback: (err: StateError) => void): Re
           forwardToRenderer,
         )) as Redux.StoreEnhancer<any>;
 
-  const store = createStore<IState, Redux.Action, any, any>(reducer([]), enhancer);
+  const store = createStore<IState, Redux.Action, any, any>(reducer([], querySanitize), enhancer);
   basePersistor = new ReduxPersistor(store);
   replayActionMain(store);
   return store;

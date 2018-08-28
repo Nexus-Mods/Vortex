@@ -38,7 +38,7 @@ process.env.SASS_BINARY_PATH = path.resolve(getVortexPath('modules'), 'node-sass
   `${process.platform}-${process.arch}-${process.versions.modules}`, 'node-sass.node');
 
 import { addNotification } from './actions/notifications';
-import reducer from './reducers/index';
+import reducer, { Decision } from './reducers/index';
 import { terminate, toError, setOutdated } from './util/errorHandling';
 import ExtensionManager from './util/ExtensionManager';
 import { ExtensionProvider } from './util/ExtensionProvider';
@@ -175,7 +175,7 @@ let tFunc: I18next.TranslationFunction = (input, options) => input;
 // now that we're not using it any more, may want to try again
 // store.replaceReducer(reducer(extReducers));
 store = createStore(
-  reducer(extReducers),
+  reducer(extReducers, () => Decision.QUIT),
   getInitialStateRenderer(),
   enhancer);
 replayActionRenderer(store);

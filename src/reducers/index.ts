@@ -18,14 +18,10 @@ import { tableReducer } from './tables';
 import { userReducer } from './user';
 import { windowReducer } from './window';
 
-import { dialog as dialogIn, remote } from 'electron';
 import update from 'immutability-helper';
 import { pick } from 'lodash';
 import { combineReducers, Reducer, ReducersMapObject } from 'redux';
 import { createReducer } from 'redux-act';
-// tslint:disable-next-line:no-submodule-imports
-
-const dialog = dialogIn || remote.dialog;
 
 /**
  * wrapper for combineReducers that doesn't drop unexpected keys
@@ -61,8 +57,9 @@ function verifyElement(verifier: IStateVerifier, value: any) {
   return true;
 }
 
-function verify(path: string, verifiers: { [key: string]: IStateVerifier },
-                input: any, defaults: { [key: string]: any }) {
+// exported for the purpose of testing
+export function verify(path: string, verifiers: { [key: string]: IStateVerifier },
+                       input: any, defaults: { [key: string]: any }) {
   if (input === undefined) {
     return input;
   }
@@ -99,7 +96,7 @@ function verify(path: string, verifiers: { [key: string]: IStateVerifier },
   return res;
 }
 
-enum Decision {
+export enum Decision {
   SANITIZE,
   IGNORE,
   QUIT,
@@ -107,23 +104,7 @@ enum Decision {
 
 let sanitizeDecision: Decision;
 
-function decideSanitize(): Decision {
-  if (sanitizeDecision === undefined) {
-    // untranslated because localization isn't loaded at this point
-    const response = dialog.showMessageBox(null, {
-      message:
-          'Application state is invalid. I can try to repair it but you may lose data',
-      buttons: ['Quit', 'Ignore', 'Repair'],
-    });
-
-    sanitizeDecision =
-        [Decision.QUIT, Decision.IGNORE, Decision.SANITIZE][response];
-  }
-
-  return sanitizeDecision;
-}
-
-function deriveReducer(path: string, ele: any): Reducer<any> {
+function deriveReducer(path: string, ele: any, querySanitize: () => Decision): Reducer<any> {
   const attributes: string[] = Object.keys(ele);
 
   if ((attributes.indexOf('reducers') !== -1)
@@ -140,7 +121,8 @@ function deriveReducer(path: string, ele: any): Reducer<any> {
             const sanitized = verify(path, ele.verifiers, input,
                                      ele.defaults);
             if (sanitized !== input) {
-              const decision = decideSanitize();
+              const decision = sanitizeDecision || querySanitize();
+              sanitizeDecision = decision;
               if (decision === Decision.SANITIZE) {
                 payload = setSafe(payload, pathArray, sanitized);
               } else if (decision === Decision.QUIT) {
@@ -157,7 +139,7 @@ function deriveReducer(path: string, ele: any): Reducer<any> {
     const combinedReducers: ReducersMapObject = {};
 
     attributes.forEach(attribute => {
-      combinedReducers[attribute] = deriveReducer(path + '.' + attribute, ele[attribute]);
+      combinedReducers[attribute] = deriveReducer(path + '.' + attribute, ele[attribute], querySanitize);
     });
     return safeCombineReducers(combinedReducers);
   }
@@ -191,7 +173,7 @@ function addToTree(tree: any, path: string[], spec: IReducerSpec) {
  * @param {IExtensionReducer[]} extensionReducers
  * @returns
  */
-function reducers(extensionReducers: IExtensionReducer[]) {
+function reducers(extensionReducers: IExtensionReducer[], querySanitize: () => Decision) {
   const tree = {
     user: userReducer,
     app: appReducer,
@@ -208,7 +190,7 @@ function reducers(extensionReducers: IExtensionReducer[]) {
   extensionReducers.forEach(extensionReducer => {
     addToTree(tree, extensionReducer.path, extensionReducer.reducer);
   });
-  return deriveReducer('', tree);
+  return deriveReducer('', tree, querySanitize);
 }
 
 export default reducers;

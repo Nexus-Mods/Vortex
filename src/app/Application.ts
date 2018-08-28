@@ -15,7 +15,7 @@ import { showError } from '../util/message';
 import migrate from '../util/migrate';
 import { StateError } from '../util/reduxSanity';
 import { allHives, createVortexStore, currentStatePath, extendStore,
-         importState, insertPersistor, markImported } from '../util/store';
+         importState, insertPersistor, markImported, querySanitize } from '../util/store';
 import {} from '../util/storeHelper';
 import SubPersistor from '../util/SubPersistor';
 
@@ -468,7 +468,7 @@ class Application {
         const ExtensionManager = require('../util/ExtensionManager').default;
         this.mExtensions = new ExtensionManager(newStore);
         const reducer = require('../reducers/index').default;
-        newStore.replaceReducer(reducer(this.mExtensions.getReducers()));
+        newStore.replaceReducer(reducer(this.mExtensions.getReducers(), querySanitize));
         return Promise.mapSeries(allHives(this.mExtensions), hive =>
           insertPersistor(hive, new SubPersistor(last(this.mLevelPersistors), hive)));
       })
