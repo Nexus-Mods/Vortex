@@ -137,6 +137,7 @@ function createColumns(api: IExtensionApi, props: () => IDownloadViewProps): ITa
               id={id}
               currentGames={getDownloadGames(download)}
               games={knownGames}
+              fileName={download.localPath}
             />);
         } else {
           const games = getDownloadGames(download);

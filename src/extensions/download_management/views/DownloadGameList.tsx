@@ -1,12 +1,16 @@
 import FlexLayout from '../../../controls/FlexLayout';
+import { IconButton } from '../../../controls/TooltipControls';
 import { IGameStored, IState } from '../../../types/IState';
 import { connect, PureComponentEx } from '../../../util/ComponentEx';
-import { gameName } from '../../../util/selectors';
+import * as fs from '../../../util/fs';
+import * as selectors from '../../../util/selectors';
 
 import { setCompatibleGames } from '../actions/state';
 
+import * as Promise from 'bluebird';
 import * as fuzz from 'fuzzball';
 import * as I18next from 'i18next';
+import * as path from 'path';
 import * as React from 'react';
 import { DropdownButton, ListGroup, ListGroupItem, MenuItem } from 'react-bootstrap';
 import * as Redux from 'redux';
@@ -17,6 +21,7 @@ export interface IBaseProps {
   id: string;
   currentGames: string[];
   games: IGameStored[];
+  fileName: string;
 }
 
 interface IActionProps {
@@ -56,15 +61,17 @@ class DownloadGameList extends PureComponentEx<IProps, {}> {
   private renderGame = (game: IGameStored) => {
     return (
       <MenuItem key={game.id} eventKey={game.id}>
-        {gameName(this.context.api.store.getState(), game.id)}
+        {selectors.gameName(this.context.api.store.getState(), game.id)}
       </MenuItem>
     );
   }
 
   private renderSelectedGame = (gameId: string, idx: number) => {
+    const { t } = this.props;
     return (
       <ListGroupItem key={gameId} className={idx === 0 ? 'primary-game' : undefined}>
-        {gameName(this.context.api.store.getState(), gameId)}
+        {selectors.gameName(this.context.api.store.getState(), gameId)}
+        <IconButton icon='remove' tooltip={t('Remove')} className='btn-embed' data-gameid={gameId} onClick={this.removeGame} />
       </ListGroupItem>
     );
   }
@@ -72,6 +79,38 @@ class DownloadGameList extends PureComponentEx<IProps, {}> {
   private addGame = (gameId: any) => {
     const { currentGames, onSetCompatibleGames } = this.props;
     onSetCompatibleGames([].concat(currentGames, [gameId]));
+  }
+
+  private moveDownload(gameId: string) {
+    const { fileName } = this.props;
+    // removing the main game, have to move the download then
+    const state = this.context.api.store.getState();
+    const oldPath = selectors.downloadPath(state);
+    const newPath = selectors.downloadPathForGame(state, gameId);
+    return fs.moveAsync(path.join(oldPath, fileName), path.join(newPath, fileName))
+      .tap(() => {
+        this.context.api.sendNotification({
+          type: 'success',
+          title: 'Download moved',
+          message: fileName,
+        });
+      });
+  }
+
+  private removeGame = (evt: React.MouseEvent<any>) => {
+    const { currentGames, onSetCompatibleGames } = this.props;
+    const gameId = evt.currentTarget.getAttribute('data-gameid');
+    const idx = currentGames.indexOf(gameId);
+    if ((idx !== -1) && (currentGames.length > 1)) {
+      const prom = (idx === 0)
+        ? this.moveDownload(currentGames[1])
+        : Promise.resolve();
+      prom.then(() => {
+        let newGames = [].concat(currentGames);
+        newGames.splice(idx, 1);
+        onSetCompatibleGames(newGames);
+      });
+    }
   }
 }
 
