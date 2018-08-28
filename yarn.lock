@@ -3495,7 +3495,7 @@ electron-rebuild@^1.6.0:
 
 electron-redux@TanninOne/electron-redux:
   version "1.3.1-sync"
-  resolved "https://codeload.github.com/TanninOne/electron-redux/tar.gz/5c73a95d06125cca7290b27f26dbfa7caaaf11ea"
+  resolved "https://codeload.github.com/TanninOne/electron-redux/tar.gz/84d5e467a2e896a473e788af7eb6ec5872a61832"
   dependencies:
     debug "^3.0.0"
     flux-standard-action "^2.0.0"

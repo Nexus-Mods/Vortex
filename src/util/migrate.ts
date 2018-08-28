@@ -45,7 +45,9 @@ function selectDirectory(defaultPathPattern: string): Promise<string> {
             if (files.length > 0) {
               dialog.showErrorBox('Invalid path selected',
                 'The directory needs to be empty');
-              selectDirectory(defaultPathPattern).then(resolve);
+              selectDirectory(defaultPathPattern)
+                .then(resolve)
+                .catch(reject);
             } else {
               resolve(filePaths[0]);
             }
