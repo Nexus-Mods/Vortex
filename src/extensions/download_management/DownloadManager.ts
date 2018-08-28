@@ -546,8 +546,10 @@ class DownloadManager {
           size: chunk.size,
           url: chunk.url,
         });
-        this.mBusyWorkers[chunk.workerId].pause();
-        this.stopWorker(chunk.workerId);
+        if (this.mBusyWorkers[chunk.workerId] !== undefined) {
+          this.mBusyWorkers[chunk.workerId].pause();
+          this.stopWorker(chunk.workerId);
+        }
       }
     });
     // remove from queue
