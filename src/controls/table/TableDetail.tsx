@@ -156,6 +156,7 @@ class DetailCell extends React.Component<ICellProps, {}> {
           valueKey='key'
           labelKey='text'
           valueComponent={ValueComponent}
+          placeholder={attribute.edit.placeholder !== undefined ? attribute.edit.placeholder() : undefined}
         />
       );
     }

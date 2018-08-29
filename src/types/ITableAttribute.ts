@@ -204,6 +204,12 @@ export interface ITableAttribute<T = any> {
     actions?: boolean,
 
     /**
+     * if set, this is called to determine the placeholder to be displayed when the input box is empty.
+     * Has no effect if this edit config doesn't generate an input box
+     */
+    placeholder?: () => string,
+
+    /**
      * if set, this field is a drop-down selection with the choices returned by this function.
      * Please note: the value returned by calc has to appear in the text-field of one of these
      *   choices

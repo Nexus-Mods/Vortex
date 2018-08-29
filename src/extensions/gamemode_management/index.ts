@@ -337,6 +337,7 @@ function genModTypeAttribute(api: IExtensionApi): ITableAttribute<IModWithState>
       + 'Leave empty (default) unless you know what you\'re doing.',
     supportsMultiple: true,
     edit: {
+      placeholder: () => api.translate('Default'),
       choices: () => {
         const gameMode = activeGameId(api.store.getState());
         return modTypeExtensions
