@@ -61,6 +61,7 @@ function unlockConfirm(filePath: string): PromiseBB<boolean> {
       + 'Windows will show an UAC dialog.',
     buttons: [
       'Cancel',
+      'Retry',
       'Give permission',
     ],
     type: 'warning',
@@ -72,7 +73,7 @@ function unlockConfirm(filePath: string): PromiseBB<boolean> {
     options);
   return (choice === 0)
     ? PromiseBB.reject(new UserCanceled())
-    : PromiseBB.resolve(true);
+    : PromiseBB.resolve(choice === 2);
 
 }
 
@@ -115,7 +116,7 @@ function errorRepeat(code: string, filePath: string): PromiseBB<boolean> {
           }, { filePath, userId })
             .then(() => true);
         } else {
-          return PromiseBB.resolve(false);
+          return PromiseBB.resolve(true);
         }
       });
   } else {
@@ -410,13 +411,16 @@ export function forcePerm<T>(t: I18next.TranslationFunction, op: () => PromiseBB
             { replace: { fileName: err.path } }),
           buttons: [
             'Cancel',
+            'Rety',
             'Give permission',
           ],
           noLink: true,
           type: 'warning',
           detail: err.path,
         });
-        if (choice === 1) {
+        if (choice === 1) { // Retry
+          return forcePerm(t, op);
+        } else if (choice === 2) { // Give Permission
           let filePath = err.path;
           const userId = getUserId();
           return fs.statAsync(err.path)
