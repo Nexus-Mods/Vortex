@@ -188,8 +188,20 @@ div:hover > .hover-expand {
   color: $link-color;
 }
 
-.icon-button.has-children svg {
-  margin-right: 0.5em;
+.icon-button.has-children {
+  display: flex;
+  align-items: center;
+
+  &.icon-button-horizontal {
+    flex-direction: row;
+    svg {
+      margin-right: 0.5em;
+    }
+  }
+
+  &.icon-button-vertical {
+    flex-direction: column;
+  }
 }
 
 .zoomed-image {
