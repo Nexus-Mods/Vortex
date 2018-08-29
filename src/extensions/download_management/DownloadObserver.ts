@@ -267,6 +267,7 @@ export class DownloadObserver {
       const dlPath = selectors.downloadPathForGame(this.mStore.getState(), getDownloadGames(download)[0]);
       fs.removeAsync(path.join(dlPath, download.localPath))
           .then(() => { this.mStore.dispatch(removeDownload(downloadId)); })
+          .catch(UserCanceled, () => undefined)
           .catch(err => {
             showError(this.mStore.dispatch, 'Failed to remove file', err, {
                       allowReport: ['EBUSY', 'EPERM'].indexOf(err.code) === -1 });
