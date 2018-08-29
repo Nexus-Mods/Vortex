@@ -1,5 +1,4 @@
 import { log } from '../../../util/log';
-import { showError } from '../../../util/message';
 import { getSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
 import { convertGameId } from './convertGameId';
@@ -11,6 +10,7 @@ import * as Promise from 'bluebird';
 import * as I18next from 'i18next';
 import NexusT, { IFileInfo, IFileUpdate, IModFiles, IModInfo, NexusError } from 'nexus-api';
 import * as Redux from 'redux';
+import * as semvish from 'semvish';
 
 /**
  * check if there is a newer mod version on the server
@@ -132,9 +132,14 @@ function updateFileAttributes(dispatch: Redux.Dispatch<any>,
     update(dispatch, gameId, mod, 'newestChangelog', undefined);
   }
 
-  const updatedFile = fileUpdates.length > 0
+  let updatedFile = fileUpdates.length > 0
     ? files.files.find(file => file.file_id === fileUpdates[fileUpdates.length - 1].new_file_id)
     : files.files.find(file => file.file_id === fileId);
+  if ((updatedFile === undefined) && truthy(mod.attributes.version)) {
+    try {
+      updatedFile = files.files.find(file => semvish.eq(file.mod_version, mod.attributes.version));
+    } catch(err) {}
+  }
   if (updatedFile !== undefined) {
     updateLatestFileAttributes(dispatch, gameId, mod, updatedFile);
   }

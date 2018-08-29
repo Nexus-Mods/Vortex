@@ -18,7 +18,7 @@ function updateState(attributes: { [id: string]: any }): UpdateState {
   const bugMessage: string = getSafe(attributes, ['bugMessage'], undefined);
 
   let hasUpdate = false;
-  if ((newestFileId !== undefined) && (fileId !== undefined) && (newestFileId !== fileId)) {
+  if ((newestFileId !== undefined) && (newestFileId !== fileId)) {
     hasUpdate = true;
   } else if ((newestVersion !== undefined) && (version !== undefined)
              && (versionClean(newestVersion) !== versionClean(version))) {

@@ -8,7 +8,6 @@ import { IModWithState } from '../types/IModProps';
 import { UpdateState } from '../util/modUpdateState';
 
 import * as I18next from 'i18next';
-import * as path from 'path';
 import * as React from 'react';
 
 export interface IBaseProps {
