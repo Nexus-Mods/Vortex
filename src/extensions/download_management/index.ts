@@ -286,6 +286,33 @@ function genGameModeActivated(api: IExtensionApi) {
   return () => updateDownloadPath(api);
 }
 
+function removeArchive(store: Redux.Store<IState>, destination: string) {
+  return fs.removeAsync(destination)
+    .then(() => {
+      const state = store.getState();
+      const fileName = path.basename(destination);
+      const { files } = state.persistent.downloads;
+      Object.keys(files)
+        .filter(dlId => files[dlId].localPath === fileName)
+        .forEach(dlId => {
+          store.dispatch(removeDownload(dlId));
+        })
+    });
+}
+
+function queryReplace(api: IExtensionApi, destination: string) {
+  return api.showDialog('question', 'File exists', {
+    text: 'This file already exists, do you want to replace it?',
+    message: destination,
+  }, [
+    { label: 'Cancel' },
+    { label: 'Replace' },
+  ])
+  .then(result => (result.action === 'Cancel')
+    ? Promise.reject(new UserCanceled())
+    : removeArchive(api.store, destination));
+}
+
 function move(api: IExtensionApi, source: string, destination: string): Promise<void> {
   const store = api.store;
   const gameMode = selectors.activeGameId(store.getState());
@@ -296,14 +323,21 @@ function move(api: IExtensionApi, source: string, destination: string): Promise<
     message: path.basename(destination),
   });
   const dlId = shortid();
-  store.dispatch(addLocalDownload(dlId, gameMode, path.basename(destination), 0));
-  return fs.copyAsync(source, destination)
+  return fs.statAsync(destination)
+    .catch(() => undefined)
+    .then(stats => stats !== undefined ? queryReplace(api, destination) : null)
+    .then(() => {
+      store.dispatch(addLocalDownload(dlId, gameMode, path.basename(destination), 0));
+    })
+    .then(() => fs.copyAsync(source, destination))
     .then(() => fs.statAsync(destination))
     .then(stats => {
       api.dismissNotification(notiId);
       store.dispatch(downloadProgress(dlId, stats.size, stats.size, [], undefined));
     })
     .catch(err => {
+      api.dismissNotification(notiId);
+      store.dispatch(removeDownload(dlId));
       log('info', 'failed to copy', {error: err.message});
     });
 }
