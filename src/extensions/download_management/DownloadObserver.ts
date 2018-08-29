@@ -35,7 +35,6 @@ import {generate as shortid} from 'shortid';
 
 import * as nodeURL from 'url';
 import * as util from 'util';
-import { downloadPathForGame } from '../../util/selectors';
 
 function progressUpdate(store: Redux.Store<any>, dlId: string, received: number,
                         total: number, chunks: IChunk[], urls: string[], filePath: string,
@@ -156,7 +155,7 @@ export class DownloadObserver {
     this.mStore.dispatch(
       initDownload(id, typeof(urls) ===  'function' ? [] : urls, modInfo, gameMode));
 
-    const downloadPath = downloadPathForGame(state, gameMode);
+    const downloadPath = selectors.downloadPathForGame(state, gameMode);
 
     const processCB = this.genProgressCB(id);
 
@@ -265,7 +264,7 @@ export class DownloadObserver {
       this.mManager.stop(downloadId);
     }
     if (truthy(download.localPath) && truthy(download.game)) {
-      const dlPath = downloadPathForGame(this.mStore.getState(), getDownloadGames(download)[0]);
+      const dlPath = selectors.downloadPathForGame(this.mStore.getState(), getDownloadGames(download)[0]);
       fs.removeAsync(path.join(dlPath, download.localPath))
           .then(() => { this.mStore.dispatch(removeDownload(downloadId)); })
           .catch(err => {
@@ -299,7 +298,7 @@ export class DownloadObserver {
     }
     if (download.state === 'paused') {
       const gameMode = getDownloadGames(download)[0];
-      const downloadPath = downloadPathForGame(this.mStore.getState(), gameMode);
+      const downloadPath = selectors.downloadPathForGame(this.mStore.getState(), gameMode);
 
       const fullPath = path.join(downloadPath, download.localPath);
       this.mStore.dispatch(pauseDownload(downloadId, false, undefined));

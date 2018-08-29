@@ -35,7 +35,6 @@ class InstallContext implements IInstallContext {
   private mShowError: (message: string, details?: any, allowReport?: boolean,
                        replace?: { [key: string]: string }) => void;
   private mSetModState: (id: string, state: ModState) => void;
-  private mSetModAttribute: (id: string, key: string, value: any) => void;
   private mSetModAttributes: (id: string, attributes: { [key: string]: any }) => void;
   private mSetModInstallationPath: (id: string, installPath: string) => void;
   private mSetModType: (id: string, modType: string) => void;
@@ -66,11 +65,6 @@ class InstallContext implements IInstallContext {
       showError(dispatch, message, details, { allowReport, replace });
     this.mSetModState = (id, state) =>
       dispatch(setModState(gameMode, id, state));
-    this.mSetModAttribute = (id, key, value) => {
-      if (value !== undefined) {
-        dispatch(setModAttribute(gameMode, id, key, value));
-      }
-    };
     this.mSetModAttributes = (id, attributes) => {
       Object.keys(attributes).forEach(id => {
         if (attributes[id] === undefined) {

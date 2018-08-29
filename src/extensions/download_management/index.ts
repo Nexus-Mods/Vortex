@@ -18,6 +18,7 @@ import {
   setDownloadModInfo,
   setDownloadSpeed,
   setDownloadSpeeds,
+  downloadProgress,
 } from './actions/state';
 import { settingsReducer } from './reducers/settings';
 import { stateReducer } from './reducers/state';
@@ -37,7 +38,6 @@ import * as _ from 'lodash';
 import * as path from 'path';
 import * as Redux from 'redux';
 import {generate as shortid} from 'shortid';
-import { downloadPathForGame } from '../../util/selectors';
 
 const app = remote !== undefined ? remote.app : appIn;
 
@@ -53,6 +53,9 @@ const archiveExtLookup = new Set<string>([
 ]);
 
 function knownArchiveExt(filePath: string): boolean {
+  if (!truthy(filePath)) {
+    return false;
+  }
   return archiveExtLookup.has(path.extname(filePath).toLowerCase());
 }
 
@@ -116,41 +119,56 @@ function genDownloadChangeHandler(store: Redux.Store<any>,
                                   gameId: string,
                                   nameIdMap: { [name: string]: string },
                                   normalize: Normalize) {
+  const updateTimers: { [fileName: string]: NodeJS.Timer } = {};
+
+  const findDownload = (fileName: string): string => {
+    const state = store.getState()
+    return Object.keys(state.persistent.downloads.files)
+      .find(iterId =>
+        state.persistent.downloads.files[iterId].localPath === fileName);
+  }
+
   return (evt: string, fileName: string) => {
-    if (!watchEnabled || (fileName === undefined)) {
+    if (!watchEnabled
+        || (fileName === undefined)
+        || !knownArchiveExt(fileName)) {
       return;
     }
-    if (evt === 'rename') {
-      if (!knownArchiveExt(fileName)) {
-        return;
+
+    if (evt === 'update') {
+      if (updateTimers[fileName] !== undefined) {
+        clearTimeout(updateTimers[fileName]);
+        setTimeout(() => {
+          fs.statAsync(path.join(currentDownloadPath, fileName))
+            .then(stats => {
+              const dlId = findDownload(fileName);
+              if (dlId !== undefined) {
+                store.dispatch(downloadProgress(dlId, stats.size, stats.size, [], undefined));
+              }
+            });
+        }, 5000);
       }
-      // if the file was added, wait a moment, then add it to the store if it doesn't
-      // exist yet. This is necessary because we can't know if it wasn't vortex
-      // itself that added the file.
-      // The file may also be empty atm
+    } else if (evt === 'rename') {
+      // this delay is intended to prevent this from picking up files that Vortex added itself.
+      // It is not enough however to prevent this from getting the wrong file size if the file
+      // copy/write takes more than this one second.
       Promise.delay(1000)
-      .then(() => fs.statAsync(path.join(currentDownloadPath, fileName)))
-      .then(stats => {
-        const state: IState = store.getState();
-        const existingId: string = Object.keys(state.persistent.downloads.files)
-          .find(iterId =>
-            state.persistent.downloads.files[iterId].localPath === fileName);
-        if (existingId === undefined) {
-          const dlId = shortid();
-          store.dispatch(
-            addLocalDownload(dlId, gameId, fileName, stats.size));
+        .then(() => fs.statAsync(path.join(currentDownloadPath, fileName)))
+        .then(stats => {
+          let dlId = findDownload(fileName);
+          if (dlId === undefined) {
+            dlId = shortid();
+            store.dispatch(addLocalDownload(dlId, gameId, fileName, stats.size));
+          }
           nameIdMap[normalize(fileName)] = dlId;
-        } else {
-          nameIdMap[normalize(fileName)] = existingId;
-        }
-      })
-      .catch(err => {
-        if ((err.code === 'ENOENT') && (nameIdMap[normalize(fileName)] !== undefined)) {
-          // if the file was deleted, remove it from state. This does nothing if
-          // the download was already removed so that's fine
-          store.dispatch(removeDownload(nameIdMap[normalize(fileName)]));
-        }
-      });
+        })
+        .catch(err => {
+          if ((err.code === 'ENOENT') && (nameIdMap[normalize(fileName)] !== undefined)) {
+            // if the file was deleted, remove it from state. This does nothing if
+            // the download was already removed so that's fine
+            store.dispatch(removeDownload(nameIdMap[normalize(fileName)]));
+          }
+        });
     }
   };
 }
@@ -201,7 +219,7 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
       return Promise.resolve();
     }
   }
-  const currentDownloadPath = downloadPathForGame(state, gameId);
+  const currentDownloadPath = selectors.downloadPathForGame(state, gameId);
 
   let nameIdMap: {[name: string]: string} = {};
 
@@ -272,11 +290,18 @@ function move(api: IExtensionApi, source: string, destination: string): Promise<
   const store = api.store;
   const gameMode = selectors.activeGameId(store.getState());
 
+  const notiId = api.sendNotification({
+    type: 'activity',
+    title: 'Importing file',
+    message: path.basename(destination),
+  });
+  const dlId = shortid();
+  store.dispatch(addLocalDownload(dlId, gameMode, path.basename(destination), 0));
   return fs.copyAsync(source, destination)
     .then(() => fs.statAsync(destination))
     .then(stats => {
-      const id = shortid();
-      addLocalDownload(id, gameMode, path.basename(destination), stats.size);
+      api.dismissNotification(notiId);
+      store.dispatch(downloadProgress(dlId, stats.size, stats.size, [], undefined));
     })
     .catch(err => {
       log('info', 'failed to copy', {error: err.message});
@@ -359,7 +384,7 @@ function init(context: IExtensionContextExt): boolean {
       const state: IState = context.api.store.getState();
 
       Promise.map(filtered, dlId => {
-        const downloadPath = downloadPathForGame(state, getDownloadGames(cur[dlId])[0]);
+        const downloadPath = selectors.downloadPathForGame(state, getDownloadGames(cur[dlId])[0]);
         context.api.lookupModMeta({ filePath: path.join(downloadPath, cur[dlId].localPath) })
           .then(result => {
             if (result.length > 0) {
