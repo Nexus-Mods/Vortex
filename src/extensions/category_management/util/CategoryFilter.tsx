@@ -127,11 +127,13 @@ class CategoryFilterComponent extends React.Component<IProps, IComponentState> {
   }
 }
 
+const emptyDict = {};
+
 function mapStateToProps(state: IState): IConnectedProps {
   const gameId = activeGameId(state);
   return {
     gameId,
-    categories: state.persistent.categories[gameId],
+    categories: state.persistent.categories[gameId] || emptyDict,
     mods: state.persistent.mods[gameId],
     downloads: state.persistent.downloads.files,
   };
