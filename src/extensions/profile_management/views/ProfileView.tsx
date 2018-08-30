@@ -271,7 +271,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
   }
 
   private onRemoveProfile = (profileId: string) => {
-    const { onRemoveProfile, onSetNextProfile, onShowDialog, profiles } = this.props;
+    const { currentProfile, onRemoveProfile, onSetNextProfile, onShowDialog, profiles } = this.props;
     onShowDialog('question', 'Confirm', {
       text: 'Remove this profile? This can\'t be undone!',
     }, [
@@ -279,7 +279,9 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
         {
           label: 'Remove', action:
             () => {
-              onSetNextProfile(undefined);
+              if (profileId === currentProfile) {
+                onSetNextProfile(undefined);
+              }
               return fs.removeAsync(profilePath(profiles[profileId]))
                 .then(() => onRemoveProfile(profileId));
             },
