@@ -93,7 +93,7 @@ function init(context: IExtensionContext): boolean {
     const store: Redux.Store<any> = context.api.store;
 
     try {
-      context.api.events.on('retrieve-categories', (gameId, categories, isUpdate) => {
+      context.api.events.on('update-categories', (gameId, categories, isUpdate) => {
         if (isUpdate) {
           context.api.store.dispatch(updateCategories(gameId, categories));
         } else {

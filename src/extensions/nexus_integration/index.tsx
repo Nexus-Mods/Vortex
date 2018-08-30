@@ -1,9 +1,7 @@
 import { IDialogResult, showDialog } from '../../actions/notifications';
 import InputButton from '../../controls/InputButton';
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
-import { IModTable, IState } from '../../types/IState';
-import { ITableAttribute } from '../../types/ITableAttribute';
-import Debouncer from '../../util/Debouncer';
+import { IState } from '../../types/IState';
 import { setApiKey } from '../../util/errorHandling';
 import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
@@ -16,10 +14,8 @@ import { decodeHTML, truthy } from '../../util/util';
 import { ICategoryDictionary } from '../category_management/types/ICategoryDictionary';
 import { DownloadIsHTML } from '../download_management/DownloadManager';
 import { IGameStored } from '../gamemode_management/types/IGameStored';
-import { setModAttribute } from '../mod_management/actions/mods';
 import { setUpdatingMods } from '../mod_management/actions/settings';
 import { IMod } from '../mod_management/types/IMod';
-import modName from '../mod_management/util/modName';
 import { IProfileMod } from '../profile_management/types/IProfile';
 
 import { setUserAPIKey } from './actions/account';
@@ -28,128 +24,35 @@ import { setAssociatedWithNXMURLs } from './actions/settings';
 import { accountReducer } from './reducers/account';
 import { sessionReducer } from './reducers/session';
 import { settingsReducer } from './reducers/settings';
-import { checkModVersion, retrieveModInfo } from './util/checkModsVersion';
-import { convertGameId, convertGameIdReverse, toNXMId } from './util/convertGameId';
-import sendEndorseMod from './util/endorseMod';
+import { convertGameId } from './util/convertGameId';
 import retrieveCategoryList from './util/retrieveCategories';
-import submitFeedback from './util/submitFeedback';
-import transformUserInfo from './util/transformUserInfo';
 import DashboardBanner from './views/DashboardBanner';
-import EndorsementFilter from './views/EndorsementFilter';
-import EndorseModButton from './views/EndorseModButton';
 import GoPremiumDashlet from './views/GoPremiumDashlet';
 import LoginDialog from './views/LoginDialog';
 import LoginIcon from './views/LoginIcon';
-import NexusModIdDetail from './views/NexusModIdDetail';
 import { } from './views/Settings';
 
-import NXMUrl from './NXMUrl';
+import { genEndorsedAttribute, genGameAttribute, genModIdAttribute } from './attributes';
+import * as eh from './eventHandlers';
 import * as sel from './selectors';
+import { processErrorMessage, startDownload, validateKey, retrieveNexusGames, nexusGames } from './util';
 
 import * as Promise from 'bluebird';
 import { remote } from 'electron';
 import * as I18next from 'i18next';
-import NexusT, { IDownloadURL,
-                 IFeedbackResponse, IFileInfo, IGameListEntry,
-                 IIssue, IModInfo,
-                 NexusError as NexusErrorT} from 'nexus-api';
+import NexusT from 'nexus-api';
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
-import * as Redux from 'redux';
-import * as util from 'util';
 import {} from 'uuid';
 import * as WebSocket from 'ws';
-
-type IModWithState = IMod & IProfileMod;
-
-const UPDATE_CHECK_DELAY = 60 * 60 * 1000;
+import { ProcessCanceled } from '../../util/api';
 
 let nexus: NexusT;
-let endorseMod: (gameId: string, modId: string, endorsedState: string) => void;
-let nexusGames: IGameListEntry[] = [];
 
 export interface IExtensionContextExt extends IExtensionContext {
   registerDownloadProtocol: (
     schema: string,
     handler: (inputUrl: string) => Promise<string[]>) => void;
-}
-
-function startDownload(api: IExtensionApi, nxmurl: string): Promise<string> {
-  let url: NXMUrl;
-
-  try {
-    url = new NXMUrl(nxmurl);
-  } catch (err) {
-    return Promise.reject(err);
-  }
-
-  let nexusModInfo: IModInfo;
-  let nexusFileInfo: IFileInfo;
-
-  const gameId = convertGameId(url.gameId);
-
-  return Promise.resolve(nexus.getModInfo(url.modId, gameId))
-    .then((modInfo: IModInfo) => {
-      nexusModInfo = modInfo;
-      return nexus.getFileInfo(url.modId, url.fileId, gameId);
-    })
-    .then((fileInfo: IFileInfo) => {
-      nexusFileInfo = fileInfo;
-      api.sendNotification({
-        id: url.fileId.toString(),
-        type: 'global',
-        title: 'Downloading from Nexus',
-        message: fileInfo.name,
-        displayMS: 4000,
-      });
-      return new Promise<string>((resolve, reject) => {
-        api.events.emit('start-download',
-          () => Promise.resolve(nexus.getDownloadURLs(url.modId, url.fileId, gameId))
-                    .map((res: IDownloadURL) => res.URI), {
-          game: url.gameId.toLowerCase(),
-          source: 'nexus',
-          name: nexusFileInfo.name,
-          nexus: {
-            ids: { gameId, modId: url.modId, fileId: url.fileId },
-            modInfo: nexusModInfo,
-            fileInfo: nexusFileInfo,
-          },
-        },
-        nexusFileInfo.file_name,
-        (err, downloadId) => (truthy(err)
-          ? reject(err)
-          : resolve(downloadId)));
-      });
-    })
-    .then(downloadId => {
-      api.sendNotification({
-        id: url.fileId.toString(),
-        type: 'success',
-        title: api.translate('Download finished'),
-        group: 'download-finished',
-        message: nexusFileInfo.name,
-        actions: [
-          {
-            title: 'Install', action: dismiss => {
-              api.events.emit('start-install-download', downloadId);
-              dismiss();
-            },
-          },
-        ],
-      });
-      return downloadId;
-    })
-    .catch((err) => {
-      api.sendNotification({
-        id: url.fileId.toString(),
-        type: 'global',
-        title: 'Download failed',
-        message: err.message,
-        displayMS: 2000,
-      });
-      log('warn', 'failed to get mod info', { err: util.inspect(err) });
-      return undefined;
-    });
 }
 
 function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
@@ -178,17 +81,23 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
         'An error occurred retrieving categories',
         'You are not logged in to Nexus Mods!', { allowReport: false });
     } else {
-
       let gameId;
       currentGame(api.store)
         .then((game: IGameStored) => {
-          gameId = game.id;
+          gameId = convertGameId(game.id);
+          if (nexusGames().find(game => game.domain_name === gameId) === undefined) {
+            // for all we know there could be another extension providing categories for this game
+            // so we can't really display an error message or anything
+            log('debug', 'game unknown on nexus', { gameId: game.id });
+            return Promise.reject(new ProcessCanceled('unsupported game'));
+          }
           log('info', 'retrieve categories for game', gameId);
-          return retrieveCategoryList(convertGameId(gameId), nexus);
+          return retrieveCategoryList(gameId, nexus);
         })
         .then((categories: ICategoryDictionary) => {
-          api.events.emit('retrieve-categories', gameId, categories, isUpdate);
+          api.events.emit('update-categories', gameId, categories, isUpdate);
         })
+        .catch(ProcessCanceled, () => null)
         .catch((err) => {
           if (err.code === 'ESOCKETTIMEOUT') {
             api.sendNotification({
@@ -215,219 +124,6 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
         });
     }
   });
-}
-
-// TODO: the field names in this object will be shown to the user, hence the capitalization
-interface IRequestError {
-  Error: string;
-  Servermessage?: string;
-  URL?: string;
-  Game?: string;
-  fatal?: boolean;
-  Mod?: number;
-  Version?: string;
-  noReport?: boolean;
-}
-
-function processErrorMessage(err: NexusErrorT): IRequestError {
-  const errorMessage = typeof(err) === 'string' ? err : err.message;
-  if (err.statusCode === undefined) {
-    if (errorMessage
-      && ((errorMessage.indexOf('APIKEY') !== -1)
-          || (errorMessage.indexOf('API Key') !== -1))) {
-      return { Error: 'You are not logged in to Nexus Mods!', noReport: true };
-    } else {
-      return { Error: errorMessage };
-    }
-  } else if ((err.statusCode >= 400) && (err.statusCode < 500)) {
-    return {
-      Error: 'Server couldn\'t process this request.\nMaybe the locally stored '
-      + 'info about the mod is wrong\nor the mod was removed from Nexus.',
-      Servermessage: errorMessage,
-      URL: err.request,
-      fatal: errorMessage === undefined,
-    };
-  } else if ((err.statusCode >= 500) && (err.statusCode < 600)) {
-    return {
-      Error: 'The server reported an internal error. Please try again later.',
-      Servermessage: errorMessage,
-      URL: err.request,
-    };
-  } else {
-    return {
-      Error: 'Unexpected error reported by the server',
-      Servermessage: (errorMessage || '') + ' ( Status Code: ' + err.statusCode + ')',
-      URL: err.request,
-    };
-  }
-}
-
-function endorseModImpl(
-  api: IExtensionApi,
-  gameId: string,
-  modId: string,
-  endorsedStatus: string) {
-  const { store } = api;
-  const mod: IMod = getSafe(store.getState(), ['persistent', 'mods', gameId, modId], undefined);
-
-  if (mod === undefined) {
-    log('warn', 'tried to endorse unknown mod', { gameId, modId });
-    return;
-  }
-
-  const APIKEY = getSafe(store.getState(),
-    ['confidential', 'account', 'nexus', 'APIKey'], '');
-  if (APIKEY === '') {
-    showError(store.dispatch,
-      'An error occurred endorsing a mod',
-      'You are not logged in to Nexus Mods!', { allowReport: false });
-    return;
-  }
-
-  const nexusModId: number = parseInt(getSafe(mod.attributes, ['modId'], '0'), 10);
-  const version: string = getSafe(mod.attributes, ['version'], undefined);
-
-  if (!truthy(version)) {
-    api.sendNotification({
-      type: 'info',
-      message: api.translate('You can\'t endorse a mod that has no version set.'),
-    });
-    return;
-  }
-
-  store.dispatch(setModAttribute(gameId, modId, 'endorsed', 'pending'));
-  sendEndorseMod(nexus, convertGameId(gameId), nexusModId, version, endorsedStatus)
-    .then((endorsed: string) => {
-      store.dispatch(setModAttribute(gameId, modId, 'endorsed', endorsed));
-    })
-    .catch((err) => {
-      store.dispatch(setModAttribute(gameId, modId, 'endorsed', 'Undecided'));
-      if (err.message === 'You must provide a version') {
-        api.sendNotification({
-          type: 'info',
-          message: api.translate('You can\'t endorse a mod that has no version set.'),
-        });
-      } else {
-        const detail = processErrorMessage(err);
-        detail.Game = gameId;
-        detail.Mod = nexusModId;
-        detail.Version = version;
-        let allowReport = detail.Servermessage === undefined;
-        if (detail.noReport) {
-          allowReport = false;
-          delete detail.noReport;
-        }
-        showError(store.dispatch, 'An error occurred endorsing a mod', detail,
-                  { allowReport });
-      }
-    });
-}
-
-function checkModVersionsImpl(
-  store: Redux.Store<any>,
-  gameId: string,
-  mods: { [modId: string]: IMod }): Promise<string[]> {
-
-  const now = Date.now();
-
-  const modsList: IMod[] = Object.keys(mods)
-    .map(modId => mods[modId])
-    .filter(mod => getSafe(mod.attributes, ['source'], undefined) === 'nexus')
-    .filter(mod =>
-      (now - (getSafe(mod.attributes, ['lastUpdateTime'], 0) || 0)) > UPDATE_CHECK_DELAY)
-    ;
-
-  log('info', 'checking mods for update (nexus)', { count: modsList.length });
-  const {TimeoutError} = require('nexus-api');
-
-  return Promise.map(modsList, mod =>
-    checkModVersion(store.dispatch, nexus, gameId, mod)
-      .then(() => {
-        store.dispatch(setModAttribute(gameId, mod.id, 'lastUpdateTime', now));
-      })
-      .catch(TimeoutError, err => {
-        const name = modName(mod, { version: true });
-        return Promise.resolve(`${name}:\nRequest timeout`);
-      })
-      .catch(err => {
-        const detail = processErrorMessage(err);
-        if (detail.fatal) {
-          return Promise.reject(detail);
-        }
-
-        if (detail.Error === undefined) {
-          return undefined;
-        }
-
-        const name = modName(mod, { version: true });
-        return (detail.Servermessage !== undefined)
-          ? `${name}:\n${detail.Error}\nServer said: "${detail.Servermessage}"`
-          : `${name}:\n${detail.Error}`;
-      }), { concurrency: 4 })
-    .then((errorMessages: string[]): string[] => errorMessages.filter(msg => msg !== undefined));
-}
-
-function renderNexusModIdDetail(
-  store: Redux.Store<any>,
-  mod: IModWithState,
-  t: I18next.TranslationFunction) {
-  const nexusModId: string = getSafe(mod.attributes, ['modId'], undefined);
-  const fileName: string =
-    getSafe(mod.attributes, ['fileName'],
-      getSafe(mod.attributes, ['name'], undefined));
-  const gameMode = activeGameId(store.getState());
-  const fileGameId = getSafe(mod.attributes, ['downloadGame'], undefined)
-                  || gameMode;
-  return (
-    <NexusModIdDetail
-      modId={mod.id}
-      nexusModId={nexusModId}
-      activeGameId={gameMode}
-      fileGameId={fileGameId}
-      fileName={fileName}
-      isDownload={mod.state === 'downloaded'}
-      t={t}
-      store={store}
-    />
-  );
-}
-
-function createEndorsedIcon(store: Redux.Store<any>, mod: IMod, t: I18next.TranslationFunction) {
-  const nexusModId: string = getSafe(mod.attributes, ['modId'], undefined);
-  const version: string = getSafe(mod.attributes, ['version'], undefined);
-  const state: string = getSafe(mod, ['state'], undefined);
-
-  // TODO: this is not a reliable way to determine if the mod is from nexus
-  const isNexusMod: boolean = (nexusModId !== undefined)
-    && (version !== undefined)
-    && !isNaN(parseInt(nexusModId, 10));
-
-  let endorsed: string = getSafe(mod.attributes, ['endorsed'], undefined);
-  if ((endorsed === undefined && state === 'installing')
-   || (endorsed === undefined && isNexusMod)) {
-    endorsed = 'Undecided';
-  }
-
-  if (getSafe(mod.attributes, ['author'], undefined)
-      === getSafe(store.getState(), ['persistent', 'nexus', 'userInfo', 'name'], undefined)) {
-    endorsed = undefined;
-  }
-
-  const gameMode = getSafe(mod.attributes, ['downloadGame'], undefined)
-                || activeGameId(store.getState());
-  if (endorsed !== undefined) {
-    return (
-      <EndorseModButton
-        endorsedStatus={endorsed}
-        t={t}
-        gameId={gameMode}
-        modId={mod.id}
-        onEndorseMod={endorseMod}
-      />
-    );
-  }
-
-  return null;
 }
 
 function openNexusPage(games: string[]) {
@@ -461,146 +157,6 @@ function processAttributes(input: any) {
   });
 }
 
-function genEndorsedAttribute(api: IExtensionApi): ITableAttribute {
-  return {
-    id: 'endorsed',
-    name: 'Endorsed',
-    description: 'Endorsement state on Nexus',
-    icon: 'star',
-    customRenderer: (mod: IMod, detail: boolean, t: I18next.TranslationFunction) =>
-      getSafe(mod.attributes, ['source'], undefined) === 'nexus'
-        ? createEndorsedIcon(api.store, mod, t)
-        : null,
-    calc: (mod: IMod) =>
-      getSafe(mod.attributes, ['source'], undefined) === 'nexus'
-        ? getSafe(mod.attributes, ['endorsed'], null)
-        : undefined,
-    placement: 'table',
-    isToggleable: true,
-    edit: {},
-    isSortable: true,
-    filter: new EndorsementFilter(),
-  };
-}
-
-function genModIdAttribute(api: IExtensionApi): ITableAttribute {
-  return {
-    id: 'nexusModId',
-    name: 'Nexus Mod ID',
-    description: 'Internal ID used by www.nexusmods.com',
-    icon: 'external-link',
-    customRenderer: (mod: IModWithState, detail: boolean, t: I18next.TranslationFunction) => {
-      const res = getSafe(mod.attributes, ['source'], undefined) === 'nexus'
-        ? renderNexusModIdDetail(api.store, mod, t)
-        : null;
-      return res;
-    },
-    calc: (mod: IMod) =>
-      getSafe(mod.attributes, ['source'], undefined) === 'nexus'
-        ? getSafe(mod.attributes, ['modId'], null)
-        : undefined
-    ,
-    placement: 'detail',
-    isToggleable: false,
-    edit: {},
-    isSortable: false,
-    isVolatile: true,
-  };
-}
-
-function genGameAttribute(api: IExtensionApi): ITableAttribute<IMod> {
-  return {
-    id: 'downloadGame',
-    name: 'Game Section',
-    description: 'NexusMods Game Section',
-    calc: mod => {
-      if (getSafe(mod.attributes, ['source'], undefined) !== 'nexus') {
-        return undefined;
-      }
-      let downloadGame = getSafe(mod.attributes, ['downloadGame'], undefined);
-      if (Array.isArray(downloadGame)) {
-        downloadGame = downloadGame[0];
-      }
-      const gameId = convertGameId(downloadGame || activeGameId(api.store.getState()));
-      const gameEntry = nexusGames.find(game => game.domain_name === gameId);
-      return (gameEntry !== undefined)
-        ? gameEntry.name
-        : gameId;
-    },
-    placement: 'detail',
-    help: api.translate(
-      'If you\'ve downloaded this mod from a different game section than you\'re, '
-      + 'set this to the game the mod was intended for.\n\n'
-      + 'So if you manually downloaded this mod from the Skyrim section and installed it for '
-      + 'Skyrim Special Edition, set this to "Skyrim".\n\n'
-      + 'Otherwise, please don\'t change this, it is required to be correct so '
-      + 'Vortex can retrieve the correct mod information (including update info).'),
-    edit: {
-      choices: () => nexusGames.sort().map(game => ({ key: game.domain_name, text: game.name })),
-      onChangeValue: (mods, value) => {
-        const gameMode = activeGameId(api.store.getState());
-        if (!Array.isArray(mods)) {
-          mods = [mods];
-        }
-        mods.forEach(mod => {
-          api.store.dispatch(setModAttribute(
-            gameMode, mod.id, 'downloadGame', convertGameIdReverse(value)));
-        });
-      },
-    },
-  };
-}
-
-function errorFromNexusError(err: NexusErrorT): string {
-  switch (err.statusCode) {
-    case 401: return 'Login was refused, please review your API key.';
-    default: return err.message;
-  }
-}
-
-function validateKey(api: IExtensionApi, key: string): Promise<void> {
-  const { NexusError, TimeoutError } = require('nexus-api');
-
-  return Promise.resolve(nexus.validateKey(key))
-    .then(userInfo => {
-      api.store.dispatch(setUserInfo(transformUserInfo(userInfo)));
-    })
-    .catch(TimeoutError, () => {
-      showError(api.store.dispatch,
-        'API Key validation timed out',
-        'Server didn\'t respond to validation request, web-based '
-        + 'features will be unavailable', { allowReport: false });
-      api.store.dispatch(setUserInfo(undefined));
-    })
-    .catch(NexusError, err => {
-      showError(api.store.dispatch,
-        'Failed to log in',
-        errorFromNexusError(err), { allowReport: false });
-      api.store.dispatch(setUserInfo(undefined));
-    })
-    .catch(err => {
-      // if there is an "errno", this is more of a technical problem, like
-      // network is offline or server not reachable
-      if (err.code === 'ESOCKETTIMEDOUT') {
-        api.sendNotification({
-          type: 'error',
-          message: 'Connection to nexusmods.com timed out, please check your internet connection',
-          actions: [
-            { title: 'Retry', action: dismiss => { validateKey(api, key); dismiss(); } },
-          ],
-        });
-        showError(api.store.dispatch,
-          'Connection to Nexus API timed out, please check your internet connection',
-          undefined, { allowReport: false });
-      } else {
-        showError(api.store.dispatch,
-          'Failed to log in',
-          err.message, { allowReport: false });
-      }
-      api.store.dispatch(setUserInfo(undefined));
-    });
-}
-
 function requestLogin(api: IExtensionApi, callback: (err: Error) => void) {
   const id = require('uuid').v4();
   const connection = new WebSocket('wss://sso.nexusmods.com')
@@ -632,7 +188,7 @@ function requestLogin(api: IExtensionApi, callback: (err: Error) => void) {
 }
 
 function doDownload(api: IExtensionApi, url: string) {
-  return startDownload(api, url)
+  return startDownload(api, nexus, url)
   .catch(DownloadIsHTML, err => undefined)
   .catch(err => {
     api.showErrorNotification('Failed to start download', err);
@@ -677,195 +233,42 @@ function once(api: IExtensionApi) {
     nexus = new Nexus(activeGameId(state), apiKey, remote.app.getVersion(), 30000);
     setApiKey(apiKey);
 
+    retrieveNexusGames(nexus);
+
     const gameMode = activeGameId(state);
     api.store.dispatch(setUpdatingMods(gameMode, false));
-
-    nexus.getGames()
-      .then(games => {
-        nexusGames = games.sort((lhs, rhs) => lhs.name.localeCompare(rhs.name));
-      })
-      .catch(err => {
-        nexusGames = [];
-      });
-
-    endorseMod = (gameId: string, modId: string, endorsedStatus: string) =>
-      endorseModImpl(api, gameId, modId, endorsedStatus);
 
     registerFunc(state.settings.nexus.associateNXM);
 
     if (state.confidential.account.nexus.APIKey !== undefined) {
       (window as any).requestIdleCallback(() => {
-        validateKey(api, state.confidential.account.nexus.APIKey);
+        validateKey(api, nexus, state.confidential.account.nexus.APIKey);
       });
     } else {
       api.store.dispatch(setUserInfo(undefined));
     }
   }
 
+  api.onAsync('check-mods-version', eh.onCheckModsVersion(api, nexus));
+  api.events.on('endorse-mod', eh.onEndorseMod(api, nexus));
+  api.events.on('submit-feedback', eh.onSubmitFeedback(nexus));
+  api.events.on('mod-update', eh.onModUpdate(api, nexus));
+  api.events.on('open-mod-page', eh.onOpenModPage);
+  api.events.on('request-nexus-login', callback => requestLogin(api, callback));
+  api.events.on('request-own-issues', eh.onRequestOwnIssues);
   api.events.on('retrieve-category-list', (isUpdate: boolean) => {
     retrieveCategories(api, isUpdate);
   });
-
-  api.onAsync('check-mods-version', (gameId, mods) => {
-    const APIKEY = getSafe(api.store.getState(),
-      ['confidential', 'account', 'nexus', 'APIKey'], '');
-    if (APIKEY === '') {
-      showError(api.store.dispatch,
-        'An error occurred checking for mod updates',
-        'You are not logged in to Nexus Mods!', { allowReport: false });
-      return Promise.resolve();
-    } else {
-      api.store.dispatch(setUpdatingMods(gameId, true));
-      const start = Date.now();
-      return checkModVersionsImpl(api.store, gameId, mods)
-        .then((errorMessages: string[]) => {
-          if (errorMessages.length !== 0) {
-            showError(api.store.dispatch,
-              'Some mods could not be checked for updates',
-              errorMessages.join('\n\n'), { allowReport: false });
-          }
-        })
-        .catch(err => {
-          showError(api.store.dispatch,
-            'An error occurred checking for mod updates',
-            err);
-        })
-        .then(() => Promise.delay(2000 - (Date.now() - start)))
-        .finally(() => {
-          api.store.dispatch(setUpdatingMods(gameId, false));
-        });
-    }
-  });
-
-  api.events.on('endorse-mod', (gameId, modId, endorsedStatus) => {
-    const APIKEY = getSafe(api.store.getState(),
-      ['confidential', 'account', 'nexus', 'APIKey'], '');
-    if (APIKEY === '') {
-      showError(api.store.dispatch,
-        'An error occurred endorsing a mod',
-        'You are not logged in to Nexus Mods!', { allowReport: false });
-    } else {
-      endorseModImpl(api, gameId, modId, endorsedStatus);
-    }
-  });
-
-  api.events.on('submit-feedback',
-    (title: string, message: string, hash: string, feedbackFiles: string[],
-     anonymous: boolean, callback: (err: Error, respones?: IFeedbackResponse) => void) => {
-      submitFeedback(nexus, title, message, feedbackFiles, anonymous, hash)
-        .then(response => callback(null, response))
-        .catch(err => callback(err));
-    });
-
   api.events.on('gamemode-activated', (gameId: string) => {
     nexus.setGame(gameId);
   });
 
-  api.events.on('mod-update', (gameId, modId, fileId) => {
-    const state: IState = api.store.getState();
-    if (!getSafe(state, ['persistent', 'nexus', 'userInfo', 'isPremium'], false)
-      && !getSafe(state, ['persistent', 'nexus', 'userInfo', 'isSupporter'], false)) {
-      // nexusmods can't let users download files directly from client, without
-      // showing ads
-      opn(['https://www.nexusmods.com', convertGameId(gameId), 'mods', modId].join('/'))
-        .catch(err => undefined);
-      return;
-    }
-    // TODO: Need some way to identify if this request is actually for a nexus mod
-    const url = `nxm://${toNXMId(gameId)}/mods/${modId}/files/${fileId}`;
-    const downloads = state.persistent.downloads.files;
-
-    // check if the file is already downloaded. If not, download before starting the install
-    const existingId = Object.keys(downloads).find(downloadId =>
-      getSafe(downloads,
-        [downloadId, 'modInfo', 'nexus', 'ids', 'fileId'], undefined) === fileId);
-    if (existingId !== undefined) {
-      api.events.emit('start-install-download', existingId);
-    } else {
-      startDownload(api, url)
-        .then(downloadId => {
-          api.events.emit('start-install-download', downloadId);
-        })
-        .catch(DownloadIsHTML, err => undefined)
-        .catch(err => {
-          api.showErrorNotification('failed to start download', err);
-        });
-    }
-  });
-
-  api.events.on('open-mod-page', (gameId, modId) => {
-    opn(['https://www.nexusmods.com',
-      convertGameId(gameId), 'mods', modId,
-    ].join('/')).catch(err => undefined);
-  });
-
-  api.events.on('request-nexus-login', callback => requestLogin(api, callback));
-
-  api.events.on('request-own-issues', (cb: (err: Error, issues?: IIssue[]) => void) => {
-    nexus.getOwnIssues()
-      .then(issues => {
-        cb(null, issues);
-      })
-      .catch(err => cb(err));
-  });
-
   api.onStateChange(['settings', 'nexus', 'associateNXM'],
-    (oldValue: boolean, newValue: boolean) => {
-      log('info', 'associate', { oldValue, newValue });
-      if (newValue === true) {
-        registerFunc(true);
-      } else {
-        api.deregisterProtocol('nxm');
-      }
-    });
-
+    eh.onChangeNXMAssociation(registerFunc, api));
   api.onStateChange(['confidential', 'account', 'nexus', 'APIKey'],
-    (oldValue: string, newValue: string) => {
-      nexus.setKey(newValue);
-      setApiKey(newValue);
-      api.store.dispatch(setUserInfo(undefined));
-      if (newValue !== undefined) {
-        validateKey(api, newValue);
-      }
-    });
+    eh.onAPIKeyChanged(api, nexus));
+  api.onStateChange(['persistent', 'mods'], eh.onChangeMods(api, nexus));
 
-  let lastModTable = api.store.getState().persistent.mods;
-  let lastGameMode = activeGameId(api.store.getState());
-
-  const updateDebouncer: Debouncer = new Debouncer(newModTable => {
-    const state = api.store.getState();
-    const gameMode = activeGameId(state);
-    if (lastGameMode === undefined) {
-      return;
-    }
-    if ((lastModTable[lastGameMode] !== newModTable[gameMode])
-      && (lastModTable[lastGameMode] !== undefined)
-      && (newModTable[gameMode] !== undefined)) {
-      Object.keys(newModTable[gameMode]).forEach(modId => {
-        const lastPath = [lastGameMode, modId, 'attributes', 'modId'];
-        const newPath = [gameMode, modId, 'attributes', 'modId'];
-        const lastDLGamePath = [lastGameMode, modId, 'attributes', 'downloadGame'];
-        const newDLGamePath = [gameMode, modId, 'attributes', 'downloadGame'];
-        if ((getSafe(lastModTable, lastPath, undefined)
-              !== getSafe(newModTable, newPath, undefined))
-           || (getSafe(lastModTable, lastDLGamePath, undefined)
-              !== getSafe(newModTable, newDLGamePath, undefined))) {
-          return retrieveModInfo(nexus, api.store,
-            gameMode, newModTable[gameMode][modId], api.translate)
-            .then(() => {
-              lastModTable = newModTable;
-              lastGameMode = gameMode;
-            });
-        }
-      });
-    } else {
-      return Promise.resolve();
-    }
-  }, 2000);
-
-  api.onStateChange(['persistent', 'mods'],
-    (oldValue: IModTable, newValue: IModTable) =>
-      updateDebouncer.schedule(undefined, newValue));
   nexus.getModInfo(1, 'site')
     .then(info => {
       api.store.dispatch(setNewestVersion(info.version));
@@ -873,6 +276,19 @@ function once(api: IExtensionApi) {
     .catch(err => {
       log('warn', 'failed to determine newest Vortex version');
     });
+}
+
+function toolbarBanner(t: I18next.TranslationFunction): React.StatelessComponent<any> {
+  return () => {
+    return (<div className='nexus-main-banner' style={{ background: 'url(assets/images/ad-banner.png)' }}>
+      <div>{t('Go Premium')}</div>
+      <div>{t('Uncapped downloads, no adverts')}</div>
+      <div>{t('Support Nexus Mods')}</div>
+      <div className='right-center'>
+        <Button bsStyle='ad' onClick={goBuyPremium}>{t('Go Premium')}</Button>
+      </div>
+    </div>);
+  };
 }
 
 function goBuyPremium() {
@@ -913,18 +329,7 @@ function init(context: IExtensionContextExt): boolean {
     condition: (props: any): boolean => !props.isPremium,
   });
 
-  context.registerBanner('main-toolbar', () => {
-    const t = context.api.translate;
-    return (
-      <div className='nexus-main-banner' style={{ background: 'url(assets/images/ad-banner.png)' }}>
-        <div>{t('Go Premium')}</div>
-        <div>{t('Uncapped downloads, no adverts')}</div>
-        <div>{t('Support Nexus Mods')}</div>
-        <div className='right-center'>
-          <Button bsStyle='ad' onClick={goBuyPremium}>{t('Go Premium')}</Button>
-        </div>
-      </div>);
-  }, {
+  context.registerBanner('main-toolbar', toolbarBanner(context.api.translate), {
     props: {
       isPremium: state => getSafe(state, ['persistent', 'nexus', 'userInfo', 'isPremium'], false),
       isSupporter: state =>
@@ -955,13 +360,13 @@ function init(context: IExtensionContextExt): boolean {
       groupId: 'download-buttons',
       icon: 'nexus',
       tooltip: 'Download NXM URL',
-      onConfirmed: (nxmurl: string) => startDownload(context.api, nxmurl),
+      onConfirmed: (nxmurl: string) => startDownload(context.api, nexus, nxmurl),
     }));
 
   context.registerAction('categories-icons', 100, 'download', {}, 'Retrieve categories',
     () => retrieveCategories(context.api, true));
 
-  context.registerTableAttribute('mods', genEndorsedAttribute(context.api));
+  context.registerTableAttribute('mods', genEndorsedAttribute(context.api, nexus));
   context.registerTableAttribute('mods', genGameAttribute(context.api));
   context.registerTableAttribute('mods', genModIdAttribute(context.api));
 
