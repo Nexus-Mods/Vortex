@@ -35,7 +35,7 @@
     "fuzzball": "^1.1.5",
     "graphlib": "^2.1.5",
     "i18next": "^11.6.0",
-    "i18next-node-fs-backend": "^1.2.1",
+    "i18next-node-fs-backend": "^2.0.0",
     "icon-extract": "Nexus-Mods/node-icon-extract",
     "iconv-lite": "^0.4.23",
     "immutability-helper": "^2.7.1",

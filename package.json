@@ -180,7 +180,7 @@
     "fuzzball": "^1.1.2",
     "graphlib": "^2.1.5",
     "i18next": "^11.5.0",
-    "i18next-node-fs-backend": "^1.0.0",
+    "i18next-node-fs-backend": "^2.0.0",
     "icon-extract": "Nexus-Mods/node-icon-extract",
     "immutability-helper": "^2.4.0",
     "is-admin": "^2.1.1",

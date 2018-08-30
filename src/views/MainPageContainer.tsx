@@ -1,4 +1,3 @@
-import FlexLayout from '../controls/FlexLayout';
 import Icon from '../controls/Icon';
 import { IMainPage } from '../types/IMainPage';
 import { ComponentEx, translate } from '../util/ComponentEx';
@@ -26,8 +25,6 @@ interface IComponentState {
   error: Error;
   errorInfo: React.ErrorInfo;
 }
-
-const nop = () => undefined;
 
 class MainPageContainer extends ComponentEx<IBaseProps, IComponentState> {
   public static childContextTypes: React.ValidationMap<any> = {
