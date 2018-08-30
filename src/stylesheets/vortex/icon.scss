@@ -13,12 +13,10 @@
 }
 
 .icon-spin {
-  -webkit-animation: icon-spin 2s infinite linear;
-  animation: icon-spin 2s infinite linear;
+  animation: icon-spin 6s infinite linear;
 }
 
 .icon-pulse {
-  -webkit-animation: icon-spin 1s infinite steps(8);
   animation: icon-spin 1s infinite steps(8);
 }
 

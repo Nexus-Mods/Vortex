@@ -779,13 +779,13 @@ class InstallManager {
           },
           [
             { label: 'Cancel' },
-            { label: 'Rename' },
+            { label: 'Add Variant' },
             { label: 'Replace' },
           ]))
         .then((result: IDialogResult) => {
           if (result.action === 'Cancel') {
             reject(new UserCanceled());
-          } else if (result.action === 'Rename') {
+          } else if (result.action === 'Add Variant') {
             resolve({
               id: modId + '+' + result.input.variant,
               variant: result.input.variant,

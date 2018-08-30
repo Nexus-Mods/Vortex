@@ -373,10 +373,10 @@ function init(context: IExtensionContextExt): boolean {
           }
           return null;
         })
-         .catch((err: Error) => {
-            showError(store.dispatch, 'Failed to set profile', err);
-            finishProfileSwitch();
-          });
+        .catch((err: Error) => {
+          showError(store.dispatch, 'Failed to set profile', err);
+          finishProfileSwitch();
+        });
 
     context.api.onStateChange(
         ['persistent', 'profiles'], (prev: string, current: string) => {

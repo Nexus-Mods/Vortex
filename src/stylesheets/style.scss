@@ -309,40 +309,6 @@ div:hover > .hover-expand {
   }
 }
 
-// /generic control rules
-/////////////////////////
-
-///////////////////////////////////
-// icons (based on fontawesome css)
-
-.icon {
-  fill: currentColor;
-  height: 1.2em;
-  width: 1.2em;
-  display: inline-block;
-  vertical-align: text-bottom;
-}
-
-.icon-border {
-  padding: .2em .25em .15em;
-  border: solid .08em $gray-light;
-  border-radius: .1em;
-}
-
-.icon-spin {
-  -webkit-animation: icon-spin 2s infinite linear;
-  animation: icon-spin 2s infinite linear;
-}
-
-.icon-pulse {
-  -webkit-animation: icon-spin 1s infinite steps(8);
-  animation: icon-spin 1s infinite steps(8);
-}
-
-.icon-stroke {
-  stroke: currentColor;
-}
-
 .panel {
   border: $border-width solid $border-color;
   height: 100%;
