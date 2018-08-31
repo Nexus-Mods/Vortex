@@ -43,11 +43,15 @@
 
 .toolbar-dropdown {
   height: 100%;
-  display: flex !important;
-  flex-direction: row !important;
-  justify-content: center;
-  align-items: center;
-  svg {
-    margin-right: 0;
+  >div { 
+    svg {
+      margin-right: 0;
+    }
+  }
+
+  .caret {
+    position: absolute;
+    right: 4px;
+    top: 50%;
   }
 }

@@ -222,7 +222,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
         </ButtonGroup>
       );
     } else {
-      const grouped = actions.reduce((prev, action, idx) => {
+      const grouped: { [key: string]: IActionDefinition[] } = actions.reduce((prev, action, idx) => {
         if (action.icon !== undefined) {
           setdefault(prev, action.icon, []).push(action);
         } else {
@@ -230,6 +230,9 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
         }
         return prev;
       }, {});
+      const byFirstPrio = (lhs: IActionDefinition[], rhs: IActionDefinition[]) => {
+        return lhs[0].position - rhs[0].position;
+      }
       return (
         <ButtonGroup
           id={id}
@@ -239,7 +242,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
           onClick={this.mBackgroundClick}
         >
           {this.props.children}
-          {Object.keys(grouped).map(key => grouped[key]).map(this.renderIcons)}
+          {Object.keys(grouped).map(key => grouped[key]).sort(byFirstPrio).map(this.renderIcons)}
         </ButtonGroup>
       );
     }
