@@ -159,11 +159,14 @@ export function saveActivation(modType: string, instance: string,
                                gamePath: string, activation: IDeployedFile[]) {
   const typeTag = (modType !== undefined) && (modType.length > 0) ? modType + '.' : '';
   const tagFile = path.join(gamePath, `vortex.deployment.${typeTag}json`);
+  const data = JSON.stringify({ instance, files: activation }, undefined, 2);
+  try {
+    JSON.parse(data);
+  } catch (err) {
+    return Promise.reject(
+      new Error(`failed to serialize deployment information: "${err.message}"`));
+  }
   return (activation.length === 0)
     ? fs.removeAsync(tagFile).catch(() => undefined)
-    : writeFileAtomic(tagFile, JSON.stringify({
-        instance,
-        files: activation,
-      },
-      undefined, 2));
+    : writeFileAtomic(tagFile, data);
 }

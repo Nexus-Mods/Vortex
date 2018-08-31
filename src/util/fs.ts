@@ -114,13 +114,16 @@ function errorRepeat(error: NodeJS.ErrnoException, filePath: string): PromiseBB<
             const { allow }: { allow: typeof allowT } = req('permissions');
             return allow(filePath, userId as any, 'rwx');
           }, { filePath, userId })
+            .then(() => true)
             .catch(elevatedErr => {
               // if elevation failed, return the original error because the one from
               // elevate - while interesting as well - would make error handling too complicated
-              log('error', 'failed to acquire permission', elevatedErr.message);
+              log('error', 'failed to acquire permission', {
+                filePath,
+                error: elevatedErr.message
+              });
               return Promise.reject(error);
-            })
-            .then(() => true);
+            });
         } else {
           return PromiseBB.resolve(true);
         }

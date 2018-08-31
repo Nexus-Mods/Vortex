@@ -1,6 +1,5 @@
 import * as React from 'react';
 import { ListGroupItem } from 'react-bootstrap';
-import * as ReactDOM from 'react-dom';
 
 export interface IPluginEntryProps {
   className?: string;
