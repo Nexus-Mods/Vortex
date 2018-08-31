@@ -35,7 +35,7 @@ import { } from './views/Settings';
 import { genEndorsedAttribute, genGameAttribute, genModIdAttribute } from './attributes';
 import * as eh from './eventHandlers';
 import * as sel from './selectors';
-import { processErrorMessage, startDownload, validateKey, retrieveNexusGames, nexusGames } from './util';
+import { processErrorMessage, startDownload, validateKey, retrieveNexusGames, nexusGames, endorseModImpl } from './util';
 
 import * as Promise from 'bluebird';
 import { remote } from 'electron';
@@ -255,7 +255,7 @@ function once(api: IExtensionApi) {
   api.events.on('mod-update', eh.onModUpdate(api, nexus));
   api.events.on('open-mod-page', eh.onOpenModPage);
   api.events.on('request-nexus-login', callback => requestLogin(api, callback));
-  api.events.on('request-own-issues', eh.onRequestOwnIssues);
+  api.events.on('request-own-issues', eh.onRequestOwnIssues(nexus));
   api.events.on('retrieve-category-list', (isUpdate: boolean) => {
     retrieveCategories(api, isUpdate);
   });
@@ -366,7 +366,8 @@ function init(context: IExtensionContextExt): boolean {
   context.registerAction('categories-icons', 100, 'download', {}, 'Retrieve categories',
     () => retrieveCategories(context.api, true));
 
-  context.registerTableAttribute('mods', genEndorsedAttribute(context.api, nexus));
+  context.registerTableAttribute('mods', genEndorsedAttribute(context.api,
+    (gameId: string, modId: string, endorseStatus: string) => endorseModImpl(context.api, nexus, gameId, modId, endorseStatus)));
   context.registerTableAttribute('mods', genGameAttribute(context.api));
   context.registerTableAttribute('mods', genModIdAttribute(context.api));
 

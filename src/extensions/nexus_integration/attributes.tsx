@@ -10,10 +10,7 @@ import NexusModIdDetail from './views/NexusModIdDetail';
 import * as I18next from 'i18next';
 import * as React from 'react';
 import * as Redux from 'redux';
-import Nexus from 'nexus-api';
-import { endorseModImpl, retrieveNexusGames, nexusGames } from './util';
-
-let endorseMod: (gameId: string, modId: string, endorsedState: string) => void;
+import { nexusGames } from './util';
 
 // TODO: the field names in this object will be shown to the user, hence the capitalization
 function renderNexusModIdDetail(
@@ -41,7 +38,9 @@ function renderNexusModIdDetail(
   );
 }
 
-function createEndorsedIcon(store: Redux.Store<any>, mod: IMod, t: I18next.TranslationFunction) {
+export type EndorseMod = (gameId: string, modId: string, endorsedStatus: string) => void;
+
+function createEndorsedIcon(store: Redux.Store<any>, mod: IMod, onEndorse: EndorseMod, t: I18next.TranslationFunction) {
   const nexusModId: string = getSafe(mod.attributes, ['modId'], undefined);
   const version: string = getSafe(mod.attributes, ['version'], undefined);
   const state: string = getSafe(mod, ['state'], undefined);
@@ -71,7 +70,7 @@ function createEndorsedIcon(store: Redux.Store<any>, mod: IMod, t: I18next.Trans
         t={t}
         gameId={gameMode}
         modId={mod.id}
-        onEndorseMod={endorseMod}
+        onEndorseMod={onEndorse}
       />
     );
   }
@@ -79,10 +78,7 @@ function createEndorsedIcon(store: Redux.Store<any>, mod: IMod, t: I18next.Trans
   return null;
 }
 
-export function genEndorsedAttribute(api: IExtensionApi, nexus: Nexus): ITableAttribute {
-  endorseMod = (gameId: string, modId: string, endorsedStatus: string) =>
-    endorseModImpl(api, nexus, gameId, modId, endorsedStatus);
-
+export function genEndorsedAttribute(api: IExtensionApi, onEndorseMod: EndorseMod): ITableAttribute {
   return {
     id: 'endorsed',
     name: 'Endorsed',
@@ -90,7 +86,7 @@ export function genEndorsedAttribute(api: IExtensionApi, nexus: Nexus): ITableAt
     icon: 'star',
     customRenderer: (mod: IMod, detail: boolean, t: I18next.TranslationFunction) =>
       getSafe(mod.attributes, ['source'], undefined) === 'nexus'
-        ? createEndorsedIcon(api.store, mod, t)
+        ? createEndorsedIcon(api.store, mod, onEndorseMod, t)
         : null,
     calc: (mod: IMod) =>
       getSafe(mod.attributes, ['source'], undefined) === 'nexus'
