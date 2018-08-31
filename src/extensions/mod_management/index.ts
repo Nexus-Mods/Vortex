@@ -438,7 +438,9 @@ function genUpdateModDeployment() {
         api.showErrorNotification('Failed to deploy mods, please try again',
                                   err.message, { allowReport: false });
       })
-      .catch(err => api.showErrorNotification('Failed to deploy mods', err))
+      .catch(err => api.showErrorNotification('Failed to deploy mods', err, {
+        allowReport: err.code !== 'EPERM',
+      }))
       .finally(() => api.dismissNotification(notificationId));
   };
 }

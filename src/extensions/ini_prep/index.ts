@@ -29,7 +29,7 @@ function ensureIniBackups(t: TranslationFunction, gameMode: string,
     return Promise.map([backupFile, bakedFile],
       copy => fs.statAsync(copy)
         .catch(err =>
-          fs.forcePerm(t, () => fs.copyAsync(file, copy, { noSelfCopy: true }))
+          fs.copyAsync(file, copy, { noSelfCopy: true })
             .catch(copyErr => {
               if (copyErr.code === 'ENOENT') {
                 log('warn', 'ini file missing', file);
@@ -143,12 +143,10 @@ function bakeSettings(t: TranslationFunction, gameMode: string, discovery: IDisc
     const baseName = path.basename(iniFileName).toLowerCase();
     // ensure the original ini and directory up to it exists
     return fs.ensureFileAsync(iniFileName)
-      .then(() => fs.forcePerm(t, () =>
-        // work around a not-yet-explained problem where .baked is a link to .base
-        fs.unlinkAsync(iniFileName + '.baked')
-          .catch(err => (err.code === 'ENOENT')
-            ? Promise.resolve()
-            : Promise.reject(err)))
+      .then(() => fs.unlinkAsync(iniFileName + '.baked')
+        .catch(err => (err.code === 'ENOENT')
+          ? Promise.resolve()
+          : Promise.reject(err))
         .then(() => fs.copyAsync(iniFileName + '.base', iniFileName + '.baked', { noSelfCopy: true })
           // base might not exist, in that case copy from the original ini
           .catch(err => (err.code === 'ENOENT')
@@ -161,8 +159,8 @@ function bakeSettings(t: TranslationFunction, gameMode: string, discovery: IDisc
           ini.data = deepMerge(ini.data, patchIni.data);
         }))
         .then(() => parser.write(iniFileName + '.baked', ini))
-        .then(() => fs.forcePerm(t, () => fs.copyAsync(iniFileName + '.baked',
-          iniFileName, { noSelfCopy: true }))));
+        .then(() => fs.copyAsync(iniFileName + '.baked',
+          iniFileName, { noSelfCopy: true })));
   }))
   .then(() => undefined);
 }
@@ -171,8 +169,8 @@ function purgeChanges(t: TranslationFunction, gameMode: string, discovery: IDisc
   return Promise.map(
       iniFiles(gameMode, discovery),
       iniFileName =>
-          fs.forcePerm(t, () => fs.copyAsync(iniFileName + '.base', iniFileName + '.baked', { noSelfCopy: true }))
-            .then(() => fs.forcePerm(t, () => fs.copyAsync(iniFileName + '.base', iniFileName, { noSelfCopy: true }))));
+          fs.copyAsync(iniFileName + '.base', iniFileName + '.baked', { noSelfCopy: true })
+            .then(() => fs.copyAsync(iniFileName + '.base', iniFileName, { noSelfCopy: true })));
 }
 
 function main(context: IExtensionContext) {

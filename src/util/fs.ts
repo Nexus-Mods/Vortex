@@ -12,7 +12,7 @@
  */
 
 import { UserCanceled } from './CustomErrors';
-import { delayed } from './delayed';
+import { log } from './log';
 
 import * as PromiseBB from 'bluebird';
 import { dialog as dialogIn, remote } from 'electron';
@@ -102,10 +102,10 @@ function busyRetry(filePath: string): PromiseBB<boolean> {
     : PromiseBB.resolve(true);
 }
 
-function errorRepeat(code: string, filePath: string): PromiseBB<boolean> {
-  if (code === 'EBUSY') {
+function errorRepeat(error: NodeJS.ErrnoException, filePath: string): PromiseBB<boolean> {
+  if (error.code === 'EBUSY') {
     return busyRetry(filePath);
-  } else if (code === 'EPERM') {
+  } else if (error.code === 'EPERM') {
     return unlockConfirm(filePath)
       .then(doUnlock => {
         if (doUnlock) {
@@ -114,6 +114,12 @@ function errorRepeat(code: string, filePath: string): PromiseBB<boolean> {
             const { allow }: { allow: typeof allowT } = req('permissions');
             return allow(filePath, userId as any, 'rwx');
           }, { filePath, userId })
+            .catch(elevatedErr => {
+              // if elevation failed, return the original error because the one from
+              // elevate - while interesting as well - would make error handling too complicated
+              log('error', 'failed to acquire permission', elevatedErr.message);
+              return Promise.reject(error);
+            })
             .then(() => true);
         } else {
           return PromiseBB.resolve(true);
@@ -130,7 +136,7 @@ function restackErr(error: Error, stackErr: Error): Error {
 }
 
 function errorHandler(error: NodeJS.ErrnoException, stackErr: Error): PromiseBB<void> {
-  return errorRepeat(error.code, (error as any).dest || error.path)
+  return errorRepeat(error, (error as any).dest || error.path)
     .then(repeat => repeat
       ? PromiseBB.resolve()
       : PromiseBB.reject(restackErr(error, stackErr)))
@@ -316,7 +322,7 @@ function rmdirInt(dirPath: string, stackErr: Error, tries: number): PromiseBB<vo
         // don't mind if a file we wanted deleted was already gone
         return PromiseBB.resolve();
       } else if (RETRY_ERRORS.has(err.code) && (tries > 0)) {
-          return delayed(RETRY_DELAY_MS)
+          return PromiseBB.delay(RETRY_DELAY_MS)
             .then(() => rmdirInt(dirPath, stackErr, tries - 1));
       }
       throw restackErr(err, stackErr);
@@ -416,7 +422,6 @@ export function forcePerm<T>(t: I18next.TranslationFunction, op: () => PromiseBB
           ],
           noLink: true,
           type: 'warning',
-          detail: err.path,
         });
         if (choice === 1) { // Retry
           return forcePerm(t, op);
@@ -431,10 +436,16 @@ export function forcePerm<T>(t: I18next.TranslationFunction, op: () => PromiseBB
               return PromiseBB.resolve();
             })
             .then(() => elevated((ipcPath, req: NodeRequireFunction) => {
-                // tslint:disable-next-line:no-shadowed-variable
-                const { allow } = req('permissions');
-                return allow(filePath, userId, 'rwx');
-              }, { filePath, userId }))
+              // tslint:disable-next-line:no-shadowed-variable
+              const { allow } = req('permissions');
+              return allow(filePath, userId, 'rwx');
+            }, { filePath, userId })
+              .catch(elevatedErr => {
+                // if elevation failed, return the original error because the one from
+                // elevate, while interesting as well, would make error handling too complicated
+                log('error', 'failed to acquire permission', elevatedErr.message);
+                return Promise.reject(err);
+              }))
             .then(() => forcePerm(t, op));
         } else {
           return PromiseBB.reject(new UserCanceled());
