@@ -7,8 +7,7 @@
       "removeModules": ["vortex-api", "nexus-api", "esptk", "loot"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/gamebryo-plugin-management"
-    }
-  ], [
+    },
     {
       "type": "build-copy",
       "name": "gamebryo-plugin-indexlock",
@@ -16,8 +15,7 @@
       "removeModules": ["vortex-api", "nexus-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/gamebryo-plugin-indexlock"
-    }
-  ], [
+    },
     {
       "type": "build-copy",
       "name": "gamebryo-savegame-management",
@@ -25,8 +23,7 @@
       "removeModules": ["vortex-api", "nexus-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/gamebryo-savegame-management"
-    }
-  ], [
+    },
     {
       "type": "build-copy",
       "name": "morrowind-plugin-management",
@@ -34,8 +31,7 @@
       "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/morrowind-plugin-management"
-    }
-  ], [
+    },
     {
       "type": "build-copy",
       "name": "gamebryo-test-settings",
@@ -43,8 +39,7 @@
       "removeModules": ["vortex-api", "nexus-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/gamebryo-test-settings"
-    }
-  ], [
+    },
     {
       "type": "build-copy",
       "name": "gamebryo-bsa-support",
@@ -52,8 +47,7 @@
       "removeModules": ["vortex-api", "nexus-api", "bsatk"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/gamebryo-bsa-support"
-    }
-  ], [
+    },
     {
       "type": "build-copy",
       "name": "gamebryo-ba2-support",
@@ -61,8 +55,7 @@
       "removeModules": ["vortex-api", "nexus-api", "ba2tk"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/gamebryo-ba2-support"
-    }
-  ], [
+    },
     {
       "type": "build-copy",
       "name": "local-gamesettings",
@@ -70,8 +63,7 @@
       "removeModules": ["vortex-api", "nexus-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/local-gamesettings"
-    }
-  ], [
+    },
     {
       "type": "build-copy",
       "name": "gamebryo-archive-invalidation",
@@ -79,8 +71,7 @@
       "removeModules": ["vortex-api", "nexus-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/gamebryo-archive-invalidation"
-    }
-  ], [
+    },
     {
       "type": "build-copy",
       "name": "mod-dependency-manager",
@@ -88,8 +79,7 @@
       "removeModules": ["vortex-api", "nexus-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.scss", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/mod-dependency-manager"
-    }
-  ], [
+    },
     {
       "type": "build-copy",
       "name": "meta-editor",
@@ -97,8 +87,7 @@
       "removeModules": ["vortex-api", "nexus-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/meta-editor"
-    }
-  ], [
+    },
     {
       "type": "build-copy",
       "name": "nmm-import-tool",
@@ -106,8 +95,7 @@
       "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/nmm-import-tool"
-    }
-  ],[
+    },
     {
       "type": "build-copy",
       "name": "feedback",
@@ -115,8 +103,7 @@
       "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/feedback"
-    }
-  ],[
+    },
     {
       "type": "build-copy",
       "name": "mod-highlight",
@@ -124,8 +111,7 @@
       "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/mod-highlight"
-    }
-  ], [
+    },
     {
       "type": "build-copy",
       "name": "theme-switcher",
@@ -133,8 +119,7 @@
       "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/theme-switcher"
-    }
-  ], [
+    },
     {
       "type": "build-copy",
       "name": "gameinfo-steam",
@@ -142,8 +127,7 @@
       "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/gameinfo-steam"
-    }
-  ], [
+    },
     {
       "type": "build-copy",
       "name": "mtframework-arc-support",
@@ -151,8 +135,7 @@
       "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/mtframework-arc-support"
-    }
-  ], [
+    },
     {
       "type": "build-copy",
       "name": "mo-import",
@@ -160,8 +143,7 @@
       "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/mo-import"
-    }
-  ], [
+    },
     {
       "type": "build-copy",
       "name": "modtype-enb",
@@ -169,8 +151,7 @@
       "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/modtype-enb"
-    }
-  ], [
+    },
     {
       "type": "build-copy",
       "name": "modtype-dinput",
@@ -178,8 +159,7 @@
       "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/modtype-dinput"
-    }
-  ], [
+    },
     {
       "type": "build-copy",
       "name": "modtype-gedosato",
@@ -187,8 +167,7 @@
       "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/modtype-gedosato"
-    }
-  ], [
+    },
     {
       "type": "build-copy",
       "name": "modtype-dragonage",
@@ -196,8 +175,7 @@
       "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/modtype-dragonage"
-    }
-  ], [
+    },
     {
       "type": "build-copy",
       "name": "open-directory",
@@ -205,8 +183,7 @@
       "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/open-directory"
-    }
-  ], [
+    },
     {
       "type": "build-copy",
       "name": "common-interpreters",
@@ -214,8 +191,7 @@
       "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/common-interpreters"
-    }
-  ], [
+    },
     {
       "type": "build-copy",
       "name": "issue-tracker",
@@ -223,8 +199,7 @@
       "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/issue-tracker"
-    }
-  ], [
+    },
     {
       "type": "build-copy",
       "name": "changelog-dashlet",
@@ -232,8 +207,7 @@
       "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/changelog-dashlet"
-    }
-  ], [
+    },
     {
       "type": "build-copy",
       "name": "fnis-integration",
@@ -241,8 +215,7 @@
       "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/fnis-integration"
-    }
-  ], [
+    },
     {
       "type": "build-copy",
       "name": "game-pillarsofeternity2",
@@ -250,8 +223,7 @@
       "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/game-pillarsofeternity2"
-    }
-  ], [
+    },
     {
       "type": "build-copy",
       "name": "test-gameversion",
@@ -259,8 +231,7 @@
       "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/test-gameversion"
-    }
-  ], [
+    },
     {
       "type": "build-copy",
       "name": "documentation",

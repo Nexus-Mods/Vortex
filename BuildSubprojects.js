@@ -105,16 +105,16 @@ function getId() {
 }
 
 function npm(command, args, options, out) {
-  if (useYarn && (command === 'install') && (args.length > 0)) {
-    command = 'add';
+  if (!useYarn && (command === 'add')) {
+    command = 'install';
   }
-  return spawnAsync(useYarn ? yarncli : npmcli, [command, ...args], options, out)
+  return spawnAsync(useYarn ? yarncli : npmcli, [command, ...args, '--mutex', 'file'], options, out)
   .catch((err) => {
     // npm is so f***ing unreliable and random,
     // a simple retry may help...
     return new Promise((resolve, reject) => {
       setTimeout(() => {
-        spawnAsync(useYarn ? yarncli : npmcli, [command, ...args], options, out)
+        spawnAsync(useYarn ? yarncli : npmcli, [command, ...args, '--mutex', 'file'], options, out)
         .then(resolve)
         .catch(reject)
         ;
@@ -163,17 +163,17 @@ function processModule(project, buildType, feedback) {
 
   return build
     .then(() => rimrafAsync(modulePath))
-    .then(() => npm('install', [project.module], options, feedback));
+    .then(() => npm('add', [project.module], options, feedback));
 }
 
 function updateLock(modulePath, feedback) {
   if (useYarn) {
     // with yarn we can update the lock file ...
-    return spawnAsync(yarncli, ['install', '--check-files'], {
+    return spawnAsync(yarncli, ['install', '--check-files', '--mutex', 'file'], {
       cwd: modulePath,
     }, feedback);
   } else {
-    // ... but npm has totally fucked it up again. As usual. I think there is a fix in the current
+    // ... but apparently not in npm. I think there is a fix in the current
     // npm version but since we're using npm from the node bundle and don't want to strictly
     // enforce a node version we can't expect it to be available
     return fs.removeAsync(path.join(modulePath));
@@ -192,9 +192,8 @@ function removeModules(project, feedback) {
 }
 
 function processCustom(project, buildType, feedback) {
-  let res =
-    removeModules(project, feedback)
-      .then(() => npm('install', [], { cwd: project.path }, feedback))
+  const start = Date.now();
+  let res = npm('install', [], { cwd: project.path }, feedback)
       .then(() => npm('run', [typeof project.build === 'string' ? project.build : 'build'], { cwd: project.path }, feedback));
   if (project.copyTo !== undefined) {
     const source = path.join(project.path, 'dist', '**', '*');
@@ -203,6 +202,9 @@ function processCustom(project, buildType, feedback) {
     res =
         res.then(() => copyfilesAsync([source, output], project.depth || 3));
   }
+  res = res.then(() => {
+    console.log(project.path, 'took', (Date.now() - start) / 1000, 's');
+  })
   return res;
 }
 
@@ -300,7 +302,7 @@ function main(args) {
           }
         })
         ;
-  }));
+  }, { concurrency: 4 }));
 }
 
 main(minimist(process.argv.slice(2)));
