@@ -89,16 +89,22 @@ class DeploymentMethod extends LinkingDeployment {
       return 'Game not fully initialized yet, this should disappear soon.';
     }
 
-    const canary = path.join(installationPath, '__vortex_canary.txt');
+    const canary = path.join(installationPath, '__vortex_canary.tmp');
     try {
       fs.writeFileSync(canary, 'Should only exist temporarily, feel free to delete');
       fs.linkSync(canary, canary + '.link');
       fs.removeSync(canary + '.link');
       fs.removeSync(canary);
     } catch (err) {
-      fs.removeSync(canary);
-      fs.removeSync(canary + '.link');
-      return 'Filesystem doesn\'t support hard links';
+      try {
+        fs.removeSync(canary + '.link');
+        fs.removeSync(canary);
+        return 'Filesystem doesn\'t support hard links';
+      } catch (innerErr) {
+        log('error', 'failed to clean up canary file. This indicates we were able to create '
+            + 'a file in the target directory but not delete it', { installationPath });
+        return 'Game directory not writeable, please check the log file';
+      }
     }
 
     return undefined;
