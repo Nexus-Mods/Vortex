@@ -53,12 +53,6 @@
   background-color: $white;
 }
 
-/*
-.btn:not(.btn-embed) svg {
-  margin-right: 0.5em;
-}
-*/
-
 .dropdown .btn-group, .btn-group-vertical {
   display: flex;
 }
@@ -240,18 +234,6 @@ div:hover > .hover-expand {
     border: 0px;
     border-left: 1px solid darken( $brand-primary, 10% );
   }
-}
-
-.nexus-orange {
-  fill: #D78F46;
-}
-
-.nexus-orange-darker {
-  fill: darken(#D78F46, 15%);
-}
-
-.nexus-outline {
-  fill: black;
 }
 
 .progress {

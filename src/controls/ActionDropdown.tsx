@@ -82,6 +82,7 @@ class DropdownMenu extends React.PureComponent<IProps, {}> {
       <div
         data-value={actions[0].title}
         onClick={actions[0].show ? this.triggerDefault : undefined}
+        className='dropdown-title'
         title={genTooltip(actions[0].show)}
         style={{ width: '100%', height: '100%' }}
       >

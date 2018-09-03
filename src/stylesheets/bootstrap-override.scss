@@ -11,10 +11,17 @@ h1, h2, h3 {
   border: $border-width solid $border-color;
   > li > a {
     display: flex;
+    align-items: center;
     > .btn {
       padding-left: 0;
       padding-right: 0;
     }
+  }
+}
+
+.dropdown-title {
+  > svg {
+    margin-right: 0.5em;
   }
 }
 
