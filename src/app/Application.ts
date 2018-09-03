@@ -230,10 +230,18 @@ class Application {
       });
   }
 
-  private checkUpgrade() {
+  private checkUpgrade(): Promise<void> {
+    const currentVersion = app.getVersion();
+    return this.migrateIfNecessary(currentVersion)
+      .then(() => {
+        this.mStore.dispatch(setApplicationVersion(currentVersion));
+        return Promise.resolve();
+      });
+  }
+
+  private migrateIfNecessary(currentVersion: string): Promise<void> {
     const state: IState = this.mStore.getState();
     const lastVersion = state.app.appVersion || '0.0.0';
-    let currentVersion = app.getVersion();
     if (this.mFirstStart || (currentVersion === '0.0.1')) {
       // don't check version change in development builds or on first start
       return Promise.resolve();
@@ -261,7 +269,6 @@ class Application {
       log('info', 'Vortex was updated, checking for necessary migrations');
       return migrate(this.mStore)
         .then(() => {
-          this.mStore.dispatch(setApplicationVersion(currentVersion));
           return Promise.resolve();
         })
         .catch(err => !(err instanceof UserCanceled) && !(err instanceof ProcessCanceled), (err: Error) => {
