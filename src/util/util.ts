@@ -54,7 +54,7 @@ export function setdefault<T>(obj: any, key: PropertyKey, def: T): T {
 
 function checksum(input: string | Buffer): string {
   return createHash('md5')
-    .update(input, 'utf8')
+    .update(input.toString(), 'utf8')
     .digest('hex');
 }
 
