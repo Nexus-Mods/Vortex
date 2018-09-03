@@ -34,32 +34,17 @@ function todos(api: IExtensionApi): IToDo[] {
       id: 'pick-game',
       icon: 'game',
       type: 'search' as ToDoType,
+      priority: 10,
       props: state => ({ gameMode: selectors.activeGameId(state) }),
       condition: props => props.gameMode === undefined,
       text: 'Select a game to manage',
       action: openGames,
     },
     {
-      id: 'manual-scan',
-      icon: props => props.discoveryRunning
-        ? <Spinner />
-        : <Icon name='search' />,
-      type: 'search' as ToDoType,
-      props: state => ({
-        searchPaths: state.settings.gameMode.searchPaths,
-        discoveryRunning: state.session.discovery.running,
-      }),
-      condition: props => props.searchPaths !== undefined,
-      text: (t: TranslationFunction, props: any): JSX.Element =>
-          props.discoveryRunning
-          ? t('Discovery running')
-          : t('Scan for Games'),
-      action: startManualSearch,
-    },
-    {
       id: 'profile-visibility',
       icon: 'profile',
       type: 'settings' as ToDoType,
+      priority: 20,
       props: state => ({ profilesVisible: state.settings.interface.profilesVisible }),
       text: 'Profile Management',
       value: (t: TranslationFunction, props: any) => props.profilesVisible ? t('Yes') : t('No'),
@@ -69,9 +54,28 @@ function todos(api: IExtensionApi): IToDo[] {
       id: 'advanced-settings',
       icon: 'settings',
       type: 'more' as ToDoType,
+      priority: 30,
       props: () => ({}),
       text: 'View Advanced Settings',
       action: openInterfaceSettings,
+    },
+    {
+      id: 'manual-scan',
+      icon: props => props.discoveryRunning
+        ? <Spinner />
+        : <Icon name='search' />,
+      type: 'search' as ToDoType,
+      priority: 40,
+      props: state => ({
+        searchPaths: state.settings.gameMode.searchPaths,
+        discoveryRunning: state.session.discovery.running,
+      }),
+      condition: props => props.searchPaths !== undefined,
+      text: (t: TranslationFunction, props: any): JSX.Element =>
+          props.discoveryRunning
+          ? t('Discovery running')
+          : t('Scan for missing games'),
+      action: startManualSearch,
     },
   ];
 }

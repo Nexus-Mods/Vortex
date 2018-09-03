@@ -351,7 +351,7 @@ function init(context: IExtensionContextExt): boolean {
   context.registerToDo('nxm-associated', 'settings', () => ({
     associated: context.api.store.getState().settings.nexus.associateNXM,
   }), 'link', 'Handle Nexus Links', associateNXM, undefined, (t, props: any) =>
-    <span>{props.associated ? t('Yes') : t('No')}</span>, undefined);
+    <span>{props.associated ? t('Yes') : t('No')}</span>, 15);
 
   context.registerAction('download-icons', 100, InputButton, {},
     () => ({
