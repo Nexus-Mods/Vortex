@@ -16,9 +16,12 @@ class WindowControls extends React.Component<{}, {}> {
   }
 
   public render(): JSX.Element {
+    if (window.isDestroyed()) {
+      return null;
+    }
     return (
       <div id='window-controls'>
-        { window.isMinimizable
+        { window.isMinimizable()
           ? (
             <IconButton
               id='window-minimize'
@@ -29,7 +32,7 @@ class WindowControls extends React.Component<{}, {}> {
             />
           ) : null
         }
-        { window.isMaximizable
+        { window.isMaximizable()
           ? (
             <IconButton
               id='window-maximize'
@@ -40,7 +43,7 @@ class WindowControls extends React.Component<{}, {}> {
             />
           ) : null
         }
-        { window.isClosable
+        { window.isClosable()
           ? (
             <IconButton
               id='window-close'
