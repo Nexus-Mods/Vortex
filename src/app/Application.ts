@@ -344,7 +344,8 @@ class Application {
     return LevelPersist.create(dbpath)
       .then(persistIn => {
         persist = persistIn;
-        return persist.getItem(pathArray);
+        return persist.getItem(pathArray)
+          .catch(() => undefined);
       })
       .then(oldValue => {
         const newValue = setParameters[1].length === 0
@@ -353,8 +354,11 @@ class Application {
             ? JSON.parse(setParameters[1])
             : oldValue.constructor(setParameters[1]);
         return persist.setItem(pathArray, newValue);
-      }).then(() => { process.stdout.write('changed\n'); })
-      .catch(err => { process.stderr.write(err.message + '\n'); })
+      })
+      .then(() => { process.stdout.write('changed\n'); })
+      .catch(err => {
+        process.stderr.write(err.message + '\n');
+      })
       .finally(() => {
         app.quit();
       });
