@@ -585,6 +585,24 @@ div:hover > .hover-expand {
 // /HIDPI
 /////////
 
+///////////////
+// nexus logo
+
+.nexus-orange {
+  fill: #D78F46;
+}
+
+.nexus-orange-darker {
+  fill: darken(#D78F46, 15%);
+}
+
+.nexus-outline {
+  fill: black;
+}
+
+// /nexus logo
+//////////////
+
 ////////////////////////////////////////////////////////
 // only used to make scss variables available at runtime
 

@@ -1,5 +1,5 @@
 import { log } from '../../../util/log';
-import { getSafe, pushSafe } from '../../../util/storeHelper';
+import { getSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
 import { IModWithState } from '../types/IModProps';
 
@@ -15,24 +15,6 @@ function byModId(input: IModWithState[]): IModWithState[][] {
     return prev;
   }, {});
   return Object.keys(grouped).map(modId => grouped[modId]);
-}
-
-interface IFileId {
-  newestFileId?: string;
-  logicalFileName?: string;
-  fileId: string;
-}
-
-function fileId(value: IModWithState): string {
-  let result = getSafe(value.attributes, ['newestFileId'], undefined);
-  if (result !== undefined) {
-    return 'n' + result;
-  }
-  result = getSafe(value.attributes, ['logicalFileName'], undefined);
-  if (result !== undefined) {
-    return 'l' + result;
-  }
-  return 'i' + value.id;
 }
 
 function fileMatch(lhs: IModWithState, rhs: IModWithState): boolean {

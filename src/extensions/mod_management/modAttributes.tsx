@@ -1,10 +1,9 @@
 import DateTimeFilter from '../../controls/table/DateTimeFilter';
 import ZoomableImage from '../../controls/ZoomableImage';
 import {ITableAttribute} from '../../types/ITableAttribute';
-import { ComponentEx } from '../../util/ComponentEx';
 import { getCurrentLanguage } from '../../util/i18n';
 import relativeTime from '../../util/relativeTime';
-import { getSafe, setSafe } from '../../util/storeHelper';
+import { getSafe } from '../../util/storeHelper';
 
 import { IModWithState } from './types/IModProps';
 import Description from './views/Description';

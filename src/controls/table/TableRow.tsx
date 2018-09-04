@@ -125,7 +125,7 @@ class TableCell extends React.Component<ICellProps, { isOpen: boolean }> {
       >
         <Button
           id={`btn-${tableId}-${attribute.id}`}
-          className={`btn-${tableId}-${attribute.id}-${key}`}
+          className={`btn-${tableId}-${attribute.id}-${key} dropdown-title`}
           key={key}
           onClick={this.cycle}
           onSelect={this.changeCell}
