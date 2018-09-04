@@ -58,7 +58,8 @@ function unlockConfirm(filePath: string): PromiseBB<boolean> {
     title: 'Access denied',
     message: `Vortex needs to access "${filePath}" but doesn\'t have permission to.\n`
       + 'If your account has admin rights Vortex can unlock the file for you. '
-      + 'Windows will show an UAC dialog.',
+      + 'Windows will show an UAC dialog.\n\n'
+      + error.stack,
     buttons: [
       'Cancel',
       'Retry',

@@ -83,6 +83,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             <FlexLayout.Fixed>
               <InputGroup>
                 <FormControl
+                  className='download-path-input'
                   value={downloadPath}
                   placeholder={t('Download Path')}
                   onChange={this.setDownloadPathEvt as any}

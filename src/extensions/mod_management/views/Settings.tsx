@@ -274,7 +274,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
   private purgeActivation(): Promise<void> {
     const { activators, currentActivator, discovery, gameMode,
-            installPath, onShowError } = this.props;
+            installPath } = this.props;
 
     const oldActivator = activators.find(iter => iter.id === currentActivator);
     const resolvedPath = getInstallPath(installPath, gameMode);
@@ -283,8 +283,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
     return oldActivator !== undefined
       ? Promise.mapSeries(Object.keys(modPaths),
-                          typeId => oldActivator.purge(resolvedPath, modPaths[typeId])
-                            .catch(err => onShowError('Purge failed', err, false)))
+                          typeId => oldActivator.purge(resolvedPath, modPaths[typeId]))
         .then(() => undefined)
       : Promise.resolve();
   }

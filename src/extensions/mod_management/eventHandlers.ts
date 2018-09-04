@@ -1,6 +1,6 @@
 import {IExtensionApi} from '../../types/IExtensionContext';
 import {IState} from '../../types/IState';
-import { ProcessCanceled, TemporaryError } from '../../util/CustomErrors';
+import { ProcessCanceled, TemporaryError, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import {showError} from '../../util/message';
 import {getSafe} from '../../util/storeHelper';
@@ -105,6 +105,7 @@ export function onGameModeActivated(
       api.events.emit('mods-refreshed');
       return null;
     })
+    .catch(UserCanceled, () => undefined)
     .catch((err: Error) => {
       showError(store.dispatch, 'Failed to refresh mods', err,
                 { allowReport: (err as any).code !== 'ENOENT' });
