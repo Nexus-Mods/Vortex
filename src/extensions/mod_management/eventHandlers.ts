@@ -283,7 +283,7 @@ export function onAddMod(api: IExtensionApi, gameId: string,
   const installationPath = installPathForGame(state, gameId);
 
   store.dispatch(addMod(gameId, mod));
-  fs.mkdirAsync(path.join(installationPath, mod.installationPath))
+  fs.ensureDirAsync(path.join(installationPath, mod.installationPath))
   .then(() => {
     callback(null);
   })
