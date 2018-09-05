@@ -14,7 +14,7 @@ import sortMods from '../extensions/mod_management/util/sort';
 import testModReference from '../extensions/mod_management/util/testModReference';
 import { Archive } from './archives';
 import copyRecursive from './copyRecursive';
-import { DataInvalid, MissingInterpreter, NotSupportedError, ProcessCanceled,
+import { DataInvalid, MissingInterpreter, NotFound, NotSupportedError, ProcessCanceled,
          SetupError, UserCanceled } from './CustomErrors';
 import Debouncer from './Debouncer';
 import delayed from './delayed';
@@ -58,6 +58,7 @@ export {
   makeReactive,
   MissingInterpreter,
   Normalize,
+  NotFound,
   NotSupportedError,
   objDiff,
   opn,

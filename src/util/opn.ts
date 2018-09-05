@@ -3,6 +3,7 @@ import {} from 'ffi';
 import opn = require('opn');
 import * as refT from 'ref';
 import { log } from './log';
+import { NotFound } from './CustomErrors';
 
 let shell32;
 
@@ -54,7 +55,11 @@ function open(target: string, wait?: boolean): Promise<void> {
             return reject(execErr);
           }
           if (res <= 32) {
-            return reject(new Win32Error('ShellExecute failed', res));
+            if (res === 2) {
+              return reject(new NotFound(target));
+            } else {
+              return reject(new Win32Error('ShellExecute failed', res));
+            }
           }
           return resolve();
         });

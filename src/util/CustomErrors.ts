@@ -67,3 +67,10 @@ export class MissingInterpreter extends Error {
     return this.mURL;
   }
 }
+
+export class NotFound extends Error {
+  constructor(what: string) {
+    super(`Not found: "${what}"`);
+    this.name = this.constructor.name;
+  }
+}
