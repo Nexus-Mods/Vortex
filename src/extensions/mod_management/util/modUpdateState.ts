@@ -1,10 +1,6 @@
-import * as fs from '../../../util/fs';
 import { getSafe } from '../../../util/storeHelper';
-import { IModWithState } from '../types/IModProps';
 
 import versionClean from './versionClean';
-
-import * as path from 'path';
 
 export type UpdateState =
   'bug-update' | 'bug-update-site' | 'bug-disable' |
@@ -18,7 +14,7 @@ function updateState(attributes: { [id: string]: any }): UpdateState {
   const bugMessage: string = getSafe(attributes, ['bugMessage'], undefined);
 
   let hasUpdate = false;
-  if ((newestFileId !== undefined) && (newestFileId !== fileId)) {
+  if ((newestFileId !== undefined) && (fileId !== undefined) && (newestFileId !== fileId)) {
     hasUpdate = true;
   } else if ((newestVersion !== undefined) && (version !== undefined)
              && (versionClean(newestVersion) !== versionClean(version))) {
