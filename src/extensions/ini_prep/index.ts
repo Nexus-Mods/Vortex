@@ -238,7 +238,10 @@ function main(context: IExtensionContext) {
       const gameMode = activeGameId(state);
       const discovery: IDiscoveryResult = state.settings.gameMode.discovered[gameMode];
       discoverSettingsChanges(gameMode, discovery)
-        .then(() => purgeChanges(context.api.translate, gameMode, discovery));
+        .then(() => purgeChanges(context.api.translate, gameMode, discovery))
+        .catch(err => {
+          context.api.showErrorNotification('Failed to purge ini edits', err);
+        });
     });
   });
 }
