@@ -49,7 +49,7 @@ const NUM_RETRIES = 3;
 const RETRY_DELAY_MS = 100;
 const RETRY_ERRORS = new Set(['EPERM', 'EBUSY', 'EUNKNOWN']);
 
-function unlockConfirm(filePath: string, error: Error): PromiseBB<boolean> {
+function unlockConfirm(filePath: string): PromiseBB<boolean> {
   if (dialog === undefined) {
     return PromiseBB.resolve(false);
   }
@@ -58,8 +58,7 @@ function unlockConfirm(filePath: string, error: Error): PromiseBB<boolean> {
     title: 'Access denied',
     message: `Vortex needs to access "${filePath}" but doesn\'t have permission to.\n`
       + 'If your account has admin rights Vortex can unlock the file for you. '
-      + 'Windows will show an UAC dialog.\n\n'
-      + error.stack,
+      + 'Windows will show an UAC dialog.',
     buttons: [
       'Cancel',
       'Retry',
@@ -107,7 +106,7 @@ function errorRepeat(error: NodeJS.ErrnoException, filePath: string): PromiseBB<
   if (error.code === 'EBUSY') {
     return busyRetry(filePath);
   } else if (error.code === 'EPERM') {
-    return unlockConfirm(filePath, error)
+    return unlockConfirm(filePath)
       .then(doUnlock => {
         if (doUnlock) {
           const userId = getUserId();
