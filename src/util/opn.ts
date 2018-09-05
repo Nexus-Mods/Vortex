@@ -43,6 +43,8 @@ function initTypes() {
 }
 
 function open(target: string, wait?: boolean): Promise<void> {
+  const stackError = new Error();
+
   initTypes();
 
   // TODO: can't implement wait behaviour with ShellExecute, would require ShellExecuteEx
@@ -55,11 +57,16 @@ function open(target: string, wait?: boolean): Promise<void> {
             return reject(execErr);
           }
           if (res <= 32) {
+            let exception: Error;
             if (res === 2) {
-              return reject(new NotFound(target));
+              exception = new NotFound(target);
             } else {
-              return reject(new Win32Error('ShellExecute failed', res));
+              exception = new Win32Error('ShellExecute failed', res);
             }
+            // in case of error, report the source of the call
+            exception.stack = stackError.stack;
+
+            return reject(exception);
           }
           return resolve();
         });
