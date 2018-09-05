@@ -51,6 +51,8 @@ class MainWindow {
     this.mWindow.loadURL(`file://${getVortexPath('base')}/index.html`);
     // this.mWindow.loadURL(`file://${getVortexPath('base')}/index.html?react_perf`);
 
+    let cancelTimer: NodeJS.Timer;
+
     // opening the devtools automatically can be very useful if the renderer has
     // trouble loading the page
     // this.mWindow.webContents.openDevTools();
@@ -58,17 +60,19 @@ class MainWindow {
       (evt: Electron.Event, level: number, message: string) => {
         if (level !== 2) {
           // TODO: at the time of writing (electron 2.0.3) this event doesn't seem to
-          //   provide the other parameters of the message
+          //   provide the other parameters of the message.
+          //   That is actually a known issue in chrome but the chrome people don't seem to care too
+          //   much and wait for a PR by the electron people but those have closed the issue. fun
           log('info', message);
-        } else {
+        } else if (cancelTimer === undefined) {
           // if an error is logged by the renderer and the window isn't shown within a reasonable time,
           // it was probably something terminal.
           // this isn't ideal as we don't have a stack trace of the error message here
-          setTimeout(() => {
+          cancelTimer = setTimeout(() => {
             if (!this.mShown) {
-              terminate({ message }, {});
+              terminate({ message: 'Vortex failed to start', details: message }, {});
             }
-          }, 5000);
+          }, 15000);
         }
       });
 

@@ -23,7 +23,6 @@ import commandLine from './util/commandLine';
 import { sendReportFile, terminate, toError } from './util/errorHandling';
 // ensures tsc includes this dependency
 import {} from './util/extensionRequire';
-import { log } from './util/log';
 
 import { app, dialog } from 'electron';
 import * as path from 'path';

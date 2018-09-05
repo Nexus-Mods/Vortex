@@ -183,7 +183,7 @@ export function terminate(error: IError, state: any, allowReport?: boolean) {
     win = null;
   }
 
-  log('error', 'unrecoverable error', error);
+  log('error', 'unrecoverable error', { error, process: process.type });
 
   try {
     let detail = (error.stack || '');

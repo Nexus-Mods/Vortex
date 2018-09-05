@@ -87,13 +87,6 @@ Promise.config({
 // set up store. Through the electronEnhancer this is automatically
 // synchronized with the main process store
 
-const filter = true;
-
-function actionFilter(action) {
-  return (action.meta === undefined)
-      || (action.meta.forward !== false);
-}
-
 const middleware = [
   thunkMiddleware,
   reduxSanity(sanityCheckCB),
@@ -108,34 +101,52 @@ function sanityCheckCB(err: StateError) {
 let store: ThunkStore<any>;
 
 const terminateFromError = (error: any) => {
+  log('warn', 'about to report an error', { stack: new Error().stack });
   terminate(toError(error), store !== undefined ? store.getState() : {});
 };
 
-window.addEventListener('error', (evt: any) => {
-  const {error} = evt;
+// turn all error logs into a single parameter. The reason is that (at least in production)
+// these only get reported by the main process and due to a "bug" only one parameter gets
+// relayed.
+const oldErr = console.error;
+console.error = (...args) => {
+  oldErr(args.concat(' '));
+}
+
+function errorHandler(evt: any) {
+  const error = evt.reason
+      || evt.error
+      || ((evt.detail !== undefined) ? evt.detail.reason : undefined)
+      || evt.message;
+
   if ((error !== undefined)
       && (error.stack !== undefined)
       // TODO: socket hang up should trigger another error that we catch
       //  unfortunately I don't know yet if this is caused by mod download
       //  or vortex update check or api requests and why it's unhandled but
       //  reports indicate it's probably the api
-      && (error.message === 'socket hang up')
-      && (error.stack.indexOf('invokeGuardedCallbackDev') !== -1)) {
+      && (
+          (error.message === 'socket hang up')
+          || (error.stack.indexOf('net::ERR_CONNECTION_RESET') !== -1)
+          || (error.stack.indexOf('invokeGuardedCallbackDev') !== -1)
+         )
+      ) {
+    log('warn', 'suppressing error message', { message: error.message, stack: error.stack });
+    // bit of a hack: The main process checks the console log during startup and if an error
+    // is reported and the main window not presented within a certain time, it will relay the
+    // error and quit.
+    // By logging this error here we ensure that even a suppressed error will be reported to
+    // user _if_ it managed to prevent the application start. Of course it would be nicer
+    // if there was a proper api for that but it's quite the fringe case I think
+    console.error(error.stack);
     return true;
+  } else {
+    terminateFromError(error);
   }
+}
 
-  terminateFromError(evt.reason
-    || evt.error
-    || ((evt.detail !== undefined) ? evt.detail.reason : undefined)
-    || evt.message);
-});
-
-window.addEventListener('unhandledrejection', (evt: any) => {
-  terminateFromError(evt.reason
-    || evt.error
-    || ((evt.detail !== undefined) ? evt.detail.reason : undefined)
-    || evt.message);
-});
+window.addEventListener('error', errorHandler);
+window.addEventListener('unhandledrejection', errorHandler);
 window.removeEventListener('error', earlyErrHandler);
 window.removeEventListener('unhandledrejection', earlyErrHandler);
 
