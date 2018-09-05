@@ -121,7 +121,11 @@ function updateInstallPath_0_16(store: Redux.Store<IState>): Promise<void> {
     log('info', 'set install path',
         format(paths[gameId].install || pathDefaults.install, { base }));
     store.dispatch(setInstallPath(
-      gameId, format(paths[gameId].install || pathDefaults.install, makeCI({ base }))));
+      gameId, format(paths[gameId].install || pathDefaults.install, makeCI({
+        base,
+        game: '{GAME}',
+        userData: '{USERDATA}',
+      }))));
     return Promise.resolve();
   })
   .then(() => null);
