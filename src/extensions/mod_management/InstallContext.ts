@@ -12,7 +12,6 @@ import { setModEnabled } from '../profile_management/actions/profiles';
 import {
   addMod,
   removeMod,
-  setModAttribute,
   setModInstallationPath,
   setModState,
   setModType,
@@ -24,7 +23,6 @@ import { IInstallContext, InstallOutcome } from './types/IInstallContext';
 
 import * as Promise from 'bluebird';
 import * as path from 'path';
-import * as Redux from 'redux';
 
 class InstallContext implements IInstallContext {
   private mAddMod: (mod: IMod) => void;

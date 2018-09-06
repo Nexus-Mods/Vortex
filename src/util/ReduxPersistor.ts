@@ -3,7 +3,6 @@ import { terminate } from '../util/errorHandling';
 
 import * as Promise from 'bluebird';
 import * as Redux from 'redux';
-import { log } from './log';
 
 function insert(target: any, key: string[], value: any, hive: string) {
   try {
@@ -69,6 +68,7 @@ class ReduxPersistor<T> {
           type: '__hydrate',
           payload: { [hive]: res },
         });
+        this.storeDiff(persistor, [], res, this.mStore.getState()[hive]);
         this.mHydrating.delete(hive);
         return Promise.resolve();
       });
@@ -130,7 +130,7 @@ class ReduxPersistor<T> {
 
   private storeDiff(persistor: IPersistor, statePath: string[],
                     oldState: any, newState: any): Promise<void> {
-    if (oldState === newState) {
+    if ((persistor === undefined) || (oldState === newState)) {
       return Promise.resolve();
     }
 
