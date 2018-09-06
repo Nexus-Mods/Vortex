@@ -2,6 +2,7 @@ import { IDialogResult, showDialog } from '../../actions/notifications';
 import InputButton from '../../controls/InputButton';
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
+import { ProcessCanceled } from '../../util/CustomErrors';
 import { setApiKey } from '../../util/errorHandling';
 import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
@@ -16,7 +17,6 @@ import { DownloadIsHTML } from '../download_management/DownloadManager';
 import { IGameStored } from '../gamemode_management/types/IGameStored';
 import { setUpdatingMods } from '../mod_management/actions/settings';
 import { IMod } from '../mod_management/types/IMod';
-import { IProfileMod } from '../profile_management/types/IProfile';
 
 import { setUserAPIKey } from './actions/account';
 import { setNewestVersion, setUserInfo } from './actions/session';
@@ -39,13 +39,13 @@ import { processErrorMessage, startDownload, validateKey, retrieveNexusGames, ne
 
 import * as Promise from 'bluebird';
 import { remote } from 'electron';
+import * as fuzz from 'fuzzball';
 import * as I18next from 'i18next';
 import NexusT from 'nexus-api';
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
 import {} from 'uuid';
 import * as WebSocket from 'ws';
-import { ProcessCanceled } from '../../util/api';
 
 let nexus: NexusT;
 
@@ -134,6 +134,14 @@ function openNexusPage(state: IState, gameIds: string[]) {
 function processAttributes(input: any) {
   const nexusChangelog = getSafe(input.nexus, ['fileInfo', 'changelog_html'], undefined);
 
+  const modName = decodeHTML(getSafe(input, ['download', 'modInfo', 'nexus',
+                                                'modInfo', 'name'], undefined));
+  const fileName = decodeHTML(getSafe(input, ['download', 'modInfo', 'nexus',
+                                                'fileInfo', 'name'], undefined));
+  const fuzzRatio = ((modName !== undefined) && (fileName !== undefined))
+    ? fuzz.ratio(modName, fileName)
+    : 100;
+
   return ({
     modId: getSafe(input, ['download', 'modInfo', 'nexus', 'ids', 'modId'], undefined),
     fileId: getSafe(input, ['download', 'modInfo', 'nexus', 'ids', 'fileId'], undefined),
@@ -149,12 +157,13 @@ function processAttributes(input: any) {
                               'fileInfo', 'category_name'], undefined),
     isPrimary: getSafe(input, ['download', 'modInfo', 'nexus',
                                'fileInfo', 'is_primary'], undefined),
-    logicalFileName: decodeHTML(getSafe(input, ['download', 'modInfo', 'nexus',
-                                                'fileInfo', 'name'], undefined)),
+    modName,
+    logicalFileName: fileName,
     changelog: truthy(nexusChangelog) ? { format: 'html', content: nexusChangelog } : undefined,
     uploadedTimestamp: getSafe(input, ['download', 'modInfo', 'nexus',
                                        'fileInfo', 'uploaded_timestamp'], undefined),
     version: getSafe(input, ['download', 'modInfo', 'nexus', 'fileInfo', 'version'], undefined),
+    customFileName: fuzzRatio < 50 ? `${modName} - ${fileName}` : undefined,
   });
 }
 
