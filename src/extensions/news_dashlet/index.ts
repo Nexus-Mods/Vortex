@@ -1,9 +1,10 @@
 import { IExtensionContext } from '../../types/IExtensionContext';
 
-import { convertGameId } from '../nexus_integration/util/convertGameId';
+import { nexusGameId } from '../nexus_integration/util/convertGameId';
 import { activeGameId } from '../profile_management/selectors';
 
 import RSSDashlet from './Dashlet';
+import { currentGame } from '../../util/selectors';
 
 function init(context: IExtensionContext): boolean {
   const t = context.api.translate;
@@ -20,12 +21,11 @@ function init(context: IExtensionContext): boolean {
   context.registerDashlet(
       'Latest Mods', 1, 3, 300, RSSDashlet,
       state => activeGameId(state) !== undefined, () => {
-        const gameId =
-            convertGameId(activeGameId(context.api.store.getState()));
+        const game = currentGame(context.api.store.getState());
         return {
           title: t('New Files'),
           emptyText: t('No New Files'),
-          url: `https://www.nexusmods.com/${gameId}/rss/newtoday/`,
+          url: `https://www.nexusmods.com/${nexusGameId(game)}/rss/newtoday/`,
           maxLength: 400,
           extras: [
             { attribute: 'nexusmods:endorsements', icon: 'endorse-yes', text: '{{ value }}' },

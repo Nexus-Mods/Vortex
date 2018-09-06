@@ -1,8 +1,9 @@
 import { log } from '../../../util/log';
 import { getSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
-import { convertGameId } from './convertGameId';
+import { nexusGameId } from './convertGameId';
 
+import { gameById } from '../../gamemode_management/selectors';
 import { setModAttribute } from '../../mod_management/actions/mods';
 import { IMod } from '../../mod_management/types/IMod';
 
@@ -34,7 +35,7 @@ export function checkModVersion(dispatch: Redux.Dispatch<any>, nexus: NexusT,
   }
 
   return Promise.resolve(nexus.getModFiles(nexusModId,
-    convertGameId(getSafe(mod.attributes, ['downloadGame'], undefined) || gameId)))
+    nexusGameId(getSafe(mod.attributes, ['downloadGame'], undefined) || gameId)))
       .then(result => updateFileAttributes(dispatch, gameId, mod, result));
 }
 
@@ -168,7 +169,7 @@ export function retrieveModInfo(
   const gameId = getSafe(mod.attributes, ['downloadGame'], gameMode);
   const nexusIdNum = parseInt(nexusModId, 10);
   // if the endorsement state is unknown, request it
-  return Promise.resolve(nexus.getModInfo(nexusIdNum, convertGameId(gameId)))
+  return Promise.resolve(nexus.getModInfo(nexusIdNum, nexusGameId(gameById(store.getState(), gameId))))
     .then((modInfo: IModInfo) => {
       if (modInfo !== undefined) {
         updateModAttributes(store.dispatch, gameMode, mod, modInfo);

@@ -7,7 +7,7 @@ import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import opn from '../../util/opn';
-import { activeGameId } from '../../util/selectors';
+import { activeGameId, gameById } from '../../util/selectors';
 import { currentGame, getSafe } from '../../util/storeHelper';
 import { decodeHTML, truthy } from '../../util/util';
 
@@ -24,7 +24,7 @@ import { setAssociatedWithNXMURLs } from './actions/settings';
 import { accountReducer } from './reducers/account';
 import { sessionReducer } from './reducers/session';
 import { settingsReducer } from './reducers/settings';
-import { convertGameId } from './util/convertGameId';
+import { nexusGameId } from './util/convertGameId';
 import retrieveCategoryList from './util/retrieveCategories';
 import DashboardBanner from './views/DashboardBanner';
 import GoPremiumDashlet from './views/GoPremiumDashlet';
@@ -84,7 +84,7 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
       let gameId;
       currentGame(api.store)
         .then((game: IGameStored) => {
-          gameId = convertGameId(game.id);
+          gameId = nexusGameId(game);
           if (nexusGames().find(game => game.domain_name === gameId) === undefined) {
             // for all we know there could be another extension providing categories for this game
             // so we can't really display an error message or anything
@@ -126,8 +126,9 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
   });
 }
 
-function openNexusPage(games: string[]) {
-  opn(`https://www.nexusmods.com/${convertGameId(games[0])}`).catch(err => undefined);
+function openNexusPage(state: IState, gameIds: string[]) {
+  const game = gameById(state, gameIds[0]);
+  opn(`https://www.nexusmods.com/${nexusGameId(game)}`).catch(err => undefined);
 }
 
 function processAttributes(input: any) {
@@ -253,7 +254,7 @@ function once(api: IExtensionApi) {
   api.events.on('endorse-mod', eh.onEndorseMod(api, nexus));
   api.events.on('submit-feedback', eh.onSubmitFeedback(nexus));
   api.events.on('mod-update', eh.onModUpdate(api, nexus));
-  api.events.on('open-mod-page', eh.onOpenModPage);
+  api.events.on('open-mod-page', eh.onOpenModPage(api));
   api.events.on('request-nexus-login', callback => requestLogin(api, callback));
   api.events.on('request-own-issues', eh.onRequestOwnIssues(nexus));
   api.events.on('retrieve-category-list', (isUpdate: boolean) => {
@@ -344,8 +345,10 @@ function init(context: IExtensionContextExt): boolean {
   };
 
   context.registerModSource('nexus', 'Nexus Mods', () => {
-    const gameMode = activeGameId(context.api.store.getState());
-    opn(`https://www.nexusmods.com/${convertGameId(gameMode)}`).catch(err => undefined);
+    currentGame(context.api.store)
+      .then(game => {
+        opn(`https://www.nexusmods.com/${nexusGameId(game)}`).catch(err => undefined);
+      });
   });
 
   context.registerToDo('nxm-associated', 'settings', () => ({
@@ -390,15 +393,15 @@ function init(context: IExtensionContextExt): boolean {
 
   context.registerAction('game-discovered-buttons', 120, 'nexus', {},
                          context.api.translate('Open Nexus Page'),
-                         openNexusPage);
+                         (games: string[]) => openNexusPage(context.api.store.getState(), games));
 
   context.registerAction('game-managed-buttons', 120, 'nexus', {},
                          context.api.translate('Open Nexus Page'),
-                         openNexusPage);
+                         (games: string[]) => openNexusPage(context.api.store.getState(), games));
 
   context.registerAction('game-undiscovered-buttons', 120, 'nexus', {},
                          context.api.translate('Open Nexus Page'),
-                         openNexusPage);
+                         (games: string[]) => openNexusPage(context.api.store.getState(), games));
 
   context.once(() => once(context.api));
 

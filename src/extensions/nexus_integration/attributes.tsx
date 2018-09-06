@@ -2,8 +2,8 @@ import { IExtensionApi, ITableAttribute, IMod } from '../../types/api';
 import { getSafe } from '../../util/storeHelper';
 import EndorsementFilter from './views/EndorsementFilter';
 import { IModWithState } from '../mod_management/types/IModProps';
-import { convertGameId, convertGameIdReverse } from './util/convertGameId';
-import { activeGameId } from '../../util/selectors';
+import { nexusGameId, convertGameIdReverse } from './util/convertGameId';
+import { activeGameId, gameById, currentGame } from '../../util/selectors';
 import { setModAttribute } from '../../actions';
 import EndorseModButton from './views/EndorseModButton';
 import NexusModIdDetail from './views/NexusModIdDetail';
@@ -134,15 +134,18 @@ export function genGameAttribute(api: IExtensionApi): ITableAttribute<IMod> {
       if (getSafe(mod.attributes, ['source'], undefined) !== 'nexus') {
         return undefined;
       }
-      let downloadGame = getSafe(mod.attributes, ['downloadGame'], undefined);
+      let downloadGame: string | string[] = getSafe(mod.attributes, ['downloadGame'], undefined);
       if (Array.isArray(downloadGame)) {
         downloadGame = downloadGame[0];
       }
-      const gameId = convertGameId(downloadGame || activeGameId(api.store.getState()));
-      const gameEntry = nexusGames().find(game => game.domain_name === gameId);
+      const game = downloadGame !== undefined
+        ? gameById(api.store.getState(), downloadGame)
+        : currentGame(api.store.getState());
+      const nexusId = nexusGameId(game);
+      const gameEntry = nexusGames().find(game => game.domain_name === nexusId);
       return (gameEntry !== undefined)
         ? gameEntry.name
-        : gameId;
+        : nexusId;
     },
     placement: 'detail',
     help: api.translate(

@@ -11,10 +11,11 @@ import modName from '../mod_management/util/modName';
 import { setUserInfo } from './actions/session';
 import NXMUrl from './NXMUrl';
 import { checkModVersion } from './util/checkModsVersion';
-import { convertGameId } from './util/convertGameId';
+import { nexusGameId } from './util/convertGameId';
 import sendEndorseMod from './util/endorseMod';
 import { TimeoutError } from './util/submitFeedback';
 import transformUserInfo from './util/transformUserInfo';
+import { gameById } from '../gamemode_management/selectors';
 
 const UPDATE_CHECK_DELAY = 60 * 60 * 1000;
 
@@ -30,7 +31,7 @@ export function startDownload(api: IExtensionApi, nexus: Nexus, nxmurl: string):
   let nexusModInfo: IModInfo;
   let nexusFileInfo: IFileInfo;
 
-  const gameId = convertGameId(url.gameId);
+  const gameId = nexusGameId(gameById(api.store.getState(), url.gameId));
 
   return Promise.resolve(nexus.getModInfo(url.modId, gameId))
     .then((modInfo: IModInfo) => {
@@ -175,7 +176,8 @@ export function endorseModImpl(
   }
 
   store.dispatch(setModAttribute(gameId, modId, 'endorsed', 'pending'));
-  sendEndorseMod(nexus, convertGameId(gameId), nexusModId, version, endorsedStatus)
+  const game = gameById(api.store.getState(), gameId);
+  sendEndorseMod(nexus, nexusGameId(game), nexusModId, version, endorsedStatus)
     .then((endorsed: string) => {
       store.dispatch(setModAttribute(gameId, modId, 'endorsed', endorsed));
     })

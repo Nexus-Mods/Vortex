@@ -1,3 +1,5 @@
+import { IGameStored } from "../../../types/IState";
+
 /**
  * convert the game id from either our internal format or the format
  * used in NXM links to the format used in the nexus api.
@@ -8,17 +10,22 @@
  *   here at all
  */
 
-export function convertGameId(input: string): string {
-  if (input === undefined) {
+export function nexusGameId(game: IGameStored): string {
+  if (game === undefined) {
     return undefined;
   }
+
+  if ((game.details !== undefined) && (game.details.nexusPageId !== undefined)) {
+    return game.details.nexusPageId;
+  }
+
   return {
     skyrimse: 'skyrimspecialedition',
     skyrimvr: 'skyrimspecialedition',
     falloutnv: 'newvegas',
     fallout4vr: 'fallout4',
     teso: 'elderscrollsonline',
-  }[input.toLowerCase()] || input;
+  }[game.id.toLowerCase()] || game.id;
 }
 
 export function convertGameIdReverse(input: string): string {

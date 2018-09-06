@@ -1,7 +1,7 @@
 import { IExtensionApi } from '../../types/IExtensionContext';
 import Debouncer from '../../util/Debouncer';
 import opn from '../../util/opn';
-import { activeGameId } from '../../util/selectors';
+import { activeGameId, gameById } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { IModTable, IState, StateChangeCallback, IMod } from '../../types/api';
 
@@ -9,7 +9,7 @@ import { retrieveModInfo } from './util/checkModsVersion';
 import submitFeedback from './util/submitFeedback';
 import * as Promise from 'bluebird';
 import Nexus, { IIssue, IFeedbackResponse } from 'nexus-api';
-import { convertGameId, toNXMId } from './util/convertGameId';
+import { nexusGameId, toNXMId } from './util/convertGameId';
 import { log } from '../../util/log';
 import { DownloadIsHTML } from '../download_management/DownloadManager';
 import { showError } from '../../util/message';
@@ -58,10 +58,13 @@ export function onChangeMods(api: IExtensionApi, nexus: Nexus) {
       updateDebouncer.schedule(undefined, newValue);
 }
 
-export function onOpenModPage(gameId: string, modId: string) {
-  opn(['https://www.nexusmods.com',
-    convertGameId(gameId), 'mods', modId,
-  ].join('/')).catch(err => undefined);
+export function onOpenModPage(api: IExtensionApi) {
+  return (gameId: string, modId: string) => {
+    const game = gameById(api.store.getState(), gameId);
+    opn(['https://www.nexusmods.com',
+      nexusGameId(game), 'mods', modId,
+    ].join('/')).catch(err => undefined);
+  };
 }
 
 export function onChangeNXMAssociation(registerFunc: (def: boolean) => void, api: IExtensionApi): StateChangeCallback {
@@ -93,7 +96,7 @@ export function onModUpdate(api: IExtensionApi, nexus: Nexus): (...args: any[]) 
       && !getSafe(state, ['persistent', 'nexus', 'userInfo', 'isSupporter'], false)) {
       // nexusmods can't let users download files directly from client, without
       // showing ads
-      opn(['https://www.nexusmods.com', convertGameId(gameId), 'mods', modId].join('/'))
+      opn(['https://www.nexusmods.com', nexusGameId(gameId), 'mods', modId].join('/'))
         .catch(err => undefined);
       return;
     }

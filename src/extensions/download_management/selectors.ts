@@ -4,7 +4,7 @@ import { IState } from '../../types/IState';
 import getDownloadPath from './util/getDownloadPath';
 
 import { createSelector } from 'reselect';
-import createCachedSelector, {ICacheObject} from 're-reselect';
+import createCachedSelector from 're-reselect';
 
 const downloadPathPattern = (state: IState) => state.settings.downloads.path;
 
