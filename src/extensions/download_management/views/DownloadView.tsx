@@ -10,7 +10,7 @@ import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../
 import { IState } from '../../../types/IState';
 import { ITableAttribute } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { ProcessCanceled } from '../../../util/CustomErrors';
+import { ProcessCanceled, UserCanceled } from '../../../util/CustomErrors';
 import { showError } from '../../../util/message';
 import * as selectors from '../../../util/selectors';
 import MainPage from '../../../views/MainPage';
@@ -416,7 +416,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
     if (type === 'urls') {
       dlPaths.forEach(url => this.context.api.events.emit('start-download', [url], {}, undefined,
         (error: Error) => {
-        if ((error !== null) && !(error instanceof DownloadIsHTML)) {
+        if ((error !== null) && !(error instanceof DownloadIsHTML) && !(error instanceof UserCanceled)) {
           if (error instanceof ProcessCanceled) {
           this.context.api.showErrorNotification('Failed to start download',
             error.message, {

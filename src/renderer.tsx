@@ -128,7 +128,6 @@ function errorHandler(evt: any) {
       && (
           (error.message === 'socket hang up')
           || (error.stack.indexOf('net::ERR_CONNECTION_RESET') !== -1)
-          || (error.stack.indexOf('invokeGuardedCallbackDev') !== -1)
          )
       ) {
     log('warn', 'suppressing error message', { message: error.message, stack: error.stack });

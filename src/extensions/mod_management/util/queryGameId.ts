@@ -4,6 +4,7 @@ import { IState } from '../../../types/IState';
 import { UserCanceled } from '../../../util/CustomErrors';
 import { activeGameId, gameName } from '../../../util/selectors';
 
+import * as Promise from 'bluebird';
 
 /**
  * Determine which game to install a download for.
