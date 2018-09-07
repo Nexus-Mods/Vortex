@@ -82,10 +82,10 @@ class DownloadGameList extends PureComponentEx<IProps, {}> {
   }
 
   private moveDownload(gameId: string) {
-    const { fileName } = this.props;
+    const { currentGames, fileName } = this.props;
     // removing the main game, have to move the download then
     const state = this.context.api.store.getState();
-    const oldPath = selectors.downloadPath(state);
+    const oldPath = selectors.downloadPathForGame(state, currentGames[0]);
     const newPath = selectors.downloadPathForGame(state, gameId);
     return fs.moveAsync(path.join(oldPath, fileName), path.join(newPath, fileName))
       .tap(() => {
