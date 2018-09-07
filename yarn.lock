@@ -1842,8 +1842,8 @@ base@^0.11.1:
     pascalcase "^0.1.1"
 
 bbcode-to-react@TanninOne/bbcode-to-react:
-  version "0.2.9"
-  resolved "https://codeload.github.com/TanninOne/bbcode-to-react/tar.gz/6dd92afeb5083a590ba24bb6f7aaf9544e91265d"
+  version "0.2.10"
+  resolved "https://codeload.github.com/TanninOne/bbcode-to-react/tar.gz/255d80b888270c87677b154991fc908351b1f1eb"
 
 bcrypt-pbkdf@^1.0.0:
   version "1.0.2"
