@@ -202,8 +202,8 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
   private renderReload(): JSX.Element {
     const {t} = this.props;
     return (
-      <Alert bsStyle='warning' style={{ display: 'flex' }}>
-        <p style={{ flexGrow: 1 }}>{t('You need to restart Vortex to apply changes.')}</p>
+      <Alert bsStyle='warning' style={{ display: 'flex', alignItems: 'center' }}>
+        <div style={{ flexGrow: 1 }}>{t('You need to restart Vortex to apply changes.')}</div>
         <Button onClick={this.restart}>{t('Restart')}</Button>
       </Alert>
     );

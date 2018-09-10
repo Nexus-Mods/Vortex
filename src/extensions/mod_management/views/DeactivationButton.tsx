@@ -45,7 +45,7 @@ class DeactivationButton extends ComponentEx<IProps, {}> {
 
     return (
       <Advanced><ToolbarIcon
-        id='deploy-mods'
+        id='purge-mods'
         icon='purge'
         text={t('Purge Mods')}
         onClick={activator !== undefined ? this.activate : nop}

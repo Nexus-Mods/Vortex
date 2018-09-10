@@ -284,7 +284,8 @@ function once(api: IExtensionApi) {
       api.store.dispatch(setNewestVersion(info.version));
     })
     .catch(err => {
-      log('warn', 'failed to determine newest Vortex version');
+      // typically just missing the api key or a downtime
+      log('info', 'failed to determine newest Vortex version', { error: err.message });
     });
 }
 

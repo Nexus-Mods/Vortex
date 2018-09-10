@@ -352,6 +352,9 @@ class ExtensionManager {
 
   constructor(initStore?: Redux.Store<any>, eventEmitter?: NodeJS.EventEmitter) {
     this.mEventEmitter = eventEmitter;
+    if (this.mEventEmitter !== undefined) {
+      this.mEventEmitter.setMaxListeners(100);
+    }
     this.mInterpreters = {};
     this.mApi = {
       showErrorNotification: this.showErrorBox,
