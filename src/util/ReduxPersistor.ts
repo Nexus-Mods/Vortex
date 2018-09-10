@@ -152,8 +152,10 @@ class ReduxPersistor<T> {
                 // keys that exist in both - already handled above
               : Promise.resolve()))
           .then(() => undefined);
-      } else {
-        return this.add(persistor, statePath, newState);
+      } else { 
+        return (newState !== undefined)
+          ? this.add(persistor, statePath, newState)
+          : this.remove(persistor, statePath, oldState)
       }
     } catch (err) {
       return Promise.reject(err);
@@ -169,6 +171,9 @@ class ReduxPersistor<T> {
   }
 
   private add(persistor: IPersistor, statePath: string[], state: any): Promise<void> {
+    if (state === undefined) {
+      return Promise.resolve();
+    }
     return this.isObject(state)
       ? Promise.mapSeries(Object.keys(state), key =>
           this.add(persistor, [].concat(statePath, key), state[key]))
