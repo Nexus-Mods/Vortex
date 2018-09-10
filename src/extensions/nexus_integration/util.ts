@@ -31,7 +31,7 @@ export function startDownload(api: IExtensionApi, nexus: Nexus, nxmurl: string):
   let nexusModInfo: IModInfo;
   let nexusFileInfo: IFileInfo;
 
-  const gameId = nexusGameId(gameById(api.store.getState(), url.gameId));
+  const gameId = nexusGameId(gameById(api.store.getState(), url.gameId.toLowerCase()));
 
   return Promise.resolve(nexus.getModInfo(url.modId, gameId))
     .then((modInfo: IModInfo) => {
@@ -223,7 +223,7 @@ export function checkModVersionsImpl(
   const {TimeoutError} = require('nexus-api');
 
   return Promise.map(modsList, mod =>
-    checkModVersion(store.dispatch, nexus, gameId, mod)
+    checkModVersion(store, nexus, gameId, mod)
       .then(() => {
         store.dispatch(setModAttribute(gameId, mod.id, 'lastUpdateTime', now));
       })

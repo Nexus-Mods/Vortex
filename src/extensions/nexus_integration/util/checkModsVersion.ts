@@ -25,8 +25,8 @@ import * as semvish from 'semvish';
  * @return {Promise<IFileInfo>} updatedMod
  *
  */
-export function checkModVersion(dispatch: Redux.Dispatch<any>, nexus: NexusT,
-                                gameId: string, mod: IMod): Promise<void> {
+export function checkModVersion(store: Redux.Store<any>, nexus: NexusT,
+                                gameMode: string, mod: IMod): Promise<void> {
   const nexusModId: number =
       parseInt(getSafe(mod.attributes, ['modId'], undefined), 10);
 
@@ -34,9 +34,12 @@ export function checkModVersion(dispatch: Redux.Dispatch<any>, nexus: NexusT,
     return Promise.resolve();
   }
 
+  const gameId = getSafe(mod.attributes, ['downloadGame'], undefined) || gameMode;
+  const game = gameById(store.getState(), gameId);
+
   return Promise.resolve(nexus.getModFiles(nexusModId,
-    nexusGameId(getSafe(mod.attributes, ['downloadGame'], undefined) || gameId)))
-      .then(result => updateFileAttributes(dispatch, gameId, mod, result));
+    nexusGameId(game)))
+      .then(result => updateFileAttributes(store.dispatch, gameId, mod, result));
 }
 
 /**
