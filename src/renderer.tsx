@@ -272,7 +272,8 @@ function renderer() {
         }))
     .then(() => {
       log('debug', 'render with language', { language: i18n.language });
-      initApplicationMenu(extensions);
+      const refresh = initApplicationMenu(extensions);
+      extensions.getApi().events.on('gamemode-activated', () => refresh());
       startupFinished();
       eventEmitter.emit('startup');
       // render the page content

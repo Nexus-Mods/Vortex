@@ -84,7 +84,15 @@ export interface IMainPageOptions {
    * name collisions if another extension is already using the same title.
    */
   id?: string;
+  /**
+   * A hotkey to be pressed together with Ctrl+Shift to open that page
+   */
   hotkey?: string;
+  /**
+   * A hotkey to be pressed to open that page. In this case the caller has to specify any modifiers
+   * in the format required by electron
+   */
+  hotkeyRaw?: string;
   visible?: () => boolean;
   group: 'dashboard' | 'global' | 'per-game' | 'support' | 'hidden';
   priority?: number;
