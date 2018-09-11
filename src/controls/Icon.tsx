@@ -115,7 +115,7 @@ class Icon extends React.Component<IIconProps, {}> {
     // it has no interactions with other css. For example css transforms tend to break z ordering
     const transforms = [];
 
-    if (this.props.spin) {
+    if (this.props.spin || (name === 'spinner')) {
       classes.push('icon-spin');
     }
 

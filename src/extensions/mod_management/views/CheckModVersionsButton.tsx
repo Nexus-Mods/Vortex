@@ -34,6 +34,7 @@ class CheckVersionsButton extends ComponentEx<IProps, {}> {
           icon='spinner'
           text={t('Checking for mod updates')}
           disabled={true}
+          spin
         />
       );
     } else {
