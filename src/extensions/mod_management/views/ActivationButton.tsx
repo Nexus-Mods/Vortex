@@ -2,7 +2,7 @@ import ToolbarIcon from '../../../controls/ToolbarIcon';
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { showError } from '../../../util/message';
-import { activeGameId } from '../../../util/selectors';
+import { activeGameId, needToDeploy } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 
 import { IDeploymentMethod } from '../types/IDeploymentMethod';
@@ -14,6 +14,7 @@ import { ThunkDispatch } from 'redux-thunk';
 
 interface IConnectedProps {
   activator: IDeploymentMethod;
+  needToDeploy: boolean;
 }
 
 interface IActionProps {
@@ -31,13 +32,14 @@ const nop = () => undefined;
 
 class ActivationButton extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
-    const { t, activator } = this.props;
+    const { t, activator, needToDeploy } = this.props;
 
     return (
       <ToolbarIcon
         id='deploy-mods'
         icon='deploy'
         text={t('Deploy Mods')}
+        className={needToDeploy ? 'need-to-deploy' : undefined}
         onClick={activator !== undefined ? this.activate : nop}
         disabled={activator === undefined}
       />
@@ -68,6 +70,7 @@ function mapStateToProps(state: IState, ownProps: IProps): IConnectedProps {
   }
   return {
     activator,
+    needToDeploy: needToDeploy(state),
   };
 }
 

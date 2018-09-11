@@ -1,13 +1,13 @@
 import { IReducerSpec } from '../../../types/IExtensionContext';
 
-import * as actions from '../actions/session';
+import * as actions from '../actions/persistent';
 
 import update from 'immutability-helper';
 
 /**
  * reducer for changes to the authentication
  */
-export const sessionReducer: IReducerSpec = {
+export const persistentReducer: IReducerSpec = {
   reducers: {
     [actions.setUserInfo as any]: (state, payload) =>
       update(state, { userInfo: { $set: payload } }),

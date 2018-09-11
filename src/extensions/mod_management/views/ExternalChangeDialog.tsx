@@ -5,7 +5,7 @@ import { ITableAttribute } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { setdefault } from '../../../util/util';
 
-import { confirmExternalChanges, setExternalChangeAction } from '../actions/externalChanges';
+import { confirmExternalChanges, setExternalChangeAction } from '../actions/session';
 
 import { FileAction, IFileEntry } from '../types/IFileEntry';
 
@@ -103,8 +103,6 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
       this.setAllFunc('srcdeleted', evt.currentTarget.href.split('#')[1]);
     },
   };
-
-  private mRef: HTMLElement;
 
   constructor(props: IProps) {
     super(props);
@@ -416,7 +414,7 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
 
 function mapStateToProps(state: any): IConnectedProps {
   return {
-    changes: state.session.externalChanges.changes,
+    changes: state.session.mods.changes,
   };
 }
 

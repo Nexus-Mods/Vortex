@@ -15,8 +15,8 @@ import { DownloadIsHTML } from '../download_management/DownloadManager';
 import { showError } from '../../util/message';
 import { startDownload, endorseModImpl, checkModVersionsImpl, validateKey } from './util';
 import { setApiKey } from '../../util/errorHandling';
-import { setUserInfo } from './actions/session';
-import { setUpdatingMods } from '../mod_management/actions/settings';
+import { setUserInfo } from './actions/persistent';
+import { setUpdatingMods } from '../mod_management/actions/session';
 
 
 export function onChangeMods(api: IExtensionApi, nexus: Nexus) {

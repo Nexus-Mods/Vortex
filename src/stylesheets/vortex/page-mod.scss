@@ -62,3 +62,20 @@
     margin-left: 0.4em !important;
   }
 }
+
+@keyframes pulseColor {
+  0% {
+    background-color: lighten($brand-clickable, 15%);
+  }
+  50% {
+    background-color: darken($brand-clickable, 15%);
+  }
+  100% {
+    background-color: lighten($brand-clickable, 15%);
+  }
+}
+
+.need-to-deploy:not(:hover) {
+  animation: pulseColor 6s infinite linear;
+  border: $border-width solid $brand-warning;
+}

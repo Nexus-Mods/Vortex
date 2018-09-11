@@ -16,10 +16,6 @@ export const settingsReducer: IReducerSpec = {
       const { gameId, activatorId } = payload;
       return setSafe(state, ['activator', gameId], activatorId);
     },
-    [actions.setUpdatingMods as any]: (state, payload) => {
-      const { gameId, updatingMods } = payload;
-      return setSafe(state, ['updatingMods', gameId], updatingMods);
-    },
     [actions.setShowModDropzone as any]: (state, payload) =>
       setSafe(state, ['showDropzone'], payload),
     [actions.setConfirmPurge as any]: (state, payload) =>
@@ -29,7 +25,6 @@ export const settingsReducer: IReducerSpec = {
     installPath: {},
     modlistState: {},
     activator: {},
-    updatingMods: {},
     showDropzone: true,
     confirmPurge: true,
   },

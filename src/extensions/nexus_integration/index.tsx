@@ -15,14 +15,14 @@ import { decodeHTML, truthy } from '../../util/util';
 import { ICategoryDictionary } from '../category_management/types/ICategoryDictionary';
 import { DownloadIsHTML } from '../download_management/DownloadManager';
 import { IGameStored } from '../gamemode_management/types/IGameStored';
-import { setUpdatingMods } from '../mod_management/actions/settings';
+import { setUpdatingMods } from '../mod_management/actions/session';
 import { IMod } from '../mod_management/types/IMod';
 
 import { setUserAPIKey } from './actions/account';
-import { setNewestVersion, setUserInfo } from './actions/session';
+import { setNewestVersion, setUserInfo } from './actions/persistent';
 import { setAssociatedWithNXMURLs } from './actions/settings';
 import { accountReducer } from './reducers/account';
-import { sessionReducer } from './reducers/session';
+import { persistentReducer } from './reducers/persistent';
 import { settingsReducer } from './reducers/settings';
 import { nexusGameId } from './util/convertGameId';
 import retrieveCategoryList from './util/retrieveCategories';
@@ -323,7 +323,7 @@ function init(context: IExtensionContextExt): boolean {
   context.registerSettings('Download', LazyComponent(() => require('./views/Settings')));
   context.registerReducer(['confidential', 'account', 'nexus'], accountReducer);
   context.registerReducer(['settings', 'nexus'], settingsReducer);
-  context.registerReducer(['persistent', 'nexus'], sessionReducer);
+  context.registerReducer(['persistent', 'nexus'], persistentReducer);
   context.registerDialog('login-dialog', LoginDialog, () => ({ nexus }));
   context.registerBanner('downloads', () => {
     const t = context.api.translate;

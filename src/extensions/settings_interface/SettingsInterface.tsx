@@ -197,7 +197,7 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
               checked={autoDeployment}
               onToggle={this.toggleAutoDeployment}
             >
-              {t('Deploy mods immediately when they get enabled')}
+              {t('Deploy mods immediately when they get enabled/disabled')}
               <More id='more-deploy-settings' name={t('Deployment')}>
                 {getTextModManagement('deployment', t)}
               </More>

@@ -263,6 +263,7 @@ export interface IState {
     downloads: IStateDownloads,
     categories: { [gameId: string]: ICategoryDictionary },
     gameMode: IStateGameMode,
+    deployment: { needToDeploy: { [gameId: string]: boolean } },
   };
 }
 

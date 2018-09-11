@@ -1,16 +1,16 @@
 import { IReducerSpec } from '../../../types/IExtensionContext';
 import { setSafe } from '../../../util/storeHelper';
 
-import { setExternalChangeAction, setExternalChanges } from '../actions/externalChanges';
+import * as actions from '../actions/session';
 
 /**
  * reducer for changes to settings regarding mods
  */
-export const externalChangesReducer: IReducerSpec = {
+export const sessionReducer: IReducerSpec = {
   reducers: {
-    [setExternalChanges as any]: (state, payload) =>
+    [actions.setExternalChanges as any]: (state, payload) =>
       setSafe(state, ['changes'], payload),
-    [setExternalChangeAction as any]: (state, payload) => {
+    [actions.setExternalChangeAction as any]: (state, payload) => {
       const changeSet = new Set(payload.filePaths);
       let current = state;
       state.changes.forEach((entry, idx) => {
@@ -20,8 +20,13 @@ export const externalChangesReducer: IReducerSpec = {
       });
       return current;
     },
+    [actions.setUpdatingMods as any]: (state, payload) => {
+      const { gameId, updatingMods } = payload;
+      return setSafe(state, ['updatingMods', gameId], updatingMods);
+    },
   },
   defaults: {
-  changes: [],
+    changes: [],
+    updatingMods: {},
   },
 };

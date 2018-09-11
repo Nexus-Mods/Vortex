@@ -14,12 +14,6 @@ export const setInstallPath = safeCreateAction('SET_MOD_INSTALL_PATH',
 export const setActivator = safeCreateAction('SET_ACTIVATOR',
   (gameId: string, activatorId: string) => ({ gameId, activatorId }));
 
-/**
- * sets the updating mods flag
- */
-export const setUpdatingMods = safeCreateAction('SET_UPDATING_MODS',
-  (gameId: string, updatingMods: boolean) => ({ gameId, updatingMods }));
-
 export const setShowModDropzone = safeCreateAction('SET_SHOW_MOD_DROPZONE',
   show => show);
 

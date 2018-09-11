@@ -19,6 +19,7 @@
 import { addNotification, IDialogResult, showDialog } from '../../actions/notifications';
 
 import { setProgress } from '../../actions/session';
+import { needToDeployForGame } from '../../util/selectors';
 import { IExtensionContext, IExtensionApi, ThunkStore } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
 import { SetupError } from '../../util/CustomErrors';
@@ -41,7 +42,7 @@ import TransferDialog from './views/TransferDialog';
 
 import { getGame } from '../gamemode_management';
 
-import { activeGameId, activeProfile } from './selectors';
+import { activeGameId, activeProfile, profileById, lastActiveProfileForGame } from './selectors';
 import { syncFromProfile, syncToProfile } from './sync';
 
 import * as Promise from 'bluebird';
@@ -159,6 +160,13 @@ function deploy(api: IExtensionApi, profileId: string): Promise<void> {
   if ((profileId === undefined) || (state.persistent.profiles[profileId] === undefined)) {
     return Promise.resolve();
   }
+
+  const profile = profileById(state, profileId);
+  if ((profileId === lastActiveProfileForGame(state, profile.gameId))
+      && !needToDeployForGame(state, profile.gameId)) {
+    return Promise.resolve();
+  }
+
   return new Promise((resolve, reject) => {
     api.events.emit('deploy-mods',
       (err: Error) => {

@@ -8,6 +8,7 @@ import createCachedSelector from 're-reselect';
 
 const installPathPattern = (state: IState) => state.settings.mods.installPath;
 const gameInstallPathPattern = (state: IState, gameId: string) => state.settings.mods.installPath[gameId];
+const allNeedToDeploy = (state: IState) => state.persistent.deployment.needToDeploy;
 
 export const installPath = createSelector(installPathPattern, activeGameId,
     (inPaths: { [gameId: string]: string }, inGameMode: string) => {
@@ -22,3 +23,9 @@ export const installPathForGame = createCachedSelector(gameInstallPathPattern, (
 
 export const currentActivator =
   (state: IState): string => state.settings.mods.activator[activeGameId(state)];
+
+export const needToDeploy = createSelector(allNeedToDeploy, activeGameId,
+  (inNeedToDeploy: { [gameId: string]: boolean }, inGameMode: string) => inNeedToDeploy[inGameMode]);
+
+export const needToDeployForGame = createCachedSelector(allNeedToDeploy, (state: IState, gameId: string) => gameId,
+  (inNeedToDeploy: { [gameId: string]: boolean }, inGameId: string) => inNeedToDeploy[inGameId])((state, gameId) => gameId);

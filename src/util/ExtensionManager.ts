@@ -2,6 +2,7 @@ import { forgetExtension, setExtensionEnabled } from '../actions/app';
 import { addNotification, dismissNotification } from '../actions/notifications';
 import { setExtensionLoadFailures } from '../actions/session';
 
+import { needToDeploy } from '../extensions/mod_management/selectors';
 import { DialogActions, DialogType, IDialogContent, showDialog } from '../actions/notifications';
 import { ExtensionInit } from '../types/Extension';
 import {
@@ -20,10 +21,11 @@ import {
   ThunkStore,
 } from '../types/IExtensionContext';
 import { INotification } from '../types/INotification';
-import { IExtensionLoadFailure, IExtensionState } from '../types/IState';
+import { IExtensionLoadFailure, IExtensionState, IState } from '../types/IState';
 
 import { Archive } from './archives';
 import { ProcessCanceled, UserCanceled } from './CustomErrors';
+import { isOutdated } from './errorHandling';
 import getVortexPath from './getVortexPath';
 import lazyRequire from './lazyRequire';
 import { log } from './log';
@@ -52,7 +54,6 @@ import * as rimraf from 'rimraf';
 import * as semver from 'semver';
 import { generate as shortid } from 'shortid';
 import { dynreq, runElevated, Win32Error } from 'vortex-run';
-import { isOutdated } from './errorHandling';
 
 // tslint:disable-next-line:no-var-requires
 const ReduxWatcher = require('redux-watcher');
@@ -913,9 +914,8 @@ class ExtensionManager {
   }
 
   private queryDeploy = (): Promise<DeployResult> => {
-    const autoDeploy = getSafe(this.mApi.store.getState(),
-                               ['settings', 'automation', 'deploy'], true);
-    if (autoDeploy) {
+    const state: IState = this.mApi.store.getState();
+    if (!needToDeploy(state)) {
       return Promise.resolve<DeployResult>('auto');
     } else {
       return this.mApi.showDialog('question', 'Deploy now?', {
