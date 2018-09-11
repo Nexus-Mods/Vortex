@@ -14,6 +14,7 @@ import LazyComponent from '../../util/LazyComponent';
 import local from '../../util/local';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
+import opn from '../../util/opn';
 import ReduxProp from '../../util/ReduxProp';
 import { activeGameId } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
@@ -44,7 +45,7 @@ import GameModeManager from './GameModeManager';
 import { currentGame, currentGameDiscovery } from './selectors';
 
 import * as Promise from 'bluebird';
-import { remote, shell } from 'electron';
+import { remote } from 'electron';
 import * as path from 'path';
 import * as Redux from 'redux';
 
@@ -425,7 +426,7 @@ function init(context: IExtensionContext): boolean {
     const discoveredGames = context.api.store.getState().settings.gameMode.discovered;
     const gamePath = getSafe(discoveredGames, [instanceIds[0], 'path'], undefined);
     if (gamePath !== undefined) {
-      shell.openItem(gamePath);
+      opn(gamePath);
     }
   };
 
@@ -433,7 +434,7 @@ function init(context: IExtensionContext): boolean {
     const discoveredGames = context.api.store.getState().settings.gameMode.discovered;
     const discovered = getSafe(discoveredGames, [instanceIds[0]], undefined);
     if (discovered !== undefined) {
-      shell.openItem(getGame(instanceIds[0]).getModPaths(discovered.path)['']);
+      opn(getGame(instanceIds[0]).getModPaths(discovered.path)['']);
     }
   };
 

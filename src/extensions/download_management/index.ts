@@ -3,7 +3,6 @@ import { IState } from '../../types/IState';
 import { getNormalizeFunc, Normalize, UserCanceled } from '../../util/api';
 import Debouncer from '../../util/Debouncer';
 import * as fs from '../../util/fs';
-import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
 import ReduxProp from '../../util/ReduxProp';
 import * as selectors from '../../util/selectors';
@@ -25,8 +24,8 @@ import { stateReducer } from './reducers/state';
 import { IDownload } from './types/IDownload';
 import { IProtocolHandlers } from './types/ProtocolHandlers';
 import getDownloadGames from './util/getDownloadGames';
-import {} from './views/DownloadView';
-import {} from './views/Settings';
+import DownloadView from './views/DownloadView';
+import Settings from './views/Settings';
 import SpeedOMeter from './views/SpeedOMeter';
 
 import DownloadManager from './DownloadManager';
@@ -351,14 +350,13 @@ function init(context: IExtensionContextExt): boolean {
       return count > 0 ? count : undefined;
     });
 
-  context.registerMainPage('download', 'Downloads',
-                           LazyComponent(() => require('./views/DownloadView')), {
+  context.registerMainPage('download', 'Downloads', DownloadView, {
                              hotkey: 'D',
                              group: 'global',
                              badge: downloadCount,
                            });
 
-  context.registerSettings('Download', LazyComponent(() => require('./views/Settings')));
+  context.registerSettings('Download', Settings);
 
   context.registerFooter('speed-o-meter', SpeedOMeter);
 

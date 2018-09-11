@@ -168,7 +168,18 @@ function processAttributes(input: any) {
 }
 
 function requestLogin(api: IExtensionApi, callback: (err: Error) => void) {
-  const id = require('uuid').v4();
+  let id: string;
+  try {
+    const uuid = require('uuid');
+    id = uuid.v4();
+  } catch(err) {
+    // odd, still unidentified bugs where bundled modules fail to load. 
+    log('warn', 'failed to import uuid module', err.message);
+    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    id = Array.apply(null, Array(10)).map(() => chars[Math.floor(Math.random() * chars.length)]).join('');
+    // the probability that this fails for another user at exactly the same time and they both get the same
+    // random number is practically 0
+  }
   const connection = new WebSocket('wss://sso.nexusmods.com')
     .on('open', () => {
       connection.send(JSON.stringify({
