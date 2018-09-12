@@ -59,9 +59,10 @@ export interface IContextMenuProps {
   visible: boolean;
   onHide: () => void;
   instanceId: string;
+  actions?: IActionDefinitionEx[];
 }
 
-type IProps = IContextMenuProps & { actions?: IActionDefinitionEx[] };
+type IProps = IContextMenuProps;
 
 class ContextMenu extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {

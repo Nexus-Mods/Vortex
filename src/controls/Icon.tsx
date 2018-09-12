@@ -188,7 +188,7 @@ class Icon extends React.Component<IIconProps, {}> {
           && !sets[set].has('icon-' + props.name)
           && !debugReported.has(props.name)) {
         // tslint:disable-next-line:no-console
-        console.log('icon missing', props.name);
+        console.trace('icon missing', props.name);
         debugReported.add(props.name);
       }
     });

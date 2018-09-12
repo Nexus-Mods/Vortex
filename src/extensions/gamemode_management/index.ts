@@ -498,6 +498,7 @@ function init(context: IExtensionContext): boolean {
     $.gameModeManager = new GameModeManagerImpl(
       extensionGames,
       (gameMode: string) => {
+        log('debug', 'gamemode activated', gameMode);
         events.emit('gamemode-activated', gameMode);
       });
     $.gameModeManager.attachToStore(store);
