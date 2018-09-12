@@ -160,6 +160,11 @@ describe('pushSafe', () => {
     let result = helper.pushSafe(input, ['a', 0, 'x'], 2);
     expect(result).toEqual({ a: [ { x: [1, 2] } ] });
   });
+  it('creates intermediate dictionaries,', () => {
+    let input = {};
+    let result = helper.pushSafe(input, ['a', 'b'], 42);
+    expect(result).toEqual({ a: { b: [42] } });
+  });
 });
 
 describe('addUniqueSafe', () => {
