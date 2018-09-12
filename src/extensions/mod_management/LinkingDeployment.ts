@@ -1,7 +1,7 @@
 import {addNotification} from '../../actions/notifications';
 import {IExtensionApi} from '../../types/IExtensionContext';
 import * as fs from '../../util/fs';
-import getNormalizeFunc, {Normalize} from '../../util/getNormalizeFunc';
+import {Normalize} from '../../util/getNormalizeFunc';
 import {log} from '../../util/log';
 import { truthy } from '../../util/util';
 
@@ -466,13 +466,19 @@ abstract class LinkingActivator implements IDeploymentMethod {
           }
         }));
     }, { recurse: false })
-    .then(() => queue)
-        .then(() => (empty && doRemove)
-          ? fs.unlinkAsync(path.join(baseDir, LinkingActivator.TAG_NAME))
-                .catch(err => err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err))
-                .then(() => fs.rmdirAsync(baseDir))
-                .then(() => true)
-          : Promise.resolve(false));
+      .then(() => queue)
+      .then(() => (empty && doRemove)
+        ? fs.unlinkAsync(path.join(baseDir, LinkingActivator.TAG_NAME))
+          .catch(err => err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err))
+          .then(() => fs.rmdirAsync(baseDir)
+            .catch(err => {
+              log('error', 'failed to remove directory, it was supposed to be empty', {
+                error: err.message,
+                path: baseDir,
+              });
+            }))
+          .then(() => true)
+        : Promise.resolve(false));
   }
 
   private restoreBackup(backupPath: string) {
