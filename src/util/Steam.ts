@@ -5,11 +5,11 @@ import * as fs from './fs';
 import { log } from './log';
 import { getSafeCI } from './storeHelper';
 
-import { app as appIn, remote } from 'electron';
 import * as path from 'path';
 import { parse } from 'simple-vdf';
 
-const app = (remote !== undefined) ? remote.app : appIn;
+
+import {homedir} from 'os';
 
 export interface ISteamEntry {
   appid: string;
@@ -75,7 +75,7 @@ class Steam implements ISteam {
           }
         });
     } else {
-      this.mBaseFolder = Promise.resolve(path.resolve(app.getPath('home'), '.steam', 'steam'));
+      this.mBaseFolder = Promise.resolve(path.resolve(homedir(), '.steam', 'steam'));
     }
   }
 
