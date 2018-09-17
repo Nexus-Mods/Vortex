@@ -97,7 +97,7 @@ function moveDownloads_0_16(store: Redux.Store<IState>): Promise<void> {
   log('info', 'importing downloads from pre-0.16.0 version');
   return dialogProm('info', 'Moving Downloads',
                     'On the next screen, please select an empty directory where all your downloads from Vortex '
-                    + 'will be placed', ['Next'])
+                    + '(for all games) will be placed', ['Next'])
     .then(() => selectDirectory(state.settings.downloads.path))
     .then(downloadPath => {
       store.dispatch(setDownloadPath(downloadPath));
@@ -138,9 +138,7 @@ const migrations: IMigration[] = [
     maySkip: false,
     doQuery: true,
     description: 'The directory structure for downloads was changed so we need to move them. '
-                + 'You can skip this step but then all downloads will disappear from your '
-                + 'download list. Please note: there will be no progress indication, please '
-                + 'be patient.',
+                + 'Please note: there will be no progress indication, please be patient.',
     apply: moveDownloads_0_16,
   },
   {

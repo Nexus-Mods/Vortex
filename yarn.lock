@@ -6297,8 +6297,8 @@ mkdirp@0.5.1, "mkdirp@>=0.5 0", mkdirp@^0.5.0, mkdirp@^0.5.1, mkdirp@~0.5.0, mkd
     minimist "0.0.8"
 
 modmeta-db@Nexus-Mods/modmeta-db:
-  version "0.3.0"
-  resolved "https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/ea5fff7e8a8d3ac5b6b7b401c9f3130db03b258a"
+  version "0.3.1"
+  resolved "https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/4a9755f7bebfc7c5e38c60de82b73b5e28ca25ad"
   dependencies:
     bluebird "^3.4.6"
     leveldown "^1.6.0"
