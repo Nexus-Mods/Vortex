@@ -673,7 +673,7 @@ class InstallManager {
 
     if ((result.instructions === undefined) ||
         (result.instructions.length === 0)) {
-      return Promise.reject('installer returned no instructions');
+      return Promise.reject(new ProcessCanceled('Empty archive or no options selected'));
     }
 
     const instructionGroups = this.transformInstructions(result.instructions);
