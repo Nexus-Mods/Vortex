@@ -78,7 +78,11 @@ class ReduxPersistor<T> {
     if ((input === undefined) || (input.length === 0)) {
       return '';
     } else {
-      return JSON.parse(input);
+      try {
+        return JSON.parse(input);
+      } catch (err) {
+        return undefined;
+      }
     }
   }
 
