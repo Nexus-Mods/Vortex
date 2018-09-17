@@ -11,11 +11,11 @@ import modName from '../mod_management/util/modName';
 import { setUserInfo } from './actions/session';
 import NXMUrl from './NXMUrl';
 import { checkModVersion } from './util/checkModsVersion';
-import { nexusGameId } from './util/convertGameId';
+import { nexusGameId, convertNXMIdReverse, convertGameIdReverse } from './util/convertGameId';
 import sendEndorseMod from './util/endorseMod';
 import { TimeoutError } from './util/submitFeedback';
 import transformUserInfo from './util/transformUserInfo';
-import { gameById } from '../gamemode_management/selectors';
+import { gameById, knownGames } from '../gamemode_management/selectors';
 
 const UPDATE_CHECK_DELAY = 60 * 60 * 1000;
 
@@ -31,12 +31,15 @@ export function startDownload(api: IExtensionApi, nexus: Nexus, nxmurl: string):
   let nexusModInfo: IModInfo;
   let nexusFileInfo: IFileInfo;
 
-  const gameId = nexusGameId(gameById(api.store.getState(), url.gameId.toLowerCase()));
+  const state = api.store.getState();
+  const games = knownGames(state);
+  const gameId = convertNXMIdReverse(games, url.gameId);
+  const pageId = nexusGameId(gameById(state, gameId));
 
-  return Promise.resolve(nexus.getModInfo(url.modId, gameId))
+  return Promise.resolve(nexus.getModInfo(url.modId, pageId))
     .then((modInfo: IModInfo) => {
       nexusModInfo = modInfo;
-      return nexus.getFileInfo(url.modId, url.fileId, gameId);
+      return nexus.getFileInfo(url.modId, url.fileId, pageId);
     })
     .then((fileInfo: IFileInfo) => {
       nexusFileInfo = fileInfo;
@@ -49,13 +52,13 @@ export function startDownload(api: IExtensionApi, nexus: Nexus, nxmurl: string):
       });
       return new Promise<string>((resolve, reject) => {
         api.events.emit('start-download',
-          () => Promise.resolve(nexus.getDownloadURLs(url.modId, url.fileId, gameId))
+          () => Promise.resolve(nexus.getDownloadURLs(url.modId, url.fileId, pageId))
                     .map((res: IDownloadURL) => res.URI), {
-          game: url.gameId.toLowerCase(),
+          game: gameId,
           source: 'nexus',
           name: nexusFileInfo.name,
           nexus: {
-            ids: { gameId, modId: url.modId, fileId: url.fileId },
+            ids: { gameId: pageId, modId: url.modId, fileId: url.fileId },
             modInfo: nexusModInfo,
             fileInfo: nexusFileInfo,
           },

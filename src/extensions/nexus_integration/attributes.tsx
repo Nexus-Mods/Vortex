@@ -3,7 +3,7 @@ import { getSafe } from '../../util/storeHelper';
 import EndorsementFilter from './views/EndorsementFilter';
 import { IModWithState } from '../mod_management/types/IModProps';
 import { nexusGameId, convertGameIdReverse } from './util/convertGameId';
-import { activeGameId, gameById, currentGame } from '../../util/selectors';
+import { activeGameId, gameById, currentGame, knownGames } from '../../util/selectors';
 import { setModAttribute } from '../../actions';
 import EndorseModButton from './views/EndorseModButton';
 import NexusModIdDetail from './views/NexusModIdDetail';
@@ -149,11 +149,11 @@ export function genGameAttribute(api: IExtensionApi): ITableAttribute<IMod> {
     },
     placement: 'detail',
     help: api.translate(
-      'If you\'ve downloaded this mod from a different game section than you\'re, '
+      'If you\'ve downloaded this mod from a different game section than you\'re managing, '
       + 'set this to the game the mod was intended for.\n\n'
       + 'So if you manually downloaded this mod from the Skyrim section and installed it for '
       + 'Skyrim Special Edition, set this to "Skyrim".\n\n'
-      + 'Otherwise, please don\'t change this, it is required to be correct so '
+      + 'Otherwise, please don\'t change this. It is required to be correct so '
       + 'Vortex can retrieve the correct mod information (including update info).'),
     edit: {
       choices: () => nexusGames().sort().map(game => ({ key: game.domain_name, text: game.name })),
@@ -164,7 +164,7 @@ export function genGameAttribute(api: IExtensionApi): ITableAttribute<IMod> {
         }
         mods.forEach(mod => {
           api.store.dispatch(setModAttribute(
-            gameMode, mod.id, 'downloadGame', convertGameIdReverse(value)));
+            gameMode, mod.id, 'downloadGame', convertGameIdReverse(knownGames(api.store.getState()), value)));
         });
       },
     },

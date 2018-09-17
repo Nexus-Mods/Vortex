@@ -1,15 +1,9 @@
 import { IGameStored } from "../../../types/IState";
 
 /**
- * convert the game id from either our internal format or the format
- * used in NXM links to the format used in the nexus api.
- * TODO: This works only as one function because our internal id so
- *   far coincides with the nxm link format except for upper/lower case.
- *   This should be two functions!
- * TODO: Actually, since game support is in extensions, this shouldn't happen
- *   here at all
+ * get the nexus page id for a game
+ * TODO: some games have hard-coded transformations here, should move all of that to game.details
  */
-
 export function nexusGameId(game: IGameStored): string {
   if (game === undefined) {
     return undefined;
@@ -28,10 +22,19 @@ export function nexusGameId(game: IGameStored): string {
   }[game.id.toLowerCase()] || game.id;
 }
 
-export function convertGameIdReverse(input: string): string {
+/**
+ * get our internal game id for a nexus page id
+ */
+export function convertGameIdReverse(knownGames: IGameStored[], input: string): string {
   if (input === undefined) {
     return undefined;
   }
+
+  const game = knownGames.find(game => (game.details !== undefined) && (game.details.nexusPageId === input));
+  if (game !== undefined) {
+    return game.id;
+  }
+
   return {
     skyrimspecialedition: 'skyrimse',
     newvegas: 'falloutnv',
@@ -39,15 +42,42 @@ export function convertGameIdReverse(input: string): string {
   }[input.toLowerCase()] || input;
 }
 
-export function toNXMId(input: string): string {
-  const inputL = input.toLowerCase();
-  if (inputL === 'skyrimse') {
+/**
+ * get our internal game id for a nxm link id
+ */
+export function convertNXMIdReverse(knownGames: IGameStored[], input: string): string {
+  if (input === undefined) {
+    return undefined;
+  }
+
+  const game = knownGames.find(game =>
+    (game.details !== undefined) &&
+    ((game.details.nxmLinkId === input) || (game.details.nexusPageId === input)));
+
+  if (game !== undefined) {
+    return game.id;
+  }
+
+  return input.toLowerCase();
+}
+
+/**
+ * get the nxm link id for a game
+ */
+export function toNXMId(game: IGameStored): string {
+  if (game.details !== undefined) {
+    if (game.details.nxmLinkId !== undefined) {
+      return game.details.nxmLinkId;
+    } else if (game.details.nexusPageId !== undefined) {
+      return game.details.nexusPageId;
+    }
+  }
+  const gameIdL = game.id.toLowerCase();
+  if (gameIdL === 'skyrimse') {
     return 'SkyrimSE';
-  } else if (inputL === 'skyrimvr') {
-    return 'SkyrimVR';
-  } else if (inputL === 'fallout4vr') {
+  } else if (gameIdL === 'fallout4vr') {
     return 'fallout4';
   } else {
-    return input;
+    return game.id;
   }
 }
