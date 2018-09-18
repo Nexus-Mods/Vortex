@@ -11,7 +11,6 @@ configuration:
 install:
 - ps: Install-Product node $env:nodejs_version x64
 - set EDGE_USE_CORECLR= && yarn install
-cache: '%LOCALAPPDATA%\Yarn'
 build_script:
 - cmd: >-
     yarn run ci
