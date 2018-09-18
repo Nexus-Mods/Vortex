@@ -440,23 +440,24 @@ function init(context: IExtensionContext): boolean {
 
   context.registerAction('game-icons', 100, 'refresh', {}, 'Quickscan', () => {
     if ($.gameModeManager !== undefined) {
+      // we need the state from before the discovery so can determine which games were discovered
+      const oldState: IState = context.api.store.getState();
       $.gameModeManager.startQuickDiscovery()
-      .then((gameIds: string[]) => {
-        const state: IState = context.api.store.getState();
-        const discoveredGames = state.settings.gameMode.discovered;
-        const knownGames = state.session.gameMode.known;
-        const newGames = gameIds.filter(id =>
-          (discoveredGames[id] === undefined) || (discoveredGames[id].path === undefined));
-        const message = newGames.length === 0
-          ? 'No new games found'
-          : newGames.map(id => '- ' + knownGames.find(iter => iter.id === id).name).join('\n');
-        removeDisapearedGames(context.api);
-        context.api.sendNotification({
-          type: 'success',
-          title: 'Discovery completed',
-          message,
+        .then((gameIds: string[]) => {
+          const discoveredGames = oldState.settings.gameMode.discovered;
+          const knownGames = oldState.session.gameMode.known;
+          const newGames = gameIds.filter(id =>
+            (discoveredGames[id] === undefined) || (discoveredGames[id].path === undefined));
+          const message = newGames.length === 0
+            ? 'No new games found'
+            : newGames.map(id => '- ' + knownGames.find(iter => iter.id === id).name).join('\n');
+          removeDisapearedGames(context.api);
+          context.api.sendNotification({
+            type: 'success',
+            title: 'Discovery completed',
+            message,
+          });
         });
-      });
     }
   });
 
