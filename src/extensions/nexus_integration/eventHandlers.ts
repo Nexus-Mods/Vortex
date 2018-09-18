@@ -92,15 +92,15 @@ export function onRequestOwnIssues(nexus: Nexus) {
 export function onModUpdate(api: IExtensionApi, nexus: Nexus): (...args: any[]) => void {
   return (gameId, modId, fileId) => {
     const state: IState = api.store.getState();
+    const game = gameById(api.store.getState(), gameId);
     if (!getSafe(state, ['persistent', 'nexus', 'userInfo', 'isPremium'], false)
       && !getSafe(state, ['persistent', 'nexus', 'userInfo', 'isSupporter'], false)) {
       // nexusmods can't let users download files directly from client, without
       // showing ads
-      opn(['https://www.nexusmods.com', nexusGameId(gameId), 'mods', modId].join('/'))
-        .catch(err => undefined);
+      opn(['https://www.nexusmods.com', nexusGameId(game), 'mods', modId].join('/'))
+        .catch(() => undefined);
       return;
     }
-    const game = gameById(api.store.getState(), gameId);
     // TODO: Need some way to identify if this request is actually for a nexus mod
     const url = `nxm://${toNXMId(game)}/mods/${modId}/files/${fileId}`;
     const downloads = state.persistent.downloads.files;
