@@ -129,7 +129,7 @@
     "cross-env": "^5.1.0",
     "devtron": "^1.4.0",
     "electron": "2.0.8",
-    "electron-builder": "^20.28.2",
+    "electron-builder": "20.15.0",
     "electron-devtools-installer": "^2.2.1",
     "electron-download-tf": "^4.3.4",
     "electron-rebuild": "^1.6.0",
