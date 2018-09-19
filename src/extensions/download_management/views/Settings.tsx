@@ -222,6 +222,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       })
       .then(() => {
         onSetDownloadPath(this.state.downloadPath);
+        this.context.api.events.emit('did-move-downloads');
       })
       .catch(UserCanceled, () => null)
       .catch((err) => {
@@ -259,6 +260,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   private transferPath() {
     const oldPath = getDownloadPath(this.props.downloadPath);
     const newPath = getDownloadPath(this.state.downloadPath);
+
+    this.context.api.events.emit('will-move-downloads');
 
     return Promise.join(fs.statAsync(oldPath), fs.statAsync(newPath),
       (statOld: fs.Stats, statNew: fs.Stats) =>
