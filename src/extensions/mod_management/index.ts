@@ -702,7 +702,11 @@ function once(api: IExtensionApi) {
   api.events.on('start-install', (archivePath: string,
                                   callback?: (error, id: string) => void) => {
     installManager.install(null, archivePath, [ activeGameId(store.getState()) ],
-          api, {},
+          api, {
+            download: {
+              localPath: path.basename(archivePath),
+            },
+          },
           true, false, callback);
   });
 

@@ -152,7 +152,7 @@ class InstallManager {
     processDependencies: boolean,
     enable: boolean,
     callback: (error: Error, id: string) => void,
-    forceGameId?: string) {
+    forceGameId?: string): void {
 
     if (this.mTask === undefined) {
       const Zip: typeof ZipT = require('node-7z');

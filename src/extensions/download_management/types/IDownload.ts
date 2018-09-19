@@ -40,7 +40,9 @@ export interface IDownload {
   urls: string[];
 
   /**
-   * path of the file being downloaded to
+   * path of the file being downloaded to. This is relative to the base download
+   * directory for the game and since we use a flat directory structure, this is
+   * in practice just the file name
    *
    * @type {string}
    * @memberOf IDownload
