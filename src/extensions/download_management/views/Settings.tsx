@@ -23,7 +23,7 @@ import { remote } from 'electron';
 import * as path from 'path';
 import * as React from 'react';
 import { Button as BSButton, ControlLabel, FormControl, FormGroup, HelpBlock, InputGroup,
-         Jumbotron, Modal } from 'react-bootstrap';
+         Jumbotron, Modal, ProgressBar } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 
@@ -46,6 +46,7 @@ type IProps = IActionProps & IConnectedProps;
 interface IComponentState {
   downloadPath: string;
   busy: string;
+  progress: number;
 }
 
 const nop = () => null;
@@ -57,6 +58,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     this.initState({
       downloadPath: props.downloadPath,
       busy: undefined,
+      progress: 0,
     });
   }
 
@@ -68,7 +70,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
   public render(): JSX.Element {
     const { t, isPremium, parallelDownloads } = this.props;
-    const { downloadPath } = this.state;
+    const { downloadPath, progress } = this.state;
 
     const changed = this.props.downloadPath !== downloadPath;
     const pathPreview = getDownloadPath(downloadPath, undefined);
@@ -99,15 +101,17 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               </InputGroup>
             </FlexLayout.Fixed>
             <FlexLayout.Fixed>
-              <BSButton disabled={!changed} onClick={this.apply}>{t('Apply')}</BSButton>
+              <InputGroup.Button>
+                <BSButton disabled={!changed} onClick={this.apply}>{t('Apply')}</BSButton>
+              </InputGroup.Button>
             </FlexLayout.Fixed>
           </FlexLayout>
           <HelpBlock><a data-url={pathPreview} onClick={this.openUrl}>{pathPreview}</a></HelpBlock>
           <Modal show={this.state.busy !== undefined} onHide={nop}>
             <Modal.Body>
               <Jumbotron>
-                <p><Spinner style={{ height: '32px', width: '32px' }} />
-                  {this.state.busy}</p>
+                <p>{this.state.busy}</p>
+                <ProgressBar style={{ height: '1.5em' }} now={progress} max={100}/>
               </Jumbotron>
             </Modal.Body>
           </Modal>
@@ -268,15 +272,31 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         Promise.resolve(statOld.dev === statNew.dev))
       .then((sameVolume: boolean) => {
         const func = sameVolume ? fs.renameAsync : fs.copyAsync;
+
+        let completed = 0;
+        let lastProgress = 0;
+        let count: number;
+
         return fs.readdirAsync(oldPath)
-          .map((fileName: string) =>
-            func(path.join(oldPath, fileName), path.join(newPath, fileName))
-            .catch(err => (err.code === 'EXDEV')
+          .map((fileName: string, idx: number, numFiles: number) => {
+            if (count === undefined) {
+              count = numFiles;
+            }
+            return func(path.join(oldPath, fileName), path.join(newPath, fileName))
+              .catch(err => (err.code === 'EXDEV')
                 // EXDEV implies we tried to rename when source and destination are
                 // not in fact on the same volume. This is what comparing the stat.dev
                 // was supposed to prevent.
                 ? fs.copyAsync(path.join(oldPath, fileName), path.join(newPath, fileName))
-                : Promise.reject(err)))
+                : Promise.reject(err))
+              .then(() => {
+                completed += 1;
+                const progress = Math.floor((completed * 100) / count);
+                if (progress > lastProgress) {
+                  this.nextState.progress = progress;
+                }
+              });
+          })
           .then(() => fs.removeAsync(oldPath));
       })
       .catch(err => (err.code === 'ENOENT')

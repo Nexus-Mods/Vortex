@@ -31,7 +31,7 @@ import * as path from 'path';
 import * as React from 'react';
 import {
   Alert, Button as BSButton, ControlLabel, FormControl, FormGroup,
-  HelpBlock, InputGroup, Jumbotron, Modal, Panel,
+  HelpBlock, InputGroup, Jumbotron, Modal, Panel, ProgressBar,
 } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
@@ -64,6 +64,7 @@ interface IActionProps {
 interface IComponentState {
   installPath: string;
   busy: string;
+  progress: number;
   supportedActivators: IDeploymentMethod[];
   currentActivator: string;
 }
@@ -77,6 +78,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     super(props);
     this.initState({
       busy: undefined,
+      progress: 0,
       supportedActivators: [],
       currentActivator: props.currentActivator,
       installPath: props.installPath,
@@ -103,7 +105,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
   public render(): JSX.Element {
     const { t, discovery, game } = this.props;
-    const { currentActivator, supportedActivators } = this.state;
+    const { currentActivator, progress, supportedActivators } = this.state;
 
     if (game === undefined) {
       return (
@@ -127,8 +129,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             <Modal show={this.state.busy !== undefined} onHide={nop}>
               <Modal.Body>
                 <Jumbotron>
-                  <p><Spinner style={{ height: '32px', width: '32px' }} />
-                    {this.state.busy}</p>
+                  <p>{this.state.busy}</p>
+                  <ProgressBar style={{ height: '1.5em' }} now={progress} />
                 </Jumbotron>
               </Modal.Body>
             </Modal>
@@ -174,8 +176,16 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         Promise.resolve(statOld.dev === statNew.dev))
       .then((sameVolume: boolean) => {
         const func = sameVolume ? fs.renameAsync : fs.copyAsync;
+
+        let completed = 0;
+        let lastProgress = 0;
+        let count: number;
+
         return fs.readdirAsync(oldPath)
-          .map((fileName: string) => {
+          .map((fileName: string, index: number, numFiles: number) => {
+            if (count === undefined) {
+              count = numFiles;
+            }
             log('debug', 'transfer installs', { fileName });
             return func(path.join(oldPath, fileName), path.join(newPath, fileName))
               .catch(err => (err.code === 'EXDEV')
@@ -183,9 +193,16 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                 // not in fact on the same volume. This is what comparing the stat.dev
                 // was supposed to prevent.
                 ? fs.copyAsync(path.join(oldPath, fileName), path.join(newPath, fileName))
-                : Promise.reject(err));
-          }, { concurrency: 5 })
-          .then(() => fs.removeAsync(oldPath));
+                : Promise.reject(err))
+              .then(() => {
+                ++completed;
+                const progress = Math.floor((completed * 100) / count);
+                if (progress > lastProgress) {
+                  this.nextState.progress = progress;
+                }
+              });
+            })
+            .then(() => fs.removeAsync(oldPath));
       })
       .catch(err => (err.code === 'ENOENT')
         ? Promise.resolve()
@@ -365,7 +382,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
   private openUrl = (evt) => {
     const url = evt.currentTarget.getAttribute('data-url');
-    opn(url).catch(err => undefined);
+    opn(url).catch(() => undefined);
   }
 
   private browsePath = () => {
