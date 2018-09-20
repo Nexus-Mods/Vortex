@@ -844,7 +844,7 @@ class ExtensionManager {
   }
 
   private lookupModMeta = (detail: ILookupDetails): Promise<ILookupResult[]> => {
-    const lookupId = this.modLookupId(detail);
+    let lookupId = this.modLookupId(detail);
     if (this.mModDBCache[lookupId] !== undefined) {
       return Promise.resolve(this.mModDBCache[lookupId]);
     }
@@ -861,6 +861,11 @@ class ExtensionManager {
       promise = modmeta.genHash(detail.filePath).then((res: IHashResult) => {
         fileMD5 = res.md5sum;
         fileSize = res.numBytes;
+        lookupId = this.modLookupId({
+          ...detail,
+          fileMD5,
+          fileSize,
+        });
         this.getApi().events.emit('filehash-calculated', detail.filePath, fileMD5, fileSize);
       });
     } else {

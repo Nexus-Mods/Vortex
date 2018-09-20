@@ -3,7 +3,7 @@ import Debouncer from '../../util/Debouncer';
 import opn from '../../util/opn';
 import { activeGameId, gameById } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
-import { IModTable, IState, StateChangeCallback, IMod } from '../../types/api';
+import { IModTable, IState, StateChangeCallback, IDownload } from '../../types/api';
 
 import { retrieveModInfo } from './util/checkModsVersion';
 import submitFeedback from './util/submitFeedback';
@@ -17,7 +17,55 @@ import { startDownload, endorseModImpl, checkModVersionsImpl, validateKey } from
 import { setApiKey } from '../../util/errorHandling';
 import { setUserInfo } from './actions/session';
 import { setUpdatingMods } from '../mod_management/actions/settings';
+import { setDownloadModInfo } from '../../actions';
 
+export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
+  const state: IState = api.store.getState();
+  let lastDownloadTable = state.persistent.downloads.files;
+
+  const updateDebouncer: Debouncer = new Debouncer((newDownloadTable: {[id: string]: IDownload }) => {
+    const state = api.store.getState();
+    if (lastDownloadTable !== newDownloadTable) {
+      Promise.map(Object.keys(newDownloadTable), dlId => {
+        const download = newDownloadTable[dlId];
+        const oldModId = getSafe(lastDownloadTable, [dlId, 'modInfo', 'nexus', 'ids', 'modId'], undefined);
+        const oldFileId = getSafe(lastDownloadTable, [dlId, 'modInfo', 'nexus', 'ids', 'fileId'], undefined);
+        const modId = getSafe(download, ['modInfo', 'nexus', 'ids', 'modId'], undefined);
+        const fileId = getSafe(download, ['modInfo', 'nexus', 'ids', 'fileId'], undefined);
+        const gameId = getSafe(download, ['modInfo', 'nexus', 'ids', 'gameId'], download.game[0]);
+        if ((modId !== undefined)
+            && ((oldModId !== modId) || (oldFileId !== fileId))) {
+          return nexus.getModInfo(modId, gameId)
+          .then(modInfo => {
+            api.store.dispatch(setDownloadModInfo(dlId, 'nexus.modInfo', modInfo));
+            return (fileId !== undefined)
+              ? nexus.getFileInfo(modId, fileId, gameId)
+                .catch(err => {
+                  log('warn', 'failed to query file info', { message: err.message });
+                  return Promise.resolve(undefined);
+                })
+              : Promise.resolve(undefined);
+          })
+          .then(fileInfo => {
+            api.store.dispatch(setDownloadModInfo(dlId, 'nexus.fileInfo', fileInfo));
+          })
+          .catch(err => {
+            log('warn', 'failed to query mod info', { message: err.message });
+          });
+        } else {
+          return Promise.resolve();
+        }
+      })
+      .then(() => {
+        lastDownloadTable = newDownloadTable;
+      });
+    }
+    return null;
+  }, 2000);
+
+  return (oldValue: IModTable, newValue: IModTable) =>
+      updateDebouncer.schedule(undefined, newValue);
+}
 
 export function onChangeMods(api: IExtensionApi, nexus: Nexus) {
   let lastModTable = api.store.getState().persistent.mods;

@@ -1,6 +1,7 @@
+import { setDownloadModInfo } from '../../actions';
 import { IDialogResult, showDialog } from '../../actions/notifications';
 import InputButton from '../../controls/InputButton';
-import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
+import { IExtensionApi, IExtensionContext, ILookupResult } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
 import { ProcessCanceled } from '../../util/CustomErrors';
 import { setApiKey } from '../../util/errorHandling';
@@ -8,7 +9,7 @@ import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import opn from '../../util/opn';
-import { activeGameId, gameById } from '../../util/selectors';
+import { activeGameId, gameById, downloadPathForGame } from '../../util/selectors';
 import { currentGame, getSafe } from '../../util/storeHelper';
 import { decodeHTML, truthy } from '../../util/util';
 
@@ -42,10 +43,12 @@ import { remote } from 'electron';
 import * as fuzz from 'fuzzball';
 import * as I18next from 'i18next';
 import NexusT from 'nexus-api';
+import * as path from 'path';
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
 import {} from 'uuid';
 import * as WebSocket from 'ws';
+import NXMUrl from './NXMUrl';
 
 let nexus: NexusT;
 
@@ -289,6 +292,7 @@ function once(api: IExtensionApi) {
   api.onStateChange(['confidential', 'account', 'nexus', 'APIKey'],
     eh.onAPIKeyChanged(api, nexus));
   api.onStateChange(['persistent', 'mods'], eh.onChangeMods(api, nexus));
+  api.onStateChange(['persistent', 'downloads', 'files'], eh.onChangeDownloads(api, nexus))
 
   nexus.getModInfo(1, 'site')
     .then(info => {
@@ -317,6 +321,43 @@ function goBuyPremium() {
   opn('https://www.nexusmods.com/register/premium').catch(err => undefined);
 }
 
+function queryInfo(api: IExtensionApi, instanceIds: string[]) {
+  if (instanceIds === undefined) {
+    return;
+  }
+
+  const state: IState = api.store.getState();
+
+  instanceIds.map(dlId => {
+    const dl = state.persistent.downloads.files[dlId];
+    const gameId = Array.isArray(dl.game) ? dl.game[0] : dl.game;
+    const downloadPath = downloadPathForGame(state, gameId);
+    api.lookupModMeta({
+      fileMD5: dl.fileMD5,
+      filePath: path.join(downloadPath, dl.localPath),
+      gameId,
+      fileSize: dl.size,
+    })
+    .then((modInfo: ILookupResult[]) => {
+      if (modInfo.length > 0) {
+        try {
+          const nxmUrl = new NXMUrl(modInfo[0].value.sourceURI);
+          api.store.dispatch(setDownloadModInfo(dlId, 'source', 'nexus'));
+          api.store.dispatch(setDownloadModInfo(dlId, 'nexus.ids.gameId', nxmUrl.gameId));
+          api.store.dispatch(setDownloadModInfo(dlId, 'nexus.ids.fileId', nxmUrl.fileId));
+          api.store.dispatch(setDownloadModInfo(dlId, 'nexus.ids.modId', nxmUrl.modId));
+        } catch (err) {
+          // failed to parse the uri as an nxm link - that's not an error in this case, if
+          // the meta server wasn't nexus mods this is to be expected
+        }
+      }
+    })
+    .catch(err => {
+      log('warn', 'failed to look up mod meta info', { message: err.message });
+    });
+  });
+}
+
 function init(context: IExtensionContextExt): boolean {
   context.registerAction('application-icons', 200, LoginIcon, {}, () => ({ nexus }));
   context.registerAction('mods-action-icons', 999, 'open-ext', {}, 'Open on Nexus Mods', instanceIds => {
@@ -331,6 +372,11 @@ function init(context: IExtensionContextExt): boolean {
     const gameMode = activeGameId(state);
     return getSafe(state.persistent.mods, [gameMode, instanceIds[0], 'attributes', 'source'], undefined) === 'nexus';
   });
+  context.registerAction('downloads-action-icons', 100, 'refresh', {}, 'Query Info',
+    (instanceIds: string[]) => queryInfo(context.api, instanceIds));
+  context.registerAction('downloads-multirow-actions', 100, 'refresh', {}, 'Query Info',
+    (instanceIds: string[]) => queryInfo(context.api, instanceIds));
+
   context.registerSettings('Download', LazyComponent(() => require('./views/Settings')));
   context.registerReducer(['confidential', 'account', 'nexus'], accountReducer);
   context.registerReducer(['settings', 'nexus'], settingsReducer);
