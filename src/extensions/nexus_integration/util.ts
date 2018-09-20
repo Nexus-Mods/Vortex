@@ -16,6 +16,7 @@ import sendEndorseMod from './util/endorseMod';
 import { TimeoutError } from './util/submitFeedback';
 import transformUserInfo from './util/transformUserInfo';
 import { gameById, knownGames } from '../gamemode_management/selectors';
+import { activeGameId } from '../../util/selectors';
 
 const UPDATE_CHECK_DELAY = 60 * 60 * 1000;
 
@@ -151,7 +152,8 @@ export function endorseModImpl(
   modId: string,
   endorsedStatus: string) {
   const { store } = api;
-  const mod: IMod = getSafe(store.getState(), ['persistent', 'mods', gameId, modId], undefined);
+  const gameMode = activeGameId(store.getState());
+  const mod: IMod = getSafe(store.getState(), ['persistent', 'mods', gameMode, modId], undefined);
 
   if (mod === undefined) {
     log('warn', 'tried to endorse unknown mod', { gameId, modId });
@@ -168,7 +170,8 @@ export function endorseModImpl(
   }
 
   const nexusModId: number = parseInt(getSafe(mod.attributes, ['modId'], '0'), 10);
-  const version: string = getSafe(mod.attributes, ['version'], undefined);
+  const version: string = getSafe(mod.attributes, ['version'], undefined)
+                        || getSafe(mod.attributes, ['modVersion'], undefined);
 
   if (!truthy(version)) {
     api.sendNotification({
@@ -182,10 +185,10 @@ export function endorseModImpl(
   const game = gameById(api.store.getState(), gameId);
   sendEndorseMod(nexus, nexusGameId(game), nexusModId, version, endorsedStatus)
     .then((endorsed: string) => {
-      store.dispatch(setModAttribute(gameId, modId, 'endorsed', endorsed));
+      store.dispatch(setModAttribute(gameMode, modId, 'endorsed', endorsed));
     })
     .catch((err) => {
-      store.dispatch(setModAttribute(gameId, modId, 'endorsed', 'Undecided'));
+      store.dispatch(setModAttribute(gameMode, modId, 'endorsed', 'Undecided'));
       if (err.message === 'You must provide a version') {
         api.sendNotification({
           type: 'info',

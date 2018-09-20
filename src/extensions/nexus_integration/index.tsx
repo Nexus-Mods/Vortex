@@ -166,6 +166,7 @@ function processAttributes(input: any) {
     uploadedTimestamp: getSafe(input, ['download', 'modInfo', 'nexus',
                                        'fileInfo', 'uploaded_timestamp'], undefined),
     version: getSafe(input, ['download', 'modInfo', 'nexus', 'fileInfo', 'version'], undefined),
+    modVersion: getSafe(input, ['download', 'modInfo', 'nexus', 'modInfo', 'version'], undefined),
     customFileName: fuzzRatio < 50 ? `${modName} - ${fileName}` : undefined,
   });
 }

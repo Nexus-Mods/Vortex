@@ -61,14 +61,14 @@ function createEndorsedIcon(store: Redux.Store<any>, mod: IMod, onEndorse: Endor
     endorsed = undefined;
   }
 
-  const gameMode = getSafe(mod.attributes, ['downloadGame'], undefined)
-                || activeGameId(store.getState());
+  const gameId = getSafe(mod.attributes, ['downloadGame'], undefined)
+               || activeGameId(store.getState());
   if (endorsed !== undefined) {
     return (
       <EndorseModButton
         endorsedStatus={endorsed}
         t={t}
-        gameId={gameMode}
+        gameId={gameId}
         modId={mod.id}
         onEndorseMod={onEndorse}
       />
