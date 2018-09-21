@@ -105,6 +105,39 @@ abstract class LinkingActivator implements IDeploymentMethod {
       });
   }
 
+  private removeDeployedFile(installationPath: string, dataPath: string, key: string, restoreBackup: boolean): Promise<void> {
+    const outputPath = path.join(
+      dataPath, this.mContext.previousDeployment[key].relPath);
+    const sourcePath = path.join(installationPath,
+      this.mContext.previousDeployment[key].source,
+      this.mContext.previousDeployment[key].relPath);
+    return this.unlinkFile(outputPath, sourcePath)
+      .catch(err => (err.code !== 'ENOENT')
+        // treat an ENOENT error for the unlink as if it was a success.
+        // The end result either way is the link doesn't exist now.
+        ? Promise.reject(err)
+        : Promise.resolve())
+      .then(() => restoreBackup
+        ? fs.renameAsync(outputPath + BACKUP_TAG, outputPath).catch(() => undefined)
+        : Promise.resolve())
+      .then(() => {
+        delete this.mContext.previousDeployment[key];
+      })
+      .catch(err => {
+        log('warn', 'failed to unlink', {
+          path: this.mContext.previousDeployment[key].relPath,
+          error: err.message,
+        });
+        // need to make sure the deployment manifest
+        // reflects the actual state, otherwise we may
+        // leave files orphaned
+        this.mContext.newDeployment[key] =
+          this.mContext.previousDeployment[key];
+
+        return Promise.reject(err);
+      });
+  }
+
   public finalize(gameId: string,
                   dataPath: string,
                   installationPath: string,
@@ -141,49 +174,23 @@ abstract class LinkingActivator implements IDeploymentMethod {
       }
     };
 
-    return Promise.map([].concat(removed, sourceChanged, contentChanged),
-                       key => {
-                         const outputPath = path.join(
-                             dataPath, this.mContext.previousDeployment[key].relPath);
-                         const sourcePath = path.join(installationPath,
-                           this.mContext.previousDeployment[key].source,
-                           this.mContext.previousDeployment[key].relPath);
-                         return this.unlinkFile(outputPath, sourcePath)
-                             .catch(err => (err.code !== 'ENOENT')
-                               // treat an ENOENT error for the unlink as if it was a success.
-                               // The end result either way is the link doesn't exist now.
-                                ? Promise.reject(err)
-                                : Promise.resolve())
-                             .then(() => fs.renameAsync(outputPath + BACKUP_TAG,
-                                                        outputPath)
-                                             .catch(() => undefined))
-                             .then(() => {
-                               progress();
-                               delete this.mContext.previousDeployment[key];
-                             })
-                             .catch(err => {
-                               log('warn', 'failed to unlink', {
-                                 path: this.mContext.previousDeployment[key].relPath,
-                                 error: err.message,
-                               });
-                               // need to make sure the deployment manifest
-                               // reflects the actual state, otherwise we may
-                               // leave files orphaned
-                               this.mContext.newDeployment[key] =
-                                this.mContext.previousDeployment[key];
-                               let idx = sourceChanged.indexOf(key);
-                               if (idx !== -1) {
-                                 sourceChanged.splice(idx, 1);
-                               } else {
-                                 idx = contentChanged.indexOf(key);
-                                 if (idx !== -1) {
-                                   contentChanged.splice(idx, 1);
-                                 }
-                               }
-
-                               ++errorCount;
-                             });
-                       })
+    return Promise.map(removed, key =>
+        this.removeDeployedFile(installationPath, dataPath, key, true)
+          .catch(() => {
+            ++errorCount;
+          }))
+      .then(() => Promise.map(sourceChanged, (key: string, idx: number) =>
+          this.removeDeployedFile(installationPath, dataPath, key, false)
+          .catch(() => {
+            ++errorCount;
+            sourceChanged.splice(idx, 1);
+          })))
+      .then(() => Promise.map(contentChanged, (key: string, idx: number) =>
+          this.removeDeployedFile(installationPath, dataPath, key, false)
+          .catch(() => {
+            ++errorCount;
+            contentChanged.splice(idx, 1);
+          })))
         // then, (re-)link all files that were added
         .then(() => Promise.map(
                   added,
