@@ -15,6 +15,7 @@ import * as I18next from 'i18next';
 import * as path from 'path';
 import turbowalk, { IEntry } from 'turbowalk';
 import * as util from 'util';
+import * as winapi from 'winapi-bindings';
 
 const LNK_EXT = '.vortex_lnk';
 
@@ -142,11 +143,16 @@ class DeploymentMethod extends LinkingDeployment {
     }
     return this.ensureDir(path.dirname(linkPath))
         .then((created: any) => {
+          const tagPath = path.join(created, LinkingDeployment.NEW_TAG_NAME);
           const tagDir = (created !== null)
-            ? fs.writeFileAsync(
-                path.join(created, LinkingDeployment.TAG_NAME),
-                'This directory was created by Vortex deployment and will be removed ' +
-                    'during purging if it\'s empty')
+            ? fs.writeFileAsync(tagPath,
+                'This directory was created by Vortex deployment and will be removed '
+                + 'during purging if it\'s empty')
+              .then(() => {
+                if (winapi !== undefined) {
+                  winapi.SetFileAttributes(tagPath, ['hidden']);
+                }
+              })
             : Promise.resolve();
 
           return tagDir.then(() => this.createLink(sourcePath, linkPath));

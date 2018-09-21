@@ -37,7 +37,7 @@ import deriveModInstallName from './modIdManager';
 import * as Promise from 'bluebird';
 import * as _ from 'lodash';
 import { IHashResult, ILookupResult, IReference, IRule } from 'modmeta-db';
-import ZipT = require('node-7z');
+import Zip = require('node-7z');
 import * as os from 'os';
 import * as path from 'path';
 import * as Redux from 'redux';
@@ -98,7 +98,7 @@ export const INI_TWEAKS_PATH = 'Ini Tweaks';
 class InstallManager {
   private mInstallers: IModInstaller[] = [];
   private mGetInstallPath: (gameId: string) => string;
-  private mTask: ZipT;
+  private mTask: Zip;
   private mQueue: Promise<void>;
 
   constructor(installPath: (gameId: string) => string) {
@@ -155,7 +155,6 @@ class InstallManager {
     forceGameId?: string): void {
 
     if (this.mTask === undefined) {
-      const Zip: typeof ZipT = require('node-7z');
       this.mTask = new Zip();
     }
 

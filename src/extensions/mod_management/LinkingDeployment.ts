@@ -38,7 +38,8 @@ interface IDeploymentContext {
  * (which is probably all of them)
  */
 abstract class LinkingActivator implements IDeploymentMethod {
-  public static TAG_NAME = '__delete_if_empty';
+  public static OLD_TAG_NAME = '__delete_if_empty';
+  public static NEW_TAG_NAME = process.platform === 'win32' ? '__folder_managed_by_vortex' : '.__folder_managed_by_vortex';
 
   public id: string;
   public name: string;
@@ -441,7 +442,9 @@ abstract class LinkingActivator implements IDeploymentMethod {
       doRemove = doRemove ||
         (entries.find(entry =>
           !entry.isDirectory
-          && path.basename(entry.filePath) === LinkingActivator.TAG_NAME) !== undefined);
+          && (   (path.basename(entry.filePath) === LinkingActivator.OLD_TAG_NAME)
+              || (path.basename(entry.filePath) === LinkingActivator.NEW_TAG_NAME))
+          ) !== undefined);
       const dirs = entries.filter(entry => entry.isDirectory);
       // recurse into subdirectories
       queue = queue.then(() =>
@@ -452,8 +455,10 @@ abstract class LinkingActivator implements IDeploymentMethod {
         .then(() => {
           // then check files. if there are any, this isn't empty. plus we
           // restore backups here
-          const files = entries.filter(entry => !entry.isDirectory &&
-            path.basename(entry.filePath) !== LinkingActivator.TAG_NAME);
+          const files = entries.filter(entry =>
+            !entry.isDirectory
+            && (path.basename(entry.filePath) !== LinkingActivator.OLD_TAG_NAME)
+            && (path.basename(entry.filePath) !== LinkingActivator.NEW_TAG_NAME));
           if (files.length > 0) {
             empty = false;
             return Promise.map(
@@ -465,11 +470,14 @@ abstract class LinkingActivator implements IDeploymentMethod {
             return Promise.resolve();
           }
         }));
-    }, { recurse: false })
+    }, { recurse: false, skipHidden: false })
       .then(() => queue)
       .then(() => (empty && doRemove)
-        ? fs.unlinkAsync(path.join(baseDir, LinkingActivator.TAG_NAME))
-          .catch(err => err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err))
+        ? fs.statAsync(path.join(baseDir, LinkingActivator.NEW_TAG_NAME))
+          .then(() => fs.unlinkAsync(path.join(baseDir, LinkingActivator.NEW_TAG_NAME)))
+          .catch(() => fs.unlinkAsync(path.join(baseDir, LinkingActivator.OLD_TAG_NAME)))
+          .catch(err =>
+            err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err))
           .then(() => fs.rmdirAsync(baseDir)
             .catch(err => {
               log('error', 'failed to remove directory, it was supposed to be empty', {

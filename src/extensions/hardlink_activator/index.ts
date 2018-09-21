@@ -14,6 +14,7 @@ import * as I18next from 'i18next';
 import * as path from 'path';
 import turbowalk from 'turbowalk';
 import * as util from 'util';
+import * as winapi from 'winapi-bindings';
 
 export class FileFound extends Error {
   constructor(name) {
@@ -167,10 +168,15 @@ class DeploymentMethod extends LinkingDeployment {
       .then((created: any) => {
         let tagDir: Promise<void>;
         if (created !== null) {
-          tagDir = fs.writeFileAsync(
-              path.join(created, LinkingDeployment.TAG_NAME),
-              'This directory was created by Vortex deployment and will be removed ' +
-                  'during purging if it\'s empty');
+          const tagPath = path.join(created, LinkingDeployment.NEW_TAG_NAME);
+          tagDir = fs.writeFileAsync(tagPath,
+              'This directory was created by Vortex deployment and will be removed '
+              + 'during purging if it\'s empty')
+            .then(() => {
+              if (winapi !== undefined) {
+                winapi.SetFileAttributes(tagPath, ['hidden']);
+              }
+            });
         } else {
           tagDir = Promise.resolve();
         }

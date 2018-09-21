@@ -95,6 +95,7 @@
     "uuid": "^3.3.2",
     "vortex-parse-ini": "Nexus-Mods/vortex-parse-ini",
     "vortex-run": "file:../src/util/vortex-run",
+    "winapi-bindings": "Nexus-Mods/node-winapi-bindings",
     "winreg": "^1.2.4",
     "winston": "^2.4.3",
     "ws": "^6.0.0"
