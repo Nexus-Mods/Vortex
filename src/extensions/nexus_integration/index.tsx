@@ -284,9 +284,8 @@ function once(api: IExtensionApi) {
   api.events.on('retrieve-category-list', (isUpdate: boolean) => {
     retrieveCategories(api, isUpdate);
   });
-  api.events.on('gamemode-activated', (gameId: string) => {
-    nexus.setGame(gameId);
-  });
+  api.events.on('gamemode-activated', (gameId: string) => { nexus.setGame(gameId); });
+  api.events.on('did-import-downloads', (dlIds: string[]) => { queryInfo(api, dlIds); });
 
   api.onStateChange(['settings', 'nexus', 'associateNXM'],
     eh.onChangeNXMAssociation(registerFunc, api));

@@ -113,12 +113,14 @@ function attributeExtractorCustom(input: any) {
   });
 }
 
-function genDownloadChangeHandler(store: Redux.Store<any>,
+function genDownloadChangeHandler(api: IExtensionApi,
                                   currentDownloadPath: string,
                                   gameId: string,
                                   nameIdMap: { [name: string]: string },
                                   normalize: Normalize) {
   const updateTimers: { [fileName: string]: NodeJS.Timer } = {};
+
+  const store: Redux.Store<any> = api.store;
 
   const findDownload = (fileName: string): string => {
     const state = store.getState()
@@ -158,6 +160,7 @@ function genDownloadChangeHandler(store: Redux.Store<any>,
           if (dlId === undefined) {
             dlId = shortid();
             store.dispatch(addLocalDownload(dlId, gameId, fileName, stats.size));
+            api.events.emit('did-import-downloads', [dlId]);
           }
           nameIdMap[normalize(fileName)] = dlId;
         })
@@ -233,7 +236,7 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
         }, {});
 
         downloadChangeHandler =
-          genDownloadChangeHandler(api.store, currentDownloadPath, gameId, nameIdMap, normalize);
+          genDownloadChangeHandler(api, currentDownloadPath, gameId, nameIdMap, normalize);
 
         const knownDLs =
           Object.keys(downloads)
@@ -333,12 +336,51 @@ function move(api: IExtensionApi, source: string, destination: string): Promise<
     .then(stats => {
       api.dismissNotification(notiId);
       store.dispatch(downloadProgress(dlId, stats.size, stats.size, [], undefined));
+      api.events.emit('did-import-download', [dlId]);
     })
     .catch(err => {
       api.dismissNotification(notiId);
       store.dispatch(removeDownload(dlId));
       log('info', 'failed to copy', {error: err.message});
     });
+}
+
+function genImportDownloadsHandler(api: IExtensionApi) {
+  return (downloadPaths: string[]) => {
+    const downloadPath = selectors.downloadPath(api.store.getState());
+    let hadDirs = false;
+    Promise.map(downloadPaths, dlPath => {
+      const fileName = path.basename(dlPath);
+      const destination = path.join(downloadPath, fileName);
+      return fs.statAsync(dlPath)
+        .then(stats => {
+          if (stats.isDirectory()) {
+            hadDirs = true;
+            return Promise.resolve();
+          } else {
+            return move(api, dlPath, destination);
+          }
+        })
+        .then(() => {
+          if (hadDirs) {
+            api.sendNotification({
+              type: 'warning',
+              title: 'Can\'t import directories',
+              message:
+                'You can drag mod archives here, directories are not supported',
+            });
+          }
+          log('info', 'imported archives', { count: downloadPaths.length });
+        })
+        .catch(err => {
+          api.sendNotification({
+            type: 'warning',
+            title: err.code === 'ENOENT' ? 'File doesn\'t exist' : err.message,
+            message: dlPath,
+          });
+        });
+    });
+  };
 }
 
 function init(context: IExtensionContextExt): boolean {
@@ -460,41 +502,7 @@ function init(context: IExtensionContextExt): boolean {
         });
     });
 
-    context.api.events.on('import-downloads', (downloadPaths: string[]) => {
-      const downloadPath = selectors.downloadPath(context.api.store.getState());
-      let hadDirs = false;
-      Promise.map(downloadPaths, dlPath => {
-        const fileName = path.basename(dlPath);
-        const destination = path.join(downloadPath, fileName);
-        return fs.statAsync(dlPath)
-            .then(stats => {
-              if (stats.isDirectory()) {
-                hadDirs = true;
-                return Promise.resolve();
-              } else {
-                return move(context.api, dlPath, destination);
-              }
-            })
-            .then(() => {
-              if (hadDirs) {
-                context.api.sendNotification({
-                  type: 'warning',
-                  title: 'Can\'t import directories',
-                  message:
-                      'You can drag mod archives here, directories are not supported',
-                });
-              }
-              log('info', 'imported archives', {count: downloadPaths.length});
-            })
-            .catch(err => {
-              context.api.sendNotification({
-                type: 'warning',
-                title: err.code === 'ENOENT' ? 'File doesn\'t exist' : err.message,
-                message: dlPath,
-              });
-            });
-      });
-    });
+    context.api.events.on('import-downloads', genImportDownloadsHandler(context.api));
 
     {
       let speedsDebouncer = new Debouncer(() => {
