@@ -62,9 +62,9 @@ function update(dispatch: Redux.Dispatch<any>,
                 mod: IMod,
                 attribute: string,
                 newValue: any) {
-  if (getSafe(mod.attributes, [attribute], undefined) !== newValue) {
-    dispatch(setModAttribute(gameId, mod.id, attribute, newValue));
-  }
+  // previously this would only update the attribute if it was already
+  // set on the mod. I just can't think of a good reason to do that any more
+  dispatch(setModAttribute(gameId, mod.id, attribute, newValue));
 }
 
 function updateModAttributes(dispatch: Redux.Dispatch<any>,

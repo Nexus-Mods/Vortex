@@ -13,13 +13,12 @@ function updateState(attributes: { [id: string]: any }): UpdateState {
   const newestVersion: string = getSafe(attributes, ['newestVersion'], undefined);
   const bugMessage: string = getSafe(attributes, ['bugMessage'], undefined);
 
-  let hasUpdate = false;
-  if ((newestFileId !== undefined) && (fileId !== undefined) && (newestFileId !== fileId)) {
-    hasUpdate = true;
-  } else if ((newestVersion !== undefined) && (version !== undefined)
-             && (versionClean(newestVersion) !== versionClean(version))) {
-    hasUpdate = true;
-  }
+  // installed file is in the OLD_VERSION group or not available at all
+  let hasUpdate = (newestFileId === 'unknown')
+    // we know the newest file id and the current file id and they are not the same
+    || ((newestFileId !== undefined) && (fileId !== undefined) && (newestFileId !== fileId))
+    // we know the newest version and the current version and the are not the same
+    || ((newestVersion !== undefined) && (version !== undefined) && (versionClean(newestVersion) !== versionClean(version)))
 
   if (hasUpdate) {
     // if the newest file id is unknown this means there *is* an update (according to the
