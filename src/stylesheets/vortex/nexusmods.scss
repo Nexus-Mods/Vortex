@@ -36,7 +36,11 @@
 
 .nexus-main-banner {
   background-size: cover !important;
-  padding: 10px;
+  // no vertical padding. If custom titlebar mode this makes no difference as the
+  // banner fills the available vertical space and that produces the exact same padding.
+  // In generic titlebar mode, the padding was pretty bad because it forced the entire
+  // header area to be wider for non-premium users compared to premium users.
+  padding: 0 10px;
   width: 320px;
   height: 100%;
   display: flex;

@@ -9,6 +9,14 @@ const earlyErrHandler = (evt) => {
   remote.app.exit(1);
 };
 
+// turn all error logs into a single parameter. The reason is that (at least in production)
+// these only get reported by the main process and due to a "bug" only one parameter gets
+// relayed.
+const oldErr = console.error;
+console.error = (...args) => {
+  oldErr(args.concat(' '));
+}
+
 window.addEventListener('error', earlyErrHandler);
 window.addEventListener('unhandledrejection', earlyErrHandler);
 
@@ -104,14 +112,6 @@ const terminateFromError = (error: any) => {
   log('warn', 'about to report an error', { stack: new Error().stack });
   terminate(toError(error), store !== undefined ? store.getState() : {});
 };
-
-// turn all error logs into a single parameter. The reason is that (at least in production)
-// these only get reported by the main process and due to a "bug" only one parameter gets
-// relayed.
-const oldErr = console.error;
-console.error = (...args) => {
-  oldErr(args.concat(' '));
-}
 
 function errorHandler(evt: any) {
   const error = evt.reason

@@ -1,7 +1,7 @@
 import * as Promise from 'bluebird';
-import {} from 'ffi';
+import * as ffi from 'ffi';
 import opn = require('opn');
-import * as refT from 'ref';
+import * as ref from 'ref';
 import { log } from './log';
 import { NotFound } from './CustomErrors';
 
@@ -27,9 +27,7 @@ function initTypes() {
 
   try {
     if (shell32 === undefined) {
-      const ffi = require('ffi');
-      const ref = require('ref');
-      const voidPtr: refT.Type = ref.refType(ref.types.void);
+      const voidPtr: ref.Type = ref.refType(ref.types.void);
 
       shell32 = new ffi.Library('Shell32', {
         ShellExecuteA: [ref.types.int32, [voidPtr, ref.types.CString, ref.types.CString,

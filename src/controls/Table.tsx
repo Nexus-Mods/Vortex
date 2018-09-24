@@ -263,7 +263,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderFooter(): JSX.Element {
-    const { t } = this.props;
+    const { t, tableId } = this.props;
     const { multiRowActions, rowState } = this.state;
 
     const selected = Object.keys(rowState).filter(key => rowState[key].selected);
@@ -278,7 +278,13 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     return (
       <div className='table-footer-placeholder'>
         <div className='table-footer'>
-          <IconBar className='menubar' t={t}>
+          <IconBar
+            t={t}
+            className='menubar'
+            group={`${tableId}-multirow-actions`}
+            instanceId={selected}
+            staticElements={multiRowActions}
+          >
             {multiRowActions.map((action, idx) =>
               <ToolbarIcon
                 key={idx}

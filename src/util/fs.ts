@@ -134,7 +134,11 @@ function errorRepeat(error: NodeJS.ErrnoException, filePath: string): PromiseBB<
 }
 
 function restackErr(error: Error, stackErr: Error): Error {
-  error.stack = error.message + '\n' + stackErr.stack;
+  // resolve the stack at the last possible moment because stack is actually a getter
+  // that will apply expensive source mapping when called
+  Object.defineProperty(error, 'stack', {
+    get: () => error.message + '\n' + stackErr.stack,
+  })
   return error;
 }
 

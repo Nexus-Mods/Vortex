@@ -311,8 +311,9 @@ function toolFilesForGame(game: IGame,
 function onFile(filePath: string, files: IFileEntry[], normalize: Normalize,
                 discoveredGames: {[id: string]: IDiscoveryResult},
                 onDiscoveredGame: DiscoveredCB, onDiscoveredTool: DiscoveredToolCB) {
+  const normalized = normalize(filePath);
   const matches: IFileEntry[] =
-    files.filter(entry => normalize(filePath).endsWith(entry.fileName));
+    files.filter(entry => normalized.endsWith(entry.fileName));
 
   for (const match of matches) {
     const testPath: string = filePath.substring(0, filePath.length - match.fileName.length);
@@ -351,7 +352,7 @@ export function searchDiscovery(
         progressCB(index, percent, label));
       // recurse through the search path and look for known files. use the appropriate file name
       // normalization
-      return getNormalizeFunc(searchPath, { separators: false, unicode: false, relative: false })
+      return getNormalizeFunc(searchPath, { separators: true, unicode: false, relative: false })
         .then((normalize: Normalize) => {
           // gather files to look for
           const files: IFileEntry[] = [];

@@ -42,7 +42,7 @@ class DeploymentMethod extends LinkingDeployment {
 
   constructor(api: IExtensionApi) {
     super(
-        'symlink_activator_elevated', 'Symlink deployment (Run as Administrator)',
+        'symlink_activator_elevated', 'Symlink Deployment (Run as Administrator)',
         'Deploys mods by setting symlinks in the destination directory. '
         + 'This is run as administrator and requires your permission every time we deploy.', api);
     this.mElevatedClient = null;

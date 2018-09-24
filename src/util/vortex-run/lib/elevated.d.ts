@@ -1,5 +1,4 @@
 /// <reference types="node" />
-/// <reference types="bluebird" />
 import * as Bluebird from 'bluebird';
 export declare class Win32Error extends Error {
     private mCode;

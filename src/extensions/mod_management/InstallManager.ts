@@ -37,7 +37,7 @@ import deriveModInstallName from './modIdManager';
 import * as Promise from 'bluebird';
 import * as _ from 'lodash';
 import { IHashResult, ILookupResult, IReference, IRule } from 'modmeta-db';
-import ZipT = require('node-7z');
+import Zip = require('node-7z');
 import * as os from 'os';
 import * as path from 'path';
 import * as Redux from 'redux';
@@ -98,7 +98,7 @@ export const INI_TWEAKS_PATH = 'Ini Tweaks';
 class InstallManager {
   private mInstallers: IModInstaller[] = [];
   private mGetInstallPath: (gameId: string) => string;
-  private mTask: ZipT;
+  private mTask: Zip;
   private mQueue: Promise<void>;
 
   constructor(installPath: (gameId: string) => string) {
@@ -152,16 +152,17 @@ class InstallManager {
     processDependencies: boolean,
     enable: boolean,
     callback: (error: Error, id: string) => void,
-    forceGameId?: string) {
+    forceGameId?: string): void {
 
     if (this.mTask === undefined) {
-      const Zip: typeof ZipT = require('node-7z');
       this.mTask = new Zip();
     }
 
     const fullInfo = { ...info };
     let destinationPath: string;
     let tempPath: string;
+
+    api.dismissNotification(`ready-to-install-${archiveId}`);
 
     const baseName = path.basename(archivePath, path.extname(archivePath));
     const currentProfile = activeProfile(api.store.getState());
@@ -673,7 +674,7 @@ class InstallManager {
 
     if ((result.instructions === undefined) ||
         (result.instructions.length === 0)) {
-      return Promise.reject('installer returned no instructions');
+      return Promise.reject(new ProcessCanceled('Empty archive or no options selected'));
     }
 
     const instructionGroups = this.transformInstructions(result.instructions);

@@ -14,6 +14,7 @@ import * as I18next from 'i18next';
 import * as path from 'path';
 import turbowalk from 'turbowalk';
 import * as util from 'util';
+import * as winapi from 'winapi-bindings';
 
 export class FileFound extends Error {
   constructor(name) {
@@ -27,7 +28,7 @@ class DeploymentMethod extends LinkingDeployment {
 
   constructor(api: IExtensionApi) {
     super(
-        'hardlink_activator', 'Hardlink deployment',
+        'hardlink_activator', 'Hardlink Deployment',
         'Deploys mods by setting hard links in the destination directory.',
         api);
   }
@@ -90,21 +91,28 @@ class DeploymentMethod extends LinkingDeployment {
     }
 
     const canary = path.join(installationPath, '__vortex_canary.tmp');
+
     try {
       fs.writeFileSync(canary, 'Should only exist temporarily, feel free to delete');
       fs.linkSync(canary, canary + '.link');
+    } catch (err) {
+      return 'Filesystem doesn\'t support hard links';
+    }
+
+    try {
       fs.removeSync(canary + '.link');
       fs.removeSync(canary);
     } catch (err) {
-      try {
-        fs.removeSync(canary + '.link');
-        fs.removeSync(canary);
-        return 'Filesystem doesn\'t support hard links';
-      } catch (innerErr) {
-        log('error', 'failed to clean up canary file. This indicates we were able to create '
-            + 'a file in the target directory but not delete it', { installationPath });
-        return 'Game directory not writeable, please check the log file';
-      }
+      // cleanup failed, this is almost certainly due to an AV jumping in to check these new files,
+      // I mean, why would I be able to create the files but not delete them?
+      // just try again later - can't do that synchronously though
+      Promise.delay(100)
+        .then(() => fs.removeAsync(canary + '.link'))
+        .then(() => fs.removeAsync(canary))
+        .catch(err => {
+          log('error', 'failed to clean up canary file. This indicates we were able to create '
+              + 'a file in the target directory but not delete it', { installationPath, message: err.message });
+        });
     }
 
     return undefined;
@@ -148,7 +156,7 @@ class DeploymentMethod extends LinkingDeployment {
                   ? fs.unlinkAsync(entry.filePath)
                     .catch(err =>
                       log('warn', 'failed to remove', entry.filePath))
-                  : Promise.resolve())
+                  : Promise.resolve(), { concurrency: 100 })
               .then(() => undefined));
           }, {details: true})
           .then(() => queue);
@@ -160,10 +168,15 @@ class DeploymentMethod extends LinkingDeployment {
       .then((created: any) => {
         let tagDir: Promise<void>;
         if (created !== null) {
-          tagDir = fs.writeFileAsync(
-              path.join(created, LinkingDeployment.TAG_NAME),
-              'This directory was created by Vortex deployment and will be removed ' +
-                  'during purging if it\'s empty');
+          const tagPath = path.join(created, LinkingDeployment.NEW_TAG_NAME);
+          tagDir = fs.writeFileAsync(tagPath,
+              'This directory was created by Vortex deployment and will be removed '
+              + 'during purging if it\'s empty')
+            .then(() => {
+              if (winapi !== undefined) {
+                winapi.SetFileAttributes(tagPath, ['hidden']);
+              }
+            });
         } else {
           tagDir = Promise.resolve();
         }

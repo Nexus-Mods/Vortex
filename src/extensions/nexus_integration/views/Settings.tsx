@@ -6,6 +6,7 @@ import Toggle from '../../../controls/Toggle';
 import { Button } from '../../../controls/TooltipControls';
 import { DialogActions, DialogType, IDialogContent } from '../../../types/IDialog';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
+import opn from '../../../util/opn';
 import { IErrorOptions, showError } from '../../../util/message';
 import { setAssociatedWithNXMURLs } from '../actions/settings';
 
@@ -26,7 +27,7 @@ function DownloadButton(): JSX.Element {
   return (
     <div className='nexusmods-action-button'>
       <Icon name='nexus' svgStyle='.st0, .st1, #path11 { fill-opacity: 0 !important }' />
-      <a className='nexusmods-fake-link' onClick={nop}>Download with Manager</a>
+      <a className='nexusmods-fake-link' onClick={nop}>Mod Manager Download</a>
     </div>
   );
 }
@@ -77,11 +78,12 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             onToggle={this.associate}
             disabled={process.platform === 'linux'}
           >
-            {t('Handle ')}<DownloadButton/>{t('buttons on nexusmods.com')}
+            {t('Handle ')}<DownloadButton/>{t('buttons on ')}
+            {<a onClick={this.openNexus}>NexusMods.com</a>}
           </Toggle>
           {process.platform === 'linux' ? <HelpBlock>Not supported on Linux</HelpBlock> : null}
           <div style={{ marginTop: 15 }}>
-            {t('Fix nexusmods-links in Chrome '
+            {t('Fix Nexus Mods links in Chrome '
               + '(Only required for Chrome. Requires Chrome to be closed)')}
             <More id='more-chrome-fix' name={t('Chrome Fix')}>
               {this.state.helpText}
@@ -92,12 +94,16 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               onClick={this.chromeFix}
               style={{ marginLeft: 5 }}
             >
-              {t('Fix now')}
+              {t('Fix Now')}
             </Button>
           </div>
         </FormGroup>
       </form>
     );
+  }
+
+  private openNexus = () => {
+    opn('https://www.nexusmods.com');
   }
 
   private chromeFix = () => {
@@ -115,7 +121,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                     text: 'Fix was applied.',
                   }, [ { label: 'Close' } ]);
                 } else {
-                  onDialog('info', 'Nothing changed', {
+                  onDialog('info', 'Nothing Changed', {
                     text: 'No change was necessary.',
                   }, [ { label: 'Close' } ]);
                 }

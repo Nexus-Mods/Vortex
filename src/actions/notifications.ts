@@ -175,7 +175,24 @@ export function showDialog(type: DialogType, title: string,
       DialogCallbacks.instance()[id] = (actionKey: string, input?: any) => {
         const action = actions.find(iter => iter.label === actionKey);
         if (truthy(action.action)) {
-          action.action(input);
+          try {
+            const res: any = action.action(input);
+            if (res.catch !== undefined) {
+              res.catch(err => {
+                log('error', 'rejection from dialog callback', {
+                  title: title,
+                  action: action.label,
+                  message: err.message,
+                });
+              });
+            }
+          } catch (err) {
+            log('error', 'exception from dialog callback', {
+              title,
+              action: action.label,
+              message: err.message,
+            });
+          }
         }
         resolve({ action: actionKey, input });
       };

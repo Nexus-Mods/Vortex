@@ -71,19 +71,25 @@ class VersionChangelogButton extends ComponentEx<IProps, {}> {
   }
 
   private renderChangelog(changelog: { format: 'html' | 'text', content: string}): JSX.Element {
+    const { t } = this.props;
     if (changelog === undefined) {
       return null;
     }
     if (changelog.format === 'html') {
-      const ReactSafeHtml: ReactSafeHtmlT = require('react-safe-html');
-      let components: any = {};
-      
-      if (ReactSafeHtml.component !== undefined) {
-        components = ReactSafeHtml.components.makeElements({});
-        components.br = ReactSafeHtml.components.createSimpleElement('br', {});
-      }
+      try {
+        const ReactSafeHtml: ReactSafeHtmlT = require('react-safe-html');
+        let components: any = {};
 
-      return <ReactSafeHtml html={changelog.content} components={components} />;
+        if (ReactSafeHtml.component !== undefined) {
+          components = ReactSafeHtml.components.makeElements({});
+          components.br = ReactSafeHtml.components.createSimpleElement('br', {});
+        }
+
+        return <ReactSafeHtml html={changelog.content} components={components} />;
+      } catch (err) {
+        // probably caused by an odd, very very rare bug loading included modules
+        return <p>{t('Parsing the changelog failed')}</p>;
+      }
     } else {
       return <p>{changelog.content}</p>;
     }

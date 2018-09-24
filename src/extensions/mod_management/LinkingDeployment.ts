@@ -1,7 +1,7 @@
 import {addNotification} from '../../actions/notifications';
 import {IExtensionApi} from '../../types/IExtensionContext';
 import * as fs from '../../util/fs';
-import getNormalizeFunc, {Normalize} from '../../util/getNormalizeFunc';
+import {Normalize} from '../../util/getNormalizeFunc';
 import {log} from '../../util/log';
 import { truthy } from '../../util/util';
 
@@ -38,7 +38,8 @@ interface IDeploymentContext {
  * (which is probably all of them)
  */
 abstract class LinkingActivator implements IDeploymentMethod {
-  public static TAG_NAME = '__delete_if_empty';
+  public static OLD_TAG_NAME = '__delete_if_empty';
+  public static NEW_TAG_NAME = process.platform === 'win32' ? '__folder_managed_by_vortex' : '.__folder_managed_by_vortex';
 
   public id: string;
   public name: string;
@@ -104,6 +105,39 @@ abstract class LinkingActivator implements IDeploymentMethod {
       });
   }
 
+  private removeDeployedFile(installationPath: string, dataPath: string, key: string, restoreBackup: boolean): Promise<void> {
+    const outputPath = path.join(
+      dataPath, this.mContext.previousDeployment[key].relPath);
+    const sourcePath = path.join(installationPath,
+      this.mContext.previousDeployment[key].source,
+      this.mContext.previousDeployment[key].relPath);
+    return this.unlinkFile(outputPath, sourcePath)
+      .catch(err => (err.code !== 'ENOENT')
+        // treat an ENOENT error for the unlink as if it was a success.
+        // The end result either way is the link doesn't exist now.
+        ? Promise.reject(err)
+        : Promise.resolve())
+      .then(() => restoreBackup
+        ? fs.renameAsync(outputPath + BACKUP_TAG, outputPath).catch(() => undefined)
+        : Promise.resolve())
+      .then(() => {
+        delete this.mContext.previousDeployment[key];
+      })
+      .catch(err => {
+        log('warn', 'failed to unlink', {
+          path: this.mContext.previousDeployment[key].relPath,
+          error: err.message,
+        });
+        // need to make sure the deployment manifest
+        // reflects the actual state, otherwise we may
+        // leave files orphaned
+        this.mContext.newDeployment[key] =
+          this.mContext.previousDeployment[key];
+
+        return Promise.reject(err);
+      });
+  }
+
   public finalize(gameId: string,
                   dataPath: string,
                   installationPath: string,
@@ -140,49 +174,23 @@ abstract class LinkingActivator implements IDeploymentMethod {
       }
     };
 
-    return Promise.map([].concat(removed, sourceChanged, contentChanged),
-                       key => {
-                         const outputPath = path.join(
-                             dataPath, this.mContext.previousDeployment[key].relPath);
-                         const sourcePath = path.join(installationPath,
-                           this.mContext.previousDeployment[key].source,
-                           this.mContext.previousDeployment[key].relPath);
-                         return this.unlinkFile(outputPath, sourcePath)
-                             .catch(err => (err.code !== 'ENOENT')
-                               // treat an ENOENT error for the unlink as if it was a success.
-                               // The end result either way is the link doesn't exist now.
-                                ? Promise.reject(err)
-                                : Promise.resolve())
-                             .then(() => fs.renameAsync(outputPath + BACKUP_TAG,
-                                                        outputPath)
-                                             .catch(() => undefined))
-                             .then(() => {
-                               progress();
-                               delete this.mContext.previousDeployment[key];
-                             })
-                             .catch(err => {
-                               log('warn', 'failed to unlink', {
-                                 path: this.mContext.previousDeployment[key].relPath,
-                                 error: err.message,
-                               });
-                               // need to make sure the deployment manifest
-                               // reflects the actual state, otherwise we may
-                               // leave files orphaned
-                               this.mContext.newDeployment[key] =
-                                this.mContext.previousDeployment[key];
-                               let idx = sourceChanged.indexOf(key);
-                               if (idx !== -1) {
-                                 sourceChanged.splice(idx, 1);
-                               } else {
-                                 idx = contentChanged.indexOf(key);
-                                 if (idx !== -1) {
-                                   contentChanged.splice(idx, 1);
-                                 }
-                               }
-
-                               ++errorCount;
-                             });
-                       })
+    return Promise.map(removed, key =>
+        this.removeDeployedFile(installationPath, dataPath, key, true)
+          .catch(() => {
+            ++errorCount;
+          }))
+      .then(() => Promise.map(sourceChanged, (key: string, idx: number) =>
+          this.removeDeployedFile(installationPath, dataPath, key, false)
+          .catch(() => {
+            ++errorCount;
+            sourceChanged.splice(idx, 1);
+          })))
+      .then(() => Promise.map(contentChanged, (key: string, idx: number) =>
+          this.removeDeployedFile(installationPath, dataPath, key, false)
+          .catch(() => {
+            ++errorCount;
+            contentChanged.splice(idx, 1);
+          })))
         // then, (re-)link all files that were added
         .then(() => Promise.map(
                   added,
@@ -441,7 +449,9 @@ abstract class LinkingActivator implements IDeploymentMethod {
       doRemove = doRemove ||
         (entries.find(entry =>
           !entry.isDirectory
-          && path.basename(entry.filePath) === LinkingActivator.TAG_NAME) !== undefined);
+          && (   (path.basename(entry.filePath) === LinkingActivator.OLD_TAG_NAME)
+              || (path.basename(entry.filePath) === LinkingActivator.NEW_TAG_NAME))
+          ) !== undefined);
       const dirs = entries.filter(entry => entry.isDirectory);
       // recurse into subdirectories
       queue = queue.then(() =>
@@ -452,8 +462,10 @@ abstract class LinkingActivator implements IDeploymentMethod {
         .then(() => {
           // then check files. if there are any, this isn't empty. plus we
           // restore backups here
-          const files = entries.filter(entry => !entry.isDirectory &&
-            path.basename(entry.filePath) !== LinkingActivator.TAG_NAME);
+          const files = entries.filter(entry =>
+            !entry.isDirectory
+            && (path.basename(entry.filePath) !== LinkingActivator.OLD_TAG_NAME)
+            && (path.basename(entry.filePath) !== LinkingActivator.NEW_TAG_NAME));
           if (files.length > 0) {
             empty = false;
             return Promise.map(
@@ -465,14 +477,23 @@ abstract class LinkingActivator implements IDeploymentMethod {
             return Promise.resolve();
           }
         }));
-    }, { recurse: false })
-    .then(() => queue)
-        .then(() => (empty && doRemove)
-          ? fs.unlinkAsync(path.join(baseDir, LinkingActivator.TAG_NAME))
-                .catch(err => err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err))
-                .then(() => fs.rmdirAsync(baseDir))
-                .then(() => true)
-          : Promise.resolve(false));
+    }, { recurse: false, skipHidden: false })
+      .then(() => queue)
+      .then(() => (empty && doRemove)
+        ? fs.statAsync(path.join(baseDir, LinkingActivator.NEW_TAG_NAME))
+          .then(() => fs.unlinkAsync(path.join(baseDir, LinkingActivator.NEW_TAG_NAME)))
+          .catch(() => fs.unlinkAsync(path.join(baseDir, LinkingActivator.OLD_TAG_NAME)))
+          .catch(err =>
+            err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err))
+          .then(() => fs.rmdirAsync(baseDir)
+            .catch(err => {
+              log('error', 'failed to remove directory, it was supposed to be empty', {
+                error: err.message,
+                path: baseDir,
+              });
+            }))
+          .then(() => true)
+        : Promise.resolve(false));
   }
 
   private restoreBackup(backupPath: string) {

@@ -55,7 +55,7 @@ class Settings extends ComponentEx<IProps, {}> {
       <form>
         <FormGroup controlId='dashlets'>
           <ControlLabel>{t('Dashlets')}</ControlLabel>
-          <HelpBlock>{t('Choose which widgets to show')}</HelpBlock>
+          <HelpBlock>{t('Enable Dashboard Widgets')}</HelpBlock>
           {
             dashlets.filter(dashlet => dashlet.closable !== false).map(dashlet => (
               <DashletToggle

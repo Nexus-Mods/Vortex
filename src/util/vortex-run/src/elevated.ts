@@ -1,17 +1,17 @@
 import * as Bluebird from 'bluebird';
-import {} from 'ffi';
+import * as ffi from 'ffi';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as refT from 'ref';
-import * as structT from 'ref-struct';
-import * as uniontypeT from 'ref-union';
+import * as ref from 'ref';
+import * as struct from 'ref-struct';
+import * as uniontype from 'ref-union';
 
 import * as tmp from 'tmp';
 
-let DUMMYUNIONNAME: uniontypeT;
-let SHELLEXECUTEINFO: structT;
-let voidPtr: refT.Type;
-let SHELLEXECUTEINFOPtr: refT.Type;
+let DUMMYUNIONNAME: uniontype;
+let SHELLEXECUTEINFO: struct;
+let voidPtr: ref.Type;
+let SHELLEXECUTEINFOPtr: ref.Type;
 let shell32;
 
 export class Win32Error extends Error {
@@ -31,10 +31,6 @@ function initTypes() {
   if (DUMMYUNIONNAME !== undefined) {
     return;
   }
-
-  const ref = require('ref');
-  const struct = require('ref-struct');
-  const uniontype = require('ref-union');
 
   voidPtr = ref.refType(ref.types.void);
 
@@ -122,8 +118,6 @@ function runElevated(ipcPath: string, func: (ipc: any, req: NodeRequireFunction)
   initTypes();
   if (shell32 === undefined) {
     if (process.platform === 'win32') {
-      const ffi = require('ffi');
-      const ref = require('ref');
       shell32 = new ffi.Library('Shell32', {
         ShellExecuteA: [ref.types.int32, [voidPtr, ref.types.CString, ref.types.CString,
                                 ref.types.CString, ref.types.CString, ref.types.int32]],

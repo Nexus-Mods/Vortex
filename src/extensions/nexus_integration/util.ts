@@ -11,11 +11,12 @@ import modName from '../mod_management/util/modName';
 import { setUserInfo } from './actions/persistent';
 import NXMUrl from './NXMUrl';
 import { checkModVersion } from './util/checkModsVersion';
-import { nexusGameId } from './util/convertGameId';
+import { nexusGameId, convertNXMIdReverse, convertGameIdReverse } from './util/convertGameId';
 import sendEndorseMod from './util/endorseMod';
 import { TimeoutError } from './util/submitFeedback';
 import transformUserInfo from './util/transformUserInfo';
-import { gameById } from '../gamemode_management/selectors';
+import { gameById, knownGames } from '../gamemode_management/selectors';
+import { activeGameId } from '../../util/selectors';
 
 const UPDATE_CHECK_DELAY = 60 * 60 * 1000;
 
@@ -31,12 +32,15 @@ export function startDownload(api: IExtensionApi, nexus: Nexus, nxmurl: string):
   let nexusModInfo: IModInfo;
   let nexusFileInfo: IFileInfo;
 
-  const gameId = nexusGameId(gameById(api.store.getState(), url.gameId.toLowerCase()));
+  const state = api.store.getState();
+  const games = knownGames(state);
+  const gameId = convertNXMIdReverse(games, url.gameId);
+  const pageId = nexusGameId(gameById(state, gameId));
 
-  return Promise.resolve(nexus.getModInfo(url.modId, gameId))
+  return Promise.resolve(nexus.getModInfo(url.modId, pageId))
     .then((modInfo: IModInfo) => {
       nexusModInfo = modInfo;
-      return nexus.getFileInfo(url.modId, url.fileId, gameId);
+      return nexus.getFileInfo(url.modId, url.fileId, pageId);
     })
     .then((fileInfo: IFileInfo) => {
       nexusFileInfo = fileInfo;
@@ -49,13 +53,13 @@ export function startDownload(api: IExtensionApi, nexus: Nexus, nxmurl: string):
       });
       return new Promise<string>((resolve, reject) => {
         api.events.emit('start-download',
-          () => Promise.resolve(nexus.getDownloadURLs(url.modId, url.fileId, gameId))
+          () => Promise.resolve(nexus.getDownloadURLs(url.modId, url.fileId, pageId))
                     .map((res: IDownloadURL) => res.URI), {
-          game: url.gameId.toLowerCase(),
+          game: gameId,
           source: 'nexus',
           name: nexusFileInfo.name,
           nexus: {
-            ids: { gameId, modId: url.modId, fileId: url.fileId },
+            ids: { gameId: pageId, modId: url.modId, fileId: url.fileId },
             modInfo: nexusModInfo,
             fileInfo: nexusFileInfo,
           },
@@ -68,7 +72,7 @@ export function startDownload(api: IExtensionApi, nexus: Nexus, nxmurl: string):
     })
     .then(downloadId => {
       api.sendNotification({
-        id: url.fileId.toString(),
+        id: `ready-to-install-${downloadId}`,
         type: 'success',
         title: api.translate('Download finished'),
         group: 'download-finished',
@@ -148,7 +152,8 @@ export function endorseModImpl(
   modId: string,
   endorsedStatus: string) {
   const { store } = api;
-  const mod: IMod = getSafe(store.getState(), ['persistent', 'mods', gameId, modId], undefined);
+  const gameMode = activeGameId(store.getState());
+  const mod: IMod = getSafe(store.getState(), ['persistent', 'mods', gameMode, modId], undefined);
 
   if (mod === undefined) {
     log('warn', 'tried to endorse unknown mod', { gameId, modId });
@@ -165,7 +170,8 @@ export function endorseModImpl(
   }
 
   const nexusModId: number = parseInt(getSafe(mod.attributes, ['modId'], '0'), 10);
-  const version: string = getSafe(mod.attributes, ['version'], undefined);
+  const version: string = getSafe(mod.attributes, ['version'], undefined)
+                        || getSafe(mod.attributes, ['modVersion'], undefined);
 
   if (!truthy(version)) {
     api.sendNotification({
@@ -179,10 +185,10 @@ export function endorseModImpl(
   const game = gameById(api.store.getState(), gameId);
   sendEndorseMod(nexus, nexusGameId(game), nexusModId, version, endorsedStatus)
     .then((endorsed: string) => {
-      store.dispatch(setModAttribute(gameId, modId, 'endorsed', endorsed));
+      store.dispatch(setModAttribute(gameMode, modId, 'endorsed', endorsed));
     })
     .catch((err) => {
-      store.dispatch(setModAttribute(gameId, modId, 'endorsed', 'Undecided'));
+      store.dispatch(setModAttribute(gameMode, modId, 'endorsed', 'Undecided'));
       if (err.message === 'You must provide a version') {
         api.sendNotification({
           type: 'info',

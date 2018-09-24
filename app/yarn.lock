@@ -932,8 +932,8 @@ electron-is-dev@^0.3.0:
   resolved "https://registry.yarnpkg.com/electron-is-dev/-/electron-is-dev-0.3.0.tgz#14e6fda5c68e9e4ecbeff9ccf037cbd7c05c5afe"
 
 electron-redux@TanninOne/electron-redux:
-  version "1.3.1-sync"
-  resolved "https://codeload.github.com/TanninOne/electron-redux/tar.gz/84d5e467a2e896a473e788af7eb6ec5872a61832"
+  version "1.3.2-sync"
+  resolved "https://codeload.github.com/TanninOne/electron-redux/tar.gz/24490cae3c0091409e93f5a710ef212069f13d98"
   dependencies:
     debug "^3.0.0"
     flux-standard-action "^2.0.0"
@@ -2061,8 +2061,8 @@ minizlib@^1.1.0:
     minimist "0.0.8"
 
 modmeta-db@Nexus-Mods/modmeta-db:
-  version "0.3.0"
-  resolved "https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/ea5fff7e8a8d3ac5b6b7b401c9f3130db03b258a"
+  version "0.3.1"
+  resolved "https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/4a9755f7bebfc7c5e38c60de82b73b5e28ca25ad"
   dependencies:
     bluebird "^3.4.6"
     leveldown "^1.6.0"
@@ -2097,6 +2097,10 @@ msbuild@^1.0.1:
 nan@2, nan@^2.10.0, nan@^2.4.0, nan@^2.8.0, nan@^2.9.2, nan@~2.10.0:
   version "2.10.0"
   resolved "https://registry.yarnpkg.com/nan/-/nan-2.10.0.tgz#96d0cd610ebd58d4b4de9cc0c6828cda99c7548f"
+
+nan@^2.11.0:
+  version "2.11.0"
+  resolved "https://registry.yarnpkg.com/nan/-/nan-2.11.0.tgz#574e360e4d954ab16966ec102c0c049fd961a099"
 
 nan@~2.7.0:
   version "2.7.0"
@@ -3675,7 +3679,7 @@ vortex-parse-ini@Nexus-Mods/vortex-parse-ini:
     ref "^1.3.4"
 
 "vortex-run@file:../src/util/vortex-run":
-  version "0.0.4"
+  version "0.0.5"
 
 warning@^3.0.0:
   version "3.0.0"
@@ -3706,6 +3710,14 @@ wide-align@^1.1.0:
   resolved "https://registry.yarnpkg.com/wide-align/-/wide-align-1.1.3.tgz#ae074e6bdc0c14a431e804e624549c633b000457"
   dependencies:
     string-width "^1.0.2 || 2"
+
+winapi-bindings@Nexus-Mods/node-winapi-bindings:
+  version "1.0.1"
+  resolved "https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/e6359b9312f8ca4c03c33026da9b5901aaadde64"
+  dependencies:
+    autogypi "^0.2.2"
+    nan "^2.11.0"
+    node-gyp "^3.8.0"
 
 winreg@^1.2.4:
   version "1.2.4"

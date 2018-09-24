@@ -1,8 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const Bluebird = require("bluebird");
+const ffi = require("ffi");
 const fs = require("fs");
 const path = require("path");
+const ref = require("ref");
+const struct = require("ref-struct");
+const uniontype = require("ref-union");
 const tmp = require("tmp");
 let DUMMYUNIONNAME;
 let SHELLEXECUTEINFO;
@@ -24,9 +28,6 @@ function initTypes() {
     if (DUMMYUNIONNAME !== undefined) {
         return;
     }
-    const ref = require('ref');
-    const struct = require('ref-struct');
-    const uniontype = require('ref-union');
     voidPtr = ref.refType(ref.types.void);
     DUMMYUNIONNAME = uniontype({
         hIcon: voidPtr,
@@ -49,30 +50,6 @@ function initTypes() {
         hProcess: voidPtr,
     });
     SHELLEXECUTEINFOPtr = ref.refType(SHELLEXECUTEINFO);
-}
-function execInfo(scriptPath) {
-    const ref = require('ref');
-    const instApp = ref.alloc(voidPtr);
-    return new SHELLEXECUTEINFO({
-        cbSize: SHELLEXECUTEINFO.size,
-        fMask: 0,
-        hwnd: null,
-        lpVerb: 'runas',
-        lpFile: process.execPath,
-        lpParameters: `--run ${scriptPath}`,
-        lpDirectory: path.dirname(process.execPath),
-        nShow: 0x01,
-        hInstApp: instApp,
-        lpIDList: null,
-        lpCLass: null,
-        hkeyClass: null,
-        dwHotKey: null,
-        DUMMYUNIONNAME: {
-            hIcon: null,
-            hMonitor: null,
-        },
-        hProcess: ref.alloc(voidPtr),
-    });
 }
 function elevatedMain(moduleRoot, ipcPath, main) {
     const handleError = (error) => {
@@ -128,8 +105,6 @@ function runElevated(ipcPath, func, args) {
     initTypes();
     if (shell32 === undefined) {
         if (process.platform === 'win32') {
-            const ffi = require('ffi');
-            const ref = require('ref');
             shell32 = new ffi.Library('Shell32', {
                 ShellExecuteA: [ref.types.int32, [voidPtr, ref.types.CString, ref.types.CString,
                         ref.types.CString, ref.types.CString, ref.types.int32]],
@@ -181,25 +156,6 @@ function runElevated(ipcPath, func, args) {
                         }
                     }
                 });
-                /* TODO: remove this code if there is no problem with ShellExecuteA
-                const runInfo = execInfo(tmpPath);
-        
-                shell32.ShellExecuteExA.async(runInfo.ref(), (execErr: any, res: any) => {
-                  // this is reached after the user confirmed the UAC dialog but before node
-                  // has read the script source so we have to give a little time for that to
-                  // happen before we can remove the tmp file
-                  setTimeout(cleanup, 5000);
-                  if (execErr) {
-                    reject(execErr);
-                  } else {
-                    if (res) {
-                      resolve(res);
-                    } else {
-                      reject(new Error(`ShellExecute failed, errorcode ${res}`));
-                    }
-                  }
-                });
-                */
             });
         });
     });

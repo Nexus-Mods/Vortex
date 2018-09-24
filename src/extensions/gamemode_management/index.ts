@@ -14,6 +14,7 @@ import LazyComponent from '../../util/LazyComponent';
 import local from '../../util/local';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
+import opn from '../../util/opn';
 import ReduxProp from '../../util/ReduxProp';
 import { activeGameId } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
@@ -44,7 +45,7 @@ import GameModeManager from './GameModeManager';
 import { currentGame, currentGameDiscovery } from './selectors';
 
 import * as Promise from 'bluebird';
-import { remote, shell } from 'electron';
+import { remote } from 'electron';
 import * as path from 'path';
 import * as Redux from 'redux';
 
@@ -425,7 +426,7 @@ function init(context: IExtensionContext): boolean {
     const discoveredGames = context.api.store.getState().settings.gameMode.discovered;
     const gamePath = getSafe(discoveredGames, [instanceIds[0], 'path'], undefined);
     if (gamePath !== undefined) {
-      shell.openItem(gamePath);
+      opn(gamePath).catch(() => undefined);
     }
   };
 
@@ -433,29 +434,30 @@ function init(context: IExtensionContext): boolean {
     const discoveredGames = context.api.store.getState().settings.gameMode.discovered;
     const discovered = getSafe(discoveredGames, [instanceIds[0]], undefined);
     if (discovered !== undefined) {
-      shell.openItem(getGame(instanceIds[0]).getModPaths(discovered.path)['']);
+      opn(getGame(instanceIds[0]).getModPaths(discovered.path)['']);
     }
   };
 
   context.registerAction('game-icons', 100, 'refresh', {}, 'Quickscan', () => {
     if ($.gameModeManager !== undefined) {
+      // we need the state from before the discovery so can determine which games were discovered
+      const oldState: IState = context.api.store.getState();
       $.gameModeManager.startQuickDiscovery()
-      .then((gameIds: string[]) => {
-        const state: IState = context.api.store.getState();
-        const discoveredGames = state.settings.gameMode.discovered;
-        const knownGames = state.session.gameMode.known;
-        const newGames = gameIds.filter(id =>
-          (discoveredGames[id] === undefined) || (discoveredGames[id].path === undefined));
-        const message = newGames.length === 0
-          ? 'No new games found'
-          : newGames.map(id => '- ' + knownGames.find(iter => iter.id === id).name).join('\n');
-        removeDisapearedGames(context.api);
-        context.api.sendNotification({
-          type: 'success',
-          title: 'Discovery completed',
-          message,
+        .then((gameIds: string[]) => {
+          const discoveredGames = oldState.settings.gameMode.discovered;
+          const knownGames = oldState.session.gameMode.known;
+          const newGames = gameIds.filter(id =>
+            (discoveredGames[id] === undefined) || (discoveredGames[id].path === undefined));
+          const message = newGames.length === 0
+            ? 'No new games found'
+            : newGames.map(id => '- ' + knownGames.find(iter => iter.id === id).name).join('\n');
+          removeDisapearedGames(context.api);
+          context.api.sendNotification({
+            type: 'success',
+            title: 'Discovery completed',
+            message,
+          });
         });
-      });
     }
   });
 
@@ -497,6 +499,7 @@ function init(context: IExtensionContext): boolean {
     $.gameModeManager = new GameModeManagerImpl(
       extensionGames,
       (gameMode: string) => {
+        log('debug', 'gamemode activated', gameMode);
         events.emit('gamemode-activated', gameMode);
       });
     $.gameModeManager.attachToStore(store);
