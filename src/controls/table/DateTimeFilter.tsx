@@ -27,11 +27,11 @@ export class DateTimeFilterComponent extends ComponentEx<IFilterProps, {}> {
       },
       ge: {
         symbol: '\u2265',
-        tooltip: props.t('Higher or Equal'),
+        tooltip: props.t('Greater-than or Equal'),
       },
       le: {
         symbol: '\u2264',
-        tooltip: props.t('Less or Equal'),
+        tooltip: props.t('Less-than or Equal'),
       },
     };
   }

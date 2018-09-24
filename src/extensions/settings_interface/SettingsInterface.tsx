@@ -143,14 +143,14 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
           </FormControl>
         </FormGroup>
         <FormGroup controlId='customization'>
-          <ControlLabel>{t('Customization')}</ControlLabel>
+          <ControlLabel>{t('Customisation')}</ControlLabel>
           <div>
             <div>
               <Toggle
                 checked={customTitlebar}
                 onToggle={this.toggleCustomTitlebar}
               >
-                {t('Custom Window Titlebar')}
+                {t('Custom Window Title Bar')}
               </Toggle>
             </div>
             <div>
@@ -171,7 +171,7 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
                 checked={advanced}
                 onToggle={this.toggleAdvanced}
               >
-                {t('Enable advanced mode')}
+                {t('Enable Advanced Mode')}
                 <More id='more-advanced-settings' name={t('Advanced')}>
                   {getText('advanced', t)}
                 </More>
@@ -182,7 +182,7 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
                 checked={profilesVisible}
                 onToggle={this.toggleProfiles}
               >
-                {t('Enable Profile management')}
+                {t('Enable Profile Management')}
                 <More id='more-profile-settings' name={t('Profiles')}>
                   {getTextProfiles('profiles', t)}
                 </More>
@@ -197,7 +197,7 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
               checked={autoDeployment}
               onToggle={this.toggleAutoDeployment}
             >
-              {t('Deploy mods immediately when they get enabled')}
+              {t('Deploy Mods when Enabled')}
               <More id='more-deploy-settings' name={t('Deployment')}>
                 {getTextModManagement('deployment', t)}
               </More>

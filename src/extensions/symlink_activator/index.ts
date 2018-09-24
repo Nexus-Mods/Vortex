@@ -25,7 +25,7 @@ class DeploymendMethod extends LinkingDeployment {
 
   constructor(api: IExtensionApi) {
     super(
-        'symlink_activator', 'Symlink deployment',
+        'symlink_activator', 'Symlink Deployment',
         'Deploys mods by setting symlinks in the destination directory.', api);
   }
 

@@ -28,7 +28,7 @@ class DeploymentMethod extends LinkingDeployment {
 
   constructor(api: IExtensionApi) {
     super(
-        'hardlink_activator', 'Hardlink deployment',
+        'hardlink_activator', 'Hardlink Deployment',
         'Deploys mods by setting hard links in the destination directory.',
         api);
   }

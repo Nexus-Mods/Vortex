@@ -134,11 +134,17 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             {!isPremium ? (
               <BSButton
                 onClick={this.goBuyPremium}
-                className='btn-download-go-premium'
+                className='btn-download-go-premium'    
               >
-                {t('Buy Premium to set multiple threads')}
+                {t('Go Premium')}
               </BSButton>
             ) : null}
+          </div>
+          <div>
+            {!isPremium ? (
+              <p>{t('Regular users are restricted to 1 download thread - Go Premium for up to 10 download threads!')}</p>
+              ) : null
+            }
           </div>
         </FormGroup>
       </form>

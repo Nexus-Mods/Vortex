@@ -202,7 +202,7 @@ class ServerList extends React.Component<IListProps, IListState> {
             key='input-add-metaserver'
             groupId='settings-buttons'
             icon='add'
-            tooltip={t('Add a metaserver')}
+            tooltip={t('Add a Metaserver')}
             onConfirmed={onAddMetaserver}
           />
         </ListGroupItem>

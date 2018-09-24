@@ -7,7 +7,6 @@ import walk from '../../../util/walk';
 import {IDiscoveryResult} from '../types/IDiscoveryResult';
 
 import * as Promise from 'bluebird';
-import * as path from 'path';
 
 function queryGameInfo(game: IGame & IDiscoveryResult): Promise<{ [key: string]: IGameDetail }> {
   if (game.path === undefined) {
@@ -29,7 +28,7 @@ function queryGameInfo(game: IGame & IDiscoveryResult): Promise<{ [key: string]:
     return {
       size: {title: 'Space Used', value: totalSize, type: 'bytes'},
       size_nolinks: {
-        title: 'Space Used (without links)',
+        title: 'Space Used (No Symlinks)',
         value: sizeWithoutLinks,
         type: 'bytes',
       },
@@ -40,5 +39,4 @@ function queryGameInfo(game: IGame & IDiscoveryResult): Promise<{ [key: string]:
     return {};
   });
 }
-
 export default queryGameInfo;
