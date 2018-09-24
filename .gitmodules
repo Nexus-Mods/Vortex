@@ -5,11 +5,11 @@
 [submodule "extensions\\gamebryo-plugin-management"]
 	path = extensions/gamebryo-plugin-management
 	url = https://github.com/Nexus-Mods/extension-plugin-management.git
-	branch = 0.16.0
+	branch = master
 [submodule "extensions\\feedback"]
 	path = extensions/feedback
 	url = https://github.com/Nexus-Mods/extension-feedback.git
-	branch = 0.16.0
+	branch = master
 [submodule "extensions\\gamebryo-archive-invalidation"]
 	path = extensions/gamebryo-archive-invalidation
 	url = https://github.com/Nexus-Mods/extension-archive-invalidation.git
@@ -45,7 +45,7 @@
 [submodule "extensions\\meta-editor"]
 	path = extensions/meta-editor
 	url = https://github.com/Nexus-Mods/extension-metaeditor.git
-	branch = single_dl_dir
+	branch = master
 [submodule "extensions\\mo-import"]
 	path = extensions/mo-import
 	url = https://github.com/Nexus-Mods/extension-mo-import.git
@@ -53,11 +53,11 @@
 [submodule "extensions\\mod-dependencies"]
 	path = extensions/mod-dependency-manager
 	url = https://github.com/Nexus-Mods/extension-mod-dependencies.git
-	branch = file-conflict-override
+	branch = master
 [submodule "extensions\\mod-highlights"]
 	path = extensions/mod-highlight
 	url = https://github.com/Nexus-Mods/extension-mod-highlights.git
-	branch = 0.16.0
+  branch = master
 [submodule "extensions\\modtype-dinput"]
 	path = extensions/modtype-dinput
 	url = https://github.com/Nexus-Mods/extension-modtype-dinput.git
@@ -93,7 +93,7 @@
 [submodule "api"]
 	path = api
 	url = https://github.com/Nexus-Mods/vortex-api
-	branch = 0.16.0
+	branch = master
 [submodule "extensions\\common-interpreters"]
 	path = extensions/common-interpreters
 	url = https://github.com/Nexus-Mods/extension-common-interpreters.git
@@ -109,7 +109,7 @@
 [submodule "extensions/fnis-integration"]
 	path = extensions/fnis-integration
 	url = https://github.com/Nexus-Mods/fnis-integration.git
-  branch = single_dl_dir
+  branch = master
 [submodule "extensions/game-pillarsofeternity2"]
 	path = extensions/game-pillarsofeternity2
 	url = https://github.com/Nexus-Mods/game-pillarsofeternity2.git
