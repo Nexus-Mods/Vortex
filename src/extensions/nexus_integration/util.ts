@@ -72,7 +72,7 @@ export function startDownload(api: IExtensionApi, nexus: Nexus, nxmurl: string):
     })
     .then(downloadId => {
       api.sendNotification({
-        id: url.fileId.toString(),
+        id: `ready-to-install-${downloadId}`,
         type: 'success',
         title: api.translate('Download finished'),
         group: 'download-finished',

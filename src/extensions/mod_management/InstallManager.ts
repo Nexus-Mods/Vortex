@@ -162,6 +162,8 @@ class InstallManager {
     let destinationPath: string;
     let tempPath: string;
 
+    api.dismissNotification(`ready-to-install-${archiveId}`);
+
     const baseName = path.basename(archivePath, path.extname(archivePath));
     const currentProfile = activeProfile(api.store.getState());
     let modId = baseName;
