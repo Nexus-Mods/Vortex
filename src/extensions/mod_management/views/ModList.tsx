@@ -182,7 +182,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       },
       {
         icon: 'refresh',
-        title: 'Check for update',
+        title: 'Check for Update',
         action: this.checkForUpdate,
         condition: instanceId => {
           const { mods } = this.props;
