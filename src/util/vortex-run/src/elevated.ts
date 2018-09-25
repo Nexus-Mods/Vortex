@@ -1,63 +1,9 @@
 import * as Bluebird from 'bluebird';
-import * as ffi from 'ffi';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as ref from 'ref';
-import * as struct from 'ref-struct';
-import * as uniontype from 'ref-union';
-
 import * as tmp from 'tmp';
+import * as winapi from 'winapi-bindings';
 
-let DUMMYUNIONNAME: uniontype;
-let SHELLEXECUTEINFO: struct;
-let voidPtr: ref.Type;
-let SHELLEXECUTEINFOPtr: ref.Type;
-let shell32;
-
-export class Win32Error extends Error {
-  private mCode: number;
-  constructor(message: string, code: number) {
-    super(`${message} (${code})`);
-    this.name = this.constructor.name;
-    this.mCode = code;
-  }
-
-  public get code(): number {
-    return this.mCode;
-  }
-}
-
-function initTypes() {
-  if (DUMMYUNIONNAME !== undefined) {
-    return;
-  }
-
-  voidPtr = ref.refType(ref.types.void);
-
-  DUMMYUNIONNAME = uniontype({
-    hIcon: voidPtr,
-    hMonitor: voidPtr,
-  });
-
-  SHELLEXECUTEINFO = struct({
-    cbSize: ref.types.uint32,
-    fMask: ref.types.uint32,
-    hwnd: voidPtr,
-    lpVerb: ref.types.CString,
-    lpFile: ref.types.CString,
-    lpParameters: ref.types.CString,
-    lpDirectory: ref.types.CString,
-    nShow: ref.types.int32,
-    hInstApp: voidPtr,
-    lpIDList: voidPtr,
-    lpClass: ref.types.CString,
-    hkeyClass: voidPtr,
-    dwHotKey: ref.types.uint32, DUMMYUNIONNAME,
-    hProcess: voidPtr,
-  });
-
-  SHELLEXECUTEINFOPtr = ref.refType(SHELLEXECUTEINFO);
-}
 
 function elevatedMain(moduleRoot: string, ipcPath: string,
                       main: (ipc, req: NodeRequireFunction) =>
@@ -115,16 +61,6 @@ function elevatedMain(moduleRoot: string, ipcPath: string,
 function runElevated(ipcPath: string, func: (ipc: any, req: NodeRequireFunction) =>
                         void | Promise<void> | Bluebird<void>,
                      args?: any): Bluebird<any> {
-  initTypes();
-  if (shell32 === undefined) {
-    if (process.platform === 'win32') {
-      shell32 = new ffi.Library('Shell32', {
-        ShellExecuteA: [ref.types.int32, [voidPtr, ref.types.CString, ref.types.CString,
-                                ref.types.CString, ref.types.CString, ref.types.int32]],
-        ShellExecuteExA: ['bool', [SHELLEXECUTEINFOPtr]],
-      });
-    }
-  }
   return new Bluebird((resolve, reject) => {
     tmp.file((err: Error, tmpPath: string, fd: number, cleanup: () => void) => {
       if (err) {
@@ -162,19 +98,17 @@ function runElevated(ipcPath: string, func: (ipc: any, req: NodeRequireFunction)
 
         // we can't call GetLastError through node-ffi so when using ShellExecuteExA we won't be
         // able to get an error code. With ShellExecuteA we can
-        shell32.ShellExecuteA.async(null, 'runas', process.execPath, `--run ${tmpPath}`,
-                                    path.dirname(process.execPath), 5, (execErr: any, res: any) => {
-          setTimeout(cleanup, 5000);
-          if (execErr) {
-            reject(execErr);
-          } else {
-            if (res > 32) {
-              resolve(res);
-            } else {
-              reject(new Win32Error('ShellExecute failed', res));
-            }
-          }
-        });
+        try {
+          winapi.ShellExecuteEx({
+            verb: 'runas',
+            file: process.execPath,
+            parameters: `--run ${tmpPath}`,
+            directory: path.dirname(process.execPath),
+            show: 'shownormal',
+          });
+        } catch (err) {
+          reject(err);
+        }
       });
     });
   });
