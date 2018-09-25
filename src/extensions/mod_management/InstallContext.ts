@@ -46,6 +46,7 @@ class InstallContext implements IInstallContext {
   private mInstallOutcome: InstallOutcome;
   private mFailReason: string;
   private mIsEnabled: (modId: string) => boolean;
+  private mIsDownload: (archiveId: string) => boolean;
   private mLastProgress: number = 0;
 
   constructor(gameMode: string, api: IExtensionApi) {
@@ -93,6 +94,10 @@ class InstallContext implements IInstallContext {
     this.mSetDownloadInstalled = (archiveId, gameId, modId) => {
       dispatch(setDownloadInstalled(archiveId, gameId, modId));
     };
+    this.mIsDownload = (archiveId) => {
+      const state: IState = store.getState();
+      return (archiveId !== null) && getSafe(state, ['persistent', 'downloads', 'files', archiveId], undefined) !== undefined;
+    }
   }
 
   public startIndicator(id: string): void {
@@ -172,7 +177,9 @@ class InstallContext implements IInstallContext {
         ...info,
       });
 
-      this.mSetDownloadInstalled(this.mArchiveId, this.mGameId, this.mAddedId);
+      if (this.mIsDownload(this.mArchiveId)) {
+        this.mSetDownloadInstalled(this.mArchiveId, this.mGameId, this.mAddedId);
+      }
     } else {
       this.mFailReason = reason;
       if (this.mAddedId !== undefined) {
