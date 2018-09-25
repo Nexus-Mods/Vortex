@@ -2,9 +2,6 @@ import { ButtonType } from '../../../controls/IconBar';
 import ToolbarIcon from '../../../controls/ToolbarIcon';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { activeGameId } from '../../../util/selectors';
-import {finishDownload} from '../../download_management/actions/state';
-
-import * as path from 'path';
 
 import { dialog as dialogIn, remote } from 'electron';
 import * as React from 'react';

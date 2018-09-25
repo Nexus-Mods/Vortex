@@ -68,7 +68,6 @@ import * as Promise from 'bluebird';
 import { genHash } from 'modmeta-db';
 import * as path from 'path';
 import * as Redux from 'redux';
-import { generate as shortid } from 'shortid';
 
 const activators: IDeploymentMethod[] = [];
 
