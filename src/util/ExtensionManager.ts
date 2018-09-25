@@ -3,6 +3,7 @@ import { addNotification, dismissNotification } from '../actions/notifications';
 import { setExtensionLoadFailures } from '../actions/session';
 
 import { needToDeploy } from '../extensions/mod_management/selectors';
+import getText from '../extensions/mod_management/texts';
 import { DialogActions, DialogType, IDialogContent, showDialog } from '../actions/notifications';
 import { ExtensionInit } from '../types/Extension';
 import {
@@ -923,9 +924,15 @@ class ExtensionManager {
     if (!needToDeploy(state)) {
       return Promise.resolve<DeployResult>('auto');
     } else {
-      return this.mApi.showDialog('question', 'Deploy now?', {
-        message: 'You should deploy mods now, otherwise the mods in game '
-        + 'will be outdated',
+      const t = this.mApi.translate;
+      return this.mApi.showDialog('question', t('Pending deployment'), {
+        bbcode: t('Mod deployment {{more}} is pending.[br][/br]'
+            + 'This means that changes made to mods such as updating, '
+            + 'enabling/disabling, as well as newly set mod rules need to be deployed to take effect.[br][/br]'
+            + 'You can skip this step, ignoring (but not reverting) newly made changes to mods and mod rules, '
+            + 'or deploy now to commit the changes.', {
+              replace: { more: `[More id='more-deploy' name='${t('Deployment')}']${getText('deployment', t)}[/More]` }
+            })
       }, [ { label: 'Cancel' }, { label: 'Skip' }, { label: 'Deploy' } ])
         .then((result) => {
           switch (result.action) {

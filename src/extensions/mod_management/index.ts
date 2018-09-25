@@ -705,6 +705,38 @@ function once(api: IExtensionApi) {
       ['persistent', 'mods'],
       (previous, current) => onModsChanged(api, previous, current));
 
+  api.onStateChange(
+      ['persistent', 'deployment', 'needToDeploy'],
+      (previous, current) => {
+        const gameMode = activeGameId(store.getState());
+        if (previous[gameMode] !== current[gameMode]) {
+          if (current[gameMode]) {
+            api.sendNotification({
+              id: 'deployment-necessary',
+              type: 'info',
+              message: 'Deployment necessary',
+              actions: [
+                {
+                  title: 'Deploy', action: () => api.events.emit('deploy-mods', (err) => {
+                    if (err !== null) {
+                      if (err instanceof NoDeployment) {
+                        this.props.onShowError(
+                          'You need to select a deployment method in settings',
+                          undefined, false);
+                      } else {
+                        this.props.onShowError('Failed to activate mods', err);
+                      }
+                    }
+                }) },
+              ]
+            });
+          } else {
+            api.dismissNotification('deployment-necessary');
+          }
+        }
+      }
+  )
+
   api.events.on('start-install', (archivePath: string,
                                   callback?: (error, id: string) => void) => {
     installManager.install(null, archivePath, [ activeGameId(store.getState()) ],

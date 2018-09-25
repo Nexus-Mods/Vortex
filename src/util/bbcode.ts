@@ -4,6 +4,7 @@ import HeadingTag from './bbcode/HeadingTag';
 import IdentityTag from './bbcode/IdentityTag';
 import LineTag from './bbcode/LineTag';
 import LinkTag from './bbcode/LinkTag';
+import MoreTag from './bbcode/MoreTag';
 import SizeTag from './bbcode/SizeTag';
 import SpoilerTag from './bbcode/SpoilerTag';
 import SvgTag from './bbcode/SvgTag';
@@ -25,6 +26,7 @@ fullParser.registerTag('youtube', YoutubeTag);
 fullParser.registerTag('line', LineTag);
 fullParser.registerTag('heading', HeadingTag);
 fullParser.registerTag('svg', SvgTag);
+fullParser.registerTag('more', MoreTag);
 
 const stripParser = new bbcode.Parser();
 stripParser.registerTag('br', BrTag);

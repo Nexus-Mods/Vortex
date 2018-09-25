@@ -11,10 +11,6 @@ class YoutubeTag extends Tag {
       <iframe src={`https://www.youtube.com/embed/${this.getContent()}`}/>
     );
   }
-
-  private calc(size: number): string {
-    return `${size * 10 + 100}%`;
-  }
 }
 
 export default YoutubeTag;
