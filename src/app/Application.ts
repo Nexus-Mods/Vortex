@@ -453,7 +453,13 @@ class Application {
           : app.getPath('userData');
         app.setPath('userData', dataPath);
         this.mBasePath = dataPath;
-        const created = fs.ensureDirSync(dataPath);
+        let created = false;
+        try {
+          fs.statSync(dataPath);
+        } catch (err) {
+          fs.ensureDirSync(dataPath);
+          created = true;
+        }
         if (multiUser && created) {
           allow(dataPath, 'group', 'rwx');
         }
