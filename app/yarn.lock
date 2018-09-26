@@ -1144,16 +1144,6 @@ feedparser@^2.2.9:
     readable-stream "^2.2.2"
     sax "^1.2.4"
 
-ffi@^2.2.0:
-  version "2.2.0"
-  resolved "https://registry.yarnpkg.com/ffi/-/ffi-2.2.0.tgz#bf18b04666a29f71227ed56895d5430af47042fa"
-  dependencies:
-    bindings "~1.2.0"
-    debug "2"
-    nan "2"
-    ref "1"
-    ref-struct "1"
-
 finalhandler@1.1.1:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/finalhandler/-/finalhandler-1.1.1.tgz#eebf4ed840079c83f4249038c9d703008301b105"
@@ -2958,28 +2948,6 @@ redux@^3.4.0:
     loose-envify "^1.1.0"
     symbol-observable "^1.0.3"
 
-ref-struct@1:
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/ref-struct/-/ref-struct-1.1.0.tgz#5d5ee65ad41cefc3a5c5feb40587261e479edc13"
-  dependencies:
-    debug "2"
-    ref "1"
-
-ref-union@^1.0.1:
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/ref-union/-/ref-union-1.0.1.tgz#3a2397f862f1e75171d687268f43b3f17729f120"
-  dependencies:
-    debug "2"
-    ref "1"
-
-ref@1, ref@^1.3.4, ref@^1.3.5:
-  version "1.3.5"
-  resolved "https://registry.yarnpkg.com/ref/-/ref-1.3.5.tgz#0e33f080cdb94a3d95312b2b3b1fd0f82044ca0f"
-  dependencies:
-    bindings "1"
-    debug "2"
-    nan "2"
-
 regenerator-runtime@^0.11.0:
   version "0.11.1"
   resolved "https://registry.yarnpkg.com/regenerator-runtime/-/regenerator-runtime-0.11.1.tgz#be05ad7f9bf7d22e056f9726cee5017fbf19e2e9"
@@ -3670,16 +3638,15 @@ void-elements@^2.0.1:
   resolved "https://registry.yarnpkg.com/void-elements/-/void-elements-2.0.1.tgz#c066afb582bb1cb4128d60ea92392e94d5e9dbec"
 
 vortex-parse-ini@Nexus-Mods/vortex-parse-ini:
-  version "0.1.2"
-  resolved "https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/6a98c35f5d3d77519859b0b1a9544b4b06342a1f"
+  version "0.2.1"
+  resolved "https://codeload.github.com/Nexus-Mods/vortex-parse-ini/tar.gz/b702de33096cf5117dc23b433af080f3f4cc27e3"
   dependencies:
     bluebird "^3.5.0"
-    ffi "^2.2.0"
     lodash "^4.17.4"
-    ref "^1.3.4"
+    winapi-bindings Nexus-Mods/node-winapi-bindings
 
 "vortex-run@file:../src/util/vortex-run":
-  version "0.0.5"
+  version "0.0.6"
 
 warning@^3.0.0:
   version "3.0.0"
