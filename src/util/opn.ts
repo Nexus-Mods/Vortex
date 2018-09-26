@@ -7,6 +7,7 @@ function open(target: string, wait?: boolean): Promise<void> {
     try {
       // TODO: technically with ShellExecuteEx we should be able to reproduce the wait behaviour
       winapi.ShellExecuteEx({ verb: 'open', show: 'restore', file: target });
+      return Promise.resolve();
     } catch (err) {
       return Promise.reject(err);
     }
