@@ -307,15 +307,11 @@ class InstallManager {
                          || ((err.stack !== undefined)
                              && err.stack.startsWith('UserCanceled: canceled by user'));
         let prom = destinationPath !== undefined
-          ? rimrafAsync(destinationPath, { glob: false, maxBusyTries: 1 })
+          ? rimrafAsync(destinationPath, { glob: false, maxBusyTries: 10 })
             .catch(err => {
               installContext.reportError(
-                'Failed to clean up installation directory, please close Vortex and remove it manually',
-                {
-                  path: destinationPath,
-                  error: err.message,
-                },
-              )
+                'Failed to clean up installation directory "{{destinationPath}}", please close Vortex and remove it manually',
+                err, true, { destinationPath })
             })
           : Promise.resolve();
 
