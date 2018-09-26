@@ -27,6 +27,7 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import * as Redux from 'redux';
 import { createSelector } from 'reselect';
+import { Button } from 'react-bootstrap';
 
 export type ChangeDataHandler = (rowId: string, attributeId: string, newValue: any) => void;
 
@@ -101,6 +102,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
   private mVisibleAttributes: ITableAttribute[];
   private mHeadRef: HTMLElement;
+  private mPinnedRef: HTMLElement;
   private mScrollRef: HTMLElement;
   private mRowRefs: { [id: string]: HTMLElement } = {};
   private mLastSelectOnly: number = 0;
@@ -212,8 +214,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { actions, showHeader, showDetails, tableId } = this.props;
-    const { detailsOpen, singleRowActions } = this.state;
+    const { t, actions, data, showHeader, showDetails, tableId } = this.props;
+    const { detailsOpen, singleRowActions, sortedRows } = this.state;
 
     let hasActions = false;
     if (actions !== undefined) {
@@ -225,6 +227,10 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
     const scrollOffset = this.mScrollRef !== undefined ? this.mScrollRef.scrollTop : 0;
     const headerStyle = { transform: `translate(0, ${scrollOffset}px)` };
+
+    const filteredLength = sortedRows !== undefined ? sortedRows.length : undefined;
+    const totalLength = Object.keys(data).length;
+    const filterActive = (filteredLength !== undefined) && (filteredLength < totalLength);
 
     return (
       <div id={`table-${tableId}`} className='table-container'>
@@ -247,6 +253,15 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
                   {this.mVisibleAttributes.map(this.renderHeaderField)}
                   {actionHeader}
                 </TR>
+                {filterActive ? (
+                  <TR className='table-pinned' domRef={this.setPinnedRef}>
+                    <div>
+                      {t('This table is filtered, showing {{shown}}/{{hidden}} items.',
+                        { replace: { shown: filteredLength, hidden: totalLength } })}
+                      <Button onClick={this.clearFilters}>{t('Clear all filters')}</Button>
+                    </div>
+                  </TR>
+                ) : null}
               </THead>
               }
             </Table>
@@ -675,6 +690,10 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     this.mHeadRef = ref;
   }
 
+  private setPinnedRef = ref => {
+    this.mPinnedRef = ref;
+  }
+
   private setRowRef = (ref: any) => {
     if (ref !== null) {
       this.mRowRefs[ref.props.id] = ref;
@@ -724,9 +743,10 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private translateHeader = (event) => {
     window.requestAnimationFrame(() => {
       if ((this.mHeadRef !== undefined) && (this.mHeadRef !== null)) {
-        const transform = `translate(0, ${event.target.scrollTop}px)`;
+        const transform = `translateY(${event.target.scrollTop}px)`;
         this.mHeadRef.style.transform = transform;
       }
+      this.mPinnedRef.className = event.target.scrollTop === 0 ? 'table-pinned' : 'table-pinned-hidden';
     });
     Object.keys(this.mNoShrinkColumns).forEach(colId => {
       this.mNoShrinkColumns[colId].updateWidth();
@@ -1156,6 +1176,10 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private setFilter = (attributeId?: string, filter?: any) => {
     const { onSetAttributeFilter, tableId } = this.props;
     onSetAttributeFilter(tableId, attributeId, filter);
+  }
+
+  private clearFilters = () => {
+    this.setFilter();
   }
 
   private useMultiSelect() {

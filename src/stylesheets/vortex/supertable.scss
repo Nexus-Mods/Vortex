@@ -136,6 +136,29 @@
   transform-style: preserve-3d;
 }
 
+.table-pinned {
+  height: 3em;
+  > div {
+    position: absolute;
+    width: 100%;
+    height: 3em;
+    background-color: $brand-warning;
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    > .btn {
+      margin-left: 8px;
+    }
+  }
+}
+
+.table-pinned-hidden {
+  display: none;
+  > div {
+    display: none;
+  }
+}
+
 .table-footer-placeholder {
   height: 48px;
 }

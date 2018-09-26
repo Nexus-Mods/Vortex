@@ -74,25 +74,27 @@ export class TH extends React.Component<DProps<HTMLTableHeaderCellElement> & { d
   }
 }
 
-export function TR(props: DProps<HTMLTableRowElement>) {
+export function TR(props: DProps<HTMLTableRowElement> & { domRef?: (ref: HTMLDivElement) => void }) {
   const classes = ['xtr'].concat((props.className || '').split(' '));
   return (
     <div
       style={{ ...props.style, display: 'table-row' }}
       className={classes.join(' ')}
+      ref={props.domRef}
     >
       {props.children}
     </div>
   );
 }
 
-export function TD(props: DProps<HTMLTableCellElement>) {
+export function TD(props: DProps<HTMLTableCellElement> & { domRef?: (ref: HTMLDivElement) => void }) {
   const classes = ['xtd'].concat((props.className || '').split(' '));
   return (
     <div
       style={{ ...props.style, display: 'table-cell' }}
       className={classes.join(' ')}
       {..._.omit(props, ['style', 'className'])}
+      ref={props.domRef}
     >
       {props.children}
     </div>
