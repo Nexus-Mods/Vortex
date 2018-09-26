@@ -7,8 +7,7 @@ import {speedDataPoints} from '../reducers/state';
 import * as I18next from 'i18next';
 import * as React from 'react';
 import ResizeDetector from 'react-resize-detector';
-import * as rechartsT from 'recharts';
-let recharts: typeof rechartsT;
+import * as recharts from 'recharts';
 
 interface IBaseProps {
   t: I18next.TranslationFunction;
@@ -35,17 +34,12 @@ class DownloadGraph extends ComponentEx<IProps, IComponentState> {
   }
 
   public componentWillMount() {
-    recharts = require('recharts');
     this.forceUpdate();
   }
 
   public render(): JSX.Element {
     const {speeds} = this.props;
     const data = this.convertData(speeds);
-
-    if (recharts === undefined) {
-      return null;
-    }
 
     const maxData = Math.max(...speeds);
     const maxRounded = this.byteRound(maxData);
