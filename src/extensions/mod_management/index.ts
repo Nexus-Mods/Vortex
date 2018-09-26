@@ -687,6 +687,15 @@ function once(api: IExtensionApi) {
   });
 
   api.events.on('mods-enabled', (mods: string[], enabled: boolean) => {
+    const state: IState = api.store.getState();
+    const { notifications } = state.session.notifications;
+    const notiIds = new Set(notifications.map(noti => noti.id));
+    mods.forEach(modId => {
+      const notiId = `may-enable-${modId}`;
+      if (notiIds.has(notiId)) {
+        api.dismissNotification(notiId);
+      }
+    });
     if (store.getState().settings.automation.deploy) {
       deploymentTimer.schedule(undefined, false);
     }

@@ -215,6 +215,7 @@ class InstallContext implements IInstallContext {
     switch (outcome) {
       case 'success':
         return {
+          id: `may-enable-${id}`,
           type: 'success',
           message: '{{id}} installed',
           replace: { id },
