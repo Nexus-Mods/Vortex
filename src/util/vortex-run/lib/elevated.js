@@ -94,9 +94,10 @@ function runElevated(ipcPath, func, args) {
                         directory: path.dirname(process.execPath),
                         show: 'shownormal',
                     });
+                    return Promise.resolve();
                 }
                 catch (err) {
-                    reject(err);
+                    return reject(err);
                 }
             });
         });

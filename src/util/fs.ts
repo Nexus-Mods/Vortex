@@ -23,7 +23,7 @@ import * as path from 'path';
 import { allow as allowT, getUserId } from 'permissions';
 import * as rimraf from 'rimraf';
 import { generate as shortid } from 'shortid';
-import { runElevated, Win32Error } from 'vortex-run';
+import { runElevated } from 'vortex-run';
 
 const dialog = remote !== undefined ? remote.dialog : dialogIn;
 
@@ -344,7 +344,7 @@ function elevated(func: (ipc, req: NodeRequireFunction) => Promise<void>,
     let resolved = false;
     ipcInst.serve(`__fs_elevated_${id}`, () => {
       runElevated(`__fs_elevated_${id}`, func, parameters)
-        .catch(Win32Error, err => {
+        .catch(err => {
           if (err.code === 5) {
             // this code is returned when the user rejected the UAC dialog. Not currently
             // aware of another case

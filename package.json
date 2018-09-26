@@ -77,7 +77,7 @@
     "@types/form-data": "^2.2.0",
     "@types/fs-extra-promise": "^1.0.4",
     "@types/graphlib": "^2.1.4",
-    "@types/i18next": "^8.4.2",
+    "@types/i18next": "*",
     "@types/immutability-helper": "^2.0.15",
     "@types/jest": "^23.3.0",
     "@types/levelup": "^0.0.30",

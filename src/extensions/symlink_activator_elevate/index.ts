@@ -20,7 +20,7 @@ import * as I18next from 'i18next';
 import * as ipc from 'node-ipc';
 import * as path from 'path';
 import { generate as shortid } from 'shortid';
-import { runElevated, Win32Error } from 'vortex-run';
+import { runElevated } from 'vortex-run';
 
 import { remoteCode } from './remoteCode';
 
@@ -250,7 +250,7 @@ class DeploymentMethod extends LinkingDeployment {
         .tapCatch(() => {
           ipc.server.stop();
         })
-        .catch(Win32Error, err => (err.code === 5)
+        .catch(err => (err.code === 5)
             ? reject(new UserCanceled())
             : reject(err)
         )

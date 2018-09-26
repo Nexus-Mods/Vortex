@@ -342,7 +342,7 @@
   version "4.6.2"
   resolved "https://registry.yarnpkg.com/@types/history/-/history-4.6.2.tgz#12cfaba693ba20f114ed5765467ff25fdf67ddb0"
 
-"@types/i18next@*", "@types/i18next@^8.4.2":
+"@types/i18next@*":
   version "8.4.4"
   resolved "https://registry.yarnpkg.com/@types/i18next/-/i18next-8.4.4.tgz#76591ab5974b65910e44b8860202d4f544f39b9d"
 
@@ -9761,8 +9761,8 @@ widest-line@^2.0.0:
     string-width "^2.1.1"
 
 winapi-bindings@Nexus-Mods/node-winapi-bindings:
-  version "1.2.1"
-  resolved "https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/b318831faff69c98d52bc67e0c4f20a04fbad187"
+  version "1.2.2"
+  resolved "https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/629e5d28f95ebeff8ab566f3330e32ce535e7036"
   dependencies:
     autogypi "^0.2.2"
     nan "^2.11.0"

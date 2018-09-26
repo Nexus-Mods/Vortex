@@ -51,7 +51,7 @@ import {} from 'redux-watcher';
 import * as rimraf from 'rimraf';
 import * as semver from 'semver';
 import { generate as shortid } from 'shortid';
-import { dynreq, runElevated, Win32Error } from 'vortex-run';
+import { dynreq, runElevated } from 'vortex-run';
 import { isOutdated } from './errorHandling';
 
 // tslint:disable-next-line:no-var-requires
@@ -1029,7 +1029,7 @@ class ExtensionManager {
           }
         }
       }) : Promise.resolve())
-        .catch(Win32Error, err => err.code === 5
+        .catch(err => err.code === 5
           ? Promise.reject(new UserCanceled())
           : Promise.reject(err));
   }
