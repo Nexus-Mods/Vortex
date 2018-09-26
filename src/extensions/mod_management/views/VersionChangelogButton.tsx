@@ -1,6 +1,5 @@
 import { IconButton } from '../../../controls/TooltipControls';
 import { ComponentEx } from '../../../util/ComponentEx';
-import lazyRequire from '../../../util/lazyRequire';
 import { getSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
 

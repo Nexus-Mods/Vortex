@@ -1,5 +1,5 @@
-import {delayed} from '../util/delayed';
 import getVortexPath from '../util/getVortexPath';
+import * as Promise from 'bluebird';
 
 class SplashScreen {
   private mWindow: Electron.BrowserWindow = null;
@@ -14,11 +14,15 @@ class SplashScreen {
 
     // don't fade out immediately, otherwise the it looks odd
     // as the main window appears at the same time
-    return delayed(200)
-        .then(() => this.mWindow.webContents.send('fade-out'))
+    return Promise.delay(200)
+        .then(() => {
+          if (!this.mWindow.isDestroyed()) {
+            this.mWindow.webContents.send('fade-out');
+          }
+        })
         // wait for the fade out animation to finish before destroying
         // the window
-        .then(() => delayed(500))
+        .then(() => Promise.delay(500))
         .then(() => {
           if (!this.mWindow.isDestroyed()) {
             this.mWindow.close();
