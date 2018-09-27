@@ -63,7 +63,7 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
   if (isUpdate) {
     askUser = api.store.dispatch(
       showDialog('question', 'Retrieve Categories', {
-        message: 'Clicking RETRIEVE you will lose all your changes',
+        text: 'Clicking RETRIEVE you will lose all your changes',
       }, [ { label: 'Cancel' }, { label: 'Retrieve' } ]))
       .then((result: IDialogResult) => {
         return result.action === 'Retrieve';
@@ -79,7 +79,7 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
 
     const APIKEY = getSafe(api.store.getState(),
       ['confidential', 'account', 'nexus', 'APIKey'], '');
-    if (APIKEY === '') {
+    if (!truthy(APIKEY)) {
       showError(api.store.dispatch,
         'An error occurred retrieving categories',
         'You are not logged in to Nexus Mods!', { allowReport: false });
