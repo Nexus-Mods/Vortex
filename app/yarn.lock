@@ -34,18 +34,6 @@ abstract-leveldown@^5.0.0, abstract-leveldown@~5.0.0:
   dependencies:
     xtend "~4.0.0"
 
-abstract-leveldown@~2.6.0:
-  version "2.6.3"
-  resolved "https://registry.yarnpkg.com/abstract-leveldown/-/abstract-leveldown-2.6.3.tgz#1c5e8c6a5ef965ae8c35dfb3a8770c476b82c4b8"
-  dependencies:
-    xtend "~4.0.0"
-
-abstract-leveldown@~2.7.0:
-  version "2.7.2"
-  resolved "https://registry.yarnpkg.com/abstract-leveldown/-/abstract-leveldown-2.7.2.tgz#87a44d7ebebc341d59665204834c8b7e0932cc93"
-  dependencies:
-    xtend "~4.0.0"
-
 accepts@~1.3.5:
   version "1.3.5"
   resolved "https://registry.yarnpkg.com/accepts/-/accepts-1.3.5.tgz#eb777df6011723a3b14e8a72c0805c8e86746bd2"
@@ -196,13 +184,9 @@ bcrypt-pbkdf@^1.0.0:
   dependencies:
     tweetnacl "^0.14.3"
 
-bindings@1, bindings@^1.3.0, bindings@~1.3.0:
+bindings@^1.3.0, bindings@~1.3.0:
   version "1.3.0"
   resolved "https://registry.yarnpkg.com/bindings/-/bindings-1.3.0.tgz#b346f6ecf6a95f5a815c5839fc7cdb22502f1ed7"
-
-bindings@~1.2.0:
-  version "1.2.1"
-  resolved "https://registry.yarnpkg.com/bindings/-/bindings-1.2.1.tgz#14ad6113812d2d37d72e67b4cacb4bb726505f11"
 
 bl@^1.0.0:
   version "1.2.2"
@@ -761,7 +745,7 @@ dashdash@^1.12.0:
   dependencies:
     assert-plus "^1.0.0"
 
-debug@2, debug@2.6.9, debug@^2.1.2:
+debug@2.6.9, debug@^2.1.2:
   version "2.6.9"
   resolved "https://registry.yarnpkg.com/debug/-/debug-2.6.9.tgz#5d128515df134ff327e90a4c93f4e077a536341f"
   dependencies:
@@ -786,12 +770,6 @@ decompress-response@^3.3.0:
 deep-extend@^0.6.0:
   version "0.6.0"
   resolved "https://registry.yarnpkg.com/deep-extend/-/deep-extend-0.6.0.tgz#c4fa7c95404a17a9c3e8ca7e1537312b736330ac"
-
-deferred-leveldown@~1.2.1:
-  version "1.2.2"
-  resolved "https://registry.yarnpkg.com/deferred-leveldown/-/deferred-leveldown-1.2.2.tgz#3acd2e0b75d1669924bc0a4b642851131173e1eb"
-  dependencies:
-    abstract-leveldown "~2.6.0"
 
 deferred-leveldown@~4.0.0:
   version "4.0.2"
@@ -1176,8 +1154,8 @@ flux-standard-action@^2.0.0:
     lodash "^4.0.0"
 
 fomod-installer@Nexus-Mods/fomod-installer:
-  version "0.0.12"
-  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/3904b8bd03c262029a0bdd02e7c887c140884e39"
+  version "0.0.13"
+  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/a7eca0d8a8d496c931b228295a80a1c6aeff9667"
   dependencies:
     copyfiles "^1.0.0"
     msbuild "^1.0.1"
@@ -1718,36 +1696,11 @@ level-codec@^9.0.0:
   version "9.0.0"
   resolved "https://registry.yarnpkg.com/level-codec/-/level-codec-9.0.0.tgz#2d3a0e835c4aa8339ec63de3f5a37480b74a5f87"
 
-level-codec@~7.0.0:
-  version "7.0.1"
-  resolved "https://registry.yarnpkg.com/level-codec/-/level-codec-7.0.1.tgz#341f22f907ce0f16763f24bddd681e395a0fb8a7"
-
-level-errors@^1.0.3:
-  version "1.1.2"
-  resolved "https://registry.yarnpkg.com/level-errors/-/level-errors-1.1.2.tgz#4399c2f3d3ab87d0625f7e3676e2d807deff404d"
-  dependencies:
-    errno "~0.1.1"
-
 level-errors@^2.0.0, level-errors@~2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/level-errors/-/level-errors-2.0.0.tgz#2de5b566b62eef92f99e19be74397fbc512563fa"
   dependencies:
     errno "~0.1.1"
-
-level-errors@~1.0.3:
-  version "1.0.5"
-  resolved "https://registry.yarnpkg.com/level-errors/-/level-errors-1.0.5.tgz#83dbfb12f0b8a2516bdc9a31c4876038e227b859"
-  dependencies:
-    errno "~0.1.1"
-
-level-iterator-stream@~1.3.0:
-  version "1.3.1"
-  resolved "https://registry.yarnpkg.com/level-iterator-stream/-/level-iterator-stream-1.3.1.tgz#e43b78b1a8143e6fa97a4f485eb8ea530352f2ed"
-  dependencies:
-    inherits "^2.0.1"
-    level-errors "^1.0.3"
-    readable-stream "^1.0.33"
-    xtend "^4.0.0"
 
 level-iterator-stream@~3.0.0:
   version "3.0.0"
@@ -1767,7 +1720,7 @@ level-js@^3.0.0:
     ltgt "^2.1.2"
     typedarray-to-buffer "~3.1.5"
 
-leveldown@4.0.1:
+leveldown@4.0.1, leveldown@^4.0.1:
   version "4.0.1"
   resolved "https://registry.yarnpkg.com/leveldown/-/leveldown-4.0.1.tgz#7bc3df93c9fa574feb39ce45a0c4073aa948cfef"
   dependencies:
@@ -1777,35 +1730,13 @@ leveldown@4.0.1:
     nan "~2.10.0"
     prebuild-install "^4.0.0"
 
-leveldown@^1.6.0:
-  version "1.9.0"
-  resolved "https://registry.yarnpkg.com/leveldown/-/leveldown-1.9.0.tgz#057b4b5d9d9717f81fe88c6e6cf962f4b44961a1"
-  dependencies:
-    abstract-leveldown "~2.7.0"
-    bindings "~1.3.0"
-    fast-future "~1.0.2"
-    nan "~2.7.0"
-    prebuild-install "^2.1.0"
-
-levelup@3.1.1:
+levelup@3.1.1, levelup@^3.1.1:
   version "3.1.1"
   resolved "https://registry.yarnpkg.com/levelup/-/levelup-3.1.1.tgz#c2c0b3be2b4dc316647c53b42e2f559e232d2189"
   dependencies:
     deferred-leveldown "~4.0.0"
     level-errors "~2.0.0"
     level-iterator-stream "~3.0.0"
-    xtend "~4.0.0"
-
-levelup@^1.3.3:
-  version "1.3.9"
-  resolved "https://registry.yarnpkg.com/levelup/-/levelup-1.3.9.tgz#2dbcae845b2bb2b6bea84df334c475533bbd82ab"
-  dependencies:
-    deferred-leveldown "~1.2.1"
-    level-codec "~7.0.0"
-    level-errors "~1.0.3"
-    level-iterator-stream "~1.3.0"
-    prr "~1.0.1"
-    semver "~5.4.1"
     xtend "~4.0.0"
 
 libxmljs@^0.19.1:
@@ -2051,12 +1982,13 @@ minizlib@^1.1.0:
     minimist "0.0.8"
 
 modmeta-db@Nexus-Mods/modmeta-db:
-  version "0.3.1"
-  resolved "https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/4a9755f7bebfc7c5e38c60de82b73b5e28ca25ad"
+  version "0.3.4"
+  resolved "https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/ce614aa145fe0c30cf5016ca6e0ba973a0a9ffe3"
   dependencies:
     bluebird "^3.4.6"
-    leveldown "^1.6.0"
-    levelup "^1.3.3"
+    encoding-down "^5.0.4"
+    leveldown "^4.0.1"
+    levelup "^3.1.1"
     minimatch "^3.0.4"
     semvish "^1.1.0"
   optionalDependencies:
@@ -2084,17 +2016,13 @@ msbuild@^1.0.1:
     colors "*"
     events "*"
 
-nan@2, nan@^2.10.0, nan@^2.4.0, nan@^2.8.0, nan@^2.9.2, nan@~2.10.0:
+nan@^2.10.0, nan@^2.4.0, nan@^2.8.0, nan@^2.9.2, nan@~2.10.0:
   version "2.10.0"
   resolved "https://registry.yarnpkg.com/nan/-/nan-2.10.0.tgz#96d0cd610ebd58d4b4de9cc0c6828cda99c7548f"
 
 nan@^2.11.0:
   version "2.11.0"
   resolved "https://registry.yarnpkg.com/nan/-/nan-2.11.0.tgz#574e360e4d954ab16966ec102c0c049fd961a099"
-
-nan@~2.7.0:
-  version "2.7.0"
-  resolved "https://registry.yarnpkg.com/nan/-/nan-2.7.0.tgz#d95bf721ec877e08db276ed3fc6eb78f9083ad46"
 
 nanoid@^1.0.7:
   version "1.2.1"
@@ -2426,26 +2354,6 @@ pinkie@^2.0.0:
 popper.js@^1.14.1:
   version "1.14.4"
   resolved "https://registry.yarnpkg.com/popper.js/-/popper.js-1.14.4.tgz#8eec1d8ff02a5a3a152dd43414a15c7b79fd69b6"
-
-prebuild-install@^2.1.0:
-  version "2.5.3"
-  resolved "https://registry.yarnpkg.com/prebuild-install/-/prebuild-install-2.5.3.tgz#9f65f242782d370296353710e9bc843490c19f69"
-  dependencies:
-    detect-libc "^1.0.3"
-    expand-template "^1.0.2"
-    github-from-package "0.0.0"
-    minimist "^1.2.0"
-    mkdirp "^0.5.1"
-    node-abi "^2.2.0"
-    noop-logger "^0.1.1"
-    npmlog "^4.0.1"
-    os-homedir "^1.0.1"
-    pump "^2.0.1"
-    rc "^1.1.6"
-    simple-get "^2.7.0"
-    tar-fs "^1.13.0"
-    tunnel-agent "^0.6.0"
-    which-pm-runs "^1.0.0"
 
 prebuild-install@^4.0.0:
   version "4.0.0"
@@ -2846,15 +2754,6 @@ read-pkg@^1.0.0:
     normalize-package-data "^2.3.2"
     path-type "^1.0.0"
 
-readable-stream@^1.0.33:
-  version "1.1.14"
-  resolved "https://registry.yarnpkg.com/readable-stream/-/readable-stream-1.1.14.tgz#7cf4c54ef648e3813084c636dd2079e166c081d9"
-  dependencies:
-    core-util-is "~1.0.0"
-    inherits "~2.0.1"
-    isarray "0.0.1"
-    string_decoder "~0.10.x"
-
 readable-stream@^2.0.1, readable-stream@^2.0.2, readable-stream@^2.0.5, readable-stream@^2.0.6, readable-stream@^2.1.5, readable-stream@^2.2.2, readable-stream@^2.3.0, readable-stream@^2.3.5:
   version "2.3.6"
   resolved "https://registry.yarnpkg.com/readable-stream/-/readable-stream-2.3.6.tgz#b11c27d88b8ff1fbe070643cf94b0c79ae1b0aaf"
@@ -3119,10 +3018,6 @@ semver@^5.5.1:
 semver@~5.3.0:
   version "5.3.0"
   resolved "https://registry.yarnpkg.com/semver/-/semver-5.3.0.tgz#9b2ce5d3de02d17c6012ad326aa6b4d0cf54f94f"
-
-semver@~5.4.1:
-  version "5.4.1"
-  resolved "https://registry.yarnpkg.com/semver/-/semver-5.4.1.tgz#e059c09d8571f0540823733433505d3a2f00b18e"
 
 semvish@^1.1.0:
   version "1.1.0"
@@ -3646,7 +3541,7 @@ vortex-parse-ini@Nexus-Mods/vortex-parse-ini:
     winapi-bindings Nexus-Mods/node-winapi-bindings
 
 "vortex-run@file:../src/util/vortex-run":
-  version "0.0.6"
+  version "0.0.7"
 
 warning@^3.0.0:
   version "3.0.0"
@@ -3679,8 +3574,8 @@ wide-align@^1.1.0:
     string-width "^1.0.2 || 2"
 
 winapi-bindings@Nexus-Mods/node-winapi-bindings:
-  version "1.0.1"
-  resolved "https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/e6359b9312f8ca4c03c33026da9b5901aaadde64"
+  version "1.2.3"
+  resolved "https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/bd2d3f7054a4c9b798ad6d44adaa922be1c64edf"
   dependencies:
     autogypi "^0.2.2"
     nan "^2.11.0"
