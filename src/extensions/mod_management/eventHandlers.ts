@@ -1,5 +1,5 @@
 import {IExtensionApi} from '../../types/IExtensionContext';
-import {IState} from '../../types/IState';
+import {IState, IModTable} from '../../types/IState';
 import { ProcessCanceled, TemporaryError, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import {showError} from '../../util/message';
@@ -30,6 +30,7 @@ import * as path from 'path';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
 import queryGameId from './util/queryGameId';
 import { downloadPathForGame } from '../../util/selectors';
+import { setDeploymentNecessary } from './actions/deployment';
 
 export function onGameModeActivated(
     api: IExtensionApi, activators: IDeploymentMethod[], newGame: string) {
@@ -115,17 +116,17 @@ export function onGameModeActivated(
 export function onPathsChanged(api: IExtensionApi,
                                previous: { [gameId: string]: string },
                                current: { [gameId: string]: string }) {
-  const store = api.store;
+  const { store } = api;
   const state = store.getState();
   const gameMode = activeGameId(state);
   if (previous[gameMode] !== current[gameMode]) {
     const knownMods = state.persistent.mods[gameMode];
     refreshMods(installPath(state), Object.keys(knownMods || {}), (mod: IMod) =>
-      api.store.dispatch(addMod(gameMode, mod))
+      store.dispatch(addMod(gameMode, mod))
       , (modNames: string[]) => {
         modNames.forEach((name: string) => {
           if (['downloaded', 'installed'].indexOf(knownMods[name].state) !== -1) {
-            api.store.dispatch(removeMod(gameMode, name));
+            store.dispatch(removeMod(gameMode, name));
           }
         });
       })
@@ -133,6 +134,23 @@ export function onPathsChanged(api: IExtensionApi,
       .catch((err: Error) => {
         showError(store.dispatch, 'Failed to refresh mods', err);
       });
+  }
+}
+
+export function onModsChanged(api: IExtensionApi, previous: IModTable, current: IModTable) {
+  const { store } = api;
+  const state: IState = store.getState();
+  const gameMode = activeGameId(state);
+
+  const rulesOrOverridesChanged = modId =>
+    (previous[gameMode][modId] !== undefined)
+    && ((previous[gameMode][modId].rules !== current[gameMode][modId].rules)
+        || (previous[gameMode][modId].fileOverrides !== current[gameMode][modId].fileOverrides));
+
+  if (previous[gameMode] !== current[gameMode]) {
+    if (Object.keys(current[gameMode]).find(rulesOrOverridesChanged) !== undefined) {
+      store.dispatch(setDeploymentNecessary(gameMode, true));
+    }
   }
 }
 

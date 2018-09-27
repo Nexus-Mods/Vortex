@@ -2,6 +2,8 @@ import { forgetExtension, setExtensionEnabled } from '../actions/app';
 import { addNotification, dismissNotification } from '../actions/notifications';
 import { setExtensionLoadFailures } from '../actions/session';
 
+import { needToDeploy } from '../extensions/mod_management/selectors';
+import getText from '../extensions/mod_management/texts';
 import { DialogActions, DialogType, IDialogContent, showDialog } from '../actions/notifications';
 import { ExtensionInit } from '../types/Extension';
 import {
@@ -20,10 +22,11 @@ import {
   ThunkStore,
 } from '../types/IExtensionContext';
 import { INotification } from '../types/INotification';
-import { IExtensionLoadFailure, IExtensionState } from '../types/IState';
+import { IExtensionLoadFailure, IExtensionState, IState } from '../types/IState';
 
 import { Archive } from './archives';
 import { ProcessCanceled, UserCanceled } from './CustomErrors';
+import { isOutdated } from './errorHandling';
 import getVortexPath from './getVortexPath';
 import lazyRequire from './lazyRequire';
 import { log } from './log';
@@ -52,7 +55,6 @@ import * as rimraf from 'rimraf';
 import * as semver from 'semver';
 import { generate as shortid } from 'shortid';
 import { dynreq, runElevated } from 'vortex-run';
-import { isOutdated } from './errorHandling';
 
 // tslint:disable-next-line:no-var-requires
 const ReduxWatcher = require('redux-watcher');
@@ -918,14 +920,19 @@ class ExtensionManager {
   }
 
   private queryDeploy = (): Promise<DeployResult> => {
-    const autoDeploy = getSafe(this.mApi.store.getState(),
-                               ['settings', 'automation', 'deploy'], true);
-    if (autoDeploy) {
+    const state: IState = this.mApi.store.getState();
+    if (!needToDeploy(state)) {
       return Promise.resolve<DeployResult>('auto');
     } else {
-      return this.mApi.showDialog('question', 'Deploy now?', {
-        message: 'You should deploy mods now, otherwise the mods in game '
-        + 'will be outdated',
+      const t = this.mApi.translate;
+      return this.mApi.showDialog('question', t('Pending deployment'), {
+        bbcode: t('Mod deployment {{more}} is pending.[br][/br]'
+            + 'This means that changes made to mods such as updating, '
+            + 'enabling/disabling, as well as newly set mod rules need to be deployed to take effect.[br][/br]'
+            + 'You can skip this step, ignoring (but not reverting) newly made changes to mods and mod rules, '
+            + 'or deploy now to commit the changes.', {
+              replace: { more: `[More id='more-deploy' name='${t('Deployment')}']${getText('deployment', t)}[/More]` }
+            })
       }, [ { label: 'Cancel' }, { label: 'Skip' }, { label: 'Deploy' } ])
         .then((result) => {
           switch (result.action) {

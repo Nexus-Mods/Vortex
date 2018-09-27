@@ -8,7 +8,7 @@ import { getSafe, showError } from '../../util/api';
 import { log } from '../../util/log';
 import { truthy } from '../../util/util';
 import modName from '../mod_management/util/modName';
-import { setUserInfo } from './actions/session';
+import { setUserInfo } from './actions/persistent';
 import NXMUrl from './NXMUrl';
 import { checkModVersion } from './util/checkModsVersion';
 import { nexusGameId, convertNXMIdReverse, convertGameIdReverse } from './util/convertGameId';

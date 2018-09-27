@@ -1,3 +1,4 @@
+import { setDownloadModInfo } from '../../actions';
 import { IExtensionApi } from '../../types/IExtensionContext';
 import Debouncer from '../../util/Debouncer';
 import opn from '../../util/opn';
@@ -15,9 +16,8 @@ import { DownloadIsHTML } from '../download_management/DownloadManager';
 import { showError } from '../../util/message';
 import { startDownload, endorseModImpl, checkModVersionsImpl, validateKey } from './util';
 import { setApiKey } from '../../util/errorHandling';
-import { setUserInfo } from './actions/session';
-import { setUpdatingMods } from '../mod_management/actions/settings';
-import { setDownloadModInfo } from '../../actions';
+import { setUserInfo } from './actions/persistent';
+import { setUpdatingMods } from '../mod_management/actions/session';
 
 export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
   const state: IState = api.store.getState();

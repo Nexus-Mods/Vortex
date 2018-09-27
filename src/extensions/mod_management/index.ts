@@ -31,10 +31,12 @@ import {setDownloadModInfo} from '../download_management/actions/state';
 import {getGame} from '../gamemode_management/index';
 import {IProfileMod, IProfile} from '../profile_management/types/IProfile';
 
-import {showExternalChanges} from './actions/externalChanges';
+import { setDeploymentNecessary } from './actions/deployment';
+import {showExternalChanges} from './actions/session';
 import {removeMod, setModAttribute} from './actions/mods';
-import {externalChangesReducer} from './reducers/externalChanges';
+import {sessionReducer} from './reducers/session';
 import {modsReducer} from './reducers/mods';
+import {deploymentReducer} from './reducers/deployment';
 import {settingsReducer} from './reducers/settings';
 import {IDeployedFile, IDeploymentMethod, IFileChange} from './types/IDeploymentMethod';
 import {IFileEntry} from './types/IFileEntry';
@@ -58,14 +60,13 @@ import {} from './views/ModList';
 import {} from './views/Settings';
 
 import { onAddMod, onGameModeActivated, onPathsChanged,
-         onRemoveMod, onStartInstallDownload } from './eventHandlers';
+         onRemoveMod, onStartInstallDownload, onModsChanged } from './eventHandlers';
 import InstallManager from './InstallManager';
 import deployMods from './modActivation';
 import mergeMods, { MERGED_PATH } from './modMerging';
 import getText from './texts';
 
 import * as Promise from 'bluebird';
-import { genHash } from 'modmeta-db';
 import * as path from 'path';
 import * as Redux from 'redux';
 
@@ -308,12 +309,13 @@ function genUpdateModDeployment() {
     // test if anything was changed by an external application
     return gate
       .then(() => {
-
         notificationId = api.sendNotification({
           type: 'activity',
           message: t('Deploying mods'),
           title: t('Deploying'),
         });
+
+        api.store.dispatch(setDeploymentNecessary(game.id, false));
 
         log('debug', 'load activation');
         return Promise.each(Object.keys(modPaths),
@@ -671,11 +673,6 @@ function once(api: IExtensionApi) {
       .then(newActivation => doSaveActivation(api, mod.type, dataPath, newActivation));
   });
 
-  api.events.on('schedule-deploy-mods', (callback: (err: Error) => void, profileId?: string,
-                                         progressCB?: (text: string, percent: number) => void) => {
-    deploymentTimer.schedule(callback, false, profileId, progressCB);
-  });
-
   api.events.on('purge-mods', (callback: (err: Error) => void) => {
     blockDeploy = blockDeploy.then(() => purgeMods(api)
       .then(() => callback(null))
@@ -687,7 +684,8 @@ function once(api: IExtensionApi) {
   });
 
   api.events.on('mods-enabled', (mods: string[], enabled: boolean) => {
-    const state: IState = api.store.getState();
+    const { store } = api;
+    const state: IState = store.getState();
     const { notifications } = state.session.notifications;
     const notiIds = new Set(notifications.map(noti => noti.id));
     mods.forEach(modId => {
@@ -696,8 +694,11 @@ function once(api: IExtensionApi) {
         api.dismissNotification(notiId);
       }
     });
-    if (store.getState().settings.automation.deploy) {
+    const gameId = activeGameId(store.getState());
+    if (state.settings.automation.deploy) {
       deploymentTimer.schedule(undefined, false);
+    } else {
+      store.dispatch(setDeploymentNecessary(gameId, true));
     }
   });
 
@@ -707,6 +708,42 @@ function once(api: IExtensionApi) {
   api.onStateChange(
       ['settings', 'mods', 'installPath'],
       (previous, current) => onPathsChanged(api, previous, current));
+
+  api.onStateChange(
+      ['persistent', 'mods'],
+      (previous, current) => onModsChanged(api, previous, current));
+
+  api.onStateChange(
+      ['persistent', 'deployment', 'needToDeploy'],
+      (previous, current) => {
+        const gameMode = activeGameId(store.getState());
+        if (previous[gameMode] !== current[gameMode]) {
+          if (current[gameMode]) {
+            api.sendNotification({
+              id: 'deployment-necessary',
+              type: 'info',
+              message: 'Deployment necessary',
+              actions: [
+                {
+                  title: 'Deploy', action: () => api.events.emit('deploy-mods', (err) => {
+                    if (err !== null) {
+                      if (err instanceof NoDeployment) {
+                        this.props.onShowError(
+                          'You need to select a deployment method in settings',
+                          undefined, false);
+                      } else {
+                        this.props.onShowError('Failed to activate mods', err);
+                      }
+                    }
+                }) },
+              ]
+            });
+          } else {
+            api.dismissNotification('deployment-necessary');
+          }
+        }
+      }
+  )
 
   api.events.on('start-install', (archivePath: string,
                                   callback?: (error, id: string) => void) => {
@@ -772,9 +809,10 @@ function init(context: IExtensionContext): boolean {
   context.registerDialog('external-changes',
                          LazyComponent(() => require('./views/ExternalChangeDialog')));
 
-  context.registerReducer(['session', 'externalChanges'], externalChangesReducer);
+  context.registerReducer(['session', 'mods'], sessionReducer);
   context.registerReducer(['settings', 'mods'], settingsReducer);
   context.registerReducer(['persistent', 'mods'], modsReducer);
+  context.registerReducer(['persistent', 'deployment'], deploymentReducer);
 
   context.registerTableAttribute('mods', genModsSourceAttribute(context.api));
 

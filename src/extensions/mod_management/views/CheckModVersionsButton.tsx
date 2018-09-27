@@ -2,6 +2,7 @@ import { ButtonType } from '../../../controls/IconBar';
 import ToolbarIcon from '../../../controls/ToolbarIcon';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { activeGameId } from '../../../util/selectors';
+import { getSafe } from '../../../util/storeHelper';
 
 import { IProfileMod } from '../../profile_management/types/IProfile';
 
@@ -63,12 +64,14 @@ class CheckVersionsButton extends ComponentEx<IProps, {}> {
   }
 }
 
+const emptyObject = {};
+
 function mapStateToProps(state: any): IConnectedProps {
   const gameMode = activeGameId(state);
   return {
-    mods: state.persistent.mods[gameMode] || {},
+    mods: getSafe(state, ['persistent', 'mods', gameMode], emptyObject),
     gameMode,
-    updateRunning: state.settings.mods.updatingMods[gameMode],
+    updateRunning: getSafe(state, ['session', 'mods', 'updatingMods', gameMode], false),
   };
 }
 
