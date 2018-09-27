@@ -746,7 +746,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         const transform = `translateY(${event.target.scrollTop}px)`;
         this.mHeadRef.style.transform = transform;
       }
-      this.mPinnedRef.className = event.target.scrollTop === 0 ? 'table-pinned' : 'table-pinned-hidden';
+      if (truthy(this.mPinnedRef)) {
+        this.mPinnedRef.className = event.target.scrollTop === 0 ? 'table-pinned' : 'table-pinned-hidden';
+      }
     });
     Object.keys(this.mNoShrinkColumns).forEach(colId => {
       this.mNoShrinkColumns[colId].updateWidth();
