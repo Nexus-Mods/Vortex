@@ -176,6 +176,7 @@ const symlinkAsync = genWrapperAsync(fs.symlinkAsync);
 const utimesAsync = genWrapperAsync(fs.utimesAsync);
 const writeAsync = genWrapperAsync(fs.writeAsync);
 const writeFileAsync = genWrapperAsync(fs.writeFileAsync);
+const isDirectoryAsync = genWrapperAsync(fs.isDirectoryAsync);
 
 export {
   chmodAsync,
@@ -194,6 +195,7 @@ export {
   utimesAsync,
   writeAsync,
   writeFileAsync,
+  isDirectoryAsync,
 };
 
 export function ensureDirSync(dirPath: string) {
