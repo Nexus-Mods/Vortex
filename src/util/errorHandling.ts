@@ -30,14 +30,19 @@ function createTitle(type: string, error: IError, hash: string) {
   return `${type}: ${error.message}`;
 }
 
-function createReport(type: string, error: IError, version: string) {
+function createReport(type: string, error: IError, version: string, reporterProcess: string, sourceProcess: string) {
+  let proc: string = reporterProcess || 'unknown';
+  if (sourceProcess !== undefined) {
+    proc = `${sourceProcess} -> ${proc}`;
+  }
   const sections = [
     `#### System
 | | |
 |------------ | -------------|
 |Platform | ${process.platform} ${os.release()} |
 |Architecture | ${process.arch} |
-|Application Version | ${version} |`,
+|Application Version | ${version} |
+|Process | ${proc} |`,
     `#### Message
 ${error.message}`,
   ];
@@ -94,18 +99,19 @@ export function genHash(error: IError) {
 }
 
 export function createErrorReport(type: string, error: IError, labels: string[],
-                                  state: any) {
+                                  state: any, sourceProcess?: string) {
   const app = appIn || remote.app;
   const reportPath = path.join(app.getPath('userData'), 'crashinfo.json');
   fs.writeFileSync(reportPath, JSON.stringify({
     type, error, labels: labels || [],
     reporterId: getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], undefined),
+    reportProcess: process.type, sourceProcess,
   }));
   spawnSelf(['--report', reportPath]);
 }
 
 function nexusReport(hash: string, type: string, error: IError, labels: string[],
-                     apiKey: string): Promise<IFeedbackResponse> {
+                     apiKey: string, reporterProcess: string, sourceProcess: string): Promise<IFeedbackResponse> {
   const app = appIn || remote.app;
   const Nexus: typeof NexusT = require('nexus-api').default;
 
@@ -113,7 +119,7 @@ function nexusReport(hash: string, type: string, error: IError, labels: string[]
   const nexus = new Nexus(undefined, apiKey, app.getVersion());
   return Promise.resolve(nexus.sendFeedback(
     createTitle(type, error, hash),
-    createReport(type, error, app.getVersion()),
+    createReport(type, error, app.getVersion(), reporterProcess, sourceProcess),
     undefined,
     apiKey === undefined,
     hash,
@@ -160,14 +166,14 @@ export function isOutdated(): boolean {
 export function sendReportFile(fileName: string): Promise<IFeedbackResponse> {
   return fs.readFileAsync(fileName)
     .then(reportData => {
-      const {type, error, labels, reporterId} = JSON.parse(reportData.toString());
-      return sendReport(type, error, labels, reporterId);
+      const {type, error, labels, reporterId, reportProcess, sourceProcess} = JSON.parse(reportData.toString());
+      return sendReport(type, error, labels, reporterId, reportProcess, sourceProcess);
   });
 }
 
-export function sendReport(type: string, error: IError, labels: string[], reporterId?: string) {
+export function sendReport(type: string, error: IError, labels: string[], reporterId?: string, reporterProcess?: string, sourceProcess?: string) {
   const hash = genHash(error);
-  return nexusReport(hash, type, error, labels, reporterId || fallbackAPIKey);
+  return nexusReport(hash, type, error, labels, reporterId || fallbackAPIKey, reporterProcess, sourceProcess);
 }
 
 /**
@@ -179,7 +185,7 @@ export function sendReport(type: string, error: IError, labels: string[], report
  * @export
  * @param {ITermination} error
  */
-export function terminate(error: IError, state: any, allowReport?: boolean) {
+export function terminate(error: IError, state: any, allowReport?: boolean, source?: string) {
   const app = appIn || remote.app;
   const dialog = dialogIn || remote.dialog;
   let win = remote !== undefined ? remote.getCurrentWindow() : null;
@@ -213,7 +219,7 @@ export function terminate(error: IError, state: any, allowReport?: boolean) {
 
     if (action === 2) {
       // Report
-      createErrorReport('Crash', error, ['bug', 'crash'], state);
+      createErrorReport('Crash', error, ['bug', 'crash'], state, source);
     } else if (action === 0) {
       // Ignore
       action = dialog.showMessageBox(win, {

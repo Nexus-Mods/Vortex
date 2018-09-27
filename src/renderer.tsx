@@ -14,7 +14,7 @@ const earlyErrHandler = (evt) => {
 // relayed.
 const oldErr = console.error;
 console.error = (...args) => {
-  oldErr(args.concat(' '));
+  oldErr(args.concat(' ') + '\n' + (new Error()).stack);
 }
 
 window.addEventListener('error', earlyErrHandler);
