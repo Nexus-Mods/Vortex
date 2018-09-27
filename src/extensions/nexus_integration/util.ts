@@ -284,22 +284,16 @@ export function validateKey(api: IExtensionApi, nexus: Nexus, key: string): Prom
     .catch(err => {
       // if there is an "errno", this is more of a technical problem, like
       // network is offline or server not reachable
-      if (err.code === 'ESOCKETTIMEDOUT') {
-        api.sendNotification({
-          type: 'error',
-          message: 'Connection to nexusmods.com timed out, please check your internet connection',
-          actions: [
-            { title: 'Retry', action: dismiss => { validateKey(api, nexus, key); dismiss(); } },
-          ],
-        });
-        showError(api.store.dispatch,
-          'Connection to Nexus API timed out, please check your internet connection',
-          undefined, { allowReport: false });
-      } else {
-        showError(api.store.dispatch,
-          'Failed to log in',
-          err.message, { allowReport: false });
-      }
+      api.sendNotification({
+        type: 'error',
+        title: err.code === 'ESOCKETTIMEDOUT' ? undefined : 'Failed to log in',
+        message: err.code ===  'ESOCKETTIMEDOUT'
+          ? 'Connection to nexusmods.com timed out, please check your internet connection'
+          : err.message,
+        actions: [
+          { title: 'Retry', action: dismiss => { validateKey(api, nexus, key); dismiss(); } },
+        ],
+      });
       api.store.dispatch(setUserInfo(undefined));
     });
 }
