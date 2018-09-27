@@ -264,6 +264,12 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
             prev[value.id] = value.info;
             return prev;
           }, {});
+      })
+      .catch(err => {
+        // this probably only occurs if the user deletes the plugins directory after start
+        this.context.api.showErrorNotification('Failed to read extension directory', err, {
+          allowReport: false,
+        });
       });
   }
 }
