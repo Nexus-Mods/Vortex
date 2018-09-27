@@ -266,6 +266,7 @@ export function validateKey(api: IExtensionApi, nexus: Nexus, key: string): Prom
   return Promise.resolve(nexus.validateKey(key))
     .then(userInfo => {
       api.store.dispatch(setUserInfo(transformUserInfo(userInfo)));
+      retrieveNexusGames(nexus);
     })
     .catch(TimeoutError, () => {
       showError(api.store.dispatch,
