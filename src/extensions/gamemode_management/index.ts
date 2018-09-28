@@ -434,7 +434,8 @@ function init(context: IExtensionContext): boolean {
     const discoveredGames = context.api.store.getState().settings.gameMode.discovered;
     const discovered = getSafe(discoveredGames, [instanceIds[0]], undefined);
     if (discovered !== undefined) {
-      opn(getGame(instanceIds[0]).getModPaths(discovered.path)['']);
+      opn(getGame(instanceIds[0]).getModPaths(discovered.path)[''])
+        .catch(() => undefined);
     }
   };
 
