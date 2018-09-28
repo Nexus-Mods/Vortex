@@ -698,7 +698,9 @@ function once(api: IExtensionApi) {
     if (state.settings.automation.deploy) {
       deploymentTimer.schedule(undefined, false);
     } else {
-      store.dispatch(setDeploymentNecessary(gameId, true));
+      if (!state.persistent.deployment.needToDeploy[gameId]) {
+        store.dispatch(setDeploymentNecessary(gameId, true));
+      }
     }
   });
 

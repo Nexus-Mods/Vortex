@@ -147,7 +147,8 @@ export function onModsChanged(api: IExtensionApi, previous: IModTable, current: 
     && ((previous[gameMode][modId].rules !== current[gameMode][modId].rules)
         || (previous[gameMode][modId].fileOverrides !== current[gameMode][modId].fileOverrides));
 
-  if (previous[gameMode] !== current[gameMode]) {
+  if ((previous[gameMode] !== current[gameMode])
+      && !state.persistent.deployment.needToDeploy[gameMode]) {
     if (Object.keys(current[gameMode]).find(rulesOrOverridesChanged) !== undefined) {
       store.dispatch(setDeploymentNecessary(gameMode, true));
     }
