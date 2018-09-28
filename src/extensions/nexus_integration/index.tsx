@@ -87,15 +87,16 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
       let gameId;
       currentGame(api.store)
         .then((game: IGameStored) => {
-          gameId = nexusGameId(game);
-          if (nexusGames().find(game => game.domain_name === gameId) === undefined) {
+          gameId = game.id;
+          const nexusId = nexusGameId(game);
+          if (nexusGames().find(game => game.domain_name === nexusId) === undefined) {
             // for all we know there could be another extension providing categories for this game
             // so we can't really display an error message or anything
-            log('debug', 'game unknown on nexus', { gameId: game.id });
+            log('debug', 'game unknown on nexus', { gameId: nexusId });
             return Promise.reject(new ProcessCanceled('unsupported game'));
           }
           log('info', 'retrieve categories for game', gameId);
-          return retrieveCategoryList(gameId, nexus);
+          return retrieveCategoryList(nexusId, nexus);
         })
         .then((categories: ICategoryDictionary) => {
           api.events.emit('update-categories', gameId, categories, isUpdate);
