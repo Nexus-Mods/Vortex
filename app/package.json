@@ -1,6 +1,6 @@
 {
   "name": "vortex",
-  "version": "0.16.6",
+  "version": "0.16.7",
   "productName": "Vortex",
   "description": "Vortex",
   "author": "Black Tree Gaming Ltd.",
@@ -11,7 +11,7 @@
     "url": "https://github.com/Nexus-Mods/Vortex"
   },
   "vortex": {
-    "electron": "2.0.8"
+    "electron": "2.0.10"
   },
   "dependencies": {
     "bbcode-to-react": "TanninOne/bbcode-to-react",

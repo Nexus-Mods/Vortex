@@ -1,11 +1,8 @@
 import {IExtensionApi} from '../../../types/IExtensionContext';
-import {log} from '../../../util/log';
 import {getSafe} from '../../../util/storeHelper';
 
 import { getNativePlugins } from '../util/gameSupport';
 import DelegateBase from './DelegateBase';
-
-import * as util from 'util';
 
 class Plugins extends DelegateBase {
   private mGameId: string;
@@ -17,7 +14,6 @@ class Plugins extends DelegateBase {
   public isActive =
       (pluginName: string, callback: (err, res: boolean) => void) => {
         try {
-          log('debug', 'isActive called', pluginName);
           const state = this.api.store.getState();
 
           const plugins = Object.keys(getSafe(state, ['session', 'plugins', 'pluginList'], {}));
@@ -40,7 +36,6 @@ class Plugins extends DelegateBase {
   public isPresent =
       (pluginName: string, callback: (err, res: boolean) => void) => {
         try {
-          log('debug', 'isPresent called', pluginName);
           const state = this.api.store.getState();
 
           const plugins = Object.keys(getSafe(state, ['session', 'plugins', 'pluginList'], {}));
@@ -54,7 +49,6 @@ class Plugins extends DelegateBase {
       }
 
   public getAll = (isActiveOnly: boolean, callback: (err, res: string[]) => void) => {
-    log('debug', 'getAll called', isActiveOnly);
     try {
       const state = this.api.store.getState();
       let plugins = Object.keys(getSafe(state, ['session', 'plugins', 'pluginList'], {}));
