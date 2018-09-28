@@ -141,19 +141,23 @@ class DeploymentMethod extends LinkingDeployment {
       // sanity check, don't link the links
       return Promise.resolve();
     }
-    return this.ensureDir(path.dirname(linkPath))
+    const basePath = path.dirname(linkPath);
+    return this.ensureDir(basePath)
         .then((created: any) => {
-          const tagPath = path.join(created, LinkingDeployment.NEW_TAG_NAME);
-          const tagDir = (created !== null)
-            ? fs.writeFileAsync(tagPath,
+          let tagDir;
+          if (created !== null) {
+            const tagPath = path.join(basePath, LinkingDeployment.NEW_TAG_NAME);
+            tagDir = fs.writeFileAsync(tagPath,
                 'This directory was created by Vortex deployment and will be removed '
                 + 'during purging if it\'s empty')
               .then(() => {
                 if (winapi !== undefined) {
                   winapi.SetFileAttributes(tagPath, ['hidden']);
                 }
-              })
-            : Promise.resolve();
+              });
+          } else {
+            tagDir = Promise.resolve();
+          }
 
           return tagDir.then(() => this.createLink(sourcePath, linkPath));
         });
