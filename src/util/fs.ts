@@ -416,7 +416,7 @@ export function ensureDirWritableAsync(dirPath: string,
 export function forcePerm<T>(t: I18next.TranslationFunction, op: () => PromiseBB<T>): PromiseBB<T> {
   return op()
     .catch(err => {
-      if (err.code === 'EPERM') {
+      if ((err.code === 'EPERM') || (err.errno === 5)) {
         const choice = dialog.showMessageBox(
           remote !== undefined ? remote.getCurrentWindow() : null, {
           title: 'Access denied (2)',
