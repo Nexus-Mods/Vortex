@@ -6,7 +6,7 @@
  * dummy comment
  */
 import { IExtensionReducer } from '../types/Extension';
-import { IReducerSpec, IStateVerifier } from '../types/IExtensionContext';
+import { IReducerSpec, IStateVerifier, VerifierDrop, VerifierDropParent } from '../types/IExtensionContext';
 import deepMerge from '../util/deepMerge';
 import { log } from '../util/log';
 import { getSafe, rehydrate, setSafe, deleteOrNop } from '../util/storeHelper';
@@ -43,7 +43,8 @@ function safeCombineReducers(reducer: ReducersMapObject) {
 function verifyElement(verifier: IStateVerifier, value: any) {
   if ((verifier.type !== undefined)
       && (verifier.required || (value !== undefined))
-      && (typeof(value) !== verifier.type)) {
+      && (((verifier.type === 'array') && !Array.isArray(value))
+          || ((verifier.type !== 'array') && (typeof(value) !== verifier.type)))) {
     return false;
   }
   if ((verifier.noUndefined === true)
@@ -64,18 +65,21 @@ export function verify(path: string, verifiers: { [key: string]: IStateVerifier 
     return input;
   }
   let res = input;
+
+  const recurse = (key: string, mapKey: string) => {
+    const sane = verify(path, verifiers[key].elements, res[mapKey], {});
+    if (sane !== res[mapKey]) {
+      if (sane === undefined) {
+        res = deleteOrNop(res, [mapKey]);
+      } else {
+        res = update(res, { [mapKey]: { $set: sane } });
+      }
+    }
+  }
+
   Object.keys(verifiers).forEach(key => {
     if (key === '_') {
-      Object.keys(res).forEach(mapKey => {
-        const sane = verify(path, verifiers[key].elements, res[mapKey], {});
-        if (sane !== res[mapKey]) {
-          if (sane === undefined) {
-            res = deleteOrNop(res, [mapKey]);
-          } else {
-            res = update(res, { [mapKey]: { $set: sane } });
-          }
-        }
-      });
+      Object.keys(res).forEach(mapKey => recurse(key, mapKey));
     } else if ((verifiers[key].required || input.hasOwnProperty(key))
                && !verifyElement(verifiers[key], input[key])) {
       log('warn', 'invalid state', { path, input, key, ver: verifiers[key] });
@@ -85,12 +89,22 @@ export function verify(path: string, verifiers: { [key: string]: IStateVerifier 
         } else {
           res = deleteOrNop(res, [key]);
         }
+      } else if (verifiers[key].repair !== undefined) {
+        try {
+          const fixed = verifiers[key].repair(input[key], defaults[key]);
+          res = update(res, { [key]: { $set: fixed } });
+        } catch (err) {
+          if (err instanceof VerifierDrop) {
+            res = deleteOrNop(res, [key]);
+          } else if (err instanceof VerifierDropParent) {
+            res = undefined;
+          }
+        }
       } else {
-        res = update(res, { [key]: { $set:
-          (verifiers[key].repair !== undefined)
-          ? verifiers[key].repair(input[key], defaults[key])
-          : defaults[key] } });
+        res = update(res, { [key]: { $set: defaults[key] } });
       }
+    } else if (verifiers[key].elements !== undefined) {
+      recurse(key, key);
     }
   });
   return res;

@@ -520,7 +520,7 @@ export interface IExtensionApi {
 
 export interface IStateVerifier {
   // the expected datatype
-  type?: 'map' | 'string' | 'boolean' | 'number' | 'object';
+  type?: 'map' | 'string' | 'boolean' | 'number' | 'object' | 'array';
   // if set, can't be undefined
   noUndefined?: boolean;
   // if set, can't be null
@@ -534,6 +534,26 @@ export interface IStateVerifier {
   deleteBroken?: boolean | 'parent';
   // if set, this function is called to generate the "repaired" value
   repair?: (input: any, def: any) => any;
+}
+
+/**
+ * The repair function can't fix a value so delete it instead
+ */
+export class VerifierDrop extends Error {
+  constructor() {
+    super('verifier drop');
+    this.name = this.constructor.name;
+  }
+}
+
+/**
+ * The repair function can't fix a value so delete the parent object instead
+ */
+export class VerifierDropParent extends Error {
+  constructor() {
+    super('verifier drop parent');
+    this.name = this.constructor.name;
+  }
 }
 
 /**

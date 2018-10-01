@@ -1,4 +1,4 @@
-import { IReducerSpec } from '../../../types/IExtensionContext';
+import { IReducerSpec, VerifierDropParent } from '../../../types/IExtensionContext';
 import { terminate } from '../../../util/errorHandling';
 import { log } from '../../../util/log';
 import { deleteOrNop, getSafe, merge, setOrNop, setSafe } from '../../../util/storeHelper';
@@ -160,4 +160,27 @@ export const stateReducer: IReducerSpec = {
     speedHistory: [],
     files: {},
   },
+  verifiers: {
+    files: {
+      elements: {
+        _: {
+          elements: {
+            game: {
+              required: true,
+              type: 'array',
+              noNull: true,
+              noUndefined: true,
+              repair: input => {
+                if (input !== undefined) {
+                  return [input];
+                 } else {
+                  throw new VerifierDropParent();
+                 }
+              },
+            }
+          }
+        }
+      }
+    }
+  }
 };
