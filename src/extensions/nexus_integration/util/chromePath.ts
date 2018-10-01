@@ -25,7 +25,7 @@ function chromePath(): Promise<string> {
           : 'Default';
         return path.join(userData, prof, 'Preferences');
       })
-      .catch(err => (['ENOENT', 'EBUSY', 'EPERM'].indexOf(err.code) !== -1)
+      .catch(err => (['ENOENT', 'EBUSY', 'EPERM', 'EISDIR'].indexOf(err.code) !== -1)
         ? Promise.resolve(path.join(userData, 'Default', 'Preferences'))
         : Promise.reject(err));
   } else {
