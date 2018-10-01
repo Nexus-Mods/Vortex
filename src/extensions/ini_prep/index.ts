@@ -67,7 +67,8 @@ function applyDelta(data: any, delta: any) {
   });
 }
 
-function discoverSettingsChanges(gameMode: string, discovery: IDiscoveryResult): Promise<void> {
+function discoverSettingsChanges(t: TranslationFunction, gameMode: string,
+                                 discovery: IDiscoveryResult): Promise<void> {
   const format = iniFormat(gameMode);
   if (format === undefined) {
     return Promise.resolve();
@@ -90,7 +91,7 @@ function discoverSettingsChanges(gameMode: string, discovery: IDiscoveryResult):
       .then(ini => {
         const delta = objDiff(oldContent, newContent);
         applyDelta(ini.data, delta);
-        return parser.write(iniFileName + '.base', ini);
+        return fs.forcePerm(t, () => parser.write(iniFileName + '.base', ini));
       });
   })
   .then(() => undefined);
@@ -224,7 +225,7 @@ function main(context: IExtensionContext) {
       }
       const state: IState = context.api.store.getState();
       const discovery: IDiscoveryResult = state.settings.gameMode.discovered[gameId];
-      discoverSettingsChanges(gameId, discovery)
+      discoverSettingsChanges(context.api.translate, gameId, discovery)
         .then(() => bakeSettings(context.api.translate, gameId, discovery, mods, state))
         .then(() => callback(null))
         .catch(err => callback(err));
@@ -237,7 +238,7 @@ function main(context: IExtensionContext) {
       const state: IState = context.api.store.getState();
       const gameMode = activeGameId(state);
       const discovery: IDiscoveryResult = state.settings.gameMode.discovered[gameMode];
-      discoverSettingsChanges(gameMode, discovery)
+      discoverSettingsChanges(context.api.translate, gameMode, discovery)
         .then(() => purgeChanges(context.api.translate, gameMode, discovery))
         .catch(err => {
           context.api.showErrorNotification('Failed to purge ini edits', err);
