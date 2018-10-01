@@ -104,8 +104,7 @@ function registerMerge(test: MergeTest, merge: MergeFunc, modType: string) {
   mergers.push({ test, merge, modType });
 }
 
-function getActivator(state: IState, gameMode?: string): IDeploymentMethod {
-  const gameId = gameMode || activeGameId(state);
+function getActivator(state: IState, gameId: string, allowFallback: boolean): IDeploymentMethod {
   const activatorId = state.settings.mods.activator[gameId];
 
   let activator: IDeploymentMethod;
@@ -117,7 +116,7 @@ function getActivator(state: IState, gameMode?: string): IDeploymentMethod {
     getSafe(state, ['settings', 'gameMode', 'discovered', gameId], undefined);
   const types = Object.keys(getGame(gameId).getModPaths(gameDiscovery.path));
 
-  if (allTypesSupported(activator, state, gameId, types) !== undefined) {
+  if (allowFallback && (allTypesSupported(activator, state, gameId, types) !== undefined)) {
     // if the selected activator is no longer supported, don't use it
     activator = undefined;
   }
@@ -136,7 +135,7 @@ function purgeMods(api: IExtensionApi): Promise<void> {
   const gameId = activeGameId(state);
   const gameDiscovery = currentGameDiscovery(state);
   const t = api.translate;
-  const activator = getActivator(state);
+  const activator = getActivator(state, gameId, false);
 
   if (activator === undefined) {
     return Promise.reject(new NoDeployment());
@@ -284,7 +283,7 @@ function genUpdateModDeployment() {
     }
     const modPaths = game.getModPaths(gameDiscovery.path);
     const t = api.translate;
-    const activator = getActivator(state, profile.gameId);
+    const activator = getActivator(state, profile.gameId, true);
 
     if (activator === undefined) {
       // this situation (no supported activator) should already be reported
@@ -652,7 +651,7 @@ function once(api: IExtensionApi) {
     if (mod === undefined) {
       return Promise.resolve();
     }
-    const activator = getActivator(state, gameId);
+    const activator = getActivator(state, gameId, false);
     const dataPath = game.getModPaths(discovery.path)[mod.type || ''];
     const installationPath = installPathForGame(state, gameId);
     

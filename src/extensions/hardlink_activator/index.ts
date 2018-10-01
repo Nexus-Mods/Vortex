@@ -96,7 +96,10 @@ class DeploymentMethod extends LinkingDeployment {
       fs.writeFileSync(canary, 'Should only exist temporarily, feel free to delete');
       fs.linkSync(canary, canary + '.link');
     } catch (err) {
-      return 'Filesystem doesn\'t support hard links';
+      // EMFILE shouldn't keep us from using hard linking
+      if (err.code !== 'EMFILE') {
+        return 'Filesystem doesn\'t support hard links';
+      }
     }
 
     try {
