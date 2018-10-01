@@ -301,7 +301,9 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
           if (checkId.length !== 0) {
             onShowError('ID already used.');
           } else if (result.input.newCategoryId === '') {
-            onShowError('Category ID empty.');
+            onShowError('Category ID cannot be empty.');
+          } else if (result.input.newCategory === '') {
+            onShowError('Category Name cannot be empty.');
           } else {
             onSetCategory(gameMode, result.input.newCategoryId, {
               name: result.input.newCategory,
@@ -335,7 +337,9 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
           if (checkId.length !== 0) {
             onShowError('An error occurred adding the new category', 'ID already used.');
           } else if (result.input.newCategoryId === '') {
-            onShowError('An error occurred adding the new category', 'Category ID empty.');
+            onShowError('An error occurred adding the new category', 'Category ID cannot be empty.');
+          } else if (result.input.newCategory === '') {
+            onShowError('An error occurred adding the new category', 'Category Name cannot be empty.');
           } else {
             onSetCategory(gameMode, result.input.newCategoryId, {
               name: result.input.newCategory,
