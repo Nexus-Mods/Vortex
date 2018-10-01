@@ -166,7 +166,7 @@ class CategoryFilter implements ITableFilter {
 
   private categoryChain(category: string, state: IState): string[] {
     const gameId = activeGameId(state);
-    const categories = state.persistent.categories[gameId];
+    const categories = state.persistent.categories[gameId] || {};
     const result: string[] = [];
     let iter = category;
     while (truthy(iter) && (categories[iter] !== undefined)) {
