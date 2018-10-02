@@ -37,18 +37,21 @@
 
 .xtd.table-external-change-refchange.cell-name,
 .xtd.table-external-change-valchange.cell-name,
+.xtd.table-external-change-srcdeleted.cell-name,
 .xtd.table-external-change-deleted.cell-name {
   width: 100%;
 }
 
 .xtd.table-external-change-refchange.cell-file_count,
 .xtd.table-external-change-valchange.cell-file_count,
+.xtd.table-external-change-srcdeleted.cell-file_count,
 .xtd.table-external-change-deleted.cell-file_count {
   white-space: nowrap;
 }
 
 .xtd.table-external-change-refchange,
 .xtd.table-external-change-valchange,
+.xtd.table-external-change-srcdeleted,
 .xtd.table-external-change-deleted {
   &.cell-action {
     min-width: 160px;
@@ -57,6 +60,7 @@
 
 #dropdown-external-change-refchange-action,
 #dropdown-external-change-valchange-action,
+#dropdown-external-change-srcdeleted-action,
 #dropdown-external-change-deleted-action {
   padding: 2px 5px;
   border: 0px;
