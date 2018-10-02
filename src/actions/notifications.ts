@@ -177,7 +177,7 @@ export function showDialog(type: DialogType, title: string,
         if (truthy(action.action)) {
           try {
             const res: any = action.action(input);
-            if (res.catch !== undefined) {
+            if ((res !== undefined) && (res.catch !== undefined)) {
               res.catch(err => {
                 log('error', 'rejection from dialog callback', {
                   title: title,
