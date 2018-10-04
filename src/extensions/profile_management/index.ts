@@ -29,6 +29,8 @@ import { showError } from '../../util/message';
 import { getSafe } from '../../util/storeHelper';
 import { truthy } from '../../util/util';
 
+import { getGame } from '../gamemode_management/util/getGame';
+
 import { forgetMod, setProfile, setProfileActivated } from './actions/profiles';
 import { setCurrentProfile, setNextProfile } from './actions/settings';
 import { profilesReducer } from './reducers/profiles';
@@ -39,8 +41,6 @@ import { IProfileFeature } from './types/IProfileFeature';
 import Connector from './views/Connector';
 import ProfileView from './views/ProfileView';
 import TransferDialog from './views/TransferDialog';
-
-import { getGame } from '../gamemode_management';
 
 import { activeGameId, activeProfile, profileById, lastActiveProfileForGame } from './selectors';
 import { syncFromProfile, syncToProfile } from './sync';

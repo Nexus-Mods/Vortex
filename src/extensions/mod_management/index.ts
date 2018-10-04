@@ -28,7 +28,7 @@ import {getSafe} from '../../util/storeHelper';
 import { removePersistent, setdefault, truthy } from '../../util/util';
 
 import {setDownloadModInfo} from '../download_management/actions/state';
-import {getGame} from '../gamemode_management/index';
+import {getGame} from '../gamemode_management/util/getGame';
 import {IProfileMod, IProfile} from '../profile_management/types/IProfile';
 
 import { setDeploymentNecessary } from './actions/deployment';

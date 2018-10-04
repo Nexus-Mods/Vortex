@@ -5,7 +5,7 @@ import { log } from '../../util/log';
 import { activeGameId, gameName } from '../../util/selectors';
 import walk from '../../util/walk';
 
-import { getGame } from '../gamemode_management';
+import { getGame } from '../gamemode_management/util/getGame';
 import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
 import LinkingDeployment from '../mod_management/LinkingDeployment';
 import { IDeploymentMethod } from '../mod_management/types/IDeploymentMethod';
@@ -14,7 +14,6 @@ import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import * as I18next from 'i18next';
 import * as path from 'path';
-import * as winapi from 'winapi-bindings';
 
 const app = appIn || remote.app;
 

@@ -6,7 +6,7 @@ import {log} from '../../../util/log';
 import {getSafe} from '../../../util/storeHelper';
 import {isNullOrWhitespace} from '../../../util/util';
 
-import {getGame} from '../../gamemode_management';
+import {getGame} from '../../gamemode_management/util/getGame';
 import {IDiscoveryResult} from '../../gamemode_management/types/IDiscoveryResult';
 
 import DelegateBase from './DelegateBase';

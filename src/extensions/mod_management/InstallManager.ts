@@ -15,7 +15,7 @@ import walk from '../../util/walk';
 
 import { IDownload } from '../download_management/types/IDownload';
 import getDownloadGames from '../download_management/util/getDownloadGames';
-import { getGame } from '../gamemode_management';
+import { getGame } from '../gamemode_management/util/getGame';
 import { IModType } from '../gamemode_management/types/IModType';
 import modName from '../mod_management/util/modName';
 import { setModEnabled } from '../profile_management/actions/profiles';

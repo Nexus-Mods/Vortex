@@ -4,7 +4,7 @@ import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 import { installPathForGame } from '../../util/selectors';
 
-import { getGame } from '../gamemode_management';
+import { getGame } from '../gamemode_management/util/getGame';
 import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
 import LinkingDeployment from '../mod_management/LinkingDeployment';
 import { IDeployedFile, IDeploymentMethod } from '../mod_management/types/IDeploymentMethod';
@@ -14,7 +14,6 @@ import * as I18next from 'i18next';
 import * as path from 'path';
 import turbowalk from 'turbowalk';
 import * as util from 'util';
-import * as winapi from 'winapi-bindings';
 
 export class FileFound extends Error {
   constructor(name) {

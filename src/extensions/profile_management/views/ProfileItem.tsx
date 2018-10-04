@@ -5,7 +5,7 @@ import { ComponentEx } from '../../../util/ComponentEx';
 import * as fs from '../../../util/fs';
 import { getSafe } from '../../../util/storeHelper';
 
-import { getGame } from '../../gamemode_management/index';
+import { getGame } from '../../gamemode_management/util/getGame';
 
 import { IProfile } from '../types/IProfile';
 import { IProfileFeature } from '../types/IProfileFeature';

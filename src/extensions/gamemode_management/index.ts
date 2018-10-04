@@ -34,6 +34,8 @@ import { settingsReducer } from './reducers/settings';
 import { IDiscoveryResult } from './types/IDiscoveryResult';
 import { IGameStored } from './types/IGameStored';
 import { IModType } from './types/IModType';
+import { getGame } from './util/getGame';
+import { getModTypeExtensions, registerModType } from './util/modTypeExtensions';
 import queryGameInfo from './util/queryGameInfo';
 import {} from './views/GamePicker';
 import HideGameIcon from './views/HideGameIcon';
@@ -50,67 +52,12 @@ import * as path from 'path';
 import * as Redux from 'redux';
 
 const extensionGames: IGame[] = [];
-const modTypeExtensions: IModType[] = [];
 
-// "decorate" IGame objects with added functionality
-const gameExHandler = {
-  get: (target: IGame, key: PropertyKey) => {
-    if (key === 'getModPaths') {
-      const applicableExtensions = modTypeExtensions.filter(ex => ex.isSupported(target.id));
-      const extTypes = applicableExtensions.reduce((prev, val) => {
-        prev[val.typeId] = val.getPath(target);
-        return prev;
-      }, {});
-
-      return gamePath => {
-        let defaultPath = target.queryModPath(gamePath);
-        if (defaultPath === undefined) {
-          defaultPath = '.';
-        }
-        if (!path.isAbsolute(defaultPath)) {
-          defaultPath = path.resolve(gamePath, defaultPath);
-        }
-        return {
-          ...extTypes,
-          '': defaultPath,
-        };
-      };
-    } else if (key === 'modTypes') {
-      return modTypeExtensions.filter(ex => ex.isSupported(target.id));
-    } else {
-      return target[key];
-    }
-  },
-};
-
-function makeGameProxy(game: IGame): IGame {
-  if (game === undefined) {
-    return undefined;
-  }
-  return new Proxy(game, gameExHandler);
-}
-
-// this isn't nice...
 const $ = local<{
   gameModeManager: GameModeManager,
 }>('gamemode-management', {
   gameModeManager: undefined,
 });
-
-// ...neither is this
-export function getGames(): IGame[] {
-  if ($.gameModeManager === undefined) {
-    throw new Error('getGames only available in renderer process');
-  }
-  return $.gameModeManager.games.map(makeGameProxy);
-}
-
-export function getGame(gameId: string): IGame {
-  if ($.gameModeManager === undefined) {
-    throw new Error('getGame only available in renderer process');
-  }
-  return makeGameProxy($.gameModeManager.games.find(iter => iter.id === gameId));
-}
 
 interface IProvider {
   id: string;
@@ -203,7 +150,7 @@ function verifyGamePath(game: IGame, gamePath: string): Promise<void> {
 
 function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
   const state: IState = api.store.getState();
-  const game = $.gameModeManager.games.find(iter => iter.id === gameId);
+  const game = getGame(gameId);
   const discovery = state.settings.gameMode.discovered[gameId];
 
   return new Promise<void>((resolve, reject) => {
@@ -341,7 +288,7 @@ function genModTypeAttribute(api: IExtensionApi): ITableAttribute<IModWithState>
       placeholder: () => api.translate('Default'),
       choices: () => {
         const gameMode = activeGameId(api.store.getState());
-        return modTypeExtensions
+        return getModTypeExtensions()
           .filter((type: IModType) => type.isSupported(gameMode))
           .map((type: IModType): IEditChoice =>
             ({ key: type.typeId, text: (type.typeId || 'Default') }));
@@ -398,19 +345,7 @@ function init(context: IExtensionContext): boolean {
       gameInfoProviders.push({ id, priority, expireMS, keys, query });
   };
 
-  context.registerModType = (id: string, priority: number,
-                             isSupported: (gameId: string) => boolean,
-                             getPath: (game: IGame) => string,
-                             test: (instructions: IInstruction[]) =>
-                                 Promise<boolean>) => {
-    modTypeExtensions.push({
-      typeId: id,
-      priority,
-      isSupported,
-      getPath,
-      test,
-    });
-  };
+  context.registerModType = registerModType;
 
   context.registerGameInfoProvider('game-path', 0, 1000,
     ['path'], (game: IGame & IDiscoveryResult) => (game.path === undefined)

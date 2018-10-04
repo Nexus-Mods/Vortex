@@ -1,7 +1,7 @@
 import { IDeploymentMethod } from '../types/IDeploymentMethod';
 import { IState } from '../../../types/IState';
 import { getSafe } from '../../../util/storeHelper';
-import { getGame } from '../../gamemode_management';
+import { getGame } from '../../gamemode_management/util/getGame';
 import allTypesSupported from './allTypesSupported';
 import { activeGameId } from '../../profile_management/selectors';
 

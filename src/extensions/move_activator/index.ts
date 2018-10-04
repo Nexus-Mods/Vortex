@@ -3,7 +3,7 @@ import { IGame } from '../../types/IGame';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 
-import { getGame } from '../gamemode_management';
+import { getGame } from '../gamemode_management/util/getGame';
 import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
 import LinkingDeployment, { IDeployment } from '../mod_management/LinkingDeployment';
 import { installPathForGame } from '../mod_management/selectors';

@@ -14,7 +14,7 @@ import {IDeploymentMethod} from './types/IDeploymentMethod';
 import {IMod} from './types/IMod';
 import {loadActivation, saveActivation} from './util/activationStore';
 
-import {getGame} from '../gamemode_management/index';
+import {getGame} from '../gamemode_management/util/getGame';
 import {setModEnabled} from '../profile_management/actions/profiles';
 import {IProfile} from '../profile_management/types/IProfile';
 
