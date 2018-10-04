@@ -262,7 +262,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
   }
 
   private renameCategory = (categoryId: string) => {
-    const {categories, gameMode, onShowDialog, onRenameCategory} = this.props;
+    const {categories, gameMode, onShowDialog, onRenameCategory, onShowError} = this.props;
 
     const category = categories[categoryId];
 
@@ -271,7 +271,11 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
     }, [ { label: 'Cancel' }, { label: 'Rename' } ])
     .then((result: IDialogResult) => {
         if ((result.action === 'Rename') && (result.input.newCategory !== undefined)) {
-          onRenameCategory(gameMode, categoryId, result.input.newCategory);
+          if (result.input.newCategory === '') {
+            onShowError('Category Name cannot be empty.');
+          } else {
+            onRenameCategory(gameMode, categoryId, result.input.newCategory);
+          }
         }
       });
   }
