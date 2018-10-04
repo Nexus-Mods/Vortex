@@ -35,7 +35,6 @@ import {
 } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
-import { getGame } from '../../gamemode_management';
 
 interface IBaseProps {
   activators: IDeploymentMethod[];
