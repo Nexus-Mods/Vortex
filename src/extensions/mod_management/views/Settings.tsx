@@ -22,6 +22,7 @@ import { setActivator, setInstallPath } from '../actions/settings';
 import { IDeploymentMethod } from '../types/IDeploymentMethod';
 import getInstallPath, { getInstallPathPattern } from '../util/getInstallPath';
 import getSupportedActivators from '../util/supportedActivators';
+import { setDeploymentNecessary } from '../actions/deployment';
 
 import getText from '../texts';
 
@@ -310,9 +311,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     const { currentActivator } = this.state;
 
     this.purgeActivation()
-    .then(() => {
-      onSetActivator(gameMode, currentActivator);
-    })
+    .then(() => { this.context.api.events.emit('purge-mods', (err) => null); })
+    .then(() => { onSetActivator(gameMode, currentActivator); })
+    .then(() => { this.context.api.store.dispatch(setDeploymentNecessary(gameMode, true)); })
     .catch(TemporaryError, err => {
       onShowError('Failed to purge previous deployment, please try again',
                   err, false);
