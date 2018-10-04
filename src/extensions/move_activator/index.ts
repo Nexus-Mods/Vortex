@@ -5,7 +5,7 @@ import { log } from '../../util/log';
 
 import { getGame } from '../gamemode_management';
 import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
-import LinkingDeployment from '../mod_management/LinkingDeployment';
+import LinkingDeployment, { IDeployment } from '../mod_management/LinkingDeployment';
 import { installPathForGame } from '../mod_management/selectors';
 import { IMod } from '../mod_management/types/IMod';
 import { IDeployedFile, IDeploymentMethod } from '../mod_management/types/IDeploymentMethod';
@@ -15,7 +15,6 @@ import * as I18next from 'i18next';
 import * as path from 'path';
 import turbowalk, { IEntry } from 'turbowalk';
 import * as util from 'util';
-import * as winapi from 'winapi-bindings';
 
 const LNK_EXT = '.vortex_lnk';
 
@@ -34,6 +33,7 @@ class DeploymentMethod extends LinkingDeployment {
     super(
         'move_activator', 'Move deployment (Experimental!)',
         'Deploys mods by actually moving files to the destination directory.',
+        false,
         api);
   }
 
@@ -95,6 +95,20 @@ class DeploymentMethod extends LinkingDeployment {
                   installationPath: string,
                   progressCB?: (files: number, total: number) => void): Promise<IDeployedFile[]> {
     this.mDirCache = new Set<string>();
+
+    let deployment: IDeployment = this.context.newDeployment;
+    const lnkExtUpper =LNK_EXT.toUpperCase();
+    const extLen = LNK_EXT.length;
+    this.context.newDeployment = Object.keys(deployment).reduce((prev: IDeployment, relPath: string) => {
+      if (path.extname(relPath) === lnkExtUpper) {
+        deployment[relPath].relPath = deployment[relPath].relPath.substr(0, relPath.length - extLen);
+        prev[relPath.substr(0, relPath.length - extLen)] = deployment[relPath];
+      } else {
+        prev[relPath] = deployment[relPath];
+      }
+      return prev;
+    }, {});
+
     return super.finalize(gameId, dataPath, installationPath, progressCB)
     .then(files => {
       this.mDirCache = undefined;
@@ -120,9 +134,6 @@ class DeploymentMethod extends LinkingDeployment {
   }
 
   protected purgeLinks(installationPath: string, dataPath: string): Promise<void> {
-    const inos = new Set<number>();
-    const deleteIfEmpty: string[] = [];
-
     let links: IEntry[] = [];
 
     // find lnk files in our mods directory
@@ -149,12 +160,7 @@ class DeploymentMethod extends LinkingDeployment {
             const tagPath = path.join(basePath, LinkingDeployment.NEW_TAG_NAME);
             tagDir = fs.writeFileAsync(tagPath,
                 'This directory was created by Vortex deployment and will be removed '
-                + 'during purging if it\'s empty')
-              .then(() => {
-                if (winapi !== undefined) {
-                  winapi.SetFileAttributes(tagPath, ['hidden']);
-                }
-              });
+                + 'during purging if it\'s empty');
           } else {
             tagDir = Promise.resolve();
           }

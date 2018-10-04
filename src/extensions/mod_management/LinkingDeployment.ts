@@ -1,5 +1,6 @@
 import {addNotification} from '../../actions/notifications';
 import {IExtensionApi} from '../../types/IExtensionContext';
+import { UserCanceled } from '../../util/api';
 import * as fs from '../../util/fs';
 import {Normalize} from '../../util/getNormalizeFunc';
 import {log} from '../../util/log';
@@ -17,9 +18,8 @@ import * as I18next from 'i18next';
 import * as _ from 'lodash';
 import * as path from 'path';
 import turbowalk from 'turbowalk';
-import { UserCanceled } from '../../util/api';
 
-interface IDeployment {
+export interface IDeployment {
   [relPath: string]: IDeployedFile;
 }
 
@@ -44,6 +44,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
   public id: string;
   public name: string;
   public description: string;
+  public isFallbackPurgeSafe: boolean;
 
   private mApi: IExtensionApi;
   private mNormalize: Normalize;
@@ -51,10 +52,11 @@ abstract class LinkingActivator implements IDeploymentMethod {
   private mQueue: Promise<void> = Promise.resolve();
   private mContext: IDeploymentContext;
 
-  constructor(id: string, name: string, description: string, api: IExtensionApi) {
+  constructor(id: string, name: string, description: string, fallbackPurgeSafe: boolean, api: IExtensionApi) {
     this.id = id;
     this.name = name;
     this.description = description;
+    this.isFallbackPurgeSafe = fallbackPurgeSafe;
     this.mApi = api;
   }
 

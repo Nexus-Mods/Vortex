@@ -1,6 +1,6 @@
 export function remoteCode(ipcClient, req) {
   return new Promise<void>((resolve, reject) => {
-    const TAG_NAME = '__delete_if_empty';
+    const TAG_NAME = process.platform === 'win32' ? '__folder_managed_by_vortex' : '.__folder_managed_by_vortex';
 
     const fs = req('fs-extra-promise');
     const path = req('path');

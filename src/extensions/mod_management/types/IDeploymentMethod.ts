@@ -83,6 +83,15 @@ export interface IDeploymentMethod {
   readonly description: string;
 
   /**
+   * true if it's "safe" to purge files from this method from another instance,
+   * that is: without knowing where the "original" files are.
+   * 
+   * @type {boolean}
+   * @memberOf IModActivator
+   */
+  readonly isFallbackPurgeSafe: boolean;
+
+  /**
    * returns more extensive description/explanation of the activator.
    *
    * @type {string}

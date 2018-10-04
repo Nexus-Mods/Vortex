@@ -26,7 +26,9 @@ class DeploymendMethod extends LinkingDeployment {
   constructor(api: IExtensionApi) {
     super(
         'symlink_activator', 'Symlink Deployment',
-        'Deploys mods by setting symlinks in the destination directory.', api);
+        'Deploys mods by setting symlinks in the destination directory.',
+        true,
+        api);
   }
 
   public detailedDescription(t: I18next.TranslationFunction): string {
@@ -91,12 +93,7 @@ class DeploymendMethod extends LinkingDeployment {
             const tagPath = path.join(created, LinkingDeployment.NEW_TAG_NAME);
             tagDir = fs.writeFileAsync(tagPath,
                 'This directory was created by Vortex deployment and will be removed '
-                + 'during purging if it\'s empty')
-            .then(() => {
-              if (winapi !== undefined) {
-                winapi.SetFileAttributes(tagPath, ['hidden']);
-              }
-            });
+                + 'during purging if it\'s empty');
           } else {
             tagDir = Promise.resolve();
           }

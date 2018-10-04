@@ -52,13 +52,13 @@ import * as basicInstaller from './util/basicInstaller';
 import { NoDeployment } from './util/exceptions';
 import { registerAttributeExtractor } from './util/filterModInfo';
 import sortMods from './util/sort';
-import supportedActivators from './util/supportedActivators';
 import ActivationButton from './views/ActivationButton';
 import DeactivationButton from './views/DeactivationButton';
 import {} from './views/ExternalChangeDialog';
 import {} from './views/ModList';
 import {} from './views/Settings';
 
+import { getCurrentActivator, getAllActivators, registerDeploymentMethod, getSupportedActivators } from './util/deploymentMethods';
 import { onAddMod, onGameModeActivated, onPathsChanged,
          onRemoveMod, onStartInstallDownload, onModsChanged } from './eventHandlers';
 import InstallManager from './InstallManager';
@@ -69,8 +69,6 @@ import getText from './texts';
 import * as Promise from 'bluebird';
 import * as path from 'path';
 import * as Redux from 'redux';
-
-const activators: IDeploymentMethod[] = [];
 
 let installManager: InstallManager;
 
@@ -87,10 +85,6 @@ const modSources: IModSource[] = [];
 
 const mergers: IFileMerge[] = [];
 
-function registerDeploymentMethod(activator: IDeploymentMethod) {
-  activators.push(activator);
-}
-
 function registerInstaller(id: string, priority: number,
                            testSupported: TestSupported, install: InstallFunc) {
   installers.push({ id, priority, testSupported, install });
@@ -104,38 +98,13 @@ function registerMerge(test: MergeTest, merge: MergeFunc, modType: string) {
   mergers.push({ test, merge, modType });
 }
 
-function getActivator(state: IState, gameId: string, allowFallback: boolean): IDeploymentMethod {
-  const activatorId = state.settings.mods.activator[gameId];
-
-  let activator: IDeploymentMethod;
-  if (activatorId !== undefined) {
-    activator = activators.find((act: IDeploymentMethod) => act.id === activatorId);
-  }
-
-  const gameDiscovery =
-    getSafe(state, ['settings', 'gameMode', 'discovered', gameId], undefined);
-  const types = Object.keys(getGame(gameId).getModPaths(gameDiscovery.path));
-
-  if (allowFallback && (allTypesSupported(activator, state, gameId, types) !== undefined)) {
-    // if the selected activator is no longer supported, don't use it
-    activator = undefined;
-  }
-
-  if (activator === undefined) {
-    activator = activators.find(act =>
-      allTypesSupported(act, state, gameId, types) === undefined);
-  }
-
-  return activator;
-}
-
 function purgeMods(api: IExtensionApi): Promise<void> {
   const state = api.store.getState();
   const instPath = installPath(state);
   const gameId = activeGameId(state);
   const gameDiscovery = currentGameDiscovery(state);
   const t = api.translate;
-  const activator = getActivator(state, gameId, false);
+  const activator = getCurrentActivator(state, gameId, false);
 
   if (activator === undefined) {
     return Promise.reject(new NoDeployment());
@@ -151,9 +120,9 @@ function purgeMods(api: IExtensionApi): Promise<void> {
   const modPaths = game.getModPaths(gameDiscovery.path);
 
   return Promise.each(Object.keys(modPaths), typeId =>
-    loadActivation(api, typeId, modPaths[typeId])
+    loadActivation(api, typeId, modPaths[typeId], activator)
       .then(() => activator.purge(instPath, modPaths[typeId]))
-      .then(() => saveActivation(typeId, state.app.instanceId, modPaths[typeId], [])))
+      .then(() => saveActivation(typeId, state.app.instanceId, modPaths[typeId], [], activator.id)))
   .catch(UserCanceled, () => undefined)
   .catch(TemporaryError, err =>
     api.showErrorNotification('Failed to purge mods, please try again',
@@ -283,7 +252,7 @@ function genUpdateModDeployment() {
     }
     const modPaths = game.getModPaths(gameDiscovery.path);
     const t = api.translate;
-    const activator = getActivator(state, profile.gameId, true);
+    const activator = getCurrentActivator(state, profile.gameId, true);
 
     if (activator === undefined) {
       // this situation (no supported activator) should already be reported
@@ -318,7 +287,7 @@ function genUpdateModDeployment() {
 
         log('debug', 'load activation');
         return Promise.each(Object.keys(modPaths),
-          typeId => loadActivation(api, typeId, modPaths[typeId]).then(
+          typeId => loadActivation(api, typeId, modPaths[typeId], activator).then(
             deployedFiles => lastDeployment[typeId] = deployedFiles));
       })
       .then(() => api.emitAndAwait('will-deploy', profile.id, lastDeployment))
@@ -419,7 +388,7 @@ function genUpdateModDeployment() {
                                      deployProgress)
                 .then(newActivation => {
                   newDeployment[typeId] = newActivation;
-                  return doSaveActivation(api, typeId, modPaths[typeId], newActivation)
+                  return doSaveActivation(api, typeId, modPaths[typeId], newActivation, activator.id)
                     .catch(err => api.showDialog('error', 'Saving manifest failed', {
                       text: 'Saving the manifest failed (see error below). This could lead to errors '
                           + 'later on, ',
@@ -453,9 +422,9 @@ function genUpdateModDeployment() {
   };
 }
 
-function doSaveActivation(api: IExtensionApi, typeId: string, modPath: string, files: IDeployedFile[]) {
+function doSaveActivation(api: IExtensionApi, typeId: string, modPath: string, files: IDeployedFile[], activatorId: string) {
   const state: IState = api.store.getState();
-  return saveActivation(typeId, state.app.instanceId, modPath, files)
+  return saveActivation(typeId, state.app.instanceId, modPath, files, activatorId)
     .catch(err => api.showDialog('error', 'Saving manifest failed', {
       text: 'Saving the manifest failed (see error below). This could lead to errors '
         + '(e.g. orphaned files in the game directory, external changes not being detected). '
@@ -466,7 +435,7 @@ function doSaveActivation(api: IExtensionApi, typeId: string, modPath: string, f
       { label: 'Ignore' },
     ])
     .then(result => (result.action === 'Retry') 
-      ? doSaveActivation(api, typeId, modPath, files)
+      ? doSaveActivation(api, typeId, modPath, files, activatorId)
       : Promise.resolve()));
 }
 
@@ -510,7 +479,7 @@ function genModsSourceAttribute(api: IExtensionApi): ITableAttribute<IMod> {
 function genValidActivatorCheck(api: IExtensionApi) {
   return () => new Promise<ITestResult>((resolve, reject) => {
     const state = api.store.getState();
-    if (supportedActivators(activators, state).length > 0) {
+    if (getSupportedActivators(state).length > 0) {
       return resolve(undefined);
     }
 
@@ -525,7 +494,7 @@ function genValidActivatorCheck(api: IExtensionApi) {
     }
     const modPaths = game.getModPaths(discovery.path);
 
-    const messages = activators.map((activator) => {
+    const messages = getAllActivators().map((activator) => {
       const supported = allTypesSupported(activator, state, gameId, Object.keys(modPaths));
       return `[*] ${activator.name} - [i]${supported}[/i]`;
     });
@@ -651,7 +620,7 @@ function once(api: IExtensionApi) {
     if (mod === undefined) {
       return Promise.resolve();
     }
-    const activator = getActivator(state, gameId, false);
+    const activator = getCurrentActivator(state, gameId, false);
     const dataPath = game.getModPaths(discovery.path)[mod.type || ''];
     const installationPath = installPathForGame(state, gameId);
     
@@ -660,7 +629,7 @@ function once(api: IExtensionApi) {
     return getNormalizeFunc(dataPath)
       .then(norm => {
         normalize = norm;
-        return loadActivation(api, mod.type, dataPath);
+        return loadActivation(api, mod.type, dataPath, activator);
       })
       .then(lastActivation => activator.prepare(dataPath, false, lastActivation, normalize))
       .then(() => (mod !== undefined)
@@ -669,7 +638,7 @@ function once(api: IExtensionApi) {
           : activator.deactivate(installationPath, dataPath, mod)
         : Promise.resolve())
       .then(() => activator.finalize(gameId, dataPath, installationPath))
-      .then(newActivation => doSaveActivation(api, mod.type, dataPath, newActivation));
+      .then(newActivation => doSaveActivation(api, mod.type, dataPath, newActivation, activator.id));
   });
 
   api.events.on('purge-mods', (callback: (err: Error) => void) => {
@@ -704,7 +673,7 @@ function once(api: IExtensionApi) {
   });
 
   api.events.on('gamemode-activated',
-      (newMode: string) => onGameModeActivated(api, activators, newMode));
+      (newMode: string) => onGameModeActivated(api, getAllActivators(), newMode));
 
   api.onStateChange(
       ['settings', 'mods', 'installPath'],
@@ -718,6 +687,7 @@ function once(api: IExtensionApi) {
       ['persistent', 'deployment', 'needToDeploy'],
       (previous, current) => {
         const gameMode = activeGameId(store.getState());
+        console.log('changing need to deploy', gameMode, previous[gameMode], current[gameMode]);
         if (previous[gameMode] !== current[gameMode]) {
           if (current[gameMode]) {
             api.sendNotification({
@@ -726,17 +696,21 @@ function once(api: IExtensionApi) {
               message: 'Deployment necessary',
               actions: [
                 {
-                  title: 'Deploy', action: () => api.events.emit('deploy-mods', (err) => {
-                    if (err !== null) {
-                      if (err instanceof NoDeployment) {
-                        this.props.onShowError(
-                          'You need to select a deployment method in settings',
-                          undefined, false);
-                      } else {
-                        this.props.onShowError('Failed to activate mods', err);
+                  title: 'Deploy', action: (dismiss) => {
+                    dismiss();
+                    api.events.emit('deploy-mods', (err) => {
+                      if (err !== null) {
+                        if (err instanceof NoDeployment) {
+                          this.props.onShowError(
+                            'You need to select a deployment method in settings',
+                            undefined, false);
+                        } else {
+                          this.props.onShowError('Failed to activate mods', err);
+                        }
                       }
-                    }
-                }) },
+                    })
+                  }
+                },
               ]
             });
           } else {
@@ -765,7 +739,7 @@ function once(api: IExtensionApi) {
   api.events.on(
       'remove-mod',
       (gameMode: string, modId: string, callback?: (error: Error) => void) =>
-          onRemoveMod(api, activators, gameMode, modId, callback));
+          onRemoveMod(api, getAllActivators(), gameMode, modId, callback));
 
   api.events.on('create-mod',
       (gameMode: string, mod: IMod, callback: (error: Error) => void) => {
@@ -791,12 +765,12 @@ function init(context: IExtensionContext): boolean {
 
   context.registerAction('mod-icons', 105, ActivationButton, {}, () => ({
     key: 'activate-button',
-    activators,
+    activators: getAllActivators(),
   }));
 
   context.registerAction('mod-icons', 110, DeactivationButton, {}, () => ({
     key: 'deactivate-button',
-    activators,
+    activators: getAllActivators(),
   }));
 
   const validActivatorCheck = genValidActivatorCheck(context.api);
@@ -805,7 +779,7 @@ function init(context: IExtensionContext): boolean {
   context.registerTest('valid-activator', 'settings-changed', validActivatorCheck);
 
   context.registerSettings('Mods', LazyComponent(() => require('./views/Settings')),
-                           () => ({activators}));
+                           () => ({activators: getAllActivators()}));
 
   context.registerDialog('external-changes',
                          LazyComponent(() => require('./views/ExternalChangeDialog')));

@@ -20,7 +20,6 @@ import {IProfile} from '../profile_management/types/IProfile';
 
 import allTypesSupported from './util/allTypesSupported';
 import refreshMods from './util/refreshMods';
-import supportedActivators from './util/supportedActivators';
 
 import InstallManager from './InstallManager';
 import {currentActivator, installPath, installPathForGame} from './selectors';
@@ -31,13 +30,14 @@ import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
 import queryGameId from './util/queryGameId';
 import { downloadPathForGame } from '../../util/selectors';
 import { setDeploymentNecessary } from './actions/deployment';
+import { getSupportedActivators } from './util/deploymentMethods';
 
 export function onGameModeActivated(
     api: IExtensionApi, activators: IDeploymentMethod[], newGame: string) {
   const store = api.store;
   const state: IState = store.getState();
   const configuredActivatorId = currentActivator(state);
-  const supported = supportedActivators(activators, state);
+  const supported = getSupportedActivators(state);
   const configuredActivator =
     supported.find(activator => activator.id === configuredActivatorId);
   const gameId = activeGameId(state);
@@ -190,14 +190,14 @@ function undeploy(api: IExtensionApi,
   return getNormalizeFunc(dataPath)
     .then(norm => {
       normalize = norm;
-      return loadActivation(api, mod.type, dataPath);
+      return loadActivation(api, mod.type, dataPath, activatorId);
     })
     .then(lastActivation => activator.prepare(dataPath, false, lastActivation, normalize))
     .then(() => (mod !== undefined)
       ? activator.deactivate(installationPath, dataPath, mod)
       : Promise.resolve())
     .then(() => activator.finalize(gameMode, dataPath, installationPath))
-    .then(newActivation => saveActivation(mod.type, state.app.instanceId, dataPath, newActivation));
+    .then(newActivation => saveActivation(mod.type, state.app.instanceId, dataPath, newActivation, activator.id));
 }
 
 export function onRemoveMod(api: IExtensionApi,

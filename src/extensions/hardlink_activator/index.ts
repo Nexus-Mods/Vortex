@@ -30,6 +30,7 @@ class DeploymentMethod extends LinkingDeployment {
     super(
         'hardlink_activator', 'Hardlink Deployment',
         'Deploys mods by setting hard links in the destination directory.',
+        true,
         api);
   }
 
@@ -174,12 +175,7 @@ class DeploymentMethod extends LinkingDeployment {
           const tagPath = path.join(created, LinkingDeployment.NEW_TAG_NAME);
           tagDir = fs.writeFileAsync(tagPath,
               'This directory was created by Vortex deployment and will be removed '
-              + 'during purging if it\'s empty')
-            .then(() => {
-              if (winapi !== undefined) {
-                winapi.SetFileAttributes(tagPath, ['hidden']);
-              }
-            });
+              + 'during purging if it\'s empty');
         } else {
           tagDir = Promise.resolve();
         }

@@ -3,7 +3,6 @@ import EmptyPlaceholder from '../../../controls/EmptyPlaceholder';
 import FlexLayout from '../../../controls/FlexLayout';
 import Icon from '../../../controls/Icon';
 import More from '../../../controls/More';
-import Spinner from '../../../controls/Spinner';
 import { Button } from '../../../controls/TooltipControls';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
@@ -14,14 +13,13 @@ import opn from '../../../util/opn';
 import { showError } from '../../../util/message';
 import { getSafe } from '../../../util/storeHelper';
 import { isChildPath } from '../../../util/util';
-import { getGame } from '../../gamemode_management';
 import { currentGame, currentGameDiscovery } from '../../gamemode_management/selectors';
 import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../../gamemode_management/types/IGameStored';
 import { setActivator, setInstallPath } from '../actions/settings';
 import { IDeploymentMethod } from '../types/IDeploymentMethod';
+import { getSupportedActivators } from '../util/deploymentMethods';
 import getInstallPath, { getInstallPathPattern } from '../util/getInstallPath';
-import getSupportedActivators from '../util/supportedActivators';
 import { setDeploymentNecessary } from '../actions/deployment';
 
 import getText from '../texts';
@@ -36,6 +34,7 @@ import {
 } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
+import { getGame } from '../../gamemode_management';
 
 interface IBaseProps {
   activators: IDeploymentMethod[];
@@ -160,7 +159,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
    * @returns {IDeploymentMethod[]}
    */
   private supportedActivators(): IDeploymentMethod[] {
-    return getSupportedActivators(this.props.activators, this.props.state);
+    return getSupportedActivators(this.props.state);
   }
 
   private pathsChanged() {
