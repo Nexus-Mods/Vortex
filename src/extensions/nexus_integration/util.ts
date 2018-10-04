@@ -1,10 +1,11 @@
 import * as Promise from 'bluebird';
-import Nexus, { IDownloadURL, IFileInfo, IGameListEntry, IModInfo, NexusError } from 'nexus-api';
+import * as I18next from 'i18next';
+import Nexus, { IDownloadURL, IFileInfo, IGameListEntry, IModInfo, NexusError, TimeoutError } from 'nexus-api';
 import * as Redux from 'redux';
 import * as util from 'util';
 import { setModAttribute } from '../../actions';
 import { IExtensionApi, IMod } from '../../types/api';
-import { getSafe, showError } from '../../util/api';
+import { getSafe, showError, calcDuration } from '../../util/api';
 import { log } from '../../util/log';
 import { truthy } from '../../util/util';
 import modName from '../mod_management/util/modName';
@@ -13,7 +14,6 @@ import NXMUrl from './NXMUrl';
 import { checkModVersion } from './util/checkModsVersion';
 import { nexusGameId, convertNXMIdReverse, convertGameIdReverse } from './util/convertGameId';
 import sendEndorseMod from './util/endorseMod';
-import { TimeoutError } from './util/submitFeedback';
 import transformUserInfo from './util/transformUserInfo';
 import { gameById, knownGames } from '../gamemode_management/selectors';
 import { activeGameId } from '../../util/selectors';
@@ -145,6 +145,24 @@ export function processErrorMessage(err: NexusError): IRequestError {
   }
 }
 
+function resolveEndorseError(t: I18next.TranslationFunction, err: Error): string {
+  if (err.message === 'You must provide a version') {
+    // is this still reported in this way?
+    return t('You can\'t endorse a mod that has no version set.');
+  } else if ((err as any).statusCode === 403) {
+    const msg = {
+      NOT_DOWNLOADED_MOD: 'You have not downloaded this mod from Nexus Mods yet.',
+      TOO_SOON_AFTER_DOWNLOAD: 'You have to wait 15 minutes after downloading a mod before you can endorse it.',
+      IS_OWN_MOD: 'You can\'t endorse your own mods.',
+    }[err.message];
+    if (msg !== undefined) {
+      return t(msg);
+    }
+  }
+
+  return undefined;
+}
+
 export function endorseModImpl(
   api: IExtensionApi,
   nexus: Nexus,
@@ -189,10 +207,19 @@ export function endorseModImpl(
     })
     .catch((err) => {
       store.dispatch(setModAttribute(gameMode, modId, 'endorsed', 'Undecided'));
-      if (err.message === 'You must provide a version') {
+      const expectedError = resolveEndorseError(api.translate, err);
+      if (expectedError !== undefined) {
         api.sendNotification({
           type: 'info',
-          message: api.translate('You can\'t endorse a mod that has no version set.'),
+          message: expectedError,
+        });
+      } else if (err instanceof TimeoutError) {
+        const message = 'A timeout occurred trying to endorse the mod, please try again later.';
+        api.sendNotification({
+          type: 'error',
+          title: 'Timeout',
+          message,
+          displayMS: calcDuration(message.length),
         });
       } else {
         const detail = processErrorMessage(err);

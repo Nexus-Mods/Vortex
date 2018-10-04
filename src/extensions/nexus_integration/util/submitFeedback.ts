@@ -5,13 +5,6 @@ import NexusT, { IFeedbackResponse } from 'nexus-api';
 import ZipT = require('node-7z');
 import { tmpName } from 'tmp';
 
-export class TimeoutError extends Error {
-  constructor(message) {
-    super(message);
-    this.name = this.constructor.name;
-  }
-}
-
 function zipFiles(files: string[]): Promise<string> {
   if (files.length === 0) {
     return Promise.resolve(undefined);
