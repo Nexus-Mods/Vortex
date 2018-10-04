@@ -687,7 +687,6 @@ function once(api: IExtensionApi) {
       ['persistent', 'deployment', 'needToDeploy'],
       (previous, current) => {
         const gameMode = activeGameId(store.getState());
-        console.log('changing need to deploy', gameMode, previous[gameMode], current[gameMode]);
         if (previous[gameMode] !== current[gameMode]) {
           if (current[gameMode]) {
             api.sendNotification({

@@ -67,6 +67,7 @@ interface IComponentState {
   progress: number;
   supportedActivators: IDeploymentMethod[];
   currentActivator: string;
+  changingActivator: boolean;
 }
 
 type IProps = IBaseProps & IActionProps & IConnectedProps;
@@ -82,6 +83,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       supportedActivators: [],
       currentActivator: props.currentActivator,
       installPath: props.installPath,
+      changingActivator: false,
     });
   }
 
@@ -290,28 +292,23 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private purgeActivation(): Promise<void> {
-    const { activators, currentActivator, discovery, gameMode,
-            installPath } = this.props;
-
-    const oldActivator = activators.find(iter => iter.id === currentActivator);
-    const resolvedPath = getInstallPath(installPath, gameMode);
-    const game = getGame(gameMode);
-    const modPaths = game.getModPaths(discovery.path);
-
-    return oldActivator !== undefined
-      ? Promise.mapSeries(Object.keys(modPaths),
-                          typeId => oldActivator.purge(resolvedPath, modPaths[typeId]))
-        .then(() => undefined)
-      : Promise.resolve();
+    return new Promise((resolve, reject) => {
+      this.context.api.events.emit('purge-mods', err => err !== null
+        ? reject(err)
+        : resolve());
+    });
   }
 
   private applyActivator = () => {
     const { gameMode, onSetActivator, onShowError } = this.props;
     const { currentActivator } = this.state;
 
+    this.nextState.changingActivator = true;
     this.purgeActivation()
-    .then(() => { this.context.api.events.emit('purge-mods', (err) => null); })
-    .then(() => { onSetActivator(gameMode, currentActivator); })
+    .then(() => {
+      onSetActivator(gameMode, currentActivator);
+      this.nextState.changingActivator = false;
+    })
     .then(() => { this.context.api.store.dispatch(setDeploymentNecessary(gameMode, true)); })
     .catch(TemporaryError, err => {
       onShowError('Failed to purge previous deployment, please try again',
@@ -396,6 +393,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
   private renderActivators(activators: IDeploymentMethod[], currentActivator: string): JSX.Element {
     const { t } = this.props;
+    const { changingActivator } = this.state;
 
     let content: JSX.Element;
     let activatorIdx: number = -1;
@@ -433,7 +431,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         <InputGroup>
           {content}
           <InputGroup.Button>
-            <BSButton disabled={!changed} onClick={this.applyActivator}>{t('Apply')}</BSButton>
+            <BSButton disabled={!changed || changingActivator} onClick={this.applyActivator}>{t('Apply')}</BSButton>
           </InputGroup.Button>
         </InputGroup>
         { activatorIdx !== -1 ? (
