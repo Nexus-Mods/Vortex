@@ -56,6 +56,7 @@ import * as ReactDOM from 'react-dom';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import * as semver from 'semver';
+import { profileById } from '../../../util/selectors';
 
 const PanelX: any = Panel;
 
@@ -719,7 +720,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   }
 
   private cycleModState(profileId: string, modId: string, newValue: string) {
-    const { onSetModEnabled } = this.props;
+    const { gameMode, onSetModEnabled } = this.props;
 
     if (this.mModsWithState[modId].state === 'downloaded') {
       // cycle from "not installed" -> "disabled"
@@ -732,7 +733,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       } else {
         onSetModEnabled(profileId, modId, true);
       }
-      this.context.api.events.emit('mods-enabled', [modId], newValue);
+      this.context.api.events.emit('mods-enabled', [modId], newValue, gameMode);
     }
   }
 
@@ -761,7 +762,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
               return this.context.api.showErrorNotification('Failed to remove mod', err);
             }
           }
-          this.context.api.events.emit('mods-enabled', [modId], value);
+          this.context.api.events.emit('mods-enabled', [modId], value, gameMode);
         });
       }
     } else if (this.mModsWithState[modId].state === 'downloaded') {
@@ -770,13 +771,13 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       this.context.api.events.emit('start-install-download', modId, (err, id) => {
         if (value === 'enabled') {
           onSetModEnabled(profileId, id, true);
-          this.context.api.events.emit('mods-enabled', [modId], value);
+          this.context.api.events.emit('mods-enabled', [modId], value, gameMode);
         }
       });
     } else {
       // selected "enabled" or "disabled" from the other one
       onSetModEnabled(profileId, modId, value === 'enabled');
-      this.context.api.events.emit('mods-enabled', [modId], value);
+      this.context.api.events.emit('mods-enabled', [modId], value, gameMode);
     }
   }
 
@@ -828,7 +829,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   }
 
   private selectVersion = (evtKey) => {
-    const { profileId, onSetModEnabled } = this.props;
+    const { gameMode, profileId, onSetModEnabled } = this.props;
     const { modId, altId } = evtKey;
 
     if (modId === altId) {
@@ -847,24 +848,25 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       onSetModEnabled(profileId, altId, true);
     }
 
-    this.context.api.events.emit('mods-enabled', [modId], false);
-    this.context.api.events.emit('mods-enabled', [altId], true);
+    this.context.api.events.emit('mods-enabled', [modId], false, gameMode);
+    this.context.api.events.emit('mods-enabled', [altId], true, gameMode);
   }
 
   private enableSelected = (modIds: string[]) => {
-    const { profileId, modState, onSetModEnabled } = this.props;
+    const { gameMode, profileId, modState } = this.props;
 
     modIds.forEach((key: string) => {
       if (!getSafe(modState, [key, 'enabled'], false)) {
         this.setModState(profileId, key, 'enabled');
       }
     });
-    this.context.api.events.emit('mods-enabled', modIds, true);
+    this.context.api.events.emit('mods-enabled', modIds, true, gameMode);
   }
 
   private disableSelected = (modIds: string[]) => {
+    const { gameMode } = this.props;
     this.disableModsInner(modIds);
-    this.context.api.events.emit('mods-enabled', modIds, false);
+    this.context.api.events.emit('mods-enabled', modIds, false, gameMode);
   }
 
   private disableModsInner(modIds: string[]) {
@@ -978,14 +980,14 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   }
 
   private reinstall = (modIds: string | string[]) => {
-    const { mods, modState } = this.props;
+    const { gameMode, mods, modState } = this.props;
     if (Array.isArray(modIds)) {
       modIds.filter(modId => mods[modId] !== undefined).forEach(modId =>
         this.context.api.events.emit('start-install-download', mods[modId].archiveId, (err) => {
           if (err === null) {
             const enabled = modIds.filter(id => getSafe(modState, [id, 'enabled'], false));
             if (enabled.length > 0) {
-              this.context.api.events.emit('mods-enabled', enabled, true);
+              this.context.api.events.emit('mods-enabled', enabled, true, gameMode);
             }
           }
         }));
@@ -995,7 +997,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           if (modState[modIds].enabled) {
             // reinstalling an enabled mod automatically enables the new one so we also need
             // to trigger this event
-            this.context.api.events.emit('mods-enabled', [modIds], true);
+            this.context.api.events.emit('mods-enabled', [modIds], true, gameMode);
           }
         }
       });

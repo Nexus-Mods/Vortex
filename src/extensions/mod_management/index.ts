@@ -651,7 +651,7 @@ function once(api: IExtensionApi) {
     deploymentTimer.wait(callback);
   });
 
-  api.events.on('mods-enabled', (mods: string[], enabled: boolean) => {
+  api.events.on('mods-enabled', (mods: string[], enabled: boolean, gameId: string) => {
     const { store } = api;
     const state: IState = store.getState();
     const { notifications } = state.session.notifications;
@@ -662,7 +662,6 @@ function once(api: IExtensionApi) {
         api.dismissNotification(notiId);
       }
     });
-    const gameId = activeGameId(store.getState());
     if (state.settings.automation.deploy) {
       deploymentTimer.schedule(undefined, false);
     } else {
