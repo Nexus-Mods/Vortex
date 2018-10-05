@@ -1036,7 +1036,7 @@ class ExtensionManager {
           }
         }
       }) : Promise.resolve())
-        .catch(err => err.code === 5
+        .catch(err => (err.errno === 1223)
           ? Promise.reject(new UserCanceled())
           : Promise.reject(err));
   }
