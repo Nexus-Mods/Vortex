@@ -450,6 +450,9 @@ export function forcePerm<T>(t: I18next.TranslationFunction, op: () => PromiseBB
               return allow(filePath, userId, 'rwx');
             }, { filePath, userId })
               .catch(elevatedErr => {
+                if (elevatedErr.message.indexOf('The operation was canceled by the user') !== -1) {
+                  return Promise.reject(new UserCanceled());
+                }
                 // if elevation failed, return the original error because the one from
                 // elevate, while interesting as well, would make error handling too complicated
                 log('error', 'failed to acquire permission', elevatedErr.message);
