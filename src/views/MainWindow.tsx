@@ -186,14 +186,12 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     }
   }
 
-  public render(): JSX.Element {
+  public render(): JSX.Element[] {
     const { activeProfileId, customTitlebar, onHideDialog,
             nextProfileId, visibleDialog } = this.props;
     const { hidpi } = this.state;
 
-    if ((activeProfileId !== nextProfileId) && truthy(nextProfileId)) {
-      return this.renderWait();
-    }
+    const switchingProfile = (activeProfileId !== nextProfileId) && truthy(nextProfileId);
 
     const classes = [];
     classes.push(hidpi ? 'hidpi' : 'lodpi');
@@ -203,8 +201,8 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       // (even though it's not actually this frame that lets him do it)
       classes.push('window-frame');
     }
-    return (
-      <div className={classes.join(' ')}>
+    return [switchingProfile ? this.renderWait() : null, (
+      <div key='main' className={classes.join(' ')} style={{ display: switchingProfile ? 'none' : undefined }}>
         <div className='menu-layer' ref={this.setMenuLayer} />
         <FlexLayout id='main-window-content' type='column'>
           {this.renderToolbar()}
@@ -215,7 +213,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
         <DialogContainer visibleDialog={visibleDialog} onHideDialog={onHideDialog} />
         {customTitlebar ? <WindowControls /> : null}
       </div>
-    );
+    )];
   }
 
   private renderWait() {
@@ -225,7 +223,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       ? <ProgressBar label={progress.text} now={progress.percent} style={{ width: '50%' }} />
       : <Spinner style={{ width: 64, height: 64 }} />;
     return (
-      <div>
+      <div key='wait'>
         <div className='center-content'>{control}</div>
         <Dialog />
         <DialogContainer visibleDialog={visibleDialog} onHideDialog={onHideDialog} />
