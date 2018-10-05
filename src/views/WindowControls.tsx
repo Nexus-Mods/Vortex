@@ -7,12 +7,13 @@ const window = remote.getCurrentWindow();
 
 class WindowControls extends React.Component<{}, {}> {
   public componentWillMount() {
-    window.on('maximize', () => {
-      this.forceUpdate();
-    });
-    window.on('unmaximize', () => {
-      this.forceUpdate();
-    });
+    window.on('maximize', this.onMaximize);
+    window.on('unmaximize', this.onMaximize);
+  }
+
+  public componentWillUnmount() {
+    window.removeListener('maximize', this.onMaximize);
+    window.removeListener('unmaximize', this.onMaximize);
   }
 
   public render(): JSX.Element {
@@ -60,6 +61,10 @@ class WindowControls extends React.Component<{}, {}> {
 
   private minimize = () => {
     window.minimize();
+  }
+
+  private onMaximize = () => {
+    this.forceUpdate();
   }
 
   private toggleMaximize = () => {
