@@ -144,10 +144,15 @@ export const stateReducer: IReducerSpec = {
         modInfo: {},
         chunks: [],
       }),
-    [action.setDownloadModInfo as any]: (state, payload) =>
-      setSafe(state,
+    [action.setDownloadModInfo as any]: (state, payload) => {
+      if (state.files[payload.id] === undefined) {
+        return state;
+      }
+
+      return setSafe(state,
         ['files', payload.id, 'modInfo'].concat(payload.key.split('.')),
-        payload.value),
+        payload.value);
+    },
     [action.setDownloadInstalled as any]: (state, payload) =>
       setSafe(state,
         ['files', payload.id, 'installed'],
