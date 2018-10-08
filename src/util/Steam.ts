@@ -137,7 +137,13 @@ class Steam implements ISteam {
         if (data === undefined) {
           return Promise.resolve([]);
         }
-        const configObj: any = parse(data.toString());
+
+        let configObj;
+        try {
+          configObj = parse(data.toString());
+        } catch (err) {
+          return Promise.resolve([]);
+        }
 
         let counter = 1;
         const steamObj: any =
