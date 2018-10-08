@@ -142,9 +142,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
 
     const { currentProfile, discoveredGames, games, onSetNextProfile, profiles } = this.props;
 
-    const game = games.find((iter: IGameStored) => iter.id === profiles[profileId].gameId);
     const discovered = discoveredGames[profiles[profileId].gameId];
-    const gameName = getSafe(discovered, ['name'], getSafe(game, ['name'], ''));
     const available = (discovered !== undefined) && (discovered.path !== undefined);
 
     return (profileId === this.state.edit) ? null : (
@@ -153,7 +151,6 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
         key={profileId}
         profile={profiles[profileId]}
         features={features}
-        gameName={gameName}
         active={currentProfile === profileId}
         available={available}
         onClone={this.onCloneProfile}

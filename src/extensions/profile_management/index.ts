@@ -214,7 +214,7 @@ function genOnProfileChange(api: IExtensionApi, onFinishProfileSwitch: (callback
               if (game === undefined) {
                 showError(store.dispatch,
                   'Game no longer supported, please install the game extension',
-                  game.name, { allowReport: false });
+                  profile.gameId, { allowReport: false });
               }
               const discovery = state.settings.gameMode.discovered[profile.gameId];
               // only calling to check if it works, some game extensions might discover

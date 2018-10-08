@@ -22,7 +22,6 @@ export interface IProps {
   active: boolean;
   available: boolean;
   profile: IProfile;
-  gameName: string;
   features: IProfileFeature[];
   highlightGameId: string;
 
@@ -62,7 +61,7 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, active, available, features, gameName, highlightGameId, profile } = this.props;
+    const { t, active, available, features, highlightGameId, profile } = this.props;
     const { counter, hasProfileImage } = this.state;
 
     const modState = getSafe(profile, ['modState'], {});
@@ -88,6 +87,10 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
     let logo = hasProfileImage || (game === undefined)
       ? this.imagePath
       : path.join(game.extensionPath, game.logo);
+
+    const gameName = (game !== undefined)
+      ? game.name
+      : t('Unknown game {{ gameId }}', { replace: { gameId: profile.gameId } });
 
     if (process.platform === 'win32') {
       logo = logo.replace(/\\/g, '/');
