@@ -3,7 +3,7 @@ import { IDialogResult, showDialog } from '../../actions/notifications';
 import InputButton from '../../controls/InputButton';
 import { IExtensionApi, IExtensionContext, ILookupResult } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
-import { ProcessCanceled } from '../../util/CustomErrors';
+import { ProcessCanceled, DataInvalid } from '../../util/CustomErrors';
 import { setApiKey } from '../../util/errorHandling';
 import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
@@ -215,7 +215,12 @@ function requestLogin(api: IExtensionApi, callback: (err: Error) => void) {
 
 function doDownload(api: IExtensionApi, url: string) {
   return startDownload(api, nexus, url)
-  .catch(DownloadIsHTML, err => undefined)
+  .catch(DownloadIsHTML, () => undefined)
+  // DataInvalid is used here to indicate invalid user input or invalid
+  // data from remote, so it's presumably not a bug in Vortex
+  .catch(DataInvalid, () => {
+    api.showErrorNotification('Failed to start download', url, { allowReport: false });
+  })
   .catch(err => {
     api.showErrorNotification('Failed to start download', err);
   });
