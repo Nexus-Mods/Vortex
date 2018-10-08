@@ -64,11 +64,45 @@ export interface IContextMenuProps {
 
 type IProps = IContextMenuProps;
 
-class ContextMenu extends ComponentEx<IProps, {}> {
+interface IComponentState {
+  right?: number;
+  bottom?: number;
+}
+
+class ContextMenu extends ComponentEx<IProps, IComponentState> {
+  private mMenuRef: HTMLDivElement = null;
+
+  constructor(props: IProps) {
+    super(props);
+
+    this.initState({});
+  }
+
+  public componentWillReceiveProps(newProps: IProps) {
+    if ((this.props.visible !== newProps.visible)
+        && newProps.visible) {
+      this.updatePlacement(newProps.position);
+    }
+  }
+
   public render(): JSX.Element {
     const { actions, children, onHide, position, visible } = this.props;
+    const { right, bottom } = this.state;
     if (!visible) {
       return null;
+    }
+
+    const menuStyle: React.CSSProperties = { position: 'absolute' };
+    if (right !== undefined) {
+      menuStyle['right'] = right;
+    } else {
+      menuStyle['left'] = position.x;
+    }
+
+    if (bottom !== undefined) {
+      menuStyle['bottom'] = bottom;
+    } else {
+      menuStyle['top'] = position.y;
     }
 
     return (
@@ -77,7 +111,8 @@ class ContextMenu extends ComponentEx<IProps, {}> {
           container={this.context.menuLayer}
         >
           <div
-            style={{ left: position.x, top: position.y, position: 'absolute' }}
+            style={menuStyle}
+            ref={this.setMenuRef}
           >
             <div className='menu-content'>{children}</div>
             <Dropdown.Menu
@@ -108,6 +143,34 @@ class ContextMenu extends ComponentEx<IProps, {}> {
     }
 
     return <MenuAction key={id} id={id} action={action} instanceId={instanceId} />;
+  }
+
+  private setMenuRef = (ref: HTMLDivElement) => {
+    this.mMenuRef = ref;
+    if (ref !== null) {
+      this.updatePlacement(this.props.position);
+    }
+  }
+
+  private updatePlacement(position: { x: number, y: number }) {
+    if (this.mMenuRef === null) {
+      return;
+    }
+
+    const rect: ClientRect = this.mMenuRef.getBoundingClientRect();
+    const outer: ClientRect = (this.context.menuLayer as any).getBoundingClientRect();
+
+    if ((position.y + rect.height) > outer.bottom) {
+      this.nextState.bottom = outer.bottom - position.y;
+    } else {
+      this.nextState.bottom = undefined;
+    }
+
+    if ((position.x + rect.width) > outer.right) {
+      this.nextState.right = outer.right - position.x;
+    } else {
+      this.nextState.right = undefined;
+    }
   }
 }
 
