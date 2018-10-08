@@ -19,6 +19,7 @@ import * as path from 'path';
 import * as semver from 'semver';
 import {} from 'uuid';
 import { IErrorOptions, IExtensionApi } from '../types/api';
+import { UserCanceled } from './api';
 
 // tslint:disable-next-line:no-var-requires
 const opn = require('opn');
@@ -262,6 +263,7 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
   }
 
   app.exit(1);
+  throw new UserCanceled();
 }
 
 export function toError(input: any, options?: IErrorOptions): IError {

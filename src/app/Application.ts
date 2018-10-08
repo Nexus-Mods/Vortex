@@ -1,5 +1,6 @@
 import {setApplicationVersion, setInstanceId, setWarnedAdmin} from '../actions/app';
 import {} from '../reducers/index';
+import { ThunkStore } from '../types/api';
 import {IState} from '../types/IState';
 import commandLine, {IParameters} from '../util/commandLine';
 import { ProcessCanceled, UserCanceled } from '../util/CustomErrors';
@@ -18,6 +19,9 @@ import { allHives, createVortexStore, currentStatePath, extendStore,
          importState, insertPersistor, markImported, querySanitize } from '../util/store';
 import {} from '../util/storeHelper';
 import SubPersistor from '../util/SubPersistor';
+import { spawnSelf } from '../util/util';
+
+import { addNotification } from '../actions';
 
 import MainWindowT from './MainWindow';
 import SplashScreenT from './SplashScreen';
@@ -30,7 +34,6 @@ import * as isAdmin from 'is-admin';
 import * as _ from 'lodash';
 import * as path from 'path';
 import { allow } from 'permissions';
-import * as Redux from 'redux';
 import * as semver from 'semver';
 import * as uuidT from 'uuid';
 
@@ -45,7 +48,7 @@ function last(array: any[]): any {
 
 class Application {
   private mBasePath: string;
-  private mStore: Redux.Store<IState>;
+  private mStore: ThunkStore<IState>;
   private mLevelPersistors: LevelPersist[] = [];
   private mArgs: IParameters;
   private mMainWindow: MainWindowT;
@@ -150,7 +153,7 @@ class Application {
         // start initialization
         .then(splashIn => {
           splash = splashIn;
-          return this.createStore();
+          return this.createStore(args.restore);
         })
         .then(() => this.warnAdmin())
         .then(() => this.checkUpgrade())
@@ -434,8 +437,19 @@ class Application {
     }
   }
 
-  private createStore(): Promise<void> {
+  private createStore(restoreBackup?: string): Promise<void> {
     const newStore = createVortexStore(this.sanityCheckCB);
+    const backupPath = path.join(app.getPath('temp'), 'state_backups');
+    let backups: string[];
+
+    const updateBackups = () => fs.readdirAsync(backupPath)
+      .filter((fileName: string) => fileName.startsWith('backup') && path.extname(fileName) === '.json')
+      .then(backupsIn => { backups = backupsIn; });
+
+    const deleteBackups = () => Promise.map(backups, backupName =>
+          fs.removeAsync(path.join(backupPath, backupName))
+            .catch(() => undefined))
+          .then(() => null);
 
     // 1. load only user settings to determine if we're in multi-user mode
     // 2. load app settings to determine which extensions to load
@@ -504,10 +518,53 @@ class Application {
                        }) :
                    Promise.resolve();
       })
+      .then(() => updateBackups())
+      .then(() => {
+        if (restoreBackup !== undefined) {
+          log('info', 'restoring state backup', restoreBackup);
+          return fs.readFileAsync(restoreBackup, { encoding: 'utf-8' })
+            .then(backupState => {
+              newStore.dispatch({
+                type: '__hydrate',
+                payload: JSON.parse(backupState),
+              });
+            })
+            .then(() => deleteBackups())
+            .then(() => updateBackups())
+            .catch(err => {
+              terminate({
+                message: 'Failed to restore backup',
+                details: err.code !== 'ENOENT' ? err : 'Specified backup file doesn\'t exist',
+              }, {}, err.code !== 'ENOENT');
+            });
+        } else {
+          return Promise.resolve();
+        }
+      })
       .then(() => {
         this.mStore = newStore;
         this.mExtensions.setStore(newStore);
         return extendStore(newStore, this.mExtensions);
+      })
+      .then(() => {
+        if (backups.length > 0) {
+          this.mStore.dispatch(addNotification({
+            type: 'info',
+            message: 'A backup of application state was created recently.',
+            actions: [
+              { title: 'Restore', action: () => {
+                const sorted = backups.sort((lhs, rhs) => rhs.localeCompare(lhs))
+                log('info', 'sorted backups', sorted);
+                spawnSelf(['--restore', path.join(backupPath, sorted[0])]);
+                app.exit();
+              } },
+              { title: 'Delete', action: dismiss => {
+                deleteBackups();
+                dismiss();
+              } },
+            ]
+          }))
+        }
       })
       .then(() => this.mExtensions.doOnce());
   }

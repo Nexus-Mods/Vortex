@@ -27,7 +27,7 @@ export function querySanitize(): Decision {
   const response = dialog.showMessageBox(null, {
     message:
         'Application state is invalid. I can try to repair it but you may lose data',
-    buttons: ['Quit', 'Ignore', 'Repair'],
+    buttons: ['Quit', 'Ignore', 'Backup and Repair'],
   });
 
   return [Decision.QUIT, Decision.IGNORE, Decision.SANITIZE][response];
@@ -139,10 +139,8 @@ export function importState(basePath: string): Promise<any> {
   // find the newest previous version to import from
   const importVer = versionDirs.find(ver => exists(ver.path));
 
-  if ((importVer !== undefined) && (importVer.func !== null)) {
+  return ((importVer !== undefined) && (importVer.func !== null))
     // read and transform data to import
-    return importVer.func(importVer.path);
-  } else {
-    return Promise.resolve();
-  }
+    ? importVer.func(importVer.path)
+    : Promise.resolve();
 }
