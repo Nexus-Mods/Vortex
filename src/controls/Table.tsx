@@ -299,16 +299,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
             group={`${tableId}-multirow-actions`}
             instanceId={selected}
             staticElements={multiRowActions}
-          >
-            {multiRowActions.map((action, idx) =>
-              <ToolbarIcon
-                key={idx}
-                icon={action.icon}
-                text={action.title}
-                instanceId={selected}
-                onClick={action.action}
-              />)}
-          </IconBar>
+          />
 
           <div className='menubar'>
             <p>{t('{{count}} item selected', { count: selected.length })}</p>

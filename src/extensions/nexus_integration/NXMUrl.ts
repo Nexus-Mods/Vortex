@@ -1,6 +1,6 @@
-import { DataInvalid } from "../../util/CustomErrors";
+import { DataInvalid } from '../../util/CustomErrors';
 
-import { URL } from "url";
+import { URL } from 'url';
 
 const sUrlExpression = /\/mods\/(\d+)\/files\/(\d+)/i;
 
