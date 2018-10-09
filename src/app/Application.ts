@@ -532,6 +532,9 @@ class Application {
             .then(() => deleteBackups())
             .then(() => updateBackups())
             .catch(err => {
+              if (err instanceof UserCanceled) {
+                return Promise.reject(err);
+              }
               terminate({
                 message: 'Failed to restore backup',
                 details: err.code !== 'ENOENT' ? err : 'Specified backup file doesn\'t exist',
