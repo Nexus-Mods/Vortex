@@ -332,9 +332,7 @@ export function retrieveNexusGames(nexus: Nexus) {
     .then(games => {
       nexusGamesCache = games.sort((lhs, rhs) => lhs.name.localeCompare(rhs.name));
     })
-    .catch(err => {
-      nexusGamesCache = [];
-    });
+    .catch(err => null);
 }
 
 export function nexusGames(): IGameListEntry[] {
