@@ -121,6 +121,7 @@ export enum Decision {
 }
 
 let sanitizeDecision: Decision;
+let backupTime: number;
 
 function deriveReducer(statePath: string, ele: any, querySanitize: () => Decision): Reducer<any> {
   const attributes: string[] = Object.keys(ele);
@@ -138,13 +139,21 @@ function deriveReducer(statePath: string, ele: any, querySanitize: () => Decisio
             const input = getSafe(payload, pathArray, undefined);
             const sanitized = verify(statePath, ele.verifiers, input, ele.defaults);
             if (sanitized !== input) {
-              const decision = sanitizeDecision || querySanitize();
+              const decision = sanitizeDecision !== undefined ? sanitizeDecision : querySanitize();
               sanitizeDecision = decision;
               if (decision === Decision.SANITIZE) {
                 const backupPath = path.join(app.getPath('temp'), 'state_backups');
                 log('info', 'sanitizing application state');
+                let backupData;
+                if (backupTime !== undefined) {
+                  const oldBackup = fs.readFileSync(path.join(backupPath, `backup_${backupTime}.json`), { encoding: 'utf-8' });
+                  backupData = { ...JSON.parse(oldBackup), ...payload };
+                } else {
+                  backupData = payload;
+                  backupTime = Date.now();
+                }
                 fs.ensureDirSync(backupPath);
-                fs.writeFileSync(path.join(backupPath, `backup_${Date.now()}.json`), JSON.stringify(payload, undefined, 2));
+                fs.writeFileSync(path.join(backupPath, `backup_${backupTime}.json`), JSON.stringify(backupData, undefined, 2));
                 payload = setSafe(payload, pathArray, sanitized);
               } else if (decision === Decision.QUIT) {
                 app.exit();
