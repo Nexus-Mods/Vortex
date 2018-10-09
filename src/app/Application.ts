@@ -632,7 +632,7 @@ class Application {
           // TODO: this instructions aren't very correct because we know Vortex doesn't have
           // a UI and needs to be shut down from the task manager
           dialog.showErrorBox('Vortex unresponsive',
-            'Vortex appears to frozen, please close Vortex and try again');
+            'Vortex appears to be frozen, please close Vortex and try again');
         }
       });
     }
