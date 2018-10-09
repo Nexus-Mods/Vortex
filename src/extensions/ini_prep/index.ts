@@ -1,5 +1,5 @@
 import {IExtensionContext} from '../../types/IExtensionContext';
-import { IState } from '../../types/IState';
+import { IState, IProfile } from '../../types/IState';
 import deepMerge from '../../util/deepMerge';
 import * as fs from '../../util/fs';
 import {log} from '../../util/log';
@@ -19,7 +19,7 @@ import renderINITweaks from './TweakList';
 import * as Promise from 'bluebird';
 import { TranslationFunction } from 'i18next';
 import * as path from 'path';
-import IniParser, {WinapiFormat} from 'vortex-parse-ini';
+import IniParser, {WinapiFormat, IniFile} from 'vortex-parse-ini';
 
 function ensureIniBackups(t: TranslationFunction, gameMode: string,
                           discovery: IDiscoveryResult): Promise<void> {
@@ -106,8 +106,10 @@ function getBaseFile(input: string): string {
   }
 }
 
-function bakeSettings(t: TranslationFunction, gameMode: string, discovery: IDiscoveryResult,
-                      mods: IMod[], state: IState): Promise<void> {
+function bakeSettings(t: TranslationFunction,
+                      gameMode: string, discovery: IDiscoveryResult,
+                      mods: IMod[], state: IState,
+                      onApplySettings: (fileName: string, parser: IniFile<any>) => Promise<void>): Promise<void> {
   const modsPath = installPathForGame(state, gameMode);
   const format = iniFormat(gameMode);
   if (format === undefined) {
@@ -159,6 +161,7 @@ function bakeSettings(t: TranslationFunction, gameMode: string, discovery: IDisc
         tweak => parser.read(tweak).then(patchIni => {
           ini.data = deepMerge(ini.data, patchIni.data);
         }))
+        .then(() => onApplySettings(iniFileName, ini))
         .then(() => parser.write(iniFileName + '.baked', ini))
         .then(() => fs.copyAsync(iniFileName + '.baked',
           iniFileName, { noSelfCopy: true })));
@@ -218,17 +221,18 @@ function main(context: IExtensionContext) {
       });
     });
 
-    context.api.events.on('bake-settings', (gameId: string, mods: IMod[],
-                                            callback: (err: Error) => void) => {
+    context.api.onAsync('bake-settings', (gameId: string, mods: IMod[], profile: IProfile) => {
       if (deactivated) {
         return;
       }
       const state: IState = context.api.store.getState();
-      const discovery: IDiscoveryResult = state.settings.gameMode.discovered[gameId];
-      discoverSettingsChanges(context.api.translate, gameId, discovery)
-        .then(() => bakeSettings(context.api.translate, gameId, discovery, mods, state))
-        .then(() => callback(null))
-        .catch(err => callback(err));
+      const discovery: IDiscoveryResult = state.settings.gameMode.discovered[profile.gameId];
+
+      const onApplySettings = (fileName: string, parser: IniFile<any>): Promise<void> =>
+        context.api.emitAndAwait('apply-settings', profile, fileName, parser);
+
+      return discoverSettingsChanges(context.api.translate, profile.gameId, discovery)
+        .then(() => bakeSettings(context.api.translate, profile.gameId, discovery, mods, state, onApplySettings));
     });
 
     context.api.events.on('purge-mods', () => {

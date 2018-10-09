@@ -198,17 +198,8 @@ function applyFileActions(sourcePath: string,
     .then(() => lastDeployment);
 }
 
-function bakeSettings(api: IExtensionApi, gameMode: string, sortedModList: IMod[]) {
-  return new Promise((resolve, reject) => {
-    api.events.emit('bake-settings', gameMode, sortedModList,
-      err => {
-        if (err !== null) {
-          reject(err);
-        } else {
-          resolve();
-        }
-      });
-  });
+function bakeSettings(api: IExtensionApi, profile: IProfile, sortedModList: IMod[]) {
+  return api.emitAndAwait('bake-settings', profile.gameId, sortedModList, profile);
 }
 
 function genSubDirFunc(game: IGame): (mod: IMod) => string {
@@ -406,7 +397,7 @@ function genUpdateModDeployment() {
           })
           .then(() => {
             progress(t('Preparing game settings'), 100);
-            return bakeSettings(api, profile.gameId, sortedModList);
+            return bakeSettings(api, profile, sortedModList);
           }));
       })
       .catch(UserCanceled, () => undefined)
