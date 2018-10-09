@@ -439,8 +439,10 @@ function init(context: IExtensionContextExt): boolean {
     });
 
     context.api.events.on('will-move-downloads', () => {
-      currentWatch.close();
-      currentWatch = undefined;
+      if (currentWatch !== undefined) {
+        currentWatch.close();
+        currentWatch = undefined;
+      }
     });
 
     context.api.onStateChange(['settings', 'downloads', 'path'], (prev, cur) => {
