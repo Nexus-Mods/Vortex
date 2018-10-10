@@ -420,7 +420,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       content = (
         <ControlLabel>
           <Alert bsStyle='danger'>
-            {t('No deployment method available')}
+            <h4 style={{ marginBottom: 0 }}>{t('No deployment method available.')}</h4>
+            <p style={{ marginTop: 0 }}>{t('See notification for more information.')}</p>
           </Alert>
         </ControlLabel>
       );

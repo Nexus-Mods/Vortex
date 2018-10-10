@@ -12,6 +12,7 @@ import {
   IDeploymentMethod,
 } from '../mod_management/types/IDeploymentMethod';
 
+import { remoteCode } from './remoteCode';
 import walk from './walk';
 
 import * as Promise from 'bluebird';
@@ -21,8 +22,6 @@ import * as ipc from 'node-ipc';
 import * as path from 'path';
 import { generate as shortid } from 'shortid';
 import { runElevated } from 'vortex-run';
-
-import { remoteCode } from './remoteCode';
 
 const app = appIn || remote.app;
 
