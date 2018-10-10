@@ -12,8 +12,13 @@ class NXMUrl {
   private mExpires: number;
 
   constructor(input: string) {
-    const parsed = new URL(input);
-    this.mGameId = parsed.hostname.toLowerCase();
+    let parsed: URL;
+    try {
+      parsed = new URL(input);
+    } catch (err) {
+      throw new DataInvalid('invalid nxm url "' + input + '"');
+    }
+    this.mGameId = parsed.hostname;
     const matches = parsed.pathname.match(sUrlExpression);
     if ((parsed.protocol !== 'nxm:') || (matches === null) || (matches.length !== 3)) {
       throw new DataInvalid('invalid nxm url "' + input + '"');

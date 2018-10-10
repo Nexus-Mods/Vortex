@@ -186,7 +186,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     }
   }
 
-  public render(): JSX.Element[] {
+  public render(): JSX.Element {
     const { activeProfileId, customTitlebar, onHideDialog,
             nextProfileId, visibleDialog } = this.props;
     const { hidpi } = this.state;
@@ -201,19 +201,21 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       // (even though it's not actually this frame that lets him do it)
       classes.push('window-frame');
     }
-    return [switchingProfile ? this.renderWait() : null, (
-      <div key='main' className={classes.join(' ')} style={{ display: switchingProfile ? 'none' : undefined }}>
-        <div className='menu-layer' ref={this.setMenuLayer} />
-        <FlexLayout id='main-window-content' type='column'>
-          {this.renderToolbar()}
-          {customTitlebar ? <div className='dragbar' /> : null}
-          {this.renderBody()}
-        </FlexLayout>
-        <Dialog />
-        <DialogContainer visibleDialog={visibleDialog} onHideDialog={onHideDialog} />
-        {customTitlebar ? <WindowControls /> : null}
-      </div>
-    )];
+    return (
+      <>
+        {switchingProfile ? this.renderWait() : null}
+        <div key='main' className={classes.join(' ')} style={{ display: switchingProfile ? 'none' : undefined }}>
+          <div className='menu-layer' ref={this.setMenuLayer} />
+          <FlexLayout id='main-window-content' type='column'>
+            {this.renderToolbar()}
+            {customTitlebar ? <div className='dragbar' /> : null}
+            {this.renderBody()}
+          </FlexLayout>
+          <Dialog />
+          <DialogContainer visibleDialog={visibleDialog} onHideDialog={onHideDialog} />
+          {customTitlebar ? <WindowControls /> : null}
+        </div>
+      </>);
   }
 
   private renderWait() {

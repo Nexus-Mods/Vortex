@@ -1,4 +1,5 @@
 import { terminate } from '../src/util/errorHandling';
+import { UserCanceled } from '../src/util/CustomErrors';
 
 import { app, dialog } from 'electron';
 import * as logger from 'winston';
@@ -10,14 +11,14 @@ describe('terminate', () => {
 
   it('terminate opens an error message box', () => {
     dialog.showMessageBox.mockClear();
-    terminate('test');
+    expect(() => terminate('test')).toThrowError(new UserCanceled());
     expect(dialog.showMessageBox.mock.calls.length).toEqual(1);
     expect(dialog.showMessageBox.mock.calls[0][1].type).toEqual('error');
   });
 
   it('terminate exits the application with a status code', () => {
     app.exit.mockClear();
-    terminate('test');
+    expect(() => terminate('test')).toThrowError(new UserCanceled());
     expect(app.exit.mock.calls.length).toEqual(1);
     expect(app.exit.mock.calls[0][0]).toEqual(1);
   });

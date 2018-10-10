@@ -19,7 +19,8 @@ function renderMainWindow() {
 
 it('returns a div', () => {
   let win = renderMainWindow();
-  expect(win.type()).toBe('div');
+  // actually returns a "Fragment" containing the div
+  expect(win.childAt(0).type()).toBe('div');
 });
 
 it('has no modals', () => {

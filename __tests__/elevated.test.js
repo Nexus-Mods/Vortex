@@ -1,7 +1,3 @@
-jest.mock('ffi');
-//jest.mock('bindings');
-jest.mock('ref');
-
 let mockTmpFileCalls = 0;
 let mockTmpFileReportError = undefined;
 jest.mock('tmp', () => ({
@@ -48,7 +44,6 @@ describe('runElevated', () => {
     mockTmpFileReportError = undefined;
     mockWrites = [];
     mockWriteReportError = undefined;
-    require('ffi').__setError(undefined);
   });
 
   it('creates a temporary file', () => {
@@ -104,7 +99,7 @@ describe('runElevated', () => {
   });
 
   it('handles library errors', () => {
-    require('ffi').__setError('i haz error');
+    require('winapi-bindings').__setError('i haz error');
     return runElevated('ipcPath', dummy)
     .then(() => {
       fail('expected error');
