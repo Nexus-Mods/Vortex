@@ -9,7 +9,7 @@ import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import lazyRequire from '../../../util/lazyRequire';
-import { showError } from '../../../util/message';
+import { showError, IErrorOptions } from '../../../util/message';
 import { activeGameId } from '../../../util/selectors';
 
 import { IMod } from '../../mod_management/types/IMod';
@@ -37,7 +37,7 @@ interface ISearchMatch {
 }
 
 interface IActionProps {
-  onShowError: (message: string, details?: string | Error) => void;
+  onShowError: (message: string, details: string | Error, options: IErrorOptions) => void;
   onSetCategory: (gameId: string, categoryId: string, category: ICategory) => void;
   onRemoveCategory: (gameId: string, categoryId: string) => void;
   onSetCategoryOrder: (gameId: string, categoryIds: string[]) => void;
@@ -246,7 +246,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
       this.nextState.showEmpty = !showEmpty;
       this.updateExpandedTreeData(categories);
     } catch (err) {
-      onShowError('An error occurred hiding/showing the empty categories', err);
+      onShowError('An error occurred hiding/showing the empty categories', err, { allowReport: false });
     }
   }
 
@@ -272,7 +272,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
     .then((result: IDialogResult) => {
         if ((result.action === 'Rename') && (result.input.newCategory !== undefined)) {
           if (result.input.newCategory === '') {
-            onShowError('Category Name cannot be empty.');
+            onShowError('Category Name cannot be empty.', undefined, { allowReport: false });
           } else {
             onRenameCategory(gameMode, categoryId, result.input.newCategory);
           }
@@ -303,11 +303,11 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
           const checkId = Object.keys(categories).filter((id: string) =>
             id === result.input.newCategoryId);
           if (checkId.length !== 0) {
-            onShowError('ID already used.');
+            onShowError('ID already used.', undefined, { allowReport: false });
           } else if (result.input.newCategoryId === '') {
-            onShowError('Category ID cannot be empty.');
+            onShowError('Category ID cannot be empty.', undefined, { allowReport: false });
           } else if (result.input.newCategory === '') {
-            onShowError('Category Name cannot be empty.');
+            onShowError('Category Name cannot be empty.', undefined, { allowReport: false });
           } else {
             onSetCategory(gameMode, result.input.newCategoryId, {
               name: result.input.newCategory,
@@ -339,11 +339,11 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
           const checkId = Object.keys(categories || {}).filter((id: string) =>
             id === result.input.newCategoryId);
           if (checkId.length !== 0) {
-            onShowError('An error occurred adding the new category', 'ID already used.');
+            onShowError('An error occurred adding the new category', 'ID already used.', { allowReport: false });
           } else if (result.input.newCategoryId === '') {
-            onShowError('An error occurred adding the new category', 'Category ID cannot be empty.');
+            onShowError('An error occurred adding the new category', 'Category ID cannot be empty.', { allowReport: false });
           } else if (result.input.newCategory === '') {
-            onShowError('An error occurred adding the new category', 'Category Name cannot be empty.');
+            onShowError('An error occurred adding the new category', 'Category Name cannot be empty.', { allowReport: false });
           } else {
             onSetCategory(gameMode, result.input.newCategoryId, {
               name: result.input.newCategory,
@@ -507,8 +507,8 @@ function mapDispatchToProps(dispatch: ThunkDispatch<IState, null, Redux.Action>)
       dispatch(removeCategory(gameId, categoryId)),
     onSetCategoryOrder: (gameId: string, categoryIds: string[]) =>
       dispatch(setCategoryOrder(gameId, categoryIds)),
-    onShowError: (message: string, details?: string | Error) =>
-      showError(dispatch, message, details),
+    onShowError: (message: string, details: string | Error, options: IErrorOptions) =>
+      showError(dispatch, message, details, options),
     onShowDialog: (type, title, content, actions) =>
       dispatch(showDialog(type, title, content, actions)),
   };
