@@ -1,4 +1,5 @@
 import { IExtensionContext } from '../../types/IExtensionContext';
+import { log } from '../../util/log';
 import settingsReducer from './reducers';
 import SettingsUpdate from './SettingsUpdate';
 
@@ -11,7 +12,11 @@ function init(context: IExtensionContext): boolean {
   context.registerReducer(['settings', 'update'], settingsReducer);
 
   context.onceMain(() => {
-    setupAutoUpdater(context.api);
+    try {
+      setupAutoUpdater(context.api);
+    } catch (err) {
+      log('error', 'failed to check for update', err.message);
+    }
   });
 
   context.once(() => {
