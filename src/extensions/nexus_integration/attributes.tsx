@@ -141,7 +141,7 @@ export function genGameAttribute(api: IExtensionApi): ITableAttribute<IMod> {
       const game = downloadGame !== undefined
         ? gameById(api.store.getState(), downloadGame)
         : currentGame(api.store.getState());
-      const nexusId = nexusGameId(game);
+      const nexusId = nexusGameId(game) || downloadGame;
       const gameEntry = nexusGames().find(game => game.domain_name === nexusId);
       return (gameEntry !== undefined)
         ? gameEntry.name

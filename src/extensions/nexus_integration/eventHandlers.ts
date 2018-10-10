@@ -110,7 +110,7 @@ export function onOpenModPage(api: IExtensionApi) {
   return (gameId: string, modId: string) => {
     const game = gameById(api.store.getState(), gameId);
     opn(['https://www.nexusmods.com',
-      nexusGameId(game), 'mods', modId,
+      nexusGameId(game) || gameId, 'mods', modId,
     ].join('/')).catch(err => undefined);
   };
 }
