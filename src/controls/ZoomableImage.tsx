@@ -22,6 +22,8 @@ function PopoverImage(props: any) {
 export interface IZoomableImageProps {
   className: string;
   url: string;
+  container?: JSX.Element;
+  overlayClass?: string;
 }
 
 class ZoomableImage extends React.Component<IZoomableImageProps, { showOverlay: boolean }> {
@@ -39,8 +41,13 @@ class ZoomableImage extends React.Component<IZoomableImageProps, { showOverlay: 
   }
 
   public render(): JSX.Element {
-    const { className, url } = this.props;
+    const { className, container, overlayClass, url } = this.props;
     const { showOverlay } = this.state;
+
+    const classes: string[] = ['zoom-backdrop'];
+    if (overlayClass !== undefined) {
+      classes.push(overlayClass);
+    }
 
     return (
       <div className={className}>
@@ -50,9 +57,9 @@ class ZoomableImage extends React.Component<IZoomableImageProps, { showOverlay: 
         }
         {showOverlay ? (
           <Portal
-            container={this.context.menuLayer}
+            container={container !== undefined ? container : this.context.menuLayer}
           >
-            <div className='zoom-backdrop' >
+            <div className={classes.join(' ')} >
               <PopoverImage src={url} onClick={this.toggleOverlay}/>
             </div>
           </Portal>

@@ -414,6 +414,8 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
       <ZoomableImage
         url={path.join(dataPath, image)}
         className='installer-image'
+        overlayClass='installer-zoom'
+        container={null}
       />
     );
   }
