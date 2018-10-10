@@ -53,7 +53,8 @@ class Todo extends React.PureComponent<ITodoProps, {}> {
     this.props.todo.action(this.props.extensionProps);
   }
 
-  private dismiss = () => {
+  private dismiss = (evt: React.MouseEvent<any>) => {
+    evt.stopPropagation();
     this.props.dismiss(this.props.todo.id);
   }
 
