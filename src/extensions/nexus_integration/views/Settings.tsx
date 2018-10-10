@@ -103,7 +103,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private openNexus = () => {
-    opn('https://www.nexusmods.com');
+    opn('https://www.nexusmods.com').catch(() => null);
   }
 
   private chromeFix = () => {
