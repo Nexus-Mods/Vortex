@@ -447,7 +447,7 @@ function init(context: IExtensionContextExt): boolean {
   context.registerTableAttribute('mods', genGameAttribute(context.api));
   context.registerTableAttribute('mods', genModIdAttribute(context.api));
 
-  context.registerDashlet('Nexus Account', 3, 1, 0, DashboardBanner, undefined, undefined, {
+  context.registerDashlet('Nexus Mods Account Banner', 3, 1, 0, DashboardBanner, undefined, undefined, {
     fixed: true,
     closable: true,
   });
