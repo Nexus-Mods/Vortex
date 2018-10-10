@@ -96,8 +96,6 @@ function runElevated(ipcPath: string, func: (ipc: any, req: NodeRequireFunction)
           return reject(writeErr);
         }
 
-        // we can't call GetLastError through node-ffi so when using ShellExecuteExA we won't be
-        // able to get an error code. With ShellExecuteA we can
         try {
           winapi.ShellExecuteEx({
             verb: 'runas',
@@ -106,7 +104,7 @@ function runElevated(ipcPath: string, func: (ipc: any, req: NodeRequireFunction)
             directory: path.dirname(process.execPath),
             show: 'shownormal',
           });
-          return Promise.resolve();
+          return resolve();
         } catch (err) {
           return reject(err);
         }
