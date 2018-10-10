@@ -5,7 +5,7 @@ import Icon from './Icon';
 import * as _ from 'lodash';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
-import { Image, Overlay, Popover } from 'react-bootstrap';
+import { Image } from 'react-bootstrap';
 import { Portal } from 'react-overlays';
 
 function PopoverImage(props: any) {
