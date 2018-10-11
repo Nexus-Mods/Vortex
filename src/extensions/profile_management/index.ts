@@ -374,11 +374,13 @@ function init(context: IExtensionContextExt): boolean {
         genOnProfileChange(context.api, (callback: () => void) => finishProfileSwitch = callback));
 
     context.api.onStateChange(['settings', 'profiles', 'activeProfileId'],
-                              (prev: string, current: string) => {
-                                context.api.events.emit('profile-did-change',
-                                                        current);
-                                finishProfileSwitch();
-                              });
+      (prev: string, current: string) => {
+        context.api.events.emit('profile-did-change',
+          current);
+        if (finishProfileSwitch !== undefined) {
+          finishProfileSwitch();
+        }
+      });
 
     const initProfile = activeProfile(store.getState());
     refreshProfile(store, initProfile, 'import')
@@ -390,7 +392,9 @@ function init(context: IExtensionContextExt): boolean {
         })
         .catch((err: Error) => {
           showError(store.dispatch, 'Failed to set profile', err);
-          finishProfileSwitch();
+          if (finishProfileSwitch !== undefined) {
+            finishProfileSwitch();
+          }
         });
 
     context.api.onStateChange(
