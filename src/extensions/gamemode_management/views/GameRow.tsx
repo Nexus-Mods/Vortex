@@ -142,7 +142,7 @@ class GameRow extends ComponentEx<IProps, {}> {
 
   private openLocation = () => {
     const { discovery } = this.props;
-    opn(discovery.path);
+    opn(discovery.path).catch(() => null);
   }
 
   private changeLocation = () => {
