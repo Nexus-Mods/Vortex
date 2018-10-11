@@ -1,5 +1,4 @@
 import * as Promise from 'bluebird';
-import * as Registry from 'winreg';
 
 import * as fs from './fs';
 import { log } from './log';
@@ -8,6 +7,7 @@ import { getSafeCI } from './storeHelper';
 import { app as appIn, remote } from 'electron';
 import * as path from 'path';
 import { parse } from 'simple-vdf';
+import * as winapi from 'winapi-bindings';
 
 const app = (remote !== undefined) ? remote.app : appIn;
 
@@ -46,34 +46,14 @@ class Steam implements ISteam {
   constructor() {
     if (process.platform === 'win32') {
         // windows
-        const regKey = new Registry({
-          hive: Registry.HKCU,
-          key: '\\Software\\Valve\\Steam',
-        });
-
-        this.mBaseFolder = new Promise<string>((resolve, reject) => {
-          try {
-            regKey.get('SteamPath',
-              (err: Error, result: Registry.RegistryItem) => {
-                if (err !== null) {
-                  // hrm, if we notify the user about this, users without Steam will be
-                  // annoyed. If we don't, the lack of steam functionality may confuse
-                  // those who do have it. Well, it's their own fault for breaking
-                  // the registry keys really...
-                  log('info', 'steam not found', { error: err.message });
-                  resolve(undefined);
-                } else if (result === null) {
-                  log('info', 'steam not found');
-                  resolve(undefined);
-                } else {
-                  resolve(result.value);
-                }
-              });
-          } catch (err) {
-            log('warn', 'steam not found', { error: err.message });
-            resolve(undefined);
-          }
-        });
+        try {
+          const steamPath = winapi.RegGetValue('HKEY_CURRENT_USER', 'Software\\Valve\\Steam', 'SteamPath');
+          this.mBaseFolder = Promise.resolve(steamPath.value as string);
+        }
+        catch (err) {
+          log('info', 'steam not found', { error: err.message });
+          this.mBaseFolder = Promise.resolve(undefined);
+        }
     } else {
       this.mBaseFolder = Promise.resolve(path.resolve(app.getPath('home'), '.steam', 'steam'));
     }
