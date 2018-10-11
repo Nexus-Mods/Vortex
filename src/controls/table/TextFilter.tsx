@@ -40,6 +40,9 @@ class TextFilter implements ITableFilter {
       // filter of the wrong type doesn't filter at all
       return true;
     }
+    if (typeof(value) !== 'string') {
+      return false;
+    }
     if (this.mCaseSensitive) {
       if ((value === undefined) || (filter === undefined)) {
         return false;
