@@ -442,7 +442,8 @@ class Application {
     const backupPath = path.join(app.getPath('temp'), 'state_backups');
     let backups: string[];
 
-    const updateBackups = () => fs.readdirAsync(backupPath)
+    const updateBackups = () => fs.ensureDirAsync(backupPath)
+      .then(() => fs.readdirAsync(backupPath))
       .filter((fileName: string) => fileName.startsWith('backup') && path.extname(fileName) === '.json')
       .then(backupsIn => { backups = backupsIn; });
 
