@@ -36,9 +36,8 @@ export class DownloadIsHTML extends Error {
 export type URLFunc = () => Promise<string[]>;
 
 function isHTMLHeader(headers: http.IncomingHttpHeaders) {
-  const type: string = headers['content-type'].toString();
-  return (type !== undefined)
-    && (type.startsWith('text/html'));
+  return (headers['content-type'] !== undefined)
+    && (headers['content-type'].toString().startsWith('text/html'));
 }
 
 interface IHTTP {
