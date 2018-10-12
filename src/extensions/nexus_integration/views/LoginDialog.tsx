@@ -1,5 +1,6 @@
 import { showDialog } from '../../../actions/notifications';
 import Icon from '../../../controls/Icon';
+import Spinner from '../../../controls/Spinner';
 import { Button, IconButton } from '../../../controls/TooltipControls';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 
@@ -29,22 +30,21 @@ interface IActionProps {
 type IProps = IBaseProps & IConnectedProps & IActionProps;
 
 interface ILoginFormState {
-  APIKey: string;
-  didSubmit: boolean;
+  loggingIn: boolean;
 }
 
 class LoginDialog extends ComponentEx<IProps, ILoginFormState> {
   constructor(props: IProps) {
     super(props);
 
-    this.state = {
-      APIKey: props.APIKey,
-      didSubmit: false,
-    };
+    this.initState({
+      loggingIn: false,
+    });
   }
 
   public render(): JSX.Element {
     const { t, visible, onHide } = this.props;
+    const { loggingIn } = this.state;
     return (
       <Modal id='login-dialog' show={visible} onHide={onHide}>
         <Modal.Body>
@@ -67,8 +67,9 @@ class LoginDialog extends ComponentEx<IProps, ILoginFormState> {
             <Button
               onClick={this.login}
               tooltip={t('Opens the Nexus Mods page in your default browser')}
+              disabled={loggingIn}
             >
-              {t('Log In On Website')}
+              {loggingIn ? <Spinner /> : t('Log In On Website')}
             </Button>
           </div>
         </Modal.Body>
@@ -78,9 +79,12 @@ class LoginDialog extends ComponentEx<IProps, ILoginFormState> {
 
   private login = () => {
     const { onHide } = this.props;
+    this.nextState.loggingIn = true;
     this.context.api.events.emit('request-nexus-login', (err: Error) => {
+      this.nextState.loggingIn = false;
       if (err !== null) {
         this.context.api.showErrorNotification('Failed to get access key', err);
+        return;
       }
       onHide();
     });
