@@ -151,7 +151,7 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
                 </FlexLayout.Flex>
                 <FlexLayout.Fixed>
                   <Dropzone
-                    accept={['files', 'urls']}
+                    accept={['files']}
                     drop={this.dropExtension}
                     dialogHint={t('Select extension file')}
                   />
@@ -175,7 +175,7 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
                                                    { allowReport: false });
           }))
       : Promise.map(extPaths, url => new Promise<void>((resolve, reject) => {
-        this.context.api.events.emit('start-download', {}, undefined,
+        this.context.api.events.emit('start-download', [url], undefined,
                                      (error: Error, id: string) => {
           const dlPath = path.join(this.props.downloadPath, downloads[id].localPath);
           installExtension(dlPath)

@@ -130,6 +130,12 @@ export class DownloadObserver {
                               callback?: (error: Error, id?: string) => void) {
     const id = shortid();
     if (typeof(urls) !== 'function') {
+      if (!Array.isArray(urls)) {
+        // could happen if triggered by foreign extensions, can't prevent that.
+        // During beta it also happened in our own code but that should be fixed
+        log('warn', 'invalid url list', { urls });
+        urls = [];
+      }
       urls = urls.filter(url =>
           (url !== undefined)
           && (['ftp:', 'http:', 'https:'].indexOf(nodeURL.parse(url).protocol) !== -1));
@@ -142,7 +148,7 @@ export class DownloadObserver {
     }
 
     const state: IState = this.mStore.getState();
-    const gameMode = modInfo.game || selectors.activeGameId(state);
+    const gameMode = (modInfo || {}).game || selectors.activeGameId(state);
 
     if (gameMode === undefined) {
       if (callback !== undefined) {
