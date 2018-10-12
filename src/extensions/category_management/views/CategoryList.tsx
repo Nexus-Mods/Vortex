@@ -6,10 +6,11 @@ import { IconButton } from '../../../controls/TooltipControls';
 import { IActionDefinition } from '../../../types/IActionDefinition';
 import { IComponentContext } from '../../../types/IComponentContext';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
+import { IErrorOptions } from '../../../types/IExtensionContext';
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import lazyRequire from '../../../util/lazyRequire';
-import { showError, IErrorOptions } from '../../../util/message';
+import { showError } from '../../../util/message';
 import { activeGameId } from '../../../util/selectors';
 
 import { IMod } from '../../mod_management/types/IMod';

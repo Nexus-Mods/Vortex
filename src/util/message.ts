@@ -4,6 +4,7 @@ import {
   IDialogContent,
   showDialog,
 } from '../actions/notifications';
+import { IErrorOptions } from '../types/IExtensionContext';
 import { IState } from '../types/IState';
 
 import { sendReport, toError, isOutdated } from './errorHandling';
@@ -113,13 +114,6 @@ function genFeedbackText(response: IFeedbackResponse): string {
   return lines.join('[br][/br]');
 }
 
-export interface IErrorOptions {
-  replace?: { [key: string]: string };
-  isHTML?: boolean;
-  id?: string;
-  allowReport?: boolean;
-}
-
 /**
  * show an error notification with an optional "more" button that displays further details
  * in a modal dialog.
@@ -132,10 +126,10 @@ export interface IErrorOptions {
  *                        want string or Errors but since some node apis return non-Error objects
  *                        where Errors are expected we have to be a bit more flexible here.
  */
-export function showError<S>(dispatch: ThunkDispatch<IState, null, Redux.Action>,
-                             message: string,
-                             details?: string | Error | any,
-                             options?: IErrorOptions) {
+export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
+                          message: string,
+                          details?: string | Error | any,
+                          options?: IErrorOptions) {
   const err = renderError(details);
 
   log('error', message, err);
@@ -150,6 +144,7 @@ export function showError<S>(dispatch: ThunkDispatch<IState, null, Redux.Action>
     message: err.message,
     options: {
       wrap: err.wrap,
+      hideMessage: (options === undefined) || (options.hideDetails !== false),
     },
     parameters: (options !== undefined) ? options.replace : undefined,
   };
@@ -222,6 +217,12 @@ function renderError(err: string | Error | any):
             + 'still access data directories.\n'
             + 'This is usually not a bug in Vortex.',
         message: (err as any).path + '\n' + err.stack,
+        wrap: false,
+      };
+    } else if ((err as any).code === 'ENOENT') {
+      return {
+        text: `A file that Vortex needs to access doesn\'t exist: "${(err as any).path}".\n`,
+        message: err.stack,
         wrap: false,
       };
     } else {

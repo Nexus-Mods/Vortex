@@ -1,59 +1,17 @@
-$collapseicon-offset: 0;
+.collapse-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 
-.collapseicon {
-  position: absolute;
-  visibility: visible !important;
-  padding: 0;
-  line-height: 1;
-
-  &.collapseicon-show {
-    margin-top: $panel-body-padding;
-  }
-}
-
-.collapseicon-topleft {
-  &.collapseicon-show {
-    top: $collapseicon-offset;
-  }
-  &.collapseicon-hide {
-    bottom: $collapseicon-offset;
-  }
-  left: $collapseicon-offset;
-}
-.collapseicon-topright {
-  &.collapseicon-show {
-    top: $collapseicon-offset;
-  }
-  &.collapseicon-hide {
-    bottom: $collapseicon-offset;
-  }
-  right: $collapseicon-offset;
-}
-.collapseicon-bottomleft {
-  &.collapseicon-show {
-    bottom: $collapseicon-offset;
-  }
-  &.collapseicon-hide {
-    top: $collapseicon-offset;
-  }
-  left: $collapseicon-offset;
-}
-.collapseicon-bottomright {
-  &.collapseicon-show {
-    bottom: $collapseicon-offset;
-  }
-  &.collapseicon-hide {
-    top: $collapseicon-offset;
-  }
-  right: $collapseicon-offset;
-}
-
-@keyframes collapseIn {
-  0% {
-    opacity: 0;
-  }
-  100% {
-    visibility: visible;
+  .collapse-content {
+    flex: 1 1 0;
+    transition: opacity 300ms;
     opacity: 1;
+    display: flex;
+  }
+
+  .collapse-content-hidden {
+    opacity: 0;
   }
 }

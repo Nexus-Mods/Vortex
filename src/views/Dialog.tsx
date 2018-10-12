@@ -1,5 +1,6 @@
 import { ILink, triggerDialogLink } from '../actions';
 import { closeDialog } from '../actions/notifications';
+import Collapse from '../controls/Collapse';
 import Icon from '../controls/Icon';
 import Webview from '../controls/Webview';
 import {
@@ -169,15 +170,23 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     }
 
     if (content.message !== undefined) {
-      const wrap = (content.options && (content.options.wrap === true)) ? 'on' : 'off';
-      controls.push((
+      const wrap = ((content.options !== undefined) && (content.options.wrap === true)) ? 'on' : 'off';
+      const ctrl = (
         <textarea
           key='dialog-content-message'
           wrap={wrap}
           defaultValue={this.translateParts(content.message, t, content.parameters)}
           readOnly={true}
         />
-      ));
+      );
+      if ((content.options !== undefined) && (content.options.hideMessage === true)) {
+        controls.push((
+          <Collapse showText={t('Show Details')} hideText={t('Hide Details')}>
+            {ctrl}
+          </Collapse>));
+      } else {
+        controls.push(ctrl);
+      }
     }
 
     if (content.bbcode !== undefined) {
