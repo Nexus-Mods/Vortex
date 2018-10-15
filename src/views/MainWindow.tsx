@@ -58,6 +58,7 @@ export interface IMainWindowState {
   showLayer: string;
   loadedPages: string[];
   hidpi: boolean;
+  switching: boolean;
 }
 
 export interface IConnectedProps {
@@ -110,6 +111,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       showLayer: '',
       loadedPages: [],
       hidpi: false,
+      switching: false,
     };
 
     this.settingsPage = {
@@ -189,9 +191,9 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   public render(): JSX.Element {
     const { activeProfileId, customTitlebar, onHideDialog,
             nextProfileId, visibleDialog } = this.props;
-    const { hidpi } = this.state;
+    const { hidpi, switching } = this.state;
 
-    const switchingProfile = (activeProfileId !== nextProfileId) && truthy(nextProfileId);
+    const switchingProfile = ((activeProfileId !== nextProfileId) && truthy(nextProfileId)) || switching;
 
     const classes = [];
     classes.push(hidpi ? 'hidpi' : 'lodpi');
@@ -207,7 +209,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
         <div key='main' className={classes.join(' ')} style={{ display: switchingProfile ? 'none' : undefined }}>
           <div className='menu-layer' ref={this.setMenuLayer} />
           <FlexLayout id='main-window-content' type='column'>
-            {this.renderToolbar()}
+            {this.renderToolbar(switchingProfile)}
             {customTitlebar ? <div className='dragbar' /> : null}
             {this.renderBody()}
           </FlexLayout>
@@ -249,7 +251,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     this.setState(this.nextState);
   }
 
-  private renderToolbar() {
+  private renderToolbar(switchingProfile: boolean) {
     const { t, customTitlebar } = this.props;
     const className = customTitlebar ? 'toolbar-app-region' : 'toolbar-default';
     return (
@@ -258,7 +260,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
         <Banner group='main-toolbar' />
         <div className='flex-fill' />
         <div className='main-toolbar-right'>
-          <NotificationButton id='notification-button' />
+          <NotificationButton id='notification-button' hide={switchingProfile} />
           <IconBar
             className='application-icons'
             group='application-icons'
