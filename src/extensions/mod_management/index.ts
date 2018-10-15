@@ -546,7 +546,7 @@ function cleanupIncompleteInstalls(api: IExtensionApi) {
       const mod = mods[gameId][modId];
       if (mod.state === 'installing') {
         if (mod.installationPath !== undefined) {
-          const instPath = installPath(store.getState());
+          const instPath = installPathForGame(store.getState(), gameId);
           const fullPath = path.join(instPath, mod.installationPath);
           log('warn', 'mod was not installed completelely and will be removed', { mod, fullPath });
           // this needs to be synchronous because once is synchronous and we have to complete this
