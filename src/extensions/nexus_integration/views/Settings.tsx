@@ -137,7 +137,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                     { allowReport: false },
                   );
                 } else {
-                  onShowError('Failed to fix NXM handling in Chrome.', err);
+                  onShowError('Failed to fix NXM handling in Chrome. '
+                    + 'Please follow the manual instructions described in the info button.',
+                    err, { allowReport: false });
                 }
               });
           },

@@ -102,14 +102,14 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
           api.events.emit('update-categories', gameId, categories, isUpdate);
         })
         .catch(ProcessCanceled, () => null)
-        .catch((err) => {
+        .catch(err => {
           if (err.code === 'ESOCKETTIMEOUT') {
             api.sendNotification({
               type: 'warning',
               message: 'Timeout retrieving categories from server, please try again later.',
             });
             return;
-          } else if (['ECONNRESET', 'ECONNREFUSED'].indexOf(err.code) !== -1) {
+          } else if (['ECONNRESET', 'ECONNREFUSED', 'ECONNABORTED'].indexOf(err.code) !== -1) {
             api.sendNotification({
               type: 'warning',
               message: 'The server refused the connection, please try again later.',

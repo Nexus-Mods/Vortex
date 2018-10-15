@@ -11,7 +11,7 @@ import {
   remote,
 } from 'electron';
 import * as fs from 'fs-extra-promise';
-import { t } from 'i18next';
+import { getFixedT } from 'i18next';
 import NexusT, { IFeedbackResponse } from 'nexus-api';
 import {} from 'opn';
 import * as os from 'os';
@@ -172,9 +172,18 @@ export function sendReportFile(fileName: string): Promise<IFeedbackResponse> {
   });
 }
 
-export function sendReport(type: string, error: IError, labels: string[], reporterId?: string, reporterProcess?: string, sourceProcess?: string) {
+export function sendReport(type: string, error: IError, labels: string[],
+                           reporterId?: string, reporterProcess?: string, sourceProcess?: string): Promise<IFeedbackResponse> {
   const hash = genHash(error);
-  return nexusReport(hash, type, error, labels, reporterId || fallbackAPIKey, reporterProcess, sourceProcess);
+  if (process.env.NODE_ENV === 'development') {
+    const dialog = dialogIn || remote.dialog;
+    dialog.showErrorBox(error.message, JSON.stringify({
+      type, error, labels, reporterId, reporterProcess, sourceProcess,
+    }));
+    return Promise.resolve(undefined);
+  } else {
+    return nexusReport(hash, type, error, labels, reporterId || fallbackAPIKey, reporterProcess, sourceProcess);
+  }
 }
 
 /**
@@ -267,20 +276,35 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
 }
 
 export function toError(input: any, options?: IErrorOptions): IError {
+  const ten = getFixedT('en');
+  const t = (text: string) => ten(text, { replace: (options || {}).replace });
+
+  if (input instanceof Error) {
+    return { message: t(input.message), stack: input.stack };
+  }
+
   switch (typeof input) {
     case 'object': {
-      if ((input.message === undefined) && (input.stack === undefined)) {
-        // not an error object, what is this??
-        return { message: require('util').inspect(input) };
+      // object, but not an Error
+      const message: string = input.message || 'An error occurred';
+
+      let attributes = Object.keys(input)
+          .filter(key => key[0].toUpperCase() === key[0]);
+      // if there are upper case characters, this is a custom, not properly typed, error object
+      // with upper case attributes, intended to be displayed to the user.
+      // Otherwise, who knows what this is, just send everything.
+      if (attributes.length == 0) {
+        attributes = Object.keys(input).filter(key => ['message', 'stack'].indexOf(key) === -1);
       }
-      const message = input.message !== undefined
-        ? t(input.message, { replace: (options || {}).replace, lng: 'en' })
-        : undefined;
-      return {message, stack: input.stack};
+
+      const details = attributes.length === 0 ? undefined : attributes
+          .map(key => key + ':\t' + input[key])
+          .join('\n');
+
+      return {message, stack: input.stack, details};
     }
     case 'string': {
-      const message = t(input, { replace: (options || {}).replace, lng: 'en' });
-      return { message };
+      return { message: t(input) };
     }
     default: {
       return { message: input as string };

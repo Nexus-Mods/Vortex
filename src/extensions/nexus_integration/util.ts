@@ -102,10 +102,11 @@ export function startDownload(api: IExtensionApi, nexus: Nexus, nxmurl: string):
 }
 
 interface IRequestError {
-  Error: string;
+  message: string;
   Servermessage?: string;
   URL?: string;
   Game?: string;
+  stack?: string;
   fatal?: boolean;
   Mod?: number;
   Version?: string;
@@ -118,13 +119,17 @@ export function processErrorMessage(err: NexusError): IRequestError {
     if (errorMessage
       && ((errorMessage.indexOf('APIKEY') !== -1)
           || (errorMessage.indexOf('API Key') !== -1))) {
-      return { Error: 'You are not logged in to Nexus Mods!', noReport: true };
+      return { message: 'You are not logged in to Nexus Mods!', noReport: true };
     } else {
-      return { Error: errorMessage };
+      const res: IRequestError = { message: errorMessage };
+      if (err.stack !== undefined) {
+        res.stack = err.stack;
+      }
+      return res;
     }
   } else if ((err.statusCode >= 400) && (err.statusCode < 500)) {
     return {
-      Error: 'Server couldn\'t process this request.\nMaybe the locally stored '
+      message: 'Server couldn\'t process this request.\nMaybe the locally stored '
       + 'info about the mod is wrong\nor the mod was removed from Nexus.',
       Servermessage: errorMessage,
       URL: err.request,
@@ -132,15 +137,17 @@ export function processErrorMessage(err: NexusError): IRequestError {
     };
   } else if ((err.statusCode >= 500) && (err.statusCode < 600)) {
     return {
-      Error: 'The server reported an internal error. Please try again later.',
+      message: 'The server reported an internal error. Please try again later.',
       Servermessage: errorMessage,
       URL: err.request,
+      noReport: true,
     };
   } else {
     return {
-      Error: 'Unexpected error reported by the server',
+      message: 'Unexpected error reported by the server',
       Servermessage: (errorMessage || '') + ' ( Status Code: ' + err.statusCode + ')',
       URL: err.request,
+      stack: err.stack
     };
   }
 }
@@ -270,14 +277,14 @@ export function checkModVersionsImpl(
           return Promise.reject(detail);
         }
 
-        if (detail.Error === undefined) {
+        if (detail.message === undefined) {
           return undefined;
         }
 
         const name = modName(mod, { version: true });
         return (detail.Servermessage !== undefined)
-          ? `${name}:\n${detail.Error}\nServer said: "${detail.Servermessage}"`
-          : `${name}:\n${detail.Error}`;
+          ? `${name}:\n${detail.message}\nServer said: "${detail.Servermessage}"`
+          : `${name}:\n${detail.message}`;
       }), { concurrency: 4 })
     .then((errorMessages: string[]): string[] => errorMessages.filter(msg => msg !== undefined));
 }

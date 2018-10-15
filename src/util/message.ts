@@ -154,7 +154,7 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
   if (!isOutdated() && ((options === undefined) || (options.allowReport !== false))) {
     actions.push({
       label: 'Report',
-      action: () => sendReport('error', toError(details, options), ['error'], '')
+      action: () => sendReport('error', toError(details, options), ['error'], '', process.type)
         .then(response => {
           if (response !== undefined) {
             dispatch(showDialog('success', 'Issue reported', {
@@ -195,14 +195,21 @@ function renderNodeError(err: Error): string {
   return res.join('\n');
 }
 
-function renderCustomError(err: any): string {
+function renderCustomError(err: any): { message?: string, text?: string, wrap: boolean } {
+  const res: { message?: string, text?: string, wrap: boolean } = { wrap: false };
   if (err === undefined) {
-    return 'Unknown error';
+    res.text = 'Unknown error';
+  } else {
+    res.text = err.message || 'An error occurred';
+    res.message = Object.keys(err)
+        .filter(key => key[0].toUpperCase() === key[0])
+        .map(key => key + ':\t' + err[key])
+        .join('\n');
+    if (res.message.length === 0) {
+      res.message = undefined;
+    }
   }
-  return Object.keys(err)
-      .filter(key => ['fatal'].indexOf(key) === -1)
-      .map(key => key + ':\t' + err[key])
-      .join('\n');
+  return res;
 }
 
 function renderError(err: string | Error | any):
@@ -229,6 +236,6 @@ function renderError(err: string | Error | any):
       return { text: err.message, message: renderNodeError(err), wrap: false };
     }
   } else {
-    return { message: renderCustomError(err), wrap: false };
+    return renderCustomError(err);
   }
 }
