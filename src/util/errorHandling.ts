@@ -126,7 +126,7 @@ function nexusReport(hash: string, type: string, error: IError, labels: string[]
     hash,
     referenceId))
   .tap(() =>
-    opn(`https://www.nexusmods.com/crash-report/?key=${referenceId}`))
+    opn(`https://www.nexusmods.com/crash-report/?key=${referenceId}`).catch(() => null))
   .catch(err => {
     log('error', 'failed to report error to nexus', err.message);
     return undefined;

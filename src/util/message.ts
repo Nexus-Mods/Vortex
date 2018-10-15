@@ -6,6 +6,7 @@ import {
 } from '../actions/notifications';
 import { IErrorOptions } from '../types/IExtensionContext';
 import { IState } from '../types/IState';
+import { jsonRequest } from '../util/network';
 
 import { sendReport, toError, isOutdated } from './errorHandling';
 
@@ -15,6 +16,8 @@ import { truthy } from './util';
 import { IFeedbackResponse } from 'nexus-api';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
+
+const GITHUB_PROJ = 'Nexus-Mods/Vortex';
 
 function clamp(min: number, value: number, max: number): number {
   return Math.max(max, Math.min(min, value));
@@ -90,24 +93,28 @@ function genGithubUrl(issueId: number) {
   return `https://github.com/Nexus-Mods/Vortex/issues/${issueId}`;
 }
 
-function genFeedbackText(response: IFeedbackResponse): string {
+function genFeedbackText(response: IFeedbackResponse, githubInfo?: any): string {
   const lines = [
     'Thank you for your feedback!',
+    '',
+    'If you\'re reporting a bug, please don\'t forget to leave additional information in the form that should have opened in your webbrowser.',
     '',
   ];
 
   if (response.github_issue === undefined) {
     lines.push('Your feedback will be reviewed before it is published.');
   } else {
-    if (response.github_issue.issue_state === 'closed') {
-      lines.push('This issue was reported before and seems to be fixed already.');
-    } else if (response.count > 1) {
+    if (((githubInfo !== undefined) && (githubInfo.state === 'closed'))
+        || response.github_issue.issue_state === 'closed') {
+      lines.push('This issue was reported before and seems to be fixed already. If you\'re not running the newest version of Vortex, please update.');
+    } else if (((githubInfo !== undefined) && (githubInfo.comments >= 1))
+               || (response.count > 1)) {
       lines.push('This is not the first report about this problem, so your report '
                + 'was added as a comment to the existing one.');
     } else {
       lines.push('You were the first to report this issue.');
     }
-    const url = genGithubUrl(response.github_issue.id);
+    const url = genGithubUrl(response.github_issue.issue_number);
     lines.push(`You can review the created issue on [url]${url}[/url]`);
   }
 
@@ -157,9 +164,14 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
       action: () => sendReport('error', toError(details, options), ['error'], '', process.type)
         .then(response => {
           if (response !== undefined) {
-            dispatch(showDialog('success', 'Issue reported', {
-              bbcode: genFeedbackText(response),
-            }, [ { label: 'Close' } ]));
+            const githubURL = `https://api.github.com/repos/${GITHUB_PROJ}/issues/${response.github_issue.issue_number}`;
+            jsonRequest<any>(githubURL)
+              .catch(() => undefined)
+              .then(githubInfo => {
+                dispatch(showDialog('success', 'Issue reported', {
+                  bbcode: genFeedbackText(response, githubInfo),
+                }, [{ label: 'Close' }]));
+              });
           }
         }),
     });
