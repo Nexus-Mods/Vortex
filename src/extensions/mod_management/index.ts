@@ -179,7 +179,8 @@ function applyFileActions(sourcePath: string,
         // or the files are actually identical), delete the target first, that way the copy
         // can't fail
         return fs.removeAsync(source)
-          .then(() => fs.copyAsync(deployed, source));
+          .then(() => fs.copyAsync(deployed, source))
+          .catch({ code: 'ENOENT' }, (err: any) => log('warn', 'file disappeared', err.path));
       }))
     .then(() => {
       // remove files that the user wants to restore from
