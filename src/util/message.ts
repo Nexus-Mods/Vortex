@@ -213,8 +213,13 @@ function renderCustomError(err: any): { message?: string, text?: string, wrap: b
     res.text = 'Unknown error';
   } else {
     res.text = err.message || 'An error occurred';
-    res.message = Object.keys(err)
-        .filter(key => key[0].toUpperCase() === key[0])
+    let attributes = Object.keys(err)
+        .filter(key => key[0].toUpperCase() === key[0]);
+    if (attributes.length === 0) {
+      attributes = Object.keys(err)
+        .filter(key => ['message', 'stack'].indexOf(key) === -1);
+    }
+    res.message = attributes
         .map(key => key + ':\t' + err[key])
         .join('\n');
     if (res.message.length === 0) {
