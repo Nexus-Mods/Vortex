@@ -1002,7 +1002,7 @@ class ExtensionManager {
             detached: true,
             shell: options.shell,
           };
-          const child = spawn(runExe, args.map(arg => arg.replace(/"/g, '')),
+          const child = spawn(runExe, options.shell ? args : args.map(arg => arg.replace(/"/g, '')),
                               spawnOptions);
 
           child
