@@ -249,6 +249,12 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
   throw new UserCanceled();
 }
 
+/**
+ * render error message for internal processing (issue tracker and such).
+ * It's important this doesn't translate the error message or lose information
+ * @param input 
+ * @param options 
+ */
 export function toError(input: any, options?: IErrorOptions): IError {
   const ten = getFixedT('en');
   const t = (text: string) => ten(text, { replace: (options || {}).replace });
@@ -260,7 +266,15 @@ export function toError(input: any, options?: IErrorOptions): IError {
   switch (typeof input) {
     case 'object': {
       // object, but not an Error
-      const message: string = input.message || 'An error occurred';
+      let message: string;
+      let stack: string;
+      if ((input.error !== undefined) && (input.error instanceof Error)) {
+        message = input.error.message;
+        stack = input.error.stack;
+      } else {
+        message = input.message || 'An error occurred';
+        stack = input.stack;
+      }
 
       let attributes = Object.keys(input)
           .filter(key => key[0].toUpperCase() === key[0]);
@@ -268,14 +282,14 @@ export function toError(input: any, options?: IErrorOptions): IError {
       // with upper case attributes, intended to be displayed to the user.
       // Otherwise, who knows what this is, just send everything.
       if (attributes.length == 0) {
-        attributes = Object.keys(input).filter(key => ['message', 'stack'].indexOf(key) === -1);
+        attributes = Object.keys(input).filter(key => ['message', 'error', 'stack'].indexOf(key) === -1);
       }
 
       const details = attributes.length === 0 ? undefined : attributes
           .map(key => key + ':\t' + input[key])
           .join('\n');
 
-      return {message, stack: input.stack, details};
+      return {message, stack, details};
     }
     case 'string': {
       return { message: t(input) };

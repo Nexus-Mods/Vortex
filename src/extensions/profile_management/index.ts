@@ -202,6 +202,9 @@ function genOnProfileChange(api: IExtensionApi, onFinishProfileSwitch: (callback
 
       finishProfileSwitchPromise = new Promise<void>((resolve, reject) => {
         onFinishProfileSwitch(resolve);
+      }).catch(err => {
+        showError(store.dispatch, 'Profile switch failed', err);
+        return Promise.resolve();
       });
 
       const profile = state.persistent.profiles[current];

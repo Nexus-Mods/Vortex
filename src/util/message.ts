@@ -153,7 +153,10 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
       wrap: err.wrap,
       hideMessage: (options === undefined) || (options.hideDetails !== false),
     },
-    parameters: (options !== undefined) ? options.replace : undefined,
+    parameters: {
+      ...(options !== undefined) ? options.replace : {},
+      ...(err.parameters || {}),
+    },
   };
 
   const actions: IDialogAction[] = [];
@@ -193,65 +196,70 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
   }));
 }
 
-function renderNodeError(err: Error): string {
-  const res: string[] = [];
-
-  if (Array.isArray(err)) {
-    err = err[0];
+function prettifyNodeErrorMessage(err: any) {
+  if (err.code === undefined) {
+    return { message: err.message, replace: {} };
+  } else if (err.code === 'EPERM') {
+    const filePath = err.path || err.filename;
+    return { message: 'Vortex needs to access "{{filePath}}" is write protected.\n'
+            + 'When you configure directories and access rights you need to ensure Vortex can '
+            + 'still access data directories.\n'
+            + 'This is usually not a bug in Vortex.', replace: { filePath } };
+  } else if (err.code === 'ENOENT') {
+    const filePath = err.path || err.filename;
+    return {
+      message: 'Vortex tried to access "{{filePath}}" but it doesn\'t exist.',
+      replace: { filePath },
+    };
   }
-
-  if (err.stack) {
-    res.push(err.stack);
-  }
-
-  return res.join('\n');
 }
 
-function renderCustomError(err: any): { message?: string, text?: string, wrap: boolean } {
-  const res: { message?: string, text?: string, wrap: boolean } = { wrap: false };
+function renderCustomError(err: any) {
+  const res: { message?: string, text?: string, parameters?: any, wrap: boolean } = { wrap: false };
   if (err === undefined) {
     res.text = 'Unknown error';
+  } else if ((err.error !== undefined) && (err.error instanceof Error)) {
+    const pretty = prettifyNodeErrorMessage(err.error);
+    res.text = pretty.message;
+    res.parameters = pretty.replace;
   } else {
     res.text = err.message || 'An error occurred';
-    let attributes = Object.keys(err)
-        .filter(key => key[0].toUpperCase() === key[0]);
-    if (attributes.length === 0) {
-      attributes = Object.keys(err)
-        .filter(key => ['message', 'stack'].indexOf(key) === -1);
-    }
-    res.message = attributes
-        .map(key => key + ':\t' + err[key])
-        .join('\n');
-    if (res.message.length === 0) {
-      res.message = undefined;
-    }
+  }
+
+  let attributes = Object.keys(err)
+      .filter(key => key[0].toUpperCase() === key[0]);
+  if (attributes.length === 0) {
+    attributes = Object.keys(err)
+      .filter(key => ['message', 'error'].indexOf(key) === -1);
+  }
+  res.message = attributes
+      .map(key => key + ':\t' + err[key])
+      .join('\n');
+  if (res.message.length === 0) {
+    res.message = undefined;
   }
   return res;
 }
 
+/**
+ * render error message for display to the user
+ * @param err 
+ */
 function renderError(err: string | Error | any):
-    { message?: string, text?: string, wrap: boolean } {
+    { message?: string, text?: string, parameters?: any, wrap: boolean } {
+  if (Array.isArray(err)) {
+    err = err[0];
+  }
   if (typeof(err) === 'string') {
     return { text: err, wrap: true };
   } else if (err instanceof Error) {
-    if ((err as any).code === 'EPERM') {
-      return {
-        text: 'A file that Vortex needs to access is write protected.\n'
-            + 'When you configure directories and access rights you need to ensure Vortex can '
-            + 'still access data directories.\n'
-            + 'This is usually not a bug in Vortex.',
-        message: (err as any).path + '\n' + err.stack,
-        wrap: false,
-      };
-    } else if ((err as any).code === 'ENOENT') {
-      return {
-        text: `A file that Vortex needs to access doesn\'t exist: "${(err as any).path}".\n`,
-        message: err.stack,
-        wrap: false,
-      };
-    } else {
-      return { text: err.message, message: renderNodeError(err), wrap: false };
-    }
+    const errMessage = prettifyNodeErrorMessage(err);
+    return {
+      text: errMessage.message,
+      message: err.stack,
+      parameters: errMessage.replace,
+      wrap: false,
+    };
   } else {
     return renderCustomError(err);
   }
