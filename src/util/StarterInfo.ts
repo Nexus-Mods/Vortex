@@ -65,15 +65,18 @@ class StarterInfo implements IStarterInfo {
       .catch(err => {
         if (err.errno === 'ENOENT') {
           onShowError('Failed to run tool', {
-            executable: info.exePath,
-            error: 'Executable doesn\'t exist, please check the configuration for info tool.',
+            Executable: info.exePath,
+            message: 'Executable doesn\'t exist, please check the configuration for info tool.',
+            stack: err.stack,
           }, false);
         } else if (err.errno === 'UNKNOWN') {
           // info sucks but node.js doesn't give us too much information about what went wrong
           // and we can't have users misconfigure their tools and then report the error they
           // get as feedback
           onShowError('Failed to run tool', {
-            error: 'File is not executable, please check the configuration for info tool.',
+            Executable: info.exePath,
+            message: 'File is not executable, please check the configuration for info tool.',
+            stack: err.stack,
           }, false);
         } else if (err instanceof MissingInterpreter) {
           const par = {
