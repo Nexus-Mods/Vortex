@@ -11,7 +11,7 @@ import MainPage from '../../../views/MainPage';
 import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../../gamemode_management/types/IGameStored';
 
-import { removeProfile, setFeature, setProfile } from '../actions/profiles';
+import { removeProfile, setFeature, setProfile, willRemoveProfile } from '../actions/profiles';
 import { setNextProfile } from '../actions/settings';
 import { IProfile } from '../types/IProfile';
 import { IProfileFeature } from '../types/IProfileFeature';
@@ -42,6 +42,7 @@ interface IConnectedProps {
 interface IActionProps {
   onAddProfile: (profile: IProfile) => void;
   onRemoveProfile: (profileId: string) => void;
+  onWillRemoveProfile: (profileId: string) => void;
   onSetNextProfile: (profileId: string) => void;
   onSetFeature: (profileId: string, featureId: string, value: any) => void;
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
@@ -268,7 +269,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
   }
 
   private onRemoveProfile = (profileId: string) => {
-    const { currentProfile, onRemoveProfile, onSetNextProfile, onShowDialog, profiles } = this.props;
+    const { currentProfile, onRemoveProfile, onWillRemoveProfile, onSetNextProfile, onShowDialog, profiles } = this.props;
     onShowDialog('question', 'Confirm', {
       text: 'Remove this profile? This can\'t be undone!',
     }, [
@@ -276,6 +277,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
         {
           label: 'Remove', action:
             () => {
+              onWillRemoveProfile(profileId);
               if (profileId === currentProfile) {
                 onSetNextProfile(undefined);
               }
@@ -313,6 +315,7 @@ function mapDispatchToProps(dispatch): IActionProps {
   return {
     onAddProfile: (profile: IProfile) => dispatch(setProfile(profile)),
     onRemoveProfile: (profileId: string) => dispatch(removeProfile(profileId)),
+    onWillRemoveProfile: (profileId: string) => dispatch(willRemoveProfile(profileId)),
     onSetNextProfile: (profileId: string) => dispatch(setNextProfile(profileId)),
     onSetFeature: (profileId: string, featureId: string, value: any) =>
       dispatch(setFeature(profileId, featureId, value)),

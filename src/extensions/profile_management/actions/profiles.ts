@@ -9,6 +9,8 @@ export const setProfile = safeCreateAction('SET_PROFILE', profileId => profileId
 
 export const removeProfile = safeCreateAction('REMOVE_PROFILE', profileId => profileId);
 
+export const willRemoveProfile =safeCreateAction('WILL_REMOVE_PROFILE', profileId => profileId);
+
 /**
  * enable or disable a mod in a profile
  */
