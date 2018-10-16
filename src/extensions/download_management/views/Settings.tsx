@@ -78,7 +78,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       <form>
         <FormGroup>
           <ControlLabel>
-            {t('Download Path')}
+            {t('Download Folder')}
           </ControlLabel>
           <FlexLayout type='row'>
             <FlexLayout.Fixed>
@@ -86,7 +86,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                 <FormControl
                   className='download-path-input'
                   value={downloadPath}
-                  placeholder={t('Download Path')}
+                  placeholder={t('Download Folder')}
                   onChange={this.setDownloadPathEvt as any}
                 />
                 <InputGroup.Button className='inset-btn'>

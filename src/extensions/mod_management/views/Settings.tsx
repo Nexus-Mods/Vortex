@@ -127,7 +127,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       <form>
         <Panel>
           <PanelX.Body>
-            {this.renderPathCtrl(t('Install Path ({{name}})', { replace: { name: gameName } }))}
+            {this.renderPathCtrl(t('Mod Staging Folder ({{name}})', { replace: { name: gameName } }))}
             <Modal show={this.state.busy !== undefined} onHide={nop}>
               <Modal.Body>
                 <Jumbotron>
