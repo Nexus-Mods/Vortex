@@ -1,7 +1,8 @@
 import Icon from '../controls/Icon';
 import { IMainPage } from '../types/IMainPage';
 import { ComponentEx, translate } from '../util/ComponentEx';
-import { genHash, isOutdated } from '../util/errorHandling';
+import { isOutdated } from '../util/errorHandling';
+import { genHash } from '../util/genHash';
 import { log } from '../util/log';
 
 import { remote } from 'electron';

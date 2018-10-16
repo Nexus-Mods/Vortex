@@ -1,14 +1,15 @@
 import { ComponentEx } from '../util/ComponentEx';
-import { genHash, isOutdated } from '../util/errorHandling';
+import { isOutdated } from '../util/errorHandling';
+import { genHash } from '../util/genHash';
 
 import Icon from './Icon';
+import { IconButton } from './TooltipControls';
 
 import { remote } from 'electron';
 import * as I18next from 'i18next';
 import * as React from 'react';
 import { Alert, Button } from 'react-bootstrap';
 import { translate } from 'react-i18next';
-import { IconButton } from './TooltipControls';
 
 export interface IErrorBoundaryProps {
   visible?: boolean;
