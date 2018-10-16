@@ -181,7 +181,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
       );
       if ((content.options !== undefined) && (content.options.hideMessage === true)) {
         controls.push((
-          <Collapse showText={t('Show Details')} hideText={t('Hide Details')}>
+          <Collapse key='dialog-content-message-wrapper' showText={t('Show Details')} hideText={t('Hide Details')}>
             {ctrl}
           </Collapse>));
       } else {

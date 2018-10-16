@@ -58,7 +58,6 @@ export interface IMainWindowState {
   showLayer: string;
   loadedPages: string[];
   hidpi: boolean;
-  switching: boolean;
 }
 
 export interface IConnectedProps {
@@ -111,7 +110,6 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       showLayer: '',
       loadedPages: [],
       hidpi: false,
-      switching: false,
     };
 
     this.settingsPage = {
@@ -191,9 +189,9 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   public render(): JSX.Element {
     const { activeProfileId, customTitlebar, onHideDialog,
             nextProfileId, visibleDialog } = this.props;
-    const { hidpi, switching } = this.state;
+    const { hidpi } = this.state;
 
-    const switchingProfile = ((activeProfileId !== nextProfileId) && truthy(nextProfileId)) || switching;
+    const switchingProfile = ((activeProfileId !== nextProfileId) && truthy(nextProfileId));
 
     const classes = [];
     classes.push(hidpi ? 'hidpi' : 'lodpi');

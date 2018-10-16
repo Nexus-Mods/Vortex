@@ -45,6 +45,7 @@ interface IComponentState {
  */
 class ProfileItem extends ComponentEx<IProps, IComponentState> {
   private mUserData: string;
+  private mMounted: boolean = false;
   constructor(props: IProps) {
     super(props);
     this.initState({
@@ -56,8 +57,16 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
 
   public componentWillMount() {
     fs.statAsync(this.imagePath)
-    .then(() => this.nextState.hasProfileImage = true)
-    .catch(() => this.nextState.hasProfileImage = false);
+    .then(() => this.setHasProfileImage(true))
+    .catch(() => this.setHasProfileImage(false));
+  }
+
+  public componentDidMount() {
+    this.mMounted = true;
+  }
+
+  public componentWillUnmount() {
+    this.mMounted = false;
   }
 
   public render(): JSX.Element {
@@ -209,10 +218,16 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
       // TODO: could resize here to save some disc space
       return fs.writeFileAsync(this.imagePath, img.toPNG())
        .then(() => {
-         this.nextState.hasProfileImage = true;
-         this.nextState.counter++;
+         this.setHasProfileImage(true);
        });
     });
+  }
+
+  private setHasProfileImage(hasImage: boolean) {
+    if (this.mMounted) {
+        this.nextState.hasProfileImage = hasImage;
+        this.nextState.counter++;
+    }
   }
 
   private get imagePath(): string {
