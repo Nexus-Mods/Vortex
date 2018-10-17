@@ -29,10 +29,10 @@ class TextFilter implements ITableFilter {
   public component = TextFilterComponent;
   public raw = false;
 
-  private mCaseSensitive: boolean;
+  private mCaseInsensitive: boolean;
 
-  constructor(caseSensitive: boolean) {
-    this.mCaseSensitive = caseSensitive;
+  constructor(ignoreCase: boolean) {
+    this.mCaseInsensitive = ignoreCase;
   }
 
   public matches(filter: any, value: any): boolean {
@@ -43,7 +43,7 @@ class TextFilter implements ITableFilter {
     if (typeof(value) !== 'string') {
       return false;
     }
-    if (this.mCaseSensitive) {
+    if (this.mCaseInsensitive) {
       if ((value === undefined) || (filter === undefined)) {
         return false;
       }
