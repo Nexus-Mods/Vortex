@@ -20,7 +20,7 @@ function chromePath(): Promise<string> {
     return fs.readFileAsync(path.join(userData, 'Local State'), { encoding: 'utf-8' })
       .then(state => {
         const dat = JSON.parse(state);
-        const prof = truthy(dat) && (dat.profile !== undefined) && (dat.profile.last_used !== undefined)
+        const prof = truthy(dat) && truthy(dat.profile) && truthy(dat.profile.last_used)
           ? dat.profile.last_used
           : 'Default';
         return path.join(userData, prof, 'Preferences');
