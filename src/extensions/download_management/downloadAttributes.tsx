@@ -38,7 +38,7 @@ function progress(props) {
     case 'redirect': return <span>{t('Redirected')}</span>;
     case 'paused': return <span>{t('Paused')}</span>;
     default: return (
-        <ProgressBar now={received} max={size} showPercentage />
+        <ProgressBar now={received} max={size} showPercentage showTimeLeft />
       );
   }
 }

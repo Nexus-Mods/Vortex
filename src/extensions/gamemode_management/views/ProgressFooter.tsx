@@ -44,7 +44,7 @@ class ProgressFooter extends PureComponentEx<IProps, {}> {
       return (
         <div className='discovery-footer'>
           <div className='discovery-footer-label'>{t('Game discovery')}</div>
-          <ProgressBar min={0} max={100} now={totalProgress}  />
+          <ProgressBar min={0} max={100} now={totalProgress} />
         </div>
       );
     }

@@ -273,6 +273,25 @@ export function bytesToString(bytes: number): string {
   }
 }
 
+export function pad(value: number, padding: string, width: number) {
+  const temp = `${value}`;
+  return (temp.length >= width)
+    ? temp
+    : new Array(width - temp.length + 1).join(padding) + temp;
+}
+
+export function timeToString(seconds: number): string {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor(seconds / 60) - (hours * 60);
+  seconds = Math.floor(seconds - minutes * 60 - hours * 3600);
+
+  if (hours > 0) {
+    return `${pad(hours, '0', 2)}:${pad(minutes, '0', 2)}:${pad(seconds, '0', 2)}`;
+  } else {
+    return `${pad(minutes, '0', 2)}:${pad(seconds, '0', 2)}`;
+  }
+}
+
 let convertDiv: HTMLDivElement;
 
 export function encodeHTML(input: string): string {
