@@ -212,6 +212,9 @@ function prettifyNodeErrorMessage(err: any) {
       replace: { filePath },
     };
   }
+  return {
+    message: err.message,
+  };
 }
 
 function renderCustomError(err: any) {
