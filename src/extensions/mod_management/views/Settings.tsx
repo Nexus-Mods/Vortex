@@ -292,6 +292,14 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private purgeActivation(): Promise<void> {
+    const { activators } = this.props;
+
+    // can't purge if there is no deployment method but there shouldn't be
+    // anything _to_ purge
+    if ((activators === undefined) || (activators.length === 0)) {
+      return Promise.resolve();
+    }
+
     return new Promise((resolve, reject) => {
       this.context.api.events.emit('purge-mods', err => err !== null
         ? reject(err)
