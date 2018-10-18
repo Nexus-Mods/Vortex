@@ -266,7 +266,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
           };
         }
       });
-    });
+    }, { skipHidden: false });
   }
 
   public deactivate(installPath: string, dataPath: string,
