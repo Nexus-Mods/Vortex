@@ -185,11 +185,13 @@ class Application {
           app.quit();
         })
         .catch((err) => {
-          terminate({
-            message: 'Startup failed',
-            details: err.message,
-            stack: err.stack,
-          }, this.mStore !== undefined ? this.mStore.getState() : {});
+          try {
+            terminate({
+              message: 'Startup failed',
+              details: err.message,
+              stack: err.stack,
+            }, this.mStore !== undefined ? this.mStore.getState() : {});
+          } catch (err) { }
         });
   }
 
