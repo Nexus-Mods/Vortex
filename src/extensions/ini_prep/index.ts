@@ -245,7 +245,7 @@ function main(context: IExtensionContext) {
       discoverSettingsChanges(context.api.translate, gameMode, discovery)
         .then(() => purgeChanges(context.api.translate, gameMode, discovery))
         .catch(err => {
-          context.api.showErrorNotification('Failed to purge ini edits', err);
+          context.api.showErrorNotification('Failed to purge ini edits', err, { allowReport: (err as any).code !== 'ENOENT' });
         });
     });
   });
