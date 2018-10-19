@@ -28,4 +28,13 @@ export const settingsReducer: IReducerSpec = {
     showDropzone: true,
     confirmPurge: true,
   },
+  verifiers: {
+    installPath: {
+      elements: {
+        _: {
+          type: 'string',
+        }
+      }
+    }
+  }
 };

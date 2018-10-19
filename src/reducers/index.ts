@@ -65,7 +65,7 @@ function verifyElement(verifier: IStateVerifier, value: any) {
 // exported for the purpose of testing
 export function verify(statePath: string, verifiers: { [key: string]: IStateVerifier },
                        input: any, defaults: { [key: string]: any }) {
-  if (input === undefined) {
+  if ((input === undefined) || (verifiers === undefined)) {
     return input;
   }
   let res = input;
@@ -81,34 +81,41 @@ export function verify(statePath: string, verifiers: { [key: string]: IStateVeri
     }
   }
 
-  Object.keys(verifiers).forEach(key => {
-    if (key === '_') {
-      Object.keys(res).forEach(mapKey => recurse(key, mapKey));
-    } else if ((verifiers[key].required || input.hasOwnProperty(key))
-               && !verifyElement(verifiers[key], input[key])) {
-      log('warn', 'invalid state', { statePath, input, key, ver: verifiers[key] });
+  const doTest = (key: string, realKey: string) => {
+    if ((verifiers[key].required || input.hasOwnProperty(realKey))
+        && !verifyElement(verifiers[key], input[realKey])) {
+      log('warn', 'invalid state', { statePath, input, key: realKey, ver: verifiers[key] });
       if (verifiers[key].deleteBroken !== undefined) {
         if (verifiers[key].deleteBroken === 'parent') {
           res = undefined;
         } else {
-          res = deleteOrNop(res, [key]);
+          res = deleteOrNop(res, [realKey]);
         }
       } else if (verifiers[key].repair !== undefined) {
         try {
-          const fixed = verifiers[key].repair(input[key], defaults[key]);
-          res = update(res, { [key]: { $set: fixed } });
+          const fixed = verifiers[key].repair(input[realKey], defaults[realKey]);
+          res = update(res, { [realKey]: { $set: fixed } });
         } catch (err) {
           if (err instanceof VerifierDrop) {
-            res = deleteOrNop(res, [key]);
+            res = deleteOrNop(res, [realKey]);
           } else if (err instanceof VerifierDropParent) {
             res = undefined;
           }
         }
       } else {
-        res = update(res, { [key]: { $set: defaults[key] } });
+        res = update(res, { [realKey]: { $set: defaults[realKey] } });
       }
     } else if (verifiers[key].elements !== undefined) {
-      recurse(key, key);
+      recurse(key, realKey);
+    }
+  };
+
+  Object.keys(verifiers).forEach(key => {
+    // _ is placeholder for every item
+    if (key === '_') {
+      Object.keys(res).forEach(mapKey => doTest(key, mapKey));
+    } else {
+      doTest(key, key);
     }
   });
   return res;
