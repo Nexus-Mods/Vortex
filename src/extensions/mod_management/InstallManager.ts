@@ -227,6 +227,7 @@ class InstallManager {
                 enable = enable || wasEnabled;
                 if (wasEnabled) {
                   setModEnabled(currentProfile.id, oldMod.id, false);
+                  api.events.emit('mods-enabled', [oldMod.id], false, currentProfile.gameId);
                 }
                 return Promise.resolve();
               } else if (action === 'Replace') {
@@ -285,6 +286,7 @@ class InstallManager {
         installContext.finishInstallCB('success', modInfo);
         if (enable) {
           api.store.dispatch(setModEnabled(currentProfile.id, modId, true));
+          api.events.emit('mods-enabled', [modId], true, currentProfile.gameId);
         }
         if (processDependencies) {
           log('info', 'process dependencies', { modId });
