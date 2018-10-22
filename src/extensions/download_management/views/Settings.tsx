@@ -77,43 +77,45 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     return (
       <form>
         <FormGroup>
-          <ControlLabel>
-            {t('Download Folder')}
-          </ControlLabel>
-          <FlexLayout type='row'>
-            <FlexLayout.Fixed>
-              <InputGroup>
-                <FormControl
-                  className='download-path-input'
-                  value={downloadPath}
-                  placeholder={t('Download Folder')}
-                  onChange={this.setDownloadPathEvt as any}
-                />
-                <InputGroup.Button className='inset-btn'>
-                  <Button
-                    tooltip={t('Browse')}
-                    onClick={this.browseDownloadPath}
-                  >
-                    <Icon name='browse' />
-                  </Button>
+          <div id='download-path-form'>
+            <ControlLabel>
+              {t('Download Folder')}
+            </ControlLabel>
+            <FlexLayout type='row'>
+              <FlexLayout.Fixed>
+                <InputGroup>
+                  <FormControl
+                    className='download-path-input'
+                    value={downloadPath}
+                    placeholder={t('Download Folder')}
+                    onChange={this.setDownloadPathEvt as any}
+                  />
+                  <InputGroup.Button className='inset-btn'>
+                    <Button
+                      tooltip={t('Browse')}
+                      onClick={this.browseDownloadPath}
+                    >
+                      <Icon name='browse' />
+                    </Button>
+                  </InputGroup.Button>
+                </InputGroup>
+              </FlexLayout.Fixed>
+              <FlexLayout.Fixed>
+                <InputGroup.Button>
+                  <BSButton disabled={!changed} onClick={this.apply}>{t('Apply')}</BSButton>
                 </InputGroup.Button>
-              </InputGroup>
-            </FlexLayout.Fixed>
-            <FlexLayout.Fixed>
-              <InputGroup.Button>
-                <BSButton disabled={!changed} onClick={this.apply}>{t('Apply')}</BSButton>
-              </InputGroup.Button>
-            </FlexLayout.Fixed>
-          </FlexLayout>
-          <HelpBlock><a data-url={pathPreview} onClick={this.openUrl}>{pathPreview}</a></HelpBlock>
-          <Modal show={this.state.busy !== undefined} onHide={nop}>
-            <Modal.Body>
-              <Jumbotron>
-                <p>{this.state.busy}</p>
-                <ProgressBar style={{ height: '1.5em' }} now={progress} max={100}/>
-              </Jumbotron>
-            </Modal.Body>
-          </Modal>
+              </FlexLayout.Fixed>
+            </FlexLayout>
+            <HelpBlock><a data-url={pathPreview} onClick={this.openUrl}>{pathPreview}</a></HelpBlock>
+            <Modal show={this.state.busy !== undefined} onHide={nop}>
+              <Modal.Body>
+                <Jumbotron>
+                  <p>{this.state.busy}</p>
+                  <ProgressBar style={{ height: '1.5em' }} now={progress} max={100}/>
+                </Jumbotron>
+              </Modal.Body>
+            </Modal>
+          </div>
 
           <ControlLabel>
             {t('Download Threads') + ': ' + parallelDownloads.toString()}

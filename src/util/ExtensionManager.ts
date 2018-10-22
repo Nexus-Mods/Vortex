@@ -382,6 +382,7 @@ class ExtensionManager {
       emitAndAwait: this.emitAndAwait,
       isOutdated: () => isOutdated(),
       onAsync: this.onAsync,
+      highlightControl: this.highlightControl,
     };
     if (initStore !== undefined) {
       // apologies for the sync operation but this needs to happen before extensions are loaded
@@ -1069,6 +1070,72 @@ class ExtensionManager {
         enqueue(listener(...args));
       }
     });
+  }
+
+  private highlightCSS = (() => {
+    let highlightCSS: CSSStyleRule;
+    let highlightAfterCSS: CSSStyleRule;
+
+    let initCSS = () => {
+      if (highlightCSS !== undefined) {
+        return;
+      }
+
+      highlightCSS = highlightAfterCSS = null;
+
+      for (let i = 0; i < document.styleSheets.length; ++i) {
+        if ((document.styleSheets[i].ownerNode as any).id === 'theme') {
+          const rules = Array.from((document.styleSheets[i] as any).rules);
+          rules.forEach((rule: CSSStyleRule) => {
+            if (rule.selectorText === '#highlight-control-dummy') {
+              highlightCSS = rule;
+            } else if (rule.selectorText === '#highlight-control-dummy::after') {
+              highlightAfterCSS = rule;
+            }
+          })
+        }
+      }
+    }
+
+    return (selector: string, text?: string) => {
+      initCSS();
+      let result = '';
+
+      // adding a new css rule matching the selector when we could just as well add
+      // the highlight class to the control.
+      // The reason it's done this way is because it's less messy (easier to clean up one css
+      // rule instead of every control matched by the selector) and it doesn't interfere with
+      // react, which might re-generate every control.
+      if (highlightCSS === null) {
+        // fallback if template rules weren't found
+        result += `${selector} { border: 1px solid red }`;
+        if (text !== undefined) {
+          result += `${selector}::after { color: red, content: "${text}" }`;
+        }
+      } else {
+        console.log('css', highlightCSS);
+        result += highlightCSS.cssText.replace('#highlight-control-dummy', selector);
+        if (text !== undefined) {
+          result += highlightAfterCSS.cssText.replace('#highlight-control-dummy', selector).replace('__contentPlaceholder', text);
+        }
+      }
+
+      return result;
+    }
+  })();
+
+  private highlightControl = (selector: string, duration: number, text?: string) => {
+    const id = shortid();
+    const style = document.createElement('style');
+    style.id = `highlight_${id}`;
+    style.type = 'text/css';
+    style.innerHTML = this.highlightCSS(selector, text);
+
+    const head = document.getElementsByTagName('head')[0];
+    const highlightNode = head.appendChild(style);
+    setTimeout(() => {
+      head.removeChild(highlightNode);
+    }, duration);
   }
 
   private startIPC(ipcPath: string) {

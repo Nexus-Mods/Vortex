@@ -334,7 +334,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     const pathPreview = getInstallPath(installPath, gameMode);
 
     return (
-      <FormGroup>
+      <FormGroup id='install-path-form'>
         <ControlLabel>
           {label}
           <More id='more-paths' name={t('Paths')} >

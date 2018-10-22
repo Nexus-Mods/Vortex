@@ -10,15 +10,35 @@ import { IToDo } from './IToDo';
 
 import { TranslationFunction } from 'i18next';
 import * as React from 'react';
+import * as winapi from 'winapi-bindings';
+
+const ONE_GB = 1024 * 1024 * 1024;
+const MIN_DISK_SPACE = 200 * ONE_GB;
+
+const freeSpace: { [key: string]: { path: string, free: number } } = {};
+
+function minDiskSpace(required: number, key: string) {
+  return props => {
+    const checkPath = props[key];
+    if ((freeSpace[key] === undefined) || (freeSpace[key].path !== checkPath)) {
+      try {
+        freeSpace[key] = { path: checkPath, free: winapi.GetDiskFreeSpaceEx(checkPath).freeToCaller };
+      } catch (err) {
+        return false;
+      }
+    }
+    return freeSpace[key].free < required;
+  }
+}
 
 function todos(api: IExtensionApi): IToDo[] {
   const onSetSettingsPage = (pageId: string) => {
     api.store.dispatch(setSettingsPage(pageId));
   };
 
-  const openInterfaceSettings = () => {
+  const openSettingsPage = (page: string) => {
     api.events.emit('show-main-page', 'application_settings');
-    onSetSettingsPage('Interface');
+    onSetSettingsPage(page);
   };
 
   const startManualSearch = () => {
@@ -51,13 +71,34 @@ function todos(api: IExtensionApi): IToDo[] {
       action: (props: any) => api.store.dispatch(setProfilesVisible(!props.profilesVisible)),
     },
     {
-      id: 'advanced-settings',
+      id: 'download-location',
       icon: 'settings',
-      type: 'more' as ToDoType,
+      type: 'settings' as ToDoType,
       priority: 30,
-      props: () => ({}),
-      text: 'View Advanced Settings',
-      action: openInterfaceSettings,
+      props: state => ({ dlPath: selectors.downloadPath(state) }),
+      text: 'Downloads are on drive',
+      value: (t: TranslationFunction, props: any) => winapi.GetVolumePathName(props.dlPath) as any,
+      action: () => {
+        openSettingsPage('Download');
+        api.highlightControl('#settings-tab-pane-Download #download-path-form', 5000,
+          api.translate('You can change the download location here'));
+      },
+      condition: minDiskSpace(MIN_DISK_SPACE, 'dlPath'),
+    },
+    {
+      id: 'mod-location',
+      icon: 'settings',
+      type: 'settings' as ToDoType,
+      priority: 31,
+      props: state => ({ instPath: selectors.installPath(state) }),
+      text: 'Mods are staged on drive',
+      value: (t: TranslationFunction, props: any) => winapi.GetVolumePathName(props.instPath) as any,
+      action: () => {
+        openSettingsPage('Mods');
+        api.highlightControl('#settings-tab-pane-Mods #install-path-form', 5000,
+          api.translate('You can change the mod staging location here'));
+      },
+      condition: minDiskSpace(MIN_DISK_SPACE, 'instPath'),
     },
     {
       id: 'manual-scan',

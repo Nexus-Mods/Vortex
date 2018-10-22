@@ -517,6 +517,13 @@ export interface IExtensionApi {
    * to determine if feedback should be sent to Nexus Mods.
    */
   isOutdated: () => boolean;
+
+  /**
+   * highlight a control for a short time to direct the users attention to it.
+   * The control (or controls) is identified by a css selector.
+   * A text can be added, but no promise that it actually looks good in practice
+   */
+  highlightControl: (selector: string, durationMS: number, text?: string) => void;
 }
 
 export interface IStateVerifier {

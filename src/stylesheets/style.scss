@@ -629,3 +629,26 @@ $colors: ( white: $white, gray-lighter: $gray-lighter, gray-light: $gray-light,
     }
   }
 }
+
+@keyframes highlightPulse {
+  0% {border-color: $brand-highlight;}
+100% {border-color: darken($brand-highlight, 20%);}
+}
+
+@keyframes highlightColorPulse {
+  0% {color: $brand-highlight;}
+100% {color: darken($brand-highlight, 20%);}
+}
+
+#highlight-control-dummy {
+  border-width: $border-width;
+  border-style: solid;
+  animation: highlightPulse 1s infinite alternate;
+  padding: 4px;
+  margin: calc((4px + #{$border-width}) * -1);
+}
+
+#highlight-control-dummy::after {
+  animation: highlightColorPulse 1s infinite alternate;
+  content: "__contentPlaceholder";
+}
