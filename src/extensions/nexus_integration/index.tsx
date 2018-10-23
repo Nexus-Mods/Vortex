@@ -371,7 +371,8 @@ function init(context: IExtensionContextExt): boolean {
     const gameMode = activeGameId(state);
     const mod: IMod = getSafe(state.persistent.mods, [gameMode, instanceIds[0]], undefined);
     if (mod !== undefined) {
-      context.api.events.emit('open-mod-page', mod.attributes.downloadGame, mod.attributes.modId);
+      const downloadId = mod.attributes.downloadGame !== undefined ? mod.attributes.downloadGame : gameMode;
+      context.api.events.emit('open-mod-page', downloadId, mod.attributes.modId);
     }
   }, instanceIds => {
     const state: IState = context.api.store.getState();
