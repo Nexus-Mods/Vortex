@@ -233,8 +233,12 @@ class DownloadWorker {
         this.assignJob(this.mJob);
       } else {
         this.handleError({
-          message: response.statusMessage,
-          http_headers: JSON.stringify(response.headers),
+          message: 'Download failed, an error was reported by the server',
+          stack: new Error().stack,
+          HTTPCode: response.statusCode,
+          HTTPStatus: response.statusMessage,
+          URL: this.mJob.url,
+          Headers: JSON.stringify(response.headers),
         });
       }
       return;

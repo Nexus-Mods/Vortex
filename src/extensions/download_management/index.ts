@@ -523,7 +523,7 @@ function init(context: IExtensionContextExt): boolean {
             }
           }, `Nexus Client v2.${app.getVersion()}`);
       observer =
-          observeImpl(context.api.events, store, manager, protocolHandlers);
+          observeImpl(context.api, manager, protocolHandlers);
 
       const downloads = (store.getState() as IState).persistent.downloads.files;
       const interruptedDownloads = Object.keys(downloads)

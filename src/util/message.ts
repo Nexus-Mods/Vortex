@@ -241,12 +241,15 @@ function renderCustomError(err: any) {
       .filter(key => ['message', 'error'].indexOf(key) === -1);
   }
   if (attributes.length > 0) {
-    res.message = res.message + '\n' +
-      attributes
+    const old = res.message;
+    res.message = attributes
         .map(key => key + ':\t' + err[key])
         .join('\n');
+    if (old !== undefined) {
+      res.message = old + '\n' + res.message;
+    }
   }
-  if (res.message.length === 0) {
+  if ((res.message !== undefined) && (res.message.length === 0)) {
     res.message = undefined;
   }
   return res;
@@ -256,7 +259,7 @@ function renderCustomError(err: any) {
  * render error message for display to the user
  * @param err 
  */
-function renderError(err: string | Error | any):
+export function renderError(err: string | Error | any):
     { message?: string, text?: string, parameters?: any, wrap: boolean } {
   if (Array.isArray(err)) {
     err = err[0];
