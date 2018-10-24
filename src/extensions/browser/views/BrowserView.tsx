@@ -3,9 +3,11 @@ import { IconButton } from '../../../controls/TooltipControls';
 import Webview from '../../../controls/Webview';
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
+import Debouncer from '../../../util/Debouncer';
 
 import { closeBrowser } from '../actions';
 
+import * as Promise from 'bluebird';
 import * as React from 'react';
 import { Breadcrumb, Button, Modal } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
@@ -39,6 +41,7 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
   private mRef: Webview = null;
   private mWebView: Element;
   private mCallbacks: { [event: string]: () => void };
+  private mLoadingDebouncer: Debouncer;
 
   constructor(props: IProps) {
     super(props);
@@ -50,9 +53,16 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
       historyIdx: 0,
     });
 
+    this.mLoadingDebouncer = new Debouncer((loading: boolean) => {
+      if (loading !== this.state.loading) {
+        this.nextState.loading = loading;
+      }
+      return Promise.resolve();
+    }, 500, false);
+
     this.mCallbacks = {
-      'did-start-loading': () => this.nextState.loading = true,
-      'did-stop-loading': () => this.nextState.loading = false,
+      'did-start-loading': () => this.mLoadingDebouncer.schedule(undefined, true),
+      'did-stop-loading': () => this.mLoadingDebouncer.runNow(undefined, false),
       'did-finish-load': () => {
         const newUrl: string = (this.mWebView as any).getURL();
         this.nextState.url = newUrl;
