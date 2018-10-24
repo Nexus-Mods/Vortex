@@ -174,6 +174,7 @@ class GameModeManager {
       progressCallback)
     .finally(() => {
       this.mStore.dispatch(discoveryFinished());
+      this.mActiveSearch = null;
     });
   }
 
@@ -184,7 +185,10 @@ class GameModeManager {
    */
   public stopSearchDiscovery(): void {
     log('info', 'stop search', { prom: this.mActiveSearch });
-    this.mActiveSearch.cancel();
+    if (this.mActiveSearch !== null) {
+      this.mActiveSearch.cancel();
+      this.mActiveSearch = null;
+    }
   }
 
   private ensureWritable(modPath: string): Promise<void> {
