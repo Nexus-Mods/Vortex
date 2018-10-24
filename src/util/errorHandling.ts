@@ -256,7 +256,16 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
  * @param options 
  */
 export function toError(input: any, options?: IErrorOptions): IError {
-  const ten = getFixedT('en');
+  let ten = getFixedT('en');
+  try {
+    ten('dummy');
+  } catch (err) {
+    // can't actually be sure if i18next is initialized - especially if this is the
+    // main process. We could use require('i18next').isInitialized but no clue if
+    // that's reliable.
+    ten = input => input;
+  }
+
   const t = (text: string) => ten(text, { replace: (options || {}).replace });
 
   if (input instanceof Error) {

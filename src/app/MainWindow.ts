@@ -83,7 +83,11 @@ class MainWindow {
           type: 'error',
           message: 'Vortex restarted after a crash, sorry about that.',
         }));
-        this.mWindow.loadURL(`file://${getVortexPath('base')}/index.html`);
+        if (this.mWindow !== null) {
+          this.mWindow.loadURL(`file://${getVortexPath('base')}/index.html`);
+        } else {
+          process.exit();
+        }
       }
     });
 

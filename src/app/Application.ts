@@ -136,6 +136,9 @@ class Application {
 
   private genHandleError() {
     return (error: any) => {
+      if (error instanceof UserCanceled) {
+        return;
+      }
       terminate(toError(error), this.mStore.getState());
     };
   }
@@ -590,6 +593,11 @@ class Application {
   }
 
   private showMainWindow() {
+    if (this.mMainWindow === null) {
+      // ??? renderer has signaled it's done loading before we even started it? that can't be right...
+      app.exit();
+      return;
+    }
     const windowMetrics = this.mStore.getState().settings.window;
     const maximized: boolean = windowMetrics.maximized || false;
     this.mMainWindow.show(maximized);
@@ -613,7 +621,7 @@ class Application {
 
     if (shouldQuit) {
       if (retries > 0) {
-        return require('../util/delayed').delayed(100).then(() => this.testShouldQuit(retries - 1));
+        return Promise.delay(100).then(() => this.testShouldQuit(retries - 1));
       }
       // exit instead of quit so events don't get triggered. Otherwise an exception may be caused
       // by failures to require modules
@@ -628,7 +636,7 @@ class Application {
     if (args.download) {
       const prom: Promise<void> = (this.mMainWindow === undefined)
         // give the main instance a moment to fully start up
-        ? require('../util/delayed').delayed(2000)
+        ? Promise.delay(2000)
         : Promise.resolve(undefined);
 
       prom.then(() => {
