@@ -223,7 +223,12 @@ function renderCustomError(err: any) {
     res.text = 'Unknown error';
   } else if ((err.error !== undefined) && (err.error instanceof Error)) {
     const pretty = prettifyNodeErrorMessage(err.error);
-    res.text = pretty.message;
+    if (err.message !== undefined) {
+      res.text = err.message;
+      res.message = pretty.message;
+    } else {
+      res.text = pretty.message;
+    }
     res.parameters = pretty.replace;
   } else {
     res.text = err.message || 'An error occurred';
@@ -235,9 +240,12 @@ function renderCustomError(err: any) {
     attributes = Object.keys(err)
       .filter(key => ['message', 'error'].indexOf(key) === -1);
   }
-  res.message = attributes
-      .map(key => key + ':\t' + err[key])
-      .join('\n');
+  if (attributes.length > 0) {
+    res.message = res.message + '\n' +
+      attributes
+        .map(key => key + ':\t' + err[key])
+        .join('\n');
+  }
   if (res.message.length === 0) {
     res.message = undefined;
   }
