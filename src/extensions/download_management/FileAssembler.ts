@@ -18,6 +18,7 @@ class FileAssembler {
   private static MIN_FLUSH_TIME = 5 * 1000;
 
   private mFD: number;
+  private mFileName: string;
   private mTotalSize: number;
   private mWork: Promise<any> = Promise.resolve();
   private mWritten: number = 0;
@@ -40,12 +41,34 @@ class FileAssembler {
       this.mTotalSize = 0;
     }
     fs.ensureDirSync(path.dirname(fileName));
+    this.mFileName = fileName;
     this.mFD = fs.openSync(fileName, exists ? 'r+' : 'w');
   }
 
   public setTotalSize(size: number) {
     this.mWork = this.mWork.then(() => {
       this.mTotalSize = size;
+    });
+  }
+
+  public isClosed() {
+    return this.mFD === undefined;
+  }
+
+  public rename(newName: string | Promise<string>) {
+    let resolved: string;
+    this.mWork = this.mWork.then(() => Promise.resolve(newName))
+    .then(nameResolved => {
+      resolved = nameResolved;
+      fs.closeAsync(this.mFD);
+    })
+    .then(() => fs.renameAsync(this.mFileName, resolved))
+    .then(() => {
+      this.mFileName = resolved;
+      return fs.openAsync(resolved, 'r+');
+    })
+    .then(fd => {
+      this.mFD = fd;
     });
   }
 

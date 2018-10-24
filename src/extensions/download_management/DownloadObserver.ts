@@ -22,18 +22,15 @@ import {IChunk} from './types/IChunk';
 import {IDownload} from './types/IDownload';
 import { IDownloadResult } from './types/IDownloadResult';
 import { ProgressCallback } from './types/ProgressCallback';
-import { IProtocolHandlers } from './types/ProtocolHandlers';
 import getDownloadGames from './util/getDownloadGames';
 
-import DownloadManager, { DownloadIsHTML, URLFunc } from './DownloadManager';
+import DownloadManager, { DownloadIsHTML } from './DownloadManager';
 
-import * as Promise from 'bluebird';
 import {IHashResult} from 'modmeta-db';
 import * as path from 'path';
 import * as Redux from 'redux';
 import {generate as shortid} from 'shortid';
 
-import * as nodeURL from 'url';
 import * as util from 'util';
 
 function progressUpdate(store: Redux.Store<any>, dlId: string, received: number,
@@ -61,13 +58,11 @@ function progressUpdate(store: Redux.Store<any>, dlId: string, received: number,
 export class DownloadObserver {
   private mStore: Redux.Store<any>;
   private mManager: DownloadManager;
-  private mProtocolHandlers: IProtocolHandlers;
 
   constructor(events: NodeJS.EventEmitter, store: Redux.Store<any>,
-              manager: DownloadManager, protocolHandlers: IProtocolHandlers) {
+              manager: DownloadManager) {
     this.mStore = store;
     this.mManager = manager;
-    this.mProtocolHandlers = protocolHandlers;
 
     events.on('remove-download',
               downloadId => this.handleRemoveDownload(downloadId));
@@ -78,25 +73,6 @@ export class DownloadObserver {
     events.on('start-download',
               (urls, modInfo, fileName?, callback?) =>
                   this.handleStartDownload(urls, modInfo, fileName, events, callback));
-  }
-
-  private transformURLS(urls: string[] | URLFunc): Promise<string[] | URLFunc> {
-    const transform = (input: string[]) => Promise.all(input.map((inputUrl: string) => {
-      const protocol = nodeURL.parse(inputUrl).protocol;
-      const handler = this.mProtocolHandlers[protocol];
-      return (handler !== undefined)
-        ? handler(inputUrl)
-        : Promise.resolve([inputUrl]);
-    }))
-    .reduce((prev: string[], current: string[]) => prev.concat(current), []);
-
-    if (typeof(urls) === 'function') {
-      return Promise.resolve(() => {
-        return urls()
-        .then(resolved => transform(resolved)); });
-    } else {
-      return transform(urls);
-    }
   }
 
   private translateError(err: any): { message: string, url?: string } {
@@ -123,7 +99,7 @@ export class DownloadObserver {
     return details;
   }
 
-  private handleStartDownload(urls: string[] | URLFunc,
+  private handleStartDownload(urls: string[],
                               modInfo: any,
                               fileName: string,
                               events: NodeJS.EventEmitter,
@@ -136,9 +112,7 @@ export class DownloadObserver {
         log('warn', 'invalid url list', { urls });
         urls = [];
       }
-      urls = urls.filter(url =>
-          (url !== undefined)
-          && (['ftp:', 'http:', 'https:'].indexOf(nodeURL.parse(url).protocol) !== -1));
+      urls = urls.filter(url => url !== undefined);
       if (urls.length === 0) {
         if (callback !== undefined) {
           callback(new ProcessCanceled('URL not usable, only ftp, http and https are supported.'));
@@ -165,9 +139,7 @@ export class DownloadObserver {
 
     const processCB = this.genProgressCB(id);
 
-    return this.transformURLS(urls)
-        .then(derivedUrls => this.mManager.enqueue(id, derivedUrls, fileName, processCB,
-                                                   downloadPath))
+    return this.mManager.enqueue(id, urls, fileName, processCB, downloadPath)
         .then((res: IDownloadResult) => {
           log('debug', 'download finished', { file: res.filePath });
           this.handleDownloadFinished(id, callback, res);
@@ -229,13 +201,18 @@ export class DownloadObserver {
           .then((md5Hash: IHashResult) => {
             this.mStore.dispatch(setDownloadHash(id, md5Hash.md5sum));
           })
-          .catch(err => callback(err, id))
-          .finally(() => {
-            this.mStore.dispatch(finishDownload(id, 'finished', undefined));
-
+          .then(() => {
             if (callback !== undefined) {
               callback(null, id);
             }
+          })
+          .catch(err => {
+            if (callback !== undefined) {
+              callback(err, id);
+            }
+          })
+          .finally(() => {
+            this.mStore.dispatch(finishDownload(id, 'finished', undefined));
           });
     }
   }
@@ -334,8 +311,8 @@ export class DownloadObserver {
  *
  */
 function observe(events: NodeJS.EventEmitter, store: Redux.Store<any>,
-                 manager: DownloadManager, protocolHandlers: IProtocolHandlers) {
-  return new DownloadObserver(events, store, manager, protocolHandlers);
+                 manager: DownloadManager) {
+  return new DownloadObserver(events, store, manager);
 }
 
 export default observe;

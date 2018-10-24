@@ -9,7 +9,7 @@ import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import opn from '../../util/opn';
-import { activeGameId, gameById, downloadPathForGame } from '../../util/selectors';
+import { activeGameId, gameById, downloadPathForGame, knownGames } from '../../util/selectors';
 import { currentGame, getSafe } from '../../util/storeHelper';
 import { decodeHTML, truthy } from '../../util/util';
 
@@ -25,7 +25,7 @@ import { setAssociatedWithNXMURLs } from './actions/settings';
 import { accountReducer } from './reducers/account';
 import { persistentReducer } from './reducers/persistent';
 import { settingsReducer } from './reducers/settings';
-import { nexusGameId } from './util/convertGameId';
+import { nexusGameId, convertNXMIdReverse } from './util/convertGameId';
 import retrieveCategoryList from './util/retrieveCategories';
 import DashboardBanner from './views/DashboardBanner';
 import GoPremiumDashlet from './views/GoPremiumDashlet';
@@ -42,7 +42,7 @@ import * as Promise from 'bluebird';
 import { remote } from 'electron';
 import * as fuzz from 'fuzzball';
 import * as I18next from 'i18next';
-import NexusT from 'nexus-api';
+import NexusT, { IDownloadURL } from 'nexus-api';
 import * as path from 'path';
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
@@ -55,7 +55,7 @@ let nexus: NexusT;
 export interface IExtensionContextExt extends IExtensionContext {
   registerDownloadProtocol: (
     schema: string,
-    handler: (inputUrl: string) => Promise<string[]>) => void;
+    handler: (inputUrl: string) => Promise<{ urls: string[], meta: any }>) => void;
 }
 
 function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
@@ -382,6 +382,18 @@ function init(context: IExtensionContextExt): boolean {
     (instanceIds: string[]) => queryInfo(context.api, instanceIds));
   context.registerAction('downloads-multirow-actions', 100, 'refresh', {}, 'Query Info',
     (instanceIds: string[]) => queryInfo(context.api, instanceIds));
+
+  // this makes it so the download manager can use nxm urls as download urls
+  context.registerDownloadProtocol('nxm', (input: string): Promise<{ urls: string[], meta: any }> => {
+    const state = context.api.store.getState();
+
+    const url = new NXMUrl(input);
+    const games = knownGames(state);
+    const gameId = convertNXMIdReverse(games, url.gameId);
+    const pageId = nexusGameId(gameById(state, gameId));
+    return Promise.resolve().then(() => nexus.getDownloadURLs(url.modId, url.fileId, pageId))
+      .then((res: IDownloadURL[]) => ({ urls: res.map(url => url.URI), meta: {} }));
+  });
 
   context.registerSettings('Download', LazyComponent(() => require('./views/Settings')));
   context.registerReducer(['confidential', 'account', 'nexus'], accountReducer);

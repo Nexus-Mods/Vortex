@@ -18,6 +18,7 @@ import * as http from 'http';
 import * as https from 'https';
 import * as path from 'path';
 import * as url from 'url';
+import { IProtocolHandlers } from './types/ProtocolHandlers';
 
 export class HTTPError extends Error {
   constructor(response: http.ServerResponse) {
@@ -32,8 +33,6 @@ export class DownloadIsHTML extends Error {
     this.name = this.constructor.name;
   }
 }
-
-export type URLFunc = () => Promise<string[]>;
 
 function isHTMLHeader(headers: http.IncomingHttpHeaders) {
   return (headers['content-type'] !== undefined)
@@ -50,7 +49,8 @@ interface IRunningDownload {
   id: string;
   fd?: number;
   error: boolean;
-  urls: string[] | URLFunc;
+  urls: string[];
+  resolvedUrls: () => Promise<string[]>;
   origName: string;
   tempName: string;
   finalName?: Promise<string>;
@@ -100,10 +100,12 @@ class DownloadWorker {
     this.mHeadersCB = headersCB;
     this.mJob = job;
     this.mUserAgent = userAgent;
-    this.assignJob(job);
+    job.url().then(jobUrl => {
+      this.assignJob(job, jobUrl);
+    });
   }
 
-  public assignJob(job: IDownloadJob) {
+  public assignJob(job: IDownloadJob, jobUrl: string) {
     this.mDataHistory = [];
     log('debug', 'requesting range', { id: job.workerId, offset: job.offset, size: job.size });
     if (job.size <= 0) {
@@ -112,11 +114,11 @@ class DownloadWorker {
       return;
     }
 
-    const parsed = url.parse(job.url);
+    const parsed = url.parse(jobUrl);
 
     const lib: IHTTP = parsed.protocol === 'https:' ? https : http;
 
-    remote.getCurrentWebContents().session.cookies.get({ url: job.url }, (cookieErr, cookies) => {
+    remote.getCurrentWebContents().session.cookies.get({ url: jobUrl }, (cookieErr, cookies) => {
       this.mRequest = lib.request({
         method: 'GET',
         protocol: parsed.protocol,
@@ -179,7 +181,9 @@ class DownloadWorker {
       if ((['ESOCKETTIMEDOUT', 'ECONNRESET'].indexOf(err.code) !== -1)
           && (this.mDataHistory.length > 0)) {
         // as long as we made progress on this chunk, retry
-        this.assignJob(this.mJob);
+        this.mJob.url().then(jobUrl => {
+          this.assignJob(this.mJob, jobUrl);
+        });
       } else {
         this.mEnded = true;
         this.mFinishCB(false);
@@ -229,8 +233,11 @@ class DownloadWorker {
     // download.
     if (response.statusCode >= 300) {
       if (response.statusCode === 302) {
-        this.mJob.url = url.resolve(this.mJob.url, response.headers['location'] as string);
-        this.assignJob(this.mJob);
+        this.mJob.url().then(jobUrl => {
+          const newUrl = url.resolve(jobUrl, response.headers['location'] as string);
+          this.mJob.url = () => Promise.resolve(newUrl);
+          this.assignJob(this.mJob, newUrl);
+        });
       } else {
         this.handleError({
           message: response.statusMessage,
@@ -354,6 +361,7 @@ class DownloadManager {
   private mNextId: number = 0;
   private mSpeedCalculator: SpeedCalculator;
   private mUserAgent: string;
+  private mProtocolHandlers: IProtocolHandlers;
 
   /**
    * Creates an instance of DownloadManager.
@@ -367,7 +375,8 @@ class DownloadManager {
    * @memberOf DownloadManager
    */
   constructor(downloadPath: string, maxWorkers: number, maxChunks: number,
-              speedCB: (speed: number) => void, userAgent: string) {
+              speedCB: (speed: number) => void, userAgent: string,
+              protocolHandlers: IProtocolHandlers) {
     // hard coded chunk size but I doubt this needs to be customized by the user
     this.mMinChunkSize = 1024 * 1024;
     this.mDownloadPath = downloadPath;
@@ -375,6 +384,7 @@ class DownloadManager {
     this.mMaxChunks = maxChunks;
     this.mUserAgent = userAgent;
     this.mSpeedCalculator = new SpeedCalculator(5, speedCB);
+    this.mProtocolHandlers = protocolHandlers;
   }
 
   public setDownloadPath(downloadPath: string) {
@@ -395,7 +405,7 @@ class DownloadManager {
    *
    * @memberOf DownloadManager
    */
-  public enqueue(id: string, urls: string[] | URLFunc,
+  public enqueue(id: string, urls: string[],
                  fileName: string,
                  progressCB: ProgressCallback,
                  destinationPath?: string): Promise<IDownloadResult> {
@@ -419,6 +429,7 @@ class DownloadManager {
             tempName: filePath,
             error: false,
             urls,
+            resolvedUrls: this.resolveUrls(urls),
             started: new Date(),
             lastProgressSent: 0,
             received: 0,
@@ -456,6 +467,7 @@ class DownloadManager {
         tempName: filePath,
         error: false,
         urls,
+        resolvedUrls: this.resolveUrls(urls),
         lastProgressSent: 0,
         received,
         size,
@@ -468,7 +480,7 @@ class DownloadManager {
         },
         promises: [],
       };
-      download.chunks = (chunks || []).map(chunk => this.toJob(download, chunk));
+      download.chunks = (chunks || []).map((chunk, idx) => this.toJob(download, chunk, idx));
       if (download.chunks.length > 0) {
         download.chunks[0].errorCB = (err) => { this.cancelDownload(download, err); };
         this.mQueue.push(download);
@@ -558,16 +570,51 @@ class DownloadManager {
     return unfinishedChunks;
   }
 
+  private resolveUrl(input: string): Promise<string[]> {
+    const protocol = url.parse(input).protocol;
+    const handler = this.mProtocolHandlers[protocol.slice(0, protocol.length - 1)];
+
+    return (handler !== undefined)
+      ? handler(input).then(res => res.urls)
+      : Promise.resolve([input]);
+  }
+
+  private resolveUrls(urls: string[]): () => Promise<string[]> {
+    let cache: Promise<string[]>;
+
+    return () => {
+      if (cache === undefined) {
+        // TODO: Does it make sense here to resolve all urls?
+        //   For all we know they could resolve to an empty list so
+        //   it wouldn't be enough to just one source url
+        cache = Promise.map(urls, iter => {
+          return this.resolveUrl(iter);
+        })
+        .then(res => {
+          console.log(res);
+          return [].concat(...res);
+        });
+      }
+      return cache;
+    };
+  }
+
   private initChunk(download: IRunningDownload): IDownloadJob {
+    let fileNameFromURL: string;
     return {
-      url: typeof(download.urls) === 'function' ? undefined : download.urls[0],
+      url: () => download.resolvedUrls().then(urls => {
+        if ((fileNameFromURL === undefined) && (urls.length > 0)) {
+          fileNameFromURL = decodeURI(path.basename(url.parse(urls[0]).pathname));
+        }
+        return urls[0];
+      }),
       offset: 0,
       state: 'init',
       received: 0,
       size: this.mMinChunkSize,
       errorCB: (err) => { this.cancelDownload(download, err); },
       responseCB: (size: number, fileName: string) =>
-        this.updateDownload(download, size, fileName),
+        this.updateDownload(download, size, fileName || fileNameFromURL),
     };
   }
 
@@ -612,42 +659,14 @@ class DownloadManager {
     job.state = 'running';
     job.workerId = workerId;
 
-    if (job.url === undefined) {
-      if (!truthy(download.urls)) {
-        throw new ProcessCanceled('no download urls');
-      }
-      if (Array.isArray(download.urls)) {
-        if (download.urls.length === 0) {
-          throw new ProcessCanceled('no download urls');
-        }
-        job.url = download.urls[0];
-        this.startJob(download, job);
-      } else {
-        // actual urls may have to be resolved first
-        (download.urls as URLFunc)()
-          .then(urls => {
-            log('info', 'resolved download urls', { urls });
-            download.urls = urls;
-            if (download.urls.length === 0) {
-              return Promise.reject(new ProcessCanceled('no download urls'));
-            }
-            job.url = download.urls[0];
-            this.startJob(download, job);
-          })
-          .catch(err => {
-            download.failedCB(err);
-          });
-      }
-    } else {
-      this.startJob(download, job);
-    }
+    this.startJob(download, job);
   }
 
   private startJob(download: IRunningDownload, job: IDownloadJob) {
     if (download.assembler === undefined) {
       try {
         download.progressCB(download.received, download.size, undefined,
-                            undefined, download.tempName);
+          undefined, download.tempName);
         download.assembler = new FileAssembler(download.tempName);
       } catch (err) {
         if (err.code === 'EBUSY') {
@@ -660,6 +679,7 @@ class DownloadManager {
         download.assembler.setTotalSize(download.size);
       }
     }
+
     log('debug', 'start download worker',
       { name: download.tempName, workerId: job.workerId, size: job.size });
     job.dataCB = this.makeDataCB(download);
@@ -723,7 +743,14 @@ class DownloadManager {
 
   private updateDownload(download: IRunningDownload, size: number, fileName?: string) {
     if ((fileName !== undefined) && (fileName !== download.origName)) {
-      download.finalName = this.unusedName(path.dirname(download.tempName), fileName);
+      const newName = this.unusedName(path.dirname(download.tempName), fileName);
+      download.finalName = newName;
+      newName.then(resolvedName => {
+        if (!download.assembler.isClosed()) {
+          download.tempName = resolvedName;
+          download.assembler.rename(resolvedName);
+        }
+      });
     }
 
     download.size = size;
@@ -746,7 +773,7 @@ class DownloadManager {
           offset,
           size: Math.min(chunkSize, size - offset),
           state: 'init',
-          url: download.urls[0],
+          url: () => download.resolvedUrls().then(urls => urls[0]),
         });
         offset += chunkSize;
       }
@@ -768,13 +795,22 @@ class DownloadManager {
     };
   }
 
-  private toJob = (download: IRunningDownload, chunk: IChunk): IDownloadJob => {
+  private toJob = (download: IRunningDownload, chunk: IChunk, idx: number): IDownloadJob => {
+    let fileNameFromURL: string;
     const job: IDownloadJob = {
-      url: chunk.url,
+      url: () => download.resolvedUrls().then(urls => {
+        if ((fileNameFromURL === undefined) && (urls.length > 0)) {
+          fileNameFromURL = decodeURI(path.basename(url.parse(urls[0]).pathname));
+        }
+
+        return urls[0];
+      }),
       offset: chunk.offset,
       state: 'init',
       size: chunk.size,
       received: chunk.received,
+      responseCB: idx > 0 ? undefined : (size: number, fileName: string) =>
+        this.updateDownload(download, size, fileName || fileNameFromURL),
     };
     if (download.size === undefined) {
       // if the size isn't known yet, use the first job response to update it
@@ -873,7 +909,8 @@ class DownloadManager {
         fs.openAsync(fullPath, 'wx')
           .then((newFd) => {
             fd = newFd;
-            fs.closeSync(newFd);
+            return fs.closeAsync(newFd);
+          }).then(() => {
             resolve(fullPath);
           }).catch((err) => {
             ++counter;
