@@ -1,6 +1,6 @@
 {
   "name": "vortex",
-  "version": "0.16.10",
+  "version": "0.16.11",
   "productName": "Vortex",
   "description": "Vortex",
   "author": "Black Tree Gaming Ltd.",
@@ -93,7 +93,6 @@
     "vortex-parse-ini": "Nexus-Mods/vortex-parse-ini",
     "vortex-run": "file:../src/util/vortex-run",
     "winapi-bindings": "Nexus-Mods/node-winapi-bindings",
-    "winreg": "^1.2.4",
     "winston": "^2.4.3",
     "ws": "^6.0.0"
   }
