@@ -36,12 +36,16 @@ const handleError = (error: any) => {
   if (error instanceof UserCanceled) {
     return;
   }
+
+  if (error === undefined) {
+    return;
+  }
+
   terminate(toError(error), {});
 };
 
 function main() {
   const mainArgs = commandLine(process.argv);
-
   if (mainArgs.report) {
     return sendReportFile(mainArgs.report)
     .then(() => {

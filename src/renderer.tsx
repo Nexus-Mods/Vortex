@@ -124,6 +124,11 @@ function errorHandler(evt: any) {
     return;
   }
 
+  if (error === undefined) {
+    log('error', 'empty error object ignored', { wasPromise: evt.promise !== undefined });
+    return;
+  }
+
   if ((error !== undefined)
       && (error.stack !== undefined)
       // TODO: socket hang up should trigger another error that we catch,

@@ -135,10 +135,16 @@ class Application {
   }
 
   private genHandleError() {
-    return (error: any) => {
+    return (error: any, promise?: any) => {
       if (error instanceof UserCanceled) {
         return;
       }
+
+      if (error === undefined) {
+        log('error', 'empty error unhandled', { wasPromise: promise !== undefined });
+        return;
+      }
+
       terminate(toError(error), this.mStore.getState());
     };
   }
