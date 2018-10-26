@@ -292,11 +292,14 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private purgeActivation(): Promise<void> {
+    const { currentActivator } = this.props;
     const { supportedActivators } = this.state;
 
     // can't purge if there is no deployment method but there shouldn't be
     // anything _to_ purge
-    if ((supportedActivators === undefined) || (supportedActivators.length === 0)) {
+    if ((supportedActivators === undefined)
+        || (supportedActivators.length === 0)
+        || (currentActivator === undefined)) {
       return Promise.resolve();
     }
 
