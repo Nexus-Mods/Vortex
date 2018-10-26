@@ -65,6 +65,7 @@ import InstallManager from './InstallManager';
 import deployMods from './modActivation';
 import mergeMods, { MERGED_PATH } from './modMerging';
 import getText from './texts';
+import preStartDeployHook from './preStartDeployHook';
 
 import * as Promise from 'bluebird';
 import * as path from 'path';
@@ -791,6 +792,8 @@ function init(context: IExtensionContext): boolean {
   registerAttributeExtractor(200, upgradeExtractor);
 
   registerInstaller('fallback', 1000, basicInstaller.testSupported, basicInstaller.install);
+
+  context.registerStartHook(100, 'check-deployment', input => preStartDeployHook(context.api, input));
 
   context.once(() => once(context.api));
 

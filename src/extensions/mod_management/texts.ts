@@ -84,6 +84,21 @@ function getText(id: string, t: I18next.TranslationFunction) {
         + 'game is Skyrim then all your extracted mods will be in '
         + '"d:\\vortex_mods\\skyrim".');
     }
+    case 'conflicts': {
+      return t(
+        'A file conflict happens every time two mods contain the same file so one mod has to overwrite the other. '
+        + 'This is a very common occurrence in modding.\n\n'
+        + 'When installing mods manually or through NMM you\'re asked during mod installation whether to '
+        + 'overwrite files or not but with Vortex you make that choice after the installation and you can change '
+        + 'your choice at any time without reinstalling the mod.\n\n'
+        + 'You still need to choose though, otherwise files you deploy may be incompatible and the game '
+        + 'could become unstable or have all sorts of errors.\n\n'
+        + 'If you don\'t know which order to use, look for instructions by the mod authors. If the instruction you get '
+        + 'says \'Install mod x after mod y\' this translates to a mod rule of \'mod x loads after mod y\'.\n\n'
+        + 'If you can\'t find any information, a good rule of thumb is: Load the newest mod (the one released last) after '
+        + 'the older one.'
+      );
+    }
     default:
       return undefined;
   }
