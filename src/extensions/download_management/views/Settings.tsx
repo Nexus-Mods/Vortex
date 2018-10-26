@@ -225,7 +225,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       })
       .then(() => {
         if (oldPath !== newPath) {
-          this.nextState.busy = t('Moving download directory');
+          this.nextState.busy = t('Moving download folder');
           return this.transferPath();
         } else {
           return Promise.resolve();

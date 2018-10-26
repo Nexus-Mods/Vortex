@@ -258,7 +258,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       })
       .then(() => {
         if (oldInstallPath !== newInstallPath) {
-          this.nextState.busy = t('Moving mod directory');
+          this.nextState.busy = t('Moving mod storage folder');
           return this.transferPath();
         } else {
           return Promise.resolve();
