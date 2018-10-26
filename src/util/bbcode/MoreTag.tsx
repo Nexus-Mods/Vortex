@@ -8,9 +8,12 @@ class MoreTag extends Tag {
   }
 
   public toReact() {
-    const { id, name } = this.params;
+    const { id, name, wikiId } = Object.keys(this.params).reduce((prev: any, par) => {
+      prev[par] = this.params[par].replace(/^["']|["']$/g, '');
+      return prev;
+    } , {});
     return (
-      <More id={id} name={name}>
+      <More id={id} name={name} wikiId={wikiId}>
         {this.getContent(true)}
       </More>
     );
