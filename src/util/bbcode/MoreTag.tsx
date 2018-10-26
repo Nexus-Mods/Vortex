@@ -11,7 +11,7 @@ class MoreTag extends Tag {
     const { id, name } = this.params;
     return (
       <More id={id} name={name}>
-        {this.getContent()}
+        {this.getContent(true)}
       </More>
     );
   }
