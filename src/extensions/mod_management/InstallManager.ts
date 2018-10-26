@@ -371,7 +371,7 @@ class InstallManager {
                 installContext.reportError(
                     'Installation failed',
                     `The installer "{{ id }}" failed: {{ message }}`,
-                    ['EPERM', 'ENOENT'].indexOf(err.code) === -1, {
+                    ['EPERM', 'ENOENT', 'ENOSPC'].indexOf(err.code) === -1, {
                       id,
                       message: errMessage,
                     });
