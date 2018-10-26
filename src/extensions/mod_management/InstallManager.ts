@@ -266,7 +266,7 @@ class InstallManager {
       .then(result => {
         const state: IState = api.store.getState();
 
-        if (state.persistent.mods[installGameId][modId].type === '') {
+        if (getSafe(state, ['persistent', 'mods', installGameId, modId, 'type'], '') === '') {
           return this.determineModType(installGameId, result.instructions)
               .then(type => {
                 installContext.setModType(modId, type);
