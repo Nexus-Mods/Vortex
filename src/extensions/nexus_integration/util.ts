@@ -53,7 +53,7 @@ export function startDownload(api: IExtensionApi, nexus: Nexus, nxmurl: string):
       });
       return new Promise<string>((resolve, reject) => {
         api.events.emit('start-download',
-          () => Promise.resolve(nexus.getDownloadURLs(url.modId, url.fileId, pageId))
+          () => Promise.resolve(nexus.getDownloadURLs(url.modId, url.fileId, url.key, url.expires, pageId))
                     .map((res: IDownloadURL) => res.URI), {
           game: gameId,
           source: 'nexus',

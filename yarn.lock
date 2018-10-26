@@ -6446,8 +6446,8 @@ next-tick@1:
   resolved "https://registry.yarnpkg.com/next-tick/-/next-tick-1.0.0.tgz#ca86d1fe8828169b0120208e3dc8424b9db8342c"
 
 nexus-api@Nexus-Mods/node-nexus-api:
-  version "0.5.7"
-  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/d722c8a935b683f2266bfc78ed4c4e0f18a5b6f6"
+  version "0.6.0"
+  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/b14e7637a987a30f9ce90247e7d8ddc5b7b45bb3"
   dependencies:
     request "^2.85.0"
     string-template "^1.0.0"
@@ -9695,10 +9695,6 @@ winapi-bindings@Nexus-Mods/node-winapi-bindings:
 window-size@0.1.0:
   version "0.1.0"
   resolved "https://registry.yarnpkg.com/window-size/-/window-size-0.1.0.tgz#5438cd2ea93b202efa3a19fe8887aee7c94f9c9d"
-
-winreg@^1.2.4:
-  version "1.2.4"
-  resolved "https://registry.yarnpkg.com/winreg/-/winreg-1.2.4.tgz#ba065629b7a925130e15779108cf540990e98d1b"
 
 winston@^2.4.3:
   version "2.4.3"
