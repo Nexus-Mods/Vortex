@@ -876,6 +876,11 @@ class InstallManager {
           .then((downloadId: string) => {
             return this.installModAsync(dep.reference, api,
               downloadId);
+          })
+          .catch(ProcessCanceled, () => undefined)
+          .catch(UserCanceled, () => undefined)
+          .catch(err => {
+            api.showErrorNotification('Failed to install dependency', err);
           });
       } else {
         return this.installModAsync(dep.reference, api,
