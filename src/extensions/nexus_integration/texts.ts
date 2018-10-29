@@ -7,7 +7,9 @@ import * as path from 'path';
 
 function getText(id: string, t: I18next.TranslationFunction): Promise<string> {
   switch (id) {
-    case 'chrome-fix': return chromePath().then(resolvedPath => t(
+    case 'chrome-fix': return chromePath()
+      .catch(() => '%LOCALAPPDATA%\\Google\\Chrome\\User Data')
+      .then(resolvedPath => t(
       'Chrome requires a change to a configuration file to allow an external program to handle '
       + 'links where chrome doesn\'t know the protocol. This is the case for the green "Download '
       + 'with Manager" buttons on Nexus.\n\n'
