@@ -15,6 +15,8 @@ export const profilesReducer: IReducerSpec = {
       }),
     [actions.removeProfile as any]: (state, payload) =>
       deleteOrNop(state, [ payload ]),
+    [actions.willRemoveProfile as any]: (state, payload) =>
+      setSafe(state, [payload, 'pendingRemove'], true),
     [actions.setModEnabled as any]: (state, payload) => {
       const { profileId, modId, enable } = payload;
 

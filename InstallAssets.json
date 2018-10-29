@@ -1,17 +1,5 @@
 {
-  "spawn": [
-    {
-      "executable": "tsc",
-      "arguments": [
-        "-p",
-        ".",
-        "--outDir", "app"
-      ],
-      "target": [
-        "app"
-      ]
-    }
-  ],
+  "spawn": [],
   "copy": [
     {
       "srcPath": "./LICENSE.md",
@@ -41,10 +29,18 @@
       ]
     },
     {
+      "srcPath": "src/index.dev.html",
+      "outPath": "",
+      "rename": "index.html",
+      "target": [
+        "out"
+      ],
+      "skipPaths": 1
+    },
+    {
       "srcPath": "src/index.html",
       "outPath": "",
       "target": [
-        "out",
         "app"
       ],
       "skipPaths": 1

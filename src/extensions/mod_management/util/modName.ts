@@ -8,10 +8,11 @@ export interface INameOptions {
 
 export function modNameFromAttributes(mod: { [key: string]: any }, options?: INameOptions): string {
   const fields = [];
-  fields.push(getSafe(mod, ['customFileName'],
-                      getSafe(mod, ['logicalFileName'],
-                              getSafe(mod, ['fileName'],
-                                      getSafe(mod, ['name'], '')))));
+  fields.push(
+    getSafe(mod, ['customFileName'], '')
+    || getSafe(mod, ['logicalFileName'], '')
+    || getSafe(mod, ['fileName'], '')
+    || getSafe(mod, ['name'], ''));
 
   if (options !== undefined && options.version) {
     fields.push(`(v${getSafe(mod, ['version'], '?')})`);
@@ -30,7 +31,7 @@ export function modNameFromAttributes(mod: { [key: string]: any }, options?: INa
  * @returns {string}
  */
 function modName(mod: IMod, options?: INameOptions): string {
-  return modNameFromAttributes(mod.attributes, options);
+  return modNameFromAttributes(mod.attributes, options) || mod.installationPath;
 }
 
 export default modName;

@@ -1,21 +1,21 @@
 import { settingsReducer } from '../src/extensions/mod_management/reducers/settings';
 import { modsReducer } from '../src/extensions/mod_management/reducers/mods';
 
-describe('setPath', () => {
-  it('sets a path (base, download or installation) for storing things', () => {
-    let input = { paths: { gameId1: { key1: 'path' } } };
-    let result = settingsReducer.reducers.SET_MOD_PATH(input, { gameId: 'gameId1', key: 'key1', path: 'New path' });
-    expect(result).toEqual({ paths: { gameId1: { key1: 'New path' } } });
+describe('setInstallPath', () => {
+  it('sets the install path for a game', () => {
+    let input = { installPath: { gameId1: 'path' } };
+    let result = settingsReducer.reducers.SET_MOD_INSTALL_PATH(input, { gameId: 'gameId1', path: 'New path' });
+    expect(result).toEqual({ installPath: { gameId1: 'New path' } });
   });
   it('creates a new game and add the new path under if the game doesn\'t exist', () => {
-    let input = { paths: { gameId1: { key1: 'path' } } };
-    let result = settingsReducer.reducers.SET_MOD_PATH(input, { gameId: 'gameId2', key: 'key1', path: 'New path' });
-    expect(result).toEqual({ paths: { gameId1: { key1: 'path' }, gameId2: { key1: 'New path' }} });
+    let input = { installPath: { gameId1: 'path' } };
+    let result = settingsReducer.reducers.SET_MOD_INSTALL_PATH(input, { gameId: 'gameId2', path: 'New path' });
+    expect(result).toEqual({ installPath: { gameId1: 'path', gameId2: 'New path' } });
   });
    it('affects only the right game', () => {
-    let input = { paths: { gameId1: { key1: 'path' }, gameId2: { key2: 'path2' } } };
-    let result = settingsReducer.reducers.SET_MOD_PATH(input, { gameId: 'gameId1', key: 'key1', path: 'New path' });
-    expect(result).toEqual({ paths: { gameId1: { key1: 'New path' }, gameId2: { key2: 'path2' } } });
+    let input = { installPath: { gameId1: 'path', gameId2: 'path2' } };
+    let result = settingsReducer.reducers.SET_MOD_INSTALL_PATH(input, { gameId: 'gameId1', path: 'New path' });
+    expect(result).toEqual({ installPath: { gameId1: 'New path', gameId2: 'path2' } });
   });
 });
 
@@ -82,6 +82,11 @@ describe('setModAttribute', () => {
     let result = modsReducer.reducers.SET_MOD_ATTRIBUTE(input, { gameId: 'gameId1', modId: 'modId1', attribute: 'attribute1', value: 'new value' });
     expect(result).toEqual({ gameId1: { modId1: { 'attributes': { attribute1: 'new value' } } } });
   });
+  it('works if there were no attributes before', () => {
+    let input = { gameId1: { modId1: { } } };
+    let result = modsReducer.reducers.SET_MOD_ATTRIBUTE(input, { gameId: 'gameId1', modId: 'modId1', attribute: 'attribute1', value: 'new value' });
+    expect(result).toEqual({ gameId1: { modId1: { 'attributes': { attribute1: 'new value' } } } });
+  });
   it('fails if the game doesn\'t exist', () => {
     let input = { gameId1: { modId1: { 'attributes': { attribute1: 'value' } } } };
     let result = modsReducer.reducers.SET_MOD_ATTRIBUTE(input, { gameId: 'gameId2', modId: 'modId1', attribute: 'attribute1', value: 'new value' });
@@ -91,6 +96,45 @@ describe('setModAttribute', () => {
     let input = { gameId1: { modId1: { 'attributes': { attribute1: 'value' } } }, gameId2: { modId1: { 'attributes': { attribute1: 'value' } } } };
     let result = modsReducer.reducers.SET_MOD_ATTRIBUTE(input, { gameId: 'gameId1', modId: 'modId1', attribute: 'attribute1', value: 'new value' });
     expect(result).toEqual({ gameId1: { modId1: { 'attributes': { attribute1: 'new value' } } }, gameId2: { modId1: { 'attributes': { attribute1: 'value' } } } });
+  });
+});
+
+describe('setModAttributes', () => {
+  it('sets the mod attributes', () => {
+    let input = { gameId1: { modId1: { 'attributes': { attribute1: 'value' } } } };
+    let result = modsReducer.reducers.SET_MOD_ATTRIBUTES(input, { gameId: 'gameId1', modId: 'modId1', attributes: {
+      attribute1: 'new value' }});
+    expect(result).toEqual({ gameId1: { modId1: { attributes: { attribute1: 'new value' } } } });
+  });
+  it('works if there were no attributes before', () => {
+    let input = { gameId1: { modId1: { } } };
+    let result = modsReducer.reducers.SET_MOD_ATTRIBUTES(input, { gameId: 'gameId1', modId: 'modId1', attributes: {
+      attribute1: 'new value' }});
+    expect(result).toEqual({ gameId1: { modId1: { attributes: { attribute1: 'new value' } } } });
+  });
+  it('fails if the game doesn\'t exist', () => {
+    let input = { gameId1: { modId1: { 'attributes': { attribute1: 'value' } } } };
+    let result = modsReducer.reducers.SET_MOD_ATTRIBUTES(input, { gameId: 'gameId2', modId: 'modId1', attributes: {
+      attribute1: 'new value' }});
+    expect(result).toEqual({ gameId1: { modId1: { attributes: { attribute1: 'value' } } } });
+  });
+  it('affects only the right game', () => {
+    let input = { gameId1: { modId1: { 'attributes': { attribute1: 'value' } } }, gameId2: { modId1: { 'attributes': { attribute1: 'value' } } } };
+    let result = modsReducer.reducers.SET_MOD_ATTRIBUTES(input, { gameId: 'gameId1', modId: 'modId1', attributes: {
+      attribute1: 'new value' }});
+    expect(result).toEqual({ gameId1: { modId1: { 'attributes': { attribute1: 'new value' } } }, gameId2: { modId1: { 'attributes': { attribute1: 'value' } } } });
+  });
+  it('can set multiple attributes', () => {
+    let input = { gameId1: { modId1: { 'attributes': { attribute1: 'value' } } } };
+    let result = modsReducer.reducers.SET_MOD_ATTRIBUTES(input, { gameId: 'gameId1', modId: 'modId1', attributes: {
+      attribute1: 'new value', attribute2: 'value2' }});
+    expect(result).toEqual({ gameId1: { modId1: { attributes: { attribute1: 'new value', attribute2: 'value2' } } } });
+  });
+  it('doesn\'t change unaffected attributes', () => {
+    let input = { gameId1: { modId1: { 'attributes': { attribute1: 'value' } } } };
+    let result = modsReducer.reducers.SET_MOD_ATTRIBUTES(input, { gameId: 'gameId1', modId: 'modId1', attributes: {
+      attribute2: 'value2', attribute3: 'value3' }});
+    expect(result).toEqual({ gameId1: { modId1: { attributes: { attribute1: 'value', attribute2: 'value2', attribute3: 'value3' } } } });
   });
 });
 

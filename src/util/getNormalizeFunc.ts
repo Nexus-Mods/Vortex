@@ -34,10 +34,13 @@ export interface INormalizeParameters {
   relative?: boolean;
 }
 
-function isCaseSensitiveFailed(testPath: string): Promise<boolean> {
+function isCaseSensitiveFailed(testPath: string, reason: string): Promise<boolean> {
+  if (testPath === undefined) {
+    return Promise.resolve(process.platform !== 'win32');
+  }
   const parentPath = path.dirname(testPath);
   if (parentPath === testPath) {
-    log('warn', 'failed to determine case sensitivity', {testPath});
+    log('warn', 'failed to determine case sensitivity', {testPath, reason});
     // on windows, assume case insensitive, everywhere else: case sensitive
     return Promise.resolve(process.platform !== 'win32');
   } else {
@@ -64,23 +67,21 @@ function isCaseSensitive(testPath: string): Promise<boolean> {
     })
     .then((stats: Array<Promise.Inspection<fs.Stats>>) => {
       if (stats === null) {
-        return isCaseSensitiveFailed(testPath);
+        return isCaseSensitiveFailed(testPath, 'Not found');
       }
 
       if (stats[1].isFulfilled()
           && stats[2].isFulfilled()
           && (stats[0].value().ino === stats[1].value().ino)
           && (stats[0].value().ino === stats[2].value().ino)) {
-        log('debug', 'file system case-insensitive', { testPath });
         return false;
       } else {
-        log('debug', 'file system case-sensitive', { testPath });
         return true;
       }
     })
-    .catch(err => (['EPERM', 'EUNKNOWN'].indexOf(err.code) !== -1)
-      ? Promise.resolve(process.platform !== 'win32')
-      : Promise.reject(err));
+    .catch(err => {
+      return isCaseSensitiveFailed(testPath, err.message);
+    });
 }
 
 /**

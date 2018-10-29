@@ -1,5 +1,4 @@
 import Icon from './Icon';
-import { ButtonType } from './IconBar';
 import { Button } from './TooltipControls';
 
 import * as React from 'react';
@@ -14,13 +13,14 @@ export interface IToolbarIconProps {
   tooltip?: string;
   onClick?: (ids: string[]) => void;
   pulse?: boolean;
+  spin?: boolean;
   disabled?: boolean;
   className?: string;
 }
 
 class ToolbarIcon extends React.PureComponent<IToolbarIconProps, {}> {
   public render(): JSX.Element {
-    const { className, id, text, tooltip, icon, iconSet, pulse, disabled} = this.props;
+    const { className, id, text, tooltip, icon, iconSet, pulse, spin, disabled} = this.props;
     const placement = this.props.placement || 'bottom';
     return (
       <Button
@@ -31,16 +31,17 @@ class ToolbarIcon extends React.PureComponent<IToolbarIconProps, {}> {
         disabled={disabled}
         className={className}
       >
-        {icon !== undefined ? <Icon set={iconSet} name={icon} pulse={pulse} /> : null}
+        {icon !== undefined ? <Icon set={iconSet} name={icon} pulse={pulse} spin={spin} /> : null}
         {text !== undefined ? <div className='button-text'>{text}</div> : null}
         {this.props.children}
       </Button>
     );
   }
 
-  private invokeAction = () => {
+  private invokeAction = (evt: React.MouseEvent<Button>) => {
     const { instanceId, onClick } = this.props;
     if (onClick !== undefined) {
+      evt.preventDefault();
       onClick(instanceId);
     }
   }

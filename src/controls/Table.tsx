@@ -1,6 +1,5 @@
 import {setAttributeFilter, setAttributeSort,
         setAttributeVisible, setSplitPos} from '../actions/tables';
-import FlexLayout from '../controls/FlexLayout';
 import {IActionDefinition} from '../types/IActionDefinition';
 import {IAttributeState} from '../types/IAttributeState';
 import { II18NProps } from '../types/II18NProps';
@@ -8,14 +7,12 @@ import {IRowState, IState, ITableState} from '../types/IState';
 import {ITableAttribute} from '../types/ITableAttribute';
 import {SortDirection} from '../types/SortDirection';
 import {ComponentEx, connect, extend, translate} from '../util/ComponentEx';
-import Debouncer from '../util/Debouncer';
 import {IExtensibleProps} from '../util/ExtensionProvider';
 import { log } from '../util/log';
 import smoothScroll from '../util/smoothScroll';
-import { getSafe, merge, setSafe } from '../util/storeHelper';
+import { getSafe, setSafe } from '../util/storeHelper';
 import {truthy} from '../util/util';
 
-import Icon from './Icon';
 import IconBar from './IconBar';
 import HeaderCell from './table/HeaderCell';
 import { Table, TBody, TH, THead, TR } from './table/MyTable';
@@ -24,14 +21,13 @@ import TableRow from './table/TableRow';
 import ToolbarIcon from './ToolbarIcon';
 
 import * as Promise from 'bluebird';
-import * as update from 'immutability-helper';
+import update from 'immutability-helper';
 import * as _ from 'lodash';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import * as SplitPane from 'react-split-pane';
 import * as Redux from 'redux';
 import { createSelector } from 'reselect';
-import { IconButton } from './TooltipControls';
+import { Button } from 'react-bootstrap';
 
 export type ChangeDataHandler = (rowId: string, attributeId: string, newValue: any) => void;
 
@@ -57,10 +53,8 @@ export interface IBaseProps {
 
 interface IConnectedProps {
   attributeState?: { [id: string]: IAttributeState };
-  splitPos: number;
   language: string;
   filter: { [id: string]: any };
-  advancedMode: boolean;
 }
 
 interface IActionProps {
@@ -81,14 +75,14 @@ export interface ILookupCalculated {
 interface IComponentState {
   lastSelected?: string;
   calculatedValues?: ILookupCalculated;
-  splitMax: number;
   rowState: { [id: string]: IRowState };
-  sortedRows: any[];
+  sortedRows: string[];
   detailsOpen: boolean;
   rowIdsDelayed: string[];
   rowVisibility: { [id: string]: boolean };
   singleRowActions: ITableRowAction[];
   multiRowActions: ITableRowAction[];
+  columnToggles: ITableRowAction[];
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps & IExtensionProps & II18NProps;
@@ -107,14 +101,11 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private static SCROLL_DURATION = 200;
 
   private mVisibleAttributes: ITableAttribute[];
-  private mSplitDebouncer: Debouncer;
-  private mSplitContainer: any;
   private mHeadRef: HTMLElement;
-  private mBodyRef: HTMLElement;
+  private mPinnedRef: HTMLElement;
   private mScrollRef: HTMLElement;
   private mRowRefs: { [id: string]: HTMLElement } = {};
   private mLastSelectOnly: number = 0;
-  private mPlaceholder: JSX.Element;
   private mLastDetailIds: string[] = [];
   private mDetailTimer: NodeJS.Timer = null;
   private mLastUpdateState: IProps = undefined;
@@ -123,14 +114,14 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private mNextState: IComponentState = undefined;
   private mNextVisibility: { [id: string]: boolean } = {};
   private mWillSetVisibility: boolean = false;
-  private mScrollTimer: NodeJS.Timer;
+  private mMounted: boolean = false;
+  private mNoShrinkColumns: { [attributeId: string]: HeaderCell } = {};
 
   constructor(props: IProps) {
     super(props);
     this.mNextState = this.state = {
       lastSelected: undefined,
       calculatedValues: undefined,
-      splitMax: 9999,
       rowState: {},
       sortedRows: undefined,
       detailsOpen: false,
@@ -138,6 +129,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       rowVisibility: {},
       singleRowActions: this.singleRowActions(props),
       multiRowActions: this.multiRowActions(props),
+      columnToggles: this.columnToggles(props),
     };
     this.mVisibleAttributes = this.visibleAttributes(props.objects, props.attributeState);
     this.updateCalculatedValues(props)
@@ -148,11 +140,6 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       }
       return null;
     });
-
-    this.mSplitDebouncer = new Debouncer((...args) => {
-      props.onSetSplitPos(props.tableId, args[0]);
-      return null;
-    }, 100);
   }
 
   public componentWillMount() {
@@ -167,8 +154,13 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     });
   }
 
+  public componentDidMount() {
+    this.mMounted = true;
+  }
+
   public componentWillUnmount() {
     this.context.api.events.removeAllListeners(this.props.tableId + '-scroll-to');
+    this.mMounted = false;
   }
 
   public componentWillReceiveProps(newProps: IProps) {
@@ -176,12 +168,21 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         || (newProps.objects !== this.props.objects)) {
       const { attributeState, objects } = newProps;
       this.mVisibleAttributes = this.visibleAttributes(objects, attributeState);
+
+      if (Object.keys(newProps.attributeState).find(id =>
+            (this.props.attributeState[id] === undefined)
+            || (this.props.attributeState[id].enabled !== newProps.attributeState[id].enabled))) {
+        const columnToggles = this.columnToggles(newProps);
+        this.updateState(update(this.mNextState, {
+          columnToggles: { $set: columnToggles },
+        }));
+      }
     }
 
     if (newProps.actions !== this.props.actions) {
       this.updateState(update(this.mNextState, {
-        singleRowActions: this.singleRowActions(newProps),
-        multiRowActions: this.multiRowActions(newProps),
+        singleRowActions: { $set: this.singleRowActions(newProps) },
+        multiRowActions: { $set: this.multiRowActions(newProps) },
       }));
     }
 
@@ -189,9 +190,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       Object.keys(this.mRowRefs).forEach(key => {
         if (newProps.data[key] === undefined) {
           delete this.mRowRefs[key];
-        }
-        if (this.state.lastSelected === key) {
-          this.updateState(update(this.mNextState, { lastSelected: { $set: undefined } }));
+          if (this.state.lastSelected === key) {
+            this.updateState(update(this.mNextState, { lastSelected: { $set: undefined } }));
+          }
         }
       });
     }
@@ -213,8 +214,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, actions, objects, showHeader, showDetails, splitPos, tableId } = this.props;
-    const { detailsOpen, rowState, singleRowActions, splitMax } = this.state;
+    const { t, actions, data, showHeader, showDetails, tableId } = this.props;
+    const { detailsOpen, singleRowActions, sortedRows } = this.state;
 
     let hasActions = false;
     if (actions !== undefined) {
@@ -224,10 +225,12 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     const actionHeader = this.renderTableActions(hasActions);
     const openClass = detailsOpen ? 'open' : 'closed';
 
-    const rowIds = Object.keys(rowState).filter(rowId => rowState[rowId].selected);
-
     const scrollOffset = this.mScrollRef !== undefined ? this.mScrollRef.scrollTop : 0;
     const headerStyle = { transform: `translate(0, ${scrollOffset}px)` };
+
+    const filteredLength = sortedRows !== undefined ? sortedRows.length : undefined;
+    const totalLength = Object.keys(data).length;
+    const filterActive = (filteredLength !== undefined) && (filteredLength < totalLength);
 
     return (
       <div id={`table-${tableId}`} className='table-container'>
@@ -250,6 +253,15 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
                   {this.mVisibleAttributes.map(this.renderHeaderField)}
                   {actionHeader}
                 </TR>
+                {filterActive ? (
+                  <TR className='table-pinned' domRef={this.setPinnedRef}>
+                    <div>
+                      {t('This table is filtered, showing {{shown}}/{{hidden}} items.',
+                        { replace: { shown: filteredLength, hidden: totalLength } })}
+                      <Button onClick={this.clearFilters}>{t('Clear all filters')}</Button>
+                    </div>
+                  </TR>
+                ) : null}
               </THead>
               }
             </Table>
@@ -259,14 +271,14 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         </div>
         {showDetails === false ? null : (
           <div className={`table-details-pane ${openClass}`}>
-            {this.renderDetails(rowIds)}
+            {this.renderDetails()}
           </div>)}
       </div>
     );
   }
 
   private renderFooter(): JSX.Element {
-    const { t, actions } = this.props;
+    const { t, tableId } = this.props;
     const { multiRowActions, rowState } = this.state;
 
     const selected = Object.keys(rowState).filter(key => rowState[key].selected);
@@ -281,16 +293,13 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     return (
       <div className='table-footer-placeholder'>
         <div className='table-footer'>
-          <IconBar className='menubar'>
-            {multiRowActions.map((action, idx) =>
-              <ToolbarIcon
-                key={idx}
-                icon={action.icon}
-                text={action.title}
-                instanceId={selected}
-                onClick={action.action}
-              />)}
-          </IconBar>
+          <IconBar
+            t={t}
+            className='menubar'
+            group={`${tableId}-multirow-actions`}
+            instanceId={selected}
+            staticElements={multiRowActions}
+          />
 
           <div className='menubar'>
             <p>{t('{{count}} item selected', { count: selected.length })}</p>
@@ -307,18 +316,15 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderBody = (visibleAttributes: ITableAttribute[]) => {
+    const { data } = this.props;
     const { calculatedValues, sortedRows } = this.state;
 
-    if ((calculatedValues === undefined) || (sortedRows === undefined)) {
+    if ((data === undefined) || (calculatedValues === undefined) || (sortedRows === undefined)) {
       return <TBody />;
     }
 
-    // TODO: forcing the first 40 items to be visible. Would be nicer to have a more dynamic
-    //   estimate of the number of items that will be visible, but there is no reliable way
-    //   to know the size without rendering
-
     return (
-      <TBody domRef={this.setBodyRef}>
+      <TBody>
         {sortedRows.map((row, idx) =>
           this.renderRow(row, visibleAttributes))}
       </TBody>
@@ -374,16 +380,16 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     this.mDetailTimer = setTimeout(() => this.setRowState(rowIds), 200);
   }
 
-  private renderDetails = (rowIds: string[]) => {
-    const {detailsOpen, rowIdsDelayed} = this.state;
+  private renderDetails = () => {
+    const {t, data, detailsTitle, language, objects} = this.props;
+    const {calculatedValues, detailsOpen, rowIdsDelayed} = this.state;
 
     if ((rowIdsDelayed === undefined)
         || (rowIdsDelayed.length === 0)
-        || (this.state.calculatedValues === undefined)) {
+        || (calculatedValues === undefined)
+        || (data === undefined)) {
       return null;
     }
-
-    const {t, data, detailsTitle, language, objects} = this.props;
 
     const detailAttributes = objects.filter((attribute: ITableAttribute) =>
       attribute.placement !== 'table');
@@ -392,7 +398,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       <TableDetail
         t={t}
         rowIds={rowIdsDelayed}
-        rowData={this.state.calculatedValues}
+        rowData={calculatedValues}
         rawData={data}
         attributes={detailAttributes}
         language={language}
@@ -403,25 +409,22 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private renderTableActions(hasActions: boolean): JSX.Element {
-    const {t, actions, objects, tableId} = this.props;
-    const {rowState} = this.state;
+  private columnToggles(props: IProps): ITableRowAction[] {
+    const { t, objects } = props;
 
     let pos = 1;
     const getPos = () => {
       return pos++;
     };
 
-    const selected = Object.keys(rowState).filter(key => rowState[key].selected);
-
-    const elements: ITableRowAction[] = [{
+    return [{
       icon: null,
       title: t('Toggle Columns'),
       position: getPos(),
     }].concat(objects
       .filter(attr => attr.isToggleable)
       .map(attr => {
-        const attributeState = this.getAttributeState(attr);
+        const attributeState = this.getAttributeState(attr, props.attributeState);
         return {
           icon: attributeState.enabled ? 'checkbox-checked' : 'checkbox-unchecked',
           title: attr.name,
@@ -429,21 +432,26 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
           action: (arg) => this.setAttributeVisible(attr.id, !attributeState.enabled),
         };
       }));
+  }
+
+  private renderTableActions(hasActions: boolean): JSX.Element {
+    const {t, tableId} = this.props;
+    const {columnToggles} = this.state;
 
     return (
       <TH className={`table-${tableId} header-action`}>
         <div>
         {hasActions ? <div className='header-action-label'>{t('Actions')}</div> : null}
         {
-          elements.length > 0 ? (
+          columnToggles.length > 0 ? (
             <IconBar
               id={`${tableId}-tableactions`}
               group={`${tableId}-action-icons-multi`}
               className='table-actions'
-              staticElements={elements}
-              instanceId={selected}
+              staticElements={columnToggles}
               collapse='force'
               icon='settings'
+              t={t}
             />
           ) : null
         }
@@ -458,12 +466,12 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       && (attributeState.sortDirection !== 'none');
   }
 
-  private renderRow(data: any,
+  private renderRow(rowId: string,
                     visibleAttributes: ITableAttribute[]): JSX.Element {
-    const { t, actions, attributeState, language, tableId } = this.props;
+    const { t, attributeState, data, language, tableId } = this.props;
     const { calculatedValues, rowState, singleRowActions } = this.state;
 
-    if (calculatedValues[data.id] === undefined) {
+    if ((calculatedValues[rowId] === undefined) || (data[rowId] === undefined)) {
       return null;
     }
 
@@ -476,20 +484,20 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       <TableRow
         t={t}
         tableId={tableId}
-        id={data.id}
-        key={data.id}
-        data={calculatedValues[data.id]}
-        rawData={data.data}
+        id={rowId}
+        key={rowId}
+        data={calculatedValues[rowId]}
+        rawData={data[rowId]}
         attributes={visibleAttributes}
         sortAttribute={sortAttribute !== undefined ? sortAttribute.id : undefined}
         actions={singleRowActions}
         language={language}
         onClick={this.selectRow}
-        selected={getSafe(rowState, [data.id, 'selected'], false)}
-        highlighted={getSafe(rowState, [data.id, 'highlighted'], false)}
+        selected={getSafe(rowState, [rowId, 'selected'], false)}
+        highlighted={getSafe(rowState, [rowId, 'highlighted'], false)}
         domRef={this.setRowRef}
         container={this.mScrollRef}
-        visible={this.state.rowVisibility[data.id] === true}
+        visible={this.state.rowVisibility[rowId] === true}
         onSetVisible={this.setRowVisible}
         onHighlight={this.setRowHighlight}
       />
@@ -497,7 +505,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderHeaderField = (attribute: ITableAttribute): JSX.Element => {
-    const { t, advancedMode, filter, tableId } = this.props;
+    const { t, filter } = this.props;
 
     const attributeState = this.getAttributeState(attribute);
 
@@ -522,10 +530,10 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
           key={attribute.id}
           attribute={attribute}
           state={attributeState}
-          doFilter={advancedMode}
+          doFilter={true}
           onSetSortDirection={this.setSortDirection}
           onSetFilter={this.setFilter}
-          advancedMode={advancedMode}
+          ref={this.setHeaderCellRef}
           t={t}
         >
           {attribute.filter !== undefined ? (
@@ -543,8 +551,15 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     }
   }
 
+  private setHeaderCellRef = (ref: HeaderCell) => {
+    if (ref !== null) {
+      if (ref.props.attribute.noShrink === true) {
+        this.mNoShrinkColumns[ref.props.attribute.id] = ref;
+      }
+    }
+  }
+
   private handleKeyDown = (evt: React.KeyboardEvent<any>) => {
-    const { multiSelect } = this.props;
     const { lastSelected, sortedRows }  = this.state;
 
     if (evt.target !== this.mScrollRef) {
@@ -562,9 +577,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     if (this.mRowRefs[lastSelected] !== undefined) {
       // the previously selected row might no longer be visible, which would cause
       // an exception when trying to find the associated dom node
-      const lastIdx = sortedRows.findIndex(item => item.id === lastSelected);
+      const lastIdx = sortedRows.indexOf(lastSelected);
       if (lastIdx !== -1) {
-        const selectedNode = ReactDOM.findDOMNode(this.mRowRefs[lastSelected]);
+        const selectedNode = ReactDOM.findDOMNode(this.mRowRefs[lastSelected]) as Element;
         visibleLineCount = this.mScrollRef.clientHeight / selectedNode.clientHeight;
         // account for the header. quite inaccurate.
         visibleLineCount -= 2;
@@ -654,24 +669,20 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       return;
     }
 
-    let idx = sortedRows.findIndex(item => item.id === lastSelected);
+    let idx = sortedRows.indexOf(lastSelected);
     idx = Math.min(Math.max(idx + delta, 0), sortedRows.length - 1);
 
-    const newSelection = sortedRows[idx].id;
+    const newSelection = sortedRows[idx];
     this.selectOnly(newSelection, false);
     return newSelection;
-  }
-
-  private setSplitRef = ref => {
-    this.mSplitContainer = ref;
   }
 
   private setHeadRef = ref => {
     this.mHeadRef = ref;
   }
 
-  private setBodyRef = ref => {
-    this.mBodyRef = ref;
+  private setPinnedRef = ref => {
+    this.mPinnedRef = ref;
   }
 
   private setRowRef = (ref: any) => {
@@ -723,9 +734,15 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private translateHeader = (event) => {
     window.requestAnimationFrame(() => {
       if ((this.mHeadRef !== undefined) && (this.mHeadRef !== null)) {
-        const transform = `translate(0, ${event.target.scrollTop}px)`;
+        const transform = `translateY(${event.target.scrollTop}px)`;
         this.mHeadRef.style.transform = transform;
       }
+      if (truthy(this.mPinnedRef)) {
+        this.mPinnedRef.className = event.target.scrollTop === 0 ? 'table-pinned' : 'table-pinned-hidden';
+      }
+    });
+    Object.keys(this.mNoShrinkColumns).forEach(colId => {
+      this.mNoShrinkColumns[colId].updateWidth();
     });
   }
 
@@ -740,21 +757,6 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     // translate the header so that it remains in view during scrolling
     ref.addEventListener('scroll', this.translateHeader);
     this.mScrollRef = ref;
-  }
-
-  private changeSplitPos = value => {
-    this.mSplitDebouncer.schedule(undefined, value);
-    const totalWidth = this.mSplitContainer.splitPane.offsetWidth;
-    const maxWidth = Math.min(
-      totalWidth * 0.5,
-      totalWidth - 700,
-    );
-
-    if (maxWidth !== this.state.splitMax) {
-      this.updateState(update(this.mNextState, {
-        splitMax: { $set: maxWidth },
-      }));
-    }
   }
 
   private updateCalculatedValues(props: IProps, forceUpdateId?: string): Promise<string[]> {
@@ -861,7 +863,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private filteredRows(props: IProps,
                        attributes: ITableAttribute[],
                        data: { [id: string]: any }) {
-    const { advancedMode, filter } = props;
+    const { filter } = props;
     const { calculatedValues } = this.state;
 
     if (filter === undefined) {
@@ -876,8 +878,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       }
       // return only elements for which we can't find a non-matching filter
       // (in other words: Keep only those items that match all filters)
-      return !advancedMode
-          || (attributes.find(attribute => {
+      return (attributes.find(attribute => {
         if (attribute.filter === undefined) {
           return false;
         }
@@ -890,7 +891,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         const value = attribute.filter.raw !== false
           ? attribute.filter.raw === true
             ? data[rowId][dataId]
-            : data[rowId][attribute.filter.raw][dataId]
+            : (data[rowId][attribute.filter.raw] || {})[dataId]
           : calculatedValues[rowId][dataId];
 
         return truthy(filter[attribute.id])
@@ -905,7 +906,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private sortedRows(attributeState: { [id: string]: IAttributeState },
                      attributes: ITableAttribute[],
                      data: { [id: string]: any },
-                     locale: string): any[] {
+                     locale: string): string[] {
     const { calculatedValues } = this.state;
 
     const sortAttribute: ITableAttribute = attributes.find(attribute => {
@@ -914,47 +915,53 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
           && (attributeState[attribute.id].sortDirection !== 'none');
     });
 
-    const idsToRows = (rowId: string) => ({
-      id: rowId,
-      data: data[rowId],
-    });
-
     // return unsorted if no sorting column was selected or if the values
     // haven't been calculated yet
     if (sortAttribute === undefined) {
       return Object.keys(data)
-        .map(idsToRows)
         // catch cases where input data was broken. Code is usually not
         // equipped to deal with undefined row data
-        .filter(row => row.data !== undefined);
+        .filter(rowId => data[rowId] !== undefined);
     }
 
-    let sortFunction = sortAttribute.sortFunc;
-    if (sortFunction === undefined) {
-      sortFunction = this.standardSort;
+    let sortFunction;
+    if (sortAttribute.sortFunc !== undefined) {
+      sortFunction = (lhsId: string, rhsId: string) =>
+        sortAttribute.sortFunc(
+          calculatedValues[lhsId][sortAttribute.id],
+          calculatedValues[rhsId][sortAttribute.id],
+          locale);
+    } else if (sortAttribute.sortFuncRaw !== undefined) {
+      sortFunction = (lhsId: string, rhsId: string) =>
+        sortAttribute.sortFuncRaw(data[lhsId], data[rhsId], locale);
+    } else {
+      sortFunction = (lhsId: string, rhsId: string) =>
+        this.standardSort(
+          calculatedValues[lhsId][sortAttribute.id],
+          calculatedValues[rhsId][sortAttribute.id]);
     }
 
     const descending = attributeState[sortAttribute.id].sortDirection === 'desc';
 
     const dataIds = Object.keys(data).filter(key => calculatedValues[key] !== undefined);
 
-    return dataIds.sort((lhsId: string, rhsId: string): number => {
-      let res = 0;
-      if (calculatedValues[lhsId][sortAttribute.id] === undefined) {
-        res = calculatedValues[rhsId][sortAttribute.id] === undefined ? 0 : -1;
-      } else if (calculatedValues[rhsId][sortAttribute.id] === undefined) {
-        res = 1;
-      } else {
-        res = sortFunction(calculatedValues[lhsId][sortAttribute.id],
-          calculatedValues[rhsId][sortAttribute.id],
-          locale);
-      }
+    // comparison function if either value or both is/are undefined
+    const undefCompare = (lhsId: string, rhsId: string) =>
+      (calculatedValues[lhsId][sortAttribute.id] !== undefined)
+        ? 1
+        : (calculatedValues[rhsId][sortAttribute.id] !== undefined)
+          ? -1
+          : 0;
 
-      if (descending) {
-        res *= -1;
-      }
-      return res;
-    }).map(idsToRows);
+    return dataIds.sort((lhsId: string, rhsId: string): number => {
+      const res = (sortAttribute.sortFuncRaw !== undefined)
+              || ((calculatedValues[lhsId][sortAttribute.id] !== undefined)
+                  && (calculatedValues[rhsId][sortAttribute.id] !== undefined))
+          ? sortFunction(lhsId, rhsId)
+          : undefCompare(lhsId, rhsId);
+
+      return (descending) ? res * -1 : res;
+    });
   }
 
   private setAttributeVisible = (attributeId: string, visible: boolean) => {
@@ -974,6 +981,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private selectRow = (evt: React.MouseEvent<any>) => {
+    if (evt.isDefaultPrevented()) {
+      return;
+    }
     let iter = evt.target as any;
     while (((iter !== null) && (iter !== undefined))
           && (iter.tagName !== 'BUTTON')
@@ -1002,8 +1012,6 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private selectOnly(rowId: string, click: boolean) {
-    const { tableId } = this.props;
-
     const rowState = {};
     Object.keys(this.state.rowState)
     .forEach(iterId => {
@@ -1031,7 +1039,6 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private selectToggle(rowId: string) {
-    const { tableId } = this.props;
     const wasSelected = getSafe(this.state.rowState, [rowId, 'selected'], undefined);
     if (!wasSelected) {
       this.updateState(update(this.mNextState, {
@@ -1077,7 +1084,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     });
 
     // then (re-)enable all visible selections
-    sortedRows.map(row => row.id).forEach(key => {
+    sortedRows.forEach(key => {
       newState[key] = (newState[key] === undefined)
         ? { $set: { selected: true } }
         : { selected: { $set: true } };
@@ -1086,30 +1093,27 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private selectTo(rowId: string) {
-    const { attributeState, data, language, objects, tableId } = this.props;
     const { sortedRows } = this.state;
-    const visibleAttributes: ITableAttribute[] =
-      this.visibleAttributes(objects, attributeState);
 
     const selection: Set<string> = new Set([rowId, this.state.lastSelected]);
     let selecting = false;
 
-    sortedRows.forEach((iterRow: any) => {
-      let isBracket = (iterRow.id === rowId) || (iterRow.id === this.state.lastSelected);
+    sortedRows.forEach(iterId => {
+      let isBracket = (iterId === rowId) || (iterId === this.state.lastSelected);
       if (!selecting && isBracket) {
         selecting = true;
-        isBracket = false;
+        isBracket = rowId === this.state.lastSelected;
       }
       if (selecting) {
-        selection.add(iterRow.id);
+        selection.add(iterId);
         if (isBracket) {
-          selecting = false;
+          selecting = false;;
         }
       }
     });
 
     const rowState = {};
-    sortedRows.map(row => row.id).forEach(iterId => {
+    sortedRows.forEach(iterId => {
       rowState[iterId] = (this.state.rowState[iterId] === undefined)
         ? { $set: { selected: selection.has(iterId) } }
         : { selected: { $set: selection.has(iterId) } };
@@ -1120,6 +1124,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private visibleAttributes(attributes: ITableAttribute[],
                             attributeStates: { [id: string]: IAttributeState }): ITableAttribute[] {
     return attributes.filter((attribute: ITableAttribute) => {
+      if ((attribute.condition !== undefined) && !attribute.condition()) {
+        return false;
+      } 
       const state = this.getAttributeState(attribute, attributeStates);
       if (attribute.placement === 'detail') {
         return false;
@@ -1164,6 +1171,10 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     onSetAttributeFilter(tableId, attributeId, filter);
   }
 
+  private clearFilters = () => {
+    this.setFilter();
+  }
+
   private useMultiSelect() {
     // default to true
     return this.props.multiSelect !== false;
@@ -1171,7 +1182,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
   private updateState(newState: IComponentState, callback?: () => void) {
     this.mNextState = newState;
-    this.setState(newState, callback);
+    if (this.mMounted) {
+      this.setState(newState, callback);
+    }
   }
 }
 
@@ -1182,13 +1195,11 @@ function mapStateToProps(state: any, ownProps: any): IConnectedProps {
     language: state.settings.interface.language,
     attributeState:
       getSafe(state, ['settings', 'tables', ownProps.tableId, 'attributes'], emptyObj),
-    splitPos: getSafe(state, ['settings', 'tables', ownProps.tableId, 'splitPos'], 200),
     filter: getSafe(state, ['settings', 'tables', ownProps.tableId, 'filter'], undefined),
-    advancedMode: state.settings.interface.advanced,
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<IState>): IActionProps {
+function mapDispatchToProps(dispatch: Redux.Dispatch): IActionProps {
   return {
     onSetAttributeVisible: (tableId: string, attributeId: string, visible: boolean) =>
       dispatch(setAttributeVisible(tableId, attributeId, visible)),

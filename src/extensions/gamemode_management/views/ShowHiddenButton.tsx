@@ -19,7 +19,7 @@ class ShowHiddenButton extends ComponentEx<IBaseProps, {}> {
     return (
       <ToolbarIcon
         id='show-hidden-games'
-        text={showHidden ? t('Hide hidden games') : t('Show hidden games')}
+        text={showHidden ? t('Hide Hidden Games') : t('Show Hidden Games')}
         onClick={toggleHidden}
         icon={showHidden ? 'hide' : 'show'}
       />

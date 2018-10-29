@@ -4,7 +4,7 @@ import settingsReducer from './reducers/interface';
 import SettingsInterface from './SettingsInterface';
 
 function init(context: IExtensionContext): boolean {
-  context.registerSettings('Interface', SettingsInterface);
+  context.registerSettings('Interface', SettingsInterface, undefined, undefined, 50);
   context.registerReducer(['settings', 'interface'], settingsReducer);
   context.registerReducer(['settings', 'automation'], automationReducer);
 

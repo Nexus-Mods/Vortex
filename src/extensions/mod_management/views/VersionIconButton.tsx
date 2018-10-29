@@ -8,7 +8,6 @@ import { IModWithState } from '../types/IModProps';
 import { UpdateState } from '../util/modUpdateState';
 
 import * as I18next from 'i18next';
-import * as path from 'path';
 import * as React from 'react';
 
 export interface IBaseProps {
@@ -83,15 +82,15 @@ class VersionIconButton extends ComponentEx<IProps, {}> {
   }
 
   private trigger = () => {
-    const { downloads, downloadPath, gameMode, mod, mods, state } = this.props;
+    const { gameMode, mod, state } = this.props;
     const newestFileId = getSafe(mod.attributes, ['newestFileId'], undefined);
 
     if ((state === 'update') || (state === 'bug-update')) {
       this.context.api.events.emit('mod-update',
-        gameMode, mod.attributes['modId'], newestFileId);
+        gameMode, getSafe(mod.attributes, ['modId'], undefined), newestFileId);
     } else if ((state === 'update-site') || (state === 'bug-update-site')) {
       this.context.api.events.emit('open-mod-page',
-        gameMode, mod.attributes['modId']);
+        gameMode, getSafe(mod.attributes, ['modId'], undefined));
     }
   }
 }

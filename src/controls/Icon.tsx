@@ -82,7 +82,7 @@ function convertAttrs(attrs: IAttrMap): IAttrMap {
 
 export interface IIconProps {
   className?: string;
-  style?: { [key: string]: string | number };
+  style?: React.CSSProperties;
   set?: string;
   name: string;
   spin?: boolean;
@@ -95,14 +95,9 @@ export interface IIconProps {
   svgStyle?: string;
 }
 
-function renderPath(pathComp: IPath, idx: number) {
-  return <path key={idx} d={pathComp.path} style={pathComp.attrs} />;
-}
-
 class Icon extends React.Component<IIconProps, {}> {
   private static sCache: { [id: string]: { width: number, height: number } } = {};
   private mCurrentSize: { width: number, height: number };
-  private mTicks: number = 0;
 
   public componentWillMount() {
     this.setIcon(this.props);
@@ -120,7 +115,7 @@ class Icon extends React.Component<IIconProps, {}> {
     // it has no interactions with other css. For example css transforms tend to break z ordering
     const transforms = [];
 
-    if (this.props.spin) {
+    if (this.props.spin || (name === 'spinner')) {
       classes.push('icon-spin');
     }
 
@@ -193,7 +188,7 @@ class Icon extends React.Component<IIconProps, {}> {
           && !sets[set].has('icon-' + props.name)
           && !debugReported.has(props.name)) {
         // tslint:disable-next-line:no-console
-        console.log('icon missing', props.name);
+        console.trace('icon missing', props.name);
         debugReported.add(props.name);
       }
     });

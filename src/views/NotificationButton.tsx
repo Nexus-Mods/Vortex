@@ -11,6 +11,7 @@ import { Badge, Button, OverlayTrigger, Popover } from 'react-bootstrap';
 
 export interface IBaseProps {
   id: string;
+  hide: boolean;
 }
 
 interface IConnectedProps {
@@ -54,7 +55,7 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, id, notifications } = this.props;
+    const { t, hide, notifications } = this.props;
 
     const collapsed: { [groupId: string]: number } = {};
 
@@ -65,7 +66,7 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
       .map(notification => this.renderNotification(notification, collapsed));
 
     const popover = (
-      <Popover id='notifications-popover' arrowOffsetLeft={64}>
+      <Popover id='notifications-popover' arrowOffsetLeft={64} style={{ display: hide ? 'none' : 'block' }}>
         {items.length > 0 ? items : t('No Notifications')}
       </Popover>
     );

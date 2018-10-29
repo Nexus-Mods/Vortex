@@ -2,10 +2,11 @@ import { showDialog } from '../../../actions/notifications';
 import ActionDropdown from '../../../controls/ActionDropdown';
 import Icon from '../../../controls/Icon';
 import IconBar from '../../../controls/IconBar';
-import { Button, IconButton } from '../../../controls/TooltipControls';
+import { IconButton } from '../../../controls/TooltipControls';
 import { IActionDefinition } from '../../../types/IActionDefinition';
 import { IComponentContext } from '../../../types/IComponentContext';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
+import { IErrorOptions } from '../../../types/IExtensionContext';
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import lazyRequire from '../../../util/lazyRequire';
@@ -20,14 +21,13 @@ import { ICategoriesTree } from '../types/ITrees';
 import createTreeDataObject from '../util/createTreeDataObject';
 
 import * as Promise from 'bluebird';
-import { remote } from 'electron';
-import * as path from 'path';
 import * as React from 'react';
 import { FormControl } from 'react-bootstrap';
 import * as SortableTreeT from 'react-sortable-tree';
 import * as Redux from 'redux';
+import { ThunkDispatch } from 'redux-thunk';
 
-const tree = lazyRequire<typeof SortableTreeT>('react-sortable-tree');
+const tree = lazyRequire<typeof SortableTreeT>(() => require('react-sortable-tree'));
 
 const nop = () => undefined;
 
@@ -38,7 +38,7 @@ interface ISearchMatch {
 }
 
 interface IActionProps {
-  onShowError: (message: string, details?: string | Error) => void;
+  onShowError: (message: string, details: string | Error, options: IErrorOptions) => void;
   onSetCategory: (gameId: string, categoryId: string, category: ICategory) => void;
   onRemoveCategory: (gameId: string, categoryId: string) => void;
   onSetCategoryOrder: (gameId: string, categoryIds: string[]) => void;
@@ -131,6 +131,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
           group='categories-icons'
           staticElements={this.mButtons}
           className='menubar categories-icons'
+          t={t}
         />
         <div className='search-category-box'>
           <div style={{ display: 'inline-block', position: 'relative' }}>
@@ -246,7 +247,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
       this.nextState.showEmpty = !showEmpty;
       this.updateExpandedTreeData(categories);
     } catch (err) {
-      onShowError('An error occurred hiding/showing the empty categories', err);
+      onShowError('An error occurred hiding/showing the empty categories', err, { allowReport: false });
     }
   }
 
@@ -262,7 +263,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
   }
 
   private renameCategory = (categoryId: string) => {
-    const {categories, gameMode, onShowDialog, onRenameCategory} = this.props;
+    const {categories, gameMode, onShowDialog, onRenameCategory, onShowError} = this.props;
 
     const category = categories[categoryId];
 
@@ -271,7 +272,11 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
     }, [ { label: 'Cancel' }, { label: 'Rename' } ])
     .then((result: IDialogResult) => {
         if ((result.action === 'Rename') && (result.input.newCategory !== undefined)) {
-          onRenameCategory(gameMode, categoryId, result.input.newCategory);
+          if (result.input.newCategory === '') {
+            onShowError('Category Name cannot be empty.', undefined, { allowReport: false });
+          } else {
+            onRenameCategory(gameMode, categoryId, result.input.newCategory);
+          }
         }
       });
   }
@@ -299,16 +304,17 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
           const checkId = Object.keys(categories).filter((id: string) =>
             id === result.input.newCategoryId);
           if (checkId.length !== 0) {
-            onShowError('ID already used.');
+            onShowError('ID already used.', undefined, { allowReport: false });
           } else if (result.input.newCategoryId === '') {
-            onShowError('Category ID empty.');
+            onShowError('Category ID cannot be empty.', undefined, { allowReport: false });
+          } else if (result.input.newCategory === '') {
+            onShowError('Category Name cannot be empty.', undefined, { allowReport: false });
           } else {
             onSetCategory(gameMode, result.input.newCategoryId, {
               name: result.input.newCategory,
               parentCategory: parentId,
               order: 0,
             });
-            this.updateExpandedTreeData(categories);
           }
         }
       });
@@ -334,9 +340,11 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
           const checkId = Object.keys(categories || {}).filter((id: string) =>
             id === result.input.newCategoryId);
           if (checkId.length !== 0) {
-            onShowError('An error occurred adding the new category', 'ID already used.');
+            onShowError('An error occurred adding the new category', 'ID already used.', { allowReport: false });
           } else if (result.input.newCategoryId === '') {
-            onShowError('An error occurred adding the new category', 'Category ID empty.');
+            onShowError('An error occurred adding the new category', 'Category ID cannot be empty.', { allowReport: false });
+          } else if (result.input.newCategory === '') {
+            onShowError('An error occurred adding the new category', 'Category Name cannot be empty.', { allowReport: false });
           } else {
             onSetCategory(gameMode, result.input.newCategoryId, {
               name: result.input.newCategory,
@@ -374,7 +382,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
 
   private refreshTree(props: IProps) {
     const { t } = this.props;
-    const { categories, mods, onShowError } = props;
+    const { categories, mods } = props;
 
     if (categories !== undefined) {
       if (Object.keys(categories).length !== 0) {
@@ -391,14 +399,14 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
   private searchFinishCallback = (matches: ISearchMatch[]) => {
     const { searchFocusIndex } = this.state;
     // important: Avoid updating the state if the values haven't changed because
-    //  changeing the state causes a re-render and a re-render causes the tree to search
+    //  changing the state causes a re-render and a re-render causes the tree to search
     //  again (why?) which causes a new finish callback -> infinite loop
     if (this.state.searchFoundCount !== matches.length) {
       this.nextState.searchFoundCount = matches.length;
     }
     const newFocusIndex = matches.length > 0 ? searchFocusIndex % matches.length : 0;
     if (this.state.searchFocusIndex !== newFocusIndex) {
-    this.nextState.searchFocusIndex = newFocusIndex;
+      this.nextState.searchFocusIndex = newFocusIndex;
     }
   }
 
@@ -459,21 +467,21 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
   }
 
   private moveNode =
-    (args: { treeData: ICategoriesTree[], node: ICategoriesTree,
-             treeIndex: number, path: string[] }): void => {
+    (args: { treeData: SortableTreeT.TreeItem[], node: SortableTreeT.TreeItem,
+             treeIndex: number, path: string[] | number[] }): void => {
     const { gameMode, onSetCategory, onSetCategoryOrder } = this.props;
     if (args.path[args.path.length - 2] !== args.node.parentId) {
       onSetCategory(gameMode, args.node.categoryId, {
         name: args.node.title,
         order: args.node.order,
-        parentCategory: args.path[args.path.length - 2],
+        parentCategory: (args.path as string[])[args.path.length - 2],
       });
     } else {
       const newOrder = (base: ICategoriesTree[]): string[] => {
         return [].concat(...base.map(node =>
           [node.categoryId, ...newOrder(node.children)]));
       };
-      onSetCategoryOrder(gameMode, newOrder(args.treeData));
+      onSetCategoryOrder(gameMode, newOrder(args.treeData as ICategoriesTree[]));
     }
   }
 }
@@ -490,7 +498,7 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<IState>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<IState, null, Redux.Action>): IActionProps {
   return {
     onRenameCategory: (gameId: string, categoryId: string, newCategory: string) =>
       dispatch(renameCategory(gameId, categoryId, newCategory)),
@@ -500,8 +508,8 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<IState>): IActionProps {
       dispatch(removeCategory(gameId, categoryId)),
     onSetCategoryOrder: (gameId: string, categoryIds: string[]) =>
       dispatch(setCategoryOrder(gameId, categoryIds)),
-    onShowError: (message: string, details?: string | Error) =>
-      showError(dispatch, message, details),
+    onShowError: (message: string, details: string | Error, options: IErrorOptions) =>
+      showError(dispatch, message, details, options),
     onShowDialog: (type, title, content, actions) =>
       dispatch(showDialog(type, title, content, actions)),
   };

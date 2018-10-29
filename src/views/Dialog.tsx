@@ -1,4 +1,6 @@
+import { ILink, triggerDialogLink } from '../actions';
 import { closeDialog } from '../actions/notifications';
+import Collapse from '../controls/Collapse';
 import Icon from '../controls/Icon';
 import Webview from '../controls/Webview';
 import {
@@ -11,7 +13,7 @@ import { ComponentEx, connect, translate } from '../util/ComponentEx';
 
 import { remote } from 'electron';
 import * as I18next from 'i18next';
-import * as update from 'immutability-helper';
+import update from 'immutability-helper';
 import * as React from 'react';
 import {
   Button, Checkbox, ControlLabel, FormControl, FormGroup,
@@ -19,7 +21,7 @@ import {
 } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
 import * as Redux from 'redux';
-import { ILink, triggerDialogLink } from '../actions';
+import { ThunkDispatch } from 'redux-thunk';
 
 const nop = () => undefined;
 
@@ -168,20 +170,28 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     }
 
     if (content.message !== undefined) {
-      const wrap = (content.options && (content.options.wrap === true)) ? 'on' : 'off';
-      controls.push((
+      const wrap = ((content.options !== undefined) && (content.options.wrap === true)) ? 'on' : 'off';
+      const ctrl = (
         <textarea
           key='dialog-content-message'
           wrap={wrap}
           defaultValue={this.translateParts(content.message, t, content.parameters)}
           readOnly={true}
         />
-      ));
+      );
+      if ((content.options !== undefined) && (content.options.hideMessage === true)) {
+        controls.push((
+          <Collapse key='dialog-content-message-wrapper' showText={t('Show Details')} hideText={t('Hide Details')}>
+            {ctrl}
+          </Collapse>));
+      } else {
+        controls.push(ctrl);
+      }
     }
 
     if (content.bbcode !== undefined) {
       controls.push((
-        <div key='dialog-content-bbcode'>
+        <div key='dialog-content-bbcode' className='dialog-content-bbcode'>
           {bbcode(content.bbcode)}
         </div>
       ));
@@ -203,13 +213,15 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
       ));
     } else if (content.checkboxes !== undefined) {
       controls.push((
-        <div key='dialog-content-choices'>
-          {content.checkboxes.map(this.renderCheckbox)}
+        <div key='dialog-content-choices' className='dialog-content-choices'>
+          <div>
+            {content.checkboxes.map(this.renderCheckbox)}
+          </div>
         </div>
       ));
     } else if (content.choices !== undefined) {
       controls.push((
-        <div key='dialog-content-choices'>
+        <div key='dialog-content-choices' className='dialog-content-choices'>
           {content.choices.map(this.renderRadiobutton)}
         </div>
       ));
@@ -403,7 +415,7 @@ function mapStateToProps(state: IState): IDialogConnectedProps {
   };
 }
 
-function mapDispatchToProps<S>(dispatch: Redux.Dispatch<S>): IDialogActionProps {
+function mapDispatchToProps<S>(dispatch: ThunkDispatch<S, null, Redux.Action>): IDialogActionProps {
   return {
     onDismiss: (id: string, action: string, input: any) =>
       dispatch(closeDialog(id, action, input)),

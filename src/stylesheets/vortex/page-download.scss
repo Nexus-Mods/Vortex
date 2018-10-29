@@ -5,13 +5,22 @@
 .download-panel {
   height: 100%;
   background-color: $brand-bg;
+  display: flex;
+  flex-direction: column;
   > .panel-body {
     height: 100%;
+    padding-right: 0;
+    padding-top: $gutter-width;
   }
 }
 
+.download-graph-panel {
+  position: relative;
+  border-width: 0 0 1px 0;
+  height: auto;
+}
+
 #table-downloads {
-  padding-top: $half-gutter;
   .header-game {
     min-width: 80px;
   }
@@ -22,7 +31,8 @@
 }
 
 .active-downloads-slim {
-  font-size: smaller;
+  white-space: nowrap;
+  font-size: xx-small;
 }
 
 .active-downloads-container {
@@ -63,5 +73,29 @@
   .header-filename {
     // use up remaining space
     width: 100%;
+  }
+}
+
+.progressbar-progress {
+  transition: width ease 1s;
+}
+
+.archive-game-list {
+  max-height: 200px;
+  overflow-y: auto;
+  .primary-game {
+    font-weight: bold;
+  }
+
+  .list-group-item {
+    display: flex;
+    justify-content: space-between;
+  }
+}
+
+.game-list-container {
+  .dropdown-menu {
+    max-height: 300px;
+    overflow-y: auto;
   }
 }

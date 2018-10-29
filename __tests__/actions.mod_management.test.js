@@ -3,10 +3,10 @@ import * as modsActions from '../src/extensions/mod_management/actions/mods';
 
 describe('setPath', () => {
   it('creates the correct action', () => {
-    expect(settingsActions.setPath('gameId1', 'key1', 'path1')).toEqual({
+    expect(settingsActions.setInstallPath('gameId1', 'path1')).toEqual({
       error: false,
-      type: 'SET_MOD_PATH',
-      payload: { gameId: 'gameId1', key: 'key1', path: 'path1' },
+      type: 'SET_MOD_INSTALL_PATH',
+      payload: { gameId: 'gameId1', path: 'path1' },
     });
   });
 });
@@ -67,6 +67,16 @@ describe('setModAttribute', () => {
       error: false,
       type: 'SET_MOD_ATTRIBUTE',
       payload: { gameId: 'gameId1', modId: 'modId1', attribute: 'attribute1', value: 'value1' },
+    });
+  });
+});
+
+describe('setModAttributes', () => {
+  it('creates the correct action', () => {
+    expect(modsActions.setModAttributes('gameId1', 'modId1', { attribute1: 'value1', attribute2: 'value2' })).toEqual({
+      error: false,
+      type: 'SET_MOD_ATTRIBUTES',
+      payload: { gameId: 'gameId1', modId: 'modId1', attributes: { attribute1: 'value1', attribute2: 'value2' } },
     });
   });
 });

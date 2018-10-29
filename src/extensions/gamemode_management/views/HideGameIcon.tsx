@@ -9,6 +9,7 @@ import { setGameHidden } from '../actions/settings';
 
 import * as React from 'react';
 import * as Redux from 'redux';
+import { ThunkDispatch } from 'redux-thunk';
 
 export interface IBaseProps {
   instanceId: string;
@@ -54,7 +55,7 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onSetGameHidden: (gameId: string, hidden: boolean) => dispatch(setGameHidden(gameId, hidden)),
   };

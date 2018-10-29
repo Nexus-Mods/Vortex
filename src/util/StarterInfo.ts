@@ -5,6 +5,10 @@ import { IDiscoveryResult } from '../extensions/gamemode_management/types/IDisco
 import { IGameStored } from '../extensions/gamemode_management/types/IGameStored';
 import { IToolStored } from '../extensions/gamemode_management/types/IToolStored';
 
+import { IExtensionApi } from '../types/IExtensionContext';
+
+import { MissingInterpreter, UserCanceled, ProcessCanceled } from './CustomErrors';
+
 import { remote } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -32,6 +36,9 @@ const userDataPath = ((): () => string => {
   };
 })();
 
+type OnShowErrorFunc =
+  (message: string, details?: string | Error | any, allowReport?: boolean) => void;
+
 /**
  * holds info about an executable to start
  *
@@ -42,6 +49,50 @@ class StarterInfo implements IStarterInfo {
     const extensionPath = gameDiscovery.extensionPath || game.extensionPath;
     const logoName = gameDiscovery.logo || game.logo;
     return StarterInfo.gameIcon(game.id, extensionPath, logoName);
+  }
+
+  public static run(info: StarterInfo, api: IExtensionApi, onShowError: OnShowErrorFunc) {
+    return api.runExecutable(info.exePath, info.commandLine, {
+      cwd: info.workingDirectory,
+      env: info.environment,
+      suggestDeploy: true,
+      shell: info.shell,
+    })
+      .catch(UserCanceled, () => undefined)
+      .catch(ProcessCanceled, err => {
+        onShowError('Failed to run tool', err.message, false);
+      })
+      .catch(err => {
+        if (err.errno === 'ENOENT') {
+          onShowError('Failed to run tool', {
+            Executable: info.exePath,
+            message: 'Executable doesn\'t exist, please check the configuration for info tool.',
+            stack: err.stack,
+          }, false);
+        } else if (err.errno === 'UNKNOWN') {
+          // info sucks but node.js doesn't give us too much information about what went wrong
+          // and we can't have users misconfigure their tools and then report the error they
+          // get as feedback
+          onShowError('Failed to run tool', {
+            Executable: info.exePath,
+            message: 'File is not executable, please check the configuration for info tool.',
+            stack: err.stack,
+          }, false);
+        } else if (err instanceof MissingInterpreter) {
+          const par = {
+            Error: err.message,
+          };
+          if (err.url !== undefined) {
+            par['Download url'] = err.url;
+          }
+          onShowError('Failed to run tool', par, false);
+        } else {
+          onShowError('Failed to run tool', {
+            executable: info.exePath,
+            error: err.stack,
+          });
+        }
+      });
   }
 
   private static gameIcon(gameId: string, extensionPath: string, logo: string) {
@@ -89,6 +140,7 @@ class StarterInfo implements IStarterInfo {
   public commandLine: string[];
   public workingDirectory: string;
   public environment: { [key: string]: string };
+  public shell: boolean;
   private mExtensionPath: string;
   private mLogoName: string;
   private mIconPathCache: string;
@@ -130,10 +182,10 @@ class StarterInfo implements IStarterInfo {
     this.name = gameDiscovery.name || game.name;
     this.exePath = path.join(gameDiscovery.path, gameDiscovery.executable || game.executable);
     this.commandLine = [];
-    this.workingDirectory = gameDiscovery.path;
+    this.workingDirectory = path.dirname(this.exePath);
     this.environment = gameDiscovery.environment || {};
     this.iconOutPath = StarterInfo.gameIconRW(this.gameId);
-
+    this.shell = gameDiscovery.shell || game.shell;
     this.mLogoName = gameDiscovery.logo || game.logo;
   }
 
@@ -148,6 +200,7 @@ class StarterInfo implements IStarterInfo {
       this.workingDirectory = toolDiscovery.workingDirectory !== undefined
         ? toolDiscovery.workingDirectory
         : path.dirname(toolDiscovery.path || '');
+      this.shell = getSafe(toolDiscovery, ['shell'], getSafe(tool, ['shell'], undefined));
     } else {
       // defaults for undiscovered & unconfigured tools
       this.name = tool.name;
@@ -156,6 +209,7 @@ class StarterInfo implements IStarterInfo {
       this.workingDirectory = '';
       this.environment = tool.environment || {};
       this.mLogoName = tool.logo;
+      this.shell = tool.shell;
     }
     this.iconOutPath = StarterInfo.toolIconRW(gameId, this.id);
   }

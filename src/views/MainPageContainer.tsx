@@ -1,8 +1,8 @@
-import FlexLayout from '../controls/FlexLayout';
 import Icon from '../controls/Icon';
 import { IMainPage } from '../types/IMainPage';
 import { ComponentEx, translate } from '../util/ComponentEx';
-import { genHash } from '../util/errorHandling';
+import { isOutdated } from '../util/errorHandling';
+import { genHash } from '../util/genHash';
 import { log } from '../util/log';
 
 import { remote } from 'electron';
@@ -27,8 +27,6 @@ interface IComponentState {
   errorInfo: React.ErrorInfo;
 }
 
-const nop = () => undefined;
-
 class MainPageContainer extends ComponentEx<IBaseProps, IComponentState> {
   public static childContextTypes: React.ValidationMap<any> = {
     api: PropTypes.object.isRequired,
@@ -48,7 +46,7 @@ class MainPageContainer extends ComponentEx<IBaseProps, IComponentState> {
   }
 
   public getChildContext() {
-    const { active, page } = this.props;
+    const { page } = this.props;
     return {
       api: this.context.api,
       headerPortal: () => this.headerRef,
@@ -77,7 +75,7 @@ class MainPageContainer extends ComponentEx<IBaseProps, IComponentState> {
             <Icon className='render-failure-icon' name='sad' />
             <div className='render-failure-text'>{t('Failed to render.')}</div>
             <div className='render-failure-buttons'>
-              <Button onClick={this.report}>{t('Report')}</Button>
+              {isOutdated() ? null : <Button onClick={this.report}>{t('Report')}</Button>}
               <Button onClick={this.retryRender}>{t('Retry')}</Button>
             </div>
           </Alert>
@@ -109,7 +107,7 @@ class MainPageContainer extends ComponentEx<IBaseProps, IComponentState> {
   private report = () => {
     const { events } = this.context.api;
     const { error, errorInfo } = this.state;
-    events.emit('report-feedback', `Component rendering error
+    events.emit('report-feedback', error.stack.split('\n')[0], `Component rendering error
 
 Vortex Version: ${remote.app.getVersion()},
 

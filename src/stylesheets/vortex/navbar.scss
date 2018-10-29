@@ -25,6 +25,14 @@
   }
 }
 
+.nav-pills.nav-stacked > li {
+  a,
+  a:hover,
+  a:focus {
+    border-right: 4px solid transparent;
+  }
+}
+
 .nav-pills.nav-stacked > li.secondary > a,
 .nav-pills.nav-pills.nav-stacked > li.secondary > a:hover,
 .nav-pills.nav-stacked > li.secondary > a:focus {

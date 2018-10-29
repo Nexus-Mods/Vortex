@@ -31,6 +31,7 @@ interface IMenuActionProps {
   id: string;
   action: IActionDefinitionEx;
   instanceId: string | string[];
+  onSelect?: () => void;
 }
 
 class MenuAction extends React.PureComponent<IMenuActionProps, {}> {
@@ -50,11 +51,12 @@ class MenuAction extends React.PureComponent<IMenuActionProps, {}> {
   }
 
   private trigger = () => {
-    const { action, instanceId } = this.props;
+    const { action, instanceId, onSelect } = this.props;
 
     const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
 
     action.action(instanceIds);
+    onSelect();
   }
 }
 
@@ -67,10 +69,9 @@ class MenuAction extends React.PureComponent<IMenuActionProps, {}> {
  * @class IconBar
  * @extends {ComponentEx<IProps, {}>}
  */
-class DropdownMenu extends React.Component<IProps, {}> {
+class DropdownMenu extends React.PureComponent<IProps, {}> {
   public render(): JSX.Element {
-    const { actions, id, instanceId, className, style } = this.props;
-    const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
+    const { actions, id, className } = this.props;
 
     const classes: string[] = [];
     if (className) {
@@ -81,6 +82,7 @@ class DropdownMenu extends React.Component<IProps, {}> {
       <div
         data-value={actions[0].title}
         onClick={actions[0].show ? this.triggerDefault : undefined}
+        className='dropdown-title'
         title={genTooltip(actions[0].show)}
         style={{ width: '100%', height: '100%' }}
       >
@@ -162,8 +164,7 @@ class DropdownMenu extends React.Component<IProps, {}> {
   private triggerDefault = (evt: React.MouseEvent<any>) => {
     const { instanceId, actions } = this.props;
     const title = evt.currentTarget.attributes.getNamedItem('data-value').value;
-    const action = actions.find(iter =>
-      iter.title === evt.currentTarget.attributes.getNamedItem('data-value').value);
+    const action = actions.find(iter => iter.title === title);
     if (action !== undefined) {
       const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
       action.action(instanceIds);

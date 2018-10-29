@@ -19,6 +19,29 @@ describe('getSafe', () => {
   });
 });
 
+describe('getSafeCI', () => {
+  it('returns the default if empty', () => {
+    let res = helper.getSafeCI({}, ['this', 'is', 'a', 'test'], 42);
+    expect(res).toBe(42);
+  });
+  it('returns the default if node missing', () => {
+    let res = helper.getSafeCI({ this: { is: { no: 13 } } }, ['this', 'is', 'a', 'test'], 42);
+    expect(res).toBe(42);
+  });
+  it('returns the default if part of path is a value', () => {
+    let res = helper.getSafeCI({ this: { is: { a: 13 } } }, ['this', 'is', 'a', 'test'], 42);
+    expect(res).toBe(42);
+  });
+  it('returns the value if path is valid', () => {
+    let res = helper.getSafeCI({ this: { value: 'valid' } }, ['this', 'value'], 42);
+    expect(res).toBe('valid');
+  });
+  it('returns the result if the keys are specified with different case', () => {
+    let res = helper.getSafeCI({ this: { value: 'valid' } }, ['tHiS', 'VaLuE'], 42);
+    expect(res).toBe('valid');
+  });
+});
+
 describe('setSafe', () => {
   it('leaves the original unmodified', () => {
     let input = {};
@@ -49,6 +72,21 @@ describe('setSafe', () => {
     let res = helper.setSafe(input, ['arr', 0], 42);
     expect(res).toEqual({ arr: [42] });
   });
+  it('can append to array', () => {
+    let input = { arr: [ 41 ] };
+    let res = helper.setSafe(input, ['arr', 1], 42);
+    expect(res).toEqual({ arr: [41, 42] });
+  });
+  it('can append to array with gaps', () => {
+    let input = { arr: [ 41 ] };
+    let res = helper.setSafe(input, ['arr', 2], 42);
+    expect(res).toEqual({ arr: [41, undefined, 42] });
+  });
+  it('doesn\'t turn arrays into objects', () => {
+    let input = { a: [ { x: 2 }, { x: 3 } ] };
+    let result = helper.setSafe(input, ['a', 1, 'x'], 1);
+    expect(result).toEqual({ a: [ { x: 2 }, { x: 1 } ] });
+  });
 });
 
 describe('setOrNop', () => {
@@ -67,6 +105,11 @@ describe('setOrNop', () => {
     let res = helper.setOrNop(input, ['a', 'test'], 42);
     expect(res).toEqual({ a: { test: 42 } });
   });
+  it('doesn\'t turn arrays into objects', () => {
+    let input = { a: [ { x: 2 }, { x: 3 } ] };
+    let result = helper.setOrNop(input, ['a', 1, 'x'], 1);
+    expect(result).toEqual({ a: [ { x: 2 }, { x: 1 } ] });
+  });
 });
 
 describe('changeOrNop', () => {
@@ -84,6 +127,11 @@ describe('changeOrNop', () => {
     let input = { a: { test: 12 } };
     let res = helper.changeOrNop(input, ['a', 'test'], 42);
     expect(res).toEqual({ a: { test: 42 } });
+  });
+  it('doesn\'t turn arrays into objects', () => {
+    let input = { a: [ { x: 2 }, { x: 3 } ] };
+    let result = helper.changeOrNop(input, ['a', 1, 'x'], 1);
+    expect(result).toEqual({ a: [ { x: 2 }, { x: 1 } ] });
   });
 });
 
@@ -106,6 +154,20 @@ describe('pushSafe', () => {
     let input = { tl: [ { a: [ 1, 2 ] } ] };
     let res = helper.pushSafe(input, [ 'tl', 0, 'a' ], 3);
     expect(res).toEqual({ tl: [ { a: [ 1, 2, 3 ] } ] });
+  });
+  it('doesn\'t turn arrays into objects', () => {
+    let input = { a: [ { x: [1] } ] };
+    let result = helper.pushSafe(input, ['a', 0, 'x'], 2);
+    expect(result).toEqual({ a: [ { x: [1, 2] } ] });
+  });
+  it('creates intermediate dictionaries', () => {
+    let input = {};
+    let result = helper.pushSafe(input, ['a', 'b'], 42);
+    expect(result).toEqual({ a: { b: [42] } });
+  });
+  it('creates base', () => {
+    let result = helper.pushSafe(undefined, ['a', 'b'], 42);
+    expect(result).toEqual({ a: { b: [42] } });
   });
 });
 
@@ -134,6 +196,11 @@ describe('addUniqueSafe', () => {
     let res = helper.addUniqueSafe(input, [ 'tl', 0, 'a' ], 3);
     expect(res).toEqual({ tl: [ { a: [ 1, 2, 3 ] } ] });
   });
+  it('doesn\'t turn arrays into objects', () => {
+    let input = { a: [ { x: [1] } ] };
+    let result = helper.addUniqueSafe(input, ['a', 0, 'x'], 2);
+    expect(result).toEqual({ a: [ { x: [1, 2] } ] });
+  });
 });
 
 describe('removeValue', () => {
@@ -150,13 +217,12 @@ describe('removeValue', () => {
   it('returns unmodified if the value doesn\'t exist', () => {
     let input = { someList: ['a', 'b', 'c'] };
     let res = helper.removeValue(input, ['someList'], 'd');
-    expect(res).toEqual({ someList: ['a', 'b', 'c'] });
-    // it does copy the input however
+    expect(res).toBe(input);
   });
-  it('returns empty list if the node is missing', () => {
-    let input = {};
-    let res = helper.removeValue(input, ['someList'], 'a');
-    expect(res).toEqual({ someList: [] });
+  it('doesn\'t turn arrays into objects', () => {
+    let input = { a: [ { x: [1, 2] } ] };
+    let result = helper.removeValue(input, ['a', 0, 'x'], 2);
+    expect(result).toEqual({ a: [ { x: [1] } ] });
   });
 });
 
@@ -174,6 +240,11 @@ describe('merge', () => {
   it('creates the object if necessary', () => {
     let res = helper.merge({}, ['someobj'], { b: 42 });
     expect(res).toEqual({ someobj: { b: 42 } });
+  });
+  it('doesn\'t turn arrays into objects', () => {
+    let input = { a: [ { x: 1 } ] };
+    let result = helper.merge(input, ['a', 0], { x: 2, y: 3 });
+    expect(result).toEqual({ a: [ { x: 2, y: 3 } ] });
   });
 });
 
@@ -198,5 +269,10 @@ describe('deleteOrNop', () => {
     let input = { a: 1, b: 2 };
     let result = helper.deleteOrNop(input, ['a']);
     expect(result).toEqual({ b: 2 });
+  });
+  it('doesn\'t turn arrays into objects', () => {
+    let input = { a: [ { x: 2 }, { x: 3 } ] };
+    let result = helper.deleteOrNop(input, ['a', 1]);
+    expect(result).toEqual({ a: [ { x: 2 } ] });
   });
 });

@@ -7,6 +7,10 @@
 
 .Select-control {
   display: inline-table;
+
+  .Select-clear-zone {
+    cursor: initial;
+  }
 }
 
 .Select-placeholder,

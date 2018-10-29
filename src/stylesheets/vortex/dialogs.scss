@@ -61,7 +61,7 @@
   flex-direction: column;
 
   // the flex sizing may not be optimal
-  > textarea {
+  textarea {
    width: 100%;
    resize: none;
    border: none;
@@ -73,12 +73,31 @@
   }
 
   > .dialog-content-text {
-    flex: 0 0 0;
+    flex: initial;
     margin-bottom: $half-gutter;
     white-space: pre-wrap;
   }
 
+  > .dialog-content-bbcode {
+    table {
+      width: 100%;
+    }
+    ul {
+      margin-bottom: 0;
+    }
+  }
+
   > .dialog-content-html {
     white-space: pre-wrap;
+  }
+
+  > .dialog-content-choices {
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    > div {
+      overflow: auto;
+    }
   }
 }

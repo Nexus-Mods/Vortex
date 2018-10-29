@@ -1,4 +1,4 @@
-import reducer from '../reducers/index';
+import reducer, { Decision } from '../reducers/index';
 import { IPersistor, PersistingType } from '../types/IExtensionContext';
 import { IState } from '../types/IState';
 
@@ -9,21 +9,29 @@ import ReduxPersistor from './ReduxPersistor';
 import {reduxSanity, StateError} from './reduxSanity';
 
 import * as Promise from 'bluebird';
-import { app as appIn, remote } from 'electron';
-import levelup = require('levelup');
+import { dialog } from 'electron';
+import * as levelup from 'levelup';
 import * as path from 'path';
 import * as Redux from 'redux';
 import { applyMiddleware, compose, createStore } from 'redux';
-import { electronEnhancer } from 'redux-electron-store';
+import { forwardToRenderer, replayActionMain } from 'electron-redux';
 import thunkMiddleware from 'redux-thunk';
-
-const app = remote !== undefined ? remote.app : appIn;
 
 let basePersistor: ReduxPersistor<IState>;
 
 const IMPORTED_TAG = 'imported__do_not_delete.txt';
 
 export const currentStatePath = 'state.v2';
+
+export function querySanitize(): Decision {
+  const response = dialog.showMessageBox(null, {
+    message:
+        'Application state is invalid. I can try to repair it but you may lose data',
+    buttons: ['Quit', 'Ignore', 'Backup and Repair'],
+  });
+
+  return [Decision.QUIT, Decision.IGNORE, Decision.SANITIZE][response];
+}
 
 export function createVortexStore(sanityCallback: (err: StateError) => void): Redux.Store<IState> {
   const middleware = [
@@ -32,11 +40,14 @@ export function createVortexStore(sanityCallback: (err: StateError) => void): Re
   ];
 
   const enhancer: Redux.StoreEnhancer<IState> =
-      compose(applyMiddleware(...middleware),
-              electronEnhancer()) as Redux.StoreEnhancer<any>;
+      compose(applyMiddleware(
+          ...middleware,
+          forwardToRenderer,
+        )) as Redux.StoreEnhancer<any>;
 
-  const store = createStore<IState>(reducer([]), enhancer);
+  const store = createStore<IState, Redux.Action, any, any>(reducer([], querySanitize), enhancer);
   basePersistor = new ReduxPersistor(store);
+  replayActionMain(store);
   return store;
 }
 
@@ -68,9 +79,7 @@ export function extendStore(store: Redux.Store<IState>,
   let queue = Promise.resolve();
   extensions.apply('registerPersistor', (hive: string, persistor: IPersistor,
                                          debounce?: number) => {
-    queue = queue.then(() => {
-      insertPersistor(hive, persistor);
-    });
+    queue = queue.then(() => insertPersistor(hive, persistor));
   });
   return queue;
 }
@@ -130,10 +139,8 @@ export function importState(basePath: string): Promise<any> {
   // find the newest previous version to import from
   const importVer = versionDirs.find(ver => exists(ver.path));
 
-  if ((importVer !== undefined) && (importVer.func !== null)) {
+  return ((importVer !== undefined) && (importVer.func !== null))
     // read and transform data to import
-    return importVer.func(importVer.path);
-  } else {
-    return Promise.resolve();
-  }
+    ? importVer.func(importVer.path)
+    : Promise.resolve();
 }

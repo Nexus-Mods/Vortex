@@ -1,23 +1,27 @@
-import {setInstanceId} from '../actions/app';
+import {setApplicationVersion, setInstanceId, setWarnedAdmin} from '../actions/app';
 import {} from '../reducers/index';
+import { ThunkStore } from '../types/api';
 import {IState} from '../types/IState';
 import commandLine, {IParameters} from '../util/commandLine';
-import { ProcessCanceled } from '../util/CustomErrors';
+import { ProcessCanceled, UserCanceled } from '../util/CustomErrors';
 import { } from '../util/delayed';
 import * as develT from '../util/devel';
-import { terminate, toError } from '../util/errorHandling';
+import { terminate, toError, setOutdated } from '../util/errorHandling';
 import ExtensionManagerT from '../util/ExtensionManager';
 import * as fs from '../util/fs';
 import lazyRequire from '../util/lazyRequire';
-import LevelPersist from '../util/LevelPersist';
+import LevelPersist, { DatabaseLocked } from '../util/LevelPersist';
 import {log, setLogPath, setupLogging} from '../util/log';
 import { showError } from '../util/message';
-import ReduxPersistor from '../util/ReduxPersistor';
+import migrate from '../util/migrate';
 import { StateError } from '../util/reduxSanity';
 import { allHives, createVortexStore, currentStatePath, extendStore,
-         importState, insertPersistor, markImported } from '../util/store';
+         importState, insertPersistor, markImported, querySanitize } from '../util/store';
 import {} from '../util/storeHelper';
 import SubPersistor from '../util/SubPersistor';
+import { spawnSelf } from '../util/util';
+
+import { addNotification } from '../actions';
 
 import MainWindowT from './MainWindow';
 import SplashScreenT from './SplashScreen';
@@ -25,14 +29,15 @@ import TrayIconT from './TrayIcon';
 
 import * as Promise from 'bluebird';
 import crashDump from 'crash-dump';
-import {app, BrowserWindow, dialog, ipcMain} from 'electron';
+import {app, dialog, ipcMain} from 'electron';
+import * as isAdmin from 'is-admin';
 import * as _ from 'lodash';
 import * as path from 'path';
 import { allow } from 'permissions';
-import * as Redux from 'redux';
+import * as semver from 'semver';
 import * as uuidT from 'uuid';
 
-const uuid = lazyRequire<typeof uuidT>('uuid');
+const uuid = lazyRequire<typeof uuidT>(() => require('uuid'));
 
 function last(array: any[]): any {
   if (array.length === 0) {
@@ -43,17 +48,20 @@ function last(array: any[]): any {
 
 class Application {
   private mBasePath: string;
-  private mStore: Redux.Store<IState>;
+  private mStore: ThunkStore<IState>;
   private mLevelPersistors: LevelPersist[] = [];
   private mArgs: IParameters;
   private mMainWindow: MainWindowT;
   private mExtensions: ExtensionManagerT;
   private mTray: TrayIconT;
+  private mFirstStart: boolean = false;
 
   constructor(args: IParameters) {
     this.mArgs = args;
 
     ipcMain.on('show-window', () => this.showMainWindow());
+
+    app.commandLine.appendSwitch('js-flags', '--max-old-space-size=4096');
 
     this.mBasePath = app.getPath('userData');
     fs.ensureDirSync(this.mBasePath);
@@ -72,6 +80,7 @@ class Application {
     this.mMainWindow = new MainWindow(this.mStore);
     return this.mMainWindow.create(this.mStore).then(webContents => {
       this.mExtensions.setupApiMain(this.mStore, webContents);
+      setOutdated(this.mExtensions.getApi());
       return this.applyArguments(this.mArgs);
     });
   }
@@ -99,19 +108,43 @@ class Application {
 
     app.on('ready', () => {
       if (args.get) {
-        this.handleGet(args.get);
+        this.handleGet(args.get, args.shared);
       } else if (args.set) {
-        this.handleSet(args.set);
+        this.handleSet(args.set, args.shared);
       } else if (args.del) {
-        this.handleDel(args.del);
+        this.handleDel(args.del, args.shared);
       } else {
         this.regularStart(args);
       }
     });
+
+    app.on('web-contents-created', (event: Electron.Event, contents: Electron.WebContents) => {
+      contents.on('will-attach-webview', this.attachWebView);
+    });
+  }
+
+  private attachWebView = (event: Electron.Event,
+                           webPreferences: Electron.WebPreferences & { preloadURL: string },
+                           params) => {
+    // disallow creation of insecure webviews
+
+    delete webPreferences.preload;
+    delete webPreferences.preloadURL;
+
+    webPreferences.nodeIntegration = false;
   }
 
   private genHandleError() {
-    return (error: any) => {
+    return (error: any, promise?: any) => {
+      if (error instanceof UserCanceled) {
+        return;
+      }
+
+      if (error === undefined) {
+        log('error', 'empty error unhandled', { wasPromise: promise !== undefined });
+        return;
+      }
+
       terminate(toError(error), this.mStore.getState());
     };
   }
@@ -129,8 +162,10 @@ class Application {
         // start initialization
         .then(splashIn => {
           splash = splashIn;
-          return this.createStore();
+          return this.createStore(args.restore);
         })
+        .then(() => this.warnAdmin())
+        .then(() => this.checkUpgrade())
         .then(() => {
           // as soon as we have a store, install an extended error handler that has
           // access to application state
@@ -145,29 +180,142 @@ class Application {
         .then(() => this.createTray())
         // end initialization
         .then(() => splash.fadeOut())
-        .catch(ProcessCanceled, () => undefined)
+        .then(() => {
+          this.connectTrayAndWindow();
+          return splash.fadeOut();
+        })
+        .catch(UserCanceled, () => app.exit())
+        .catch(ProcessCanceled, () => {
+          app.quit();
+        })
+        .catch(DatabaseLocked, () => {
+          dialog.showErrorBox('Startup failed', 'Vortex seems to be running already. '
+            + 'If you can\'t see it, please check the task manager.');
+          app.quit();
+        })
         .catch((err) => {
-          terminate({
-            message: 'Startup failed',
-            details: err.message,
-            stack: err.stack,
-          }, this.mStore !== undefined ? this.mStore.getState() : {});
+          try {
+            terminate({
+              message: 'Startup failed',
+              details: err.message,
+              stack: err.stack,
+            }, this.mStore !== undefined ? this.mStore.getState() : {});
+          } catch (err) { }
         });
+  }
+
+  private warnAdmin(): Promise<void> {
+    const state: IState = this.mStore.getState();
+    if (state.app.warnedAdmin > 0) {
+      return Promise.resolve();
+    }
+    return isAdmin()
+      .then(admin => {
+        if (!admin) {
+          return Promise.resolve();
+        }
+        return new Promise((resolve, reject) => {
+          dialog.showMessageBox(null, {
+            title: 'Admin rights detected',
+            message:
+              'Vortex is not intended to be run as administrator!\n'
+              + 'If you\'re doing this because you have permission problems, please '
+              + 'stop, you\'re just making it worse.\n'
+              + 'File permissions can be changed, so that the tools can be run with a '
+              + 'regular account. '
+              + 'Vortex will try its best to help you with that.\n'
+              + 'If you choose to continue I won\'t bother you again but please '
+              + 'don\'t report any permission problems to us because they are '
+              + 'of your own making.',
+            buttons: [
+              'Quit',
+              'Ignore',
+            ],
+            noLink: true,
+          }, (response: number) => {
+            if (response === 0) {
+              app.quit();
+            } else {
+              this.mStore.dispatch(setWarnedAdmin(1));
+              resolve();
+            }
+          });
+        });
+      });
+  }
+
+  private checkUpgrade(): Promise<void> {
+    const currentVersion = app.getVersion();
+    return this.migrateIfNecessary(currentVersion)
+      .then(() => {
+        this.mStore.dispatch(setApplicationVersion(currentVersion));
+        return Promise.resolve();
+      });
+  }
+
+  private migrateIfNecessary(currentVersion: string): Promise<void> {
+    const state: IState = this.mStore.getState();
+    const lastVersion = state.app.appVersion || '0.0.0';
+    if (this.mFirstStart || (currentVersion === '0.0.1')) {
+      // don't check version change in development builds or on first start
+      return Promise.resolve();
+    }
+    if ((semver.major(currentVersion) < semver.major(lastVersion))
+        || (semver.minor(currentVersion) < semver.minor(lastVersion))) {
+      if (dialog.showMessageBox(null, {
+        type: 'warning',
+        title: 'Downgrade detected',
+        message: 'The version of Vortex you\'re running is older than the one you previously ran. '
+               + 'While Vortex versions are backward compatible they are not forward compatible, '
+               + 'it\'s possible this version of Vortex may not run and may even '
+               + 'do irrevsible damage to your application state.\n'
+               + 'Only continue if you\'re happy to reinstall and cleanup everything manually.',
+        buttons: [
+          'Quit',
+          'Yes, I\'m mad',
+        ],
+        noLink: true,
+      }) == 0) {
+        app.quit();
+        return Promise.reject(new UserCanceled());
+      }
+    } else if (semver.gt(currentVersion, lastVersion)) {
+      log('info', 'Vortex was updated, checking for necessary migrations');
+      return migrate(this.mStore)
+        .then(() => {
+          return Promise.resolve();
+        })
+        .catch(err => !(err instanceof UserCanceled) && !(err instanceof ProcessCanceled), (err: Error) => {
+          dialog.showErrorBox(
+            'Migration failed',
+            'The migration from the previous Vortex release failed. '
+            + 'Please resolve the errors you got, then try again.');
+          app.exit(1);
+          return Promise.reject(new ProcessCanceled('Migration failed'));
+        });
+    } else {
+      return Promise.resolve();
+    }
   }
 
   private splitPath(statePath: string): string[] {
     return statePath.match(/(\\.|[^.])+/g).map(input => input.replace(/\\(.)/, '$1'));
   }
 
-  private handleGet(getPath: string | boolean): Promise<void> {
+  private handleGet(getPath: string | boolean, shared: boolean): Promise<void> {
     if (typeof(getPath) === 'boolean') {
       fs.writeSync(1, 'Usage: vortex --get <path>\n');
       app.quit();
       return;
     }
 
-    const vortexPath = process.env.NODE_ENV === 'development' ? 'vortex_devel' : 'vortex';
-    const dbpath = path.join(process.env['APPDATA'], vortexPath, currentStatePath);
+    const vortexPath = process.env.NODE_ENV === 'development'
+        ? 'vortex_devel'
+        : 'vortex';
+
+    const dbpath = shared
+      ? path.join(process.env.ProgramData, 'vortex', currentStatePath)
+      : path.join(process.env['APPDATA'], vortexPath, currentStatePath);
     const pathArray = this.splitPath(getPath);
 
     let persist: LevelPersist;
@@ -189,15 +337,20 @@ class Application {
       });
   }
 
-  private handleSet(setParameters: string[]): Promise<void> {
+  private handleSet(setParameters: string[], shared: boolean): Promise<void> {
     if (setParameters.length !== 2) {
       process.stdout.write('Usage: vortex --set <path>=<value>\n');
       app.quit();
       return;
     }
 
-    const vortexPath = process.env.NODE_ENV === 'development' ? 'vortex_devel' : 'vortex';
-    const dbpath = path.join(process.env['APPDATA'], vortexPath, currentStatePath);
+    const vortexPath = process.env.NODE_ENV === 'development'
+        ? 'vortex_devel'
+        : 'vortex';
+
+    const dbpath = shared
+      ? path.join(process.env.ProgramData, 'vortex', currentStatePath)
+      : path.join(process.env['APPDATA'], vortexPath, currentStatePath);
     const pathArray = this.splitPath(setParameters[0]);
 
     let persist: LevelPersist;
@@ -205,7 +358,8 @@ class Application {
     return LevelPersist.create(dbpath)
       .then(persistIn => {
         persist = persistIn;
-        return persist.getItem(pathArray);
+        return persist.getItem(pathArray)
+          .catch(() => undefined);
       })
       .then(oldValue => {
         const newValue = setParameters[1].length === 0
@@ -214,19 +368,29 @@ class Application {
             ? JSON.parse(setParameters[1])
             : oldValue.constructor(setParameters[1]);
         return persist.setItem(pathArray, newValue);
-      }).then(() => { process.stdout.write('changed\n'); })
-      .catch(err => { process.stderr.write(err.message + '\n'); })
+      })
+      .then(() => { process.stdout.write('changed\n'); })
+      .catch(err => {
+        process.stderr.write(err.message + '\n');
+      })
       .finally(() => {
         app.quit();
       });
   }
 
-  private handleDel(delPath: string): Promise<void> {
-    const vortexPath = process.env.NODE_ENV === 'development' ? 'vortex_devel' : 'vortex';
-    const dbpath = path.join(process.env['APPDATA'], vortexPath, currentStatePath);
+  private handleDel(delPath: string, shared: boolean): Promise<void> {
+    const vortexPath = process.env.NODE_ENV === 'development'
+        ? 'vortex_devel'
+        : 'vortex';
+
+    const dbpath = shared
+      ? path.join(process.env.ProgramData, 'vortex', currentStatePath)
+      : path.join(process.env['APPDATA'], vortexPath, currentStatePath);
     const pathArray = this.splitPath(delPath);
 
     let persist: LevelPersist;
+
+    let found = false;
 
     return LevelPersist.create(dbpath)
       .then(persistIn => {
@@ -237,9 +401,14 @@ class Application {
       .map((key: string[]) => {
         // tslint:disable-next-line:no-console
         console.log('removing', key.join('.'));
+        found = true;
         return persist.removeItem(key);
       })
-      .then(() => { process.stdout.write('removed\n'); })
+      .then(() => {
+        if (!found) {
+          process.stdout.write('not found\n');
+        }
+      })
       .catch(err => { process.stderr.write(err.message + '\n'); })
       .finally(() => {
         app.quit();
@@ -250,6 +419,12 @@ class Application {
     const TrayIcon = require('./TrayIcon').default;
     this.mTray = new TrayIcon(this.mExtensions.getApi());
     return Promise.resolve();
+  }
+
+  private connectTrayAndWindow() {
+    if (this.mTray.initialized) {
+      this.mMainWindow.connectToTray(this.mTray);
+    }
   }
 
   private multiUserPath() {
@@ -273,8 +448,20 @@ class Application {
     }
   }
 
-  private createStore(): Promise<void> {
+  private createStore(restoreBackup?: string): Promise<void> {
     const newStore = createVortexStore(this.sanityCheckCB);
+    const backupPath = path.join(app.getPath('temp'), 'state_backups');
+    let backups: string[];
+
+    const updateBackups = () => fs.ensureDirAsync(backupPath)
+      .then(() => fs.readdirAsync(backupPath))
+      .filter((fileName: string) => fileName.startsWith('backup') && path.extname(fileName) === '.json')
+      .then(backupsIn => { backups = backupsIn; });
+
+    const deleteBackups = () => Promise.map(backups, backupName =>
+          fs.removeAsync(path.join(backupPath, backupName))
+            .catch(() => undefined))
+          .then(() => null);
 
     // 1. load only user settings to determine if we're in multi-user mode
     // 2. load app settings to determine which extensions to load
@@ -292,7 +479,13 @@ class Application {
           : app.getPath('userData');
         app.setPath('userData', dataPath);
         this.mBasePath = dataPath;
-        const created = fs.ensureDirSync(dataPath);
+        let created = false;
+        try {
+          fs.statSync(dataPath);
+        } catch (err) {
+          fs.ensureDirSync(dataPath);
+          created = true;
+        }
         if (multiUser && created) {
           allow(dataPath, 'group', 'rwx');
         }
@@ -311,13 +504,14 @@ class Application {
       .then(() => insertPersistor('app', new SubPersistor(last(this.mLevelPersistors), 'app')))
       .then(() => {
         if (newStore.getState().app.instanceId === undefined) {
+          this.mFirstStart = true;
           const newId = uuid.v4();
           newStore.dispatch(setInstanceId(newId));
         }
         const ExtensionManager = require('../util/ExtensionManager').default;
         this.mExtensions = new ExtensionManager(newStore);
         const reducer = require('../reducers/index').default;
-        newStore.replaceReducer(reducer(this.mExtensions.getReducers()));
+        newStore.replaceReducer(reducer(this.mExtensions.getReducers(), querySanitize));
         return Promise.mapSeries(allHives(this.mExtensions), hive =>
           insertPersistor(hive, new SubPersistor(last(this.mLevelPersistors), hive)));
       })
@@ -336,10 +530,56 @@ class Application {
                        }) :
                    Promise.resolve();
       })
+      .then(() => updateBackups())
+      .then(() => {
+        if (restoreBackup !== undefined) {
+          log('info', 'restoring state backup', restoreBackup);
+          return fs.readFileAsync(restoreBackup, { encoding: 'utf-8' })
+            .then(backupState => {
+              newStore.dispatch({
+                type: '__hydrate',
+                payload: JSON.parse(backupState),
+              });
+            })
+            .then(() => deleteBackups())
+            .then(() => updateBackups())
+            .catch(err => {
+              if (err instanceof UserCanceled) {
+                return Promise.reject(err);
+              }
+              terminate({
+                message: 'Failed to restore backup',
+                details: err.code !== 'ENOENT' ? err : 'Specified backup file doesn\'t exist',
+              }, {}, err.code !== 'ENOENT');
+            });
+        } else {
+          return Promise.resolve();
+        }
+      })
       .then(() => {
         this.mStore = newStore;
         this.mExtensions.setStore(newStore);
         return extendStore(newStore, this.mExtensions);
+      })
+      .then(() => {
+        if (backups.length > 0) {
+          this.mStore.dispatch(addNotification({
+            type: 'info',
+            message: 'A backup of application state was created recently.',
+            actions: [
+              { title: 'Restore', action: () => {
+                const sorted = backups.sort((lhs, rhs) => rhs.localeCompare(lhs))
+                log('info', 'sorted backups', sorted);
+                spawnSelf(['--restore', path.join(backupPath, sorted[0])]);
+                app.exit();
+              } },
+              { title: 'Delete', action: dismiss => {
+                deleteBackups();
+                dismiss();
+              } },
+            ]
+          }))
+        }
       })
       .then(() => this.mExtensions.doOnce());
   }
@@ -359,6 +599,11 @@ class Application {
   }
 
   private showMainWindow() {
+    if (this.mMainWindow === null) {
+      // ??? renderer has signaled it's done loading before we even started it? that can't be right...
+      app.exit();
+      return;
+    }
     const windowMetrics = this.mStore.getState().settings.window;
     const maximized: boolean = windowMetrics.maximized || false;
     this.mMainWindow.show(maximized);
@@ -382,9 +627,11 @@ class Application {
 
     if (shouldQuit) {
       if (retries > 0) {
-        return require('../util/delayed').delayed(100).then(() => this.testShouldQuit(retries - 1));
+        return Promise.delay(100).then(() => this.testShouldQuit(retries - 1));
       }
-      app.quit();
+      // exit instead of quit so events don't get triggered. Otherwise an exception may be caused
+      // by failures to require modules
+      app.exit();
       return Promise.reject(new ProcessCanceled('should quit'));
     }
 
@@ -395,7 +642,7 @@ class Application {
     if (args.download) {
       const prom: Promise<void> = (this.mMainWindow === undefined)
         // give the main instance a moment to fully start up
-        ? require('../util/delayed').delayed(2000)
+        ? Promise.delay(2000)
         : Promise.resolve(undefined);
 
       prom.then(() => {
@@ -405,7 +652,7 @@ class Application {
           // TODO: this instructions aren't very correct because we know Vortex doesn't have
           // a UI and needs to be shut down from the task manager
           dialog.showErrorBox('Vortex unresponsive',
-            'Vortex appears to frozen, please close Vortex and try again');
+            'Vortex appears to be frozen, please close Vortex and try again');
         }
       });
     }

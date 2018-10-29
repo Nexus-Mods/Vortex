@@ -5,7 +5,7 @@ import { ComponentEx } from '../util/ComponentEx';
 
 import * as I18next from 'i18next';
 import * as React from 'react';
-import { Alert, Button } from 'react-bootstrap';
+import { Button } from 'react-bootstrap';
 import { fireNotificationAction } from '../actions';
 
 interface IActionProps {
@@ -47,14 +47,21 @@ export interface IProps {
 class Notification extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
     const { t, collapsed } = this.props;
-    const { actions, message, noDismiss, title, type } = this.props.params;
+    const { actions, message, noDismiss, progress, title, type } = this.props.params;
 
-    const lines = message.split('\n');
+    if ((message === undefined) && (title === undefined)) {
+      return null;
+    }
+
+    const lines = (message || '').split('\n');
 
     const styleName = this.typeToStyle(type);
 
     return (
       <div role='alert' className={`notification alert-${styleName}`} >
+        {progress !== undefined
+          ? <span className='notification-progress' style={{ left: `${progress}%` }} />
+          : null}
         {this.typeToIcon(type)}{' '}
         <div className='notification-textbox'>
           {title !== undefined ? <div className='notification-title'>{title}</div> : null}

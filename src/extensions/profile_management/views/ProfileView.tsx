@@ -11,7 +11,7 @@ import MainPage from '../../../views/MainPage';
 import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../../gamemode_management/types/IGameStored';
 
-import { removeProfile, setFeature, setProfile } from '../actions/profiles';
+import { removeProfile, setFeature, setProfile, willRemoveProfile } from '../actions/profiles';
 import { setNextProfile } from '../actions/settings';
 import { IProfile } from '../types/IProfile';
 import { IProfileFeature } from '../types/IProfileFeature';
@@ -20,7 +20,7 @@ import ProfileEdit from './ProfileEdit';
 import ProfileItem from './ProfileItem';
 
 import { remote } from 'electron';
-import * as update from 'immutability-helper';
+import update from 'immutability-helper';
 import * as path from 'path';
 import * as React from 'react';
 import { Button, Collapse, ListGroup, ListGroupItem, Panel } from 'react-bootstrap';
@@ -42,6 +42,7 @@ interface IConnectedProps {
 interface IActionProps {
   onAddProfile: (profile: IProfile) => void;
   onRemoveProfile: (profileId: string) => void;
+  onWillRemoveProfile: (profileId: string) => void;
   onSetNextProfile: (profileId: string) => void;
   onSetFeature: (profileId: string, featureId: string, value: any) => void;
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
@@ -136,15 +137,18 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
   private renderProfile = (profileId: string, features: IProfileFeature[]): JSX.Element => {
     const { t } = this.props;
     const { edit } = this.state;
+
     if (profileId === edit) {
       return this.renderEditProfile();
     }
 
-    const { currentProfile, discoveredGames, games, onSetNextProfile, profiles } = this.props;
+    const { currentProfile, discoveredGames, onSetNextProfile, profiles } = this.props;
 
-    const game = games.find((iter: IGameStored) => iter.id === profiles[profileId].gameId);
+    if (profiles[profileId] === undefined) {
+      return null;
+    }
+
     const discovered = discoveredGames[profiles[profileId].gameId];
-    const gameName = getSafe(discovered, ['name'], getSafe(game, ['name'], ''));
     const available = (discovered !== undefined) && (discovered.path !== undefined);
 
     return (profileId === this.state.edit) ? null : (
@@ -153,7 +157,6 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
         key={profileId}
         profile={profiles[profileId]}
         features={features}
-        gameName={gameName}
         active={currentProfile === profileId}
         available={available}
         onClone={this.onCloneProfile}
@@ -271,14 +274,21 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
   }
 
   private onRemoveProfile = (profileId: string) => {
-    const { onRemoveProfile, onShowDialog, profiles } = this.props;
+    const { currentProfile, onRemoveProfile, onWillRemoveProfile, onSetNextProfile, onShowDialog, profiles } = this.props;
     onShowDialog('question', 'Confirm', {
-      message: 'Remove this profile? This can\'t be undone!',
+      text: 'Remove this profile? This can\'t be undone!',
     }, [
         { label: 'Cancel', default: true },
         {
-          label: 'Remove', action: () => fs.removeAsync(profilePath(profiles[profileId]))
-            .then(() => onRemoveProfile(profileId)),
+          label: 'Remove', action:
+            () => {
+              onWillRemoveProfile(profileId);
+              if (profileId === currentProfile) {
+                onSetNextProfile(undefined);
+              }
+              return fs.removeAsync(profilePath(profiles[profileId]))
+                .then(() => onRemoveProfile(profileId));
+            },
         },
     ]);
   }
@@ -310,6 +320,7 @@ function mapDispatchToProps(dispatch): IActionProps {
   return {
     onAddProfile: (profile: IProfile) => dispatch(setProfile(profile)),
     onRemoveProfile: (profileId: string) => dispatch(removeProfile(profileId)),
+    onWillRemoveProfile: (profileId: string) => dispatch(willRemoveProfile(profileId)),
     onSetNextProfile: (profileId: string) => dispatch(setNextProfile(profileId)),
     onSetFeature: (profileId: string, featureId: string, value: any) =>
       dispatch(setFeature(profileId, featureId, value)),

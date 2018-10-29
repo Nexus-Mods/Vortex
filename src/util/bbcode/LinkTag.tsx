@@ -1,5 +1,7 @@
+import opn from '../opn';
+
 import { Tag } from 'bbcode-to-react';
-import opn = require('opn');
+import {} from 'opn';
 import * as React from 'react';
 
 class LinkTag extends Tag {

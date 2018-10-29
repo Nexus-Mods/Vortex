@@ -1,6 +1,12 @@
 import { parseModEntries } from '../extensions/nmm-import-tool/src/util/nmmVirtualConfigParser';
 import { ParseError } from '../extensions/nmm-import-tool/src/types/nmmEntries';
 
+jest.mock('fs-extra-promise', () => ({
+    statAsync: () => {
+      return Promise.resolve({});
+    }
+}));
+
 describe('parseModEntries', () => {
   it('parse the NMM virtual config file', () => {
     const inputXML = `<virtualModActivator fileVersion="0.3.0.0">
@@ -14,7 +20,7 @@ describe('parseModEntries', () => {
                       </modList>
                       </virtualModActivator>`;
     const fileEntry = new Array({
-          fileSource: 'TestPath',
+          fileSource: 'TestMod',
           fileDestination: 'TestPath',
           isActive: true,
           filePriority: 0,
@@ -22,18 +28,18 @@ describe('parseModEntries', () => {
     const modEntry = new Array({
       nexusId: '1',
       vortexId: 'TestMod',
-      downloadId: '1',
+      downloadId: 1,
       modName: 'TestMod',
       modFilename: 'TestMod',
       archivePath: '',
       modVersion: '1.0.0',
-      archiveMD5: '',
+      archiveMD5: null,
       importFlag: true,
       isAlreadyManaged: false,
       fileEntries: fileEntry,
     });
     let result;
-    parseModEntries(inputXML, undefined)
+    return parseModEntries(inputXML, undefined, 'c:\\temp')
     .then((ModEntries) => {
       result = ModEntries;
     })
@@ -49,7 +55,7 @@ describe('parseModEntries', () => {
     const expectedError = new ParseError('The selected folder contains an older VirtualModConfig.xml file,'
         + 'you need to upgrade your NMM before proceeding with the mod import.');
     let result;
-    parseModEntries(inputXML, undefined)
+    return parseModEntries(inputXML, undefined)
     .then((ModEntries) => {
       result = ModEntries;
     })
@@ -67,7 +73,7 @@ describe('parseModEntries', () => {
                       </invalidModActivator>`;
     const expectedError = new ParseError('The selected folder does not contain a valid VirtualModConfig.xml file.');
     let result;
-    parseModEntries(inputXML, undefined)
+    return parseModEntries(inputXML, undefined)
     .then((ModEntries) => {
       result = ModEntries;
     })
@@ -85,7 +91,7 @@ describe('parseModEntries', () => {
                       </virtualModActivator>`;
     const expectedError = new ParseError('The selected folder contains an empty VirtualModConfig.xml file.');
     let result;
-    parseModEntries(inputXML, undefined)
+    return parseModEntries(inputXML, undefined)
     .then((ModEntries) => {
       result = ModEntries;
     })

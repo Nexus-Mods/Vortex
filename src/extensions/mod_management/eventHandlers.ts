@@ -1,49 +1,52 @@
 import {IExtensionApi} from '../../types/IExtensionContext';
-import {IDiscoveryResult, IState, IStatePaths} from '../../types/IState';
-import { ProcessCanceled } from '../../util/CustomErrors';
+import {IState, IModTable} from '../../types/IState';
+import { ProcessCanceled, TemporaryError, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
-import {log} from '../../util/log';
 import {showError} from '../../util/message';
 import {getSafe} from '../../util/storeHelper';
 import {truthy} from '../../util/util';
 
 import {IDownload} from '../download_management/types/IDownload';
-import {activeGameId, activeProfile} from '../profile_management/selectors';
+import {activeGameId} from '../profile_management/selectors';
 import {addMod, removeMod} from './actions/mods';
 import {setActivator} from './actions/settings';
 import {IDeploymentMethod} from './types/IDeploymentMethod';
 import {IMod} from './types/IMod';
 import {loadActivation, saveActivation} from './util/activationStore';
 
-import {getGame} from '../gamemode_management/index';
-import {currentGameDiscovery} from '../gamemode_management/selectors';
+import {getGame} from '../gamemode_management/util/getGame';
 import {setModEnabled} from '../profile_management/actions/profiles';
 import {IProfile} from '../profile_management/types/IProfile';
 
 import allTypesSupported from './util/allTypesSupported';
 import refreshMods from './util/refreshMods';
-import resolvePath from './util/resolvePath';
-import supportedActivators from './util/supportedActivators';
 
 import InstallManager from './InstallManager';
-import {currentActivator, installPath} from './selectors';
+import {currentActivator, installPath, installPathForGame} from './selectors';
 
 import * as Promise from 'bluebird';
 import * as path from 'path';
+import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
+import queryGameId from './util/queryGameId';
+import { downloadPathForGame } from '../../util/selectors';
+import { setDeploymentNecessary } from './actions/deployment';
+import { getSupportedActivators } from './util/deploymentMethods';
 
 export function onGameModeActivated(
     api: IExtensionApi, activators: IDeploymentMethod[], newGame: string) {
   const store = api.store;
   const state: IState = store.getState();
   const configuredActivatorId = currentActivator(state);
-  const supported = supportedActivators(activators, state);
+  const supported = getSupportedActivators(state);
   const configuredActivator =
     supported.find(activator => activator.id === configuredActivatorId);
   const gameId = activeGameId(state);
   const gameDiscovery = state.settings.gameMode.discovered[gameId];
   const game = getGame(gameId);
 
-  if ((gameDiscovery === undefined) || (gameDiscovery.path === undefined)) {
+  if ((gameDiscovery === undefined)
+      || (gameDiscovery.path === undefined)
+      || (game === undefined)) {
     return;
   }
 
@@ -72,7 +75,12 @@ export function onGameModeActivated(
       const modPaths = game.getModPaths(gameDiscovery.path);
       const purgePromise = oldActivator !== undefined
         ? Promise.mapSeries(Object.keys(modPaths),
-            typeId => oldActivator.purge(instPath, modPaths[typeId])).then(() => undefined)
+            typeId => oldActivator.purge(instPath, modPaths[typeId]))
+              .then(() => undefined)
+              .catch(TemporaryError, err =>
+                  api.showErrorNotification('Purge failed, please try again',
+                    err.message, { allowReport: false }))
+              .catch(err => api.showErrorNotification('Purge filed', err))
         : Promise.resolve();
 
       purgePromise.then(() => {
@@ -98,6 +106,7 @@ export function onGameModeActivated(
       api.events.emit('mods-refreshed');
       return null;
     })
+    .catch(UserCanceled, () => undefined)
     .catch((err: Error) => {
       showError(store.dispatch, 'Failed to refresh mods', err,
                 { allowReport: (err as any).code !== 'ENOENT' });
@@ -105,19 +114,19 @@ export function onGameModeActivated(
 }
 
 export function onPathsChanged(api: IExtensionApi,
-                               previous: { [gameId: string]: IStatePaths },
-                               current: { [gameId: string]: IStatePaths }) {
-  const store = api.store;
+                               previous: { [gameId: string]: string },
+                               current: { [gameId: string]: string }) {
+  const { store } = api;
   const state = store.getState();
   const gameMode = activeGameId(state);
   if (previous[gameMode] !== current[gameMode]) {
     const knownMods = state.persistent.mods[gameMode];
-    refreshMods(installPath(state), Object.keys(knownMods), (mod: IMod) =>
-      api.store.dispatch(addMod(gameMode, mod))
+    refreshMods(installPath(state), Object.keys(knownMods || {}), (mod: IMod) =>
+      store.dispatch(addMod(gameMode, mod))
       , (modNames: string[]) => {
         modNames.forEach((name: string) => {
           if (['downloaded', 'installed'].indexOf(knownMods[name].state) !== -1) {
-            api.store.dispatch(removeMod(gameMode, name));
+            store.dispatch(removeMod(gameMode, name));
           }
         });
       })
@@ -128,15 +137,38 @@ export function onPathsChanged(api: IExtensionApi,
   }
 }
 
+export function onModsChanged(api: IExtensionApi, previous: IModTable, current: IModTable) {
+  const { store } = api;
+  const state: IState = store.getState();
+  const gameMode = activeGameId(state);
+
+  const rulesOrOverridesChanged = modId =>
+    (previous[gameMode][modId] !== undefined)
+    && ((previous[gameMode][modId].rules !== current[gameMode][modId].rules)
+        || (previous[gameMode][modId].fileOverrides !== current[gameMode][modId].fileOverrides));
+
+  if ((previous[gameMode] !== current[gameMode])
+      && !state.persistent.deployment.needToDeploy[gameMode]) {
+    if (Object.keys(current[gameMode]).find(rulesOrOverridesChanged) !== undefined) {
+      store.dispatch(setDeploymentNecessary(gameMode, true));
+    }
+  }
+}
+
 function undeploy(api: IExtensionApi,
                   activators: IDeploymentMethod[],
                   gameMode: string,
-                  mod: IMod,
-                  callback?: (error: Error) => void): Promise<void> {
+                  mod: IMod): Promise<void> {
   const store = api.store;
   const state: IState = store.getState();
 
   const discovery = state.settings.gameMode.discovered[gameMode];
+
+  if ((discovery === undefined) || (discovery.path === undefined)) {
+    // if the game hasn't been discovered we can't deploy, but that's not really a problem
+    return Promise.resolve();
+  }
+
   const game = getGame(gameMode);
   const modPaths = game.getModPaths(discovery.path);
   const modTypes = Object.keys(modPaths);
@@ -148,25 +180,24 @@ function undeploy(api: IExtensionApi,
     : activators.find(act => allTypesSupported(act, state, gameMode, modTypes) === undefined);
 
   if (activator === undefined) {
-    return Promise.reject(callback(new ProcessCanceled('no activator')));
+    return Promise.reject(new ProcessCanceled('No deployment method active'));
   }
 
-  const installationPath = resolvePath('install', state.settings.mods.paths, gameMode);
-
-  if (discovery === undefined) {
-    // if the game hasn't been discovered we can't deploy, but that's not really a problem
-    return Promise.resolve(callback(null));
-  }
+  const installationPath = installPathForGame(state, gameMode);
 
   const dataPath = modPaths[mod.type || ''];
-  return loadActivation(api, mod.type, dataPath)
-    .then(lastActivation => activator.prepare(dataPath, false, lastActivation))
+  let normalize: Normalize;
+  return getNormalizeFunc(dataPath)
+    .then(norm => {
+      normalize = norm;
+      return loadActivation(api, mod.type, dataPath, activatorId);
+    })
+    .then(lastActivation => activator.prepare(dataPath, false, lastActivation, normalize))
     .then(() => (mod !== undefined)
       ? activator.deactivate(installationPath, dataPath, mod)
       : Promise.resolve())
     .then(() => activator.finalize(gameMode, dataPath, installationPath))
-    .then(newActivation => saveActivation(mod.type, state.app.instanceId, dataPath, newActivation))
-    .catch(err => callback(err));
+    .then(newActivation => saveActivation(mod.type, state.app.instanceId, dataPath, newActivation, activator.id));
 }
 
 export function onRemoveMod(api: IExtensionApi,
@@ -179,8 +210,10 @@ export function onRemoveMod(api: IExtensionApi,
 
   const modState = getSafe(state, ['persistent', 'mods', gameMode, modId, 'state'], undefined);
   if (['downloaded', 'installed'].indexOf(modState) === -1) {
+    if (callback !== undefined) {
       callback(new ProcessCanceled('Can\'t delete mod during download or install'));
-      return;
+    }
+    return;
   }
 
   // we need to remove the mod from activation, otherwise me might leave orphaned
@@ -195,12 +228,11 @@ export function onRemoveMod(api: IExtensionApi,
   }
 
   const profile: IProfile = getSafe(state, ['persistent', 'profiles', profileId], undefined);
-
-  const wasEnabled = getSafe(profile, ['modState', modId, 'enabled'], false);
+  const wasEnabled: boolean = getSafe(profile, ['modState', modId, 'enabled'], false);
 
   store.dispatch(setModEnabled(profileId, modId, false));
 
-  const installationPath = resolvePath('install', state.settings.mods.paths, gameMode);
+  const installationPath = installPathForGame(state, gameMode);
 
   let mod: IMod;
 
@@ -223,18 +255,34 @@ export function onRemoveMod(api: IExtensionApi,
     return;
   }
 
-  // remove from state first, otherwise if the deletion takes some time it will appear as if nothing
-  // happened
-  store.dispatch(removeMod(gameMode, mod.id));
+  // TODO: no indication anything is happening until undeployment was successful.
+  //   we used to remove the mod right away but then if undeployment failed the mod was gone
+  //   anyway
 
-  (wasEnabled ? undeploy(api, activators, gameMode, mod, callback) : Promise.resolve())
+  (wasEnabled ? undeploy(api, activators, gameMode, mod) : Promise.resolve())
   .then(() => truthy(mod)
     ? fs.removeAsync(path.join(installationPath, mod.installationPath))
         .catch(err => err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err))
     : Promise.resolve())
   .then(() => {
+    store.dispatch(removeMod(gameMode, mod.id));
     if (callback !== undefined) {
       callback(null);
+    }
+  })
+  .catch(TemporaryError, (err) => {
+    if (callback !== undefined) {
+      callback(err);
+    } else {
+      api.showErrorNotification('Failed to undeploy mod, please try again',
+        err.message, { allowReport: false });
+    }
+  })
+  .catch(ProcessCanceled, (err) => {
+    if (callback !== undefined) {
+      callback(err);
+    } else {
+      api.showErrorNotification('Failed to remove mod', err.message, { allowReport: false });
     }
   })
   .catch(err => {
@@ -251,10 +299,10 @@ export function onAddMod(api: IExtensionApi, gameId: string,
   const store = api.store;
   const state: IState = store.getState();
 
-  const installationPath = resolvePath('install', state.settings.mods.paths, gameId);
+  const installationPath = installPathForGame(state, gameId);
 
   store.dispatch(addMod(gameId, mod));
-  fs.mkdirAsync(path.join(installationPath, mod.installationPath))
+  fs.ensureDirAsync(path.join(installationPath, mod.installationPath))
   .then(() => {
     callback(null);
   })
@@ -266,9 +314,9 @@ export function onAddMod(api: IExtensionApi, gameId: string,
 export function onStartInstallDownload(api: IExtensionApi,
                                        installManager: InstallManager,
                                        downloadId: string,
-                                       callback?: (error, id: string) => void) {
+                                       callback?: (error, id: string) => void): Promise<void> {
   const store = api.store;
-  const state = store.getState();
+  const state: IState = store.getState();
   const download: IDownload = state.persistent.downloads.files[downloadId];
   if (download === undefined) {
     api.showErrorNotification('Unknown Download',
@@ -276,30 +324,39 @@ export function onStartInstallDownload(api: IExtensionApi,
       + 'Please reinstall by installing the file from the downloads tab.', {
         allowReport: false,
       });
-    return;
+    return Promise.resolve();
   }
 
-  const gameId = download.game || activeGameId(state);
-  if (!truthy(download.localPath)) {
-    api.events.emit('refresh-downloads', gameId, () => {
-      api.showErrorNotification('Download invalid',
-      'Sorry, the meta data for this download is incomplete. Vortex has '
-      + 'tried to refreshed that data, please try again.',
-      { allowReport: false });
+  return queryGameId(api.store, download.game)
+    .then(gameId => {
+      if (!truthy(download.localPath)) {
+        api.events.emit('refresh-downloads', gameId, () => {
+          api.showErrorNotification('Download invalid',
+            'Sorry, the meta data for this download is incomplete. Vortex has '
+            + 'tried to refresh it, please try again.',
+            { allowReport: false });
+        });
+        return Promise.resolve();
+      }
+
+      const downloadGame: string = Array.isArray(download.game) ? download.game[0] : download.game;
+      const downloadPath: string = downloadPathForGame(state, downloadGame);
+      if (downloadPath === undefined) {
+        api.showErrorNotification('Unknown Game',
+          'Failed to determine installation directory. This shouldn\'t have happened', {
+            allowReport: true,
+          });
+        return;
+      }
+      const fullPath: string = path.join(downloadPath, download.localPath);
+      installManager.install(downloadId, fullPath, download.game, api,
+        { download }, true, false, callback, gameId);
+    })
+    .catch(err => {
+      if (callback !== undefined) {
+        callback(err, undefined);
+      } else if (!(err instanceof UserCanceled)) {
+        api.showErrorNotification('Failed to start download', err);
+      }
     });
-    return;
-  }
-
-  const inPaths = state.settings.mods.paths;
-  const downloadPath: string = resolvePath('download', inPaths, gameId);
-  if (downloadPath === undefined) {
-    api.showErrorNotification('Unknown Game',
-      'Failed to determine installation directory. This shouldn\'t have happened', {
-        allowReport: true,
-      });
-    return;
-  }
-  const fullPath: string = path.join(downloadPath, download.localPath);
-  installManager.install(downloadId, fullPath, download.game, api,
-    { download }, true, false, callback);
 }

@@ -65,7 +65,11 @@ export const removeDownload = safeCreateAction('REMOVE_DOWNLOAD',
 /**
  * sets the current download speed in bytes/second
  */
-export const setDownloadSpeed = safeCreateAction('SET_DOWNLOAD_SPEED', speed => speed);
+export const setDownloadSpeed = safeCreateAction(
+  'SET_DOWNLOAD_SPEED', speed => speed, () => ({ forward: false }));
+
+export const setDownloadSpeeds = safeCreateAction(
+  'SET_DOWNLOAD_SPEEDS', speeds => speeds);
 
 /**
  * add a file that has been found on disk but where we weren't involved
@@ -83,3 +87,6 @@ export const setDownloadInstalled = safeCreateAction('SET_DOWNLOAD_INSTALLED',
 
 export const setDownloadTime = safeCreateAction('SET_DOWNLOAD_TIME',
   (id: string, time: number) => ({ id, time }));
+
+export const setCompatibleGames = safeCreateAction('SET_COMPATIBLE_GAMES',
+  (id: string, games: string[]) => ({ id, games }));

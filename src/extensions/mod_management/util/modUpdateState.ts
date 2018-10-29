@@ -1,29 +1,24 @@
-import * as fs from '../../../util/fs';
 import { getSafe } from '../../../util/storeHelper';
-import { IModWithState } from '../types/IModProps';
 
 import versionClean from './versionClean';
-
-import * as path from 'path';
 
 export type UpdateState =
   'bug-update' | 'bug-update-site' | 'bug-disable' |
   'update' | 'update-site' | 'current' | 'install';
 
-function updateState(mod: IModWithState, downloadPath: string, mods: {}): UpdateState {
-  const fileId: string = getSafe(mod.attributes, ['fileId'], undefined);
-  const version: string = getSafe(mod.attributes, ['version'], undefined);
-  const newestFileId: string = getSafe(mod.attributes, ['newestFileId'], undefined);
-  const newestVersion: string = getSafe(mod.attributes, ['newestVersion'], undefined);
-  const bugMessage: string = getSafe(mod.attributes, ['bugMessage'], undefined);
+function updateState(attributes: { [id: string]: any }): UpdateState {
+  const fileId: string = getSafe(attributes, ['fileId'], undefined);
+  const version: string = getSafe(attributes, ['version'], undefined);
+  const newestFileId: string = getSafe(attributes, ['newestFileId'], undefined);
+  const newestVersion: string = getSafe(attributes, ['newestVersion'], undefined);
+  const bugMessage: string = getSafe(attributes, ['bugMessage'], undefined);
 
-  let hasUpdate = false;
-  if ((newestFileId !== undefined) && (fileId !== undefined) && (newestFileId !== fileId)) {
-    hasUpdate = true;
-  } else if ((newestVersion !== undefined) && (version !== undefined)
-             && (versionClean(newestVersion) !== versionClean(version))) {
-    hasUpdate = true;
-  }
+  // installed file is in the OLD_VERSION group or not available at all
+  let hasUpdate = (newestFileId === 'unknown')
+    // we know the newest file id and the current file id and they are not the same
+    || ((newestFileId !== undefined) && (fileId !== undefined) && (newestFileId !== fileId))
+    // we know the newest version and the current version and the are not the same
+    || ((newestVersion !== undefined) && (version !== undefined) && (versionClean(newestVersion) !== versionClean(version)))
 
   if (hasUpdate) {
     // if the newest file id is unknown this means there *is* an update (according to the

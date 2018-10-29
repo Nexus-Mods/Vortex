@@ -1,13 +1,16 @@
 import { IActionDefinition } from '../types/IActionDefinition';
 import { IExtensibleProps } from '../util/ExtensionProvider';
+import { setdefault } from '../util/util';
 
 import ActionControl, { IActionControlProps, IActionDefinitionEx } from './ActionControl';
 import Dropdown from './Dropdown';
 import Icon from './Icon';
 import ToolbarIcon from './ToolbarIcon';
+import ToolbarDropdown from './ToolbarDropdown';
 import { IconButton } from './TooltipControls';
 
-import * as update from 'immutability-helper';
+import * as I18next from 'i18next';
+import update from 'immutability-helper';
 import * as _ from 'lodash';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
@@ -24,10 +27,12 @@ export interface IBaseProps {
   buttonType?: ButtonType;
   orientation?: 'horizontal' | 'vertical';
   collapse?: boolean | 'force';
+  groupByIcon?: boolean;
   filter?: (action: IActionDefinition) => boolean;
   icon?: string;
   pullRight?: boolean;
   clickAnywhere?: boolean;
+  t: I18next.TranslationFunction;
 }
 
 type IProps = IBaseProps & { actions?: IActionDefinitionEx[] } & React.HTMLAttributes<any>;
@@ -86,9 +91,9 @@ class PortalMenu extends React.Component<IPortalMenuProps, {}> {
   }
 }
 
-function genTooltip(show: boolean | string): string {
+function genTooltip(t: I18next.TranslationFunction, show: boolean | string): string {
   return typeof (show) === 'string'
-    ? show
+    ? t(show)
     : undefined;
 }
 
@@ -96,21 +101,22 @@ interface IMenuActionProps {
   id: string;
   action: IActionDefinitionEx;
   instanceId: string | string[];
+  t: I18next.TranslationFunction;
 }
 
 class MenuAction extends React.PureComponent<IMenuActionProps, {}> {
   public render(): JSX.Element {
-    const { action, id } = this.props;
+    const { t, action, id } = this.props;
     return (
       <MenuItem
         eventKey={id}
         onSelect={this.trigger}
         disabled={action.show !== true}
-        title={genTooltip(action.show)}
+        title={genTooltip(t, action.show)}
       >
         {/*this.renderIconInner(icon, index, 'menu')*/}
         <Icon name={action.icon} />
-        <div className='button-text'>{action.title}</div>
+        <div className='button-text'>{t(action.title)}</div>
       </MenuItem>
     );
   }
@@ -141,7 +147,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
   public context: { menuLayer: JSX.Element };
 
   private portalTargetRef: JSX.Element;
-  private mBackgroundClick: () => void;
+  private mBackgroundClick: (evt: React.MouseEvent<ButtonGroup>) => void;
 
   constructor(props: IProps) {
     super(props);
@@ -158,16 +164,13 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
   }
 
   public render(): JSX.Element {
-    const { actions, clickAnywhere, collapse, icon, id, instanceId,
+    const { actions, collapse, icon, id,
             orientation, className, style } = this.props;
-    const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
 
     const classes: string[] = [];
     if (className) {
       classes.push(className);
     }
-
-    const sorted = actions.sort((lhs, rhs) => lhs.position - rhs.position);
 
     if (collapse) {
       classes.push('btngroup-collapsed');
@@ -175,7 +178,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
       const collapsed: IActionDefinition[] = [];
       const unCollapsed: IActionDefinition[] = [];
 
-      sorted.forEach(action => {
+      actions.forEach(action => {
         if ((collapse === 'force')
             || ((action.options === undefined) || !action.options.noCollapse)) {
           collapsed.push(action);
@@ -219,6 +222,17 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
         </ButtonGroup>
       );
     } else {
+      const grouped: { [key: string]: IActionDefinition[] } = actions.reduce((prev, action, idx) => {
+        if (action.icon !== undefined) {
+          setdefault(prev, action.icon, []).push(action);
+        } else {
+          prev[idx.toString()] = [action];
+        }
+        return prev;
+      }, {});
+      const byFirstPrio = (lhs: IActionDefinition[], rhs: IActionDefinition[]) => {
+        return lhs[0].position - rhs[0].position;
+      }
       return (
         <ButtonGroup
           id={id}
@@ -228,7 +242,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
           onClick={this.mBackgroundClick}
         >
           {this.props.children}
-          {sorted.map(this.renderIcon)}
+          {Object.keys(grouped).map(key => grouped[key]).sort(byFirstPrio).map(this.renderIcons)}
         </ButtonGroup>
       );
     }
@@ -236,27 +250,27 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
 
   private renderMenuItem =
     (icon: IActionDefinition & { show: boolean | string }, index: number) => {
-    const { instanceId } = this.props;
+    const { t, instanceId } = this.props;
 
     const id = `${instanceId || '1'}_${index}`;
 
     if ((icon.icon === null) && (icon.component === undefined)) {
       return (
         <MenuItem className='menu-separator-line' key={id} disabled={true}>
-          {icon.title}
+          {t(icon.title)}
         </MenuItem>
       );
     }
 
     if (icon.icon !== undefined) {
-      return <MenuAction key={id} id={id} action={icon} instanceId={instanceId} />;
+      return <MenuAction key={id} id={id} action={icon} instanceId={instanceId} t={t} />;
     } else {
       return (
         <MenuItem
           key={id}
           eventKey={id}
           disabled={icon.show !== true}
-          title={genTooltip(icon.show)}
+          title={genTooltip(t, icon.show)}
         >
           {this.renderCustomIcon(id, icon)}
         </MenuItem>
@@ -272,9 +286,40 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
     return this.renderIconInner(icon, index);
   }
 
+  private renderIcons = (icons: IActionDefinition[], index: number) => {
+    if (icons.length === 1) {
+      if ((icons[0].icon === null) && (icons[0].component === undefined)) {
+        // skip text-only elements in this mode
+        return null;
+      }
+      return this.renderIconInner(icons[0], index);
+    } else {
+      return this.renderIconGroup(icons, index);
+    }
+  }
+
+  private renderIconGroup = (icons: IActionDefinition[], index: number) => {
+    const { t, instanceId, orientation, buttonType } = this.props;
+
+    const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
+
+    const id = `${instanceId || '1'}_${index}`;
+
+    return (
+      <ToolbarDropdown
+        key={id}
+        id={id}
+        instanceId={instanceIds}
+        icons={icons}
+        buttonType={buttonType}
+        orientation={orientation}
+      />
+    );
+  }
+
   private renderIconInner = (icon: IActionDefinition, index: number,
                              forceButtonType?: ButtonType) => {
-    const { instanceId, tooltipPlacement } = this.props;
+    const { t, instanceId, tooltipPlacement } = this.props;
 
     const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
 
@@ -298,8 +343,8 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
           id={id}
           instanceId={instanceIds}
           icon={hasIcon ? icon.icon : undefined}
-          text={hasText ? icon.title : undefined}
-          tooltip={icon.title}
+          text={hasText ? t(icon.title) : undefined}
+          tooltip={t(icon.title)}
           onClick={icon.action}
           placement={tooltipPlacement}
         />
@@ -355,7 +400,13 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
     const {actions, clickAnywhere, instanceId} = this.props;
     const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
     this.mBackgroundClick = ((clickAnywhere === true) && (actions.length === 1))
-      ? (() => actions[0].action(instanceIds))
+      ? ((evt: React.MouseEvent<ButtonGroup>) => {
+        // don't trigger if the button itself was clicked
+        if (!evt.isDefaultPrevented()) {
+          evt.preventDefault();
+          actions[0].action(instanceIds);
+        }
+      })
       : undefined;
   }
 }

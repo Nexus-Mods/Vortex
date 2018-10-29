@@ -13,7 +13,7 @@ function toWordExp(input: string): string {
 
 const gamebryoTopLevel: string[] = ['distantlod', 'textures', 'meshes', 'music', 'shaders', 'video',
       'interface', 'fonts', 'scripts', 'facegen', 'menus', 'lodsettings', 'lsdata', 'sound',
-      'strings', 'trees', 'asi'];
+      'strings', 'trees', 'asi', 'tools', 'calientetools'];
 
 const gamebryoPatterns: string[] = [
   '[^/]*\\.esp$',
@@ -47,12 +47,14 @@ function stopPatterns(gameMode: string) {
                               'speedtree', 'templates', 'tests'].map(toWordExp).concat(uniPatterns);
     case 'kingdomcomedeliverance':
       return ['[^/]*\\.pak$'].concat(['mod.manifest'].map(toWordExp), uniPatterns);
+    case 'pillarsofeternity2':
+      return ['manifest.json', 'thumb.png', 'localized', 'conversations', 'atlases'].map(toWordExp);
     default: return [].concat(uniPatterns);
   }
 }
 
 interface IGameSupport {
-  iniPath?: string;
+  iniPath?: () => string;
   stopPatterns: string[];
   pluginPath?: string;
   nativePlugins?: string[];
@@ -63,7 +65,7 @@ const gameSupport: { [gameId: string]: IGameSupport } = {
     stopPatterns: stopPatterns('dragonsdogma'),
   },
   fallout4: {
-    iniPath: bethIni('Fallout4', 'Fallout4'),
+    iniPath: () => bethIni('Fallout4', 'Fallout4'),
     stopPatterns: stopPatterns('fallout4'),
     pluginPath: 'Data',
     nativePlugins: [
@@ -100,7 +102,7 @@ const gameSupport: { [gameId: string]: IGameSupport } = {
     ],
   },
   fallout4vr: {
-    iniPath: bethIni('Fallout4VR', 'Fallout4Custom'),
+    iniPath: () => bethIni('Fallout4VR', 'Fallout4Custom'),
     stopPatterns: stopPatterns('fallout4'),
     pluginPath: 'Data',
     nativePlugins: [
@@ -115,7 +117,7 @@ const gameSupport: { [gameId: string]: IGameSupport } = {
     ],
   },
   fallout3: {
-    iniPath: bethIni('Fallout3', 'Fallout3'),
+    iniPath: () => bethIni('Fallout3', 'Fallout3'),
     stopPatterns: stopPatterns('fallout3'),
     pluginPath: 'Data',
     nativePlugins: [
@@ -128,7 +130,7 @@ const gameSupport: { [gameId: string]: IGameSupport } = {
     ],
   },
   falloutnv: {
-    iniPath: bethIni('FalloutNV', 'Fallout'),
+    iniPath: () => bethIni('FalloutNV', 'Fallout'),
     stopPatterns: stopPatterns('falloutnv'),
     pluginPath: 'Data',
     nativePlugins: [
@@ -136,7 +138,7 @@ const gameSupport: { [gameId: string]: IGameSupport } = {
     ],
   },
   morrowind: {
-    iniPath: bethIni('Morrowind', 'Morrowind'),
+    iniPath: () => bethIni('Morrowind', 'Morrowind'),
     stopPatterns: stopPatterns('morrowind'),
     pluginPath: 'Data',
     nativePlugins: [
@@ -144,7 +146,7 @@ const gameSupport: { [gameId: string]: IGameSupport } = {
     ],
   },
   oblivion: {
-    iniPath: bethIni('Oblivion', 'Oblivion'),
+    iniPath: () => bethIni('Oblivion', 'Oblivion'),
     stopPatterns: stopPatterns('oblivion'),
     pluginPath: 'Data',
     nativePlugins: [
@@ -152,7 +154,7 @@ const gameSupport: { [gameId: string]: IGameSupport } = {
     ],
   },
   skyrim: {
-    iniPath: bethIni('Skyrim', 'Skyrim'),
+    iniPath: () => bethIni('Skyrim', 'Skyrim'),
     stopPatterns: stopPatterns('skyrim'),
     pluginPath: 'Data',
     nativePlugins: [
@@ -161,7 +163,7 @@ const gameSupport: { [gameId: string]: IGameSupport } = {
     ],
   },
   skyrimse: {
-    iniPath: bethIni('Skyrim Special Edition', 'Skyrim'),
+    iniPath: () => bethIni('Skyrim Special Edition', 'Skyrim'),
     stopPatterns: stopPatterns('skyrimse'),
     pluginPath: 'Data',
     nativePlugins: [
@@ -173,7 +175,7 @@ const gameSupport: { [gameId: string]: IGameSupport } = {
     ],
   },
   skyrimvr: {
-    iniPath: bethIni('Skyrim VR', 'Skyrim'),
+    iniPath: () => bethIni('Skyrim VR', 'Skyrim'),
     stopPatterns: stopPatterns('skyrimse'),
     pluginPath: 'Data',
     nativePlugins: [
@@ -191,18 +193,28 @@ const gameSupport: { [gameId: string]: IGameSupport } = {
   kingdomcomedeliverance: {
     stopPatterns: stopPatterns('kingdomcomedeliverance'),
   },
+  subnautica: {
+    stopPatterns: stopPatterns('subnautica'),
+    pluginPath: 'QMods',
+  },
+  stateofdecay: {
+    stopPatterns: stopPatterns('stateofdecay'),
+  },
+  pillarsofeternity2: {
+    stopPatterns: stopPatterns('pillarsofeternity2'),
+  },
 };
 
-export function getIniFilePath(gameMode: string) {
+export function getIniFilePath(gameMode: string): string {
   if ((gameSupport[gameMode] === undefined)
       || (gameSupport[gameMode].iniPath === undefined)) {
     return '';
   }
 
-  return gameSupport[gameMode].iniPath;
+  return gameSupport[gameMode].iniPath();
 }
 
-export function getStopPatterns(gameMode: string) {
+export function getStopPatterns(gameMode: string): string[] {
   if ((gameSupport[gameMode] === undefined)
       || (gameSupport[gameMode].stopPatterns === undefined)) {
     return [];
@@ -211,7 +223,7 @@ export function getStopPatterns(gameMode: string) {
   return gameSupport[gameMode].stopPatterns;
 }
 
-export function getPluginPath(gameMode: string) {
+export function getPluginPath(gameMode: string): string {
   if ((gameSupport[gameMode] === undefined)
       || (gameSupport[gameMode].pluginPath === undefined)) {
     return null;
@@ -220,7 +232,7 @@ export function getPluginPath(gameMode: string) {
   return gameSupport[gameMode].pluginPath;
 }
 
-export function getNativePlugins(gameMode: string) {
+export function getNativePlugins(gameMode: string): string[] {
   if ((gameSupport[gameMode] === undefined)
     || (gameSupport[gameMode].nativePlugins === undefined)) {
     return [];

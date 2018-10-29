@@ -1,16 +1,46 @@
 import { showDialog } from '../../actions';
 import { IExtensionApi } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
+import { UserCanceled } from '../../util/api';
 import { log } from '../../util/log';
-import { spawnSelf } from '../../util/util';
+import { truthy } from '../../util/util';
 
-import {app, ipcMain} from 'electron';
+import {ipcMain} from 'electron';
 import {autoUpdater as AUType, UpdateInfo} from 'electron-updater';
+import * as semver from 'semver';
 
 function setupAutoUpdate(api: IExtensionApi) {
   const autoUpdater: typeof AUType = require('electron-updater').autoUpdater;
 
   const state: IState = api.store.getState();
+
+  const queryUpdate = (version: string): Promise<void> => {
+    return new Promise<void>((resolve, reject) => {
+      if (semver.satisfies(version, '^' + autoUpdater.currentVersion.version)) {
+        // don't warn on a "compatible" update
+        return resolve();
+      }
+
+      api.sendNotification({
+        type: 'info',
+        title: 'Major update available',
+        message: 'After installing this update you shouldn\'t go back to an older version.',
+        noDismiss: true,
+        actions: [
+          { title: 'Download', action: dismiss => {
+            dismiss();
+            resolve();
+           } },
+          {
+            title: 'Remind me later', action: dismiss => {
+              dismiss();
+              reject(new UserCanceled());
+            }
+          },
+        ]
+      });
+    })
+  }
 
   autoUpdater.on('error', (err) => {
     if ((err.cmd !== undefined) && err.cmd.startsWith('powershell.exe')) {
@@ -37,8 +67,15 @@ function setupAutoUpdate(api: IExtensionApi) {
     }
   });
 
-  autoUpdater.on('update-available', () => {
-                 log('info', 'update available'); });
+  autoUpdater.on('update-available', (info: UpdateInfo) => {
+    log('info', 'update available');
+    queryUpdate(info.version)
+      .then(() => autoUpdater.downloadUpdate()
+        .catch(err => {
+          log('warn', 'Downloading update failed', err);
+        }))
+      .catch(() => null);
+  });
   autoUpdater.on('update-not-available', () => {
                  log('info', 'no update available'); });
   autoUpdater.on('update-downloaded',
@@ -74,11 +111,14 @@ function setupAutoUpdate(api: IExtensionApi) {
       const { channel } = state.settings.update;
       if ((channel !== 'none') && (process.env.NODE_ENV !== 'development')) {
         autoUpdater.allowPrerelease = channel === 'beta';
+        autoUpdater.autoDownload = false;
         autoUpdater.checkForUpdates()
         .then(check => {
-          check.downloadPromise.catch(err => {
-            log('warn', 'Checking for update failed', err);
-          });
+          if (truthy(check.downloadPromise)) {
+            check.downloadPromise.catch(err => {
+              log('warn', 'Checking for update failed', err);
+            });
+          }
         })
         .catch(err => {
           log('warn', 'Checking for update failed', err);

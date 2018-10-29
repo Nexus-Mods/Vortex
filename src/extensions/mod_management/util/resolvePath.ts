@@ -1,10 +1,9 @@
-import { IStatePaths } from '../../../types/IState';
 import makeCI from '../../../util/makeCaseInsensitive';
 import { getSafe } from '../../../util/storeHelper';
 
 import { app as appIn, remote } from 'electron';
 import * as path from 'path';
-import format = require('string-template');
+import * as format from 'string-template';
 
 const app = remote !== undefined ? remote.app : appIn;
 
@@ -18,7 +17,7 @@ export const pathDefaults = {
 
 let userData;
 
-function resolvePath(key: PathKey, paths: {[gameId: string]: IStatePaths},
+function resolvePath(key: PathKey, paths: {[gameId: string]: any},
                      gameMode: string): string {
   if (gameMode === undefined) {
     return undefined;

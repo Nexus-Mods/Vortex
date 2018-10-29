@@ -2,12 +2,11 @@ import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext'
 import { IGame } from '../../types/IGame';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
-import { activeGameId } from '../../util/selectors';
+import { installPathForGame } from '../../util/selectors';
 
-import { getGame } from '../gamemode_management';
+import { getGame } from '../gamemode_management/util/getGame';
 import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
 import LinkingDeployment from '../mod_management/LinkingDeployment';
-import { installPath } from '../mod_management/selectors';
 import { IDeployedFile, IDeploymentMethod } from '../mod_management/types/IDeploymentMethod';
 
 import * as Promise from 'bluebird';
@@ -28,8 +27,9 @@ class DeploymentMethod extends LinkingDeployment {
 
   constructor(api: IExtensionApi) {
     super(
-        'hardlink_activator', 'Hardlink deployment',
+        'hardlink_activator', 'Hardlink Deployment',
         'Deploys mods by setting hard links in the destination directory.',
+        true,
         api);
   }
 
@@ -44,7 +44,7 @@ class DeploymentMethod extends LinkingDeployment {
       + 'a full-fledged index, so there is no differentiation between "original" and "link" '
       + 'after the link was created.\n'
       + 'Advantages:\n'
-      + ' - perfect compatibility\n'
+      + ' - perfect compatibility with all applications\n'
       + ' - no performance penalty\n'
       + ' - Wide OS and FS support\n'
       + 'Disadvantages:\n'
@@ -67,13 +67,15 @@ class DeploymentMethod extends LinkingDeployment {
     try {
       fs.accessSync(modPaths[typeId], fs.constants.W_OK);
     } catch (err) {
-      log('info', 'hardlink activator not supported due to lack of write access',
+      log('info', 'hardlink deployment not supported due to lack of write access',
           { typeId, path: modPaths[typeId] });
       return `Can\'t write to output directory: ${modPaths[typeId]}`;
     }
 
+    const installationPath = installPathForGame(state, gameId);
+
     try {
-      if (fs.statSync(installPath(state)).dev !== fs.statSync(modPaths[typeId]).dev) {
+      if (fs.statSync(installationPath).dev !== fs.statSync(modPaths[typeId]).dev) {
         // hard links work only on the same drive
         return 'Works only if mods are installed on the same drive as the game. '
           + 'You can go to settings and change the mod directory to the same drive '
@@ -82,10 +84,38 @@ class DeploymentMethod extends LinkingDeployment {
     } catch (err) {
       // this can happen when managing the the game for the first time
       log('info', 'failed to stat. directory missing?', {
-        dir1: installPath(state), dir2: modPaths[typeId],
+        dir1: installationPath || 'undefined', dir2: modPaths[typeId],
         err: util.inspect(err),
       });
       return 'Game not fully initialized yet, this should disappear soon.';
+    }
+
+    const canary = path.join(installationPath, '__vortex_canary.tmp');
+
+    try {
+      fs.writeFileSync(canary, 'Should only exist temporarily, feel free to delete');
+      fs.linkSync(canary, canary + '.link');
+    } catch (err) {
+      // EMFILE shouldn't keep us from using hard linking
+      if (err.code !== 'EMFILE') {
+        return 'Filesystem doesn\'t support hard links';
+      }
+    }
+
+    try {
+      fs.removeSync(canary + '.link');
+      fs.removeSync(canary);
+    } catch (err) {
+      // cleanup failed, this is almost certainly due to an AV jumping in to check these new files,
+      // I mean, why would I be able to create the files but not delete them?
+      // just try again later - can't do that synchronously though
+      Promise.delay(100)
+        .then(() => fs.removeAsync(canary + '.link'))
+        .then(() => fs.removeAsync(canary))
+        .catch(err => {
+          log('error', 'failed to clean up canary file. This indicates we were able to create '
+              + 'a file in the target directory but not delete it', { installationPath, message: err.message });
+        });
     }
 
     return undefined;
@@ -129,7 +159,7 @@ class DeploymentMethod extends LinkingDeployment {
                   ? fs.unlinkAsync(entry.filePath)
                     .catch(err =>
                       log('warn', 'failed to remove', entry.filePath))
-                  : Promise.resolve())
+                  : Promise.resolve(), { concurrency: 100 })
               .then(() => undefined));
           }, {details: true})
           .then(() => queue);
@@ -138,23 +168,22 @@ class DeploymentMethod extends LinkingDeployment {
 
   protected linkFile(linkPath: string, sourcePath: string): Promise<void> {
     return this.ensureDir(path.dirname(linkPath))
-        .then((created: any) => {
-          let tagDir: Promise<void>;
-          if (created !== null) {
-            tagDir = fs.writeFileAsync(
-                path.join(created, LinkingDeployment.TAG_NAME),
-                'This directory was created by Vortex deployment and will be removed ' +
-                    'during purging if it\'s empty');
-          } else {
-            tagDir = Promise.resolve();
-          }
-          return tagDir.then(() => fs.linkAsync(sourcePath, linkPath))
-              .catch(err => {
-                if (err.code !== 'EEXIST') {
-                  throw err;
-                }
-              });
-        });
+      .then((created: any) => {
+        let tagDir: Promise<void>;
+        if (created !== null) {
+          const tagPath = path.join(created, LinkingDeployment.NEW_TAG_NAME);
+          tagDir = fs.writeFileAsync(tagPath,
+              'This directory was created by Vortex deployment and will be removed '
+              + 'during purging if it\'s empty');
+        } else {
+          tagDir = Promise.resolve();
+        }
+        return tagDir.then(() => fs.linkAsync(sourcePath, linkPath))
+            .catch(err => (err.code !== 'EEXIST')
+                ? Promise.reject(err)
+                : fs.removeAsync(linkPath)
+                  .then(() => fs.linkAsync(sourcePath, linkPath)));
+      });
   }
 
   protected unlinkFile(linkPath: string): Promise<void> {

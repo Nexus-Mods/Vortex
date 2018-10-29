@@ -3,18 +3,18 @@ import Toggle from '../../../controls/Toggle';
 import { Button } from '../../../controls/TooltipControls';
 import { ITableAttribute } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { midClip, setdefault } from '../../../util/util';
+import { setdefault } from '../../../util/util';
 
-import { confirmExternalChanges, setExternalChangeAction } from '../actions/externalChanges';
+import { confirmExternalChanges, setExternalChangeAction } from '../actions/session';
 
 import { FileAction, IFileEntry } from '../types/IFileEntry';
 
 import * as I18next from 'i18next';
-import * as update from 'immutability-helper';
+import update from 'immutability-helper';
 import * as React from 'react';
-import { Collapse, Modal } from 'react-bootstrap';
+import { Modal } from 'react-bootstrap';
 import * as Redux from 'redux';
-import * as ReduxThunk from 'redux-thunk';
+import { ThunkDispatch } from 'redux-thunk';
 
 export interface IBaseProps {
 }
@@ -31,26 +31,27 @@ interface IActionProps {
 interface IPossibleAction {
   key: string;
   text: string;
+  allText: string;
 }
 
 const nop = () => undefined;
 
 const possibleActions: { [type: string]: IPossibleAction[] } = {
   refchange: [
-    { key: 'import', text: 'Apply' },
-    { key: 'drop', text: 'Undo' },
+    { key: 'import', text: 'Save change', allText: 'Save all changes' },
+    { key: 'drop', text: 'Revert change', allText: 'Revert all changes' },
   ],
   valchange: [
-    { key: 'nop', text: 'Apply' },
+    { key: 'nop', text: 'Save change', allText: 'Save all changes' },
     // TODO: implement a "restore from archive" option
   ],
   deleted: [
-    { key: 'delete', text: 'Apply' },
-    { key: 'restore', text: 'Undo' },
+    { key: 'delete', text: 'Save change', allText: 'Save all changes' },
+    { key: 'restore', text: 'Revert change', allText: 'Revert all changes' },
   ],
   srcdeleted: [
-    { key: 'drop', text: 'Apply' },
-    { key: 'import', text: 'Undo' },
+    { key: 'drop', text: 'Save change', allText: 'Save all changes' },
+    { key: 'import', text: 'Revert change', allText: 'Revert all changes' },
   ],
 };
 
@@ -102,8 +103,6 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
       this.setAllFunc('srcdeleted', evt.currentTarget.href.split('#')[1]);
     },
   };
-
-  private mRef: HTMLElement;
 
   constructor(props: IProps) {
     super(props);
@@ -175,13 +174,14 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         {/* this.renderChangedSources(t('These mods were modified'), 'valchange', vc) */}
         {this.renderChangedSources(t('File content modified '
-          + '("Apply" will save the changed, "Undo" will restore the original content)'),
+                    + '("Save" will apply the changed file from the game directory permanently, '
+                    + '"Revert" will restore the original file from the mod directory)'),
           'refchange', rc)}
         {this.renderChangedSources(t('Source files were deleted '
-          + '("Apply" will permanenly remove the files, "Undo" will restore them)'),
+          + '("Save" will remove the files permanenly, "Revert" will restore them)'),
           'srcdeleted', sd)}
         {this.renderChangedSources(t('Links were deleted '
-          + '("Apply" will permanently remove the files, "Undo" will restore them)'),
+          + '("Save" will remove the files permanently, "Revert" will restore them)'),
           'deleted', d)}
       </div>
     );
@@ -195,13 +195,14 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         {/* this.renderChangedFile(t('These files were modified'), 'valchange', valChanged) */}
         {this.renderChangedFile(t('File content modified'
-          + '("Apply" will save the changed, "Undo" will restore the original content)'),
+                    + '("Save" will apply the changed file from the game directory permanently, '
+                    + '"Revert" will restore the original file from the mod directory)'),
           'refchange', refChanged)}
         {this.renderChangedFile(t('Source files were deleted'
-          + '("Apply" will permanenly remove the files, "Undo" will restore them)'),
+          + '("Save" will remove the files permanenly, "Revert" will restore them)'),
           'srcdeleted', srcDeleted)}
         {this.renderChangedFile(t('Links were deleted'
-          + '("Apply" will permanently remove the files, "Undo" will restore them)'),
+          + '("Save" will remove the files permanently, "Revert" will restore them)'),
           'deleted', deleted)}
       </div>
     );
@@ -226,7 +227,7 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
             onClick={this.setAll[type]}
             href={'#' + action.key}
             style={{ marginRight: 10 }}
-          >{t(action.text)}
+          >{t(action.allText)}
           </a>
         ))
         }</p>
@@ -263,7 +264,7 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
             onClick={this.setAll[type]}
             href={'#' + action.key}
             style={{ marginRight: 10 }}
-          >{t(action.text)}
+          >{t(action.allText)}
           </a>
         ))
         }</p>
@@ -305,11 +306,21 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
         id: 'action',
         name: 'Action',
         description: 'the action to take on files in this mod',
-        calc: (source: ISourceEntry) =>
-          possibleActions[type].find(act => act.key === source.action).text,
+        calc: (source: ISourceEntry) => {
+          const action = possibleActions[type].find(act => act.key === source.action);
+          if (action === undefined) {
+            this.context.api.showErrorNotification('Invalid action', {
+              type,
+              action: source.action,
+            });
+            return 'INVALID!';
+          }
+          return action.text;
+        },
         placement: 'table',
         edit: {
           inline: true,
+          actions: false,
           choices: () => possibleActions[type],
           onChangeValue: (source: ISourceEntry, value: any) => {
             let newAction = value;
@@ -346,11 +357,22 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
         id: 'action',
         name: 'Action',
         description: 'the action to take on the file',
-        calc: (file: IFileEntry) =>
-          possibleActions[type].find(act => act.key === file.action).text,
+        calc: (file: IFileEntry) => {
+          const action = possibleActions[type].find(act => act.key === file.action);
+          if (action === undefined) {
+            this.context.api.showErrorNotification('Invalid action', {
+              type,
+              action: file.action,
+            });
+            return 'INVALID!';
+          }
+
+          return action.text;
+        },
         placement: 'table',
         edit: {
           inline: true,
+          actions: false,
           choices: () => possibleActions[type],
           onChangeValue: (file: IFileEntry, value: any) => {
             if (value === undefined) {
@@ -392,11 +414,11 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
 
 function mapStateToProps(state: any): IConnectedProps {
   return {
-    changes: state.session.externalChanges.changes,
+    changes: state.session.mods.changes,
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onChangeAction: (fileName: string[], action: FileAction) =>
       dispatch(setExternalChangeAction(fileName, action)),

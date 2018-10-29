@@ -1,15 +1,16 @@
 import { showDialog } from '../actions/notifications';
 import { IDialogResult } from '../types/IDialog';
+import { ThunkStore } from '../types/IExtensionContext';
 import { UserCanceled } from './CustomErrors';
 import delayed from './delayed';
+import getVortexPath from './getVortexPath';
 import { log } from './log';
 
 import * as Promise from 'bluebird';
 import { spawn } from 'child_process';
+import { createHash } from 'crypto';
 import * as fs from 'fs-extra-promise';
-import * as _ from 'lodash';
 import * as path from 'path';
-import * as Redux from 'redux';
 import { file } from 'tmp';
 
 /**
@@ -49,6 +50,42 @@ export function setdefault<T>(obj: any, key: PropertyKey, def: T): T {
     obj[key] = def;
   }
   return obj[key];
+}
+
+function checksum(input: string | Buffer): string {
+  return createHash('md5')
+    .update(input.toString(), 'utf8')
+    .digest('hex');
+}
+
+export function writeFileAtomic(filePath: string, data: string | Buffer,
+                                options?: fs.WriteFileOptions) {
+  let cleanup: () => void;
+  let tmpPath: string;
+  const hash = checksum(data);
+  return new Promise<number>((resolve, reject) => {
+    file({ template: `${filePath}.XXXXXX.tmp` },
+         (err: any, genPath: string, fd: number, cleanupCB: () => void) => {
+      if (err) {
+        return reject(err);
+      }
+      cleanup = cleanupCB;
+      tmpPath = genPath;
+      resolve(fd);
+    });
+  })
+  .then(fd => fs.closeAsync(fd))
+  .then(() => fs.writeFileAsync(tmpPath, data, options))
+  .tapCatch(() => {
+    if (cleanup !== undefined) {
+      cleanup();
+    }
+  })
+  .then(() => fs.readFileAsync(tmpPath))
+  .then(data => (checksum(data) !== hash)
+      ? Promise.reject(new Error('Write failed, checksums differ'))
+      : Promise.resolve())
+  .then(() => fs.renameAsync(tmpPath, filePath));
 }
 
 /**
@@ -107,7 +144,7 @@ export function copyFileAtomic(srcPath: string,
       });
 }
 
-export function removePersistent(store: Redux.Store<any>, destPath: string): Promise<void> {
+export function removePersistent(store: ThunkStore<any>, destPath: string): Promise<void> {
   return fs.removeAsync(destPath)
     .catch(err => {
       if (err.code === 'ENOENT') {
@@ -214,7 +251,7 @@ export function objDiff(lhs: any, rhs: any): any {
 export function spawnSelf(args: string[]) {
   if (process.execPath.endsWith('electron.exe')) {
     // development version
-    args = [path.resolve(__dirname, '..', '..')].concat(args);
+    args = [getVortexPath('package')].concat(args);
   }
   spawn(process.execPath, args, {
     detached: true,
@@ -233,6 +270,25 @@ export function bytesToString(bytes: number): string {
     return bytes.toFixed(Math.max(0, labelIdx - 1)) + ' ' + labels[labelIdx];
   } catch (err) {
     return '???';
+  }
+}
+
+export function pad(value: number, padding: string, width: number) {
+  const temp = `${value}`;
+  return (temp.length >= width)
+    ? temp
+    : new Array(width - temp.length + 1).join(padding) + temp;
+}
+
+export function timeToString(seconds: number): string {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor(seconds / 60) - (hours * 60);
+  seconds = Math.floor(seconds - minutes * 60 - hours * 3600);
+
+  if (hours > 0) {
+    return `${pad(hours, '0', 2)}:${pad(minutes, '0', 2)}:${pad(seconds, '0', 2)}`;
+  } else {
+    return `${pad(minutes, '0', 2)}:${pad(seconds, '0', 2)}`;
   }
 }
 

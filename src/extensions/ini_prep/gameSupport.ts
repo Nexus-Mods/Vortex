@@ -2,8 +2,7 @@ import { getSafe } from '../../util/storeHelper';
 
 import { app as appIn, remote } from 'electron';
 import * as path from 'path';
-import format = require('string-template');
-import { IState } from '../../types/IState';
+import * as format from 'string-template';
 import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
 
 const app = appIn || remote.app;
@@ -41,6 +40,7 @@ const gameSupport = {
     iniFiles: [
       path.join('{mygames}', 'Fallout4', 'Fallout4.ini'),
       path.join('{mygames}', 'Fallout4', 'Fallout4Prefs.ini'),
+      path.join('{mygames}', 'Fallout4', 'Fallout4Custom.ini'),
     ],
     iniFormat: 'winapi',
   },

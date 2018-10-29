@@ -1,13 +1,15 @@
+import { setDialogVisible } from '../../../actions/session';
+import Spinner from '../../../controls/Spinner';
 import { IconButton } from '../../../controls/TooltipControls';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
+import opn from '../../../util/opn';
 import { setUserAPIKey } from '../actions/account';
 import { IValidateKeyData } from '../types/IValidateKeyData';
 
-import opn = require('opn');
 import * as React from 'react';
 import { Button, Image } from 'react-bootstrap';
 import * as Redux from 'redux';
-import { setDialogVisible } from '../../../actions/session';
+import { ThunkDispatch } from 'redux-thunk';
 
 interface IConnectedProps {
   userInfo: IValidateKeyData;
@@ -20,7 +22,15 @@ interface IActionProps {
 
 type IProps = IConnectedProps & IActionProps;
 
-class DashboardBanner extends ComponentEx<IProps, {}> {
+class DashboardBanner extends ComponentEx<IProps, { loggingIn: boolean }> {
+  constructor(props: IProps) {
+    super(props);
+
+    this.initState({
+      loggingIn: false,
+    });
+  }
+
   public render(): JSX.Element {
     const { userInfo } = this.props;
     if ((userInfo !== undefined) && (userInfo !== null)) {
@@ -32,6 +42,7 @@ class DashboardBanner extends ComponentEx<IProps, {}> {
 
   private renderRegister(): JSX.Element {
     const { t } = this.props;
+    const { loggingIn } = this.state;
     return (
       <div className='dashlet-nexus-login'>
         <div className='nexus-login-heading'>{t('Register or Log In')}</div>
@@ -39,8 +50,8 @@ class DashboardBanner extends ComponentEx<IProps, {}> {
           {t('Log In using your Nexus Mods account or register a new account '
             + 'on the Nexus Mods website to get the best experience!')}
         </div>
-        <Button onClick={this.login}>
-          {t('Log In or Register')}
+        <Button onClick={this.login} disabled={loggingIn}>
+          {loggingIn ? <Spinner /> : t('Log In or Register')}
         </Button>
       </div>
     );
@@ -79,7 +90,9 @@ class DashboardBanner extends ComponentEx<IProps, {}> {
   }
 
   private login = () => {
+    this.nextState.loggingIn = true;
     this.context.api.events.emit('request-nexus-login', (err: Error) => {
+      this.nextState.loggingIn = false;
       if (err !== null) {
         this.context.api.showErrorNotification('Failed to get access key', err);
       }
@@ -100,11 +113,11 @@ class DashboardBanner extends ComponentEx<IProps, {}> {
 
 function mapStateToProps(state: any): IConnectedProps {
   return {
-    userInfo: state.session.nexus.userInfo,
+    userInfo: state.persistent.nexus.userInfo,
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onSetAPIKey: (APIKey: string) => dispatch(setUserAPIKey(APIKey)),
     onSetDialogVisible: (id: string) => dispatch(setDialogVisible(id)),

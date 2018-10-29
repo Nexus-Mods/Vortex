@@ -30,7 +30,7 @@ function walk(target: string,
     .then((fileNames: string[]) => {
       allFileNames = fileNames;
       return Promise.map(fileNames, (statPath: string) =>
-                         fs.lstatAsync(path.join(target, statPath)).reflect(), { concurrency: 50 });
+                fs.lstatAsync([target, statPath].join(path.sep)).reflect(), { concurrency: 50 });
     }).then((res: Array<Promise.Inspection<fs.Stats>>) => {
       // use the stats results to generate a list of paths of the directories
       // in the searched directory
@@ -42,12 +42,12 @@ function walk(target: string,
         }
         const fullPath: string = path.join(target, allFileNames[idx]);
         cbPromises.push(callback(fullPath, stat.value()));
-        if (stat.value().isDirectory()) {
+        if (stat.value().isDirectory() && (path.extname(fullPath) !== '.asar')) {
           subDirs.push(fullPath);
         }
       });
       return Promise.all(cbPromises.concat(Promise.mapSeries(subDirs, (subDir) =>
-        walk(subDir, callback))));
+                         walk(subDir, callback))));
     })
     .catch(err => {
       if ((opt.ignoreErrors !== undefined)
@@ -58,7 +58,7 @@ function walk(target: string,
         return Promise.reject(err);
       }
     })
-    .then(() => undefined);
+    .then(() => Promise.resolve());
 }
 
 export default walk;

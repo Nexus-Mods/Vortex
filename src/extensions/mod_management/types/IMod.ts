@@ -22,11 +22,13 @@ export interface IMod {
   // path to the installed mod (will usually be the same as id)
   installationPath: string;
   // dictionary of extended information fields
-  attributes: { [id: string]: any };
+  attributes?: { [id: string]: any };
   // list of custom rules for this mod instance
   rules?: IRule[];
   // list of enabled ini tweaks
   enabledINITweaks?: string[];
+  // list of files that shall always be provided by this mod, no matter the deployment order
+  fileOverrides?: string[];
 }
 
 export interface IModReference extends IReference {

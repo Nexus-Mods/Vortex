@@ -7,10 +7,11 @@ import Icon from './Icon';
 import ToolbarIcon from './ToolbarIcon';
 import { Button } from './TooltipControls';
 
-import * as update from 'immutability-helper';
+import update from 'immutability-helper';
 import * as React from 'react';
 import { FormControl } from 'react-bootstrap';
 import * as Redux from 'redux';
+import { ThunkDispatch } from 'redux-thunk';
 
 export interface IBaseProps {
   id: string;
@@ -127,7 +128,7 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onSelectDisplayGroup:
       (groupId: string, itemId: string) => dispatch(displayGroup(groupId, itemId)),
@@ -136,5 +137,5 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
 
 export default
   translate([ 'common' ], { wait: false })(
-    connect(mapStateToProps, mapDispatchToProps)(
+    connect<IConnectedProps, IActionProps, IBaseProps, IState>(mapStateToProps, mapDispatchToProps)(
       InputButton)) as React.ComponentClass<IBaseProps>;

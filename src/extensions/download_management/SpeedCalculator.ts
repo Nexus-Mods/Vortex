@@ -23,7 +23,7 @@ class SpeedCalculator {
     this.mMeasureTime = this.now();
     setInterval(() => {
       this.moveHorizon();
-      const totalRate = sum(this.mTimeSlices) / this.mHorizon;
+      const totalRate = sum(this.mTimeSlices.slice(0, this.mHorizon - 1)) / (this.mHorizon - 1);
       this.mTargetRate = this.mTargetRate * 0.99 + totalRate * 0.01;
       speedCB(totalRate);
     }, 1000);
@@ -56,7 +56,8 @@ class SpeedCalculator {
     let starvation;
     if ((secondsPassed > 0)
         && (this.mCounters[id].timeSlices.length === this.mHorizon)) {
-      const rate = sum(this.mCounters[id].timeSlices) / this.mHorizon;
+      const rate =
+        sum(this.mCounters[id].timeSlices.slice(0, this.mHorizon - 1)) / (this.mHorizon - 1);
       starvation = rate < ((this.mTargetRate / Object.keys(this.mCounters).length) / 5);
     }
 

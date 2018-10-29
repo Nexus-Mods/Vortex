@@ -1,14 +1,16 @@
-import program = require('commander');
+import * as program from 'commander';
 import { app } from 'electron';
 
 export interface IParameters {
   download?: string;
   report?: string;
+  restore?: string;
   wait?: boolean;
   get?: string;
   set?: string[];
   del?: string;
   run?: string;
+  shared?: boolean;
 }
 
 function assign(input: string): string[] {
@@ -32,6 +34,9 @@ function parseCommandline(argv: string[]): IParameters {
     .option('--wait', 'If another instance of Vortex is running, wait for it to end.')
     .option('--run [path]', 'Execute the js program instead of Vortex itself.')
     .option('--report [path]', 'Send an error report. For internal use')
+    .option('--restore [path]', 'Restore a state backup')
+    .option('--shared', 'Used in conjunction with set, get or del, this will access the database'
+                                       + 'in the shared location instead of the per-user one')
     // allow unknown options since they may be interpreted by electron/node
     .allowUnknownOption()
     .parse(argv || []) as IParameters;

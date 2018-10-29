@@ -1,10 +1,10 @@
 import {addNotification} from '../../actions/notifications';
 import {IExtensionApi} from '../../types/IExtensionContext';
-import { ProcessCanceled } from '../../util/CustomErrors';
+import { UserCanceled } from '../../util/api';
 import * as fs from '../../util/fs';
-import getNormalizeFunc, {Normalize} from '../../util/getNormalizeFunc';
+import {Normalize} from '../../util/getNormalizeFunc';
 import {log} from '../../util/log';
-import { getSafe } from '../../util/storeHelper';
+import { truthy } from '../../util/util';
 
 import {
   IDeployedFile,
@@ -19,7 +19,7 @@ import * as _ from 'lodash';
 import * as path from 'path';
 import turbowalk from 'turbowalk';
 
-interface IDeployment {
+export interface IDeployment {
   [relPath: string]: IDeployedFile;
 }
 
@@ -30,6 +30,7 @@ export const BACKUP_TAG = '.vortex_backup';
 interface IDeploymentContext {
   previousDeployment: IDeployment;
   newDeployment: IDeployment;
+  onComplete: () => void;
 }
 
 /**
@@ -37,21 +38,25 @@ interface IDeploymentContext {
  * (which is probably all of them)
  */
 abstract class LinkingActivator implements IDeploymentMethod {
-  public static TAG_NAME = '__delete_if_empty';
+  public static OLD_TAG_NAME = '__delete_if_empty';
+  public static NEW_TAG_NAME = process.platform === 'win32' ? '__folder_managed_by_vortex' : '.__folder_managed_by_vortex';
 
   public id: string;
   public name: string;
   public description: string;
+  public isFallbackPurgeSafe: boolean;
 
   private mApi: IExtensionApi;
   private mNormalize: Normalize;
 
+  private mQueue: Promise<void> = Promise.resolve();
   private mContext: IDeploymentContext;
 
-  constructor(id: string, name: string, description: string, api: IExtensionApi) {
+  constructor(id: string, name: string, description: string, fallbackPurgeSafe: boolean, api: IExtensionApi) {
     this.id = id;
     this.name = name;
     this.description = description;
+    this.isFallbackPurgeSafe = fallbackPurgeSafe;
     this.mApi = api;
   }
 
@@ -71,19 +76,26 @@ abstract class LinkingActivator implements IDeploymentMethod {
   }
 
   public detailedDescription(t: I18next.TranslationFunction): string {
-    return this.description;
+    return t(this.description);
   }
 
-  public prepare(dataPath: string, clean: boolean, lastDeployment: IDeployedFile[]): Promise<void> {
-    if (this.mContext !== undefined) {
-      return Promise.reject(new ProcessCanceled('Deployment in progress'));
-    }
-    return getNormalizeFunc(dataPath, { unicode: false, separators: false, relative: false })
-      .then(func => {
-        this.mNormalize = func;
+  public prepare(dataPath: string, clean: boolean, lastDeployment: IDeployedFile[],
+                 normalize: Normalize): Promise<void> {
+    let queueResolve: () => void;
+    const queueProm = new Promise<void>(resolve => {
+      queueResolve = resolve;
+    });
+
+    const queue = this.mQueue;
+    this.mQueue = this.mQueue.then(() => queueProm);
+    this.mNormalize = normalize;
+
+    return queue
+      .then(() => {
         this.mContext = {
           newDeployment: {},
           previousDeployment: {},
+          onComplete: queueResolve,
         };
         lastDeployment.forEach(file => {
           const key = this.mNormalize(file.relPath);
@@ -95,11 +107,46 @@ abstract class LinkingActivator implements IDeploymentMethod {
       });
   }
 
+  private removeDeployedFile(installationPath: string, dataPath: string, key: string, restoreBackup: boolean): Promise<void> {
+    const outputPath = path.join(
+      dataPath, this.mContext.previousDeployment[key].relPath);
+    const sourcePath = path.join(installationPath,
+      this.mContext.previousDeployment[key].source,
+      this.mContext.previousDeployment[key].relPath);
+    return this.unlinkFile(outputPath, sourcePath)
+      .catch(err => (err.code !== 'ENOENT')
+        // treat an ENOENT error for the unlink as if it was a success.
+        // The end result either way is the link doesn't exist now.
+        ? Promise.reject(err)
+        : Promise.resolve())
+      .then(() => restoreBackup
+        ? fs.renameAsync(outputPath + BACKUP_TAG, outputPath).catch(() => undefined)
+        : Promise.resolve())
+      .then(() => {
+        delete this.mContext.previousDeployment[key];
+      })
+      .catch(err => {
+        log('warn', 'failed to unlink', {
+          path: this.mContext.previousDeployment[key].relPath,
+          error: err.message,
+        });
+        // need to make sure the deployment manifest
+        // reflects the actual state, otherwise we may
+        // leave files orphaned
+        this.mContext.newDeployment[key] =
+          this.mContext.previousDeployment[key];
+
+        return Promise.reject(err);
+      });
+  }
+
   public finalize(gameId: string,
                   dataPath: string,
                   installationPath: string,
                   progressCB?: (files: number, total: number) => void): Promise<IDeployedFile[]> {
-    const state = this.mApi.store.getState();
+    if (this.mContext === undefined) {
+      return Promise.reject(new Error('No deployment in progress'));
+    }
 
     let added: string[];
     let removed: string[];
@@ -120,59 +167,32 @@ abstract class LinkingActivator implements IDeploymentMethod {
 
     const total = added.length + removed.length + sourceChanged.length + contentChanged.length;
     let count = 0;
-    let lastReported = 0;
     const progress = () => {
       if (progressCB !== undefined) {
         ++count;
         if ((count % 1000) === 0) {
-          lastReported = count;
           progressCB(count, total);
         }
       }
     };
 
-    return Promise.map([].concat(removed, sourceChanged, contentChanged),
-                       key => {
-                         const outputPath = path.join(
-                             dataPath, this.mContext.previousDeployment[key].relPath);
-                         return this.unlinkFile(outputPath)
-                             .catch(err => {
-                               if (err.code !== 'ENOENT') {
-                                 return Promise.reject(err);
-                               }
-                               // treat an ENOENT error for the unlink as if it was a success.
-                               // The end result either way is the link doesn't exist now.
-                             })
-                             .then(() => fs.renameAsync(outputPath + BACKUP_TAG,
-                                                        outputPath)
-                                             .catch(() => undefined))
-                             .then(() => {
-                               progress();
-                               delete this.mContext.previousDeployment[key];
-                             })
-                             .catch(err => {
-                               log('warn', 'failed to unlink', {
-                                 path: this.mContext.previousDeployment[key].relPath,
-                                 error: err.message,
-                               });
-                               // need to make sure the deployment manifest
-                               // reflects the actual state, otherwise we may
-                               // leave files orphaned
-                               this.mContext.newDeployment[key] =
-                                this.mContext.previousDeployment[key];
-                               let idx = sourceChanged.indexOf(key);
-                               if (idx !== -1) {
-                                 sourceChanged.splice(idx, 1);
-                               } else {
-                                 idx = contentChanged.indexOf(key);
-                                 if (idx !== -1) {
-                                   contentChanged.splice(idx, 1);
-                                 }
-                               }
-
-                               ++errorCount;
-                             });
-                       })
+    return Promise.map(removed, key =>
+        this.removeDeployedFile(installationPath, dataPath, key, true)
+          .catch(() => {
+            ++errorCount;
+          }))
+      .then(() => Promise.map(sourceChanged, (key: string, idx: number) =>
+          this.removeDeployedFile(installationPath, dataPath, key, false)
+          .catch(() => {
+            ++errorCount;
+            sourceChanged.splice(idx, 1);
+          })))
+      .then(() => Promise.map(contentChanged, (key: string, idx: number) =>
+          this.removeDeployedFile(installationPath, dataPath, key, false)
+          .catch(() => {
+            ++errorCount;
+            contentChanged.splice(idx, 1);
+          })))
         // then, (re-)link all files that were added
         .then(() => Promise.map(
                   added,
@@ -215,23 +235,30 @@ abstract class LinkingActivator implements IDeploymentMethod {
 
           const context = this.mContext;
           this.mContext = undefined;
+          context.onComplete();
           return Object.keys(context.previousDeployment)
               .map(key => context.previousDeployment[key]);
         })
         .tapCatch(() => {
+          const context = this.mContext;
           this.mContext = undefined;
+          context.onComplete();
         });
   }
 
   public activate(sourcePath: string, sourceName: string, dataPath: string,
                   blackList: Set<string>): Promise<void> {
     return turbowalk(sourcePath, entries => {
+      if (this.mContext === undefined) {
+        return;
+      }
       entries.forEach(entry => {
         const relPath: string = path.relative(sourcePath, entry.filePath);
-        if (!entry.isDirectory && !blackList.has(relPath)) {
+        const relPathNorm = this.mNormalize(relPath);
+        if (!entry.isDirectory && !blackList.has(relPathNorm)) {
           // mods are activated in order of ascending priority so
           // overwriting is fine here
-          this.mContext.newDeployment[this.mNormalize(relPath)] = {
+          this.mContext.newDeployment[relPathNorm] = {
             relPath,
             source: sourceName,
             target: dataPath,
@@ -239,13 +266,16 @@ abstract class LinkingActivator implements IDeploymentMethod {
           };
         }
       });
-    });
+    }, { skipHidden: false });
   }
 
   public deactivate(installPath: string, dataPath: string,
                     mod: IMod): Promise<void> {
     const sourceBase = path.join(installPath, mod.installationPath);
     return turbowalk(sourceBase, entries => {
+      if (this.mContext === undefined) {
+        return;
+      }
       entries.forEach(entry => {
         if (!entry.isDirectory) {
           const relPath: string = path.relative(sourceBase, entry.filePath);
@@ -256,6 +286,9 @@ abstract class LinkingActivator implements IDeploymentMethod {
   }
 
   public purge(installPath: string, dataPath: string): Promise<void> {
+    if (!truthy(dataPath)) {
+      return Promise.reject(new Error('invalid data path'));
+    }
     // purge
     return this.purgeLinks(installPath, dataPath)
       .then(() => this.postPurge(dataPath, false))
@@ -270,25 +303,26 @@ abstract class LinkingActivator implements IDeploymentMethod {
                          installPath: string,
                          dataPath: string,
                          activation: IDeployedFile[]): Promise<IFileChange[]> {
-    const state = this.mApi.store.getState();
-
     const nonLinks: IFileChange[] = [];
 
     return Promise.map(activation, fileEntry => {
-      const fileDataPath = [dataPath, fileEntry.relPath].join(path.sep);
+      const fileDataPath = (truthy(fileEntry.target)
+        ? [dataPath, fileEntry.target, fileEntry.relPath]
+        : [dataPath, fileEntry.relPath]
+        ).join(path.sep);
       const fileModPath = [installPath, fileEntry.source, fileEntry.relPath].join(path.sep);
       let sourceDeleted: boolean = false;
       let destDeleted: boolean = false;
       let destTime: Date;
 
-      return fs.statAsync(fileModPath)
+      return this.stat(fileModPath)
         .catch(err => {
           // can't stat source, probably the file was deleted
           sourceDeleted = true;
           return Promise.resolve();
         })
-        .then(() => fs.lstatAsync(fileDataPath))
-        .catch(err => {
+        .then(() => this.statLink(fileDataPath))
+        .catch(() => {
           // can't stat destination, probably the file was deleted
           destDeleted = true;
           return Promise.resolve(undefined);
@@ -334,8 +368,12 @@ abstract class LinkingActivator implements IDeploymentMethod {
       }, { concurrency: 200 }).then(() => Promise.resolve(nonLinks));
   }
 
+  /**
+   * create file link
+   * Note: This function is expected to replace the target file if it exists
+   */
   protected abstract linkFile(linkPath: string, sourcePath: string): Promise<void>;
-  protected abstract unlinkFile(linkPath: string): Promise<void>;
+  protected abstract unlinkFile(linkPath: string, sourcePath: string): Promise<void>;
   protected abstract purgeLinks(installPath: string, dataPath: string): Promise<void>;
   protected abstract isLink(linkPath: string, sourcePath: string): Promise<boolean>;
   /**
@@ -345,25 +383,43 @@ abstract class LinkingActivator implements IDeploymentMethod {
    */
   protected abstract canRestore(): boolean;
 
+  protected get normalize(): Normalize {
+    return this.mNormalize;
+  }
+
+  protected get context(): IDeploymentContext {
+    return this.mContext;
+  }
+
+  protected stat(filePath: string): Promise<fs.Stats> {
+    return fs.statAsync(filePath);
+  }
+
+  protected statLink(filePath: string): Promise<fs.Stats> {
+    return fs.lstatAsync(filePath);
+  }
+
   private deployFile(key: string, installPathStr: string, dataPath: string,
                      replace: boolean): Promise<IDeployedFile> {
-    const fullPath = path.join(installPathStr, this.mContext.newDeployment[key].source,
-                               this.mContext.newDeployment[key].relPath);
+    const fullPath =
+      [installPathStr, this.mContext.newDeployment[key].source,
+        this.mContext.newDeployment[key].relPath].join(path.sep);
     const fullOutputPath =
-        path.join(dataPath, this.mContext.newDeployment[key].target || '',
-                  this.mContext.newDeployment[key].relPath);
+      [dataPath, this.mContext.newDeployment[key].target || null,
+        this.mContext.newDeployment[key].relPath].filter(i => i !== null).join(path.sep);
 
     const backupProm: Promise<void> = replace
-      ? Promise.resolve(undefined)
+      ? Promise.resolve()
       : this.isLink(fullOutputPath, fullPath)
-        ? Promise.resolve(undefined)
-        : fs.renameAsync(fullOutputPath, fullOutputPath + BACKUP_TAG)
-          .catch(err => (err.code === 'ENOENT')
-            // if the backup fails because there is nothing to backup, that's great,
-            // that's the most common outcome. Otherwise we failed to backup an existing
-            // file, so continuing could cause data loss
-            ? Promise.resolve(undefined)
-            : Promise.reject(err));
+        .then(link => link
+          ? Promise.resolve(undefined) // don't re-create link that's already correct
+          : fs.renameAsync(fullOutputPath, fullOutputPath + BACKUP_TAG))
+        .catch(err => (err.code === 'ENOENT')
+          // if the backup fails because there is nothing to backup, that's great,
+          // that's the most common outcome. Otherwise we failed to backup an existing
+          // file, so continuing could cause data loss
+          ? Promise.resolve(undefined)
+          : Promise.reject(err));
 
     return backupProm
       .then(() => this.linkFile(fullOutputPath, fullPath))
@@ -395,7 +451,9 @@ abstract class LinkingActivator implements IDeploymentMethod {
       doRemove = doRemove ||
         (entries.find(entry =>
           !entry.isDirectory
-          && path.basename(entry.filePath) === LinkingActivator.TAG_NAME) !== undefined);
+          && (   (path.basename(entry.filePath) === LinkingActivator.OLD_TAG_NAME)
+              || (path.basename(entry.filePath) === LinkingActivator.NEW_TAG_NAME))
+          ) !== undefined);
       const dirs = entries.filter(entry => entry.isDirectory);
       // recurse into subdirectories
       queue = queue.then(() =>
@@ -406,31 +464,61 @@ abstract class LinkingActivator implements IDeploymentMethod {
         .then(() => {
           // then check files. if there are any, this isn't empty. plus we
           // restore backups here
-          const files = entries.filter(entry => !entry.isDirectory &&
-                                      path.basename(entry.filePath) !==
-                                          LinkingActivator.TAG_NAME);
+          const files = entries.filter(entry =>
+            !entry.isDirectory
+            && (path.basename(entry.filePath) !== LinkingActivator.OLD_TAG_NAME)
+            && (path.basename(entry.filePath) !== LinkingActivator.NEW_TAG_NAME));
           if (files.length > 0) {
             empty = false;
             return Promise.map(
-                files.filter(entry =>
-                                 path.extname(entry.filePath) === BACKUP_TAG),
-                entry => fs.renameAsync(
-                    entry.filePath,
-                    entry.filePath.substr(
-                        0, entry.filePath.length - BACKUP_TAG.length)))
+                files.filter(entry => path.extname(entry.filePath) === BACKUP_TAG),
+                entry => this.restoreBackup(entry.filePath))
+              .catch(UserCanceled, () => undefined)
               .then(() => undefined);
           } else {
             return Promise.resolve();
           }
         }));
-    }, { recurse: false })
-    .then(() => queue)
-        .then(() => (empty && doRemove)
-          ? fs.unlinkAsync(path.join(baseDir, LinkingActivator.TAG_NAME))
-                .catch(err => err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err))
-                .then(() => fs.rmdirAsync(baseDir))
-                .then(() => true)
-          : Promise.resolve(false));
+    }, { recurse: false, skipHidden: false })
+      .then(() => queue)
+      .then(() => (empty && doRemove)
+        ? fs.statAsync(path.join(baseDir, LinkingActivator.NEW_TAG_NAME))
+          .then(() => fs.unlinkAsync(path.join(baseDir, LinkingActivator.NEW_TAG_NAME)))
+          .catch(() => fs.unlinkAsync(path.join(baseDir, LinkingActivator.OLD_TAG_NAME)))
+          .catch(err =>
+            err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err))
+          .then(() => fs.rmdirAsync(baseDir)
+            .catch(err => {
+              log('error', 'failed to remove directory, it was supposed to be empty', {
+                error: err.message,
+                path: baseDir,
+              });
+            }))
+          .then(() => true)
+        : Promise.resolve(false));
+  }
+
+  private restoreBackup(backupPath: string) {
+    const targetPath = backupPath.substr(0, backupPath.length - BACKUP_TAG.length);
+    return fs.renameAsync(backupPath, targetPath)
+      .catch(UserCanceled, cancelErr => {
+        // TODO:
+        // this dialog may show up multiple times for the same file because
+        // the purge process for different mod types may come across the same directory if
+        // the base directory of one is a parent of the base directory of another
+        // (say .../Fallout4 and .../Fallout4/data)
+        // to fix that we'd have to blacklist directories that are the base of another mod type which
+        // would speed this up in general but it feels like a lot can go wrong with that
+        return this.mApi.showDialog('question', 'Confirm', {
+          text: 'Are you sure you want to cancel? This will leave backup files '
+            + 'unrestored, you will have to clean those up manually.',
+        }, [
+            { label: 'Really cancel' },
+            { label: 'Try again' },
+          ]).then(res => (res.action === 'Really cancel')
+            ? Promise.reject(cancelErr)
+            : this.restoreBackup(backupPath));
+      });
   }
 }
 

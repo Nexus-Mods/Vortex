@@ -12,7 +12,7 @@ import {
 } from '../types/interface';
 
 import * as I18next from 'i18next';
-import * as update from 'immutability-helper';
+import update from 'immutability-helper';
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as React from 'react';
@@ -265,45 +265,41 @@ function Step(props: IStepProps) {
     </Form>
   );
 }
+
 interface IInstallerInfo {
   moduleName: string;
   image: IHeaderImage;
 }
+
 export interface IBaseProps {
 }
+
 interface IConnectedProps {
   dataPath: string;
   installerInfo: IInstallerInfo;
   installerState: IInstallerState;
 }
-interface ISize {
-  width: number;
-  height: number;
-}
+
 interface IDialogState {
   invalidGroups: string[];
   currentImage: string;
   currentDescription: string;
 }
+
 type IProps = IBaseProps & IConnectedProps;
+
 class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
   constructor(props: IProps) {
     super(props);
-    this.state = {
-      invalidGroups: [],
-      currentImage: undefined,
-      currentDescription: undefined,
-    };
+    this.state = this.initDescription(props);
   }
   public componentWillReceiveProps(nextProps: IProps) {
-    if ((this.props.installerState !== undefined)
-      && ((this.props.installerInfo !== nextProps.installerInfo)
-        || (this.props.installerState.currentStep !== nextProps.installerState.currentStep))) {
-      this.setState({
-        invalidGroups: [],
-        currentImage: undefined,
-        currentDescription: undefined,
-      });
+    if (
+      ((this.props.installerState === undefined) && (nextProps.installerState !== undefined))
+      || ((this.props.installerState !== undefined)
+        && ((this.props.installerInfo !== nextProps.installerInfo)
+          || (this.props.installerState.currentStep !== nextProps.installerState.currentStep)))) {
+      this.setState(this.initDescription(nextProps));
     }
   }
   public render(): JSX.Element {
@@ -366,7 +362,7 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
               lastVisible !== undefined
                 ? (
                   <Button onClick={this.prev}>
-                    {lastVisible.name || t('Previous')}
+                   {lastVisible.name || t('Previous')}
                   </Button>
                 ) : null
             }</div>
@@ -418,9 +414,27 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
       <ZoomableImage
         url={path.join(dataPath, image)}
         className='installer-image'
+        overlayClass='installer-zoom'
+        container={null}
       />
     );
   }
+
+  private initDescription(props: IProps): IDialogState {
+    const ret = (option) => ({
+      invalidGroups: [],
+      currentImage: option.image,
+      currentDescription: option.description,
+    });
+
+    if (props.installerState === undefined) {
+      return ret({});
+    }
+    const { currentStep, installSteps } = props.installerState;
+    const selOption = installSteps[currentStep].optionalFileGroups.group[0].options.find(opt => opt.selected);
+    return ret(selOption || {});
+  }
+
   private showDescription = (image: string, description: string) => {
     this.setState(update(this.state, {
       currentDescription: { $set: description },

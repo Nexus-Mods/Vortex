@@ -1,9 +1,11 @@
 import { IDashletSettings, IState } from '../../../types/IState';
-import { ComponentEx, connect, extend, translate } from '../../../util/ComponentEx';
+import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import Debouncer from '../../../util/Debouncer';
+import { getSafe } from '../../../util/storeHelper';
 import MainPage from '../../../views/MainPage';
 
 import { setDashletEnabled, setLayout } from '../actions';
+import { IDashletProps } from '../types/IDashletProps';
 
 import PackeryGrid from './PackeryGrid';
 import PackeryItem from './PackeryItem';
@@ -11,10 +13,9 @@ import PackeryItem from './PackeryItem';
 import { remote } from 'electron';
 import * as _ from 'lodash';
 import * as React from 'react';
-import * as ReactDOM from 'react-dom';
 import * as Redux from 'redux';
-import { getSafe } from '../../../util/storeHelper';
-import { IDashletProps } from '../types/IDashletProps';
+import { ThunkDispatch } from 'redux-thunk';
+
 
 const UPDATE_FREQUENCY_MS = 1000;
 
@@ -34,11 +35,6 @@ interface IActionProps {
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
-
-interface IRenderedDash {
-  props: IDashletProps;
-  comp: JSX.Element;
-}
 
 interface IComponentState {
   counter: number;
@@ -68,16 +64,20 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
     // assuming this doesn't change?
     const window = remote.getCurrentWindow();
     this.mWindowFocused = window.isFocused();
-    window.on('focus', () => { this.mWindowFocused = true; });
-    window.on('blur', () => { this.mWindowFocused = false; });
   }
 
   public componentDidMount() {
     this.startUpdateCycle();
+    const window = remote.getCurrentWindow();
+    window.on('focus', this.onFocus);
+    window.on('blur', this.onBlur);
   }
 
   public componentWillUnmount() {
     clearTimeout(this.mUpdateTimer);
+    const window = remote.getCurrentWindow();
+    window.removeListener('focus', this.onFocus);
+    window.removeListener('blur', this.onBlur);
   }
 
   public componentWillReceiveProps(nextProps: IProps) {
@@ -96,10 +96,10 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
 
     const state = this.context.api.store.getState();
 
-    const layoutMap: { [key: string]: number } = {};
-    if (layout !== undefined) {
-      layout.forEach((item: string, idx: number) => layoutMap[item] = idx + 1000);
-    }
+    const layoutMap: { [key: string]: number } = layout.reduce((prev, key, idx) => {
+      prev[key] = idx + 1;
+      return prev;
+    }, {});
 
     const sorted = dashlets
       .filter((dash: IDashletProps) =>
@@ -133,6 +133,10 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
   private onChangeLayout = (layout: string[]) => {
     this.mLayoutDebouncer.schedule(undefined, layout);
   }
+
+  private onFocus = () => { this.mWindowFocused = true; };
+
+  private onBlur = () => { this.mWindowFocused = false; };
 
   private startUpdateCycle = () => {
     // TODO: this is a hack needed so dashlets get updated even if they get props passed in
@@ -188,7 +192,7 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onSetLayout: (items: string[]) => dispatch(setLayout(items)),
     onSetDashletEnabled: (dashletId: string, enabled: boolean) =>

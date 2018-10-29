@@ -1,15 +1,13 @@
 import * as Promise from 'bluebird';
-import Registry = require('winreg');
 
 import * as fs from './fs';
 import { log } from './log';
-import { getSafe } from './storeHelper';
-
-import * as path from 'path';
+import { getSafeCI } from './storeHelper';
 
 import { app as appIn, remote } from 'electron';
-
+import * as path from 'path';
 import { parse } from 'simple-vdf';
+import * as winapi from 'winapi-bindings';
 
 const app = (remote !== undefined) ? remote.app : appIn;
 
@@ -21,11 +19,16 @@ export interface ISteamEntry {
 }
 
 export class GameNotFound extends Error {
+  private mSearch;
   constructor(search: string) {
-    super(`game not found: ${search}`);
+    super('Not in Steam library');
     Error.captureStackTrace(this, this.constructor);
 
     this.name = this.constructor.name;
+    this.mSearch = search;
+  }
+  public get search() {
+    return this.mSearch;
   }
 }
 
@@ -41,37 +44,21 @@ export interface ISteam {
  * @class Steam
  */
 class Steam implements ISteam {
+  public static GameNotFound = GameNotFound;
   private mBaseFolder: Promise<string>;
-  private mCache: ISteamEntry[];
+  private mCache: Promise<ISteamEntry[]>;
 
   constructor() {
     if (process.platform === 'win32') {
         // windows
-        const regKey = new Registry({
-          hive: Registry.HKCU,
-          key: '\\Software\\Valve\\Steam',
-        });
-
-        this.mBaseFolder = new Promise<string>((resolve, reject) => {
-          try {
-            regKey.get('SteamPath',
-              (err: Error, result: Registry.RegistryItem) => {
-                if (err !== null) {
-                  // hrm, if we notify the user about this, users without Steam will be
-                  // annoyed. If we don't, the lack of steam functionality may confuse
-                  // those who do have it. Well, it's their own fault for breaking
-                  // the registry keys really...
-                  log('info', 'steam not found', { error: err.message });
-                  resolve(undefined);
-                } else {
-                  resolve(result.value);
-                }
-              });
-          } catch (err) {
-            log('warn', 'steam not found', { error: err.message });
-            resolve(undefined);
-          }
-        });
+        try {
+          const steamPath = winapi.RegGetValue('HKEY_CURRENT_USER', 'Software\\Valve\\Steam', 'SteamPath');
+          this.mBaseFolder = Promise.resolve(steamPath.value as string);
+        }
+        catch (err) {
+          log('info', 'steam not found', { error: err.message });
+          this.mBaseFolder = Promise.resolve(undefined);
+        }
     } else {
       this.mBaseFolder = Promise.resolve(path.resolve(app.getPath('home'), '.steam', 'steam'));
     }
@@ -86,7 +73,7 @@ class Steam implements ISteam {
       .then(entries => entries.find(entry => re.test(entry.name)))
       .then(entry => {
         if (entry === undefined) {
-          return Promise.reject(new GameNotFound(namePattern));
+          return Promise.reject(new Steam.GameNotFound(namePattern));
         } else {
           return Promise.resolve(entry);
         }
@@ -115,10 +102,10 @@ class Steam implements ISteam {
   }
 
   public allGames(): Promise<ISteamEntry[]> {
-    if (this.mCache !== undefined) {
-      return Promise.resolve(this.mCache);
+    if (this.mCache === undefined) {
+      this.mCache = this.parseManifests();
     }
-    return this.parseManifests().tap(entries => { this.mCache = entries; });
+    return this.mCache;
   }
 
   private parseManifests(): Promise<ISteamEntry[]> {
@@ -131,21 +118,25 @@ class Steam implements ISteam {
         steamPaths.push(basePath);
         return fs.readFileAsync(path.resolve(basePath, 'config', 'config.vdf'));
       })
-      .then((data: NodeBuffer) => {
+      .then((data: Buffer) => {
         if (data === undefined) {
           return Promise.resolve([]);
         }
-        const configObj: any = parse(data.toString());
+
+        let configObj;
+        try {
+          configObj = parse(data.toString());
+        } catch (err) {
+          return Promise.resolve([]);
+        }
 
         let counter = 1;
         const steamObj: any =
-          getSafe(configObj, ['InstallConfigStore', 'Software', 'Valve', 'Steam'], {});
+          getSafeCI(configObj, ['InstallConfigStore', 'Software', 'Valve', 'Steam'], {});
         while (steamObj.hasOwnProperty(`BaseInstallFolder_${counter}`)) {
           steamPaths.push(steamObj[`BaseInstallFolder_${counter}`]);
           ++counter;
         }
-
-        log('debug', 'steam base folders', { steamPaths });
 
         return Promise.all(Promise.map(steamPaths, steamPath => {
           const steamAppsPath = path.join(steamPath, 'steamapps');
@@ -156,7 +147,7 @@ class Steam implements ISteam {
               return Promise.map(filtered, (name: string) =>
                 fs.readFileAsync(path.join(steamAppsPath, name)));
             })
-            .then((appsData: NodeBuffer[]) => {
+            .then((appsData: Buffer[]) => {
               return appsData.map(appData => parse(appData.toString())).map(obj =>
                 ({
                   appid: obj['AppState']['appid'],
@@ -164,12 +155,15 @@ class Steam implements ISteam {
                   gamePath: path.join(steamAppsPath, 'common', obj['AppState']['installdir']),
                   lastUpdated: new Date(obj['AppState']['LastUpdated'] * 1000),
                 }));
+            })
+            .catch(err => {
+              log('warn', 'Failed to read steam library', err.message);
             });
         }));
       })
       .then((games: ISteamEntry[][]) =>
         games.reduce((prev: ISteamEntry[], current: ISteamEntry[]): ISteamEntry[] =>
-          prev.concat(current)));
+          prev.concat(current), []));
   }
 }
 

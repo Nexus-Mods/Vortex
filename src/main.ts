@@ -2,56 +2,62 @@
  * entry point for the main process
  */
 
-import {} from './util/requireRebuild';
+import * as sourceMapSupport from 'source-map-support';
+sourceMapSupport.install();
 
-if (process.env.NODE_ENV === 'development') {
+if (process.env.NODE_ENV !== 'development') {
+  // see renderer.ts for why this is so ugly
+  const key = 'NODE_ENV';
+  process.env[key] = 'production';
+} else {
   // tslint:disable-next-line:no-var-requires
   const rebuildRequire = require('./util/requireRebuild').default;
   rebuildRequire();
 }
 
-import timeRequire from './util/timeRequire';
-const stopTime = timeRequire();
+import {} from './util/requireRebuild';
 
 import Application from './app/Application';
 
-import { IError } from './types/IError';
 import commandLine from './util/commandLine';
+import { UserCanceled } from './util/CustomErrors';
 import { sendReportFile, terminate, toError } from './util/errorHandling';
 // ensures tsc includes this dependency
 import {} from './util/extensionRequire';
-import { log } from './util/log';
 
-import { app, crashReporter, dialog } from 'electron';
+import { app, dialog } from 'electron';
 import * as path from 'path';
-
-stopTime();
-
-/*
-crashReporter.start({
-  productName: 'Vortex',
-  companyName: 'Black Tree Gaming Ltd.',
-  submitURL: 'https://localhost',
-  uploadToServer: false,
-});
-*/
 
 process.env.Path = process.env.Path + path.delimiter + __dirname;
 
 let application: Application;
 
 const handleError = (error: any) => {
+  if (error instanceof UserCanceled) {
+    return;
+  }
+
+  if (error === undefined) {
+    return;
+  }
+
   terminate(toError(error), {});
 };
 
 function main() {
   const mainArgs = commandLine(process.argv);
-
   if (mainArgs.report) {
     return sendReportFile(mainArgs.report)
     .then(() => {
       app.quit();
     });
+  }
+
+  let fixedT = require('i18next').getFixedT('en');
+  try {
+    fixedT('dummy');
+  } catch (err) {
+    fixedT = input => input;
   }
 
   if (mainArgs.run !== undefined) {
@@ -75,10 +81,12 @@ function main() {
     return;
   }
 
+  process.on('uncaughtException', handleError);
+  process.on('unhandledRejection', handleError);
+
   application = new Application(mainArgs);
 
   if (process.env.NODE_ENV === 'development') {
-    log('info', 'enabling debugging');
     app.commandLine.appendSwitch('remote-debugging-port', '9222');
   }
 
@@ -88,9 +96,6 @@ function main() {
     app.commandLine.appendSwitch('force-device-scale-factor', '1');
   }
   */
-
-  process.on('uncaughtException', handleError);
-  process.on('unhandledRejection', handleError);
 }
 
 main();

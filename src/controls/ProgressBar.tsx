@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { timeToString } from '../util/util';
 
 export interface IBaseProps {
   className?: string;
@@ -8,15 +9,36 @@ export interface IBaseProps {
   labelLeft?: string;
   labelRight?: string;
   showPercentage?: boolean;
+  showTimeLeft?: boolean;
+}
+
+interface IProgressBarState {
+  startTime: number;
+  startPos: number;
 }
 
 /**
  * custom progress bar control, since the one from bootstrap isn't customizable
  * enough
  */
-class ProgressBar extends React.PureComponent<IBaseProps, {}> {
+class ProgressBar extends React.PureComponent<IBaseProps, IProgressBarState> {
+  constructor(props: IBaseProps) {
+    super(props);
+
+    this.state = {
+      startTime: undefined,
+      startPos: undefined,
+    };
+  }
+
+  public componentWillReceiveProps(newProps: IBaseProps) {
+    if ((this.props.now !== newProps.now) && (this.state.startTime === undefined)) {
+      this.setState({ startTime: Date.now(), startPos: newProps.now });
+    }
+  }
+
   public render(): JSX.Element {
-    const { className, labelLeft, labelRight, showPercentage, now } = this.props;
+    const { className, labelLeft, labelRight, showPercentage, showTimeLeft, now } = this.props;
 
     const min = this.props.min || 0;
     const max = this.props.max || 100;
@@ -33,6 +55,7 @@ class ProgressBar extends React.PureComponent<IBaseProps, {}> {
           </div>
         </div>
         {showPercentage ? this.renderPercentage(percent) : null}
+        {showTimeLeft ? this.renderTimeLeft(percent) : null}
       </div>
     );
   }
@@ -50,6 +73,22 @@ class ProgressBar extends React.PureComponent<IBaseProps, {}> {
 
   private renderPercentage(percent: number): JSX.Element {
     return <div className='progressbar-percentage'>{percent}%</div>;
+  }
+
+  private renderTimeLeft(percent: number): JSX.Element {
+    const elapsed = Date.now() - this.state.startTime;
+
+    if (Number.isNaN(elapsed) || (percent === 0)) {
+      return null;
+    }
+
+    const expected = elapsed / (percent / 100);
+
+    return (
+      <div className='progressbar-timeleft'>
+        {timeToString((expected - elapsed) / 1000)}
+      </div>
+    );
   }
 }
 

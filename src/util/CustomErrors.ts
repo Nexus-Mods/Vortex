@@ -35,6 +35,13 @@ export class SetupError extends Error {
   }
 }
 
+export class TemporaryError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = this.constructor.name;
+  }
+}
+
 export class HTTPError extends Error {
   private mBody: string;
   constructor(statusCode: number, message: string, body: string) {
@@ -58,5 +65,12 @@ export class MissingInterpreter extends Error {
 
   public get url(): string {
     return this.mURL;
+  }
+}
+
+export class NotFound extends Error {
+  constructor(what: string) {
+    super(`Not found: "${what}"`);
+    this.name = this.constructor.name;
   }
 }

@@ -1,20 +1,20 @@
 'use strict';
 
 const dialog = {
-  showMessageBox: jest.genMockFunction()
+  showMessageBox: jest.fn()
 }
 
 const app = {
-  exit: jest.genMockFunction()
+  exit: jest.fn()
 }
 
 const remote = {
-  getCurrentWindow: jest.genMockFunction()
+  getCurrentWindow: jest.fn()
 }
 
 module.exports = {
-  require: jest.genMockFunction(),
-  match: jest.genMockFunction(),
+  require: jest.fn(),
+  match: jest.fn(),
   app,
   remote,
   dialog

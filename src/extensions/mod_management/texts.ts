@@ -51,6 +51,14 @@ function getText(id: string, t: I18next.TranslationFunction) {
         'Thus "1.2.5" should definitively be more stable than "1.2.4". "1.3.0" should have all ' +
         'the bugfixes of "1.2.x" so far but it also adds features so there could be new bugs.\n' +
         'These dots are NOT decimal marks, version 1.10.0 is (much) newer than 1.3.0.');
+    case 'variant':
+      return t(
+        'If you have multiple copies of the same mod installed ' +
+        '(e.g. with different settings made) ' +
+        'they will be merged into one line on the mod list between which you can toggle. ' +
+        'Use the variant field to distinguish between them. E.g. you could have a ' +
+        '"1k" and a "2k" variant of a mod installed.',
+      );
     case 'source':
       return t(
         'The "Source" specifies where you got the mod. That source will be consulted for certain ' +
@@ -68,15 +76,28 @@ function getText(id: string, t: I18next.TranslationFunction) {
         + 'Please make sure you have write permission to the new directories. Do NOT use your '
         + 'Vortex application directory!\n\n'
         + 'You can use "variables" to save yourself some typing:\n'
-        + ' - {BASE} is replaced with the base path from the first box.\n'
         + ' - {GAME} is replaced with the id of the game\n'
         + ' - {USERDATA} is replaced with a platform dependent data directory that is guaranteed '
         + 'to have write access.\n'
         + '\n'
-        + 'Example: If you only change the base path to "d:\\vortex_mods\\{GAME}" and your active '
-        + 'game is Skyrim then all your downloads will be located in '
-        + '"d:\\vortex_mods\\skyrim\\downloads" and all your extracted mods will be in '
-        + '"d:\\vortex_mods\\skyrim\\mods".');
+        + 'Example: If you change the path to "d:\\vortex_mods\\{GAME}" and your active '
+        + 'game is Skyrim then all your extracted mods will be in '
+        + '"d:\\vortex_mods\\skyrim".');
+    }
+    case 'conflicts': {
+      return t(
+        'A file conflict happens every time two mods contain the same file so one mod has to overwrite the other. '
+        + 'This is a very common occurrence in modding.\n\n'
+        + 'When installing mods manually or through NMM you\'re asked during mod installation whether to '
+        + 'overwrite files or not but with Vortex you make that choice after the installation and you can change '
+        + 'your choice at any time without reinstalling the mod.\n\n'
+        + 'You still need to choose though, otherwise files you deploy may be incompatible and the game '
+        + 'could become unstable or have all sorts of errors.\n\n'
+        + 'If you don\'t know which order to use, look for instructions by the mod authors. If the instruction you get '
+        + 'says \'Install mod x after mod y\' this translates to a mod rule of \'mod x loads after mod y\'.\n\n'
+        + 'If you can\'t find any information, a good rule of thumb is: Load the newest mod (the one released last) after '
+        + 'the older one.'
+      );
     }
     default:
       return undefined;

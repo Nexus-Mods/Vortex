@@ -6,10 +6,12 @@
  * dummy comment
  */
 import { IExtensionReducer } from '../types/Extension';
-import { IReducerSpec, IStateVerifier } from '../types/IExtensionContext';
+import { IReducerSpec, IStateVerifier, VerifierDrop, VerifierDropParent } from '../types/IExtensionContext';
+import { UserCanceled } from '../util/api';
 import deepMerge from '../util/deepMerge';
+import * as fs from '../util/fs';
 import { log } from '../util/log';
-import { getSafe, rehydrate, setSafe } from '../util/storeHelper';
+import { getSafe, rehydrate, setSafe, deleteOrNop } from '../util/storeHelper';
 
 import { appReducer } from './app';
 import { notificationsReducer } from './notifications';
@@ -18,14 +20,12 @@ import { tableReducer } from './tables';
 import { userReducer } from './user';
 import { windowReducer } from './window';
 
-import { dialog as dialogIn, remote } from 'electron';
-import * as update from 'immutability-helper';
+import { app } from 'electron';
+import update from 'immutability-helper';
 import { pick } from 'lodash';
+import  * as path from 'path';
 import { combineReducers, Reducer, ReducersMapObject } from 'redux';
 import { createReducer } from 'redux-act';
-// tslint:disable-next-line:no-submodule-imports
-
-const dialog = dialogIn || remote.dialog;
 
 /**
  * wrapper for combineReducers that doesn't drop unexpected keys
@@ -47,73 +47,96 @@ function safeCombineReducers(reducer: ReducersMapObject) {
 function verifyElement(verifier: IStateVerifier, value: any) {
   if ((verifier.type !== undefined)
       && (verifier.required || (value !== undefined))
-      && (typeof(value) !== verifier.type)) {
+      && (((verifier.type === 'array') && !Array.isArray(value))
+          || ((verifier.type !== 'array') && (typeof(value) !== verifier.type)))) {
     return false;
   }
   if ((verifier.noUndefined === true)
       && (value === undefined)) {
     return false;
   }
+  if ((verifier.noNull === true)
+      && (value === null)) {
+    return false;
+  }
   return true;
 }
 
-function verify(path: string, verifiers: { [key: string]: IStateVerifier },
-                input: any, defaults: { [key: string]: any }) {
-  if (input === undefined) {
+// exported for the purpose of testing
+export function verify(statePath: string, verifiers: { [key: string]: IStateVerifier },
+                       input: any, defaults: { [key: string]: any }) {
+  if ((input === undefined) || (verifiers === undefined)) {
     return input;
   }
   let res = input;
-  Object.keys(verifiers).forEach(key => {
-    if (key === '_') {
-      Object.keys(res).forEach(mapKey => {
-        const sane = verify(path, verifiers[key].elements, res[mapKey], {});
-        if (sane !== res[mapKey]) {
-          res = update(res, { [mapKey]: { $set: sane } });
+
+  const recurse = (key: string, mapKey: string) => {
+    const sane = verify(statePath, verifiers[key].elements, res[mapKey], {});
+    if (sane !== res[mapKey]) {
+      if (sane === undefined) {
+        res = deleteOrNop(res, [mapKey]);
+      } else {
+        res = update(res, { [mapKey]: { $set: sane } });
+      }
+    }
+  }
+
+  const doTest = (key: string, realKey: string) => {
+    if ((verifiers[key].required || input.hasOwnProperty(realKey))
+        && !verifyElement(verifiers[key], input[realKey])) {
+      log('warn', 'invalid state', { statePath, input, key: realKey, ver: verifiers[key] });
+      if (verifiers[key].deleteBroken !== undefined) {
+        if (verifiers[key].deleteBroken === 'parent') {
+          res = undefined;
+        } else {
+          res = deleteOrNop(res, [realKey]);
         }
-      });
-    } else if ((verifiers[key].required || input.hasOwnProperty(key))
-               && !verifyElement(verifiers[key], input[key])) {
-      log('warn', 'invalid state', { path, input, key, ver: verifiers[key] });
-      res = update(res, { [key]: { $set:
-        (verifiers[key].repair !== undefined)
-        ? verifiers[key].repair(input[key], defaults[key])
-        : defaults[key] } });
+      } else if (verifiers[key].repair !== undefined) {
+        try {
+          const fixed = verifiers[key].repair(input[realKey], defaults[realKey]);
+          res = update(res, { [realKey]: { $set: fixed } });
+        } catch (err) {
+          if (err instanceof VerifierDrop) {
+            res = deleteOrNop(res, [realKey]);
+          } else if (err instanceof VerifierDropParent) {
+            res = undefined;
+          }
+        }
+      } else {
+        res = update(res, { [realKey]: { $set: defaults[realKey] } });
+      }
+    } else if (verifiers[key].elements !== undefined) {
+      recurse(key, realKey);
+    }
+  };
+
+  Object.keys(verifiers).forEach(key => {
+    // _ is placeholder for every item
+    if (key === '_') {
+      Object.keys(res).forEach(mapKey => doTest(key, mapKey));
+    } else {
+      doTest(key, key);
     }
   });
   return res;
 }
 
-enum Decision {
+export enum Decision {
   SANITIZE,
   IGNORE,
   QUIT,
 }
 
 let sanitizeDecision: Decision;
+let backupTime: number;
 
-function decideSanitize(): Decision {
-  if (sanitizeDecision === undefined) {
-    // untranslated because localization isn't loaded at this point
-    const response = dialog.showMessageBox(null, {
-      message:
-          'Application state is invalid. I can try to repair it but you may lose data',
-      buttons: ['Quit', 'Ignore', 'Repair'],
-    });
-
-    sanitizeDecision =
-        [Decision.QUIT, Decision.IGNORE, Decision.SANITIZE][response];
-  }
-
-  return sanitizeDecision;
-}
-
-function deriveReducer(path: string, ele: any): Reducer<any> {
+function deriveReducer(statePath: string, ele: any, querySanitize: () => Decision): Reducer<any> {
   const attributes: string[] = Object.keys(ele);
 
   if ((attributes.indexOf('reducers') !== -1)
       && (attributes.indexOf('defaults') !== -1)) {
     let red = ele.reducers;
-    const pathArray = path.split('.').slice(1);
+    const pathArray = statePath.split('.').slice(1);
     if (red['__hydrate'] === undefined) {
       red = {
         ...ele.reducers,
@@ -121,14 +144,27 @@ function deriveReducer(path: string, ele: any): Reducer<any> {
           if ((ele.verifiers !== undefined)
               && (sanitizeDecision !== Decision.IGNORE)) {
             const input = getSafe(payload, pathArray, undefined);
-            const sanitized = verify(path, ele.verifiers, input,
-                                     ele.defaults);
+            const sanitized = verify(statePath, ele.verifiers, input, ele.defaults);
             if (sanitized !== input) {
-              const decision = decideSanitize();
+              const decision = sanitizeDecision !== undefined ? sanitizeDecision : querySanitize();
+              sanitizeDecision = decision;
               if (decision === Decision.SANITIZE) {
+                const backupPath = path.join(app.getPath('temp'), 'state_backups');
+                log('info', 'sanitizing application state');
+                let backupData;
+                if (backupTime !== undefined) {
+                  const oldBackup = fs.readFileSync(path.join(backupPath, `backup_${backupTime}.json`), { encoding: 'utf-8' });
+                  backupData = { ...JSON.parse(oldBackup), ...payload };
+                } else {
+                  backupData = payload;
+                  backupTime = Date.now();
+                }
+                fs.ensureDirSync(backupPath);
+                fs.writeFileSync(path.join(backupPath, `backup_${backupTime}.json`), JSON.stringify(backupData, undefined, 2));
                 payload = setSafe(payload, pathArray, sanitized);
               } else if (decision === Decision.QUIT) {
-                process.exit();
+                app.exit();
+                throw new UserCanceled();
               } // in case of ignore we just continue with the original payload
             }
           }
@@ -141,14 +177,14 @@ function deriveReducer(path: string, ele: any): Reducer<any> {
     const combinedReducers: ReducersMapObject = {};
 
     attributes.forEach(attribute => {
-      combinedReducers[attribute] = deriveReducer(path + '.' + attribute, ele[attribute]);
+      combinedReducers[attribute] = deriveReducer(statePath + '.' + attribute, ele[attribute], querySanitize);
     });
     return safeCombineReducers(combinedReducers);
   }
 }
 
-function addToTree(tree: any, path: string[], spec: IReducerSpec) {
-  if (path.length === 0) {
+function addToTree(tree: any, statePath: string[], spec: IReducerSpec) {
+  if (statePath.length === 0) {
     if (tree.reducers === undefined) {
       tree.reducers = {};
     }
@@ -161,10 +197,10 @@ function addToTree(tree: any, path: string[], spec: IReducerSpec) {
       tree.verifiers = deepMerge(tree.verifiers, spec.verifiers);
     }
   } else {
-    if (!(path[0] in tree)) {
-      tree[path[0]] = {};
+    if (!(statePath[0] in tree)) {
+      tree[statePath[0]] = {};
     }
-    addToTree(tree[path[0]], path.slice(1), spec);
+    addToTree(tree[statePath[0]], statePath.slice(1), spec);
   }
 }
 
@@ -175,7 +211,7 @@ function addToTree(tree: any, path: string[], spec: IReducerSpec) {
  * @param {IExtensionReducer[]} extensionReducers
  * @returns
  */
-function reducers(extensionReducers: IExtensionReducer[]) {
+function reducers(extensionReducers: IExtensionReducer[], querySanitize: () => Decision) {
   const tree = {
     user: userReducer,
     app: appReducer,
@@ -192,7 +228,7 @@ function reducers(extensionReducers: IExtensionReducer[]) {
   extensionReducers.forEach(extensionReducer => {
     addToTree(tree, extensionReducer.path, extensionReducer.reducer);
   });
-  return deriveReducer('', tree);
+  return deriveReducer('', tree, querySanitize);
 }
 
 export default reducers;

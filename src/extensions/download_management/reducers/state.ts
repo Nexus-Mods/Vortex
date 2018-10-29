@@ -1,6 +1,5 @@
-import { IReducerSpec } from '../../../types/IExtensionContext';
+import { IReducerSpec, VerifierDropParent } from '../../../types/IExtensionContext';
 import { terminate } from '../../../util/errorHandling';
-import { log } from '../../../util/log';
 import { deleteOrNop, getSafe, merge, setOrNop, setSafe } from '../../../util/storeHelper';
 
 import * as action from '../actions/state';
@@ -28,12 +27,10 @@ export const stateReducer: IReducerSpec = {
       }
       return setSafe(state, [ 'files', payload.id ], {
         state: 'init',
-        game: payload.game,
+        game: [ payload.game ],
         urls: payload.urls,
         modInfo: payload.modInfo,
         chunks: [],
-        localPath: undefined,
-        fileMD5: undefined,
         fileTime: Date.now(),
       });
     },
@@ -64,7 +61,6 @@ export const stateReducer: IReducerSpec = {
       const downloadId = Object.keys(state.files || {}).find(
         (id: string) => state.files[id].localPath === payload.fileName);
       if (downloadId === undefined) {
-        log('warn', 'unknown download', payload.fileName);
         return state;
       }
       return merge(state, ['files', downloadId], {
@@ -129,12 +125,16 @@ export const stateReducer: IReducerSpec = {
       }
       return setSafe(temp, ['speedHistory'], speeds);
     },
+    [action.setDownloadSpeeds as any]: (state, payload) => {
+      const temp = setSafe(state, ['speed'], payload[payload.length - 1]);
+      return setSafe(temp, ['speedHistory'], payload);
+    },
     [action.removeDownload as any]: (state, payload) =>
       deleteOrNop(state, [ 'files', payload.id ]),
     [action.addLocalDownload as any]: (state, payload) =>
       setSafe(state, [ 'files', payload.id ], {
         state: 'finished',
-        game: payload.game,
+        game: [ payload.game ],
         localPath: payload.localPath,
         size: payload.fileSize,
         fileTime: Date.now(),
@@ -142,18 +142,48 @@ export const stateReducer: IReducerSpec = {
         modInfo: {},
         chunks: [],
       }),
-    [action.setDownloadModInfo as any]: (state, payload) =>
-      setSafe(state,
+    [action.setDownloadModInfo as any]: (state, payload) => {
+      if (state.files[payload.id] === undefined) {
+        return state;
+      }
+
+      return setSafe(state,
         ['files', payload.id, 'modInfo'].concat(payload.key.split('.')),
-        payload.value),
+        payload.value);
+    },
     [action.setDownloadInstalled as any]: (state, payload) =>
       setSafe(state,
         ['files', payload.id, 'installed'],
         { gameId: payload.gameId, modId: payload.modId }),
+    [action.setCompatibleGames as any]: (state, payload) =>
+      setSafe(state, ['files', payload.id, 'game'], payload.games),
   },
   defaults: {
     speed: 0,
     speedHistory: [],
     files: {},
   },
+  verifiers: {
+    files: {
+      elements: {
+        _: {
+          elements: {
+            game: {
+              required: true,
+              type: 'array',
+              noNull: true,
+              noUndefined: true,
+              repair: input => {
+                if (input !== undefined) {
+                  return [input];
+                 } else {
+                  throw new VerifierDropParent();
+                 }
+              },
+            }
+          }
+        }
+      }
+    }
+  }
 };

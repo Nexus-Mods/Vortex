@@ -1,9 +1,9 @@
+import Dashlet from '../../../controls/Dashlet';
 import { ComponentEx, translate } from '../../../util/ComponentEx';
+import opn from '../../../util/opn';
 
-import opn = require('opn');
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
-import Dashlet from '../../../controls/Dashlet';
 
 class GoPremiumDashlet extends ComponentEx<{}, {}> {
   public render(): JSX.Element {

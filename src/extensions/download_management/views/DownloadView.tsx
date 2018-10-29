@@ -1,64 +1,41 @@
 import { showDialog } from '../../../actions/notifications';
 import Banner from '../../../controls/Banner';
+import CollapseIcon from '../../../controls/CollapseIcon';
 import Dropzone, { DropType } from '../../../controls/Dropzone';
 import EmptyPlaceholder from '../../../controls/EmptyPlaceholder';
 import FlexLayout from '../../../controls/FlexLayout';
-import IconBar from '../../../controls/IconBar';
-import InputButton from '../../../controls/InputButton';
 import SuperTable, { ITableRowAction } from '../../../controls/Table';
-import DateTimeFilter from '../../../controls/table/DateTimeFilter';
-import GameFilter from '../../../controls/table/GameFilter';
-import ToolbarIcon from '../../../controls/ToolbarIcon';
-import { IActionDefinition } from '../../../types/IActionDefinition';
 import { IComponentContext } from '../../../types/IComponentContext';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
 import { IState } from '../../../types/IState';
 import { ITableAttribute } from '../../../types/ITableAttribute';
-import { Placeholder } from '../../../util/asyncRequire';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { ProcessCanceled, UserCanceled } from '../../../util/CustomErrors';
-import * as fs from '../../../util/fs';
-import { getCurrentLanguage } from '../../../util/i18n';
-import { log } from '../../../util/log';
 import { showError } from '../../../util/message';
-import relativeTime from '../../../util/relativeTime';
-import { activeGameId } from '../../../util/selectors';
-import { setSafe } from '../../../util/storeHelper';
+import * as selectors from '../../../util/selectors';
 import MainPage from '../../../views/MainPage';
 
 import { IGameStored } from '../../gamemode_management/types/IGameStored';
-import { downloadPath as downloadPathSelector } from '../../mod_management/selectors';
 
+import { setShowDLDropzone, setShowDLGraph } from '../actions/settings';
+import { setDownloadTime } from '../actions/state';
 import { IDownload } from '../types/IDownload';
 
-import { FILE_NAME, FILE_SIZE, LOGICAL_NAME, PROGRESS } from '../downloadAttributes';
+import createColumns from '../downloadAttributes';
+import { DownloadIsHTML } from '../DownloadManager';
 
 import DownloadGraph from './DownloadGraph';
 
 import * as Promise from 'bluebird';
 import * as I18next from 'i18next';
-import * as path from 'path';
-import * as PropTypes from 'prop-types';
 import * as React from 'react';
 import { Button, Panel } from 'react-bootstrap';
 import * as Redux from 'redux';
-import { generate as shortid } from 'shortid';
-import { setDownloadTime } from '../actions/state';
-import { DownloadIsHTML } from '../DownloadManager';
+import { ThunkDispatch } from 'redux-thunk';
 
 const PanelX: any = Panel;
 
-function objectFilter(obj: any, filter: (key: string, value: any) => boolean) {
-  const result = {};
-  for (const key in obj) {
-    if (obj.hasOwnProperty(key) && filter(key, obj[key])) {
-      result[key] = obj[key];
-    }
-  }
-  return result;
-}
-
-export interface IBaseProps {
+export interface IDownloadViewBaseProps {
   active: boolean;
   secondary: boolean;
 }
@@ -68,6 +45,8 @@ interface IConnectedProps {
   gameMode: string;
   knownGames: IGameStored[];
   downloadPath: string;
+  showDropzone: boolean;
+  showGraph: boolean;
 }
 
 interface IActionProps {
@@ -76,197 +55,28 @@ interface IActionProps {
                  actions: DialogActions) => Promise<IDialogResult>;
   onShowError: (message: string, details?: string | Error,
                 notificationId?: string, allowReport?: boolean) => void;
+  onShowDropzone: (show: boolean) => void;
+  onShowGraph: (show: boolean) => void;
 }
 
-type IProps = IBaseProps & IConnectedProps & IActionProps;
+export type IDownloadViewProps = IDownloadViewBaseProps & IConnectedProps & IActionProps & { t: I18next.TranslationFunction };
 
 interface IComponentState {
   viewAll: boolean;
 }
 
-interface IAllGamesButtonProps {
-  id: string;
-  buttonType: 'icon' | 'text' | 'both';
-  onClick: () => void;
-  t: (input: string) => string;
-}
+const nop = () => null;
 
-interface IFileTimeProps {
-  t: I18next.TranslationFunction;
-  language: string;
-  detail: boolean;
-  download: IDownload;
-  downloadPath: string;
-  time: Date;
-}
-
-class FileTime extends ComponentEx<IFileTimeProps, { mtime: Date }> {
-  private mIsMounted: boolean = false;
-
-  constructor(props: IFileTimeProps) {
-    super(props);
-
-    this.initState({ mtime: undefined });
-  }
-
-  public componentDidMount() {
-    this.mIsMounted = true;
-    this.updateTime();
-  }
-
-  public componentWillUnmount() {
-    this.mIsMounted = false;
-  }
-
-  public componentWillReceiveProps(nextProps: IFileTimeProps) {
-    if ((nextProps.time === undefined)
-      && ((this.props.downloadPath !== nextProps.downloadPath)
-        || (this.props.download !== nextProps.download))) {
-        this.updateTime();
-      }
-  }
-
-  public render(): JSX.Element {
-    const { t, detail, download, language, time } = this.props;
-
-    const mtime = time || this.state.mtime;
-
-    if (mtime === undefined) {
-      return null;
-    }
-
-    if (detail) {
-      return <span>{mtime.toLocaleString(language)}</span>;
-    } else {
-      return <span>{relativeTime(mtime, t)}</span>;
-    }
-  }
-
-  private updateTime() {
-    const { download, downloadPath } = this.props;
-    if ((download.localPath === undefined) || (downloadPath === undefined)) {
-        return null;
-    } else {
-      return fs.statAsync(path.join(downloadPath, download.localPath))
-        .then((stat: fs.Stats) => {
-          if (this.mIsMounted) {
-            this.nextState.mtime = stat.mtime;
-          }
-        })
-        .catch(err => undefined);
-    }
-  }
-}
-
-function downloadTime(download: IDownload) {
-  return (download.fileTime !== undefined)
-    ? new Date(download.fileTime)
-    : undefined;
-}
-
-class DownloadView extends ComponentEx<IProps, IComponentState> {
+class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
   public context: IComponentContext;
-  private staticButtons: IActionDefinition[];
-  private gameColumn: ITableAttribute;
-  private fileTimeColumn: ITableAttribute;
   private actions: ITableRowAction[];
+  private mColumns: ITableAttribute<IDownload>[] = [];
 
-  constructor(props: IProps) {
+  constructor(props: IDownloadViewProps) {
     super(props);
     this.initState({
       viewAll: false,
     });
-
-    let lang: string;
-    let collator: Intl.Collator;
-
-    this.gameColumn = {
-      id: 'game',
-      name: 'Game',
-      description: 'The game this download is associated with',
-      icon: 'game',
-      calc: (attributes: IDownload) => {
-        const game = this.props.knownGames.find((ele: IGameStored) => attributes.game === ele.id);
-        return game ? this.props.t(game.shortName || game.name) : attributes.game;
-      },
-      placement: 'both',
-      isToggleable: true,
-      edit: {},
-      isSortable: true,
-      filter: new GameFilter(),
-      sortFunc: (lhs: string, rhs: string, locale: string): number => {
-        if ((collator === undefined) || (locale !== lang)) {
-          lang = locale;
-          collator = new Intl.Collator(locale, { sensitivity: 'base' });
-        }
-        return collator.compare(lhs, rhs);
-      },
-    };
-
-    this.fileTimeColumn = {
-      id: 'filetime',
-      name: 'Downloaded',
-      description: 'Time the file was last modified',
-      icon: 'calendar-plus-o',
-      customRenderer: (attributes: IDownload, detail: boolean, t) => {
-        const time = downloadTime(attributes);
-
-        if ((time === undefined)
-            && ((attributes.game !== this.props.gameMode)
-                || (attributes.localPath === undefined))) {
-          return null;
-        }
-        return (
-          <FileTime
-            t={t}
-            time={time}
-            download={attributes}
-            downloadPath={this.props.downloadPath}
-            detail={detail}
-            language={getCurrentLanguage()}
-          />
-        );
-      },
-      calc: (attributes: IDownload) => {
-        const time = downloadTime(attributes);
-
-        if (time !== undefined) {
-          return time;
-        }
-
-        if ((attributes.game !== this.props.gameMode)
-          || (attributes.localPath === undefined)) {
-          return null;
-        }
-        return fs.statAsync(path.join(this.props.downloadPath, attributes.localPath))
-        .then(stat => {
-          const { downloads, onSetAttribute } = this.props;
-          const id = Object.keys(downloads).find(key => downloads[key] === attributes);
-          onSetAttribute(id, stat.mtimeMs);
-          return Promise.resolve(stat.mtime);
-        })
-        .catch(() => undefined);
-      },
-      placement: 'both',
-      isToggleable: true,
-      edit: {},
-      isSortable: true,
-      filter: new DateTimeFilter(),
-    };
-
-    this.staticButtons = [
-      {
-        component: InputButton,
-        props: () => ({
-          id: 'input-download-url',
-          groupId: 'download-buttons',
-          key: 'input-download-url',
-          icon: 'download',
-          tooltip: 'Download URL',
-          onConfirmed: this.startDownload,
-        }),
-      },
-    ];
 
     this.actions = [
       {
@@ -319,19 +129,24 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
 
   public componentWillMount() {
     this.nextState.viewAll = false;
+
+    this.mColumns = createColumns(this.context.api, () => this.props);
   }
 
-  public shouldComponentUpdate(nextProps: IProps, nextState: IComponentState) {
+  public shouldComponentUpdate(nextProps: IDownloadViewProps, nextState: IComponentState) {
     return this.props.downloads !== nextProps.downloads
       || this.props.downloadPath !== nextProps.downloadPath
       || this.props.gameMode !== nextProps.gameMode
       || this.props.knownGames !== nextProps.knownGames
       || this.props.secondary !== nextProps.secondary
-      || this.state.viewAll !== nextState.viewAll;
+      || this.props.showDropzone !== nextProps.showDropzone
+      || this.props.showGraph !== nextProps.showGraph
+      || this.state.viewAll !== nextState.viewAll
+    ;
   }
 
   public render(): JSX.Element {
-    const { t, downloads, gameMode, secondary } = this.props;
+    const { t, downloads, gameMode, secondary, showGraph } = this.props;
     const { viewAll } = this.state;
 
     let content = null;
@@ -343,6 +158,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
             <EmptyPlaceholder
               icon='folder-download'
               text={t('Please select a game to manage first')}
+              fill={true}
             />
           </PanelX.Body>
         </Panel>
@@ -362,27 +178,33 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
         <FlexLayout type='column'>
           {secondary ? null : <Banner group='downloads' />}
           <FlexLayout.Flex>
-            <Panel className='download-panel'>
-              <PanelX.Body>
+            <PanelX className='download-panel' >
+              {secondary ? null : (
+                <PanelX
+                  className='download-graph-panel'
+                  expanded={showGraph}
+                  onToggle={nop}
+                >
+                  <PanelX.Body collapsible={true}>
+                    <DownloadGraph />
+                  </PanelX.Body>
+                  <CollapseIcon
+                    position='bottomright'
+                    onClick={this.toggleGraph}
+                    visible={showGraph}
+                  />
+                </PanelX>
+              )}
+            <PanelX.Body>
                 <FlexLayout type='column'>
-                  <FlexLayout.Fixed>
-                    {secondary ? null : <DownloadGraph />}
-                  </FlexLayout.Fixed>
                   <FlexLayout.Flex>
                     <SuperTable
                       tableId='downloads'
                       data={filtered}
-                      staticElements={[
-                        FILE_NAME,
-                        LOGICAL_NAME,
-                        this.fileTimeColumn,
-                        this.gameColumn,
-                        FILE_SIZE,
-                        PROGRESS,
-                      ]}
+                      staticElements={this.mColumns}
                       actions={this.actions}
                     />
-                  </FlexLayout.Flex>
+                      </FlexLayout.Flex>
                   <FlexLayout.Fixed style={{ textAlign: 'center' }}>
                     <Button bsStyle='ghost' onClick={this.toggleViewAll} >
                       {viewAll ? t('View not-yet-installed Downloads') : t('View All Downloads')}
@@ -390,7 +212,7 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
                   </FlexLayout.Fixed>
                 </FlexLayout>
               </PanelX.Body>
-            </Panel>
+            </PanelX>
           </FlexLayout.Flex>
           <FlexLayout.Fixed>
             {secondary ? null : this.renderDropzone()}
@@ -409,18 +231,29 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderDropzone(): JSX.Element {
-    const { t } = this.props;
+    const { t, showDropzone } = this.props;
     return (
-      <Panel className='download-drop-panel'>
-        <PanelX.Body>
-          <Dropzone
-            accept={['urls', 'files']}
-            drop={this.dropDownload}
-            dialogHint={t('Enter download URL')}
-            icon='folder-download'
-          />
-        </PanelX.Body>
-      </Panel>
+      <PanelX
+        className='download-drop-panel'
+        expanded={showDropzone}
+        onToggle={nop}
+      >
+        <PanelX.Collapse>
+          <PanelX.Body>
+            <Dropzone
+              accept={['urls', 'files']}
+              drop={this.dropDownload}
+              dialogHint={t('Enter download URL')}
+              icon='folder-download'
+            />
+          </PanelX.Body>
+        </PanelX.Collapse>
+        <CollapseIcon
+          position='topright'
+          onClick={this.toggleDropzone}
+          visible={showDropzone}
+        />
+      </PanelX>
     );
   }
 
@@ -428,37 +261,18 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
     this.nextState.viewAll = !this.state.viewAll;
   }
 
-  private getDownload(downloadId: string): IDownload {
-    return this.props.downloads[downloadId];
+  private toggleDropzone = () => {
+    const { showDropzone, onShowDropzone } = this.props;
+    onShowDropzone(!showDropzone);
   }
 
-  private startDownload = (url: string) => {
-    this.context.api.events.emit('start-download', [url], {}, undefined, (err) => {
-      if (err !== undefined) {
-        if ((err instanceof UserCanceled)
-            || (err instanceof DownloadIsHTML)) {
-          // nop
-        } else if (err instanceof ProcessCanceled) {
-          this.context.api.sendNotification({
-            type: 'warning',
-            message: err.message,
-          });
-        } else if (err.code === 'ECONNRESET') {
-          this.props.onShowError('Failed to download', 'Server closed the connection, please '
-                                + 'check your internet connection',
-            undefined, false);
-        } else if (err.code === 'ETIMEDOUT') {
-          this.props.onShowError('Failed to download', 'Connection timed out, please check '
-                                + 'your internet connection',
-            undefined, false);
-        } else if (err.code === 'ENOSPC') {
-          this.props.onShowError('Failed to download', 'The disk is full',
-            undefined, false);
-        } else {
-          this.context.api.showErrorNotification('Failed to start download', err);
-        }
-      }
-    });
+  private toggleGraph = () => {
+    const { showGraph, onShowGraph } = this.props;
+    onShowGraph(!showGraph);
+  }
+
+  private getDownload(downloadId: string): IDownload {
+    return this.props.downloads[downloadId];
   }
 
   private pause = (downloadIds: string[]) => {
@@ -482,19 +296,20 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
                                    'Sorry, this download is missing info necessary to resume. '
                                    + 'Please try restarting it.',
                                    undefined, false);
-          } else if ((err.message === 'Moved Permanently') || (err.message === 'Forbidden')) {
-            this.props.onShowError('Failed to download', 'The url is no longer valid',
+          } else if (['moved permanently', 'forbidden', 'gone'].indexOf(err.HTTPStatus.toLowerCase()) !== -1) {
+            this.props.onShowError('Failed to resume download', 'Sorry, the download link is no longer valid. '
+                                 + 'Please restart the download.',
               undefined, false);
           } else if (err.code === 'ECONNRESET') {
-            this.props.onShowError('Failed to download', 'Server closed the connection, please '
+            this.props.onShowError('Failed to resume download', 'Server closed the connection, please '
                                   + 'check your internet connection',
               undefined, false);
           } else if (err.code === 'ETIMEDOUT') {
-            this.props.onShowError('Failed to download', 'Connection timed out, please check '
+            this.props.onShowError('Failed to resume download', 'Connection timed out, please check '
                                   + 'your internet connection',
               undefined, false);
           } else if (err.code === 'ENOSPC') {
-            this.props.onShowError('Failed to download', 'The disk is full',
+            this.props.onShowError('Failed to resume download', 'The disk is full',
               undefined, false);
           } else {
             this.props.onShowError('Failed to download', err);
@@ -585,7 +400,6 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
     } else if (download.state === 'redirect') {
       onShowDialog('error', 'Received website', {
         message: t('The url lead to this website, maybe it contains a redirection?'),
-        htmlFile: download.failCause.htmlFile,
       }, [
           { label: 'Delete',
             action: () => this.context.api.events.emit('remove-download', downloadId) },
@@ -603,10 +417,15 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
     if (type === 'urls') {
       dlPaths.forEach(url => this.context.api.events.emit('start-download', [url], {}, undefined,
         (error: Error) => {
-        if ((error !== null) && !(error instanceof DownloadIsHTML)) {
-          this.context.api.showErrorNotification('Failed to start download', error, {
-            allowReport: !(error instanceof ProcessCanceled),
-          });
+        if ((error !== null) && !(error instanceof DownloadIsHTML) && !(error instanceof UserCanceled)) {
+          if (error instanceof ProcessCanceled) {
+            this.context.api.showErrorNotification('Failed to start download',
+              error.message, {
+              allowReport: false,
+            });
+          } else {
+            this.context.api.showErrorNotification('Failed to start download', error);
+          }
         }
       }));
     } else {
@@ -617,14 +436,16 @@ class DownloadView extends ComponentEx<IProps, IComponentState> {
 
 function mapStateToProps(state: IState): IConnectedProps {
   return {
-    gameMode: activeGameId(state),
+    gameMode: selectors.activeGameId(state),
     knownGames: state.session.gameMode.known,
     downloads: state.persistent.downloads.files,
-    downloadPath: downloadPathSelector(state),
+    downloadPath: selectors.downloadPath(state),
+    showDropzone: state.settings.downloads.showDropzone,
+    showGraph: state.settings.downloads.showGraph,
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onSetAttribute: (id, time) => dispatch(setDownloadTime(id, time)),
     onShowDialog: (type, title, content, actions) =>
@@ -632,6 +453,8 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
     onShowError: (message: string, details?: string | Error,
                   notificationId?: string, allowReport?: boolean) =>
       showError(dispatch, message, details, { id: notificationId, allowReport }),
+    onShowDropzone: (show: boolean) => dispatch(setShowDLDropzone(show)),
+    onShowGraph: (show: boolean) => dispatch(setShowDLGraph(show)),
   };
 }
 

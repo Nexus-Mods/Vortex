@@ -10,7 +10,8 @@
     "node_modules/bootstrap-sass/assets/stylesheets",
     "node_modules/react-select/scss",
     "node_modules/fomod-installer/dist",
-    "assets/css/**"
+    "assets/css/**",
+    "**/*.node"
   ],
   "appId": "com.nexusmods.vortex",
   "win": {
@@ -27,7 +28,8 @@
   "nsis": {
     "perMachine": true,
     "runAfterFinish": true,
-    "menuCategory": true
+    "menuCategory": true,
+    "uninstallDisplayName": "${productName}"
   },
   "extraResources": [
     "locales"
@@ -37,7 +39,7 @@
     "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme,test,__tests__,tests,powered-test,example,examples,*.d.ts}",
     "!**/node_modules/.bin${/*}",
     "!**/*.{o,hprof,orig,pyc,pyo,rbc}",
-    "!**/*.js.map",
+    "!**/node_modules/**/*.js.map",
     "!**/._*",
     "!**/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,__pycache__,thumbs.db,.gitignore,.gitattributes,.editorconfig,.flowconfig,.yarn-metadata.json,.idea,appveyor.yml,.travis.yml,circle.yml,npm-debug.log,.nyc_output,yarn.lock,.yarn-integrity}",
     "!**/*.{pdb,lib,VC.db,exp,gypi,d.ts}",
@@ -52,7 +54,6 @@
     "!**/node_modules/edge/src${/*}",
     "!**/node_modules/leveldown/deps${/*}",
     "!**/node_modules/node-sass/{build,src,vendor}${/*}",
-    "!**/node_modules/react-layout-pane/{demo,docs}${/*}",
     "!**/node_modules/recharts/umd${/*}",
     "!**/node_modules/ffi/deps",
     "!**/Release/*.map",

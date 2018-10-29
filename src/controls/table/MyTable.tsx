@@ -57,37 +57,44 @@ export function TBody(props: DProps<HTMLTableSectionElement>
   );
 }
 
-export function TH(props: DProps<HTMLTableHeaderCellElement>) {
-  const classes = ['table-header-cell', 'xth'].concat((props.className || '').split(' '));
-  return (
-    <div
-      style={{ ...props.style, display: 'table-cell' }}
-      className={classes.join(' ')}
-      {..._.omit(props, ['style', 'className'])}
-    >
-      {props.children}
-    </div>
-  );
+export class TH extends React.Component<DProps<HTMLTableHeaderCellElement> & { domRef?: (ref: HTMLDivElement) => void }, {}> {
+  public render() {
+    const { children, className, domRef, style } = this.props;
+    const classes = ['table-header-cell', 'xth'].concat((className || '').split(' '));
+    return (
+      <div
+        style={{ ...style, display: 'table-cell' }}
+        className={classes.join(' ')}
+        ref={domRef}
+        {..._.omit(this.props, ['style', 'className', 'domRef'])}
+      >
+        {children}
+      </div>
+    );
+  }
 }
-export function TR(props: DProps<HTMLTableRowElement>) {
+
+export function TR(props: DProps<HTMLTableRowElement> & { domRef?: (ref: HTMLDivElement) => void }) {
   const classes = ['xtr'].concat((props.className || '').split(' '));
   return (
     <div
       style={{ ...props.style, display: 'table-row' }}
       className={classes.join(' ')}
+      ref={props.domRef}
     >
       {props.children}
     </div>
   );
 }
 
-export function TD(props: DProps<HTMLTableCellElement>) {
+export function TD(props: DProps<HTMLTableCellElement> & { domRef?: (ref: HTMLDivElement) => void }) {
   const classes = ['xtd'].concat((props.className || '').split(' '));
   return (
     <div
       style={{ ...props.style, display: 'table-cell' }}
       className={classes.join(' ')}
       {..._.omit(props, ['style', 'className'])}
+      ref={props.domRef}
     >
       {props.children}
     </div>

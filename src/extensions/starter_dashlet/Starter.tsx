@@ -4,16 +4,16 @@ import Dropdown from '../../controls/Dropdown';
 import EmptyPlaceholder from '../../controls/EmptyPlaceholder';
 import Icon from '../../controls/Icon';
 import Spinner from '../../controls/Spinner';
+import { IconButton } from '../../controls/TooltipControls';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../types/IDialog';
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
-import asyncRequire, { Placeholder } from '../../util/asyncRequire';
 import { ComponentEx, connect } from '../../util/ComponentEx';
-import { MissingInterpreter, UserCanceled } from '../../util/CustomErrors';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import { activeGameId } from '../../util/selectors';
-import StarterInfo from '../../util/StarterInfo';
+import StarterInfo, { IStarterInfo } from '../../util/StarterInfo';
 import { getSafe } from '../../util/storeHelper';
+import { truthy } from '../../util/util';
 
 import {
   addDiscoveredTool,
@@ -30,21 +30,22 @@ import { setPrimaryTool } from './actions';
 
 import ToolButton from './ToolButton';
 import ToolEditDialogT from './ToolEditDialog';
-let ToolEditDialog: typeof ToolEditDialogT = Placeholder as any;
+let ToolEditDialog: typeof ToolEditDialogT;
 
 import * as Promise from 'bluebird';
-import * as update from 'immutability-helper';
-import * as path from 'path';
+import { remote } from 'electron';
 import * as React from 'react';
-import { Col, Grid, Media, MenuItem, Row } from 'react-bootstrap';
+import { Media, MenuItem } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
 import * as Redux from 'redux';
+import { ThunkDispatch } from 'redux-thunk';
 import { generate as shortid } from 'shortid';
 
 interface IWelcomeScreenState {
   editTool: StarterInfo;
   counter: number;
   tools: StarterInfo[];
+  discovering: boolean;
 }
 
 interface IActionProps {
@@ -76,19 +77,18 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
       editTool: undefined,
       counter: 1,
       tools: this.generateToolStarters(props),
+      discovering: false,
     });
+    this.updateJumpList(this.state.tools);
   }
 
   public componentDidMount() {
-    this.mRef = ReactDOM.findDOMNode(this);
+    this.mRef = ReactDOM.findDOMNode(this) as Element;
     this.mIsMounted = true;
-    asyncRequire('./ToolEditDialog', __dirname)
-      .then(moduleIn => {
-        ToolEditDialog = moduleIn.default;
-        if (this.mIsMounted) {
-          this.forceUpdate();
-        }
-      });
+    ToolEditDialog = require('./ToolEditDialog').default;
+    if (this.mIsMounted) {
+      this.forceUpdate();
+    }
   }
 
   public componentWillUnmount() {
@@ -101,6 +101,8 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
        || (nextProps.gameMode !== this.props.gameMode)
        || (nextProps.knownGames !== this.props.knownGames)) {
       this.nextState.tools = this.generateToolStarters(nextProps);
+
+      this.updateJumpList(this.nextState.tools);
    }
   }
 
@@ -120,7 +122,6 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
     } else {
       const game: IGameStored = knownGames.find((ele) => ele.id === gameMode);
       const discoveredGame = discoveredGames[gameMode];
-      const gameName = getSafe(discoveredGame, ['name'], getSafe(game, ['name'], gameMode));
       content = (
         <Media id='starter-dashlet'>
           <Media.Left>
@@ -129,6 +130,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
           </Media.Left>
           <Media.Body>
             {this.renderToolIcons(game, discoveredGame)}
+            {this.renderRefresh()}
           </Media.Body>
           <Media.Right>
             {this.renderAddButton()}
@@ -144,17 +146,26 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
     );
   }
 
+  private renderRefresh() {
+    const { t } = this.props;
+    const { discovering } = this.state;
+    return (
+      <IconButton
+        icon={discovering ? 'spinner' : 'refresh'}
+        tooltip={t('Refresh')}
+        onClick={this.quickDiscovery}
+        className='refresh-button'
+      />
+    );
+  }
+
   private renderToolIcons(game: IGameStored, discoveredGame: IDiscoveryResult): JSX.Element {
-    const { discoveredTools, primaryTool } = this.props;
+    const { discoveredTools } = this.props;
     const { tools } = this.state;
 
     if ((game === undefined) && (getSafe(discoveredGame, ['id'], undefined) === undefined)) {
       return null;
     }
-
-    const gameId = discoveredGame.id || game.id;
-    const knownTools: IToolStored[] = getSafe(game, ['supportedTools'], []);
-    const preConfTools = new Set<string>(knownTools.map(tool => tool.id));
 
     const visible = tools.filter(starter =>
       starter.isGame
@@ -231,9 +242,6 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
       return null;
     }
 
-    const isPrimary = (starter.id === primaryTool)
-      || ((primaryTool === undefined) && starter.isGame);
-
     return (
       <ToolButton
         t={t}
@@ -246,6 +254,16 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
         onMakePrimary={this.makePrimary}
       />
     );
+  }
+
+  private quickDiscovery = () => {
+    this.nextState.discovering = true;
+    const start = Date.now();
+    this.context.api.events.emit('start-quick-discovery', () => {
+      setTimeout(() => {
+        this.nextState.discovering = false;
+      }, 1000 - (Date.now() - start));
+    });
   }
 
   private generateToolStarters(props: IStarterProps): StarterInfo[] {
@@ -295,6 +313,22 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
     return starters;
   }
 
+  private updateJumpList(starters: IStarterInfo[]) {
+    const userTasks = starters
+      .filter(starter =>
+        (truthy(starter.exePath))
+        && (Object.keys(starter.environment).length === 0))
+      .map(starter => ({
+        arguments: starter.commandLine.join(' '),
+        description: starter.name,
+        iconIndex: 0,
+        iconPath: starter.iconPath,
+        program: starter.exePath,
+        title: starter.name,
+      }));
+    remote.app.setUserTasks(userTasks);
+  }
+
   private startGame = () => {
     const { primaryTool } = this.props;
     const { tools } = this.state;
@@ -308,40 +342,11 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
   }
 
   private startTool = (info: StarterInfo) => {
-    this.context.api.runExecutable(info.exePath, info.commandLine, {
-      cwd: info.workingDirectory,
-      env: info.environment,
-      suggestDeploy: true,
-    })
-      .catch(err => {
-        const { onShowError } = this.props;
-        if (err.errno === 'ENOENT') {
-          onShowError('Failed to run tool', {
-            executable: info.exePath,
-            error: 'Executable doesn\'t exist, please check the configuration for this tool.',
-          }, false);
-        } else if (err.errno === 'UNKNOWN') {
-          // this sucks but node.js doesn't give us too much information about what went wrong
-          // and we can't have users misconfigure their tools and then report the error they
-          // get as feedback
-          onShowError('Failed to run tool', {
-            error: 'File is not executable, please check the configuration for this tool.',
-          }, false);
-        } else if (err instanceof MissingInterpreter) {
-          const par = {
-            Error: err.message,
-          };
-          if (err.url !== undefined) {
-            par['Download url'] = err.url;
-          }
-          onShowError('Failed to run tool', par, false);
-        } else {
-          onShowError('Failed to run tool', {
-            executable: info.exePath,
-            error: err.stack,
-          });
-        }
-      });
+    const { onShowError } = this.props;
+    if (info === undefined) {
+      return;
+    }
+    StarterInfo.run(info, this.context.api, onShowError);
   }
 
   private unhide = (toolId: any) => {
@@ -397,6 +402,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
       executable: undefined,
       requiredFiles: [],
       logo: undefined,
+      shell: false,
     });
     this.nextState.editTool = empty;
   }
@@ -427,7 +433,7 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onAddDiscoveredTool: (gameId: string, toolId: string, result: IDiscoveredTool) => {
       dispatch(addDiscoveredTool(gameId, toolId, result));

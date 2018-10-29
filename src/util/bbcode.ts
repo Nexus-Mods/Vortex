@@ -1,26 +1,38 @@
 import BrTag from './bbcode/BrTag';
 import FontTag from './bbcode/FontTag';
 import HeadingTag from './bbcode/HeadingTag';
+import IdentityTag from './bbcode/IdentityTag';
 import LineTag from './bbcode/LineTag';
 import LinkTag from './bbcode/LinkTag';
+import MoreTag from './bbcode/MoreTag';
 import SizeTag from './bbcode/SizeTag';
 import SpoilerTag from './bbcode/SpoilerTag';
 import SvgTag from './bbcode/SvgTag';
 import YoutubeTag from './bbcode/YoutubeTag';
 
 import * as bbcode from 'bbcode-to-react';
+import React = require('react');
 
-bbcode.registerTag('size', SizeTag);
-bbcode.registerTag('br', BrTag);
-bbcode.registerTag('email', LinkTag);
-bbcode.registerTag('link', LinkTag);
-bbcode.registerTag('url', LinkTag);
-bbcode.registerTag('spoiler', SpoilerTag);
-bbcode.registerTag('font', FontTag);
-bbcode.registerTag('youtube', YoutubeTag);
-bbcode.registerTag('line', LineTag);
-bbcode.registerTag('heading', HeadingTag);
-bbcode.registerTag('svg', SvgTag);
+const fullParser = new bbcode.Parser();
+
+fullParser.registerTag('size', SizeTag);
+fullParser.registerTag('br', BrTag);
+fullParser.registerTag('email', LinkTag);
+fullParser.registerTag('link', LinkTag);
+fullParser.registerTag('url', LinkTag);
+fullParser.registerTag('spoiler', SpoilerTag);
+fullParser.registerTag('font', FontTag);
+fullParser.registerTag('youtube', YoutubeTag);
+fullParser.registerTag('line', LineTag);
+fullParser.registerTag('heading', HeadingTag);
+fullParser.registerTag('svg', SvgTag);
+fullParser.registerTag('more', MoreTag);
+
+const stripParser = new bbcode.Parser();
+stripParser.registerTag('br', BrTag);
+['size', 'email', 'font', 'link', 'url', 'spoiler',
+ 'font', 'youtube', 'line', 'heading', 'svg', 'b', 'u']
+ .forEach(tag => stripParser.registerTag(tag, IdentityTag));
 
 let convertDiv: HTMLDivElement;
 
@@ -37,8 +49,19 @@ function renderBBCode(input: string): React.ReactChild[] {
     return [''];
   }
 
-  return bbcode.toReact(input.replace(/<br *\/?>/g, '[br][/br]')
+  return fullParser.toReact(input.replace(/<br *\/?>/g, '[br][/br]')
       .replace(/(&[^;]+;)/g, transformSymbol));
+}
+
+export function stripBBCode(input: string): string { 
+  if (input === undefined) {
+    return '';
+  }
+
+  return stripParser.toReact(input.replace(/<br *\/?>/g, '[br][/br]')
+      .replace(/(&[^;]+;)/g, transformSymbol))
+      .filter(line => typeof(line) === 'string')
+      .join('');
 }
 
 export default renderBBCode;

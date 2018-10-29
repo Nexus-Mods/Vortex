@@ -1,8 +1,8 @@
-import Icon from '../../../controls/Icon';
 import { IconButton } from '../../../controls/TooltipControls';
 import { IComponentContext } from '../../../types/IComponentContext';
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
+import { log } from '../../../util/log';
 import { isNullOrWhitespace } from '../../../util/util';
 
 import { addSearchPath, removeSearchPath } from '../actions/settings';
@@ -11,8 +11,7 @@ import * as React from 'react';
 import { Button, ControlLabel, FormGroup, HelpBlock,
          ListGroup, ListGroupItem } from 'react-bootstrap';
 import * as Redux from 'redux';
-
-import { log } from '../../../util/log';
+import { ThunkDispatch } from 'redux-thunk';
 
 interface IPathProps {
   searchPath: string;
@@ -132,7 +131,7 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onAddPath: (path: string): void => {
       dispatch(addSearchPath(path));

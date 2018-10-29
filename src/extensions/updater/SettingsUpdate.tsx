@@ -7,6 +7,7 @@ import getText from './texts';
 import * as React from 'react';
 import { ControlLabel, FormControl, FormGroup } from 'react-bootstrap';
 import * as Redux from 'redux';
+import { ThunkDispatch } from 'redux-thunk';
 
 interface IConnectedProps {
   updateChannel: 'stable' | 'beta' | 'none';
@@ -60,7 +61,7 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onSetUpdateChannel: (channel: 'stable' | 'beta'): void => {
         dispatch(setUpdateChannel(channel));

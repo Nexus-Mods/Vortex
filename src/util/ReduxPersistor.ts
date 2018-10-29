@@ -1,33 +1,41 @@
 import {IPersistor} from '../types/IExtensionContext';
+import { terminate } from '../util/errorHandling';
 
 import * as Promise from 'bluebird';
-import * as _ from 'lodash';
 import * as Redux from 'redux';
 
-function insert(target: any, key: string[], value: any) {
+function insert(target: any, key: string[], value: any, hive: string) {
   try {
     key.reduce((prev, keySegment: string, idx: number, fullKey: string[]) => {
       if (idx === fullKey.length - 1) {
+        // this could cause an exception if prev isn't an object, but only if
+        // we previously stored incorrect data. We'd want to fix the error that
+        // caused that, so we allow the exception to bubble up
         prev[keySegment] = value;
         return prev;
       } else {
-        if (prev[keySegment] === undefined) {
+        // Ideally there wouldn't be any null values in the state but with extensions
+        // we can't really ensure that
+        if ((prev[keySegment] === undefined)
+            || (prev[keySegment] === null)) {
           prev[keySegment] = {};
         }
         return prev[keySegment];
       }
     }, target);
   } catch (err) {
-    throw err;
+    const newErr = new Error(`Failed to load application state ${hive}.${key.join('.')}`);
+    newErr.stack = err.stack;
+    throw newErr;
   }
 }
 
 class ReduxPersistor<T> {
-  private mUnsubscribe: () => void;
   private mStore: Redux.Store<T>;
   private mPersistedState: T;
   private mPersistors: { [key: string]: IPersistor } = {};
   private mHydrating: Set<string> = new Set();
+  private mUpdateQueue: Promise<void> = Promise.resolve();
 
   constructor(store: Redux.Store<T>) {
     this.mStore = store;
@@ -49,28 +57,32 @@ class ReduxPersistor<T> {
     return persistor.getAllKeys()
       .then(keys =>
         Promise.map(keys, key => persistor.getItem(key)
-          .then(value => ({ key, value: this.deserialize(value) }
-          ))))
+          .then(value => ({ key, value: this.deserialize(value) }))))
       .then(kvPairs => {
         const res: any = {};
         kvPairs.forEach(pair => {
-          insert(res, pair.key, pair.value);
+          insert(res, pair.key, pair.value, hive);
         });
         this.mHydrating.add(hive);
         this.mStore.dispatch({
           type: '__hydrate',
           payload: { [hive]: res },
         });
+        this.storeDiff(persistor, [], res, this.mStore.getState()[hive]);
         this.mHydrating.delete(hive);
         return Promise.resolve();
       });
   }
 
   private deserialize(input: string): any {
-    if (input.length === 0) {
+    if ((input === undefined) || (input.length === 0)) {
       return '';
     } else {
-      return JSON.parse(input);
+      try {
+        return JSON.parse(input);
+      } catch (err) {
+        return undefined;
+      }
     }
   }
 
@@ -81,13 +93,28 @@ class ReduxPersistor<T> {
   private handleChange = () => {
     const oldState = this.mPersistedState;
     const newState = this.mStore.getState();
-    if (oldState !== newState) {
-      this.mPersistedState = newState;
-      this.storeDiffHive(oldState, newState);
-    }
+
+    this.mUpdateQueue = this.mUpdateQueue
+      .then(() => this.doProcessChange(oldState, newState));
   }
 
-  private doRecurse(state: any): boolean {
+  private doProcessChange(oldState: any, newState: any) {
+    if (oldState === newState) {
+      return Promise.resolve();
+    }
+    this.mPersistedState = newState;
+    return this.storeDiffHive(oldState, newState)
+      .catch(err => {
+        // Only way this has ever gone wrong during alpha is when the disk
+        // is full, which is nothing we can fix.
+        terminate({
+          message: 'Failed to store application state',
+          stack: err.stack,
+        }, undefined, false);
+      });
+  }
+
+  private isObject(state: any): boolean {
     return (state !== null) && (typeof(state) === 'object') && !Array.isArray(state);
   }
 
@@ -107,30 +134,40 @@ class ReduxPersistor<T> {
 
   private storeDiff(persistor: IPersistor, statePath: string[],
                     oldState: any, newState: any): Promise<void> {
-    if (oldState === newState) {
+    if ((persistor === undefined) || (oldState === newState)) {
       return Promise.resolve();
     }
 
-    if (this.doRecurse(oldState)) {
-      const oldkeys = Object.keys(oldState);
-      const newkeys = Object.keys(newState);
+    try {
+      if (this.isObject(oldState) && this.isObject(newState)) {
+        const oldkeys = Object.keys(oldState);
+        const newkeys = Object.keys(newState);
 
-      return Promise.mapSeries(oldkeys,
-        key => (newState[key] === undefined)
-          ? this.remove(persistor, [].concat(statePath, key), oldState[key])
-          : this.storeDiff(persistor, [].concat(statePath, key), oldState[key], newState[key]))
-      .then(() => Promise.mapSeries(newkeys,
-        key => (oldState[key] === undefined)
-          ? this.add(persistor, [].concat(statePath, key), newState[key])
-          : Promise.resolve()))
-      .then(() => undefined);
-    } else {
-      persistor.setItem(statePath, this.serialize(newState));
+        return Promise.mapSeries(oldkeys,
+          key => (newState[key] === undefined)
+              // keys that exist in oldState but not newState
+            ? this.remove(persistor, [].concat(statePath, key), oldState[key])
+              // keys that exist in both
+            : this.storeDiff(persistor, [].concat(statePath, key), oldState[key], newState[key]))
+          .then(() => Promise.mapSeries(newkeys,
+            key => ((oldState[key] === undefined) && (newState[key] !== undefined))
+                // keys that exist in newState but not oldState
+              ? this.add(persistor, [].concat(statePath, key), newState[key])
+                // keys that exist in both - already handled above
+              : Promise.resolve()))
+          .then(() => undefined);
+      } else { 
+        return (newState !== undefined)
+          ? this.add(persistor, statePath, newState)
+          : this.remove(persistor, statePath, oldState)
+      }
+    } catch (err) {
+      return Promise.reject(err);
     }
   }
 
   private remove(persistor: IPersistor, statePath: string[], state: any): Promise<void> {
-    return this.doRecurse(state)
+    return this.isObject(state)
       ? Promise.mapSeries(Object.keys(state), key =>
           this.remove(persistor, [].concat(statePath, key), state[key]))
         .then(() => undefined)
@@ -138,7 +175,10 @@ class ReduxPersistor<T> {
   }
 
   private add(persistor: IPersistor, statePath: string[], state: any): Promise<void> {
-    return this.doRecurse(state)
+    if (state === undefined) {
+      return Promise.resolve();
+    }
+    return this.isObject(state)
       ? Promise.mapSeries(Object.keys(state), key =>
           this.add(persistor, [].concat(statePath, key), state[key]))
         .then(() => undefined)

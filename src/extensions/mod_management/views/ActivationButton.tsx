@@ -1,24 +1,20 @@
-import { DialogType,
-         IDialogContent, IDialogResult, showDialog } from '../../../actions/notifications';
 import ToolbarIcon from '../../../controls/ToolbarIcon';
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { showError } from '../../../util/message';
-import { activeGameId, activeProfile } from '../../../util/selectors';
+import { activeGameId, needToDeploy } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
-
-import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResult';
-import { IProfileMod } from '../../profile_management/types/IProfile';
 
 import { IDeploymentMethod } from '../types/IDeploymentMethod';
 import { NoDeployment } from '../util/exceptions';
 
-import * as Promise from 'bluebird';
 import * as React from 'react';
 import * as Redux from 'redux';
+import { ThunkDispatch } from 'redux-thunk';
 
 interface IConnectedProps {
   activator: IDeploymentMethod;
+  needToDeploy: boolean;
 }
 
 interface IActionProps {
@@ -36,13 +32,14 @@ const nop = () => undefined;
 
 class ActivationButton extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
-    const { t, activator, buttonType } = this.props;
+    const { t, activator, needToDeploy } = this.props;
 
     return (
       <ToolbarIcon
         id='deploy-mods'
         icon='deploy'
         text={t('Deploy Mods')}
+        className={needToDeploy ? 'need-to-deploy' : undefined}
         onClick={activator !== undefined ? this.activate : nop}
         disabled={activator === undefined}
       />
@@ -64,10 +61,6 @@ class ActivationButton extends ComponentEx<IProps, {}> {
   }
 }
 
-function activeGameDiscovery(state: IState)  {
-  return state.settings.gameMode.discovered[activeGameId(state)];
-}
-
 function mapStateToProps(state: IState, ownProps: IProps): IConnectedProps {
   const gameId = activeGameId(state);
   const activatorId = getSafe(state, ['settings', 'mods', 'activator', gameId], undefined);
@@ -77,10 +70,11 @@ function mapStateToProps(state: IState, ownProps: IProps): IConnectedProps {
   }
   return {
     activator,
+    needToDeploy: needToDeploy(state),
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<IState>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<IState, null, Redux.Action>): IActionProps {
   return {
     onShowError: (message: string, details?: string, allowReport?: boolean) =>
       showError(dispatch, message, details, { allowReport }),

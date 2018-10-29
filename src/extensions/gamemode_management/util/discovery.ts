@@ -114,10 +114,9 @@ export function quickDiscovery(knownGames: IGame[],
           resolve();
         });
     } catch (err) {
-      log('warn', 'failed to use game support plugin', { id: game.id, err: err.message });
-      // TODO: this may not be the right thing to do, just because one game support plugin doesn't
-      //   work we shouldn't cancel the whole discovery?
-      reject(err);
+      log('error', 'failed to use game support plugin', { id: game.id, err: err.message });
+      // don't escalate exception because a single game shouldn't break everything
+      return resolve();
     }
   })).then(gameNames => gameNames.filter(name => name !== undefined));
 }
@@ -225,10 +224,12 @@ export function discoverRelativeTools(game: IGame, gamePath: string,
                                       discoveredGames: {[id: string]: IDiscoveryResult},
                                       onDiscoveredTool: DiscoveredToolCB, normalize: Normalize)
                                : Promise<void> {
-  const discoveredTools = getSafe(discoveredGames[game.id], ['tools'], {});
+  const discoveredTools: { [id: string]: IToolStored } =
+    getSafe(discoveredGames[game.id], ['tools'], {});
   const relativeTools = (game.supportedTools || [])
     .filter(tool => tool.relative === true)
-    .filter(tool => discoveredTools[tool.id] === undefined);
+    .filter(tool => (discoveredTools[tool.id] === undefined)
+                 || (discoveredTools[tool.id].executable === undefined));
 
   if (relativeTools.length === 0) {
     return Promise.resolve();
@@ -309,8 +310,9 @@ function toolFilesForGame(game: IGame,
 function onFile(filePath: string, files: IFileEntry[], normalize: Normalize,
                 discoveredGames: {[id: string]: IDiscoveryResult},
                 onDiscoveredGame: DiscoveredCB, onDiscoveredTool: DiscoveredToolCB) {
+  const normalized = normalize(filePath);
   const matches: IFileEntry[] =
-    files.filter(entry => normalize(filePath).endsWith(entry.fileName));
+    files.filter(entry => normalized.endsWith(entry.fileName));
 
   for (const match of matches) {
     const testPath: string = filePath.substring(0, filePath.length - match.fileName.length);
@@ -335,6 +337,7 @@ export function searchDiscovery(
     knownGames: IGame[], discoveredGames: {[id: string]: IDiscoveryResult},
     searchPaths: string[], onDiscoveredGame: DiscoveredCB,
     onDiscoveredTool: DiscoveredToolCB,
+    onError: (title: string, message: string) => void,
     progressCB: (idx: number, percent: number, label: string) => void): Promise<any> {
 
   return Promise.map(
@@ -348,7 +351,7 @@ export function searchDiscovery(
         progressCB(index, percent, label));
       // recurse through the search path and look for known files. use the appropriate file name
       // normalization
-      return getNormalizeFunc(searchPath, { separators: false, unicode: false, relative: false })
+      return getNormalizeFunc(searchPath, { separators: true, unicode: false, relative: false })
         .then((normalize: Normalize) => {
           // gather files to look for
           const files: IFileEntry[] = [];
@@ -377,6 +380,9 @@ export function searchDiscovery(
             onFile(filePath, files, normalize, discoveredGames, onDiscoveredGame, onDiscoveredTool);
           return walk(searchPath, matchList, onFileCB, progressObj, normalize);
         })
+        .catch(err => (err.code === 'ENOENT')
+          ? Promise.resolve(onError('A search path doesn\'t exist or is not connected', searchPath))
+          : Promise.resolve(onError(err.message, searchPath)))
         .then(() => {
           progressObj.completed(searchPath);
           return null;

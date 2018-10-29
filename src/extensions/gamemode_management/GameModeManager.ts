@@ -1,5 +1,6 @@
-import { showDialog } from '../../actions/notifications';
+import { addNotification, showDialog } from '../../actions/notifications';
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
+import { ThunkStore } from '../../types/IExtensionContext';
 import { IGame } from '../../types/IGame';
 import { IState } from '../../types/IState';
 import { ITool } from '../../types/ITool';
@@ -19,14 +20,10 @@ import { IDiscoveryResult } from './types/IDiscoveryResult';
 import { IGameStored } from './types/IGameStored';
 import { IToolStored } from './types/IToolStored';
 import { discoverRelativeTools, quickDiscovery, searchDiscovery } from './util/discovery';
-import Progress from './util/Progress';
 
 import * as Promise from 'bluebird';
-import { remote } from 'electron';
 import * as path from 'path';
 import * as Redux from 'redux';
-
-type EmptyCB = () => void;
 
 /**
  * discovers game modes
@@ -34,18 +31,13 @@ type EmptyCB = () => void;
  * @class GameModeManager
  */
 class GameModeManager {
-  private mBasePath: string;
-  private mError: boolean;
-  private mStore: Redux.Store<IState>;
+  private mStore: ThunkStore<IState>;
   private mKnownGames: IGame[];
   private mActiveSearch: Promise<any[]>;
   private mOnGameModeActivated: (mode: string) => void;
 
-  constructor(basePath: string,
-              extensionGames: IGame[],
+  constructor(extensionGames: IGame[],
               onGameModeActivated: (mode: string) => void) {
-    this.mBasePath = basePath;
-    this.mError = false;
     this.mStore = null;
     this.mKnownGames = extensionGames;
     this.mActiveSearch = null;
@@ -64,6 +56,10 @@ class GameModeManager {
 
     const gamesStored: IGameStored[] = this.mKnownGames.map(this.storeGame);
     store.dispatch(setKnownGames(gamesStored));
+    // we used to activate the game mode right here but there is another
+    // call to do this in the "once" CB of gamemode_management so it's
+    // redundant and the other call handles errors properly while this one
+    // didn't
   }
 
   /**
@@ -84,11 +80,17 @@ class GameModeManager {
       return Promise.reject(new ProcessCanceled('game mode not found'));
     }
 
-    let modPath = game.queryModPath(gameDiscovery.path);
-    if (!path.isAbsolute(modPath)) {
-      modPath = path.resolve(gameDiscovery.path, modPath);
+    let modPath;
+    try {
+      modPath = game.queryModPath(gameDiscovery.path);
+      if (!path.isAbsolute(modPath)) {
+        modPath = path.resolve(gameDiscovery.path, modPath);
+      }
+    } catch (err) {
+      return Promise.reject(err);
     }
-    return fs.statAsync(modPath)
+    return fs.statAsync(gameDiscovery.path)
+      .then(() => fs.statAsync(modPath))
       .then(() => this.ensureWritable(modPath))
       .then(() => getNormalizeFunc(gameDiscovery.path))
       .then(normalize =>
@@ -100,7 +102,7 @@ class GameModeManager {
       })
       .catch(err => {
         return (err.code === 'ENOENT')
-        ? Promise.reject(new ProcessCanceled('Mod directory missing: ' + modPath))
+        ? Promise.reject(new ProcessCanceled('Missing: ' + (err.filename || modPath)))
         : Promise.reject(err);
       });
   }
@@ -154,7 +156,7 @@ class GameModeManager {
     const progressCallback = (idx: number, percent: number, label: string) =>
             this.mStore.dispatch(discoveryProgress(idx, percent, label));
 
-    const searchPaths = this.mStore.getState().settings.gameMode.searchPaths;
+    const { searchPaths } = this.mStore.getState().settings.gameMode;
 
     if (!Array.isArray(searchPaths)) {
       throw new Error('invalid search paths: ' + require('util').inspect(searchPaths));
@@ -168,9 +170,11 @@ class GameModeManager {
       searchPaths,
       this.onDiscoveredGame,
       this.onDiscoveredTool,
+      this.onError,
       progressCallback)
     .finally(() => {
       this.mStore.dispatch(discoveryFinished());
+      this.mActiveSearch = null;
     });
   }
 
@@ -181,7 +185,10 @@ class GameModeManager {
    */
   public stopSearchDiscovery(): void {
     log('info', 'stop search', { prom: this.mActiveSearch });
-    this.mActiveSearch.cancel();
+    if (this.mActiveSearch !== null) {
+      this.mActiveSearch.cancel();
+      this.mActiveSearch = null;
+    }
   }
 
   private ensureWritable(modPath: string): Promise<void> {
@@ -211,6 +218,7 @@ class GameModeManager {
       executable: game.executable(),
       environment: game.environment,
       details: game.details,
+      shell: game.shell,
     };
   }
 
@@ -232,6 +240,14 @@ class GameModeManager {
 
   private onDiscoveredGame = (gameId: string, result: IDiscoveryResult) => {
     this.mStore.dispatch(addDiscoveredGame(gameId, result));
+  }
+
+  private onError = (title: string, message: string) => {
+    this.mStore.dispatch(addNotification({
+      type: 'error',
+      message,
+      title,
+    }));
   }
 }
 

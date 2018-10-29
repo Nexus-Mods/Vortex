@@ -1,9 +1,8 @@
 import { IReducerSpec } from '../../../types/IExtensionContext';
-import { setSafe } from '../../../util/storeHelper';
 
 import * as actions from '../actions/session';
 
-import * as update from 'immutability-helper';
+import update from 'immutability-helper';
 
 /**
  * reducer for changes to ephemeral session state

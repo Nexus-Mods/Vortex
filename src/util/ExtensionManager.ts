@@ -17,12 +17,15 @@ import {
   IRunOptions,
   IRunParameters,
   StateChangeCallback,
+  ThunkStore,
 } from '../types/IExtensionContext';
 import { INotification } from '../types/INotification';
-import { IExtensionLoadFailure, IExtensionState } from '../types/IState';
+import { IExtensionLoadFailure, IExtensionState, IState } from '../types/IState';
 
 import { Archive } from './archives';
-import runElevated from './elevated';
+import { ProcessCanceled, UserCanceled } from './CustomErrors';
+import { isOutdated } from './errorHandling';
+import getVortexPath from './getVortexPath';
 import lazyRequire from './lazyRequire';
 import { log } from './log';
 import { showError } from './message';
@@ -31,25 +34,28 @@ import runElevatedCustomTool from './runElevatedCustomTool';
 import { activeGameId } from './selectors';
 import { getSafe } from './storeHelper';
 import StyleManagerT from './StyleManager';
-import { setdefault } from './util';
+import { setdefault, truthy } from './util';
 
 import * as Promise from 'bluebird';
-import { exec, spawn, SpawnOptions } from 'child_process';
+import { spawn, SpawnOptions } from 'child_process';
 import { app as appIn, dialog as dialogIn, ipcMain, ipcRenderer, remote } from 'electron';
 import { EventEmitter } from 'events';
 import * as fs from 'fs';
 import * as I18next from 'i18next';
 import { IHashResult, ILookupResult, IModInfo, IReference } from 'modmeta-db';
 import * as modmetaT from 'modmeta-db';
-const modmeta = lazyRequire<typeof modmetaT>('modmeta-db');
+const modmeta = lazyRequire<typeof modmetaT>(() => require('modmeta-db'));
 import * as nodeIPC from 'node-ipc';
 import * as path from 'path';
 import * as Redux from 'redux';
-import { types as ratypes } from 'redux-act';
-import ReduxWatcher = require('redux-watcher');
+import {} from 'redux-watcher';
 import * as rimraf from 'rimraf';
 import * as semver from 'semver';
 import { generate as shortid } from 'shortid';
+import { dynreq, runElevated } from 'vortex-run';
+
+// tslint:disable-next-line:no-var-requires
+const ReduxWatcher = require('redux-watcher');
 
 let app = appIn;
 let dialog = dialogIn;
@@ -58,12 +64,6 @@ if (remote !== undefined) {
   app = remote.app;
   dialog = remote.dialog;
 }
-
-function asarUnpacked(input: string): string {
-  return input.replace('app.asar' + path.sep, 'app.asar.unpacked' + path.sep);
-}
-
-type DeployResult = 'auto' | 'yes' | 'skip' | 'cancel';
 
 interface IRegisteredExtension {
   name: string;
@@ -167,7 +167,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
 
     this.getCalls('requireVersion').forEach(call => {
       if ((process.env.NODE_ENV !== 'development')
-          && !semver.satisfies(app.getVersion(), ...call.arguments)) {
+          && !semver.satisfies(app.getVersion(), call.arguments[0])) {
         setdefault(incompatibleExtensions, call.extension, []).push(
           { id: 'unsupported-version' });
       }
@@ -255,6 +255,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
       registerActionCheck: undefined,
       registerMerge: undefined,
       registerInterpreter: undefined,
+      registerStartHook: undefined,
       requireVersion: undefined,
       requireExtension: undefined,
       api: undefined,
@@ -293,7 +294,9 @@ class EventProxy extends EventEmitter {
   }
 
   public emit(eventName: string, ...args) {
-    if (!super.emit(eventName, args) && (this.mTarget !== undefined)) {
+    if (!super.emit(eventName, args)
+        && (this.mTarget !== undefined)
+        && !this.mTarget.isDestroyed()) {
       // relay all events this process didn't handle itself to the connected
       // process
       this.mTarget.send('relay-event', eventName, ...args);
@@ -321,7 +324,7 @@ class ExtensionManager {
     // load the bundled ones last so a user can replace them
     return [
       path.join(app.getPath('userData'), 'plugins'),
-      asarUnpacked(path.resolve(__dirname, '..', 'bundledPlugins')),
+      getVortexPath('bundledPlugins'),
     ];
   }
 
@@ -341,16 +344,19 @@ class ExtensionManager {
   private mModDBGame: string;
   private mModDBAPIKey: string;
   private mModDBCache: { [id: string]: ILookupResult[] } = {};
-  private mPid: number;
   private mContextProxyHandler: ContextProxyHandler;
   private mExtensionState: { [extId: string]: IExtensionState };
   private mLoadFailures: { [extId: string]: IExtensionLoadFailure[] };
   private mInterpreters: { [ext: string]: (input: IRunParameters) => IRunParameters };
+  private mStartHooks: Array<{ priority: number, id: string, hook: (input: IRunParameters) => Promise<IRunParameters> }>;
 
   constructor(initStore?: Redux.Store<any>, eventEmitter?: NodeJS.EventEmitter) {
-    this.mPid = process.pid;
     this.mEventEmitter = eventEmitter;
+    if (this.mEventEmitter !== undefined) {
+      this.mEventEmitter.setMaxListeners(100);
+    }
     this.mInterpreters = {};
+    this.mStartHooks = [];
     this.mApi = {
       showErrorNotification: this.showErrorBox,
       selectFile: this.selectFile,
@@ -360,6 +366,7 @@ class ExtensionManager {
       translate: (input, options?) => {
         return this.mTranslator !== undefined ? this.mTranslator.t(input, options) : input;
       },
+      locale: () => this.mTranslator.language,
       getI18n: () => this.mTranslator,
       getPath: this.getPath,
       onStateChange: (statePath: string[], callback: StateChangeCallback) => undefined,
@@ -371,6 +378,10 @@ class ExtensionManager {
       openArchive: this.openArchive,
       setStylesheet: (key, filePath) => this.mStyleManager.setSheet(key, filePath),
       runExecutable: this.runExecutable,
+      emitAndAwait: this.emitAndAwait,
+      isOutdated: () => isOutdated(),
+      onAsync: this.onAsync,
+      highlightControl: this.highlightControl,
     };
     if (initStore !== undefined) {
       // apologies for the sync operation but this needs to happen before extensions are loaded
@@ -393,7 +404,7 @@ class ExtensionManager {
 
       this.mExtensionState = initStore.getState().app.extensions;
       const extensionsPath = path.join(app.getPath('userData'), 'plugins');
-      const extensionsToRemove = Object.keys(this.mExtensionState)
+      Object.keys(this.mExtensionState)
         .filter(extId => this.mExtensionState[extId].remove)
         .forEach(extId => {
           rimraf.sync(path.join(extensionsPath, extId));
@@ -404,6 +415,10 @@ class ExtensionManager {
       });
     } else {
       this.mExtensionState = ipcRenderer.sendSync('__get_extension_state');
+    }
+    if (remote !== undefined) {
+      const StyleManager = require('./StyleManager').default;
+      this.mStyleManager = new StyleManager(this.mApi);
     }
     this.mExtensions = this.loadExtensions();
     this.initExtensions();
@@ -421,7 +436,7 @@ class ExtensionManager {
    *
    * @memberOf ExtensionManager
    */
-  public setStore<S>(store: Redux.Store<S>) {
+  public setStore<S>(store: ThunkStore<S>) {
     this.mReduxWatcher = new ReduxWatcher(store);
 
     this.mExtensionState = getSafe(store.getState(), ['app', 'extensions'], {});
@@ -511,6 +526,12 @@ class ExtensionManager {
                                        apply: (input: IRunParameters) => IRunParameters) => {
       this.mInterpreters[extension.toLowerCase()] = apply;
     });
+    this.apply('registerStartHook', (priority: number, id: string, hook: (input: IRunParameters) => Promise<IRunParameters>) => {
+      this.mStartHooks.push({ priority, id, hook });
+    });
+
+    this.mStartHooks.sort((lhs, rhs) => lhs.priority - rhs.priority);
+
     return reducers;
   }
 
@@ -572,7 +593,7 @@ class ExtensionManager {
   }
 
   private getModDB = (): Promise<modmetaT.ModDB> => {
-    const currentGame = activeGameId(this.mApi.store.getState());
+    const gameMode = activeGameId(this.mApi.store.getState());
     const currentKey =
       getSafe(this.mApi.store.getState(),
         ['confidential', 'account', 'nexus', 'APIKey'], '');
@@ -582,7 +603,10 @@ class ExtensionManager {
     let onDone: () => void;
     if (this.mModDBPromise === undefined) {
       this.mModDBPromise = new Promise<void>((resolve, reject) => {
-        onDone = resolve;
+        onDone = () => {
+          this.mModDBPromise = undefined;
+          resolve();
+        };
       });
       init = Promise.resolve();
     } else {
@@ -592,41 +616,57 @@ class ExtensionManager {
     return init.then(() => {
       // reset the moddb if necessary so new settings get used
       if ((this.mModDB === undefined)
-          || (currentGame !== this.mModDBGame)
+          || (gameMode !== this.mModDBGame)
           || (currentKey !== this.mModDBAPIKey)) {
         if (this.mModDB !== undefined) {
           return this.mModDB.close()
             .then(() => this.mModDB = undefined);
-        } else {
-          return Promise.resolve();
         }
       }
+      return Promise.resolve();
     })
-      .then(() => {
-        if (this.mModDB === undefined) {
-          this.mModDB = new modmeta.ModDB(
-            path.join(app.getPath('userData'), 'metadb'),
-            currentGame, [
-              {
-                protocol: 'nexus',
-                url: 'https://api.nexusmods.com/v1',
-                apiKey: currentKey,
-                cacheDurationSec: 86400,
-              },
-            ], log);
-          this.mModDBGame = currentGame;
-          this.mModDBAPIKey = currentKey;
-          log('debug', 'initialised');
-        }
-        return Promise.resolve(this.mModDB);
-      })
+      .then(() => (this.mModDB !== undefined)
+        ? Promise.resolve()
+        : this.connectMetaDB(gameMode, currentKey)
+          .then(modDB => {
+            this.mModDB = modDB
+            this.mModDBGame = gameMode;
+            this.mModDBAPIKey = currentKey;
+            log('debug', 'initialised');
+          }))
+      .then(() => this.mModDB)
       .finally(() => {
         if (onDone !== undefined) {
           onDone();
         }
-      })
-      ;
+      });
       // TODO: the fallback to nexus api should somehow be set up in nexus_integration, not here
+  }
+
+  private connectMetaDB(gameId: string, apiKey: string) {
+    const dbPath = path.join(app.getPath('userData'), 'metadb');
+    return modmeta.ModDB.create(
+      dbPath,
+      gameId, [
+        {
+          protocol: 'nexus',
+          url: 'https://api.nexusmods.com/v1',
+          apiKey,
+          cacheDurationSec: 86400,
+        },
+      ], log)
+      .catch(err => {
+        return this.mApi.showDialog('error', 'Failed to connect meta database', {
+          text: 'Please check that there is no other instance of Vortex still running.',
+          message: err.message,
+        }, [
+          { label: 'Quit' },
+          { label: 'Retry' },
+        ])
+        .then(result => (result.action === 'Quit')
+          ? app.quit()
+          : this.connectMetaDB(gameId, apiKey));
+      });
   }
 
   private stateChangeHandler = (watchPath: string[],
@@ -687,8 +727,6 @@ class ExtensionManager {
       if (remote !== undefined) {
         // log this only once so we don't spam the log file with this
         log('info', 'init extension', {name: ext.name});
-        const StyleManager = require('./StyleManager').default;
-        this.mStyleManager = new StyleManager(this.mApi);
       }
       this.mContextProxyHandler.setExtension(ext.name, ext.path);
       try {
@@ -731,6 +769,7 @@ class ExtensionManager {
 
   private selectExecutable(options: IOpenOptions) {
     return new Promise<string>((resolve, reject) => {
+      // TODO: make the filter list dynamic based on the list of registered interpreters?
       const fullOptions: Electron.OpenDialogOptions = {
         ...options,
         properties: ['openFile'],
@@ -769,14 +808,17 @@ class ExtensionManager {
     });
   }
 
-  private registerProtocol = (protocol: string, callback: (url: string) => void) => {
+  private registerProtocol = (protocol: string, def: boolean,
+                              callback: (url: string) => void) => {
     log('info', 'register protocol', { protocol });
-    if (process.execPath.endsWith('electron.exe')) {
-      // make it work when using the development version
-      app.setAsDefaultProtocolClient(protocol, process.execPath,
-                                     [ path.resolve(__dirname, '..', '..'), '-d' ]);
-    } else {
-      app.setAsDefaultProtocolClient(protocol, process.execPath, [ '-d' ]);
+    if (def) {
+      if (process.execPath.endsWith('electron.exe')) {
+        // make it work when using the development version
+        app.setAsDefaultProtocolClient(protocol, process.execPath,
+          [getVortexPath('package'), '-d']);
+      } else {
+        app.setAsDefaultProtocolClient(protocol, process.execPath, ['-d']);
+      }
     }
     this.mProtocolHandlers[protocol] = callback;
   }
@@ -790,9 +832,9 @@ class ExtensionManager {
     if (process.execPath.endsWith('electron.exe')) {
       // make it work when using the development version
       app.removeAsDefaultProtocolClient(protocol, process.execPath,
-                                        [ path.resolve(__dirname, '..', '..') ]);
+                                        [ getVortexPath('package'), '-d' ]);
     } else {
-      app.removeAsDefaultProtocolClient(protocol);
+      app.removeAsDefaultProtocolClient(protocol, process.execPath, ['-d']);
     }
   }
 
@@ -810,7 +852,7 @@ class ExtensionManager {
   }
 
   private lookupModMeta = (detail: ILookupDetails): Promise<ILookupResult[]> => {
-    const lookupId = this.modLookupId(detail);
+    let lookupId = this.modLookupId(detail);
     if (this.mModDBCache[lookupId] !== undefined) {
       return Promise.resolve(this.mModDBCache[lookupId]);
     }
@@ -827,6 +869,11 @@ class ExtensionManager {
       promise = modmeta.genHash(detail.filePath).then((res: IHashResult) => {
         fileMD5 = res.md5sum;
         fileSize = res.numBytes;
+        lookupId = this.modLookupId({
+          ...detail,
+          fileMD5,
+          fileSize,
+        });
         this.getApi().events.emit('filehash-calculated', detail.filePath, fileMD5, fileSize);
       });
     } else {
@@ -878,59 +925,32 @@ class ExtensionManager {
       .then((handler: IArchiveHandler) => Promise.resolve(new Archive(handler)));
   }
 
-  private queryDeploy = (): Promise<DeployResult> => {
-    const autoDeploy = getSafe(this.mApi.store.getState(),
-                               ['settings', 'automation', 'deploy'], true);
-    if (autoDeploy) {
-      return Promise.resolve<DeployResult>('auto');
-    } else {
-      return this.mApi.showDialog('question', 'Deploy now?', {
-        message: 'You should deploy mods now, otherwise the mods in game '
-        + 'will be outdated',
-      }, [ { label: 'Cancel' }, { label: 'Skip' }, { label: 'Deploy' } ])
-        .then((result) => {
-          switch (result.action) {
-            case 'Skip': return Promise.resolve<DeployResult>('skip');
-            case 'Deploy': return Promise.resolve<DeployResult>('yes');
-            default: return Promise.resolve<DeployResult>('cancel');
-          }
-        });
-    }
-  }
-
-  private checkDeploy(): Promise<boolean> {
-    return this.queryDeploy()
-      .then(shouldDeploy => {
-        if (shouldDeploy === 'yes') {
-          return new Promise<boolean>((resolve, reject) => {
-            this.mApi.events.emit('deploy-mods', (err) => {
-              if (err !== null) {
-                reject(err);
-              } else {
-                resolve(true);
-              }
-            });
-          });
-        } else if (shouldDeploy === 'auto') {
-          return new Promise<boolean>((resolve, reject) => {
-            this.mApi.events.emit('await-activation', (err: Error) => {
-              if (err !== null) {
-                reject(err);
-              } else {
-                resolve(true);
-              }
-            });
-          });
-        } else if (shouldDeploy === 'cancel') {
-          return Promise.resolve(false);
-        } else { // skip
-          return Promise.resolve(true);
-        }
-      });
+  private applyStartHooks(input: IRunParameters) : Promise<IRunParameters> {
+    let updated = input;
+    return Promise.each(this.mStartHooks, hook => hook.hook(updated)
+      .then(newParameters => {
+        updated = newParameters;
+      })
+      .catch(UserCanceled, err => {
+        log('debug', 'start canceled by user');
+        return Promise.reject(err);
+      })
+      .catch(ProcessCanceled, err => {
+        log('debug', 'hook canceled start', err.message);
+        return Promise.reject(err);
+      })
+      .catch(err => {
+        log('error', 'hook failed', err);
+        return Promise.reject(err);
+      }))
+    .then(() => updated);
   }
 
   private runExecutable =
     (executable: string, args: string[], options: IRunOptions): Promise<void> => {
+      if (!truthy(executable)) {
+        return Promise.reject(new ProcessCanceled('Executable not set'));
+      }
       const interpreter = this.mInterpreters[path.extname(executable).toLowerCase()];
       if (interpreter !== undefined) {
         try {
@@ -939,17 +959,26 @@ class ExtensionManager {
           return Promise.reject(err);
         }
       }
-      return (options.suggestDeploy === true ? this.checkDeploy() : Promise.resolve(true))
-      .then(cont => cont ? new Promise<void>((resolve, reject) => {
+      return this.applyStartHooks({ executable, args, options })
+      .then(updatedParameters => {
+        ({ executable, args, options } = updatedParameters);
+        return Promise.resolve();
+      })
+      .then(() => new Promise<void>((resolve, reject) => {
         const cwd = options.cwd || path.dirname(executable);
         const env = { ...process.env, ...options.env };
         try {
+          const runExe = options.shell
+            ? `"${executable}"`
+            : executable;
           const spawnOptions: SpawnOptions = {
             cwd,
             env,
             detached: true,
+            shell: options.shell,
           };
-          const child = spawn(executable, args.map(arg => arg.replace(/"/g, '')), spawnOptions);
+          const child = spawn(runExe, options.shell ? args : args.map(arg => arg.replace(/"/g, '')),
+                              spawnOptions);
 
           child
             .on('error', err => {
@@ -962,6 +991,10 @@ class ExtensionManager {
                 // doesn't seem to affect anything
                 log('warn', 'child process exited with code: ' + code, {});
               }
+              resolve();
+          });
+          child.stderr.on('data', chunk => {
+            log('error', executable + ': ', chunk.toString());
           });
         } catch (err) {
           const ipcPath = shortid();
@@ -977,7 +1010,107 @@ class ExtensionManager {
             return reject(err);
           }
         }
-      }) : Promise.resolve());
+      }))
+        .catch(ProcessCanceled, () => null)
+        .catch(err => (err.errno === 1223)
+          ? Promise.reject(new UserCanceled())
+          : Promise.reject(err));
+  }
+
+  private emitAndAwait = (event: string, ...args: any[]): Promise<void> => {
+    let queue = Promise.resolve();
+    const enqueue = (prom: Promise<void>) => {
+      if (prom !== undefined) {
+        queue = queue.then(() => prom.catch(err => null));
+      }
+    }
+
+    this.mEventEmitter.emit(event, ...args, enqueue);
+
+    return queue;
+  }
+
+  private onAsync = (event: string, listener: (...args) => Promise<void>) => {
+    this.mEventEmitter.on(event, (...args: any[]) => {
+      const enqueue = args.pop();
+      if ((enqueue === undefined) || (typeof(enqueue) !== 'function')) {
+        // no arguments, this is not an emitAndAwait event!
+        this.mApi.showErrorNotification('Invalid event handler', { event });
+        if (enqueue !== undefined) {
+          args.push(enqueue);
+        }
+        // call the listener anyway
+        listener(...args).then(() => null);
+      } else {
+        enqueue(listener(...args));
+      }
+    });
+  }
+
+  private highlightCSS = (() => {
+    let highlightCSS: CSSStyleRule;
+    let highlightAfterCSS: CSSStyleRule;
+
+    let initCSS = () => {
+      if (highlightCSS !== undefined) {
+        return;
+      }
+
+      highlightCSS = highlightAfterCSS = null;
+
+      for (let i = 0; i < document.styleSheets.length; ++i) {
+        if ((document.styleSheets[i].ownerNode as any).id === 'theme') {
+          const rules = Array.from((document.styleSheets[i] as any).rules);
+          rules.forEach((rule: CSSStyleRule) => {
+            if (rule.selectorText === '#highlight-control-dummy') {
+              highlightCSS = rule;
+            } else if (rule.selectorText === '#highlight-control-dummy::after') {
+              highlightAfterCSS = rule;
+            }
+          })
+        }
+      }
+    }
+
+    return (selector: string, text?: string) => {
+      initCSS();
+      let result = '';
+
+      // adding a new css rule matching the selector when we could just as well add
+      // the highlight class to the control.
+      // The reason it's done this way is because it's less messy (easier to clean up one css
+      // rule instead of every control matched by the selector) and it doesn't interfere with
+      // react, which might re-generate every control.
+      if (highlightCSS === null) {
+        // fallback if template rules weren't found
+        result += `${selector} { border: 1px solid red }`;
+        if (text !== undefined) {
+          result += `${selector}::after { color: red, content: "${text}" }`;
+        }
+      } else {
+        console.log('css', highlightCSS);
+        result += highlightCSS.cssText.replace('#highlight-control-dummy', selector);
+        if (text !== undefined) {
+          result += highlightAfterCSS.cssText.replace('#highlight-control-dummy', selector).replace('__contentPlaceholder', text);
+        }
+      }
+
+      return result;
+    }
+  })();
+
+  private highlightControl = (selector: string, duration: number, text?: string) => {
+    const id = shortid();
+    const style = document.createElement('style');
+    style.id = `highlight_${id}`;
+    style.type = 'text/css';
+    style.innerHTML = this.highlightCSS(selector, text);
+
+    const head = document.getElementsByTagName('head')[0];
+    const highlightNode = head.appendChild(style);
+    setTimeout(() => {
+      head.removeChild(highlightNode);
+    }, duration);
   }
 
   private startIPC(ipcPath: string) {
@@ -1005,7 +1138,7 @@ class ExtensionManager {
     if (fs.existsSync(indexPath)) {
       return {
         name: path.basename(extensionPath),
-        initFunc: require(indexPath).default,
+        initFunc: dynreq(indexPath).default,
         path: extensionPath,
       };
     } else {
@@ -1071,6 +1204,7 @@ class ExtensionManager {
       'symlink_activator',
       'symlink_activator_elevate',
       'hardlink_activator',
+      'move_activator',
       'updater',
       'installer_fomod',
       'installer_nested_fomod',

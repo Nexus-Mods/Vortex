@@ -16,6 +16,7 @@ import * as path from 'path';
 import * as React from 'react';
 import { ListGroup, ListGroupItem } from 'react-bootstrap';
 import * as Redux from 'redux';
+import { ThunkDispatch } from '../../../node_modules/redux-thunk';
 
 interface IBaseProps {
   modId: string;
@@ -131,7 +132,7 @@ function mapStateToProps(state: IState, ownProps: IBaseProps): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<IState>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<IState, null, Redux.Action>): IActionProps {
   return {
     onSetINITweakEnabled:
     (gameId: string, modId: string, tweak: string, enabled: boolean) => {

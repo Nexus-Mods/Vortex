@@ -16,16 +16,20 @@
  *      enables or disables a mod in the current profile
  */
 
-import { IDialogResult, showDialog } from '../../actions/notifications';
+import { addNotification, IDialogResult, showDialog } from '../../actions/notifications';
 
 import { setProgress } from '../../actions/session';
-import { IExtensionContext } from '../../types/IExtensionContext';
+import { needToDeployForGame } from '../../util/selectors';
+import { IExtensionContext, IExtensionApi, ThunkStore } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
 import { SetupError } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import { getSafe } from '../../util/storeHelper';
+import { truthy } from '../../util/util';
+
+import { getGame } from '../gamemode_management/util/getGame';
 
 import { forgetMod, setProfile, setProfileActivated } from './actions/profiles';
 import { setCurrentProfile, setNextProfile } from './actions/settings';
@@ -38,9 +42,7 @@ import Connector from './views/Connector';
 import ProfileView from './views/ProfileView';
 import TransferDialog from './views/TransferDialog';
 
-import { getGame } from '../gamemode_management';
-
-import { activeGameId, activeProfile } from './selectors';
+import { activeGameId, activeProfile, profileById, lastActiveProfileForGame } from './selectors';
 import { syncFromProfile, syncToProfile } from './sync';
 
 import * as Promise from 'bluebird';
@@ -56,6 +58,7 @@ const profileFeatures: IProfileFeature[] = [];
 function profilePath(store: Redux.Store<any>, profile: IProfile): string {
   const app = appIn || remote.app;
 
+  log('debug', 'profile path', profile);
   return path.join(app.getPath('userData'), profile.gameId, 'profiles', profile.id);
 }
 
@@ -111,8 +114,22 @@ function refreshProfile(store: Redux.Store<any>, profile: IProfile,
  *
  * @param {string} gameId
  */
-function activateGame(store: Redux.Store<IState>, gameId: string) {
+function activateGame(store: ThunkStore<IState>, gameId: string) {
   const state: IState = store.getState();
+  if (getSafe(state, ['settings', 'gameMode', 'discovered', gameId, 'path'], undefined)
+      === undefined) {
+    store.dispatch(addNotification({
+      type: 'warning',
+      title: '{{gameId}} not enabled',
+      message: 'Game no longer discovered',
+      replace: {
+        gameId,
+      },
+    }));
+    store.dispatch(setNextProfile(undefined));
+    return;
+  }
+
   const profileId = getSafe(state, ['settings', 'profiles', 'lastActiveProfile', gameId],
     undefined);
   const profile = getSafe(state, ['persistent', 'profiles', profileId], undefined);
@@ -136,6 +153,127 @@ function activateGame(store: Redux.Store<IState>, gameId: string) {
   } else {
     store.dispatch(setNextProfile(profileId));
   }
+}
+
+function deploy(api: IExtensionApi, profileId: string): Promise<void> {
+  const state: IState = api.store.getState();
+  if ((profileId === undefined) || (state.persistent.profiles[profileId] === undefined)) {
+    return Promise.resolve();
+  }
+
+  const profile = profileById(state, profileId);
+  if ((profileId === lastActiveProfileForGame(state, profile.gameId))
+      && !needToDeployForGame(state, profile.gameId)) {
+    return Promise.resolve();
+  }
+
+  return new Promise((resolve, reject) => {
+    api.events.emit('deploy-mods',
+      (err: Error) => {
+        if (err === null) {
+          resolve();
+        } else {
+          reject(err);
+        }
+      }, profileId,
+      (text: string, percent: number) => {
+        api.store.dispatch(
+          setProgress('profile', 'deploying', text, percent));
+      });
+  });
+}
+
+function genOnProfileChange(api: IExtensionApi, onFinishProfileSwitch: (callback: () => void) => void) {
+  let finishProfileSwitchPromise: Promise<void> = Promise.resolve();
+  const { store } = api;
+
+  return (prev: string, current: string) => {
+    finishProfileSwitchPromise.then(() => {
+      const state: IState = store.getState();
+      if (state.settings.profiles.nextProfileId !== current) {
+        // cancel if there was another profile switch while we waited
+        return null;
+      }
+
+      if (state.settings.profiles.activeProfileId === current) {
+        // also do nothing if we're actually resetting the nextprofile
+        return null;
+      }
+
+      finishProfileSwitchPromise = new Promise<void>((resolve, reject) => {
+        onFinishProfileSwitch(resolve);
+      }).catch(err => {
+        showError(store.dispatch, 'Profile switch failed', err);
+        return Promise.resolve();
+      });
+
+      const profile = state.persistent.profiles[current];
+      if ((profile === undefined) && (current !== undefined)) {
+        return Promise.reject('Tried to set invalid profile');;
+      }
+
+      if (profile !== undefined) {
+        const game = getGame(profile.gameId);
+        if (game === undefined) {
+          showError(store.dispatch,
+            'Game no longer supported, please install the game extension',
+            profile.gameId, { allowReport: false });
+        }
+        const discovery = state.settings.gameMode.discovered[profile.gameId];
+        // only calling to check if it works, some game extensions might discover
+        // a setup-error when trying to resolve the mod path
+        game.getModPaths(discovery.path);
+      }
+
+      let queue: Promise<void> = Promise.resolve();
+      // emit an event notifying about the impending profile change.
+      // every listener can return a cb returning a promise which will be
+      // awaited before continuing.
+      // It would be fun if we could cancel the profile change if one of
+      // these promises is rejected but that would only work if we could roll back
+      // changes that happened.
+      const enqueue = (cb: () => Promise<void>) => {
+        queue = queue.then(cb).catch(err => Promise.resolve());
+      };
+
+      // changes to profile files are only saved back to the profile at this point
+      queue = queue.then(() => refreshProfile(store, oldProfile, 'import'));
+      const oldProfile = state.persistent.profiles[prev];
+
+      api.events.emit('profile-will-change', current, enqueue);
+
+      if (current === undefined) {
+        store.dispatch(setCurrentProfile(undefined, undefined));
+        return queue;
+      }
+
+      sanitizeProfile(store, profile);
+      return queue.then(() => refreshProfile(store, profile, 'export'))
+        // ensure the old profile is synchronised before we switch, otherwise me might
+        // revert some changes
+        .then(() => deploy(api, prev))
+        .then(() => deploy(api, current))
+        .then(() => {
+          api.store.dispatch(
+            setProgress('profile', 'deploying', undefined, undefined));
+          const gameId = profile !== undefined ? profile.gameId : undefined;
+          store.dispatch(setCurrentProfile(gameId, current));
+          store.dispatch(setProfileActivated(current));
+          return null;
+        });
+    })
+      .catch(SetupError, err => {
+        showError(store.dispatch, 'Failed to set profile', err.message,
+          { allowReport: false });
+        store.dispatch(setCurrentProfile(undefined, undefined));
+        store.dispatch(setNextProfile(undefined));
+      })
+      .catch(err => {
+        showError(store.dispatch, 'Failed to set profile', err);
+        store.dispatch(setCurrentProfile(undefined, undefined));
+        store.dispatch(setNextProfile(undefined));
+      });
+  };
 }
 
 export interface IExtensionContextExt extends IExtensionContext {
@@ -233,112 +371,20 @@ function init(context: IExtensionContextExt): boolean {
     // promise used to ensure a new profile switch can't be started before the last one
     // is complete
     let finishProfileSwitch: () => void;
-    let finishProfileSwitchPromise: Promise<void> = Promise.resolve();
 
     context.api.onStateChange(
         ['settings', 'profiles', 'nextProfileId'],
-        (prev: string, current: string) => {
-          finishProfileSwitchPromise.then(() => {
-            const state: IState = store.getState();
-            if (state.settings.profiles.nextProfileId !== current) {
-              // cancel if there was another profile switch while we waited
-              return null;
-            }
-
-            if (state.settings.profiles.activeProfileId === current) {
-              // also do nothing if we're actually resetting the nextprofile
-              return null;
-            }
-
-            finishProfileSwitchPromise = new Promise<void>((resolve, reject) => {
-              finishProfileSwitch = resolve;
-            });
-
-            const profile = state.persistent.profiles[current];
-            if ((profile === undefined) && (current !== undefined)) {
-              return Promise.reject('Tried to set invalid profile');
-            }
-
-            if (profile !== undefined) {
-              const game = getGame(profile.gameId);
-              if (game === undefined) {
-                showError(store.dispatch,
-                  'Game no longer supported, please install the game extension',
-                  game.name, { allowReport: false });
-              }
-              const discovery = state.settings.gameMode.discovered[profile.gameId];
-              // only calling to check if it works, some game extensions might discover
-              // a setup-error when trying to resolve the mod path
-              game.getModPaths(discovery.path);
-            }
-
-            let queue: Promise<void> = Promise.resolve();
-            // emit an event notifying about the impending profile change.
-            // every listener can return a cb returning a promise which will be
-            // awaited before continuing.
-            // It would be fun if we could cancel the profile change if one of
-            // these promises
-            // is rejected but that would only work if we could roll back
-            // changes that happened.
-            const enqueue = (cb: () => Promise<void>) => {
-              queue = queue.then(cb).catch(err => Promise.resolve());
-            };
-
-            // changes to profile files are only saved back to the profile at this point
-            queue = queue.then(() => refreshProfile(store, oldProfile, 'import'));
-            const oldProfile = state.persistent.profiles[prev];
-
-            context.api.events.emit('profile-will-change', current, enqueue);
-
-            if (current === undefined) {
-              store.dispatch(setCurrentProfile(undefined, undefined));
-              return queue;
-            }
-
-            sanitizeProfile(store, profile);
-            return queue.then(() => refreshProfile(store, profile, 'export'))
-                .then(() => new Promise((resolve, reject) => {
-                  context.api.events.emit('deploy-mods',
-                    (err: Error) => {
-                      if (err === null) {
-                        resolve();
-                      } else {
-                        reject(err);
-                      }
-                    }, current,
-                    (text: string, percent: number) => {
-                      context.api.store.dispatch(
-                        setProgress('profile', 'deploying', text, percent));
-                    });
-                }))
-                .then(() => {
-                  context.api.store.dispatch(
-                    setProgress('profile', 'deploying', undefined, undefined));
-                  const gameId = profile !== undefined ? profile.gameId : undefined;
-                  store.dispatch(setCurrentProfile(gameId, current));
-                  store.dispatch(setProfileActivated(current));
-                  return null;
-                });
-          })
-          .catch(SetupError, err => {
-            showError(store.dispatch, 'Failed to set profile', err.message,
-                      { allowReport: false });
-            store.dispatch(setCurrentProfile(undefined, undefined));
-            store.dispatch(setNextProfile(undefined));
-          })
-          .catch(err => {
-            showError(store.dispatch, 'Failed to set profile', err);
-            store.dispatch(setCurrentProfile(undefined, undefined));
-            store.dispatch(setNextProfile(undefined));
-          });
-        });
+        genOnProfileChange(context.api, (callback: () => void) => finishProfileSwitch = callback));
 
     context.api.onStateChange(['settings', 'profiles', 'activeProfileId'],
-                              (prev: string, current: string) => {
-                                context.api.events.emit('profile-did-change',
-                                                        current);
-                                finishProfileSwitch();
-                              });
+      (prev: string, current: string) => {
+        context.api.events.emit('profile-did-change',
+          current);
+        if (finishProfileSwitch !== undefined) {
+          finishProfileSwitch();
+        }
+      });
+
     const initProfile = activeProfile(store.getState());
     refreshProfile(store, initProfile, 'import')
         .then(() => {
@@ -347,10 +393,12 @@ function init(context: IExtensionContextExt): boolean {
           }
           return null;
         })
-         .catch((err: Error) => {
-            showError(store.dispatch, 'Failed to set profile', err);
+        .catch((err: Error) => {
+          showError(store.dispatch, 'Failed to set profile', err);
+          if (finishProfileSwitch !== undefined) {
             finishProfileSwitch();
-          });
+          }
+        });
 
     context.api.onStateChange(
         ['persistent', 'profiles'], (prev: string, current: string) => {
@@ -379,10 +427,23 @@ function init(context: IExtensionContextExt): boolean {
         });
     {
       const state: IState = store.getState();
-      if (state.settings.profiles.nextProfileId !==
-          state.settings.profiles.activeProfileId) {
+      const { activeProfileId, nextProfileId } = state.settings.profiles;
+      if (nextProfileId !== activeProfileId) {
         log('warn', 'started with a profile change in progress');
-        store.dispatch(setNextProfile(state.settings.profiles.activeProfileId || undefined));
+        store.dispatch(setNextProfile(activeProfileId || undefined));
+      }
+      // it's important we stop managing a game if it's no longer discovered
+      // because that can cause problems all over the application
+      if (truthy(activeProfileId)) {
+        const profile = state.persistent.profiles[activeProfileId];
+        if (profile === undefined) {
+          return;
+        }
+        const discovery = state.settings.gameMode.discovered[profile.gameId];
+        if ((discovery === undefined) || (discovery.path === undefined)) {
+          log('debug', 'active game no longer discovered, deactivate');
+          store.dispatch(setNextProfile(undefined));
+        }
       }
     }
   });

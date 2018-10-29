@@ -9,12 +9,14 @@ import MainPage from './MainPage';
 import * as React from 'react';
 import { Panel, Tab, Tabs } from 'react-bootstrap';
 import * as Redux from 'redux';
+import { ThunkDispatch } from 'redux-thunk';
 
 interface ISettingsPage {
   title: string;
   component: React.ComponentClass<any>;
   props: PropsCallback;
   visible: () => boolean;
+  priority: number;
 }
 
 interface ICombinedSettingsPage {
@@ -74,7 +76,9 @@ class Settings extends ComponentEx<IProps, {}> {
   private renderTab = (page: ICombinedSettingsPage): JSX.Element => {
     const { t } = this.props;
 
-    const elements = page.elements.filter(ele => (ele.visible === undefined) || ele.visible());
+    const elements = page.elements
+      .filter(ele => (ele.visible === undefined) || ele.visible())
+      .sort((lhs, rhs) => lhs.priority - rhs.priority);
 
     const content = (elements.length > 0)
       ? (
@@ -118,8 +122,9 @@ function registerSettings(instanceGroup: undefined,
                           title: string,
                           component: React.ComponentClass<any>,
                           props: PropsCallback,
-                          visible: () => boolean): ISettingsPage {
-  return { title, component, props, visible };
+                          visible: () => boolean,
+                          priority?: number): ISettingsPage {
+  return { title, component, props, visible, priority: priority || 100 };
 }
 
 function mapStateToProps(state: IState): IConnectedProps {
@@ -128,7 +133,7 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onSetPage: (title: string) => dispatch(setSettingsPage(title)),
   };

@@ -8,7 +8,7 @@ import { setModAttribute } from '../../mod_management/actions/mods';
 
 import * as I18next from 'i18next';
 import * as React from 'react';
-import { Button, ControlLabel, FormControl, FormGroup, InputGroup } from 'react-bootstrap';
+import { Button, ControlLabel, FormGroup, InputGroup } from 'react-bootstrap';
 import * as Redux from 'redux';
 
 export interface IProps {
@@ -66,10 +66,14 @@ class NexusModIdDetail extends ComponentEx<IProps, {}> {
   }
 
   private guessNexusId = () => {
-    const { fileName, activeGameId, modId, store } = this.props;
+    const { fileName, activeGameId, isDownload, modId, store } = this.props;
     const match = fileName.match(/-([0-9]+)-/);
     if (match !== null) {
-      store.dispatch(setModAttribute(activeGameId, modId, 'modId', match[1]));
+      if (isDownload) {
+        store.dispatch(setDownloadModInfo(modId, 'nexus.ids.modId', match[1]));
+      } else {
+        store.dispatch(setModAttribute(activeGameId, modId, 'modId', match[1]));
+      }
     }
   }
 

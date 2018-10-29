@@ -25,6 +25,7 @@
     border: 0;
     flex: 1 1 0;
     max-width: 64px;
+    margin-left: initial !important;
   }
   .button-text {
     margin-top: 2px;
@@ -39,4 +40,19 @@
 
 .icon-menu-positioner {
   z-index: $zindex-menu-layer;
+}
+
+.toolbar-dropdown {
+  height: 100%;
+  >div { 
+    svg {
+      margin-right: 0;
+    }
+  }
+
+  .caret {
+    position: absolute;
+    right: 4px;
+    top: 50%;
+  }
 }

@@ -4,14 +4,34 @@ import { spawnSync, SpawnSyncOptions } from 'child_process';
 import { createHash } from 'crypto';
 import { app as appIn, remote } from 'electron';
 import * as fs from 'fs-extra';
-import Module = require('module');
+import {} from 'module';
 import * as os from 'os';
 import * as path from 'path';
-import reqResolve = require('resolve');
+import * as reqResolve from 'resolve';
 
 const app = appIn || remote.app;
 
-const packageJSON = fs.readJSONSync(path.resolve(__dirname, '..', '..', 'package.json'));
+// tslint:disable-next-line:no-var-requires
+const Module = require('module');
+
+const loggingHandler = {
+  get: (obj, prop) => {
+    if (typeof(obj[prop]) === 'function') {
+      return function(...args) {
+        console.log(prop, args);
+        return obj[prop](...args);
+      };
+    } else {
+      return obj[prop];
+    }
+  },
+};
+
+// add module names here to get a console message for every call to a function of
+// that module (in development runs only) including arguments.
+// e.g. const modulesToLog = new Set(['https']);
+const modulesToLog = new Set([]);
+
 const cachePath = path.join(app.getPath('temp'), 'native_cache');
 fs.ensureDirSync(cachePath);
 
@@ -35,9 +55,14 @@ const headerURL = 'https://atom.io/download/electron';
 function patchedLoad(orig) {
   const processed = new Set<string>();
   // tslint:disable-next-line:only-arrow-functions
-  return function(request: string, parent: Module) {
+  return function(request: string, parent: typeof Module) {
     try {
-      return orig.apply(this, arguments);
+      const res = orig.apply(this, arguments);
+      if (modulesToLog.has(request)) {
+        return new Proxy(res, loggingHandler);
+      } else {
+        return res;
+      }
     } catch (err) {
       if (!mismatchExp.test(err.message)
           && !differentVersionExp.test(err.message)

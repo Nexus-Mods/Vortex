@@ -4,14 +4,20 @@ import {
   IDialogContent,
   showDialog,
 } from '../actions/notifications';
+import { IErrorOptions } from '../types/IExtensionContext';
+import { IState } from '../types/IState';
+import { jsonRequest } from '../util/network';
 
-import { createErrorReport, sendReport, toError } from './errorHandling';
+import { sendReport, toError, isOutdated } from './errorHandling';
 
 import { log } from './log';
 import { truthy } from './util';
 
+import { IFeedbackResponse } from 'nexus-api';
 import * as Redux from 'redux';
-import * as ReduxThunk from 'redux-thunk';
+import { ThunkDispatch } from 'redux-thunk';
+
+const GITHUB_PROJ = 'Nexus-Mods/Vortex';
 
 function clamp(min: number, value: number, max: number): number {
   return Math.max(max, Math.min(min, value));
@@ -42,7 +48,7 @@ export function calcDuration(messageLength: number) {
  * @param {string} message
  * @param {string} [id]
  */
-export function showSuccess<S>(dispatch: Redux.Dispatch<S>, message: string, id?: string) {
+export function showSuccess<S>(dispatch: ThunkDispatch<IState, null, Redux.Action>, message: string, id?: string) {
   // show message for 2 to 7 seconds, depending on message length
   dispatch(addNotification({
     id,
@@ -55,7 +61,7 @@ export function showSuccess<S>(dispatch: Redux.Dispatch<S>, message: string, id?
 /**
  * show activity notification
  */
-export function showActivity<S>(dispatch: Redux.Dispatch<S>, message: string, id?: string) {
+export function showActivity<S>(dispatch: ThunkDispatch<IState, null, Redux.Action>, message: string, id?: string) {
   dispatch(addNotification({
     id,
     type: 'activity',
@@ -73,7 +79,7 @@ export function showActivity<S>(dispatch: Redux.Dispatch<S>, message: string, id
  * @param {string} message
  * @param {string} [id]
  */
-export function showInfo<S>(dispatch: Redux.Dispatch<S>, message: string, id?: string) {
+export function showInfo<S>(dispatch: ThunkDispatch<IState, null, Redux.Action>, message: string, id?: string) {
   // show message for 2 to 7 seconds, depending on message length
   dispatch(addNotification({
     id,
@@ -83,11 +89,49 @@ export function showInfo<S>(dispatch: Redux.Dispatch<S>, message: string, id?: s
   }));
 }
 
-export interface IErrorOptions {
-  replace?: { [key: string]: string };
-  isHTML?: boolean;
-  id?: string;
-  allowReport?: boolean;
+function genGithubUrl(issueId: number) {
+  return `https://github.com/Nexus-Mods/Vortex/issues/${issueId}`;
+}
+
+function genFeedbackText(response: IFeedbackResponse, githubInfo?: any): string {
+  const lines = [
+    'Thank you for your feedback!',
+    '',
+    'If you\'re reporting a bug, please don\'t forget to leave additional information in the form that should have opened in your webbrowser.',
+    '',
+  ];
+
+  if (response.github_issue === undefined) {
+    lines.push('Your feedback will be reviewed before it is published.');
+  } else {
+    if (((githubInfo !== undefined) && (githubInfo.state === 'closed'))
+        || response.github_issue.issue_state === 'closed') {
+      lines.push('This issue was reported before and seems to be fixed already. If you\'re not running the newest version of Vortex, please update.');
+    } else if (((githubInfo !== undefined) && (githubInfo.comments >= 1))
+               || (response.count > 1)) {
+      lines.push('This is not the first report about this problem, so your report '
+               + 'was added as a comment to the existing one.');
+    } else {
+      lines.push('You were the first to report this issue.');
+    }
+    const url = genGithubUrl(response.github_issue.issue_number);
+    lines.push(`You can review the created issue on [url]${url}[/url]`);
+  }
+
+  return lines.join('[br][/br]');
+}
+
+const noReportErrors = ['ETIMEDOUT', 'ECONNREFUSED', 'ECONNABORTED', 'ENETUNREACH'];
+
+function shouldAllowReport(err: string | Error | any, options?: IErrorOptions): boolean {
+  if ((options !== undefined) && (options.allowReport !== undefined)) {
+    return options.allowReport;
+  }
+  if (err.code === undefined) {
+    return true;
+  }
+
+  return noReportErrors.indexOf(err.code) === -1;
 }
 
 /**
@@ -102,13 +146,15 @@ export interface IErrorOptions {
  *                        want string or Errors but since some node apis return non-Error objects
  *                        where Errors are expected we have to be a bit more flexible here.
  */
-export function showError<S>(dispatch: Redux.Dispatch<S>,
-                             message: string,
-                             details?: string | Error | any,
-                             options?: IErrorOptions) {
+export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
+                          message: string,
+                          details?: string | Error | any,
+                          options?: IErrorOptions) {
   const err = renderError(details);
 
-  log('error', message, err);
+  const allowReport = shouldAllowReport(details, options);
+
+  log(allowReport ? 'error' : 'warn', message, err);
 
   const content: IDialogContent = (truthy(options) && options.isHTML) ? {
     htmlText: err.message || err.text,
@@ -120,16 +166,32 @@ export function showError<S>(dispatch: Redux.Dispatch<S>,
     message: err.message,
     options: {
       wrap: err.wrap,
+      hideMessage: (options === undefined) || (options.hideDetails !== false),
     },
-    parameters: (options !== undefined) ? options.replace : undefined,
+    parameters: {
+      ...(options !== undefined) ? options.replace : {},
+      ...(err.parameters || {}),
+    },
   };
 
   const actions: IDialogAction[] = [];
 
-  if ((options === undefined) || (options.allowReport !== false)) {
+  if (!isOutdated() && allowReport) {
     actions.push({
       label: 'Report',
-      action: () => sendReport('error', toError(details), ['error'], ''),
+      action: () => sendReport('error', toError(details, options), ['error'], '', process.type)
+        .then(response => {
+          if (response !== undefined) {
+            const githubURL = `https://api.github.com/repos/${GITHUB_PROJ}/issues/${response.github_issue.issue_number}`;
+            jsonRequest<any>(githubURL)
+              .catch(() => undefined)
+              .then(githubInfo => {
+                dispatch(showDialog('success', 'Issue reported', {
+                  bbcode: genFeedbackText(response, githubInfo),
+                }, [{ label: 'Close' }]));
+              });
+          }
+        }),
     });
   }
 
@@ -149,48 +211,103 @@ export function showError<S>(dispatch: Redux.Dispatch<S>,
   }));
 }
 
-function renderNodeError(err: Error): string {
-  const res: string[] = [];
+function prettifyNodeErrorMessage(err: any) {
+  if (err.code === undefined) {
+    return { message: err.message, replace: {} };
+  } else if (err.code === 'EPERM') {
+    const filePath = err.path || err.filename;
+    return { message: 'Vortex needs to access "{{filePath}}" is write protected.\n'
+            + 'When you configure directories and access rights you need to ensure Vortex can '
+            + 'still access data directories.\n'
+            + 'This is usually not a bug in Vortex.', replace: { filePath } };
+  } else if (err.code === 'ENOENT') {
+    const filePath = err.path || err.filename;
+    return {
+      message: 'Vortex tried to access "{{filePath}}" but it doesn\'t exist.',
+      replace: { filePath },
+    };
+  } else if (err.code === 'ENETUNREACH') {
+    return {
+      message: 'Network server not reachable.',
+    };
+  } else if (err.code === 'ECONNABORTED') {
+    return {
+      message: 'Network connection aborted by the server.',
+    };
+  } else if (err.code === 'ECONNREFUSED') {
+    return {
+      message: 'Network connection refused.',
+    };
+  } else if (err.code === 'ETIMEDOUT') {
+    return {
+      message: 'Network connection to "{{address}}" timed out, please try again.',
+      replace: { address: err.address }
+    };
+  }
 
+  return {
+    message: err.message,
+  };
+}
+
+function renderCustomError(err: any) {
+  const res: { message?: string, text?: string, parameters?: any, wrap: boolean } = { wrap: false };
+  if (err === undefined) {
+    res.text = 'Unknown error';
+  } else if ((err.error !== undefined) && (err.error instanceof Error)) {
+    const pretty = prettifyNodeErrorMessage(err.error);
+    if (err.message !== undefined) {
+      res.text = err.message;
+      res.message = pretty.message;
+    } else {
+      res.text = pretty.message;
+    }
+    res.parameters = pretty.replace;
+  } else {
+    res.text = err.message || 'An error occurred';
+  }
+
+  let attributes = Object.keys(err)
+      .filter(key => key[0].toUpperCase() === key[0]);
+  if (attributes.length === 0) {
+    attributes = Object.keys(err)
+      .filter(key => ['message', 'error'].indexOf(key) === -1);
+  }
+  if (attributes.length > 0) {
+    const old = res.message;
+    res.message = attributes
+        .map(key => key + ':\t' + err[key])
+        .join('\n');
+    if (old !== undefined) {
+      res.message = old + '\n' + res.message;
+    }
+  }
+  if ((res.message !== undefined) && (res.message.length === 0)) {
+    res.message = undefined;
+  }
+  return res;
+}
+
+/**
+ * render error message for display to the user
+ * @param err 
+ */
+export function renderError(err: string | Error | any):
+    { message?: string, text?: string, parameters?: any, wrap: boolean } {
   if (Array.isArray(err)) {
     err = err[0];
   }
-
-  if (err.stack) {
-    res.push(err.stack);
-  }
-
-  return res.join('\n');
-}
-
-function renderCustomError(err: any): string {
-  if (err === undefined) {
-    return 'Unknown error';
-  }
-  return Object.keys(err)
-      .filter(key => ['fatal'].indexOf(key) === -1)
-      .map(key => key + ':\t' + err[key])
-      .join('\n');
-}
-
-function renderError(err: string | Error | any):
-    { message?: string, text?: string, wrap: boolean } {
   if (typeof(err) === 'string') {
     return { text: err, wrap: true };
   } else if (err instanceof Error) {
-    if ((err as any).code === 'EPERM') {
-      return {
-        text: 'A file that Vortex needs to access is write protected.\n'
-            + 'When you configure directories and access rights you need to ensure Vortex can '
-            + 'still access data directories.\n'
-            + 'This is usually not a bug in Vortex.',
-        message: (err as any).path + '\n' + err.stack,
-        wrap: false,
-      };
-    } else {
-      return { text: err.message, message: renderNodeError(err), wrap: false };
-    }
+    const errMessage = prettifyNodeErrorMessage(err);
+    return {
+      text: errMessage.message,
+      message: err.stack,
+      parameters: errMessage.replace,
+      wrap: false,
+    };
   } else {
-    return { message: renderCustomError(err), wrap: false };
+    return renderCustomError(err);
   }
 }

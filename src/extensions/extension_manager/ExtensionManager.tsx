@@ -6,12 +6,13 @@ import { IExtensionLoadFailure, IExtensionState, IState } from '../../types/ISta
 import { ITableAttribute } from '../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import * as fs from '../../util/fs';
+import getVortexPath from '../../util/getVortexPath';
+import * as selectors from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { spawnSelf } from '../../util/util';
 import MainPage from '../../views/MainPage';
 
 import { IDownload } from '../download_management/types/IDownload';
-import { downloadPath } from '../mod_management/selectors';
 
 import installExtension from './installExtension';
 import getTableAttributes from './tableAttributes';
@@ -24,6 +25,7 @@ import * as path from 'path';
 import * as React from 'react';
 import { Alert, Button, Panel } from 'react-bootstrap';
 import * as Redux from 'redux';
+import { ThunkDispatch } from 'redux-thunk';
 
 interface IConnectedProps {
   extensionConfig: { [extId: string]: IExtensionState };
@@ -47,7 +49,7 @@ interface IComponentState {
 
 function getAllDirectories(searchPath: string): Promise<string[]> {
   return fs.readdirAsync(searchPath)
-    .filter<string>(fileName =>
+    .filter(fileName =>
       fs.statAsync(path.join(searchPath, fileName))
         .then(stat => stat.isDirectory()));
 }
@@ -149,7 +151,7 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
                 </FlexLayout.Flex>
                 <FlexLayout.Fixed>
                   <Dropzone
-                    accept={['files', 'urls']}
+                    accept={['files']}
                     drop={this.dropExtension}
                     dialogHint={t('Select extension file')}
                   />
@@ -169,10 +171,11 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
       ? Promise.map(extPaths, extPath => installExtension(extPath)
           .then(() => { success = true; })
           .catch(err => {
-            this.context.api.showErrorNotification('Failed to install extension', err);
+            this.context.api.showErrorNotification('Failed to install extension', err,
+                                                   { allowReport: false });
           }))
       : Promise.map(extPaths, url => new Promise<void>((resolve, reject) => {
-        this.context.api.events.emit('start-download', {}, undefined,
+        this.context.api.events.emit('start-download', [url], undefined,
                                      (error: Error, id: string) => {
           const dlPath = path.join(this.props.downloadPath, downloads[id].localPath);
           installExtension(dlPath)
@@ -180,7 +183,8 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
             success = true;
           })
           .catch(err => {
-            this.context.api.showErrorNotification('Failed to install extension', err);
+            this.context.api.showErrorNotification('Failed to install extension', err,
+                                                   { allowReport: false });
           })
           .finally(() => {
             resolve();
@@ -198,8 +202,8 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
   private renderReload(): JSX.Element {
     const {t} = this.props;
     return (
-      <Alert bsStyle='warning' style={{ display: 'flex' }}>
-        <p style={{ flexGrow: 1 }}>{t('You need to restart Vortex to apply changes.')}</p>
+      <Alert bsStyle='warning' style={{ display: 'flex', alignItems: 'center' }}>
+        <div style={{ flexGrow: 1 }}>{t('You need to restart Vortex to apply changes.')}</div>
         <Button onClick={this.restart}>{t('Restart')}</Button>
       </Alert>
     );
@@ -235,7 +239,7 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
   }
 
   private readExtensions() {
-    const bundledPath = path.resolve(__dirname, '..', '..', 'bundledPlugins');
+    const bundledPath = getVortexPath('bundledPlugins');
     const extensionsPath = path.join(remote.app.getPath('userData'), 'plugins');
     const extensions: { [extId: string]: IExtension } = {};
 
@@ -260,23 +264,31 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
             prev[value.id] = value.info;
             return prev;
           }, {});
+      })
+      .catch(err => {
+        // this probably only occurs if the user deletes the plugins directory after start
+        this.context.api.showErrorNotification('Failed to read extension directory', err, {
+          allowReport: false,
+        });
       });
   }
 }
+
+const emptyObject = {};
 
 function mapStateToProps(state: IState): IConnectedProps {
   return {
     // TODO: don't use || {} in mapStateToProps because {} is always a new object and
     //   thus causes constant re-drawing. but when removing this, make sure no access
     //   to undefined can happen
-    extensionConfig: state.app.extensions || {},
+    extensionConfig: state.app.extensions || emptyObject,
     loadFailures: state.session.base.extLoadFailures,
     downloads: state.persistent.downloads.files,
-    downloadPath: downloadPath(state),
+    downloadPath: selectors.downloadPath(state),
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onSetExtensionEnabled: (extId: string, enabled: boolean) =>
       dispatch(setExtensionEnabled(extId, enabled)),

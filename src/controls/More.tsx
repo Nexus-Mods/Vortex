@@ -1,14 +1,26 @@
-import Icon from './Icon';
 import Overlay from './Overlay';
 import { IconButton } from './TooltipControls';
 
 import * as React from 'react';
 import {Popover} from 'react-bootstrap';
-import * as ReactDOM from 'react-dom';
+import { translate, ComponentEx } from '../util/ComponentEx';
+import Icon from './Icon';
+import { IExtensionApi } from '../types/api';
+
+let _haveKnowledgeBase: boolean;
+
+function haveKnowledgeBase(api: IExtensionApi): boolean {
+  if (_haveKnowledgeBase === undefined) {
+    // is this expensive? Is it worth caching?
+    _haveKnowledgeBase = api.events.listenerCount('open-knowledge-base') > 0;
+  }
+  return _haveKnowledgeBase;
+}
 
 export interface IProps {
   id: string;
   name: string;
+  wikiId?: string;
   children?: string;
   container?: Element;
   orientation?: 'vertical' | 'horizontal';
@@ -28,9 +40,8 @@ export interface IComponentState {
  * @param {IProps} props
  * @returns
  */
-class More extends React.Component<IProps, IComponentState> {
+class More extends ComponentEx<IProps, IComponentState> {
 
-  private mPopoverRef: Element;
   private mRef: Element;
 
   constructor(props: IProps) {
@@ -42,17 +53,26 @@ class More extends React.Component<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { children, id, name, orientation } = this.props;
+    const { t, children, id, name, orientation, wikiId } = this.props;
     const { open } = this.state;
 
     if (children === undefined) {
       return null;
     }
 
+    const wikiFooter = (wikiId === undefined) || !haveKnowledgeBase(this.context.api)
+      ? null
+      : (
+        <div className='more-footer'><a href={`#${wikiId}`} onClick={this.openWiki}>
+          <Icon name='open-in-browser'/>{' '}{t('Learn more')}</a>
+        </div>
+      );
+
     let pCounter = 0;
     const popover = (
       <Popover id={`popover-${id}`} className='more-popover' title={name}>
         {children.split('\n\n').map((paragraph) => <p key={pCounter++}>{paragraph}</p>)}
+        {wikiFooter}
       </Popover>
     );
     return (
@@ -80,6 +100,11 @@ class More extends React.Component<IProps, IComponentState> {
     this.mRef = ref;
   }
 
+  private openWiki = (evt: React.MouseEvent<HTMLAnchorElement>) => {
+    this.context.api.events.emit('open-knowledge-base', evt.currentTarget.getAttribute('href').slice(1));
+    this.hide();
+  }
+
   private toggle = evt => {
     evt.preventDefault();
     this.setState({ open: !this.state.open });
@@ -103,4 +128,4 @@ class More extends React.Component<IProps, IComponentState> {
   }
 }
 
-export default More;
+export default translate(['common'], { wait: false })(More);

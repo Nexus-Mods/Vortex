@@ -5,7 +5,7 @@ import { log } from '../../util/log';
 import { activeGameId, gameName } from '../../util/selectors';
 import walk from '../../util/walk';
 
-import { getGame } from '../gamemode_management';
+import { getGame } from '../gamemode_management/util/getGame';
 import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
 import LinkingDeployment from '../mod_management/LinkingDeployment';
 import { IDeploymentMethod } from '../mod_management/types/IDeploymentMethod';
@@ -24,8 +24,10 @@ class DeploymendMethod extends LinkingDeployment {
 
   constructor(api: IExtensionApi) {
     super(
-        'symlink_activator', 'Symlink deployment',
-        'Deploys mods by setting symlinks in the destination directory.', api);
+        'symlink_activator', 'Symlink Deployment',
+        'Deploys mods by setting symlinks in the destination directory.',
+        true,
+        api);
   }
 
   public detailedDescription(t: I18next.TranslationFunction): string {
@@ -87,19 +89,18 @@ class DeploymendMethod extends LinkingDeployment {
         .then((created: any) => {
           let tagDir: Promise<void>;
           if (created !== null) {
-            tagDir = fs.writeFileAsync(
-                path.join(created, LinkingDeployment.TAG_NAME),
-                'This directory was created by Vortex deployment and will be removed ' +
-                    'during purging if it\'s empty');
+            const tagPath = path.join(created, LinkingDeployment.NEW_TAG_NAME);
+            tagDir = fs.writeFileAsync(tagPath,
+                'This directory was created by Vortex deployment and will be removed '
+                + 'during purging if it\'s empty');
           } else {
             tagDir = Promise.resolve();
           }
           return tagDir.then(() => fs.symlinkAsync(sourcePath, linkPath))
-              .catch((err) => {
-                if (err.code !== 'EEXIST') {
-                  throw err;
-                }
-              });
+            .catch(err => (err.code !== 'EEXIST')
+                ? Promise.reject(err)
+                : fs.removeAsync(linkPath)
+                  .then(() => fs.symlinkAsync(sourcePath, linkPath)));
         });
   }
 
@@ -150,6 +151,7 @@ class DeploymendMethod extends LinkingDeployment {
     try {
       fs.linkSync(srcFile, destFile);
       fs.removeSync(destFile);
+      return true;
     } catch (err) {
       return false;
     }

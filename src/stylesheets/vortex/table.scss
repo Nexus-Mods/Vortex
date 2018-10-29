@@ -8,13 +8,14 @@
       > .xtd {
         padding: $table-cell-padding;
         line-height: $line-height-base;
-        vertical-align: middle;
         border-top: $table-row-gap solid $table-border-color;
+      }
+      > .xtd {
+        vertical-align: middle;
       }
     }
   }
   > .xthead > .xtr > .xth {
-    vertical-align: bottom;
     border-bottom: $table-header-separator solid $table-border-color;
   }
   > .xthead:first-child {

@@ -2,6 +2,7 @@ import { ButtonType } from '../../../controls/IconBar';
 import ToolbarIcon from '../../../controls/ToolbarIcon';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { activeGameId } from '../../../util/selectors';
+import { getSafe } from '../../../util/storeHelper';
 
 import { IProfileMod } from '../../profile_management/types/IProfile';
 
@@ -25,7 +26,7 @@ type IProps = IBaseProps & IConnectedProps;
 
 class CheckVersionsButton extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
-    const { t, buttonType, updateRunning } = this.props;
+    const { t, updateRunning } = this.props;
 
     if (updateRunning) {
       return (
@@ -34,6 +35,7 @@ class CheckVersionsButton extends ComponentEx<IProps, {}> {
           icon='spinner'
           text={t('Checking for mod updates')}
           disabled={true}
+          spin
         />
       );
     } else {
@@ -41,7 +43,7 @@ class CheckVersionsButton extends ComponentEx<IProps, {}> {
         <ToolbarIcon
           id='check-mods-version'
           icon='refresh'
-          text={t('Check for mod updates')}
+          text={t('Check for Mod Updates')}
           onClick={this.checkModsVersion}
         />
       );
@@ -51,16 +53,25 @@ class CheckVersionsButton extends ComponentEx<IProps, {}> {
   private checkModsVersion = () => {
     const { gameMode, mods } = this.props;
 
-    this.context.api.events.emit('check-mods-version', gameMode, mods);
+    this.context.api.emitAndAwait('check-mods-version', gameMode, mods)
+      .then(() => {
+        this.context.api.sendNotification({
+          type: 'success',
+          message: 'Check for mod updates complete',
+          displayMS: 5000,
+        });
+      });
   }
 }
+
+const emptyObject = {};
 
 function mapStateToProps(state: any): IConnectedProps {
   const gameMode = activeGameId(state);
   return {
-    mods: state.persistent.mods[gameMode] || {},
+    mods: getSafe(state, ['persistent', 'mods', gameMode], emptyObject),
     gameMode,
-    updateRunning: state.settings.mods.updatingMods[gameMode],
+    updateRunning: getSafe(state, ['session', 'mods', 'updatingMods', gameMode], false),
   };
 }
 

@@ -1,8 +1,9 @@
 import {IExtensionContext} from '../../types/IExtensionContext';
-import { IState } from '../../types/IState';
+import { IState, IProfile } from '../../types/IState';
 import deepMerge from '../../util/deepMerge';
 import * as fs from '../../util/fs';
 import {log} from '../../util/log';
+import { installPathForGame } from '../../util/selectors';
 import {getSafe} from '../../util/storeHelper';
 import {objDiff, setdefault} from '../../util/util';
 
@@ -10,7 +11,6 @@ import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult'
 import {INI_TWEAKS_PATH} from '../mod_management/InstallManager';
 import {IMod} from '../mod_management/types/IMod';
 import {IModWithState} from '../mod_management/types/IModProps';
-import resolvePath from '../mod_management/util/resolvePath';
 import {activeGameId} from '../profile_management/selectors';
 
 import {iniFiles, iniFormat} from './gameSupport';
@@ -19,7 +19,7 @@ import renderINITweaks from './TweakList';
 import * as Promise from 'bluebird';
 import { TranslationFunction } from 'i18next';
 import * as path from 'path';
-import IniParser, {IniFile, WinapiFormat} from 'vortex-parse-ini';
+import IniParser, {WinapiFormat, IniFile} from 'vortex-parse-ini';
 
 function ensureIniBackups(t: TranslationFunction, gameMode: string,
                           discovery: IDiscoveryResult): Promise<void> {
@@ -29,7 +29,7 @@ function ensureIniBackups(t: TranslationFunction, gameMode: string,
     return Promise.map([backupFile, bakedFile],
       copy => fs.statAsync(copy)
         .catch(err =>
-          fs.forcePerm(t, () => fs.copyAsync(file, copy))
+          fs.copyAsync(file, copy, { noSelfCopy: true })
             .catch(copyErr => {
               if (copyErr.code === 'ENOENT') {
                 log('warn', 'ini file missing', file);
@@ -59,12 +59,16 @@ function applyDelta(data: any, delta: any) {
     } else if (key[0] === '+') {
       data[key.slice(1)] = delta[key];
     } else {
+      if (data[key] === undefined) {
+        data[key] = {};
+      }
       applyDelta(data[key], delta[key]);
     }
   });
 }
 
-function discoverSettingsChanges(gameMode: string, discovery: IDiscoveryResult): Promise<void> {
+function discoverSettingsChanges(t: TranslationFunction, gameMode: string,
+                                 discovery: IDiscoveryResult): Promise<void> {
   const format = iniFormat(gameMode);
   if (format === undefined) {
     return Promise.resolve();
@@ -87,7 +91,7 @@ function discoverSettingsChanges(gameMode: string, discovery: IDiscoveryResult):
       .then(ini => {
         const delta = objDiff(oldContent, newContent);
         applyDelta(ini.data, delta);
-        return parser.write(iniFileName + '.base', ini);
+        return fs.forcePerm(t, () => parser.write(iniFileName + '.base', ini));
       });
   })
   .then(() => undefined);
@@ -102,9 +106,11 @@ function getBaseFile(input: string): string {
   }
 }
 
-function bakeSettings(t: TranslationFunction, gameMode: string, discovery: IDiscoveryResult,
-                      mods: IMod[], paths: any): Promise<void> {
-  const modsPath = resolvePath('install', paths, gameMode);
+function bakeSettings(t: TranslationFunction,
+                      gameMode: string, discovery: IDiscoveryResult,
+                      mods: IMod[], state: IState,
+                      onApplySettings: (fileName: string, parser: IniFile<any>) => Promise<void>): Promise<void> {
+  const modsPath = installPathForGame(state, gameMode);
   const format = iniFormat(gameMode);
   if (format === undefined) {
     return Promise.resolve();
@@ -118,8 +124,10 @@ function bakeSettings(t: TranslationFunction, gameMode: string, discovery: IDisc
 
   // get a list of all tweaks we need to apply
   return Promise.each(mods, mod => {
-    const tweaksPath =
-        path.join(modsPath, mod.installationPath, INI_TWEAKS_PATH);
+    if (mod.installationPath === undefined) {
+      return Promise.resolve();
+    }
+    const tweaksPath = path.join(modsPath, mod.installationPath, INI_TWEAKS_PATH);
     const modTweaks = getSafe(mod, ['enabledINITweaks'], []).map(name => name.toLowerCase());
     return fs.readdirAsync(tweaksPath)
         .then(files => {
@@ -136,25 +144,27 @@ function bakeSettings(t: TranslationFunction, gameMode: string, discovery: IDisc
     // starting with the .base file for each ini, re-bake the file by applying
     // the ini tweaks
     const baseName = path.basename(iniFileName).toLowerCase();
-    return fs.forcePerm(t, () => fs.copyAsync(iniFileName + '.base', iniFileName + '.baked'))
-        .catch(err => {
-          if (err.code === 'ENOENT') {
-            // source file missing isn't really a big deal, treat as empty
-            return Promise.join(
-              fs.ensureFileAsync(iniFileName + '.base'),
-              fs.ensureFileAsync(iniFileName + '.baked'));
-          } else {
-            return Promise.reject(err);
-          }
-        })
-        .then(() => parser.read(iniFileName + '.baked'))
-        .then(ini => Promise.each(enabledTweaks[baseName] || [],
-          tweak => parser.read(tweak).then(patchIni => {
-            ini.data = deepMerge(ini.data, patchIni.data);
-          }))
-          .then(() => parser.write(iniFileName + '.baked', ini))
-          .then(() => fs.forcePerm(t, () => fs.copyAsync(iniFileName + '.baked',
-            iniFileName))));
+    // ensure the original ini and directory up to it exists
+    return fs.ensureFileAsync(iniFileName)
+      .then(() => fs.unlinkAsync(iniFileName + '.baked')
+        .catch(err => (err.code === 'ENOENT')
+          ? Promise.resolve()
+          : Promise.reject(err))
+        .then(() => fs.copyAsync(iniFileName + '.base', iniFileName + '.baked', { noSelfCopy: true })
+          // base might not exist, in that case copy from the original ini
+          .catch(err => (err.code === 'ENOENT')
+            ? fs.copyAsync(iniFileName, iniFileName + '.base')
+              .then(() => fs.copyAsync(iniFileName, iniFileName + '.baked', { noSelfCopy: true }))
+            : Promise.reject(err))))
+      .then(() => parser.read(iniFileName + '.baked'))
+      .then(ini => Promise.each(enabledTweaks[baseName] || [],
+        tweak => parser.read(tweak).then(patchIni => {
+          ini.data = deepMerge(ini.data, patchIni.data);
+        }))
+        .then(() => onApplySettings(iniFileName, ini))
+        .then(() => parser.write(iniFileName + '.baked', ini))
+        .then(() => fs.copyAsync(iniFileName + '.baked',
+          iniFileName, { noSelfCopy: true })));
   }))
   .then(() => undefined);
 }
@@ -163,8 +173,8 @@ function purgeChanges(t: TranslationFunction, gameMode: string, discovery: IDisc
   return Promise.map(
       iniFiles(gameMode, discovery),
       iniFileName =>
-          fs.forcePerm(t, () => fs.copyAsync(iniFileName + '.base', iniFileName + '.baked'))
-            .then(() => fs.forcePerm(t, () => fs.copyAsync(iniFileName + '.base', iniFileName))));
+          fs.copyAsync(iniFileName + '.base', iniFileName + '.baked', { noSelfCopy: true })
+            .then(() => fs.copyAsync(iniFileName + '.base', iniFileName, { noSelfCopy: true })));
 }
 
 function main(context: IExtensionContext) {
@@ -211,18 +221,18 @@ function main(context: IExtensionContext) {
       });
     });
 
-    context.api.events.on('bake-settings', (gameId: string, mods: IMod[],
-                                            callback: (err: Error) => void) => {
+    context.api.onAsync('bake-settings', (gameId: string, mods: IMod[], profile: IProfile) => {
       if (deactivated) {
         return;
       }
       const state: IState = context.api.store.getState();
-      const discovery: IDiscoveryResult = state.settings.gameMode.discovered[gameId];
-      const paths = state.settings.mods.paths;
-      discoverSettingsChanges(gameId, discovery)
-        .then(() => bakeSettings(context.api.translate, gameId, discovery, mods, paths))
-        .then(() => callback(null))
-        .catch(err => callback(err));
+      const discovery: IDiscoveryResult = state.settings.gameMode.discovered[profile.gameId];
+
+      const onApplySettings = (fileName: string, parser: IniFile<any>): Promise<void> =>
+        context.api.emitAndAwait('apply-settings', profile, fileName, parser);
+
+      return discoverSettingsChanges(context.api.translate, profile.gameId, discovery)
+        .then(() => bakeSettings(context.api.translate, profile.gameId, discovery, mods, state, onApplySettings));
     });
 
     context.api.events.on('purge-mods', () => {
@@ -232,8 +242,11 @@ function main(context: IExtensionContext) {
       const state: IState = context.api.store.getState();
       const gameMode = activeGameId(state);
       const discovery: IDiscoveryResult = state.settings.gameMode.discovered[gameMode];
-      discoverSettingsChanges(gameMode, discovery)
-        .then(() => purgeChanges(context.api.translate, gameMode, discovery));
+      discoverSettingsChanges(context.api.translate, gameMode, discovery)
+        .then(() => purgeChanges(context.api.translate, gameMode, discovery))
+        .catch(err => {
+          context.api.showErrorNotification('Failed to purge ini edits', err, { allowReport: (err as any).code !== 'ENOENT' });
+        });
     });
   });
 }

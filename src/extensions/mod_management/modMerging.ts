@@ -153,11 +153,12 @@ function mergeMods(api: IExtensionApi,
             mergedFiles.push(relPath);
             return fs.ensureDirAsync(realDest)
               .then(() => Promise.map(merger.match.baseFiles(),
-                file => fs.copyAsync(file.in, path.join(realDest, file.out)).catch(err =>
-                  // source file missing isn't really a big deal, treat as empty
-                  (err.code === 'ENOENT')
-                    ? fs.ensureFileAsync(file.in)
-                    : Promise.reject(err))))
+                file => fs.removeAsync(path.join(realDest, file.out)).catch(err => null)
+                  .then(() => fs.copyAsync(file.in, path.join(realDest, file.out)))
+                  .catch(err => (err.code === 'ENOENT')
+                    // source file missing isn't really a big deal, treat as empty
+                      ? fs.ensureFileAsync(file.in)
+                      : Promise.reject(err))))
               .then(() => merger.merge(fileEntry.filePath, realDest));
           }
         }

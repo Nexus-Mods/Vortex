@@ -53,10 +53,6 @@
   background-color: $white;
 }
 
-.btn:not(.btn-embed) svg {
-  margin-right: 0.5em;
-}
-
 .dropdown .btn-group, .btn-group-vertical {
   display: flex;
 }
@@ -70,7 +66,7 @@
   }
 
   >.xtbody>.xtr>.xtd {
-    vertical-align: left;
+    vertical-align: middle;
   }
 
   >.xthead>.xtr>.xth,
@@ -186,8 +182,20 @@ div:hover > .hover-expand {
   color: $link-color;
 }
 
-.icon-button.has-children svg {
-  margin-right: 0.5em;
+.icon-button.has-children {
+  display: flex;
+  align-items: center;
+
+  &.icon-button-horizontal {
+    flex-direction: row;
+    svg {
+      margin-right: 0.5em;
+    }
+  }
+
+  &.icon-button-vertical {
+    flex-direction: column;
+  }
 }
 
 .zoomed-image {
@@ -226,18 +234,6 @@ div:hover > .hover-expand {
     border: 0px;
     border-left: 1px solid darken( $brand-primary, 10% );
   }
-}
-
-.nexus-orange {
-  fill: #D78F46;
-}
-
-.nexus-orange-darker {
-  fill: darken(#D78F46, 15%);
-}
-
-.nexus-outline {
-  fill: black;
 }
 
 .progress {
@@ -295,40 +291,6 @@ div:hover > .hover-expand {
   }
 }
 
-// /generic control rules
-/////////////////////////
-
-///////////////////////////////////
-// icons (based on fontawesome css)
-
-.icon {
-  fill: currentColor;
-  height: 1.2em;
-  width: 1.2em;
-  display: inline-block;
-  vertical-align: text-bottom;
-}
-
-.icon-border {
-  padding: .2em .25em .15em;
-  border: solid .08em $gray-light;
-  border-radius: .1em;
-}
-
-.icon-spin {
-  -webkit-animation: icon-spin 2s infinite linear;
-  animation: icon-spin 2s infinite linear;
-}
-
-.icon-pulse {
-  -webkit-animation: icon-spin 1s infinite steps(8);
-  animation: icon-spin 1s infinite steps(8);
-}
-
-.icon-stroke {
-  stroke: currentColor;
-}
-
 .panel {
   border: $border-width solid $border-color;
   height: 100%;
@@ -358,12 +320,36 @@ div:hover > .hover-expand {
   }
 }
 
-.dropdown svg,
-.dropup svg {
-  margin-right: 8px;
-}
 .Select-placeholder, .Select--single>.Select-control .Select-value {
   color: $gray;
+}
+
+.datetime-filter {
+  width: 100%;
+  >div {
+    // not sure why this is necessary, without reducing the line-height
+    // the input box takes more vertical space than it should but only when there is no content
+    line-height: 0.5;
+  }
+}
+
+.react-datepicker__close-icon::after {
+  background-color: initial;
+  z-index: 2;
+  cursor: default;
+}
+
+.react-datepicker-wrapper {
+  width: 100%;
+  >.react-datepicker__input-container {
+    width: 100%;
+    >input {
+      @extend .form-control;
+      padding: 0;
+      height: 22px;
+      cursor: default;
+    }
+  }
 }
 
 // /generic control rules
@@ -374,7 +360,10 @@ div:hover > .hover-expand {
 
 @import "vortex/banner";
 @import "vortex/bbcode";
+@import "vortex/browser";
 @import "vortex/charts";
+@import "vortex/collapse";
+@import "vortex/collapseicon";
 @import "vortex/dashlet";
 @import "vortex/dashlet-rss";
 @import "vortex/dialogs";
@@ -387,7 +376,7 @@ div:hover > .hover-expand {
 @import "vortex/main-window";
 @import "vortex/more";
 @import "vortex/navbar";
-@import "vortex/nexusmods-download";
+@import "vortex/nexusmods";
 @import "vortex/notification";
 @import "vortex/quicklaunch";
 @import "vortex/placeholder";
@@ -436,28 +425,6 @@ div:hover > .hover-expand {
 
 /////////////////////////
 // specific table columns
-
-.mod-update {
-  &.warning {
-    color: $brand-warning;
-  }
-
-  &.download {
-    color: $brand-warning;
-  }
-
-  &.ban {
-    color: $brand-danger;
-  }
-
-  &.bug {
-    color: $brand-danger;
-  }
-
-  .icon-button {
-    margin-left: 0.4em !important;
-  }
-}
 
 .cell-enabled, .header-enabled {
   text-align: center;
@@ -619,6 +586,24 @@ div:hover > .hover-expand {
 // /HIDPI
 /////////
 
+///////////////
+// nexus logo
+
+.nexus-orange {
+  fill: #D78F46;
+}
+
+.nexus-orange-darker {
+  fill: darken(#D78F46, 15%);
+}
+
+.nexus-outline {
+  fill: black;
+}
+
+// /nexus logo
+//////////////
+
 ////////////////////////////////////////////////////////
 // only used to make scss variables available at runtime
 
@@ -643,4 +628,27 @@ $colors: ( white: $white, gray-lighter: $gray-lighter, gray-light: $gray-light,
       }
     }
   }
+}
+
+@keyframes highlightPulse {
+  0% {border-color: $brand-highlight;}
+100% {border-color: darken($brand-highlight, 20%);}
+}
+
+@keyframes highlightColorPulse {
+  0% {color: $brand-highlight;}
+100% {color: darken($brand-highlight, 20%);}
+}
+
+#highlight-control-dummy {
+  border-width: $border-width;
+  border-style: solid;
+  animation: highlightPulse 1s infinite alternate;
+  padding: 4px;
+  margin: calc((4px + #{$border-width}) * -1);
+}
+
+#highlight-control-dummy::after {
+  animation: highlightColorPulse 1s infinite alternate;
+  content: "__contentPlaceholder";
 }

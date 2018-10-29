@@ -1,17 +1,9 @@
 import * as fs from '../../../util/fs';
-import { log } from '../../../util/log';
 
 import * as Promise from 'bluebird';
-import NexusT from 'nexus-api';
+import NexusT, { IFeedbackResponse } from 'nexus-api';
 import ZipT = require('node-7z');
 import { tmpName } from 'tmp';
-
-export class TimeoutError extends Error {
-  constructor(message) {
-    super(message);
-    this.name = this.constructor.name;
-  }
-}
 
 function zipFiles(files: string[]): Promise<string> {
   if (files.length === 0) {
@@ -21,7 +13,7 @@ function zipFiles(files: string[]): Promise<string> {
   const task: ZipT = new Zip();
 
   return new Promise<string>((resolve, reject) => {
-    const filePath = tmpName({
+    tmpName({
       postfix: '.7z',
     }, (err, tmpPath: string) => (err !== null)
       ? reject(err)
@@ -32,15 +24,15 @@ function zipFiles(files: string[]): Promise<string> {
         .then(() => tmpPath));
 }
 
-function submitFeedback(nexus: NexusT, message: string, feedbackFiles: string[],
-                        anonymous: boolean, hash: string): Promise<void> {
+function submitFeedback(nexus: NexusT, title: string, message: string, feedbackFiles: string[],
+                        anonymous: boolean, hash: string): Promise<IFeedbackResponse> {
   let archive: string;
   return zipFiles(feedbackFiles)
     .then(tmpPath => {
       archive = tmpPath;
-      return nexus.sendFeedback(message, tmpPath, anonymous, hash);
+      return nexus.sendFeedback(title, message, tmpPath, anonymous, hash);
     })
-    .then(() => {
+    .finally(() => {
       if (archive !== undefined) {
         fs.removeAsync(archive);
       }

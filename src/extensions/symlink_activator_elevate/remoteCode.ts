@@ -1,10 +1,9 @@
-export function remoteCode(ipcClient) {
+export function remoteCode(ipcClient, req) {
   return new Promise<void>((resolve, reject) => {
-    const TAG_NAME = '__delete_if_empty';
+    const TAG_NAME = process.platform === 'win32' ? '__folder_managed_by_vortex' : '.__folder_managed_by_vortex';
 
-    const walk = require('./walk').default;
-    const fs = require('fs-extra-promise');
-    const path = require('path');
+    const fs = req('fs-extra-promise');
+    const path = req('path');
 
     ipcClient.on('link-file', (payload) => {
       const {source, destination, num} = payload;
@@ -29,7 +28,11 @@ export function remoteCode(ipcClient) {
                   : Promise.reject(err));
             }
           })
-          .then(() => fs.symlinkAsync(source, destination))
+          .then(() => fs.symlinkAsync(source, destination)
+              .catch(err => (err.code !== 'EEXIST')
+                  ? Promise.reject(err)
+                  : fs.removeAsync(destination)
+                    .then(() => fs.symlinkAsync(source, destination))))
           .then(() => {
             ipcClient.emit('log', {
               level: 'debug',

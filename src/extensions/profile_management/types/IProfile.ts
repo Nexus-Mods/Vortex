@@ -8,5 +8,6 @@ export interface IProfile {
   name: string;
   modState: { [id: string]: IProfileMod };
   lastActivated: number;
+  pendingRemove?: boolean;
   features?: { [featureId: string]: any };
 }

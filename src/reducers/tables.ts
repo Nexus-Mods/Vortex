@@ -18,11 +18,11 @@ export const tableReducer: IReducerSpec = {
     },
     [actions.setAttributeFilter as any]: (state, payload) => {
       const { tableId, attributeId, filter } = payload;
-      if (attributeId === undefined) {
-        return setSafe(state, [tableId, 'filter'], undefined);
-      } else {
-        return setSafe(state, [tableId, 'filter', attributeId], filter);
-      }
+      return (attributeId === undefined)
+        ? setSafe(state, [tableId, 'filter'], undefined)
+        : (filter === null)
+          ? setSafe(state, [tableId, 'filter', attributeId], undefined)
+          : setSafe(state, [tableId, 'filter', attributeId], filter);
     },
     [actions.setSplitPos as any]: (state, payload) =>
       setSafe(state, [payload.tableId, 'splitPos'], payload.pos),

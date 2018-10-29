@@ -5,7 +5,7 @@ import FlexLayout from '../controls/FlexLayout';
 import Icon from '../controls/Icon';
 import IconBar from '../controls/IconBar';
 import Spinner from '../controls/Spinner';
-import { Button, IconButton, NavItem } from '../controls/TooltipControls';
+import { Button, NavItem } from '../controls/TooltipControls';
 import { IActionDefinition } from '../types/IActionDefinition';
 import { IComponentContext } from '../types/IComponentContext';
 import { IExtensionApi, IMainPageOptions } from '../types/IExtensionContext';
@@ -29,15 +29,15 @@ import Settings from './Settings';
 import WindowControls from './WindowControls';
 
 import * as I18next from 'i18next';
-import * as update from 'immutability-helper';
+import update from 'immutability-helper';
 import * as _ from 'lodash';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
-import { Alert, Badge, Button as ReactButton, ControlLabel, FormGroup,
-         ListGroup, ListGroupItem, Modal, Nav, ProgressBar } from 'react-bootstrap';
+import { Button as ReactButton, Nav, ProgressBar } from 'react-bootstrap';
 // tslint:disable-next-line:no-submodule-imports
 import {addStyle} from 'react-bootstrap/lib/utils/bootstrapUtils';
 import * as Redux from 'redux';
+import { ThunkDispatch } from 'redux-thunk';
 
 addStyle(ReactButton, 'secondary');
 addStyle(ReactButton, 'ad');
@@ -187,13 +187,11 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   }
 
   public render(): JSX.Element {
-    const { activeProfileId, APIKey, customTitlebar, onHideDialog,
-            nextProfileId, notifications, userInfo, visibleDialog } = this.props;
+    const { activeProfileId, customTitlebar, onHideDialog,
+            nextProfileId, visibleDialog } = this.props;
     const { hidpi } = this.state;
 
-    if ((activeProfileId !== nextProfileId) && truthy(nextProfileId)) {
-      return this.renderWait();
-    }
+    const switchingProfile = ((activeProfileId !== nextProfileId) && truthy(nextProfileId));
 
     const classes = [];
     classes.push(hidpi ? 'hidpi' : 'lodpi');
@@ -204,26 +202,20 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       classes.push('window-frame');
     }
     return (
-      <div className={classes.join(' ')}>
-        <div className='menu-layer' ref={this.setMenuLayer} />
-        <FlexLayout id='main-window-content' type='column'>
-          {this.renderToolbar()}
-          {customTitlebar ? <div className='dragbar'/> : null}
-          {this.renderBody()}
-        </FlexLayout>
-        <Dialog />
-        <DialogContainer visibleDialog={visibleDialog} onHideDialog={onHideDialog} />
-        {customTitlebar ? <WindowControls /> : null}
-      </div>
-    );
-  }
-
-  private login = () => {
-    this.props.api.events.emit('request-nexus-login', (err: Error) => {
-      if (err !== null) {
-        this.props.api.showErrorNotification('Failed to get access key', err);
-      }
-    });
+      <>
+        {switchingProfile ? this.renderWait() : null}
+        <div key='main' className={classes.join(' ')} style={{ display: switchingProfile ? 'none' : undefined }}>
+          <div className='menu-layer' ref={this.setMenuLayer} />
+          <FlexLayout id='main-window-content' type='column'>
+            {this.renderToolbar(switchingProfile)}
+            {customTitlebar ? <div className='dragbar' /> : null}
+            {this.renderBody()}
+          </FlexLayout>
+          <Dialog />
+          <DialogContainer visibleDialog={visibleDialog} onHideDialog={onHideDialog} />
+          {customTitlebar ? <WindowControls /> : null}
+        </div>
+      </>);
   }
 
   private renderWait() {
@@ -233,7 +225,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       ? <ProgressBar label={progress.text} now={progress.percent} style={{ width: '50%' }} />
       : <Spinner style={{ width: 64, height: 64 }} />;
     return (
-      <div>
+      <div key='wait'>
         <div className='center-content'>{control}</div>
         <Dialog />
         <DialogContainer visibleDialog={visibleDialog} onHideDialog={onHideDialog} />
@@ -257,7 +249,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     this.setState(this.nextState);
   }
 
-  private renderToolbar() {
+  private renderToolbar(switchingProfile: boolean) {
     const { t, customTitlebar } = this.props;
     const className = customTitlebar ? 'toolbar-app-region' : 'toolbar-default';
     return (
@@ -266,11 +258,12 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
         <Banner group='main-toolbar' />
         <div className='flex-fill' />
         <div className='main-toolbar-right'>
-          <NotificationButton id='notification-button' />
+          <NotificationButton id='notification-button' hide={switchingProfile} />
           <IconBar
             className='application-icons'
             group='application-icons'
             staticElements={this.applicationButtons}
+            t={t}
           />
           <IconBar
             id='global-icons'
@@ -279,6 +272,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
             staticElements={this.globalButtons}
             orientation='vertical'
             collapse
+            t={t}
           />
         </div>
       </FlexLayout.Fixed>
@@ -396,7 +390,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   }
 
   private renderPage(page: IMainPage) {
-    const { t, mainPage, secondaryPage } = this.props;
+    const { mainPage, secondaryPage } = this.props;
     const { loadedPages } = this.state;
 
     if (loadedPages.indexOf(page.id) === -1) {
@@ -422,15 +416,6 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
   private handleClickPage = (evt: React.MouseEvent<any>) => {
     this.setMainPage(evt.currentTarget.id, evt.ctrlKey);
-  }
-
-  private hideLayer = () => this.showLayerImpl('');
-
-  private showLayerImpl(layer: string): void {
-    if (this.state.showLayer !== '') {
-      this.props.api.events.emit('hide-modal', this.state.showLayer);
-    }
-    this.updateState({ showLayer: { $set: layer } });
   }
 
   private setMainPage = (pageId: string, secondary: boolean) => {
@@ -490,13 +475,13 @@ function mapStateToProps(state: IState): IConnectedProps {
     nextProfileId: state.settings.profiles.nextProfileId,
     progressProfile: getSafe(state.session.base, ['progress', 'profile'], undefined),
     customTitlebar: state.settings.window.customTitlebar,
-    userInfo: getSafe(state, ['session', 'nexus', 'userInfo'], undefined),
+    userInfo: getSafe(state, ['persistent', 'nexus', 'userInfo'], undefined),
     APIKey: getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], ''),
     notifications: state.session.notifications.notifications,
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onSetTabsMinimized: (minimized: boolean) => dispatch(setTabsMinimized(minimized)),
     onSetOpenMainPage:
@@ -527,5 +512,6 @@ function registerMainPage(
 
 export default
   extend(registerMainPage)(
-    connect(mapStateToProps, mapDispatchToProps)(MainWindow),
+    connect(mapStateToProps, mapDispatchToProps)(
+      MainWindow),
   ) as React.ComponentClass<IBaseProps>;

@@ -38,7 +38,7 @@
 }
 
 .table-filter-column {
-  background-color: $brand-warning;
+  background-color: $brand-warning !important;
 }
 
 .table-sort-column {
@@ -86,14 +86,13 @@
 
 .table-details-pane {
   contain: content;
-  height: 100%;
   overflow-y: auto;
   padding: 0px;
   background-color: $brand-menu;
   transition: max-width 300ms;
   border-right-width: 0px;
   position: absolute;
-  right: 0;
+  right: 1px;
   top: 0;
   bottom: 0;
 
@@ -135,6 +134,29 @@
 .table-header {
   margin-right: $scrollbar-width;
   transform-style: preserve-3d;
+}
+
+.table-pinned {
+  height: 3em;
+  > div {
+    position: absolute;
+    width: 100%;
+    height: 3em;
+    background-color: $brand-warning;
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    > .btn {
+      margin-left: 8px;
+    }
+  }
+}
+
+.table-pinned-hidden {
+  display: none;
+  > div {
+    display: none;
+  }
 }
 
 .table-footer-placeholder {
@@ -204,6 +226,9 @@
 
 .xtable .cell-actions {
   display: inline-flex;
+  .dropdown .btn:first-child {
+    text-align: left
+  }
   .dropdown-toggle {
     min-width: initial;
   }

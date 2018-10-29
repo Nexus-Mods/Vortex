@@ -1,11 +1,11 @@
-import Icon from '../../../controls/Icon';
+import { ActionDropdown } from '../../../controls/api';
 import { Table, TD, TR } from '../../../controls/table/MyTable';
-import { Icon as TooltipIcon, IconButton } from '../../../controls/TooltipControls';
+import { IActionDefinition } from '../../../types/api';
 import { ComponentEx } from '../../../util/ComponentEx';
 import * as fs from '../../../util/fs';
 import { getSafe } from '../../../util/storeHelper';
 
-import { getGame } from '../../gamemode_management/index';
+import { getGame } from '../../gamemode_management/util/getGame';
 
 import { IProfile } from '../types/IProfile';
 import { IProfileFeature } from '../types/IProfileFeature';
@@ -16,21 +16,12 @@ import { nativeImage, remote } from 'electron';
 import * as I18next from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
-import { MenuItem, SplitButton } from 'react-bootstrap';
-
-interface IActionEntry {
-  id: string;
-  icon: string;
-  text: string;
-  action: () => void;
-}
 
 export interface IProps {
   t: I18next.TranslationFunction;
   active: boolean;
   available: boolean;
   profile: IProfile;
-  gameName: string;
   features: IProfileFeature[];
   highlightGameId: string;
 
@@ -53,22 +44,37 @@ interface IComponentState {
  * @extends {React.Component<IConnectedProps, {}>}
  */
 class ProfileItem extends ComponentEx<IProps, IComponentState> {
+  private mUserData: string;
+  private mMounted: boolean = false;
   constructor(props: IProps) {
     super(props);
     this.initState({
       hasProfileImage: false,
       counter: 0,
     });
+    this.mUserData = remote.app.getPath('userData');
   }
 
   public componentWillMount() {
-    fs.statAsync(this.imagePath)
-    .then(() => this.nextState.hasProfileImage = true)
-    .catch(() => this.nextState.hasProfileImage = false);
+    if (this.props.profile === undefined) {
+      this.setHasProfileImage(false);
+    } else {
+      fs.statAsync(this.imagePath)
+        .then(() => this.setHasProfileImage(true))
+        .catch(() => this.setHasProfileImage(false));
+    }
+  }
+
+  public componentDidMount() {
+    this.mMounted = true;
+  }
+
+  public componentWillUnmount() {
+    this.mMounted = false;
   }
 
   public render(): JSX.Element {
-    const { t, active, available, features, gameName, highlightGameId, profile } = this.props;
+    const { t, active, available, features, highlightGameId, profile } = this.props;
     const { counter, hasProfileImage } = this.state;
 
     const modState = getSafe(profile, ['modState'], {});
@@ -95,6 +101,10 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
       ? this.imagePath
       : path.join(game.extensionPath, game.logo);
 
+    const gameName = (game !== undefined)
+      ? game.name
+      : t('Unknown game {{ gameId }}', { replace: { gameId: profile.gameId } });
+
     if (process.platform === 'win32') {
       logo = logo.replace(/\\/g, '/');
     }
@@ -119,29 +129,33 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
           <Table className='profile-details'>
             {this.renderFeatureWithValue({
               id: profile.id + 'mods',
-              label: t('Mods Installed'),
+              label: t('Mods Enabled'),
               icon: 'mods',
               type: 'number',
               supported: () => true,
               description: t('Number of Mods enabled'),
             }, enabledMods)}
+            {this.renderFeatureWithValue({
+              id: profile.id + 'id',
+              label: t('ID'),
+              icon: '',
+              type: 'string',
+              supported: () => true,
+              description: t('Internal ID of this profile'),
+            }, profile.id)}
 
             {features.map(this.renderFeature)}
           </Table>
         </div>
         <div className='profile-actions'>
-          <SplitButton
-            id={`profile-${profile.id}-actions`}
-            title={(
-              <div>
-                <Icon name={actions[0].icon} />
-                {actions[0].text}
-              </div>
-            )}
-            onClick={actions[0].action}
-          >
-            {this.renderActions(actions.slice(1))}
-          </SplitButton>
+          <ActionDropdown
+            group='profile-actions'
+            orientation='vertical'
+            className='menubar'
+            staticElements={actions}
+            buttonType='both'
+            instanceId={profile.id}
+          />
           <TransferIcon
             t={t}
             disabled={!available}
@@ -153,33 +167,23 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private getActions(): IActionEntry[] {
-    const { t, active, available, profile } = this.props;
+  private getActions(): IActionDefinition[] {
+    const { t, active, available } = this.props;
 
-    const res = [];
+    const res: IActionDefinition[] = [];
     if (!active && available) {
-      res.push({ id: 'enable', icon: 'activate', text: t('Enable'), action: this.activate });
+      res.push({ icon: 'activate', title: t('Enable'), action: this.activate });
     }
     if (available) {
-      res.push({ id: 'edit', icon: 'edit', text: t('Edit'), action: this.startEditing });
-      res.push({ id: 'clone', icon: 'clone', text: t('Clone'), action: this.cloneProfile });
+      res.push({ icon: 'edit', title: t('Edit'), action: this.startEditing });
+      res.push({ icon: 'clone', title: t('Clone'), action: this.cloneProfile });
     }
-    res.push({ id: 'remove', icon: 'remove', text: t('Remove'), action: this.removeProfile });
+    res.push({ icon: 'remove', title: t('Remove'), action: this.removeProfile });
     return res;
   }
 
-  private renderActions(actions: IActionEntry[]): JSX.Element[] {
-    const { t, active, available, profile } = this.props;
-    return actions.map(action => (
-      <MenuItem key={action.id} onClick={action.action} >
-        <Icon name={action.icon} />
-        {action.text}
-      </MenuItem>
-    ));
-  }
-
   private renderFeature = (feature: IProfileFeature): JSX.Element => {
-    const { t, profile } = this.props;
+    const { profile } = this.props;
     const value = getSafe(profile, ['features', feature.id], undefined);
     return this.renderFeatureWithValue(feature, value);
   }
@@ -218,16 +222,22 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
       // TODO: could resize here to save some disc space
       return fs.writeFileAsync(this.imagePath, img.toPNG())
        .then(() => {
-         this.nextState.hasProfileImage = true;
-         this.nextState.counter++;
+         this.setHasProfileImage(true);
        });
     });
+  }
+
+  private setHasProfileImage(hasImage: boolean) {
+    if (this.mMounted) {
+        this.nextState.hasProfileImage = hasImage;
+        this.nextState.counter++;
+    }
   }
 
   private get imagePath(): string {
     const { profile } = this.props;
     return path.join(
-      remote.app.getPath('userData'), profile.gameId, 'profiles', profile.id, 'banner.png');
+      this.mUserData, profile.gameId, 'profiles', profile.id, 'banner.png');
   }
 
   private cloneProfile = () => {

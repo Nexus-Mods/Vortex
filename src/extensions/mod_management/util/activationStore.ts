@@ -3,15 +3,17 @@ import {IExtensionApi} from '../../../types/IExtensionContext';
 import {IState} from '../../../types/IState';
 import {UserCanceled} from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
+import { truthy, writeFileAtomic } from '../../../util/util';
 
 import {IDeploymentManifest, ManifestFormat} from '../types/IDeploymentManifest';
-import {IDeployedFile} from '../types/IDeploymentMethod';
+import {IDeployedFile, IDeploymentMethod} from '../types/IDeploymentMethod';
 
 import format_1 from './manifest_formats/format_1';
 
 import * as Promise from 'bluebird';
+import * as I18next from 'i18next';
 import * as path from 'path';
-import { truthy } from '../../../util/util';
+import { getActivator } from './deploymentMethods';
 
 const CURRENT_VERSION = 1;
 
@@ -90,12 +92,8 @@ function fallbackPurge(basePath: string,
   .then(() => undefined);
 }
 
-function queryPurge(api: IExtensionApi,
-                    basePath: string,
-                    files: IDeployedFile[]): Promise<void> {
-  const t = api.translate;
-  return api.store.dispatch(showDialog('info', t('Purge files from different instance?'), {
-    message: t('IMPORTANT: This game was modded by another instance of Vortex.\n\n' +
+function queryPurgeTextSafe(t: I18next.TranslationFunction) {
+  return t('IMPORTANT: This game was modded by another instance of Vortex.\n\n' +
       'If you switch between different instances (or between shared and ' +
       'single-user mode) it\'s better if you purge mods before switching.\n\n' +
       'Vortex can try to clean up now but this is less reliable (*) than doing it ' +
@@ -107,7 +105,27 @@ function queryPurge(api: IExtensionApi,
       'won\'t be removed to prevent data loss. If the manifest is damaged or ' +
       'outdated the purge may be incomplete. When purging from the "right" instance ' +
       'the manifest isn\'t required, it can reliably deduce which files need to ' +
-      'be removed.'),
+      'be removed.');
+}
+
+function queryPurgeTextUnsafe(t: I18next.TranslationFunction) {
+  return t('IMPORTANT: This game was modded by another instance of Vortex.\n\n' +
+      'Vortex can only proceed by purging the mods from that other instance.\n\n' +
+      'This will irreversably **destroy** the mod installations from that other ' +
+      'instance!\n\n' +
+      'You should instead cancel now, open that other vortex instance and purge ' +
+      'from there. This can also be caused by switching between shared and ' +
+      'single-user mode.');
+}
+
+function queryPurge(api: IExtensionApi,
+                    basePath: string,
+                    files: IDeployedFile[],
+                    safe: boolean): Promise<void> {
+  const t = api.translate;
+  const text = safe ? queryPurgeTextSafe(t) : queryPurgeTextUnsafe(t);
+  return api.store.dispatch(showDialog('info', t('Purge files from different instance?'), {
+    text,
   }, [ { label: 'Cancel' }, { label: 'Purge' } ]))
     .then(result => {
       if (result.action === 'Purge') {
@@ -125,7 +143,7 @@ function queryPurge(api: IExtensionApi,
 }
 
 export function loadActivation(api: IExtensionApi, modType: string,
-                               modPath: string): Promise<IDeployedFile[]> {
+                               modPath: string, activator: IDeploymentMethod): Promise<IDeployedFile[]> {
   if (modPath === undefined) {
     return Promise.resolve([]);
   }
@@ -147,26 +165,44 @@ export function loadActivation(api: IExtensionApi, modType: string,
         if (tagObject === undefined) {
           tagObject = emptyManifest(instanceId);
         }
-        return ((tagObject.instance !== instanceId) && (tagObject.files.length > 0))
-           ? queryPurge(api, modPath, tagObject.files)
-              .then(() => saveActivation(modType, state.app.instanceId, modPath, []))
-              .then(() => Promise.resolve([]))
-           : Promise.resolve(tagObject.files);
+
+        let result: Promise<IDeployedFile[]>;
+        if ((tagObject.instance !== instanceId) && (tagObject.files.length > 0)) {
+          let safe = true;
+          if (tagObject.deploymentMethod !== undefined) {
+            const previousActivator = getActivator(tagObject.deploymentMethod);
+            if ((previousActivator !== undefined) && !previousActivator.isFallbackPurgeSafe) {
+              safe = false;
+            }
+          }
+          result = queryPurge(api, modPath, tagObject.files, safe)
+              .then(() => saveActivation(modType, state.app.instanceId, modPath, [], activator.id))
+              .then(() => Promise.resolve([]));
+        } else {
+          result = Promise.resolve(tagObject.files);
+        }
+        return result;
       });
 }
 
 export function saveActivation(modType: string, instance: string,
-                               gamePath: string, activation: IDeployedFile[]) {
+                               gamePath: string, activation: IDeployedFile[],
+                               activatorId: string) {
   const typeTag = (modType !== undefined) && (modType.length > 0) ? modType + '.' : '';
   const tagFile = path.join(gamePath, `vortex.deployment.${typeTag}json`);
-  if (activation.length === 0) {
-    return fs.removeAsync(tagFile).catch(err => undefined);
-  } else {
-    return fs.writeFileAsync(tagFile, JSON.stringify(
-                                          {
-                                            instance,
-                                            files: activation,
-                                          },
-                                          undefined, 2));
+  const data = JSON.stringify({
+    instance,
+    version: CURRENT_VERSION,
+    deploymentMethod: activatorId,
+    files: activation
+  }, undefined, 2);
+  try {
+    JSON.parse(data);
+  } catch (err) {
+    return Promise.reject(
+      new Error(`failed to serialize deployment information: "${err.message}"`));
   }
+  return (activation.length === 0)
+    ? fs.removeAsync(tagFile).catch(() => undefined)
+    : writeFileAtomic(tagFile, data);
 }

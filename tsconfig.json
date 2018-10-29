@@ -9,8 +9,8 @@
         "preserveConstEnums": true,
         "rootDir": "./src",
         "outDir": "./out",
-        "sourceMap": true,
-        "mapRoot": "/",
+        "inlineSourceMap": true,
+        "inlineSources": true,
         "skipLibCheck": true,
         "jsx":"react"
     },

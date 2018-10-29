@@ -56,10 +56,9 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
       ? countIf(Object.keys(profile.modState || {}), id => profile.modState[id].enabled)
       : undefined;
 
-    const PanelX: any = Panel;
     return (
-      <Panel bsClass='game-thumbnail' bsStyle={active ? 'primary' : 'default'}>
-        <PanelX.Body>
+      <Panel className='game-thumbnail' bsStyle={active ? 'primary' : 'default'}>
+        <Panel.Body className='game-thumbnail-body'>
           <img
             className={'thumbnail-img'}
             src={logoPath}
@@ -78,7 +77,7 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
           <div className='hover-menu'>
             {type === 'launcher' ? this.renderLaunch() : this.renderMenu()}
           </div>
-        </PanelX.Body>
+        </Panel.Body>
       </Panel>
     );
   }
@@ -112,6 +111,7 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
           buttonType='text'
           orientation='vertical'
           filter={this.lowPriorityButtons}
+          t={t}
         />
         <GameInfoPopover
           t={t}
@@ -135,6 +135,7 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
           orientation='vertical'
           filter={this.priorityButtons}
           clickAnywhere={true}
+          t={t}
         />
       </div>
     ), (

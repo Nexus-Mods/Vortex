@@ -9,6 +9,12 @@ import { activeGameId } from './selectors';
 import * as Promise from 'bluebird';
 import * as Redux from 'redux';
 
+function clone<T>(input: T): T {
+  return Array.isArray(input)
+    ? [].concat(input)
+    : { ...(input as any) };
+}
+
 /**
  * return an item from state or the fallback if the path doesn't lead
  * to an item.
@@ -28,6 +34,37 @@ export function getSafe<T>(state: any, path: Array<(string | number)>, fallback:
     } else {
       current = current[segment];
     }
+  }
+  return current;
+}
+
+/**
+ * case insensitive variant of getSafe
+ */
+export function getSafeCI<T>(state: any, path: Array<(string | number)>, fallback: T): T {
+  let current = state;
+  const getCaseCorrected = (obj: any, prop: string | number) => {
+    if (typeof(prop) === 'number') {
+      return obj[prop] !== undefined ? prop : undefined;
+    }
+    const keys = Object.keys(obj);
+    const idx = keys.map(key => key.toLowerCase()).indexOf(prop.toLowerCase());
+    if (idx === -1) {
+      return undefined;
+    }
+    return keys[idx];
+  };
+
+  for (const segment of path) {
+    if ((current === undefined) || (current === null)) {
+      return fallback;
+    }
+
+    const caseCorrected = getCaseCorrected(current, segment);
+    if (caseCorrected === undefined) {
+      return fallback;
+    }
+    current = current[caseCorrected];
   }
   return current;
 }
@@ -96,8 +133,8 @@ export function setOrNop<T>(state: T, path: string[], value: any): T {
   } else {
     if (state.hasOwnProperty(firstElement)) {
       const temp = setOrNop(result[firstElement], path.slice(1), value);
-      if (temp !== state[firstElement]) {
-        result = { ...(state as any) };
+      if (temp !== result[firstElement]) {
+        result = clone(result);
         result[firstElement] = temp;
       }
     }
@@ -127,8 +164,8 @@ export function changeOrNop<T>(state: T, path: Array<(string | number)>, value: 
   } else {
     if (state.hasOwnProperty(firstElement)) {
       const temp = changeOrNop(result[firstElement], path.slice(1), value);
-      if (temp !== state[firstElement]) {
-        result = { ...(state as any) };
+      if (temp !== result[firstElement]) {
+        result = clone(result);
         result[firstElement] = temp;
       }
     }
@@ -159,8 +196,8 @@ export function deleteOrNop<T>(state: T, path: Array<(string | number)>): T {
   } else {
     if (result.hasOwnProperty(firstElement)) {
       const temp = deleteOrNop(result[firstElement], path.slice(1));
-      if (temp !== state[firstElement]) {
-        result = { ...(state as any) };
+      if (temp !== result[firstElement]) {
+        result = clone(result);
         result[firstElement] = temp;
       }
     }
@@ -175,7 +212,11 @@ function setDefaultArray<T>(state: T, path: Array<(string | number)>, fallback: 
     ? state.slice()
     : { ...(state as any) };
 
-  if (path.length === 1) {
+  if (path.length === 0) {
+    return ((copy !== undefined) && Array.isArray(copy))
+      ? copy
+      : fallback as any;
+  } else if (path.length === 1) {
     copy[firstElement] = (!copy.hasOwnProperty(firstElement) || (copy[firstElement] === undefined))
       ? fallback
       : copy[firstElement].slice();
@@ -231,9 +272,10 @@ export function removeValue<T>(state: T, path: Array<(string | number)>, value: 
   const copy = setDefaultArray(state, path, []);
   const list = getSafe(copy, path, undefined);
   const idx = list.indexOf(value);
-  if (idx !== -1) {
-    list.splice(idx, 1);
+  if (idx === -1) {
+    return state;
   }
+  list.splice(idx, 1);
   return copy;
 }
 
@@ -254,7 +296,7 @@ export function removeValueIf<T extends object>(
 }
 
 /**
- * shallow merge a value into the store at the  specified location
+ * shallow merge a value into the store at the specified location
  *
  * @export
  * @template T

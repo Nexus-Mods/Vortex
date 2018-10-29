@@ -3,8 +3,6 @@ import { ITableAttribute } from '../../types/ITableAttribute';
 import { SortDirection } from '../../types/SortDirection';
 import getAttr from '../../util/getAttr';
 
-import { IconButton } from '../TooltipControls';
-
 import { TH } from './MyTable';
 import SortIndicator from './SortIndicator';
 
@@ -17,7 +15,6 @@ export interface IHeaderProps {
   attribute: ITableAttribute;
   state: IAttributeState;
   doFilter: boolean;
-  advancedMode: boolean;
   onSetSortDirection: (id: string, dir: SortDirection) => void;
   onSetFilter: (id?: string, filter?: any) => void;
   t: I18next.TranslationFunction;
@@ -31,12 +28,29 @@ function nextDirection(direction: SortDirection): SortDirection {
 }
 
 class HeaderCell extends React.Component<IHeaderProps, {}> {
+  private mMinWidth: number = -1;
+  private mRef: HTMLDivElement = null;
+
+  public shouldComponentUpdate(newProps: IHeaderProps) {
+    // TODO: state is a new object every call, needs to be fixed in Table.tsx
+    return (this.props.attribute !== newProps.attribute)
+             || !_.isEqual(this.props.state, newProps.state)
+             || (this.props.doFilter !== newProps.doFilter)
+             || (this.props.children !== (newProps as any).children);
+  }
+
   public render(): JSX.Element {
-    const { t, advancedMode, attribute, className, doFilter } = this.props;
+    const { t, attribute, className, doFilter } = this.props;
+    const style = {};
+    if (this.mMinWidth >= 0) {
+      style['minWidth'] = this.mMinWidth;
+    }
     return (
       <TH
         className={`table-header-cell ${className}`}
         key={attribute.id}
+        domRef={this.setRef}
+        style={style}
       >
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <div
@@ -54,6 +68,14 @@ class HeaderCell extends React.Component<IHeaderProps, {}> {
       </TH>
     );
   }
+  
+  public updateWidth() {
+    if (this.mRef !== null) {
+      if (this.mRef.clientWidth > this.mMinWidth) {
+        this.mMinWidth = this.mRef.clientWidth;
+      }
+    }
+  }
 
   private renderSortIndicator(): JSX.Element {
     const { state } = this.props;
@@ -65,17 +87,8 @@ class HeaderCell extends React.Component<IHeaderProps, {}> {
     );
   }
 
-  private renderFilterIndicator(): JSX.Element {
-    const { t, attribute } = this.props;
-    return (
-      <IconButton
-        id={`btn-filter-${attribute.id}`}
-        className='btn-table-filter'
-        icon='filter'
-        tooltip={t('Filter')}
-        onClick={this.toggleFilter}
-      />
-    );
+  private setRef = (ref: HTMLDivElement) => {
+    this.mRef = ref;
   }
 
   private cycleDirection = () => {
@@ -89,15 +102,6 @@ class HeaderCell extends React.Component<IHeaderProps, {}> {
   private setDirection = (dir: SortDirection) => {
     const { attribute, onSetSortDirection } = this.props;
     onSetSortDirection(attribute.id, dir);
-  }
-
-  private toggleFilter = () => {
-    const { attribute, doFilter, onSetFilter } = this.props;
-    if (doFilter) {
-      onSetFilter(undefined);
-    } else {
-      onSetFilter(attribute.id, null);
-    }
   }
 }
 

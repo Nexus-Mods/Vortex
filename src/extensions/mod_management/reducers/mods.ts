@@ -51,12 +51,26 @@ export const modsReducer: IReducerSpec = {
       }
       return setSafe(state, [gameId, modId, 'attributes', attribute], value);
     },
+    [actions.setModAttributes as any]: (state, payload) => {
+      const { gameId, modId, attributes } = payload;
+      if ((state[gameId] === undefined) || (state[gameId][modId] === undefined)) {
+        return state;
+      }
+      return merge(state, [gameId, modId, 'attributes'], attributes);
+    },
     [actions.setModType as any]: (state, payload) => {
       const { gameId, modId, type } = payload;
       if (getSafe(state, [gameId, modId], undefined) === undefined) {
         return state;
       }
       return setSafe(state, [gameId, modId, 'type'], type);
+    },
+    [actions.clearModRules as any]: (state, payload) => {
+      const { gameId, modId } = payload;
+      if ((state[gameId] === undefined) || (state[gameId][modId] === undefined)) {
+        return state;
+      }
+      return setSafe(state, [gameId, modId, 'rules'], []);
     },
     [actions.addModRule as any]: (state, payload) => {
       const { gameId, modId, rule } = payload;
@@ -97,24 +111,30 @@ export const modsReducer: IReducerSpec = {
         ? pushSafe(state, [gameId, modId, 'enabledINITweaks'], tweak)
         : removeValue(state, [gameId, modId, 'enabledINITweaks'], tweak);
     },
+    [actions.setFileOverride as any]: (state, payload) => {
+      const { gameId, modId, files }  = payload;
+      return setSafe(state, [gameId, modId, 'fileOverrides'], files);
+    },
   },
   defaults: {
   },
-  /*
   verifiers: {
     _: {
       elements: {
         _: {
+          type: 'object',
+          deleteBroken: true,
           elements: {
-            archiveId: {
+            installationPath: {
               type: 'string',
-              // fixes a problem where we stored [archiveId] instead of just the archiveId
-              repair: (input) => Array.isArray(input) ? input[0] : '',
+              noUndefined: true,
+              noNull: true,
+              required: true,
+              deleteBroken: 'parent',
             },
           },
         },
       },
     },
   },
-  */
 };

@@ -1,10 +1,9 @@
-import { DialogActions, DialogType, IDialogContent } from '../../../actions/notifications';
-import Advanced from '../../../controls/Advanced';
 import IconBar from '../../../controls/IconBar';
 import OverlayTrigger from '../../../controls/OverlayTrigger';
 import { IconButton } from '../../../controls/TooltipControls';
+import { IActionDefinition } from '../../../types/IActionDefinition';
 import { ComponentEx } from '../../../util/ComponentEx';
-import * as fs from '../../../util/fs';
+import opn from '../../../util/opn';
 
 import { IMod } from '../../mod_management/types/IMod';
 
@@ -14,7 +13,6 @@ import { IGameStored } from '../types/IGameStored';
 import GameInfoPopover from './GameInfoPopover';
 
 import * as Promise from 'bluebird';
-import { remote } from 'electron';
 import * as I18next from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
@@ -52,12 +50,8 @@ class GameRow extends ComponentEx<IProps, {}> {
     const logoPath: string = path.join(game.extensionPath, game.logo);
 
     const location = (discovery !== undefined) && (discovery.path !== undefined)
-      ? (
-        <Advanced>
-          <a onClick={this.openLocation}>{discovery.path}</a>
-          {discovery.path}
-        </Advanced>
-      ) : <a onClick={this.openLocation}>{t('Browse...')}</a>;
+      ? <a onClick={this.openLocation}>{discovery.path}</a>
+      : <a onClick={this.changeLocation}>{t('Browse...')}</a>;
 
     const classes = [ 'game-list-item' ];
     if (active) {
@@ -65,7 +59,19 @@ class GameRow extends ComponentEx<IProps, {}> {
     }
 
     const gameInfoPopover = (
-      <Popover id={`popover-info-${game.id}`}>
+      <Popover id={`popover-info-${game.id}`} className='popover-game-info' >
+        <IconBar
+          id={`game-thumbnail-${game.id}`}
+          className='buttons'
+          group={`game-${type}-buttons`}
+          instanceId={game.id}
+          staticElements={[]}
+          collapse={false}
+          buttonType='text'
+          orientation='vertical'
+          filter={this.lowPriorityButtons}
+          t={t}
+        />
         <GameInfoPopover
           t={t}
           game={game}
@@ -100,7 +106,7 @@ class GameRow extends ComponentEx<IProps, {}> {
             >
               <IconButton
                 id={`btn-info-${game.id}`}
-                icon='details'
+                icon='game-menu'
                 className='btn-embed'
                 tooltip={t('Show Details')}
               />
@@ -110,7 +116,12 @@ class GameRow extends ComponentEx<IProps, {}> {
               group={`game-${type}-buttons`}
               instanceId={game.id}
               staticElements={[]}
-              collapse={true}
+              collapse={false}
+              filter={this.priorityButtons}
+              clickAnywhere={true}
+              buttonType='icon'
+
+              t={t}
             />
           </Media.Right>
         </Media>
@@ -130,8 +141,19 @@ class GameRow extends ComponentEx<IProps, {}> {
   }
 
   private openLocation = () => {
+    const { discovery } = this.props;
+    opn(discovery.path).catch(() => null);
+  }
+
+  private changeLocation = () => {
     this.props.onBrowseGameLocation(this.props.game.id);
   }
+
+  private priorityButtons = (action: IActionDefinition) =>
+    action.position < 100
+
+  private lowPriorityButtons = (action: IActionDefinition) =>
+    action.position >= 100
 }
 
 export default GameRow as React.ComponentClass<IProps>;

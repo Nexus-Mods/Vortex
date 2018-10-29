@@ -1,17 +1,12 @@
 import { IExtensionApi } from '../../types/IExtensionContext';
-import { IGame } from '../../types/IGame';
-import * as fs from '../../util/fs';
+import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
 import { log } from '../../util/log';
-import { getSafe } from '../../util/storeHelper';
 import { truthy } from '../../util/util';
-
-import { IProfileMod } from '../profile_management/types/IProfile';
 
 import { IDeployedFile, IDeploymentMethod } from './types/IDeploymentMethod';
 import { IMod } from './types/IMod';
 import renderModName from './util/modName';
 
-import { BACKUP_TAG } from './LinkingDeployment';
 import { MERGED_PATH } from './modMerging';
 
 import * as Promise from 'bluebird';
@@ -36,24 +31,34 @@ function deployMods(api: IExtensionApi,
                     method: IDeploymentMethod,
                     lastActivation: IDeployedFile[],
                     typeId: string,
-                    merged: Set<string>,
+                    skipFiles: Set<string>,
                     subDir: (mod: IMod) => string,
                     progressCB?: (name: string, progress: number) => void,
                    ): Promise<IDeployedFile[]> {
-  if (typeof (destinationPath) !== 'string') {
-    // TODO: This is for debugging a specific problem and can probably removed afterwards
-    return Promise.reject(new Error(
-      `Invalid mod path for game "${gameId}" type "${typeId}": `
-      + `"${require('util').inspect(destinationPath)}"`));
+  if (!truthy(destinationPath)) {
+    return Promise.resolve([]);
   }
-  return method.prepare(destinationPath, true, lastActivation)
+
+  let skipFilesNormalized: Set<string>;
+  let normalize: Normalize;
+  return getNormalizeFunc(destinationPath)
+    .then(norm => {
+      normalize = norm;
+      skipFilesNormalized = new Set(Array.from(skipFiles).map(norm));
+      return method.prepare(destinationPath, true, lastActivation, norm);
+    })
     .then(() => Promise.each(mods, (mod, idx, length) => {
       try {
         if (progressCB !== undefined) {
           progressCB(renderModName(mod), Math.round((idx * 50) / length));
         }
         return method.activate(path.join(installationPath, mod.installationPath),
-                               mod.installationPath, subDir(mod), merged);
+                               mod.installationPath, subDir(mod), skipFilesNormalized)
+          .then(() => {
+            if (mod.fileOverrides !== undefined) {
+              mod.fileOverrides.forEach(file => skipFilesNormalized.add(normalize(file)));
+            }
+          });
       } catch (err) {
         log('error', 'failed to deploy mod', {err: err.message, id: mod.id});
       }

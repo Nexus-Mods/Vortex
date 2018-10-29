@@ -4,8 +4,10 @@ import { setCustomTitlebar } from '../../actions/window';
 import More from '../../controls/More';
 import Toggle from '../../controls/Toggle';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../types/IDialog';
+import { IState } from '../../types/IState';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import { readdirAsync } from '../../util/fs';
+import getVortexPath from '../../util/getVortexPath';
 import { log } from '../../util/log';
 import { spawnSelf } from '../../util/util';
 
@@ -13,18 +15,19 @@ import getTextModManagement from '../mod_management/texts';
 import getTextProfiles from '../profile_management/texts';
 
 import { setAutoDeployment } from './actions/automation';
-import { setAdvancedMode, setLanguage, setProfilesVisible } from './actions/interface';
+import { setAdvancedMode, setLanguage, setProfilesVisible, setDesktopNotifications } from './actions/interface';
 import { nativeCountryName, nativeLanguageName } from './languagemap';
 import getText from './texts';
 
 import * as Promise from 'bluebird';
 import { remote } from 'electron';
-import * as update from 'immutability-helper';
+import update from 'immutability-helper';
 import * as path from 'path';
 import * as React from 'react';
-import { Alert, Button, Checkbox, ControlLabel,
+import { Alert, Button, ControlLabel,
          FormControl, FormGroup, HelpBlock } from 'react-bootstrap';
 import * as Redux from 'redux';
+import { ThunkDispatch } from 'redux-thunk';
 
 interface ILanguage {
   key: string;
@@ -38,6 +41,8 @@ interface IConnectedProps {
   autoDeployment: boolean;
   advanced: boolean;
   customTitlebar: boolean;
+  minimizeToTray: boolean;
+  desktopNotifications: boolean;
 }
 
 interface IActionProps {
@@ -48,15 +53,16 @@ interface IActionProps {
   onShowDialog: (type: DialogType, title: string,
                  content: IDialogContent, actions: DialogActions) => Promise<IDialogResult>;
   onSetCustomTitlebar: (enable: boolean) => void;
+  onSetDesktopNotifications: (enabled: boolean) => void;
 }
 
-interface IState {
+interface IComponentState {
   languages: ILanguage[];
 }
 
 type IProps = IActionProps & IConnectedProps;
 
-class SettingsInterface extends ComponentEx<IProps, IState> {
+class SettingsInterface extends ComponentEx<IProps, IComponentState> {
   private mInitialTitlebar: boolean;
 
   constructor(props: IProps) {
@@ -69,10 +75,10 @@ class SettingsInterface extends ComponentEx<IProps, IState> {
   }
 
   public componentDidMount() {
-    const bundledLanguages = path.normalize(path.join(__dirname, '..', '..', '..', 'locales'));
+    const bundledLanguages = getVortexPath('locales');
     const userLanguages = path.normalize(path.join(remote.app.getPath('userData'), 'locales'));
 
-    Promise.join(readdirAsync(bundledLanguages), readdirAsync(userLanguages).catch(err => []))
+    Promise.join(readdirAsync(bundledLanguages), readdirAsync(userLanguages).catch(() => []))
       .then(fileLists => Array.from(new Set([].concat(...fileLists))))
       .then(files => {
         const locales = files.map(key => {
@@ -111,9 +117,9 @@ class SettingsInterface extends ComponentEx<IProps, IState> {
 
   public render(): JSX.Element {
     const { t, advanced, autoDeployment, currentLanguage,
-            customTitlebar, profilesVisible } = this.props;
+            customTitlebar, desktopNotifications, profilesVisible } = this.props;
 
-    const needRestart = customTitlebar !== this.mInitialTitlebar;
+    const needRestart = (customTitlebar !== this.mInitialTitlebar);
 
     const restartNotification = needRestart ? (
       <HelpBlock>
@@ -137,14 +143,22 @@ class SettingsInterface extends ComponentEx<IProps, IState> {
           </FormControl>
         </FormGroup>
         <FormGroup controlId='customization'>
-          <ControlLabel>{t('Customization')}</ControlLabel>
+          <ControlLabel>{t('Customisation')}</ControlLabel>
           <div>
             <div>
               <Toggle
                 checked={customTitlebar}
                 onToggle={this.toggleCustomTitlebar}
               >
-                {t('Custom Window Titlebar')}
+                {t('Custom Window Title Bar')}
+              </Toggle>
+            </div>
+            <div>
+              <Toggle
+                checked={desktopNotifications !== false}
+                onToggle={this.toggleDesktopNotifications}
+              >
+                {t('Enable Desktop Notifications')}
               </Toggle>
             </div>
           </div>
@@ -157,7 +171,7 @@ class SettingsInterface extends ComponentEx<IProps, IState> {
                 checked={advanced}
                 onToggle={this.toggleAdvanced}
               >
-                {t('Enable advanced mode')}
+                {t('Enable Advanced Mode')}
                 <More id='more-advanced-settings' name={t('Advanced')}>
                   {getText('advanced', t)}
                 </More>
@@ -168,8 +182,8 @@ class SettingsInterface extends ComponentEx<IProps, IState> {
                 checked={profilesVisible}
                 onToggle={this.toggleProfiles}
               >
-                {t('Enable Profile management')}
-                <More id='more-profile-settings' name={t('Profiles')}>
+                {t('Enable Profile Management')}
+                <More id='more-profile-settings' name={t('Profiles')} wikiId='profiles'>
                   {getTextProfiles('profiles', t)}
                 </More>
               </Toggle>
@@ -183,7 +197,7 @@ class SettingsInterface extends ComponentEx<IProps, IState> {
               checked={autoDeployment}
               onToggle={this.toggleAutoDeployment}
             >
-              {t('Deploy mods immediately when they get enabled')}
+              {t('Deploy Mods when Enabled')}
               <More id='more-deploy-settings' name={t('Deployment')}>
                 {getTextModManagement('deployment', t)}
               </More>
@@ -217,6 +231,11 @@ class SettingsInterface extends ComponentEx<IProps, IState> {
   private toggleAutoDeployment = () => {
     const { autoDeployment, onSetAutoDeployment } = this.props;
     onSetAutoDeployment(!autoDeployment);
+  }
+
+  private toggleDesktopNotifications = () => {
+    const { desktopNotifications, onSetDesktopNotifications } = this.props;
+    onSetDesktopNotifications(!desktopNotifications);
   }
 
   private toggleProfiles = () => {
@@ -253,17 +272,19 @@ class SettingsInterface extends ComponentEx<IProps, IState> {
   }
 }
 
-function mapStateToProps(state: any): IConnectedProps {
+function mapStateToProps(state: IState): IConnectedProps {
   return {
     currentLanguage: state.settings.interface.language,
     profilesVisible: state.settings.interface.profilesVisible,
     advanced: state.settings.interface.advanced,
+    desktopNotifications: state.settings.interface.desktopNotifications,
     autoDeployment: state.settings.automation.deploy,
     customTitlebar: state.settings.window.customTitlebar,
+    minimizeToTray: state.settings.window.minimizeToTray,
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onSetLanguage: (newLanguage: string): void => {
       dispatch(setLanguage(newLanguage));
@@ -281,6 +302,9 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
       dispatch(showDialog(type, title, content, actions)),
     onSetCustomTitlebar: (enable: boolean) =>
       dispatch(setCustomTitlebar(enable)),
+    onSetDesktopNotifications: (enabled: boolean) => {
+      dispatch(setDesktopNotifications(enabled));
+    },
   };
 }
 

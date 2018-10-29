@@ -1,14 +1,15 @@
 import { ComponentEx } from '../util/ComponentEx';
-import { genHash } from '../util/errorHandling';
+import { isOutdated } from '../util/errorHandling';
+import { genHash } from '../util/genHash';
 
 import Icon from './Icon';
+import { IconButton } from './TooltipControls';
 
 import { remote } from 'electron';
 import * as I18next from 'i18next';
 import * as React from 'react';
 import { Alert, Button } from 'react-bootstrap';
 import { translate } from 'react-i18next';
-import { IconButton } from './TooltipControls';
 
 export interface IErrorBoundaryProps {
   visible?: boolean;
@@ -52,7 +53,7 @@ class ErrorBoundary extends ComponentEx<IErrorBoundaryProps, IErrorBoundaryState
           <Icon className='render-failure-icon' name='sad' />
           <div className='render-failure-text'>{t('Failed to render.')}</div>
           <div className='render-failure-buttons'>
-            <Button onClick={this.report}>{t('Report')}</Button>
+            {isOutdated() ? null : <Button onClick={this.report}>{t('Report')}</Button>}
             <Button onClick={this.retryRender}>{t('Retry')}</Button>
           </div>
           {(onHide !== undefined)
@@ -76,7 +77,7 @@ class ErrorBoundary extends ComponentEx<IErrorBoundaryProps, IErrorBoundaryState
     if (onHide !== undefined) {
       onHide();
     }
-    events.emit('report-feedback', `Component rendering error
+    events.emit('report-feedback', error.stack.split('\n')[0], `Component rendering error
 
 Vortex Version: ${remote.app.getVersion()},
 

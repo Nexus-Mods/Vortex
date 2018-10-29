@@ -1,9 +1,8 @@
 import {IExtensionApi, IExtensionContext} from '../../types/IExtensionContext';
-import {ProcessCanceled, UserCanceled} from '../../util/CustomErrors';
+import {ProcessCanceled, TemporaryError, UserCanceled} from '../../util/CustomErrors';
 import { delayed } from '../../util/delayed';
-import * as elevatedT from '../../util/elevated';
 import * as fs from '../../util/fs';
-import lazyRequire from '../../util/lazyRequire';
+import { Normalize } from '../../util/getNormalizeFunc';
 import { log } from '../../util/log';
 import { activeGameId, gameName } from '../../util/selectors';
 
@@ -13,19 +12,20 @@ import {
   IDeploymentMethod,
 } from '../mod_management/types/IDeploymentMethod';
 
+import { remoteCode } from './remoteCode';
 import walk from './walk';
 
 import * as Promise from 'bluebird';
+import { app as appIn, remote } from 'electron';
 import * as I18next from 'i18next';
-import ipc = require('node-ipc');
+import * as ipc from 'node-ipc';
 import * as path from 'path';
+import { generate as shortid } from 'shortid';
+import { runElevated } from 'vortex-run';
 
-import { remoteCode } from './remoteCode';
+const app = appIn || remote.app;
 
 ipc.config.logger = (message) => log('debug', 'ipc message', { message });
-
-const elevated =
-    lazyRequire<typeof elevatedT>('../../util/elevated', __dirname);
 
 class DeploymentMethod extends LinkingDeployment {
   public id: string;
@@ -41,23 +41,25 @@ class DeploymentMethod extends LinkingDeployment {
 
   constructor(api: IExtensionApi) {
     super(
-        'symlink_activator_elevated', 'Symlink deployment (Run as Administrator)',
+        'symlink_activator_elevated', 'Symlink Deployment (Run as Administrator)',
         'Deploys mods by setting symlinks in the destination directory. '
-        + 'This is run as administrator and requires your permission every time we deploy.', api);
+        + 'This is run as administrator and requires your permission every time we deploy.',
+        true,
+        api);
     this.mElevatedClient = null;
 
     this.mWaitForUser = () => new Promise<void>((resolve, reject) => api.sendNotification({
-      type: 'info',
-      message: 'Deployment requires elevation',
-      noDismiss: true,
-      actions: [{
-        title: 'Elevate',
-        action: dismiss => { dismiss(); resolve(); },
-      }, {
-        title: 'Cancel',
-        action: dismiss => { dismiss(); reject(new UserCanceled()); },
-      }],
-    }));
+        type: 'info',
+        message: 'Deployment requires elevation',
+        noDismiss: true,
+        actions: [{
+          title: 'Elevate',
+          action: dismiss => { dismiss(); resolve(); },
+        }, {
+          title: 'Cancel',
+          action: dismiss => { dismiss(); reject(new UserCanceled()); },
+        }],
+      }));
   }
 
   public detailedDescription(t: I18next.TranslationFunction): string {
@@ -83,10 +85,11 @@ class DeploymentMethod extends LinkingDeployment {
     return this.mWaitForUser();
   }
 
-  public prepare(dataPath: string, clean: boolean, lastActivation: IDeployedFile[]): Promise<void> {
+  public prepare(dataPath: string, clean: boolean, lastActivation: IDeployedFile[],
+                 normalize: Normalize): Promise<void> {
     this.mCounter = 0;
     this.mOpenRequests = {};
-    return super.prepare(dataPath, clean, lastActivation);
+    return super.prepare(dataPath, clean, lastActivation, normalize);
   }
 
   public finalize(gameId: string, dataPath: string,
@@ -96,6 +99,9 @@ class DeploymentMethod extends LinkingDeployment {
     });
     this.mOpenRequests = {};
     return this.startElevated()
+        .tapCatch(() => {
+          this.context.onComplete();
+        })
         .then(() => super.finalize(gameId, dataPath, installationPath))
         .then(result => this.stopElevated().then(() => result));
   }
@@ -114,6 +120,9 @@ class DeploymentMethod extends LinkingDeployment {
     if (this.isUnsupportedGame(gameId)) {
       // Mods for this games use some file types that have issues working with symbolic links
       return 'Doesn\'t work with ' + gameName(state, gameId);
+    }
+    if (this.ensureAdmin()) {
+      return 'No need to use the elevated variant, use the regular symlink deployment';
     }
     return undefined;
   }
@@ -165,10 +174,24 @@ class DeploymentMethod extends LinkingDeployment {
     return false;
   }
 
+  private ensureAdmin(): boolean {
+    const userData = app.getPath('userData');
+    // any file we know exists
+    const srcFile = path.join(userData, 'Cookies');
+    const destFile = path.join(userData, '__link_test');
+    try {
+      fs.linkSync(srcFile, destFile);
+      fs.removeSync(destFile);
+      return true;
+    } catch (err) {
+      return false;
+    }
+  }
+
   private startElevated(): Promise<void> {
     this.mOpenRequests = {};
     this.mDone = null;
-    const ipcPath: string = 'vortex_elevate_symlink';
+    const ipcPath: string = `vortex_elevate_symlink_${shortid()}`;
 
     return new Promise<void>((resolve, reject) => {
       let connected: boolean = false;
@@ -200,7 +223,11 @@ class DeploymentMethod extends LinkingDeployment {
         }
       });
       ipc.server.on('socket.disconnected', () => {
-        ipc.server.stop();
+        try {
+          ipc.server.stop();
+        } catch (err) {
+          log('warn', 'Failed to close ipc server', err.message);
+        }
       });
       ipc.server.on('log', (data: any) => {
         log(data.level, data.message, data.meta);
@@ -208,15 +235,26 @@ class DeploymentMethod extends LinkingDeployment {
       ipc.server.on('error', err => {
         log('error', 'Failed to start symlink activator', err);
       });
-      return elevated.default(ipcPath, remoteCode, {}, __dirname)
-        .then(() => delayed(5000))
+      return runElevated(ipcPath, remoteCode, {})
+        .then(() => delayed(15000))
         .then(() => {
           if (!connected) {
             // still no connection, something must have gone wrong
-            ipc.server.stop();
-            reject(new Error('failed to run deployment helper'));
+            try {
+              ipc.server.stop();
+            } catch (err) {
+              log('warn', 'Failed to close ipc server', err.message);
+            }
+            reject(new TemporaryError('failed to run deployment helper'));
           }
         })
+        .tapCatch(() => {
+          ipc.server.stop();
+        })
+        .catch(err => (err.code === 5)
+            ? reject(new UserCanceled())
+            : reject(err)
+        )
         .catch(reject);
     });
   }
@@ -237,8 +275,14 @@ class DeploymentMethod extends LinkingDeployment {
       clearTimeout(this.mQuitTimer);
     }
     this.mQuitTimer = setTimeout(() => {
-      ipc.server.emit(this.mElevatedClient, 'quit');
-      ipc.server.stop();
+      try {
+        ipc.server.emit(this.mElevatedClient, 'quit');
+        ipc.server.stop();
+      } catch (err) {
+        // the most likely reason here is that it's already closed
+        // and cleaned up
+        log('warn', 'Failed to close ipc server', err.message);
+      }
       this.mElevatedClient = null;
       this.mQuitTimer = undefined;
     }, 1000);

@@ -1,11 +1,14 @@
+import { addNotification } from '../../../actions';
 import { showDialog } from '../../../actions/notifications';
 import Icon from '../../../controls/Icon';
 import More from '../../../controls/More';
 import Toggle from '../../../controls/Toggle';
 import { Button } from '../../../controls/TooltipControls';
 import { DialogActions, DialogType, IDialogContent } from '../../../types/IDialog';
+import { IErrorOptions } from '../../../types/IExtensionContext';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { IErrorOptions, showError } from '../../../util/message';
+import opn from '../../../util/opn';
+import { showError } from '../../../util/message';
 import { setAssociatedWithNXMURLs } from '../actions/settings';
 
 import chromeAllowScheme from '../util/chromeAllowScheme';
@@ -13,9 +16,9 @@ import chromeAllowScheme from '../util/chromeAllowScheme';
 import getText from '../texts';
 
 import * as React from 'react';
-import { Checkbox, FormGroup, HelpBlock } from 'react-bootstrap';
+import { FormGroup, HelpBlock } from 'react-bootstrap';
 import * as Redux from 'redux';
-import { addNotification } from '../../../actions';
+import { ThunkDispatch } from 'redux-thunk';
 
 function nop() {
   // nop
@@ -25,7 +28,7 @@ function DownloadButton(): JSX.Element {
   return (
     <div className='nexusmods-action-button'>
       <Icon name='nexus' svgStyle='.st0, .st1, #path11 { fill-opacity: 0 !important }' />
-      <a className='nexusmods-fake-link' onClick={nop}>Download with Manager</a>
+      <a className='nexusmods-fake-link' onClick={nop}>Mod Manager Download</a>
     </div>
   );
 }
@@ -47,7 +50,24 @@ interface IActionProps {
 
 type IProps = IBaseProps & IActionProps & IConnectedProps;
 
-class Settings extends ComponentEx<IProps, {}> {
+interface IComponentState {
+  helpText: string;
+}
+
+class Settings extends ComponentEx<IProps, IComponentState> {
+  constructor(props: IProps) {
+    super(props);
+
+    this.state = { helpText: '' };
+  }
+
+  public componentWillMount() {
+    getText('chrome-fix', this.props.t)
+    .then(text => {
+      this.setState({ helpText: text });
+    });
+  }
+
   public render(): JSX.Element {
     const { t, associated } = this.props;
 
@@ -59,25 +79,32 @@ class Settings extends ComponentEx<IProps, {}> {
             onToggle={this.associate}
             disabled={process.platform === 'linux'}
           >
-            {t('Handle ')}<DownloadButton/>{t('buttons on nexusmods.com')}
+            {t('Handle ')}<DownloadButton/>{t('buttons on ')}
+            {<a onClick={this.openNexus}>NexusMods.com</a>}
           </Toggle>
           {process.platform === 'linux' ? <HelpBlock>Not supported on Linux</HelpBlock> : null}
           <div style={{ marginTop: 15 }}>
-            {t('Fix nexusmods-links in Chrome '
+            {t('Fix Nexus Mods links in Chrome '
               + '(Only required for Chrome. Requires Chrome to be closed)')}
-            <More id='more-chrome-fix' name={t('Chrome Fix')}>{getText('chrome-fix', t)}</More>
+            <More id='more-chrome-fix' name={t('Chrome Fix')}>
+              {this.state.helpText}
+            </More>
             <Button
               tooltip={t('Fix')}
               id='chrome-download-fix'
               onClick={this.chromeFix}
               style={{ marginLeft: 5 }}
             >
-              {t('Fix now')}
+              {t('Fix Now')}
             </Button>
           </div>
         </FormGroup>
       </form>
     );
+  }
+
+  private openNexus = () => {
+    opn('https://www.nexusmods.com').catch(() => null);
   }
 
   private chromeFix = () => {
@@ -95,7 +122,7 @@ class Settings extends ComponentEx<IProps, {}> {
                     text: 'Fix was applied.',
                   }, [ { label: 'Close' } ]);
                 } else {
-                  onDialog('info', 'Nothing changed', {
+                  onDialog('info', 'Nothing Changed', {
                     text: 'No change was necessary.',
                   }, [ { label: 'Close' } ]);
                 }
@@ -110,7 +137,9 @@ class Settings extends ComponentEx<IProps, {}> {
                     { allowReport: false },
                   );
                 } else {
-                  onShowError('Failed to fix NXM handling in Chrome.', err);
+                  onShowError('Failed to fix NXM handling in Chrome. '
+                    + 'Please follow the manual instructions described in the info button.',
+                    err, { allowReport: false });
                 }
               });
           },
@@ -135,7 +164,7 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onAssociate: (associate: boolean): void => {
       dispatch(setAssociatedWithNXMURLs(associate));

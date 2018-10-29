@@ -28,15 +28,17 @@ $thumbnail-width: 256px;
 
 .game-thumbnail {
   position: relative;
-}
+  height: auto;
+  border: 0;
 
-.game-thumbnail-primary {
-  border-color: $border-color;
-}
+  &panel-primary {
+    border-color: $border-color;
+  }
 
-.game-thumbnail-default {
-  @extend .panel-default;
-  border-color: transparent;
+  &panel-default {
+    @extend .panel-default;
+    border-color: transparent;
+  }
 }
 
 .game-thumbnail-body {
@@ -158,6 +160,26 @@ $thumbnail-width: 256px;
 
 .discovery-progress-container {
   display: flex;
+  align-items: center;
+  .progress {
+    height: 2em;
+    background-color: rgba(128, 128, 128, 0.5);
+    span {
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      right: 0;
+      color: $text-color;
+      text-shadow: 1px  1px 1px $gray-lighter,
+                  -1px  1px 1px $gray-lighter,
+                   1px -1px 1px $gray-lighter,
+                  -1px -1px 1px $gray-lighter;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+    }
+  }
 }
 
 .discovery-progress-0 {

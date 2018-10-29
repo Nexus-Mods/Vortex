@@ -1,7 +1,9 @@
 import { showDialog } from '../../../actions/notifications';
+import CollapseIcon from '../../../controls/CollapseIcon';
 import DropdownButton from '../../../controls/DropdownButton';
 import Dropzone, { DropType } from '../../../controls/Dropzone';
 import EmptyPlaceholder from '../../../controls/EmptyPlaceholder';
+import FlexLayout from '../../../controls/FlexLayout';
 import Icon from '../../../controls/Icon';
 import IconBar from '../../../controls/IconBar';
 import SuperTable, { ITableRowAction } from '../../../controls/Table';
@@ -9,23 +11,23 @@ import OptionsFilter from '../../../controls/table/OptionsFilter';
 import TextFilter from '../../../controls/table/TextFilter';
 import { IconButton } from '../../../controls/TooltipControls';
 import { IActionDefinition } from '../../../types/IActionDefinition';
-import { IAttributeState } from '../../../types/IAttributeState';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
 import { IState } from '../../../types/IState';
 import { ITableAttribute } from '../../../types/ITableAttribute';
-import { ComponentEx, connect, extend, translate } from '../../../util/ComponentEx';
+import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
+import { ProcessCanceled, TemporaryError, UserCanceled } from '../../../util/CustomErrors';
 import Debouncer from '../../../util/Debouncer';
 import * as fs from '../../../util/fs';
-import { activeGameId, activeProfile } from '../../../util/selectors';
-import { getSafe, setSafe } from '../../../util/storeHelper';
+import { getSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
 import MainPage from '../../../views/MainPage';
 
-import { IDownload } from '../../download_management/types/IDownload';
+import getDownloadGames from '../../download_management/util/getDownloadGames';
 import { setModEnabled } from '../../profile_management/actions/profiles';
 import { IProfileMod } from '../../profile_management/types/IProfile';
 
 import { removeMod, setModAttribute } from '../actions/mods';
+import { setShowModDropzone } from '../actions/settings';
 import { IMod } from '../types/IMod';
 import { IModProps } from '../types/IModProps';
 import { IModSource } from '../types/IModSource';
@@ -33,13 +35,12 @@ import filterModInfo from '../util/filterModInfo';
 import groupMods from '../util/modGrouping';
 import modName from '../util/modName';
 import modUpdateState, { UpdateState } from '../util/modUpdateState';
-import resolvePath from '../util/resolvePath';
 import VersionFilter from '../util/VersionFilter';
 import VersionChangelogButton from '../views/VersionChangelogButton';
 import VersionIconButton from '../views/VersionIconButton';
 
 import { INSTALL_TIME, PICTURE } from '../modAttributes';
-import { installPath as installPathSelector } from '../selectors';
+import * as selectors from '../../../util/selectors';
 import getText from '../texts';
 
 import CheckModVersionsButton from './CheckModVersionsButton';
@@ -50,12 +51,12 @@ import * as I18next from 'i18next';
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as React from 'react';
-import { Button, ButtonGroup, Jumbotron, MenuItem, Panel } from 'react-bootstrap';
+import { Button, ButtonGroup, MenuItem, Panel } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
 import * as Redux from 'redux';
+import { ThunkDispatch } from 'redux-thunk';
 import * as semver from 'semver';
-import { FlexLayout } from '../../../index';
-import { UserCanceled } from '../../../util/CustomErrors';
+import { profileById } from '../../../util/selectors';
 
 const PanelX: any = Panel;
 
@@ -72,9 +73,18 @@ interface IVersionOptionProps {
 class VersionOption extends React.PureComponent<IVersionOptionProps, {}> {
   public render(): JSX.Element {
     const { t, modId, altId, mod } = this.props;
+    if (mod === undefined) {
+      return null;
+    }
+
+    const variant = getSafe(mod.attributes, ['variant'], undefined);
+
     return (
-      <div>
-        {mod.attributes['version']}
+      <a className='version-option'>
+        <div>
+          {getSafe(mod.attributes, ['version'], '')}
+          {variant !== undefined ? ` (${variant})` : ''}
+        </div>
         <IconButton
           id={`btn-remove-${modId}-${altId}`}
           className='btn-embed'
@@ -82,11 +92,12 @@ class VersionOption extends React.PureComponent<IVersionOptionProps, {}> {
           tooltip={t('remove')}
           onClick={this.remove}
         />
-      </div>
+      </a>
     );
   }
 
-  private remove = () => {
+  private remove = (evt) => {
+    evt.preventDefault();
     this.props.onRemove(this.props.altId);
   }
 }
@@ -96,16 +107,13 @@ interface IBaseProps {
   modSources: IModSource[];
 }
 
-interface IAttributeStateMap {
-  [attributeId: string]: IAttributeState;
-}
-
 interface IConnectedProps extends IModProps {
   gameMode: string;
   profileId: string;
   language: string;
   installPath: string;
   downloadPath: string;
+  showDropzone: boolean;
 }
 
 interface IActionProps {
@@ -114,6 +122,7 @@ interface IActionProps {
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
                  actions: DialogActions) => Promise<IDialogResult>;
   onRemoveMod: (gameMode: string, modId: string) => void;
+  onShowDropzone: (show: boolean) => void;
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
@@ -121,6 +130,8 @@ type IProps = IBaseProps & IConnectedProps & IActionProps;
 interface IComponentState {
   bounds: ClientRect;
 }
+
+const nop = () => null;
 
 /**
  * displays the list of mods installed for the current game.
@@ -132,6 +143,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   private modNameAttribute: ITableAttribute;
   private modVersionAttribute: ITableAttribute;
   private modVersionDetailAttribute: ITableAttribute;
+  private modVariantDetailAttribute: ITableAttribute;
   private modAuthorAttribute: ITableAttribute<IModWithState>;
   private mModsWithState: { [id: string]: IModWithState };
   private mGroupedMods: { [id: string]: IModWithState[] } = {};
@@ -171,7 +183,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       },
       {
         icon: 'refresh',
-        title: 'Check for update',
+        title: 'Check for Update',
         action: this.checkForUpdate,
         condition: instanceId => {
           const { mods } = this.props;
@@ -215,8 +227,15 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       },
     ];
 
-    this.mUpdateDebouncer = new Debouncer(
-      (newProps) => this.updateModsWithState(newProps), 100);
+    this.mUpdateDebouncer = new Debouncer((newProps) => {
+        this.updateModsWithState(newProps)
+          .then(() => {
+            if (this.mIsMounted) {
+              this.forceUpdate();
+            }
+          });
+        return null;
+      }, 500);
 
     this.state = {
       bounds: { top: 0, bottom: 0, height: 0, width: 0, left: 0, right: 0 },
@@ -231,7 +250,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
   public setBoundsRef = ref => {
     if (ref !== null) {
-      this.mRef = ReactDOM.findDOMNode(ref);
+      this.mRef = ReactDOM.findDOMNode(ref) as Element;
       this.forceUpdate();
     }
   }
@@ -240,21 +259,22 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     this.mIsMounted = false;
   }
 
+  public shouldComponentUpdate() {
+    return false;
+  }
+
   public componentWillReceiveProps(newProps: IProps) {
     if ((this.props.gameMode !== newProps.gameMode)
         || (this.props.mods !== newProps.mods)
         || (this.props.modState !== newProps.modState)
-        || (this.props.downloads !== newProps.downloads)) {
-      this.mUpdateDebouncer.schedule(() => {
-        if (this.mIsMounted) {
-          this.forceUpdate();
-        }
-      }, newProps);
+        || (this.props.downloads !== newProps.downloads)
+        || (this.props.showDropzone !== newProps.showDropzone)) {
+      this.mUpdateDebouncer.schedule(undefined, newProps);
     }
   }
 
   public render(): JSX.Element {
-    const { t, gameMode, modSources } = this.props;
+    const { t, gameMode, modSources, showDropzone } = this.props;
 
     if (gameMode === undefined) {
       // shouldn't happen
@@ -298,6 +318,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
                 this.modVersionAttribute,
                 this.modAuthorAttribute,
                 this.modVersionDetailAttribute,
+                this.modVariantDetailAttribute,
                 INSTALL_TIME,
               ]}
               actions={this.modActions}
@@ -316,6 +337,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
             group='mod-icons'
             staticElements={this.staticButtons}
             className='menubar'
+            t={t}
           />
         </MainPage.Header>
         <MainPage.Body>
@@ -324,16 +346,27 @@ class ModList extends ComponentEx<IProps, IComponentState> {
               {content}
             </FlexLayout.Flex>
             <FlexLayout.Fixed>
-            <Panel className='mod-drop-panel'>
-              <PanelX.Body>
-              <Dropzone
-                accept={['files']}
-                drop={this.dropMod}
-                icon='folder-download'
-                clickable={false}
-              />
-              </PanelX.Body>
-            </Panel>
+              <PanelX
+                className='mod-drop-panel'
+                expanded={showDropzone}
+                onToggle={nop}
+              >
+                <PanelX.Collapse>
+                  <PanelX.Body>
+                    <Dropzone
+                      accept={['files']}
+                      drop={this.dropMod}
+                      icon='folder-download'
+                      clickable={false}
+                    />
+                  </PanelX.Body>
+                </PanelX.Collapse>
+                <CollapseIcon
+                  position='topright'
+                  onClick={this.toggleDropzone}
+                  visible={showDropzone}
+                />
+              </PanelX>
             </FlexLayout.Fixed>
           </FlexLayout>
         </MainPage.Body>
@@ -401,15 +434,19 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       ? equalMods.map(iter => iter.id)
       : [mod.id];
 
-    const updateState = modUpdateState(mod, downloadPath, mods);
+    const updateState = modUpdateState(mod.attributes);
+
+    const variant = getSafe(mod.attributes, ['variant'], undefined);
 
     const versionDropdown = alternatives.length > 1
       ? (
         <DropdownButton
           className='dropdown-version'
-          title={mod.attributes['version'] || ''}
+          title={
+            (getSafe(mod.attributes, ['version'], undefined) || '')
+            + (variant !== undefined ? ` (${variant})` : '')
+          }
           id={`version-dropdown-${mod.id}`}
-          onSelect={this.selectVersion}
           container={this.mRef}
         >
           {alternatives.map(altId => this.renderVersionOptions(mod.id, altId))}
@@ -418,7 +455,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
     return (
       <div className={'mod-update ' + this.updateClass(updateState)}>
-        {alternatives.length === 1 ? mod.attributes['version'] : null}
+        {alternatives.length === 1 ? getSafe(mod.attributes, ['version'], null) : null}
         <ButtonGroup id={`btngroup-${mod.id}`} className='btngroup-version'>
           {versionDropdown}
           <VersionIconButton
@@ -453,7 +490,13 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   private renderVersionOptions(modId: string, altId: string): JSX.Element {
     const { t } = this.props;
     return (
-      <MenuItem eventKey={{ modId, altId }} key={altId}>
+      <li
+        role='presentation'
+        key={altId}
+        data-modid={modId}
+        data-altid={altId}
+        onClick={this.selectVersionClick}
+      >
         <VersionOption
           t={t}
           key={altId}
@@ -462,7 +505,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           mod={this.mModsWithState[altId]}
           onRemove={this.removeMod}
         />
-      </MenuItem>
+      </li>
     );
   }
 
@@ -502,7 +545,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       icon: 'check-o',
       calc: (mod: IModWithState) => {
         if (mod.state === 'downloaded') {
-          return (mod.attributes.wasInstalled)
+          return (getSafe(mod.attributes, ['wasInstalled'], false))
             ? 'Uninstalled'
             : 'Never Installed';
         } else if (mod.state === 'installing') {
@@ -524,6 +567,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         ],
         onChangeValue: this.changeModEnabled,
       },
+      noShrink: true,
       isSortable: false,
       filter: new OptionsFilter([
         { value: true, label: 'Enabled' },
@@ -559,9 +603,26 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       customRenderer: this.renderVersion,
       placement: 'table',
       isToggleable: true,
+      isVolatile: true,
       edit: {},
       isSortable: false,
       filter: new VersionFilter(),
+    };
+
+    this.modVariantDetailAttribute = {
+      id: 'variantDetail',
+      name: 'Variant',
+      description: 'File variant',
+      help: getText('variant', this.props.t),
+      calc: (mod: IModWithState) => getSafe(mod.attributes, ['variant'], ''),
+      placement: 'detail',
+      isToggleable: false,
+      edit: {
+        readOnly: (mod: IModWithState) => mod.state === 'downloaded',
+        onChangeValue: (mod: IModWithState, value: any) =>
+          this.props.onSetModAttribute(this.props.gameMode, mod.id, 'variant', value),
+      },
+      isSortable: false,
     };
 
     this.modAuthorAttribute = {
@@ -574,6 +635,8 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       isToggleable: true,
       isDefaultVisible: false,
       isSortable: true,
+      sortFunc: (lhs: string, rhs: string) =>
+        lhs.localeCompare(rhs, this.props.language, { caseFirst: 'false' }),
       edit: {},
     };
   }
@@ -607,7 +670,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     // the source-specific data we need to do this asynchronously although
     // we expect all attributes to be available instantaneous.
     return Promise.map(Object.keys(newProps.downloads), archiveId => {
-      if ((newProps.downloads[archiveId].game === gameMode)
+      if ((getDownloadGames(newProps.downloads[archiveId]).indexOf(gameMode) !== -1)
         && (newProps.downloads[archiveId].state === 'finished')
         && !installedIds.has(archiveId)) {
         if ((oldProps.downloads[archiveId] === newProps.downloads[archiveId])
@@ -657,7 +720,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   }
 
   private cycleModState(profileId: string, modId: string, newValue: string) {
-    const { onSetModEnabled } = this.props;
+    const { gameMode, onSetModEnabled } = this.props;
 
     if (this.mModsWithState[modId].state === 'downloaded') {
       // cycle from "not installed" -> "disabled"
@@ -670,7 +733,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       } else {
         onSetModEnabled(profileId, modId, true);
       }
-      this.context.api.events.emit('mods-enabled', [modId], newValue);
+      this.context.api.events.emit('mods-enabled', [modId], newValue, gameMode);
     }
   }
 
@@ -688,11 +751,18 @@ class ModList extends ComponentEx<IProps, IComponentState> {
             if (err instanceof UserCanceled) {
               // the user knows that he cancelled, no need to notify
               return;
+            } else if (err instanceof TemporaryError) {
+              return this.context.api.showErrorNotification(
+                'Failed to remove mod, please try again',
+                err.message, { allowReport: false });
+            } else if (err instanceof ProcessCanceled) {
+              return this.context.api.showErrorNotification('Failed to remove mod', err.message,
+                { allowReport: false });
             } else {
               return this.context.api.showErrorNotification('Failed to remove mod', err);
             }
           }
-          this.context.api.events.emit('mods-enabled', [modId], value);
+          this.context.api.events.emit('mods-enabled', [modId], value, gameMode);
         });
       }
     } else if (this.mModsWithState[modId].state === 'downloaded') {
@@ -701,20 +771,21 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       this.context.api.events.emit('start-install-download', modId, (err, id) => {
         if (value === 'enabled') {
           onSetModEnabled(profileId, id, true);
-          this.context.api.events.emit('mods-enabled', [modId], value);
+          this.context.api.events.emit('mods-enabled', [modId], value, gameMode);
         }
       });
     } else {
       // selected "enabled" or "disabled" from the other one
       onSetModEnabled(profileId, modId, value === 'enabled');
-      this.context.api.events.emit('mods-enabled', [modId], value);
+      this.context.api.events.emit('mods-enabled', [modId], value, gameMode);
     }
   }
 
   private changeModEnabled = (mod: IModWithState, value: any) => {
     const { profileId } = this.props;
 
-    if (this.mModsWithState[mod.id].state === 'installing') {
+    if ((this.mModsWithState[mod.id] === undefined)
+        || (this.mModsWithState[mod.id].state === 'installing')) {
       // can't change state while installing
       return;
     }
@@ -747,35 +818,55 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     this.mGroupedMods = groupedMods;
   }
 
-  private selectVersion = (evt) => {
-    const { profileId, onSetModEnabled } = this.props;
-    const { modId, altId } = evt;
+  private selectVersionClick = (event) => {
+    if (event.isDefaultPrevented()) {
+      return;
+    }
+    this.selectVersion({
+      modId: event.currentTarget.getAttribute('data-modid'),
+      altId: event.currentTarget.getAttribute('data-altid'),
+    });
+  }
+
+  private selectVersion = (evtKey) => {
+    const { gameMode, profileId, onSetModEnabled } = this.props;
+    const { modId, altId } = evtKey;
 
     if (modId === altId) {
       return;
     }
 
     onSetModEnabled(profileId, modId, false);
-    onSetModEnabled(profileId, altId, true);
+    if ((this.mModsWithState[altId] !== undefined)
+        && (this.mModsWithState[altId].state === 'downloaded')) {
+      this.context.api.events.emit('start-install-download', altId, (err, id) => {
+        if (err === null) {
+          onSetModEnabled(profileId, id, true);
+        }
+      });
+    } else {
+      onSetModEnabled(profileId, altId, true);
+    }
 
-    this.context.api.events.emit('mods-enabled', [modId], false);
-    this.context.api.events.emit('mods-enabled', [altId], true);
+    this.context.api.events.emit('mods-enabled', [modId], false, gameMode);
+    this.context.api.events.emit('mods-enabled', [altId], true, gameMode);
   }
 
   private enableSelected = (modIds: string[]) => {
-    const { profileId, modState, onSetModEnabled } = this.props;
+    const { gameMode, profileId, modState } = this.props;
 
     modIds.forEach((key: string) => {
       if (!getSafe(modState, [key, 'enabled'], false)) {
         this.setModState(profileId, key, 'enabled');
       }
     });
-    this.context.api.events.emit('mods-enabled', modIds, true);
+    this.context.api.events.emit('mods-enabled', modIds, true, gameMode);
   }
 
   private disableSelected = (modIds: string[]) => {
+    const { gameMode } = this.props;
     this.disableModsInner(modIds);
-    this.context.api.events.emit('mods-enabled', modIds, false);
+    this.context.api.events.emit('mods-enabled', modIds, false, gameMode);
   }
 
   private disableModsInner(modIds: string[]) {
@@ -809,6 +900,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
          && truthy(mods[key].installationPath)
          && (['downloaded', 'installed'].indexOf(mods[key].state) !== -1))
           ? fs.removeAsync(path.join(installPath, mods[key].installationPath))
+              .catch(UserCanceled, () => undefined)
               .catch(err => {
                 this.context.api.showErrorNotification('Failed to remove mod', err);
               })
@@ -817,7 +909,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   }
 
   private removeSelected = (modIds: string[]) => {
-    const { t, gameMode, installPath, onRemoveMod, onShowDialog, mods } = this.props;
+    const { t, gameMode, onRemoveMod, onShowDialog } = this.props;
 
     let removeMods: boolean;
     let removeArchive: boolean;
@@ -827,6 +919,11 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       .filter(modId =>
         ['downloaded', 'installed'].indexOf(this.mModsWithState[modId].state) !== -1);
 
+    if (filteredIds.length === 0) {
+      return;
+    }
+
+    let allArchives = true;
     const modNames = filteredIds
       .map(modId => {
         let name = modName(this.mModsWithState[modId], {
@@ -834,18 +931,24 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         });
         if (this.mModsWithState[modId].state === 'downloaded') {
           name += ' ' + t('(Archive only)');
+        } else {
+          allArchives = false;
         }
         return name;
     });
+
+    const checkboxes = allArchives
+      ? [ { id: 'archive', text: t('Remove Archive'), value: true } ]
+      : [
+        { id: 'mod', text: t('Remove Mod'), value: true },
+        { id: 'archive', text: t('Remove Archive'), value: false },
+      ];
 
     onShowDialog('question', 'Confirm deletion', {
       message: t('Do you really want to delete this mod?',
         { count: filteredIds.length, replace: { count: filteredIds.length } })
         + '\n' + modNames.join('\n'),
-      checkboxes: [
-        { id: 'mod', text: t('Remove Mod'), value: true },
-        { id: 'archive', text: t('Remove Archive'), value: false },
-      ],
+      checkboxes,
     }, [ { label: 'Cancel' }, { label: 'Remove' } ])
     .then((result: IDialogResult) => {
         removeMods = result.action === 'Remove' && result.input.mod;
@@ -877,19 +980,46 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   }
 
   private reinstall = (modIds: string | string[]) => {
-    const { mods } = this.props;
+    const { gameMode, mods, modState } = this.props;
     if (Array.isArray(modIds)) {
       modIds.filter(modId => mods[modId] !== undefined).forEach(modId =>
-        this.context.api.events.emit('start-install-download', mods[modId].archiveId));
+        this.context.api.events.emit('start-install-download', mods[modId].archiveId, (err) => {
+          if (err === null) {
+            const enabled = modIds.filter(id => getSafe(modState, [id, 'enabled'], false));
+            if (enabled.length > 0) {
+              this.context.api.events.emit('mods-enabled', enabled, true, gameMode);
+            }
+          }
+        }));
     } else if (mods[modIds] !== undefined) {
-      this.context.api.events.emit('start-install-download', mods[modIds].archiveId);
+      this.context.api.events.emit('start-install-download', mods[modIds].archiveId, (err) => {
+        if (err === null) {
+          if (modState[modIds].enabled) {
+            // reinstalling an enabled mod automatically enables the new one so we also need
+            // to trigger this event
+            this.context.api.events.emit('mods-enabled', [modIds], true, gameMode);
+          }
+        }
+      });
     }
+  }
+
+  private toggleDropzone = () => {
+    const { showDropzone, onShowDropzone } = this.props;
+    onShowDropzone(!showDropzone);
   }
 
   private checkForUpdate = (modIds: string[]) => {
     const { gameMode, mods } = this.props;
 
-    this.context.api.events.emit('check-mods-version', gameMode, _.pick(mods, modIds));
+    this.context.api.emitAndAwait('check-mods-version', gameMode, _.pick(mods, modIds))
+      .then(() => {
+        this.context.api.sendNotification({
+          type: 'success',
+          message: 'Check for mod updates complete',
+          displayMS: 5000,
+        });
+      });
   }
 
   private dropMod = (type: DropType, values: string[]) => {
@@ -900,10 +1030,8 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 const empty = {};
 
 function mapStateToProps(state: IState): IConnectedProps {
-  const profile = activeProfile(state);
-  const gameMode = activeGameId(state);
-  const downloadPath = resolvePath('download',
-      state.settings.mods.paths, gameMode);
+  const profile = selectors.activeProfile(state);
+  const gameMode = selectors.activeGameId(state);
 
   return {
     mods: getSafe(state, ['persistent', 'mods', gameMode], empty),
@@ -912,12 +1040,13 @@ function mapStateToProps(state: IState): IConnectedProps {
     gameMode,
     profileId: getSafe(profile, ['id'], undefined),
     language: state.settings.interface.language,
-    installPath: installPathSelector(state),
-    downloadPath,
+    installPath: selectors.installPath(state),
+    downloadPath: selectors.downloadPath(state),
+    showDropzone: state.settings.mods.showDropzone,
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onSetModAttribute: (gameMode: string, modId: string, attributeId: string, value: any) => {
       dispatch(setModAttribute(gameMode, modId, attributeId, value));
@@ -928,6 +1057,7 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
     onShowDialog:
     (type, title, content, actions) => dispatch(showDialog(type, title, content, actions)),
     onRemoveMod: (gameMode: string, modId: string) => dispatch(removeMod(gameMode, modId)),
+    onShowDropzone: (show: boolean) => dispatch(setShowModDropzone(show)),
   };
 }
 

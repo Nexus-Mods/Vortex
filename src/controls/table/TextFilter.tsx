@@ -5,7 +5,10 @@ import { FormControl } from 'react-bootstrap';
 
 export class TextFilterComponent extends React.Component<IFilterProps, {}> {
   public render(): JSX.Element {
-    const { filter } = this.props;
+    let { filter } = this.props;
+    if (typeof(filter) !== 'string') {
+      filter = undefined;
+    }
     return (
       <FormControl
         className='form-field-compact'
@@ -26,14 +29,21 @@ class TextFilter implements ITableFilter {
   public component = TextFilterComponent;
   public raw = false;
 
-  private mCaseSensitive: boolean;
+  private mCaseInsensitive: boolean;
 
-  constructor(caseSensitive: boolean) {
-    this.mCaseSensitive = caseSensitive;
+  constructor(ignoreCase: boolean) {
+    this.mCaseInsensitive = ignoreCase;
   }
 
   public matches(filter: any, value: any): boolean {
-    if (this.mCaseSensitive) {
+    if (typeof(filter) !== 'string') {
+      // filter of the wrong type doesn't filter at all
+      return true;
+    }
+    if (typeof(value) !== 'string') {
+      return false;
+    }
+    if (this.mCaseInsensitive) {
       if ((value === undefined) || (filter === undefined)) {
         return false;
       }

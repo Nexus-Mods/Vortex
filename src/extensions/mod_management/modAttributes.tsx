@@ -1,10 +1,9 @@
 import DateTimeFilter from '../../controls/table/DateTimeFilter';
 import ZoomableImage from '../../controls/ZoomableImage';
 import {ITableAttribute} from '../../types/ITableAttribute';
-import { ComponentEx } from '../../util/ComponentEx';
 import { getCurrentLanguage } from '../../util/i18n';
 import relativeTime from '../../util/relativeTime';
-import { getSafe, setSafe } from '../../util/storeHelper';
+import { getSafe } from '../../util/storeHelper';
 
 import { IModWithState } from './types/IModProps';
 import Description from './views/Description';
@@ -12,7 +11,7 @@ import Description from './views/Description';
 import * as I18next from 'i18next';
 import * as React from 'react';
 
-export const PICTURE: ITableAttribute = {
+export const PICTURE: ITableAttribute<IModWithState> = {
   id: 'picture',
   description: 'A picture provided by the author',
   customRenderer: (mod: IModWithState, detail: boolean, t: I18next.TranslationFunction) => {
@@ -30,7 +29,7 @@ export const PICTURE: ITableAttribute = {
       </ZoomableImage>
     );
   },
-  calc: (mod: IModWithState) => getSafe(mod.attributes, ['pictureUrl'], ''),
+  calc: mod => getSafe(mod.attributes, ['pictureUrl'], ''),
   placement: 'detail',
   edit: {},
 };

@@ -3,15 +3,22 @@ import delayed from './delayed';
 import { log } from './log';
 
 import * as Promise from 'bluebird';
-import levelup = require('levelup');
-import { intersection, without } from 'lodash';
-import * as path from 'path';
+import * as encode from 'encoding-down';
+import * as leveldown from 'leveldown';
+import * as levelup from 'levelup';
 
 const SEPARATOR: string = '###';
 
+export class DatabaseLocked extends Error {
+  constructor() {
+    super('Database is locked');
+    this.name = this.constructor.name;
+  }
+}
+
 function openDB(dbPath: string): Promise<levelup.LevelUp> {
   return new Promise<levelup.LevelUp>((resolve, reject) => {
-    (levelup as any)(dbPath, undefined, (err, db) => {
+    (levelup as any)(encode(leveldown(dbPath)), { keyEncoding: 'utf8', valueEncoding: 'utf8' }, (err, db) => {
       if (err !== null) {
         return reject(err);
       }
@@ -21,12 +28,16 @@ function openDB(dbPath: string): Promise<levelup.LevelUp> {
 }
 
 class LevelPersist implements IPersistor {
-  public static create(persistPath: string): Promise<LevelPersist> {
+  public static create(persistPath: string, tries: number = 10): Promise<LevelPersist> {
     return openDB(persistPath)
       .then(db => new LevelPersist(db))
       .catch(err => {
-        log('info', 'failed to open db', err);
-        return delayed(100).then(() => LevelPersist.create(persistPath));
+        if (tries === 0) {
+          log('info', 'failed to open db', err);
+          return Promise.reject(new DatabaseLocked());
+        } else {
+          return delayed(500).then(() => LevelPersist.create(persistPath, tries - 1));
+        }
       });
   }
 
@@ -34,18 +45,6 @@ class LevelPersist implements IPersistor {
 
   constructor(db: levelup.LevelUp) {
     this.mDB = db;
-  }
-
-  public changeDatabase(dbPath: string): Promise<void> {
-    return openDB(dbPath)
-      .then(db => {
-        this.mDB.close();
-        this.mDB = db;
-      })
-      .catch(err => {
-        log('info', 'failed to open db', err);
-        return delayed(100).then(() => this.changeDatabase(dbPath));
-      });
   }
 
   public setResetCallback(cb: () => void): void {
@@ -67,7 +66,9 @@ class LevelPersist implements IPersistor {
     return new Promise((resolve, reject) => {
       const keys: string[][] = [];
       this.mDB.createKeyStream()
-          .on('data', data => keys.push(data.split(SEPARATOR)))
+          .on('data', data => {
+            keys.push(data.split(SEPARATOR));
+          })
           .on('error', error => reject(error))
           .on('close', () => resolve(keys));
     });

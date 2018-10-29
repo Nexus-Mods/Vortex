@@ -1,18 +1,15 @@
 import { DialogActions, DialogType, IDialogContent,
          IDialogResult, showDialog } from '../actions/notifications';
-import { IComponentContext } from '../types/IComponentContext';
 import { ComponentEx, connect, translate } from '../util/ComponentEx';
-import { log } from '../util/log';
-import { activeGameId, downloadPath } from '../util/selectors';
-import { getSafe } from '../util/storeHelper';
 
 import Icon from './Icon';
 
 import * as Promise from 'bluebird';
 
-import * as PropTypes from 'prop-types';
 import * as React from 'react';
 import * as Redux from 'redux';
+import { ThunkDispatch } from 'redux-thunk';
+import { IState } from '../types/IState';
 
 export type DropType = 'urls' | 'files';
 
@@ -105,8 +102,8 @@ class Dropzone extends ComponentEx<IProps, IComponentState> {
 
     const acceptList = accept.map(mode => {
       return {
-        urls: t('URL'),
-        files: t('File'),
+        urls: t('URL(s)'),
+        files: t('File(s)'),
       }[mode];
     });
 
@@ -250,7 +247,7 @@ function mapStateToProps(state): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onShowDialog: (type: DialogType, title: string,
                    content: IDialogContent, actions: DialogActions) =>
@@ -260,5 +257,5 @@ function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
 
 export default
   translate(['common'], { wait: false })(
-    connect(mapStateToProps, mapDispatchToProps)(
+    connect<{}, IActionProps, IBaseProps, IState>(mapStateToProps, mapDispatchToProps)(
       Dropzone)) as React.ComponentClass<IBaseProps>;

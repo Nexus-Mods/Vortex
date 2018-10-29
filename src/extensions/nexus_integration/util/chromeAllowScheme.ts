@@ -16,7 +16,7 @@ function chromeAllowScheme(scheme: string): Promise<boolean> {
 
   return chromePath()
   .then((statePath) => fs.readFileAsync(statePath)
-    .then((content: NodeBuffer) => {
+    .then((content: Buffer) => {
       const state = JSON.parse(content.toString());
       log('info', 'protocol handler', state.protocol_handler);
       const currentState = getSafe(state, ['protocol_handler', 'excluded_schemes', scheme], false);

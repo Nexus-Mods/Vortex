@@ -46,6 +46,7 @@ export interface IWindow {
   size: IDimensions;
   tabsMinimized: boolean;
   customTitlebar: boolean;
+  minimizeToTray: boolean;
 }
 
 /**
@@ -109,7 +110,10 @@ export interface IExtensionState {
 export interface IApp {
   instanceId: string;
   version: string;
+  appVersion: string;
   extensions: { [id: string]: IExtensionState };
+  warnedAdmin: number;
+  migrations: string[];
 }
 
 /**
@@ -141,8 +145,13 @@ export interface ISettingsInterface {
   language: string;
   advanced: boolean;
   profilesVisible: boolean;
+  desktopNotifications: boolean;
   dashboardLayout: string[];
   dashletSettings: { [dashletId: string]: IDashletSettings };
+}
+
+export interface ISettingsAutomation {
+  deploy: boolean;
 }
 
 export interface ISettingsProfiles {
@@ -161,6 +170,9 @@ export interface ISettingsDownloads {
   minChunkSize: number;
   maxChunks: number;
   maxParallelDownloads: number;
+  path: string;
+  showDropzone: boolean;
+  showGraph: boolean;
 }
 
 export interface IStatePaths {
@@ -170,9 +182,11 @@ export interface IStatePaths {
 }
 
 export interface ISettingsMods {
-  paths: { [gameId: string]: IStatePaths };
+  installPath: { [gameId: string]: string };
   modlistState: { [id: string]: IAttributeState };
   activator: { [gameId: string]: string };
+  showDropzone: boolean;
+  confirmPurge: boolean;
 }
 
 export interface ISettingsUpdate {
@@ -181,6 +195,7 @@ export interface ISettingsUpdate {
 
 export interface ISettings {
   interface: ISettingsInterface;
+  automation: ISettingsAutomation;
   gameMode: ISettingsGameMode;
   profiles: ISettingsProfiles;
   window: IWindow;
@@ -248,6 +263,7 @@ export interface IState {
     downloads: IStateDownloads,
     categories: { [gameId: string]: ICategoryDictionary },
     gameMode: IStateGameMode,
+    deployment: { needToDeploy: { [gameId: string]: boolean } },
   };
 }
 

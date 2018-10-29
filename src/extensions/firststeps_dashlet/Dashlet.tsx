@@ -1,20 +1,16 @@
 import Dashlet from '../../controls/Dashlet';
 import Icon from '../../controls/Icon';
-import More from '../../controls/More';
 import { IconButton } from '../../controls/TooltipControls';
-import { IToDoButton, ToDoType } from '../../types/IExtensionContext';
 import { II18NProps } from '../../types/II18NProps';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
-import * as selectors from '../../util/selectors';
 
 import { dismissStep } from './actions';
 import { IToDo } from './IToDo';
 
 import { TranslationFunction } from 'i18next';
 import * as React from 'react';
-import { Button, ListGroup, ListGroupItem } from 'react-bootstrap';
-import { Interpolate } from 'react-i18next';
 import * as Redux from 'redux';
+import { ThunkDispatch } from 'redux-thunk';
 
 interface ITodoProps {
   t: TranslationFunction;
@@ -26,8 +22,8 @@ interface ITodoProps {
 class Todo extends React.PureComponent<ITodoProps, {}> {
   public render(): JSX.Element {
     const { t, extensionProps, todo } = this.props;
-    const text: JSX.Element = this.resolveElement(todo.id, todo.text, 'todo-text');
-    const value: JSX.Element = this.resolveElement(todo.id, todo.value, 'todo-value');
+    const text: JSX.Element = this.resolveElement(todo.text, 'todo-text');
+    const value: JSX.Element = this.resolveElement(todo.value, 'todo-value');
     const icon = typeof (todo.icon) === 'string'
       ? <Icon name={todo.icon} />
       : todo.icon(extensionProps);
@@ -57,21 +53,13 @@ class Todo extends React.PureComponent<ITodoProps, {}> {
     this.props.todo.action(this.props.extensionProps);
   }
 
-  private dismiss = () => {
+  private dismiss = (evt: React.MouseEvent<any>) => {
+    evt.stopPropagation();
     this.props.dismiss(this.props.todo.id);
   }
 
-  private typeToIcon(type: ToDoType): string {
-    return {
-      settings: 'settings',
-      automation: 'wand',
-      search: 'search',
-      workaround: 'workaround',
-    }[type];
-  }
 
-  private resolveElement(id: string,
-                         input: string | ((t: TranslationFunction, props: any) => JSX.Element),
+  private resolveElement(input: string | ((t: TranslationFunction, props: any) => JSX.Element),
                          className: string): JSX.Element {
     const { t, extensionProps } = this.props;
     return input === undefined
@@ -110,8 +98,6 @@ class TodoDashlet extends ComponentEx<IProps, {}> {
       return null;
     }
 
-    const state = this.context.api.store.getState();
-
     const visibleSteps = todos.filter(
       (step) => {
         if (steps[step.id]) {
@@ -144,29 +130,6 @@ class TodoDashlet extends ComponentEx<IProps, {}> {
     );
   }
 
-  private renderButton(id: string,
-                       buttonGen: (t: TranslationFunction, props: any) => IToDoButton)
-                       : JSX.Element {
-    if (buttonGen === undefined) {
-      return null;
-    }
-    const { t, extensionProps } = this.props;
-    const button = buttonGen(t, extensionProps[id]);
-    if (button === undefined) {
-      return null;
-    }
-    return (
-      <IconButton
-        id={button.text}
-        icon={button.icon}
-        onClick={button.onClick}
-        tooltip={button.text}
-      >
-        {button.text}
-      </IconButton>
-    );
-  }
-
   private dismiss = (id: string) => {
     this.props.onDismissStep(id);
   }
@@ -185,7 +148,7 @@ function mapStateToProps(state: any, ownProps: IBaseProps): IConnectedState {
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onDismissStep: (step: string) => dispatch(dismissStep(step)),
   };

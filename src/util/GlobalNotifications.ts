@@ -4,6 +4,8 @@ import { INotification } from '../types/INotification';
 import * as path from 'path';
 
 import { log } from '../util/log';
+import getVortexPath from './getVortexPath';
+import { IState } from '../types/IState';
 
 declare var Notification: any;
 
@@ -11,6 +13,7 @@ class GlobalNotifications {
   private mCurrentId: string;
   private mCurrentNotification: any;
   private mKnownNotifications: INotification[];
+  private mIsEnabled: () => boolean;
 
   constructor(api: IExtensionApi) {
     api.onStateChange([ 'session', 'notifications', 'global_notifications' ],
@@ -23,7 +26,7 @@ class GlobalNotifications {
         currentNotification = this.mKnownNotifications.find(
           (notification: INotification) => notification.id === this.mCurrentId);
         if (currentNotification === undefined) {
-          log('info', 'notification no longer exists', this.mCurrentId);
+          log('debug', 'notification no longer exists', this.mCurrentId);
           // notification no longer exists
           this.mCurrentId = undefined;
         }
@@ -31,26 +34,31 @@ class GlobalNotifications {
 
       // close notification if it was dismissed
       if ((this.mCurrentId === undefined) && (this.mCurrentNotification !== undefined)) {
-        log('info', 'close notification',
+        log('debug', 'close notification',
             { id: this.mCurrentNotification.tag, name: this.mCurrentNotification.body });
         this.mCurrentNotification.close();
         this.mCurrentNotification = undefined;
       } else if ((this.mCurrentNotification !== undefined) &&
                  (currentNotification.message !== this.mCurrentNotification.body)) {
-        log('info', 'replace notification', { id: this.mCurrentId });
+        log('debug', 'replace notification', { id: this.mCurrentId });
         this.mCurrentNotification.close();
         this.mCurrentNotification = undefined;
         this.showNotification(currentNotification);
       } else {
-        currentNotification = this.mKnownNotifications[0];
-        if (currentNotification !== undefined) {
-          log('info', 'new notification', { id: currentNotification.id });
+        currentNotification = this.mKnownNotifications[this.mKnownNotifications.length - 1];
+        if ((currentNotification !== undefined)
+            && (this.mCurrentId !== currentNotification.id)
+            && (this.mIsEnabled())) {
+          log('debug', 'new notification', { id: currentNotification.id });
           // Notification api broken as of electron 1.7.11
           // this.showNotification(currentNotification);
           api.events.emit('show-balloon', currentNotification.title, currentNotification.message);
+          this.mCurrentId = currentNotification.id;
         }
       }
     });
+
+    this.mIsEnabled = () => (api.store.getState() as IState).settings.interface.desktopNotifications;
   }
 
   private showNotification(notification: INotification): void {
@@ -58,7 +66,7 @@ class GlobalNotifications {
     try {
       this.mCurrentNotification = new Notification(notification.title, {
         tag: notification.id,
-        icon: notification.icon || path.resolve(__dirname, '..', 'assets', 'images', 'vortex.ico'),
+        icon: notification.icon || path.resolve(getVortexPath('assets'), 'images', 'vortex.ico'),
         body: notification.message,
         requireInteraction: true,
       });

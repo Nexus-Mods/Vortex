@@ -15,13 +15,14 @@ import {
   ISupportedResult,
   TestSupported,
 } from '../extensions/mod_management/types/TestSupported';
-
 import { Archive } from '../util/archives';
 import ReduxProp from '../util/ReduxProp';
 import { SanityCheck } from '../util/reduxSanity';
 
+import { DialogActions, IDialogContent } from './api';
 import { IActionOptions } from './IActionDefinition';
 import { IBannerOptions } from './IBannerOptions';
+import { DialogType, IDialogResult } from './IDialog';
 import { IGame } from './IGame';
 import { INotification } from './INotification';
 import { IDiscoveryResult } from './IState';
@@ -33,11 +34,14 @@ import * as I18next from 'i18next';
 import { ILookupResult, IModInfo, IReference } from 'modmeta-db';
 import * as React from 'react';
 import * as Redux from 'redux';
-import { DialogActions, IDialogAction, IDialogContent } from './api';
-import { DialogType, IDialogResult } from './IDialog';
+import { ThunkDispatch } from 'redux-thunk';
 
 export { TestSupported, IInstallResult, IInstruction, IDeployedFile, IDeploymentMethod,
-         IFileChange, InstallFunc, ISupportedResult, ProgressDelegate };
+         IFileChange, ILookupResult, IModInfo, IReference, InstallFunc, ISupportedResult, ProgressDelegate };
+
+export interface ThunkStore<S> extends Redux.Store<S> {
+  dispatch: ThunkDispatch<S, null, Redux.Action>;
+}
 
 export type PropsCallback = () => any;
 
@@ -55,7 +59,8 @@ export type RegisterSettings =
   (title: string,
    element: React.ComponentClass<any> | React.StatelessComponent<any>,
    props?: PropsCallback,
-   visible?: () => boolean) => void;
+   visible?: () => boolean,
+   priority?: number) => void;
 
 export type RegisterAction =
   (group: string,
@@ -64,7 +69,7 @@ export type RegisterAction =
    options: IActionOptions,
    titleOrProps?: string | PropsCallback,
    actionOrCondition?: (instanceIds?: string[]) => void | boolean,
-   condition?: (instanceIds?: string[]) => boolean) => void;
+   condition?: (instanceIds?: string[]) => boolean | string) => void;
 
 export type RegisterFooter =
   (id: string, element: React.ComponentClass<any>, props?: PropsCallback) => void;
@@ -79,7 +84,15 @@ export interface IMainPageOptions {
    * name collisions if another extension is already using the same title.
    */
   id?: string;
+  /**
+   * A hotkey to be pressed together with Ctrl+Shift to open that page
+   */
   hotkey?: string;
+  /**
+   * A hotkey to be pressed to open that page. In this case the caller has to specify any modifiers
+   * in the format required by electron
+   */
+  hotkeyRaw?: string;
   visible?: () => boolean;
   group: 'dashboard' | 'global' | 'per-game' | 'support' | 'hidden';
   priority?: number;
@@ -127,7 +140,7 @@ export type RegisterToDo =
      priority: number) => void;
 
 export interface IRegisterProtocol {
-  (protocol: string, callback: (url: string) => void);
+  (protocol: string, def: boolean, callback: (url: string) => void);
 }
 
 export interface IFileFilter {
@@ -224,6 +237,7 @@ export interface IErrorOptions {
   id?: string;
   isHTML?: boolean;
   allowReport?: boolean;
+  hideDetails?: boolean;
   replace?: { [key: string]: string };
 }
 
@@ -263,6 +277,7 @@ export interface IRunOptions {
   cwd?: string;
   env?: { [key: string]: string };
   suggestDeploy?: boolean;
+  shell?: boolean;
 }
 
 /**
@@ -350,7 +365,7 @@ export interface IExtensionApi {
    * @type {Redux.Store<any>}
    * @memberOf IExtensionApi
    */
-  store?: Redux.Store<any>;
+  store?: ThunkStore<any>;
 
   /**
    * event emitter
@@ -364,6 +379,11 @@ export interface IExtensionApi {
    * translation function
    */
   translate: I18next.TranslationFunction;
+
+  /**
+   * active locale
+   */
+  locale: () => string;
 
   /**
    * get direct access to the i18next object managing localisation.
@@ -401,7 +421,10 @@ export interface IExtensionApi {
   onStateChange?: (path: string[], callback: StateChangeCallback) => void;
 
   /**
-   * registers an uri protocol to be handled by this application
+   * registers an uri protocol to be handled by this application. If the "def"ault parameter
+   * is set to true, this application will also be inserted as the system wide default handler
+   * for the protocol. Use with caution, as this will overwrite the previous value, which
+   * can't be undone automatically
    *
    * @type {IRegisterProtocol}
    * @memberOf IExtensionContext
@@ -475,14 +498,70 @@ export interface IExtensionApi {
    * It will also automatically ask the user to authorize elevation if the executable requires it
    */
   runExecutable: (executable: string, args: string[], options: IRunOptions) => Promise<void>;
+
+  /**
+   * emit an event and allow every receiver to return a Promise. This call will only return
+   * after all these Promises are resolved.
+   * Note that errors are ignored atm, if the listener has an error to report, it has do so itself
+   */
+  emitAndAwait: (eventName: string, ...args: any[]) => Promise<void>;
+
+  /**
+   * handle an event emitted with emitAndAwait. The listener can return a promise and the emitter
+   * will only return after all promises from handlers are returned.
+   */
+  onAsync: (eventName: string, listener: (...args: any[]) => Promise<void>) => void;
+
+  /**
+   * returns true if the running version of Vortex is considered outdated. This is mostly used
+   * to determine if feedback should be sent to Nexus Mods.
+   */
+  isOutdated: () => boolean;
+
+  /**
+   * highlight a control for a short time to direct the users attention to it.
+   * The control (or controls) is identified by a css selector.
+   * A text can be added, but no promise that it actually looks good in practice
+   */
+  highlightControl: (selector: string, durationMS: number, text?: string) => void;
 }
 
 export interface IStateVerifier {
-  type?: 'map' | 'string' | 'boolean' | 'number' | 'object';
+  // the expected datatype
+  type?: 'map' | 'string' | 'boolean' | 'number' | 'object' | 'array';
+  // if set, can't be undefined
   noUndefined?: boolean;
+  // if set, can't be null
+  noNull?: boolean;
+  // if set, look at the object elements inside
   elements?: { [key: string]: IStateVerifier };
+  // if set, this entry has to exist
   required?: boolean;
+  // if set, delete this element or an ancestor element if this one doesn't
+  // match the verifier.
+  deleteBroken?: boolean | 'parent';
+  // if set, this function is called to generate the "repaired" value
   repair?: (input: any, def: any) => any;
+}
+
+/**
+ * The repair function can't fix a value so delete it instead
+ */
+export class VerifierDrop extends Error {
+  constructor() {
+    super('verifier drop');
+    this.name = this.constructor.name;
+  }
+}
+
+/**
+ * The repair function can't fix a value so delete the parent object instead
+ */
+export class VerifierDropParent extends Error {
+  constructor() {
+    super('verifier drop parent');
+    this.name = this.constructor.name;
+  }
 }
 
 /**
@@ -722,9 +801,8 @@ export interface IExtensionContext {
    * registers support for a game
    *
    * @param {IGame} game
-   * @param {string} extensionPath path to the extension assets
    */
-  registerGame: (game: IGame, extensionPath: string) => void;
+  registerGame: (game: IGame) => void;
 
   /**
    * registers a provider for general information about a game
@@ -814,6 +892,20 @@ export interface IExtensionContext {
    */
   registerInterpreter:
     (extension: string, apply: (call: IRunParameters) => IRunParameters) => void;
+
+  /**
+   * register a hook to be called before Vortex starts any tool and is allowed to replace parameter or
+   * cancel the start by rejecting with ProcessCanceled or UserCanceled.
+   * This could be used as a more powerful replacement for registerInterpreter.
+   * Interpreters registered with registerInterpreter will be processed before any hooks are applied
+   * @param {number} priority Hooks are applied in ascending priority order. Please choose priorities
+   *                          with a bit of space between hooks you know about so that other extension
+   *                          developers can insert their own hooks between. non-extension hooks will be
+   *                          applied in steps of 100
+   * @param {string} id identifier for the hook. This will only be used for logging
+   * @param {function} hook the hook to be called
+   */
+  registerStartHook: (priority: number, id: string, hook: (call: IRunParameters) => Promise<IRunParameters>) => void;
 
   /**
    * specify that a certain range of versions of vortex is required

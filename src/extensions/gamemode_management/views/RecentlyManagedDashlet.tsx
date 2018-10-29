@@ -1,7 +1,6 @@
 import Dashlet from '../../../controls/Dashlet';
 import Placeholder from '../../../controls/EmptyPlaceholder';
-import Icon from '../../../controls/Icon';
-import { IDiscoveryState, IProfile, IState } from '../../../types/IState';
+import { IProfile, IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { getSafe } from '../../../util/storeHelper';
 
@@ -32,7 +31,6 @@ interface IActionProps {
 type IProps = IBaseProps & IConnectedProps & IActionProps;
 
 class RecentlyManaged extends ComponentEx<IProps, {}> {
-  private mRef: Element;
   public render(): JSX.Element {
     const { t, discoveredGames, gameMode, lastActiveProfile, knownGames, profiles } = this.props;
 
@@ -79,10 +77,6 @@ class RecentlyManaged extends ComponentEx<IProps, {}> {
     );
   }
 
-  private openGames = () => {
-    this.context.api.events.emit('show-main-page', 'Games');
-  }
-
   private refreshGameInfo = gameId => {
     return new Promise<void>((resolve, reject) => {
       this.context.api.events.emit('refresh-game-info', gameId, err => {
@@ -106,11 +100,6 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch): IActionProps {
-  return {
-  };
-}
-
 export default
   translate(['common'], { wait: false })(
-    connect(mapStateToProps, mapDispatchToProps)(RecentlyManaged)) as React.ComponentClass<{}>;
+    connect(mapStateToProps)(RecentlyManaged)) as React.ComponentClass<{}>;

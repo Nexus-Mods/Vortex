@@ -1,9 +1,9 @@
 import * as actions from '../actions/notifications';
 import { IReducerSpec } from '../types/IExtensionContext';
 
-import { pushSafe, removeValueIf } from '../util/storeHelper';
+import { pushSafe, removeValueIf, setSafe } from '../util/storeHelper';
 
-import * as update from 'immutability-helper';
+import update from 'immutability-helper';
 import { generate as shortid } from 'shortid';
 
 /**
@@ -20,6 +20,16 @@ export const notificationsReducer: IReducerSpec = {
         temp = removeValueIf(state, statePath, (noti) => noti.id === payload.id);
       }
       return pushSafe(temp, statePath, payload);
+    },
+    [actions.updateNotification as any]: (state, payload) => {
+      const idx = state.notifications.findIndex(noti => noti.id === payload.id);
+      if (idx === -1) {
+        return state;
+      }
+
+      return setSafe(
+        setSafe(state, ['notifications', idx, 'progress'],  payload.progress),
+        ['notifications', idx, 'message'], payload.message);
     },
     [actions.stopNotification as any]: (state, payload) => {
       return removeValueIf(removeValueIf(state, ['notifications'], (noti) => noti.id === payload),

@@ -1,20 +1,17 @@
 import { setDialogVisible } from '../../../actions/session';
 import Icon from '../../../controls/Icon';
-import { Button, IconButton } from '../../../controls/TooltipControls';
+import { Button } from '../../../controls/TooltipControls';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { getSafe } from '../../../util/storeHelper';
+import opn from '../../../util/opn';
 
 import { setUserAPIKey } from '../actions/account';
 import { IValidateKeyData } from '../types/IValidateKeyData';
 
-import LoginDialog from './LoginDialog';
-
-import * as update from 'immutability-helper';
 import NexusT from 'nexus-api';
-import opn = require('opn');
 import * as React from 'react';
-import { ControlLabel, Form, FormGroup, Image } from 'react-bootstrap';
+import { Image } from 'react-bootstrap';
 import * as Redux from 'redux';
+import { ThunkDispatch } from 'redux-thunk';
 
 export interface IBaseProps {
   nexus: NexusT;
@@ -112,11 +109,11 @@ class LoginIcon extends ComponentEx<IProps, {}> {
 function mapStateToProps(state: any): IConnectedProps {
   return {
     APIKey: state.confidential.account.nexus.APIKey,
-    userInfo: state.session.nexus.userInfo,
+    userInfo: state.persistent.nexus.userInfo,
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onSetAPIKey: (APIKey: string) => dispatch(setUserAPIKey(APIKey)),
     onShowDialog: () => dispatch(setDialogVisible('login-dialog')),

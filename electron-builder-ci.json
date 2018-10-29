@@ -21,7 +21,8 @@
   "nsis": {
     "perMachine": true,
     "runAfterFinish": true,
-    "menuCategory": true
+    "menuCategory": true,
+    "uninstallDisplayName": "${productName}"
   },
   "extraResources": [
     "locales"
@@ -46,7 +47,6 @@
     "!**/node_modules/edge/src${/*}",
     "!**/node_modules/leveldown/deps${/*}",
     "!**/node_modules/node-sass/{build,src,vendor}${/*}",
-    "!**/node_modules/react-layout-pane/{demo,docs}${/*}",
     "!**/node_modules/recharts/umd${/*}",
     "!**/node_modules/ffi/deps",
     "!**/Release/*.map",

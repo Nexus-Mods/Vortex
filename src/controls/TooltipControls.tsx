@@ -1,7 +1,7 @@
 import SvgIcon from './Icon';
 import { ButtonType } from './IconBar';
 
-import * as update from 'immutability-helper';
+import update from 'immutability-helper';
 import * as React from 'react';
 
 import { Button as BootstrapButton, NavItem as BootstrapNavItem,
@@ -60,10 +60,11 @@ export interface IIconButtonExtraProps {
   flip?: 'horizontal' | 'vertical';
   rotate?: number;
   rotateId?: string;
+  vertical?: boolean;
 }
 
 const iconPropNames = new Set(['spin', 'pulse', 'stroke', 'border', 'inverse',
-                               'flip', 'rotate', 'rotateId']);
+                               'flip', 'rotate', 'rotateId', 'vertical']);
 
 export type IconButtonProps = ButtonProps & IIconButtonExtraProps;
 
@@ -90,6 +91,12 @@ export class IconButton extends React.Component<IconButtonProps, {}> {
 
     if (React.Children.count(this.props.children) > 0) {
       buttonProps['className'] += ' has-children';
+    }
+    
+    if (this.props.vertical) {
+      buttonProps['className'] += ' icon-button-vertical';
+    } else {
+      buttonProps['className'] += ' icon-button-horizontal';
     }
 
     if (typeof (this.props.tooltip) === 'string') {

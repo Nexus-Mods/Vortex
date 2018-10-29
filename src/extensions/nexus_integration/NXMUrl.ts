@@ -1,19 +1,33 @@
+import { DataInvalid } from '../../util/CustomErrors';
 
-const sUrlExpression = /nxm:\/\/([a-z0-9]+)\/mods\/(\d+)\/files\/(\d+)/i;
+import { URL } from 'url';
+
+const sUrlExpression = /\/mods\/(\d+)\/files\/(\d+)/i;
 
 class NXMUrl {
   private mGameId: string;
   private mModId: number;
   private mFileId: number;
+  private mKey: string;
+  private mExpires: number;
 
   constructor(input: string) {
-    const matches = input.match(sUrlExpression);
-    if ((matches === null) || (matches.length !== 4)) {
-      throw new Error('invalid nxm url "' + input + '"');
+    let parsed: URL;
+    try {
+      parsed = new URL(input);
+    } catch (err) {
+      throw new DataInvalid('invalid nxm url "' + input + '"');
     }
-    this.mGameId = matches[1];
-    this.mModId = parseInt(matches[2], 10);
-    this.mFileId = parseInt(matches[3], 10);
+    this.mGameId = parsed.hostname;
+    const matches = parsed.pathname.match(sUrlExpression);
+    if ((parsed.protocol !== 'nxm:') || (matches === null) || (matches.length !== 3)) {
+      throw new DataInvalid('invalid nxm url "' + input + '"');
+    }
+
+    this.mModId = parseInt(matches[1], 10);
+    this.mFileId = parseInt(matches[2], 10);
+    this.mKey = parsed.searchParams.get('key');
+    this.mExpires = parseInt(parsed.searchParams.get('expires'), 10);
   }
 
   public get gameId(): string {
@@ -26,6 +40,20 @@ class NXMUrl {
 
   public get fileId(): number {
     return this.mFileId;
+  }
+
+  /**
+   * a key identifying the user that requested the nxm link
+   */
+  public get key(): string {
+    return this.mKey;
+  }
+
+  /**
+   * returns a timestamp of when the link becomes invalid
+   */
+  public get expires(): number {
+    return this.mExpires;
   }
 }
 

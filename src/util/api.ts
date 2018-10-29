@@ -6,21 +6,18 @@
 export * from './message';
 export * from './storeHelper';
 
-import { resolveCategoryName, resolveCategoryPath } from '../extensions/category_management';
-import { getGame, getGames } from '../extensions/gamemode_management';
+import { resolveCategoryName, resolveCategoryPath } from '../extensions/category_management/util/retrieveCategoryPath';
+import { getGame, getGames } from '../extensions/gamemode_management/util/getGame';
 import deriveModInstallName from '../extensions/mod_management/modIdManager';
 import renderModName from '../extensions/mod_management/util/modName';
-import resolvePath from '../extensions/mod_management/util/resolvePath';
 import sortMods from '../extensions/mod_management/util/sort';
 import testModReference from '../extensions/mod_management/util/testModReference';
 import { Archive } from './archives';
-import AsyncComponent from './AsyncComponent';
 import copyRecursive from './copyRecursive';
-import { DataInvalid, MissingInterpreter, NotSupportedError, ProcessCanceled,
+import { DataInvalid, MissingInterpreter, NotFound, NotSupportedError, ProcessCanceled,
          SetupError, UserCanceled } from './CustomErrors';
 import Debouncer from './Debouncer';
 import delayed from './delayed';
-import runElevated from './elevated';
 import { terminate } from './errorHandling';
 import { extend } from './ExtensionProvider';
 import getNormalizeFunc, { Normalize } from './getNormalizeFunc';
@@ -28,17 +25,19 @@ import { getCurrentLanguage } from './i18n';
 import LazyComponent from './LazyComponent';
 import lazyRequire from './lazyRequire';
 import makeReactive from './makeReactive';
+import opn from './opn';
+import { getReduxLog } from './reduxLogger';
 import ReduxProp from './ReduxProp';
 import relativeTime from './relativeTime';
-import steam, { ISteamEntry } from './Steam';
-import runThreaded from './thread';
+import steam, { GameNotFound, ISteamEntry } from './Steam';
 import { bytesToString, copyFileAtomic, isNullOrWhitespace, objDiff,
          removePersistent, setdefault } from './util';
 import walk from './walk';
 
+import { runElevated, runThreaded } from 'vortex-run';
+
 export {
   Archive,
-  AsyncComponent,
   bytesToString,
   copyFileAtomic,
   copyRecursive,
@@ -47,18 +46,22 @@ export {
   delayed,
   deriveModInstallName as deriveInstallName,
   extend,
+  GameNotFound,
   getCurrentLanguage,
   getGame,
   getGames,
   getNormalizeFunc,
+  getReduxLog,
   isNullOrWhitespace,
   LazyComponent,
   lazyRequire,
   makeReactive,
   MissingInterpreter,
   Normalize,
+  NotFound,
   NotSupportedError,
   objDiff,
+  opn,
   ProcessCanceled,
   ReduxProp,
   relativeTime,
@@ -66,7 +69,6 @@ export {
   renderModName,
   resolveCategoryName,
   resolveCategoryPath,
-  resolvePath,
   runElevated,
   runThreaded,
   setdefault,

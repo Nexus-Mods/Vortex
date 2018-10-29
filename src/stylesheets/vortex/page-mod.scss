@@ -31,3 +31,51 @@
 .mod-drop-panel {
   margin-top: $half-gutter;
 }
+
+.version-option {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  svg {
+    margin: 0 !important;
+  }
+}
+
+.mod-update {
+  &.warning {
+    color: $brand-warning;
+  }
+
+  &.download {
+    color: $brand-warning;
+  }
+
+  &.ban {
+    color: $brand-danger;
+  }
+
+  &.bug {
+    color: $brand-danger;
+  }
+
+  .icon-button {
+    margin-left: 0.4em !important;
+  }
+}
+
+@keyframes pulseColor {
+  0% {
+    background-color: lighten($brand-clickable, 15%);
+  }
+  50% {
+    background-color: darken($brand-clickable, 15%);
+  }
+  100% {
+    background-color: lighten($brand-clickable, 15%);
+  }
+}
+
+.need-to-deploy:not(:hover) {
+  animation: pulseColor 6s infinite linear;
+  border: $border-width solid $brand-warning;
+}

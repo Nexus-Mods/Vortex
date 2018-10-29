@@ -15,3 +15,6 @@ export const setAdvancedMode = safeCreateAction('SET_ADVANCED_MODE',
 
 export const setProfilesVisible = safeCreateAction('SET_PROFILES_VISIBLE',
   (visible: boolean) => ({ visible }));
+
+export const setDesktopNotifications = safeCreateAction('SET_DESKTOP_NOTIFICATIONS',
+  (enabled: boolean) => enabled);

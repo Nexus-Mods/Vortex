@@ -1,6 +1,7 @@
 import { IActionDefinition, IActionOptions } from '../types/IActionDefinition';
 import { extend, IExtensibleProps } from '../util/ExtensionProvider';
 
+import * as _ from 'lodash';
 import * as React from 'react';
 
 export interface IActionControlProps {
@@ -30,20 +31,35 @@ export interface IActionDefinitionEx extends IActionDefinition {
  *
  * @class IconBar
  */
-class ActionControl extends React.Component<IProps, {}> {
+class ActionControl extends React.Component<IProps, { actions: IActionDefinitionEx[] }> {
+  constructor(props: IProps) {
+    super(props);
+    this.state = {
+      actions: this.actionsToShow(props),
+    };
+  }
+
+  public componentWillReceiveProps(newProps: IProps) {
+    // TODO: since we can't know how the condition callback is implemented,
+    //   there is no way to determine, based on props, whether the actions
+    //   to be shown need to be updated.
+    //   this here is inefficient and could technically still miss updates
+    const newActions = this.actionsToShow(newProps);
+    if (!_.isEqual(newActions, this.state.actions)) {
+      this.setState({ actions: newActions });
+    }
+  }
+
   public render() {
-    const { children, instanceId, objects } = this.props;
+    const { children, instanceId } = this.props;
     return React.cloneElement(React.Children.only(children), {
       instanceId,
-      actions: this.actionsToShow(),
+      actions: this.state.actions,
     });
   }
 
-  private iconSort = (lhs: IActionDefinition, rhs: IActionDefinition): number =>
-    (lhs.position || 100) - (rhs.position || 100)
-
-  private actionsToShow(): IActionDefinitionEx[] {
-    const { filter, instanceId, objects } = this.props;
+  private actionsToShow(props: IProps): IActionDefinitionEx[] {
+    const { filter, instanceId, objects } = props;
     const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
     const checkCondition = (def: IActionDefinition): boolean | string => {
       if (def.condition === undefined) {
@@ -62,7 +78,8 @@ class ActionControl extends React.Component<IProps, {}> {
           show: checkCondition(iter),
         }))
       .filter(iter => iter.show !== false)
-      .filter(iter => (filter === undefined) || filter(iter));
+      .filter(iter => (filter === undefined) || filter(iter))
+      .sort(iconSort);
   }
 }
 

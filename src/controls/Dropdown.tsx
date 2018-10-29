@@ -45,7 +45,7 @@ class MyDropdown extends React.Component<IProps, { up: boolean }> {
   }
 
   public componentDidMount() {
-    this.mNode = ReactDOM.findDOMNode(this);
+    this.mNode = ReactDOM.findDOMNode(this) as Element;
   }
 
   public render(): JSX.Element {

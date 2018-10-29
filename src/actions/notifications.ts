@@ -8,8 +8,8 @@ import safeCreateAction from './safeCreateAction';
 
 import * as Promise from 'bluebird';
 import { ipcMain, ipcRenderer } from 'electron';
-import * as reduxAct from 'redux-act';
 
+import * as reduxAct from 'redux-act';
 import { generate as shortid } from 'shortid';
 
 export * from '../types/IDialog';
@@ -21,6 +21,9 @@ const identity = input => input;
  * left unset, in that case one will be generated
  */
 export const startNotification = safeCreateAction('ADD_NOTIFICATION', identity);
+
+export const updateNotification = safeCreateAction('UPDATE_NOTIFICATION',
+  (id: string, progress: number, message: string) => ({ id, progress, message }), () => ({ forward: false }));
 
 /**
  * dismiss a notification. Takes the id of the notification
@@ -55,6 +58,11 @@ const notificationActions = local<{ [id: string]: NotificationFunc[] }>('notific
 export function fireNotificationAction(notiId: string, notiProcess: string,
                                        action: number, dismiss: NotificationDismiss) {
   if (notiProcess === process.type) {
+    if (notificationActions[notiId] === undefined) {
+      // this can happen if vortex was restarted and so the notification is still in the store but
+      // the callbacks are no longer available.
+      return;
+    }
     const func = notificationActions[notiId][action];
     if (func !== undefined) {
       func(dismiss);
@@ -72,13 +80,14 @@ export function fireNotificationAction(notiId: string, notiProcess: string,
 if (ipcMain !== undefined) {
   ipcMain.on('fire-notification-action',
              (event: Electron.Event, notiId: string, action: number) => {
-    event.returnValue = false;
     const func = notificationActions[notiId][action];
+    let res = false;
     if (func !== undefined) {
       func(() => {
-        event.returnValue = true;
+        res = true;
       });
     }
+    event.returnValue = res;
   });
 }
 
@@ -166,7 +175,24 @@ export function showDialog(type: DialogType, title: string,
       DialogCallbacks.instance()[id] = (actionKey: string, input?: any) => {
         const action = actions.find(iter => iter.label === actionKey);
         if (truthy(action.action)) {
-          action.action(input);
+          try {
+            const res: any = action.action(input);
+            if ((res !== undefined) && (res.catch !== undefined)) {
+              res.catch(err => {
+                log('error', 'rejection from dialog callback', {
+                  title: title,
+                  action: action.label,
+                  message: err.message,
+                });
+              });
+            }
+          } catch (err) {
+            log('error', 'exception from dialog callback', {
+              title,
+              action: action.label,
+              message: err.message,
+            });
+          }
         }
         resolve({ action: actionKey, input });
       };

@@ -132,6 +132,10 @@
       "path": "{nucleo}/holidays/{nucleo_simple}_favourite-31",
       "rmFill": true
     },
+    "plugin-light": {
+      "path": "{nucleo}/animals-nature/{nucleo_simple}_leaf-81",
+      "rmFill": true
+    },
     "plugin-clean": {
       "path": "{nucleo}/design-development/{nucleo_simple}_spray-2",
       "rmFill": true
@@ -433,6 +437,50 @@
     },
     "groups": {
       "path": "{nucleo}/design-development/{nucleo_simple}_layers",
+      "rmFill": true
+    },
+    "showhide-down": {
+      "path": "{nucleo}/arrows/{nucleo_simple}_stre-down",
+      "rmFill": true
+    },
+    "showhide-up": {
+      "path": "{nucleo}/arrows/{nucleo_simple}_stre-up",
+      "rmFill": true
+    },
+    "attention-required": {
+      "path": "{nucleo}/ui/{nucleo_simple}_alert",
+      "rmFill": true
+    },
+    "completed": {
+      "path": "{nucleo}/ui/{nucleo_simple}_check-curve",
+      "rmFill": true
+    },
+    "in-progress": {
+      "path": "{nucleo}/loaders/{nucleo_simple}_dots",
+      "rmFill": true
+    },
+    "launch": {
+      "path": "{nucleo}/arrows/{nucleo_simple}_launch-47",
+      "rmFill": true
+    },
+    "milestone": {
+      "path": "{nucleo}/healthcare-medical/{nucleo_simple}_steps",
+      "rmFill": true
+    },
+    "override": {
+      "path": "{nucleo}/user interface/{nucleo_simple}_alert-exc",
+      "rmFill": true
+    },
+    "nav-back": {
+      "path": "{nucleo}/arrows/{nucleo_simple}_simple-left",
+      "rmFill": true
+    },
+    "nav-forward": {
+      "path": "{nucleo}/arrows/{nucleo_simple}_simple-right",
+      "rmFill": true
+    },
+    "video": {
+      "path": "{nucleo}/multimedia/{nucleo_simple}_play-69",
       "rmFill": true
     }
   }

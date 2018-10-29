@@ -1,13 +1,9 @@
-jest.mock('ffi');
-//jest.mock('bindings');
-jest.mock('ref');
-
 let mockTmpFileCalls = 0;
 let mockTmpFileReportError = undefined;
 jest.mock('tmp', () => ({
   file: (callback) => {
     if (mockTmpFileReportError) {
-      return callback(mockTmpFileReportError);
+      return callback(new Error(mockTmpFileReportError));
     }
     mockTmpFileCalls += 1;
     callback(null, '/tmp/xyz', 42, () => undefined);
@@ -20,7 +16,7 @@ let mockWriteReportError = undefined;
 jest.mock('fs', () => ({
     write: (fd, data, callback) => {
       if (mockWriteReportError) {
-        callback(mockWriteReportError);
+        callback(new Error(mockWriteReportError));
         return;
       }
       mockWrites.push(data);
@@ -35,7 +31,7 @@ jest.mock('fs', () => ({
 }));
 
 
-import runElevated from '../src/util/elevated';
+import runElevated from '../src/util/vortex-run/src/elevated';
 
 function dummy() {
   console.log('DUMMY FUNCTION');
@@ -48,7 +44,6 @@ describe('runElevated', () => {
     mockTmpFileReportError = undefined;
     mockWrites = [];
     mockWriteReportError = undefined;
-    require('ffi').__setError(undefined);
   });
 
   it('creates a temporary file', () => {
@@ -61,7 +56,7 @@ describe('runElevated', () => {
     return runElevated('ipcPath', dummy).then(() => {
       expect(mockWrites.length).toBe(1);
       expect(mockWrites[0]).toContain('let moduleRoot =');
-      expect(mockWrites[0]).toContain('let baseDir =');
+      expect(mockWrites[0]).toContain('let main = function dummy');
       expect(mockWrites[0]).toContain('DUMMY FUNCTION');
     });
   });
@@ -74,7 +69,6 @@ describe('runElevated', () => {
       array: [ 1, 2, 3 ]
     }, '/module/base')
     .then(() => {
-      expect(mockWrites[0]).toContain('let baseDir = \'/module/base\'');
       expect(mockWrites[0]).toContain('let answer = 42;');
       expect(mockWrites[0]).toContain('let truth = true;');
       expect(mockWrites[0]).toContain('let str = "string";');
@@ -89,7 +83,7 @@ describe('runElevated', () => {
       fail('expected error');
     })
     .catch((err) => {
-      expect(err).toBe('i haz error');
+      expect(err.message).toBe('i haz error');
     });
   });
 
@@ -100,18 +94,18 @@ describe('runElevated', () => {
       fail('expected error');
     })
     .catch((err) => {
-      expect(err).toBe('i haz error');
+      expect(err.message).toBe('i haz error');
     });
   });
 
   it('handles library errors', () => {
-    require('ffi').__setError('i haz error');
+    require('winapi-bindings').__setError('i haz error');
     return runElevated('ipcPath', dummy)
     .then(() => {
       fail('expected error');
     })
     .catch((err) => {
-      expect(err).toBe('i haz error');
+      expect(err.message).toBe('i haz error');
     });
   });
 });

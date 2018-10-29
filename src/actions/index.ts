@@ -12,6 +12,7 @@ export * from '../extensions/download_management/actions/state';
 export * from '../extensions/installer_fomod/actions/installerUI';
 
 export * from '../extensions/mod_management/actions/settings';
+export * from '../extensions/mod_management/actions/deployment';
 export * from '../extensions/mod_management/actions/mods';
 
 export * from '../extensions/nexus_integration/actions/account';

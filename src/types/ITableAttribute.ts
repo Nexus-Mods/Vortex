@@ -112,6 +112,10 @@ export interface ITableAttribute<T = any> {
    */
   isVolatile?: boolean;
   /**
+   * Never shrink the column while scrolling, it can still grow though
+   */
+  noShrink?: boolean;
+  /**
    * when using external data (not part of the data passed to the table) in calc or customRenderer,
    * set this parameter.
    * This function gets called with a callback that then needs to be called whenever the external
@@ -147,10 +151,21 @@ export interface ITableAttribute<T = any> {
   calc?: (object: T, t: I18next.TranslationFunction) => any | Promise<any>;
   /**
    * custom function for sorting by this attribute. The parameters passed in (lhs and rhs) are
-   * by calc (cached). Return <0 if lhs is smaller than rhs, >0 if it's bigger and =0 if they are
-   * equal.
+   * the output of calc (cached). Return <0 if lhs is smaller than rhs, >0 if it's bigger and
+   * =0 if they are equal.
    */
   sortFunc?: (lhs: any, rhs: any, locale: string) => number;
+  /**
+   * custom function for sorting by this attribute. The parameters passed in (lhs and rhs) are
+   * the objects to compare. Return <0 if lhs is smaller than rhs, >0 if it's bigger and
+   * =0 if they are equal.
+   */
+  sortFuncRaw?: (lhs: T, rhs: T, locale: string) => number;
+  /**
+   * if specified, this is called to determine if the attribute is visible at all.
+   * This can be used to hide attributes on game where they aren't supported
+   */
+  condition?: () => boolean;
   /**
    * does this attribute support displaying and editing multiple values? defaults to false.
    * If this is false the attribute is not displayed with multiple items selected. If this is true,
@@ -180,6 +195,19 @@ export interface ITableAttribute<T = any> {
      * allow inline editing of this cell
      */
     inline?: boolean,
+
+    /**
+     * Affects how choices are displayed if you have a choice attribute
+     * if true (or undefined) then we display a dropdown box where each item immediately triggers
+     * an action. If false, render a selection box
+     */
+    actions?: boolean,
+
+    /**
+     * if set, this is called to determine the placeholder to be displayed when the input box is empty.
+     * Has no effect if this edit config doesn't generate an input box
+     */
+    placeholder?: () => string,
 
     /**
      * if set, this field is a drop-down selection with the choices returned by this function.

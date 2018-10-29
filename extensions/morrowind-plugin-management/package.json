@@ -17,7 +17,7 @@
   },
   "devDependencies": {
     "@types/i18next": "^8.4.0",
-    "@types/immutability-helper" : "^2.0.15",
+    "@types/immutability-helper": "^2.0.15",
     "@types/react": "16.0.34",
     "@types/react-bootstrap": "^0.32.1",
     "@types/react-dom": "16.0.3",
@@ -30,9 +30,9 @@
     "copyfiles": "^1.0.0",
     "i18next": "^8.4.3",
     "immutability-helper": "^2.2.2",
+    "ts-loader": "2.3.4",
     "vortex-api": "Nexus-Mods/vortex-api",
     "vortex-parse-ini": "Nexus-Mods/vortex-parse-ini",
-    "webpack": "^3.5.5",
-    "ts-loader": "2.3.4"
+    "webpack": "^3.5.5"
   }
 }

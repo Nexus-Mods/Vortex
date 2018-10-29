@@ -1,9 +1,12 @@
 import { displayGroup } from '../../actions/session';
 import { FormPathItem, FormTextItem } from '../../controls/FormFields';
+import More from '../../controls/More';
+import Toggle from '../../controls/Toggle';
 import { Button, IconButton } from '../../controls/TooltipControls';
 import { IComponentContext } from '../../types/IComponentContext';
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
+import { ProcessCanceled } from '../../util/CustomErrors';
 import Debouncer from '../../util/Debouncer';
 import * as fs from '../../util/fs';
 import StarterInfo, { IStarterInfo } from '../../util/StarterInfo';
@@ -22,7 +25,7 @@ import * as React from 'react';
 import { Col, ControlLabel, Form, FormControl, FormGroup, InputGroup, ListGroup,
          ListGroupItem, Modal } from 'react-bootstrap';
 import * as Redux from 'redux';
-import { ProcessCanceled } from '../../util/CustomErrors';
+import { ThunkDispatch } from 'redux-thunk';
 
 interface IEnvButtonProps {
   t: I18next.TranslationFunction;
@@ -38,7 +41,6 @@ interface IEnvButtonState {
 }
 
 class EnvButton extends ComponentEx<IEnvButtonProps, IEnvButtonState> {
-
   constructor(props: IEnvButtonProps) {
     super(props);
     this.initState({ varCopy: { ...props.variable } });
@@ -93,8 +95,10 @@ class EnvButton extends ComponentEx<IEnvButtonProps, IEnvButtonState> {
         );
       } else {
         return (
-          <div>
-            <b>{varCopy.key}</b> = <b>{varCopy.value}</b>{' '}
+          <div className='env-kvpair'>
+            <div>
+              <b>{varCopy.key}</b> = <b>{varCopy.value}</b>
+            </div>
             <div className='env-edit-buttons'>
               <IconButton
                 id={`btn-edit-${varCopy.key}`}
@@ -172,6 +176,7 @@ interface IEditStarterInfo {
   commandLine: string;
   workingDirectory: string;
   environment: { [key: string]: string };
+  shell: boolean;
 }
 
 interface IToolEditState {
@@ -195,9 +200,8 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
       tool: this.toEditStarter(props.tool),
       imageId: Date.now(),
     });
-    this.mUpdateImageDebouncer = new Debouncer((imagePath: string) => {
-      return this.useImage(imagePath);
-    }, 2000);
+    this.mUpdateImageDebouncer = new Debouncer((imagePath: string) =>
+      this.useImage(imagePath), 2000);
   }
 
   public render(): JSX.Element {
@@ -207,6 +211,8 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
     if ((realName === undefined) && (this.props.tool !== undefined)) {
       realName = this.props.tool.name;
     }
+
+    const haveEnvironment: boolean = Object.keys(tool.environment).length > 0;
 
     return (
       <Modal show={true} onHide={onClose} id='tool-edit-dialog'>
@@ -273,15 +279,22 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
                 readOnly={tool.isGame}
             />
 
-            <FormGroup>
+            <FormGroup
+              validationState={haveEnvironment ? 'warning' : undefined}
+            >
+
               <Col sm={3}>
                 <ControlLabel>{t('Environment Variables')}</ControlLabel>
               </Col>
               <Col sm={9}>
                 {this.renderEnvironment(tool.environment)}
+                {haveEnvironment ? (
+                  <ControlLabel style={{ paddingTop: 0 }}>
+                    {t('Tools with environments can\'t be started from the "Tasks" list')}
+                  </ControlLabel>
+                ) : null}
               </Col>
             </FormGroup>
-
             <FormGroup>
               <Col sm={3}>
                 <ControlLabel>{t('Icon')}</ControlLabel>
@@ -300,6 +313,18 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
                     />
                   </Button>
                 </FormControl.Static>
+              </Col>
+            </FormGroup>
+            <FormGroup>
+              <Col sm={12}>
+                <Toggle checked={tool.shell} onToggle={this.toggleShell}>
+                  {t('Run in shell')}
+                  <More id='run-in-shell' name={t('Run in shell')}>
+                    {t('If (and only if!) a tool is written as a console '
+                         + 'application, you have to enable this to allow it to run '
+                         + 'correctly.')}
+                  </More>
+                </Toggle>
               </Col>
             </FormGroup>
           </Form>
@@ -407,8 +432,6 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
   }
 
   private handleChangePath = (field: 'exePath', filePath: string) => {
-    const { tool } = this.props;
-
     this.handleChange('exePath', filePath);
     if (!this.state.tool.name) {
       this.handleChange('name', path.basename(filePath, path.extname(filePath)));
@@ -436,6 +459,10 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
         this.useImage(filePath);
       }
     });
+  }
+
+  private toggleShell = () => {
+    this.nextState.tool.shell = !this.state.tool.shell;
   }
 
   private useImage(filePath: string): Promise<void> {
@@ -490,6 +517,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
       environment: tool.environment,
       logo: `${tool.id}.png`,
       parameters: this.splitCommandLine(tool.commandLine),
+      shell: tool.shell,
     };
   }
 
@@ -502,6 +530,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
         iconPath: tool.iconPath,
         environment: tool.environment,
         commandLine: this.splitCommandLine(tool.commandLine),
+        shell: tool.shell,
       });
     } else {
       onAddTool(tool.gameId, tool.id, this.toToolDiscovery(tool));
@@ -516,7 +545,7 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: Redux.Dispatch<any>): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onAddTool: (gameId, toolId, result) => dispatch(addDiscoveredTool(gameId, toolId, result)),
     onEditEnv: (itemId: string) => dispatch(displayGroup('envEdit', itemId)),

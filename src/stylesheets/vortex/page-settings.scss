@@ -40,7 +40,20 @@
   }
 }
 
+#settings-tab-pane-Download {
+  .download-path-input {
+    min-width: 40em;
+  }
+  .input-group-btn {
+    width: initial;
+    padding-left: 4px;
+  }
+}
+
 #settings-tab-pane-Mods {
+  .install-path-input {
+    min-width: 40em;
+  }
   .input-group-btn {
     width: initial;
     padding-left: 4px;

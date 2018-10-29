@@ -35,10 +35,20 @@ export const setModAttribute = safeCreateAction('SET_MOD_ATTRIBUTE',
     ({ gameId, modId, attribute, value }));
 
 /**
+ * set multiple mod attributes at once
+ */
+export const setModAttributes = safeCreateAction('SET_MOD_ATTRIBUTES',
+  (gameId: string, modId: string, attributes: { [attribute: string]: any }) =>
+    ({ gameId, modId, attributes }));
+
+/**
  * sets the type of a mod
  */
 export const setModType = safeCreateAction('SET_MOD_TYPE',
   (gameId: string, modId: string, type: string) => ({ gameId, modId, type }));
+
+export const clearModRules = safeCreateAction('CLEAR_MOD_RULE',
+  (gameId: string, modId: string) => ({ gameId, modId }));
 
 /**
  * add a dependency rule for this mod
@@ -56,3 +66,9 @@ export const setINITweakEnabled = safeCreateAction(
     'SET_TWEAK_ENABLED',
     (gameId: string, modId: string, tweak: string, enabled: boolean) =>
         ({gameId, modId, tweak, enabled}));
+
+/**
+ * set list of files that will always be provided by this mod, no matter the deployment order
+ */
+export const setFileOverride = safeCreateAction('SET_FILE_OVERRIDE',
+  (gameId: string, modId: string, files: string[]) => ({ gameId, modId, files }));

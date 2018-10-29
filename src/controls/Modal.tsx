@@ -31,6 +31,7 @@ class MyModal extends React.PureComponent<typeof Modal.prototype.props, {}> {
 
   private setMenuLayer = (ref: Element) => {
     this.mMenuLayer = ref;
+    this.forceUpdate();
   }
 }
 

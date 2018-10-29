@@ -2,7 +2,7 @@ import { IReducerSpec } from '../../../types/IExtensionContext';
 
 import * as actions from '../actions/interface';
 
-import * as update from 'immutability-helper';
+import update from 'immutability-helper';
 
 /**
  * reducer for changes to interface settings
@@ -15,11 +15,14 @@ const settingsReducer: IReducerSpec = {
       update(state, { advanced: { $set: payload.advanced } }),
     [actions.setProfilesVisible as any]: (state, payload) =>
       update(state, { profilesVisible: { $set: payload.visible } }),
+    [actions.setDesktopNotifications as any]: (state, payload) =>
+      update(state, { desktopNotifications: { $set: payload } }),
   },
   defaults: {
     language: 'en',
     advanced: false,
     profilesVisible: false,
+    desktopNotifications: true,
   },
 };
 

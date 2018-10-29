@@ -17,7 +17,7 @@ const sanityChecks: { [type: string]: SanityCheck[] } = {};
 
 export function reduxSanity(callback: (err: StateError) => void) {
   return (store: Redux.Store<any>) =>
-    <S>(next: Redux.Dispatch<S>) =>
+    (next: Redux.Dispatch) =>
       <A extends Redux.Action>(action: A): A => {
         let invalid: boolean = false;
         (sanityChecks[action.type as string] || []).forEach(check => {

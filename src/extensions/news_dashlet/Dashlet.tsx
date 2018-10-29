@@ -1,14 +1,16 @@
 import Dashlet from '../../controls/Dashlet';
+import EmptyPlaceholder from '../../controls/EmptyPlaceholder';
 import Icon from '../../controls/Icon';
-import bbcode from '../../util/bbcode';
+import { IconButton } from '../../controls/TooltipControls';
+import bbcode, { stripBBCode } from '../../util/bbcode';
 import { ComponentEx, translate } from '../../util/ComponentEx';
+import opn from '../../util/opn';
+import { getSafe } from '../../util/storeHelper';
 
 import rss, {IFeedMessage} from './rss';
 
-import opn = require('opn');
 import * as React from 'react';
 import { Alert, ListGroup, ListGroupItem } from 'react-bootstrap';
-import { getSafe } from '../../util/storeHelper';
 
 export interface IExtra {
   attribute: string;
@@ -18,6 +20,7 @@ export interface IExtra {
 
 export interface IBaseProps {
   title: string;
+  emptyText: string;
   url: string;
   maxLength: number;
   extras: IExtra[];
@@ -31,6 +34,7 @@ interface IComponentState {
 type IProps = IBaseProps;
 
 class RSSDashlet extends ComponentEx<IProps, IComponentState> {
+  private static MAX_MESSAGE_LENGTH = 200;
   private mMounted: boolean = false;
 
   constructor(props) {
@@ -41,19 +45,7 @@ class RSSDashlet extends ComponentEx<IProps, IComponentState> {
 
   public componentDidMount() {
     this.mMounted = true;
-    rss(this.props.url)
-    .then(result => {
-      if (this.mMounted) {
-        this.setState({
-          messages: result.map(this.transformMessage),
-        });
-    }
-    })
-    .catch((err: Error) => {
-      this.setState({
-        error: err.message,
-      });
-    });
+    this.refresh();
   }
 
   public componentWillUnmount() {
@@ -65,16 +57,58 @@ class RSSDashlet extends ComponentEx<IProps, IComponentState> {
     const { error, messages } = this.state;
     return (
       <Dashlet className='dashlet-news' title={title}>
+        <IconButton
+          className='issues-refresh'
+          icon='refresh'
+          tooltip={t('Refresh Issues')}
+          onClick={this.refresh}
+        />
+
         {error !== undefined ? <Alert>{t('No messages received')}</Alert> : null}
-        {messages !== undefined ? this.renderMessages(messages) : null}
+        {((messages || []).length !== 0) ? this.renderMessages(messages) : this.renderPlaceholder()}
       </Dashlet>
     );
   }
 
+  private renderPlaceholder(): JSX.Element {
+    const { t, emptyText } = this.props;
+    return (
+      <EmptyPlaceholder
+        icon='layout-list'
+        text={emptyText}
+        subtext={t('*crickets chirp*')}
+      />
+    );
+  }
+
+  private refresh = () => {
+    rss(this.props.url)
+    .then(result => {
+      if (this.mMounted) {
+        this.setState({
+          messages: result.map(this.transformMessage),
+        });
+      }
+    })
+    .catch((err: Error) => {
+      if (this.mMounted) {
+        this.setState({
+          error: err.message,
+        });
+      }
+    });
+  }
+
   private transformMessage(input: IFeedMessage): IFeedMessage {
     const res = { ...input };
+
+    const messageInput = getSafe(input, ['nexusmods:summary', '#'], input.description);
     res.titleRendered = bbcode(input.title);
-    res.descriptionRendered = bbcode(getSafe(input, ['nexusmods:summary', '#'], input.description));
+    res.descriptionRendered = bbcode(messageInput);
+    res.descriptionShortened = stripBBCode(messageInput);
+    if (res.descriptionShortened.length > RSSDashlet.MAX_MESSAGE_LENGTH) {
+      res.descriptionShortened = res.descriptionShortened.substr(0, RSSDashlet.MAX_MESSAGE_LENGTH) + '...';
+    }
     return res;
   }
 
@@ -87,8 +121,8 @@ class RSSDashlet extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderMessage = (message: IFeedMessage): JSX.Element => {
-    const { t, extras, maxLength } = this.props;
-    const shortened = message.descriptionRendered[0];
+    const { extras } = this.props;
+    const shortened = message.descriptionShortened;
     if (shortened === undefined) {
       return;
     }
@@ -104,7 +138,7 @@ class RSSDashlet extends ComponentEx<IProps, IComponentState> {
           style={{ background: image !== undefined ? `url(${image.url})` : undefined }}
         />
         <h4><a href={message.link} onClick={this.openMore}>{message.titleRendered}</a></h4>
-        {shortened}
+        <p className='rss-summary'>{shortened}</p>
         {
           extras !== undefined
             ? (

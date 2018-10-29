@@ -8,7 +8,7 @@ export interface ISpinnerProps {
 }
 
 function Spinner(props: ISpinnerProps) {
-  return <Icon className={props.className} name='spinner' style={props.style} />;
+  return <Icon className={props.className} name='spinner' style={props.style} spin />;
 }
 
 export default Spinner;
