@@ -137,11 +137,16 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
   private renderProfile = (profileId: string, features: IProfileFeature[]): JSX.Element => {
     const { t } = this.props;
     const { edit } = this.state;
+
     if (profileId === edit) {
       return this.renderEditProfile();
     }
 
-    const { currentProfile, discoveredGames, games, onSetNextProfile, profiles } = this.props;
+    const { currentProfile, discoveredGames, onSetNextProfile, profiles } = this.props;
+
+    if (profiles[profileId] === undefined) {
+      return null;
+    }
 
     const discovered = discoveredGames[profiles[profileId].gameId];
     const available = (discovered !== undefined) && (discovered.path !== undefined);

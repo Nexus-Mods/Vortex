@@ -56,9 +56,13 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
   }
 
   public componentWillMount() {
-    fs.statAsync(this.imagePath)
-    .then(() => this.setHasProfileImage(true))
-    .catch(() => this.setHasProfileImage(false));
+    if (this.props.profile === undefined) {
+      this.setHasProfileImage(false);
+    } else {
+      fs.statAsync(this.imagePath)
+        .then(() => this.setHasProfileImage(true))
+        .catch(() => this.setHasProfileImage(false));
+    }
   }
 
   public componentDidMount() {
