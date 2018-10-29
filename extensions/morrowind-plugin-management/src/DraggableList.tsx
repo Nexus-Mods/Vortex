@@ -89,7 +89,11 @@ const entryTarget: DropTargetSpec<IItemProps, any, any> = {
       return;
     }
 
-    const hoverBoundingRect = ReactDOM.findDOMNode(component).getBoundingClientRect();
+    const domNode = ReactDOM.findDOMNode(component);
+    if (domNode === null) {
+      return;
+    }
+    const hoverBoundingRect = domNode.getBoundingClientRect();
     const hoverMiddleY = (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2;
     const clientOffset = monitor.getClientOffset();
     const hoverClientY = clientOffset.y - hoverBoundingRect.top;
