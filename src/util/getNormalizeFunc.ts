@@ -35,6 +35,9 @@ export interface INormalizeParameters {
 }
 
 function isCaseSensitiveFailed(testPath: string, reason: string): Promise<boolean> {
+  if (testPath === undefined) {
+    return Promise.resolve(process.platform !== 'win32');
+  }
   const parentPath = path.dirname(testPath);
   if (parentPath === testPath) {
     log('warn', 'failed to determine case sensitivity', {testPath, reason});
