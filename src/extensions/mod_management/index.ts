@@ -16,6 +16,7 @@ import * as fs from '../../util/fs';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
 import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
+import { calcDuration } from '../../util/message';
 import ReduxProp from '../../util/ReduxProp';
 import {
   activeGameId,
@@ -403,7 +404,14 @@ function genUpdateModDeployment() {
           }));
       })
       .catch(UserCanceled, () => undefined)
-      .catch(ProcessCanceled, () => undefined)
+      .catch(ProcessCanceled, err => {
+        api.sendNotification({
+          type: 'warning',
+          title: 'Deployment interrupted',
+          message: err.message,
+          displayMS: calcDuration(err.message.length),
+        });
+      })
       .catch(TemporaryError, err => {
         api.showErrorNotification('Failed to deploy mods, please try again',
                                   err.message, { allowReport: false });
