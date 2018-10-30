@@ -94,7 +94,8 @@ class DownloadGameList extends PureComponentEx<IProps, {}> {
           title: 'Download moved',
           message: fileName,
         });
-      });
+      })
+      .catch(err => this.context.api.showErrorNotification('Unable to move archive', err, { allowReport: ['EPERM','ENOSPC','EEXIST'].indexOf(err.code) === -1 }));
   }
 
   private removeGame = (evt: React.MouseEvent<any>) => {
