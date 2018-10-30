@@ -372,6 +372,10 @@ function queryInfo(api: IExtensionApi, instanceIds: string[]) {
     const dl = state.persistent.downloads.files[dlId];
     const gameId = Array.isArray(dl.game) ? dl.game[0] : dl.game;
     const downloadPath = downloadPathForGame(state, gameId);
+    if ((downloadPath === undefined) || (dl.localPath === undefined)) {
+      // almost certainly dl.localPath is undefined with a bugged download
+      return;
+    }
     api.lookupModMeta({
       fileMD5: dl.fileMD5,
       filePath: path.join(downloadPath, dl.localPath),
