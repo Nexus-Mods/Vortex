@@ -211,7 +211,7 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
   }));
 }
 
-function prettifyNodeErrorMessage(err: any) {
+export function prettifyNodeErrorMessage(err: any): { message: string, replace?: any, allowReport?: boolean } {
   if (err.code === undefined) {
     return { message: err.message, replace: {} };
   } else if (err.code === 'EPERM') {
@@ -219,29 +219,39 @@ function prettifyNodeErrorMessage(err: any) {
     return { message: 'Vortex needs to access "{{filePath}}" is write protected.\n'
             + 'When you configure directories and access rights you need to ensure Vortex can '
             + 'still access data directories.\n'
-            + 'This is usually not a bug in Vortex.', replace: { filePath } };
+            + 'This is usually not a bug in Vortex.', replace: { filePath }, allowReport: false };
   } else if (err.code === 'ENOENT') {
     const filePath = err.path || err.filename;
     return {
       message: 'Vortex tried to access "{{filePath}}" but it doesn\'t exist.',
       replace: { filePath },
+      allowReport: false,
+    };
+  } else if (err.code === 'ENOSPC') {
+    return {
+      message: 'The disk is full',
+      allowReport: false,
     };
   } else if (err.code === 'ENETUNREACH') {
     return {
       message: 'Network server not reachable.',
+      allowReport: false,
     };
   } else if (err.code === 'ECONNABORTED') {
     return {
       message: 'Network connection aborted by the server.',
+      allowReport: false,
     };
   } else if (err.code === 'ECONNREFUSED') {
     return {
       message: 'Network connection refused.',
+      allowReport: false,
     };
   } else if (err.code === 'ETIMEDOUT') {
     return {
       message: 'Network connection to "{{address}}" timed out, please try again.',
-      replace: { address: err.address }
+      replace: { address: err.address },
+      allowReport: false,
     };
   }
 

@@ -8,6 +8,7 @@ import { createErrorReport, isOutdated } from '../../util/errorHandling';
 import * as fs from '../../util/fs';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
 import { log } from '../../util/log';
+import { prettifyNodeErrorMessage } from '../../util/message';
 import { activeProfile, downloadPath } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { setdefault } from '../../util/util';
@@ -318,9 +319,12 @@ class InstallManager {
           : Promise.resolve();
 
         if (installContext !== undefined) {
+          const pretty = prettifyNodeErrorMessage(err);
           // context doesn't have to be set if we canceled early
           prom = prom.then(() => installContext.finishInstallCB(
-            canceled ? 'canceled' : 'failed', undefined, err.message));
+            canceled ? 'canceled' : 'failed',
+            undefined,
+            api.translate(pretty.message, { replace: pretty.replace })));
         }
 
         if (err === undefined) {
@@ -361,7 +365,17 @@ class InstallManager {
             });
         } else {
           const { genHash } = require('modmeta-db');
-          const errMessage = typeof err === 'string' ? err : err.message + '\n' + err.stack;
+          let errMessage: string;
+          let allowReport = true;
+          if (typeof err === 'string') {
+            errMessage = err;
+          } else {
+            const pretty = prettifyNodeErrorMessage(err);
+            errMessage = api.translate(pretty.message, { replace: pretty.replace });
+            if (pretty.allowReport !== undefined) {
+              allowReport = pretty.allowReport;
+            }
+          }
 
           return prom
             .then(() => genHash(archivePath).catch(() => ({})))
@@ -371,7 +385,7 @@ class InstallManager {
                 installContext.reportError(
                     'Installation failed',
                     `The installer "{{ id }}" failed: {{ message }}`,
-                    ['EPERM', 'ENOENT', 'ENOSPC'].indexOf(err.code) === -1, {
+                    allowReport, {
                       id,
                       message: errMessage,
                     });
