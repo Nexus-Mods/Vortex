@@ -296,19 +296,20 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
                                    'Sorry, this download is missing info necessary to resume. '
                                    + 'Please try restarting it.',
                                    undefined, false);
-          } else if ((err.message === 'Moved Permanently') || (err.message === 'Forbidden')) {
-            this.props.onShowError('Failed to download', 'The url is no longer valid',
+          } else if (['moved permanently', 'forbidden', 'gone'].indexOf(err.HTTPStatus.toLowerCase()) !== -1) {
+            this.props.onShowError('Failed to resume download', 'Sorry, the download link is no longer valid. '
+                                 + 'Please restart the download.',
               undefined, false);
           } else if (err.code === 'ECONNRESET') {
-            this.props.onShowError('Failed to download', 'Server closed the connection, please '
+            this.props.onShowError('Failed to resume download', 'Server closed the connection, please '
                                   + 'check your internet connection',
               undefined, false);
           } else if (err.code === 'ETIMEDOUT') {
-            this.props.onShowError('Failed to download', 'Connection timed out, please check '
+            this.props.onShowError('Failed to resume download', 'Connection timed out, please check '
                                   + 'your internet connection',
               undefined, false);
           } else if (err.code === 'ENOSPC') {
-            this.props.onShowError('Failed to download', 'The disk is full',
+            this.props.onShowError('Failed to resume download', 'The disk is full',
               undefined, false);
           } else {
             this.props.onShowError('Failed to download', err);
@@ -418,14 +419,12 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
         (error: Error) => {
         if ((error !== null) && !(error instanceof DownloadIsHTML) && !(error instanceof UserCanceled)) {
           if (error instanceof ProcessCanceled) {
-          this.context.api.showErrorNotification('Failed to start download',
-            error.message, {
-            allowReport: false,
-          });
-          } else {
-            this.context.api.showErrorNotification('Failed to start download', error, {
-              allowReport: true,
+            this.context.api.showErrorNotification('Failed to start download',
+              error.message, {
+              allowReport: false,
             });
+          } else {
+            this.context.api.showErrorNotification('Failed to start download', error);
           }
         }
       }));

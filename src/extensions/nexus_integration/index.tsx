@@ -226,34 +226,68 @@ function doDownload(api: IExtensionApi, url: string) {
   });
 }
 
-function once(api: IExtensionApi) {
-  const registerFunc = (def: boolean) => {
-    api.registerProtocol('nxm', def, (url: string) => {
-      if (sel.apiKey(api.store.getState()) === undefined) {
-        api.sendNotification({
-          type: 'info',
-          title: 'Not logged in',
-          message: 'Nexus Mods requires Vortex to be logged in for downloading',
-          actions: [
-            {
-              title: 'Log in',
-              action: (dismiss: () => void) => {
-                requestLogin(api, (err) => {
-                  if (err !== null) {
-                    api.showErrorNotification('Failed to get access key', err);
-                  } else {
-                    dismiss();
-                    doDownload(api, url);
-                  }
-                });
-              },
+function ensureLoggedIn(api: IExtensionApi): Promise<void> {
+  if (sel.apiKey(api.store.getState()) === undefined) {
+    return new Promise((resolve, reject) => {
+      api.sendNotification({
+        type: 'info',
+        title: 'Not logged in',
+        message: 'Nexus Mods requires Vortex to be logged in for downloading',
+        actions: [
+          {
+            title: 'Log in',
+            action: (dismiss: () => void) => {
+              requestLogin(api, (err) => {
+                if (err !== null) {
+                  return reject(err);
+                } else {
+                  dismiss();
+                  return resolve();
+                }
+              });
             },
-          ],
-        });
-      } else {
-        doDownload(api, url);
-      }
+          },
+        ],
+      });
     });
+  } else {
+    return Promise.resolve();
+  }
+}
+
+function once(api: IExtensionApi) {
+  const registerFunc = (def?: boolean) => {
+    if (def === undefined) {
+      api.store.dispatch(setAssociatedWithNXMURLs(true));
+    }
+
+    if (api.registerProtocol('nxm', def !== false, (url: string) => {
+      ensureLoggedIn(api)
+        .then(() => {
+          doDownload(api, url);
+        })
+        .catch(err => {
+          api.showErrorNotification('Failed to get access key', err);
+        });
+    })) {
+      api.sendNotification({
+        type: 'info',
+        message: 'Vortex will now handle Nexus Download links',
+        actions: [
+          { title: 'More', action: () => {
+            api.showDialog('info', 'Download link handling', {
+              text: 'Only one application can be set up to handle Nexus "Mod Manager Download" links, Vortex is now '
+                  + 'registered to do that.\n\n'
+                  + 'To use a different application for these links, please go to Settings->Downloads, disable '
+                  + 'the "Handle Nexus Links" option, then go to the application you do want to handle the links '
+                  + 'and enable the corresponding option there.',
+            }, [
+              { label: 'Close' },
+            ]);
+          } },
+        ]
+      });
+    };
   };
 
   { // limit lifetime of state
@@ -269,7 +303,7 @@ function once(api: IExtensionApi) {
     const gameMode = activeGameId(state);
     api.store.dispatch(setUpdatingMods(gameMode, false));
 
-    registerFunc(state.settings.nexus.associateNXM);
+    registerFunc(getSafe(state, ['settings', 'nexus', 'associateNXM'], undefined));
 
     if (state.confidential.account.nexus.APIKey !== undefined) {
       (window as any).requestIdleCallback(() => {
@@ -338,6 +372,10 @@ function queryInfo(api: IExtensionApi, instanceIds: string[]) {
     const dl = state.persistent.downloads.files[dlId];
     const gameId = Array.isArray(dl.game) ? dl.game[0] : dl.game;
     const downloadPath = downloadPathForGame(state, gameId);
+    if ((downloadPath === undefined) || (dl.localPath === undefined)) {
+      // almost certainly dl.localPath is undefined with a bugged download
+      return;
+    }
     api.lookupModMeta({
       fileMD5: dl.fileMD5,
       filePath: path.join(downloadPath, dl.localPath),
@@ -371,7 +409,8 @@ function init(context: IExtensionContextExt): boolean {
     const gameMode = activeGameId(state);
     const mod: IMod = getSafe(state.persistent.mods, [gameMode, instanceIds[0]], undefined);
     if (mod !== undefined) {
-      context.api.events.emit('open-mod-page', mod.attributes.downloadGame, mod.attributes.modId);
+      const gameId = mod.attributes.downloadGame !== undefined ? mod.attributes.downloadGame : gameMode;
+      context.api.events.emit('open-mod-page', gameId, mod.attributes.modId);
     }
   }, instanceIds => {
     const state: IState = context.api.store.getState();
@@ -391,7 +430,7 @@ function init(context: IExtensionContextExt): boolean {
     const games = knownGames(state);
     const gameId = convertNXMIdReverse(games, url.gameId);
     const pageId = nexusGameId(gameById(state, gameId));
-    return Promise.resolve().then(() => nexus.getDownloadURLs(url.modId, url.fileId, pageId))
+    return Promise.resolve().then(() => nexus.getDownloadURLs(url.modId, url.fileId, url.key, url.expires, pageId))
       .then((res: IDownloadURL[]) => ({ urls: res.map(url => url.URI), meta: {} }));
   });
 
@@ -435,11 +474,6 @@ function init(context: IExtensionContextExt): boolean {
         opn(`https://www.nexusmods.com/${nexusGameId(game)}`).catch(err => undefined);
       });
   });
-
-  context.registerToDo('nxm-associated', 'settings', () => ({
-    associated: context.api.store.getState().settings.nexus.associateNXM,
-  }), 'link', 'Handle Nexus Links', associateNXM, undefined, (t, props: any) =>
-    <span>{props.associated ? t('Yes') : t('No')}</span>, 15);
 
   context.registerAction('download-icons', 100, InputButton, {},
     () => ({

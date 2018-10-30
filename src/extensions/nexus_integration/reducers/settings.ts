@@ -12,6 +12,6 @@ export const settingsReducer: IReducerSpec = {
      setSafe(state, [ 'associateNXM' ], payload),
   },
   defaults: {
-    associateNXM: false,
+    associateNXM: undefined,
   },
 };

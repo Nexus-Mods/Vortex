@@ -14,11 +14,6 @@ import { getEmptyImage } from 'react-dnd-html5-backend';
 import { findDOMNode } from 'react-dom';
 import { connect } from 'react-redux';
 
-function splitOnce(input: string, separator: string): string[] {
-  const idx = input.indexOf(separator);
-  return [input.slice(0, idx), input.slice(idx + 1)];
-}
-
 export interface IBaseProps {
   profile: IProfile;
   t: I18next.TranslationFunction;

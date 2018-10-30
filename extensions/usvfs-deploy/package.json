@@ -13,11 +13,11 @@
   "license": "GPL-3.0",
   "devDependencies": {
     "copyfiles": "^1.2.0",
-    "ts-loader": "2.3.4",
-    "webpack": "^3.10.0"
+    "ts-loader": "^4.4.2",
+    "webpack": "^4.23.1"
   },
   "dependencies": {
-    "usvfs": "file:../../lib/cpp/usvfs",
+    "usvfs": "TanninOne/node-usvfs",
     "vortex-api": "Nexus-Mods/vortex-api"
   }
 }

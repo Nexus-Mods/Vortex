@@ -21,6 +21,7 @@ import * as os from 'os';
 import * as path from 'path';
 import * as semver from 'semver';
 import {} from 'uuid';
+import { inspect } from 'util';
 
 // tslint:disable-next-line:no-var-requires
 const opn = require('opn');
@@ -256,7 +257,16 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
  * @param options 
  */
 export function toError(input: any, options?: IErrorOptions): IError {
-  const ten = getFixedT('en');
+  let ten = getFixedT('en');
+  try {
+    ten('dummy');
+  } catch (err) {
+    // can't actually be sure if i18next is initialized - especially if this is the
+    // main process. We could use require('i18next').isInitialized but no clue if
+    // that's reliable.
+    ten = input => input;
+  }
+
   const t = (text: string) => ten(text, { replace: (options || {}).replace });
 
   if (input instanceof Error) {
@@ -268,21 +278,28 @@ export function toError(input: any, options?: IErrorOptions): IError {
       // object, but not an Error
       let message: string;
       let stack: string;
-      if ((input.error !== undefined) && (input.error instanceof Error)) {
+      if (input === null) {
+        // this is bad...
+        message = 'An empty error message was thrown';
+      } else if ((input.error !== undefined) && (input.error instanceof Error)) {
         message = input.error.message;
         stack = input.error.stack;
       } else {
         message = input.message || 'An error occurred';
+        if ((input.message === undefined) && (input.error !== undefined)) {
+          // not sure what this is but need to ensure not to drop any information
+          message = inspect(input.error);
+        }
         stack = input.stack;
       }
 
-      let attributes = Object.keys(input)
+      let attributes = Object.keys(input || {})
           .filter(key => key[0].toUpperCase() === key[0]);
       // if there are upper case characters, this is a custom, not properly typed, error object
       // with upper case attributes, intended to be displayed to the user.
       // Otherwise, who knows what this is, just send everything.
       if (attributes.length == 0) {
-        attributes = Object.keys(input).filter(key => ['message', 'error', 'stack'].indexOf(key) === -1);
+        attributes = Object.keys(input || {}).filter(key => ['message', 'error', 'stack'].indexOf(key) === -1);
       }
 
       const details = attributes.length === 0 ? undefined : attributes
@@ -292,10 +309,10 @@ export function toError(input: any, options?: IErrorOptions): IError {
       return {message, stack, details};
     }
     case 'string': {
-      return { message: t(input) };
+      return { message: 'String exception: ' + input };
     }
     default: {
-      return { message: input as string };
+      return { message: 'Unknown exception: ' + inspect(input) };
     }
   }
 }

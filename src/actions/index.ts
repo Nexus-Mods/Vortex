@@ -21,6 +21,7 @@ export * from '../extensions/nexus_integration/actions/settings';
 export * from '../extensions/gamemode_management/actions/settings';
 
 export * from '../extensions/profile_management/actions/profiles';
+export { setNextProfile } from '../extensions/profile_management/actions/settings';
 
 export * from '../extensions/settings_interface/actions/automation';
 export * from '../extensions/settings_interface/actions/interface';

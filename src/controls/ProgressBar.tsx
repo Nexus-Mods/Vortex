@@ -78,7 +78,7 @@ class ProgressBar extends React.PureComponent<IBaseProps, IProgressBarState> {
   private renderTimeLeft(percent: number): JSX.Element {
     const elapsed = Date.now() - this.state.startTime;
 
-    if (Number.isNaN(elapsed)) {
+    if (Number.isNaN(elapsed) || (percent === 0)) {
       return null;
     }
 

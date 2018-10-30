@@ -2,8 +2,6 @@ import { forgetExtension, setExtensionEnabled } from '../actions/app';
 import { addNotification, dismissNotification } from '../actions/notifications';
 import { setExtensionLoadFailures } from '../actions/session';
 
-import { needToDeploy } from '../extensions/mod_management/selectors';
-import getText from '../extensions/mod_management/texts';
 import { DialogActions, DialogType, IDialogContent, showDialog } from '../actions/notifications';
 import { ExtensionInit } from '../types/Extension';
 import {
@@ -66,8 +64,6 @@ if (remote !== undefined) {
   app = remote.app;
   dialog = remote.dialog;
 }
-
-type DeployResult = 'auto' | 'yes' | 'skip' | 'cancel';
 
 interface IRegisteredExtension {
   name: string;
@@ -259,6 +255,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
       registerActionCheck: undefined,
       registerMerge: undefined,
       registerInterpreter: undefined,
+      registerStartHook: undefined,
       requireVersion: undefined,
       requireExtension: undefined,
       api: undefined,
@@ -351,6 +348,7 @@ class ExtensionManager {
   private mExtensionState: { [extId: string]: IExtensionState };
   private mLoadFailures: { [extId: string]: IExtensionLoadFailure[] };
   private mInterpreters: { [ext: string]: (input: IRunParameters) => IRunParameters };
+  private mStartHooks: Array<{ priority: number, id: string, hook: (input: IRunParameters) => Promise<IRunParameters> }>;
 
   constructor(initStore?: Redux.Store<any>, eventEmitter?: NodeJS.EventEmitter) {
     this.mEventEmitter = eventEmitter;
@@ -358,6 +356,7 @@ class ExtensionManager {
       this.mEventEmitter.setMaxListeners(100);
     }
     this.mInterpreters = {};
+    this.mStartHooks = [];
     this.mApi = {
       showErrorNotification: this.showErrorBox,
       selectFile: this.selectFile,
@@ -527,6 +526,12 @@ class ExtensionManager {
                                        apply: (input: IRunParameters) => IRunParameters) => {
       this.mInterpreters[extension.toLowerCase()] = apply;
     });
+    this.apply('registerStartHook', (priority: number, id: string, hook: (input: IRunParameters) => Promise<IRunParameters>) => {
+      this.mStartHooks.push({ priority, id, hook });
+    });
+
+    this.mStartHooks.sort((lhs, rhs) => lhs.priority - rhs.priority);
+
     return reducers;
   }
 
@@ -804,18 +809,19 @@ class ExtensionManager {
   }
 
   private registerProtocol = (protocol: string, def: boolean,
-                              callback: (url: string) => void) => {
+                              callback: (url: string) => void): boolean => {
     log('info', 'register protocol', { protocol });
+    // make it work when using the development version
+    const args = process.execPath.endsWith('electron.exe')
+      ? [getVortexPath('package'), '-d']
+      : ['-d'];
+
+    let haveToRegister = def && !app.isDefaultProtocolClient(protocol, process.execPath, args)
     if (def) {
-      if (process.execPath.endsWith('electron.exe')) {
-        // make it work when using the development version
-        app.setAsDefaultProtocolClient(protocol, process.execPath,
-          [getVortexPath('package'), '-d']);
-      } else {
-        app.setAsDefaultProtocolClient(protocol, process.execPath, ['-d']);
-      }
+      app.setAsDefaultProtocolClient(protocol, process.execPath, args);
     }
     this.mProtocolHandlers[protocol] = callback;
+    return haveToRegister;
   }
 
   private registerArchiveHandler = (extension: string, handler: ArchiveHandlerCreator) => {
@@ -920,60 +926,25 @@ class ExtensionManager {
       .then((handler: IArchiveHandler) => Promise.resolve(new Archive(handler)));
   }
 
-  private queryDeploy = (): Promise<DeployResult> => {
-    const state: IState = this.mApi.store.getState();
-    if (!needToDeploy(state)) {
-      return Promise.resolve<DeployResult>('auto');
-    } else {
-      const t = this.mApi.translate;
-      return this.mApi.showDialog('question', t('Pending deployment'), {
-        bbcode: t('Mod deployment {{more}} is pending.[br][/br]'
-            + 'This means that changes made to mods such as updating, '
-            + 'enabling/disabling, as well as newly set mod rules need to be deployed to take effect.[br][/br]'
-            + 'You can skip this step, ignoring (but not reverting) newly made changes to mods and mod rules, '
-            + 'or deploy now to commit the changes.', {
-              replace: { more: `[More id='more-deploy' name='${t('Deployment')}']${getText('deployment', t)}[/More]` }
-            })
-      }, [ { label: 'Cancel' }, { label: 'Skip' }, { label: 'Deploy' } ])
-        .then((result) => {
-          switch (result.action) {
-            case 'Skip': return Promise.resolve<DeployResult>('skip');
-            case 'Deploy': return Promise.resolve<DeployResult>('yes');
-            default: return Promise.resolve<DeployResult>('cancel');
-          }
-        });
-    }
-  }
-
-  private checkDeploy(): Promise<boolean> {
-    return this.queryDeploy()
-      .then(shouldDeploy => {
-        if (shouldDeploy === 'yes') {
-          return new Promise<boolean>((resolve, reject) => {
-            this.mApi.events.emit('deploy-mods', (err) => {
-              if (err !== null) {
-                reject(err);
-              } else {
-                resolve(true);
-              }
-            });
-          });
-        } else if (shouldDeploy === 'auto') {
-          return new Promise<boolean>((resolve, reject) => {
-            this.mApi.events.emit('await-activation', (err: Error) => {
-              if (err !== null) {
-                reject(err);
-              } else {
-                resolve(true);
-              }
-            });
-          });
-        } else if (shouldDeploy === 'cancel') {
-          return Promise.resolve(false);
-        } else { // skip
-          return Promise.resolve(true);
-        }
-      });
+  private applyStartHooks(input: IRunParameters) : Promise<IRunParameters> {
+    let updated = input;
+    return Promise.each(this.mStartHooks, hook => hook.hook(updated)
+      .then(newParameters => {
+        updated = newParameters;
+      })
+      .catch(UserCanceled, err => {
+        log('debug', 'start canceled by user');
+        return Promise.reject(err);
+      })
+      .catch(ProcessCanceled, err => {
+        log('debug', 'hook canceled start', err.message);
+        return Promise.reject(err);
+      })
+      .catch(err => {
+        log('error', 'hook failed', err);
+        return Promise.reject(err);
+      }))
+    .then(() => updated);
   }
 
   private runExecutable =
@@ -989,8 +960,12 @@ class ExtensionManager {
           return Promise.reject(err);
         }
       }
-      return (options.suggestDeploy === true ? this.checkDeploy() : Promise.resolve(true))
-      .then(cont => cont ? new Promise<void>((resolve, reject) => {
+      return this.applyStartHooks({ executable, args, options })
+      .then(updatedParameters => {
+        ({ executable, args, options } = updatedParameters);
+        return Promise.resolve();
+      })
+      .then(() => new Promise<void>((resolve, reject) => {
         const cwd = options.cwd || path.dirname(executable);
         const env = { ...process.env, ...options.env };
         try {
@@ -1036,7 +1011,8 @@ class ExtensionManager {
             return reject(err);
           }
         }
-      }) : Promise.resolve())
+      }))
+        .catch(ProcessCanceled, () => null)
         .catch(err => (err.errno === 1223)
           ? Promise.reject(new UserCanceled())
           : Promise.reject(err));

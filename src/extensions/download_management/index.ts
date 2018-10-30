@@ -522,7 +522,8 @@ function init(context: IExtensionContextExt): boolean {
               speedsDebouncer.schedule();
             }
           }, `Nexus Client v2.${app.getVersion()}`, protocolHandlers);
-      observer = observeImpl(context.api.events, store, manager);
+      observer =
+          observeImpl(context.api, manager);
 
       const downloads = (store.getState() as IState).persistent.downloads.files;
       const interruptedDownloads = Object.keys(downloads)

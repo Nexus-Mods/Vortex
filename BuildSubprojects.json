@@ -117,7 +117,7 @@
       "name": "theme-switcher",
       "path": "extensions/theme-switcher",
       "removeModules": ["vortex-api"],
-      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "themes/**/*.scss", "src/", "*.json", "webpack.config.js"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/theme-switcher"
     },
     {

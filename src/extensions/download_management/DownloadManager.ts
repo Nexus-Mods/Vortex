@@ -172,7 +172,7 @@ class DownloadWorker {
   }
 
   private handleError(err) {
-    log('error', 'chunk error', { id: this.mJob.workerId, err, ended: this.mEnded });
+    log('warn', 'chunk error', { id: this.mJob.workerId, err, ended: this.mEnded });
     if (this.mJob.errorCB !== undefined) {
       this.mJob.errorCB(err);
     }
@@ -240,8 +240,12 @@ class DownloadWorker {
         });
       } else {
         this.handleError({
-          message: response.statusMessage,
-          http_headers: JSON.stringify(response.headers),
+          message: 'Download failed, an error was reported by the server',
+          stack: new Error().stack,
+          HTTPCode: response.statusCode,
+          HTTPStatus: response.statusMessage,
+          URL: this.mJob.url,
+          Headers: JSON.stringify(response.headers),
         });
       }
       return;

@@ -77,6 +77,7 @@ import crashDump from 'crash-dump';
 import {} from './util/extensionRequire';
 import { reduxLogger } from './util/reduxLogger';
 import { ThunkStore } from './types/IExtensionContext';
+import { UserCanceled } from './util/api';
 
 log('debug', 'renderer process started', { pid: process.pid });
 
@@ -119,9 +120,18 @@ function errorHandler(evt: any) {
       || ((evt.detail !== undefined) ? evt.detail.reason : undefined)
       || evt.message;
 
+  if (error instanceof UserCanceled) {
+    return;
+  }
+
+  if (error === undefined) {
+    log('error', 'empty error object ignored', { wasPromise: evt.promise !== undefined });
+    return;
+  }
+
   if ((error !== undefined)
       && (error.stack !== undefined)
-      // TODO: socket hang up should trigger another error that we catch
+      // TODO: socket hang up should trigger another error that we catch,
       //  unfortunately I don't know yet if this is caused by mod download
       //  or vortex update check or api requests and why it's unhandled but
       //  reports indicate it's probably the api
@@ -203,6 +213,9 @@ const globalNotifications = new GlobalNotifications(extensions.getApi());
 ipcRenderer.on('external-url', (event, url) => {
   startupPromise
     .then(() => {
+      if (typeof(url) !== 'string') {
+        return;
+      }
       const protocol = url.split(':')[0];
 
       const handler = extensions.getProtocolHandler(protocol);

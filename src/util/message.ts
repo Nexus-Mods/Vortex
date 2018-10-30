@@ -121,6 +121,19 @@ function genFeedbackText(response: IFeedbackResponse, githubInfo?: any): string 
   return lines.join('[br][/br]');
 }
 
+const noReportErrors = ['ETIMEDOUT', 'ECONNREFUSED', 'ECONNABORTED', 'ENETUNREACH'];
+
+function shouldAllowReport(err: string | Error | any, options?: IErrorOptions): boolean {
+  if ((options !== undefined) && (options.allowReport !== undefined)) {
+    return options.allowReport;
+  }
+  if (err.code === undefined) {
+    return true;
+  }
+
+  return noReportErrors.indexOf(err.code) === -1;
+}
+
 /**
  * show an error notification with an optional "more" button that displays further details
  * in a modal dialog.
@@ -139,7 +152,9 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
                           options?: IErrorOptions) {
   const err = renderError(details);
 
-  log('error', message, err);
+  const allowReport = shouldAllowReport(details, options);
+
+  log(allowReport ? 'error' : 'warn', message, err);
 
   const content: IDialogContent = (truthy(options) && options.isHTML) ? {
     htmlText: err.message || err.text,
@@ -161,7 +176,7 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
 
   const actions: IDialogAction[] = [];
 
-  if (!isOutdated() && ((options === undefined) || (options.allowReport !== false))) {
+  if (!isOutdated() && allowReport) {
     actions.push({
       label: 'Report',
       action: () => sendReport('error', toError(details, options), ['error'], '', process.type)
@@ -196,7 +211,7 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
   }));
 }
 
-function prettifyNodeErrorMessage(err: any) {
+export function prettifyNodeErrorMessage(err: any): { message: string, replace?: any, allowReport?: boolean } {
   if (err.code === undefined) {
     return { message: err.message, replace: {} };
   } else if (err.code === 'EPERM') {
@@ -204,14 +219,42 @@ function prettifyNodeErrorMessage(err: any) {
     return { message: 'Vortex needs to access "{{filePath}}" is write protected.\n'
             + 'When you configure directories and access rights you need to ensure Vortex can '
             + 'still access data directories.\n'
-            + 'This is usually not a bug in Vortex.', replace: { filePath } };
+            + 'This is usually not a bug in Vortex.', replace: { filePath }, allowReport: false };
   } else if (err.code === 'ENOENT') {
     const filePath = err.path || err.filename;
     return {
       message: 'Vortex tried to access "{{filePath}}" but it doesn\'t exist.',
       replace: { filePath },
+      allowReport: false,
+    };
+  } else if (err.code === 'ENOSPC') {
+    return {
+      message: 'The disk is full',
+      allowReport: false,
+    };
+  } else if (err.code === 'ENETUNREACH') {
+    return {
+      message: 'Network server not reachable.',
+      allowReport: false,
+    };
+  } else if (err.code === 'ECONNABORTED') {
+    return {
+      message: 'Network connection aborted by the server.',
+      allowReport: false,
+    };
+  } else if (err.code === 'ECONNREFUSED') {
+    return {
+      message: 'Network connection refused.',
+      allowReport: false,
+    };
+  } else if (err.code === 'ETIMEDOUT') {
+    return {
+      message: 'Network connection to "{{address}}" timed out, please try again.',
+      replace: { address: err.address },
+      allowReport: false,
     };
   }
+
   return {
     message: err.message,
   };
@@ -223,7 +266,12 @@ function renderCustomError(err: any) {
     res.text = 'Unknown error';
   } else if ((err.error !== undefined) && (err.error instanceof Error)) {
     const pretty = prettifyNodeErrorMessage(err.error);
-    res.text = pretty.message;
+    if (err.message !== undefined) {
+      res.text = err.message;
+      res.message = pretty.message;
+    } else {
+      res.text = pretty.message;
+    }
     res.parameters = pretty.replace;
   } else {
     res.text = err.message || 'An error occurred';
@@ -235,10 +283,16 @@ function renderCustomError(err: any) {
     attributes = Object.keys(err)
       .filter(key => ['message', 'error'].indexOf(key) === -1);
   }
-  res.message = attributes
-      .map(key => key + ':\t' + err[key])
-      .join('\n');
-  if (res.message.length === 0) {
+  if (attributes.length > 0) {
+    const old = res.message;
+    res.message = attributes
+        .map(key => key + ':\t' + err[key])
+        .join('\n');
+    if (old !== undefined) {
+      res.message = old + '\n' + res.message;
+    }
+  }
+  if ((res.message !== undefined) && (res.message.length === 0)) {
     res.message = undefined;
   }
   return res;
@@ -248,7 +302,7 @@ function renderCustomError(err: any) {
  * render error message for display to the user
  * @param err 
  */
-function renderError(err: string | Error | any):
+export function renderError(err: string | Error | any):
     { message?: string, text?: string, parameters?: any, wrap: boolean } {
   if (Array.isArray(err)) {
     err = err[0];

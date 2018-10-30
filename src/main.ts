@@ -20,6 +20,7 @@ import {} from './util/requireRebuild';
 import Application from './app/Application';
 
 import commandLine from './util/commandLine';
+import { UserCanceled } from './util/CustomErrors';
 import { sendReportFile, terminate, toError } from './util/errorHandling';
 // ensures tsc includes this dependency
 import {} from './util/extensionRequire';
@@ -32,17 +33,31 @@ process.env.Path = process.env.Path + path.delimiter + __dirname;
 let application: Application;
 
 const handleError = (error: any) => {
+  if (error instanceof UserCanceled) {
+    return;
+  }
+
+  if (error === undefined) {
+    return;
+  }
+
   terminate(toError(error), {});
 };
 
 function main() {
   const mainArgs = commandLine(process.argv);
-
   if (mainArgs.report) {
     return sendReportFile(mainArgs.report)
     .then(() => {
       app.quit();
     });
+  }
+
+  let fixedT = require('i18next').getFixedT('en');
+  try {
+    fixedT('dummy');
+  } catch (err) {
+    fixedT = input => input;
   }
 
   if (mainArgs.run !== undefined) {

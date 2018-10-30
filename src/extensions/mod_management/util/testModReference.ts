@@ -2,8 +2,6 @@ import { truthy } from '../../../util/util';
 
 import { IMod, IModReference } from '../types/IMod';
 
-import { modNameFromAttributes } from './modName';
-
 import * as minimatch from 'minimatch';
 import * as path from 'path';
 import * as semver from 'semvish';
@@ -76,6 +74,10 @@ function testRef(mod: IModLookupInfo, ref: IModReference): boolean {
 }
 
 export function testModReference(mod: IMod | IModLookupInfo, reference: IModReference) {
+  if (mod === undefined) {
+    return false;
+  }
+
   if ((mod as any).attributes) {
     const lookup: IModLookupInfo = {
       id: mod.id,

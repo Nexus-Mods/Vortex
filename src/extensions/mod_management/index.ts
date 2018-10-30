@@ -16,6 +16,7 @@ import * as fs from '../../util/fs';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
 import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
+import { calcDuration } from '../../util/message';
 import ReduxProp from '../../util/ReduxProp';
 import {
   activeGameId,
@@ -65,6 +66,7 @@ import InstallManager from './InstallManager';
 import deployMods from './modActivation';
 import mergeMods, { MERGED_PATH } from './modMerging';
 import getText from './texts';
+import preStartDeployHook from './preStartDeployHook';
 
 import * as Promise from 'bluebird';
 import * as path from 'path';
@@ -402,7 +404,14 @@ function genUpdateModDeployment() {
           }));
       })
       .catch(UserCanceled, () => undefined)
-      .catch(ProcessCanceled, () => undefined)
+      .catch(ProcessCanceled, err => {
+        api.sendNotification({
+          type: 'warning',
+          title: 'Deployment interrupted',
+          message: err.message,
+          displayMS: calcDuration(err.message.length),
+        });
+      })
       .catch(TemporaryError, err => {
         api.showErrorNotification('Failed to deploy mods, please try again',
                                   err.message, { allowReport: false });
@@ -791,6 +800,8 @@ function init(context: IExtensionContext): boolean {
   registerAttributeExtractor(200, upgradeExtractor);
 
   registerInstaller('fallback', 1000, basicInstaller.testSupported, basicInstaller.install);
+
+  context.registerStartHook(100, 'check-deployment', input => preStartDeployHook(context.api, input));
 
   context.once(() => once(context.api));
 

@@ -114,10 +114,9 @@ export function quickDiscovery(knownGames: IGame[],
           resolve();
         });
     } catch (err) {
-      log('warn', 'failed to use game support plugin', { id: game.id, err: err.message });
-      // TODO: this may not be the right thing to do, just because one game support plugin doesn't
-      //   work we shouldn't cancel the whole discovery?
-      reject(err);
+      log('error', 'failed to use game support plugin', { id: game.id, err: err.message });
+      // don't escalate exception because a single game shouldn't break everything
+      return resolve();
     }
   })).then(gameNames => gameNames.filter(name => name !== undefined));
 }

@@ -248,8 +248,19 @@ function removeDisapearedGames(api: IExtensionApi): Promise<void> {
 function resetSearchPaths(api: IExtensionApi) {
   const store = api.store;
 
+  let list;
+  try {
+    list = require('drivelist');
+  } catch (err) {
+    api.showErrorNotification('Failed to query list of system drives', 
+      {
+        message: 'Vortex was not able to query the operating system for the list of system drives. '
+            + 'If this error persists, please configure the list manually.',
+        error: err
+      }, { allowReport: false });
+    return;
+  }
   store.dispatch(clearSearchPaths());
-  const {list} = require('drivelist');
   list((error, disks) => {
     if (error) {
       api.showErrorNotification(

@@ -12,5 +12,8 @@
   "Save": "Speichern",
   "Autosort enabled": "Automatisches Sortieren aktiv",
   "Loads after:": "Lädt nach:",
-  "load after {{ reference }}": "Nach {{ reference }} laden"
+  "load after {{ reference }}": "Nach {{ reference }} laden",
+  "Autosort Enabled": "Automatisches Sortieren aktiv",
+  "Sort Now": "Jetzt sortieren",
+  "Autosort Disabled": "Automatisches Sortieren inaktiv"
 }

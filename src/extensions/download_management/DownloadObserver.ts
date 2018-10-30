@@ -1,8 +1,9 @@
+import { IExtensionApi } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
 import {ProcessCanceled, UserCanceled} from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import {log} from '../../util/log';
-import {showError} from '../../util/message';
+import {showError, renderError} from '../../util/message';
 import * as selectors from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { truthy } from '../../util/util';
@@ -22,6 +23,7 @@ import {IChunk} from './types/IChunk';
 import {IDownload} from './types/IDownload';
 import { IDownloadResult } from './types/IDownloadResult';
 import { ProgressCallback } from './types/ProgressCallback';
+import { IProtocolHandlers } from './types/ProtocolHandlers';
 import getDownloadGames from './util/getDownloadGames';
 
 import DownloadManager, { DownloadIsHTML } from './DownloadManager';
@@ -56,12 +58,12 @@ function progressUpdate(store: Redux.Store<any>, dlId: string, received: number,
  * @class DownloadObserver
  */
 export class DownloadObserver {
-  private mStore: Redux.Store<any>;
+  private mApi: IExtensionApi;
   private mManager: DownloadManager;
 
-  constructor(events: NodeJS.EventEmitter, store: Redux.Store<any>,
-              manager: DownloadManager) {
-    this.mStore = store;
+  constructor(api: IExtensionApi, manager: DownloadManager) {
+    this.mApi = api;
+    const events = api.events;
     this.mManager = manager;
 
     events.on('remove-download',
@@ -75,28 +77,11 @@ export class DownloadObserver {
                   this.handleStartDownload(urls, modInfo, fileName, events, callback));
   }
 
-  private translateError(err: any): { message: string, url?: string } {
-    const details: any = {
-      message: err.message,
-    };
-    if (err.http_headers !== undefined) {
-      if (err.http_headers.nexuserror !== undefined) {
-        details.message = err.http_headers.nexuserrorinfo;
-      } else if (err.http_headers.status !== undefined) {
-        details.message = err.http_headers.status;
-      }
-    } else if (err.code !== undefined) {
-      if (err.code === 'ENOSPC') {
-        details.message = 'The disk is full';
-      } else if (err.code === 'ECONNRESET') {
-        details.message = 'Server refused the connection';
-      }
-    }
+  private translateError(err: any): string {
+    const t = this.mApi.translate;
 
-    if (err.request !== undefined) {
-      details.url = err.request;
-    }
-    return details;
+    const details = renderError(err);
+    return `${t(details.text, {replace: details.parameters})}\n\n${t(details.message, { replace: details.parameters })}`;
   }
 
   private handleStartDownload(urls: string[],
@@ -121,7 +106,7 @@ export class DownloadObserver {
       }
     }
 
-    const state: IState = this.mStore.getState();
+    const state: IState = this.mApi.store.getState();
     const gameMode = (modInfo || {}).game || selectors.activeGameId(state);
 
     if (gameMode === undefined) {
@@ -132,7 +117,7 @@ export class DownloadObserver {
       return;
     }
 
-    this.mStore.dispatch(
+    this.mApi.store.dispatch(
       initDownload(id, typeof(urls) ===  'function' ? [] : urls, modInfo, gameMode));
 
     const downloadPath = selectors.downloadPathForGame(state, gameMode);
@@ -145,12 +130,12 @@ export class DownloadObserver {
           this.handleDownloadFinished(id, callback, res);
         })
         .catch(DownloadIsHTML, err => {
-          const innerState: IState = this.mStore.getState();
+          const innerState: IState = this.mApi.store.getState();
           const filePath: string =
             getSafe(innerState.persistent.downloads.files, [id, 'localPath'], undefined);
 
-          this.mStore.dispatch(removeDownload(id));
-          this.mStore.dispatch(showURL(urls[0]));
+          this.mApi.store.dispatch(removeDownload(id));
+          this.mApi.store.dispatch(showURL(urls[0]));
           if (callback !== undefined) {
             callback(err, id);
           }
@@ -158,18 +143,24 @@ export class DownloadObserver {
             fs.removeAsync(path.join(downloadPath, filePath));
           }
         })
-        .catch(UserCanceled, () => {
-          this.mStore.dispatch(removeDownload(id));
-        })
-        .catch((err: any) => {
-          const details: { message: string, url?: string } = this.translateError(err);
-          log('warn', 'download failed', {message: details.message, err: util.inspect(err)});
-          showError(this.mStore.dispatch, 'Download failed', details, {
-            allowReport: false,
-          });
-          this.mStore.dispatch(finishDownload(id, 'failed', { message: details.message }));
+        .catch(UserCanceled, err => {
+          this.mApi.store.dispatch(removeDownload(id));
           if (callback !== undefined) {
             callback(err, id);
+          }
+        })
+        .catch((err: any) => {
+          const message = this.translateError(err);
+          log('warn', 'download failed', {message: message, err: util.inspect(err)});
+
+          this.mApi.store.dispatch(finishDownload(id, 'failed', { message }));
+          if (callback !== undefined) {
+            callback(err, id);
+          } else {
+            // only report error if there was no callback, otherwise it's the job of the caller to report
+            showError(this.mApi.store.dispatch, 'Download failed', message, {
+              allowReport: false,
+            });
           }
         });
   }
@@ -178,19 +169,18 @@ export class DownloadObserver {
                                  callback: (error: Error, id: string) => void,
                                  res: IDownloadResult) {
     const fileName = path.basename(res.filePath);
-    const state: IState = this.mStore.getState();
     if (truthy(fileName)) {
       log('debug', 'setting final download name', { id, fileName });
-      this.mStore.dispatch(setDownloadFilePath(id, fileName));
+      this.mApi.store.dispatch(setDownloadFilePath(id, fileName));
     } else {
       log('error', 'finished download has no filename?', res);
     }
     log('debug', 'unfinished chunks', { chunks: res.unfinishedChunks });
     if (res.unfinishedChunks.length > 0) {
-      this.mStore.dispatch(pauseDownload(id, true, res.unfinishedChunks));
+      this.mApi.store.dispatch(pauseDownload(id, true, res.unfinishedChunks));
     } else if (res.filePath.toLowerCase().endsWith('.html')) {
-      this.mStore.dispatch(downloadProgress(id, res.size, res.size, [], undefined));
-      this.mStore.dispatch(
+      this.mApi.store.dispatch(downloadProgress(id, res.size, res.size, [], undefined));
+      this.mApi.store.dispatch(
           finishDownload(id, 'redirect', {htmlFile: res.filePath}));
       if (callback !== undefined) {
         callback(new Error('html result'), id);
@@ -199,9 +189,12 @@ export class DownloadObserver {
       const {genHash} = require('modmeta-db');
       genHash(res.filePath)
           .then((md5Hash: IHashResult) => {
-            this.mStore.dispatch(setDownloadHash(id, md5Hash.md5sum));
+            this.mApi.store.dispatch(setDownloadHash(id, md5Hash.md5sum));
           })
-          .then(() => {
+          .catch(err => callback(err, id))
+          .finally(() => {
+            this.mApi.store.dispatch(finishDownload(id, 'finished', undefined));
+
             if (callback !== undefined) {
               callback(null, id);
             }
@@ -212,7 +205,7 @@ export class DownloadObserver {
             }
           })
           .finally(() => {
-            this.mStore.dispatch(finishDownload(id, 'finished', undefined));
+            this.mApi.store.dispatch(finishDownload(id, 'finished', undefined));
           });
     }
   }
@@ -230,14 +223,14 @@ export class DownloadObserver {
         lastUpdateTick = now;
         lastUpdatePerc = newPerc;
       }
-      progressUpdate(this.mStore, id, received, total, chunks,
+      progressUpdate(this.mApi.store, id, received, total, chunks,
                      urls, filePath, small);
     };
   }
 
   private handleRemoveDownload(downloadId: string) {
     const download =
-        this.mStore.getState().persistent.downloads.files[downloadId];
+        this.mApi.store.getState().persistent.downloads.files[downloadId];
     if (download === undefined) {
       log('warn', 'failed to remove download: unknown', {downloadId});
       return;
@@ -247,22 +240,22 @@ export class DownloadObserver {
       this.mManager.stop(downloadId);
     }
     if (truthy(download.localPath) && truthy(download.game)) {
-      const dlPath = selectors.downloadPathForGame(this.mStore.getState(), getDownloadGames(download)[0]);
+      const dlPath = selectors.downloadPathForGame(this.mApi.store.getState(), getDownloadGames(download)[0]);
       fs.removeAsync(path.join(dlPath, download.localPath))
-          .then(() => { this.mStore.dispatch(removeDownload(downloadId)); })
+          .then(() => { this.mApi.store.dispatch(removeDownload(downloadId)); })
           .catch(UserCanceled, () => undefined)
           .catch(err => {
-            showError(this.mStore.dispatch, 'Failed to remove file', err, {
+            showError(this.mApi.store.dispatch, 'Failed to remove file', err, {
                       allowReport: ['EBUSY', 'EPERM'].indexOf(err.code) === -1 });
           });
     } else {
-      this.mStore.dispatch(removeDownload(downloadId));
+      this.mApi.store.dispatch(removeDownload(downloadId));
     }
   }
 
   private handlePauseDownload(downloadId: string) {
     const download =
-        this.mStore.getState().persistent.downloads.files[downloadId];
+        this.mApi.store.getState().persistent.downloads.files[downloadId];
     if (download === undefined) {
       log('warn', 'failed to pause download: unknown', {downloadId});
       return;
@@ -275,17 +268,17 @@ export class DownloadObserver {
   private handleResumeDownload(downloadId: string,
                                callback?: (error: Error, id: string) => void) {
     const download: IDownload =
-        this.mStore.getState().persistent.downloads.files[downloadId];
+        this.mApi.store.getState().persistent.downloads.files[downloadId];
     if (download === undefined) {
       log('warn', 'failed to resume download: unknown', {downloadId});
       return;
     }
     if (download.state === 'paused') {
       const gameMode = getDownloadGames(download)[0];
-      const downloadPath = selectors.downloadPathForGame(this.mStore.getState(), gameMode);
+      const downloadPath = selectors.downloadPathForGame(this.mApi.store.getState(), gameMode);
 
       const fullPath = path.join(downloadPath, download.localPath);
-      this.mStore.dispatch(pauseDownload(downloadId, false, undefined));
+      this.mApi.store.dispatch(pauseDownload(downloadId, false, undefined));
       this.mManager.resume(downloadId, fullPath, download.urls,
                            download.received, download.size, download.startTime, download.chunks,
                            this.genProgressCB(downloadId))
@@ -293,13 +286,24 @@ export class DownloadObserver {
             log('debug', 'download finished (resumed)', { file: res.filePath });
             this.handleDownloadFinished(downloadId, callback, res);
           })
-          .catch(err => {
-            const details = this.translateError(err);
-
-            this.mStore.dispatch(finishDownload(downloadId, 'failed',
-                                                { message: details.message }));
+          .catch(UserCanceled, err => {
+            this.mApi.store.dispatch(removeDownload(downloadId));
             if (callback !== undefined) {
-              callback(err, null);
+              callback(err, downloadId);
+            }
+          })
+         .catch(err => {
+            const message = this.translateError(err);
+
+            this.mApi.store.dispatch(finishDownload(downloadId, 'failed', {
+              message }));
+            if (callback !== undefined) {
+              callback(err, downloadId);
+            } else {
+              // only report error if there was no callback, otherwise it's the job of the caller to report
+              showError(this.mApi.store.dispatch, 'Download failed', message, {
+                allowReport: false,
+              });
             }
           });
     }
@@ -310,9 +314,8 @@ export class DownloadObserver {
  * hook up the download manager to handle internal events
  *
  */
-function observe(events: NodeJS.EventEmitter, store: Redux.Store<any>,
-                 manager: DownloadManager) {
-  return new DownloadObserver(events, store, manager);
+function observe(api: IExtensionApi, manager: DownloadManager) {
+  return new DownloadObserver(api, manager);
 }
 
 export default observe;

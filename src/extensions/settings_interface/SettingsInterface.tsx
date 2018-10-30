@@ -183,7 +183,7 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
                 onToggle={this.toggleProfiles}
               >
                 {t('Enable Profile Management')}
-                <More id='more-profile-settings' name={t('Profiles')}>
+                <More id='more-profile-settings' name={t('Profiles')} wikiId='profiles'>
                   {getTextProfiles('profiles', t)}
                 </More>
               </Toggle>
