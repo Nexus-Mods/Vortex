@@ -114,7 +114,13 @@ class DownloadWorker {
       return;
     }
 
-    const parsed = url.parse(jobUrl);
+    let parsed: url.UrlWithStringQuery;
+    try {
+      parsed = url.parse(jobUrl);
+    } catch (err) {
+      this.handleError(new Error('no valid URL for this download'));
+      return;
+    }
 
     const lib: IHTTP = parsed.protocol === 'https:' ? https : http;
 
@@ -177,7 +183,9 @@ class DownloadWorker {
       this.mJob.errorCB(err);
     }
     if (this.mEnded) {
-      this.mRequest.abort();
+      if (this.mRequest !== undefined) {
+        this.mRequest.abort();
+      }
       if ((['ESOCKETTIMEDOUT', 'ECONNRESET'].indexOf(err.code) !== -1)
           && (this.mDataHistory.length > 0)) {
         // as long as we made progress on this chunk, retry
@@ -413,14 +421,11 @@ class DownloadManager {
                  fileName: string,
                  progressCB: ProgressCallback,
                  destinationPath?: string): Promise<IDownloadResult> {
-    const deferredURL = typeof(urls) === 'function';
-    if (!deferredURL && (urls.length === 0)) {
+    if (urls.length === 0) {
       return Promise.reject(new Error('No download urls'));
     }
     log('info', 'queueing download', id);
-    const nameTemplate: string = deferredURL
-      ? fileName
-      : decodeURI(path.basename(url.parse(urls[0]).pathname));
+    const nameTemplate: string = fileName || decodeURI(path.basename(url.parse(urls[0]).pathname));
     const destPath = destinationPath || this.mDownloadPath;
     let download: IRunningDownload;
     return fs.ensureDirAsync(destPath)
