@@ -809,18 +809,19 @@ class ExtensionManager {
   }
 
   private registerProtocol = (protocol: string, def: boolean,
-                              callback: (url: string) => void) => {
+                              callback: (url: string) => void): boolean => {
     log('info', 'register protocol', { protocol });
+    // make it work when using the development version
+    const args = process.execPath.endsWith('electron.exe')
+      ? [getVortexPath('package'), '-d']
+      : ['-d'];
+
+    let haveToRegister = def && !app.isDefaultProtocolClient(protocol, process.execPath, args)
     if (def) {
-      if (process.execPath.endsWith('electron.exe')) {
-        // make it work when using the development version
-        app.setAsDefaultProtocolClient(protocol, process.execPath,
-          [getVortexPath('package'), '-d']);
-      } else {
-        app.setAsDefaultProtocolClient(protocol, process.execPath, ['-d']);
-      }
+      app.setAsDefaultProtocolClient(protocol, process.execPath, args);
     }
     this.mProtocolHandlers[protocol] = callback;
+    return haveToRegister;
   }
 
   private registerArchiveHandler = (extension: string, handler: ArchiveHandlerCreator) => {
