@@ -11,6 +11,8 @@ coverage
 *.VC.db
 app/bundledPlugins
 
+extensions/usvfs-deploy/node_modules/*
+
 # User-specific files
 *.suo
 
