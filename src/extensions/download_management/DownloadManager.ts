@@ -170,7 +170,7 @@ class DownloadWorker {
   }
 
   private handleError(err) {
-    log('error', 'chunk error', { id: this.mJob.workerId, err, ended: this.mEnded });
+    log('warn', 'chunk error', { id: this.mJob.workerId, err, ended: this.mEnded });
     if (this.mJob.errorCB !== undefined) {
       this.mJob.errorCB(err);
     }

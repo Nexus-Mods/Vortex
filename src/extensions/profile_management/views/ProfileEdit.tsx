@@ -1,4 +1,3 @@
-import Icon from '../../../controls/Icon';
 import Toggle from '../../../controls/Toggle';
 import {Button} from '../../../controls/TooltipControls';
 import {ComponentEx} from '../../../util/ComponentEx';
@@ -9,7 +8,7 @@ import {IProfileFeature} from '../types/IProfileFeature';
 
 import update from 'immutability-helper';
 import * as React from 'react';
-import {Checkbox, FormControl, ListGroupItem, Panel} from 'react-bootstrap';
+import {FormControl, ListGroupItem, Panel} from 'react-bootstrap';
 
 export interface IEditState {
   edit: IProfile;
@@ -56,7 +55,7 @@ class ProfileEdit extends ComponentEx<IEditProps, IEditState> {
   public componentWillReceiveProps(newProps: IEditProps) {
     if (this.props.gameId !== newProps.gameId) {
       this.setState(update(this.state, {
-        features: newProps.features.filter(feature => feature.supported()),
+        features: { $set: newProps.features.filter(feature => feature.supported()) },
       }));
     }
   }

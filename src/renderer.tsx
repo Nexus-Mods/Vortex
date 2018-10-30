@@ -213,6 +213,9 @@ const globalNotifications = new GlobalNotifications(extensions.getApi());
 ipcRenderer.on('external-url', (event, url) => {
   startupPromise
     .then(() => {
+      if (typeof(url) !== 'string') {
+        return;
+      }
       const protocol = url.split(':')[0];
 
       const handler = extensions.getProtocolHandler(protocol);

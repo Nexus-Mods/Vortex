@@ -296,7 +296,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
                                    'Sorry, this download is missing info necessary to resume. '
                                    + 'Please try restarting it.',
                                    undefined, false);
-          } else if (['Moved Permanently', 'Forbidden', 'Gone'].indexOf(err.HTTPStatus) !== -1) {
+          } else if (['moved permanently', 'forbidden', 'gone'].indexOf(err.HTTPStatus.toLowerCase()) !== -1) {
             this.props.onShowError('Failed to resume download', 'Sorry, the download link is no longer valid. '
                                  + 'Please restart the download.',
               undefined, false);
@@ -424,9 +424,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
               allowReport: false,
             });
           } else {
-            this.context.api.showErrorNotification('Failed to start download', error, {
-              allowReport: true,
-            });
+            this.context.api.showErrorNotification('Failed to start download', error);
           }
         }
       }));

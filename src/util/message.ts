@@ -121,6 +121,19 @@ function genFeedbackText(response: IFeedbackResponse, githubInfo?: any): string 
   return lines.join('[br][/br]');
 }
 
+const noReportErrors = ['ETIMEDOUT', 'ECONNREFUSED', 'ECONNABORTED', 'ENETUNREACH'];
+
+function shouldAllowReport(err: string | Error | any, options?: IErrorOptions): boolean {
+  if ((options !== undefined) && (options.allowReport !== undefined)) {
+    return options.allowReport;
+  }
+  if (err.code === undefined) {
+    return true;
+  }
+
+  return noReportErrors.indexOf(err.code) === -1;
+}
+
 /**
  * show an error notification with an optional "more" button that displays further details
  * in a modal dialog.
@@ -139,7 +152,9 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
                           options?: IErrorOptions) {
   const err = renderError(details);
 
-  log('error', message, err);
+  const allowReport = shouldAllowReport(details, options);
+
+  log(allowReport ? 'error' : 'warn', message, err);
 
   const content: IDialogContent = (truthy(options) && options.isHTML) ? {
     htmlText: err.message || err.text,
@@ -161,7 +176,7 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
 
   const actions: IDialogAction[] = [];
 
-  if (!isOutdated() && ((options === undefined) || (options.allowReport !== false))) {
+  if (!isOutdated() && allowReport) {
     actions.push({
       label: 'Report',
       action: () => sendReport('error', toError(details, options), ['error'], '', process.type)
@@ -211,7 +226,25 @@ function prettifyNodeErrorMessage(err: any) {
       message: 'Vortex tried to access "{{filePath}}" but it doesn\'t exist.',
       replace: { filePath },
     };
+  } else if (err.code === 'ENETUNREACH') {
+    return {
+      message: 'Network server not reachable.',
+    };
+  } else if (err.code === 'ECONNABORTED') {
+    return {
+      message: 'Network connection aborted by the server.',
+    };
+  } else if (err.code === 'ECONNREFUSED') {
+    return {
+      message: 'Network connection refused.',
+    };
+  } else if (err.code === 'ETIMEDOUT') {
+    return {
+      message: 'Network connection to "{{address}}" timed out, please try again.',
+      replace: { address: err.address }
+    };
   }
+
   return {
     message: err.message,
   };
