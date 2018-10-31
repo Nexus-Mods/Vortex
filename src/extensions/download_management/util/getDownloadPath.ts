@@ -17,9 +17,15 @@ function getDownloadPath(pattern: string, gameId?: string): string {
     userdata: userData,
   });
 
-  return gameId !== undefined
+  let result = gameId !== undefined
     ? path.join(format(pattern, formatKeys), gameId)
     : format(pattern, formatKeys);
+
+  if (!path.isAbsolute(result)) {
+    result = path.resolve(app.getAppPath(), result);
+  }
+
+  return result;
 }
 
 export default getDownloadPath;

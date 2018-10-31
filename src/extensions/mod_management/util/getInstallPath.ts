@@ -22,7 +22,13 @@ function getInstallPath(pattern: string, gameId: string): string {
     game: gameId,
   });
 
-  return format(getInstallPathPattern(pattern), formatKeys);
+  let result = format(getInstallPathPattern(pattern), formatKeys);
+
+  if (!path.isAbsolute(result)) {
+    result = path.resolve(app.getAppPath(), result);
+  }
+
+  return result;
 }
 
 export default getInstallPath;

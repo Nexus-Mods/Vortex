@@ -194,7 +194,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       // (resources/app.asar)
       vortexPath = path.dirname(path.dirname(vortexPath));
     }
-    if (isChildPath(newPath, vortexPath)) {
+    if (!path.isAbsolute(newPath)
+        || isChildPath(newPath, vortexPath)) {
       return onShowDialog('error', 'Invalid paths selected', {
                   text: 'You can not put mods into the vortex application directory. '
                   + 'This directory gets removed during updates so you would lose all your '
