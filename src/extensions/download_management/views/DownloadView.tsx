@@ -296,7 +296,8 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
                                    'Sorry, this download is missing info necessary to resume. '
                                    + 'Please try restarting it.',
                                    undefined, false);
-          } else if (['moved permanently', 'forbidden', 'gone'].indexOf(err.HTTPStatus.toLowerCase()) !== -1) {
+          } else if ((err.HTTPStatus !== undefined)
+                     && (['moved permanently', 'forbidden', 'gone'].indexOf(err.HTTPStatus.toLowerCase()) !== -1)) {
             this.props.onShowError('Failed to resume download', 'Sorry, the download link is no longer valid. '
                                  + 'Please restart the download.',
               undefined, false);
