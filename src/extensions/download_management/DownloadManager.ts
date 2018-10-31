@@ -489,7 +489,8 @@ class DownloadManager {
         },
         promises: [],
       };
-      download.chunks = (chunks || []).map((chunk, idx) => this.toJob(download, chunk, idx));
+      const isPending = received === 0;
+      download.chunks = (chunks || []).map((chunk, idx) => this.toJob(download, chunk, isPending && (idx === 0)));
       if (download.chunks.length > 0) {
         download.chunks[0].errorCB = (err) => { this.cancelDownload(download, err); };
         this.mQueue.push(download);
@@ -548,7 +549,7 @@ class DownloadManager {
 
     const unfinishedChunks: IChunk[] = [];
 
-    // first, make sure not-yet-started chungs are paused, otherwise
+    // first, make sure not-yet-started chunks are paused, otherwise
     // they might get started as we stop running chunks as that frees
     // space in the queue
     download.chunks.forEach((chunk: IDownloadJob) => {
@@ -762,10 +763,16 @@ class DownloadManager {
       });
     }
 
-    download.size = size;
-    download.assembler.setTotalSize(size);
+    if (download.size !== size) {
+      download.size = size;
+      download.assembler.setTotalSize(size);
+    }
 
     const remainingSize = size - this.mMinChunkSize;
+
+    if (download.chunks.length > 1) {
+      return;
+    }
 
     const maxChunks = Math.min(this.mMaxChunks, this.mMaxWorkers);
 
@@ -804,7 +811,7 @@ class DownloadManager {
     };
   }
 
-  private toJob = (download: IRunningDownload, chunk: IChunk, idx: number): IDownloadJob => {
+  private toJob = (download: IRunningDownload, chunk: IChunk, first: boolean): IDownloadJob => {
     let fileNameFromURL: string;
     const job: IDownloadJob = {
       url: () => download.resolvedUrls().then(urls => {
@@ -818,7 +825,7 @@ class DownloadManager {
       state: 'init',
       size: chunk.size,
       received: chunk.received,
-      responseCB: idx > 0 ? undefined : (size: number, fileName: string) =>
+      responseCB: !first ? undefined : (size: number, fileName: string) =>
         this.updateDownload(download, size, fileName || fileNameFromURL),
     };
     if (download.size === undefined) {
