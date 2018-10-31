@@ -125,7 +125,11 @@ class GameModeManager {
       return Promise.resolve();
     } else {
       try {
-        return game.setup(gameDiscovery);
+        return fs.statAsync(gameDiscovery.path)
+          .then(() => game.setup(gameDiscovery))
+          .catch(err => (err.code === 'ENOENT')
+            ? Promise.reject(new ProcessCanceled(`Game folder \"${gameDiscovery.path}\" doesn\'t exist (any more).`))
+            : Promise.reject(err));
       } catch (err) {
         return Promise.reject(err);
       }
