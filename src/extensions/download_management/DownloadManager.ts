@@ -20,6 +20,9 @@ import * as path from 'path';
 import * as url from 'url';
 import { IProtocolHandlers } from './types/ProtocolHandlers';
 
+// assume urls are valid for at least 5 minutes
+const URL_RESOLVE_EXPIRE_MS = 1000 * 60 * 5;
+
 export class HTTPError extends Error {
   constructor(response: http.ServerResponse) {
     super(`HTTP Status ${response.statusCode}: ${response.statusMessage}`);
@@ -382,6 +385,7 @@ class DownloadManager {
   private mSpeedCalculator: SpeedCalculator;
   private mUserAgent: string;
   private mProtocolHandlers: IProtocolHandlers;
+  private mResolveCache: { [url: string]: { time: number, urls: string[] } } = {};
 
   /**
    * Creates an instance of DownloadManager.
@@ -589,11 +593,18 @@ class DownloadManager {
   }
 
   private resolveUrl(input: string): Promise<string[]> {
+    if ((this.mResolveCache[input] !== undefined)
+      && ((Date.now() - this.mResolveCache[input].time) < URL_RESOLVE_EXPIRE_MS)) {
+      return Promise.resolve(this.mResolveCache[input].urls);
+    }
     const protocol = url.parse(input).protocol;
     const handler = this.mProtocolHandlers[protocol.slice(0, protocol.length - 1)];
 
     return (handler !== undefined)
-      ? handler(input).then(res => res.urls)
+      ? handler(input).then(res => {
+        this.mResolveCache[input] = { time: Date.now(), urls: res.urls };
+        return res.urls;
+      })
       : Promise.resolve([input]);
   }
 
