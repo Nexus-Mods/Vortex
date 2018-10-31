@@ -178,7 +178,9 @@ class DownloadWorker {
   }
 
   private handleError(err) {
-    log('warn', 'chunk error', { id: this.mJob.workerId, err, ended: this.mEnded });
+    if (!this.mEnded) {
+      log('warn', 'chunk error', { id: this.mJob.workerId, err, ended: this.mEnded });
+    }
     if (this.mJob.errorCB !== undefined) {
       this.mJob.errorCB(err);
     }
@@ -187,6 +189,7 @@ class DownloadWorker {
         this.mRequest.abort();
       }
       if ((['ESOCKETTIMEDOUT', 'ECONNRESET'].indexOf(err.code) !== -1)
+          && !this.mEnded
           && (this.mDataHistory.length > 0)) {
         // as long as we made progress on this chunk, retry
         this.mJob.url().then(jobUrl => {
@@ -330,6 +333,11 @@ class DownloadWorker {
   }
 
   private handleData(data: Buffer) {
+    if (this.mEnded) {
+      log('debug', 'got data after ended', { workerId: this.mJob.workerId, ended: this.mEnded, aborted: this.mRequest.aborted });
+      this.mRequest.abort();
+      return;
+    }
     this.mDataHistory.push({ time: Date.now(), size: data.byteLength });
     this.mBuffers.push(data);
 
@@ -601,7 +609,6 @@ class DownloadManager {
           return this.resolveUrl(iter);
         })
         .then(res => {
-          console.log(res);
           return [].concat(...res);
         });
       }
