@@ -172,6 +172,12 @@ function processAttributes(input: any) {
   });
 }
 
+function bringToFront() {
+  remote.getCurrentWindow().setAlwaysOnTop(true);
+  remote.getCurrentWindow().show();
+  remote.getCurrentWindow().setAlwaysOnTop(false);
+}
+
 function requestLogin(api: IExtensionApi, callback: (err: Error) => void) {
   let id: string;
   try {
@@ -185,6 +191,8 @@ function requestLogin(api: IExtensionApi, callback: (err: Error) => void) {
     // the probability that this fails for another user at exactly the same time and they both get the same
     // random number is practically 0
   }
+  let keyReceived: boolean = false;
+  let connectionAlive: boolean = true;
   const connection = new WebSocket('wss://sso.nexusmods.com')
     .on('open', () => {
       connection.send(JSON.stringify({
@@ -196,20 +204,39 @@ function requestLogin(api: IExtensionApi, callback: (err: Error) => void) {
         }
       });
       opn(`https://www.nexusmods.com/sso?id=${id}`).catch(err => undefined);
+      const keepAlive = setInterval(() => {
+        if (!connectionAlive) {
+          connection.terminate();
+          clearInterval(keepAlive);
+        } else if (connection.readyState === WebSocket.OPEN) {
+          connection.ping();
+        } else {
+          clearInterval(keepAlive);
+        }
+      }, 30000);
+    })
+    .on('close', (code: number, reason: string) => {
+      bringToFront();
+      if (!keyReceived) {
+        callback(new Error(`Log-in connection closed prematurely (Code ${code})`));
+      }
+    })
+    .on('pong', () => {
+      connectionAlive = true;
     })
     .on('message', data => {
       connection.close();
       api.store.dispatch(setUserAPIKey(data.toString()));
-      remote.getCurrentWindow().setAlwaysOnTop(true);
-      remote.getCurrentWindow().show();
-      remote.getCurrentWindow().setAlwaysOnTop(false);
+      bringToFront();
       callback(null);
+      keyReceived = true;
     })
-    .on('error', error => {
-      api.showErrorNotification('Failed to connect to nexusmods.com', error, {
+    .on('error', err => {
+      api.showErrorNotification('Failed to connect to nexusmods.com', err, {
         allowReport: false,
       });
       connection.close();
+      callback(err);
     });
 }
 
