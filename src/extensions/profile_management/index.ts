@@ -80,6 +80,9 @@ function refreshProfile(store: Redux.Store<any>, profile: IProfile,
   if (profile === undefined) {
     return Promise.resolve();
   }
+  if ((profile.gameId === undefined) || (profile.id === undefined)) {
+    return Promise.reject(new Error('The active profile is corrupted, please create a new one.'));
+  }
   return checkProfile(store, profile)
       .then(() => profilePath(store, profile))
       .then((currentProfilePath: string) => {
