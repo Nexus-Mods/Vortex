@@ -467,8 +467,13 @@ class ExtensionManager {
     if (ipcRenderer !== undefined) {
       ipcRenderer.on('send-notification',
         (event, notification) => this.mApi.sendNotification(notification));
-      ipcRenderer.on('show-error-notification', (event, message, details, options) =>
-        this.mApi.showErrorNotification(message, details, options || undefined));
+      ipcRenderer.on('show-error-notification', (event, message, details, options, isError) =>  {
+        let data = JSON.parse(details);
+        if (isError) {
+          data = Object.assign(new Error(), data);
+        }
+        this.mApi.showErrorNotification(message, data, options || undefined);
+      });
 
       store.dispatch(setExtensionLoadFailures(this.mLoadFailures));
     }
@@ -486,12 +491,20 @@ class ExtensionManager {
   public setupApiMain<S>(store: Redux.Store<S>, ipc: Electron.WebContents) {
     this.mApi.showErrorNotification =
         (message: string, details: string | Error, options: IErrorOptions) => {
-          // unfortunately it appears we can't send an error object via ipc
-          const errMessage = typeof(details) === 'string'
-            ? details
-            : details.message + '\n' + details.stack;
           try {
-            ipc.send('show-error-notification', message, errMessage, options);
+            // make an attempt to serialise error objects in such a way that they can be reconstructed.
+            const data: any = Object.assign({}, details);
+            if (details instanceof Error) {
+              // details.stack may be a getter, so we have to assign it separately
+              data.stack = details.stack;
+              // stack is also optional. If we don't have one, generate one to this function which is
+              // better than nothing because otherwise the code reconstructing the error will produce a stack
+              // that is completely useless
+              if (data.stack === undefined) {
+                data.stack = (new Error()).stack;
+              }
+            } 
+            ipc.send('show-error-notification', message, JSON.stringify(data), options, details instanceof Error);
           } catch (err) {
             // this may happen if the ipc has already been destroyed
             this.showErrorBox(message, details);

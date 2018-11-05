@@ -253,6 +253,11 @@ export function prettifyNodeErrorMessage(err: any): { message: string, replace?:
       replace: { address: err.address },
       allowReport: false,
     };
+  } else if (err.code === 'EISDIR') { 
+    return {
+      message: 'Vortex expected a file but found a directory.',
+      allowReport: false,
+    }
   }
 
   return {
