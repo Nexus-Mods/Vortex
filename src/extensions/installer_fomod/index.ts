@@ -4,7 +4,7 @@ import {
   ISupportedResult,
   ProgressDelegate,
 } from '../../types/IExtensionContext';
-import { DataInvalid, UserCanceled } from '../../util/CustomErrors';
+import { DataInvalid, UserCanceled, SetupError } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import getVortexPath from '../../util/getVortexPath';
 import lazyRequire from '../../util/lazyRequire';
@@ -39,6 +39,11 @@ function transformError(err: any): Error {
     } else {
       return new Error(err);
     }
+  } else if (err.name === 'System.IO.PathTooLongException') {
+    let error = new SetupError('The installer tried to access a file with a path longer than 260 characters. '
+                             + 'This usually means that your mod staging path is too long.');
+    error.stack = err.StackTrace;
+    return error;
   } else if ((err.StackTrace.indexOf('XNodeValidator.ValidationCallback') !== -1)
              || (err.StackTrace.indexOf('XmlTextReaderImpl.ParseXmlDeclaration') !== -1)
              || (err.StackTrace.indexOf('XmlScriptType.GetXmlScriptVersion') !== -1)) {

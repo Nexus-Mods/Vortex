@@ -5,6 +5,7 @@ import Icon from '../../../controls/Icon';
 import More from '../../../controls/More';
 import { Button } from '../../../controls/TooltipControls';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
+import { ValidationState } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { TemporaryError, UserCanceled } from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
@@ -329,14 +330,48 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     });
   }
 
+  private validateModPath(input: string): { state: ValidationState, reason?: string } {
+    let vortexPath = remote.app.getAppPath();
+    if (path.basename(vortexPath) === 'app.asar') {
+      // in asar builds getAppPath returns the path of the asar so need to go up 2 levels
+      // (resources/app.asar)
+      vortexPath = path.dirname(path.dirname(vortexPath));
+    }
+    if (isChildPath(input, vortexPath)) {
+      return {
+        state: 'error',
+        reason: 'Staging folder can\'t be a subdirectory of the Vortex application folder.',
+      };
+    }
+
+    if (input.length > 100) {
+      return {
+        state: (input.length > 200) ? 'error' : 'warning',
+        reason: 'Staging path shouldn\'t be too long, otherwise mod installers may fail.',
+      }
+    }
+
+    if (!path.isAbsolute(input)) {
+      return {
+        state: 'error',
+        reason: 'Staging folder needs to be an absolute path.'
+      };
+    }
+
+    return {
+      state: 'success',
+    }
+  }
+
   private renderPathCtrl(label: string): JSX.Element {
     const { t, gameMode } = this.props;
     const { installPath } = this.state;
 
     const pathPreview = getInstallPath(installPath, gameMode);
+    const validationState = this.validateModPath(pathPreview);
 
     return (
-      <FormGroup id='install-path-form'>
+      <FormGroup id='install-path-form' validationState={validationState.state}>
         <ControlLabel>
           {label}
           <More id='more-paths' name={t('Paths')} >
@@ -374,6 +409,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           </FlexLayout.Fixed>
         </FlexLayout>
         <HelpBlock><a data-url={pathPreview} onClick={this.openUrl}>{pathPreview}</a></HelpBlock>
+        {validationState.reason ? <ControlLabel>{t(validationState.reason)}</ControlLabel> : null}
       </FormGroup>
     );
   }

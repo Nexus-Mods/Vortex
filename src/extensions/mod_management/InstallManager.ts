@@ -3,7 +3,8 @@ import { IDialogResult } from '../../types/IDialog';
 import { IExtensionApi, ThunkStore } from '../../types/IExtensionContext';
 import {IState} from '../../types/IState';
 import { DataInvalid, ProcessCanceled, TemporaryError,
-         UserCanceled } from '../../util/CustomErrors';
+         UserCanceled, 
+         SetupError} from '../../util/CustomErrors';
 import { createErrorReport, isOutdated } from '../../util/errorHandling';
 import * as fs from '../../util/fs';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
@@ -350,17 +351,33 @@ class InstallManager {
                   { installerPath: path.basename(archivePath) });
               }
             });
+        } else if (err instanceof SetupError) {
+          return prom
+            .then(() => {
+              if (installContext !== undefined) {
+                installContext.reportError(
+                  'Installation failed',
+                  /*'The installation of "{{ installerPath }}" failed due to a problem with your setup: '
+                  + '\n{{ message }}'*/ err,
+                  false, {
+                    installerPath: path.basename(archivePath),
+                    message: err.message
+                  }
+                );
+              }
+            });
         } else if (err instanceof DataInvalid) {
           return prom
             .then(() => {
               if (installContext !== undefined) {
                 installContext.reportError(
                   'Installation failed',
-                  `The installer {{ installerPath }} is invalid and couldn't be `
+                  'The installer {{ installerPath }} is invalid and couldn\'t be '
                   + 'installed:\n{{ message }}\nPlease inform the mod author.\n',
                   false, {
                     installerPath: path.basename(archivePath),
-                    message: err.message });
+                    message: err.message
+                  });
               }
             });
         } else {
