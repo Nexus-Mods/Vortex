@@ -152,7 +152,7 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
                           options?: IErrorOptions) {
   const err = renderError(details);
 
-  const allowReport = shouldAllowReport(details, options);
+  const allowReport = err.allowReport !== undefined ? err.allowReport : shouldAllowReport(details, options);
 
   log(allowReport ? 'error' : 'warn', message, err);
 
@@ -266,7 +266,7 @@ export function prettifyNodeErrorMessage(err: any): { message: string, replace?:
 }
 
 function renderCustomError(err: any) {
-  const res: { message?: string, text?: string, parameters?: any, wrap: boolean } = { wrap: false };
+  const res: { message?: string, text?: string, parameters?: any, allowReport?: boolean, wrap: boolean } = { wrap: false };
   if (err === undefined) {
     res.text = 'Unknown error';
   } else if ((err.error !== undefined) && (err.error instanceof Error)) {
@@ -278,6 +278,7 @@ function renderCustomError(err: any) {
       res.text = pretty.message;
     }
     res.parameters = pretty.replace;
+    res.allowReport = pretty.allowReport;
   } else {
     res.text = err.message || 'An error occurred';
   }
@@ -308,7 +309,7 @@ function renderCustomError(err: any) {
  * @param err 
  */
 export function renderError(err: string | Error | any):
-    { message?: string, text?: string, parameters?: any, wrap: boolean } {
+    { message?: string, text?: string, parameters?: any, allowReport?: boolean, wrap: boolean } {
   if (Array.isArray(err)) {
     err = err[0];
   }
@@ -321,6 +322,7 @@ export function renderError(err: string | Error | any):
       message: err.stack,
       parameters: errMessage.replace,
       wrap: false,
+      allowReport: errMessage.allowReport,
     };
   } else {
     return renderCustomError(err);

@@ -83,8 +83,7 @@ class LoginDialog extends ComponentEx<IProps, ILoginFormState> {
     this.context.api.events.emit('request-nexus-login', (err: Error) => {
       this.nextState.loggingIn = false;
       if (err !== null) {
-        this.context.api.showErrorNotification('Failed to get access key', err);
-        return;
+        this.context.api.showErrorNotification('Failed to get access key', err, { allowReport: false });
       }
       onHide();
     });
