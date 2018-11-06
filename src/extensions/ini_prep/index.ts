@@ -1,5 +1,6 @@
 import {IExtensionContext} from '../../types/IExtensionContext';
 import { IState, IProfile } from '../../types/IState';
+import { UserCanceled } from '../../util/CustomErrors';
 import deepMerge from '../../util/deepMerge';
 import * as fs from '../../util/fs';
 import {log} from '../../util/log';
@@ -244,6 +245,9 @@ function main(context: IExtensionContext) {
       const discovery: IDiscoveryResult = state.settings.gameMode.discovered[gameMode];
       discoverSettingsChanges(context.api.translate, gameMode, discovery)
         .then(() => purgeChanges(context.api.translate, gameMode, discovery))
+        .catch(UserCanceled, () => {
+          context.api.showErrorNotification('Ini files were not restored', undefined, { allowReport: false });
+        })
         .catch(err => {
           context.api.showErrorNotification('Failed to purge ini edits', err, { allowReport: (err as any).code !== 'ENOENT' });
         });
