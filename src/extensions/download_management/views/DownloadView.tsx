@@ -13,6 +13,7 @@ import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { ProcessCanceled, UserCanceled } from '../../../util/CustomErrors';
 import { showError } from '../../../util/message';
 import * as selectors from '../../../util/selectors';
+import { truthy } from '../../../util/util';
 import MainPage from '../../../views/MainPage';
 
 import { IGameStored } from '../../gamemode_management/types/IGameStored';
@@ -385,11 +386,11 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
               action: () => this.context.api.events.emit('remove-download', downloadId) },
             { label: 'Close' },
         ];
-      if (download.failCause.htmlFile !== undefined) {
+      if ((download.failCause !== undefined) && (download.failCause.htmlFile !== undefined)) {
         onShowDialog('error', 'Download failed', {
           htmlFile: download.failCause.htmlFile,
         }, actions);
-      } else if (download.failCause.message) {
+      } else if ((download.failCause !== undefined) && truthy(download.failCause.message)) {
         onShowDialog('error', 'Download failed', {
           message: download.failCause.message,
         }, actions);
