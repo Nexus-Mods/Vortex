@@ -94,7 +94,9 @@ class DashboardBanner extends ComponentEx<IProps, { loggingIn: boolean }> {
     this.context.api.events.emit('request-nexus-login', (err: Error) => {
       this.nextState.loggingIn = false;
       if (err !== null) {
-        this.context.api.showErrorNotification('Failed to get access key', err);
+        this.context.api.showErrorNotification('Failed to get access key', err, {
+          allowReport: false
+        });
       }
     });
     // this.props.onSetDialogVisible('login-dialog');

@@ -218,7 +218,7 @@ function requestLogin(api: IExtensionApi, callback: (err: Error) => void) {
     .on('close', (code: number, reason: string) => {
       bringToFront();
       if (!keyReceived) {
-        callback(new Error(`Log-in connection closed prematurely (Code ${code})`));
+        callback(new ProcessCanceled(`Log-in connection closed prematurely (Code ${code})`));
       }
     })
     .on('pong', () => {
@@ -292,6 +292,9 @@ function once(api: IExtensionApi) {
       ensureLoggedIn(api)
         .then(() => {
           doDownload(api, url);
+        })
+        .catch(ProcessCanceled, err => {
+          api.showErrorNotification('Log-in failed', err, { allowReport: false });
         })
         .catch(err => {
           api.showErrorNotification('Failed to get access key', err);
