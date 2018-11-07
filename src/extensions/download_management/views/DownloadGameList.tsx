@@ -81,36 +81,51 @@ class DownloadGameList extends PureComponentEx<IProps, {}> {
     onSetCompatibleGames([].concat(currentGames, [gameId]));
   }
 
-  private moveDownload(gameId: string) {
+  private moveDownload(gameId: string): Promise<void> {
     const { currentGames, fileName } = this.props;
     // removing the main game, have to move the download then
     const state = this.context.api.store.getState();
     const oldPath = selectors.downloadPathForGame(state, currentGames[0]);
     const newPath = selectors.downloadPathForGame(state, gameId);
-    return fs.moveAsync(path.join(oldPath, fileName), path.join(newPath, fileName))
-      .tap(() => {
-        this.context.api.sendNotification({
-          type: 'success',
-          title: 'Download moved',
-          message: fileName,
-        });
-      })
-      .catch(err => this.context.api.showErrorNotification('Unable to move archive', err, { allowReport: ['EPERM','ENOSPC','EEXIST'].indexOf(err.code) === -1 }));
+    const source = path.join(oldPath, fileName);
+    const dest = path.join(newPath, fileName);
+    return fs.moveAsync(source, dest)
+      .catch(err => {
+        if (err.code !== 'EEXIST') {
+          return Promise.reject(err);
+        } else {
+          // We can use the "modified time" to assert whether we're dealing with
+          //  identical files and remove the source if this is the case - if not - raise error.
+          return Promise.all([fs.statAsync(source), fs.statAsync(dest)]).then(res => 
+            res[0].mtimeMs === res[1].mtimeMs
+              ? fs.removeAsync(source)
+              : Promise.reject(err)
+          );
+        }
+      });
   }
 
   private removeGame = (evt: React.MouseEvent<any>) => {
-    const { currentGames, onSetCompatibleGames } = this.props;
+    const { currentGames, onSetCompatibleGames, fileName } = this.props;
     const gameId = evt.currentTarget.getAttribute('data-gameid');
     const idx = currentGames.indexOf(gameId);
     if ((idx !== -1) && (currentGames.length > 1)) {
       const prom = (idx === 0)
-        ? this.moveDownload(currentGames[1])
+        ? this.moveDownload(currentGames[1]).tap(() => {
+            this.context.api.sendNotification({
+              type: 'success',
+              title: 'Download moved',
+              message: fileName,
+            });
+
+            return Promise.resolve();
+        })
         : Promise.resolve();
       prom.then(() => {
         let newGames = [].concat(currentGames);
         newGames.splice(idx, 1);
         onSetCompatibleGames(newGames);
-      });
+      }).catch(err => this.context.api.showErrorNotification(`Unable to remove game ${gameId}`, err, { allowReport: ['EPERM','ENOSPC','EEXIST'].indexOf(err.code) === -1 }));
     }
   }
 }
