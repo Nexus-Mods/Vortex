@@ -278,17 +278,24 @@ export function toError(input: any, options?: IErrorOptions): IError {
       // object, but not an Error
       let message: string;
       let stack: string;
-      if (input === null) {
+      if (!truthy(input) || (Object.keys(input).length === 0)) {
         // this is bad...
         message = 'An empty error message was thrown';
       } else if ((input.error !== undefined) && (input.error instanceof Error)) {
         message = input.error.message;
         stack = input.error.stack;
       } else {
-        message = input.message || 'An error occurred';
-        if ((input.message === undefined) && (input.error !== undefined)) {
-          // not sure what this is but need to ensure not to drop any information
-          message = inspect(input.error);
+        message = input.message;
+        if (input.message === undefined) {
+          if (input.error !== undefined) {
+            // not sure what this is but need to ensure not to drop any information
+            message = inspect(input.error);
+          } else if (Object.keys(input).length > 0) {
+            // wtf is this???
+            message = inspect(input);
+          } else {
+            message = 'An error occurred';
+          }
         }
         stack = input.stack;
       }
@@ -309,7 +316,7 @@ export function toError(input: any, options?: IErrorOptions): IError {
       return {message, stack, details};
     }
     case 'string': {
-      return { message: 'String exception: ' + input };
+      return { message: 'String exception: ' + t(input) };
     }
     default: {
       return { message: 'Unknown exception: ' + inspect(input) };
