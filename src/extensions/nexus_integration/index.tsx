@@ -42,7 +42,7 @@ import * as Promise from 'bluebird';
 import { remote } from 'electron';
 import * as fuzz from 'fuzzball';
 import * as I18next from 'i18next';
-import NexusT from 'nexus-api';
+import NexusT, { TimeoutError } from 'nexus-api';
 import * as path from 'path';
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
@@ -102,6 +102,12 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
           api.events.emit('update-categories', gameId, categories, isUpdate);
         })
         .catch(ProcessCanceled, () => null)
+        .catch(TimeoutError, () => {
+          api.sendNotification({
+            type: 'warning',
+            message: 'Timeout retrieving categories from server, please try again later.',
+          });
+        })
         .catch(err => {
           if (err.code === 'ESOCKETTIMEOUT') {
             api.sendNotification({

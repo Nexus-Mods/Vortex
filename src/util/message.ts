@@ -257,6 +257,11 @@ export function prettifyNodeErrorMessage(err: any): { message: string, replace?:
     return {
       message: 'Vortex expected a file but found a directory.',
       allowReport: false,
+    };
+  } else if (err.code === 'ENOTDIR') {
+    return {
+      message: 'Vortex expected a directory but found a file.',
+      allowReport: false,
     }
   }
 
