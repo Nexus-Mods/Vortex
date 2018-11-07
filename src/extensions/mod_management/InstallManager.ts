@@ -12,7 +12,7 @@ import { log } from '../../util/log';
 import { prettifyNodeErrorMessage } from '../../util/message';
 import { activeProfile, downloadPath } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
-import { setdefault } from '../../util/util';
+import { setdefault, truthy } from '../../util/util';
 import walk from '../../util/walk';
 
 import { IDownload } from '../download_management/types/IDownload';
@@ -552,7 +552,7 @@ class InstallManager {
 
   private transformInstructions(input: IInstruction[]): InstructionGroups {
     return input.reduce((prev, value) => {
-      if (prev[value.type] !== undefined) {
+      if (truthy(value) && (prev[value.type] !== undefined)) {
         prev[value.type].push(value);
       }
       return prev;
