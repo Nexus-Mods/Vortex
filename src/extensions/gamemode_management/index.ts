@@ -409,6 +409,12 @@ function init(context: IExtensionContext): boolean {
     }
   });
 
+  context.registerAction('game-icons', 110, 'refresh', {}, 'Full scan', () => {
+    if (($.gameModeManager !== undefined) && !$.gameModeManager.isSearching()) {
+      $.gameModeManager.startSearchDiscovery();
+    }
+  });
+
   context.registerAction('game-managed-buttons', 100, HideGameIcon, {});
   context.registerAction('game-discovered-buttons', 100, HideGameIcon, {});
   context.registerAction('game-undiscovered-buttons', 100, HideGameIcon, {});

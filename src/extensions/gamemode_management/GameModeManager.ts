@@ -151,6 +151,10 @@ class GameModeManager {
                           this.onDiscoveredGame, this.onDiscoveredTool);
   }
 
+  public isSearching(): boolean {
+    return this.mActiveSearch !== null;
+  }
+
   /**
    * start game discovery using known files
    *
