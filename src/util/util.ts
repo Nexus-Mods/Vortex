@@ -58,11 +58,11 @@ function checksum(input: string | Buffer): string {
     .digest('hex');
 }
 
-export function writeFileAtomic(filePath: string, data: string | Buffer,
+export function writeFileAtomic(filePath: string, input: string | Buffer,
                                 options?: fs.WriteFileOptions) {
   let cleanup: () => void;
   let tmpPath: string;
-  const hash = checksum(data);
+  const hash = checksum(input);
   return new Promise<number>((resolve, reject) => {
     file({ template: `${filePath}.XXXXXX.tmp` },
          (err: any, genPath: string, fd: number, cleanupCB: () => void) => {
@@ -75,7 +75,7 @@ export function writeFileAtomic(filePath: string, data: string | Buffer,
     });
   })
   .then(fd => fs.closeAsync(fd))
-  .then(() => fs.writeFileAsync(tmpPath, data, options))
+  .then(() => fs.writeFileAsync(tmpPath, input, options))
   .tapCatch(() => {
     if (cleanup !== undefined) {
       cleanup();
