@@ -426,7 +426,7 @@ export function forcePerm<T>(t: I18next.TranslationFunction, op: () => PromiseBB
             { replace: { fileName: err.path } }),
           buttons: [
             'Cancel',
-            'Rety',
+            'Retry',
             'Give permission',
           ],
           noLink: true,
