@@ -350,7 +350,7 @@ function init(context: IExtensionContextExt): boolean {
 
     const profile = state.persistent.profiles[profileId];
     if (profile === undefined) {
-      return 'Unknown profile';
+      return 'Tried to activate unknown profile';
     }
 
     if (getSafe(state,

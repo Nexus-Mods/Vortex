@@ -206,12 +206,13 @@ class Application {
 
   private warnAdmin(): Promise<void> {
     const state: IState = this.mStore.getState();
-    if (state.app.warnedAdmin > 0) {
-      return Promise.resolve();
-    }
     return isAdmin()
       .then(admin => {
         if (!admin) {
+          return Promise.resolve();
+        }
+        log('warn', 'running as administrator');
+        if (state.app.warnedAdmin > 0) {
           return Promise.resolve();
         }
         return new Promise((resolve, reject) => {
