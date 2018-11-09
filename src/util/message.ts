@@ -288,10 +288,10 @@ function renderCustomError(err: any) {
     res.text = err.message || 'An error occurred';
   }
 
-  let attributes = Object.keys(err)
+  let attributes = Object.keys(err || {})
       .filter(key => key[0].toUpperCase() === key[0]);
   if (attributes.length === 0) {
-    attributes = Object.keys(err)
+    attributes = Object.keys(err || {})
       .filter(key => ['message', 'error'].indexOf(key) === -1);
   }
   if (attributes.length > 0) {
