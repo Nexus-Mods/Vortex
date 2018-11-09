@@ -3,6 +3,7 @@ import {PropsCallback} from '../types/IExtensionContext';
 import {extend} from '../util/ComponentEx';
 
 import * as React from 'react';
+import ExtensionGate from '../controls/ExtensionGate';
 
 interface IExtDialog {
   id: string;
@@ -40,11 +41,13 @@ class DialogContainer extends React.Component<IProps, {}> {
         visible={dialog.id === visibleDialog}
         onHide={onHideDialog}
       >
-        <dialog.component
-          visible={dialog.id === visibleDialog}
-          onHide={onHideDialog}
-          {...props}
-        />
+        <ExtensionGate id={dialog.id}>
+          <dialog.component
+            visible={dialog.id === visibleDialog}
+            onHide={onHideDialog}
+            {...props}
+          />
+        </ExtensionGate>
       </ErrorBoundary>
     );
   }
