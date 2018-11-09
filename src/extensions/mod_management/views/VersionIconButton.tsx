@@ -84,13 +84,14 @@ class VersionIconButton extends ComponentEx<IProps, {}> {
   private trigger = () => {
     const { gameMode, mod, state } = this.props;
     const newestFileId = getSafe(mod.attributes, ['newestFileId'], undefined);
+    const downloadGame = getSafe(mod.attributes, ['downloadGame'], gameMode);
 
     if ((state === 'update') || (state === 'bug-update')) {
       this.context.api.events.emit('mod-update',
         gameMode, getSafe(mod.attributes, ['modId'], undefined), newestFileId);
     } else if ((state === 'update-site') || (state === 'bug-update-site')) {
       this.context.api.events.emit('open-mod-page',
-        gameMode, getSafe(mod.attributes, ['modId'], undefined));
+        downloadGame, getSafe(mod.attributes, ['modId'], undefined));
     }
   }
 }
