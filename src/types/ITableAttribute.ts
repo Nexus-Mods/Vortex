@@ -132,6 +132,8 @@ export interface ITableAttribute<T = any> {
    * if specified this function is used to render the value in the table instead of the usual cell
    * renderer. Please note that if you want caching or asynchronous calculation for this cell you'll
    * have to implement it yourself.
+   * Also note that table cells using customRenderer will do more unnecessary rerenders than a calc-based
+   * field so please use customRenderer only when neccessary.
    */
   customRenderer?: (object: T | T[], detailCell: boolean,
                     t: I18next.TranslationFunction, props: ICustomProps) => JSX.Element;

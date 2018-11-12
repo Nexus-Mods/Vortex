@@ -3,13 +3,6 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 
-interface IRect {
-  top: number;
-  bottom: number;
-  left: number;
-  right: number;
-}
-
 export interface IProps {
   container?: HTMLElement;
   placeholder: () => React.ReactNode;

@@ -11,6 +11,7 @@ import VisibilityProxy from '../VisibilityProxy';
 
 import { TD } from './MyTable';
 
+import * as _ from 'lodash';
 import * as I18next from 'i18next';
 import * as React from 'react';
 import { MenuItem } from 'react-bootstrap';
@@ -46,7 +47,7 @@ class TableCell extends React.Component<ICellProps, { isOpen: boolean }> {
   }
 
   public shouldComponentUpdate(newProps: ICellProps, newState: { isOpen: boolean }) {
-    return this.props.rawData !== newProps.rawData
+    return (newProps.attribute.customRenderer !== undefined) && (this.props.rawData !== newProps.rawData)
         || this.props.data !== newProps.data
         || this.props.language !== newProps.language
         || this.state.isOpen !== newState.isOpen;
