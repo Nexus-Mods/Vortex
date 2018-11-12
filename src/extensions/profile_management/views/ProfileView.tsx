@@ -37,6 +37,7 @@ interface IConnectedProps {
   language: string;
   games: IGameStored[];
   discoveredGames: { [gameId: string]: IDiscoveryResult };
+  activity: string[];
 }
 
 interface IActionProps {
@@ -74,7 +75,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
   }
 
   public render(): JSX.Element {
-    const { t, discoveredGames, features, gameId, games, language, profiles } = this.props;
+    const { t, activity, features, gameId, language, profiles } = this.props;
     const { edit, showOther } = this.state;
 
     const currentGameProfiles: { [id: string]: IProfile } = {};
@@ -91,13 +92,11 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
     const currentGameProfilesSorted = this.sortProfiles(currentGameProfiles, language);
     const otherProfilesSorted = this.sortProfiles(otherProfiles, language);
 
+    const isDeploying = activity.indexOf('deployment') !== -1;
+
     // const sortedProfiles: string[] = this.sortProfiles(profiles, language);
 
     const supportedFeatures = features.filter(feature => feature.supported());
-
-    const game = games.find((iter: IGameStored) => iter.id === gameId);
-    const discovered = discoveredGames[gameId];
-    const gameName = getSafe(discovered, ['name'], getSafe(game, ['name'], ''));
 
     return (
       <MainPage>
@@ -120,8 +119,18 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
               </div>
             </div>
           </Collapse>
+          {isDeploying ? this.renderOverlay() : null}
         </MainPage.Body>
       </MainPage>
+    );
+  }
+
+  private renderOverlay(): JSX.Element {
+    const {t} = this.props;
+    return (
+      <div className='profile-overlay'>
+        {t('Deployment in progress')}
+      </div>
     );
   }
 
@@ -304,6 +313,8 @@ function profilePath(profile: IProfile): string {
   return path.join(remote.app.getPath('userData'), profile.gameId, 'profiles', profile.id);
 }
 
+const emptyArray = [];
+
 function mapStateToProps(state: IState): IConnectedProps {
   const gameId = activeGameId(state);
   return {
@@ -313,6 +324,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     language: state.settings.interface.language,
     games: state.session.gameMode.known,
     discoveredGames: state.settings.gameMode.discovered,
+    activity: getSafe(state, ['session', 'base', 'activity', 'mods'], emptyArray),
   };
 }
 
