@@ -242,7 +242,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
             onKeyDown={this.handleKeyDown}
           >
             <Table hover>
-              {this.renderBody(this.mVisibleAttributes)}
+              {this.renderBody()}
               {/* header below body so content in the table can't overlap the header */}
               {showHeader === false ? null : <THead
                 className='table-header'
@@ -315,18 +315,21 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private renderBody = (visibleAttributes: ITableAttribute[]) => {
-    const { data } = this.props;
+  private renderBody = () => {
+    const { attributeState, data } = this.props;
     const { calculatedValues, sortedRows } = this.state;
 
     if ((data === undefined) || (calculatedValues === undefined) || (sortedRows === undefined)) {
       return <TBody />;
     }
 
+    const sortAttribute: ITableAttribute = this.mVisibleAttributes.find(attribute =>
+      this.isSortColumn(attributeState[attribute.id]));
+
     return (
       <TBody>
         {sortedRows.map((row, idx) =>
-          this.renderRow(row, visibleAttributes))}
+          this.renderRow(row, sortAttribute))}
       </TBody>
     );
   }
@@ -466,9 +469,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       && (attributeState.sortDirection !== 'none');
   }
 
-  private renderRow(rowId: string,
-                    visibleAttributes: ITableAttribute[]): JSX.Element {
-    const { t, attributeState, data, language, tableId } = this.props;
+  private renderRow(rowId: string, sortAttribute: ITableAttribute): JSX.Element {
+    const { t, data, language, tableId } = this.props;
     const { calculatedValues, rowState, singleRowActions } = this.state;
 
     if ((calculatedValues[rowId] === undefined) || (data[rowId] === undefined)) {
@@ -476,9 +478,6 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     }
 
     const attributes = this.mVisibleAttributes;
-
-    const sortAttribute: ITableAttribute = attributes.find(attribute =>
-      this.isSortColumn(attributeState[attribute.id]));
 
     return (
       <TableRow
@@ -488,7 +487,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         key={rowId}
         data={calculatedValues[rowId]}
         rawData={data[rowId]}
-        attributes={visibleAttributes}
+        attributes={attributes}
         sortAttribute={sortAttribute !== undefined ? sortAttribute.id : undefined}
         actions={singleRowActions}
         language={language}
