@@ -1,5 +1,5 @@
 import { updateNotification, dismissNotification } from '../../actions/notifications';
-import { setSettingsPage } from '../../actions/session';
+import { setSettingsPage, startActivity, stopActivity } from '../../actions/session';
 import {
   IExtensionApi,
   IExtensionContext,
@@ -277,6 +277,7 @@ function genUpdateModDeployment() {
           title: t('Deploying'),
         });
 
+        api.store.dispatch(startActivity('mods', 'deployment'));
         api.store.dispatch(setDeploymentNecessary(game.id, false));
 
         log('debug', 'load activation');
@@ -419,7 +420,10 @@ function genUpdateModDeployment() {
       .catch(err => api.showErrorNotification('Failed to deploy mods', err, {
         allowReport: err.code !== 'EPERM',
       }))
-      .finally(() => api.dismissNotification(notificationId));
+      .finally(() => {
+        api.store.dispatch(stopActivity('mods', 'deployment'));
+        api.dismissNotification(notificationId);
+      });
   };
 }
 
