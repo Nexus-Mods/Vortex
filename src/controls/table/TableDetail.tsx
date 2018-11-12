@@ -297,7 +297,7 @@ class DetailBox extends ComponentEx<IDetailProps, {}> {
 
     const visClass = (show ? 'table-form-details-show' : 'table-form-details-hide');
     return (
-      <div style={{ height: '100%', position: 'relative', display: 'flex', overflowX: 'hidden' }}>
+      <div style={{ height: '100%', position: 'relative', display: 'flex' }}>
         <div style={{ display: 'flex', flexDirection: 'column' }} >
           {detailList.length > 0 ? (
             <form className={'table-form-details ' + visClass}>

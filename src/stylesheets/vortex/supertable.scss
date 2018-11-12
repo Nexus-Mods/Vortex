@@ -85,8 +85,8 @@
 }
 
 .table-details-pane {
-  contain: content;
-  overflow-y: auto;
+  // contain: content;
+  // overflow-y: auto;
   padding: 0px;
   background-color: $brand-menu;
   transition: max-width 300ms;
@@ -124,10 +124,17 @@
   padding: 5px;
   min-width: 250px;
   &.table-form-details-show {
-    overflow-y: auto;
+    // overflow-y: auto;
   }
   &.table-form-details-hide {
-    overflow-y: hidden;
+    // overflow-y: hidden;
+  }
+
+  .Select-menu-outer {
+    white-space: nowrap;
+    width: auto;
+    left: unset;
+    right: 0;
   }
 }
 
