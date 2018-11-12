@@ -15,7 +15,7 @@ import getTextModManagement from '../mod_management/texts';
 import getTextProfiles from '../profile_management/texts';
 
 import { setAutoDeployment } from './actions/automation';
-import { setAdvancedMode, setLanguage, setProfilesVisible, setDesktopNotifications } from './actions/interface';
+import { setAdvancedMode, setLanguage, setProfilesVisible, setDesktopNotifications, setHideTopLevelCategory } from './actions/interface';
 import { nativeCountryName, nativeLanguageName } from './languagemap';
 import getText from './texts';
 
@@ -43,6 +43,7 @@ interface IConnectedProps {
   customTitlebar: boolean;
   minimizeToTray: boolean;
   desktopNotifications: boolean;
+  hideTopLevelCategory: boolean;
 }
 
 interface IActionProps {
@@ -54,6 +55,7 @@ interface IActionProps {
                  content: IDialogContent, actions: DialogActions) => Promise<IDialogResult>;
   onSetCustomTitlebar: (enable: boolean) => void;
   onSetDesktopNotifications: (enabled: boolean) => void;
+  onSetHideTopLevelCategory: (hide: boolean) => void;
 }
 
 interface IComponentState {
@@ -117,7 +119,8 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
 
   public render(): JSX.Element {
     const { t, advanced, autoDeployment, currentLanguage,
-            customTitlebar, desktopNotifications, profilesVisible } = this.props;
+            customTitlebar, desktopNotifications, profilesVisible,
+            hideTopLevelCategory } = this.props;
 
     const needRestart = (customTitlebar !== this.mInitialTitlebar);
 
@@ -159,6 +162,17 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
                 onToggle={this.toggleDesktopNotifications}
               >
                 {t('Enable Desktop Notifications')}
+              </Toggle>
+            </div>
+            <div>
+              <Toggle
+                checked={hideTopLevelCategory}
+                onToggle={this.toggleHideTopLevelCategory}
+              >
+                {t('Hide Top-Level Category')}
+                <More id='more-hide-toplevel-category' name={t('Top-Level Categories')}>
+                  {getText('toplevel-categories', t)}
+                </More>
               </Toggle>
             </div>
           </div>
@@ -238,6 +252,11 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
     onSetDesktopNotifications(!desktopNotifications);
   }
 
+  private toggleHideTopLevelCategory = () => {
+    const { hideTopLevelCategory, onSetHideTopLevelCategory } = this.props;
+    onSetHideTopLevelCategory(!hideTopLevelCategory);
+  }
+
   private toggleProfiles = () => {
     const { t, profilesVisible, onSetProfilesVisible, onShowDialog } = this.props;
     if (profilesVisible) {
@@ -276,6 +295,7 @@ function mapStateToProps(state: IState): IConnectedProps {
   return {
     currentLanguage: state.settings.interface.language,
     profilesVisible: state.settings.interface.profilesVisible,
+    hideTopLevelCategory: state.settings.interface.hideTopLevelCategory,
     advanced: state.settings.interface.advanced,
     desktopNotifications: state.settings.interface.desktopNotifications,
     autoDeployment: state.settings.automation.deploy,
@@ -305,6 +325,9 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
     onSetDesktopNotifications: (enabled: boolean) => {
       dispatch(setDesktopNotifications(enabled));
     },
+    onSetHideTopLevelCategory: (skip: boolean) => {
+      dispatch(setHideTopLevelCategory(skip));
+    }
   };
 }
 

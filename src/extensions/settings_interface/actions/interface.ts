@@ -18,3 +18,6 @@ export const setProfilesVisible = safeCreateAction('SET_PROFILES_VISIBLE',
 
 export const setDesktopNotifications = safeCreateAction('SET_DESKTOP_NOTIFICATIONS',
   (enabled: boolean) => enabled);
+
+export const setHideTopLevelCategory = safeCreateAction('SET_HIDE_TOPLEVEL_CATEGORY',
+  (hide: boolean) => ({ hide }))

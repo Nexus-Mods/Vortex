@@ -146,6 +146,7 @@ export interface ISettingsInterface {
   advanced: boolean;
   profilesVisible: boolean;
   desktopNotifications: boolean;
+  hideTopLevelCategory: boolean;
   dashboardLayout: string[];
   dashletSettings: { [dashletId: string]: IDashletSettings };
 }

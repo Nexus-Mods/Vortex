@@ -38,7 +38,7 @@ function retrieveCategoryList(
               parentCategory: parent,
               order: counter,
             };
-            counter++;
+            ++counter;
           });
 
           resolve(res);
