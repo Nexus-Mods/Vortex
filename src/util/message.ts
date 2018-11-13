@@ -253,6 +253,11 @@ export function prettifyNodeErrorMessage(err: any): { message: string, replace?:
       replace: { address: err.address },
       allowReport: false,
     };
+  } else if (err.code === 'EAI_AGAIN') {
+    return {
+      message: 'Temporary name resolution error, please try again later.',
+      allowReport: false,
+    };
   } else if (err.code === 'EISDIR') { 
     return {
       message: 'Vortex expected a file but found a directory.',
