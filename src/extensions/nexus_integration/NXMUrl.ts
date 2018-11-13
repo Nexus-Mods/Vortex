@@ -26,8 +26,8 @@ class NXMUrl {
 
     this.mModId = parseInt(matches[1], 10);
     this.mFileId = parseInt(matches[2], 10);
-    this.mKey = parsed.searchParams.get('key');
-    const exp = parsed.searchParams.get('expires');
+    this.mKey = parsed.searchParams.get('key') || undefined;
+    const exp = parsed.searchParams.get('expires') || undefined;
     this.mExpires = exp !== undefined ? parseInt(exp, 10) : undefined;
   }
 
