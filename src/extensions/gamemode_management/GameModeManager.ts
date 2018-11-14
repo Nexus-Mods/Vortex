@@ -160,18 +160,24 @@ class GameModeManager {
     const progressCallback = (idx: number, percent: number, label: string) =>
             this.mStore.dispatch(discoveryProgress(idx, percent, label));
 
-    const { searchPaths } = this.mStore.getState().settings.gameMode;
+    const state: IState = this.mStore.getState();
+    const { searchPaths } = state.settings.gameMode;
 
     if (!Array.isArray(searchPaths)) {
       throw new Error('invalid search paths: ' + require('util').inspect(searchPaths));
+    }
+
+    if (state.session.discovery.running) {
+      // already scanning
+      return;
     }
 
     this.mStore.dispatch(setPhaseCount(searchPaths.length));
 
     this.mActiveSearch = searchDiscovery(
       this.mKnownGames,
-      this.mStore.getState().settings.gameMode.discovered,
-      searchPaths,
+      state.settings.gameMode.discovered,
+      searchPaths.slice().sort(),
       this.onDiscoveredGame,
       this.onDiscoveredTool,
       this.onError,
