@@ -17,6 +17,7 @@ import sendEndorseMod from './util/endorseMod';
 import transformUserInfo from './util/transformUserInfo';
 import { gameById, knownGames } from '../gamemode_management/selectors';
 import { activeGameId } from '../../util/selectors';
+import { setApiKey } from '../../util/errorHandling';
 
 const UPDATE_CHECK_DELAY = 60 * 60 * 1000;
 
@@ -296,8 +297,9 @@ function errorFromNexusError(err: NexusError): string {
   }
 }
 
-export function validateKey(api: IExtensionApi, nexus: Nexus, key: string): Promise<void> {
-  return Promise.resolve(nexus.validateKey(key))
+export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promise<void> {
+  setApiKey(key);
+  return Promise.resolve(nexus.setKey(key))
     .then(userInfo => {
       api.store.dispatch(setUserInfo(transformUserInfo(userInfo)));
       retrieveNexusGames(nexus);
@@ -325,7 +327,7 @@ export function validateKey(api: IExtensionApi, nexus: Nexus, key: string): Prom
           ? 'Connection to nexusmods.com timed out, please check your internet connection'
           : err.message,
         actions: [
-          { title: 'Retry', action: dismiss => { validateKey(api, nexus, key); dismiss(); } },
+          { title: 'Retry', action: dismiss => { updateKey(api, nexus, key); dismiss(); } },
         ],
       });
       api.store.dispatch(setUserInfo(undefined));

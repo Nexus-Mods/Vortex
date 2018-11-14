@@ -3374,13 +3374,6 @@ edge-cs@1.2.1:
   version "1.2.1"
   resolved "https://registry.yarnpkg.com/edge-cs/-/edge-cs-1.2.1.tgz#bd1a9ecdb94ef0ed40c894582046749e57045e5a"
 
-edge@^7.10.1:
-  version "7.10.1"
-  resolved "https://registry.yarnpkg.com/edge/-/edge-7.10.1.tgz#68386eac102f39724d273cc19aea30091e2b4ae4"
-  dependencies:
-    edge-cs "1.2.1"
-    nan "^2.0.9"
-
 ee-first@1.1.1:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/ee-first/-/ee-first-1.1.1.tgz#590c61156b0ae2f4f0255732a158b266bc56b21d"
@@ -4198,8 +4191,8 @@ flux-standard-action@^2.0.0:
     lodash "^4.0.0"
 
 fomod-installer@Nexus-Mods/fomod-installer:
-  version "0.0.14"
-  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/714fb0ff00f9d4862c1cd17360c4e9b04b54ff66"
+  version "0.0.16"
+  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/56472563cc3aa52249810dacafb517d6e43366f6"
   dependencies:
     copyfiles "^1.0.0"
     msbuild "^1.0.1"
@@ -6371,7 +6364,7 @@ msbuild@^1.0.1:
     colors "*"
     events "*"
 
-nan@^2.0.9, nan@^2.10.0, nan@^2.4.0, nan@^2.8.0, nan@^2.9.2, nan@~2.10.0:
+nan@^2.10.0, nan@^2.4.0, nan@^2.8.0, nan@^2.9.2, nan@~2.10.0:
   version "2.10.0"
   resolved "https://registry.yarnpkg.com/nan/-/nan-2.10.0.tgz#96d0cd610ebd58d4b4de9cc0c6828cda99c7548f"
 
@@ -6442,8 +6435,8 @@ next-tick@1:
   resolved "https://registry.yarnpkg.com/next-tick/-/next-tick-1.0.0.tgz#ca86d1fe8828169b0120208e3dc8424b9db8342c"
 
 nexus-api@Nexus-Mods/node-nexus-api:
-  version "0.6.1"
-  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/00669021aaccc256bef0b6b4f536af41779e1606"
+  version "0.7.2"
+  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/dbd5cca4212c66c8f8b09b396f30515b0b64b55f"
   dependencies:
     request "^2.85.0"
     string-template "^1.0.0"
