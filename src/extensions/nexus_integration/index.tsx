@@ -16,7 +16,6 @@ import { decodeHTML, truthy } from '../../util/util';
 import { ICategoryDictionary } from '../category_management/types/ICategoryDictionary';
 import { DownloadIsHTML } from '../download_management/DownloadManager';
 import { IGameStored } from '../gamemode_management/types/IGameStored';
-import { setUpdatingMods } from '../mod_management/actions/session';
 import { IMod } from '../mod_management/types/IMod';
 
 import { setUserAPIKey } from './actions/account';
@@ -39,7 +38,7 @@ import { genEndorsedAttribute, genGameAttribute, genModIdAttribute } from './att
 import * as eh from './eventHandlers';
 import NXMUrl from './NXMUrl';
 import * as sel from './selectors';
-import { processErrorMessage, startDownload, validateKey, retrieveNexusGames, nexusGames, endorseModImpl } from './util';
+import { processErrorMessage, startDownload, nexusGames, endorseModImpl, updateKey } from './util';
 
 import * as Promise from 'bluebird';
 import { remote } from 'electron';
@@ -350,27 +349,14 @@ function once(api: IExtensionApi) {
     const state = api.store.getState();
 
     const Nexus: typeof NexusT = require('nexus-api').default;
-    const apiKey = getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], '');
+    const apiKey = getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], undefined);
     const gameMode = activeGameId(state);
+
     nexus = new Nexus(remote.app.getVersion(), gameMode, 30000);
-    nexus.setKey(apiKey)
-      .then(() => {
-        setApiKey(apiKey);
 
-        retrieveNexusGames(nexus);
+    updateKey(api, nexus, apiKey);
 
-        api.store.dispatch(setUpdatingMods(gameMode, false));
-
-        registerFunc(getSafe(state, ['settings', 'nexus', 'associateNXM'], undefined));
-
-        if (state.confidential.account.nexus.APIKey !== undefined) {
-          (window as any).requestIdleCallback(() => {
-            validateKey(api, nexus, state.confidential.account.nexus.APIKey);
-          });
-        } else {
-          api.store.dispatch(setUserInfo(undefined));
-        }
-      });
+    registerFunc(getSafe(state, ['settings', 'nexus', 'associateNXM'], undefined));
   }
 
   api.onAsync('check-mods-version', eh.onCheckModsVersion(api, nexus));

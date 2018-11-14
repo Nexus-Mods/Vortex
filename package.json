@@ -167,7 +167,6 @@
     "dnd-core": "^4.0.5",
     "draggabilly": "^2.2.0",
     "drivelist": "^6.3.0",
-    "edge": "^7.10.1",
     "electron-edge-js": "^8.3.6",
     "electron-updater": "^3.0.3",
     "encoding-down": "^5.0.4",
