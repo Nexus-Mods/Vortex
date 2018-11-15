@@ -114,7 +114,6 @@ class MenuAction extends React.PureComponent<IMenuActionProps, {}> {
         disabled={action.show !== true}
         title={genTooltip(t, action.show)}
       >
-        {/*this.renderIconInner(icon, index, 'menu')*/}
         <Icon name={action.icon} />
         <div className='button-text'>{t(action.title)}</div>
       </MenuItem>

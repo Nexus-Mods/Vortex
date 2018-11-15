@@ -482,6 +482,10 @@
     "video": {
       "path": "{nucleo}/multimedia/{nucleo_simple}_play-69",
       "rmFill": true
+    },
+    "clipboard": {
+      "path": "{fa}/clipboard",
+      "rmFill": true
     }
   }
 }

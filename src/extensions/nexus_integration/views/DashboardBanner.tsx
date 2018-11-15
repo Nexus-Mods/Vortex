@@ -10,9 +10,11 @@ import * as React from 'react';
 import { Button, Image } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
+import { UserCanceled } from '../../../util/CustomErrors';
 
 interface IConnectedProps {
   userInfo: IValidateKeyData;
+  loginId: string;
 }
 
 interface IActionProps {
@@ -22,15 +24,7 @@ interface IActionProps {
 
 type IProps = IConnectedProps & IActionProps;
 
-class DashboardBanner extends ComponentEx<IProps, { loggingIn: boolean }> {
-  constructor(props: IProps) {
-    super(props);
-
-    this.initState({
-      loggingIn: false,
-    });
-  }
-
+class DashboardBanner extends ComponentEx<IProps, { }> {
   public render(): JSX.Element {
     const { userInfo } = this.props;
     if ((userInfo !== undefined) && (userInfo !== null)) {
@@ -41,8 +35,7 @@ class DashboardBanner extends ComponentEx<IProps, { loggingIn: boolean }> {
   }
 
   private renderRegister(): JSX.Element {
-    const { t } = this.props;
-    const { loggingIn } = this.state;
+    const { t, loginId } = this.props;
     return (
       <div className='dashlet-nexus-login'>
         <div className='nexus-login-heading'>{t('Register or Log In')}</div>
@@ -50,8 +43,8 @@ class DashboardBanner extends ComponentEx<IProps, { loggingIn: boolean }> {
           {t('Log In using your Nexus Mods account or register a new account '
             + 'on the Nexus Mods website to get the best experience!')}
         </div>
-        <Button onClick={this.login} disabled={loggingIn}>
-          {loggingIn ? <Spinner /> : t('Log In or Register')}
+        <Button onClick={this.login} disabled={loginId !== undefined}>
+          {(loginId !== undefined) ? <Spinner /> : t('Log In or Register')}
         </Button>
       </div>
     );
@@ -90,10 +83,8 @@ class DashboardBanner extends ComponentEx<IProps, { loggingIn: boolean }> {
   }
 
   private login = () => {
-    this.nextState.loggingIn = true;
     this.context.api.events.emit('request-nexus-login', (err: Error) => {
-      this.nextState.loggingIn = false;
-      if (err !== null) {
+      if ((err !== null) && !(err instanceof UserCanceled)) {
         this.context.api.showErrorNotification('Failed to get access key', err, {
           allowReport: false
         });
@@ -116,6 +107,7 @@ class DashboardBanner extends ComponentEx<IProps, { loggingIn: boolean }> {
 function mapStateToProps(state: any): IConnectedProps {
   return {
     userInfo: state.persistent.nexus.userInfo,
+    loginId: state.session.nexus.loginId,
   };
 }
 

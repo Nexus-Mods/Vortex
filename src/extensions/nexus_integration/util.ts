@@ -301,8 +301,10 @@ export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promis
   setApiKey(key);
   return Promise.resolve(nexus.setKey(key))
     .then(userInfo => {
-      api.store.dispatch(setUserInfo(transformUserInfo(userInfo)));
-      retrieveNexusGames(nexus);
+      if (userInfo !== null) {
+        api.store.dispatch(setUserInfo(transformUserInfo(userInfo)));
+        retrieveNexusGames(nexus);
+      }
     })
     .catch(TimeoutError, () => {
       showError(api.store.dispatch,
