@@ -8,14 +8,9 @@ import { IMod } from '../types/IMod';
 import testModReference from './testModReference';
 
 import * as Promise from 'bluebird';
+import * as _ from 'lodash';
 import { alg, Graph } from 'graphlib';
 import { ILookupResult, IReference, IRule, RuleType } from 'modmeta-db';
-
-interface IBiRule {
-  subject: string;
-  object: string;
-  type: RuleType;
-}
 
 function findByRef(mods: IMod[], reference: IReference): IMod {
   return mods.find((mod: IMod) => testModReference(mod, reference));
@@ -37,7 +32,20 @@ function showCycles(api: IExtensionApi, cycles: string[][]) {
   ]));
 }
 
+let sortModsCache: { id: { gameId: string, mods: IMod[] }, sorted: Promise<IMod[]> } =
+  { id: { gameId: undefined, mods: [] }, sorted: Promise.resolve([]) };
+
 function sortMods(gameId: string, mods: IMod[], api: IExtensionApi): Promise<IMod[]> {
+  if (mods.length === 0) {
+    // don't flush the cache if the input is empty
+    return Promise.resolve([]);
+  }
+
+  if ((sortModsCache.id.gameId === gameId)
+    && _.isEqual(sortModsCache.id.mods, mods)) {
+    return sortModsCache.sorted;
+  }
+
   const dependencies = new Graph();
 
   const modMapper = (mod: IMod) => {
@@ -67,7 +75,7 @@ function sortMods(gameId: string, mods: IMod[], api: IExtensionApi): Promise<IMo
 
   mods.forEach(mod => { dependencies.setNode(mod.id); });
 
-  return Promise.map(mods, modMapper)
+  let sorted = Promise.map(mods, modMapper)
     .catch((err: Error) => {
       log('error', 'failed to sort mods',
           {msg: err.message, stack: err.stack});
@@ -101,6 +109,10 @@ function sortMods(gameId: string, mods: IMod[], api: IExtensionApi): Promise<IMo
         }
       }
     });
+
+  sortModsCache = { id: { gameId, mods }, sorted };
+
+  return sorted;
 }
 
 function renderCycles(cycles: string[][]): string {
