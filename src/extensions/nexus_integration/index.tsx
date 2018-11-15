@@ -3,8 +3,7 @@ import { IDialogResult, showDialog } from '../../actions/notifications';
 import InputButton from '../../controls/InputButton';
 import { IExtensionApi, IExtensionContext, ILookupResult } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
-import { ProcessCanceled, DataInvalid } from '../../util/CustomErrors';
-import { setApiKey } from '../../util/errorHandling';
+import { ProcessCanceled, DataInvalid, UserCanceled } from '../../util/CustomErrors';
 import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
@@ -20,10 +19,12 @@ import { setUpdatingMods } from '../mod_management/actions/session';
 import { IMod } from '../mod_management/types/IMod';
 
 import { setUserAPIKey } from './actions/account';
-import { setNewestVersion, setUserInfo } from './actions/persistent';
+import { setNewestVersion } from './actions/persistent';
+import { setLoginId } from './actions/session';
 import { setAssociatedWithNXMURLs } from './actions/settings';
 import { accountReducer } from './reducers/account';
 import { persistentReducer } from './reducers/persistent';
+import { sessionReducer } from './reducers/session';
 import { settingsReducer } from './reducers/settings';
 import { nexusGameId } from './util/convertGameId';
 import retrieveCategoryList from './util/retrieveCategories';
@@ -35,6 +36,7 @@ import { } from './views/Settings';
 
 import { genEndorsedAttribute, genGameAttribute, genModIdAttribute } from './attributes';
 import * as eh from './eventHandlers';
+import NXMUrl from './NXMUrl';
 import * as sel from './selectors';
 import { processErrorMessage, startDownload, validateKey, retrieveNexusGames, nexusGames, endorseModImpl } from './util';
 
@@ -48,7 +50,6 @@ import * as React from 'react';
 import { Button } from 'react-bootstrap';
 import {} from 'uuid';
 import * as WebSocket from 'ws';
-import NXMUrl from './NXMUrl';
 
 let nexus: NexusT;
 
@@ -184,6 +185,8 @@ function bringToFront() {
   remote.getCurrentWindow().setAlwaysOnTop(false);
 }
 
+let cancelLogin: () => void;
+
 function requestLogin(api: IExtensionApi, callback: (err: Error) => void) {
   let id: string;
   try {
@@ -197,53 +200,68 @@ function requestLogin(api: IExtensionApi, callback: (err: Error) => void) {
     // the probability that this fails for another user at exactly the same time and they both get the same
     // random number is practically 0
   }
+
+  const stackErr = new Error();
+
   let keyReceived: boolean = false;
   let connectionAlive: boolean = true;
-  const connection = new WebSocket('wss://sso.nexusmods.com')
-    .on('open', () => {
-      connection.send(JSON.stringify({
-        id, appid: 'Vortex',
-      }), err => {
-        if (err) {
-          api.showErrorNotification('Failed to start login', err);
+  let errorReported: boolean = false;
+  try {
+    const connection = new WebSocket('wss://sso.nexusmods.com')
+      .on('open', () => {
+        cancelLogin = () => {
           connection.close();
         }
-      });
-      opn(`https://www.nexusmods.com/sso?id=${id}`).catch(err => undefined);
-      const keepAlive = setInterval(() => {
-        if (!connectionAlive) {
-          connection.terminate();
-          clearInterval(keepAlive);
-        } else if (connection.readyState === WebSocket.OPEN) {
-          connection.ping();
-        } else {
-          clearInterval(keepAlive);
+        connection.send(JSON.stringify({
+          id, appid: 'Vortex',
+        }), err => {
+          api.store.dispatch(setLoginId(id));
+          if (err) {
+            api.showErrorNotification('Failed to start login', err);
+            connection.close();
+          }
+        });
+        opn(`https://www.nexusmods.com/sso?id=${id}`).catch(err => undefined);
+        const keepAlive = setInterval(() => {
+          if (!connectionAlive) {
+            connection.terminate();
+            clearInterval(keepAlive);
+          } else if (connection.readyState === WebSocket.OPEN) {
+            connection.ping();
+          } else {
+            clearInterval(keepAlive);
+          }
+        }, 30000);
+      })
+      .on('close', (code: number, reason: string) => {
+        api.store.dispatch(setLoginId(undefined));
+        cancelLogin = undefined;
+        bringToFront();
+        if (!keyReceived && !errorReported) {
+          callback((code === 1005)
+            ? new UserCanceled()
+            : new ProcessCanceled(`Log-in connection closed prematurely (Code ${code})`));
         }
-      }, 30000);
-    })
-    .on('close', (code: number, reason: string) => {
-      bringToFront();
-      if (!keyReceived) {
-        callback(new ProcessCanceled(`Log-in connection closed prematurely (Code ${code})`));
-      }
-    })
-    .on('pong', () => {
-      connectionAlive = true;
-    })
-    .on('message', data => {
-      connection.close();
-      api.store.dispatch(setUserAPIKey(data.toString()));
-      bringToFront();
-      callback(null);
-      keyReceived = true;
-    })
-    .on('error', err => {
-      api.showErrorNotification('Failed to connect to nexusmods.com', err, {
-        allowReport: false,
+      })
+      .on('pong', () => {
+        connectionAlive = true;
+      })
+      .on('message', data => {
+        connection.close();
+        api.store.dispatch(setUserAPIKey(data.toString()));
+        bringToFront();
+        callback(null);
+        keyReceived = true;
+      })
+      .on('error', err => {
+        connection.close();
+        errorReported = true;
+        err.stack = (err.stack || '') + '\nRequest Stack:\n' + stackErr.stack;
+        callback(err);
       });
-      connection.close();
-      callback(err);
-    });
+  } catch (err) {
+    callback(err);
+  }
 }
 
 function doDownload(api: IExtensionApi, url: string) {
@@ -299,6 +317,7 @@ function once(api: IExtensionApi) {
         .then(() => {
           doDownload(api, url);
         })
+        .catch(UserCanceled, () => null)
         .catch(ProcessCanceled, err => {
           api.showErrorNotification('Log-in failed', err, { allowReport: false });
         })
@@ -462,7 +481,14 @@ function init(context: IExtensionContextExt): boolean {
   context.registerReducer(['confidential', 'account', 'nexus'], accountReducer);
   context.registerReducer(['settings', 'nexus'], settingsReducer);
   context.registerReducer(['persistent', 'nexus'], persistentReducer);
-  context.registerDialog('login-dialog', LoginDialog, () => ({ nexus }));
+  context.registerReducer(['session', 'nexus'], sessionReducer);
+  context.registerDialog('login-dialog', LoginDialog, () => ({
+    onCancelLogin: () => {
+      if (cancelLogin !== undefined) {
+        cancelLogin();
+      }
+    }
+  }));
   context.registerBanner('downloads', () => {
     const t = context.api.translate;
     return (
@@ -486,11 +512,6 @@ function init(context: IExtensionContextExt): boolean {
     },
     condition: (props: any): boolean => !props.isPremium && !props.isSupporter,
   });
-
-  const associateNXM = () => {
-    const state: any = context.api.store.getState();
-    context.api.store.dispatch(setAssociatedWithNXMURLs(!state.settings.nexus.associateNXM));
-  };
 
   context.registerModSource('nexus', 'Nexus Mods', () => {
     currentGame(context.api.store)

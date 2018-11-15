@@ -299,8 +299,10 @@ function errorFromNexusError(err: NexusError): string {
 export function validateKey(api: IExtensionApi, nexus: Nexus, key: string): Promise<void> {
   return Promise.resolve(nexus.validateKey(key))
     .then(userInfo => {
-      api.store.dispatch(setUserInfo(transformUserInfo(userInfo)));
-      retrieveNexusGames(nexus);
+      if (userInfo !== null) {
+        api.store.dispatch(setUserInfo(transformUserInfo(userInfo)));
+        retrieveNexusGames(nexus);
+      }
     })
     .catch(TimeoutError, () => {
       showError(api.store.dispatch,
