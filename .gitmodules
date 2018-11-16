@@ -53,7 +53,7 @@
 [submodule "extensions\\mod-dependencies"]
 	path = extensions/mod-dependency-manager
 	url = https://github.com/Nexus-Mods/extension-mod-dependencies.git
-	branch = master
+	branch = improved-conflict-ui
 [submodule "extensions\\mod-highlights"]
 	path = extensions/mod-highlight
 	url = https://github.com/Nexus-Mods/extension-mod-highlights.git
