@@ -226,8 +226,9 @@
 
 .xtable .cell-actions {
   display: inline-flex;
-  .dropdown .btn:first-child {
-    text-align: left
+  .dropdown .btn:first-child,
+  .dropup .btn:first-child {
+    text-align: left;
   }
   .dropdown-toggle {
     min-width: initial;
