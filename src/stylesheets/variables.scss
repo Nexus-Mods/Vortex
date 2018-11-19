@@ -35,15 +35,6 @@ $brand-menu:            $gray-light;
 $brand-clickable:       $brand-primary;
 $brand-secondary:       $brand-primary;
 
-$highlight1: #6610f2; 
-$highlight2: #9f0dff;
-$highlight3: #ff00ba;
-$highlight4: #dcff0d;
-$highlight5: #13c8c4;
-$highlight6: #FF1C38;
-$highlight7: #26FF41;
-$highlight8: #262AFF;
-
 $border-color: rgb(128, 128, 128);
 $border-width: 1px;
 
@@ -59,6 +50,17 @@ $text-color-disabled:   darken($text-color, 15%);
 $link-color:            $brand-clickable;
 $link-hover-color:      darken($link-color, 15%);
 $link-hover-decoration: underline;
+
+$highlight-list: (
+  ( 1, #6610f2 ),
+  ( 2, #9f0dff ),
+  ( 3, #ff00ba ),
+  ( 4, #dcff0d ),
+  ( 5, #13c8c4 ),
+  ( 6, #FF1C38 ),
+  ( 7, #26FF41 ),
+  ( 8, #262AFF ),
+);
 
 $component-active-color:    white;
 $component-active-bg:       $brand-primary;

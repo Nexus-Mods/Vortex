@@ -358,7 +358,7 @@
       "rmFill": true
     },
     "highlight-map": {
-      "path": "{fa}/map",
+      "path": "{nucleo}/maps-location/{nucleo_simple}_map-big",
       "rmFill": true
     },
     "highlight-flag": {
