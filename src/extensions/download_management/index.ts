@@ -81,7 +81,7 @@ function refreshDownloads(downloadPath: string, knownDLs: string[],
     });
 }
 
-export type ProtocolHandler = (inputUrl: string) => Promise<string[]>;
+export type ProtocolHandler = (inputUrl: string) => Promise<{ urls: string[], meta: any }>;
 
 export interface IExtensionContextExt extends IExtensionContext {
   // register a download protocol handler
@@ -521,9 +521,9 @@ function init(context: IExtensionContextExt): boolean {
               // this schedules the main progress to be updated
               speedsDebouncer.schedule();
             }
-          }, `Nexus Client v2.${app.getVersion()}`);
+          }, `Nexus Client v2.${app.getVersion()}`, protocolHandlers);
       observer =
-          observeImpl(context.api, manager, protocolHandlers);
+          observeImpl(context.api, manager);
 
       const downloads = (store.getState() as IState).persistent.downloads.files;
       const interruptedDownloads = Object.keys(downloads)
