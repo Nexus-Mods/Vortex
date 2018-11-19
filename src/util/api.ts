@@ -10,7 +10,7 @@ import { resolveCategoryName, resolveCategoryPath } from '../extensions/category
 import { getGame, getGames } from '../extensions/gamemode_management/util/getGame';
 import deriveModInstallName from '../extensions/mod_management/modIdManager';
 import renderModName from '../extensions/mod_management/util/modName';
-import sortMods from '../extensions/mod_management/util/sort';
+import sortMods, { CycleError } from '../extensions/mod_management/util/sort';
 import testModReference from '../extensions/mod_management/util/testModReference';
 import { Archive } from './archives';
 import copyRecursive from './copyRecursive';
@@ -41,6 +41,7 @@ export {
   bytesToString,
   copyFileAtomic,
   copyRecursive,
+  CycleError,
   DataInvalid,
   Debouncer,
   delayed,
