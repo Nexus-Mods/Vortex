@@ -46,7 +46,10 @@
       "path": "{fa}/commenting",
       "rmFill": true
     },
-    "conflict": "{fa}/bolt",
+    "conflict": {
+      "path": "{nucleo}/multimedia/{nucleo_simple}_flash-24",
+      "rmFill": true
+    },
     "download": {
       "path": "{nucleo}/arrows/{nucleo_simple}_square-download",
       "rmFill": true
@@ -344,7 +347,10 @@
       "path": "{nucleo}/files-folders/{nucleo_simple}_bookmark-2",
       "rmFill": true
     },
-    "highlight-conflict": "{fa}/bolt",
+    "highlight-conflict": {
+      "path": "{nucleo}/multimedia/{nucleo_simple}_flash-24",
+      "rmFill": true
+    },
     "highlight-temple": {
       "path": "{nucleo}/travel/{nucleo_simple}_temple-25",
       "rmFill": true
