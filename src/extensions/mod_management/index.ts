@@ -52,7 +52,7 @@ import allTypesSupported from './util/allTypesSupported';
 import * as basicInstaller from './util/basicInstaller';
 import { NoDeployment } from './util/exceptions';
 import { registerAttributeExtractor } from './util/filterModInfo';
-import sortMods from './util/sort';
+import sortMods, { CycleError } from './util/sort';
 import ActivationButton from './views/ActivationButton';
 import DeactivationButton from './views/DeactivationButton';
 import {} from './views/ExternalChangeDialog';
@@ -326,7 +326,8 @@ function genUpdateModDeployment() {
             .map((key: string) => mods[key])
             .filter((mod: IMod) => getSafe(modState, [mod.id, 'enabled'], false));
 
-        return sortMods(profile.gameId, unsorted, api);
+        return sortMods(profile.gameId, unsorted, api)
+          .catch(CycleError, () => Promise.reject(new ProcessCanceled('Deployment is not possible when you have cyclical mod rules.')));
       })
       .then((sortedModList: IMod[]) => {
         const mergedFileMap: { [modType: string]: string[] } = {};
@@ -410,7 +411,6 @@ function genUpdateModDeployment() {
           type: 'warning',
           title: 'Deployment interrupted',
           message: err.message,
-          displayMS: calcDuration(err.message.length),
         });
       })
       .catch(TemporaryError, err => {

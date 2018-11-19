@@ -280,7 +280,7 @@ export function toError(input: any, options?: IErrorOptions): IError {
       let stack: string;
       if (!truthy(input) || (Object.keys(input).length === 0)) {
         // this is bad...
-        message = 'An empty error message was thrown';
+        message = `An empty error message was thrown: "${inspect(input)}"`;
       } else if ((input.error !== undefined) && (input.error instanceof Error)) {
         message = input.error.message;
         stack = input.error.stack;
