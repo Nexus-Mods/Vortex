@@ -10,6 +10,9 @@ export const userReducer: IReducerSpec = {
     multiUser: false,
   },
   verifiers: {
-    multiUser: { type: 'boolean' },
+    multiUser: {
+      description: () => 'Choice of "shared"/"per-user" mode was not stored, defaulting to "per-user" mode.',
+      type: 'boolean'
+    },
   },
 };

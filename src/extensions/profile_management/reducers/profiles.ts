@@ -45,4 +45,29 @@ export const profilesReducer: IReducerSpec = {
   },
   defaults: {
   },
+  verifiers: {
+    _: {
+      type: 'object',
+      deleteBroken: true,
+      description: () => `Invalid profile will be removed`,
+      elements: {
+        gameId: {
+          type: 'string',
+          description: (input) => `Profile ${input.id} has no game assigned and will be removed`,
+          noUndefined: true,
+          noNull: true,
+          required: true,
+          deleteBroken: 'parent',
+        },
+        name: {
+          type: 'string',
+          description: (input) => `Profile ${input.id} is missing a name, will set a default`,
+          noUndefined: true,
+          noNull: true,
+          required: true,
+          repair: () => '<Invalid>',
+        },
+      },
+    },
+  },
 };

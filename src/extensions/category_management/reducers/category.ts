@@ -33,11 +33,21 @@ export const categoryReducer: IReducerSpec = {
   defaults: {},
   verifiers: {
     _: {
+      // shouldn't be reported atm
+      description: () => 'Invalid set of categories',
       elements: {
         _: {
+          // shouldn't be reported atm
+          description: () => 'Invalid category',
           elements: {
-            name: { type: 'string' },
-            order: { type: 'number' },
+            name: {
+              description: () => 'Category without name will be set to default',
+              type: 'string'
+            },
+            order: {
+              description: () => 'Category without sorting order will be reset',
+              type: 'number'
+            },
           },
         },
       },

@@ -20,6 +20,7 @@ export const persistentReducer: IReducerSpec = {
   },
   verifiers: {
     userInfo: {
+      description: () => 'Invalid Nexus user info will be removed, this should resolve itself automatically.',
       type: 'object',
       noNull: true,
     },

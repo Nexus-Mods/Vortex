@@ -120,13 +120,17 @@ export const modsReducer: IReducerSpec = {
   },
   verifiers: {
     _: {
+      // shouldn't be possible
+      description: () => 'Severe! Corrupted mod list',
       elements: {
         _: {
           type: 'object',
+          description: () => 'Corrupted mod info will be reset',
           deleteBroken: true,
           elements: {
             installationPath: {
               type: 'string',
+              description: () => 'Mod with invalid attribute will be reset.',
               noUndefined: true,
               noNull: true,
               required: true,
