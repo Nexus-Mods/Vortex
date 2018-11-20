@@ -276,9 +276,20 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
 
   private renderInput = (input: IInput, idx: number) => {
     const { t } = this.props;
-    const hasValidationError = this.hasValidationError(input);
+    const { dialogState } = this.state;
+    let hasValidationError = undefined;
+    if (dialogState.condition !== undefined) {
+      hasValidationError = this.hasValidationError(input);
+    }
+
+    const getValidationStatus = () => {
+      return hasValidationError !== undefined 
+        ? hasValidationError ? 'error' : 'success'
+        : null;
+    }
+    
     return (
-      <FormGroup key={input.id} validationState={hasValidationError ? 'error' : 'success'}>
+      <FormGroup key={input.id} validationState={getValidationStatus()}>
       { input.label ? (
         <ControlLabel>{t(input.label)}</ControlLabel>
       ) : null }
