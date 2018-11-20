@@ -13,6 +13,9 @@ export function getInstallPathPattern(pattern: string): string {
 }
 
 function getInstallPath(pattern: string, gameId: string): string {
+  if (gameId === undefined) {
+    throw new Error('gameId can\'t be undefined');
+  }
   if (userData === undefined) {
     // cached to avoid ipcs from renderer -> main process
     userData = app.getPath('userData');
