@@ -285,7 +285,10 @@ function genUpdateModDeployment() {
           typeId => loadActivation(api, typeId, modPaths[typeId], activator).then(
             deployedFiles => lastDeployment[typeId] = deployedFiles));
       })
-      .then(() => api.emitAndAwait('will-deploy', profile.id, lastDeployment))
+      .then(() => {
+        progress(t('Running pre-deployment events'), 2);
+        return api.emitAndAwait('will-deploy', profile.id, lastDeployment);
+      })
       .then(() => {
         // for each mod type, check if the local files were changed outside vortex
         const changes: { [typeId: string]: IFileChange[] } = {};
@@ -299,12 +302,15 @@ function genUpdateModDeployment() {
           : activeProfile(state);
         progress(t('Checking for external changes'), 5);
         return Promise.each(Object.keys(modPaths),
-          typeId => activator.externalChanges(profile.gameId, instPath, modPaths[typeId],
-            lastDeployment[typeId]).then(fileChanges => {
-              if (fileChanges.length > 0) {
-                changes[typeId] = fileChanges;
-              }
-            }))
+          typeId => {
+            log('debug', 'checking external changes', { modType: typeId, count: lastDeployment[typeId].length });
+            return activator.externalChanges(profile.gameId, instPath, modPaths[typeId], lastDeployment[typeId])
+              .then(fileChanges => {
+                if (fileChanges.length > 0) {
+                  changes[typeId] = fileChanges;
+                }
+            });
+          })
           .then(() => changes);
       })
       .then((changes: { [typeId: string]: IFileChange[] }) => {
