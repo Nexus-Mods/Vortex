@@ -386,7 +386,7 @@ function init(context: IExtensionContext): boolean {
     }
   };
 
-  context.registerAction('game-icons', 100, 'refresh', {}, 'Quickscan', () => {
+  context.registerAction('game-icons', 100, 'refresh', {}, 'Scan: Quick', () => {
     if ($.gameModeManager !== undefined) {
       // we need the state from before the discovery so can determine which games were discovered
       const oldState: IState = context.api.store.getState();
@@ -409,7 +409,7 @@ function init(context: IExtensionContext): boolean {
     }
   });
 
-  context.registerAction('game-icons', 110, 'refresh', {}, 'Full scan', () => {
+  context.registerAction('game-icons', 110, 'refresh', {}, 'Scan: Full', () => {
     if (($.gameModeManager !== undefined) && !$.gameModeManager.isSearching()) {
       $.gameModeManager.startSearchDiscovery();
     }

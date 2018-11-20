@@ -123,6 +123,7 @@
   flex: 1 1 0%;
   padding: 5px;
   min-width: 250px;
+  overflow-y: auto;
 
   .Select-menu-outer {
     white-space: nowrap;
@@ -131,6 +132,12 @@
     left: unset;
     right: 0;
   }
+}
+
+// hack to allow dropdowns inside the sidebar to extend outside of it
+.table-form-details-show {
+  padding-left: calc(50vw + 5px);
+  margin-left: -50vw;
 }
 
 .table-header {
