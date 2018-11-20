@@ -5,7 +5,7 @@ import Icon from '../controls/Icon';
 import Webview from '../controls/Webview';
 import {
   DialogType, ICheckbox, IDialog,
-  IDialogContent, IInput,
+  IDialogContent, IInput, DisabledActions
 } from '../types/IDialog';
 import { IState } from '../types/IState';
 import bbcode from '../util/bbcode';
@@ -30,17 +30,19 @@ interface IActionProps {
   onDismiss: (action: string) => void;
   action: string;
   isDefault: boolean;
+  isDisabled: boolean;
 }
 
 class Action extends React.Component<IActionProps, {}> {
   public render(): JSX.Element {
-    const { t, action, isDefault } = this.props;
+    const { t, action, isDefault, isDisabled } = this.props;
     return (
       <Button
         id='close'
         onClick={this.dismiss}
         bsStyle={isDefault ? 'primary' : undefined}
         ref={isDefault ? this.focus : undefined}
+        disabled={isDisabled}
       >
         {t(action)}
       </Button>
@@ -70,6 +72,7 @@ interface IDialogActionProps {
 interface IComponentState {
   currentDialogId: string;
   dialogState: IDialogContent;
+  disabledActions: DisabledActions;
 }
 
 type IProps = IDialogConnectedProps & IDialogActionProps;
@@ -81,16 +84,25 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     this.state = {
       currentDialogId: undefined,
       dialogState: undefined,
+      disabledActions: [],
     };
   }
 
   public componentWillReceiveProps(newProps: IProps) {
     if ((newProps.dialogs.length > 0) &&
       (newProps.dialogs[0].id !== this.state.currentDialogId)) {
-      this.setState(update(this.state, {
+      let newState = update(this.state, {
         currentDialogId: { $set: newProps.dialogs[0].id },
         dialogState: { $set: newProps.dialogs[0].content },
-      }));
+      });
+
+      const newMap = this.validateContent(newState.dialogState);
+      if (newMap !== undefined) {
+        newState = {...newState, disabledActions: newMap}
+      }
+
+      this.setState(newState);
+
       const window = remote.getCurrentWindow();
       if (window.isMinimized()) {
         window.restore();
@@ -242,10 +254,31 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     return <div className='dialog-container'>{controls}</div>;
   }
 
+  private validateContent(dialogState: IDialogContent): DisabledActions {
+    const { disabledActions } = this.state;
+    if ((disabledActions === undefined) || (dialogState.condition === undefined)) {
+      return undefined;
+    }
+
+    let newMap: DisabledActions = [];
+    const res: DisabledActions = dialogState.condition(dialogState);
+    res.length > 0
+      ? newMap = res
+      : newMap = [];
+
+    return newMap;
+  }
+
+  private hasValidationError(input: IInput): boolean {
+    const { disabledActions } = this.state;
+    return disabledActions.find(res => res.id === input.id) !== undefined;
+  }
+
   private renderInput = (input: IInput, idx: number) => {
     const { t } = this.props;
+    const hasValidationError = this.hasValidationError(input);
     return (
-      <FormGroup key={input.id}>
+      <FormGroup key={input.id} validationState={hasValidationError ? 'error' : 'success'}>
       { input.label ? (
         <ControlLabel>{t(input.label)}</ControlLabel>
       ) : null }
@@ -258,6 +291,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         onChange={this.changeInput}
         ref={idx === 0 ? this.focusMe : undefined}
       />
+      {hasValidationError ? <label className='control-label'>{this.getErrorText(input)}</label> : null}
       </FormGroup>
     );
   }
@@ -320,11 +354,18 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     const newInput = { ...dialogState.input[idx] };
     newInput.value = evt.currentTarget.value;
 
-    this.setState(update(this.state, {
+    let newState = update(this.state, {
       dialogState: {
         input: { $splice: [[idx, 1, newInput]] },
       },
-    }));
+    });
+
+    const newMap = this.validateContent(newState.dialogState);
+    if (newMap !== undefined) {
+      newState = {...newState, disabledActions: newMap}
+    }
+
+    this.setState(newState);
   }
 
   private toggleCheckbox = (evt: React.MouseEvent<any>) => {
@@ -336,11 +377,18 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     const newCheckboxes = JSON.parse(JSON.stringify(dialogState.checkboxes.slice(0)));
     newCheckboxes[idx].value = !newCheckboxes[idx].value;
 
-    this.setState(update(this.state, {
+    let newState = update(this.state, {
       dialogState: {
         checkboxes: { $set: newCheckboxes },
       },
-    }));
+    });
+
+    const newMap = this.validateContent(newState.dialogState);
+    if (newMap !== undefined) {
+      newState = {...newState, disabledActions: newMap}
+    }
+
+    this.setState(newState);
   }
 
   private toggleRadio = (evt: React.MouseEvent<any>) => {
@@ -353,17 +401,44 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
       ({ id: choice.id, text: choice.text, value: false }));
     newChoices[idx].value = true;
 
-    this.setState(update(this.state, {
+    let newState = update(this.state, {
       dialogState: {
         choices: { $set: newChoices },
       },
-    }));
+    });
+
+    const newMap = this.validateContent(newState.dialogState);
+    if (newMap !== undefined) {
+      newState = {...newState, disabledActions: newMap}
+    }
+
+    this.setState(newState);
+  }
+
+  private getErrorText(input: IInput): string {
+    const { disabledActions } = this.state;
+
+    let errorString = '';
+    const errors = disabledActions.filter(res => res.id === input.id);
+    if (errors.length === 0) {
+      return undefined;
+    }
+
+    errors.forEach(error => {
+      errorString = errorString !== '' 
+        ? error.errorText + '\n' 
+        : error.errorText;
+    })
+
+    return errorString;
   }
 
   private renderAction = (action: string, isDefault: boolean): JSX.Element => {
+    const { disabledActions } = this.state;
     const { t } = this.props;
+    const isDisabled = disabledActions.find(res => res.actions.find(act => act === action) !== undefined) !== undefined;
     return (
-      <Action t={t} key={action} action={action} isDefault={isDefault} onDismiss={this.dismiss} />
+      <Action t={t} key={action} action={action} isDefault={isDefault} onDismiss={this.dismiss} isDisabled={isDisabled} />
     );
   }
 
