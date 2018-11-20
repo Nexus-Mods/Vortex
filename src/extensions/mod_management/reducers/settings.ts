@@ -30,8 +30,11 @@ export const settingsReducer: IReducerSpec = {
   },
   verifiers: {
     installPath: {
+      // shouldn't be possible
+      description: () => 'Severe! Invalid set of staging folders',
       elements: {
         _: {
+          description: () => 'Severe! A mod staging folder was corrupted and has to be reset',
           type: 'string',
         }
       }

@@ -527,6 +527,8 @@ export interface IExtensionApi {
 }
 
 export interface IStateVerifier {
+  // Human readable description of the problem, emitted if this verifier detects a problem
+  description: (input: any) => string;
   // the expected datatype
   type?: 'map' | 'string' | 'boolean' | 'number' | 'object' | 'array';
   // if set, can't be undefined

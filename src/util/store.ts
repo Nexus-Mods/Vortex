@@ -23,10 +23,11 @@ const IMPORTED_TAG = 'imported__do_not_delete.txt';
 
 export const currentStatePath = 'state.v2';
 
-export function querySanitize(): Decision {
+export function querySanitize(errors: string[]): Decision {
   const response = dialog.showMessageBox(null, {
     message:
-        'Application state is invalid. I can try to repair it but you may lose data',
+        'Application state is invalid. I can try to repair it but you may lose data.',
+    detail: errors.join('\n'),
     buttons: ['Quit', 'Ignore', 'Backup and Repair'],
   });
 

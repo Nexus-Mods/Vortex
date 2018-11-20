@@ -31,9 +31,21 @@ export const appReducer: IReducerSpec = {
     migrations: [],
   },
   verifiers: {
-    instanceId: { type: 'string' },
-    version: { type: 'string' },
-    appVersion: { type: 'string' },
-    extensions: { noUndefined: true },
+    instanceId: {
+      description: () => 'No instance id set',
+      type: 'string',
+    },
+    version: {
+      description: () => 'Version not set',
+      type: 'string',
+    },
+    appVersion: {
+      description: () => 'Application version not set',
+      type: 'string',
+    },
+    extensions: {
+      description: () => 'Resetting list of disabled extensions',
+      noUndefined: true,
+    },
   },
 };
