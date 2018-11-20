@@ -120,9 +120,11 @@ class StarterInfo implements IStarterInfo {
       fs.statSync(iconPath);
       return iconPath;
     } catch (err) {
-      if (toolLogo !== undefined) {
-        return path.join(extensionPath, toolLogo);
-      } else {
+      try {
+        const iconPath = path.join(extensionPath, toolLogo);
+        fs.statSync(iconPath);
+        return iconPath
+      } catch (err) {
         return undefined;
       }
     }
