@@ -83,7 +83,7 @@ class CategoryFilterComponent extends React.Component<IProps, IComponentState> {
       .filter(id => getSafe(categories, [id], undefined) !== undefined)
       .map(id => ({
         value: id.toString(),
-        label: getSafe(categories, [id, 'name'], undefined),
+        label: getSafe(categories, [id, 'name'], ''),
       })).sort((lhs, rhs) => lhs.label.localeCompare(rhs.label));
 
     return (
