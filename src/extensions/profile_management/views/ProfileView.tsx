@@ -1,6 +1,5 @@
 import { DialogActions, DialogType, IDialogContent, IDialogResult,
          showDialog } from '../../../actions/notifications';
-import Icon from '../../../controls/Icon';
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import * as fs from '../../../util/fs';

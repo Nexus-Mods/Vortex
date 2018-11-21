@@ -69,7 +69,7 @@ class Webview extends React.Component<IWebviewProps & IWebView, {}> {
   }
 
   private logMessage = (evt) => {
-    if (evt.level > 0) {
+    if (evt.level > 1) {
       log('info', 'from embedded page', evt.message);
     }
   }

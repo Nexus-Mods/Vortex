@@ -63,15 +63,17 @@ function verifyElement(verifier: IStateVerifier, value: any) {
 }
 
 // exported for the purpose of testing
-export function verify(statePath: string, verifiers: { [key: string]: IStateVerifier },
-                       input: any, defaults: { [key: string]: any }) {
+export function verify(statePath: string,
+                       verifiers: { [key: string]: IStateVerifier },
+                       input: any, defaults: { [key: string]: any },
+                       emitDescription: (description: string) => void): any {
   if ((input === undefined) || (verifiers === undefined)) {
     return input;
   }
   let res = input;
 
   const recurse = (key: string, mapKey: string) => {
-    const sane = verify(statePath, verifiers[key].elements, res[mapKey], {});
+    const sane = verify(statePath, verifiers[key].elements, res[mapKey], {}, emitDescription);
     if (sane !== res[mapKey]) {
       if (sane === undefined) {
         res = deleteOrNop(res, [mapKey]);
@@ -85,6 +87,7 @@ export function verify(statePath: string, verifiers: { [key: string]: IStateVeri
     if ((verifiers[key].required || input.hasOwnProperty(realKey))
         && !verifyElement(verifiers[key], input[realKey])) {
       log('warn', 'invalid state', { statePath, input, key: realKey, ver: verifiers[key] });
+      emitDescription(verifiers[key].description(input));
       if (verifiers[key].deleteBroken !== undefined) {
         if (verifiers[key].deleteBroken === 'parent') {
           res = undefined;
@@ -130,7 +133,7 @@ export enum Decision {
 let sanitizeDecision: Decision;
 let backupTime: number;
 
-function deriveReducer(statePath: string, ele: any, querySanitize: () => Decision): Reducer<any> {
+function deriveReducer(statePath: string, ele: any, querySanitize: (errors: string[]) => Decision): Reducer<any> {
   const attributes: string[] = Object.keys(ele);
 
   if ((attributes.indexOf('reducers') !== -1)
@@ -144,10 +147,21 @@ function deriveReducer(statePath: string, ele: any, querySanitize: () => Decisio
           if ((ele.verifiers !== undefined)
               && (sanitizeDecision !== Decision.IGNORE)) {
             const input = getSafe(payload, pathArray, undefined);
-            const sanitized = verify(statePath, ele.verifiers, input, ele.defaults);
+            let errors: string[] = [];
+            let moreCount = 0;
+            const sanitized = verify(statePath, ele.verifiers, input, ele.defaults, (error: string) => {
+              if (errors.length < 10) {
+                errors.push(error);
+              } else {
+                ++moreCount;
+              }
+            });
             if (sanitized !== input) {
-              const decision = sanitizeDecision !== undefined ? sanitizeDecision : querySanitize();
-              sanitizeDecision = decision;
+              if (moreCount > 0) {
+                errors.push(`... ${moreCount} more errors ...`);
+              }
+              const decision = sanitizeDecision !== undefined ? sanitizeDecision : querySanitize(errors);
+              // sanitizeDecision = decision;
               if (decision === Decision.SANITIZE) {
                 const backupPath = path.join(app.getPath('temp'), 'state_backups');
                 log('info', 'sanitizing application state');
@@ -211,7 +225,7 @@ function addToTree(tree: any, statePath: string[], spec: IReducerSpec) {
  * @param {IExtensionReducer[]} extensionReducers
  * @returns
  */
-function reducers(extensionReducers: IExtensionReducer[], querySanitize: () => Decision) {
+function reducers(extensionReducers: IExtensionReducer[], querySanitize: (errors: string[]) => Decision) {
   const tree = {
     user: userReducer,
     app: appReducer,

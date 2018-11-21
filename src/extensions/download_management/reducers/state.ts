@@ -165,10 +165,15 @@ export const stateReducer: IReducerSpec = {
   },
   verifiers: {
     files: {
+      // shouldn't be reported atm
+      description: () => 'Severe! Invalid list of archives',
       elements: {
         _: {
+          // shouldn't be reported atm
+          description: () => 'Invalid download',
           elements: {
             game: {
+              description: () => 'Download to game assignment stored incorrectly will be repaired.',
               required: true,
               type: 'array',
               noNull: true,

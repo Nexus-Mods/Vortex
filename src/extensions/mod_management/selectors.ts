@@ -19,7 +19,12 @@ export const installPath = createSelector(installPathPattern, activeGameId,
     });
 
 export const installPathForGame = createCachedSelector(gameInstallPathPattern, (state: IState, gameId: string) => gameId,
-  (inPath: string, gameId: string) => getInstallPath(inPath, gameId))((state, gameId) => gameId);
+  (inPath: string, gameId: string) => getInstallPath(inPath, gameId))((state, gameId) => {
+    if (gameId === undefined) {
+      throw new Error('gameId can\'t be undefined');
+    }
+    return gameId;
+  });
 
 export const currentActivator =
   (state: IState): string => state.settings.mods.activator[activeGameId(state)];
