@@ -112,7 +112,18 @@ class DownloadWorker {
       return;
     }
 
-    const parsed = url.parse(job.url);
+    if (job.url === undefined) {
+      this.handleError(new ProcessCanceled('No URL found for this download'));
+      return;
+    }
+
+    let parsed: url.UrlWithStringQuery;
+    try {
+      parsed = url.parse(job.url);
+    } catch (err) {
+      this.handleError(new Error('No valid URL for this download'));
+      return;
+    }
 
     const lib: IHTTP = parsed.protocol === 'https:' ? https : http;
 

@@ -87,6 +87,7 @@ export class DownloadObserver {
       const handler = this.mProtocolHandlers[protocol];
       return (handler !== undefined)
         ? handler(inputUrl)
+          .catch(() => [])
         : Promise.resolve([inputUrl]);
     }))
     .reduce((prev: string[], current: string[]) => prev.concat(current), []);
@@ -167,7 +168,10 @@ export class DownloadObserver {
             callback(err, id);
           }
           if (filePath !== undefined) {
-            fs.removeAsync(path.join(downloadPath, filePath));
+            fs.removeAsync(path.join(downloadPath, filePath))
+              .catch(err => {
+                this.mApi.showErrorNotification('Failed to remove failed download', err);
+              });
           }
         })
         .catch(UserCanceled, err => {
@@ -175,6 +179,29 @@ export class DownloadObserver {
           if (callback !== undefined) {
             callback(err, id);
           }
+        })
+        .catch(ProcessCanceled, err => {
+          const innerState: IState = this.mApi.store.getState();
+          const filePath: string =
+            getSafe(innerState.persistent.downloads.files, [id, 'localPath'], undefined);
+          const prom: Promise<void> = (filePath !== undefined)
+            ? fs.removeAsync(path.join(downloadPath, filePath))
+            : Promise.resolve();
+
+          prom
+            .catch(err => {
+              this.mApi.showErrorNotification('Failed to remove failed download', err);
+            })
+            .then(() => {
+              this.mApi.store.dispatch(removeDownload(id));
+              if (callback !== undefined) {
+                callback(err, id);
+              } else {
+                showError(this.mApi.store.dispatch, 'Download failed', err.message, {
+                  allowReport: false,
+                });
+              }
+            });
         })
         .catch((err: any) => {
           const message = this.translateError(err);
