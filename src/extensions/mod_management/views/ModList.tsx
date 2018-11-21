@@ -931,14 +931,14 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     });
 
     const checkboxes = allArchives
-      ? [ { id: 'archive', text: t('Remove Archive'), value: true } ]
+      ? [ { id: 'archive', text: t('Delete Archive'), value: true } ]
       : [
         { id: 'mod', text: t('Remove Mod'), value: true },
-        { id: 'archive', text: t('Remove Archive'), value: false },
+        { id: 'archive', text: t('Delete Archive'), value: false },
       ];
 
-    onShowDialog('question', 'Confirm deletion', {
-      message: t('Do you really want to delete this mod?',
+    onShowDialog('question', 'Confirm removal', {
+      message: t('Do you really want to remove this mod?',
         { count: filteredIds.length, replace: { count: filteredIds.length } })
         + '\n' + modNames.join('\n'),
       checkboxes,

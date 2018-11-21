@@ -113,8 +113,8 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
         condition: this.resumable,
       },
       {
-        icon: 'remove',
-        title: 'Remove',
+        icon: 'delete',
+        title: 'Delete',
         action: this.remove,
         condition: this.removable,
         hotKey: { code: 46 },
