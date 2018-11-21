@@ -4,6 +4,7 @@ import opn from '../../../util/opn';
 import { bytesToString } from '../../../util/util';
 
 import { IGameStored } from '../types/IGameStored';
+import { IDiscoveryResult } from '../types/IDiscoveryResult';
 
 import * as Promise from 'bluebird';
 import * as I18next from 'i18next';
@@ -17,6 +18,7 @@ export interface IBaseProps {
 }
 
 interface IConnectedProps {
+  discoveredGames: { [id: string]: IDiscoveryResult };
   gameInfo: {
     [key: string]: IGameInfoEntry,
   };
@@ -51,6 +53,14 @@ class GameInfoPopover extends ComponentEx<IProps, { loading: boolean }> {
   }
 
   public componentWillReceiveProps(nextProps: IProps) {
+    if ((this.props.discoveredGames !== nextProps.discoveredGames)
+      && (nextProps.onRefreshGameInfo !== undefined)) {
+      // A change in discovered games would suggest that the player has
+      //  modified the game's path - We need to refresh the game information
+      //  object.
+      nextProps.onRefreshGameInfo(nextProps.game.id);
+    }
+
     if (this.props.gameInfo !== nextProps.gameInfo) {
       nextProps.onChange();
     }
@@ -103,6 +113,7 @@ class GameInfoPopover extends ComponentEx<IProps, { loading: boolean }> {
 
 function mapStateToProps(state: IState, ownProps: IBaseProps): IConnectedProps {
   return {
+    discoveredGames: state.settings.gameMode.discovered,
     gameInfo: state.persistent.gameMode.gameInfo[ownProps.game.id],
     language: state.settings.interface.language,
   };
