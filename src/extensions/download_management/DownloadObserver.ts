@@ -23,11 +23,11 @@ import {IChunk} from './types/IChunk';
 import {IDownload} from './types/IDownload';
 import { IDownloadResult } from './types/IDownloadResult';
 import { ProgressCallback } from './types/ProgressCallback';
-import { IProtocolHandlers } from './types/ProtocolHandlers';
 import getDownloadGames from './util/getDownloadGames';
 
 import DownloadManager, { DownloadIsHTML } from './DownloadManager';
 
+import * as Promise from 'bluebird';
 import {IHashResult} from 'modmeta-db';
 import * as path from 'path';
 import * as Redux from 'redux';
@@ -140,7 +140,10 @@ export class DownloadObserver {
             callback(err, id);
           }
           if (filePath !== undefined) {
-            fs.removeAsync(path.join(downloadPath, filePath));
+            fs.removeAsync(path.join(downloadPath, filePath))
+              .catch(err => {
+                this.mApi.showErrorNotification('Failed to remove failed download', err);
+              });
           }
         })
         .catch(UserCanceled, err => {
@@ -148,6 +151,29 @@ export class DownloadObserver {
           if (callback !== undefined) {
             callback(err, id);
           }
+        })
+        .catch(ProcessCanceled, err => {
+          const innerState: IState = this.mApi.store.getState();
+          const filePath: string =
+            getSafe(innerState.persistent.downloads.files, [id, 'localPath'], undefined);
+          const prom: Promise<void> = (filePath !== undefined)
+            ? fs.removeAsync(path.join(downloadPath, filePath))
+            : Promise.resolve();
+
+          prom
+            .catch(err => {
+              this.mApi.showErrorNotification('Failed to remove failed download', err);
+            })
+            .then(() => {
+              this.mApi.store.dispatch(removeDownload(id));
+              if (callback !== undefined) {
+                callback(err, id);
+              } else {
+                showError(this.mApi.store.dispatch, 'Download failed', err.message, {
+                  allowReport: false,
+                });
+              }
+            });
         })
         .catch((err: any) => {
           const message = this.translateError(err);

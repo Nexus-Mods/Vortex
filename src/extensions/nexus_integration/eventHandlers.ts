@@ -153,14 +153,20 @@ export function onModUpdate(api: IExtensionApi, nexus: Nexus): (...args: any[]) 
     const url = `nxm://${toNXMId(game)}/mods/${modId}/files/${fileId}`;
     const downloads = state.persistent.downloads.files;
     // check if the file is already downloaded. If not, download before starting the install
-    const existingId = Object.keys(downloads).find(downloadId => getSafe(downloads, [downloadId, 'modInfo', 'nexus', 'ids', 'fileId'], undefined) === fileId);
+    const existingId = Object.keys(downloads).find(downloadId =>
+      getSafe(downloads, [downloadId, 'modInfo', 'nexus', 'ids', 'fileId'], undefined) === fileId);
     if (existingId !== undefined) {
       api.events.emit('start-install-download', existingId);
     }
     else {
       startDownload(api, nexus, url)
         .then(downloadId => {
-          api.events.emit('start-install-download', downloadId);
+          if (downloadId !== undefined) {
+            api.events.emit('start-install-download', downloadId);
+          } else {
+            api.showErrorNotification('Failed to download update file, please download it manually.',
+                                      undefined, { allowReport: false });
+          }
         })
         .catch(DownloadIsHTML, err => undefined)
         .catch(err => {

@@ -117,11 +117,16 @@ class DownloadWorker {
       return;
     }
 
+    if (jobUrl === undefined) {
+      this.handleError(new ProcessCanceled('No URL found for this download'));
+      return;
+    }
+
     let parsed: url.UrlWithStringQuery;
     try {
       parsed = url.parse(jobUrl);
     } catch (err) {
-      this.handleError(new Error('no valid URL for this download'));
+      this.handleError(new Error('No valid URL for this download'));
       return;
     }
 
@@ -605,6 +610,7 @@ class DownloadManager {
         this.mResolveCache[input] = { time: Date.now(), urls: res.urls };
         return res.urls;
       })
+      .catch(err => [])
       : Promise.resolve([input]);
   }
 
@@ -616,9 +622,7 @@ class DownloadManager {
         // TODO: Does it make sense here to resolve all urls?
         //   For all we know they could resolve to an empty list so
         //   it wouldn't be enough to just one source url
-        cache = Promise.map(urls, iter => {
-          return this.resolveUrl(iter);
-        })
+        cache = Promise.map(urls, iter => this.resolveUrl(iter))
         .then(res => {
           return [].concat(...res);
         });
