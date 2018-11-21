@@ -265,12 +265,15 @@ export interface IDetailProps {
   onToggleShow: () => void;
 }
 
-class DetailBox extends ComponentEx<IDetailProps, {}> {
+class DetailBox extends ComponentEx<IDetailProps, { hovered: boolean }> {
+  private mFormRef: HTMLFormElement = null;
+
   constructor(props: IDetailProps) {
     super(props);
+    this.initState({ hovered: false });
   }
 
-  public shouldComponentUpdate(nextProps: IDetailProps) {
+  public shouldComponentUpdate(nextProps: IDetailProps, nextState: { hovered: boolean }) {
     // TODO: when data changes it will almost always cause an update in rawData and
     //   then a delayed update to rowData, so this component gets updated twice for
     //   one change in row data
@@ -279,6 +282,7 @@ class DetailBox extends ComponentEx<IDetailProps, {}> {
       || (this.props.rawData !== nextProps.rawData)
       || (this.props.rowData !== nextProps.rowData)
       || (this.props.show !== nextProps.show)
+      || (this.state.hovered !== nextState.hovered)
       || !_.isEqual(this.props.attributes, nextProps.attributes);
   }
 
@@ -295,12 +299,17 @@ class DetailBox extends ComponentEx<IDetailProps, {}> {
         && ((rowIds.length === 1)
           || obj.supportsMultiple));
 
+    const innerClasses = ['table-details-inner'];
+    if (this.state.hovered) {
+      innerClasses.push('table-details-hovered');
+    }
+
     const visClass = (show ? 'table-form-details-show' : 'table-form-details-hide');
     return (
-      <div style={{ height: '100%', position: 'relative', display: 'flex' }}>
-        <div style={{ display: 'flex', flexDirection: 'column' }} >
+      <div className='table-details-outer'>
+        <div className={innerClasses.join(' ')}>
           {detailList.length > 0 ? (
-            <form className={'table-form-details ' + visClass}>
+            <form className={'table-form-details ' + visClass} ref={this.setFormRef}>
               {detailList.map(obj => this.renderDetail(obj))}
             </form>
           ) : (
@@ -309,14 +318,14 @@ class DetailBox extends ComponentEx<IDetailProps, {}> {
             </h4>
           )
           }
-          <Button
-            id='btn-minimize-menu'
-            onClick={onToggleShow}
-            className='btn-menu-minimize'
-          >
-            <Icon name={show ? 'pane-right' : 'pane-left'} />
-          </Button>
         </div>
+        <Button
+          id='btn-minimize-menu'
+          onClick={onToggleShow}
+          className='btn-menu-minimize'
+        >
+          <Icon name={show ? 'pane-right' : 'pane-left'} />
+        </Button>
       </div>
     );
   }
@@ -336,6 +345,28 @@ class DetailBox extends ComponentEx<IDetailProps, {}> {
         onChangeData={this.onChangeData}
       />
     );
+  }
+
+  private setFormRef = (ref: HTMLFormElement) => {
+    const oldRef = this.mFormRef;
+    this.mFormRef = ref;
+    if (ref !== null) {
+      ref.addEventListener('mouseenter', this.startHover)
+      ref.addEventListener('mouseleave', this.stopHover)
+    } else if (oldRef !== null) {
+      ref.removeEventListener('mouseenter', this.startHover)
+      ref.removeEventListener('mouseleave', this.stopHover)
+    }
+  }
+
+  private startHover = () => {
+    this.nextState.hovered = true;
+    // why is this necessary? the state change doesn't seem to trigger an update on its own
+    this.forceUpdate();
+  }
+
+  private stopHover = () => {
+    this.nextState.hovered = false;
   }
 
   private onChangeData = (rowIds: string[], attributeId: string, value: any) => {

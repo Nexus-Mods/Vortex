@@ -119,25 +119,40 @@
   margin: 10px;
 }
 
+.table-details-outer {
+  height: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.table-details-inner {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  &.table-details-hovered {
+    padding-left: 50vw;
+    margin-left: -50vw;
+
+    .Select-menu-outer {
+      width: auto;
+      min-width: 100%;
+      left: unset;
+      right: 0;
+    }
+  }
+}
+
 .table-form-details {
   flex: 1 1 0%;
   padding: 5px;
   min-width: 250px;
-  overflow-y: auto;
 
   .Select-menu-outer {
     white-space: nowrap;
-    width: auto;
-    min-width: 100%;
-    left: unset;
-    right: 0;
   }
-}
-
-// hack to allow dropdowns inside the sidebar to extend outside of it
-.table-form-details-show {
-  padding-left: calc(50vw + 5px);
-  margin-left: -50vw;
 }
 
 .table-header {
