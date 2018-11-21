@@ -13,7 +13,7 @@ import { log } from '../../../util/log';
 import opn from '../../../util/opn';
 import { showError } from '../../../util/message';
 import { getSafe } from '../../../util/storeHelper';
-import { isChildPath } from '../../../util/util';
+import { isChildPath, transferPath } from '../../../util/util';
 import { currentGame, currentGameDiscovery } from '../../gamemode_management/selectors';
 import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../../gamemode_management/types/IGameStored';
@@ -173,42 +173,12 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     const oldPath = getInstallPath(this.props.installPath, gameMode);
     const newPath = getInstallPath(this.state.installPath, gameMode);
 
-    return Promise.join(fs.statAsync(oldPath), fs.statAsync(newPath),
-      (statOld: fs.Stats, statNew: fs.Stats) =>
-        Promise.resolve(statOld.dev === statNew.dev))
-      .then((sameVolume: boolean) => {
-        const func = sameVolume ? fs.renameAsync : fs.copyAsync;
-
-        let completed = 0;
-        let lastProgress = 0;
-        let count: number;
-
-        return fs.readdirAsync(oldPath)
-          .map((fileName: string, index: number, numFiles: number) => {
-            if (count === undefined) {
-              count = numFiles;
-            }
-            log('debug', 'transfer installs', { fileName });
-            return func(path.join(oldPath, fileName), path.join(newPath, fileName))
-              .catch(err => (err.code === 'EXDEV')
-                // EXDEV implies we tried to rename when source and destination are
-                // not in fact on the same volume. This is what comparing the stat.dev
-                // was supposed to prevent.
-                ? fs.copyAsync(path.join(oldPath, fileName), path.join(newPath, fileName))
-                : Promise.reject(err))
-              .then(() => {
-                ++completed;
-                const progress = Math.floor((completed * 100) / count);
-                if (progress > lastProgress) {
-                  this.nextState.progress = progress;
-                }
-              });
-            })
-            .then(() => fs.removeAsync(oldPath));
-      })
-      .catch(err => (err.code === 'ENOENT')
-        ? Promise.resolve()
-        : Promise.reject(err));
+    return transferPath(oldPath, newPath, (from: string, to: string, progress: number) => {
+      log('debug', 'transfer mod', { from, to });
+      if (progress > this.state.progress) {
+        this.nextState.progress = progress;
+      }
+    });
   }
 
   private applyPaths = () => {
@@ -223,10 +193,22 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       vortexPath = path.dirname(path.dirname(vortexPath));
     }
     if (isChildPath(newInstallPath, vortexPath)) {
-      return onShowDialog('error', 'Invalid paths selected', {
+      return onShowDialog('error', 'Invalid path selected', {
                   text: 'You can not put mods into the vortex application directory. '
                   + 'This directory gets removed during updates so you would lose all your '
                   + 'files on the next update.',
+      }, [ { label: 'Close' } ]);
+    }
+
+    if (isChildPath(oldInstallPath, newInstallPath)) {
+      return onShowDialog('error', 'Invalid path selected', {
+                text: 'You can\'t change the staging folder to be the parent of the old folder. '
+                    + 'This is because the new staging folder has to be empty and it isn\'t '
+                    + 'empty if it contains the current staging folder.\n\n'
+                    + 'If your current staging folder is "{USERDATA}\\{game}\\mods\\foobar"\n'
+                    + 'and you want it to be "{USERDATA}\\{game}\\mods"\n'
+                    + 'you first have to set it to something like "{USERDATA}\\{game}\\mods_temp"\n'
+                    + 'and then you can change it to "{USERDATA}\\{game}\\mods".'
       }, [ { label: 'Close' } ]);
     }
 

@@ -339,3 +339,61 @@ export function isChildPath(child: string, parent: string): boolean {
 
   return tokens.every((token: string, idx: number) => childTokens[idx] === token);
 }
+
+/**
+ * Move the content of a directory to another - Using a move operation if it's on the same
+ * drive and a copy+delete if not.
+ * This works around or properly reports common problems, like when the destination directory
+ * is a parent of the source directory
+ * @param source 
+ * @param dest 
+ */
+export function transferPath(source: string,
+                             dest: string,
+                             progress: (from: string, to: string, percentage: number) => void): Promise<void> {
+  const moveDown = isChildPath(dest, source);
+
+  return Promise.join(fs.statAsync(source), fs.statAsync(dest),
+    (statOld: fs.Stats, statNew: fs.Stats) =>
+      Promise.resolve(statOld.dev === statNew.dev))
+    .then((sameVolume: boolean) => {
+      const func = sameVolume ? fs.renameAsync : fs.copyAsync;
+
+      let completed = 0;
+      let count: number;
+
+      return fs.readdirAsync(source)
+        .mapSeries((fileName: string, index: number, numFiles: number) => {
+          if (count === undefined) {
+            count = numFiles;
+          }
+          const sourcePath = path.join(source, fileName);
+          const destPath = path.join(dest, fileName);
+          if (sourcePath === dest) {
+            // if the target directory is a subdirectory of the old one, don't try
+            // to move it into itself, that's just weird. Also it fails
+            // (e.g. ...\mods -> ...\mods\newMods)
+            return Promise.resolve();
+          }
+          progress(sourcePath, destPath, Math.floor((completed * 100) / count));
+          return func(sourcePath, destPath)
+            .catch(err => {
+              return (err.code === 'EXDEV')
+                // EXDEV implies we tried to rename when source and destination are
+                // not in fact on the same volume. This is what comparing the stat.dev
+                // was supposed to prevent.
+                ? fs.copyAsync(sourcePath, destPath)
+                : Promise.reject(err);
+            })
+            .then(() => {
+              ++completed;
+            });
+        })
+        .then(() => moveDown
+          ? Promise.resolve()
+          : fs.removeAsync(source));
+    })
+    .catch(err => (err.code === 'ENOENT')
+      ? Promise.resolve()
+      : Promise.reject(err));
+}

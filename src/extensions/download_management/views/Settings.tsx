@@ -7,10 +7,11 @@ import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { UserCanceled } from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
+import { log } from '../../../util/log';
 import { showError } from '../../../util/message';
 import opn from '../../../util/opn';
 import { getSafe } from '../../../util/storeHelper';
-import { isChildPath } from '../../../util/util';
+import { isChildPath, transferPath } from '../../../util/util';
 import { setDownloadPath, setMaxDownloads } from '../actions/settings';
 
 import getDownloadPath from '../util/getDownloadPath';
@@ -194,12 +195,21 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       // (resources/app.asar)
       vortexPath = path.dirname(path.dirname(vortexPath));
     }
+
     if (!path.isAbsolute(newPath)
         || isChildPath(newPath, vortexPath)) {
       return onShowDialog('error', 'Invalid paths selected', {
                   text: 'You can not put mods into the vortex application directory. '
                   + 'This directory gets removed during updates so you would lose all your '
                   + 'files on the next update.',
+      }, [ { label: 'Close' } ]);
+    }
+
+    if (isChildPath(oldPath, newPath)) {
+      return onShowDialog('error', 'Invalid path selected', {
+                text: 'You can\'t change the download folder to be the parent of the old folder. '
+                    + 'This is because the new download folder has to be empty and it isn\'t '
+                    + 'empty if it contains the old download folder.'
       }, [ { label: 'Close' } ]);
     }
 
@@ -275,41 +285,12 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
     this.context.api.events.emit('will-move-downloads');
 
-    return Promise.join(fs.statAsync(oldPath), fs.statAsync(newPath),
-      (statOld: fs.Stats, statNew: fs.Stats) =>
-        Promise.resolve(statOld.dev === statNew.dev))
-      .then((sameVolume: boolean) => {
-        const func = sameVolume ? fs.renameAsync : fs.copyAsync;
-
-        let completed = 0;
-        let lastProgress = 0;
-        let count: number;
-
-        return fs.readdirAsync(oldPath)
-          .map((fileName: string, idx: number, numFiles: number) => {
-            if (count === undefined) {
-              count = numFiles;
-            }
-            return func(path.join(oldPath, fileName), path.join(newPath, fileName))
-              .catch(err => (err.code === 'EXDEV')
-                // EXDEV implies we tried to rename when source and destination are
-                // not in fact on the same volume. This is what comparing the stat.dev
-                // was supposed to prevent.
-                ? fs.copyAsync(path.join(oldPath, fileName), path.join(newPath, fileName))
-                : Promise.reject(err))
-              .then(() => {
-                completed += 1;
-                const progress = Math.floor((completed * 100) / count);
-                if (progress > lastProgress) {
-                  this.nextState.progress = progress;
-                }
-              });
-          })
-          .then(() => fs.removeAsync(oldPath));
-      })
-      .catch(err => (err.code === 'ENOENT')
-        ? Promise.resolve()
-        : Promise.reject(err));
+    return transferPath(oldPath, newPath, (from: string, to: string, progress: number) => {
+      log('debug', 'transfer download', { from, to });
+      if (progress > this.state.progress) {
+        this.nextState.progress = progress;
+      }
+    });
   }
 }
 
