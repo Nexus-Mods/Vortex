@@ -895,8 +895,10 @@ class ExtensionManager {
     }
     return promise
       .then(() => this.getModDB())
-      .then(modDB => modDB.lookup(detail.filePath, fileMD5,
-          fileSize, detail.gameId))
+      .then(modDB => fileSize !== 0
+        ? modDB.lookup(detail.filePath, fileMD5, fileSize, detail.gameId)
+        : []
+      )
       .then((result: ILookupResult[]) => {
         this.mModDBCache[lookupId] = result;
         return Promise.resolve(result);
