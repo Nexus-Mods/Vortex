@@ -123,7 +123,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     const type = (dialog.content.htmlFile !== undefined) || (dialog.content.htmlText !== undefined)
       ? 'wide'
       : 'regular';
-    return dialog !== undefined ? (
+    return (
       <Modal className={`common-dialog-${type}`} show={dialog !== undefined} onHide={nop}>
         <Modal.Header>
           <Modal.Title>{this.iconForType(dialog.type)}{' '}{t(dialog.title)}</Modal.Title>
@@ -138,7 +138,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
           }
         </Modal.Footer>
       </Modal>
-    ) : null;
+    );
   }
 
   private translateParts(message: string, t: I18next.TranslationFunction, parameters?: any) {
@@ -175,7 +175,8 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         <textarea
           key='dialog-content-message'
           wrap={wrap}
-          defaultValue={this.translateParts(content.message, t, content.parameters)}
+          value={this.translateParts(content.message, t, content.parameters)}
+          defaultValue={''}
           readOnly={true}
         />
       );
