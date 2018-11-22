@@ -43,15 +43,27 @@ export class TemporaryError extends Error {
 }
 
 export class HTTPError extends Error {
-  private mBody: string;
-  constructor(statusCode: number, message: string, body: string) {
+  private mCode: number;
+  private mMessage: string;
+  private mURL: string;
+  constructor(statusCode: number, message: string, url: string) {
     super(`HTTP (${statusCode}) - ${message}`);
     this.name = this.constructor.name;
-    this.mBody = body;
+    this.mCode = statusCode;
+    this.mMessage = message;
+    this.mURL = url;
   }
 
-  public get body(): string {
-    return this.mBody;
+  public get statusCode(): number {
+    return this.mCode;
+  }
+
+  public get statusMessage(): string {
+    return this.mMessage;
+  }
+
+  public get url(): string {
+    return this.mURL;
   }
 }
 

@@ -54,7 +54,7 @@ function retrieve(url: string): Promise<IFeedMessage[]> {
     req.on('error', error => reject(error));
     req.on('response', response => {
       if (response.statusCode !== 200) {
-        return reject(new HTTPError(response.statusCode, response.statusMessage, ''));
+        return reject(new HTTPError(response.statusCode, response.statusMessage, url));
       }
       req.pipe(parser);
     });

@@ -135,7 +135,7 @@ export class DownloadObserver {
             getSafe(innerState.persistent.downloads.files, [id, 'localPath'], undefined);
 
           this.mApi.store.dispatch(removeDownload(id));
-          this.mApi.store.dispatch(showURL(urls[0]));
+          this.mApi.store.dispatch(showURL(err.url));
           if (callback !== undefined) {
             callback(err, id);
           }

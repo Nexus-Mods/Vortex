@@ -1,4 +1,4 @@
-import { ProcessCanceled } from '../../util/CustomErrors';
+import { ProcessCanceled, HTTPError } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 import { countIf, truthy } from '../../util/util';
@@ -22,18 +22,19 @@ import { IProtocolHandlers } from './types/ProtocolHandlers';
 
 // assume urls are valid for at least 5 minutes
 const URL_RESOLVE_EXPIRE_MS = 1000 * 60 * 5;
-
-export class HTTPError extends Error {
-  constructor(response: http.ServerResponse) {
-    super(`HTTP Status ${response.statusCode}: ${response.statusMessage}`);
-    this.name = this.constructor.name;
-  }
-}
+// don't follow redirects arbitrarily long
+const MAX_REDIRECT_FOLLOW = 2;
 
 export class DownloadIsHTML extends Error {
-  constructor() {
+  private mUrl: string;
+  constructor(url: string) {
     super('');
     this.name = this.constructor.name;
+    this.mUrl = url;
+  }
+
+  public get url() {
+    return this.mUrl;
   }
 }
 
@@ -92,6 +93,8 @@ class DownloadWorker {
   private mEnded: boolean = false;
   private mResponse: http.ClientResponse;
   private mWriting: boolean = false;
+  private mRedirected: boolean = false;
+  private mRedirectsFollowed: number = 0;
 
   constructor(job: IDownloadJob,
               progressCB: (bytes: number) => void,
@@ -145,25 +148,31 @@ class DownloadWorker {
           'Accept-Encoding': 'gzip',
           Cookie: (cookies || []).map(cookie => `${cookie.name}=${cookie.value}`),
         },
-        agent: new lib.Agent(),
+        agent: false,
       }, (res) => {
         log('debug', 'downloading from',
             { address: `${res.connection.remoteAddress}:${res.connection.remotePort}` });
         this.mResponse = res;
-        this.handleResponse(res);
+        this.handleResponse(res, jobUrl);
         res
           .on('data', (data: Buffer) => {
             this.handleData(data);
           })
           .on('error', err => this.handleError(err))
           .on('end', () => {
-            this.handleComplete();
+            if (!this.mRedirected) {
+              this.handleComplete();
+            }
             this.mRequest.abort();
+            res.destroy();
+            this.mResponse = undefined;
           });
       });
 
       this.mRequest
-        .on('error', err => this.handleError(err))
+        .on('error', (err) => {
+          this.handleError(err);
+        })
         .end();
      });
   }
@@ -222,10 +231,10 @@ class DownloadWorker {
     return true;
   }
 
-  private handleHTML() {
+  private handleHTML(url: string) {
     this.abort(false);
     if (this.mJob.errorCB !== undefined) {
-      this.mJob.errorCB(new DownloadIsHTML());
+      this.mJob.errorCB(new DownloadIsHTML(url));
     }
   }
 
@@ -244,28 +253,34 @@ class DownloadWorker {
       .catch(err => this.handleError(err));
   }
 
-  private handleResponse(response: http.IncomingMessage) {
+  private handleResponse(response: http.IncomingMessage, jobUrl: string) {
     // we're not handling redirections here. For one thing it may be undesired by the user
     // plus there might be a javascript redirect which we can't handle here anyway.
     // Instead we display the website as a download with a button where the user can open the
     // it. If it contains any redirect, the browser window will follow it and initiate a
     // download.
     if (response.statusCode >= 300) {
-      if (response.statusCode === 302) {
-        this.mJob.url().then(jobUrl => {
-          const newUrl = url.resolve(jobUrl, response.headers['location'] as string);
-          this.mJob.url = () => Promise.resolve(newUrl);
+      if (([301, 302].indexOf(response.statusCode) !== -1) && (this.mRedirectsFollowed < MAX_REDIRECT_FOLLOW)) {
+        const newUrl = url.resolve(jobUrl, response.headers['location'] as string);
+        log('info', 'redirected', { newUrl, loc: response.headers['location'] });
+        this.mJob.url = () => Promise.resolve(newUrl);
+        this.mRedirected = true;
+
+        // delay the new request a bit to ensure the old request is completely settled
+        // TODO: this is ugly and shouldn't be necessary if we made sure no state was neccessary to
+        //   shut down the old connection
+        setTimeout(() => {
+          ++this.mRedirectsFollowed;
+          this.mRedirected = false;
+          // any data we may have gotten with the old reply is useless
+          this.mJob.size += this.mJob.received;
+          this.mJob.received = this.mJob.offset = 0;
+          this.mJob.state = 'running';
+          this.mEnded = false;
           this.assignJob(this.mJob, newUrl);
-        });
+        }, 100);
       } else {
-        this.handleError({
-          message: 'Download failed, an error was reported by the server',
-          stack: new Error().stack,
-          HTTPCode: response.statusCode,
-          HTTPStatus: response.statusMessage,
-          URL: this.mJob.url,
-          Headers: JSON.stringify(response.headers),
-        });
+        this.handleError(new HTTPError(response.statusCode, response.statusMessage, jobUrl));
       }
       return;
     }
@@ -273,7 +288,7 @@ class DownloadWorker {
     this.mHeadersCB(response.headers);
 
     if (isHTMLHeader(response.headers)) {
-      this.handleHTML();
+      this.handleHTML(jobUrl);
       return;
     }
 
@@ -346,6 +361,12 @@ class DownloadWorker {
       this.mRequest.abort();
       return;
     }
+
+    if (this.mRedirected) {
+      // ignore message body when we were redirected
+      return;
+    }
+
     this.mDataHistory.push({ time: Date.now(), size: data.byteLength });
     this.mBuffers.push(data);
 
