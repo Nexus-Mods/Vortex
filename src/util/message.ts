@@ -8,8 +8,8 @@ import { IErrorOptions } from '../types/IExtensionContext';
 import { IState } from '../types/IState';
 import { jsonRequest } from '../util/network';
 
+import { HTTPError } from './CustomErrors';
 import { sendReport, toError, isOutdated } from './errorHandling';
-
 import { log } from './log';
 import { truthy } from './util';
 
@@ -247,10 +247,21 @@ export function prettifyNodeErrorMessage(err: any): { message: string, replace?:
       message: 'Network connection refused.',
       allowReport: false,
     };
+  } else if (err.code === 'ECONNRESET') {
+    return {
+      message: 'Network connection closed unexpectedly.',
+      allowReport: false,
+    };
   } else if (err.code === 'ETIMEDOUT') {
     return {
       message: 'Network connection to "{{address}}" timed out, please try again.',
       replace: { address: err.address },
+      allowReport: false,
+    };
+  } else if ((err.code === 'ENOTFOUND') && (err.syscall === 'getaddrinfo')) {
+    return {
+      message: 'Network address "{{host}}" could not be resolved. This is often a temporary error, please try again later.',
+      replace: { host: err.host || err.hostname },
       allowReport: false,
     };
   } else if (err.code === 'EAI_AGAIN') {
@@ -314,6 +325,15 @@ function renderCustomError(err: any) {
   return res;
 }
 
+function prettifyHTTPError(err: HTTPError) {
+  return {
+  }[err.statusCode] || {
+    text: err.statusMessage,
+    message: err.url,
+    allowReport: true,
+  }
+}
+
 /**
  * render error message for display to the user
  * @param err 
@@ -325,6 +345,8 @@ export function renderError(err: string | Error | any):
   }
   if (typeof(err) === 'string') {
     return { text: err, wrap: true };
+  } else if (err instanceof HTTPError) {
+    return prettifyHTTPError(err);
   } else if (err instanceof Error) {
     const errMessage = prettifyNodeErrorMessage(err);
     return {
