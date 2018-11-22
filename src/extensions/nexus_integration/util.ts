@@ -5,7 +5,7 @@ import * as Redux from 'redux';
 import * as util from 'util';
 import { setModAttribute } from '../../actions';
 import { IExtensionApi, IMod } from '../../types/api';
-import { getSafe, showError, calcDuration } from '../../util/api';
+import { getSafe, showError, calcDuration, prettifyNodeErrorMessage } from '../../util/api';
 import { log } from '../../util/log';
 import { truthy } from '../../util/util';
 import modName from '../mod_management/util/modName';
@@ -318,14 +318,16 @@ export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promis
       api.store.dispatch(setUserInfo(undefined));
     })
     .catch(err => {
+      const t = api.translate;
+      const pretty = prettifyNodeErrorMessage(err);
       // if there is an "errno", this is more of a technical problem, like
       // network is offline or server not reachable
       api.sendNotification({
         type: 'error',
         title: err.code === 'ESOCKETTIMEDOUT' ? undefined : 'Failed to log in',
         message: err.code ===  'ESOCKETTIMEDOUT'
-          ? 'Connection to nexusmods.com timed out, please check your internet connection'
-          : err.message,
+          ? t('Connection to nexusmods.com timed out, please check your internet connection')
+          : t(pretty.message, { replace: pretty.replace }),
         actions: [
           { title: 'Retry', action: dismiss => { updateKey(api, nexus, key); dismiss(); } },
         ],
