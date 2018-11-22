@@ -18,7 +18,6 @@ import { IMod } from '../../mod_management/types/IMod';
 import { removeCategory, renameCategory, setCategory, setCategoryOrder } from '../actions/category';
 import { ICategory, ICategoryDictionary } from '../types/ICategoryDictionary';
 import { ICategoriesTree } from '../types/ITrees';
-import { IValidationTest } from '../types/IValidationTest';
 import createTreeDataObject from '../util/createTreeDataObject';
 
 import * as Promise from 'bluebird';
@@ -305,57 +304,42 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
     });
   }
 
-  private hasEmptyInput = (input: IInput): IValidationTest => {
+  private hasEmptyInput = (input: IInput): IConditionResult => {
     const { t } = this.props;
-    return {
-      isValid: () => input.value !== '',
-      errorString: t('{{label}} cannot be empty.', { 
-        replace: {
-          label: input.label ? input.label : 'Field'
+    return input.value === ''
+      ? { 
+          id: input.id, 
+          actions: ['Add', 'Rename'], 
+          errorText: t('{{label}} cannot be empty.', { 
+            replace: { label: input.label ? input.label : 'Field' }
+          }) 
         }
-      })
-    }
+      : undefined
   }
 
-  private idExists = (input: IInput): IValidationTest => {
+  private idExists = (input: IInput): IConditionResult => {
     const { t, categories } = this.props;
-    return {
-      isValid: () => Object.keys(categories).find(id =>
-        input.value === id) === undefined,
-      errorString: t('ID already used.')
-    }
+    return categories[input.value] !== undefined
+      ? { id: input.id,
+          actions: ['Add'],
+          errorText: t('ID already used.') }
+      : undefined;
   }
 
   private validateCategoryDialog = (content: IDialogContent): IConditionResult[] => {
-    // Holds the actions that are affected by this condition result.
-    const actions: string[] = ['Add', 'Rename'];
     let results: IConditionResult[] = [];
     content.input.forEach(inp => {
-      const validationTests: IValidationTest[] = [
-        this.hasEmptyInput(inp),
-      ]
-
+      results.push(this.hasEmptyInput(inp));
       if (inp.id === 'newCategoryId') {
-        validationTests.push(this.idExists(inp));
+        results.push(this.idExists(inp));
       }
-
-      validationTests.forEach(test => {
-        if (!test.isValid()) {
-          results.push({
-            id: inp.id,
-            actions: actions,
-            errorText: test.errorString,
-          })
-        }
-      })
     });
-
-    return results;
+    
+    return results.filter(res => res !== undefined);
   }
 
   private addRootCategory = () => {
     const {categories, gameMode, onSetCategory, onShowDialog, onShowError} = this.props;
-    let addCategory = true;
     const lastIndex = this.searchLastRootId(categories);
 
     onShowDialog('question', 'Add new Root Category', {

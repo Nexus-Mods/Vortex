@@ -21,11 +21,11 @@ export interface IConditionResult {
   id: string,
 }
 
-export type DisabledActions = IConditionResult[];
+export type ConditionResults = IConditionResult[];
 
 export type DialogActions = IDialogAction[];
 
-export type Condition = (content: IDialogContent) => DisabledActions;
+export type Condition = (content: IDialogContent) => ConditionResults;
 
 export interface IDialog {
   id: string;

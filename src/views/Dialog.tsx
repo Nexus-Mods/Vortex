@@ -5,7 +5,7 @@ import Icon from '../controls/Icon';
 import Webview from '../controls/Webview';
 import {
   DialogType, ICheckbox, IDialog,
-  IDialogContent, IInput, DisabledActions
+  IDialogContent, IInput, ConditionResults, IConditionResult
 } from '../types/IDialog';
 import { IState } from '../types/IState';
 import bbcode from '../util/bbcode';
@@ -72,7 +72,7 @@ interface IDialogActionProps {
 interface IComponentState {
   currentDialogId: string;
   dialogState: IDialogContent;
-  disabledActions: DisabledActions;
+  conditionResults: ConditionResults;
 }
 
 type IProps = IDialogConnectedProps & IDialogActionProps;
@@ -84,7 +84,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     this.state = {
       currentDialogId: undefined,
       dialogState: undefined,
-      disabledActions: [],
+      conditionResults: [],
     };
   }
 
@@ -96,9 +96,9 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         dialogState: { $set: newProps.dialogs[0].content },
       });
 
-      const newMap = this.validateContent(newState.dialogState);
-      if (newMap !== undefined) {
-        newState = {...newState, disabledActions: newMap}
+      const validationResults = this.validateContent(newState.dialogState);
+      if (validationResults !== undefined) {
+        newState = {...newState, conditionResults: validationResults}
       }
 
       this.setState(newState);
@@ -254,42 +254,34 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     return <div className='dialog-container'>{controls}</div>;
   }
 
-  private validateContent(dialogState: IDialogContent): DisabledActions {
-    const { disabledActions } = this.state;
-    if ((disabledActions === undefined) || (dialogState.condition === undefined)) {
+  private validateContent(dialogState: IDialogContent): ConditionResults {
+    const { conditionResults } = this.state;
+    if ((conditionResults === undefined) || (dialogState.condition === undefined)) {
       return undefined;
     }
 
-    let newMap: DisabledActions = [];
-    const res: DisabledActions = dialogState.condition(dialogState);
-    res.length > 0
-      ? newMap = res
-      : newMap = [];
-
-    return newMap;
+    return dialogState.condition(dialogState);
   }
 
-  private hasValidationError(input: IInput): boolean {
-    const { disabledActions } = this.state;
-    return disabledActions.find(res => res.id === input.id) !== undefined;
+  private getValidationResult(input: IInput): IConditionResult[] {
+    const { conditionResults } = this.state;
+    return conditionResults.filter(res => res.id === input.id);
   }
 
   private renderInput = (input: IInput, idx: number) => {
     const { t } = this.props;
     const { dialogState } = this.state;
-    let hasValidationError = undefined;
+    let valRes: IConditionResult[];
     if (dialogState.condition !== undefined) {
-      hasValidationError = this.hasValidationError(input);
+      valRes = this.getValidationResult(input);
     }
 
-    const getValidationStatus = () => {
-      return hasValidationError !== undefined 
-        ? hasValidationError ? 'error' : 'success'
+    const validationState = valRes !== undefined 
+        ? (valRes.length !== 0) ? 'error' : 'success'
         : null;
-    }
     
     return (
-      <FormGroup key={input.id} validationState={getValidationStatus()}>
+      <FormGroup key={input.id} validationState={validationState}>
       { input.label ? (
         <ControlLabel>{t(input.label)}</ControlLabel>
       ) : null }
@@ -302,7 +294,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         onChange={this.changeInput}
         ref={idx === 0 ? this.focusMe : undefined}
       />
-      {hasValidationError ? <label className='control-label'>{this.getErrorText(input)}</label> : null}
+      {(valRes.length !== 0) ? <label className='control-label'>{valRes.map(res => res.errorText).join('\n')}</label> : null}
       </FormGroup>
     );
   }
@@ -371,9 +363,9 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
       },
     });
 
-    const newMap = this.validateContent(newState.dialogState);
-    if (newMap !== undefined) {
-      newState = {...newState, disabledActions: newMap}
+    const validationResults = this.validateContent(newState.dialogState);
+    if (validationResults !== undefined) {
+      newState = {...newState, conditionResults: validationResults}
     }
 
     this.setState(newState);
@@ -394,9 +386,9 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
       },
     });
 
-    const newMap = this.validateContent(newState.dialogState);
-    if (newMap !== undefined) {
-      newState = {...newState, disabledActions: newMap}
+    const validationResults = this.validateContent(newState.dialogState);
+    if (validationResults !== undefined) {
+      newState = {...newState, conditionResults: validationResults}
     }
 
     this.setState(newState);
@@ -418,36 +410,18 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
       },
     });
 
-    const newMap = this.validateContent(newState.dialogState);
-    if (newMap !== undefined) {
-      newState = {...newState, disabledActions: newMap}
+    const validationResults = this.validateContent(newState.dialogState);
+    if (validationResults !== undefined) {
+      newState = {...newState, conditionResults: validationResults}
     }
 
     this.setState(newState);
   }
 
-  private getErrorText(input: IInput): string {
-    const { disabledActions } = this.state;
-
-    let errorString = '';
-    const errors = disabledActions.filter(res => res.id === input.id);
-    if (errors.length === 0) {
-      return undefined;
-    }
-
-    errors.forEach(error => {
-      errorString = errorString !== '' 
-        ? error.errorText + '\n' 
-        : error.errorText;
-    })
-
-    return errorString;
-  }
-
   private renderAction = (action: string, isDefault: boolean): JSX.Element => {
-    const { disabledActions } = this.state;
+    const { conditionResults } = this.state;
     const { t } = this.props;
-    const isDisabled = disabledActions.find(res => res.actions.find(act => act === action) !== undefined) !== undefined;
+    const isDisabled = conditionResults.find(res => res.actions.find(act => act === action) !== undefined) !== undefined;
     return (
       <Action t={t} key={action} action={action} isDefault={isDefault} onDismiss={this.dismiss} isDisabled={isDisabled} />
     );
