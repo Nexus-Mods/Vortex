@@ -354,8 +354,8 @@ class DetailBox extends ComponentEx<IDetailProps, { hovered: boolean }> {
       ref.addEventListener('mouseenter', this.startHover)
       ref.addEventListener('mouseleave', this.stopHover)
     } else if (oldRef !== null) {
-      ref.removeEventListener('mouseenter', this.startHover)
-      ref.removeEventListener('mouseleave', this.stopHover)
+      oldRef.removeEventListener('mouseenter', this.startHover)
+      oldRef.removeEventListener('mouseleave', this.stopHover)
     }
   }
 
