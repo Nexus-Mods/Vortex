@@ -278,7 +278,6 @@ function genUpdateModDeployment() {
         });
 
         api.store.dispatch(startActivity('mods', 'deployment'));
-        api.store.dispatch(setDeploymentNecessary(game.id, false));
 
         log('debug', 'load activation');
         return Promise.each(Object.keys(modPaths),
@@ -409,7 +408,10 @@ function genUpdateModDeployment() {
           .then(() => {
             progress(t('Preparing game settings'), 100);
             return bakeSettings(api, profile, sortedModList);
-          }));
+          }))
+          .then(() => {
+            api.store.dispatch(setDeploymentNecessary(game.id, false));
+          });
       })
       .catch(UserCanceled, () => undefined)
       .catch(ProcessCanceled, err => {
