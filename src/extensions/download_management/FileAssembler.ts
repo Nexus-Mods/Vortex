@@ -96,28 +96,25 @@ class FileAssembler {
             return Promise.resolve(bytesWritten);
           }
         })
-        .then((bytesWritten: number) =>
-          (bytesWritten !== data.length)
+        .then((bytesWritten: number) => (bytesWritten !== data.length)
             ? reject(new Error(`incomplete write ${bytesWritten}/${data.length}`))
             : resolve(synced))
-        .catch(ProcessCanceled, () => {
-          resolve(false);
-        })
         .catch(err => reject(err));
       });
   }
 
   public close(): Promise<void> {
-    return this.mWork
+    this.mWork =  this.mWork
     .then(() => {
       if (this.mFD !== undefined) {
         const fd = this.mFD;
         this.mFD = undefined;
-        return fs.closeAsync(fd);
+        return fs.fsyncAsync(fd).then(() => fs.closeAsync(fd));
       } else {
         return Promise.resolve();
       }
     });
+    return this.mWork;
   }
 }
 

@@ -164,8 +164,6 @@ class DownloadWorker {
               this.handleComplete();
             }
             this.mRequest.abort();
-            res.destroy();
-            this.mResponse = undefined;
           });
       });
 
@@ -239,6 +237,10 @@ class DownloadWorker {
   }
 
   private handleComplete() {
+    if (this.mEnded) {
+      log('debug', 'chunk completed but can\'t write it anymore');
+      return;
+    }
     log('info', 'chunk completed', {
       id: this.mJob.workerId,
       numBuffers: this.mBuffers.length,
@@ -250,6 +252,7 @@ class DownloadWorker {
         }
         this.abort(false);
       })
+      .catch(ProcessCanceled, () => null)
       .catch(err => this.handleError(err));
   }
 
@@ -348,7 +351,9 @@ class DownloadWorker {
     }
     const merged = this.mergeBuffers();
     const res = this.mJob.dataCB(this.mJob.offset, merged)
-      .then(synced => undefined);
+      .then(synced => null);
+
+    // need to update immediately, otherwise chunks might overwrite each other
     this.mJob.received += merged.length;
     this.mJob.offset += merged.length;
     this.mJob.size -= merged.length;
@@ -375,6 +380,7 @@ class DownloadWorker {
       if (!this.mWriting) {
         this.mWriting = true;
         this.writeBuffer()
+          .catch(ProcessCanceled, () => null)
           .catch(err => {
             this.handleError(err);
           })
@@ -766,6 +772,9 @@ class DownloadManager {
       if (isNaN(download.received)) {
         download.received = 0;
       }
+      if (download.assembler.isClosed()) {
+        return Promise.reject(new ProcessCanceled('file already closed'));
+      }
       // these values will change until the data was written to file
       // so copy them so we write the correct info to state
       const receivedNow = download.received;
@@ -780,16 +789,18 @@ class DownloadManager {
                 : undefined,
               urls,
               download.tempName);
-          return synced;
+          return Promise.resolve(synced);
         })
         .catch(err => {
-          for (const chunk of download.chunks) {
-            if (chunk.state === 'running') {
-              this.mBusyWorkers[chunk.workerId].cancel();
+          if (!(err instanceof ProcessCanceled)) {
+            for (const chunk of download.chunks) {
+              if (chunk.state === 'running') {
+                this.mBusyWorkers[chunk.workerId].cancel();
+              }
             }
+            download.failedCB(err);
           }
-          download.failedCB(err);
-          return Promise.resolve(false);
+          return Promise.reject(err);
         });
     };
   }
