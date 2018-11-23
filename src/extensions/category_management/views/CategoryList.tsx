@@ -364,13 +364,13 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
   }
 
   private searchLastRootId(categories: ICategoryDictionary) {
-    let maxId = 0;
+    let maxId = 1000;
     if (categories !== undefined) {
-    Object.keys(categories).filter((id: string) => {
-      if (parseInt(id, 10) > maxId) {
-        maxId = parseInt(id, 10);
-      }
-    });
+      Object.keys(categories).filter((id: string) => {
+        if (parseInt(id, 10) > maxId) {
+          maxId = parseInt(id, 10);
+        }
+      });
     }
     return maxId + 1;
   }

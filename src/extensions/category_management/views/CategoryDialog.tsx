@@ -1,6 +1,5 @@
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import DNDContainer from '../../../views/DNDContainer';
-import { IState } from '../../../types/IState';
 
 import { showCategoriesDialog } from '../actions/session';
 
