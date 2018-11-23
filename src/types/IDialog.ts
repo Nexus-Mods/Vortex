@@ -7,7 +7,25 @@ export interface IDialogAction {
   action?: (label: string) => void;
 }
 
+export interface IConditionResult {
+  // Array of actions that should be disabled
+  //  as part of this error result.
+  actions: string[],
+
+  // The error/reason string why the actions
+  //  should be disabled.
+  errorText: string,
+
+  // The id of the control which is reporting
+  //  this error.
+  id: string,
+}
+
+export type ConditionResults = IConditionResult[];
+
 export type DialogActions = IDialogAction[];
+
+export type Condition = (content: IDialogContent) => ConditionResults;
 
 export interface IDialog {
   id: string;
@@ -18,14 +36,16 @@ export interface IDialog {
   actions: string[];
 }
 
-export interface ICheckbox {
+export interface IControlBase {
   id: string;
+}
+
+export interface ICheckbox extends IControlBase {
   text: string;
   value: boolean;
 }
 
-export interface IInput {
-  id: string;
+export interface IInput extends IControlBase {
   type?: 'text' | 'password' | 'number' | 'date' | 'time' | 'email' | 'url';
   value?: string;
   label?: string;
@@ -74,6 +94,8 @@ export interface IDialogContent {
     wrap?: boolean;
     hideMessage?: boolean;
   };
+
+  condition?: Condition;
 }
 
 export interface IDialogResult {
