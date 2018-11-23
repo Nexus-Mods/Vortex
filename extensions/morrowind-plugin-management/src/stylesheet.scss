@@ -1,8 +1,9 @@
 #morrowind-plugin-panel {
   .list-group {
     border: $border-width solid $border-color;
-    margin: $half-gutter;
     min-height: $gutter-width;
+    overflow: auto;
+    height: 100%;
   }
   .plugin-entry {
     background-color: $brand-bg;
@@ -11,5 +12,13 @@
     &.dragging {
       opacity: 0;
     }
+  }
+
+  > .layout-container > .layout-flex {
+    margin: 4px;
+  }
+
+  .plugin-column {
+    padding: 4px;
   }
 }

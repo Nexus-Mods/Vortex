@@ -154,7 +154,7 @@ class DraggableList extends ComponentEx<IProps, IState> {
     const { connectDropTarget, id, itemRenderer } = this.props;
     const { ordered } = this.state;
     return connectDropTarget(
-      <div>
+      <div style={{ height: '100%' }}>
         <ListGroup>
           {ordered.map((item, idx) => (
               <Draggable
@@ -172,15 +172,6 @@ class DraggableList extends ComponentEx<IProps, IState> {
       </div>);
   }
 
-  public take = (item: any) => {
-    const { ordered } = this.nextState;
-    const index = ordered.indexOf(item);
-    const copy = ordered.slice(0);
-    const res = copy.splice(index, 1)[0];
-    this.nextState.ordered = copy;
-    return res;
-  }
-
   public changeIndex = (oldIndex: number, newIndex: number, take: () => any) => {
     if (oldIndex === undefined) {
       return;
@@ -192,6 +183,18 @@ class DraggableList extends ComponentEx<IProps, IState> {
 
     this.nextState.ordered = copy;
     this.applyDebouncer.schedule();
+  }
+
+  private take = (item: any) => {
+    const { ordered } = this.nextState;
+    let res = item;
+    const index = ordered.indexOf(item);
+    const copy = ordered.slice(0);
+    if (index !== -1) {
+      res = copy.splice(index, 1)[0];
+    }
+    this.nextState.ordered = copy;
+    return item;
   }
 
   private apply = () => {

@@ -1,3 +1,4 @@
+import ExtensionGate from '../controls/ExtensionGate';
 import Icon from '../controls/Icon';
 import { IMainPage } from '../types/IMainPage';
 import { ComponentEx, translate } from '../util/ComponentEx';
@@ -90,7 +91,9 @@ class MainPageContainer extends ComponentEx<IBaseProps, IComponentState> {
         <div className={classes.join(' ')}>
           <div className='mainpage-header-container' ref={this.setHeaderRef} />
           <div className='mainpage-body-container'>
-            <page.component active={active} secondary={secondary} {...props} />
+            <ExtensionGate id={page.id}>
+              <page.component active={active} secondary={secondary} {...props} />
+            </ExtensionGate>
           </div>
         </div>
       );

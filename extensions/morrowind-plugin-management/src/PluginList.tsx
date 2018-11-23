@@ -9,15 +9,18 @@ import { ComponentEx, DNDContainer, FlexLayout, MainPage } from 'vortex-api';
 const PanelX: any = Panel;
 
 export interface IPluginListProps {
-  knownPlugins: string[];
-  pluginOrder: string[];
+  localState: {
+    knownPlugins: string[],
+    pluginOrder: string[],
+  };
 
   onSetPluginOrder: (enabled: string[]) => void;
 }
 
 class PluginList extends ComponentEx<IPluginListProps, {}> {
   public render(): JSX.Element {
-    const { t, knownPlugins, pluginOrder } = this.props;
+    const { t } = this.props;
+    const { knownPlugins, pluginOrder } = this.props.localState;
     const disabledPlugins = knownPlugins.filter(plugin => pluginOrder.indexOf(plugin) === -1);
 
     return (
@@ -25,25 +28,37 @@ class PluginList extends ComponentEx<IPluginListProps, {}> {
         <MainPage.Body>
           <Panel id='morrowind-plugin-panel'>
             <PanelX.Body>
-              <DNDContainer>
+              <DNDContainer style={{ height: '100%' }}>
                 <FlexLayout type='row'>
                   <FlexLayout.Flex>
-                    <h4>{t('Enabled')}</h4>
-                    <DraggableList
-                      id='enabled'
-                      items={pluginOrder}
-                      itemRenderer={PluginEntry}
-                      apply={this.applyEnabled}
-                    />
+                    <FlexLayout type='column' className='plugin-column'>
+                      <FlexLayout.Fixed>
+                        <h4>{t('Enabled')}</h4>
+                      </FlexLayout.Fixed>
+                      <FlexLayout.Flex>
+                        <DraggableList
+                          id='enabled'
+                          items={pluginOrder}
+                          itemRenderer={PluginEntry}
+                          apply={this.applyEnabled}
+                        />
+                      </FlexLayout.Flex>
+                    </FlexLayout>
                   </FlexLayout.Flex>
                   <FlexLayout.Flex>
-                    <h4>{t('Disabled')}</h4>
-                    <DraggableList
-                      id='disabled'
-                      items={disabledPlugins}
-                      itemRenderer={PluginEntry}
-                      apply={this.applyDisabled}
-                    />
+                    <FlexLayout type='column' className='plugin-column'>
+                      <FlexLayout.Fixed>
+                        <h4>{t('Disabled')}</h4>
+                      </FlexLayout.Fixed>
+                      <FlexLayout.Flex>
+                        <DraggableList
+                          id='disabled'
+                          items={disabledPlugins}
+                          itemRenderer={PluginEntry}
+                          apply={this.applyDisabled}
+                        />
+                      </FlexLayout.Flex>
+                    </FlexLayout>
                   </FlexLayout.Flex>
                 </FlexLayout>
               </DNDContainer>
