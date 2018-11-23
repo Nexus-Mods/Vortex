@@ -80,9 +80,6 @@ class DropdownMenu extends React.PureComponent<IProps, {}> {
 
     const title: any = (
       <div
-        data-value={actions[0].title}
-        onClick={actions[0].show ? this.triggerDefault : undefined}
-        className='dropdown-title'
         title={genTooltip(actions[0].show)}
         style={{ width: '100%', height: '100%' }}
       >
@@ -95,6 +92,8 @@ class DropdownMenu extends React.PureComponent<IProps, {}> {
         id={`${id}-menu`}
         split
         title={title}
+        data-value={actions[0].title}
+        onClick={actions[0].show ? this.triggerDefault : undefined}
       >
         {actions.slice(1).map((iter, idx) => this.renderMenuItem(iter, idx))}
       </DropdownButton>
