@@ -23,7 +23,7 @@ import { INotification } from '../types/INotification';
 import { IExtensionLoadFailure, IExtensionState, IState } from '../types/IState';
 
 import { Archive } from './archives';
-import { ProcessCanceled, UserCanceled } from './CustomErrors';
+import { ProcessCanceled, UserCanceled, MissingDependency } from './CustomErrors';
 import { isOutdated } from './errorHandling';
 import getVortexPath from './getVortexPath';
 import lazyRequire from './lazyRequire';
@@ -1001,7 +1001,13 @@ class ExtensionManager {
               reject(err);
             })
             .on('close', (code) => {
-              if (code !== 0) {
+              const game = activeGameId(this.mApi.store.getState());
+              if ((code === 3221225781) && (game === 'fallout3')) {
+                // FO3 is dependent on several redistributables being installed to run.
+                //  code 3221225781 suggests that xlive and possibly other redistribs are not installed.
+                reject(new MissingDependency(code));
+              }
+              else if (code !== 0) {
                 // TODO: the child process returns an exit code of 53 for SSE and
                 // FO4, and an exit code of 1 for Skyrim. We don't know why but it
                 // doesn't seem to affect anything
