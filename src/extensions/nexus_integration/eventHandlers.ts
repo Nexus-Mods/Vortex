@@ -198,12 +198,14 @@ export function onEndorseMod(api: IExtensionApi, nexus: Nexus): (...args: any[])
 
 export function onAPIKeyChanged(api: IExtensionApi, nexus: Nexus): StateChangeCallback {
   return (oldValue: string, newValue: string) => {
-    nexus.setKey(newValue);
-    setApiKey(newValue);
-    api.store.dispatch(setUserInfo(undefined));
-    if (newValue !== undefined) {
-      validateKey(api, nexus, newValue);
-    }
+    nexus.setKey(newValue)
+      .then(() => {
+        setApiKey(newValue);
+        api.store.dispatch(setUserInfo(undefined));
+        if (newValue !== undefined) {
+          validateKey(api, nexus, newValue);
+        }
+      });
   };
 }
 

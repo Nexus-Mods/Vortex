@@ -92,20 +92,21 @@ function nexusReport(hash: string, type: string, error: IError, labels: string[]
   const Nexus: typeof NexusT = require('nexus-api').default;
 
   const referenceId = require('uuid').v4();
-  const nexus = new Nexus(undefined, apiKey, app.getVersion());
-  return Promise.resolve(nexus.sendFeedback(
-    createTitle(type, error, hash),
-    createReport(type, error, app.getVersion(), reporterProcess, sourceProcess),
-    undefined,
-    apiKey === undefined,
-    hash,
-    referenceId))
-  .tap(() =>
-    opn(`https://www.nexusmods.com/crash-report/?key=${referenceId}`).catch(() => null))
-  .catch(err => {
-    log('error', 'failed to report error to nexus', err.message);
-    return undefined;
-  });
+
+  return Promise.resolve(Nexus.create(apiKey, app.getVersion(), undefined))
+    .then(nexus => nexus.sendFeedback(
+      createTitle(type, error, hash),
+      createReport(type, error, app.getVersion(), reporterProcess, sourceProcess),
+      undefined,
+      apiKey === undefined,
+      hash,
+      referenceId))
+    .tap(() =>
+      opn(`https://www.nexusmods.com/crash-report/?key=${referenceId}`).catch(() => null))
+    .catch(err => {
+      log('error', 'failed to report error to nexus', err.message);
+      return undefined;
+    });
 }
 
 let fallbackAPIKey: string;

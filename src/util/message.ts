@@ -325,15 +325,6 @@ function renderCustomError(err: any) {
   return res;
 }
 
-function prettifyHTTPError(err: HTTPError) {
-  return {
-  }[err.statusCode] || {
-    text: err.statusMessage,
-    message: err.url,
-    allowReport: true,
-  }
-}
-
 /**
  * render error message for display to the user
  * @param err 
@@ -345,8 +336,6 @@ export function renderError(err: string | Error | any):
   }
   if (typeof(err) === 'string') {
     return { text: err, wrap: true };
-  } else if (err instanceof HTTPError) {
-    return prettifyHTTPError(err);
   } else if (err instanceof Error) {
     const errMessage = prettifyNodeErrorMessage(err);
     return {

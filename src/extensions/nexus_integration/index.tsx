@@ -4,6 +4,7 @@ import InputButton from '../../controls/InputButton';
 import { IExtensionApi, IExtensionContext, ILookupResult } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
 import { ProcessCanceled, DataInvalid, UserCanceled } from '../../util/CustomErrors';
+import { setApiKey } from '../../util/errorHandling';
 import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
@@ -19,7 +20,7 @@ import { setUpdatingMods } from '../mod_management/actions/session';
 import { IMod } from '../mod_management/types/IMod';
 
 import { setUserAPIKey } from './actions/account';
-import { setNewestVersion } from './actions/persistent';
+import { setNewestVersion, setUserInfo } from './actions/persistent';
 import { setLoginId } from './actions/session';
 import { setAssociatedWithNXMURLs } from './actions/settings';
 import { accountReducer } from './reducers/account';
@@ -350,23 +351,26 @@ function once(api: IExtensionApi) {
 
     const Nexus: typeof NexusT = require('nexus-api').default;
     const apiKey = getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], '');
-    nexus = new Nexus(activeGameId(state), apiKey, remote.app.getVersion(), 30000);
-    setApiKey(apiKey);
-
-    retrieveNexusGames(nexus);
-
     const gameMode = activeGameId(state);
-    api.store.dispatch(setUpdatingMods(gameMode, false));
+    nexus = new Nexus(remote.app.getVersion(), gameMode, 30000);
+    nexus.setKey(apiKey)
+      .then(() => {
+        setApiKey(apiKey);
 
-    registerFunc(getSafe(state, ['settings', 'nexus', 'associateNXM'], undefined));
+        retrieveNexusGames(nexus);
 
-    if (state.confidential.account.nexus.APIKey !== undefined) {
-      (window as any).requestIdleCallback(() => {
-        validateKey(api, nexus, state.confidential.account.nexus.APIKey);
+        api.store.dispatch(setUpdatingMods(gameMode, false));
+
+        registerFunc(getSafe(state, ['settings', 'nexus', 'associateNXM'], undefined));
+
+        if (state.confidential.account.nexus.APIKey !== undefined) {
+          (window as any).requestIdleCallback(() => {
+            validateKey(api, nexus, state.confidential.account.nexus.APIKey);
+          });
+        } else {
+          api.store.dispatch(setUserInfo(undefined));
+        }
       });
-    } else {
-      api.store.dispatch(setUserInfo(undefined));
-    }
   }
 
   api.onAsync('check-mods-version', eh.onCheckModsVersion(api, nexus));

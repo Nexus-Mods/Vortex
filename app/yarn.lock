@@ -2049,8 +2049,8 @@ negotiator@0.6.1:
   resolved "https://registry.yarnpkg.com/negotiator/-/negotiator-0.6.1.tgz#2b327184e8992101177b28563fb5e7102acd0ca9"
 
 nexus-api@Nexus-Mods/node-nexus-api:
-  version "0.6.1"
-  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/00669021aaccc256bef0b6b4f536af41779e1606"
+  version "0.7.3"
+  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4150a583050eed8c01b723b25aff54bd2041ee9b"
   dependencies:
     request "^2.85.0"
     string-template "^1.0.0"
