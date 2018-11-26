@@ -59,8 +59,11 @@ class StarterInfo implements IStarterInfo {
       shell: info.shell,
     })
       .catch(UserCanceled, () => undefined)
-      .catch(MissingDependency, err => {
-        onShowError('Failed to run tool', err.message, false);
+      .catch(MissingDependency, () => {
+        onShowError('Failed to run tool', {
+          executable: info.exePath,
+          message: 'An Application/Tool dependency is missing, please consult the Application/Tool documentation for required dependencies.',
+        }, false);
       })
       .catch(ProcessCanceled, err => {
         onShowError('Failed to run tool', err.message, false);
