@@ -466,8 +466,8 @@ core-util-is@1.0.2, core-util-is@~1.0.0:
   resolved "https://registry.yarnpkg.com/core-util-is/-/core-util-is-1.0.2.tgz#b5fd54220aa2bc5ab57aab7140c940754503c1a7"
 
 crash-dump@Nexus-Mods/node-crash-dump:
-  version "1.0.3"
-  resolved "https://codeload.github.com/Nexus-Mods/node-crash-dump/tar.gz/23999ecd03ec732816704b7a8f23fc95049c141c"
+  version "1.0.4"
+  resolved "https://codeload.github.com/Nexus-Mods/node-crash-dump/tar.gz/204baba864af93629c8d1fe62c1f76c1938de783"
   dependencies:
     autogypi "^0.2.2"
     nan "^2.8.0"
@@ -1982,8 +1982,8 @@ minizlib@^1.1.0:
     minimist "0.0.8"
 
 modmeta-db@Nexus-Mods/modmeta-db:
-  version "0.3.9"
-  resolved "https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/6420be1d065499a6bc4994cdc77ae87cccd322fc"
+  version "0.3.10"
+  resolved "https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/b9e06b44b76ba926554255ad8cfd29900a75150b"
   dependencies:
     bluebird "^3.4.6"
     encoding-down "^5.0.4"
