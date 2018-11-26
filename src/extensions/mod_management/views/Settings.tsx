@@ -9,6 +9,7 @@ import { ValidationState } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { TemporaryError, UserCanceled } from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
+import getVortexPath from '../../../util/getVortexPath';
 import { log } from '../../../util/log';
 import opn from '../../../util/opn';
 import { showError } from '../../../util/message';
@@ -182,21 +183,26 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private applyPaths = () => {
-    const { t, gameMode, onSetInstallPath, onShowDialog, onShowError } = this.props;
+    const { t, discovery, gameMode, onSetInstallPath, onShowDialog, onShowError } = this.props;
     const newInstallPath: string = getInstallPath(this.state.installPath, gameMode);
     const oldInstallPath: string = getInstallPath(this.props.installPath, gameMode);
 
-    let vortexPath = remote.app.getAppPath();
-    if (path.basename(vortexPath) === 'app.asar') {
-      // in asar builds getAppPath returns the path of the asar so need to go up 2 levels
-      // (resources/app.asar)
-      vortexPath = path.dirname(path.dirname(vortexPath));
-    }
+    let vortexPath = getVortexPath('base');
+
     if (isChildPath(newInstallPath, vortexPath)) {
       return onShowDialog('error', 'Invalid path selected', {
-                  text: 'You can not put mods into the vortex application directory. '
+                text: 'You can not put mods into the vortex application directory. '
                   + 'This directory gets removed during updates so you would lose all your '
                   + 'files on the next update.',
+      }, [ { label: 'Close' } ]);
+    }
+
+    if (isChildPath(newInstallPath, discovery.path)) {
+      return onShowDialog('error', 'Invalid path selected', {
+                text: 'You can not put mods into the game directory. '
+                  + 'This directory is under the control of the game (and potentially Steam or similar) '
+                  + 'so your mods might be deleted or moved or otherwise damaged by foreign software.\n'
+                  + 'Please choose a separate folder for staging folder, one that no other application uses.'
       }, [ { label: 'Close' } ]);
     }
 

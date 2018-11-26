@@ -16,7 +16,7 @@ import * as fs from '../../util/fs';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
 import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
-import { calcDuration } from '../../util/message';
+import getVortexPath from '../../util/getVortexPath';
 import ReduxProp from '../../util/ReduxProp';
 import {
   activeGameId,
@@ -26,7 +26,7 @@ import {
   installPathForGame,
 } from '../../util/selectors';
 import {getSafe} from '../../util/storeHelper';
-import { removePersistent, setdefault, truthy } from '../../util/util';
+import { removePersistent, setdefault, truthy, isChildPath } from '../../util/util';
 
 import {setDownloadModInfo} from '../download_management/actions/state';
 import {getGame} from '../gamemode_management/util/getGame';
@@ -760,6 +760,48 @@ function once(api: IExtensionApi) {
   cleanupIncompleteInstalls(api);
 }
 
+function checkStagingFolder(api: IExtensionApi): Promise<ITestResult> {
+  let result: ITestResult;
+  const state = api.store.getState();
+  const discovery = currentGameDiscovery(state);
+  const instPath = installPath(state);
+  const basePath = getVortexPath('base');
+  if (isChildPath(instPath, basePath)) {
+    result = {
+      severity: 'warning',
+      description: {
+        short: 'Invalid staging folder',
+        long: 'Your mod staging folder is inside the Vortex application directory. '
+          + 'This is a very bad idea beckaue that folder gets removed during updates so you would '
+          + 'lose all your files on the next update.'
+      },
+    };
+  } else if (isChildPath(instPath, discovery.path)) {
+    result = {
+      severity: 'warning',
+      description: {
+        short: 'Invalid staging folder',
+        long: 'Your mod staging folder is inside the game folder.<br/>'
+          + 'This is a very bad idea because that folder is under the control of the game '
+          + '(and potentially Steam or similar) and may be moved or deleted - e.g. when the game is '
+          + 'updated/repaired.<br/>'
+          + 'Please choose a separate folder for the staging folder, one that no other application uses.'
+      },
+      automaticFix: () => new Promise<void>((fixResolve, fixReject) => {
+        api.events.emit('show-main-page', 'application_settings');
+        api.store.dispatch(setSettingsPage('Mods'));
+        api.highlightControl('#install-path-form', 5000);
+        api.events.on('hide-modal', (modal) => {
+          if (modal === 'settings') {
+            fixResolve();
+          }
+        });
+      }),
+    };
+  }
+  return Promise.resolve(result);
+}
+
 function init(context: IExtensionContext): boolean {
   const modsActivity = new ReduxProp(context.api, [
     ['session', 'base', 'activity', 'mods'],
@@ -801,6 +843,11 @@ function init(context: IExtensionContext): boolean {
   context.registerReducer(['persistent', 'deployment'], deploymentReducer);
 
   context.registerTableAttribute('mods', genModsSourceAttribute(context.api));
+
+  context.registerTest('validate-staging-folder', 'gamemode-activated',
+    () => checkStagingFolder(context.api));
+  context.registerTest('validate-staging-folder', 'settings-changed',
+    () => checkStagingFolder(context.api));
 
   context.registerDeploymentMethod = registerDeploymentMethod;
   context.registerInstaller = registerInstaller;

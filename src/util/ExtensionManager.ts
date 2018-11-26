@@ -1110,7 +1110,6 @@ class ExtensionManager {
           result += `${selector}::after { color: red, content: "${text}" }`;
         }
       } else {
-        console.log('css', highlightCSS);
         result += highlightCSS.cssText.replace('#highlight-control-dummy', selector);
         if (text !== undefined) {
           result += highlightAfterCSS.cssText.replace('#highlight-control-dummy', selector).replace('__contentPlaceholder', text);
