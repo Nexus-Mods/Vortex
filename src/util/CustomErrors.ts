@@ -28,6 +28,14 @@ export class UserCanceled extends Error {
   }
 }
 
+// Possibly rename this to MissingRedistributable ?
+export class MissingDependency extends Error {
+  constructor(code) {
+    super(`An Application/Tool dependency is missing - (code: ${code}) - please consult Application/Tool documentation for required dependencies.`);
+    this.name = this.constructor.name;
+  }
+}
+
 export class SetupError extends Error {
   constructor(message: string) {
     super(message);

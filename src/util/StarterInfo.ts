@@ -7,7 +7,7 @@ import { IToolStored } from '../extensions/gamemode_management/types/IToolStored
 
 import { IExtensionApi } from '../types/IExtensionContext';
 
-import { MissingInterpreter, UserCanceled, ProcessCanceled } from './CustomErrors';
+import { MissingInterpreter, UserCanceled, ProcessCanceled, MissingDependency } from './CustomErrors';
 
 import { remote } from 'electron';
 import * as fs from 'fs';
@@ -59,6 +59,9 @@ class StarterInfo implements IStarterInfo {
       shell: info.shell,
     })
       .catch(UserCanceled, () => undefined)
+      .catch(MissingDependency, err => {
+        onShowError('Failed to run tool', err.message, false);
+      })
       .catch(ProcessCanceled, err => {
         onShowError('Failed to run tool', err.message, false);
       })
