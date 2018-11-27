@@ -828,6 +828,7 @@ class DownloadManager {
               return fs.renameAsync(download.tempName, resolvedPath);
             });
           } else if ((download.headers !== undefined)
+                     && (download.headers['content-type'] !== undefined)
                      && (contentType.parse(download.headers['content-type']).type === 'text/html')
                      && !download.tempName.toLowerCase().endsWith('.html')) {
             // don't keep html files. It's possible handleHTML already deleted it though
