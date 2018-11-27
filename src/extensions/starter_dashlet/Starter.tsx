@@ -420,6 +420,8 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
   }
 }
 
+const emptyObj = {};
+
 function mapStateToProps(state: any): IConnectedProps {
   const gameMode: string = activeGameId(state);
 
@@ -428,7 +430,7 @@ function mapStateToProps(state: any): IConnectedProps {
     knownGames: state.session.gameMode.known,
     discoveredGames: state.settings.gameMode.discovered,
     discoveredTools: getSafe(state, ['settings', 'gameMode',
-      'discovered', gameMode, 'tools'], {}),
+      'discovered', gameMode, 'tools'], emptyObj),
     primaryTool: getSafe(state, ['settings', 'interface', 'primaryTool', gameMode], undefined),
   };
 }

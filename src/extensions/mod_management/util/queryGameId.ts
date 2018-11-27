@@ -56,7 +56,7 @@ function queryGameId(store: ThunkStore<any>, downloadGameIds: string[]): Promise
         'question', 'Download is for a different game',
         {
           message:
-            'This download is not marked compatible with the managed game.' +
+            'This download is not marked compatible with the managed game. ' +
             'Which one do you want to install it for?',
         },
         options.concat(managed.map(gameId => (

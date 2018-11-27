@@ -8,6 +8,7 @@ import { dismissStep } from './actions';
 import { IToDo } from './IToDo';
 
 import { TranslationFunction } from 'i18next';
+import * as _ from 'lodash';
 import * as React from 'react';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
@@ -89,6 +90,12 @@ type IProps = IBaseProps & IConnectedState & IActionProps & II18NProps;
 class TodoDashlet extends ComponentEx<IProps, {}> {
   constructor(inProps: IProps) {
     super(inProps);
+  }
+
+  public shouldComponentUpdate(newProps: IProps): boolean {
+    return (newProps.dismissAll !== this.props.dismissAll)
+        || (newProps.steps !== this.props.steps)
+        || !_.isEqual(newProps.extensionProps, this.props.extensionProps);
   }
 
   public render(): JSX.Element {
