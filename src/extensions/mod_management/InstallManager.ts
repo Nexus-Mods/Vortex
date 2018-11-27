@@ -48,8 +48,8 @@ import { IInstallContext } from './types/IInstallContext';
 import renderModName from '../mod_management/util/modName';
 
 export class ArchiveBrokenError extends Error {
-  constructor() {
-    super('Archive is broken');
+  constructor(message: string) {
+    super(`Archive is broken: ${message}`);
 
     this.name = this.constructor.name;
   }
@@ -187,6 +187,7 @@ class InstallManager {
         return api.lookupModMeta({ filePath: archivePath, gameId });
       })
       .then((modInfo: ILookupResult[]) => {
+        log('debug', 'got mod meta information', { archivePath, resultCount: modInfo.length });
         if (modInfo.length > 0) {
           fullInfo.meta = modInfo[0].value;
         }
@@ -214,6 +215,7 @@ class InstallManager {
       //   even a particularly good way to discover conflicts
       .then(newModId => {
         modId = newModId;
+        log('debug', 'mod id for newly installed mod', { archivePath, modId });
         return filterModInfo(fullInfo, undefined);
       })
       .then(modInfo => {
@@ -260,6 +262,7 @@ class InstallManager {
         installContext.startInstallCB(modId, installGameId, archiveId);
 
         destinationPath = path.join(this.mGetInstallPath(installGameId), modId);
+        log('debug', 'installing to', { modId, destinationPath });
         installContext.setInstallPathCB(modId, destinationPath);
         tempPath = destinationPath + '.installing';
         return this.installInner(api, archivePath,
@@ -438,20 +441,23 @@ class InstallManager {
       }
     };
     process.noAsar = true;
+    log('debug', 'extracting mod archive', { archivePath, tempPath });
     return this.mTask.extractFull(archivePath, tempPath, {ssc: false},
                                   progress,
                                   () => this.queryPassword(api.store))
         .catch((err: Error) => this.isCritical(err.message)
-          ? Promise.reject(new ArchiveBrokenError())
+          ? Promise.reject(new ArchiveBrokenError(err.message))
           : Promise.reject(err))
         .then(({ code, errors }: {code: number, errors: string[] }) => {
+          log('debug', 'extraction completed', { code, errors });
           if (installContext !== undefined) {
             installContext.setProgress();
           }
           if (code !== 0) {
+            log('warn', 'extraction reported error', { code, errors });
             const critical = errors.find(this.isCritical);
             if (critical !== undefined) {
-              return Promise.reject(new ArchiveBrokenError());
+              return Promise.reject(new ArchiveBrokenError(critical));
             }
             return this.queryContinue(api, errors);
           } else {
@@ -480,6 +486,8 @@ class InstallManager {
           }
 
           const {installer, requiredFiles} = supportedInstaller;
+          // TODO: We don't have an id for installers - that would be useful here...
+          log('debug', 'invoking installer', supportedInstaller.installer.priority);
           return installer.install(
               fileList, tempPath, gameId,
               (perc: number) => log('info', 'progress', perc));
