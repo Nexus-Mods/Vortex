@@ -159,7 +159,7 @@ class DeploymentMethod extends LinkingDeployment {
                   ? fs.unlinkAsync(entry.filePath)
                     .catch(err =>
                       log('warn', 'failed to remove', entry.filePath))
-                  : Promise.resolve(), { concurrency: 100 })
+                  : Promise.resolve())
               .then(() => undefined));
           }, {details: true})
           .then(() => queue);
