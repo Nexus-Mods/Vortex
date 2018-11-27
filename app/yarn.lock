@@ -1982,8 +1982,8 @@ minizlib@^1.1.0:
     minimist "0.0.8"
 
 modmeta-db@Nexus-Mods/modmeta-db:
-  version "0.3.10"
-  resolved "https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/b9e06b44b76ba926554255ad8cfd29900a75150b"
+  version "0.3.11"
+  resolved "https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/c2bcf7ca2f12469f6f8b904f487ffbadd5afd632"
   dependencies:
     bluebird "^3.4.6"
     encoding-down "^5.0.4"
@@ -3367,8 +3367,8 @@ tunnel-agent@^0.6.0:
     safe-buffer "^5.0.1"
 
 turbowalk@Nexus-Mods/node-turbowalk:
-  version "1.2.1"
-  resolved "https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/f297e4700a432190fac0b9812504e0c4a8ee8c0b"
+  version "1.3.1"
+  resolved "https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/88eaaf092b4be2c5b2333d32f5bac2a9bde688e7"
   dependencies:
     autogypi "^0.2.2"
     fs-extra-promise "^1.0.1"
