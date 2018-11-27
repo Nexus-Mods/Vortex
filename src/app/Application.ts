@@ -293,9 +293,8 @@ class Application {
           app.exit(1);
           return Promise.reject(new ProcessCanceled('Migration failed'));
         });
-    } else {
-      return Promise.resolve();
     }
+    return Promise.resolve();
   }
 
   private splitPath(statePath: string): string[] {
