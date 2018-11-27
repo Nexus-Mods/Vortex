@@ -248,25 +248,27 @@ abstract class LinkingActivator implements IDeploymentMethod {
 
   public activate(sourcePath: string, sourceName: string, dataPath: string,
                   blackList: Set<string>): Promise<void> {
-    return turbowalk(sourcePath, entries => {
-      if (this.mContext === undefined) {
-        return;
-      }
-      entries.forEach(entry => {
-        const relPath: string = path.relative(sourcePath, entry.filePath);
-        const relPathNorm = this.mNormalize(relPath);
-        if (!entry.isDirectory && !blackList.has(relPathNorm)) {
-          // mods are activated in order of ascending priority so
-          // overwriting is fine here
-          this.mContext.newDeployment[relPathNorm] = {
-            relPath,
-            source: sourceName,
-            target: dataPath,
-            time: entry.mtime * 1000,
-          };
+    return fs.statAsync(sourcePath)
+      .then(() => turbowalk(sourcePath, entries => {
+        if (this.mContext === undefined) {
+          return;
         }
-      });
-    }, { skipHidden: false });
+        entries.forEach(entry => {
+          const relPath: string = path.relative(sourcePath, entry.filePath);
+          const relPathNorm = this.mNormalize(relPath);
+          if (!entry.isDirectory && !blackList.has(relPathNorm)) {
+            // mods are activated in order of ascending priority so
+            // overwriting is fine here
+            this.mContext.newDeployment[relPathNorm] = {
+              relPath,
+              source: sourceName,
+              target: dataPath,
+              time: entry.mtime * 1000,
+            };
+          }
+        });
+      }, { skipHidden: false }))
+      .catch({ code: 'ENOENT' }, () => null);
   }
 
   public deactivate(installPath: string, dataPath: string,
