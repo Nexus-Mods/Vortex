@@ -9173,8 +9173,8 @@ tunnel-agent@^0.6.0:
     safe-buffer "^5.0.1"
 
 turbowalk@Nexus-Mods/node-turbowalk:
-  version "1.3.1"
-  resolved "https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/88eaaf092b4be2c5b2333d32f5bac2a9bde688e7"
+  version "1.3.3"
+  resolved "https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/91edfa2a660dca36fa419d361a1f9e218a3a297e"
   dependencies:
     autogypi "^0.2.2"
     fs-extra-promise "^1.0.1"
@@ -9664,6 +9664,14 @@ which@1, which@^1.2.12, which@^1.2.9, which@^1.3.0:
   resolved "https://registry.yarnpkg.com/which/-/which-1.3.1.tgz#a45043d54f5805316da8d62f9f50918d3da70b0a"
   dependencies:
     isexe "^2.0.0"
+
+wholocks@Nexus-Mods/node-wholocks:
+  version "0.1.0"
+  resolved "https://codeload.github.com/Nexus-Mods/node-wholocks/tar.gz/85bd462427608dd39a8010dde5617b5f36736662"
+  dependencies:
+    autogypi "^0.2.2"
+    nan "^2.8.0"
+    node-gyp "^3.6.2"
 
 wide-align@^1.1.0:
   version "1.1.3"
