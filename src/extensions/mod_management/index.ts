@@ -763,6 +763,12 @@ function once(api: IExtensionApi) {
 function checkStagingFolder(api: IExtensionApi): Promise<ITestResult> {
   let result: ITestResult;
   const state = api.store.getState();
+  
+  const gameMode = activeGameId(state);
+  if (gameMode === undefined) {
+    return Promise.resolve(result);
+  }
+
   const discovery = currentGameDiscovery(state);
   const instPath = installPath(state);
   const basePath = getVortexPath('base');
