@@ -12,6 +12,7 @@ import { screen } from 'electron';
 import * as Redux from 'redux';
 import TrayIcon from './TrayIcon';
 import { ThunkStore } from '../types/IExtensionContext';
+import { truthy } from '../util/util';
 
 class MainWindow {
   private mWindow: Electron.BrowserWindow = null;
@@ -128,9 +129,11 @@ class MainWindow {
 
   public show(maximized: boolean) {
     this.mShown = true;
-    this.mWindow.show();
-    if (maximized) {
-      this.mWindow.maximize();
+    if (truthy(this.mWindow)) {
+      this.mWindow.show();
+      if (maximized) {
+        this.mWindow.maximize();
+      }
     }
   }
 
