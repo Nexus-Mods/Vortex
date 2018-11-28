@@ -295,7 +295,9 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         onChange={this.changeInput}
         ref={idx === 0 ? this.focusMe : undefined}
       />
-      {(valRes.length !== 0) ? <label className='control-label'>{valRes.map(res => res.errorText).join('\n')}</label> : null}
+      {((valRes !== undefined) && (valRes.length !== 0)) 
+        ? <label className='control-label'>{valRes.map(res => res.errorText).join('\n')}</label> 
+        : null}
       </FormGroup>
     );
   }
