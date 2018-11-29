@@ -36,6 +36,7 @@ import {
 } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
+import * as process from 'process';
 
 interface IBaseProps {
   activators: IDeploymentMethod[];
@@ -69,6 +70,7 @@ interface IComponentState {
   supportedActivators: IDeploymentMethod[];
   currentActivator: string;
   changingActivator: boolean;
+  currentPlatform: string;
 }
 
 type IProps = IBaseProps & IActionProps & IConnectedProps;
@@ -85,11 +87,13 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       currentActivator: props.currentActivator,
       installPath: props.installPath,
       changingActivator: false,
+      currentPlatform: '',
     });
   }
 
   public componentWillMount() {
     this.nextState.supportedActivators = this.supportedActivators();
+    this.nextState.currentPlatform = process.platform;
   }
 
   public componentWillReceiveProps(newProps: IProps) {
@@ -319,6 +323,12 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private validateModPath(input: string): { state: ValidationState, reason?: string } {
+    const { currentPlatform } = this.state;
+
+    const invalidCharacters = currentPlatform === 'win32' 
+      ? ['/', '?', '%', '*', ':', '|', '"', '<', '>', '.']
+      : [];
+    
     let vortexPath = remote.app.getAppPath();
     if (path.basename(vortexPath) === 'app.asar') {
       // in asar builds getAppPath returns the path of the asar so need to go up 2 levels
@@ -343,6 +353,14 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       return {
         state: 'error',
         reason: 'Staging folder needs to be an absolute path.'
+      };
+    }
+
+    const removedWinRoot = currentPlatform === 'win32' ? input.substr(3) : input;
+    if (invalidCharacters.find(inv => removedWinRoot.indexOf(inv) !== -1) !== undefined) {
+      return {
+        state: 'error',
+        reason: 'Path cannot contain illegal characters'
       };
     }
 
