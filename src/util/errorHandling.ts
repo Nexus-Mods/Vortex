@@ -1,7 +1,7 @@
 import { IErrorOptions, IExtensionApi } from '../types/api';
 import { IError } from '../types/IError';
 
-import { UserCanceled } from './api';
+import { UserCanceled } from './CustomErrors';
 import { log } from './log';
 import { genHash } from './genHash';
 import { getSafe } from './storeHelper';
