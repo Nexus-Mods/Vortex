@@ -406,7 +406,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           <FlexLayout.Fixed>
             <InputGroup.Button>
               <BSButton
-                disabled={!this.pathsChanged()}
+                disabled={!this.pathsChanged() || validationState.state === 'error'}
                 onClick={this.applyPaths}
               >
                 {t('Apply')}
