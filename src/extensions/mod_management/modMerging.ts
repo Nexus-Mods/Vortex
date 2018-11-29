@@ -153,13 +153,34 @@ function mergeMods(api: IExtensionApi,
             mergedFiles.push(relPath);
             return fs.ensureDirAsync(realDest)
               .then(() => Promise.map(merger.match.baseFiles(),
-                file => fs.removeAsync(path.join(realDest, file.out)).catch(err => null)
-                  .then(() => fs.copyAsync(file.in, path.join(realDest, file.out)))
-                  .catch(err => (err.code === 'ENOENT')
-                    // source file missing isn't really a big deal, treat as empty
-                      ? fs.ensureFileAsync(file.in)
-                      : Promise.reject(err))))
-              .then(() => merger.merge(fileEntry.filePath, realDest));
+                file => Promise.all([fs.statAsync(file.in + BACKUP_TAG).catch(err => err.code === 'ENOENT' ? undefined : Promise.reject(err)),
+                  fs.statAsync(path.join(realDest, file.out)).catch(err => err.code === 'ENOENT' ? undefined : Promise.reject(err))])
+                  .then(res => {
+                    // res[0] points to the file.in's backup file the existence of this file suggests that the
+                    //  merge is more complex as the game itself had pre-existing data within file.in; the correct
+                    //  behavior in this case would be to use this file as a clean template and merge our mod
+                    //  using the backup file as the template rather than using the normal file.in.
+
+                    // res[1] points to the output merge file. This file is removed prior to this function
+                    //  being called, so if the merge file already exists, this would mean that a separate 
+                    //  mod has already merged its data and we should simply merge this mod's data into the output file
+                    if (res[1] !== undefined) {
+                      // Merge file already exists, nothing to do here.
+                      return Promise.resolve();
+                    } else {
+                      if (res[0] !== undefined) {
+                        // We found a backup file, use this file as the merge output base file.
+                        return fs.copyAsync(file.in + BACKUP_TAG, path.join(realDest, file.out));
+                      } else {
+                        // No backup file found, ensure that the input file exists as it does not
+                        //  matter if it's empty and copy it over to the output location
+                        return fs.ensureFileAsync(file.in)
+                          .then(() => fs.copyAsync(file.in, path.join(realDest, file.out)))
+                      }
+                    }
+                  }).catch(err => Promise.reject(err))
+                ))
+                .then(() => merger.merge(fileEntry.filePath, realDest))
           }
         }
         return Promise.resolve();
