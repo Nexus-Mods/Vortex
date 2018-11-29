@@ -124,7 +124,8 @@ function errorHandler(evt: any) {
     return;
   }
 
-  if (error === undefined) {
+  if ((error === undefined)
+      || ((typeof(error) === 'object') && (Object.keys(error).length === 0))) {
     log('error', 'empty error object ignored', { wasPromise: evt.promise !== undefined });
     return;
   }
