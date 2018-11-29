@@ -34,6 +34,7 @@ function ensureIniBackups(t: TranslationFunction, gameMode: string,
             .catch(copyErr => {
               if (copyErr.code === 'ENOENT') {
                 log('warn', 'ini file missing', file);
+                return Promise.resolve();
               } else {
                 return Promise.reject(copyErr);
               }
