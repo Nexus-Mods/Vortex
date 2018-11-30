@@ -215,7 +215,7 @@ function genSubDirFunc(game: IGame): (mod: IMod) => string {
   }
 }
 
-function showCycles(api: IExtensionApi, cycles: string[][]) {
+function showCycles(api: IExtensionApi, cycles: string[][], gameId: string) {
   return api.showDialog('error', 'Cycles', {
     text: 'Dependency rules between your mods contain cycles, '
       + 'like "A after B" and "B after A". You need to remove one of the '
@@ -223,7 +223,7 @@ function showCycles(api: IExtensionApi, cycles: string[][]) {
       + 'applied in the right order.',
     links: cycles.map((cycle, idx) => (
       { label: cycle.join(', '), action: () => {
-        api.events.emit('edit-mod-cycle', cycle);
+        api.events.emit('edit-mod-cycle', gameId, cycle);
       } }
     )),
   }, [
@@ -448,7 +448,7 @@ function genUpdateModDeployment() {
           message: 'Mod rules contain cycles',
           actions: [
             { title: 'Show', action: () => {
-              showCycles(api, err.cycles);
+              showCycles(api, err.cycles, profile.gameId);
             } },
           ],
         });
