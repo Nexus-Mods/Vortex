@@ -78,6 +78,7 @@ import {} from './util/extensionRequire';
 import { reduxLogger } from './util/reduxLogger';
 import { ThunkStore } from './types/IExtensionContext';
 import { UserCanceled } from './util/api';
+import { getAllPropertyNames } from './util/util';
 
 log('debug', 'renderer process started', { pid: process.pid });
 
@@ -124,7 +125,7 @@ function errorHandler(evt: any) {
     return;
   }
 
-  if (error === undefined) {
+  if ((error === undefined) || (getAllPropertyNames(error).length === 0)) {
     log('error', 'empty error object ignored', { wasPromise: evt.promise !== undefined });
     return;
   }

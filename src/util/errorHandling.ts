@@ -5,7 +5,7 @@ import { UserCanceled } from './CustomErrors';
 import { log } from './log';
 import { genHash } from './genHash';
 import { getSafe } from './storeHelper';
-import { spawnSelf, truthy } from './util';
+import { spawnSelf, truthy, getAllPropertyNames } from './util';
 
 import * as Promise from 'bluebird';
 import {
@@ -278,7 +278,7 @@ export function toError(input: any, options?: IErrorOptions): IError {
       // object, but not an Error
       let message: string;
       let stack: string;
-      if (!truthy(input) || (Object.keys(input).length === 0)) {
+      if (!truthy(input) || (getAllPropertyNames(input).length === 0)) {
         // this is bad...
         message = `An empty error message was thrown: "${inspect(input)}"`;
       } else if ((input.error !== undefined) && (input.error instanceof Error)) {
