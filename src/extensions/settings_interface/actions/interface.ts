@@ -21,3 +21,6 @@ export const setDesktopNotifications = safeCreateAction('SET_DESKTOP_NOTIFICATIO
 
 export const setHideTopLevelCategory = safeCreateAction('SET_HIDE_TOPLEVEL_CATEGORY',
   (hide: boolean) => ({ hide }))
+
+export const showUsageInstruction = safeCreateAction('SHOW_USAGE_INSTRUCTION',
+  (usageId: string, show: boolean) => ({ usageId, show }));
