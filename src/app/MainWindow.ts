@@ -99,13 +99,15 @@ class MainWindow {
     this.mWindow.webContents.session.on(
         'will-download', (event, item) => {
           event.preventDefault();
-          this.mWindow.webContents.send('external-url', item.getURL());
-          store.dispatch(addNotification({
-            type: 'info',
-            title: 'Download started',
-            message: item.getFilename(),
-            displayMS: 4000,
-          }));
+          if (this.mWindow !== null) {
+            this.mWindow.webContents.send('external-url', item.getURL());
+            store.dispatch(addNotification({
+              type: 'info',
+              title: 'Download started',
+              message: item.getFilename(),
+              displayMS: 4000,
+            }));
+          }
         });
 
     this.mWindow.webContents.on('new-window', (event, url, frameName, disposition) => {
@@ -118,7 +120,9 @@ class MainWindow {
 
     return new Promise<Electron.WebContents>((resolve) => {
       this.mWindow.once('ready-to-show', () => {
-        resolve(this.mWindow.webContents);
+        if (this.mWindow !== null) {
+          resolve(this.mWindow.webContents);
+        }
       });
     });
   }
