@@ -88,6 +88,10 @@ export function quickDiscovery(knownGames: IGame[],
     if (game.queryPath === undefined) {
       return resolve();
     }
+    // don't override manually set game location
+    if (getSafe(discoveredGames, [game.id, 'pathSetManually'], false)) {
+      return resolve();
+    }
     try {
       const gamePath = game.queryPath();
       const prom = (typeof (gamePath) === 'string')

@@ -13,7 +13,9 @@ export const settingsReducer: IReducerSpec = {
       // there may also be user configuration
       merge(state, ['discovered', payload.id], payload.result),
     [actions.setGamePath as any]: (state, payload) =>
-      setOrNop(state, ['discovered', payload.gameId, 'path'], payload.gamePath),
+      setOrNop(
+        setOrNop(state, ['discovered', payload.gameId, 'path'], payload.gamePath),
+        ['discovered', payload.gameId, 'pathSetManually'], payload.gamePath !== undefined),
     [actions.addDiscoveredTool as any]: (state, payload) =>
       (state.discovered[payload.gameId] === undefined)
         ? state
