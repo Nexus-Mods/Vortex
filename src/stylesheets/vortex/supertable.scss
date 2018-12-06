@@ -254,6 +254,9 @@
   .dropdown .btn:first-child,
   .dropup .btn:first-child {
     text-align: left;
+    svg {
+      margin-right: 0.5em;
+    }
   }
   .dropdown-toggle {
     min-width: initial;

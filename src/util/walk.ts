@@ -30,7 +30,7 @@ function walk(target: string,
     .then((fileNames: string[]) => {
       allFileNames = fileNames;
       return Promise.map(fileNames, (statPath: string) =>
-                fs.lstatAsync([target, statPath].join(path.sep)).reflect(), { concurrency: 50 });
+        fs.lstatAsync([target, statPath].join(path.sep)).reflect());
     }).then((res: Array<Promise.Inspection<fs.Stats>>) => {
       // use the stats results to generate a list of paths of the directories
       // in the searched directory

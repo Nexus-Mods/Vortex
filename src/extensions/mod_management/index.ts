@@ -215,6 +215,22 @@ function genSubDirFunc(game: IGame): (mod: IMod) => string {
   }
 }
 
+function showCycles(api: IExtensionApi, cycles: string[][], gameId: string) {
+  return api.showDialog('error', 'Cycles', {
+    text: 'Dependency rules between your mods contain cycles, '
+      + 'like "A after B" and "B after A". You need to remove one of the '
+      + 'rules causing the cycle, otherwise your mods can\'t be '
+      + 'applied in the right order.',
+    links: cycles.map((cycle, idx) => (
+      { label: cycle.join(', '), action: () => {
+        api.events.emit('edit-mod-cycle', gameId, cycle);
+      } }
+    )),
+  }, [
+    { label: 'Close' },
+  ]);
+}
+
 function genUpdateModDeployment() {
   return (api: IExtensionApi, manual: boolean, profileId?: string,
           progressCB?: (text: string, percent: number) => void): Promise<void> => {
@@ -426,6 +442,7 @@ function genUpdateModDeployment() {
             api.store.dispatch(setDeploymentNecessary(game.id, false));
           });
       })
+
       .catch(UserCanceled, () => undefined)
       .catch(ProcessCanceled, err => {
         api.sendNotification({
@@ -437,6 +454,18 @@ function genUpdateModDeployment() {
       .catch(TemporaryError, err => {
         api.showErrorNotification('Failed to deploy mods, please try again',
                                   err.message, { allowReport: false });
+      })
+      .catch(CycleError, err => {
+        api.sendNotification({
+          id: 'mod-cycle-warning',
+          type: 'warning',
+          message: 'Mod rules contain cycles',
+          actions: [
+            { title: 'Show', action: () => {
+              showCycles(api, err.cycles, profile.gameId);
+            } },
+          ],
+        });
       })
       .catch(err => api.showErrorNotification('Failed to deploy mods', err, {
         allowReport: err.code !== 'EPERM',

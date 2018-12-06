@@ -136,7 +136,11 @@ class GameRow extends ComponentEx<IProps, {}> {
   private redraw = () => {
     if (this.mRef !== null) {
       this.mRef.hide();
-      setTimeout(() => this.mRef.show(), 100);
+      setTimeout(() => {
+        if (this.mRef !== null) {
+          this.mRef.show();
+        }
+      }, 100);
     }
   }
 

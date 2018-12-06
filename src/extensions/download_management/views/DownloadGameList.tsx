@@ -3,6 +3,7 @@ import { IconButton } from '../../../controls/TooltipControls';
 import { IGameStored, IState } from '../../../types/IState';
 import { connect, PureComponentEx } from '../../../util/ComponentEx';
 import * as fs from '../../../util/fs';
+import { log } from '../../../util/log';
 import * as selectors from '../../../util/selectors';
 
 import { setCompatibleGames } from '../actions/state';
@@ -83,6 +84,10 @@ class DownloadGameList extends PureComponentEx<IProps, {}> {
 
   private moveDownload(gameId: string): Promise<void> {
     const { currentGames, fileName } = this.props;
+    if (fileName === undefined) {
+      log('warn', 'Failed to move download, filename is undefined', { gameId });
+      return Promise.resolve();
+    }
     // removing the main game, have to move the download then
     const state = this.context.api.store.getState();
     const oldPath = selectors.downloadPathForGame(state, currentGames[0]);

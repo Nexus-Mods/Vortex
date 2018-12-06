@@ -1,0 +1,19 @@
+.usage-instructions {
+  // position: absolute;
+  // bottom: $gutter-width;
+  // left: $gutter-width;
+  background-color: $brand-bg;
+  opacity: 0.75;
+  border: $border-width solid $border-color;
+  padding: 4px;
+  position: relative;
+  &.usage-instructions-show {
+    padding-right: 32px;
+  }
+}
+
+.usage-instructions-content {
+  display: flex;
+  min-height: 32px;
+  align-items: center;
+}
