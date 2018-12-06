@@ -13,6 +13,7 @@ import * as Redux from 'redux';
 import TrayIcon from './TrayIcon';
 import { ThunkStore } from '../types/IExtensionContext';
 import { truthy } from '../util/util';
+import opn from '../util/opn';
 
 class MainWindow {
   private mWindow: Electron.BrowserWindow = null;
@@ -114,6 +115,12 @@ class MainWindow {
       if (disposition === 'background-tab') {
         event.preventDefault();
       }
+    });
+
+    this.mWindow.webContents.on('will-navigate', (event, url) => {
+      log('debug', 'navigating to page', url);
+      opn(url).catch(() => null);
+      event.preventDefault();
     });
 
     this.initEventHandlers(store);
