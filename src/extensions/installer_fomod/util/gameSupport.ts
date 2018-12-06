@@ -19,6 +19,8 @@ const gamebryoPatterns: string[] = [
   '[^/]*\\.esp$',
   '[^/]*\\.esm$',
   '[^/]*\\.esl$',
+  '[^/]*\\.bsa$',
+  '[^/]*\\.ba2$',
   'fomod/ModuleConfig.xml$',
 ].concat(gamebryoTopLevel.map(toWordExp));
 
