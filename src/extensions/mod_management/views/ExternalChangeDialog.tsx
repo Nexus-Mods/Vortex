@@ -1,3 +1,4 @@
+import Modal from '../../../controls/Modal';
 import Table from '../../../controls/Table';
 import Toggle from '../../../controls/Toggle';
 import { Button } from '../../../controls/TooltipControls';
@@ -12,7 +13,6 @@ import { FileAction, IFileEntry } from '../types/IFileEntry';
 import * as I18next from 'i18next';
 import update from 'immutability-helper';
 import * as React from 'react';
-import { Modal } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 
@@ -38,8 +38,9 @@ const nop = () => undefined;
 
 const possibleActions: { [type: string]: IPossibleAction[] } = {
   refchange: [
-    { key: 'import', text: 'Save change', allText: 'Save all changes' },
-    { key: 'drop', text: 'Revert change', allText: 'Revert all changes' },
+    { key: 'import', text: 'Save change (use deployed file)', allText: 'Save all changes' },
+    { key: 'drop', text: 'Revert change (use staging file)', allText: 'Revert all changes' },
+    { key: 'newest', text: 'Use newer file', allText: 'Use newer file for all changes' },
   ],
   valchange: [
     { key: 'nop', text: 'Save change', allText: 'Save all changes' },
@@ -274,7 +275,6 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
             data={entries}
             actions={[]}
             staticElements={columns}
-            showHeader={false}
             showDetails={false}
           />
         </div>
@@ -351,6 +351,20 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
         name: 'File Name',
         description: 'file name',
         calc: (file: IFileEntry) => file.filePath,
+        placement: 'table',
+        edit: {},
+      }, {
+        id: 'staged_changed',
+        name: 'Staged file modified',
+        description: 'Last time the stage file (the one in the mod staging folder) was modified',
+        calc: (file: IFileEntry, t) => file.sourceModified.toLocaleString(),
+        placement: 'table',
+        edit: {},
+      }, {
+        id: 'deployment_changed',
+        name: 'Deployed file modified',
+        description: 'Last time the deployed file (the one in the game folder) was modified',
+        calc: (file: IFileEntry) => file.destModified.toLocaleString(),
         placement: 'table',
         edit: {},
       }, {

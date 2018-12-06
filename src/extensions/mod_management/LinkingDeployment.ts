@@ -315,15 +315,21 @@ abstract class LinkingActivator implements IDeploymentMethod {
       const fileModPath = [installPath, fileEntry.source, fileEntry.relPath].join(path.sep);
       let sourceDeleted: boolean = false;
       let destDeleted: boolean = false;
+      let sourceTime: Date;
       let destTime: Date;
 
       return this.stat(fileModPath)
         .catch(err => {
           // can't stat source, probably the file was deleted
           sourceDeleted = true;
-          return Promise.resolve();
+          return Promise.resolve(undefined);
         })
-        .then(() => this.statLink(fileDataPath))
+        .then(sourceStats => {
+          if (sourceStats !== undefined) {
+            sourceTime = sourceStats.mtime;
+          }
+          return this.statLink(fileDataPath);
+        })
         .catch(() => {
           // can't stat destination, probably the file was deleted
           destDeleted = true;
@@ -354,6 +360,8 @@ abstract class LinkingActivator implements IDeploymentMethod {
             nonLinks.push({
               filePath: fileEntry.relPath,
               source: fileEntry.source,
+              sourceTime,
+              destTime,
               changeType: 'refchange',
             });
           /* TODO not registering these atm as we have no way to "undo" anyway

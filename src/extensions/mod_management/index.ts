@@ -153,7 +153,13 @@ function applyFileActions(sourcePath: string,
   }
 
   const actionGroups: { [type: string]: IFileEntry[] } = fileActions.reduce((prev, value) => {
-      setdefault(prev, value.action, []).push(value);
+    let action;
+      if (value.action ===  'newest') {
+        action = (value.sourceModified > value.destModified) ? 'drop' : 'import';
+      } else {
+        action = value.action;
+      }
+      setdefault(prev, action, []).push(value);
       return prev;
     }, {});
 

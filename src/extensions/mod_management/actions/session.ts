@@ -24,7 +24,7 @@ let curReject;
 
 function defaultAction(changeType: string): FileAction {
   switch (changeType) {
-    case 'refchange': return 'import';
+    case 'refchange': return 'newest';
     case 'valchange': return 'nop';
     case 'deleted': return 'delete';
     case 'srcdeleted': return 'drop';
@@ -39,6 +39,8 @@ function changeToEntry(modTypeId: string, change: IFileChange): IFileEntry {
     source: change.source,
     type: change.changeType,
     action: defaultAction(change.changeType),
+    sourceModified: change.sourceTime,
+    destModified: change.destTime,
   };
 }
 

@@ -430,12 +430,16 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       return pos++;
     };
 
+    const toggleableColumns = objects.filter(attr => attr.isToggleable);
+    if (toggleableColumns.length === 0) {
+      return [];
+    }
+
     return [{
       icon: null,
       title: t('Toggle Columns'),
       position: getPos(),
-    }].concat(objects
-      .filter(attr => attr.isToggleable)
+    }].concat(toggleableColumns
       .map(attr => {
         const attributeState = this.getAttributeState(attr, props.attributeState);
         return {

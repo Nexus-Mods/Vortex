@@ -31,6 +31,14 @@ export interface IFileChange {
    * srcdeleted means that the file was deleted in the source directory
    */
   changeType: 'refchange' | 'valchange' | 'deleted' | 'srcdeleted';
+  /**
+   * time the deployed file was last changed
+   */
+  destTime?: Date;
+  /**
+   * time the staging file was last changed
+   */
+  sourceTime?: Date;
 }
 
 export interface IDeployedFile {
