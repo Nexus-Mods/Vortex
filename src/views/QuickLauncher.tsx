@@ -6,6 +6,7 @@ import { IGameStored } from '../extensions/gamemode_management/types/IGameStored
 import { IProfile } from '../extensions/profile_management/types/IProfile';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../types/IDialog';
 import { IDiscoveredTool } from '../types/IDiscoveredTool';
+import { IState } from '../types/IState';
 import { ComponentEx, connect, translate } from '../util/ComponentEx';
 import { log } from '../util/log';
 import { showError } from '../util/message';
@@ -35,6 +36,8 @@ interface IConnectedProps {
   profiles: { [profileId: string]: IProfile };
   discoveredGames: { [gameId: string]: IDiscoveryResult };
   knownGames: IGameStored[];
+  profilesVisible: boolean;
+  lastActiveProfile: { [gameId: string]: string };
 }
 
 interface IActionProps {
@@ -134,7 +137,7 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderGameOption = (gameId: string) => {
-    const { discoveredGames } = this.props;
+    const { discoveredGames, lastActiveProfile, profiles, profilesVisible } = this.props;
     const { gameIconCache } = this.state;
 
     if ((gameIconCache === undefined) || (gameIconCache[gameId] === undefined)) {
@@ -147,6 +150,8 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
     const iconPath = gameIconCache[gameId].icon.replace(/\\/g, '/');
     const game = gameIconCache[gameId].game;
 
+    const profile = profiles[lastActiveProfile[gameId]];
+
     const displayName =
       getSafe(discovered, ['shortName'], getSafe(game, ['shortName'], undefined))
       || getSafe(discovered, ['name'], getSafe(game, ['name'], undefined));
@@ -156,7 +161,10 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
         className='tool-icon-container'
         style={{ background: `url('${iconPath}')` }}
       >
-        <span className='menu-label'>{displayName}</span>
+        <div className='quicklaunch-item'>
+          <div className='quicklaunch-name'>{displayName}</div>
+          {profilesVisible ? <div className='quicklaunch-profile'>Profile: {profile.name}</div> : null}
+        </div>
       </div>
     );
   }
@@ -229,7 +237,7 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
   }
 }
 
-function mapStateToProps(state: any): IConnectedProps {
+function mapStateToProps(state: IState): IConnectedProps {
   const gameMode: string = activeGameId(state);
 
   return {
@@ -244,6 +252,8 @@ function mapStateToProps(state: any): IConnectedProps {
     knownGames: state.session.gameMode.known,
     profiles: state.persistent.profiles,
     discoveredGames: state.settings.gameMode.discovered,
+    profilesVisible: state.settings.interface.profilesVisible,
+    lastActiveProfile: state.settings.profiles.lastActiveProfile,
   };
 }
 
