@@ -61,6 +61,14 @@ function unlockConfirm(filePath: string): PromiseBB<boolean> {
     ? `Vortex needs to access "${filePath}" but doesn\'t have permission to.`
     : `Vortex needs to access "${filePath}" but it either has too restrictive permissions or is locked by another process.`;
 
+  const buttons = [
+      'Cancel',
+      'Retry',
+  ];
+
+  if (processes.length === 0) {
+    buttons.push('Give permission');
+  }
 
   const options: Electron.MessageBoxOptions = {
     title: 'Access denied',
@@ -68,13 +76,9 @@ function unlockConfirm(filePath: string): PromiseBB<boolean> {
       + ' If your account has admin rights Vortex can try to unlock the file for you.',
     detail: processes.length === 0
       ? undefined
-      : 'Processes that have the file open:\n'
+      : 'Please close the following applications and retry:\n'
         + processes.map(proc => `${proc.appName} (${proc.pid})`).join('\n'),
-    buttons: [
-      'Cancel',
-      'Retry',
-      'Give permission',
-    ],
+    buttons,
     type: 'warning',
     noLink: true,
   };
@@ -97,7 +101,7 @@ function busyRetry(filePath: string): PromiseBB<boolean> {
     title: 'File busy',
     message: `Vortex needs to access "${filePath}" but it\'s open in another application. `
       + 'Please close the file in all other applications and then retry.',
-    detail: 'Processes that have the file open:\n'
+    detail: 'Please close the following applications and retry:\n'
           + processes.map(proc => `${proc.appName} (${proc.pid})`).join('\n'),
     buttons: [
       'Cancel',
