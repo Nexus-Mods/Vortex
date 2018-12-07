@@ -52,7 +52,9 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
 
     const logoPath: string = path.join(game.extensionPath, game.logo);
 
-    const modCount = profile !== undefined
+    // Mod count should only be shown for Managed and Discovered games as
+    //  the supported type suggests that the game has been removed from the machine.
+    const modCount = ((profile !== undefined) && (type !== 'undiscovered'))
       ? countIf(Object.keys(profile.modState || {}), id => profile.modState[id].enabled)
       : undefined;
 
