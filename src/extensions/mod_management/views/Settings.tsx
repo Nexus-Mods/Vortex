@@ -129,7 +129,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     const PanelX: any = Panel;
 
     return (
-      <form>
+      // Prevent default submit event for the form as it will
+      //  cause Vortex to refresh (same thing as pressing F5).
+      <form onSubmit={this.submitEvt}>
         <Panel>
           <PanelX.Body>
             {this.renderPathCtrl(t('Mod Staging Folder ({{name}})', { replace: { name: gameName } }))}
@@ -157,6 +159,10 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         </Panel>
       </form>
     );
+  }
+
+  private submitEvt = (evt) => {
+    evt.preventDefault();
   }
 
   /**
