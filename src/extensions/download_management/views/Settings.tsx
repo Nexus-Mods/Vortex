@@ -4,6 +4,7 @@ import Icon from '../../../controls/Icon';
 import More from '../../../controls/More';
 import { Button } from '../../../controls/TooltipControls';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
+import { ValidationState } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { UserCanceled } from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
@@ -14,7 +15,7 @@ import { getSafe } from '../../../util/storeHelper';
 import { isChildPath, transferPath } from '../../../util/util';
 import { setDownloadPath, setMaxDownloads } from '../actions/settings';
 
-import getDownloadPath from '../util/getDownloadPath';
+import getDownloadPath, {getDownloadPathPattern} from '../util/getDownloadPath';
 
 import getText from '../texts';
 
@@ -26,6 +27,7 @@ import { Button as BSButton, ControlLabel, FormControl, FormGroup, HelpBlock, In
          Jumbotron, Modal, ProgressBar } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
+import * as process from 'process';
 
 interface IConnectedProps {
   parallelDownloads: number;
@@ -47,6 +49,7 @@ interface IComponentState {
   downloadPath: string;
   busy: string;
   progress: number;
+  currentPlatform: string;
 }
 
 const nop = () => null;
@@ -59,12 +62,65 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       downloadPath: props.downloadPath,
       busy: undefined,
       progress: 0,
+      currentPlatform: '',
     });
+  }
+
+  public componentWillMount() {
+    this.nextState.currentPlatform = process.platform;
   }
 
   public componentWillReceiveProps(newProps: IProps) {
     if (this.props.downloadPath !== newProps.downloadPath) {
       this.nextState.downloadPath = newProps.downloadPath;
+    }
+  }
+
+  private validateDownloadPath(input: string): { state: ValidationState, reason?: string } {
+    const { currentPlatform } = this.state;
+
+    const invalidCharacters = currentPlatform === 'win32' 
+      ? ['/', '?', '%', '*', ':', '|', '"', '<', '>', '.']
+      : [];
+
+    let vortexPath = remote.app.getAppPath();
+    if (path.basename(vortexPath) === 'app.asar') {
+      // in asar builds getAppPath returns the path of the asar so need to go up 2 levels
+      // (resources/app.asar)
+      vortexPath = path.dirname(path.dirname(vortexPath));
+    }
+    
+    if (isChildPath(input, vortexPath)) {
+      return {
+        state: 'error',
+        reason: 'Download folder can\'t be a subdirectory of the Vortex application folder.',
+      };
+    }
+
+    if (input.length > 100) {
+      return {
+        state: (input.length > 200) ? 'error' : 'warning',
+        reason: 'Download path shouldn\'t be too long, otherwise downloads may fail.',
+      };
+    }
+
+    if (!path.isAbsolute(input)) {
+      return {
+        state: 'error',
+        reason: 'Download folder needs to be an absolute path.'
+      };
+    }
+
+    const removedWinRoot = currentPlatform === 'win32' ? input.substr(3) : input;
+    if (invalidCharacters.find(inv => removedWinRoot.indexOf(inv) !== -1) !== undefined) {
+      return {
+        state: 'error',
+        reason: 'Path cannot contain illegal characters'
+      };
+    }
+
+    return {
+      state: 'success',
     }
   }
 
@@ -74,10 +130,12 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
     const changed = this.props.downloadPath !== downloadPath;
     const pathPreview = getDownloadPath(downloadPath, undefined);
+    const validationState = this.validateDownloadPath(pathPreview);
 
     return (
-      <form>
-        <FormGroup>
+      // Supressing default form submission event.
+      <form onSubmit={this.submitEvt}>
+        <FormGroup validationState={validationState.state}>
           <div id='download-path-form'>
             <ControlLabel>
               {t('Download Folder')}
@@ -87,9 +145,10 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                 <InputGroup>
                   <FormControl
                     className='download-path-input'
-                    value={downloadPath}
+                    value={getDownloadPathPattern(downloadPath)}
                     placeholder={t('Download Folder')}
                     onChange={this.setDownloadPathEvt as any}
+                    onKeyPress={changed && (validationState.state !== 'error') ? this.keyPressEvt : null}
                   />
                   <InputGroup.Button className='inset-btn'>
                     <Button
@@ -103,11 +162,15 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               </FlexLayout.Fixed>
               <FlexLayout.Fixed>
                 <InputGroup.Button>
-                  <BSButton disabled={!changed} onClick={this.apply}>{t('Apply')}</BSButton>
+                  <BSButton 
+                    disabled={!changed || (validationState.state === 'error')} 
+                    onClick={this.apply}>{t('Apply')}
+                  </BSButton>
                 </InputGroup.Button>
               </FlexLayout.Fixed>
             </FlexLayout>
             <HelpBlock><a data-url={pathPreview} onClick={this.openUrl}>{pathPreview}</a></HelpBlock>
+            {validationState.reason ? <ControlLabel>{t(validationState.reason)}</ControlLabel> : null}
             <Modal show={this.state.busy !== undefined} onHide={nop}>
               <Modal.Body>
                 <Jumbotron>
@@ -151,6 +214,17 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         </FormGroup>
       </form>
     );
+  }
+
+  private submitEvt = (evt) => {
+    evt.preventDefault();
+  }
+
+  private keyPressEvt = (evt) => {
+    if (evt.which === 13) {
+      evt.preventDefault();
+      this.apply();
+    }
   }
 
   private openUrl = (evt) => {
