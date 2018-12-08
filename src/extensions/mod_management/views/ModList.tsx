@@ -18,6 +18,7 @@ import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { ProcessCanceled, TemporaryError, UserCanceled } from '../../../util/CustomErrors';
 import Debouncer from '../../../util/Debouncer';
 import * as fs from '../../../util/fs';
+import onceCB from '../../../util/onceCB';
 import { getSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
 import MainPage from '../../../views/MainPage';
@@ -880,13 +881,13 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
     this.disableModsInner(modIds);
     return new Promise<void>((resolve, reject) => {
-      this.context.api.events.emit('deploy-mods', (err: Error) => {
+      this.context.api.events.emit('deploy-mods', onceCB((err: Error) => {
         if (err === null) {
           resolve();
         } else {
           reject(err);
         }
-      });
+      }));
     })
       .then(() => Promise.map(modIds, key =>
         ((mods[key] !== undefined)

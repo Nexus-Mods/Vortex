@@ -1,5 +1,6 @@
 import { IExtensionApi, IRunParameters } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
+import onceCB from '../../util/onceCB';
 
 import { needToDeploy } from './selectors';
 
@@ -39,13 +40,13 @@ function checkDeploy(api: IExtensionApi): Promise<void> {
     .then(shouldDeploy => {
       if (shouldDeploy === 'yes') {
         return new Promise<void>((resolve, reject) => {
-          api.events.emit('deploy-mods', (err) => {
+          api.events.emit('deploy-mods', onceCB((err) => {
             if (err !== null) {
               reject(err);
             } else {
               resolve();
             }
-          });
+          }));
         });
       } else if (shouldDeploy === 'auto') {
         return new Promise<void>((resolve, reject) => {

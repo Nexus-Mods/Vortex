@@ -11,6 +11,7 @@ import { getGame, getGames } from '../extensions/gamemode_management/util/getGam
 import deriveModInstallName from '../extensions/mod_management/modIdManager';
 import renderModName from '../extensions/mod_management/util/modName';
 import sortMods, { CycleError } from '../extensions/mod_management/util/sort';
+import { getCurrentActivator } from '../extensions/mod_management/util/deploymentMethods';
 import testModReference from '../extensions/mod_management/util/testModReference';
 import { Archive } from './archives';
 import copyRecursive from './copyRecursive';
@@ -25,6 +26,7 @@ import { getCurrentLanguage } from './i18n';
 import LazyComponent from './LazyComponent';
 import lazyRequire from './lazyRequire';
 import makeReactive from './makeReactive';
+import onceCB from './onceCB';
 import opn from './opn';
 import { getReduxLog } from './reduxLogger';
 import ReduxProp from './ReduxProp';
@@ -48,6 +50,7 @@ export {
   deriveModInstallName as deriveInstallName,
   extend,
   GameNotFound,
+  getCurrentActivator,
   getCurrentLanguage,
   getGame,
   getGames,
@@ -62,6 +65,7 @@ export {
   NotFound,
   NotSupportedError,
   objDiff,
+  onceCB,
   opn,
   ProcessCanceled,
   ReduxProp,

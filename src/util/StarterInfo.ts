@@ -65,9 +65,7 @@ class StarterInfo implements IStarterInfo {
           message: 'An Application/Tool dependency is missing, please consult the Application/Tool documentation for required dependencies.',
         }, false);
       })
-      .catch(ProcessCanceled, err => {
-        onShowError('Failed to run tool', err.message, false);
-      })
+      .catch(ProcessCanceled, () => undefined)
       .catch(err => {
         if (err.errno === 'ENOENT') {
           onShowError('Failed to run tool', {
@@ -95,7 +93,7 @@ class StarterInfo implements IStarterInfo {
         } else {
           onShowError('Failed to run tool', {
             executable: info.exePath,
-            error: err.stack,
+            error: err,
           });
         }
       });
