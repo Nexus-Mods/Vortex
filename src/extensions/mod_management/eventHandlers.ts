@@ -2,35 +2,40 @@ import {IExtensionApi} from '../../types/IExtensionContext';
 import {IState, IModTable} from '../../types/IState';
 import { ProcessCanceled, TemporaryError, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
+import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
 import {showError} from '../../util/message';
+import { downloadPathForGame } from '../../util/selectors';
 import {getSafe} from '../../util/storeHelper';
 import {truthy} from '../../util/util';
 
 import {IDownload} from '../download_management/types/IDownload';
 import {activeGameId} from '../profile_management/selectors';
+
+import { setDeploymentNecessary } from './actions/deployment';
 import {addMod, removeMod} from './actions/mods';
 import {setActivator} from './actions/settings';
 import {IDeploymentMethod} from './types/IDeploymentMethod';
 import {IMod} from './types/IMod';
-import {loadActivation, saveActivation} from './util/activationStore';
+import {loadActivation, saveActivation, fallbackPurge} from './util/activationStore';
+import { getSupportedActivators } from './util/deploymentMethods';
 
 import {getGame} from '../gamemode_management/util/getGame';
 import {setModEnabled} from '../profile_management/actions/profiles';
 import {IProfile} from '../profile_management/types/IProfile';
 
 import allTypesSupported from './util/allTypesSupported';
+import queryGameId from './util/queryGameId';
 import refreshMods from './util/refreshMods';
 
 import InstallManager from './InstallManager';
 import {currentActivator, installPath, installPathForGame} from './selectors';
 
 import * as Promise from 'bluebird';
+import { app as appIn, remote } from 'electron';
 import * as path from 'path';
-import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
-import queryGameId from './util/queryGameId';
-import { downloadPathForGame } from '../../util/selectors';
-import { setDeploymentNecessary } from './actions/deployment';
-import { getSupportedActivators } from './util/deploymentMethods';
+import { generate as shortid } from 'shortid';
+
+const app = remote !== undefined ? remote.app : appIn;
 
 export function onGameModeActivated(
     api: IExtensionApi, activators: IDeploymentMethod[], newGame: string) {
@@ -51,6 +56,38 @@ export function onGameModeActivated(
   }
 
   const instPath = installPath(state);
+
+  let activatorProm = fs.statAsync(instPath)
+    .catch(err => {
+      return api.showDialog('error', 'Mod Staging Folder missing!', {
+        text: 'Your mod staging folder (see below) is missing. This might happen because you deleted it '
+            + 'or - if you have it on a removable drive - it is not currently connected.\n'
+            + 'If you continue now, a new staging folder will be created but all your previously managed mods '
+            + 'will be lost.',
+        message: instPath,
+      }, [
+        { label: 'Remove all mods' },
+        { label: 'Quit Vortex' },
+      ])
+      .then(dialogResult => {
+        if (dialogResult.action === 'Quit Vortex') {
+          app.exit(0);
+          return Promise.reject(new UserCanceled());
+        } else {
+          const id = shortid();
+          api.sendNotification({
+            id,
+            type: 'activity',
+            message: 'Purging mods',
+          });
+          return fallbackPurge(api)
+            .then(() => fs.ensureDirWritableAsync(instPath, () => Promise.resolve()))
+            .finally(() => {
+              api.dismissNotification(id);
+            });
+        }
+      });
+    });
 
   if (configuredActivator === undefined) {
     // current activator is not valid for this game. This should only occur
@@ -73,17 +110,17 @@ export function onGameModeActivated(
         }, { allowReport: false });
     } else {
       const modPaths = game.getModPaths(gameDiscovery.path);
-      const purgePromise = oldActivator !== undefined
-        ? Promise.mapSeries(Object.keys(modPaths),
+      if (oldActivator !== undefined) {
+        activatorProm = activatorProm.then(() => Promise.mapSeries(Object.keys(modPaths),
             typeId => oldActivator.purge(instPath, modPaths[typeId]))
               .then(() => undefined)
               .catch(TemporaryError, err =>
                   api.showErrorNotification('Purge failed, please try again',
                     err.message, { allowReport: false }))
-              .catch(err => api.showErrorNotification('Purge filed', err))
-        : Promise.resolve();
+              .catch(err => api.showErrorNotification('Purge failed', err)));
+      }
 
-      purgePromise.then(() => {
+      activatorProm = activatorProm.then(() => {
         if (supported.length > 0) {
           api.store.dispatch(
             setActivator(newGame, supported[0].id));
@@ -93,15 +130,16 @@ export function onGameModeActivated(
   }
 
   const knownMods: { [modId: string]: IMod } = getSafe(state, ['persistent', 'mods', newGame], {});
-  refreshMods(instPath, Object.keys(knownMods), (mod: IMod) => {
-    api.store.dispatch(addMod(newGame, mod));
-  }, (modNames: string[]) => {
-    modNames.forEach((name: string) => {
-      if (['downloaded', 'installed'].indexOf(knownMods[name].state) !== -1) {
-        api.store.dispatch(removeMod(newGame, name));
-      }
-    });
-  })
+  activatorProm
+    .then(() => refreshMods(instPath, Object.keys(knownMods), (mod: IMod) => {
+      api.store.dispatch(addMod(newGame, mod));
+    }, (modNames: string[]) => {
+      modNames.forEach((name: string) => {
+        if (['downloaded', 'installed'].indexOf(knownMods[name].state) !== -1) {
+          api.store.dispatch(removeMod(newGame, name));
+        }
+      });
+    }))
     .then(() => {
       api.events.emit('mods-refreshed');
       return null;

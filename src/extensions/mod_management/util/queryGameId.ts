@@ -47,7 +47,7 @@ function queryGameId(store: ThunkStore<any>, downloadGameIds: string[]): Promise
       store.dispatch(showDialog(
         'question', 'No compatible game being managed',
         {
-          message:
+          text:
             'The game(s) associated with this download are not managed, '
             + 'Install for the currently managed game?',
         }, options));
@@ -55,7 +55,7 @@ function queryGameId(store: ThunkStore<any>, downloadGameIds: string[]): Promise
       store.dispatch(showDialog(
         'question', 'Download is for a different game',
         {
-          message:
+          text:
             'This download is not marked compatible with the managed game. ' +
             'Which one do you want to install it for?',
         },
