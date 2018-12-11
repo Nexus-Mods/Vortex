@@ -682,6 +682,11 @@ function once(api: IExtensionApi) {
       return Promise.resolve();
     }
     const activator = getCurrentActivator(state, gameId, false);
+
+    if (activator === undefined) {
+      return Promise.resolve();
+    }
+
     const dataPath = game.getModPaths(discovery.path)[mod.type || ''];
     const installationPath = installPathForGame(state, gameId);
     
