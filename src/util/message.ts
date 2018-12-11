@@ -221,12 +221,21 @@ export function prettifyNodeErrorMessage(err: any): { message: string, replace?:
             + 'still access data directories.\n'
             + 'This is usually not a bug in Vortex.', replace: { filePath }, allowReport: false };
   } else if (err.code === 'ENOENT') {
-    const filePath = err.path || err.filename;
-    return {
-      message: 'Vortex tried to access "{{filePath}}" but it doesn\'t exist.',
-      replace: { filePath },
-      allowReport: false,
-    };
+    if ((err.path !== undefined) || (err.filename !== undefined)) {
+      const filePath = err.path || err.filename;
+
+      return {
+        message: 'Vortex tried to access "{{filePath}}" but it doesn\'t exist.',
+        replace: { filePath },
+        allowReport: false,
+      };
+    } else if (err.host !== undefined) {
+      return {
+        message: 'Network address "{{host}}" not found.',
+        replace: { host: err.host },
+        allowReport: false,
+      };
+    }
   } else if (err.code === 'ENOSPC') {
     return {
       message: 'The disk is full',
