@@ -66,8 +66,8 @@ export function onGameModeActivated(
             + 'will be lost.',
         message: instPath,
       }, [
-        { label: 'Remove all mods' },
         { label: 'Quit Vortex' },
+        { label: 'Reinitialize staging folder' },
       ])
       .then(dialogResult => {
         if (dialogResult.action === 'Quit Vortex') {
