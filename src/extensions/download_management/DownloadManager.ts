@@ -814,6 +814,9 @@ class DownloadManager {
           download.tempName = resolvedName;
           download.assembler.rename(resolvedName);
         }
+      })
+      .catch(err => {
+        log('error', 'failed to update download name', err.message);
       });
     }
 
