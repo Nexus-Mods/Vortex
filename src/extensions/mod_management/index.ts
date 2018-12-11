@@ -16,6 +16,7 @@ import * as fs from '../../util/fs';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
 import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
+import { showError } from '../../util/message';
 import getVortexPath from '../../util/getVortexPath';
 import ReduxProp from '../../util/ReduxProp';
 import {
@@ -154,7 +155,7 @@ function applyFileActions(sourcePath: string,
 
   const actionGroups: { [type: string]: IFileEntry[] } = fileActions.reduce((prev, value) => {
     let action;
-      if (value.action ===  'newest') {
+      if (value.action === 'newest') {
         action = (value.sourceModified > value.destModified) ? 'drop' : 'import';
       } else {
         action = value.action;
@@ -765,11 +766,11 @@ function once(api: IExtensionApi) {
                     api.events.emit('deploy-mods', (err) => {
                       if (err !== null) {
                         if (err instanceof NoDeployment) {
-                          this.props.onShowError(
+                          showError(api.store.dispatch,
                             'You need to select a deployment method in settings',
-                            undefined, false);
+                            undefined, { allowReport: false });
                         } else {
-                          this.props.onShowError('Failed to activate mods', err);
+                          showError(api.store.dispatch, 'Failed to activate mods', err);
                         }
                       }
                     })
