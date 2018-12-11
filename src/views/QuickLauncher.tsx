@@ -151,6 +151,9 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
     const game = gameIconCache[gameId].game;
 
     const profile = profiles[lastActiveProfile[gameId]];
+    if (profile === undefined) {
+      return null;
+    }
 
     const displayName =
       getSafe(discovered, ['shortName'], getSafe(game, ['shortName'], undefined))
