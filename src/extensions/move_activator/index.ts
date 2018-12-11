@@ -157,7 +157,7 @@ class DeploymentMethod extends LinkingDeployment {
         .then((created: any) => {
           let tagDir;
           if (created !== null) {
-            const tagPath = path.join(basePath, LinkingDeployment.NEW_TAG_NAME);
+            const tagPath = path.join(created, LinkingDeployment.NEW_TAG_NAME);
             tagDir = fs.writeFileAsync(tagPath,
                 'This directory was created by Vortex deployment and will be removed '
                 + 'during purging if it\'s empty');
