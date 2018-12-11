@@ -15,7 +15,6 @@ import { log } from '../../util/log';
 import { DownloadIsHTML } from '../download_management/DownloadManager';
 import { showError } from '../../util/message';
 import { startDownload, endorseModImpl, checkModVersionsImpl, updateKey } from './util';
-import { setApiKey } from '../../util/errorHandling';
 import { setUserInfo } from './actions/persistent';
 import { setUpdatingMods } from '../mod_management/actions/session';
 

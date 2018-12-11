@@ -10,6 +10,7 @@ import * as Promise from 'bluebird';
 import { spawn } from 'child_process';
 import { createHash } from 'crypto';
 import * as fs from 'fs-extra-promise';
+import * as _ from 'lodash';
 import * as path from 'path';
 import { file } from 'tmp';
 
@@ -314,6 +315,35 @@ export function decodeHTML(input: string): string {
   }
   convertDiv.innerHTML = input;
   return convertDiv.innerText;
+}
+
+const PROP_BLACKLIST = ['constructor',
+  '__defineGetter__',
+  '__defineSetter__',
+  'hasOwnProperty',
+  '__lookupGetter__',
+  '__lookupSetter__',
+  'isPrototypeOf',
+  'propertyIsEnumerable',
+  'toString',
+  'valueOf',
+  '__proto__',
+  'toLocaleString' ];
+
+export function getAllPropertyNames(obj: Object) {
+  let props: string[] = [];
+
+  while (obj !== null) {
+    const objProps = Object.getOwnPropertyNames(obj);
+    // don't want the properties of the "base" object
+    if (objProps.indexOf('__defineGetter__') !== -1) {
+      break;
+    }
+    props = props.concat(objProps);
+    obj = Object.getPrototypeOf(obj);
+  }
+
+  return Array.from(new Set(_.difference(props, PROP_BLACKLIST)));
 }
 
 /**

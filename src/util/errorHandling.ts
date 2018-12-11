@@ -1,11 +1,11 @@
 import { IErrorOptions, IExtensionApi } from '../types/api';
 import { IError } from '../types/IError';
 
-import { UserCanceled } from './api';
+import { UserCanceled } from './CustomErrors';
 import { log } from './log';
 import { genHash } from './genHash';
 import { getSafe } from './storeHelper';
-import { spawnSelf, truthy } from './util';
+import { spawnSelf, truthy, getAllPropertyNames } from './util';
 
 import * as Promise from 'bluebird';
 import {
@@ -278,7 +278,7 @@ export function toError(input: any, options?: IErrorOptions): IError {
       // object, but not an Error
       let message: string;
       let stack: string;
-      if (!truthy(input) || (Object.keys(input).length === 0)) {
+      if (!truthy(input) || (getAllPropertyNames(input).length === 0)) {
         // this is bad...
         message = `An empty error message was thrown: "${inspect(input)}"`;
       } else if ((input.error !== undefined) && (input.error instanceof Error)) {
@@ -306,7 +306,7 @@ export function toError(input: any, options?: IErrorOptions): IError {
       // with upper case attributes, intended to be displayed to the user.
       // Otherwise, who knows what this is, just send everything.
       if (attributes.length == 0) {
-        attributes = Object.keys(input || {}).filter(key => ['message', 'error', 'stack'].indexOf(key) === -1);
+        attributes = getAllPropertyNames(input || {}).filter(key => ['message', 'error', 'stack'].indexOf(key) === -1);
       }
 
       const details = attributes.length === 0 ? undefined : attributes

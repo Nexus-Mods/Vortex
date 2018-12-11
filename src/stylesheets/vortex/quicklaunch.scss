@@ -19,16 +19,27 @@
     }
   }
 
-  .menu-label {
-    flex: 1 1 0;
-    margin: auto 2em;
+  .quicklaunch-item {
+    margin: auto 0;
+    padding: 0 1em;
+    width: 100%;
     text-align: left;
-    font-size: larger;
     white-space: normal;
     text-shadow: 1px  1px 1px $gray-lighter,
                 -1px  1px 1px $gray-lighter,
                  1px -1px 1px $gray-lighter,
                 -1px -1px 1px $gray-lighter
+  }
+
+  .quicklaunch-name {
+    font-size: larger;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow-x: hidden;
+  }
+
+  .quicklaunch-profile {
+    font-size: x-small;
   }
 
   .tool-icon-container {

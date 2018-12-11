@@ -1,4 +1,4 @@
-export type FileActionRef = 'import' | 'drop';
+export type FileActionRef = 'import' | 'drop' | 'newest';
 export type FileActionVal = 'nop';
 export type FileActionDel = 'restore' | 'delete';
 export type FileActionSrcDel = 'drop' | 'import';
@@ -11,4 +11,6 @@ export interface IFileEntry {
   type: 'refchange' | 'valchange' | 'deleted' | 'srcdeleted';
   action: FileAction;
   modTypeId: string;
+  sourceModified: Date;
+  destModified: Date;
 }

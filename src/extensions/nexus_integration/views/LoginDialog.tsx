@@ -80,7 +80,12 @@ class LoginDialog extends ComponentEx<IProps, {}> {
               tooltip={t('Opens the Nexus Mods page in your default browser')}
               disabled={loginId !== undefined}
             >
-              {(loginId !== undefined) ? <Spinner /> : t('Log In On Website')}
+              {(loginId !== undefined) ? (
+                <div>
+                  <Spinner />
+                  {t('Please click "Authorise" on the website')}
+                </div>
+              ) : t('Log In On Website')}
             </Button>
           </div>
         </Modal.Body>

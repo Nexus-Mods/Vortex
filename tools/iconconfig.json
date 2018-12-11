@@ -504,6 +504,14 @@
     "clipboard": {
       "path": "{fa}/clipboard",
       "rmFill": true
+    },
+    "idea": {
+      "path": "{nucleo}/business-finance/{nucleo_simple}_bulb-63",
+      "rmFill": true
+    },
+    "support": {
+      "path": "{nucleo}/shopping/{nucleo_simple}_customer-support",
+      "rmFill": true
     }
   }
 }

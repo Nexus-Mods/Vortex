@@ -25,6 +25,7 @@ import TableTextFilter from './table/TextFilter';
 import Toggle from './Toggle';
 import ToolbarIcon from './ToolbarIcon';
 import * as tooltip from './TooltipControls';
+import Usage from './Usage';
 import Webview from './Webview';
 
 export {
@@ -32,4 +33,4 @@ export {
   Dropdown, Dropzone, EmptyPlaceholder,
   FlexLayout, FormFeedback, FormInput, Icon, IconBar, ITableRowAction, Modal,
   More, Overlay, OverlayTrigger, Table, TableDateTimeFilter, TableNumericFilter, TableTextFilter,
-  Spinner, Steps, makeGetSelection, Toggle, ToolbarIcon, tooltip, Webview};
+  Spinner, Steps, makeGetSelection, Toggle, ToolbarIcon, tooltip, Usage, Webview};

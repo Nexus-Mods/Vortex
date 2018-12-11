@@ -217,7 +217,11 @@ export class DownloadObserver {
           .then((md5Hash: IHashResult) => {
             this.mApi.store.dispatch(setDownloadHash(id, md5Hash.md5sum));
           })
-          .catch(err => callback(err, id))
+          .catch(err => {
+            if (callback !== undefined) {
+              callback(err, id);
+            }
+          })
           .finally(() => {
             this.mApi.store.dispatch(finishDownload(id, 'finished', undefined));
 

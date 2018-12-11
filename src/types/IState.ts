@@ -149,6 +149,7 @@ export interface ISettingsInterface {
   hideTopLevelCategory: boolean;
   dashboardLayout: string[];
   dashletSettings: { [dashletId: string]: IDashletSettings };
+  usage: { [usageId: string]: boolean };
 }
 
 export interface ISettingsAutomation {

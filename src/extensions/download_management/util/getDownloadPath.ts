@@ -8,6 +8,11 @@ const app = remote !== undefined ? remote.app : appIn;
 
 let userData: string;
 
+export function getDownloadPathPattern(pattern: string): string {
+  return pattern || path.join('{USERDATA}', 'downloads');
+}
+
+
 function getDownloadPath(pattern: string, gameId?: string): string {
   if (userData === undefined) {
     // cached to avoid ipcs from renderer -> main process
@@ -18,8 +23,8 @@ function getDownloadPath(pattern: string, gameId?: string): string {
   });
 
   let result = gameId !== undefined
-    ? path.join(format(pattern, formatKeys), gameId)
-    : format(pattern, formatKeys);
+    ? path.join(format(getDownloadPathPattern(pattern), formatKeys), gameId)
+    : format(getDownloadPathPattern(pattern), formatKeys);
 
   if (!path.isAbsolute(result)) {
     result = path.resolve(app.getAppPath(), result);
