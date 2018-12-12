@@ -214,6 +214,12 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
 export function prettifyNodeErrorMessage(err: any): { message: string, replace?: any, allowReport?: boolean } {
   if (err.code === undefined) {
     return { message: err.message, replace: {} };
+  } else if (err.syscall === 'getaddrinfo') {
+    return {
+      message: 'Network address "{{host}}" could not be resolved. This is often a temporary error, please try again later.',
+      replace: { host: err.host || err.hostname },
+      allowReport: false,
+    };
   } else if (err.code === 'EPERM') {
     const filePath = err.path || err.filename;
     return { message: 'Vortex needs to access "{{filePath}}" but it\'s write protected.\n'
@@ -265,12 +271,6 @@ export function prettifyNodeErrorMessage(err: any): { message: string, replace?:
     return {
       message: 'Network connection to "{{address}}" timed out, please try again.',
       replace: { address: err.address },
-      allowReport: false,
-    };
-  } else if ((err.code === 'ENOTFOUND') && (err.syscall === 'getaddrinfo')) {
-    return {
-      message: 'Network address "{{host}}" could not be resolved. This is often a temporary error, please try again later.',
-      replace: { host: err.host || err.hostname },
       allowReport: false,
     };
   } else if (err.code === 'EAI_AGAIN') {
