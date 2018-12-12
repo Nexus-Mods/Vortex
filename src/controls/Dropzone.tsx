@@ -1,6 +1,8 @@
 import { DialogActions, DialogType, IDialogContent,
          IDialogResult, showDialog } from '../actions/notifications';
+import { IState } from '../types/IState';
 import { ComponentEx, connect, translate } from '../util/ComponentEx';
+import { truthy } from '../util/util';
 
 import Icon from './Icon';
 
@@ -9,7 +11,7 @@ import * as Promise from 'bluebird';
 import * as React from 'react';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
-import { IState } from '../types/IState';
+import * as url from 'url';
 
 export type DropType = 'urls' | 'files';
 
@@ -226,7 +228,12 @@ class Dropzone extends ComponentEx<IProps, IComponentState> {
       }, [ { label: 'Cancel' }, { label: 'Download' } ])
       .then(result => {
           if (result.action === 'Download') {
-            this.props.drop('urls', [result.input.url]);
+            let inputUrl = result.input.url;
+            if (!truthy(url.parse(inputUrl).protocol)) {
+              // no protocol specified
+              inputUrl = 'https://' + inputUrl;
+            }
+            this.props.drop('urls', [inputUrl]);
           }
         });
     } else {

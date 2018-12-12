@@ -636,6 +636,9 @@ class DownloadManager {
       return Promise.resolve(this.mResolveCache[input].urls);
     }
     const protocol = url.parse(input).protocol;
+    if (!truthy(protocol)) {
+      return Promise.resolve([]);
+    }
     const handler = this.mProtocolHandlers[protocol.slice(0, protocol.length - 1)];
 
     return (handler !== undefined)
