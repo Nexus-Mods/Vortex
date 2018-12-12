@@ -349,9 +349,15 @@ class DownloadWorker {
     if (this.mBuffers.length === 0) {
       return Promise.resolve();
     }
-    const merged = this.mergeBuffers();
+
+    let merged: Buffer;
+    try {
+      merged = this.mergeBuffers();
+    } catch (err) {
+      return Promise.reject(err);
+    }
     const res = this.mJob.dataCB(this.mJob.offset, merged)
-      .then(synced => null);
+      .then(() => null);
 
     // need to update immediately, otherwise chunks might overwrite each other
     this.mJob.received += merged.length;
