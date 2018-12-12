@@ -206,7 +206,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
 
   public render(): JSX.Element {
     const { t, onClose } = this.props;
-    const { tool } = this.state;
+    const { imageId, tool } = this.state;
     let realName: string = tool.name;
     if ((realName === undefined) && (this.props.tool !== undefined)) {
       realName = this.props.tool.name;
@@ -308,7 +308,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
                   >
                     <ToolIcon
                       imageUrl={tool.iconPath}
-                      imageId={this.state.imageId}
+                      imageId={imageId}
                       valid={true}
                     />
                   </Button>
@@ -469,6 +469,10 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
     const { tool } = this.props;
     const destPath = tool.iconOutPath;
 
+    if (destPath === filePath) {
+      return Promise.resolve();
+    }
+
     return fs.statAsync(filePath)
       .catch(err => Promise.reject(new ProcessCanceled('invalid file')))
       .then(stats => stats.isDirectory()
@@ -492,13 +496,16 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
       })
       .catch((err) => {
         if ((err !== null) && !(err instanceof ProcessCanceled)) {
-          this.context.api.showErrorNotification('Failed to change tool icon', err.message);
+          this.context.api.showErrorNotification('Failed to change tool icon', err);
         }
       });
   }
 
   private toEditStarter(input: IStarterInfo): IEditStarterInfo {
-    const temp: any = { ...input };
+    const temp: any = {
+      ...input,
+      iconPath: input.iconPath,
+    };
     temp.commandLine = temp.commandLine.join(' ');
     temp.environment = { ...input.environment };
     return temp;

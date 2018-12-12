@@ -1,22 +1,20 @@
 import Icon from '../../controls/Icon';
 import IconBar from '../../controls/IconBar';
-import { Button } from '../../controls/TooltipControls';
 import { IActionDefinition } from '../../types/IActionDefinition';
 import { PureComponentEx } from '../../util/ComponentEx';
 import StarterInfo from '../../util/StarterInfo';
 import { truthy } from '../../util/util';
 
-import { setPrimaryTool } from './actions';
 import ToolIcon from './ToolIcon';
 
 import * as I18next from 'i18next';
 import * as React from 'react';
-import { Dropdown, Image, MenuItem } from 'react-bootstrap';
 
 export type RemoveTool = (gameId: string, toolId: string) => void;
 
 export interface IProps {
   t: I18next.TranslationFunction;
+  counter: number;
   starter: StarterInfo;
   primary: boolean;
   onRun: (starter: StarterInfo) => void;
@@ -25,18 +23,11 @@ export interface IProps {
   onEdit: (starter: StarterInfo) => void;
 }
 
-export interface IToolButtonState {
-  imageUrl: string;
-}
-
-class ToolButton extends PureComponentEx<IProps, IToolButtonState> {
-  private mImageId: number;
+class ToolButton extends PureComponentEx<IProps, {}> {
   private mStaticElements: IActionDefinition[];
 
   constructor(props: IProps) {
     super(props);
-
-    this.initState({ imageUrl: undefined });
 
     this.mStaticElements = [
       {
@@ -69,12 +60,8 @@ class ToolButton extends PureComponentEx<IProps, IToolButtonState> {
     ];
   }
 
-  public componentDidMount() {
-    this.mImageId = Date.now();
-  }
-
   public render() {
-    const { t, primary, starter } = this.props;
+    const { t, counter, primary, starter } = this.props;
     const valid = (starter.exePath !== undefined) && (starter.exePath !== '');
 
     const classes = [
@@ -87,7 +74,7 @@ class ToolButton extends PureComponentEx<IProps, IToolButtonState> {
     return (
       <div className={classes.join(' ')}>
         <div className='tool-icon-container'>
-          <ToolIcon imageUrl={starter.iconPath} imageId={this.mImageId} valid={valid} />
+          <ToolIcon imageUrl={starter.iconPath} imageId={counter} valid={valid} />
         </div>
         <span>{starter.name}</span>
         {primary ? <Icon className='tool-bookmark' name='bookmark'/> : null}

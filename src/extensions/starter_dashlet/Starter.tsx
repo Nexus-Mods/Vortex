@@ -238,6 +238,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
 
   private renderTool = (starter: StarterInfo) => {
     const { t, primaryTool } = this.props;
+    const { counter } = this.state;
     if (starter === undefined) {
       return null;
     }
@@ -247,6 +248,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
         t={t}
         key={starter.id}
         primary={starter.id === primaryTool}
+        counter={counter}
         starter={starter}
         onRun={this.startTool}
         onEdit={this.editTool}
