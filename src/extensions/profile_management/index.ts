@@ -19,7 +19,7 @@
 import { addNotification, IDialogResult, showDialog } from '../../actions/notifications';
 
 import { setProgress } from '../../actions/session';
-import { needToDeployForGame } from '../../util/selectors';
+import { needToDeployForGame, installPathForGame } from '../../util/selectors';
 import { IExtensionContext, IExtensionApi, ThunkStore } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
 import { SetupError } from '../../util/CustomErrors';
@@ -304,13 +304,17 @@ function init(context: IExtensionContextExt): boolean {
     (instanceIds: string[]) => {
       const profileId = shortid();
       const gameId = instanceIds[0];
-      context.api.store.dispatch(setProfile({
-        id: profileId,
-        gameId,
-        name: 'Default',
-        modState: {},
-      }));
-      context.api.store.dispatch(setNextProfile(profileId));
+      const instPath = installPathForGame(context.api.store.getState(), gameId);
+      fs.ensureDirWritableAsync(instPath, () => Promise.resolve())
+        .then(() => {
+          context.api.store.dispatch(setProfile({
+            id: profileId,
+            gameId,
+            name: 'Default',
+            modState: {},
+          }));
+          context.api.store.dispatch(setNextProfile(profileId));
+        });
   });
 
   context.registerAction('game-managed-buttons', 50, 'activate', {

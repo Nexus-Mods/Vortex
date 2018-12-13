@@ -19,6 +19,7 @@ import { Table, TBody, TH, THead, TR } from './table/MyTable';
 import TableDetail from './table/TableDetail';
 import TableRow from './table/TableRow';
 import ToolbarIcon from './ToolbarIcon';
+import Usage from './Usage';
 
 import * as Promise from 'bluebird';
 import update from 'immutability-helper';
@@ -283,8 +284,17 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
     const selected = Object.keys(rowState).filter(key => rowState[key].selected);
 
-    if ((multiRowActions.length === 0) || (selected.length < 2)) {
+    if ((multiRowActions.length === 0) || !this.useMultiSelect()) {
       return null;
+    }
+
+    if (selected.length < 2) {
+      return (
+        <Usage infoId='table-multiselect'>
+          {t('Did you know? You can select multiple items using ctrl+click or shift+click or select everything using ctrl+a '
+            + 'and then do things with all selected items at once.')}
+        </Usage>
+      );
     }
 
     // the footer itself (.table-footer) is absolutely positioned so it fills out a surrounding
@@ -420,12 +430,16 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       return pos++;
     };
 
+    const toggleableColumns = objects.filter(attr => attr.isToggleable);
+    if (toggleableColumns.length === 0) {
+      return [];
+    }
+
     return [{
       icon: null,
       title: t('Toggle Columns'),
       position: getPos(),
-    }].concat(objects
-      .filter(attr => attr.isToggleable)
+    }].concat(toggleableColumns
       .map(attr => {
         const attributeState = this.getAttributeState(attr, props.attributeState);
         return {

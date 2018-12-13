@@ -129,7 +129,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     const PanelX: any = Panel;
 
     return (
-      <form>
+      // Prevent default submit event for the form as it will
+      //  cause Vortex to refresh (same thing as pressing F5).
+      <form onSubmit={this.submitEvt}>
         <Panel>
           <PanelX.Body>
             {this.renderPathCtrl(t('Mod Staging Folder ({{name}})', { replace: { name: gameName } }))}
@@ -157,6 +159,10 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         </Panel>
       </form>
     );
+  }
+
+  private submitEvt = (evt) => {
+    evt.preventDefault();
   }
 
   /**
@@ -392,6 +398,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                 value={getInstallPathPattern(installPath)}
                 placeholder={label}
                 onChange={this.changePathEvt}
+                onKeyPress={this.pathsChanged() && (validationState.state !== 'error') ? this.keyPressEvt : null}
               />
               <InputGroup.Button className='inset-btn'>
                 <Button
@@ -406,7 +413,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           <FlexLayout.Fixed>
             <InputGroup.Button>
               <BSButton
-                disabled={!this.pathsChanged() || validationState.state === 'error'}
+                disabled={!this.pathsChanged() || (validationState.state === 'error')}
                 onClick={this.applyPaths}
               >
                 {t('Apply')}
@@ -418,6 +425,13 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         {validationState.reason ? <ControlLabel>{t(validationState.reason)}</ControlLabel> : null}
       </FormGroup>
     );
+  }
+
+  private keyPressEvt = (evt) => {
+    if (evt.which === 13) {
+      evt.preventDefault();
+      this.applyPaths();
+    }
   }
 
   private changePathEvt = (evt) => {

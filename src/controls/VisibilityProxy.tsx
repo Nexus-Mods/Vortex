@@ -1,4 +1,3 @@
-import update from 'immutability-helper';
 import * as _ from 'lodash';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
@@ -71,6 +70,7 @@ class VisibilityProxy extends React.PureComponent<any, {}> {
       if ((this.mLastVisible !== visible) &&
           (visible || (now - this.mVisibleTime) > 1000.0)) {
         this.mLastVisible = visible;
+        this.mVisibleTime = now;
         this.props.setVisible(visible);
       }
     });

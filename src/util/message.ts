@@ -214,19 +214,34 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
 export function prettifyNodeErrorMessage(err: any): { message: string, replace?: any, allowReport?: boolean } {
   if (err.code === undefined) {
     return { message: err.message, replace: {} };
+  } else if (err.syscall === 'getaddrinfo') {
+    return {
+      message: 'Network address "{{host}}" could not be resolved. This is often a temporary error, please try again later.',
+      replace: { host: err.host || err.hostname },
+      allowReport: false,
+    };
   } else if (err.code === 'EPERM') {
     const filePath = err.path || err.filename;
-    return { message: 'Vortex needs to access "{{filePath}}" is write protected.\n'
+    return { message: 'Vortex needs to access "{{filePath}}" but it\'s write protected.\n'
             + 'When you configure directories and access rights you need to ensure Vortex can '
             + 'still access data directories.\n'
             + 'This is usually not a bug in Vortex.', replace: { filePath }, allowReport: false };
   } else if (err.code === 'ENOENT') {
-    const filePath = err.path || err.filename;
-    return {
-      message: 'Vortex tried to access "{{filePath}}" but it doesn\'t exist.',
-      replace: { filePath },
-      allowReport: false,
-    };
+    if ((err.path !== undefined) || (err.filename !== undefined)) {
+      const filePath = err.path || err.filename;
+
+      return {
+        message: 'Vortex tried to access "{{filePath}}" but it doesn\'t exist.',
+        replace: { filePath },
+        allowReport: false,
+      };
+    } else if (err.host !== undefined) {
+      return {
+        message: 'Network address "{{host}}" not found.',
+        replace: { host: err.host },
+        allowReport: false,
+      };
+    }
   } else if (err.code === 'ENOSPC') {
     return {
       message: 'The disk is full',
@@ -256,12 +271,6 @@ export function prettifyNodeErrorMessage(err: any): { message: string, replace?:
     return {
       message: 'Network connection to "{{address}}" timed out, please try again.',
       replace: { address: err.address },
-      allowReport: false,
-    };
-  } else if ((err.code === 'ENOTFOUND') && (err.syscall === 'getaddrinfo')) {
-    return {
-      message: 'Network address "{{host}}" could not be resolved. This is often a temporary error, please try again later.',
-      replace: { host: err.host || err.hostname },
       allowReport: false,
     };
   } else if (err.code === 'EAI_AGAIN') {

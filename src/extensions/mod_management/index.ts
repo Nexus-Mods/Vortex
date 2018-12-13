@@ -17,6 +17,7 @@ import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
 import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
 import onceCB from '../../util/onceCB';
+import { showError } from '../../util/message';
 import getVortexPath from '../../util/getVortexPath';
 import ReduxProp from '../../util/ReduxProp';
 import {
@@ -154,7 +155,13 @@ function applyFileActions(sourcePath: string,
   }
 
   const actionGroups: { [type: string]: IFileEntry[] } = fileActions.reduce((prev, value) => {
-      setdefault(prev, value.action, []).push(value);
+    let action;
+      if (value.action === 'newest') {
+        action = (value.sourceModified > value.destModified) ? 'drop' : 'import';
+      } else {
+        action = value.action;
+      }
+      setdefault(prev, action, []).push(value);
       return prev;
     }, {});
 
@@ -214,6 +221,22 @@ function genSubDirFunc(game: IGame): (mod: IMod) => string {
   } else {
     return game.mergeMods;
   }
+}
+
+function showCycles(api: IExtensionApi, cycles: string[][], gameId: string) {
+  return api.showDialog('error', 'Cycles', {
+    text: 'Dependency rules between your mods contain cycles, '
+      + 'like "A after B" and "B after A". You need to remove one of the '
+      + 'rules causing the cycle, otherwise your mods can\'t be '
+      + 'applied in the right order.',
+    links: cycles.map((cycle, idx) => (
+      { label: cycle.join(', '), action: () => {
+        api.events.emit('edit-mod-cycle', gameId, cycle);
+      } }
+    )),
+  }, [
+    { label: 'Close' },
+  ]);
 }
 
 function genUpdateModDeployment() {
@@ -339,16 +362,29 @@ function genUpdateModDeployment() {
         const mergedFileMap: { [modType: string]: string[] } = {};
 
         progress(t('Merging mods'), 35);
-        // merge mods
-        return Promise.mapSeries(Object.keys(modPaths),
-            typeId => {
-              const mergePath = truthy(typeId)
-                ? MERGED_PATH + '.' + typeId
-                : MERGED_PATH;
 
-              return removePersistent(api.store, path.join(instPath, mergePath));
+        const mergeModTypes = Object.keys(modPaths)
+          .filter(modType => fileMergers
+           .find(merger => merger.modType === modType));
+
+        const purgePromise = activator !== undefined
+        ? Promise.each(mergeModTypes,
+            typeId => {
+              lastDeployment[typeId] = [];
+              return activator.purge(instPath, modPaths[typeId])
             })
-          .then(() => Promise.each(Object.keys(modPaths),
+        : Promise.resolve([]);
+
+        // merge mods
+        return purgePromise.then(() => Promise.mapSeries(mergeModTypes,
+          typeId => {
+            const mergePath = truthy(typeId)
+              ? MERGED_PATH + '.' + typeId
+              : MERGED_PATH;
+
+            return removePersistent(api.store, path.join(instPath, mergePath));
+          }))
+          .then(() => Promise.each(mergeModTypes,
             typeId => mergeMods(api, game, instPath, modPaths[typeId],
                                 sortedModList.filter(mod => (mod.type || '') === typeId),
                                 fileMergers)
@@ -414,6 +450,7 @@ function genUpdateModDeployment() {
             api.store.dispatch(setDeploymentNecessary(game.id, false));
           });
       })
+
       .catch(UserCanceled, () => undefined)
       .catch(ProcessCanceled, err => {
         api.sendNotification({
@@ -425,6 +462,18 @@ function genUpdateModDeployment() {
       .catch(TemporaryError, err => {
         api.showErrorNotification('Failed to deploy mods, please try again',
                                   err.message, { allowReport: false });
+      })
+      .catch(CycleError, err => {
+        api.sendNotification({
+          id: 'mod-cycle-warning',
+          type: 'warning',
+          message: 'Mod rules contain cycles',
+          actions: [
+            { title: 'Show', action: () => {
+              showCycles(api, err.cycles, profile.gameId);
+            } },
+          ],
+        });
       })
       .catch(err => api.showErrorNotification('Failed to deploy mods', err, {
         allowReport: err.code !== 'EPERM',
@@ -637,6 +686,11 @@ function once(api: IExtensionApi) {
       return Promise.resolve();
     }
     const activator = getCurrentActivator(state, gameId, false);
+
+    if (activator === undefined) {
+      return Promise.resolve();
+    }
+
     const dataPath = game.getModPaths(discovery.path)[mod.type || ''];
     const installationPath = installPathForGame(state, gameId);
     
@@ -715,11 +769,11 @@ function once(api: IExtensionApi) {
                     api.events.emit('deploy-mods', onceCB((err) => {
                       if (err !== null) {
                         if (err instanceof NoDeployment) {
-                          this.props.onShowError(
+                          showError(api.store.dispatch,
                             'You need to select a deployment method in settings',
-                            undefined, false);
+                            undefined, { allowReport: false });
                         } else {
-                          this.props.onShowError('Failed to activate mods', err);
+                          showError(api.store.dispatch, 'Failed to activate mods', err);
                         }
                       }
                     }));

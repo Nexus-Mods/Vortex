@@ -1,4 +1,3 @@
-import { showDialog } from '../../../actions';
 import { IExtensionApi } from '../../../types/IExtensionContext';
 import { log } from '../../../util/log';
 import { getSafe } from '../../../util/storeHelper';

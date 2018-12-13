@@ -133,6 +133,10 @@ function mergeMods(api: IExtensionApi,
   const archiveMerges: { [relPath: string]: string[] } = {};
   const mergedFiles: string[] = [];
 
+  const fileExists = (file: string) => fs.statAsync(file)
+    .then(() => Promise.resolve(true))
+    .catch(() => Promise.resolve(false));
+
   // go through all files of all mods. do "mergers" immediately, store
   // archives to be merged for later
   return Promise.mapSeries(mods, mod => {
@@ -153,13 +157,20 @@ function mergeMods(api: IExtensionApi,
             mergedFiles.push(relPath);
             return fs.ensureDirAsync(realDest)
               .then(() => Promise.map(merger.match.baseFiles(),
-                file => fs.removeAsync(path.join(realDest, file.out)).catch(err => null)
-                  .then(() => fs.copyAsync(file.in, path.join(realDest, file.out)))
-                  .catch(err => (err.code === 'ENOENT')
-                    // source file missing isn't really a big deal, treat as empty
-                      ? fs.ensureFileAsync(file.in)
-                      : Promise.reject(err))))
-              .then(() => merger.merge(fileEntry.filePath, realDest));
+                // Check whether the output file is already inside the destination folder
+                //  as this would signify that a previous merge has occurred and therefore
+                //  setup is not required.
+                file => fileExists(path.join(realDest, file.out)).then(outputExists => {
+                  return outputExists 
+                    ? Promise.resolve()
+                    // Output file is missing, check whether the game has a 
+                    //  pre-existing input file and use that as the base for the merge.
+                    : fileExists(file.in).then(inputExists => inputExists 
+                      ? fs.copyAsync(file.in, path.join(realDest, file.out))
+                      : Promise.resolve());
+                })
+                .catch(err => Promise.reject(err))))
+              .then(() => merger.merge(fileEntry.filePath, realDest))
           }
         }
         return Promise.resolve();

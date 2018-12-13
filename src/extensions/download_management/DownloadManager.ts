@@ -349,9 +349,15 @@ class DownloadWorker {
     if (this.mBuffers.length === 0) {
       return Promise.resolve();
     }
-    const merged = this.mergeBuffers();
+
+    let merged: Buffer;
+    try {
+      merged = this.mergeBuffers();
+    } catch (err) {
+      return Promise.reject(err);
+    }
     const res = this.mJob.dataCB(this.mJob.offset, merged)
-      .then(synced => null);
+      .then(() => null);
 
     // need to update immediately, otherwise chunks might overwrite each other
     this.mJob.received += merged.length;
@@ -630,6 +636,9 @@ class DownloadManager {
       return Promise.resolve(this.mResolveCache[input].urls);
     }
     const protocol = url.parse(input).protocol;
+    if (!truthy(protocol)) {
+      return Promise.resolve([]);
+    }
     const handler = this.mProtocolHandlers[protocol.slice(0, protocol.length - 1)];
 
     return (handler !== undefined)
@@ -814,6 +823,9 @@ class DownloadManager {
           download.tempName = resolvedName;
           download.assembler.rename(resolvedName);
         }
+      })
+      .catch(err => {
+        log('error', 'failed to update download name', err.message);
       });
     }
 
@@ -919,6 +931,7 @@ class DownloadManager {
               return fs.renameAsync(download.tempName, resolvedPath);
             });
           } else if ((download.headers !== undefined)
+                     && (download.headers['content-type'] !== undefined)
                      && (contentType.parse(download.headers['content-type']).type === 'text/html')
                      && !download.tempName.toLowerCase().endsWith('.html')) {
             // don't keep html files. It's possible handleHTML already deleted it though

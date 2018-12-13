@@ -470,7 +470,13 @@ function init(context: IExtensionContextExt): boolean {
   context.registerDownloadProtocol('nxm', (input: string): Promise<{ urls: string[], meta: any }> => {
     const state = context.api.store.getState();
 
-    const url = new NXMUrl(input);
+    let url: NXMUrl;
+    try {
+      url = new NXMUrl(input);
+    } catch (err) {
+      return Promise.reject(err);
+    }
+
     const games = knownGames(state);
     const gameId = convertNXMIdReverse(games, url.gameId);
     const pageId = nexusGameId(gameById(state, gameId));

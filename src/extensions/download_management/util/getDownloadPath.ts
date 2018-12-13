@@ -8,6 +8,11 @@ const app = remote !== undefined ? remote.app : appIn;
 
 let userData: string;
 
+export function getDownloadPathPattern(pattern: string): string {
+  return pattern || path.join('{USERDATA}', 'downloads');
+}
+
+
 function getDownloadPath(pattern: string, gameId?: string): string {
   if (userData === undefined) {
     // cached to avoid ipcs from renderer -> main process
@@ -18,10 +23,13 @@ function getDownloadPath(pattern: string, gameId?: string): string {
   });
 
   let result = gameId !== undefined
-    ? path.join(format(pattern, formatKeys), gameId)
-    : format(pattern, formatKeys);
+    ? path.join(format(getDownloadPathPattern(pattern), formatKeys), gameId)
+    : format(getDownloadPathPattern(pattern), formatKeys);
 
-  if (!path.isAbsolute(result)) {
+  // on windows a path of the form \foo\bar will be identified as absolute
+  // because why would anything make sense on windows?
+  if (!path.isAbsolute(result)
+      || ((process.platform === 'win32') && (result[0] === '\\') && (result[1] !== '\\'))) {
     result = path.resolve(app.getAppPath(), result);
   }
 

@@ -24,6 +24,7 @@ import { allow as allowT, getUserId } from 'permissions';
 import * as rimraf from 'rimraf';
 import { generate as shortid } from 'shortid';
 import { runElevated } from 'vortex-run';
+import wholocks from 'wholocks';
 
 const dialog = remote !== undefined ? remote.dialog : dialogIn;
 
@@ -54,16 +55,30 @@ function unlockConfirm(filePath: string): PromiseBB<boolean> {
     return PromiseBB.resolve(false);
   }
 
-  const options: Electron.MessageBoxOptions = {
-    title: 'Access denied',
-    message: `Vortex needs to access "${filePath}" but doesn\'t have permission to.\n`
-      + 'If your account has admin rights Vortex can unlock the file for you. '
-      + 'Windows will show an UAC dialog.',
-    buttons: [
+  const processes = wholocks(filePath);
+
+  const baseMessage = processes.length === 0
+    ? `Vortex needs to access "${filePath}" but doesn\'t have permission to.`
+    : `Vortex needs to access "${filePath}" but it either has too restrictive permissions or is locked by another process.`;
+
+  const buttons = [
       'Cancel',
       'Retry',
-      'Give permission',
-    ],
+  ];
+
+  if (processes.length === 0) {
+    buttons.push('Give permission');
+  }
+
+  const options: Electron.MessageBoxOptions = {
+    title: 'Access denied',
+    message: baseMessage
+      + ' If your account has admin rights Vortex can try to unlock the file for you.',
+    detail: processes.length === 0
+      ? undefined
+      : 'Please close the following applications and retry:\n'
+        + processes.map(proc => `${proc.appName} (${proc.pid})`).join('\n'),
+    buttons,
     type: 'warning',
     noLink: true,
   };
@@ -74,7 +89,6 @@ function unlockConfirm(filePath: string): PromiseBB<boolean> {
   return (choice === 0)
     ? PromiseBB.reject(new UserCanceled())
     : PromiseBB.resolve(choice === 2);
-
 }
 
 function busyRetry(filePath: string): PromiseBB<boolean> {
@@ -82,17 +96,20 @@ function busyRetry(filePath: string): PromiseBB<boolean> {
     return PromiseBB.resolve(false);
   }
 
+  const processes = wholocks(filePath);
   const options: Electron.MessageBoxOptions = {
-      title: 'File busy',
-      message: `Vortex needs to access "${filePath}" but it\'s open in another application. `
-             + 'Please close the file in all other applications and then retry',
-      buttons: [
-        'Cancel',
-        'Retry',
-      ],
-      type: 'warning',
-      noLink: true,
-    };
+    title: 'File busy',
+    message: `Vortex needs to access "${filePath}" but it\'s open in another application. `
+      + 'Please close the file in all other applications and then retry.',
+    detail: 'Please close the following applications and retry:\n'
+          + processes.map(proc => `${proc.appName} (${proc.pid})`).join('\n'),
+    buttons: [
+      'Cancel',
+      'Retry',
+    ],
+    type: 'warning',
+    noLink: true,
+  };
 
   const choice = dialog.showMessageBox(
     remote !== undefined ? remote.getCurrentWindow() : null,

@@ -54,7 +54,11 @@
 .xtd.table-external-change-srcdeleted,
 .xtd.table-external-change-deleted {
   &.cell-action {
-    min-width: 160px;
+    min-width: 20em;
+  }
+  &.cell-staged_changed,
+  &.cell-deployment_changed {
+    min-width: 15em;
   }
 }
 

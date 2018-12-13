@@ -241,6 +241,7 @@
     "webpack": "^4.25.1",
     "webpack-cli": "^3.1.2",
     "webpack-node-externals": "^1.7.2",
+    "wholocks": "Nexus-Mods/node-wholocks",
     "winapi-bindings": "Nexus-Mods/node-winapi-bindings",
     "winston": "^2.4.3",
     "ws": "^6.0.0",

@@ -57,7 +57,7 @@ function updatePluginOrder(iniFilePath: string, plugins: string[]) {
         prev[`GameFile${idx}`] = plugin;
         return prev;
       }, {});
-      parser.write(iniFilePath, ini);
+      return parser.write(iniFilePath, ini);
     });
 }
 
@@ -93,7 +93,10 @@ function init(context: types.IExtensionContext) {
         reactive.pluginOrder = plugins;
         const discovery = state.settings.gameMode.discovered['morrowind'];
         const iniFilePath = path.join(discovery.path, 'Morrowind.ini');
-        updatePluginOrder(iniFilePath, plugins);
+        updatePluginOrder(iniFilePath, plugins)
+          .catch(err => {
+            context.api.showErrorNotification('Failed to update morrowind.ini', err, { allowReport: false });
+          });
       },
     }),
   });

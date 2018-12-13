@@ -261,10 +261,10 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
     const { t, profilesVisible, onSetProfilesVisible, onShowDialog } = this.props;
     if (profilesVisible) {
       onShowDialog('question', t('Disabling Profile Management'), {
-        message: t('Please be aware that toggling this only disables the interface for profiles, '
-                 + 'meaning profiles don\'t get deleted and an active profile doesn\'t '
-                 + 'get disabled. The last active profile for each game will still be used '
-                 + '(i.e. its mod selection and local savegames).'),
+        text: t('Please be aware that toggling this only disables the interface for profiles, '
+          + 'meaning profiles don\'t get deleted and an active profile doesn\'t '
+          + 'get disabled. The last active profile for each game will still be used '
+          + '(i.e. its mod selection and local savegames).'),
         options: { translated: true, wrap: true },
       }, [
         { label: 'Cancel' },
