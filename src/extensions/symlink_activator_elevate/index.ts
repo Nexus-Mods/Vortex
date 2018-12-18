@@ -99,15 +99,8 @@ class DeploymentMethod extends LinkingDeployment {
     });
     this.mOpenRequests = {};
     return this.startElevated()
-        .catch((err) => {
-          this.context.onComplete();
-          // Error 1223 is the current standard Windows system error code 
-          //  for ERROR_CANCELLED, which in this case is raised if the user
-          //  selects to deny elevation when prompted.
-          //  https://docs.microsoft.com/en-us/windows/desktop/debug/system-error-codes--1000-1299-
-          return (process.platform === 'win32') && (err.errno === 1223) 
-            ? Promise.reject(new UserCanceled()) 
-            : Promise.reject(err);
+        .tapCatch(() => {
+          this.context.onComplete()
         })
         .then(() => super.finalize(gameId, dataPath, installationPath))
         .then(result => this.stopElevated().then(() => result));
@@ -258,7 +251,12 @@ class DeploymentMethod extends LinkingDeployment {
         .tapCatch(() => {
           ipc.server.stop();
         })
-        .catch(err => (err.code === 5)
+        // Error 1223 is the current standard Windows system error code 
+        //  for ERROR_CANCELLED, which in this case is raised if the user
+        //  selects to deny elevation when prompted.
+        //  https://docs.microsoft.com/en-us/windows/desktop/debug/system-error-codes--1000-1299-
+        .catch(err => (err.code === 5) 
+          || ((process.platform === 'win32') && (err.errno === 1223))
             ? reject(new UserCanceled())
             : reject(err)
         )
