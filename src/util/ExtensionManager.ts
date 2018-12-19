@@ -23,7 +23,7 @@ import { INotification } from '../types/INotification';
 import { IExtensionLoadFailure, IExtensionState, IState } from '../types/IState';
 
 import { Archive } from './archives';
-import { ProcessCanceled, UserCanceled, MissingDependency } from './CustomErrors';
+import { ProcessCanceled, UserCanceled, MissingDependency, SteamExecutionDependency } from './CustomErrors';
 import { isOutdated } from './errorHandling';
 import getVortexPath from './getVortexPath';
 import lazyRequire from './lazyRequire';
@@ -1002,12 +1002,17 @@ class ExtensionManager {
             })
             .on('close', (code) => {
               const game = activeGameId(this.mApi.store.getState());
-              if ((code === 3221225781) && (game === 'fallout3')) {
+              if ((game === 'fallout3') && (code === 3221225781)) {
                 // FO3 is dependent on several redistributables being installed to run.
                 //  code 3221225781 suggests that xlive and possibly other redistribs are not installed.
                 reject(new MissingDependency());
-              }
-              else if (code !== 0) {
+              } else if ((game === 'kotor2') && (code === 4294967295)) {
+                // The Steam version of KOTOR 2 will refuse to execute its own executable
+                //  (Even when attempting to run it manually by clicking it)
+                //  giving off the 4294967295 error code and stating that it needs to
+                //  be executed using steam.
+                reject(new SteamExecutionDependency());
+              } else if (code !== 0) {
                 // TODO: the child process returns an exit code of 53 for SSE and
                 // FO4, and an exit code of 1 for Skyrim. We don't know why but it
                 // doesn't seem to affect anything

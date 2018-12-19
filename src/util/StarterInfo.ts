@@ -1,5 +1,6 @@
 import { IDiscoveredTool } from '../types/IDiscoveredTool';
 import { getSafe } from '../util/storeHelper';
+import Steam from '../util/Steam';
 
 import { IDiscoveryResult } from '../extensions/gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../extensions/gamemode_management/types/IGameStored';
@@ -7,7 +8,7 @@ import { IToolStored } from '../extensions/gamemode_management/types/IToolStored
 
 import { IExtensionApi } from '../types/IExtensionContext';
 
-import { MissingInterpreter, UserCanceled, ProcessCanceled, MissingDependency } from './CustomErrors';
+import { MissingInterpreter, UserCanceled, ProcessCanceled, MissingDependency, SteamExecutionDependency } from './CustomErrors';
 
 import { remote } from 'electron';
 import * as fs from 'fs';
@@ -51,6 +52,26 @@ class StarterInfo implements IStarterInfo {
     return StarterInfo.gameIcon(game.id, extensionPath, logoName);
   }
 
+  private static executeWithSteam(info: StarterInfo, api: IExtensionApi, args?: string[]): Promise<void> {
+    // Should never happen but it's worth adding 
+    //  the game check just in case.
+    if (!info.isGame) {
+      return Promise.reject();
+    }
+
+    return new Promise((resolve, reject) => {
+      Steam.getSteamExecutionPath(path.dirname(info.exePath), args).then(execInfo => 
+        api.runExecutable(execInfo.steamPath, execInfo.arguments, {
+          cwd: path.dirname(execInfo.steamPath),
+          env: info.environment,
+          suggestDeploy: true,
+          shell: true,
+      }))
+      .then(() => resolve())
+      .catch(err => reject());
+    })
+  }
+
   public static run(info: StarterInfo, api: IExtensionApi, onShowError: OnShowErrorFunc) {
     return api.runExecutable(info.exePath, info.commandLine, {
       cwd: info.workingDirectory,
@@ -64,6 +85,12 @@ class StarterInfo implements IStarterInfo {
           executable: info.exePath,
           message: 'An Application/Tool dependency is missing, please consult the Application/Tool documentation for required dependencies.',
         }, false);
+      })
+      .catch(SteamExecutionDependency, () => {
+        this.executeWithSteam(info, api).catch(err => onShowError('Failed to run tool', {
+          executable: info.exePath,
+          message: 'This executable MUST be run via Steam',
+        }, false));
       })
       .catch(ProcessCanceled, err => {
         onShowError('Failed to run tool', err.message, false);

@@ -18,6 +18,11 @@ export interface ISteamEntry {
   lastUpdated: Date;
 }
 
+export interface ISteamExec {
+  steamPath: string;
+  arguments: string[];
+}
+
 export class GameNotFound extends Error {
   private mSearch;
   constructor(search: string) {
@@ -36,6 +41,7 @@ export interface ISteam {
   findByName(namePattern: string): Promise<ISteamEntry>;
   findByAppId(appId: string | string[]): Promise<ISteamEntry>;
   allGames(): Promise<ISteamEntry[]>;
+  getSteamExecutionPath(gamePath: string, args?: string[]): Promise<ISteamExec>;
 }
 
 /**
@@ -77,6 +83,31 @@ class Steam implements ISteam {
         } else {
           return Promise.resolve(entry);
         }
+      });
+  }
+
+  /**
+   * Look up Steam's executable path and launch arguments for 
+   *  the game we're attempting to start-up.
+   * @param gamePath - Used to identify the game's cache entry and retrieve the
+   *  corresponding appId.
+   * @param args - Can be used to add additional launch arguments.
+   */
+  public getSteamExecutionPath(gamePath: string, args?: string[]): Promise<ISteamExec> {
+    return this.allGames()
+      .then(entries => entries.find(entry => entry.gamePath === gamePath))
+      .then(entry => {
+        return entry !== undefined 
+          ? this.mBaseFolder.then((basePath: string) => {
+              const steamExec: ISteamExec = {
+                steamPath: basePath + '\\Steam.exe',
+                arguments: args !== undefined 
+                  ? ['-applaunch', entry.appid, ...args] 
+                  : ['-applaunch', entry.appid]
+              };
+              return Promise.resolve(steamExec);
+            })
+          : Promise.reject(undefined);
       });
   }
 
