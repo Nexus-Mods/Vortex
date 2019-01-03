@@ -75,8 +75,13 @@ export function writeFileAtomic(filePath: string, input: string | Buffer,
       resolve(fd);
     });
   })
-  .then(fd => fs.closeAsync(fd))
-  .then(() => fs.writeFileAsync(tmpPath, input, options))
+  .then(fd => {
+    const buf: Buffer = input instanceof Buffer
+      ? input
+      : Buffer.from(input);
+    return fs.writeAsync(fd, buf, 0, input.length, 0)
+      .then(() => fs.closeAsync(fd));
+  })
   .tapCatch(() => {
     if (cleanup !== undefined) {
       cleanup();
