@@ -35,13 +35,6 @@ export class MissingDependency extends Error {
   }
 }
 
-export class SteamExecutionDependency extends Error {
-  constructor() {
-    super('Application MUST be executed using Steam');
-    this.name = this.constructor.name;
-  }
-}
-
 export class SetupError extends Error {
   constructor(message: string) {
     super(message);
