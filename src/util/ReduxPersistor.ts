@@ -103,14 +103,29 @@ class ReduxPersistor<T> {
       return Promise.resolve();
     }
     this.mPersistedState = newState;
+
+    this.ensureStoreDiffHive(oldState, newState);
+  }
+
+  private ensureStoreDiffHive(oldState: any, newState: any) {
     return this.storeDiffHive(oldState, newState)
       .catch(err => {
         // Only way this has ever gone wrong during alpha is when the disk
         // is full, which is nothing we can fix.
-        terminate({
-          message: 'Failed to store application state',
-          stack: err.stack,
-        }, undefined, false);
+        if (err.stack.indexOf('not enough space on the disk') !== -1) {
+          terminate({
+            message: 'There is not enough space on the disk, Vortex needs to quit now to '
+                   + 'ensure you\'re not losing further work. Please free up some space, then restart Vortex.',
+          }, undefined, false);
+          // If we get here, the user has ignored us. What an idiot.
+          // Oh well, try to retry the store,otherwise things will just get worse.
+          return this.ensureStoreDiffHive(oldState, newState);
+        } else {
+          terminate({
+            message: 'Failed to store application state',
+            stack: err.stack,
+          }, undefined, true);
+        }
       });
   }
 

@@ -1,10 +1,13 @@
-import { ProcessCanceled } from '../../util/CustomErrors';
+import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 
 import * as Promise from 'bluebird';
+import { dialog as dialogIn, remote } from 'electron';
 import * as fsFast from 'fs-extra-promise';
 import * as path from 'path';
+
+const dialog = remote !== undefined ? remote.dialog : dialogIn;
 
 /**
  * assembles a file received in chunks.
@@ -99,6 +102,19 @@ class FileAssembler {
         .then((bytesWritten: number) => (bytesWritten !== data.length)
             ? reject(new Error(`incomplete write ${bytesWritten}/${data.length}`))
             : resolve(synced))
+        .catch({ code: 'ENOSPC' }, () => {
+          let win = remote !== undefined ? remote.getCurrentWindow() : null;
+          (dialog.showMessageBox(win, {
+            type: 'warning',
+            title: 'Disk is full',
+            message: 'Download can\'t continue because disk is full, please free some some space and retry.',
+            buttons: ['Cancel', 'Retry'],
+            defaultId: 1,
+            noLink: true,
+          }) === 1)
+            ? resolve(this.addChunk(offset, data))
+            : reject(new UserCanceled())
+        })
         .catch(err => reject(err));
       });
   }

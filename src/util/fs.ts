@@ -50,6 +50,28 @@ const NUM_RETRIES = 3;
 const RETRY_DELAY_MS = 100;
 const RETRY_ERRORS = new Set(['EPERM', 'EBUSY', 'EUNKNOWN']);
 
+function nospcQuery(): PromiseBB<boolean> {
+  if (dialog === undefined) {
+    return PromiseBB.resolve(false);
+  }
+
+  const options: Electron.MessageBoxOptions = {
+    title: 'Disk full',
+    message: `Operation can't continue because the disk is full. `
+           + 'Please free up some space and retry.',
+    buttons: ['Cancel', 'Retry'],
+    type: 'warning',
+    noLink: true,
+  };
+
+  const choice = dialog.showMessageBox(
+    remote !== undefined ? remote.getCurrentWindow() : null,
+    options);
+  return (choice === 0)
+    ? PromiseBB.reject(new UserCanceled())
+    : PromiseBB.resolve(true);
+}
+
 function unlockConfirm(filePath: string): PromiseBB<boolean> {
   if (dialog === undefined) {
     return PromiseBB.resolve(false);
@@ -122,6 +144,8 @@ function busyRetry(filePath: string): PromiseBB<boolean> {
 function errorRepeat(error: NodeJS.ErrnoException, filePath: string): PromiseBB<boolean> {
   if (error.code === 'EBUSY') {
     return busyRetry(filePath);
+  } else if (error.code === 'ENOSPC') {
+    return nospcQuery();
   } else if (error.code === 'EPERM') {
     return unlockConfirm(filePath)
       .then(doUnlock => {
