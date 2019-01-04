@@ -106,9 +106,13 @@ class DownloadWorker {
     this.mHeadersCB = headersCB;
     this.mJob = job;
     this.mUserAgent = userAgent;
-    job.url().then(jobUrl => {
-      this.assignJob(job, jobUrl);
-    });
+    job.url()
+      .then(jobUrl => {
+        this.assignJob(job, jobUrl);
+      })
+      .catch(err => {
+        this.handleError(err);
+      });
   }
 
   public assignJob(job: IDownloadJob, jobUrl: string) {
@@ -646,7 +650,6 @@ class DownloadManager {
         this.mResolveCache[input] = { time: Date.now(), urls: res.urls };
         return res.urls;
       })
-      .catch(err => [])
       : Promise.resolve([input]);
   }
 
@@ -670,12 +673,13 @@ class DownloadManager {
   private initChunk(download: IRunningDownload): IDownloadJob {
     let fileNameFromURL: string;
     return {
-      url: () => download.resolvedUrls().then(urls => {
-        if ((fileNameFromURL === undefined) && (urls.length > 0)) {
-          fileNameFromURL = decodeURI(path.basename(url.parse(urls[0]).pathname));
-        }
-        return urls[0];
-      }),
+      url: () => download.resolvedUrls()
+        .then(urls => {
+          if ((fileNameFromURL === undefined) && (urls.length > 0)) {
+            fileNameFromURL = decodeURI(path.basename(url.parse(urls[0]).pathname));
+          }
+          return urls[0];
+        }),
       offset: 0,
       state: 'init',
       received: 0,

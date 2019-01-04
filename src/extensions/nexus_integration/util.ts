@@ -88,13 +88,33 @@ export function startDownload(api: IExtensionApi, nexus: Nexus, nxmurl: string):
       return downloadId;
     })
     .catch((err) => {
-      api.sendNotification({
-        id: url.fileId.toString(),
-        type: 'global',
-        title: 'Download failed',
-        message: err.message,
-        displayMS: 2000,
-      });
+      if (err.message === 'Provided key and expire time isn\'t correct for this user/file.') {
+        const userName = getSafe(state, ['persistent', 'nexus', 'userInfo', 'name'], undefined);
+        const t = api.translate;
+        api.sendNotification({
+          id: url.fileId.toString(),
+          type: 'warning',
+          title: 'Download failed',
+          message: userName === undefined
+            ? t('You need to be logged in to Nexus Mods.')
+            : t('The link was not created for this account ({{ userName }}).', {
+            replace: {
+              userName,
+            }
+          }),
+          localize: {
+            message: false,
+          }
+        });
+      } else {
+        api.sendNotification({
+          id: url.fileId.toString(),
+          type: 'global',
+          title: 'Download failed',
+          message: err.message,
+          displayMS: 2000,
+        });
+      }
       log('warn', 'failed to get mod info', { err: util.inspect(err) });
       return undefined;
     });
