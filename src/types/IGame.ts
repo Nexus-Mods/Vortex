@@ -41,6 +41,16 @@ export interface IGame extends ITool {
   getModPaths?: (gamePath: string) => { [typeId: string]: string };
 
   /**
+   * Determine whether the game needs to be executed via Steam
+   * 
+   * If this returns true, Vortex will attempt to start up the game
+   * using Steam's CLI applaunch command.
+   * 
+   * @param gamePath path where the game is installed.
+   */
+  requiresSteamStart?: (gamePath: string) => Promise<boolean>;
+
+  /**
    * returns the mod type extensions applicable to this game (all
    * mod types except the default
    *

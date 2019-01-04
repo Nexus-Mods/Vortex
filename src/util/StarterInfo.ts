@@ -1,9 +1,13 @@
 import { IDiscoveredTool } from '../types/IDiscoveredTool';
 import { getSafe } from '../util/storeHelper';
+import Steam from '../util/Steam';
+import { IGame } from '../types/IGame';
+import { log } from '../util/log';
 
 import { IDiscoveryResult } from '../extensions/gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../extensions/gamemode_management/types/IGameStored';
 import { IToolStored } from '../extensions/gamemode_management/types/IToolStored';
+import { getGame } from '../extensions/gamemode_management/util/getGame';
 
 import { IExtensionApi } from '../types/IExtensionContext';
 
@@ -12,6 +16,7 @@ import { MissingInterpreter, UserCanceled, ProcessCanceled, MissingDependency } 
 import { remote } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as Promise from 'bluebird';
 
 export interface IStarterInfo {
   id: string;
@@ -51,54 +56,91 @@ class StarterInfo implements IStarterInfo {
     return StarterInfo.gameIcon(game.id, extensionPath, logoName);
   }
 
-  public static run(info: StarterInfo, api: IExtensionApi, onShowError: OnShowErrorFunc) {
+  private static executeWithSteam(info: StarterInfo, api: IExtensionApi, args?: string[]): Promise<void> {
+    // Should never happen but it's worth adding 
+    //  the game check just in case.
+    if (!info.isGame) {
+      return Promise.reject(`Attempted to execute a tool via Steam - ${info.exePath}`);
+    }
+
+    return new Promise((resolve, reject) => {
+      Steam.getSteamExecutionPath(path.dirname(info.exePath), args).then(execInfo => 
+        api.runExecutable(execInfo.steamPath, execInfo.arguments, {
+          cwd: path.dirname(execInfo.steamPath),
+          env: info.environment,
+          suggestDeploy: true,
+          shell: true,
+      }))
+      .then(() => resolve())
+      .catch(err => reject(err));
+    })
+  }
+
+  private static runGameExecutable(info: StarterInfo, api: IExtensionApi, onShowError: OnShowErrorFunc): Promise<void> {
     return api.runExecutable(info.exePath, info.commandLine, {
       cwd: info.workingDirectory,
       env: info.environment,
       suggestDeploy: true,
       shell: info.shell,
     })
-      .catch(UserCanceled, () => undefined)
-      .catch(MissingDependency, () => {
+    .catch(UserCanceled, () => undefined)
+    .catch(MissingDependency, () => {
+      onShowError('Failed to run tool', {
+        executable: info.exePath,
+        message: 'An Application/Tool dependency is missing, please consult the Application/Tool documentation for required dependencies.',
+      }, false);
+    })
+    .catch(ProcessCanceled, err => {
+      onShowError('Failed to run tool', err.message, false);
+    })
+    .catch(err => {
+      if (err.errno === 'ENOENT') {
+        onShowError('Failed to run tool', {
+          Executable: info.exePath,
+          message: 'Executable doesn\'t exist, please check the configuration for info tool.',
+          stack: err.stack,
+        }, false);
+      } else if (err.errno === 'UNKNOWN') {
+        // info sucks but node.js doesn't give us too much information about what went wrong
+        // and we can't have users misconfigure their tools and then report the error they
+        // get as feedback
+        onShowError('Failed to run tool', {
+          Executable: info.exePath,
+          message: 'File is not executable, please check the configuration for info tool.',
+          stack: err.stack,
+        }, false);
+      } else if (err instanceof MissingInterpreter) {
+        const par = {
+          Error: err.message,
+        };
+        if (err.url !== undefined) {
+          par['Download url'] = err.url;
+        }
+        onShowError('Failed to run tool', par, false);
+      } else {
         onShowError('Failed to run tool', {
           executable: info.exePath,
-          message: 'An Application/Tool dependency is missing, please consult the Application/Tool documentation for required dependencies.',
-        }, false);
+          error: err.stack,
+        });
+      }
+    })
+  }
+
+  public static run(info: StarterInfo, api: IExtensionApi, onShowError: OnShowErrorFunc) {
+    const game: IGame = getGame(info.gameId);
+    const steamPromise = game.requiresSteamStart !== undefined 
+      ? game.requiresSteamStart(path.dirname(info.exePath)).catch(err => {
+        log('warn', err);
+        return Promise.resolve(false);
       })
-      .catch(ProcessCanceled, err => {
-        onShowError('Failed to run tool', err.message, false);
+      : Promise.resolve(false);
+
+    return steamPromise.then(res => res 
+      ? StarterInfo.executeWithSteam(info, api).catch(err => {
+        log('warn', err);
+        return StarterInfo.runGameExecutable(info, api, onShowError)
       })
-      .catch(err => {
-        if (err.errno === 'ENOENT') {
-          onShowError('Failed to run tool', {
-            Executable: info.exePath,
-            message: 'Executable doesn\'t exist, please check the configuration for info tool.',
-            stack: err.stack,
-          }, false);
-        } else if (err.errno === 'UNKNOWN') {
-          // info sucks but node.js doesn't give us too much information about what went wrong
-          // and we can't have users misconfigure their tools and then report the error they
-          // get as feedback
-          onShowError('Failed to run tool', {
-            Executable: info.exePath,
-            message: 'File is not executable, please check the configuration for info tool.',
-            stack: err.stack,
-          }, false);
-        } else if (err instanceof MissingInterpreter) {
-          const par = {
-            Error: err.message,
-          };
-          if (err.url !== undefined) {
-            par['Download url'] = err.url;
-          }
-          onShowError('Failed to run tool', par, false);
-        } else {
-          onShowError('Failed to run tool', {
-            executable: info.exePath,
-            error: err.stack,
-          });
-        }
-      });
+      : StarterInfo.runGameExecutable(info, api, onShowError));
   }
 
   private static gameIcon(gameId: string, extensionPath: string, logo: string) {
