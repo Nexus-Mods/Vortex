@@ -1042,7 +1042,9 @@ class ExtensionManager {
     let queue = Promise.resolve();
     const enqueue = (prom: Promise<void>) => {
       if (prom !== undefined) {
-        queue = queue.then(() => prom.catch(err => null));
+        queue = queue.then(() => prom.catch(err => {
+          this.mApi.showErrorNotification(`Unhandled error in event "${event}"`, err);
+        }));
       }
     }
 
@@ -1061,7 +1063,11 @@ class ExtensionManager {
           args.push(enqueue);
         }
         // call the listener anyway
-        listener(...args).then(() => null);
+        listener(...args)
+          .then(() => null)
+          .catch(err => {
+            this.mApi.showErrorNotification(`Failed to call event ${event}`, err);
+          });
       } else {
         enqueue(listener(...args));
       }

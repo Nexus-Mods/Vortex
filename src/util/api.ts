@@ -30,7 +30,7 @@ import { getReduxLog } from './reduxLogger';
 import ReduxProp from './ReduxProp';
 import relativeTime from './relativeTime';
 import steam, { GameNotFound, ISteamEntry } from './Steam';
-import { bytesToString, copyFileAtomic, isNullOrWhitespace, objDiff,
+import { bytesToString, copyFileAtomic, isChildPath, objDiff,
          removePersistent, setdefault } from './util';
 import walk from './walk';
 
@@ -53,7 +53,7 @@ export {
   getGames,
   getNormalizeFunc,
   getReduxLog,
-  isNullOrWhitespace,
+  isChildPath,
   LazyComponent,
   lazyRequire,
   makeReactive,

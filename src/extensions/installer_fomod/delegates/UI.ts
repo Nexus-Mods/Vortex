@@ -1,6 +1,7 @@
 import {IExtensionApi} from '../../../types/IExtensionContext';
 import { log } from '../../../util/log';
 import {showError} from '../../../util/message';
+import { truthy } from '../../../util/util';
 
 import {endDialog, setDialogState, startDialog} from '../actions/installerUI';
 import {IInstallerInfo, IInstallerState, IReportError, StateCallback} from '../types/interface';
@@ -75,8 +76,11 @@ class UI extends DelegateBase {
   public reportError = (parameters: IReportError) => {
     log('debug', 'reportError', inspect(parameters, null));
     try {
-      this.api.showErrorNotification(
-        parameters.title, parameters.message + '\n' + parameters.details,
+      let msg = parameters.message;
+      if (truthy(parameters.details)) {
+        msg += '\n' + parameters.details;
+      }
+      this.api.showErrorNotification(parameters.title, msg,
         { isHTML: true, allowReport: false });
     } catch (err) {
       showError(this.api.store.dispatch,
