@@ -1027,12 +1027,10 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
   private transferFile(source: string, destination: string, move: boolean): Promise<void> {
     const command = move ? fs.renameAsync : fs.copyAsync;
     return fs.ensureDirAsync(path.dirname(destination))
-      .then(() => command(source, destination))
-      .catch(err => {
-        return err.code === 'EPERM'
-        ? Promise.delay(100).then(() => command(source, destination))
-        : Promise.reject(err);
-      });
+      .then(() => move
+        ? fs.renameAsync(source, destination)
+        : fs.copyAsync(source, destination, { noSelfCopy: true })
+      );
   }
 
   /**
