@@ -70,7 +70,11 @@ function nameFromUrl(input: string) {
     return undefined;
   }
 
-  return decodeURI(path.basename(pathname));
+  try {
+    return decodeURI(path.basename(pathname));
+  } catch (err) {
+    return path.basename(pathname);
+  }
 }
 
 
