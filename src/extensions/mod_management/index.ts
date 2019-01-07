@@ -122,16 +122,20 @@ function purgeMods(api: IExtensionApi): Promise<void> {
   const game: IGame = getGame(gameId);
   const modPaths = game.getModPaths(gameDiscovery.path);
 
-  return Promise.each(Object.keys(modPaths), typeId =>
+  return activator.prePurge(instPath)
+    .then(() => Promise.each(Object.keys(modPaths), typeId =>
     loadActivation(api, typeId, modPaths[typeId], activator)
       .then(() => activator.purge(instPath, modPaths[typeId]))
-      .then(() => saveActivation(typeId, state.app.instanceId, modPaths[typeId], [], activator.id)))
+      .then(() => saveActivation(typeId, state.app.instanceId, modPaths[typeId], [], activator.id))))
   .catch(UserCanceled, () => undefined)
   .catch(TemporaryError, err =>
     api.showErrorNotification('Failed to purge mods, please try again',
                               err, { allowReport: false }))
   .catch(err => api.showErrorNotification('Failed to purge mods', err))
-  .finally(() => api.dismissNotification(notificationId));
+  .finally(() => {
+    api.dismissNotification(notificationId);
+    return activator.postPurge();
+  });
 }
 
 /**
@@ -367,11 +371,13 @@ function genUpdateModDeployment() {
            .find(merger => merger.modType === modType));
 
         const purgePromise = activator !== undefined
-        ? Promise.each(mergeModTypes,
-            typeId => {
-              lastDeployment[typeId] = [];
-              return activator.purge(instPath, modPaths[typeId])
-            })
+          ? activator.prePurge(instPath)
+            .then(() => Promise.each(mergeModTypes,
+              typeId => {
+                lastDeployment[typeId] = [];
+                return activator.purge(instPath, modPaths[typeId])
+              }))
+            .finally(() => activator.postPurge())
         : Promise.resolve([]);
 
         // merge mods

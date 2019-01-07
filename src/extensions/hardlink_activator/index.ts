@@ -24,6 +24,7 @@ export class FileFound extends Error {
 
 class DeploymentMethod extends LinkingDeployment {
   private mDirCache: Set<string>;
+  private mInstallationFiles: Set<number>;
 
   constructor(api: IExtensionApi) {
     super(
@@ -133,37 +134,54 @@ class DeploymentMethod extends LinkingDeployment {
     });
   }
 
+  public postPurge(): Promise<void> {
+    delete this.mInstallationFiles;
+    return Promise.resolve();
+  }
+
   protected purgeLinks(installationPath: string, dataPath: string): Promise<void> {
-    const inos = new Set<number>();
-    const deleteIfEmpty: string[] = [];
+    let installEntryProm: Promise<Set<number>>;
 
     // find ids of all files in our mods directory
-    return turbowalk(installationPath,
-                     entries => {
-                       entries.forEach(entry => {
-                         if (entry.linkCount > 1) {
-                           inos.add(entry.id);
-                         }
-                       });
-                     },
-                     {
-                       details: true,
-                     })
-        // now remove all files in the game directory that have the same id
+    if (this.mInstallationFiles !== undefined) {
+      installEntryProm = Promise.resolve(this.mInstallationFiles);
+    } else {
+      this.mInstallationFiles = new Set<number>();
+      installEntryProm = turbowalk(installationPath,
+        entries => {
+          entries.forEach(entry => {
+            if (entry.linkCount > 1) {
+              this.mInstallationFiles.add(entry.id);
+            }
+          });
+        },
+        {
+          details: true,
+        })
         .then(() => {
-          let queue = Promise.resolve();
-          return turbowalk(dataPath, entries => {
-            queue = queue
-              .then(() => Promise.map(entries,
-                entry => (entry.linkCount > 1) && inos.has(entry.id)
-                  ? fs.unlinkAsync(entry.filePath)
-                    .catch(err =>
-                      log('warn', 'failed to remove', entry.filePath))
-                  : Promise.resolve())
-              .then(() => undefined));
-          }, {details: true})
-          .then(() => queue);
+          return Promise.resolve(this.mInstallationFiles)
         });
+    }
+
+    // now remove all files in the game directory that have the same id
+    // as a file in the mods directory
+    return installEntryProm.then(inos => {
+      let queue = Promise.resolve();
+      if (inos.size === 0) {
+        return Promise.resolve();
+      }
+      return turbowalk(dataPath, entries => {
+        queue = queue
+          .then(() => Promise.map(entries,
+            entry => (entry.linkCount > 1) && inos.has(entry.id)
+              ? fs.unlinkAsync(entry.filePath)
+                .catch(err =>
+                  log('warn', 'failed to remove', entry.filePath))
+              : Promise.resolve())
+            .then(() => undefined));
+      }, { details: true })
+        .then(() => queue);
+    });
   }
 
   protected linkFile(linkPath: string, sourcePath: string): Promise<void> {

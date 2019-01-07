@@ -287,14 +287,22 @@ abstract class LinkingActivator implements IDeploymentMethod {
     });
   }
 
+  public prePurge(): Promise<void> {
+    return Promise.resolve();
+  }
+
   public purge(installPath: string, dataPath: string): Promise<void> {
     if (!truthy(dataPath)) {
       return Promise.reject(new Error('invalid data path'));
     }
     // purge
     return this.purgeLinks(installPath, dataPath)
-      .then(() => this.postPurge(dataPath, false))
+      .then(() => this.postLinkPurge(dataPath, false))
       .then(() => undefined);
+  }
+
+  public postPurge(): Promise<void> {
+    return Promise.resolve();
   }
 
   public isActive(): boolean {
@@ -452,7 +460,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
     };
   }
 
-  private postPurge(baseDir: string, doRemove: boolean): Promise<boolean> {
+  private postLinkPurge(baseDir: string, doRemove: boolean): Promise<boolean> {
     // recursively go through directories and remove empty ones !if! we encountered a
     // __delete_if_empty file in the hierarchy so far
     let empty = true;
@@ -467,7 +475,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
       const dirs = entries.filter(entry => entry.isDirectory);
       // recurse into subdirectories
       queue = queue.then(() =>
-        Promise.each(dirs, dir => this.postPurge(dir.filePath, doRemove)
+        Promise.each(dirs, dir => this.postLinkPurge(dir.filePath, doRemove)
                                     .then(removed => {
                                       if (!removed) { empty = false; }
                                     }))

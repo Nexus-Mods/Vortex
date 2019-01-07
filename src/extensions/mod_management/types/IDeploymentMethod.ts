@@ -183,6 +183,14 @@ export interface IDeploymentMethod {
   deactivate: (installPath: string, dataPath: string, mod: IMod) => Promise<void>;
 
   /**
+   * called before mods are being purged. If multiple mod types are going to be purged,
+   * this is only called once.
+   * This is primarily useful for optimization, to avoid work being done redundantly
+   * for every modtype-purge
+   */
+  prePurge: (installPath: string) => Promise<void>;
+
+  /**
    * deactivate all mods at the destination location
    * @param {string} installPath Vortex path where mods are installed from (source)
    * @param {string} dataPath game paths where mods are installed to (destination)
@@ -194,6 +202,13 @@ export interface IDeploymentMethod {
    * @memberOf IModActivator
    */
   purge: (installPath: string, dataPath: string) => Promise<void>;
+
+  /**
+   * called after mods were purged. If multiple mod types wer purged, this is only called
+   * after they are all done.
+   * Like prePurge, this is intended for optimizations
+   */
+  postPurge: () => Promise<void>;
 
   /**
    * retrieve list of external changes, that is: files that were installed by this

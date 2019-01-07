@@ -111,13 +111,16 @@ export function onGameModeActivated(
     } else {
       const modPaths = game.getModPaths(gameDiscovery.path);
       if (oldActivator !== undefined) {
-        activatorProm = activatorProm.then(() => Promise.mapSeries(Object.keys(modPaths),
+        activatorProm = activatorProm
+          .then(() => oldActivator.prePurge(instPath))
+          .then(() => Promise.mapSeries(Object.keys(modPaths),
             typeId => oldActivator.purge(instPath, modPaths[typeId]))
               .then(() => undefined)
               .catch(TemporaryError, err =>
                   api.showErrorNotification('Purge failed, please try again',
                     err.message, { allowReport: false }))
-              .catch(err => api.showErrorNotification('Purge failed', err)));
+              .catch(err => api.showErrorNotification('Purge failed', err)))
+          .finally(() => oldActivator.postPurge());
       }
 
       activatorProm = activatorProm.then(() => {
