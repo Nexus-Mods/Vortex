@@ -106,6 +106,12 @@ class Application {
       }
     });
 
+    /** electron 3
+    app.on('second-instance', (event: Event, secondaryArgv: string[]) => {
+      this.applyArguments(commandLine(secondaryArgv));
+    });
+    */
+
     app.on('ready', () => {
       if (args.get) {
         this.handleGet(args.get, args.shared);
@@ -152,7 +158,7 @@ class Application {
   private regularStart(args: IParameters): Promise<void> {
     let splash: SplashScreenT;
 
-    return this.testShouldQuit(args.wait ? 10 : -1)
+    return this.testShouldQuit()
         .then(() => {
           setupLogging(app.getPath('userData'), process.env.NODE_ENV === 'development');
           log('info', '--------------------------');
@@ -609,26 +615,29 @@ class Application {
     this.mMainWindow.show(maximized);
   }
 
-  private testShouldQuit(retries: number): Promise<void> {
-    // different modes: if retries were set, the caller wants to start a
-    // "primary" instance and is willing to wait. In that case we don't act as
-    // a secondary instance that sends off it's arguments to the first
-    const remoteCallback = (retries === -1) ?
-                               (secondaryArgv, workingDirectory) => {
-                                 // this is called inside the primary process
-                                 // with the parameters of
-                                 // the secondary one whenever an additional
-                                 // instance is started
-                                 this.applyArguments(commandLine(secondaryArgv));
-                               } :
-                               () => undefined;
+  private testShouldQuit(): Promise<void> {
+    /* electron 3
+    const primaryInstance: boolean = app.requestSingleInstanceLock();
+
+    if (primaryInstance) {
+      return Promise.resolve();
+    } else {
+      app.exit();
+      return Promise.reject(new ProcessCanceled('should quit'));
+    }
+    */
+
+    const remoteCallback = (secondaryArgv, workingDirectory) => {
+      // this is called inside the primary process
+      // with the parameters of
+      // the secondary one whenever an additional
+      // instance is started
+      this.applyArguments(commandLine(secondaryArgv));
+    };
 
     const shouldQuit: boolean = app.makeSingleInstance(remoteCallback);
 
     if (shouldQuit) {
-      if (retries > 0) {
-        return Promise.delay(100).then(() => this.testShouldQuit(retries - 1));
-      }
       // exit instead of quit so events don't get triggered. Otherwise an exception may be caused
       // by failures to require modules
       app.exit();

@@ -11,7 +11,7 @@
     "url": "https://github.com/Nexus-Mods/Vortex"
   },
   "vortex": {
-    "electron": "2.0.12"
+    "electron": "2.0.16"
   },
   "dependencies": {
     "bbcode-to-react": "TanninOne/bbcode-to-react",

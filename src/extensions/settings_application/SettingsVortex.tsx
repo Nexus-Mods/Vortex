@@ -77,7 +77,7 @@ class SettingsVortex extends ComponentEx<IProps, IComponentState> {
   }
 
   private restart = () => {
-    spawnSelf(['--wait']);
+    remote.app.relaunch();
     remote.app.exit(0);
   }
 }
