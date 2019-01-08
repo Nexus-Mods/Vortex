@@ -98,11 +98,11 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
         icon: 'collapse-all',
         action: this.collapseAll,
       }, {
-        title: t('Add Root Category'),
+        title: t('Add Root'),
         icon: 'folder-add',
         action: this.addRootCategory,
       }, {
-        title: t('Toggle empty categories'),
+        title: t('Show/Hide Empty'),
         icon: 'hide',
         action: this.toggleShowEmpty,
       },
