@@ -79,7 +79,7 @@ export function writeFileAtomic(filePath: string, input: string | Buffer,
     const buf: Buffer = input instanceof Buffer
       ? input
       : Buffer.from(input);
-    return fs.writeAsync(fd, buf, 0, input.length, 0)
+    return fs.writeAsync(fd, buf, 0, buf.byteLength, 0)
       .then(() => fs.closeAsync(fd));
   })
   .tapCatch(() => {
