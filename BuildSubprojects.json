@@ -210,6 +210,14 @@
     },
     {
       "type": "build-copy",
+      "name": "gist-dashlet",
+      "path": "extensions/gist-dashlet",
+      "removeModules": ["vortex-api"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
+      "copyTo": "{BUILD_DIR}/bundledPlugins/gist-dashlet"
+    },
+    {
+      "type": "build-copy",
       "name": "fnis-integration",
       "path": "extensions/fnis-integration",
       "removeModules": ["vortex-api"],
