@@ -10,7 +10,7 @@ import * as Redux from 'redux';
 import { log, types, util } from 'vortex-api';
 import GistDashlet from './gistDashlet';
 
-const GIST_LINK = 'https://gist.github.com/IDCs/84233f3b6caa4d584fa378271215fad9.json';
+const GIST_LINK = 'https://gist.githubusercontent.com/IDCs/84233f3b6caa4d584fa378271215fad9/raw/feed.json';
 
 function updateGists(store: Redux.Store<any>): Promise<void> {
   const getHTTPData = (link): Promise<any> => {
@@ -35,20 +35,9 @@ function updateGists(store: Redux.Store<any>): Promise<void> {
     })
   }
 
-  return getHTTPData(GIST_LINK).then(data => {
-    return data['div'] !== undefined
-      ? data['div'].match(/https\:.*\/raw\/.*\.json/g)
-      : Promise.reject('Gist output is missing div header.');
-  }).then(latestURL => {
-    if (latestURL[0] === undefined) {
-      return Promise.reject('Failed to match raw JSON output')
-    }
-
-    const gistUserContentLink = latestURL[0].replace('github', 'githubusercontent');
-    return getHTTPData(gistUserContentLink).then((res) => {
-      store.dispatch(setGists(res));
-      return Promise.resolve();
-    });
+  return getHTTPData(GIST_LINK).then((res) => {
+    store.dispatch(setGists(res));
+    return Promise.resolve();
   });
 }
 
