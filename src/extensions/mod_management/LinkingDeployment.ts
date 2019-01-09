@@ -255,7 +255,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
         }
         entries.forEach(entry => {
           const relPath: string = path.relative(sourcePath, entry.filePath);
-          const relPathNorm = this.mNormalize(relPath);
+          const relPathNorm = this.mNormalize(path.join(dataPath, relPath));
           if (!entry.isDirectory && !blackList.has(relPathNorm)) {
             // mods are activated in order of ascending priority so
             // overwriting is fine here
@@ -281,7 +281,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
       entries.forEach(entry => {
         if (!entry.isDirectory) {
           const relPath: string = path.relative(sourceBase, entry.filePath);
-          delete this.mContext.newDeployment[this.mNormalize(relPath)];
+          delete this.mContext.newDeployment[this.mNormalize(path.join(dataPath, relPath))];
         }
       });
     });
