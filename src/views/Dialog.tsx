@@ -304,7 +304,9 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
 
   private renderLink = (link: ILink, idx: number) => {
     return (
-      <a key={idx} onClick={this.triggerLink} data-linkidx={idx}>{link.label}</a>
+      <div key={idx}>
+        <a onClick={this.triggerLink} data-linkidx={idx}>{link.label}</a>
+      </div>
     );
   }
 
