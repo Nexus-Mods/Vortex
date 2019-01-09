@@ -35,6 +35,8 @@ interface IConnectedProps {
 
 type IProps = IBaseProps & IConnectedProps;
 
+function nop() {}
+
 /**
  * thumbnail + controls for a single game mode within the game picker
  *
@@ -44,7 +46,7 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
   private mRef = null;
 
   public render(): JSX.Element {
-    const { t, active, container, game, getBounds, onRefreshGameInfo, profile, type } = this.props;
+    const { t, active, game, profile, type } = this.props;
 
     if (game === undefined) {
       return null;
@@ -79,6 +81,19 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
           <div className='hover-menu'>
             {type === 'launcher' ? this.renderLaunch() : this.renderMenu()}
           </div>
+          {type !== 'launcher' ? (
+          <div className='game-thumbnail-tags'>
+            {game.contributed ? (
+              <IconButton className='btn-embed' icon='contributor' tooltip={t('Contributed by {{name}}', { replace: { name: game.contributed } })}/>
+             ) : (
+              <IconButton className='btn-embed' icon='official' tooltip={t('Officially support')} />
+             )}
+            {game.final ? null : (
+              <a className='fake-link' onClick={nop} title={t('Not fully tested, please provide feedback')}>{t('Beta')}</a>
+              
+            )}
+          </div>
+          ) : null}
         </Panel.Body>
       </Panel>
     );

@@ -12,4 +12,6 @@ export interface IGameStored {
   environment?: { [key: string]: string };
   details?: { [key: string]: any };
   shell?: boolean;
+  contributed?: string;
+  final?: boolean;
 }

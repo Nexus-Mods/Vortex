@@ -133,6 +133,16 @@ $thumbnail-width: 256px;
   right: 8px;
 }
 
+.game-thumbnail-tags {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  opacity: 0.75;
+  display: flex;
+  align-items: flex-end;
+  font-size: smaller;
+}
+
 .game-list-selected {
   background-color: $table-bg-active;
 }

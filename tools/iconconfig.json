@@ -512,6 +512,14 @@
     "support": {
       "path": "{nucleo}/shopping/{nucleo_simple}_customer-support",
       "rmFill": true
+    },
+    "official": {
+      "path": "{nucleo}/shopping/{nucleo_simple}_award",
+      "rmFill": true
+    },
+    "contributor": {
+      "path": "{nucleo}/users/{nucleo_simple}_a-share",
+      "rmFill": true
     }
   }
 }

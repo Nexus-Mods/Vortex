@@ -233,6 +233,8 @@ class GameModeManager {
       environment: game.environment,
       details: game.details,
       shell: game.shell,
+      contributed: game.contributed,
+      final: game.final,
     };
   }
 
