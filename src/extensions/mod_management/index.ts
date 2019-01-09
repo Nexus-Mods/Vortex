@@ -1,4 +1,4 @@
-import { updateNotification, dismissNotification } from '../../actions/notifications';
+import { updateNotification, dismissNotification, ICheckbox } from '../../actions/notifications';
 import { setSettingsPage, startActivity, stopActivity } from '../../actions/session';
 import {
   IExtensionApi,
@@ -31,6 +31,7 @@ import { removePersistent, setdefault, truthy, isChildPath } from '../../util/ut
 
 import {setDownloadModInfo} from '../download_management/actions/state';
 import {getGame} from '../gamemode_management/util/getGame';
+import { setModEnabled } from '../profile_management/actions/profiles';
 import {IProfileMod, IProfile} from '../profile_management/types/IProfile';
 
 import { setDeploymentNecessary } from './actions/deployment';
@@ -53,6 +54,7 @@ import allTypesSupported from './util/allTypesSupported';
 import * as basicInstaller from './util/basicInstaller';
 import { NoDeployment } from './util/exceptions';
 import { registerAttributeExtractor } from './util/filterModInfo';
+import renderModName from './util/modName';
 import sortMods, { CycleError } from './util/sort';
 import ActivationButton from './views/ActivationButton';
 import DeactivationButton from './views/DeactivationButton';
@@ -418,33 +420,74 @@ function genUpdateModDeployment() {
                   ? Promise.reject(new UserCanceled())
                   : Promise.resolve());
             }
+            let overwritten: IMod[] = [];
             return prom
               .then(() => Promise.each(
                 Object.keys(modPaths).filter(typeId => undiscovered.indexOf(typeId) === -1),
-                typeId => deployMods(api,
-                                     game.id,
-                                     instPath, modPaths[typeId],
-                                     sortedModList.filter(mod => (mod.type || '') === typeId),
-                                     activator, lastDeployment[typeId],
-                                     typeId, new Set(mergedFileMap[typeId]),
-                                     genSubDirFunc(game),
-                                     deployProgress)
-                .then(newActivation => {
-                  newDeployment[typeId] = newActivation;
-                  return doSaveActivation(api, typeId, modPaths[typeId], newActivation, activator.id)
-                    .catch(err => api.showDialog('error', 'Saving manifest failed', {
-                      text: 'Saving the manifest failed (see error below). This could lead to errors '
-                          + 'later on, ',
-                      message: err.message,
-                    }, [
+                typeId => {
+                  const filteredModList = sortedModList.filter(mod => (mod.type || '') === typeId);
+                  return deployMods(api,
+                                    game.id,
+                                    instPath, modPaths[typeId],
+                                    filteredModList,
+                                    activator, lastDeployment[typeId],
+                                    typeId, new Set(mergedFileMap[typeId]),
+                                    genSubDirFunc(game),
+                                    deployProgress)
+                    .then(newActivation => {
+                      overwritten.push(...filteredModList.filter(mod =>
+                        newActivation.find(entry => entry.source === mod.installationPath) === undefined));
 
-                    ]));
-                })))
+                      newDeployment[typeId] = newActivation;
+
+                      return doSaveActivation(api, typeId, modPaths[typeId], newActivation, activator.id)
+                        .catch(err => api.showDialog('error', 'Saving manifest failed', {
+                          text: 'Saving the manifest failed (see error below). This could lead to errors '
+                            + 'later on, ',
+                          message: err.message,
+                        }, []));
+                    })
+                }))
               .then(() => {
                 progress(t('Running post-deployment events'), 99);
                 return api.emitAndAwait('did-deploy', profile.id, newDeployment, (title: string) => {
                   progress(title, 99);
                 })
+              })
+              .then(() => {
+                if (overwritten.length > 0) {
+                  api.sendNotification({
+                    type: 'info',
+                    message: 'Some mods are redundant',
+                    actions: [
+                      { title: 'Show', action: dismiss => {
+                        return api.showDialog('info', 'Redundant mods', {
+                          text: 'Some of the enabled mods either contain no files or all files '
+                              + 'they do contain are entirely overwritten by another mod. '
+                              + 'These redundant mods don\'t do any harm except slow down '
+                              + 'deployment a bit.',
+                          checkboxes: overwritten.map((mod: IMod): ICheckbox => ({
+                            id: mod.id,
+                            text: renderModName(mod),
+                            value: true
+                          }))
+                        }, [
+                          { label: 'Disable selected' },
+                          { label: 'Close', default: true },
+                        ]).then(result => {
+                          if (result.action === 'Disable selected') {
+                            Object.keys(result.input)
+                              .filter(modId => result.input[modId])
+                              .forEach(modId => {
+                                api.store.dispatch(setModEnabled(profile.id, modId, false));
+                              });
+                              dismiss();
+                          }
+                        });
+                      } },
+                    ]
+                  });
+                }
               });
           })
           .then(() => {
