@@ -2,11 +2,11 @@ import * as React from 'react';
 import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
 import { ComponentEx, Dashlet, selectors, util } from 'vortex-api';
-import { IGistNode } from './types';
+import { IAnnouncement, AnnouncementSeverity } from './types';
 
 interface IConnectedProps {
   gameMode: string;
-  gists: Array<{ date: string, description: string, githublink?: string, gameMode?: string }>;
+  announcements: Array<{ date: string, description: string, severity: AnnouncementSeverity, githublink?: string, gameMode?: string }>;
 }
 
 interface IActionProps {
@@ -20,15 +20,15 @@ class GistDashlet extends ComponentEx<IProps, {}> {
   }
 
   public render(): JSX.Element {
-    const { t, gists, gameMode } = this.props;
+    const { t, announcements, gameMode } = this.props;
     
     const filtered = gameMode !== undefined 
-      ? gists.filter(gist => ((gist.gameMode !== undefined) && (gist.gameMode === gameMode)) 
-        || gist.gameMode === undefined)
-      : gists.filter(gist => gist.gameMode === undefined);
+      ? announcements.filter(announce => ((announce.gameMode !== undefined) && (announce.gameMode === gameMode)) 
+        || announce.gameMode === undefined)
+      : announcements.filter(announce => announce.gameMode === undefined);
 
     return filtered.length > 0 
-    ? (<Dashlet className='gist-log' title={t('Notification')}>
+    ? (<Dashlet className='gist-log' title={t('Announcements')}>
         {this.renderContent(filtered)}
       </Dashlet>) 
     : null;
@@ -40,26 +40,43 @@ class GistDashlet extends ComponentEx<IProps, {}> {
     util.opn(link).catch(() => null);
   }
 
-  private renderContent(filtered: IGistNode[]) {
+  private generateClassName(announcement: IAnnouncement, id: number): string {
+    const severity = announcement.severity !== undefined ? announcement.severity : 'information';
+    return `announce-${severity} ${id}`;
+  }
+
+  private renderContent(filtered: IAnnouncement[]) {
     const { t } = this.props;
 
-    const renderElement = (gist: IGistNode): JSX.Element => {
-      return gist.githublink !== undefined 
-        ? (<li>
-            {`(${gist.date}) - `}
-              <a 
-                data-link={gist.githublink} 
-                onClick={this.openLink} 
-                href={gist.githublink}>
-                {gist.description}
-              </a>
-          </li>)
-        : (<li>{`(${gist.date}) - ${gist.description}`}</li>)
+    const renderElement = (announcement: IAnnouncement, id: number): JSX.Element => {
+      const generateItem = (): JSX.Element => {
+        return announcement.githublink !== undefined 
+          ? (
+            <a 
+              className = {this.generateClassName(announcement, id)}
+              data-link={announcement.githublink} 
+              onClick={this.openLink} 
+              href={announcement.githublink}>
+              {announcement.description}
+            </a>)
+          : (
+            <span className={this.generateClassName(announcement, id)}>
+              {announcement.description}
+            </span>);
+      };
+
+      return (
+        <li>
+          <h5>
+            {`(${announcement.date}) - `}
+            {generateItem()}
+          </h5>
+        </li>)
     }
 
     return (
-      <ul>
-        {filtered.map(gist => renderElement(gist))}
+      <ul className='list-announcements'>
+        {filtered.map((announcement, id) => renderElement(announcement, id))}
       </ul>
     );
   }
@@ -68,7 +85,7 @@ class GistDashlet extends ComponentEx<IProps, {}> {
 function mapStateToProps(state: any): IConnectedProps {
   return {
     gameMode: selectors.activeGameId(state) || undefined,
-    gists: state.session.gists.gists,
+    announcements: state.session.announcements.announcements,
   };
 }
 

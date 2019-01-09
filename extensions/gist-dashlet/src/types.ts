@@ -1,6 +1,9 @@
-export interface IGistNode {
+export interface IAnnouncement {
   date: string,
   description: string,
+  severity?: AnnouncementSeverity,
   githublink?: string,
-  game?: string,
+  gameMode?: string,
 }
+
+export type AnnouncementSeverity = 'information' | 'warning' | 'critical';

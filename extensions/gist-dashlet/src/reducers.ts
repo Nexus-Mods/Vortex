@@ -4,11 +4,11 @@ import * as actions from './actions';
 
 const sessionReducer: types.IReducerSpec = {
   reducers: {
-    [actions.setGists as any]: (state, payload) =>
-      util.setSafe(state, ['gists'], payload),
+    [actions.setAnnouncements as any]: (state, payload) =>
+      util.setSafe(state, ['announcements'], payload),
   },
   defaults: {
-    gists: [],
+    announcements: [],
   },
 };
 

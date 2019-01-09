@@ -1,9 +1,19 @@
-.dashlet-gist {
+.gist-log {
   display: flex;
   flex-direction: column;
-  .gist-text {
-    flex: 1 1 0;
-    overflow: auto;
-    white-space: pre;
+
+  .list-announcements {
+    overflow-y: auto;
+  }
+
+  li {
+    background-color: transparent !important;
+    .announce-critical {
+      color: $brand-danger;
+    }
+  
+    .announce-warning {
+      color: $brand-warning;
+    }
   }
 }

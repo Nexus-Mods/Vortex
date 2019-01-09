@@ -1,5 +1,5 @@
 import { createAction } from 'redux-act';
-import { IGistNode } from './types';
+import { IAnnouncement } from './types';
 
-export const setGists = createAction('SET_GISTS',
-    (gists: IGistNode[]) => gists);
+export const setAnnouncements = createAction('SET_ANNOUNCEMENTS',
+    (announcements: IAnnouncement[]) => announcements);
