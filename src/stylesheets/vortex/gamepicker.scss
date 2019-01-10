@@ -131,6 +131,15 @@ $thumbnail-width: 256px;
   position: absolute;
   top: 8px;
   right: 8px;
+  line-height: 0;
+  width: 24px;
+  height: 24px;
+  background: rgba($black, 0.3);
+  border: 1px solid rgba($white, 0.3);
+  svg {
+    stroke: $text-color;
+    stroke-width: 2px;
+  }
 }
 
 .game-thumbnail-tags {

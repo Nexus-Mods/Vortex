@@ -67,7 +67,8 @@ function refreshIcons() {
 
 function saveChanges() {
   fs.writeFile(configPath, JSON.stringify(config, undefined, 2))
-  .then(() => refreshIcons());
+  .then(() => refreshIcons())
+  .catch(err => console.error('failed to write', err));
 }
 
 function sanitizeName(name) {
@@ -92,7 +93,7 @@ function addFile(file) {
   });
 
   if (!found) {
-    alert('not found');
+    alert(`not found: ${file.name}`);
   }
 }
 

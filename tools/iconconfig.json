@@ -450,7 +450,7 @@
       "rmFill": true
     },
     "game-menu": {
-      "path": "{fa}/plus-square",
+      "path": "{nucleo}/user interface/{nucleo_simple}_small-add",
       "rmFill": true
     },
     "groups": {
