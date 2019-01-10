@@ -24,7 +24,7 @@ import ShowHiddenButton from './ShowHiddenButton';
 import * as Promise from 'bluebird';
 import update from 'immutability-helper';
 import * as React from 'react';
-import { Alert, ListGroup, ProgressBar, Tab, Tabs } from 'react-bootstrap';
+import { ListGroup, ProgressBar, Tab, Tabs, FormControl, InputGroup } from 'react-bootstrap';
 
 function gameFromDiscovery(id: string, discovered: IDiscoveryResult): IGameStored {
   return {
@@ -61,6 +61,7 @@ type IProps = IBaseProps & IConnectedProps & IActionProps;
 
 interface IComponentState {
   showHidden: boolean;
+  currentFilterValue: string;
 }
 
 /**
@@ -78,9 +79,10 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
   constructor(props: IProps) {
     super(props);
 
-    this.state = {
+    this.initState({
       showHidden: false,
-    };
+      currentFilterValue: '',
+    });
 
     this.buttons = [
       {
@@ -93,12 +95,13 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
 
   public render(): JSX.Element {
     const { t, discoveredGames, discovery, knownGames, pickerLayout, profiles } = this.props;
-    const { showHidden } = this.state;
+    const { showHidden, currentFilterValue } = this.state;
 
     // TODO: lots of computation and it doesn't actually change except through discovery
     //   or when adding a profile
-    const displayedGames: IGameStored[] = showHidden ? knownGames : knownGames.filter(
-      (game: IGameStored) => !getAttr(discoveredGames, game.id, { hidden: false }).hidden);
+    const displayedGames: IGameStored[] = ((showHidden) || (!!currentFilterValue))
+      ? knownGames 
+      : knownGames.filter((game: IGameStored) => !getAttr(discoveredGames, game.id, { hidden: false }).hidden);
 
     const profileGames = new Set<string>(
       Object.keys(profiles).map((profileId: string) => profiles[profileId].gameId));
@@ -186,24 +189,32 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
           <FlexLayout type='column' className='game-page'>
             <FlexLayout.Flex>
               <div ref={this.setScrollRef} className='gamepicker-body'>
+                <InputGroup>
+                  <FormControl
+                    className='game-filter-input'
+                    value={currentFilterValue}
+                    placeholder={t('Search for a game...')}
+                    onChange={this.onFilterInputChange}
+                  />
+                </InputGroup>
                 <Tabs defaultActiveKey='managed' id='games-picker-tabs'>
                   <Tab
                     eventKey='managed'
                     title={title(t('Managed'), managedGameList.length)}
                   >
-                    {this.renderGames(managedGameList, 'managed')}
+                    {this.renderGames(managedGameList.filter(game => this.applyGameFilter(game)), 'managed')}
                   </Tab>
                   <Tab
                     eventKey='discovered'
                     title={title(t('Discovered'), discoveredGameList.length)}
                   >
-                    {this.renderGames(discoveredGameList, 'discovered')}
+                    {this.renderGames(discoveredGameList.filter(game => this.applyGameFilter(game)), 'discovered')}
                   </Tab>
                   <Tab
                     eventKey='supported'
                     title={title(t('Supported'), supportedGameList.length)}
                   >
-                    {this.renderGames(supportedGameList, 'undiscovered')}
+                    {this.renderGames(supportedGameList.filter(game => this.applyGameFilter(game)), 'undiscovered')}
                   </Tab>
                 </Tabs>
               </div>
@@ -220,10 +231,10 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
                   <IconButton
                     id='start-discovery'
                     icon={discovery.running ? 'stop' : 'search'}
-                    tooltip={discovery.running ? t('Stop Search') : t('Search for Games')}
+                    tooltip={discovery.running ? t('Stop Scan') : t('Scan for Games')}
                     onClick={discovery.running ? this.stopDiscovery : this.startDiscovery}
                   >
-                    {discovery.running ? t('Stop Search') : t('Search for Games')}
+                    {discovery.running ? t('Stop Scan') : t('Scan for Games')}
                   </IconButton>
                 </FlexLayout.Fixed>
               </div>
@@ -232,6 +243,15 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
         </MainPage.Body>
       </MainPage>
     );
+  }
+
+  private onFilterInputChange = (evt) => {
+    this.nextState.currentFilterValue = evt.target.value;
+  }
+
+  private applyGameFilter = (game: IGameStored): boolean => {
+    const { currentFilterValue } = this.state;
+    return game.name.toLowerCase().includes(currentFilterValue.toLowerCase()) || !currentFilterValue;
   }
 
   private renderProgress = (phase: IDiscoveryPhase, idx: number): JSX.Element => {
@@ -286,10 +306,21 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
 
   private renderGames = (games: IGameStored[], type: string): JSX.Element => {
     const { t, gameMode, pickerLayout } = this.props;
+    const { currentFilterValue } = this.state;
+
+    const failedFilter = (): JSX.Element => (
+      <EmptyPlaceholder
+        icon='game'
+        text={t('Vortex cannot find "{{gameName}}"', {replace: { gameName: currentFilterValue } })}
+        subtext={t('Please try alternative spellings, or submit a game request via the feedback system.')}
+      />
+    );
 
     if (games.length === 0) {
       if (type === 'managed') {
-        return (
+        return (!!currentFilterValue)
+        ? failedFilter()
+        : (
           <EmptyPlaceholder
             icon='game'
             text={t('You haven\'t managed any games yet')}
@@ -297,13 +328,17 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
           />
         );
       } else if (type === 'discovered') {
-        return (
+        return (!!currentFilterValue)
+        ? failedFilter()
+        : (
           <EmptyPlaceholder
             icon='game'
             text={t('No games were discovered')}
             subtext={t('You can manually add a game from "Supported" or start a full disk scan.')}
           />
         );
+      } else if ((type === 'undiscovered') && (!!currentFilterValue)) {
+        return failedFilter();
       }
     }
 
