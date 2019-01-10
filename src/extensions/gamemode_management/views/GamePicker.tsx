@@ -187,16 +187,18 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
         </MainPage.Header>
         <MainPage.Body>
           <FlexLayout type='column' className='game-page'>
+            <FlexLayout.Fixed>
+              <InputGroup>
+                <FormControl
+                  className='game-filter-input'
+                  value={currentFilterValue}
+                  placeholder={t('Search for a game...')}
+                  onChange={this.onFilterInputChange}
+                />
+              </InputGroup>
+            </FlexLayout.Fixed>
             <FlexLayout.Flex>
               <div ref={this.setScrollRef} className='gamepicker-body'>
-                <InputGroup>
-                  <FormControl
-                    className='game-filter-input'
-                    value={currentFilterValue}
-                    placeholder={t('Search for a game...')}
-                    onChange={this.onFilterInputChange}
-                  />
-                </InputGroup>
                 <Tabs defaultActiveKey='managed' id='games-picker-tabs'>
                   <Tab
                     eventKey='managed'
@@ -311,8 +313,8 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
     const failedFilter = (): JSX.Element => (
       <EmptyPlaceholder
         icon='game'
-        text={t('Vortex cannot find "{{gameName}}"', {replace: { gameName: currentFilterValue } })}
-        subtext={t('Please try alternative spellings, or submit a game request via the feedback system.')}
+        text={t('Vortex cannot find "{{gameName}}" in selected tab', {replace: { gameName: currentFilterValue } })}
+        subtext={t('Please switch tab, try alternative spellings, or submit a game request via the feedback system.')}
       />
     );
 
