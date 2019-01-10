@@ -27,7 +27,7 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import * as Redux from 'redux';
-import { createSelector } from 'reselect';
+import { createSelector, OutputSelector } from 'reselect';
 import { Button } from 'react-bootstrap';
 
 export type ChangeDataHandler = (rowId: string, attributeId: string, newValue: any) => void;
@@ -1237,7 +1237,7 @@ function getTableState(state: IState, tableId: string) {
   return state.settings.tables[tableId];
 }
 
-export function makeGetSelection(tableId: string) {
+export function makeGetSelection(tableId: string): OutputSelector<any, string[], (res: ITableState) => string[]> {
   const getTableStateInst = (state: any) => getTableState(state, tableId);
   return createSelector(getTableStateInst, (tableState: ITableState) => {
     return Object.keys(tableState.rows).filter((rowId: string) => (

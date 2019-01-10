@@ -74,4 +74,4 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>, ow
   };
 }
 
-export default translate(['common'], { wait: false })(connect(mapStateToProps, mapDispatchToProps)(Usage));
+export default translate(['common'], { wait: false })(connect(mapStateToProps, mapDispatchToProps)(Usage)) as React.ComponentClass<IUsageProps>;

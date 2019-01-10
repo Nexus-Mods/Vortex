@@ -1,11 +1,11 @@
+import Icon from './Icon';
 import Overlay from './Overlay';
 import { IconButton } from './TooltipControls';
+import { IExtensionApi } from '../types/api';
+import { translate, ComponentEx } from '../util/ComponentEx';
 
 import * as React from 'react';
 import {Popover} from 'react-bootstrap';
-import { translate, ComponentEx } from '../util/ComponentEx';
-import Icon from './Icon';
-import { IExtensionApi } from '../types/api';
 
 let _haveKnowledgeBase: boolean;
 
@@ -128,4 +128,4 @@ class More extends ComponentEx<IProps, IComponentState> {
   }
 }
 
-export default translate(['common'], { wait: false })(More);
+export default translate(['common'], { wait: false })(More) as React.ComponentClass<IProps>;

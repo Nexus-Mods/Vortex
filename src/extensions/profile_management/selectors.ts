@@ -2,8 +2,8 @@ import {getSafe} from '../../util/storeHelper';
 
 import { IProfile } from './types/IProfile';
 
-import { createSelector } from 'reselect';
-import createCachedSelector from 're-reselect';
+import { createSelector, OutputSelector } from 'reselect';
+import createCachedSelector, { ICacheObject, ParametricSelector, OutputParametricSelector } from 're-reselect';
 import { IState } from '../../types/IState';
 
 const profilesBase = (state: IState) => state.persistent.profiles;

@@ -5,8 +5,8 @@ import {getSafe} from '../../util/storeHelper';
 import {IDiscoveryResult} from './types/IDiscoveryResult';
 import {IGameStored} from './types/IGameStored';
 
-import { createSelector } from 'reselect';
-import createCachedSelector from 're-reselect';
+import { createSelector, OutputSelector } from 'reselect';
+import createCachedSelector, { ICacheObject, OutputParametricSelector, ParametricSelector } from 're-reselect';
 
 export function knownGames(state): IGameStored[] {
   return getSafe(state, ['session', 'gameMode', 'known'], []);
