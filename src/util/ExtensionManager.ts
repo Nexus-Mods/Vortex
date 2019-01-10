@@ -944,7 +944,7 @@ class ExtensionManager {
   private applyStartHooks(input: IRunParameters) : Promise<IRunParameters> {
     let updated = input;
     return Promise.each(this.mStartHooks, hook => hook.hook(updated)
-      .then(newParameters => {
+      .then((newParameters: IRunParameters) => {
         updated = newParameters;
       })
       .catch(UserCanceled, err => {

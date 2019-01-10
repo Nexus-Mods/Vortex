@@ -26,6 +26,7 @@ import { SetupError } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
+import onceCB from '../../util/onceCB';
 import { getSafe } from '../../util/storeHelper';
 import { truthy } from '../../util/util';
 
@@ -171,14 +172,13 @@ function deploy(api: IExtensionApi, profileId: string): Promise<void> {
   }
 
   return new Promise((resolve, reject) => {
-    api.events.emit('deploy-mods',
-      (err: Error) => {
+    api.events.emit('deploy-mods', onceCB((err: Error) => {
         if (err === null) {
           resolve();
         } else {
           reject(err);
         }
-      }, profileId,
+      }), profileId,
       (text: string, percent: number) => {
         api.store.dispatch(
           setProgress('profile', 'deploying', text, percent));

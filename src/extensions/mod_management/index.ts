@@ -16,6 +16,7 @@ import * as fs from '../../util/fs';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
 import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
+import onceCB from '../../util/onceCB';
 import { showError } from '../../util/message';
 import getVortexPath from '../../util/getVortexPath';
 import ReduxProp from '../../util/ReduxProp';
@@ -717,7 +718,9 @@ function once(api: IExtensionApi) {
 
   api.events.on('deploy-mods', (callback: (err: Error) => void, profileId?: string,
                                 progressCB?: (text: string, percent: number) => void) => {
-    deploymentTimer.runNow(callback, true, profileId, progressCB);
+    if (!(callback as any).called) {
+      deploymentTimer.runNow(callback, true, profileId, progressCB);
+    }
   });
 
   api.onAsync('deploy-single-mod', (gameId: string, modId: string, enable?: boolean) => {
@@ -812,7 +815,7 @@ function once(api: IExtensionApi) {
                 {
                   title: 'Deploy', action: (dismiss) => {
                     dismiss();
-                    api.events.emit('deploy-mods', (err) => {
+                    api.events.emit('deploy-mods', onceCB((err) => {
                       if (err !== null) {
                         if (err instanceof NoDeployment) {
                           showError(api.store.dispatch,
@@ -822,7 +825,7 @@ function once(api: IExtensionApi) {
                           showError(api.store.dispatch, 'Failed to activate mods', err);
                         }
                       }
-                    })
+                    }));
                   }
                 },
               ]
