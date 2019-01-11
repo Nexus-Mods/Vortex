@@ -1,14 +1,17 @@
-import { setAnnouncements } from './actions';
-import sessionReducer from './reducers';
-
 import * as Promise from 'bluebird';
 import * as https from 'https';
 import * as url from 'url';
 import * as _ from 'lodash';
-import * as path from 'path';
 import * as Redux from 'redux';
-import { log, types, util } from 'vortex-api';
-import GistDashlet from './gistDashlet';
+
+import { IExtensionContext } from '../../types/IExtensionContext';
+import { IState } from '../../types/IState';
+import { log } from '../../util/log';
+import { getSafe } from '../../util/storeHelper';
+
+import { setAnnouncements } from './actions';
+import sessionReducer from './reducers';
+import GistDashlet from './GistDashlet';
 import { IAnnouncement } from './types';
 
 const GIST_LINK = 'https://gist.githubusercontent.com/IDCs/84233f3b6caa4d584fa378271215fad9/raw/feed.json';
@@ -42,10 +45,10 @@ function updateAnnouncements(store: Redux.Store<any>): Promise<void> {
   });
 }
 
-function main(context: types.IExtensionContext) {
+function init(context: IExtensionContext): boolean {
   context.registerDashlet('gistlog', 1, 3, 200, GistDashlet,
-    (state: types.IState) => {
-      const gists = util.getSafe(state, ['session', 'announcements', 'announcements'], undefined);
+    (state: IState) => {
+      const gists = getSafe(state, ['session', 'announcements', 'announcements'], undefined);
       return (gists !== undefined) && (Object.keys(gists).length > 0);
     },
   () => ({}), { closable: true });
@@ -53,8 +56,6 @@ function main(context: types.IExtensionContext) {
   context.registerReducer(['session', 'announcements'], sessionReducer);
 
   context.once(() => {
-    context.api.setStylesheet('gistlog',
-      path.join(__dirname, 'gistlog.scss'));
     updateAnnouncements(context.api.store)
     .catch(err => {
       log('error', 'failed to retrieve list of announcements', err);
@@ -64,4 +65,4 @@ function main(context: types.IExtensionContext) {
   return true;
 }
 
-export default main;
+export default init;

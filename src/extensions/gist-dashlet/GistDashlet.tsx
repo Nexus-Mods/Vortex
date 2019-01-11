@@ -1,7 +1,11 @@
 import * as React from 'react';
-import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
-import { ComponentEx, Dashlet, selectors, util } from 'vortex-api';
+
+import { ComponentEx, translate } from '../../util/ComponentEx';
+import Dashlet from '../../controls/Dashlet';
+import opn from '../../util/opn';
+import * as selectors from '../../util/selectors';
+//import { ComponentEx, Dashlet, selectors, util } from 'vortex-api';
 import { IAnnouncement, AnnouncementSeverity } from './types';
 
 interface IConnectedProps {
@@ -37,7 +41,7 @@ class GistDashlet extends ComponentEx<IProps, {}> {
   private openLink = (evt: React.MouseEvent<HTMLAnchorElement>) => {
     evt.preventDefault();
     const link = evt.currentTarget.getAttribute('data-link');
-    util.opn(link).catch(() => null);
+    opn(link).catch(() => null);
   }
 
   private generateClassName(announcement: IAnnouncement, id: number): string {
