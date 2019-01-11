@@ -146,8 +146,23 @@
     padding: 5px 2px;
 
     .gist-list-item {
-      p {
+      .gist-description {
         padding: 0 10px;
+
+        svg {
+          padding-top: 12px;
+          padding-right: 3px;
+          height: 2.4em;
+          width: 1.6em;
+        }
+
+        .gist-icon-critical {
+          fill: $brand-danger;
+        }
+      
+        .gist-icon-warning {
+          fill: $brand-warning;
+        }
       }
 
       background: $gray-lighter !important;
@@ -155,28 +170,10 @@
       margin-bottom: 10px !important;
     }
 
-    // .gist-open-link-icon {
-    //   width: 24px;
-    //   height: 24px;
-    //   font-size: smaller;
-    // }
-
     .gist-extras {
       justify-content: space-between;
       padding: 8px !important;
       font-size: smaller;
-    }
-
-    .gist-description {
-      .gist-icon-critical {
-        fill: $brand-danger;
-        padding: 16px 0px !important;
-      }
-    
-      .gist-icon-warning {
-        fill: $brand-warning;
-        padding: 16px 0px !important;
-      }
     }
   }
 }

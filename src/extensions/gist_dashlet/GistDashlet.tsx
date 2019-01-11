@@ -65,8 +65,7 @@ class GistDashlet extends ComponentEx<IProps, {}> {
           data-link={announcement.githublink}
           icon='about'
           tooltip={t('View Issue')}
-          onClick={this.openLink} 
-          href={announcement.githublink}/>
+          onClick={this.openLink}/>
       )
     };
 
@@ -129,5 +128,5 @@ function mapDispatchToProps(dispatch: any): IActionProps {
 
 export default
   connect(mapStateToProps, mapDispatchToProps)(
-    translate(['gist-dashlet', 'common'], { wait: true })(
+    translate(['common'], { wait: true })(
       GistDashlet));
