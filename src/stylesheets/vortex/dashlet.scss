@@ -135,6 +135,52 @@
   }
 }
 
+.dashlet-gist {
+  display: flex;
+  flex-direction: column;
+
+  .list-announcements {
+    overflow-y: auto;
+    list-style: none;
+
+    padding: 5px 2px;
+
+    .gist-list-item {
+      p {
+        padding: 0 10px;
+      }
+
+      background: $gray-lighter !important;
+      padding: 0 10px;
+      margin-bottom: 10px !important;
+    }
+
+    // .gist-open-link-icon {
+    //   width: 24px;
+    //   height: 24px;
+    //   font-size: smaller;
+    // }
+
+    .gist-extras {
+      justify-content: space-between;
+      padding: 8px !important;
+      font-size: smaller;
+    }
+
+    .gist-description {
+      .gist-icon-critical {
+        fill: $brand-danger;
+        padding: 16px 0px !important;
+      }
+    
+      .gist-icon-warning {
+        fill: $brand-warning;
+        padding: 16px 0px !important;
+      }
+    }
+  }
+}
+
 .nexus-name-username,
 .nexus-login-heading {
   text-transform: uppercase;

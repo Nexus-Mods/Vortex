@@ -12,7 +12,7 @@ import { getSafe } from '../../util/storeHelper';
 import { setAnnouncements } from './actions';
 import sessionReducer from './reducers';
 import GistDashlet from './GistDashlet';
-import { IAnnouncement } from './types';
+import { IAnnouncement, AnnouncementParseError } from './types';
 
 const GIST_LINK = 'https://gist.githubusercontent.com/IDCs/84233f3b6caa4d584fa378271215fad9/raw/feed.json';
 
@@ -30,7 +30,7 @@ function updateAnnouncements(store: Redux.Store<any>): Promise<void> {
               const parsed: IAnnouncement[] = JSON.parse(output)
               resolve(parsed);
             } catch (err) {
-              reject(`statusCode: "${res.statusCode}" - ${err.message} - received: "${output}"`);
+              reject(new AnnouncementParseError(res.statusCode, err.message, link, output));
             }
         })
       }).on('error', (e) => {
