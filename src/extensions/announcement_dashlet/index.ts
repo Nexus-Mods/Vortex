@@ -46,11 +46,8 @@ function updateAnnouncements(store: Redux.Store<any>): Promise<void> {
 }
 
 function init(context: IExtensionContext): boolean {
-  context.registerDashlet('announcementlog', 1, 3, 200, AnnouncementDashlet,
-    (state: IState) => {
-      const announcements = getSafe(state, ['session', 'announcements', 'announcements'], undefined);
-      return (announcements !== undefined) && (Object.keys(announcements).length > 0);
-    },
+  context.registerDashlet('Announcements', 1, 3, 200, AnnouncementDashlet,
+    (state: IState) => true,
   () => ({}), { closable: true });
 
   context.registerReducer(['session', 'announcements'], sessionReducer);

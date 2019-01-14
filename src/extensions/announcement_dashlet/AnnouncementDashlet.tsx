@@ -8,7 +8,7 @@ import * as selectors from '../../util/selectors';
 import { Icon, IconButton } from '../../controls/TooltipControls';
 
 import { IAnnouncement, AnnouncementSeverity } from './types';
-import { FlexLayout } from '../../controls/api';
+import { FlexLayout, EmptyPlaceholder } from '../../controls/api';
 
 interface IConnectedProps {
   gameMode: string;
@@ -33,11 +33,20 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
         || announce.gameMode === undefined)
       : announcements.filter(announce => announce.gameMode === undefined);
 
-    return filtered.length > 0 
-    ? (<Dashlet className='dashlet-announcement' title={t('Announcements')}>
-        {this.renderContent(filtered)}
-      </Dashlet>) 
-    : null;
+    return <Dashlet className='dashlet-announcement' title={t('Announcements')}>
+            {filtered.length > 0 ? this.renderContent(filtered) : this.renderPlaceholder()}
+          </Dashlet>;
+  }
+
+  private renderPlaceholder(): JSX.Element {
+    const { t } = this.props;
+    return (
+      <EmptyPlaceholder
+        icon='layout-list'
+        text={t('No Announcements')}
+        subtext={t('No news is good news!')}
+      />
+    );
   }
 
   private openLink = (evt) => {
@@ -96,9 +105,9 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
   }
 
   private renderContent(filtered: IAnnouncement[]) {
-    const renderElement = (announcement: IAnnouncement): JSX.Element => {
+    const renderElement = (announcement: IAnnouncement, id: number): JSX.Element => {
       return (
-        <li className='announcement-list-item'>
+        <li key={id} className='announcement-list-item'>
             <FlexLayout type='column'>
               {this.generateDescription(announcement)}
               {this.generateExtraPanel(announcement)}
@@ -108,7 +117,7 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
 
     return (
       <ul className='list-announcements'>
-        {filtered.map((announcement) => renderElement(announcement))}
+        {filtered.map((announcement, id) => renderElement(announcement, id))}
       </ul>
     );
   }
