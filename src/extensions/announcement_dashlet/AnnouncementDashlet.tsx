@@ -12,7 +12,7 @@ import { FlexLayout } from '../../controls/api';
 
 interface IConnectedProps {
   gameMode: string;
-  announcements: Array<{ date: string, description: string, severity: AnnouncementSeverity, githublink?: string, gameMode?: string }>;
+  announcements: Array<{ date: string, description: string, severity: AnnouncementSeverity, link?: string, gameMode?: string, icon? :string }>;
 }
 
 interface IActionProps {
@@ -62,7 +62,7 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
       return (
         <IconButton 
           className='announcement-open-link-icon'
-          data-link={announcement.githublink}
+          data-link={announcement.link}
           icon='about'
           tooltip={t('View Issue')}
           onClick={this.openLink}/>
@@ -78,7 +78,7 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
     return (
       <FlexLayout type='row' className='announcement-extras'>
         {generateDate()}
-        {announcement.githublink !== undefined ? generateLinkButton() : null}
+        {announcement.link !== undefined ? generateLinkButton() : null}
       </FlexLayout>
     );
   }

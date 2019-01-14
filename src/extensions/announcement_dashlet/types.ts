@@ -3,7 +3,7 @@ import { HTTPError } from '../../util/CustomErrors';
 export interface IAnnouncement {
   date: string,
   description: string,
-  githublink?: string,
+  link?: string,
   gameMode?: string,
   icon?: string,
   severity?: AnnouncementSeverity,
