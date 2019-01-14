@@ -6,9 +6,18 @@
     "fa": "Font-Awesome-SVG-PNG-master/black/svg"
   },
   "icons": {
-    "window-minimize": "{fa}/window-minimize",
-    "window-restore": "{fa}/window-restore",
-    "window-maximize": "{fa}/window-maximize",
+    "window-minimize": {
+      "path": "{fa}/window-minimize",
+      "scaleStroke": false
+    },
+    "window-restore": {
+      "path": "{fa}/window-restore",
+      "scaleStroke": false
+    },
+    "window-maximize": {
+      "path": "{fa}/window-maximize",
+      "scaleStroke": false
+    },
     "window-close": {
       "path": "{nucleo}/ui/{nucleo_simple}_bold-remove",
       "rmFill": true
@@ -188,7 +197,10 @@
       "path": "{nucleo}/text editing/{nucleo_simple}_list-bullet",
       "rmFill": true
     },
-    "launch-application": "{fa}/play-circle-o",
+    "launch-application": {
+      "path": "{fa}/play-circle-o",
+      "scaleStroke": false
+    },
     "launch-simple": {
       "path": "{nucleo}/multimedia/{nucleo_simple}_button-play",
       "rmFill": true

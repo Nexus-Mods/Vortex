@@ -258,6 +258,12 @@
   }
 }
 
+.dashlet-announcement {
+  .placeholder {
+    flex: 1 1 0;
+  }
+}
+
 .dashlet-game-more {
   position: absolute;
   top: 0;

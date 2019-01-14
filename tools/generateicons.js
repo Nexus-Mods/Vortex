@@ -41,6 +41,9 @@ function applyTransforms(svg, cfg) {
   if (cfg.rmStroke) {
     rmStroke(svg);
   }
+  if (cfg.scaleStroke === false) {
+    svg.$['vector-effect'] = 'non-scaling-stroke';
+  }
   if (svg.$['data-color'] !== undefined) {
     delete svg.$['data-color'];
   }
