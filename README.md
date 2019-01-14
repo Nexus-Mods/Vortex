@@ -32,3 +32,7 @@ Example of a valid announcement:
   "gamemode": "skyrim",
   "icon": "bug"
 }`
+
+**Please note: Upon changing the announcements.json file, it may take up to 5 minutes for the changes to be reflected within Vortex. This
+is probably due to some github caching mechanism or possibly just because it takes a little while for the raw page to be queryable.
+
