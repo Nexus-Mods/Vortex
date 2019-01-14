@@ -19,7 +19,7 @@ All data elements are optional except for the "date" and "description" elements 
 * "icon" : The name of the icon we wish to add to this announcement - When provided, Vortex will search for the icon's name within its
   icon selection and attempt to display it alongside the description.
 
-* "severity" : This element accepts one of the following "information" | "warning" | "critical"; this will modify UI elements accordingly
+* "severity" : This element accepts one of the following: "information" | "warning" | "critical"; this will modify UI elements accordingly
   to highlight the severity type of the announcement. (Currently only changes the color of the announcement's icon)
 
 Example of a valid announcement:
