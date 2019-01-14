@@ -11,7 +11,7 @@ All data elements are optional except for the "date" and "description" elements 
 
 * "description" : The announcement text you wish to display.
 
-* "githublink" : When an URL is provided, Vortex will generate a button for the announcement allowing the users to click and open
+* "link" : When an URL is provided, Vortex will generate a button for the announcement allowing the users to click and open
   the URL in a new webpage.
 
 * "gamemode" : Providing a specific game id will only show this announcement when actively managing the game matching the game id.
@@ -27,7 +27,7 @@ Example of a valid announcement:
 `{
   "date": "2019-01-14T10:20:10",
   "description": "This is a fake announcement",
-  "githublink": "www.github.com",
+  "link": "www.github.com",
   "severity": "critical",
   "gamemode": "skyrim",
   "icon": "bug"
