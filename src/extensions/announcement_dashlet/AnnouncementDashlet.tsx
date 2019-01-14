@@ -20,7 +20,7 @@ interface IActionProps {
 
 type IProps = IConnectedProps & IActionProps;
 
-class GistDashlet extends ComponentEx<IProps, {}> {
+class AnnouncementDashlet extends ComponentEx<IProps, {}> {
   constructor(props: IProps) {
     super(props);
   }
@@ -34,7 +34,7 @@ class GistDashlet extends ComponentEx<IProps, {}> {
       : announcements.filter(announce => announce.gameMode === undefined);
 
     return filtered.length > 0 
-    ? (<Dashlet className='dashlet-gist' title={t('Announcements')}>
+    ? (<Dashlet className='dashlet-announcement' title={t('Announcements')}>
         {this.renderContent(filtered)}
       </Dashlet>) 
     : null;
@@ -50,7 +50,7 @@ class GistDashlet extends ComponentEx<IProps, {}> {
     const { t } = this.props;
     const sev = announcement.severity !== undefined ? announcement.severity : 'information';
     if ((sev !== 'information') && (announcement.icon !== undefined)) {
-      return <Icon className={`gist-icon-${sev}`} key='attention-required' name={announcement.icon} tooltip={t('Icon')} />;
+      return <Icon className={`announcement-icon-${sev}`} key='attention-required' name={announcement.icon} tooltip={t('Icon')} />;
     } else {
       return null;
     }
@@ -61,7 +61,7 @@ class GistDashlet extends ComponentEx<IProps, {}> {
     const generateLinkButton = (): JSX.Element => {
       return (
         <IconButton 
-          className='gist-open-link-icon'
+          className='announcement-open-link-icon'
           data-link={announcement.githublink}
           icon='about'
           tooltip={t('View Issue')}
@@ -76,7 +76,7 @@ class GistDashlet extends ComponentEx<IProps, {}> {
     );
 
     return (
-      <FlexLayout type='row' className='gist-extras'>
+      <FlexLayout type='row' className='announcement-extras'>
         {generateDate()}
         {announcement.githublink !== undefined ? generateLinkButton() : null}
       </FlexLayout>
@@ -88,7 +88,7 @@ class GistDashlet extends ComponentEx<IProps, {}> {
     
 
     return (
-      <FlexLayout type='row' className='gist-description'>
+      <FlexLayout type='row' className='announcement-description'>
         {this.renderIcon(announcement)}
         <p>{announcement.description}</p>
       </FlexLayout>
@@ -98,7 +98,7 @@ class GistDashlet extends ComponentEx<IProps, {}> {
   private renderContent(filtered: IAnnouncement[]) {
     const renderElement = (announcement: IAnnouncement): JSX.Element => {
       return (
-        <li className='gist-list-item'>
+        <li className='announcement-list-item'>
             <FlexLayout type='column'>
               {this.generateDescription(announcement)}
               {this.generateExtraPanel(announcement)}
@@ -129,4 +129,4 @@ function mapDispatchToProps(dispatch: any): IActionProps {
 export default
   connect(mapStateToProps, mapDispatchToProps)(
     translate(['common'], { wait: true })(
-      GistDashlet));
+      AnnouncementDashlet));

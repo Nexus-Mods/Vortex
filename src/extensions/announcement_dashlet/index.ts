@@ -11,10 +11,10 @@ import { getSafe } from '../../util/storeHelper';
 
 import { setAnnouncements } from './actions';
 import sessionReducer from './reducers';
-import GistDashlet from './GistDashlet';
+import AnnouncementDashlet from './AnnouncementDashlet';
 import { IAnnouncement, AnnouncementParseError } from './types';
 
-const GIST_LINK = 'https://gist.githubusercontent.com/IDCs/84233f3b6caa4d584fa378271215fad9/raw/feed.json';
+const ANNOUNCEMENT_LINK = 'https://raw.githubusercontent.com/Nexus-Mods/Vortex/announcements/announcements.json';
 
 function updateAnnouncements(store: Redux.Store<any>): Promise<void> {
   const getHTTPData = (link): Promise<any> => {
@@ -39,17 +39,17 @@ function updateAnnouncements(store: Redux.Store<any>): Promise<void> {
     })
   }
 
-  return getHTTPData(GIST_LINK).then((res) => {
+  return getHTTPData(ANNOUNCEMENT_LINK).then((res) => {
     store.dispatch(setAnnouncements(res));
     return Promise.resolve();
   });
 }
 
 function init(context: IExtensionContext): boolean {
-  context.registerDashlet('gistlog', 1, 3, 200, GistDashlet,
+  context.registerDashlet('announcementlog', 1, 3, 200, AnnouncementDashlet,
     (state: IState) => {
-      const gists = getSafe(state, ['session', 'announcements', 'announcements'], undefined);
-      return (gists !== undefined) && (Object.keys(gists).length > 0);
+      const announcements = getSafe(state, ['session', 'announcements', 'announcements'], undefined);
+      return (announcements !== undefined) && (Object.keys(announcements).length > 0);
     },
   () => ({}), { closable: true });
 

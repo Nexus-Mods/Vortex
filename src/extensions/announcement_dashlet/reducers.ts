@@ -1,4 +1,3 @@
-//import { types, util } from 'vortex-api';
 import { setSafe } from '../../util/storeHelper';
 import { IReducerSpec } from '../../types/IExtensionContext';
 
