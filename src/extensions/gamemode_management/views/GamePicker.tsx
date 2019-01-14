@@ -25,6 +25,7 @@ import * as Promise from 'bluebird';
 import update from 'immutability-helper';
 import * as React from 'react';
 import { ListGroup, ProgressBar, Tab, Tabs, FormControl, InputGroup } from 'react-bootstrap';
+import { IGameDetail } from '../../../types/api';
 
 function gameFromDiscovery(id: string, discovered: IDiscoveryResult): IGameStored {
   return {
@@ -135,7 +136,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
       }
     });
 
-    const title = (text: string, count: number) => {
+    const title = (text: string, count: string) => {
       return (
         <div className='nav-title'>
         <div className='nav-title-title'>{text}</div>
@@ -143,6 +144,10 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
       </div>
       );
     };
+
+    const filteredManaged = managedGameList.filter(game => this.applyGameFilter(game));
+    const filteredDiscovered = discoveredGameList.filter(game => this.applyGameFilter(game));
+    const filteredSupported = supportedGameList.filter(game => this.applyGameFilter(game))
 
     return (
       <MainPage domRef={this.setRef}>
@@ -202,21 +207,21 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
                 <Tabs defaultActiveKey='managed' id='games-picker-tabs'>
                   <Tab
                     eventKey='managed'
-                    title={title(t('Managed'), managedGameList.length)}
+                    title={title(t('Managed'), this.getTabGameNumber(managedGameList, filteredManaged))}
                   >
-                    {this.renderGames(managedGameList.filter(game => this.applyGameFilter(game)), 'managed')}
+                    {this.renderGames(filteredManaged, 'managed')}
                   </Tab>
                   <Tab
                     eventKey='discovered'
-                    title={title(t('Discovered'), discoveredGameList.length)}
+                    title={title(t('Discovered'), this.getTabGameNumber(discoveredGameList, filteredDiscovered))}
                   >
-                    {this.renderGames(discoveredGameList.filter(game => this.applyGameFilter(game)), 'discovered')}
+                    {this.renderGames(filteredDiscovered, 'discovered')}
                   </Tab>
                   <Tab
                     eventKey='supported'
-                    title={title(t('Supported'), supportedGameList.length)}
+                    title={title(t('Discovered'), this.getTabGameNumber(supportedGameList, filteredSupported))}
                   >
-                    {this.renderGames(supportedGameList.filter(game => this.applyGameFilter(game)), 'undiscovered')}
+                    {this.renderGames(filteredSupported, 'undiscovered')}
                   </Tab>
                 </Tabs>
               </div>
@@ -249,6 +254,11 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
 
   private onFilterInputChange = (evt) => {
     this.nextState.currentFilterValue = evt.target.value;
+  }
+
+  private getTabGameNumber(unfiltered: IGameStored[], filtered: IGameStored[]): string {
+    const { currentFilterValue } = this.state;
+    return currentFilterValue ? `${filtered.length}/${unfiltered.length}` : `${unfiltered.length}`;
   }
 
   private applyGameFilter = (game: IGameStored): boolean => {
