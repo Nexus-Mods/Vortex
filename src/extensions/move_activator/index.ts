@@ -16,6 +16,7 @@ import * as path from 'path';
 import turbowalk, { IEntry } from 'turbowalk';
 import * as util from 'util';
 import * as winapi from 'winapi-bindings';
+import { setSettingsPage } from '../../actions/session';
 
 const LNK_EXT = '.vortex_lnk';
 
@@ -92,6 +93,11 @@ class DeploymentMethod extends LinkingDeployment {
                 gameVolume: winapi.GetVolumePathName(modPaths[typeId]),
               }
             }),
+          fixCallback: (api: IExtensionApi) => new Promise((resolve, reject) => {
+            api.events.emit('show-main-page', 'application_settings');
+            api.store.dispatch(setSettingsPage('Mods'));
+            api.highlightControl('#install-path-form', 5000, 'Change this to be on the same drive as the game.');
+          }),
         };
       }
     } catch (err) {
