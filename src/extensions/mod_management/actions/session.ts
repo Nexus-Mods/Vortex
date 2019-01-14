@@ -4,11 +4,22 @@ import {UserCanceled} from '../../../util/CustomErrors';
 import {IFileChange} from '../types/IDeploymentMethod';
 import {FileAction, IFileEntry} from '../types/IFileEntry';
 
+export interface IDeploymentProblem {
+  activator: string;
+  message: string;
+  solution: string;
+  order: number;
+  hasAutomaticFix: boolean;
+};
+
 /**
  * sets the updating mods flag
  */
 export const setUpdatingMods = safeCreateAction('SET_UPDATING_MODS',
   (gameId: string, updatingMods: boolean) => ({ gameId, updatingMods }));
+
+export const setDeploymentProblem = safeCreateAction('SET_DEPLOYMENT_PROBLEM',
+  (errors: IDeploymentProblem[]) => errors);
 
 /**
  * stores info about files that were changed outside the control of Vortex. The user

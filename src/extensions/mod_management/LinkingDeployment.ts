@@ -10,6 +10,7 @@ import {
   IDeployedFile,
   IDeploymentMethod,
   IFileChange,
+  IUnavailableReason,
 } from './types/IDeploymentMethod';
 import {IMod} from './types/IMod';
 
@@ -60,7 +61,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
     this.mApi = api;
   }
 
-  public abstract isSupported(state: any, gameId: string, modTypeId: string): string;
+  public abstract isSupported(state: any, gameId: string, modTypeId: string): IUnavailableReason;
 
   /**
    * if necessary, get user confirmation we should deploy now. Right now this

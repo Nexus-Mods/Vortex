@@ -7,13 +7,15 @@ import { installPathForGame } from '../../util/selectors';
 import { getGame } from '../gamemode_management/util/getGame';
 import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
 import LinkingDeployment from '../mod_management/LinkingDeployment';
-import { IDeployedFile, IDeploymentMethod } from '../mod_management/types/IDeploymentMethod';
+import { IDeployedFile, IDeploymentMethod, IUnavailableReason } from '../mod_management/types/IDeploymentMethod';
 
 import * as Promise from 'bluebird';
 import * as I18next from 'i18next';
 import * as path from 'path';
 import turbowalk from 'turbowalk';
 import * as util from 'util';
+import * as winapi from 'winapi-bindings';
+import { setSettingsPage } from '../../actions/session';
 
 export class FileFound extends Error {
   constructor(name) {
@@ -56,10 +58,12 @@ class DeploymentMethod extends LinkingDeployment {
       + 'a copy.');
   }
 
-  public isSupported(state: any, gameId: string, typeId: string): string {
+  public isSupported(state: any, gameId: string, typeId: string): IUnavailableReason {
     const discovery: IDiscoveryResult = state.settings.gameMode.discovered[gameId];
     if (discovery === undefined) {
-      return 'No game discovery';
+      return {
+        description: t => t('Game not discovered.'),
+      };
     }
 
     const game: IGame = getGame(gameId);
@@ -70,7 +74,15 @@ class DeploymentMethod extends LinkingDeployment {
     } catch (err) {
       log('info', 'hardlink deployment not supported due to lack of write access',
           { typeId, path: modPaths[typeId] });
-      return `Can\'t write to output directory: ${modPaths[typeId]}`;
+      return {
+        description: t => t('Can\'t write to output directory'),
+        order: 3,
+        solution: t => t('To resolve this problem, the current user account needs to be given write permission to "{{modPath}}".', {
+          replace: {
+            modPath: modPaths[typeId],
+          }
+        }),
+      };
     }
 
     const installationPath = installPathForGame(state, gameId);
@@ -78,9 +90,21 @@ class DeploymentMethod extends LinkingDeployment {
     try {
       if (fs.statSync(installationPath).dev !== fs.statSync(modPaths[typeId]).dev) {
         // hard links work only on the same drive
-        return 'Works only if mods are installed on the same drive as the game. '
-          + 'You can go to settings and change the mod directory to the same drive '
-          + 'as the game.';
+        return {
+          description: t => t('Works only if mods are installed on the same drive as the game.'),
+          order: 5,
+          solution: t => t('Please go to Settings->Mods and set the mod staging folder to be on the same '
+            + 'drive as the game ({{gameVolume}}).', {
+              replace: {
+                gameVolume: winapi.GetVolumePathName(modPaths[typeId]),
+              }
+            }),
+          fixCallback: (api: IExtensionApi) => new Promise((resolve, reject) => {
+            api.events.emit('show-main-page', 'application_settings');
+            api.store.dispatch(setSettingsPage('Mods'));
+            api.highlightControl('#install-path-form', 5000, 'Change this to be on the same drive as the game.');
+          }),
+        };
       }
     } catch (err) {
       // this can happen when managing the the game for the first time
@@ -88,7 +112,9 @@ class DeploymentMethod extends LinkingDeployment {
         dir1: installationPath || 'undefined', dir2: modPaths[typeId],
         err: util.inspect(err),
       });
-      return 'Game not fully initialized yet, this should disappear soon.';
+      return {
+        description: t => t('Game not fully initialized yet, this should disappear soon.'),
+      };
     }
 
     const canary = path.join(installationPath, '__vortex_canary.tmp');
@@ -99,7 +125,9 @@ class DeploymentMethod extends LinkingDeployment {
     } catch (err) {
       // EMFILE shouldn't keep us from using hard linking
       if (err.code !== 'EMFILE') {
-        return 'Filesystem doesn\'t support hard links';
+        return {
+          description: t => t('Filesystem doesn\'t support hard links.'),
+        };
       }
     }
 

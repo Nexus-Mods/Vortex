@@ -1,8 +1,10 @@
+import { IExtensionApi } from '../../../types/IExtensionContext';
 import { Normalize } from '../../../util/getNormalizeFunc';
 import { IMod } from './IMod';
 
 import * as Promise from 'bluebird';
 import * as I18next from 'i18next';
+import i18next = require('i18next');
 
 /**
  * details about a file change
@@ -64,6 +66,31 @@ export interface IDeployedFile {
   //   criterium
 }
 
+/**
+ * Indicates why a deployment method is unavailable an if it can be made to work
+ */
+export interface IUnavailableReason {
+  /**
+   * description (english) why the deployment method is unavailable
+   */
+  description: (t: i18next.TranslationFunction) => string;
+  /**
+   * describes the solution to make this 
+   */
+  solution?: (t: i18next.TranslationFunction) => string;
+  /**
+   * if the problem can be fixed automatically, this can be set to a function that takes care
+   * of it
+   */
+  fixCallback?: (api: IExtensionApi) => Promise<void>;
+  /**
+   * When no method is supported, Vortex will offer possible solutions in this order.
+   * It should indicate both how much effort the solution is and also a general preference for
+   * this deployment methods so that the preferred method has a lower order number than others.
+   */
+  order?: number;
+}
+
 export interface IDeploymentMethod {
 
   /**
@@ -116,7 +143,7 @@ export interface IDeploymentMethod {
    *
    * @memberOf IModActivator
    */
-  isSupported: (state: any, gameId: string, modTypeId: string) => string;
+  isSupported: (state: any, gameId: string, modTypeId: string) => IUnavailableReason;
 
   /**
    * if mod deployment in some way requires user interaction we should give the user control

@@ -278,6 +278,7 @@ export interface IRunOptions {
   env?: { [key: string]: string };
   suggestDeploy?: boolean;
   shell?: boolean;
+  detach?: boolean;
 }
 
 /**

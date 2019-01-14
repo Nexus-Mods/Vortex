@@ -52,12 +52,15 @@ function runCheck(api: IExtensionApi, check: ICheckEntry): Promise<void> {
       if (result === undefined) {
         api.dismissNotification(id);
       } else {
-        const actions: INotificationAction[] = [{
-          title: 'More',
-          action: () => api.store.dispatch(showDialog('info', 'Check failed', {
-            bbcode: result.description.long,
-          }, [ { label: 'Close' } ])),
-        }];
+        const actions: INotificationAction[] = [];
+        if (result.description.long !== undefined) {
+          actions.push({
+            title: 'More',
+            action: () => api.store.dispatch(showDialog('info', 'Check failed', {
+              bbcode: result.description.long,
+            }, [{ label: 'Close' }])),
+          });
+        }
         if (result.automaticFix !== undefined) {
           actions.push({
             title: 'Fix',

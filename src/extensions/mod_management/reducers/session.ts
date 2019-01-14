@@ -24,9 +24,12 @@ export const sessionReducer: IReducerSpec = {
       const { gameId, updatingMods } = payload;
       return setSafe(state, ['updatingMods', gameId], updatingMods);
     },
+    [actions.setDeploymentProblem as any]: (state, payload) =>
+      setSafe(state, ['deploymentProblems'], payload),
   },
   defaults: {
     changes: [],
     updatingMods: {},
+    deploymentProblems: [],
   },
 };
