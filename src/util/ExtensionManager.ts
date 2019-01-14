@@ -1227,6 +1227,7 @@ class ExtensionManager {
       'nexus_integration',
       'download_management',
       'gamemode_management',
+      'announcement_dashlet',
       'symlink_activator',
       'symlink_activator_elevate',
       'hardlink_activator',

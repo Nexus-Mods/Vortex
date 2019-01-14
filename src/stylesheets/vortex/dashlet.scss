@@ -135,6 +135,49 @@
   }
 }
 
+.dashlet-announcement {
+  display: flex;
+  flex-direction: column;
+
+  .list-announcements {
+    overflow-y: auto;
+    list-style: none;
+
+    padding: 5px 2px;
+
+    .announcement-list-item {
+      .announcement-description {
+        padding: 0 10px;
+
+        svg {
+          padding-top: 12px;
+          padding-right: 3px;
+          height: 2.4em;
+          width: 1.6em;
+        }
+
+        .announcement-icon-critical {
+          fill: $brand-danger;
+        }
+      
+        .announcement-icon-warning {
+          fill: $brand-warning;
+        }
+      }
+
+      background: $gray-lighter !important;
+      padding: 0 10px;
+      margin-bottom: 10px !important;
+    }
+
+    .announcement-extras {
+      justify-content: space-between;
+      padding: 8px !important;
+      font-size: smaller;
+    }
+  }
+}
+
 .nexus-name-username,
 .nexus-login-heading {
   text-transform: uppercase;

@@ -10,6 +10,7 @@ import {} from './download_management';
 import {} from './extension_manager';
 import {} from './firststeps_dashlet';
 import {} from './gamemode_management';
+import {} from './announcement_dashlet';
 import {} from './hardlink_activator';
 import {} from './ini_prep';
 import {} from './installer_fomod';
