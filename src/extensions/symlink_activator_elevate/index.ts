@@ -10,6 +10,7 @@ import LinkingDeployment from '../mod_management/LinkingDeployment';
 import {
   IDeployedFile,
   IDeploymentMethod,
+  IUnavailableReason,
 } from '../mod_management/types/IDeploymentMethod';
 
 import { remoteCode } from './remoteCode';
@@ -106,23 +107,27 @@ class DeploymentMethod extends LinkingDeployment {
         .then(result => this.stopElevated().then(() => result));
   }
 
-  public isSupported(state: any, gameId?: string): string {
+  public isSupported(state: any, gameId?: string): IUnavailableReason {
     if (process.platform !== 'win32') {
-      return 'Not required on non-windows systems';
+      return { description: t => t('Elevation not required on non-windows systems') };
     }
     if (gameId === undefined) {
       gameId = activeGameId(state);
     }
-    if (this.isGamebryoGame(gameId)) {
-      return 'Doesn\'t work with games based on the gamebryo engine '
-        + '(including Skyrim SE and Fallout 4)';
-    }
-    if (this.isUnsupportedGame(gameId)) {
+    if (this.isGamebryoGame(gameId) || this.isUnsupportedGame(gameId)) {
       // Mods for this games use some file types that have issues working with symbolic links
-      return 'Doesn\'t work with ' + gameName(state, gameId);
+      return {
+        description: t => t('Incompatible with "{{name}}".', {
+          replace: {
+            name: gameName(state, gameId),
+          }
+        }),
+      };
     }
     if (this.ensureAdmin()) {
-      return 'No need to use the elevated variant, use the regular symlink deployment';
+      return {
+        description: t => t('No need to use the elevated variant, use the regular symlink deployment'),
+      };
     }
     return undefined;
   }

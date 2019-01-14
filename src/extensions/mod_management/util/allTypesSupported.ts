@@ -1,11 +1,11 @@
-import {IDeploymentMethod} from '../types/IDeploymentMethod';
+import {IDeploymentMethod, IUnavailableReason} from '../types/IDeploymentMethod';
 
 function allTypesSupported(activator: IDeploymentMethod, state: any,
-                           gameId: string, types: string[]): string {
+                           gameId: string, types: string[]): IUnavailableReason {
   if (activator === undefined) {
-    return 'No deployment method selected';
+    return { description: t => t('No deployment method selected') };
   }
-  let reason: string;
+  let reason: IUnavailableReason;
   types.find(type => {
     reason = activator.isSupported(state, gameId, type);
     return reason !== undefined;

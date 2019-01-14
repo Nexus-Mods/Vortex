@@ -36,13 +36,13 @@ import { setModEnabled } from '../profile_management/actions/profiles';
 import {IProfileMod, IProfile} from '../profile_management/types/IProfile';
 
 import { setDeploymentNecessary } from './actions/deployment';
-import {showExternalChanges} from './actions/session';
+import {showExternalChanges, setDeploymentProblem} from './actions/session';
 import {removeMod, setModAttribute} from './actions/mods';
 import {sessionReducer} from './reducers/session';
 import {modsReducer} from './reducers/mods';
 import {deploymentReducer} from './reducers/deployment';
 import {settingsReducer} from './reducers/settings';
-import {IDeployedFile, IDeploymentMethod, IFileChange} from './types/IDeploymentMethod';
+import {IDeployedFile, IFileChange, IUnavailableReason} from './types/IDeploymentMethod';
 import {IFileEntry} from './types/IFileEntry';
 import {IFileMerge} from './types/IFileMerge';
 import {IMod} from './types/IMod';
@@ -55,11 +55,13 @@ import allTypesSupported from './util/allTypesSupported';
 import * as basicInstaller from './util/basicInstaller';
 import { NoDeployment } from './util/exceptions';
 import { registerAttributeExtractor } from './util/filterModInfo';
+import getModPaths from './util/getModPaths';
 import renderModName from './util/modName';
 import sortMods, { CycleError } from './util/sort';
 import ActivationButton from './views/ActivationButton';
 import DeactivationButton from './views/DeactivationButton';
 import {} from './views/ExternalChangeDialog';
+import {} from './views/FixDeploymentDialog';
 import {} from './views/ModList';
 import {} from './views/Settings';
 
@@ -596,40 +598,31 @@ function genValidActivatorCheck(api: IExtensionApi) {
     }
 
     const gameId = activeGameId(state);
-    const game = getGame(gameId);
-    if (game === undefined) {
-      return resolve(undefined);
-    }
-    const discovery = currentGameDiscovery(state);
-    if ((discovery === undefined) || (discovery.path === undefined)) {
-      return resolve(undefined);
-    }
-    const modPaths = game.getModPaths(discovery.path);
+    const modPaths = getModPaths(state, gameId);
 
-    const messages = getAllActivators().map((activator) => {
-      const supported = allTypesSupported(activator, state, gameId, Object.keys(modPaths));
-      return `[*] ${activator.name} - [i]${supported}[/i]`;
+    type IUnavailableReasonEx = IUnavailableReason & { activator?: string };
+
+    const reasons: IUnavailableReasonEx[] = getAllActivators().map(activator => {
+      const reason: IUnavailableReasonEx = allTypesSupported(activator, state, gameId, Object.keys(modPaths));
+      if (reason !== undefined) {
+        reason.activator = activator.id;
+      }
+      return reason;
     });
 
     return resolve({
       description: {
         short: 'Mods can\'t be deployed.',
-        long: 'With the current settings, mods can\'t be deployed.\n'
-          + 'Please read the following error messages from the deployment '
-          + 'plugins and fix one of them.\nAt least the "hardlink deployment" '
-          + 'can usually be made to work.\n\n[list]'
-          + messages.join('\n')
-          + '[/list]',
       },
       severity: 'error',
       automaticFix: () => new Promise<void>((fixResolve, fixReject) => {
-        api.events.emit('show-main-page', 'application_settings');
-        api.store.dispatch(setSettingsPage('Mods'));
-        api.events.on('hide-modal', (modal) => {
-          if (modal === 'settings') {
-            fixResolve();
-          }
-        });
+        api.store.dispatch(setDeploymentProblem(reasons.map(reason => ({
+          activator: reason.activator,
+          message: reason.description(api.translate),
+          solution: reason.solution !== undefined ? reason.solution(api.translate) : undefined,
+          order: reason.order || 1000,
+          hasAutomaticFix: reason.fixCallback !== undefined,
+        })).sort((lhs, rhs) => lhs.order - rhs.order)));
       }),
     });
   });
@@ -948,6 +941,10 @@ function init(context: IExtensionContext): boolean {
 
   context.registerDialog('external-changes',
                          LazyComponent(() => require('./views/ExternalChangeDialog')));
+  context.registerDialog('fix-deployment',
+    LazyComponent(() => require('./views/FixDeploymentDialog')), () => {
+
+    });
 
   context.registerReducer(['session', 'mods'], sessionReducer);
   context.registerReducer(['settings', 'mods'], settingsReducer);

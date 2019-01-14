@@ -37,6 +37,7 @@ import {
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import * as process from 'process';
+import * as winapi from 'winapi-bindings';
 
 interface IBaseProps {
   activators: IDeploymentMethod[];
@@ -134,7 +135,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       <form onSubmit={this.submitEvt}>
         <Panel>
           <PanelX.Body>
-            {this.renderPathCtrl(t('Mod Staging Folder ({{name}})', { replace: { name: gameName } }))}
+            {this.renderPathCtrl(t('Mod Staging Folder ({{name}})', { replace: { name: gameName } }), supportedActivators)}
             <Modal show={this.state.busy !== undefined} onHide={nop}>
               <Modal.Body>
                 <Jumbotron>
@@ -256,7 +257,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       })
       .then(() => {
         if (oldInstallPath !== newInstallPath) {
-          this.nextState.busy = t('Moving mod storage folder');
+          this.nextState.busy = t('Moving mod staging folder');
           return this.transferPath();
         } else {
           return Promise.resolve();
@@ -375,7 +376,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     }
   }
 
-  private renderPathCtrl(label: string): JSX.Element {
+  private renderPathCtrl(label: string, activators: IDeploymentMethod[]): JSX.Element {
     const { t, gameMode } = this.props;
     const { installPath } = this.state;
 
@@ -412,6 +413,14 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           </FlexLayout.Fixed>
           <FlexLayout.Fixed>
             <InputGroup.Button>
+              {((activators === undefined) || (activators.length === 0)) ? (
+                <Button
+                  onClick={this.suggestPath}
+                  tooltip={t('This will suggest a path that should allow you to deploy mods for the current game')}
+                >
+                  {t('Suggest')}
+                </Button>
+              ) : null}
               <BSButton
                 disabled={!this.pathsChanged() || (validationState.state === 'error')}
                 onClick={this.applyPaths}
@@ -432,6 +441,21 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       evt.preventDefault();
       this.applyPaths();
     }
+  }
+
+  private suggestPath = () => {
+    const { discovery } = this.props;
+    Promise.join(fs.statAsync(discovery.path), fs.statAsync(remote.app.getPath('userData')))
+      .then(stats => {
+        let suggestion: string;
+        if (stats[0].dev === stats[1].dev) {
+          suggestion = path.join('{USERDATA}', '{game}', 'mods');
+        } else {
+          const volume = winapi.GetVolumePathName(discovery.path);
+          suggestion = path.join(volume, 'Vortex Mods', '{game}');
+        }
+        this.changePath(suggestion);
+      });
   }
 
   private changePathEvt = (evt) => {

@@ -8,13 +8,14 @@ import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult'
 import LinkingDeployment, { IDeployment } from '../mod_management/LinkingDeployment';
 import { installPathForGame } from '../mod_management/selectors';
 import { IMod } from '../mod_management/types/IMod';
-import { IDeployedFile, IDeploymentMethod } from '../mod_management/types/IDeploymentMethod';
+import { IDeployedFile, IDeploymentMethod, IUnavailableReason } from '../mod_management/types/IDeploymentMethod';
 
 import * as Promise from 'bluebird';
 import * as I18next from 'i18next';
 import * as path from 'path';
 import turbowalk, { IEntry } from 'turbowalk';
 import * as util from 'util';
+import * as winapi from 'winapi-bindings';
 
 const LNK_EXT = '.vortex_lnk';
 
@@ -52,10 +53,10 @@ class DeploymentMethod extends LinkingDeployment {
       + ' - easier to break since the game directory contains real files.');
   }
 
-  public isSupported(state: any, gameId: string, typeId: string): string {
+  public isSupported(state: any, gameId: string, typeId: string): IUnavailableReason {
     const discovery: IDiscoveryResult = state.settings.gameMode.discovered[gameId];
     if ((discovery === undefined) || (discovery.path === undefined)) {
-      return 'No game discovery';
+      return { description: t => t('Game not discovered.') };
     }
 
     const instPath = installPathForGame(state, gameId);
@@ -68,15 +69,30 @@ class DeploymentMethod extends LinkingDeployment {
     } catch (err) {
       log('info', 'move deployment not supported due to lack of write access',
           { typeId, path: modPaths[typeId] });
-      return `Can\'t write to output directory: ${modPaths[typeId]}`;
+      return {
+        description: t => t('Can\'t write to output directory'),
+        order: 3,
+        solution: t => t('To resolve this problem, the current user account needs to be given write permission to "{{modPath}}".', {
+          replace: {
+            modPath: modPaths[typeId],
+          }
+        }),
+      };
     }
 
     try {
       if (fs.statSync(instPath).dev !== fs.statSync(modPaths[typeId]).dev) {
         // actually we could support this but it would be so slow it wouldn't make sense
-        return 'Works only if mods are installed on the same drive as the game. '
-          + 'You can go to settings and change the mod directory to the same drive '
-          + 'as the game.';
+        return {
+          description: t => t('Works only if mods are installed on the same drive as the game'),
+          order: 8,
+          solution: t => t('Please go to Settings->Mods and set the mod staging folder to be on the same '
+            + 'drive as the game ({{gameVolume}}).', {
+              replace: {
+                gameVolume: winapi.GetVolumePathName(modPaths[typeId]),
+              }
+            }),
+        };
       }
     } catch (err) {
       // this can happen when managing the the game for the first time
@@ -84,7 +100,7 @@ class DeploymentMethod extends LinkingDeployment {
         dir1: instPath || 'undefined', dir2: modPaths[typeId],
         err: util.inspect(err),
       });
-      return 'Game not fully initialized yet, this should disappear soon.';
+      return { description: t => t('Game not fully initialized yet, this should disappear soon.') };
     }
 
     return undefined;

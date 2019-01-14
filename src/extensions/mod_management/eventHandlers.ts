@@ -99,7 +99,7 @@ export function onGameModeActivated(
       api.showErrorNotification(
         'Deployment method no longer available',
         {
-          reason:
+          message:
           'The deployment method used with this game is no longer available. ' +
           'This probably means you removed the corresponding extension or ' +
           'it can no longer be loaded due to a bug.\n' +
