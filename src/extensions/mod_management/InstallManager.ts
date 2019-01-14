@@ -1025,7 +1025,6 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
   }
 
   private transferFile(source: string, destination: string, move: boolean): Promise<void> {
-    const command = move ? fs.renameAsync : fs.copyAsync;
     return fs.ensureDirAsync(path.dirname(destination))
       .then(() => move
         ? fs.renameAsync(source, destination)
