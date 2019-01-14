@@ -18,6 +18,7 @@ export { IDiscoveredTool } from '../types/IDiscoveredTool';
 export { IDiscoveryResult } from '../extensions/gamemode_management/types/IDiscoveryResult';
 export { IGameStored } from '../extensions/gamemode_management/types/IGameStored';
 export { IMod, IModReference, IModRule} from '../extensions/mod_management/types/IMod';
+export { IDeploymentMethod, IUnavailableReason } from '../extensions/mod_management/types/IDeploymentMethod';
 export { IToolStored } from '../extensions/gamemode_management/types/IToolStored';
 export { IProfile, IProfileMod } from '../extensions/profile_management/types/IProfile';
 export { IValidateKeyData } from '../extensions/nexus_integration/types/IValidateKeyData';

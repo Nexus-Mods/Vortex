@@ -520,6 +520,10 @@
     "contributor": {
       "path": "{nucleo}/users/{nucleo_simple}_a-share",
       "rmFill": true
+    },
+    "announcements": {
+      "path": "{nucleo}/user interface/{nucleo_simple}_megaphone",
+      "rmFill": true
     }
   }
 }

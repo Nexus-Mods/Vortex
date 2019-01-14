@@ -42,7 +42,7 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
     const { t } = this.props;
     return (
       <EmptyPlaceholder
-        icon='layout-list'
+        icon='announcements'
         text={t('No Announcements')}
         subtext={t('No news is good news!')}
       />
