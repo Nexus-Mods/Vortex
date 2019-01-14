@@ -2,6 +2,12 @@
   padding-right: $half-gutter;
 }
 
+.game-filter-input {
+  padding: 10px 10px;
+  margin-bottom: 5px !important;
+  border-color: $border-color;
+}
+
 #games-picker-tabs {
   .tab-content {
     // needs to be relative for the placeholder to show properly if a tab is empty
