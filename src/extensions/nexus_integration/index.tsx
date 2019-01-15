@@ -3,7 +3,7 @@ import { IDialogResult, showDialog } from '../../actions/notifications';
 import InputButton from '../../controls/InputButton';
 import { IExtensionApi, IExtensionContext, ILookupResult } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
-import { ProcessCanceled, DataInvalid, UserCanceled } from '../../util/CustomErrors';
+import { ProcessCanceled, DataInvalid, UserCanceled, HTTPError } from '../../util/CustomErrors';
 import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
@@ -43,7 +43,7 @@ import * as Promise from 'bluebird';
 import { remote } from 'electron';
 import * as fuzz from 'fuzzball';
 import * as I18next from 'i18next';
-import NexusT, { IDownloadURL, TimeoutError } from 'nexus-api';
+import NexusT, { IDownloadURL, TimeoutError, NexusError } from 'nexus-api';
 import * as path from 'path';
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
@@ -481,7 +481,12 @@ function init(context: IExtensionContextExt): boolean {
     const gameId = convertNXMIdReverse(games, url.gameId);
     const pageId = nexusGameId(gameById(state, gameId));
     return Promise.resolve().then(() => nexus.getDownloadURLs(url.modId, url.fileId, url.key, url.expires, pageId))
-      .then((res: IDownloadURL[]) => ({ urls: res.map(url => url.URI), meta: {} }));
+      .then((res: IDownloadURL[]) => ({ urls: res.map(url => url.URI), meta: {} }))
+      .catch(NexusError, err => {
+        const newError = new HTTPError(err.statusCode, err.message, err.request);
+        newError.stack = err.stack;
+        return Promise.reject(newError);
+      });
   });
 
   context.registerSettings('Download', LazyComponent(() => require('./views/Settings')));

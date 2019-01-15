@@ -392,7 +392,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
         }, actions);
       } else if ((download.failCause !== undefined) && truthy(download.failCause.message)) {
         onShowDialog('error', 'Download failed', {
-          message: download.failCause.message,
+          text: download.failCause.message,
         }, actions);
       } else {
         onShowDialog('error', 'Download failed', {

@@ -335,12 +335,16 @@ function renderCustomError(err: any) {
 }
 
 function prettifyHTTPError(err: HTTPError) {
-  return {
-  }[err.statusCode] || {
+  const fallback = () => ({
     text: err.statusMessage,
     message: err.url,
     allowReport: true,
-  }
+  });
+
+  let func = {
+  }[err.statusCode] || fallback;
+
+  return func();
 }
 
 /**
