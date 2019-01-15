@@ -130,10 +130,10 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
           </Media.Left>
           <Media.Body>
             {this.renderToolIcons(game, discoveredGame)}
-            {this.renderRefresh()}
           </Media.Body>
           <Media.Right>
             {this.renderAddButton()}
+            {this.renderRefresh()}
           </Media.Right>
         </Media>
       );
@@ -152,7 +152,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
     return (
       <IconButton
         icon={discovering ? 'spinner' : 'refresh'}
-        tooltip={t('Refresh')}
+        tooltip={t('Quick Discovery')}
         onClick={this.quickDiscovery}
         className='refresh-button'
       />

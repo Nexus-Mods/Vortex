@@ -23,18 +23,18 @@
     vertical-align: middle;
     flex-direction: row;
     position: relative;
-    
-    .refresh-button {
-      @extend .btn-embed;
-      position: absolute;
-      top: $slim-gutter;
-      right: $slim-gutter;
-    }
   }
   
   .media-right {
     display: flex;
     align-items: center;
+
+    .refresh-button {
+      @extend .btn-embed;
+      position: absolute;
+      top: 40px;
+      right: 12px;
+    }
   }
 }
 
