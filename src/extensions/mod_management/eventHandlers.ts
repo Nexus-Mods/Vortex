@@ -58,8 +58,8 @@ export function onGameModeActivated(
   const instPath = installPath(state);
 
   let activatorProm = fs.statAsync(instPath)
-    .catch(err => {
-      return api.showDialog('error', 'Mod Staging Folder missing!', {
+    .catch(err =>
+      api.showDialog('error', 'Mod Staging Folder missing!', {
         text: 'Your mod staging folder (see below) is missing. This might happen because you deleted it '
             + 'or - if you have it on a removable drive - it is not currently connected.\n'
             + 'If you continue now, a new staging folder will be created but all your previously managed mods '
@@ -82,12 +82,19 @@ export function onGameModeActivated(
           });
           return fallbackPurge(api)
             .then(() => fs.ensureDirWritableAsync(instPath, () => Promise.resolve()))
+            .catch(err => {
+              api.showDialog('error', 'Mod Staging Folder missing!', {
+                bbcode: 'The staging folder could not be created. You [b][color=red]have[/color][/b] to go to settings->mods and change it '
+                      + 'to a valid directory [b][color=red]before doing anything else[/color][/b] or you will get further error messages.',
+              }, [
+                { label: 'Close' },
+              ]);
+            })
             .finally(() => {
               api.dismissNotification(id);
             });
         }
-      });
-    });
+      }));
 
   if (configuredActivator === undefined) {
     // current activator is not valid for this game. This should only occur
@@ -119,7 +126,9 @@ export function onGameModeActivated(
               .catch(TemporaryError, err =>
                   api.showErrorNotification('Purge failed, please try again',
                     err.message, { allowReport: false }))
-              .catch(err => api.showErrorNotification('Purge failed', err)))
+              .catch(err => api.showErrorNotification('Purge failed', err, {
+                allowReport: ['ENOENT', 'ENOTFOUND'].indexOf(err.code) !== -1,
+              })))
           .finally(() => oldActivator.postPurge());
       }
 
