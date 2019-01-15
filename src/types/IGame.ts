@@ -48,7 +48,7 @@ export interface IGame extends ITool {
    * 
    * @param gamePath path where the game is installed.
    */
-  requiresLauncher?: (gamePath: string, startInfo: IStarterInfo) => Promise<{ launcher: string, addInfo?: any }>;
+  requiresLauncher?: (gamePath: string) => Promise<{ launcher: string, addInfo?: any }>;
 
   /**
    * returns the mod type extensions applicable to this game (all

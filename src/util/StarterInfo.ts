@@ -130,8 +130,9 @@ class StarterInfo implements IStarterInfo {
 
   public static run(info: StarterInfo, api: IExtensionApi, onShowError: OnShowErrorFunc) {
     const game: IGame = getGame(info.gameId);
-    const launcherPromise: Promise<{ launcher: string, addInfo?: any }> = game.requiresLauncher !== undefined 
-      ? game.requiresLauncher(path.dirname(info.exePath), info)
+    const launcherPromise: Promise<{ launcher: string, addInfo?: any }> =
+      (game.requiresLauncher !== undefined) && info.isGame
+      ? game.requiresLauncher(path.dirname(info.exePath))
         .catch(err => {
           onShowError('Failed to determine if launcher is required', err, true);
           return Promise.resolve(undefined);
