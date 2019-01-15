@@ -31,6 +31,7 @@ import opn from './opn';
 import { getReduxLog } from './reduxLogger';
 import ReduxProp from './ReduxProp';
 import relativeTime from './relativeTime';
+import epicGamesLauncher from './EpicGamesLauncher';
 import steam, { GameNotFound, ISteamEntry } from './Steam';
 import { bytesToString, copyFileAtomic, isChildPath, objDiff,
          removePersistent, setdefault } from './util';
@@ -48,6 +49,7 @@ export {
   Debouncer,
   delayed,
   deriveModInstallName as deriveInstallName,
+  epicGamesLauncher,
   extend,
   GameNotFound,
   getCurrentActivator,

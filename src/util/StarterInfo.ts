@@ -2,7 +2,7 @@ import { IDiscoveredTool } from '../types/IDiscoveredTool';
 import { getSafe } from '../util/storeHelper';
 import Steam from '../util/Steam';
 import { IGame } from '../types/IGame';
-import { log } from '../util/log';
+import opn from '../util/opn';
 
 import { IDiscoveryResult } from '../extensions/gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../extensions/gamemode_management/types/IGameStored';
@@ -56,7 +56,7 @@ class StarterInfo implements IStarterInfo {
     return StarterInfo.gameIcon(game.id, extensionPath, logoName);
   }
 
-  private static executeWithSteam(info: StarterInfo, api: IExtensionApi, args?: string[]): Promise<void> {
+  private static executeWithSteam(info: StarterInfo, api: IExtensionApi): Promise<void> {
     // Should never happen but it's worth adding 
     //  the game check just in case.
     if (!info.isGame) {
@@ -64,7 +64,7 @@ class StarterInfo implements IStarterInfo {
     }
 
     return new Promise((resolve, reject) => {
-      Steam.getSteamExecutionPath(path.dirname(info.exePath), args).then(execInfo => 
+      Steam.getSteamExecutionPath(path.dirname(info.exePath)).then(execInfo => 
         api.runExecutable(execInfo.steamPath, execInfo.arguments, {
           cwd: path.dirname(execInfo.steamPath),
           env: info.environment,
@@ -74,6 +74,10 @@ class StarterInfo implements IStarterInfo {
       .then(() => resolve())
       .catch(err => reject(err));
     })
+  }
+
+  private static executeWithEpic(info: StarterInfo, api: IExtensionApi, addInfo: any): Promise<void> {
+    return opn(`com.epicgames.launcher://apps/${addInfo}?action=launch&silent=true`).catch(err => null);
   }
 
   private static runGameExecutable(info: StarterInfo, api: IExtensionApi, onShowError: OnShowErrorFunc): Promise<void> {
@@ -126,19 +130,37 @@ class StarterInfo implements IStarterInfo {
 
   public static run(info: StarterInfo, api: IExtensionApi, onShowError: OnShowErrorFunc) {
     const game: IGame = getGame(info.gameId);
-    const steamPromise = game.requiresSteamStart !== undefined 
-      ? game.requiresSteamStart(path.dirname(info.exePath)).catch(err => {
-        log('warn', err);
-        return Promise.resolve(false);
-      })
-      : Promise.resolve(false);
+    const launcherPromise: Promise<{ launcher: string, addInfo?: any }> = game.requiresLauncher !== undefined 
+      ? game.requiresLauncher(path.dirname(info.exePath), info)
+        .catch(err => {
+          onShowError('Failed to determine if launcher is required', err, true);
+          return Promise.resolve(undefined);
+        })
+      : Promise.resolve(undefined);
 
-    return steamPromise.then(res => res 
-      ? StarterInfo.executeWithSteam(info, api).catch(err => {
-        log('warn', err);
+    return launcherPromise.then(res => {
+      if (res !== undefined) {
+        return StarterInfo.runThroughLauncher(res.launcher, info, api, res.addInfo)
+          .catch(err => {
+            onShowError('Failed to start game through launcher', err, true);
+            return StarterInfo.runGameExecutable(info, api, onShowError)
+          });
+      } else {
         return StarterInfo.runGameExecutable(info, api, onShowError)
-      })
-      : StarterInfo.runGameExecutable(info, api, onShowError));
+      }
+    });
+  }
+  
+  private static runThroughLauncher(launcher: string, info: StarterInfo, api: IExtensionApi, addInfo: any): Promise<void> {
+    let launchFunc = {
+      steam: this.executeWithSteam,
+      epic: this.executeWithEpic,
+    }[launcher];
+    if (launchFunc !== undefined) {
+      return launchFunc(info, api, addInfo);
+    } else {
+      return Promise.reject(new Error(`Unsupported launcher ${launcher}`));
+    }
   }
 
   private static gameIcon(gameId: string, extensionPath: string, logo: string) {

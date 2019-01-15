@@ -1,4 +1,5 @@
 import { IModType } from '../extensions/gamemode_management/types/IModType';
+import { IStarterInfo } from '../util/StarterInfo';
 
 import { IDiscoveryResult, IMod } from './IState';
 import { ITool } from './ITool';
@@ -41,14 +42,13 @@ export interface IGame extends ITool {
   getModPaths?: (gamePath: string) => { [typeId: string]: string };
 
   /**
-   * Determine whether the game needs to be executed via Steam
+   * Determine whether the game needs to be executed via a launcher, like Steam or EpicGamesLauncher
    * 
-   * If this returns true, Vortex will attempt to start up the game
-   * using Steam's CLI applaunch command.
+   * If this returns a value, Vortex will use appropriate code for that launcher
    * 
    * @param gamePath path where the game is installed.
    */
-  requiresSteamStart?: (gamePath: string) => Promise<boolean>;
+  requiresLauncher?: (gamePath: string, startInfo: IStarterInfo) => Promise<{ launcher: string, addInfo?: any }>;
 
   /**
    * returns the mod type extensions applicable to this game (all
