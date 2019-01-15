@@ -152,7 +152,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
     return (
       <IconButton
         icon={discovering ? 'spinner' : 'refresh'}
-        tooltip={t('Quick Discovery')}
+        tooltip={t('Quickscan')}
         onClick={this.quickDiscovery}
         className='refresh-button'
       />

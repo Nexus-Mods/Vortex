@@ -60,7 +60,7 @@ class RSSDashlet extends ComponentEx<IProps, IComponentState> {
         <IconButton
           className='issues-refresh'
           icon='refresh'
-          tooltip={t('Refresh Issues')}
+          tooltip={t('Refresh')}
           onClick={this.refresh}
         />
 
