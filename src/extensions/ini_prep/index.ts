@@ -164,7 +164,7 @@ function bakeSettings(t: TranslationFunction,
           ini.data = deepMerge(ini.data, patchIni.data);
         }))
         .then(() => onApplySettings(iniFileName, ini))
-        .then(() => parser.write(iniFileName + '.baked', ini))
+        .then(() => fs.forcePerm(t, () => parser.write(iniFileName + '.baked', ini)))
         .then(() => fs.copyAsync(iniFileName + '.baked',
           iniFileName, { noSelfCopy: true })));
   }))
