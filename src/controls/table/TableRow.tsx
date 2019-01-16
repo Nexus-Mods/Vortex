@@ -47,7 +47,7 @@ class TableCell extends React.Component<ICellProps, { isOpen: boolean }> {
   }
 
   public shouldComponentUpdate(newProps: ICellProps, newState: { isOpen: boolean }) {
-    return (newProps.attribute.customRenderer !== undefined) && (this.props.rawData !== newProps.rawData)
+    return ((newProps.attribute.customRenderer !== undefined) && (this.props.rawData !== newProps.rawData))
         || this.props.data !== newProps.data
         || this.props.language !== newProps.language
         || this.state.isOpen !== newState.isOpen;

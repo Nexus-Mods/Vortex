@@ -7,7 +7,7 @@ import * as path from 'path';
 import * as semver from 'semvish';
 
 export interface IModLookupInfo {
-  id: string;
+  id?: string;
   fileMD5: string;
   fileSizeBytes: number;
   fileName: string;
@@ -17,15 +17,15 @@ export interface IModLookupInfo {
   version: string;
 }
 
-function testRef(mod: IModLookupInfo, ref: IModReference): boolean {
-  // if reference is by file hash, use only that
-  if ((ref.fileMD5 !== undefined)
-      && (mod.fileMD5 !== ref.fileMD5)) {
+function testRef(mod: IModLookupInfo, modId: string, ref: IModReference): boolean {
+  if ((ref.id !== undefined)
+    && (ref.id !== modId)) {
     return false;
   }
 
-  if ((ref.id !== undefined)
-    && (ref.id !== mod.id)) {
+  // if reference is by file hash, use only that
+  if ((ref.fileMD5 !== undefined)
+      && (mod.fileMD5 !== ref.fileMD5)) {
     return false;
   }
 
@@ -73,19 +73,18 @@ function testRef(mod: IModLookupInfo, ref: IModReference): boolean {
   return true;
 }
 
+
+
 export function testModReference(mod: IMod | IModLookupInfo, reference: IModReference) {
   if (mod === undefined) {
     return false;
   }
 
   if ((mod as any).attributes) {
-    const lookup: IModLookupInfo = {
-      id: mod.id,
-      ...(mod as IMod).attributes,
-    } as any;
-    return testRef(lookup, reference);
+    return testRef((mod as IMod).attributes as IModLookupInfo, mod.id, reference);
   } else {
-    return testRef(mod as IModLookupInfo, reference);
+    const lookup = mod as IModLookupInfo;
+    return testRef(lookup, lookup.id, reference);
   }
 }
 

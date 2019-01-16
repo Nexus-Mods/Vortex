@@ -49,6 +49,7 @@
   overflow-y: auto;
   flex: 1 1 0%;
   margin-right: $half-gutter;
+  will-change: transform;
 
   .xthead {
     .xth {

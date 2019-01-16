@@ -100,6 +100,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   // keyboard
   private static SCROLL_OFFSET = 100;
   private static SCROLL_DURATION = 200;
+  // delay certain actions (like hiding offscreen items) until after scrolling ends.
+  // this improves scroll smoothness at the expense of memory
+  private static SCROLL_DEBOUNCE = 1000;
 
   private mVisibleAttributes: ITableAttribute[];
   private mHeadRef: HTMLElement;
@@ -114,6 +117,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private mUpdateInProgress: boolean = false;
   private mNextState: IComponentState = undefined;
   private mNextVisibility: { [id: string]: boolean } = {};
+  private mDelayedVisibility: { [id: string]: boolean } = {};
+  private mDelayedVisibilityTimer: NodeJS.Timer;
+  private mLastScroll: number;
   private mWillSetVisibility: boolean = false;
   private mMounted: boolean = false;
   private mNoShrinkColumns: { [attributeId: string]: HeaderCell } = {};
@@ -226,9 +232,6 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     const actionHeader = this.renderTableActions(hasActions);
     const openClass = detailsOpen ? 'open' : 'closed';
 
-    const scrollOffset = this.mScrollRef !== undefined ? this.mScrollRef.scrollTop : 0;
-    const headerStyle = { transform: `translate(0, ${scrollOffset}px)` };
-
     const filteredLength = sortedRows !== undefined ? sortedRows.length : undefined;
     const totalLength = Object.keys(data).length;
     const filterActive = (filteredLength !== undefined) && (filteredLength < totalLength);
@@ -248,7 +251,6 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
               {showHeader === false ? null : <THead
                 className='table-header'
                 domRef={this.setHeadRef}
-                style={headerStyle}
               >
                 <TR>
                   {this.mVisibleAttributes.map(this.renderHeaderField)}
@@ -705,8 +707,13 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private setRowVisible = (rowId: string, visible: boolean) => {
-    this.mNextVisibility[rowId] = visible;
-    this.triggerUpdateVisibility();
+    if (visible || (this.mDelayedVisibilityTimer === undefined)) {
+      this.mNextVisibility[rowId] = visible;
+      this.mDelayedVisibility[rowId] = visible;
+      this.triggerUpdateVisibility();
+    } else {
+      this.mDelayedVisibility[rowId] = visible;
+    }
   }
 
   private triggerUpdateVisibility() {
@@ -716,6 +723,16 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         this.mWillSetVisibility = false;
         this.updateState(setSafe(this.mNextState, ['rowVisibility'], this.mNextVisibility));
       });
+    }
+  }
+
+  private postScroll() {
+    if ((Date.now() - this.mLastScroll) < SuperTable.SCROLL_DEBOUNCE) {
+      this.mDelayedVisibilityTimer = setTimeout(() => this.postScroll(), SuperTable.SCROLL_DEBOUNCE + 100);
+    } else {
+      this.mDelayedVisibilityTimer = undefined;
+      this.mNextVisibility = this.mDelayedVisibility
+      this.triggerUpdateVisibility();
     }
   }
 
@@ -744,7 +761,11 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     }
   }
 
-  private translateHeader = (event) => {
+  private onScroll = (event) => {
+    this.mLastScroll = Date.now();
+    if (this.mDelayedVisibilityTimer === undefined) {
+      this.mDelayedVisibilityTimer = setTimeout(() => this.postScroll(), SuperTable.SCROLL_DEBOUNCE + 100);
+    }
     window.requestAnimationFrame(() => {
       if ((this.mHeadRef !== undefined) && (this.mHeadRef !== null)) {
         const transform = `translateY(${event.target.scrollTop}px)`;
@@ -765,10 +786,10 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     }
 
     // not sure if this is necessary, I guess not
-    ref.removeEventListener('scroll', this.translateHeader);
+    ref.removeEventListener('scroll', this.onScroll);
 
     // translate the header so that it remains in view during scrolling
-    ref.addEventListener('scroll', this.translateHeader);
+    ref.addEventListener('scroll', this.onScroll);
     this.mScrollRef = ref;
   }
 
