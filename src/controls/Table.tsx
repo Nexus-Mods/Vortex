@@ -102,7 +102,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private static SCROLL_DURATION = 200;
   // delay certain actions (like hiding offscreen items) until after scrolling ends.
   // this improves scroll smoothness at the expense of memory
-  private static SCROLL_DEBOUNCE = 1000;
+  private static SCROLL_DEBOUNCE = 500;
 
   private mVisibleAttributes: ITableAttribute[];
   private mHeadRef: HTMLElement;
@@ -731,7 +731,10 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       this.mDelayedVisibilityTimer = setTimeout(() => this.postScroll(), SuperTable.SCROLL_DEBOUNCE + 100);
     } else {
       this.mDelayedVisibilityTimer = undefined;
-      this.mNextVisibility = this.mDelayedVisibility
+      this.mNextVisibility = this.mDelayedVisibility;
+      const transform = `translateY(${this.mScrollRef.scrollTop}px)`;
+      this.mHeadRef.style.transform = transform;
+      this.mHeadRef.style.visibility = 'initial';
       this.triggerUpdateVisibility();
     }
   }
@@ -768,8 +771,11 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     }
     window.requestAnimationFrame(() => {
       if ((this.mHeadRef !== undefined) && (this.mHeadRef !== null)) {
-        const transform = `translateY(${event.target.scrollTop}px)`;
-        this.mHeadRef.style.transform = transform;
+        // const transform = `translateY(${event.target.scrollTop}px)`;
+        // this.mHeadRef.style.transform = transform;
+        if (event.target.scrollTop > this.mHeadRef.clientHeight) {
+          this.mHeadRef.style.visibility = 'hidden';
+        }
       }
       if (truthy(this.mPinnedRef)) {
         this.mPinnedRef.className = event.target.scrollTop === 0 ? 'table-pinned' : 'table-pinned-hidden';
