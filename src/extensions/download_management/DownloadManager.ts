@@ -197,27 +197,27 @@ class DownloadWorker {
   }
 
   private handleError(err) {
-    if (!this.mEnded) {
-      log('warn', 'chunk error', { id: this.mJob.workerId, err, ended: this.mEnded });
+    if (this.mEnded) {
+      // don't report errors again
+      return;
     }
+    log('warn', 'chunk error', { id: this.mJob.workerId, err, ended: this.mEnded });
     if (this.mJob.errorCB !== undefined) {
       this.mJob.errorCB(err);
     }
-    if (this.mEnded) {
-      if (this.mRequest !== undefined) {
-        this.mRequest.abort();
-      }
-      if ((['ESOCKETTIMEDOUT', 'ECONNRESET'].indexOf(err.code) !== -1)
-          && !this.mEnded
-          && (this.mDataHistory.length > 0)) {
-        // as long as we made progress on this chunk, retry
-        this.mJob.url().then(jobUrl => {
-          this.assignJob(this.mJob, jobUrl);
-        });
-      } else {
-        this.mEnded = true;
-        this.mFinishCB(false);
-      }
+    if (this.mRequest !== undefined) {
+      this.mRequest.abort();
+    }
+    if ((['ESOCKETTIMEDOUT', 'ECONNRESET'].indexOf(err.code) !== -1)
+        && !this.mEnded
+        && (this.mDataHistory.length > 0)) {
+      // as long as we made progress on this chunk, retry
+      this.mJob.url().then(jobUrl => {
+        this.assignJob(this.mJob, jobUrl);
+      });
+    } else {
+      this.mEnded = true;
+      this.mFinishCB(false);
     }
   }
 

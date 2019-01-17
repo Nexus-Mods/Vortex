@@ -176,18 +176,7 @@ export class DownloadObserver {
             });
         })
         .catch((err: any) => {
-          const message = this.translateError(err);
-          log('warn', 'download failed', {message: message, err: util.inspect(err)});
-
-          this.mApi.store.dispatch(finishDownload(id, 'failed', { message }));
-          if (callback !== undefined) {
-            callback(err, id);
-          } else {
-            // only report error if there was no callback, otherwise it's the job of the caller to report
-            showError(this.mApi.store.dispatch, 'Download failed', message, {
-              allowReport: false,
-            });
-          }
+          this.handleDownloadError(err, id, callback);
         });
   }
 
@@ -312,30 +301,39 @@ export class DownloadObserver {
       this.mManager.resume(downloadId, fullPath, download.urls,
                            download.received, download.size, download.startTime, download.chunks,
                            this.genProgressCB(downloadId))
-          .then(res => {
-            log('debug', 'download finished (resumed)', { file: res.filePath });
-            this.handleDownloadFinished(downloadId, callback, res);
-          })
-          .catch(UserCanceled, err => {
-            this.mApi.store.dispatch(removeDownload(downloadId));
-            if (callback !== undefined) {
-              callback(err, downloadId);
-            }
-          })
-         .catch(err => {
-            const message = this.translateError(err);
+        .then(res => {
+          log('debug', 'download finished (resumed)', { file: res.filePath });
+          this.handleDownloadFinished(downloadId, callback, res);
+        })
+        .catch(UserCanceled, err => {
+          this.mApi.store.dispatch(removeDownload(downloadId));
+          if (callback !== undefined) {
+            callback(err, downloadId);
+          }
+        })
+        .catch(err => this.handleDownloadError(err, downloadId, callback));
+    }
+  }
 
-            this.mApi.store.dispatch(finishDownload(downloadId, 'failed', {
-              message }));
-            if (callback !== undefined) {
-              callback(err, downloadId);
-            } else {
-              // only report error if there was no callback, otherwise it's the job of the caller to report
-              showError(this.mApi.store.dispatch, 'Download failed', message, {
-                allowReport: false,
-              });
-            }
-          });
+  private handleDownloadError(err: any, downloadId: string, callback: (err: Error, id?: string) => void) {
+    if (['ESOCKETTIMEDOUT', 'ECONNRESET'].indexOf(err.code) !== -1) {
+      // may be resumable
+      // this.mManager.pause(downloadId);
+      callback(null, downloadId);
+    } else {
+      const message = this.translateError(err);
+
+      this.mApi.store.dispatch(finishDownload(downloadId, 'failed', {
+        message
+      }));
+      if (callback !== undefined) {
+        callback(err, downloadId);
+      } else {
+        // only report error if there was no callback, otherwise it's the job of the caller to report
+        showError(this.mApi.store.dispatch, 'Download failed', message, {
+          allowReport: false,
+        });
+      }
     }
   }
 }
