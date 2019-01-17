@@ -186,41 +186,61 @@ function bringToFront() {
 
 let cancelLogin: () => void;
 
-function requestLogin(api: IExtensionApi, callback: (err: Error) => void) {
-  let id: string;
+function genId() {
   try {
     const uuid = require('uuid');
-    id = uuid.v4();
+    return uuid.v4();
   } catch(err) {
     // odd, still unidentified bugs where bundled modules fail to load. 
     log('warn', 'failed to import uuid module', err.message);
     const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    id = Array.apply(null, Array(10)).map(() => chars[Math.floor(Math.random() * chars.length)]).join('');
+    return Array.apply(null, Array(10)).map(() => chars[Math.floor(Math.random() * chars.length)]).join('');
     // the probability that this fails for another user at exactly the same time and they both get the same
     // random number is practically 0
   }
+}
 
+interface INexusLoginMessage {
+  id: string;
+  appid: string;
+  protocol: number;
+  token?: string;
+}
+
+function requestLogin(api: IExtensionApi, callback: (err: Error) => void) {
   const stackErr = new Error();
+
+  let connection: WebSocket;
+
+  let loginMessage: INexusLoginMessage = {
+    id: genId(),
+    appid: 'Vortex',
+    protocol: 2,
+  };
+
 
   let keyReceived: boolean = false;
   let connectionAlive: boolean = true;
-  let errorReported: boolean = false;
-  try {
-    const connection = new WebSocket('wss://sso.nexusmods.com')
+  let error: Error;
+  let attempts = 5;
+
+  const connect = () => {
+    connection = new WebSocket('wss://sso.nexusmods.com')
       .on('open', () => {
         cancelLogin = () => {
           connection.close();
         }
-        connection.send(JSON.stringify({
-          id, appid: 'Vortex',
-        }), err => {
-          api.store.dispatch(setLoginId(id));
+        connection.send(JSON.stringify(loginMessage), err => {
+          api.store.dispatch(setLoginId(loginMessage.id));
           if (err) {
             api.showErrorNotification('Failed to start login', err);
             connection.close();
           }
         });
-        opn(`https://www.nexusmods.com/sso?id=${id}`).catch(err => undefined);
+        // open the authorization page - but not on reconnects!
+        if (loginMessage.token === undefined) {
+          opn(`https://www.nexusmods.com/sso?id=${loginMessage.id}`).catch(err => undefined);
+        }
         const keepAlive = setInterval(() => {
           if (!connectionAlive) {
             connection.terminate();
@@ -233,31 +253,66 @@ function requestLogin(api: IExtensionApi, callback: (err: Error) => void) {
         }, 30000);
       })
       .on('close', (code: number, reason: string) => {
-        api.store.dispatch(setLoginId(undefined));
-        cancelLogin = undefined;
-        bringToFront();
-        if (!keyReceived && !errorReported) {
-          callback((code === 1005)
-            ? new UserCanceled()
-            : new ProcessCanceled(`Log-in connection closed prematurely (Code ${code})`));
+        if (!keyReceived) {
+          if (code === 1005) {
+            api.store.dispatch(setLoginId(undefined));
+            cancelLogin = undefined;
+            bringToFront();
+            callback(new UserCanceled());
+          } else if (attempts-- > 0) {
+            // automatic reconnect
+            connect();
+          } else {
+            api.store.dispatch(setLoginId(undefined));
+            cancelLogin = undefined;
+            bringToFront();
+            if (error !== undefined) {
+              callback(error);
+            } else {
+              let error = new ProcessCanceled(`Log-in connection closed prematurely (Code ${code})`);
+              error.stack = stackErr.stack;
+              callback(error);
+            }
+          }
         }
       })
       .on('pong', () => {
         connectionAlive = true;
+        attempts = 5;
       })
       .on('message', data => {
-        connection.close();
-        api.store.dispatch(setUserAPIKey(data.toString()));
-        bringToFront();
-        callback(null);
-        keyReceived = true;
+        try {
+          const response = JSON.parse(data.toString());
+          
+          if (response.success) {
+              if (response.data.connection_token !== undefined) {
+                loginMessage.token = response.data.connection_token;
+              } else if (response.data.api_key !== undefined) {
+                connection.close();
+                api.store.dispatch(setLoginId(undefined));
+                api.store.dispatch(setUserAPIKey(response.data.api_key));
+                bringToFront();
+                keyReceived = true;
+                callback(null);
+              }
+          } else {
+            const err = new Error(response.error);
+            err.stack = stackErr.stack;
+            callback(err);
+          }
+        } catch (err) {
+          err.stack = stackErr.stack;
+          callback(err);
+        }
       })
       .on('error', err => {
+        error = err;
         connection.close();
-        errorReported = true;
-        err.stack = (err.stack || '') + '\nRequest Stack:\n' + stackErr.stack;
-        callback(err);
       });
+  }
+
+  try {
+    connect();
   } catch (err) {
     callback(err);
   }
