@@ -103,7 +103,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private static SCROLL_DURATION = 200;
   // delay certain actions (like hiding offscreen items) until after scrolling ends.
   // this improves scroll smoothness at the expense of memory
-  private static SCROLL_DEBOUNCE = 500;
+  private static SCROLL_DEBOUNCE = 5000;
 
   private mVisibleAttributes: ITableAttribute[];
   private mPinnedRef: HTMLElement;
