@@ -32,14 +32,6 @@ function ensureIniBackups(t: TranslationFunction, gameMode: string,
       copy => fs.statAsync(copy)
         .catch(err =>
           fs.copyAsync(file, copy, { noSelfCopy: true })
-            .then(() => {
-              try {
-                winapi.SetFileAttributes(copy, ['normal']);
-                return Promise.resolve();
-              } catch (err) {
-                return Promise.reject(err);
-              }
-            })
             .catch(copyErr => {
               if (copyErr.code === 'ENOENT') {
                 log('warn', 'ini file missing', file);
