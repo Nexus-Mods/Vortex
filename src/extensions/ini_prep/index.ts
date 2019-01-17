@@ -21,7 +21,6 @@ import * as Promise from 'bluebird';
 import { TranslationFunction } from 'i18next';
 import * as path from 'path';
 import IniParser, {WinapiFormat, IniFile} from 'vortex-parse-ini';
-import * as winapi from 'winapi-bindings';
 
 function ensureIniBackups(t: TranslationFunction, gameMode: string,
                           discovery: IDiscoveryResult): Promise<void> {
@@ -125,18 +124,6 @@ function bakeSettings(t: TranslationFunction,
   const baseFileNames = baseFiles.map(name => path.basename(name).toLowerCase());
   const parser = new IniParser(genIniFormat(format));
 
-  const copyBakedFile = (source, destination) => {
-    return fs.copyAsync(source, destination, { noSelfCopy: true })
-      .then(() => {
-        try {
-          winapi.SetFileAttributes(destination, ['normal']);
-          return Promise.resolve();
-        } catch (err) {
-          return Promise.reject(err);
-        }
-      })
-  }
-
   // get a list of all tweaks we need to apply
   return Promise.each(mods, mod => {
     if (mod.installationPath === undefined) {
@@ -165,11 +152,11 @@ function bakeSettings(t: TranslationFunction,
         .catch(err => (err.code === 'ENOENT')
           ? Promise.resolve()
           : Promise.reject(err))
-        .then(() => copyBakedFile(iniFileName + '.base', iniFileName + '.baked')
+        .then(() => fs.copyAsync(iniFileName + '.base', iniFileName + '.baked', { noSelfCopy: true })
           // base might not exist, in that case copy from the original ini
           .catch(err => (err.code === 'ENOENT')
             ? fs.copyAsync(iniFileName, iniFileName + '.base')
-              .then(() => copyBakedFile(iniFileName, iniFileName + '.baked'))
+              .then(() => fs.copyAsync(iniFileName, iniFileName + '.baked', { noSelfCopy: true }))
             : Promise.reject(err))))
       .then(() => parser.read(iniFileName + '.baked'))
       .then(ini => Promise.each(enabledTweaks[baseName] || [],
@@ -177,7 +164,8 @@ function bakeSettings(t: TranslationFunction,
           ini.data = deepMerge(ini.data, patchIni.data);
         }))
         .then(() => onApplySettings(iniFileName, ini))
-        .then(() => fs.forcePerm(t, () => parser.write(iniFileName + '.baked', ini)))
+        .then(() => fs.forcePerm(t, () => parser.write(iniFileName + '.baked', ini), 
+                                    () => fs.ensureFileWritableAsync(iniFileName + '.baked')))
         .then(() => fs.copyAsync(iniFileName + '.baked',
           iniFileName, { noSelfCopy: true })));
   }))

@@ -25,6 +25,7 @@ import * as rimraf from 'rimraf';
 import { generate as shortid } from 'shortid';
 import { runElevated } from 'vortex-run';
 import wholocks from 'wholocks';
+import { access } from 'fs';
 
 const dialog = remote !== undefined ? remote.dialog : dialogIn;
 
@@ -454,55 +455,77 @@ export function ensureDirWritableAsync(dirPath: string,
     });
 }
 
-export function forcePerm<T>(t: I18next.TranslationFunction, op: () => PromiseBB<T>): PromiseBB<T> {
+export function ensureFileWritableAsync(filePath: string): PromiseBB<void> {
+  return new PromiseBB<void>((resolve, reject) => {
+    access(filePath, fs.constants.W_OK, (err) => {
+      if (err && (err.code === 'EPERM')) {
+        return fs.chmodAsync(filePath, parseInt('0777', 8))
+          .then(() => resolve())
+          .catch(modErr => reject(modErr))
+      } else {
+        return resolve();
+      }
+    });
+  });
+}
+
+export function forcePerm<T>(t: I18next.TranslationFunction, 
+                             op: () => PromiseBB<T>, 
+                             fix?: () => PromiseBB<T>): PromiseBB<T> {
+  const raiseUACDialog = (err): PromiseBB<T> => {
+    const choice = dialog.showMessageBox(
+      remote !== undefined ? remote.getCurrentWindow() : null, {
+      title: 'Access denied (2)',
+      message: t('Vortex needs to access "{{ fileName }}" but doesn\'t have permission to.\n'
+               + 'If your account has admin rights Vortex can unlock the file for you. '
+               + 'Windows will show an UAC dialog.',
+        { replace: { fileName: err.path } }),
+      buttons: [
+        'Cancel',
+        'Retry',
+        'Give permission',
+      ],
+      noLink: true,
+      type: 'warning',
+    });
+    if (choice === 1) { // Retry
+      return forcePerm(t, op);
+    } else if (choice === 2) { // Give Permission
+      let filePath = err.path;
+      const userId = getUserId();
+      return fs.statAsync(err.path)
+        .catch((statErr) => {
+          if (statErr.code === 'ENOENT') {
+            filePath = path.dirname(filePath);
+          }
+          return PromiseBB.resolve();
+        })
+        .then(() => elevated((ipcPath, req: NodeRequireFunction) => {
+          // tslint:disable-next-line:no-shadowed-variable
+          const { allow } = req('permissions');
+          return allow(filePath, userId, 'rwx');
+        }, { filePath, userId })
+          .catch(elevatedErr => {
+            if (elevatedErr.message.indexOf('The operation was canceled by the user') !== -1) {
+              return Promise.reject(new UserCanceled());
+            }
+            // if elevation failed, return the original error because the one from
+            // elevate, while interesting as well, would make error handling too complicated
+            log('error', 'failed to acquire permission', elevatedErr.message);
+            return Promise.reject(err);
+          }))
+        .then(() => forcePerm(t, op));
+    } else {
+      return PromiseBB.reject(new UserCanceled());
+    }
+  }
+
   return op()
     .catch(err => {
       if ((err.code === 'EPERM') || (err.errno === 5)) {
-        const choice = dialog.showMessageBox(
-          remote !== undefined ? remote.getCurrentWindow() : null, {
-          title: 'Access denied (2)',
-          message: t('Vortex needs to access "{{ fileName }}" but doesn\'t have permission to.\n'
-                   + 'If your account has admin rights Vortex can unlock the file for you. '
-                   + 'Windows will show an UAC dialog.',
-            { replace: { fileName: err.path } }),
-          buttons: [
-            'Cancel',
-            'Retry',
-            'Give permission',
-          ],
-          noLink: true,
-          type: 'warning',
-        });
-        if (choice === 1) { // Retry
-          return forcePerm(t, op);
-        } else if (choice === 2) { // Give Permission
-          let filePath = err.path;
-          const userId = getUserId();
-          return fs.statAsync(err.path)
-            .catch((statErr) => {
-              if (statErr.code === 'ENOENT') {
-                filePath = path.dirname(filePath);
-              }
-              return PromiseBB.resolve();
-            })
-            .then(() => elevated((ipcPath, req: NodeRequireFunction) => {
-              // tslint:disable-next-line:no-shadowed-variable
-              const { allow } = req('permissions');
-              return allow(filePath, userId, 'rwx');
-            }, { filePath, userId })
-              .catch(elevatedErr => {
-                if (elevatedErr.message.indexOf('The operation was canceled by the user') !== -1) {
-                  return Promise.reject(new UserCanceled());
-                }
-                // if elevation failed, return the original error because the one from
-                // elevate, while interesting as well, would make error handling too complicated
-                log('error', 'failed to acquire permission', elevatedErr.message);
-                return Promise.reject(err);
-              }))
-            .then(() => forcePerm(t, op));
-        } else {
-          return PromiseBB.reject(new UserCanceled());
-        }
+        return fix !== undefined 
+          ? fix().then(() => forcePerm(t, op)).catch(() => raiseUACDialog(err))
+          : raiseUACDialog(err);
       } else {
         return PromiseBB.reject(err);
       }
