@@ -93,7 +93,8 @@ function discoverSettingsChanges(t: TranslationFunction, gameMode: string,
       .then(ini => {
         const delta = objDiff(oldContent, newContent);
         applyDelta(ini.data, delta);
-        return fs.forcePerm(t, () => parser.write(iniFileName + '.base', ini));
+        const baseFile = iniFileName + '.base';
+        return fs.forcePerm(t, () => parser.write(baseFile, ini), baseFile);
       });
   })
   .then(() => undefined);
@@ -153,10 +154,12 @@ function bakeSettings(t: TranslationFunction,
           ? Promise.resolve()
           : Promise.reject(err))
         .then(() => fs.copyAsync(iniFileName + '.base', iniFileName + '.baked', { noSelfCopy: true })
+        //.then(() => fs.ensureFileWritableAsync(iniFileName + '.baked'))
           // base might not exist, in that case copy from the original ini
           .catch(err => (err.code === 'ENOENT')
             ? fs.copyAsync(iniFileName, iniFileName + '.base')
               .then(() => fs.copyAsync(iniFileName, iniFileName + '.baked', { noSelfCopy: true }))
+              //.then(() => fs.ensureFileWritableAsync(iniFileName + '.baked'))
             : Promise.reject(err))))
       .then(() => parser.read(iniFileName + '.baked'))
       .then(ini => Promise.each(enabledTweaks[baseName] || [],
@@ -164,8 +167,10 @@ function bakeSettings(t: TranslationFunction,
           ini.data = deepMerge(ini.data, patchIni.data);
         }))
         .then(() => onApplySettings(iniFileName, ini))
-        .then(() => fs.forcePerm(t, () => parser.write(iniFileName + '.baked', ini), 
-                                    () => fs.ensureFileWritableAsync(iniFileName + '.baked')))
+        .then(() => {
+          const bakedFile = iniFileName + '.baked';
+          return fs.forcePerm(t, () => parser.write(bakedFile, ini), bakedFile);
+        })
         .then(() => fs.copyAsync(iniFileName + '.baked',
           iniFileName, { noSelfCopy: true })));
   }))

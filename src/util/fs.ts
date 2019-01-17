@@ -25,7 +25,6 @@ import * as rimraf from 'rimraf';
 import { generate as shortid } from 'shortid';
 import { runElevated } from 'vortex-run';
 import wholocks from 'wholocks';
-import { access } from 'fs';
 
 const dialog = remote !== undefined ? remote.dialog : dialogIn;
 
@@ -455,23 +454,32 @@ export function ensureDirWritableAsync(dirPath: string,
     });
 }
 
-export function ensureFileWritableAsync(filePath: string): PromiseBB<void> {
-  return new PromiseBB<void>((resolve, reject) => {
-    access(filePath, fs.constants.W_OK, (err) => {
-      if (err && (err.code === 'EPERM')) {
-        return fs.chmodAsync(filePath, parseInt('0777', 8))
-          .then(() => resolve())
-          .catch(modErr => reject(modErr))
-      } else {
-        return resolve();
-      }
-    });
-  });
+export function ensureFileWritableAsync(filePath: string, skipTest?: boolean): PromiseBB<void> {
+  // It's beyond this function's scope to ensure that the file is executable;
+  //  read and write file attributes for all users should be sufficient on all platforms.
+  const wantedAttributes: number = parseInt('0666', 8);
+
+  const changeAttributes = (file): PromiseBB<void> => {
+    return fs.chmodAsync(file, wantedAttributes)
+      .then(() => PromiseBB.resolve())
+      .catch(err => PromiseBB.reject(err))
+  }
+
+  if (!!skipTest) {
+    return changeAttributes(filePath);
+  } else {
+    return fs.statAsync(filePath).then(stat => 
+      (stat.isFile()
+      && ((stat.mode & wantedAttributes) !== wantedAttributes))
+        ? changeAttributes(filePath)
+        : PromiseBB.resolve()
+    );
+  }
 }
 
-export function forcePerm<T>(t: I18next.TranslationFunction, 
-                             op: () => PromiseBB<T>, 
-                             fix?: () => PromiseBB<T>): PromiseBB<T> {
+export function forcePerm<T>(t: I18next.TranslationFunction,
+                             op: () => PromiseBB<T>,
+                             filePath?: string): PromiseBB<T> {
   const raiseUACDialog = (err): PromiseBB<T> => {
     const choice = dialog.showMessageBox(
       remote !== undefined ? remote.getCurrentWindow() : null, {
@@ -523,8 +531,8 @@ export function forcePerm<T>(t: I18next.TranslationFunction,
   return op()
     .catch(err => {
       if ((err.code === 'EPERM') || (err.errno === 5)) {
-        return fix !== undefined 
-          ? fix().then(() => forcePerm(t, op)).catch(() => raiseUACDialog(err))
+        return filePath !== undefined
+          ? ensureFileWritableAsync(filePath, true).then(() => forcePerm(t, op)).catch(() => raiseUACDialog(err))
           : raiseUACDialog(err);
       } else {
         return PromiseBB.reject(err);
