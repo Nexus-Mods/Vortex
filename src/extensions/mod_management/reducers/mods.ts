@@ -81,17 +81,17 @@ export const modsReducer: IReducerSpec = {
       let idx = -1;
       if (['after', 'before'].indexOf(rule.type) !== -1) {
         idx = getSafe(state, [gameId, modId, 'rules'], [])
-                  .findIndex((iterRule: IRule) => {
-                    const typeMatch =
-                        ['after', 'before'].indexOf(rule.type) !== -1;
-                    const filteredIter = _.omitBy(iterRule.reference, _.isUndefined);
-                    return typeMatch && _.isEqual(filteredRef, filteredIter);
-                  });
+          .findIndex((iterRule: IRule) => {
+            const typeMatch = ['after', 'before'].indexOf(rule.type) !== -1;
+            const filteredIter = _.omitBy(iterRule.reference, _.isUndefined);
+            return typeMatch && _.isEqual(filteredRef, filteredIter);
+          });
       } else {
         idx = getSafe(state, [gameId, modId, 'rules'], [])
-          .findIndex(iterRule => {
+          .findIndex((iterRule: IRule) => {
+            const typeMatch = rule.type === iterRule.type;
             const filteredIter = _.omitBy(iterRule.reference, _.isUndefined);
-            return _.isEqual(filteredRef, filteredIter);
+            return typeMatch && _.isEqual(filteredRef, filteredIter);
           });
       }
       if (idx !== -1) {
