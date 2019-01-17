@@ -164,10 +164,11 @@ class DialogCallbacks {
  * @returns
  */
 export function showDialog(type: DialogType, title: string,
-                           content: IDialogContent, actions: DialogActions) {
+                           content: IDialogContent, actions: DialogActions,
+                           inId?: string) {
   return (dispatch) => {
     return new Promise<IDialogResult>((resolve, reject) => {
-      const id = shortid();
+      const id = inId || shortid();
       const defaultAction = actions.find(iter => iter.default === true);
       const defaultLabel = defaultAction !== undefined ? defaultAction.label : undefined;
       dispatch(addDialog(id, type, title, content, defaultLabel,
@@ -203,11 +204,11 @@ export function showDialog(type: DialogType, title: string,
   };
 }
 
-export function closeDialog(id: string, actionKey: string, input: any) {
+export function closeDialog(id: string, actionKey?: string, input?: any) {
   return (dispatch) => {
     dispatch(dismissDialog(id));
     try {
-      if (DialogCallbacks.instance()[id] !== undefined) {
+      if ((actionKey !== undefined) && (DialogCallbacks.instance()[id] !== undefined)) {
         DialogCallbacks.instance()[id](actionKey, input);
       }
     } catch (err) {

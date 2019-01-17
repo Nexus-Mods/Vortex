@@ -77,6 +77,7 @@ import preStartDeployHook from './preStartDeployHook';
 import * as Promise from 'bluebird';
 import * as path from 'path';
 import * as Redux from 'redux';
+import shortid = require('shortid');
 
 let installManager: InstallManager;
 
@@ -232,6 +233,7 @@ function genSubDirFunc(game: IGame): (mod: IMod) => string {
 }
 
 function showCycles(api: IExtensionApi, cycles: string[][], gameId: string) {
+  const id = shortid();
   return api.showDialog('error', 'Cycles', {
     text: 'Dependency rules between your mods contain cycles, '
       + 'like "A after B" and "B after A". You need to remove one of the '
@@ -239,12 +241,13 @@ function showCycles(api: IExtensionApi, cycles: string[][], gameId: string) {
       + 'applied in the right order.',
     links: cycles.map((cycle, idx) => (
       { label: cycle.join(', '), action: () => {
+        api.closeDialog(id);
         api.events.emit('edit-mod-cycle', gameId, cycle);
       } }
     )),
   }, [
     { label: 'Close' },
-  ]);
+  ], id);
 }
 
 function genUpdateModDeployment() {

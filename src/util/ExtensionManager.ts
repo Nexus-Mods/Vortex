@@ -1,5 +1,5 @@
 import { forgetExtension, setExtensionEnabled } from '../actions/app';
-import { addNotification, dismissNotification } from '../actions/notifications';
+import { addNotification, dismissNotification, closeDialog } from '../actions/notifications';
 import { setExtensionLoadFailures } from '../actions/session';
 
 import { DialogActions, DialogType, IDialogContent, showDialog } from '../actions/notifications';
@@ -455,8 +455,11 @@ class ExtensionManager {
     };
 
     this.mApi.showDialog =
-      (type: DialogType, title: string, content: IDialogContent, actions: DialogActions) => {
-        return store.dispatch(showDialog(type, title, content, actions));
+      (type: DialogType, title: string, content: IDialogContent, actions: DialogActions, id?: string) => {
+        return store.dispatch(showDialog(type, title, content, actions, id));
+      };
+    this.mApi.closeDialog = (id: string, actionKey: string, input: any) => {
+        return store.dispatch(closeDialog(id, actionKey, input))
       };
     this.mApi.dismissNotification = (id: string) => {
       store.dispatch(dismissNotification(id));

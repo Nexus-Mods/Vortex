@@ -323,7 +323,12 @@ export interface IExtensionApi {
    * show a dialog
    */
   showDialog?: (type: DialogType, title: string, content: IDialogContent,
-                actions: DialogActions) => Promise<IDialogResult>;
+                actions: DialogActions, id?: string) => Promise<IDialogResult>;
+
+  /**
+   * close a dialog
+   */
+  closeDialog?: (id: string, actionKey?: string, input?: any) => void;
 
   /**
    * hides a notification by its id
