@@ -45,12 +45,23 @@
   background-color: darken($table-bg, 5%);
 }
 
+.table-header-pane {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: calc($half-gutter + $scrollbar-width);
+
+}
+
 .table-main-pane {
   overflow-y: auto;
   flex: 1 1 0%;
   margin-right: $half-gutter;
   will-change: transform;
+}
 
+.table-main-pane,
+.table-header-pane {
   .xthead {
     .xth {
       padding: $table-header-border-width 0px $table-header-border-width !important;
@@ -229,6 +240,7 @@
   flex-direction: row;
   overflow: hidden;
   height: 100%;
+  position: relative;
 }
 
 .table-container-inner {

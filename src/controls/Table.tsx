@@ -7,6 +7,7 @@ import {IRowState, IState, ITableState} from '../types/IState';
 import {ITableAttribute} from '../types/ITableAttribute';
 import {SortDirection} from '../types/SortDirection';
 import {ComponentEx, connect, extend, translate} from '../util/ComponentEx';
+import Debouncer from '../util/Debouncer';
 import {IExtensibleProps} from '../util/ExtensionProvider';
 import { log } from '../util/log';
 import smoothScroll from '../util/smoothScroll';
@@ -105,7 +106,6 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private static SCROLL_DEBOUNCE = 500;
 
   private mVisibleAttributes: ITableAttribute[];
-  private mHeadRef: HTMLElement;
   private mPinnedRef: HTMLElement;
   private mScrollRef: HTMLElement;
   private mRowRefs: { [id: string]: HTMLElement } = {};
@@ -119,6 +119,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private mNextVisibility: { [id: string]: boolean } = {};
   private mDelayedVisibility: { [id: string]: boolean } = {};
   private mDelayedVisibilityTimer: NodeJS.Timer;
+  private mProxyHeaderRef: HTMLElement;
+  private mVisibleHeaderRef: HTMLElement;
+  private mHeaderUpdateDebouncer: Debouncer;
   private mLastScroll: number;
   private mWillSetVisibility: boolean = false;
   private mMounted: boolean = false;
@@ -147,6 +150,11 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       }
       return null;
     });
+
+    this.mHeaderUpdateDebouncer = new Debouncer(() => {
+      this.updateColumnWidth();
+      return Promise.resolve();
+    }, 200, false);
   }
 
   public componentWillMount() {
@@ -220,21 +228,15 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     }
   }
 
+  public componentDidUpdate() {
+    this.mHeaderUpdateDebouncer.schedule();
+  }
+
   public render(): JSX.Element {
-    const { t, actions, data, showHeader, showDetails, tableId } = this.props;
-    const { detailsOpen, singleRowActions, sortedRows } = this.state;
+    const { showHeader, showDetails, tableId } = this.props;
+    const { detailsOpen } = this.state;
 
-    let hasActions = false;
-    if (actions !== undefined) {
-      hasActions = singleRowActions.length > 0;
-    }
-
-    const actionHeader = this.renderTableActions(hasActions);
     const openClass = detailsOpen ? 'open' : 'closed';
-
-    const filteredLength = sortedRows !== undefined ? sortedRows.length : undefined;
-    const totalLength = Object.keys(data).length;
-    const filterActive = (filteredLength !== undefined) && (filteredLength < totalLength);
 
     return (
       <div id={`table-${tableId}`} className='table-container'>
@@ -246,37 +248,65 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
             onKeyDown={this.handleKeyDown}
           >
             <Table hover>
+              {showHeader === false ? null : this.renderHeader(true)}
               {this.renderBody()}
-              {/* header below body so content in the table can't overlap the header */}
-              {showHeader === false ? null : <THead
-                className='table-header'
-                domRef={this.setHeadRef}
-              >
-                <TR>
-                  {this.mVisibleAttributes.map(this.renderHeaderField)}
-                  {actionHeader}
-                </TR>
-                {filterActive ? (
-                  <TR className='table-pinned' domRef={this.setPinnedRef}>
-                    <div>
-                      {t('This table is filtered, showing {{shown}}/{{hidden}} items.',
-                        { replace: { shown: filteredLength, hidden: totalLength } })}
-                      <Button onClick={this.clearFilters}>{t('Clear all filters')}</Button>
-                    </div>
-                  </TR>
-                ) : null}
-              </THead>
-              }
             </Table>
             {this.props.children}
           </div>
           {this.renderFooter()}
         </div>
+        {showHeader === false ? null : (
+          <div
+            className='table-header-pane'
+          >
+            <Table hover>
+              {this.renderHeader(false)}
+            </Table>
+          </div>)}
         {showDetails === false ? null : (
           <div className={`table-details-pane ${openClass}`}>
             {this.renderDetails()}
           </div>)}
       </div>
+    );
+  }
+
+  private renderHeader(proxy: boolean): JSX.Element {
+    const { t, actions, data } = this.props;
+    const { singleRowActions, sortedRows } = this.state;
+
+    let hasActions = false;
+    if (actions !== undefined) {
+      hasActions = singleRowActions.length > 0;
+    }
+
+    const filteredLength = sortedRows !== undefined ? sortedRows.length : undefined;
+    const totalLength = Object.keys(data).length;
+
+    const actionHeader = this.renderTableActions(hasActions);
+    const filterActive = (filteredLength !== undefined) && (filteredLength < totalLength);
+
+    return (
+      <THead
+        className='table-header'
+      >
+        <TR
+          domRef={proxy ? this.setProxyHeaderRef : this.setVisibleHeaderRef}
+        >
+
+          {this.mVisibleAttributes.map(attribute => this.renderHeaderField(attribute, proxy))}
+          {actionHeader}
+        </TR>
+        {filterActive ? (
+          <TR className='table-pinned' domRef={this.setPinnedRef}>
+            <div>
+              {t('This table is filtered, showing {{shown}}/{{hidden}} items.',
+                { replace: { shown: filteredLength, hidden: totalLength } })}
+              <Button onClick={this.clearFilters}>{t('Clear all filters')}</Button>
+            </div>
+          </TR>
+        ) : null}
+      </THead>
     );
   }
 
@@ -519,7 +549,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private renderHeaderField = (attribute: ITableAttribute): JSX.Element => {
+  private renderHeaderField = (attribute: ITableAttribute, proxy: boolean): JSX.Element => {
     const { t, filter } = this.props;
 
     const attributeState = this.getAttributeState(attribute);
@@ -548,7 +578,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
           doFilter={true}
           onSetSortDirection={this.setSortDirection}
           onSetFilter={this.setFilter}
-          ref={this.setHeaderCellRef}
+          ref={proxy ? this.setHeaderCellRef : undefined}
           t={t}
         >
           {attribute.filter !== undefined ? (
@@ -692,8 +722,24 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     return newSelection;
   }
 
-  private setHeadRef = ref => {
-    this.mHeadRef = ref;
+  private setProxyHeaderRef = ref => {
+    this.mProxyHeaderRef = ref;
+    this.mHeaderUpdateDebouncer.schedule();
+  }
+
+  private setVisibleHeaderRef = ref => {
+    this.mVisibleHeaderRef = ref;
+    this.mHeaderUpdateDebouncer.schedule();
+  }
+
+  private updateColumnWidth() {
+    if (!truthy(this.mProxyHeaderRef) || !truthy(this.mVisibleHeaderRef)) {
+      return;
+    }
+
+    this.mProxyHeaderRef.childNodes.forEach((node, index) => {
+      (this.mVisibleHeaderRef.childNodes.item(index) as HTMLElement).style.width = `${(node as HTMLElement).clientWidth}px`;
+    });
   }
 
   private setPinnedRef = ref => {
@@ -732,9 +778,6 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     } else {
       this.mDelayedVisibilityTimer = undefined;
       this.mNextVisibility = this.mDelayedVisibility;
-      const transform = `translateY(${this.mScrollRef.scrollTop}px)`;
-      this.mHeadRef.style.transform = transform;
-      this.mHeadRef.style.visibility = 'initial';
       this.triggerUpdateVisibility();
     }
   }
@@ -770,13 +813,6 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       this.mDelayedVisibilityTimer = setTimeout(() => this.postScroll(), SuperTable.SCROLL_DEBOUNCE + 100);
     }
     window.requestAnimationFrame(() => {
-      if ((this.mHeadRef !== undefined) && (this.mHeadRef !== null)) {
-        // const transform = `translateY(${event.target.scrollTop}px)`;
-        // this.mHeadRef.style.transform = transform;
-        if (event.target.scrollTop > this.mHeadRef.clientHeight) {
-          this.mHeadRef.style.visibility = 'hidden';
-        }
-      }
       if (truthy(this.mPinnedRef)) {
         this.mPinnedRef.className = event.target.scrollTop === 0 ? 'table-pinned' : 'table-pinned-hidden';
       }
