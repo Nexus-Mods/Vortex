@@ -10,6 +10,7 @@ class NXMUrl {
   private mFileId: number;
   private mKey: string;
   private mExpires: number;
+  private mUserId: number;
 
   constructor(input: string) {
     let parsed: URL;
@@ -29,6 +30,8 @@ class NXMUrl {
     this.mKey = parsed.searchParams.get('key') || undefined;
     const exp = parsed.searchParams.get('expires') || undefined;
     this.mExpires = exp !== undefined ? parseInt(exp, 10) : undefined;
+    const userId = parsed.searchParams.get('user_id') || undefined;
+    this.mUserId = userId !== undefined ? parseInt(userId, 10) : undefined;
   }
 
   public get gameId(): string {
@@ -55,6 +58,13 @@ class NXMUrl {
    */
   public get expires(): number {
     return this.mExpires;
+  }
+
+  /**
+   * returns the user id for whom the download was created
+   */
+  public get userId(): number {
+    return this.mUserId;
   }
 }
 

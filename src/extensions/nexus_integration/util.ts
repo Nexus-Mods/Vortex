@@ -97,7 +97,8 @@ export function startDownload(api: IExtensionApi, nexus: Nexus, nxmurl: string):
           title: 'Download failed',
           message: userName === undefined
             ? t('You need to be logged in to Nexus Mods.')
-            : t('The link was not created for this account ({{ userName }}).', {
+            : t('The link was not created for this account ({{ userName }}). You have to be logged into '
+                + 'nexusmods.com with the same account that you use in Vortex.', {
             replace: {
               userName,
             }

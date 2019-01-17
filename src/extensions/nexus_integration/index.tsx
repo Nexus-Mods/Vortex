@@ -532,6 +532,16 @@ function init(context: IExtensionContextExt): boolean {
       return Promise.reject(err);
     }
 
+    const userId: number = getSafe(state, ['persistent', 'nexus', 'userInfo', 'userId'], undefined);
+    if ((url.userId !== undefined) && (url.userId !== userId)) {
+      const userName: string = getSafe(state, ['persistent', 'nexus', 'userInfo', 'name'], undefined);
+      context.api.showErrorNotification('Invalid download links',
+        'The link was not created for this account ({{userName}}). You have to be logged into nexusmods.com with the same account '
+        + 'that you use in Vortex.',
+        { allowReport: false, replace: { userName } });
+      return Promise.reject(new ProcessCanceled('Wrong user id'));
+    }
+
     const games = knownGames(state);
     const gameId = convertNXMIdReverse(games, url.gameId);
     const pageId = nexusGameId(gameById(state, gameId));
