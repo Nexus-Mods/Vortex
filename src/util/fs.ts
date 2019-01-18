@@ -11,7 +11,7 @@
  * - ignoring ENOENT error when deleting a file.
  */
 
-import { UserCanceled, DataInvalid } from './CustomErrors';
+import { UserCanceled, DataInvalid, ProcessCanceled } from './CustomErrors';
 import { log } from './log';
 
 import * as PromiseBB from 'bluebird';
@@ -455,16 +455,18 @@ export function ensureDirWritableAsync(dirPath: string,
 }
 
 export function changeFileOwnership(filePath: string, stat: fs.Stats): PromiseBB<void> {
-  // Ask for forgiveness, not permission.
-  const readAndWriteOther = parseInt('0600', 8);
-  if ((process.platform === 'win32') 
-    || ((stat.mode & readAndWriteOther) === readAndWriteOther)) {
-    // This function is to be used with *nix ONLY and there's no point
-    //  in changing ownership if readAndWrite bits are already set for "other" users.
+  if (process.platform === 'win32') {
+    // This is a *nix only function.
     return PromiseBB.resolve();
   }
 
-  return (stat.uid !== process.getuid()) && (stat.gid !== process.getgid())
+  const readAndWriteOther = parseInt('0006', 8);
+  if ((stat.mode & readAndWriteOther) === readAndWriteOther) {
+    return PromiseBB.reject(new ProcessCanceled('Ownership change not required'));
+  }
+
+  // Ask for forgiveness, not permission.
+  return (stat.uid !== process.getuid()) || (stat.gid !== process.getgid())
     ? fs.chownAsync(filePath, process.getuid(), process.getgid()).catch(err => PromiseBB.reject(err))
     : PromiseBB.resolve();
 }
@@ -475,11 +477,12 @@ export function changeFileAttributes(filePath: string, wantedAttributes: number,
         const finalAttributes = stat.mode | wantedAttributes;
         return fs.chmodAsync(filePath, finalAttributes);
     })
+    .catch(ProcessCanceled, () => PromiseBB.resolve())
     .catch(err => PromiseBB.reject(err));
 }
 
 export function ensureFileWritableAsync(filePath: string): PromiseBB<void> {
-  const wantedAttributes = process.platform === 'win32' ? parseInt('0666', 8) : parseInt('0006', 8);
+  const wantedAttributes = process.platform === 'win32' ? parseInt('0666', 8) : parseInt('0600', 8);
   return fs.statAsync(filePath).then(stat => {
     if (!stat.isFile()) {
       return PromiseBB.reject(new DataInvalid(`${filePath} - is not a file!`));
@@ -493,9 +496,9 @@ export function ensureFileWritableAsync(filePath: string): PromiseBB<void> {
 
 export function forcePerm<T>(t: I18next.TranslationFunction,
                              op: () => PromiseBB<T>,
-                             file?: string): PromiseBB<T> {
+                             filePath?: string): PromiseBB<T> {
   const raiseUACDialog = (err): PromiseBB<T> => {
-    const fileToAccess = file !== undefined ? file : err.path;
+    let fileToAccess = filePath !== undefined ? filePath : err.path;
     const choice = dialog.showMessageBox(
       remote !== undefined ? remote.getCurrentWindow() : null, {
       title: 'Access denied (2)',
@@ -514,20 +517,19 @@ export function forcePerm<T>(t: I18next.TranslationFunction,
     if (choice === 1) { // Retry
       return forcePerm(t, op);
     } else if (choice === 2) { // Give Permission
-      let filePath = fileToAccess;
       const userId = getUserId();
       return fs.statAsync(fileToAccess)
         .catch((statErr) => {
           if (statErr.code === 'ENOENT') {
-            filePath = path.dirname(filePath);
+            fileToAccess = path.dirname(fileToAccess);
           }
           return PromiseBB.resolve();
         })
         .then(() => elevated((ipcPath, req: NodeRequireFunction) => {
           // tslint:disable-next-line:no-shadowed-variable
           const { allow } = req('permissions');
-          return allow(filePath, userId, 'rwx');
-        }, { filePath, userId })
+          return allow(fileToAccess, userId, 'rwx');
+        }, { fileToAccess, userId })
           .catch(elevatedErr => {
             if (elevatedErr.message.indexOf('The operation was canceled by the user') !== -1) {
               return Promise.reject(new UserCanceled());
@@ -545,13 +547,14 @@ export function forcePerm<T>(t: I18next.TranslationFunction,
 
   return op()
     .catch(err => {
-      const fileToAccess = file !== undefined ? file : err.path;
+      const fileToAccess = filePath !== undefined ? filePath : err.path;
       if ((err.code === 'EPERM') || (err.errno === 5)) {
-        const wantedAttributes = process.platform === 'win32' ? parseInt('0666', 8) : parseInt('0006', 8);
-        return fs.statAsync(file)
+        const wantedAttributes = process.platform === 'win32' ? parseInt('0666', 8) : parseInt('0600', 8);
+        return fs.statAsync(filePath)
           .then(stat => this.changeFileAttributes(fileToAccess, wantedAttributes, stat))
           .then(() => op())
           .catch(() => raiseUACDialog(err))
+          .catch(UserCanceled, () => undefined)
       } else {
         return PromiseBB.reject(err);
       }
