@@ -959,7 +959,13 @@ class ExtensionManager {
         return Promise.reject(err);
       })
       .catch(err => {
-        log('error', 'hook failed', err);
+        if (err instanceof UserCanceled) {
+          log('debug', 'start canceled by user');
+        } else if (err instanceof ProcessCanceled) {
+          log('debug', 'hook canceled start', err.message);
+        } else {
+          log('error', 'hook failed', err);
+        }
         return Promise.reject(err);
       }))
     .then(() => updated);
