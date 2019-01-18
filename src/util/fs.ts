@@ -11,7 +11,7 @@
  * - ignoring ENOENT error when deleting a file.
  */
 
-import { UserCanceled } from './CustomErrors';
+import { UserCanceled, DataInvalid } from './CustomErrors';
 import { log } from './log';
 
 import * as PromiseBB from 'bluebird';
@@ -454,40 +454,55 @@ export function ensureDirWritableAsync(dirPath: string,
     });
 }
 
-export function ensureFileWritableAsync(filePath: string, skipTest?: boolean): PromiseBB<void> {
-  // It's beyond this function's scope to ensure that the file is executable;
-  //  read and write file attributes for all users should be sufficient on all platforms.
-  const wantedAttributes: number = parseInt('0666', 8);
-
-  const changeAttributes = (file): PromiseBB<void> => {
-    return fs.chmodAsync(file, wantedAttributes)
-      .then(() => PromiseBB.resolve())
-      .catch(err => PromiseBB.reject(err))
+export function changeFileOwnership(filePath: string, stat: fs.Stats): PromiseBB<void> {
+  // Ask for forgiveness, not permission.
+  const readAndWriteOther = parseInt('0600', 8);
+  if ((process.platform === 'win32') 
+    || ((stat.mode & readAndWriteOther) === readAndWriteOther)) {
+    // This function is to be used with *nix ONLY and there's no point
+    //  in changing ownership if readAndWrite bits are already set for "other" users.
+    return PromiseBB.resolve();
   }
 
-  if (!!skipTest) {
-    return changeAttributes(filePath);
-  } else {
-    return fs.statAsync(filePath).then(stat => 
-      (stat.isFile()
-      && ((stat.mode & wantedAttributes) !== wantedAttributes))
-        ? changeAttributes(filePath)
-        : PromiseBB.resolve()
-    );
-  }
+  return (stat.uid !== process.getuid()) && (stat.gid !== process.getgid())
+    ? fs.chownAsync(filePath, process.getuid(), process.getgid()).catch(err => PromiseBB.reject(err))
+    : PromiseBB.resolve();
+}
+
+export function changeFileAttributes(filePath: string, wantedAttributes: number, stat: fs.Stats): PromiseBB<void> {
+    return this.changeFileOwnership(filePath, stat)
+      .then(() => {
+        const finalAttributes = stat.mode | wantedAttributes;
+        return fs.chmodAsync(filePath, finalAttributes);
+    })
+    .catch(err => PromiseBB.reject(err));
+}
+
+export function ensureFileWritableAsync(filePath: string): PromiseBB<void> {
+  const wantedAttributes = process.platform === 'win32' ? parseInt('0666', 8) : parseInt('0006', 8);
+  return fs.statAsync(filePath).then(stat => {
+    if (!stat.isFile()) {
+      return PromiseBB.reject(new DataInvalid(`${filePath} - is not a file!`));
+    }
+
+    return ((stat.mode & wantedAttributes) !== wantedAttributes)
+      ? this.changeFileAttributes(filePath, wantedAttributes, stat)
+      : PromiseBB.resolve();
+  });
 }
 
 export function forcePerm<T>(t: I18next.TranslationFunction,
                              op: () => PromiseBB<T>,
-                             filePath?: string): PromiseBB<T> {
+                             file?: string): PromiseBB<T> {
   const raiseUACDialog = (err): PromiseBB<T> => {
+    const fileToAccess = file !== undefined ? file : err.path;
     const choice = dialog.showMessageBox(
       remote !== undefined ? remote.getCurrentWindow() : null, {
       title: 'Access denied (2)',
       message: t('Vortex needs to access "{{ fileName }}" but doesn\'t have permission to.\n'
                + 'If your account has admin rights Vortex can unlock the file for you. '
                + 'Windows will show an UAC dialog.',
-        { replace: { fileName: err.path } }),
+        { replace: { fileName: fileToAccess } }),
       buttons: [
         'Cancel',
         'Retry',
@@ -499,9 +514,9 @@ export function forcePerm<T>(t: I18next.TranslationFunction,
     if (choice === 1) { // Retry
       return forcePerm(t, op);
     } else if (choice === 2) { // Give Permission
-      let filePath = err.path;
+      let filePath = fileToAccess;
       const userId = getUserId();
-      return fs.statAsync(err.path)
+      return fs.statAsync(fileToAccess)
         .catch((statErr) => {
           if (statErr.code === 'ENOENT') {
             filePath = path.dirname(filePath);
@@ -530,10 +545,13 @@ export function forcePerm<T>(t: I18next.TranslationFunction,
 
   return op()
     .catch(err => {
+      const fileToAccess = file !== undefined ? file : err.path;
       if ((err.code === 'EPERM') || (err.errno === 5)) {
-        return filePath !== undefined
-          ? ensureFileWritableAsync(filePath, true).then(() => forcePerm(t, op)).catch(() => raiseUACDialog(err))
-          : raiseUACDialog(err);
+        const wantedAttributes = process.platform === 'win32' ? parseInt('0666', 8) : parseInt('0006', 8);
+        return fs.statAsync(file)
+          .then(stat => this.changeFileAttributes(fileToAccess, wantedAttributes, stat))
+          .then(() => op())
+          .catch(() => raiseUACDialog(err))
       } else {
         return PromiseBB.reject(err);
       }
