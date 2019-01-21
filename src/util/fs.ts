@@ -11,7 +11,7 @@
  * - ignoring ENOENT error when deleting a file.
  */
 
-import { UserCanceled } from './CustomErrors';
+import { UserCanceled, DataInvalid, ProcessCanceled } from './CustomErrors';
 import { log } from './log';
 
 import * as PromiseBB from 'bluebird';
@@ -454,55 +454,107 @@ export function ensureDirWritableAsync(dirPath: string,
     });
 }
 
-export function forcePerm<T>(t: I18next.TranslationFunction, op: () => PromiseBB<T>): PromiseBB<T> {
+export function changeFileOwnership(filePath: string, stat: fs.Stats): PromiseBB<void> {
+  if (process.platform === 'win32') {
+    // This is a *nix only function.
+    return PromiseBB.resolve();
+  }
+
+  const readAndWriteOther = parseInt('0006', 8);
+  if ((stat.mode & readAndWriteOther) === readAndWriteOther) {
+    return PromiseBB.reject(new ProcessCanceled('Ownership change not required'));
+  }
+
+  // Ask for forgiveness, not permission.
+  return (stat.uid !== process.getuid()) && (stat.gid !== process.getgid())
+    ? fs.chownAsync(filePath, process.getuid(), stat.gid).catch(err => PromiseBB.reject(err))
+    : PromiseBB.resolve();
+}
+
+export function changeFileAttributes(filePath: string, wantedAttributes: number, stat: fs.Stats): PromiseBB<void> {
+    return this.changeFileOwnership(filePath, stat)
+      .then(() => {
+        const finalAttributes = stat.mode | wantedAttributes;
+        return fs.chmodAsync(filePath, finalAttributes);
+    })
+    .catch(ProcessCanceled, () => PromiseBB.resolve())
+    .catch(err => PromiseBB.reject(err));
+}
+
+export function ensureFileWritableAsync(filePath: string): PromiseBB<void> {
+  const wantedAttributes = process.platform === 'win32' ? parseInt('0666', 8) : parseInt('0600', 8);
+  return fs.statAsync(filePath).then(stat => {
+    if (!stat.isFile()) {
+      return PromiseBB.reject(new DataInvalid(`${filePath} - is not a file!`));
+    }
+
+    return ((stat.mode & wantedAttributes) !== wantedAttributes)
+      ? this.changeFileAttributes(filePath, wantedAttributes, stat)
+      : PromiseBB.resolve();
+  });
+}
+
+export function forcePerm<T>(t: I18next.TranslationFunction,
+                             op: () => PromiseBB<T>,
+                             filePath?: string): PromiseBB<T> {
+  const raiseUACDialog = (err): PromiseBB<T> => {
+    let fileToAccess = filePath !== undefined ? filePath : err.path;
+    const choice = dialog.showMessageBox(
+      remote !== undefined ? remote.getCurrentWindow() : null, {
+      title: 'Access denied (2)',
+      message: t('Vortex needs to access "{{ fileName }}" but doesn\'t have permission to.\n'
+               + 'If your account has admin rights Vortex can unlock the file for you. '
+               + 'Windows will show an UAC dialog.',
+        { replace: { fileName: fileToAccess } }),
+      buttons: [
+        'Cancel',
+        'Retry',
+        'Give permission',
+      ],
+      noLink: true,
+      type: 'warning',
+    });
+    if (choice === 1) { // Retry
+      return forcePerm(t, op);
+    } else if (choice === 2) { // Give Permission
+      const userId = getUserId();
+      return fs.statAsync(fileToAccess)
+        .catch((statErr) => {
+          if (statErr.code === 'ENOENT') {
+            fileToAccess = path.dirname(fileToAccess);
+          }
+          return PromiseBB.resolve();
+        })
+        .then(() => elevated((ipcPath, req: NodeRequireFunction) => {
+          // tslint:disable-next-line:no-shadowed-variable
+          const { allow } = req('permissions');
+          return allow(fileToAccess, userId, 'rwx');
+        }, { fileToAccess, userId })
+          .catch(elevatedErr => {
+            if (elevatedErr.message.indexOf('The operation was canceled by the user') !== -1) {
+              return Promise.reject(new UserCanceled());
+            }
+            // if elevation failed, return the original error because the one from
+            // elevate, while interesting as well, would make error handling too complicated
+            log('error', 'failed to acquire permission', elevatedErr.message);
+            return Promise.reject(err);
+          }))
+        .then(() => forcePerm(t, op));
+    } else {
+      return PromiseBB.reject(new UserCanceled());
+    }
+  }
+
   return op()
     .catch(err => {
+      const fileToAccess = filePath !== undefined ? filePath : err.path;
       if ((err.code === 'EPERM') || (err.errno === 5)) {
-        const choice = dialog.showMessageBox(
-          remote !== undefined ? remote.getCurrentWindow() : null, {
-          title: 'Access denied (2)',
-          message: t('Vortex needs to access "{{ fileName }}" but doesn\'t have permission to.\n'
-                   + 'If your account has admin rights Vortex can unlock the file for you. '
-                   + 'Windows will show an UAC dialog.',
-            { replace: { fileName: err.path } }),
-          buttons: [
-            'Cancel',
-            'Retry',
-            'Give permission',
-          ],
-          noLink: true,
-          type: 'warning',
-        });
-        if (choice === 1) { // Retry
-          return forcePerm(t, op);
-        } else if (choice === 2) { // Give Permission
-          let filePath = err.path;
-          const userId = getUserId();
-          return fs.statAsync(err.path)
-            .catch((statErr) => {
-              if (statErr.code === 'ENOENT') {
-                filePath = path.dirname(filePath);
-              }
-              return PromiseBB.resolve();
-            })
-            .then(() => elevated((ipcPath, req: NodeRequireFunction) => {
-              // tslint:disable-next-line:no-shadowed-variable
-              const { allow } = req('permissions');
-              return allow(filePath, userId, 'rwx');
-            }, { filePath, userId })
-              .catch(elevatedErr => {
-                if (elevatedErr.message.indexOf('The operation was canceled by the user') !== -1) {
-                  return Promise.reject(new UserCanceled());
-                }
-                // if elevation failed, return the original error because the one from
-                // elevate, while interesting as well, would make error handling too complicated
-                log('error', 'failed to acquire permission', elevatedErr.message);
-                return Promise.reject(err);
-              }))
-            .then(() => forcePerm(t, op));
-        } else {
-          return PromiseBB.reject(new UserCanceled());
-        }
+        const wantedAttributes = process.platform === 'win32' ? parseInt('0666', 8) : parseInt('0600', 8);
+        return fs.statAsync(fileToAccess)
+          .then(stat => this.changeFileAttributes(fileToAccess, wantedAttributes, stat))
+          .then(() => op())
+          .catch(() => raiseUACDialog(err))
+          .catch(UserCanceled, () => undefined)
       } else {
         return PromiseBB.reject(err);
       }
