@@ -466,8 +466,8 @@ export function changeFileOwnership(filePath: string, stat: fs.Stats): PromiseBB
   }
 
   // Ask for forgiveness, not permission.
-  return (stat.uid !== process.getuid()) || (stat.gid !== process.getgid())
-    ? fs.chownAsync(filePath, process.getuid(), process.getgid()).catch(err => PromiseBB.reject(err))
+  return (stat.uid !== process.getuid()) && (stat.gid !== process.getgid())
+    ? fs.chownAsync(filePath, process.getuid(), stat.gid).catch(err => PromiseBB.reject(err))
     : PromiseBB.resolve();
 }
 
