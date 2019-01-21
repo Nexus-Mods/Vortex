@@ -6391,8 +6391,8 @@ mkdirp@0.5.1, "mkdirp@>=0.5 0", mkdirp@^0.5.0, mkdirp@^0.5.1, mkdirp@~0.5.0, mkd
     minimist "0.0.8"
 
 modmeta-db@Nexus-Mods/modmeta-db:
-  version "0.3.11"
-  resolved "https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/c2bcf7ca2f12469f6f8b904f487ffbadd5afd632"
+  version "0.4.0"
+  resolved "https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/7acae8dc8fe90070b8c270d0f98a28c49322c7f6"
   dependencies:
     bluebird "^3.4.6"
     encoding-down "^5.0.4"
@@ -6523,8 +6523,8 @@ next-tick@1:
   resolved "https://registry.yarnpkg.com/next-tick/-/next-tick-1.0.0.tgz#ca86d1fe8828169b0120208e3dc8424b9db8342c"
 
 nexus-api@Nexus-Mods/node-nexus-api:
-  version "0.7.3"
-  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/4150a583050eed8c01b723b25aff54bd2041ee9b"
+  version "0.8.0"
+  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/0e8abeb6fcef44426b43df311fbcec9aeea4dc68"
   dependencies:
     request "^2.85.0"
     string-template "^1.0.0"

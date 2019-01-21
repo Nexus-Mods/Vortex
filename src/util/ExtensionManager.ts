@@ -349,6 +349,8 @@ class ExtensionManager {
   private mLoadFailures: { [extId: string]: IExtensionLoadFailure[] };
   private mInterpreters: { [ext: string]: (input: IRunParameters) => IRunParameters };
   private mStartHooks: Array<{ priority: number, id: string, hook: (input: IRunParameters) => Promise<IRunParameters> }>;
+  private mProgrammaticMetaServers: { [id: string]: any } = {};
+  private mForceDBReconnect: boolean = false;
 
   constructor(initStore?: Redux.Store<any>, eventEmitter?: NodeJS.EventEmitter) {
     this.mEventEmitter = eventEmitter;
@@ -382,6 +384,7 @@ class ExtensionManager {
       isOutdated: () => isOutdated(),
       onAsync: this.onAsync,
       highlightControl: this.highlightControl,
+      addMetaServer: this.addMetaServer,
     };
     if (initStore !== undefined) {
       // apologies for the sync operation but this needs to happen before extensions are loaded
@@ -466,6 +469,10 @@ class ExtensionManager {
     };
     this.mApi.store = store;
     this.mApi.onStateChange = this.stateChangeHandler;
+
+    this.mApi.onStateChange(['settings', 'metaserver', 'servers'], () => {
+      this.mForceDBReconnect = true;
+    });
 
     if (ipcRenderer !== undefined) {
       ipcRenderer.on('send-notification',
@@ -632,8 +639,10 @@ class ExtensionManager {
     return init.then(() => {
       // reset the moddb if necessary so new settings get used
       if ((this.mModDB === undefined)
+          || this.mForceDBReconnect
           || (gameMode !== this.mModDBGame)
           || (currentKey !== this.mModDBAPIKey)) {
+        this.mForceDBReconnect = false;
         if (this.mModDB !== undefined) {
           return this.mModDB.close()
             .then(() => this.mModDB = undefined);
@@ -659,18 +668,21 @@ class ExtensionManager {
       // TODO: the fallback to nexus api should somehow be set up in nexus_integration, not here
   }
 
+  private getMetaServerList() {
+    const state = this.mApi.store.getState();
+    const servers = getSafe(state, ['settings', 'metaserver', 'servers'], {});
+    
+    return [].concat(
+      Object.keys(this.mProgrammaticMetaServers).map(id => this.mProgrammaticMetaServers[id]),
+      Object.keys(servers).map(id => servers[id])
+    );
+  }
+
   private connectMetaDB(gameId: string, apiKey: string) {
     const dbPath = path.join(app.getPath('userData'), 'metadb');
     return modmeta.ModDB.create(
       dbPath,
-      gameId, [
-        {
-          protocol: 'nexus',
-          url: 'https://api.nexusmods.com/v1',
-          apiKey,
-          cacheDurationSec: 86400,
-        },
-      ], log)
+      gameId, this.getMetaServerList(), log)
       .catch(err => {
         return this.mApi.showDialog('error', 'Failed to connect meta database', {
           text: 'Please check that there is no other instance of Vortex still running.',
@@ -1146,6 +1158,11 @@ class ExtensionManager {
     setTimeout(() => {
       head.removeChild(highlightNode);
     }, duration);
+  }
+
+  private addMetaServer = (id: string, server: any) => {
+    this.mProgrammaticMetaServers[id] = server;
+    this.mForceDBReconnect = true;
   }
 
   private startIPC(ipcPath: string) {

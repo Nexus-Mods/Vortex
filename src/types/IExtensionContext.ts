@@ -452,6 +452,13 @@ export interface IExtensionApi {
   lookupModReference: (ref: IReference) => Promise<ILookupResult[]>;
 
   /**
+   * add a meta server
+   * Please note that setting a server with the same id again will replace the existing one
+   * with that id and setting it to undefined removes it
+   */
+  addMetaServer: (id: string, server?: any) => void;
+
+  /**
    * find meta information about a mod
    * this will calculate a hash and the file size of the specified file
    * for the lookup unless those details are already provided.

@@ -26,6 +26,7 @@ import { persistentReducer } from './reducers/persistent';
 import { sessionReducer } from './reducers/session';
 import { settingsReducer } from './reducers/settings';
 import { nexusGameId, convertNXMIdReverse } from './util/convertGameId';
+import { getPageURL } from './util/sso';
 import retrieveCategoryList from './util/retrieveCategories';
 import DashboardBanner from './views/DashboardBanner';
 import GoPremiumDashlet from './views/GoPremiumDashlet';
@@ -49,6 +50,7 @@ import * as React from 'react';
 import { Button } from 'react-bootstrap';
 import {} from 'uuid';
 import * as WebSocket from 'ws';
+import { RateLimitError } from 'nexus-api/lib/customErrors';
 
 let nexus: NexusT;
 
@@ -239,7 +241,7 @@ function requestLogin(api: IExtensionApi, callback: (err: Error) => void) {
         });
         // open the authorization page - but not on reconnects!
         if (loginMessage.token === undefined) {
-          opn(`https://www.nexusmods.com/sso?id=${loginMessage.id}`).catch(err => undefined);
+          opn(getPageURL(loginMessage.id)).catch(err => undefined);
         }
         const keepAlive = setInterval(() => {
           if (!connectionAlive) {
@@ -433,6 +435,8 @@ function once(api: IExtensionApi) {
   api.onStateChange(['persistent', 'mods'], eh.onChangeMods(api, nexus));
   api.onStateChange(['persistent', 'downloads', 'files'], eh.onChangeDownloads(api, nexus))
 
+  api.addMetaServer('nexus_api', { nexus, url: 'https://api.nexusmods.com', cacheDurationSec: 86400 });
+
   nexus.getModInfo(1, 'site')
     .then(info => {
       api.store.dispatch(setNewestVersion(info.version));
@@ -551,6 +555,10 @@ function init(context: IExtensionContextExt): boolean {
         const newError = new HTTPError(err.statusCode, err.message, err.request);
         newError.stack = err.stack;
         return Promise.reject(newError);
+      })
+      .catch(RateLimitError, err => {
+        context.api.showErrorNotification('Rate limit exceeded', err, { allowReport: false });
+        return Promise.reject(err);
       });
   });
 

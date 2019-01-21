@@ -13,6 +13,7 @@ import * as React from 'react';
 import { Modal, FormControl, ControlLabel, FormGroup, InputGroup, InputGroupAddon } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
+import { getPageURL } from '../util/sso';
 
 export interface IBaseProps {
   visible: boolean;
@@ -110,8 +111,7 @@ class LoginDialog extends ComponentEx<IProps, {}> {
   }
 
   private getLoginUrl() {
-    const { loginId } = this.props;
-    return `https://www.nexusmods.com/sso?id=${loginId}`;
+    return getPageURL(this.props.loginId);
   }
 
   private copyUrlToClipboard = () => {

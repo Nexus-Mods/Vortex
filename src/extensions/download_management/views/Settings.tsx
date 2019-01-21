@@ -17,6 +17,7 @@ import { setDownloadPath, setMaxDownloads } from '../actions/settings';
 
 import getDownloadPath, {getDownloadPathPattern} from '../util/getDownloadPath';
 
+import getTextMod from '../../mod_management/texts';
 import getText from '../texts';
 
 import * as Promise from 'bluebird';
@@ -139,6 +140,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           <div id='download-path-form'>
             <ControlLabel>
               {t('Download Folder')}
+              <More id='more-paths' name={t('Paths')} >
+                {getTextMod('paths', t)}
+              </More>
             </ControlLabel>
             <FlexLayout type='row'>
               <FlexLayout.Fixed>
