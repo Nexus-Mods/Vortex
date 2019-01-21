@@ -465,9 +465,21 @@ export function changeFileOwnership(filePath: string, stat: fs.Stats): PromiseBB
     return PromiseBB.reject(new ProcessCanceled('Ownership change not required'));
   }
 
+  const readAndWriteGroup = parseInt('0060', 8);
+  const hasGroupPermissions = ((stat.mode & readAndWriteGroup) === readAndWriteGroup);
+
+  // (Writing this down as it can get confusing) Cases where we need to change ownership are:
+  //  <BaseOwnerCheck> - If the process real ID is different than the file's real ID.
+  //
+  //  1. If <BaseOwnerCheck> is true and the file does NOT have the group read/write bits set.
+  //  2. If <BaseOwnerCheck> is true and the file DOES have the group read/write bits set but the process
+  //   group id differs from the file's group id.
+  //
   // Ask for forgiveness, not permission.
-  return (stat.uid !== process.getuid()) && (stat.gid !== process.getgid())
-    ? fs.chownAsync(filePath, process.getuid(), stat.gid).catch(err => PromiseBB.reject(err))
+  return (stat.uid !== process.getuid())
+    ? (!hasGroupPermissions) || (hasGroupPermissions && (stat.gid !== process.getgid()))
+      ? fs.chownAsync(filePath, process.getuid(), stat.gid).catch(err => PromiseBB.reject(err))
+      : PromiseBB.resolve()
     : PromiseBB.resolve();
 }
 
