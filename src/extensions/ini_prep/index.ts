@@ -93,8 +93,7 @@ function discoverSettingsChanges(t: TranslationFunction, gameMode: string,
       .then(ini => {
         const delta = objDiff(oldContent, newContent);
         applyDelta(ini.data, delta);
-        const baseFile = iniFileName + '.base';
-        return fs.forcePerm(t, () => parser.write(baseFile, ini), baseFile);
+        return fs.forcePerm(t, () => parser.write(iniFileName + '.base', ini));
       });
   })
   .then(() => undefined);
@@ -167,10 +166,7 @@ function bakeSettings(t: TranslationFunction,
           ini.data = deepMerge(ini.data, patchIni.data);
         }))
         .then(() => onApplySettings(iniFileName, ini))
-        .then(() => {
-          const bakedFile = iniFileName + '.baked';
-          return fs.forcePerm(t, () => parser.write(bakedFile, ini), bakedFile);
-        })
+        .then(() => fs.forcePerm(t, () => parser.write(iniFileName + '.baked', ini)))
         .then(() => fs.copyAsync(iniFileName + '.baked',
           iniFileName, { noSelfCopy: true })));
   }))

@@ -550,7 +550,7 @@ export function forcePerm<T>(t: I18next.TranslationFunction,
       const fileToAccess = filePath !== undefined ? filePath : err.path;
       if ((err.code === 'EPERM') || (err.errno === 5)) {
         const wantedAttributes = process.platform === 'win32' ? parseInt('0666', 8) : parseInt('0600', 8);
-        return fs.statAsync(filePath)
+        return fs.statAsync(fileToAccess)
           .then(stat => this.changeFileAttributes(fileToAccess, wantedAttributes, stat))
           .then(() => op())
           .catch(() => raiseUACDialog(err))
