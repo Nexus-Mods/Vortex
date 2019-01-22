@@ -8,8 +8,8 @@ export class NotSupportedError extends Error {
 }
 
 export class InsufficientDiskSpace extends Error {
-  constructor(message: string) {
-    super(message);
+  constructor(mountPoint: string) {
+    super(`The partition "${mountPoint}" has insufficient space.`);
     this.name = this.constructor.name;
   }
 }

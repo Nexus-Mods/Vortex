@@ -1,7 +1,7 @@
 import { showDialog } from '../actions/notifications';
 import { IDialogResult } from '../types/IDialog';
 import { ThunkStore } from '../types/IExtensionContext';
-import { UserCanceled, InsufficientDiskSpace } from './CustomErrors';
+import { UserCanceled, ProcessCanceled, InsufficientDiskSpace } from './CustomErrors';
 import delayed from './delayed';
 import getVortexPath from './getVortexPath';
 import { log } from './log';
@@ -14,6 +14,7 @@ import * as _ from 'lodash';
 import * as path from 'path';
 import { file } from 'tmp';
 import * as diskusage from 'diskusage';
+import * as winapi from 'winapi-bindings';
 
 /**
  * count the elements in an array for which the predicate matches
@@ -390,12 +391,17 @@ export function isChildPath(child: string, parent: string): boolean {
  * @param destination The proposed destination folder.
  */
 export function testPathTransfer(source: string, destination: string): Promise<void> {
-  const destinationRoot = path.parse(destination).root;
-  const sourceRoot = path.parse(source).root;
-  if (destinationRoot === sourceRoot) {
-    // We're relying on this being a renaming operation
-    //  when both filepaths have the same root.
-    return Promise.resolve();
+  // 500MB or 524288000 Bytes in binary.
+  const MIN_DISK_SPACE_OFFSET = ((512 * 1024) * 1000);
+
+  // TODO: Add mount point query for *nix once we have one available.
+  const destinationRoot = process.platform === 'win32'
+    ? winapi.GetVolumePathName(destination)
+    : '/';
+
+  const isOnSameVolume = (): Promise<boolean> => {
+    return Promise.all([fs.statAsync(source), fs.statAsync(destination)])
+      .then(stats => stats[0].dev === stats[1].dev);
   }
 
   const calculate = (filePath: string): Promise<number> => {
@@ -409,9 +415,11 @@ export function testPathTransfer(source: string, destination: string): Promise<v
       )).reduce((lhs, rhs) => lhs + rhs, 0);
   }
 
-  const MIN_DISK_SPACE_OFFSET = (500 * (1e+6));
   let totalNeededBytes = 0;
-  return calculate(source)
+  return isOnSameVolume()
+    .then(res => res === true
+      ? Promise.reject(new ProcessCanceled('Disk space calculations are unnecessary.')) 
+      : calculate(source))
     .then(totalSize => {
       totalNeededBytes = totalSize;
       try {
@@ -423,8 +431,8 @@ export function testPathTransfer(source: string, destination: string): Promise<v
     .then(res => 
       (totalNeededBytes < (res.free - MIN_DISK_SPACE_OFFSET))
         ? Promise.resolve()
-        : Promise.reject(new InsufficientDiskSpace('Insufficient disk space at destination partition!'))
-    );
+        : Promise.reject(new InsufficientDiskSpace(destinationRoot))
+    ).catch(ProcessCanceled, () => Promise.resolve());
 }
 
 /**
