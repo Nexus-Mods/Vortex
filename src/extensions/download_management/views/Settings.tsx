@@ -6,13 +6,13 @@ import { Button } from '../../../controls/TooltipControls';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
 import { ValidationState } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { UserCanceled } from '../../../util/CustomErrors';
+import { UserCanceled, InsufficientDiskSpace } from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
 import { log } from '../../../util/log';
 import { showError } from '../../../util/message';
 import opn from '../../../util/opn';
 import { getSafe } from '../../../util/storeHelper';
-import { isChildPath, transferPath } from '../../../util/util';
+import { isChildPath, transferPath, testPathTransfer } from '../../../util/util';
 import { setDownloadPath, setMaxDownloads } from '../actions/settings';
 
 import getDownloadPath, {getDownloadPathPattern} from '../util/getDownloadPath';
@@ -291,8 +291,17 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       }, [ { label: 'Close' } ]);
     }
 
+    const notEnoughDiskSpace = () => {
+      return onShowDialog('error', 'Insufficient disk space', {
+        text: 'You do not have enough disk space to move the downloads folder to your '
+            + 'proposed destination folder.\n\n'
+            + 'Please select a different destination or free up some space and try again!'
+      }, [ { label: 'Close' } ]);
+    }
+
     this.nextState.busy = t('Moving');
-    return fs.ensureDirWritableAsync(newPath, this.confirmElevate)
+    return testPathTransfer(oldPath, newPath)
+      .then(() => fs.ensureDirWritableAsync(newPath, this.confirmElevate))
       .then(() => {
         let queue = Promise.resolve();
         let fileCount = 0;
@@ -325,6 +334,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         this.context.api.events.emit('did-move-downloads');
       })
       .catch(UserCanceled, () => null)
+      .catch(InsufficientDiskSpace, () => notEnoughDiskSpace())
       .catch((err) => {
         if (err !== null) {
           if (err.code === 'EPERM') {

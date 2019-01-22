@@ -7,6 +7,13 @@ export class NotSupportedError extends Error {
   }
 }
 
+export class InsufficientDiskSpace extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = this.constructor.name;
+  }
+}
+
 export class ProcessCanceled extends Error {
   constructor(message: string) {
     super(message);

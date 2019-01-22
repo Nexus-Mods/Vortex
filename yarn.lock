@@ -3241,6 +3241,14 @@ discontinuous-range@1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/discontinuous-range/-/discontinuous-range-1.0.0.tgz#e38331f0844bba49b9a9cb71c771585aab1bc65a"
 
+diskusage@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/diskusage/-/diskusage-1.0.0.tgz#20209c5c5c8f523d4890584059056922969ff561"
+  integrity sha512-eOrPVSZLxo8kXz03GA+gdKauSSmicNET/pXMZKXs1vkdZrEayeZmJYu1Eo2uzVhkQL748vq1irIi7hzoPWBRmQ==
+  dependencies:
+    es6-promise "^4.2.5"
+    nan "^2.11.1"
+
 disposables@^1.0.1:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/disposables/-/disposables-1.0.2.tgz#36c6a674475f55a2d6913567a601444e487b4b6e"
@@ -3770,7 +3778,7 @@ es6-iterator@2, es6-iterator@^2.0.1, es6-iterator@~2.0.3:
     es5-ext "^0.10.35"
     es6-symbol "^3.1.1"
 
-es6-promise@^4.0.5:
+es6-promise@^4.0.5, es6-promise@^4.2.5:
   version "4.2.5"
   resolved "https://registry.yarnpkg.com/es6-promise/-/es6-promise-4.2.5.tgz#da6d0d5692efb461e082c14817fe2427d8f5d054"
   integrity sha512-n6wvpdE43VFtJq+lUDYDBFUwV8TZbuGXLV4D6wKafg13ldznKsyEvatubnmUe31zcvelSzOHF+XbaT+Bl9ObDg==
@@ -6454,6 +6462,11 @@ nan@^2.10.0:
 nan@^2.11.0:
   version "2.11.0"
   resolved "https://registry.yarnpkg.com/nan/-/nan-2.11.0.tgz#574e360e4d954ab16966ec102c0c049fd961a099"
+
+nan@^2.11.1:
+  version "2.12.1"
+  resolved "https://registry.yarnpkg.com/nan/-/nan-2.12.1.tgz#7b1aa193e9aa86057e3c7bbd0ac448e770925552"
+  integrity sha512-JY7V6lRkStKcKTvHO5NVSQRv+RV+FIL5pvDoLiAtSL9pKlC5x9PKQcZDsq7m4FO4d57mkhC6Z+QhAh3Jdk5JFw==
 
 nan@^2.4.0, nan@^2.8.0, nan@^2.9.2, nan@~2.10.0:
   version "2.10.0"

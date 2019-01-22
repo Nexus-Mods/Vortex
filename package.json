@@ -164,6 +164,7 @@
     "content-type": "^1.0.4",
     "crash-dump": "Nexus-Mods/node-crash-dump",
     "d3": "^5.5.0",
+    "diskusage": "^1.0.0",
     "dnd-core": "^4.0.5",
     "draggabilly": "^2.2.0",
     "drivelist": "^6.3.0",

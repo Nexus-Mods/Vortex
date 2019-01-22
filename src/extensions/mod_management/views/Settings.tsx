@@ -7,14 +7,14 @@ import { Button } from '../../../controls/TooltipControls';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
 import { ValidationState } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { TemporaryError, UserCanceled } from '../../../util/CustomErrors';
+import { TemporaryError, UserCanceled, InsufficientDiskSpace } from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
 import getVortexPath from '../../../util/getVortexPath';
 import { log } from '../../../util/log';
 import opn from '../../../util/opn';
 import { showError } from '../../../util/message';
 import { getSafe } from '../../../util/storeHelper';
-import { isChildPath, transferPath } from '../../../util/util';
+import { isChildPath, transferPath, testPathTransfer } from '../../../util/util';
 import { currentGame, currentGameDiscovery } from '../../gamemode_management/selectors';
 import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../../gamemode_management/types/IGameStored';
@@ -229,12 +229,22 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       }, [ { label: 'Close' } ]);
     }
 
+
+    const notEnoughDiskSpace = () => {
+      return onShowDialog('error', 'Insufficient disk space', {
+        text: 'You do not have enough disk space to move the staging folder to your '
+            + 'proposed destination folder.\n\n'
+            + 'Please select a different destination or free up some space and try again!'
+      }, [ { label: 'Close' } ]);
+    }
+
     const purgePromise = oldInstallPath !== newInstallPath
       ? this.purgeActivation()
       : Promise.resolve();
 
     this.nextState.busy = t('Moving');
-    return purgePromise
+    return testPathTransfer(oldInstallPath, newInstallPath)
+      .then(() => purgePromise)
       .then(() => fs.ensureDirAsync(newInstallPath))
       .then(() => {
         let queue = Promise.resolve();
@@ -270,6 +280,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         onShowError('Failed to move directories, please try again', err, false);
       })
       .catch(UserCanceled, () => null)
+      .catch(InsufficientDiskSpace, () => notEnoughDiskSpace())
       .catch((err) => {
         if (err !== null) {
           if (err.code === 'EPERM') {
