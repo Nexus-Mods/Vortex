@@ -1,7 +1,7 @@
 import { showDialog } from '../actions/notifications';
 import { IDialogResult } from '../types/IDialog';
 import { ThunkStore } from '../types/IExtensionContext';
-import { UserCanceled, ProcessCanceled, InsufficientDiskSpace } from './CustomErrors';
+import { UserCanceled, ProcessCanceled, InsufficientDiskSpace, DataInvalid, NotSupportedError } from './CustomErrors';
 import delayed from './delayed';
 import getVortexPath from './getVortexPath';
 import { log } from './log';
@@ -13,8 +13,15 @@ import * as fs from 'fs-extra-promise';
 import * as _ from 'lodash';
 import * as path from 'path';
 import { file } from 'tmp';
+import turbowalk from 'turbowalk';
 import * as diskusage from 'diskusage';
 import * as winapi from 'winapi-bindings';
+
+export interface IMountInformation {
+  device: string;
+  mountPoints: string[];
+  fsType: string;
+}
 
 /**
  * count the elements in an array for which the predicate matches
@@ -378,6 +385,90 @@ export function isChildPath(child: string, parent: string): boolean {
 }
 
 /**
+ * Retrieves mountPoints information directly from the /proc/mounts kernel 
+ *  output for Linux systems.
+ */
+export function getNixMounts(): Promise<IMountInformation[]> {
+  if (process.platform === 'win32') {
+    return Promise.reject(new NotSupportedError());
+  }
+
+  // A selection of *nix specific file systems we wish to ignore when
+  //  parsing the /proc/mounts "file"/system status output.
+  const NIX_FS_FILTER = [
+    'tmpfs', 'autofs', 'cgroup', 'securityfs',
+    'sysfs', 'proc', 'devtmpfs', 'debugfs',
+  ];
+
+  return fs.readFileAsync('/proc/mounts', 'utf8').then(contents => {
+    const procs = contents.split(/[\s]/).filter(inst => inst !== '');
+    if (procs.length % 6 !== 0) {
+      /** Example of expected /proc/mounts element format:
+       * /dev/mapper/ubuntu--vg-root / ext4 rw,relatime,errors=remount-ro,data=ordered 0 0
+       * 
+       * 1. Device: "/dev/mapper/ubuntu--vg-root"
+       * 2. MountPoint: "/"
+       * 3. FileSystemType: "ext4"
+       * 4. MountAttributes: "rw,relatime,errors=remount-ro,data=ordered"
+       * 5,6. Values designed to match the format used in /etc/mtab.
+       * 
+       * Only the first 3 elements are used. Regardless of the number of lines
+       *  within that file, we expect to be able to divide the total number of
+       *  elements by 6 with no remainder (hence the modulus check).
+       */
+      return Promise.reject(new DataInvalid('/proc/mounts has unexpected format'));
+    } else {
+      const mounts: IMountInformation[] = [];
+      for (let i = 0; i < procs.length; i += 6) {
+        const mountPoints = procs[i+1].split(',');
+        const match = mounts.findIndex(val => val.device === procs[i]);
+        if ((procs[i].charAt(0) !== '/') 
+        || (NIX_FS_FILTER.indexOf(procs[i+2]) !== -1)) {
+          continue;
+        }
+
+        if (match !== -1) {
+          mounts[match].mountPoints.concat(mountPoints);
+        } else {
+          mounts.push({
+            device: procs[i],
+            mountPoints: procs[i+1].split(','),
+            fsType: procs[i+2]
+          });
+        }
+      }
+      return Promise.resolve(mounts);
+    }
+  })
+}
+
+/**
+ * Will attempt to find the root path/mount point for the provided filePath.
+ * TODO: Must run tests once Vortex can run on Linux natively.
+ * @param filePath - absolute path to the file we want the root directory for.
+ */
+export function getRootPath(filePath: string): Promise<string> {
+  return new Promise<string>((resolve, reject) => {
+    if (process.platform === 'win32') {
+      try {
+        const rootPath = winapi.GetVolumePathName(filePath);
+        return resolve(rootPath);
+      } catch (err) {
+        return reject(err);
+      }
+    } else {
+      return getNixMounts().then(mounts =>
+        mounts.map(mount => mount.mountPoints.find(point => 
+          filePath.indexOf(point) !== -1)))
+        .then(matches => matches.length > 0 
+          ? resolve(matches.reduce((prev, match) => match.length > prev.length 
+            ? match : prev))
+          : reject(new DataInvalid('Unable to find root mount point')));
+    }
+  });
+}
+
+/**
  * Test whether it is viable to transfer files and directories from
  *  a source directory to a new proposed destination directory.
  * Note:
@@ -394,45 +485,43 @@ export function testPathTransfer(source: string, destination: string): Promise<v
   // 500MB or 524288000 Bytes in binary.
   const MIN_DISK_SPACE_OFFSET = ((512 * 1024) * 1000);
 
-  // TODO: Add mount point query for *nix once we have one available.
-  const destinationRoot = process.platform === 'win32'
-    ? winapi.GetVolumePathName(destination)
-    : '/';
-
-  const isOnSameVolume = (): Promise<boolean> => {
-    return Promise.all([fs.statAsync(source), fs.statAsync(destination)])
+  const isOnSameVolume = (destinationRoot: string): Promise<boolean> => {
+    return Promise.all([fs.statAsync(source), fs.statAsync(destinationRoot)])
       .then(stats => stats[0].dev === stats[1].dev);
   }
 
   const calculate = (filePath: string): Promise<number> => {
-    return fs.readdirAsync(filePath)
-      .then(files => Promise.mapSeries(files, file => 
-        fs.statAsync(path.join(filePath, file)).then(stats => 
-          stats.isDirectory()
-            ? calculate(path.join(filePath, file))
-            : Promise.resolve(stats.size)
-        )
-      )).reduce((lhs, rhs) => lhs + rhs, 0);
+    return new Promise<number> ((resolve, reject) => {
+      turbowalk(filePath, entries => {
+        const files = entries.filter(entry => !entry.isDirectory);
+        const total = files.reduce((lhs, rhs) => lhs + rhs.size, 0);
+        return resolve(total);
+      })
+    })
   }
 
   let totalNeededBytes = 0;
-  return isOnSameVolume()
-    .then(res => res === true
-      ? Promise.reject(new ProcessCanceled('Disk space calculations are unnecessary.')) 
-      : calculate(source))
-    .then(totalSize => {
-      totalNeededBytes = totalSize;
-      try {
-        return diskusage.check(destinationRoot);
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    })
-    .then(res => 
-      (totalNeededBytes < (res.free - MIN_DISK_SPACE_OFFSET))
-        ? Promise.resolve()
-        : Promise.reject(new InsufficientDiskSpace(destinationRoot))
-    ).catch(ProcessCanceled, () => Promise.resolve());
+  let destinationRoot;
+  return getRootPath(destination).then(rootPath => {
+    destinationRoot = rootPath;
+    return isOnSameVolume(rootPath)
+  })
+  .then(res => res === true
+    ? Promise.reject(new ProcessCanceled('Disk space calculations are unnecessary.')) 
+    : calculate(source))
+  .then(totalSize => {
+    totalNeededBytes = totalSize;
+    try {
+      return diskusage.check(destinationRoot);
+    } catch (err) {
+      return Promise.reject(err);
+    }
+  })
+  .then(res => 
+    (totalNeededBytes < (res.free - MIN_DISK_SPACE_OFFSET))
+      ? Promise.resolve()
+      : Promise.reject(new InsufficientDiskSpace(destinationRoot))
+  ).catch(ProcessCanceled, () => Promise.resolve());
 }
 
 /**
