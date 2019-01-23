@@ -219,7 +219,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
                   </Tab>
                   <Tab
                     eventKey='supported'
-                    title={title(t('Discovered'), this.getTabGameNumber(supportedGameList, filteredSupported))}
+                    title={title(t('Supported'), this.getTabGameNumber(supportedGameList, filteredSupported))}
                   >
                     {this.renderGames(filteredSupported, 'undiscovered')}
                   </Tab>
