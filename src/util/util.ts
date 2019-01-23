@@ -385,9 +385,6 @@ export function isChildPath(child: string, parent: string): boolean {
  * - Currently will only test whether there's enough disk space at the destination
  *    folder.
  * 
- * - The function relies on both directories to exist before calling it;
- *    it is beyond its scope to create them.
- * 
  * @param source The current source folder.
  * @param destination The proposed destination folder.
  */
@@ -407,7 +404,7 @@ export function testPathTransfer(source: string, destination: string): Promise<v
   }
 
   const isOnSameVolume = (): Promise<boolean> => {
-    return Promise.all([fs.statAsync(source), fs.statAsync(destination)])
+    return Promise.all([fs.statAsync(source), fs.statAsync(destinationRoot)])
       .then(stats => stats[0].dev === stats[1].dev);
   }
 
