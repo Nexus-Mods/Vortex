@@ -6,7 +6,7 @@ import { Button } from '../../../controls/TooltipControls';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
 import { ValidationState } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { UserCanceled, InsufficientDiskSpace } from '../../../util/CustomErrors';
+import { UserCanceled, InsufficientDiskSpace, UnsupportedOperatingSystem } from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
 import { log } from '../../../util/log';
 import { showError } from '../../../util/message';
@@ -335,6 +335,10 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       })
       .catch(UserCanceled, () => null)
       .catch(InsufficientDiskSpace, () => notEnoughDiskSpace())
+      .catch(UnsupportedOperatingSystem, () => 
+        onShowError('Unsupported operating system', 
+        'This functionality is currently unavailable for your operating system!', 
+        false))
       .catch((err) => {
         if (err !== null) {
           if (err.code === 'EPERM') {
