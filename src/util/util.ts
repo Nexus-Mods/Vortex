@@ -17,6 +17,9 @@ import * as diskusage from 'diskusage';
 import * as winapi from 'winapi-bindings';
 import turbowalk from 'turbowalk';
 
+  // 500MB or 524288000 Bytes in binary.
+  const MIN_DISK_SPACE_OFFSET = ((512 * 1024) * 1000);
+
 /**
  * count the elements in an array for which the predicate matches
  *
@@ -389,9 +392,6 @@ export function isChildPath(child: string, parent: string): boolean {
  * @param destination The proposed destination folder.
  */
 export function testPathTransfer(source: string, destination: string): Promise<void> {
-  // 500MB or 524288000 Bytes in binary.
-  const MIN_DISK_SPACE_OFFSET = ((512 * 1024) * 1000);
-
   if (process.platform !== 'win32') {
     return Promise.reject(new UnsupportedOperatingSystem())
   }
