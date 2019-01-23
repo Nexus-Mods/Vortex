@@ -1,7 +1,7 @@
 import { showDialog } from '../actions/notifications';
 import { IDialogResult } from '../types/IDialog';
 import { ThunkStore } from '../types/IExtensionContext';
-import { UserCanceled, ProcessCanceled, InsufficientDiskSpace } from './CustomErrors';
+import { UserCanceled, ProcessCanceled, InsufficientDiskSpace, UnsupportedOperatingSystem } from './CustomErrors';
 import delayed from './delayed';
 import getVortexPath from './getVortexPath';
 import { log } from './log';
@@ -15,6 +15,7 @@ import * as path from 'path';
 import { file } from 'tmp';
 import * as diskusage from 'diskusage';
 import * as winapi from 'winapi-bindings';
+import turbowalk from 'turbowalk';
 
 /**
  * count the elements in an array for which the predicate matches
@@ -394,10 +395,16 @@ export function testPathTransfer(source: string, destination: string): Promise<v
   // 500MB or 524288000 Bytes in binary.
   const MIN_DISK_SPACE_OFFSET = ((512 * 1024) * 1000);
 
-  // TODO: Add mount point query for *nix once we have one available.
-  const destinationRoot = process.platform === 'win32'
-    ? winapi.GetVolumePathName(destination)
-    : '/';
+  if (process.platform !== 'win32') {
+    return Promise.reject(new UnsupportedOperatingSystem())
+  }
+
+  let destinationRoot;
+  try {
+    destinationRoot = winapi.GetVolumePathName(destination);
+  } catch (err) {
+    return Promise.reject(err);
+  }
 
   const isOnSameVolume = (): Promise<boolean> => {
     return Promise.all([fs.statAsync(source), fs.statAsync(destination)])
@@ -405,14 +412,13 @@ export function testPathTransfer(source: string, destination: string): Promise<v
   }
 
   const calculate = (filePath: string): Promise<number> => {
-    return fs.readdirAsync(filePath)
-      .then(files => Promise.mapSeries(files, file => 
-        fs.statAsync(path.join(filePath, file)).then(stats => 
-          stats.isDirectory()
-            ? calculate(path.join(filePath, file))
-            : Promise.resolve(stats.size)
-        )
-      )).reduce((lhs, rhs) => lhs + rhs, 0);
+    return new Promise<number> ((resolve, reject) => {
+      turbowalk(filePath, entries => {
+        const files = entries.filter(entry => !entry.isDirectory);
+        const total = files.reduce((lhs, rhs) => lhs + rhs.size, 0);
+        return resolve(total);
+      })
+    })
   }
 
   let totalNeededBytes = 0;

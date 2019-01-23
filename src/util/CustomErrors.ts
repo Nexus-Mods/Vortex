@@ -7,6 +7,13 @@ export class NotSupportedError extends Error {
   }
 }
 
+export class UnsupportedOperatingSystem extends Error {
+  constructor() {
+    super('Not supported on current Operating System');
+    this.name = this.constructor.name;
+  }
+}
+
 export class InsufficientDiskSpace extends Error {
   constructor(mountPoint: string) {
     super(`The partition "${mountPoint}" has insufficient space.`);
