@@ -1,7 +1,9 @@
-import * as fs from '../util/fs';
 import { log } from '../util/log';
 
 import * as Promise from 'bluebird';
+// using fs directly because the svg may be bundled inside the asar so
+// we need the electron-fs hook here
+import * as fs from 'fs';
 import { remote } from 'electron';
 import * as path from 'path';
 import * as React from 'react';
@@ -221,7 +223,14 @@ class Icon extends React.Component<IIconProps, {}> {
       const fontPath = path.resolve(remote.app.getAppPath(), 'assets', 'fonts', set + '.svg');
       log('info', 'read font', fontPath);
       // TODO: this does not support adding icons from extensions yet
-      return fs.readFileAsync(fontPath, {})
+      return new Promise((resolve, reject) => {
+        fs.readFile(fontPath, {}, (err, data) => {
+          if (err !== null) {
+            return reject(err);
+          }
+          return resolve(data);
+        });
+      })
         .then(data => {
           newset.innerHTML = data.toString();
           const newSymbols = newset.querySelectorAll('symbol');
