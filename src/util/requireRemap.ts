@@ -1,15 +1,15 @@
-const REQUIRE_MAP = {
-  'fs': 'original-fs',
-}
-
 // tslint:disable-next-line:no-var-requires
 const Module = require('module');
 
 function patchedLoad(orig) {
   // tslint:disable-next-line:only-arrow-functions
-  return function(request: string, ...rest) {
-    request = REQUIRE_MAP[request] || request;
-    return orig.apply(this, [request, ...rest]);
+  return function(request: string, parent, ...rest) {
+    if ((request === 'fs')
+        && ((parent.filename.indexOf('graceful-fs') !== -1)
+            || (parent.filename.indexOf('rimraf') !== -1))) {
+      request = 'original-fs';
+    }
+    return orig.apply(this, [request, parent, ...rest]);
   };
 }
 
