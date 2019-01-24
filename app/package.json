@@ -21,6 +21,7 @@
     "content-type": "^1.0.4",
     "crash-dump": "Nexus-Mods/node-crash-dump",
     "d3": "5.5.0",
+    "diskusage": "^1.0.0",
     "draggabilly": "^2.2.0",
     "drivelist": "^6.4.0",
     "electron-edge-js": "^8.3.6",
