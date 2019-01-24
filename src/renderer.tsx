@@ -23,6 +23,9 @@ window.addEventListener('unhandledrejection', earlyErrHandler);
 import * as sourceMapSupport from 'source-map-support';
 sourceMapSupport.install();
 
+import requireRemap from './util/requireRemap';
+requireRemap();
+
 if (process.env.NODE_ENV === 'development') {
   // tslint:disable-next-line:no-var-requires
   const rebuildRequire = require('./util/requireRebuild').default;

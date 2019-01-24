@@ -5,6 +5,9 @@
 import * as sourceMapSupport from 'source-map-support';
 sourceMapSupport.install();
 
+import requireRemap from './util/requireRemap';
+requireRemap();
+
 if (process.env.NODE_ENV !== 'development') {
   // see renderer.ts for why this is so ugly
   const key = 'NODE_ENV';
