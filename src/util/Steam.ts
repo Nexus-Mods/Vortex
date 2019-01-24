@@ -95,7 +95,7 @@ class Steam implements ISteam {
    */
   public getSteamExecutionPath(gamePath: string, args?: string[]): Promise<ISteamExec> {
     return this.allGames()
-      .then(entries => entries.find(entry => entry.gamePath === gamePath))
+      .then(entries => entries.find(entry => gamePath.indexOf(entry.gamePath) !== -1 ))
       .then(entry => {
         return entry !== undefined 
           ? this.mBaseFolder.then((basePath: string) => {
