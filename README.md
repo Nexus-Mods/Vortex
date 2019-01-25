@@ -21,6 +21,9 @@ All data elements are optional except for the "date" and "description" elements 
 
 * "severity" : This element accepts one of the following: "information" | "warning" | "critical"; this will modify UI elements accordingly
   to highlight the severity type of the announcement. (Currently only changes the color of the announcement's icon)
+  
+* "version" : Providing a specific version number will ensure that the announcement only shows inside copies of Vortex with that
+  specific version number.
 
 Example of a valid announcement:
 
