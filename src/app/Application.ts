@@ -499,6 +499,8 @@ class Application {
         log('info', `using ${dataPath} as the storage directory`);
         if (multiUser) {
           setLogPath(dataPath);
+          log('info', '--------------------------');
+          log('info', 'Vortex Version', app.getVersion());
           return LevelPersist.create(path.join(dataPath, currentStatePath))
             .then(levelPersistor => {
               this.mLevelPersistors.push(levelPersistor);
