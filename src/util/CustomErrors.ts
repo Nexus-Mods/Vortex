@@ -7,6 +7,13 @@ export class NotSupportedError extends Error {
   }
 }
 
+export class ServiceTemporarilyUnavailable extends Error {
+  constructor(service: string) {
+    super(`${service} service is temporarily unavailable. Please try again later.`);
+    this.name = this.constructor.name;
+  }
+}
+
 export class UnsupportedOperatingSystem extends Error {
   constructor() {
     super('Not supported on current Operating System');

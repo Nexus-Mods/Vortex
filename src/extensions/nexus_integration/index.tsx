@@ -3,7 +3,7 @@ import { IDialogResult, showDialog } from '../../actions/notifications';
 import InputButton from '../../controls/InputButton';
 import { IExtensionApi, IExtensionContext, ILookupResult } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
-import { ProcessCanceled, DataInvalid, UserCanceled, HTTPError } from '../../util/CustomErrors';
+import { ProcessCanceled, DataInvalid, UserCanceled, HTTPError, ServiceTemporarilyUnavailable } from '../../util/CustomErrors';
 import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
@@ -308,7 +308,12 @@ function requestLogin(api: IExtensionApi, callback: (err: Error) => void) {
         }
       })
       .on('error', err => {
-        error = err;
+        // Cloudflare will serve 503 service unavailable errors when/if
+        //  it is unable to reach the SSO server.
+        error = err.message === 'Unexpected server response: 503'
+          ? new ServiceTemporarilyUnavailable('Login')
+          : err;
+
         connection.close();
       });
   }
@@ -376,6 +381,9 @@ function once(api: IExtensionApi) {
         .catch(UserCanceled, () => null)
         .catch(ProcessCanceled, err => {
           api.showErrorNotification('Log-in failed', err, { allowReport: false });
+        })
+        .catch(ServiceTemporarilyUnavailable, err => {
+          api.showErrorNotification('Service temporarily unavailable', err, { allowReport: false },)
         })
         .catch(err => {
           api.showErrorNotification('Failed to get access key', err);
