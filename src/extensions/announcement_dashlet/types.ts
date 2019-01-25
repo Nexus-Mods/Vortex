@@ -7,6 +7,7 @@ export interface IAnnouncement {
   gameMode?: string,
   icon?: string,
   severity?: AnnouncementSeverity,
+  version?: string,
 }
 
 export type AnnouncementSeverity = 'information' | 'warning' | 'critical';
