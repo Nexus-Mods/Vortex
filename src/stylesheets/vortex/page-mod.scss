@@ -75,7 +75,7 @@
   }
 }
 
-.need-to-deploy:not(:hover) {
-  animation: pulseColor 6s infinite linear;
-  border: $border-width solid $brand-warning;
+.window-focused .need-to-deploy:not(:hover) {
+    animation: pulseColor 6s infinite linear;
+    border: $border-width solid $brand-warning;
 }

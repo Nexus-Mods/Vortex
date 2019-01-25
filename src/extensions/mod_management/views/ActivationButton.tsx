@@ -40,7 +40,7 @@ class ActivationButton extends ComponentEx<IProps, {}> {
         id='deploy-mods'
         icon='deploy'
         text={t('Deploy Mods')}
-        className={needToDeploy ? 'need-to-deploy' : undefined}
+        className={needToDeploy ? 'need-to-deploy' : 'no-deploy'}
         onClick={activator !== undefined ? this.activate : nop}
         disabled={activator === undefined}
       />
