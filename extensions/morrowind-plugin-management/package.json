@@ -30,9 +30,9 @@
     "copyfiles": "^1.0.0",
     "i18next": "^8.4.3",
     "immutability-helper": "^2.2.2",
-    "ts-loader": "2.3.4",
+    "ts-loader": "^4.4.2",
     "vortex-api": "Nexus-Mods/vortex-api",
     "vortex-parse-ini": "Nexus-Mods/vortex-parse-ini",
-    "webpack": "^3.5.5"
+    "webpack": "^4.17.1"
   }
 }
