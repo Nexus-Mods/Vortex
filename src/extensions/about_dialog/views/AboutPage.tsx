@@ -1,6 +1,6 @@
 import More from '../../../controls/More';
 import { ComponentEx, translate } from '../../../util/ComponentEx';
-import * as fs from '../../../util/fs';
+import * as fs from 'fs';
 import {log} from '../../../util/log';
 import MainPage from '../../../views/MainPage';
 
@@ -18,7 +18,7 @@ let modules = {};
 let ownLicenseText: string = '';
 if (remote !== undefined) {
   try {
-    modules = fs.readJSONSync(path.join(remote.app.getAppPath(), 'assets', 'modules.json')) as any;
+    modules = JSON.parse(fs.readFileSync(path.join(remote.app.getAppPath(), 'assets', 'modules.json'), { encoding: 'utf8' }));
     ownLicenseText = fs.readFileSync(path.join(remote.app.getAppPath(), 'LICENSE.md')).toString();
   } catch (err) {
     // should we display this in the ui? It shouldn't ever happen in the release and 99% of users
@@ -189,16 +189,17 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
     const licenseFile = mod.licenseFile !== undefined
       ? path.join(this.mAppPath, mod.licenseFile)
       : path.join(this.mAppPath, 'assets', 'licenses', license + '.md');
-    fs.readFileAsync(licenseFile, { })
-      .then(licenseText => {
-        if (this.mMounted) {
-          this.nextState.licenseText = licenseText.toString();
-        }
-      })
-      .catch(err => {
+    fs.readFile(licenseFile, { }, (err, licenseText) => {
+      if (!this.mMounted) {
+        return;
+      }
+      if (err !== null) {
         this.nextState.licenseText = t('Missing license {{licenseFile}}',
           { replace: { licenseFile } });
-      });
+      } else {
+        this.nextState.licenseText = licenseText.toString();
+      }
+    });
   }
 
   private renderModule = (mod: ILicense) => {

@@ -58,6 +58,7 @@ export interface IMainWindowState {
   showLayer: string;
   loadedPages: string[];
   hidpi: boolean;
+  focused: boolean;
 }
 
 export interface IConnectedProps {
@@ -110,6 +111,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       showLayer: '',
       loadedPages: [],
       hidpi: false,
+      focused: true,
     };
 
     this.settingsPage = {
@@ -157,12 +159,16 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     window.addEventListener('resize', this.updateSize);
     window.addEventListener('keydown', this.updateModifiers);
     window.addEventListener('keyup', this.updateModifiers);
+    window.addEventListener('focus', this.setFocus);
+    window.addEventListener('blur', this.unsetFocus);
   }
 
   public componentWillUnmount() {
     window.removeEventListener('resize', this.updateSize);
     window.removeEventListener('keydown', this.updateModifiers);
     window.removeEventListener('keyup', this.updateModifiers);
+    window.removeEventListener('focus', this.setFocus);
+    window.removeEventListener('blur', this.unsetFocus);
   }
 
   public shouldComponentUpdate(nextProps: IProps, nextState: IMainWindowState) {
@@ -175,6 +181,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       || this.props.progressProfile !== nextProps.progressProfile
       || this.state.showLayer !== nextState.showLayer
       || this.state.hidpi !== nextState.hidpi
+      || this.state.focused !== nextState.focused
       || this.props.userInfo !== nextProps.userInfo
       ;
   }
@@ -189,12 +196,13 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   public render(): JSX.Element {
     const { activeProfileId, customTitlebar, onHideDialog,
             nextProfileId, visibleDialog } = this.props;
-    const { hidpi } = this.state;
+    const { focused, hidpi } = this.state;
 
     const switchingProfile = ((activeProfileId !== nextProfileId) && truthy(nextProfileId));
 
     const classes = [];
     classes.push(hidpi ? 'hidpi' : 'lodpi');
+    classes.push(focused ? 'window-focused' : 'window-unfocused');
     if (customTitlebar) {
       // a border around the window if the standard os frame is disabled.
       // this is important to indicate to the user he can resize the window
@@ -282,6 +290,18 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   private updateSize = () => {
     this.updateState({
       hidpi: { $set: screen.width > 1920 },
+    });
+  }
+
+  private setFocus = () => {
+    this.updateState({
+      focused: { $set: true },
+    });
+  }
+
+  private unsetFocus = () => {
+    this.updateState({
+      focused: { $set: false },
     });
   }
 
