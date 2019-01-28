@@ -434,12 +434,6 @@
     "@types/node" "*"
     "@types/react" "*"
 
-"@types/react-fontawesome@^1.6.1":
-  version "1.6.3"
-  resolved "https://registry.yarnpkg.com/@types/react-fontawesome/-/react-fontawesome-1.6.3.tgz#03d00dd940d2eb9dc3f21f4b9a972789a95dc8cf"
-  dependencies:
-    "@types/react" "*"
-
 "@types/react-i18next@^7.8.0":
   version "7.8.0"
   resolved "https://registry.yarnpkg.com/@types/react-i18next/-/react-i18next-7.8.0.tgz#9e194babb9aa2a233905d05fb6638b2b40817193"
@@ -4237,10 +4231,6 @@ fomod-installer@Nexus-Mods/fomod-installer:
     copyfiles "^1.0.0"
     msbuild "^1.0.1"
 
-font-awesome@^4.7.0:
-  version "4.7.0"
-  resolved "https://registry.yarnpkg.com/font-awesome/-/font-awesome-4.7.0.tgz#8fa8cf0411a1a31afd07b06d2902bb9fc815a133"
-
 for-in@^1.0.1, for-in@^1.0.2:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/for-in/-/for-in-1.0.2.tgz#81068d295a8142ec0ac726c6e2200c30fb6d5e80"
@@ -7379,7 +7369,7 @@ prop-types-extra@^1.0.1:
     react-is "^16.3.2"
     warning "^3.0.0"
 
-prop-types@^15.0.0, prop-types@^15.5.10, prop-types@^15.5.6, prop-types@^15.5.7, prop-types@^15.5.8, prop-types@^15.5.9, prop-types@^15.6.0, prop-types@^15.6.1, prop-types@^15.6.2:
+prop-types@^15.0.0, prop-types@^15.5.10, prop-types@^15.5.7, prop-types@^15.5.8, prop-types@^15.5.9, prop-types@^15.6.0, prop-types@^15.6.1, prop-types@^15.6.2:
   version "15.6.2"
   resolved "https://registry.yarnpkg.com/prop-types/-/prop-types-15.6.2.tgz#05d5ca77b4453e985d60fc7ff8c859094a497102"
   dependencies:
@@ -7627,12 +7617,6 @@ react-dom@^16.4.1:
     loose-envify "^1.1.0"
     object-assign "^4.1.1"
     prop-types "^15.6.0"
-
-react-fontawesome@^1.6.1:
-  version "1.6.1"
-  resolved "https://registry.yarnpkg.com/react-fontawesome/-/react-fontawesome-1.6.1.tgz#eddce17e7dc731aa09fd4a186688a61793a16c5c"
-  dependencies:
-    prop-types "^15.5.6"
 
 react-i18next@^7.9.1:
   version "7.9.1"
@@ -9849,8 +9833,8 @@ widest-line@^2.0.0:
     string-width "^2.1.1"
 
 winapi-bindings@Nexus-Mods/node-winapi-bindings:
-  version "1.4.4"
-  resolved "https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/223e4c84dedafc47b79b4531052c630c90309aa2"
+  version "1.4.5"
+  resolved "https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/34263c0515fbc4245a2778a6a2174e18cc60a236"
   dependencies:
     autogypi "^0.2.2"
     nan "^2.11.0"

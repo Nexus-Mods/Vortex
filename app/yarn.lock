@@ -2648,12 +2648,6 @@ react-dom@^16.4.2:
     object-assign "^4.1.1"
     prop-types "^15.6.0"
 
-react-fontawesome@^1.6.1:
-  version "1.6.1"
-  resolved "https://registry.yarnpkg.com/react-fontawesome/-/react-fontawesome-1.6.1.tgz#eddce17e7dc731aa09fd4a186688a61793a16c5c"
-  dependencies:
-    prop-types "^15.5.6"
-
 react-i18next@^7.10.1:
   version "7.10.1"
   resolved "https://registry.yarnpkg.com/react-i18next/-/react-i18next-7.10.1.tgz#9e119c15970eb401b9ef178336a2e09dd120bb15"
@@ -3685,8 +3679,8 @@ wide-align@^1.1.0:
     string-width "^1.0.2 || 2"
 
 winapi-bindings@Nexus-Mods/node-winapi-bindings:
-  version "1.4.4"
-  resolved "https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/223e4c84dedafc47b79b4531052c630c90309aa2"
+  version "1.4.5"
+  resolved "https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/34263c0515fbc4245a2778a6a2174e18cc60a236"
   dependencies:
     autogypi "^0.2.2"
     nan "^2.11.0"
