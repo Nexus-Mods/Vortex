@@ -1,5 +1,6 @@
 import { DialogActions, DialogType, IDialogContent,
-         IDialogResult, showDialog } from '../actions/notifications';
+         IDialogResult, showDialog, IConditionResult, IInput } from '../actions/notifications';
+         
 import { IState } from '../types/IState';
 import { ComponentEx, connect, translate } from '../util/ComponentEx';
 import { truthy } from '../util/util';
@@ -225,6 +226,7 @@ class Dropzone extends ComponentEx<IProps, IComponentState> {
           type: 'url',
           value: dialogDefault,
         }],
+        condition: this.validateURL,
       }, [ { label: 'Cancel' }, { label: 'Download' } ])
       .then(result => {
           if (result.action === 'Download') {
@@ -246,6 +248,24 @@ class Dropzone extends ComponentEx<IProps, IComponentState> {
         }
       });
     }
+  }
+
+  private hasEmptyInput = (input: IInput): IConditionResult => {
+    const { t } = this.props;
+    return (input.value === undefined) || ((input.value === ''))
+      ? { 
+          id: input.id || 'url', 
+          actions: ['Download'], 
+          errorText: t('{{label}} cannot be empty.', { 
+            replace: { label: input.label ? input.label : 'Field' }
+          }) 
+        }
+      : undefined
+  }
+
+  private validateURL = (content: IDialogContent): IConditionResult[] => {
+    const urlInput = content.input.find(inp => inp.id === 'url');
+    return [this.hasEmptyInput(urlInput)].filter(res => res !== undefined);
   }
 }
 
