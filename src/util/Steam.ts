@@ -97,8 +97,10 @@ class Steam implements ISteam {
     return this.allGames()
       .then(entries => entries.find(entry => gamePath.indexOf(entry.gamePath) !== -1 ))
       .then(entry => {
-        return entry !== undefined 
-          ? this.mBaseFolder.then((basePath: string) => {
+        if (entry === undefined) {
+          return Promise.resolve(undefined);
+        }
+        return this.mBaseFolder.then((basePath: string) => {
               const steamExec: ISteamExec = {
                 steamPath: basePath + '\\Steam.exe',
                 arguments: args !== undefined 
@@ -106,8 +108,7 @@ class Steam implements ISteam {
                   : ['-applaunch', entry.appid]
               };
               return Promise.resolve(steamExec);
-            })
-          : Promise.reject(undefined);
+            });
       });
   }
 
@@ -187,6 +188,11 @@ class Steam implements ISteam {
                   lastUpdated: new Date(obj['AppState']['LastUpdated'] * 1000),
                 }));
             })
+            .catch({ code: 'ENOENT' }, (err: any) => {
+              // no biggy, this can happen for example if the steam library is on a removable medium
+              // which is currently removed
+              log('info', 'Steam library not found', err.code);
+            })
             .catch(err => {
               log('warn', 'Failed to read steam library', err.message);
             });
@@ -194,7 +200,7 @@ class Steam implements ISteam {
       })
       .then((games: ISteamEntry[][]) =>
         games.reduce((prev: ISteamEntry[], current: ISteamEntry[]): ISteamEntry[] =>
-          prev.concat(current), []));
+          current !== undefined ? prev.concat(current) : prev, []));
   }
 }
 
