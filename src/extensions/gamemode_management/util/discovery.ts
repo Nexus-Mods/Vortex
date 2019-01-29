@@ -200,7 +200,12 @@ function walk(searchPath: string,
 
 function verifyToolDir(tool: ITool, testPath: string): Promise<void> {
   return Promise.mapSeries(tool.requiredFiles,
-    (fileName: string) => fs.statAsync(path.join(testPath, fileName)))
+    (fileName: string) => fs.statAsync(path.join(testPath, fileName))
+      .catch(err => {
+        log('warn', 'file not found', path.join(testPath, fileName));;
+        return Promise.reject(err);
+      })
+    )
     .then(() => undefined);
 }
 
@@ -213,7 +218,7 @@ function assertToolDir(tool: ITool, testPath: string): Promise<string> {
     .then(() => testPath)
     .catch(err => {
       if (err.code === 'ENOENT') {
-        log('warn', 'game directory not valid', { testPath });
+        log('warn', 'game directory not valid', { game: tool.name, testPath, missing: err.path });
       } else {
         log('error', 'failed to verify game directory',
           { testPath, error: err.message });

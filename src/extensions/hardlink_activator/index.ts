@@ -125,6 +125,7 @@ class DeploymentMethod extends LinkingDeployment {
     } catch (err) {
       // EMFILE shouldn't keep us from using hard linking
       if (err.code !== 'EMFILE') {
+        // the error code we're actually getting is EISDIR, which makes no sense at all
         return {
           description: t => t('Filesystem doesn\'t support hard links.'),
         };

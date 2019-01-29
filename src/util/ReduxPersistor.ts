@@ -104,7 +104,7 @@ class ReduxPersistor<T> {
     }
     this.mPersistedState = newState;
 
-    this.ensureStoreDiffHive(oldState, newState);
+    return this.ensureStoreDiffHive(oldState, newState);
   }
 
   private ensureStoreDiffHive(oldState: any, newState: any) {

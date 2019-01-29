@@ -55,7 +55,7 @@ function init(context: IExtensionContext): boolean {
   context.once(() => {
     updateAnnouncements(context.api.store)
     .catch(err => {
-      log('error', 'failed to retrieve list of announcements', err);
+      log('warn', 'failed to retrieve list of announcements', err);
     });
   });
 

@@ -41,6 +41,7 @@ export {
   readFileSync,
   readJSONSync,
   statSync,
+  symlinkSync,
   watch,
   writeFileSync,
   writeSync,
