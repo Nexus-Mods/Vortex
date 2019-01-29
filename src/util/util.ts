@@ -410,12 +410,12 @@ export function testPathTransfer(source: string, destination: string): Promise<v
 
   const calculate = (filePath: string): Promise<number> => {
     return new Promise<number> ((resolve, reject) => {
+      let total = 0;
       turbowalk(filePath, entries => {
         const files = entries.filter(entry => !entry.isDirectory);
-        const total = files.reduce((lhs, rhs) => lhs + rhs.size, 0);
-        return resolve(total);
-      });
-    });
+        total = files.reduce((lhs, rhs) => lhs + rhs.size, 0);
+      }).then(() => resolve(total));
+    })
   }
 
   let totalNeededBytes = 0;

@@ -180,6 +180,7 @@ function restackErr(error: Error, stackErr: Error): Error {
   // that will apply expensive source mapping when called
   Object.defineProperty(error, 'stack', {
     get: () => error.message + '\n' + stackErr.stack,
+    set: () => null,
   })
   return error;
 }
