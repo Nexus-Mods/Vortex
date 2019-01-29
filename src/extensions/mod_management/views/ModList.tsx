@@ -205,14 +205,16 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         icon: 'start-install',
         title: 'Reinstall',
         action: this.reinstall,
-        condition: (instanceId: string) => {
-          if (this.props.mods[instanceId] === undefined) {
-            return false;
+        condition: (instanceId: string | string[]) => {
+          const cond = (id: string) => (this.props.mods[id] !== undefined)
+              && (truthy(this.props.mods[id].archiveId)
+                || this.props.t('No associated archive.'))
+          if (typeof(instanceId) === 'string') {
+            return cond(instanceId);
+          } else {
+            return instanceId.find(cond) !== undefined;
           }
-          return truthy(this.props.mods[instanceId].archiveId)
-               || this.props.t('No associated archive.');
         },
-        singleRowAction: true,
       },
     ];
 

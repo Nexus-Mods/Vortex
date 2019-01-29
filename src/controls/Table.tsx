@@ -339,6 +339,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
             t={t}
             className='menubar'
             group={`${tableId}-multirow-actions`}
+            groupByIcon={false}
             instanceId={selected}
             staticElements={multiRowActions}
           />

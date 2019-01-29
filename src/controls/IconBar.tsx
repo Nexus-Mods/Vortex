@@ -163,7 +163,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
   }
 
   public render(): JSX.Element {
-    const { actions, collapse, icon, id,
+    const { actions, collapse, icon, id, groupByIcon,
             orientation, className, style } = this.props;
 
     const classes: string[] = [];
@@ -222,7 +222,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
       );
     } else {
       const grouped: { [key: string]: IActionDefinition[] } = actions.reduce((prev, action, idx) => {
-        if (action.icon !== undefined) {
+        if ((action.icon !== undefined) && (groupByIcon !== false)) {
           setdefault(prev, action.icon, []).push(action);
         } else {
           prev[idx.toString()] = [action];

@@ -463,6 +463,7 @@ function genUpdateModDeployment() {
               .then(() => {
                 if (overwritten.length > 0) {
                   api.sendNotification({
+                    id: 'redundant-mods',
                     type: 'info',
                     message: 'Some mods are redundant',
                     actions: [
