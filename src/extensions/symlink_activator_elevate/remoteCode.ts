@@ -42,11 +42,15 @@ export function remoteCode(ipcClient, req) {
             ipcClient.emit('completed', { err: null, num });
           })
           .catch((err) => {
-            ipcClient.emit('log', {
-              level: 'error',
-              message: 'failed to install symlink',
-              meta: {err: err.message},
-            });
+            if (err.code === 'EISDIR') {
+              ipcClient.emit('report', 'not-supported');
+            } else {
+              ipcClient.emit('log', {
+                level: 'error',
+                message: 'failed to install symlink',
+                meta: { err: err.message },
+              });
+            }
             ipcClient.emit('completed', { err, num });
           });
     });

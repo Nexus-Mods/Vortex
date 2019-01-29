@@ -2,7 +2,7 @@ import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext'
 import { IGame } from '../../types/IGame';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
-import { activeGameId, gameName } from '../../util/selectors';
+import { activeGameId, gameName, installPathForGame } from '../../util/selectors';
 import walk from '../../util/walk';
 
 import { getGame } from '../gamemode_management/util/getGame';
@@ -81,6 +81,23 @@ class DeploymendMethod extends LinkingDeployment {
     } catch (err) {
       return { description: t => err.message };
     }
+
+    const installationPath = installPathForGame(state, gameId);
+    const canary = path.join(installationPath, '__vortex_canary.tmp');
+
+    try {
+      fs.writeFileSync(canary, 'Should only exist temporarily, feel free to delete');
+      fs.symlinkSync(canary, canary + '.link');
+    } catch (err) {
+      // EMFILE shouldn't keep us from using hard linking
+      if (err.code !== 'EMFILE') {
+        // the error code we're actually getting is EISDIR, which makes no sense at all
+        return {
+          description: t => t('Filesystem doesn\'t support hard links.'),
+        };
+      }
+    }
+
     return undefined;
   }
 

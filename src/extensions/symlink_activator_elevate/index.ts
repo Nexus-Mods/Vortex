@@ -39,6 +39,7 @@ class DeploymentMethod extends LinkingDeployment {
   private mOpenRequests: { [num: number]: { resolve: () => void, reject: (err: Error) => void } };
   private mDone: () => void;
   private mWaitForUser: () => Promise<void>;
+  private mOnReport: (report: string) => void;
 
   constructor(api: IExtensionApi) {
     super(
@@ -61,6 +62,23 @@ class DeploymentMethod extends LinkingDeployment {
           action: dismiss => { dismiss(); reject(new UserCanceled()); },
         }],
       }));
+
+    let lastReport: string;
+    this.mOnReport = (report: string) => {
+      if (report === lastReport) {
+        return;
+      }
+
+      lastReport = report;
+
+      if (report === 'not-supported') {
+        api.showErrorNotification('Symlinks not support',
+          'It appears symbolic links aren\'t supported between your mod staging folder and game folder. '
+          + 'On Windows, symbolic links only work on NTFS drives', { allowReport: false });
+      } else {
+        api.showErrorNotification('Unknown error', report);
+      }
+    }
   }
 
   public detailedDescription(t: I18next.TranslationFunction): string {
@@ -100,9 +118,7 @@ class DeploymentMethod extends LinkingDeployment {
     });
     this.mOpenRequests = {};
     return this.startElevated()
-        .tapCatch(() => {
-          this.context.onComplete()
-        })
+        .tapCatch(() =>this.context.onComplete())
         .then(() => super.finalize(gameId, dataPath, installationPath))
         .then(result => this.stopElevated().then(() => result));
   }
@@ -236,6 +252,9 @@ class DeploymentMethod extends LinkingDeployment {
       });
       ipc.server.on('log', (data: any) => {
         log(data.level, data.message, data.meta);
+      });
+      ipc.server.on('report', (data: string) => {
+        this.mOnReport(data);
       });
       ipc.server.on('error', err => {
         log('error', 'Failed to start symlink activator', err);
