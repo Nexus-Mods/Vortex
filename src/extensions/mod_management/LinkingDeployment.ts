@@ -109,8 +109,9 @@ abstract class LinkingActivator implements IDeploymentMethod {
   }
 
   private removeDeployedFile(installationPath: string, dataPath: string, key: string, restoreBackup: boolean): Promise<void> {
-    const outputPath = path.join(
-      dataPath, this.mContext.previousDeployment[key].relPath);
+    const outputPath = path.join(dataPath,
+      this.mContext.previousDeployment[key].target || '',
+      this.mContext.previousDeployment[key].relPath);
     const sourcePath = path.join(installationPath,
       this.mContext.previousDeployment[key].source,
       this.mContext.previousDeployment[key].relPath);
