@@ -24,7 +24,13 @@ class EpicGamesLauncher implements IEpicGamesLauncher {
    */
   public isGameInstalled(name: string): Promise<boolean> {
     return this.config.then(ini => {
+      if (ini.data === undefined) {
+        return false;
+      }
       const settingsKey = Object.keys(ini.data).find(key => key.endsWith('_Settings'));
+      if (ini.data[settingsKey] === undefined) {
+        return false;
+      }
       return Object.keys(ini.data[settingsKey]).indexOf(`${name}_AutoUpdate`) !== -1;
     });
   }
