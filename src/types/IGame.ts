@@ -120,7 +120,7 @@ export interface IGame extends ITool {
   details?: { [key: string]: any };
 
   /**
-   * set to name of the contributor that added support for this game. For officialy supported games this is undefined
+   * set the name of the contributor that added support for this game. For officialy supported games this is undefined
    */
   contributed?: string;
 
@@ -128,4 +128,10 @@ export interface IGame extends ITool {
    * set to true if support for this game has been fully tested
    */
   final?: boolean;
+
+  /**
+   * should be set to true only if the game in question needs its mod folders
+   *  cleaned up on each deploy event.
+   */
+  requiresCleanup?: boolean;
 }

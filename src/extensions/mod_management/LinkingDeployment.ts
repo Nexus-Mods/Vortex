@@ -1,6 +1,6 @@
 import {addNotification} from '../../actions/notifications';
 import {IExtensionApi} from '../../types/IExtensionContext';
-import { UserCanceled } from '../../util/api';
+import { UserCanceled, getGame } from '../../util/api';
 import * as fs from '../../util/fs';
 import {Normalize} from '../../util/getNormalizeFunc';
 import {log} from '../../util/log';
@@ -19,6 +19,7 @@ import * as I18next from 'i18next';
 import * as _ from 'lodash';
 import * as path from 'path';
 import turbowalk from 'turbowalk';
+import { IGame } from '../../types/api';
 
 export interface IDeployment {
   [relPath: string]: IDeployedFile;
@@ -99,7 +100,8 @@ abstract class LinkingActivator implements IDeploymentMethod {
           onComplete: queueResolve,
         };
         lastDeployment.forEach(file => {
-          const key = this.mNormalize(file.relPath);
+          const outputPath = [file.target || null, file.relPath].filter(i => i !== null).join(path.sep);
+          const key = this.mNormalize(outputPath);
           this.mContext.previousDeployment[key] = file;
           if (!clean) {
             this.mContext.newDeployment[key] = file;
@@ -178,6 +180,8 @@ abstract class LinkingActivator implements IDeploymentMethod {
       }
     };
 
+    const initialDeployment = {...this.mContext.previousDeployment};
+
     return Promise.map(removed, key =>
         this.removeDeployedFile(installationPath, dataPath, key, true)
           .catch(() => {
@@ -233,6 +237,22 @@ abstract class LinkingActivator implements IDeploymentMethod {
                   + 'deployment.',
                   {replace: {count: errorCount}}),
             }));
+          }
+
+          const currentGame: IGame = getGame(gameId);
+          let targetDirectories: string[] = [];
+          if ((total > 0) && currentGame.requiresCleanup) {
+            const newFiles = added.map(key => this.mContext.newDeployment[key]);
+            const filtered = removed.filter(rem => newFiles.find(newFile => this.mNormalize(newFile.relPath) === rem) === undefined);
+            filtered.forEach(removedItem => {
+              const fileEntry = initialDeployment[removedItem];
+              const targetDir = path.join(dataPath, fileEntry.target || '');
+
+              if (targetDirectories.find(dir => dir === targetDir) === undefined) {
+                targetDirectories.push(targetDir);
+              }
+            });
+            this.cleanupDeployment(targetDirectories);
           }
 
           const context = this.mContext;
@@ -460,6 +480,24 @@ abstract class LinkingActivator implements IDeploymentMethod {
       contentChanged: keysBoth.filter((key: string) =>
          (before[key].time !== after[key].time) && (before[key].source === after[key].source)),
     };
+  }
+
+  public cleanupDeployment(paths: string[]): Promise<void> {
+    return Promise.map(paths, dirPath => {
+      return this.postLinkPurge(dirPath, true)
+        .then(res => {
+          if (!res) {
+            return Promise.resolve(dirPath);
+          }
+        });
+    })
+    .then(results => {
+      if (results.length > 0) {
+        log('error', 'Failed to clean up some directories', results.join('; '));
+      }
+
+      return Promise.resolve();
+    });
   }
 
   private postLinkPurge(baseDir: string, doRemove: boolean): Promise<boolean> {
