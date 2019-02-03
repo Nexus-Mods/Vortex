@@ -4,7 +4,7 @@ import ExtensionManager from './ExtensionManager';
 import { debugTranslations, getMissingTranslations } from './i18n';
 import { log } from './log';
 
-import { remote } from 'electron';
+import { remote, webFrame } from 'electron';
 
 const { Menu, clipboard } = remote;
 
@@ -94,6 +94,22 @@ export function initApplicationMenu(extensions: ExtensionManager) {
       });
       viewMenu[viewMenu.length - 1].enabled = false;
     }
+
+    viewMenu.push({
+      label: 'Zoom In',
+      accelerator: 'CmdOrCtrl+Shift+Plus',
+      click(item, focusedWindow) {
+        webFrame.setZoomFactor(webFrame.getZoomFactor() + 0.1);
+      },
+    });
+
+    viewMenu.push({
+      label: 'Zoom Out',
+      accelerator: 'CmdOrCtrl+Shift+-',
+      click(item, focusedWindow) {
+        webFrame.setZoomFactor(webFrame.getZoomFactor() - 0.1);
+      },
+    });
 
     const menu = Menu.buildFromTemplate([
       { label: 'File', submenu: fileMenu },
