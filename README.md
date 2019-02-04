@@ -10,6 +10,7 @@ Automatic (mostly):
 
 Manual:
 - Before you can build vortex you need to download and install a couple of dependencies.
+  If any of the download links is no longer valid, try google or a search engine of your choice.
   - node.js
     * download installer from https://nodejs.org and run
     * version doesn't matter much, latest lts should be fine
@@ -21,10 +22,9 @@ Manual:
   - python 2.7
     * download installer (2.7.*, 64-bit) from https://www.python.org/downloads/ and run
     * defaults are fine, you can disable samples and documentation if you want
-  - c++ build tools 2015
-    * download installer from http://landinghub.visualstudio.com/visual-cpp-build-tools and run
+  - c++ build tools 2017
+    * download "Build Tools für Visual Studio 2017" from https://visualstudio.microsoft.com/de/downloads/ and run
     * default settings are fine
-    * Note: Do _not_ install VS 2017. A compiler error keeps nbind from building at the moment.
   - Call _"yarn config set msvs_version 2015 --global"_
     * This sets up yarn to use the c++ build tools we just installed
     * If you downloaded a newer version, change the version accordingly
