@@ -25,7 +25,7 @@ Manual:
   - c++ build tools 2017
     * download "Build Tools für Visual Studio 2017" from https://visualstudio.microsoft.com/de/downloads/ and run
     * default settings are fine
-  - Call _"yarn config set msvs_version 2015 --global"_
+  - Call _"yarn config set msvs_version 2017 --global"_
     * This sets up yarn to use the c++ build tools we just installed
     * If you downloaded a newer version, change the version accordingly
 - Check out the repository
