@@ -16,7 +16,8 @@
   align-items: center;
   margin: $half-gutter;
 
-  .dropdown > .btn:first-child svg {
+  .dropdown > .btn:first-child svg,
+  .dropup > .btn:first-child svg {
     margin-right: 8px;
   }
 
