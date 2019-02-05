@@ -1,6 +1,6 @@
 import * as Promise from 'bluebird';
 import * as I18next from 'i18next';
-import Nexus, { IDownloadURL, IFileInfo, IGameListEntry, IModInfo, NexusError, TimeoutError } from 'nexus-api';
+import Nexus, { IFileInfo, IGameListEntry, IModInfo, NexusError, RateLimitError, TimeoutError } from 'nexus-api';
 import * as Redux from 'redux';
 import * as util from 'util';
 import { setModAttribute } from '../../actions';
@@ -86,6 +86,14 @@ export function startDownload(api: IExtensionApi, nexus: Nexus, nxmurl: string):
         ],
       });
       return downloadId;
+    })
+    .catch(RateLimitError, err => {
+      api.sendNotification({
+        id: 'rate-limit-exceeded',
+        type: 'warning',
+        title: 'Rate-limit exceeded',
+        message: 'You wont be able to use network features until the next full hour.',
+      });
     })
     .catch((err) => {
       if (err.message === 'Provided key and expire time isn\'t correct for this user/file.') {

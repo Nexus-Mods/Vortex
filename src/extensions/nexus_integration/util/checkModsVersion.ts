@@ -1,3 +1,4 @@
+import { IExtensionApi } from '../../../types/IExtensionContext';
 import { log } from '../../../util/log';
 import { getSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
@@ -9,7 +10,7 @@ import { IMod } from '../../mod_management/types/IMod';
 
 import * as Promise from 'bluebird';
 import * as I18next from 'i18next';
-import NexusT, { IFileInfo, IFileUpdate, IModFiles, IModInfo, NexusError } from 'nexus-api';
+import NexusT, { IFileInfo, IFileUpdate, IModFiles, IModInfo, NexusError, RateLimitError } from 'nexus-api';
 import * as Redux from 'redux';
 import * as semvish from 'semvish';
 
@@ -160,11 +161,12 @@ function errorFromNexus(err: NexusError): Error {
 }
 
 export function retrieveModInfo(
-  nexus: NexusT,
-  store: Redux.Store<any>,
-  gameMode: string,
-  mod: IMod,
-  t: I18next.TranslationFunction): Promise<void> {
+    nexus: NexusT,
+    api: IExtensionApi,
+    gameMode: string,
+    mod: IMod,
+    t: I18next.TranslationFunction): Promise<void> {
+  const store = api.store;
   const nexusModId: string = getSafe(mod.attributes, ['modId'], undefined);
   if ((nexusModId === undefined) || (nexusModId.length === 0)) {
     return Promise.resolve();
@@ -177,6 +179,14 @@ export function retrieveModInfo(
       if (modInfo !== undefined) {
         updateModAttributes(store.dispatch, gameMode, mod, modInfo);
       }
+    })
+    .catch(RateLimitError, err => {
+      api.sendNotification({
+        id: 'rate-limit-exceeded',
+        type: 'warning',
+        title: 'Rate-limit exceeded',
+        message: 'You wont be able to use network features until the next full hour.',
+      });
     })
     .catch((err: NexusError) => {
       if (err.statusCode === 404) {

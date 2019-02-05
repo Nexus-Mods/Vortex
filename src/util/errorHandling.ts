@@ -92,7 +92,7 @@ function nexusReport(hash: string, type: string, error: IError, labels: string[]
   const Nexus: typeof NexusT = require('nexus-api').default;
 
   const referenceId = require('uuid').v4();
-  return Promise.resolve(Nexus.create(apiKey, app.getVersion(), undefined))
+  return Promise.resolve(Nexus.create(apiKey, 'Vortex', app.getVersion(), undefined))
     .then(nexus => nexus.sendFeedback(
       createTitle(type, error, hash),
       createReport(type, error, app.getVersion(), reporterProcess, sourceProcess),

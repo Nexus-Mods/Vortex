@@ -416,7 +416,7 @@ function once(api: IExtensionApi) {
     const apiKey = getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], undefined);
     const gameMode = activeGameId(state);
 
-    nexus = new Nexus(remote.app.getVersion(), gameMode, 30000);
+    nexus = new Nexus('Vortex', remote.app.getVersion(), gameMode, 30000);
 
     updateKey(api, nexus, apiKey);
 

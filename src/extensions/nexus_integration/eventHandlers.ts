@@ -88,7 +88,7 @@ export function onChangeMods(api: IExtensionApi, nexus: Nexus) {
               !== getSafe(newModTable, newPath, undefined))
            || (getSafe(lastModTable, lastDLGamePath, undefined)
               !== getSafe(newModTable, newDLGamePath, undefined))) {
-          return retrieveModInfo(nexus, api.store,
+          return retrieveModInfo(nexus, api,
             gameMode, newModTable[gameMode][modId], api.translate)
             .then(() => {
               lastModTable = newModTable;
