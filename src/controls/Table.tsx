@@ -122,6 +122,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private mProxyHeaderRef: HTMLElement;
   private mVisibleHeaderRef: HTMLElement;
   private mHeaderUpdateDebouncer: Debouncer;
+  private mUpdateCalculatedDebouncer: Debouncer;
   private mLastScroll: number;
   private mWillSetVisibility: boolean = false;
   private mMounted: boolean = false;
@@ -155,6 +156,15 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       this.updateColumnWidth();
       return Promise.resolve();
     }, 200, false);
+
+    this.mUpdateCalculatedDebouncer = new Debouncer(() => {
+      return this.updateCalculatedValues(this.props)
+        .then(changedColumns => {
+          this.refreshSorted(this.mNextUpdateState);
+          this.updateSelection(this.mNextUpdateState);
+          return null;
+        });
+    }, 200, true);
   }
 
   public componentWillMount() {
@@ -215,12 +225,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     if ((newProps.data !== this.props.data)
         || (newProps.dataId !== this.props.dataId)
         || (newProps.objects !== this.props.objects)) {
-      this.updateCalculatedValues(newProps)
-      .then(changedColumns => {
-        this.refreshSorted(this.mNextUpdateState);
-        this.updateSelection(this.mNextUpdateState);
-        return null;
-      });
+      this.mUpdateCalculatedDebouncer.schedule();
     } else if ((newProps.attributeState !== this.props.attributeState)
             || (newProps.language !== this.props.language)
             || (newProps.filter !== this.props.filter)) {
