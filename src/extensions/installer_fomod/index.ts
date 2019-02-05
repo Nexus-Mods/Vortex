@@ -4,6 +4,7 @@ import {
   ISupportedResult,
   ProgressDelegate,
 } from '../../types/IExtensionContext';
+import { ITestResult } from '../../types/ITestResult';
 import { DataInvalid, UserCanceled, SetupError } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import getVortexPath from '../../util/getVortexPath';
@@ -17,12 +18,14 @@ import {
   getPluginPath,
   getStopPatterns,
 } from './util/gameSupport';
+import { getNetVersion, checkAssemblies } from './util/netVersion';
 import InstallerDialog from './views/InstallerDialog';
 
 import * as Promise from 'bluebird';
 import * as edgeT from 'electron-edge-js';
 const edge = lazyRequire<typeof edgeT>(() => require('electron-edge-js'));
 import * as path from 'path';
+import * as semver from 'semver';
 import * as util from 'util';
 
 let testSupportedLib;
@@ -132,6 +135,40 @@ function processAttributes(input: any, modPath: string): Promise<any> {
       .catch(err => ({}));
 }
 
+function checkNetInstall() {
+  const netVersion = getNetVersion();
+  if ((netVersion === undefined) || semver.lt(netVersion, '4.6.0')) {
+    const res: ITestResult = {
+      description: {
+        short: '.Net installation incompatible',
+        long: 'It appears that your installation of the .Net framework is outdated or missing.[br][/br]'
+            + 'You will probably not be able to install mods.[br][/br]'
+            + 'Please install a current version of .Net (at least version 4.6).',
+      },
+      severity: 'error',
+    };
+    return Promise.resolve(res);
+  } else {
+    return checkAssemblies()
+      .then(valid => {
+        if (valid) {
+          return Promise.resolve(undefined);
+        } else {
+          const res: ITestResult = {
+            description: {
+              short: '.Net installation broken',
+              long: 'It appears that your installation of the .Net framework is broken.[br][/br]'
+                + 'You will probably not be able to install mods.[br][/br]'
+                + 'Please (re-)install .Net (at least version 4.6).',
+            },
+            severity: 'error',
+          };
+          return Promise.resolve(res);
+        }
+      })
+  }
+}
+
 function init(context: IExtensionContext): boolean {
   context.registerInstaller(
     'fomod', 100, testSupported, (files, scriptPath, gameId, progressDelegate) => {
@@ -151,6 +188,7 @@ function init(context: IExtensionContext): boolean {
         .finally(() => coreDelegates.detach());
       });
 
+  context.registerTest('net-current', 'startup', checkNetInstall);
   context.registerDialog('fomod-installer', InstallerDialog);
   context.registerReducer(['session', 'fomod', 'installer', 'dialog'], installerUIReducer);
 
