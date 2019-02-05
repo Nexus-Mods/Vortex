@@ -1,17 +1,18 @@
 import Modal from '../../../controls/Modal';
+import { IDeploymentMethod } from '../../../types/api';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
+import { activeGameId, currentGameDiscovery } from '../../../util/selectors';
+import { truthy } from '../../../util/util';
+import { getGame } from '../../gamemode_management/util/getGame';
 import { IDeploymentProblem, setDeploymentProblem } from '../actions/session';
+import { IUnavailableReason } from '../types/IDeploymentMethod';
+import allTypesSupported from '../util/allTypesSupported';
+import { getAllActivators } from '../util/deploymentMethods';
+import getModPaths from '../util/getModPaths';
 import * as React from 'react';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { Button } from 'react-bootstrap';
-import { getAllActivators } from '../util/deploymentMethods';
-import { IDeploymentMethod } from '../../../types/api';
-import allTypesSupported from '../util/allTypesSupported';
-import { activeGameId } from '../../../util/selectors';
-import { getGame } from '../../gamemode_management/util/getGame';
-import getModPaths from '../util/getModPaths';
-import { IUnavailableReason } from '../types/IDeploymentMethod';
 import { Trans } from 'react-i18next';
 
 export interface IFixDeploymentDialogProps {
@@ -129,9 +130,20 @@ class FixDeploymentDialog extends ComponentEx<IProps, IFixDeploymentDialogState>
 
     const gameId = activeGameId(state);
     const modPaths = getModPaths(state, gameId);
-    const reason: IUnavailableReason = allTypesSupported(method, state, gameId, Object.keys(modPaths));
-    onClear();
-    return reason.fixCallback(this.context.api);
+    if (truthy(modPaths)) {
+      const reason: IUnavailableReason = allTypesSupported(method, state, gameId, Object.keys(modPaths));
+      onClear();
+      return reason.fixCallback(this.context.api);
+    } else {
+      const discovery = currentGameDiscovery(state);
+      this.context.api.showErrorNotification('Failed to apply fix', {
+        gameId,
+        activator: problems[step].activator,
+        gameFound: getGame(gameId) !== undefined,
+        discoveryFound: discovery !== undefined,
+      });
+      onClear();
+    }
   }
 
   private cancel = () => {
