@@ -8,5 +8,5 @@ export interface IInstallContext {
       void;
   finishInstallCB: (success: InstallOutcome, info?: any) => void;
   progressCB: (percent: number, file: string) => void;
-  reportError: (message: string, details?: string) => void;
+  reportError: (message: string, details?: string | Error) => void;
 }

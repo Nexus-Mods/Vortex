@@ -200,7 +200,7 @@ class InstallContext implements IInstallContext {
     this.mSetModType(id, modType);
   }
 
-  public reportError(message: string, details?: any, allowReport?: boolean,
+  public reportError(message: string, details?: string | Error, allowReport?: boolean,
                      replace?: { [key: string]: string }): void {
     log('error', 'install error', { message, details, replace });
     this.mShowError(message, details, allowReport, replace);

@@ -18,6 +18,7 @@ const KNOWN_RELEASES = [
 const REQUIRED_ASSEMBLIES = [
   'microsoft.csharp.dll',
   'system.dll',
+  'system.configuration.dll',
   'system.core.dll',
   'system.data.dll',
   'system.data.datasetextensions.dll',
@@ -31,7 +32,6 @@ const REQUIRED_ASSEMBLIES = [
 function getRegValue(key: string, expectedType: string): any {
   try {
     const res = winapi.RegGetValue('HKEY_LOCAL_MACHINE', 'SOFTWARE\\Microsoft\\NET Framework Setup\\NDP\\v4\\Full', key);
-    console.log('reg res', key, res);
     if ((res === undefined) || (res.type !== expectedType)) {
       return undefined;
     }
@@ -60,7 +60,6 @@ export function checkAssemblies(): Promise<boolean> {
     .then(files => {
       const installed = new Set(files);
       const missing = REQUIRED_ASSEMBLIES.find(name => !installed.has(name));
-      console.log('missing', missing);
       return Promise.resolve(missing === undefined);
     });
 }

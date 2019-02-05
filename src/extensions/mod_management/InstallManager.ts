@@ -362,8 +362,7 @@ class InstallManager {
               if (installContext !== undefined) {
                 installContext.reportError(
                   'Installation failed',
-                  /*'The installation of "{{ installerPath }}" failed due to a problem with your setup: '
-                  + '\n{{ message }}'*/ err,
+                  err,
                   false, {
                     installerPath: path.basename(archivePath),
                     message: err.message
@@ -386,6 +385,8 @@ class InstallManager {
               }
             });
         } else {
+          // TODO: This drops the original error stack and makes the errors reported here ugly
+          //   and harder to diagnoes
           const { genHash } = require('modmeta-db');
           let errMessage: string;
           let allowReport = true;
