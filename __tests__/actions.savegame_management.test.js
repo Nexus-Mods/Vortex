@@ -2,20 +2,23 @@ import * as sessionActions from '../extensions/gamebryo-savegame-management/src/
 
 describe('setSavegames', () => {
   it('creates the correct action', () => {
-    expect(sessionActions.setSavegames('savegame1')).toEqual({
+    expect(sessionActions.setSavegames('savegame1', false)).toEqual({
       error: false,
       type: 'SET_SAVEGAMES',
-      payload: 'savegame1' ,
+      payload: {
+        savegames: 'savegame1',
+        truncated: false,
+      },
     });
   });
 });
 
-describe('setSavegameState', () => {
+describe('updateSavegame', () => {
   it('creates the correct action', () => {
-    expect(sessionActions.setSavegameState('savegame1', 'new value')).toEqual({
+    expect(sessionActions.updateSavegame('savegame1', 'new value')).toEqual({
       error: false,
-      type: 'SET_SAVEGAME_STATE',
-      payload: {id: 'savegame1', savegameState: 'new value'},
+      type: 'UPDATE_SAVEGAME',
+      payload: {id: 'savegame1', saveGame: 'new value'},
     });
   });
 });

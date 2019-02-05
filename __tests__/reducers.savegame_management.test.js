@@ -8,36 +8,36 @@ describe('setSavegames', () => {
       savegameBind: null,
       attributes: {},
     };
-    let result = sessionReducer.reducers.SET_SAVEGAMES(input, { savegame1: savegame });
-    expect(result).toEqual({ saves: { savegame1: savegame } });
+    let result = sessionReducer.reducers.SET_SAVEGAMES(input, { savegames: [ savegame ], truncated: false });
+    expect(result).toEqual({ saves: [ savegame ], savesTruncated: false });
   });
-  it('updates the list adding only the new savegame passed', () => {
+  it('updates the list, replacing previously installed saves', () => {
     let input = {
-      saves: {
-        savegame1: { id: '', savegameBind: null, attributes: {} },
-        savegame2: { id: '', savegameBind: null, attributes: {} }
-      }
+      saves: [
+        { id: '', savegameBind: null, attributes: {} },
+        { id: '', savegameBind: null, attributes: {} },
+      ],
     };
     let newSavegame = {
       id: 'savegame1',
       savegameBind: null,
       attributes: {},
     };
-    let result = sessionReducer.reducers.SET_SAVEGAMES(input, { savegame1: newSavegame });
-    expect(result).toEqual({ saves: { savegame1: newSavegame } });
+    let result = sessionReducer.reducers.SET_SAVEGAMES(input, { savegames: [ newSavegame ], truncated: false });
+    expect(result).toEqual({ saves: [ newSavegame ], savesTruncated: false });
   });
 });
 
-describe('setSavegameState', () => {
+describe('updateSavegame', () => {
   it('sets the savegame state', () => {
-    let input = { saves: { savegame1: { state: 'savegameState' } } };
-    let result = sessionReducer.reducers.SET_SAVEGAME_STATE(input, { id: 'savegame1', savegameState: 'newSavegameState' });
-    expect(result).toEqual({ saves: { savegame1: { state: 'newSavegameState' } } });
+    let input = { saves: { savegame1: 'savegameState' } };
+    let result = sessionReducer.reducers.UPDATE_SAVEGAME(input, { id: 'savegame1', saveGame: 'newSavegameState' });
+    expect(result).toEqual({ saves: { savegame1: 'newSavegameState' } });
   });
   it('affects only the right savegame', () => {
-    let input = { saves: { savegame1: { state: 'savegameState' }, savegame2: { state: 'savegameState' } } };
-    let result = sessionReducer.reducers.SET_SAVEGAME_STATE(input, { id: 'savegame1', savegameState: 'newSavegameState' });
-    expect(result).toEqual({ saves: { savegame1: { state: 'newSavegameState' }, savegame2: { state: 'savegameState' } } });
+    let input = { saves: { savegame1: 'savegameState1', savegame2: 'savegameState2' } };
+    let result = sessionReducer.reducers.UPDATE_SAVEGAME(input, { id: 'savegame1', saveGame: 'newSavegameState' });
+    expect(result).toEqual({ saves: { savegame1: 'newSavegameState', savegame2: 'savegameState2' } });
   });
 });
 
