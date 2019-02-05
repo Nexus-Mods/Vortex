@@ -198,7 +198,14 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         icon: 'start-install',
         title: 'Install',
         action: this.install,
-        condition: (instanceId: string) => this.props.mods[instanceId] === undefined,
+        condition: (instanceId: string | string[]) => {
+          const { mods } = this.props;
+          if (typeof(instanceId) === 'string') {
+            return mods[instanceId] === undefined;
+          } else {
+            return instanceId.find(id => mods[id] !== undefined) === undefined;
+          }
+        },
         position: 50,
       },
       {
