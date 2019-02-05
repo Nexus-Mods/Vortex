@@ -409,13 +409,11 @@ export function testPathTransfer(source: string, destination: string): Promise<v
   }
 
   const calculate = (filePath: string): Promise<number> => {
-    return new Promise<number> ((resolve, reject) => {
-      let total = 0;
-      turbowalk(filePath, entries => {
-        const files = entries.filter(entry => !entry.isDirectory);
-        total = files.reduce((lhs, rhs) => lhs + rhs.size, 0);
-      }).then(() => resolve(total));
-    })
+    let total = 0;
+    return turbowalk(filePath, entries => {
+      const files = entries.filter(entry => !entry.isDirectory);
+      total = files.reduce((lhs, rhs) => lhs + rhs.size, 0);
+    }).then(() => Promise.resolve(total));
   }
 
   let totalNeededBytes = 0;
@@ -461,7 +459,7 @@ export function transferPath(source: string,
       let count: number;
 
       return fs.readdirAsync(source)
-        .mapSeries((fileName: string, index: number, numFiles: number) => {
+        .map((fileName: string, index: number, numFiles: number) => {
           if (count === undefined) {
             count = numFiles;
           }
@@ -486,7 +484,7 @@ export function transferPath(source: string,
             .then(() => {
               ++completed;
             });
-        })
+        }, { concurrency: 100 })
         .then(() => moveDown
           ? Promise.resolve()
           : fs.removeAsync(source));
