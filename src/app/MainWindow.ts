@@ -1,19 +1,19 @@
 import {addNotification} from '../actions/notifications';
 import {setMaximized, setWindowPosition,  setWindowSize} from '../actions/window';
+import { ThunkStore } from '../types/IExtensionContext';
 import {IState, IWindow} from '../types/IState';
 import Debouncer from '../util/Debouncer';
 import { terminate } from '../util/errorHandling';
 import getVortexPath from '../util/getVortexPath';
 import { log } from '../util/log';
+import opn from '../util/opn';
 import * as storeHelperT from '../util/storeHelper';
+import { truthy } from '../util/util';
 
 import * as Promise from 'bluebird';
 import { screen } from 'electron';
 import * as Redux from 'redux';
 import TrayIcon from './TrayIcon';
-import { ThunkStore } from '../types/IExtensionContext';
-import { truthy } from '../util/util';
-import opn from '../util/opn';
 
 class MainWindow {
   private mWindow: Electron.BrowserWindow = null;
@@ -67,12 +67,13 @@ class MainWindow {
           //   much and wait for a PR by the electron people but those have closed the issue. fun
           log('info', message);
         } else if (cancelTimer === undefined) {
-          // if an error is logged by the renderer and the window isn't shown within a reasonable time,
-          // it was probably something terminal.
+          // if an error is logged by the renderer and the window isn't shown within a reasonable
+          // time, it was probably something terminal.
           // this isn't ideal as we don't have a stack trace of the error message here
           cancelTimer = setTimeout(() => {
             if (!this.mShown) {
-              terminate({ message: 'Vortex failed to start', details: message }, {}, true, 'renderer');
+              terminate({ message: 'Vortex failed to start', details: message },
+                        {}, true, 'renderer');
             }
           }, 15000);
         }

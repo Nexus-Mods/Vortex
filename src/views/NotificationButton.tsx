@@ -66,7 +66,11 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
       .map(notification => this.renderNotification(notification, collapsed));
 
     const popover = (
-      <Popover id='notifications-popover' arrowOffsetLeft={64} style={{ display: hide ? 'none' : 'block' }}>
+      <Popover
+        id='notifications-popover'
+        arrowOffsetLeft={64}
+        style={{ display: hide ? 'none' : 'block' }}
+      >
         {items.length > 0 ? items : t('No Notifications')}
       </Popover>
     );
