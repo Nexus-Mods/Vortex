@@ -7,28 +7,31 @@ import { Button } from '../../../controls/TooltipControls';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
 import { ValidationState } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { TemporaryError, UserCanceled, InsufficientDiskSpace, UnsupportedOperatingSystem } from '../../../util/CustomErrors';
+import { InsufficientDiskSpace, TemporaryError,
+         UnsupportedOperatingSystem, UserCanceled } from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
 import getVortexPath from '../../../util/getVortexPath';
 import { log } from '../../../util/log';
-import opn from '../../../util/opn';
 import { showError } from '../../../util/message';
+import opn from '../../../util/opn';
 import { getSafe } from '../../../util/storeHelper';
-import { isChildPath, transferPath, testPathTransfer } from '../../../util/util';
+import { isChildPath, testPathTransfer, transferPath } from '../../../util/util';
 import { currentGame, currentGameDiscovery } from '../../gamemode_management/selectors';
 import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../../gamemode_management/types/IGameStored';
+import { setDeploymentNecessary } from '../actions/deployment';
 import { setActivator, setInstallPath } from '../actions/settings';
 import { IDeploymentMethod } from '../types/IDeploymentMethod';
 import { getSupportedActivators } from '../util/deploymentMethods';
+import { NoDeployment } from '../util/exceptions';
 import getInstallPath, { getInstallPathPattern } from '../util/getInstallPath';
-import { setDeploymentNecessary } from '../actions/deployment';
 
 import getText from '../texts';
 
 import * as Promise from 'bluebird';
 import { remote } from 'electron';
 import * as path from 'path';
+import * as process from 'process';
 import * as React from 'react';
 import {
   Alert, Button as BSButton, ControlLabel, FormControl, FormGroup,
@@ -36,7 +39,6 @@ import {
 } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
-import * as process from 'process';
 import * as winapi from 'winapi-bindings';
 
 interface IBaseProps {
@@ -135,7 +137,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       <form onSubmit={this.submitEvt}>
         <Panel>
           <PanelX.Body>
-            {this.renderPathCtrl(t('Mod Staging Folder ({{name}})', { replace: { name: gameName } }), supportedActivators)}
+            {this.renderPathCtrl(t('Mod Staging Folder ({{name}})',
+                                 { replace: { name: gameName } }), supportedActivators)}
             <Modal show={this.state.busy !== undefined} onHide={nop}>
               <Modal.Body>
                 <Jumbotron>
@@ -196,8 +199,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     const { t, discovery, gameMode, onSetInstallPath, onShowDialog, onShowError } = this.props;
     const newInstallPath: string = getInstallPath(this.state.installPath, gameMode);
     const oldInstallPath: string = getInstallPath(this.props.installPath, gameMode);
+    log('info', 'changing staging directory', { from: oldInstallPath, to: newInstallPath });
 
-    let vortexPath = getVortexPath('base');
+    const vortexPath = getVortexPath('base');
 
     if (isChildPath(newInstallPath, vortexPath)) {
       return onShowDialog('error', 'Invalid path selected', {
@@ -228,23 +232,26 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       }, [ { label: 'Close' } ]);
     }
 
-
     const notEnoughDiskSpace = () => {
       return onShowDialog('error', 'Insufficient disk space', {
         text: 'You do not have enough disk space to move the staging folder to your '
             + 'proposed destination folder.\n\n'
-            + 'Please select a different destination or free up some space and try again!'
+            + 'Please select a different destination or free up some space and try again!',
       }, [ { label: 'Close' } ]);
-    }
+    };
 
-    const purgePromise = oldInstallPath !== newInstallPath
-      ? this.purgeActivation()
+    // it's possible that old and new path indicate the same directory but are still different,
+    // e.g. if the old path contained a variable (like {game}) and the new one has the game name
+    // written out. In this case we update the setting without purging or moving anything
+    const doPurge = () => oldInstallPath !== newInstallPath
+      // ignore if there is no deployment method because in that case there is nothing to purge
+      ? this.purgeActivation().catch(NoDeployment, () => Promise.resolve())
       : Promise.resolve();
 
     this.nextState.progress = 0;
     this.nextState.busy = t('Moving');
     return testPathTransfer(oldInstallPath, newInstallPath)
-      .then(() => purgePromise)
+      .then(() => doPurge())
       .then(() => fs.ensureDirAsync(newInstallPath))
       .then(() => {
         let queue = Promise.resolve();
@@ -281,9 +288,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       })
       .catch(UserCanceled, () => null)
       .catch(InsufficientDiskSpace, () => notEnoughDiskSpace())
-      .catch(UnsupportedOperatingSystem, () => 
-        onShowError('Unsupported operating system', 
-        'This functionality is currently unavailable for your operating system!', 
+      .catch(UnsupportedOperatingSystem, () =>
+        onShowError('Unsupported operating system',
+        'This functionality is currently unavailable for your operating system!',
         false))
       .catch((err) => {
         if (err !== null) {
@@ -335,6 +342,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       this.nextState.changingActivator = false;
     })
     .then(() => { this.context.api.store.dispatch(setDeploymentNecessary(gameMode, true)); })
+    .catch(UserCanceled, () => null)
     .catch(TemporaryError, err => {
       onShowError('Failed to purge previous deployment, please try again',
                   err, false);
@@ -347,10 +355,10 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   private validateModPath(input: string): { state: ValidationState, reason?: string } {
     const { currentPlatform } = this.state;
 
-    const invalidCharacters = currentPlatform === 'win32' 
+    const invalidCharacters = currentPlatform === 'win32'
       ? ['/', '?', '%', '*', ':', '|', '"', '<', '>', '.']
       : [];
-    
+
     let vortexPath = remote.app.getAppPath();
     if (path.basename(vortexPath) === 'app.asar') {
       // in asar builds getAppPath returns the path of the asar so need to go up 2 levels
@@ -368,13 +376,13 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       return {
         state: (input.length > 200) ? 'error' : 'warning',
         reason: 'Staging path shouldn\'t be too long, otherwise mod installers may fail.',
-      }
+      };
     }
 
     if (!path.isAbsolute(input)) {
       return {
         state: 'error',
-        reason: 'Staging folder needs to be an absolute path.'
+        reason: 'Staging folder needs to be an absolute path.',
       };
     }
 
@@ -382,13 +390,13 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     if (invalidCharacters.find(inv => removedWinRoot.indexOf(inv) !== -1) !== undefined) {
       return {
         state: 'error',
-        reason: 'Path cannot contain illegal characters'
+        reason: 'Path cannot contain illegal characters',
       };
     }
 
     return {
       state: 'success',
-    }
+    };
   }
 
   private renderPathCtrl(label: string, activators: IDeploymentMethod[]): JSX.Element {
@@ -414,7 +422,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                 value={getInstallPathPattern(installPath)}
                 placeholder={label}
                 onChange={this.changePathEvt}
-                onKeyPress={this.pathsChanged() && (validationState.state !== 'error') ? this.keyPressEvt : null}
+                onKeyPress={(this.pathsChanged() && (validationState.state !== 'error'))
+                             ? this.keyPressEvt : null}
               />
               <InputGroup.Button className='inset-btn'>
                 <Button
@@ -431,7 +440,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               {((activators === undefined) || (activators.length === 0)) ? (
                 <Button
                   onClick={this.suggestPath}
-                  tooltip={t('This will suggest a path that should allow you to deploy mods for the current game')}
+                  tooltip={t('This will suggest a path that should allow you to '
+                           + 'deploy mods for the current game')}
                 >
                   {t('Suggest')}
                 </Button>
@@ -537,7 +547,12 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         <InputGroup>
           {content}
           <InputGroup.Button>
-            <BSButton disabled={!changed || changingActivator} onClick={this.applyActivator}>{t('Apply')}</BSButton>
+            <BSButton
+              disabled={!changed || changingActivator}
+              onClick={this.applyActivator}
+            >
+              {t('Apply')}
+            </BSButton>
           </InputGroup.Button>
         </InputGroup>
         { activatorIdx !== -1 ? (

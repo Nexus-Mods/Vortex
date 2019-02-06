@@ -133,11 +133,7 @@ function purgeMods(api: IExtensionApi): Promise<void> {
     loadActivation(api, typeId, modPaths[typeId], activator)
       .then(() => activator.purge(instPath, modPaths[typeId]))
       .then(() => saveActivation(typeId, state.app.instanceId, modPaths[typeId], [], activator.id))))
-  .catch(UserCanceled, () => undefined)
-  .catch(TemporaryError, err =>
-    api.showErrorNotification('Failed to purge mods, please try again',
-                              err, { allowReport: false }))
-  .catch(err => api.showErrorNotification('Failed to purge mods', err))
+    .then(() => Promise.resolve())
   .finally(() => {
     api.dismissNotification(notificationId);
     return activator.postPurge();
