@@ -186,7 +186,6 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     const newPath = getInstallPath(this.state.installPath, gameMode);
 
     return transferPath(oldPath, newPath, (from: string, to: string, progress: number) => {
-      log('debug', 'transfer mod', { from, to });
       if (progress > this.state.progress) {
         this.nextState.progress = progress;
       }
@@ -242,6 +241,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       ? this.purgeActivation()
       : Promise.resolve();
 
+    this.nextState.progress = 0;
     this.nextState.busy = t('Moving');
     return testPathTransfer(oldInstallPath, newInstallPath)
       .then(() => purgePromise)

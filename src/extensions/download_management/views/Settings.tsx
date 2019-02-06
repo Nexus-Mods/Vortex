@@ -299,6 +299,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       }, [ { label: 'Close' } ]);
     }
 
+    this.nextState.progress = 0;
     this.nextState.busy = t('Moving');
     return testPathTransfer(oldPath, newPath)
       .then(() => fs.ensureDirWritableAsync(newPath, this.confirmElevate))

@@ -15,7 +15,7 @@ import * as path from 'path';
 import { file } from 'tmp';
 import * as diskusage from 'diskusage';
 import * as winapi from 'winapi-bindings';
-import turbowalk from 'turbowalk';
+import turbowalk, { IEntry } from 'turbowalk';
 
   // 500MB or 524288000 Bytes in binary.
   const MIN_DISK_SPACE_OFFSET = ((512 * 1024) * 1000);
@@ -449,46 +449,63 @@ export function transferPath(source: string,
                              progress: (from: string, to: string, percentage: number) => void): Promise<void> {
   const moveDown = isChildPath(dest, source);
 
+  let func = fs.copyAsync;
+
+  let completed = 0;
+  let count: number = 0;
+  let lastPerc = 0;
+
+  let copyPromise = Promise.resolve();
+
   return Promise.join(fs.statAsync(source), fs.statAsync(dest),
     (statOld: fs.Stats, statNew: fs.Stats) =>
       Promise.resolve(statOld.dev === statNew.dev))
     .then((sameVolume: boolean) => {
-      const func = sameVolume ? fs.renameAsync : fs.copyAsync;
-
-      let completed = 0;
-      let count: number;
-
-      return fs.readdirAsync(source)
-        .map((fileName: string, index: number, numFiles: number) => {
-          if (count === undefined) {
-            count = numFiles;
-          }
-          const sourcePath = path.join(source, fileName);
-          const destPath = path.join(dest, fileName);
-          if (sourcePath === dest) {
-            // if the target directory is a subdirectory of the old one, don't try
-            // to move it into itself, that's just weird. Also it fails
-            // (e.g. ...\mods -> ...\mods\newMods)
-            return Promise.resolve();
-          }
-          progress(sourcePath, destPath, Math.floor((completed * 100) / count));
-          return func(sourcePath, destPath)
-            .catch(err => {
-              return (err.code === 'EXDEV')
-                // EXDEV implies we tried to rename when source and destination are
-                // not in fact on the same volume. This is what comparing the stat.dev
-                // was supposed to prevent.
-                ? fs.copyAsync(sourcePath, destPath)
-                : Promise.reject(err);
-            })
-            .then(() => {
-              ++completed;
-            });
-        }, { concurrency: 100 })
-        .then(() => moveDown
-          ? Promise.resolve()
-          : fs.removeAsync(source));
+      func = sameVolume ? fs.renameAsync : fs.copyAsync;
     })
+    .then(() => turbowalk(source, (entries: IEntry[]) => {
+      count += entries.length;
+      copyPromise = copyPromise.then(() => Promise.map(entries, entry => {
+        const sourcePath = entry.filePath;
+        const destPath = path.join(dest, path.relative(source, entry.filePath));
+        if (sourcePath === dest) {
+          // if the target directory is a subdirectory of the old one, don't try
+          // to move it into itself, that's just weird. Also it fails
+          // (e.g. ...\mods -> ...\mods\newMods)
+          return Promise.resolve();
+        }
+
+        if (entry.isDirectory) {
+          return fs.mkdirsAsync(destPath);
+        }
+
+        const perc = Math.floor((completed * 100) / count);
+        if (perc !== lastPerc) {
+          progress(sourcePath, destPath, perc);
+        }
+        return func(sourcePath, destPath)
+          .catch(err => {
+            // EXDEV implies we tried to rename when source and destination are
+            // not in fact on the same volume. This is what comparing the stat.dev
+            // was supposed to prevent.
+            if (err.code === 'EXDEV') {
+              func = fs.copyAsync;
+              return func(sourcePath, destPath);
+            } else if (err.code === 'ENOENT') {
+              return Promise.resolve();
+            } else {
+              return Promise.reject(err);
+            }
+          })
+          .then(() => {
+            ++completed;
+          });
+      }).then(() => null));
+    }, { details: false, skipHidden: false }))
+    .then(() => copyPromise)
+    .then(() => moveDown
+      ? Promise.resolve()
+      : fs.removeAsync(source))
     .catch(err => (err.code === 'ENOENT')
       ? Promise.resolve()
       : Promise.reject(err));
