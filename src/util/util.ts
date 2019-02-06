@@ -387,13 +387,13 @@ export function isChildPath(child: string, parent: string): boolean {
  * Note:
  * - Currently will only test whether there's enough disk space at the destination
  *    folder.
- * 
+ *
  * @param source The current source folder.
  * @param destination The proposed destination folder.
  */
 export function testPathTransfer(source: string, destination: string): Promise<void> {
   if (process.platform !== 'win32') {
-    return Promise.reject(new UnsupportedOperatingSystem())
+    return Promise.reject(new UnsupportedOperatingSystem());
   }
 
   let destinationRoot;
@@ -406,7 +406,7 @@ export function testPathTransfer(source: string, destination: string): Promise<v
   const isOnSameVolume = (): Promise<boolean> => {
     return Promise.all([fs.statAsync(source), fs.statAsync(destinationRoot)])
       .then(stats => stats[0].dev === stats[1].dev);
-  }
+  };
 
   const calculate = (filePath: string): Promise<number> => {
     let total = 0;
@@ -414,12 +414,12 @@ export function testPathTransfer(source: string, destination: string): Promise<v
       const files = entries.filter(entry => !entry.isDirectory);
       total = files.reduce((lhs, rhs) => lhs + rhs.size, 0);
     }).then(() => Promise.resolve(total));
-  }
+  };
 
   let totalNeededBytes = 0;
   return isOnSameVolume()
-    .then(res => res === true
-      ? Promise.reject(new ProcessCanceled('Disk space calculations are unnecessary.')) 
+    .then(res => res
+      ? Promise.reject(new ProcessCanceled('Disk space calculations are unnecessary.'))
       : calculate(source))
     .then(totalSize => {
       totalNeededBytes = totalSize;
@@ -429,12 +429,14 @@ export function testPathTransfer(source: string, destination: string): Promise<v
         return Promise.reject(err);
       }
     })
-    .then(res => 
+    .then(res =>
       (totalNeededBytes < (res.free - MIN_DISK_SPACE_OFFSET))
         ? Promise.resolve()
-        : Promise.reject(new InsufficientDiskSpace(destinationRoot))
-    ).catch(ProcessCanceled, () => Promise.resolve());
+        : Promise.reject(new InsufficientDiskSpace(destinationRoot)))
+    .catch(ProcessCanceled, () => Promise.resolve());
 }
+
+export type ProgressCallback = (from: string, to: string, percentage: number) => void;
 
 /**
  * Move the content of a directory to another - Using a move operation if it's on the same
@@ -446,7 +448,7 @@ export function testPathTransfer(source: string, destination: string): Promise<v
  */
 export function transferPath(source: string,
                              dest: string,
-                             progress: (from: string, to: string, percentage: number) => void): Promise<void> {
+                             progress: ProgressCallback): Promise<void> {
   const moveDown = isChildPath(dest, source);
 
   let func = fs.copyAsync;
@@ -481,6 +483,7 @@ export function transferPath(source: string,
 
         const perc = Math.floor((completed * 100) / count);
         if (perc !== lastPerc) {
+          lastPerc = perc;
           progress(sourcePath, destPath, perc);
         }
         return func(sourcePath, destPath)

@@ -118,18 +118,20 @@ class DeploymentMethod extends LinkingDeployment {
                   progressCB?: (files: number, total: number) => void): Promise<IDeployedFile[]> {
     this.mDirCache = new Set<string>();
 
-    let deployment: IDeployment = this.context.newDeployment;
-    const lnkExtUpper =LNK_EXT.toUpperCase();
+    const deployment: IDeployment = this.context.newDeployment;
+    const lnkExtUpper = LNK_EXT.toUpperCase();
     const extLen = LNK_EXT.length;
-    this.context.newDeployment = Object.keys(deployment).reduce((prev: IDeployment, relPath: string) => {
-      if (path.extname(relPath) === lnkExtUpper) {
-        deployment[relPath].relPath = deployment[relPath].relPath.substr(0, relPath.length - extLen);
-        prev[relPath.substr(0, relPath.length - extLen)] = deployment[relPath];
-      } else {
-        prev[relPath] = deployment[relPath];
-      }
-      return prev;
-    }, {});
+    this.context.newDeployment = Object.keys(deployment)
+      .reduce((prev: IDeployment, relPath: string) => {
+        if (path.extname(relPath) === lnkExtUpper) {
+          deployment[relPath].relPath =
+            deployment[relPath].relPath.substr(0, relPath.length - extLen);
+          prev[relPath.substr(0, relPath.length - extLen)] = deployment[relPath];
+        } else {
+          prev[relPath] = deployment[relPath];
+        }
+        return prev;
+      }, {});
 
     return super.finalize(gameId, dataPath, installationPath, progressCB)
     .then(files => {
@@ -147,8 +149,8 @@ class DeploymentMethod extends LinkingDeployment {
       }
       entries.forEach(entry => {
         if (!entry.isDirectory && (path.extname(entry.filePath) === LNK_EXT)) {
-          const relPath: string =
-            path.relative(sourceBase, entry.filePath.substring(0, entry.filePath.length - LNK_EXT.length));
+          const relPath: string = path.relative(sourceBase,
+            entry.filePath.substring(0, entry.filePath.length - LNK_EXT.length));
           delete this.context.newDeployment[this.normalize(relPath)];
         }
       });

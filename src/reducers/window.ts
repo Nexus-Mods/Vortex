@@ -13,6 +13,8 @@ export const windowReducer: IReducerSpec = {
       setSafe(state, ['position'], payload),
     [actions.setMaximized as any]: (state, payload) =>
       setSafe(state, ['maximized'], payload),
+    [actions.setZoomFactor as any]: (state, payload) =>
+      setSafe(state, ['zoomFactor'], payload),
     [actions.setTabsMinimized as any]: (state, payload) =>
       setSafe(state, ['tabsMinimized'], payload),
     [actions.setCustomTitlebar as any]: (state, payload) =>
@@ -20,6 +22,7 @@ export const windowReducer: IReducerSpec = {
   },
   defaults: {
     maximized: false,
+    zoomFactor: 1.0,
     position: { x: 0, y: 0 },
     size: {},
     tabsMinimized: false,

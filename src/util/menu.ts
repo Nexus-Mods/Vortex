@@ -5,6 +5,7 @@ import { debugTranslations, getMissingTranslations } from './i18n';
 import { log } from './log';
 
 import { remote, webFrame } from 'electron';
+import { setZoomFactor } from '../actions/window';
 
 const { Menu, clipboard } = remote;
 
@@ -15,6 +16,27 @@ const { Menu, clipboard } = remote;
  * @param {ExtensionManager} extensions
  */
 export function initApplicationMenu(extensions: ExtensionManager) {
+
+  const changeZoomFactor = (factor: number) => {
+    if ((factor < 0.5) || (factor > 1.5)) {
+      return;
+    }
+    factor = Math.round(factor * 10) / 10;
+    extensions.getApi().sendNotification({
+      id: 'zoom-factor-changed',
+      type: 'info',
+      message: extensions.getApi().translate('Zoom: {{factor}}%',
+        { replace: { factor: Math.floor(factor * 100) } }),
+      noDismiss: true,
+      displayMS: 2000,
+      localize: {
+        message: false,
+      },
+    });
+    webFrame.setZoomFactor(factor);
+    extensions.getApi().store.dispatch(setZoomFactor(factor));
+  };
+
   const fileMenu: Electron.MenuItemConstructorOptions[] = [
     {
       label: 'Close',
@@ -95,28 +117,32 @@ export function initApplicationMenu(extensions: ExtensionManager) {
       viewMenu[viewMenu.length - 1].enabled = false;
     }
 
-    viewMenu.push({
+    viewMenu.push(...[{
       label: 'Zoom In',
       accelerator: 'CmdOrCtrl+Shift+Plus',
       click(item, focusedWindow) {
-        webFrame.setZoomFactor(webFrame.getZoomFactor() + 0.1);
+        changeZoomFactor(webFrame.getZoomFactor() + 0.1);
       },
-    });
-
-    viewMenu.push({
+    }, {
       label: 'Zoom Out',
       accelerator: 'CmdOrCtrl+Shift+-',
       click(item, focusedWindow) {
-        webFrame.setZoomFactor(webFrame.getZoomFactor() - 0.1);
+        changeZoomFactor(webFrame.getZoomFactor() - 0.1);
       },
-    });
+    }, {
+      label: 'Reset Zoom',
+      accelerator: 'CmdOrCtrl+0',
+      click() {
+        changeZoomFactor(1.0);
+      },
+    }]);
 
     const menu = Menu.buildFromTemplate([
       { label: 'File', submenu: fileMenu },
       { label: 'View', submenu: viewMenu },
     ]);
     Menu.setApplicationMenu(menu);
-  }
+  };
   refresh();
   return refresh;
 }

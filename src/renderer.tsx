@@ -62,7 +62,7 @@ import { reduxSanity, StateError } from './util/reduxSanity';
 import MainWindow from './views/MainWindow';
 
 import * as Promise from 'bluebird';
-import { ipcRenderer, remote } from 'electron';
+import { ipcRenderer, remote, webFrame } from 'electron';
 import { EventEmitter } from 'events';
 import * as I18next from 'i18next';
 import { changeLanguage } from 'i18next';
@@ -80,8 +80,9 @@ import crashDump from 'crash-dump';
 import {} from './util/extensionRequire';
 import { reduxLogger } from './util/reduxLogger';
 import { ThunkStore } from './types/IExtensionContext';
-import { UserCanceled } from './util/api';
 import { getAllPropertyNames } from './util/util';
+import { UserCanceled } from './util/CustomErrors';
+import { getSafe } from './util/storeHelper';
 
 log('debug', 'renderer process started', { pid: process.pid });
 
@@ -270,6 +271,8 @@ store.subscribe(() => {
 function renderer() {
   let i18n: I18next.i18n;
   let error: Error;
+
+  webFrame.setZoomFactor(getSafe(store.getState(), ['settings', 'window', 'zoomFactor'], 1));
 
   getI18n(store.getState().settings.interface.language)
     .then(res => {

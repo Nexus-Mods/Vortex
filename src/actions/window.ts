@@ -23,6 +23,8 @@ export const setWindowPosition = safeCreateAction('STORE_WINDOW_POSITION', ident
  */
 export const setMaximized = safeCreateAction('SET_MAXIMIZED', identity);
 
+export const setZoomFactor = safeCreateAction('SET_ZOOM_FACTOR', identity);
+
 export const setTabsMinimized = safeCreateAction('SET_TABS_MINIMIZED', identity);
 
 export const setCustomTitlebar = safeCreateAction('SET_CUSTOM_TITLEBAR', identity);
