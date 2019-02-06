@@ -746,6 +746,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     this.mProxyHeaderRef.childNodes.forEach((node, index) => {
       (this.mVisibleHeaderRef.childNodes.item(index) as HTMLElement).style.width = `${(node as HTMLElement).clientWidth}px`;
     });
+
+    const height = this.mVisibleHeaderRef.clientHeight;
+    this.mScrollRef.style['marginTop'] = `${height}px`;
   }
 
   private setPinnedRef = ref => {

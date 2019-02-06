@@ -96,6 +96,19 @@
   }
 }
 
+.table-container .table-main-pane .xthead {
+  .table-header-cell.xth {
+    padding: 0 !important;
+    border: 0 !important;
+    > * {
+      max-height: 0 !important;
+      visibility: hidden;
+      padding: 0 !important;
+      margin-top: -100%;
+    }
+  }
+}
+
 .table-details-pane {
   // overflow-y: auto;
   padding: 0px;
