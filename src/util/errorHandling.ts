@@ -2,10 +2,10 @@ import { IErrorOptions, IExtensionApi } from '../types/api';
 import { IError } from '../types/IError';
 
 import { UserCanceled } from './CustomErrors';
-import { log } from './log';
 import { genHash } from './genHash';
+import { log } from './log';
 import { getSafe } from './storeHelper';
-import { spawnSelf, truthy, getAllPropertyNames } from './util';
+import { getAllPropertyNames, spawnSelf, truthy } from './util';
 
 import * as Promise from 'bluebird';
 import {
@@ -20,20 +20,18 @@ import { } from 'opn';
 import * as os from 'os';
 import * as path from 'path';
 import * as semver from 'semver';
-import {} from 'uuid';
 import { inspect } from 'util';
+import {} from 'uuid';
 
 // tslint:disable-next-line:no-var-requires
 const opn = require('opn');
-
-// could be a bit more dynamic but how often is this going to change?
-const repo = 'Nexus-Mods/Vortex';
 
 function createTitle(type: string, error: IError, hash: string) {
   return `${type}: ${error.message}`;
 }
 
-function createReport(type: string, error: IError, version: string, reporterProcess: string, sourceProcess: string) {
+function createReport(type: string, error: IError, version: string,
+                      reporterProcess: string, sourceProcess: string) {
   let proc: string = reporterProcess || 'unknown';
   if (sourceProcess !== undefined) {
     proc = `${sourceProcess} -> ${proc}`;
@@ -87,7 +85,8 @@ export function createErrorReport(type: string, error: IError, labels: string[],
 }
 
 function nexusReport(hash: string, type: string, error: IError, labels: string[],
-                     apiKey: string, reporterProcess: string, sourceProcess: string): Promise<IFeedbackResponse> {
+                     apiKey: string, reporterProcess: string,
+                     sourceProcess: string): Promise<IFeedbackResponse> {
   const app = appIn || remote.app;
   const Nexus: typeof NexusT = require('nexus-api').default;
 
@@ -142,13 +141,15 @@ export function isOutdated(): boolean {
 export function sendReportFile(fileName: string): Promise<IFeedbackResponse> {
   return fs.readFileAsync(fileName)
     .then(reportData => {
-      const {type, error, labels, reporterId, reportProcess, sourceProcess} = JSON.parse(reportData.toString());
+      const {type, error, labels, reporterId, reportProcess, sourceProcess} =
+        JSON.parse(reportData.toString());
       return sendReport(type, error, labels, reporterId, reportProcess, sourceProcess);
   });
 }
 
 export function sendReport(type: string, error: IError, labels: string[],
-                           reporterId?: string, reporterProcess?: string, sourceProcess?: string): Promise<IFeedbackResponse> {
+                           reporterId?: string, reporterProcess?: string,
+                           sourceProcess?: string): Promise<IFeedbackResponse> {
   const hash = genHash(error);
   if (process.env.NODE_ENV === 'development') {
     const dialog = dialogIn || remote.dialog;
@@ -157,7 +158,8 @@ export function sendReport(type: string, error: IError, labels: string[],
     }));
     return Promise.resolve(undefined);
   } else {
-    return nexusReport(hash, type, error, labels, reporterId || fallbackAPIKey, reporterProcess, sourceProcess);
+    return nexusReport(hash, type, error, labels, reporterId || fallbackAPIKey,
+                       reporterProcess, sourceProcess);
   }
 }
 
@@ -188,7 +190,7 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
     if (error.details) {
       detail = error.details + '\n' + detail;
     }
-    const buttons = ['Ignore', 'Quit']
+    const buttons = ['Ignore', 'Quit'];
     if ((allowReport !== false) && !outdated) {
       buttons.push('Report and Quit');
     }
@@ -253,8 +255,6 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
 /**
  * render error message for internal processing (issue tracker and such).
  * It's important this doesn't translate the error message or lose information
- * @param input 
- * @param options 
  */
 export function toError(input: any, options?: IErrorOptions): IError {
   let ten = getFixedT('en');
@@ -264,7 +264,7 @@ export function toError(input: any, options?: IErrorOptions): IError {
     // can't actually be sure if i18next is initialized - especially if this is the
     // main process. We could use require('i18next').isInitialized but no clue if
     // that's reliable.
-    ten = input => input;
+    ten = tinput => tinput;
   }
 
   const t = (text: string) => ten(text, { replace: (options || {}).replace });
@@ -305,8 +305,9 @@ export function toError(input: any, options?: IErrorOptions): IError {
       // if there are upper case characters, this is a custom, not properly typed, error object
       // with upper case attributes, intended to be displayed to the user.
       // Otherwise, who knows what this is, just send everything.
-      if (attributes.length == 0) {
-        attributes = getAllPropertyNames(input || {}).filter(key => ['message', 'error', 'stack'].indexOf(key) === -1);
+      if (attributes.length === 0) {
+        attributes = getAllPropertyNames(input || {})
+          .filter(key => ['message', 'error', 'stack'].indexOf(key) === -1);
       }
 
       const details = attributes.length === 0 ? undefined : attributes

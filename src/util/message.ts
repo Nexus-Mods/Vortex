@@ -9,7 +9,7 @@ import { IState } from '../types/IState';
 import { jsonRequest } from '../util/network';
 
 import { HTTPError } from './CustomErrors';
-import { sendReport, toError, isOutdated } from './errorHandling';
+import { isOutdated, sendReport, toError } from './errorHandling';
 import { log } from './log';
 import { truthy } from './util';
 
@@ -48,7 +48,9 @@ export function calcDuration(messageLength: number) {
  * @param {string} message
  * @param {string} [id]
  */
-export function showSuccess<S>(dispatch: ThunkDispatch<IState, null, Redux.Action>, message: string, id?: string) {
+export function showSuccess<S>(dispatch: ThunkDispatch<IState, null, Redux.Action>,
+                               message: string,
+                               id?: string) {
   // show message for 2 to 7 seconds, depending on message length
   dispatch(addNotification({
     id,
@@ -61,7 +63,9 @@ export function showSuccess<S>(dispatch: ThunkDispatch<IState, null, Redux.Actio
 /**
  * show activity notification
  */
-export function showActivity<S>(dispatch: ThunkDispatch<IState, null, Redux.Action>, message: string, id?: string) {
+export function showActivity<S>(dispatch: ThunkDispatch<IState, null, Redux.Action>,
+                                message: string,
+                                id?: string) {
   dispatch(addNotification({
     id,
     type: 'activity',
@@ -79,7 +83,9 @@ export function showActivity<S>(dispatch: ThunkDispatch<IState, null, Redux.Acti
  * @param {string} message
  * @param {string} [id]
  */
-export function showInfo<S>(dispatch: ThunkDispatch<IState, null, Redux.Action>, message: string, id?: string) {
+export function showInfo<S>(dispatch: ThunkDispatch<IState, null, Redux.Action>,
+                            message: string,
+                            id?: string) {
   // show message for 2 to 7 seconds, depending on message length
   dispatch(addNotification({
     id,
@@ -97,7 +103,8 @@ function genFeedbackText(response: IFeedbackResponse, githubInfo?: any): string 
   const lines = [
     'Thank you for your feedback!',
     '',
-    'If you\'re reporting a bug, please don\'t forget to leave additional information in the form that should have opened in your webbrowser.',
+    'If you\'re reporting a bug, please don\'t forget to leave additional '
+      + 'information in the form that should have opened in your webbrowser.',
     '',
   ];
 
@@ -106,7 +113,8 @@ function genFeedbackText(response: IFeedbackResponse, githubInfo?: any): string 
   } else {
     if (((githubInfo !== undefined) && (githubInfo.state === 'closed'))
         || response.github_issue.issue_state === 'closed') {
-      lines.push('This issue was reported before and seems to be fixed already. If you\'re not running the newest version of Vortex, please update.');
+      lines.push('This issue was reported before and seems to be fixed already. '
+               + 'If you\'re not running the newest version of Vortex, please update.');
     } else if (((githubInfo !== undefined) && (githubInfo.comments >= 1))
                || (response.count > 1)) {
       lines.push('This is not the first report about this problem, so your report '
@@ -152,7 +160,9 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
                           options?: IErrorOptions) {
   const err = renderError(details);
 
-  const allowReport = err.allowReport !== undefined ? err.allowReport : shouldAllowReport(details, options);
+  const allowReport = err.allowReport !== undefined
+    ? err.allowReport
+    : shouldAllowReport(details, options);
 
   log(allowReport ? 'error' : 'warn', message, err);
 
@@ -182,7 +192,8 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
       action: () => sendReport('error', toError(details, options), ['error'], '', process.type)
         .then(response => {
           if (response !== undefined) {
-            const githubURL = `https://api.github.com/repos/${GITHUB_PROJ}/issues/${response.github_issue.issue_number}`;
+            const { issue_number } = response.github_issue;
+            const githubURL = `https://api.github.com/repos/${GITHUB_PROJ}/issues/${issue_number}`;
             jsonRequest<any>(githubURL)
               .catch(() => undefined)
               .then(githubInfo => {
@@ -211,21 +222,33 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
   }));
 }
 
-export function prettifyNodeErrorMessage(err: any): { message: string, replace?: any, allowReport?: boolean } {
+export interface IPrettifiedError {
+  message: string;
+  replace?: any;
+  allowReport?: boolean;
+}
+
+export function prettifyNodeErrorMessage(err: any): IPrettifiedError {
   if (err.code === undefined) {
     return { message: err.message, replace: {} };
   } else if (err.syscall === 'getaddrinfo') {
     return {
-      message: 'Network address "{{host}}" could not be resolved. This is often a temporary error, please try again later.',
+      message: 'Network address "{{host}}" could not be resolved. This is often a temporary error, '
+             + 'please try again later.',
       replace: { host: err.host || err.hostname },
       allowReport: false,
     };
   } else if (err.code === 'EPERM') {
     const filePath = err.path || err.filename;
-    return { message: 'Vortex needs to access "{{filePath}}" but it\'s write protected.\n'
+    return {
+      message: 'Vortex needs to access "{{filePath}}" but it\'s write protected.\n'
+
             + 'When you configure directories and access rights you need to ensure Vortex can '
             + 'still access data directories.\n'
-            + 'This is usually not a bug in Vortex.', replace: { filePath }, allowReport: false };
+            + 'This is usually not a bug in Vortex.',
+      replace: { filePath },
+      allowReport: false,
+    };
   } else if (err.code === 'ENOENT') {
     if ((err.path !== undefined) || (err.filename !== undefined)) {
       const filePath = err.path || err.filename;
@@ -278,7 +301,7 @@ export function prettifyNodeErrorMessage(err: any): { message: string, replace?:
       message: 'Temporary name resolution error, please try again later.',
       allowReport: false,
     };
-  } else if (err.code === 'EISDIR') { 
+  } else if (err.code === 'EISDIR') {
     return {
       message: 'Vortex expected a file but found a directory.',
       allowReport: false,
@@ -287,7 +310,7 @@ export function prettifyNodeErrorMessage(err: any): { message: string, replace?:
     return {
       message: 'Vortex expected a directory but found a file.',
       allowReport: false,
-    }
+    };
   }
 
   return {
@@ -295,8 +318,16 @@ export function prettifyNodeErrorMessage(err: any): { message: string, replace?:
   };
 }
 
+interface ICustomErrorType {
+  message?: string;
+  text?: string;
+  parameters?: any;
+  allowReport?: boolean;
+  wrap: boolean;
+}
+
 function renderCustomError(err: any) {
-  const res: { message?: string, text?: string, parameters?: any, allowReport?: boolean, wrap: boolean } = { wrap: false };
+  const res: ICustomErrorType = { wrap: false };
   if (err === undefined) {
     res.text = 'Unknown error';
   } else if ((err.error !== undefined) && (err.error instanceof Error)) {
@@ -341,7 +372,7 @@ function prettifyHTTPError(err: HTTPError) {
     allowReport: true,
   });
 
-  let func = {
+  const func = {
   }[err.statusCode] || fallback;
 
   return func();
@@ -349,7 +380,7 @@ function prettifyHTTPError(err: HTTPError) {
 
 /**
  * render error message for display to the user
- * @param err 
+ * @param err
  */
 export function renderError(err: string | Error | any):
     { message?: string, text?: string, parameters?: any, allowReport?: boolean, wrap: boolean } {

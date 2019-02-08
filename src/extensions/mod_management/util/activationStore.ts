@@ -158,14 +158,15 @@ function getManifest(instanceId: string, filePath: string): Promise<any> {
       }
       return Promise.reject(
         new Error(`${err.message}.\n*** When you report this, `
-          + `please include the file "${filePath} ***"`));
+          + `please include the file "${filePath}" ***`));
     })
     .then(manifest => (manifest !== undefined)
       ? manifest
       : emptyManifest(instanceId));
 }
 
-function fallbackPurgeType(api: IExtensionApi, activator: IDeploymentMethod, modType: string, modPath: string): Promise<void> {
+function fallbackPurgeType(api: IExtensionApi, activator: IDeploymentMethod,
+                           modType: string, modPath: string): Promise<void> {
   const state: IState = api.store.getState();
   const typeTag = (modType !== undefined) && (modType.length > 0) ? modType + '.' : '';
   const tagFile = path.join(modPath, `vortex.deployment.${typeTag}json`);
@@ -190,10 +191,7 @@ function fallbackPurgeType(api: IExtensionApi, activator: IDeploymentMethod, mod
         }
         return result;
       })
-      .catch(err => {
-        console.error(err);
-        return Promise.reject(err);
-      });
+      .catch(err => Promise.reject(err));
 }
 
 /**
@@ -213,7 +211,8 @@ export function fallbackPurge(api: IExtensionApi): Promise<void> {
 }
 
 export function loadActivation(api: IExtensionApi, modType: string,
-                               modPath: string, activator: IDeploymentMethod): Promise<IDeployedFile[]> {
+                               modPath: string,
+                               activator: IDeploymentMethod): Promise<IDeployedFile[]> {
   if (modPath === undefined) {
     return Promise.resolve([]);
   }
@@ -251,7 +250,7 @@ export function saveActivation(modType: string, instance: string,
     instance,
     version: CURRENT_VERSION,
     deploymentMethod: activatorId,
-    files: activation
+    files: activation,
   }, undefined, 2);
   try {
     JSON.parse(data);

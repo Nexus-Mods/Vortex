@@ -2,9 +2,8 @@ import { showDialog } from '../../actions/notifications';
 import { IDialogResult } from '../../types/IDialog';
 import { IExtensionApi, ThunkStore } from '../../types/IExtensionContext';
 import {IState} from '../../types/IState';
-import { DataInvalid, ProcessCanceled, TemporaryError,
-         UserCanceled, 
-         SetupError} from '../../util/CustomErrors';
+import { DataInvalid, ProcessCanceled, SetupError, TemporaryError,
+         UserCanceled} from '../../util/CustomErrors';
 import { createErrorReport, isOutdated } from '../../util/errorHandling';
 import * as fs from '../../util/fs';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
@@ -17,8 +16,8 @@ import walk from '../../util/walk';
 
 import { IDownload } from '../download_management/types/IDownload';
 import getDownloadGames from '../download_management/util/getDownloadGames';
-import { getGame } from '../gamemode_management/util/getGame';
 import { IModType } from '../gamemode_management/types/IModType';
+import { getGame } from '../gamemode_management/util/getGame';
 import modName from '../mod_management/util/modName';
 import { setModEnabled } from '../profile_management/actions/profiles';
 
@@ -143,7 +142,8 @@ class InstallManager {
    *                                      of others and tries to install those too
    * @param {boolean} enable if true, enable the mod after installation
    * @param {Function} callback callback once this is finished
-   * @param {boolean} forceGameId set if the user has already been queried which game to install the mod for
+   * @param {boolean} forceGameId set if the user has already been queried which game
+   *                              to install the mod for
    */
   public install(
     archiveId: string,
@@ -317,10 +317,11 @@ class InstallManager {
                              && err.stack.startsWith('UserCanceled: canceled by user'));
         let prom = destinationPath !== undefined
           ? rimrafAsync(destinationPath, { glob: false, maxBusyTries: 10 })
-            .catch(err => {
+            .catch(innerErr => {
               installContext.reportError(
-                'Failed to clean up installation directory "{{destinationPath}}", please close Vortex and remove it manually',
-                err, true, { destinationPath })
+                'Failed to clean up installation directory "{{destinationPath}}", '
+                + 'please close Vortex and remove it manually.',
+                innerErr, true, { destinationPath });
             })
           : Promise.resolve();
 
@@ -365,9 +366,8 @@ class InstallManager {
                   err,
                   false, {
                     installerPath: path.basename(archivePath),
-                    message: err.message
-                  }
-                );
+                    message: err.message,
+                  });
               }
             });
         } else if (err instanceof DataInvalid) {
@@ -380,7 +380,7 @@ class InstallManager {
                   + 'installed:\n{{ message }}\nPlease inform the mod author.\n',
                   false, {
                     installerPath: path.basename(archivePath),
-                    message: err.message
+                    message: err.message,
                   });
               }
             });
@@ -740,7 +740,8 @@ class InstallManager {
 
     if (instructionGroups.error.length > 0) {
       api.showErrorNotification('Installer reported errors',
-        'Errors were reported processing this installer. It\'s possible the mod works (partially) anyway. '
+        'Errors were reported processing this installer. '
+        + 'It\'s possible the mod works (partially) anyway. '
         + 'Please note that NMM tends to ignore errors so just because NMM doesn\'t '
         + 'report a problem with this installer doesn\'t mean it doesn\'t have any.\n'
         + '{{ errors }}'
@@ -749,8 +750,7 @@ class InstallManager {
             errors: instructionGroups.error.map(err => err.source).join('\n'),
           },
           allowReport: false,
-        }
-      );
+        });
     }
 
     log('debug', 'installer instructions', instructionGroups);
@@ -1029,8 +1029,7 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
     return fs.ensureDirAsync(path.dirname(destination))
       .then(() => move
         ? fs.renameAsync(source, destination)
-        : fs.copyAsync(source, destination, { noSelfCopy: true })
-      );
+        : fs.copyAsync(source, destination, { noSelfCopy: true }));
   }
 
   /**

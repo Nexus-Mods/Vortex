@@ -192,13 +192,14 @@ function genId() {
   try {
     const uuid = require('uuid');
     return uuid.v4();
-  } catch(err) {
-    // odd, still unidentified bugs where bundled modules fail to load. 
+  } catch (err) {
+    // odd, still unidentified bugs where bundled modules fail to load.
     log('warn', 'failed to import uuid module', err.message);
     const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    return Array.apply(null, Array(10)).map(() => chars[Math.floor(Math.random() * chars.length)]).join('');
-    // the probability that this fails for another user at exactly the same time and they both get the same
-    // random number is practically 0
+    return Array.apply(null, Array(10))
+      .map(() => chars[Math.floor(Math.random() * chars.length)]).join('');
+    // the probability that this fails for another user at exactly the same time
+    // and they both get the same random number is practically 0
   }
 }
 
@@ -214,12 +215,11 @@ function requestLogin(api: IExtensionApi, callback: (err: Error) => void) {
 
   let connection: WebSocket;
 
-  let loginMessage: INexusLoginMessage = {
+  const loginMessage: INexusLoginMessage = {
     id: genId(),
     appid: 'Vortex',
     protocol: 2,
   };
-
 
   let keyReceived: boolean = false;
   let connectionAlive: boolean = true;
@@ -231,7 +231,7 @@ function requestLogin(api: IExtensionApi, callback: (err: Error) => void) {
       .on('open', () => {
         cancelLogin = () => {
           connection.close();
-        }
+        };
         connection.send(JSON.stringify(loginMessage), err => {
           api.store.dispatch(setLoginId(loginMessage.id));
           if (err) {

@@ -11,7 +11,7 @@
  * - ignoring ENOENT error when deleting a file.
  */
 
-import { UserCanceled, DataInvalid, ProcessCanceled } from './CustomErrors';
+import { DataInvalid, ProcessCanceled, UserCanceled } from './CustomErrors';
 import { log } from './log';
 
 import * as PromiseBB from 'bluebird';
@@ -49,7 +49,7 @@ export {
 
 const NUM_RETRIES = 3;
 const RETRY_DELAY_MS = 100;
-const RETRY_ERRORS = new Set(['EPERM', 'EBUSY', 'EUNKNOWN']);
+const RETRY_ERRORS = new Set(['EPERM', 'EBUSY', 'UNKNOWN']);
 
 function nospcQuery(): PromiseBB<boolean> {
   if (dialog === undefined) {
@@ -82,7 +82,8 @@ function unlockConfirm(filePath: string): PromiseBB<boolean> {
 
   const baseMessage = processes.length === 0
     ? `Vortex needs to access "${filePath}" but doesn\'t have permission to.`
-    : `Vortex needs to access "${filePath}" but it either has too restrictive permissions or is locked by another process.`;
+    : `Vortex needs to access "${filePath}" but it either has too restrictive `
+      + 'permissions or is locked by another process.';
 
   const buttons = [
       'Cancel',
@@ -162,7 +163,7 @@ function errorRepeat(error: NodeJS.ErrnoException, filePath: string): PromiseBB<
               // elevate - while interesting as well - would make error handling too complicated
               log('error', 'failed to acquire permission', {
                 filePath,
-                error: elevatedErr.message
+                error: elevatedErr.message,
               });
               return Promise.reject(error);
             });
@@ -181,7 +182,7 @@ function restackErr(error: Error, stackErr: Error): Error {
   Object.defineProperty(error, 'stack', {
     get: () => error.message + '\n' + stackErr.stack,
     set: () => null,
-  })
+  });
   return error;
 }
 
@@ -194,7 +195,7 @@ function errorHandler(error: NodeJS.ErrnoException, stackErr: Error): PromiseBB<
 }
 
 function genWrapperAsync<T extends (...args) => any>(func: T): T {
-  const wrapper = (stackErr: Error, ...args) => 
+  const wrapper = (stackErr: Error, ...args) =>
     func(...args)
       .catch(err => errorHandler(err, stackErr)
         .then(() => wrapper(stackErr, ...args)));
@@ -269,7 +270,7 @@ export function ensureDirAsync(dirPath: string): PromiseBB<void> {
 
 function selfCopyCheck(src: string, dest: string) {
   return PromiseBB.join(fs.statAsync(src), fs.statAsync(dest)
-                .catch(err => err.code === 'ENOENT' ? PromiseBB.resolve({}) : PromiseBB.reject(err)))
+                .catch({ code: 'ENOENT' }, err => PromiseBB.resolve({})))
     .then((stats: fs.Stats[]) => (stats[0].ino === stats[1].ino)
         ? PromiseBB.reject(new Error(
           `Source "${src}" and destination "${dest}" are the same file (id "${stats[0].ino}").`))
@@ -278,11 +279,11 @@ function selfCopyCheck(src: string, dest: string) {
 
 /**
  * copy file
- * The copy function from fs-extra doesn't (at the time of writing) correctly check that a file isn't
- * copied onto itself (it fails for links or potentially on case insensitive disks), so this makes
- * a check based on the ino number.
- * Unfortunately a bug in node.js (https://github.com/nodejs/node/issues/12115) prevents this check from
- * working reliably so it can currently be disabled.
+ * The copy function from fs-extra doesn't (at the time of writing) correctly check that a file
+ * isn't copied onto itself (it fails for links or potentially on case insensitive disks),
+ * so this makes a check based on the ino number.
+ * Unfortunately a bug in node.js (https://github.com/nodejs/node/issues/12115) prevents this
+ * check from working reliably so it can currently be disabled.
  * @param src file to copy
  * @param dest destination path
  * @param options copy options (see documentation for fs)
@@ -324,7 +325,7 @@ function removeInt(dirPath: string, stackErr: Error): PromiseBB<void> {
       } else {
         resolve();
       }
-    })
+    });
   })
     .catch((err: NodeJS.ErrnoException) => (err.code === 'ENOENT')
       // don't mind if a file we wanted deleted was already gone
@@ -474,8 +475,8 @@ export function changeFileOwnership(filePath: string, stat: fs.Stats): PromiseBB
   //  <BaseOwnerCheck> - If the process real ID is different than the file's real ID.
   //
   //  1. If <BaseOwnerCheck> is true and the file does NOT have the group read/write bits set.
-  //  2. If <BaseOwnerCheck> is true and the file DOES have the group read/write bits set but the process
-  //   group id differs from the file's group id.
+  //  2. If <BaseOwnerCheck> is true and the file DOES have the group read/write bits set but
+  //   the process group id differs from the file's group id.
   //
   // Ask for forgiveness, not permission.
   return (stat.uid !== process.getuid())
@@ -485,7 +486,9 @@ export function changeFileOwnership(filePath: string, stat: fs.Stats): PromiseBB
     : PromiseBB.resolve();
 }
 
-export function changeFileAttributes(filePath: string, wantedAttributes: number, stat: fs.Stats): PromiseBB<void> {
+export function changeFileAttributes(filePath: string,
+                                     wantedAttributes: number,
+                                     stat: fs.Stats): PromiseBB<void> {
     return this.changeFileOwnership(filePath, stat)
       .then(() => {
         const finalAttributes = stat.mode | wantedAttributes;
@@ -557,18 +560,20 @@ export function forcePerm<T>(t: I18next.TranslationFunction,
     } else {
       return PromiseBB.reject(new UserCanceled());
     }
-  }
+  };
 
   return op()
     .catch(err => {
       const fileToAccess = filePath !== undefined ? filePath : err.path;
       if ((err.code === 'EPERM') || (err.errno === 5)) {
-        const wantedAttributes = process.platform === 'win32' ? parseInt('0666', 8) : parseInt('0600', 8);
+        const wantedAttributes = process.platform === 'win32'
+          ? parseInt('0666', 8)
+          : parseInt('0600', 8);
         return fs.statAsync(fileToAccess)
           .then(stat => this.changeFileAttributes(fileToAccess, wantedAttributes, stat))
           .then(() => op())
           .catch(() => raiseUACDialog(err))
-          .catch(UserCanceled, () => undefined)
+          .catch(UserCanceled, () => undefined);
       } else {
         return PromiseBB.reject(err);
       }

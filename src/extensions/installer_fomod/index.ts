@@ -5,7 +5,7 @@ import {
   ProgressDelegate,
 } from '../../types/IExtensionContext';
 import { ITestResult } from '../../types/ITestResult';
-import { DataInvalid, UserCanceled, SetupError } from '../../util/CustomErrors';
+import { DataInvalid, SetupError, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import getVortexPath from '../../util/getVortexPath';
 import lazyRequire from '../../util/lazyRequire';
@@ -18,7 +18,7 @@ import {
   getPluginPath,
   getStopPatterns,
 } from './util/gameSupport';
-import { getNetVersion, checkAssemblies } from './util/netVersion';
+import { checkAssemblies, getNetVersion } from './util/netVersion';
 import InstallerDialog from './views/InstallerDialog';
 
 import * as Promise from 'bluebird';
@@ -37,21 +37,21 @@ function transformError(err: any): Error {
   let result: Error;
   if (typeof(err) === 'string') {
     // I hope these errors aren't localised or something...
-    if (err === 'The operation was cancelled.') {
+    result = (err === 'The operation was cancelled.')
       // weeell, we don't actually know if it was the user who cancelled...
-      result = new UserCanceled();
-    } else {
-      result = new Error(err);
-    }
+      ? new UserCanceled()
+      : new Error(err);
   } else if (err.name === 'System.IO.FileNotFoundException') {
     if (err.FileName !== undefined) {
       if (err.FileName.indexOf('PublicKeyToken') !== -1) {
         const fileName = err.FileName.split(',')[0];
-        result = new SetupError(`Your system is missing "${fileName}" which is supposed to be part of the .Net Framework. Please reinstall it.`);
+        result = new SetupError(`Your system is missing "${fileName}" which is supposed to be part `
+                               + 'of the .Net Framework. Please reinstall it.');
       } else if (err.FileName.indexOf('node_modules\\fomod-installer') !== -1) {
         const fileName = err.FileName.replace(/^file:\/*/, '');
-        result = new SetupError(`Your installation is missing "${fileName}" which is part of the Vortex installer. `
-          + 'This would only happen if you use an inofficial installer or the Vortex installation was modified.');
+        result = new SetupError(`Your installation is missing "${fileName}" which is part of the `
+          + 'Vortex installer. This would only happen if you use an inofficial installer or the '
+          + 'Vortex installation was modified.');
       } else {
         result = new Error();
       }
@@ -60,12 +60,13 @@ function transformError(err: any): Error {
     if (err.FileName.indexOf('node_modules\\fomod-installer') !== -1) {
       const fileName = err.FileName.replace(/^file:\/*/, '');
       result = new SetupError(`Windows prevented Vortex from loading "${fileName}". `
-        + 'This is usually caused if you don\'t install Vortex but only extracted it because Windows will then block all executable files contained. '
+        + 'This is usually caused if you don\'t install Vortex but only extracted it because '
+        + 'Windows will then block all executable files. '
         + 'Please install Vortex or unblock all .dll and .exe files manually.');
     }
   } else if (err.name === 'System.IO.PathTooLongException') {
-    result = new SetupError('The installer tried to access a file with a path longer than 260 characters. '
-                             + 'This usually means that your mod staging path is too long.');
+    result = new SetupError('The installer tried to access a file with a path longer than 260 '
+                        + 'characters. This usually means that your mod staging path is too long.');
   } else if ((err.StackTrace.indexOf('XNodeValidator.ValidationCallback') !== -1)
              || (err.StackTrace.indexOf('XmlTextReaderImpl.ParseXmlDeclaration') !== -1)
              || (err.StackTrace.indexOf('XmlTextReaderImpl.ParseAttributes') !== -1)
@@ -75,11 +76,10 @@ function transformError(err: any): Error {
   }
 
   if (result === undefined) {
-    if (err.Message !== undefined) {
-      result = new Error(err.Message);
-    } else {
-      result = new Error('unknown error: ' + util.inspect(err));
-    }
+    result = new Error(
+      (err.Message !== undefined)
+        ? err.Message
+        : 'unknown error: ' + util.inspect(err));
   }
   [
     { in: 'StackTrace', out: 'stack' },
@@ -187,9 +187,9 @@ function checkNetInstall() {
     const res: ITestResult = {
       description: {
         short: '.Net installation incompatible',
-        long: 'It appears that your installation of the .Net framework is outdated or missing.[br][/br]'
-            + 'You will probably not be able to install mods.[br][/br]'
-            + 'Please install a current version of .Net (at least version 4.6).',
+        long: 'It appears that your installation of the .Net framework is outdated or missing.'
+            + '[br][/br]You will probably not be able to install mods.'
+            + '[br][/br]Please install a current version of .Net (at least version 4.6).',
       },
       severity: 'error',
     };
@@ -211,7 +211,7 @@ function checkNetInstall() {
           };
           return Promise.resolve(res);
         }
-      })
+      });
   }
 }
 

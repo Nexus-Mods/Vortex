@@ -5,8 +5,8 @@ import { setdefault } from '../util/util';
 import ActionControl, { IActionControlProps, IActionDefinitionEx } from './ActionControl';
 import Dropdown from './Dropdown';
 import Icon from './Icon';
-import ToolbarIcon from './ToolbarIcon';
 import ToolbarDropdown from './ToolbarDropdown';
+import ToolbarIcon from './ToolbarIcon';
 import { IconButton } from './TooltipControls';
 
 import * as I18next from 'i18next';
