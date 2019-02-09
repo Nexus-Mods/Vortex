@@ -390,8 +390,6 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
   private toggleOpen = () => {
     this.setState(update(this.state, {
       open: { $set: !this.state.open },
-      x: { $set: undefined },
-      y: { $set: undefined },
     }));
   }
 

@@ -66,7 +66,7 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
   public componentWillReceiveProps(nextProps: IProps) {
     if (!this.props.visible && nextProps.visible) {
       this.setState(update(this.state, {
-        sessionKey: { $set: -1 },
+        sessionIdx: { $set: -1 },
         show: { $set: {
           error: true,
           warning: true,

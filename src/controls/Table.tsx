@@ -1126,13 +1126,13 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private selectToggle(rowId: string) {
     const wasSelected = getSafe(this.state.rowState, [rowId, 'selected'], undefined);
     if (!wasSelected) {
+      const rowState = wasSelected === undefined
+            ? { $set: { selected: true } }
+            : { selected: { $set: !wasSelected } };
       this.updateState(update(this.mNextState, {
         lastSelected: { $set: rowId },
-        rowState: { [rowId]:
-          wasSelected === undefined
-            ? { $set: { selected: true } }
-            : { selected: { $set: !wasSelected } },
-        }}), this.onRowStateChanged);
+        rowState: { [rowId]: rowState },
+        }), this.onRowStateChanged);
     } else {
       this.updateState(update(this.mNextState, {
         rowState: { [rowId]: { selected: { $set: !wasSelected } } },
