@@ -6712,8 +6712,8 @@ next-tick@1:
   resolved "https://registry.yarnpkg.com/next-tick/-/next-tick-1.0.0.tgz#ca86d1fe8828169b0120208e3dc8424b9db8342c"
 
 nexus-api@Nexus-Mods/node-nexus-api:
-  version "1.0.0-rc2"
-  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/1188008acf09ca03a2d384a7ff6286f1e7e1fd1a"
+  version "1.0.0-rc4"
+  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/6b41eb892f361578d63fdeab2a7116d7b639604e"
   dependencies:
     request "^2.85.0"
     string-template "^1.0.0"
