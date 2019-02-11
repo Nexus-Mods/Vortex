@@ -10,7 +10,8 @@ import { IMod } from '../../mod_management/types/IMod';
 
 import * as Promise from 'bluebird';
 import * as I18next from 'i18next';
-import NexusT, { IFileInfo, IFileUpdate, IModFiles, IModInfo, NexusError, RateLimitError } from 'nexus-api';
+import NexusT, { IFileInfo, IFileUpdate, IModFiles, IModInfo,
+                 NexusError, RateLimitError } from 'nexus-api';
 import * as Redux from 'redux';
 import * as semvish from 'semvish';
 
@@ -143,7 +144,9 @@ function updateFileAttributes(dispatch: Redux.Dispatch<any>,
   if ((updatedFile === undefined) && truthy(mod.attributes.version)) {
     try {
       updatedFile = files.files.find(file => semvish.eq(file.mod_version, mod.attributes.version));
-    } catch(err) {}
+    } catch (err) {
+      // nop
+    }
   }
   if (updatedFile !== undefined) {
     updateLatestFileAttributes(dispatch, gameId, mod, updatedFile);
@@ -174,7 +177,8 @@ export function retrieveModInfo(
   const gameId = getSafe(mod.attributes, ['downloadGame'], gameMode);
   const nexusIdNum = parseInt(nexusModId, 10);
   // if the endorsement state is unknown, request it
-  return Promise.resolve(nexus.getModInfo(nexusIdNum, nexusGameId(gameById(store.getState(), gameId))))
+  return Promise.resolve(nexus.getModInfo(nexusIdNum,
+                                          nexusGameId(gameById(store.getState(), gameId))))
     .then((modInfo: IModInfo) => {
       if (modInfo !== undefined) {
         updateModAttributes(store.dispatch, gameMode, mod, modInfo);

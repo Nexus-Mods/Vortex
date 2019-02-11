@@ -6,7 +6,7 @@ import commandLine, {IParameters} from '../util/commandLine';
 import { ProcessCanceled, UserCanceled } from '../util/CustomErrors';
 import { } from '../util/delayed';
 import * as develT from '../util/devel';
-import { terminate, toError, setOutdated } from '../util/errorHandling';
+import { setOutdated, terminate, toError } from '../util/errorHandling';
 import ExtensionManagerT from '../util/ExtensionManager';
 import * as fs from '../util/fs';
 import lazyRequire from '../util/lazyRequire';
@@ -106,7 +106,7 @@ class Application {
       }
     });
 
-    /** electron 3
+    /* electron 3
     app.on('second-instance', (event: Event, secondaryArgv: string[]) => {
       this.applyArguments(commandLine(secondaryArgv));
     });
@@ -206,7 +206,9 @@ class Application {
               details: err.message,
               stack: err.stack,
             }, this.mStore !== undefined ? this.mStore.getState() : {});
-          } catch (err) { }
+          } catch (err) {
+            // nop
+          }
         });
   }
 
@@ -282,7 +284,7 @@ class Application {
           'Yes, I\'m mad',
         ],
         noLink: true,
-      }) == 0) {
+      }) === 0) {
         app.quit();
         return Promise.reject(new UserCanceled());
       }
@@ -292,7 +294,8 @@ class Application {
         .then(() => {
           return Promise.resolve();
         })
-        .catch(err => !(err instanceof UserCanceled) && !(err instanceof ProcessCanceled), (err: Error) => {
+        .catch(err => !(err instanceof UserCanceled)
+                   && !(err instanceof ProcessCanceled), (err: Error) => {
           dialog.showErrorBox(
             'Migration failed',
             'The migration from the previous Vortex release failed. '
@@ -305,7 +308,7 @@ class Application {
   }
 
   private splitPath(statePath: string): string[] {
-    return statePath.match(/(\\.|[^.])+/g).map(input => input.replace(/\\(.)/, '$1'));
+    return statePath.match(/(\\.|[^.])+/g).map(input => input.replace(/\\(.)/g, '$1'));
   }
 
   private handleGet(getPath: string | boolean, shared: boolean): Promise<void> {
@@ -461,7 +464,8 @@ class Application {
 
     const updateBackups = () => fs.ensureDirAsync(backupPath)
       .then(() => fs.readdirAsync(backupPath))
-      .filter((fileName: string) => fileName.startsWith('backup') && path.extname(fileName) === '.json')
+      .filter((fileName: string) =>
+        fileName.startsWith('backup') && path.extname(fileName) === '.json')
       .then(backupsIn => { backups = backupsIn; });
 
     const deleteBackups = () => Promise.map(backups, backupName =>
@@ -576,7 +580,7 @@ class Application {
             message: 'A backup of application state was created recently.',
             actions: [
               { title: 'Restore', action: () => {
-                const sorted = backups.sort((lhs, rhs) => rhs.localeCompare(lhs))
+                const sorted = backups.sort((lhs, rhs) => rhs.localeCompare(lhs));
                 log('info', 'sorted backups', sorted);
                 spawnSelf(['--restore', path.join(backupPath, sorted[0])]);
                 app.exit();
@@ -585,8 +589,8 @@ class Application {
                 deleteBackups();
                 dismiss();
               } },
-            ]
-          }))
+            ],
+          }));
         }
       })
       .then(() => this.mExtensions.doOnce());
@@ -608,7 +612,8 @@ class Application {
 
   private showMainWindow() {
     if (this.mMainWindow === null) {
-      // ??? renderer has signaled it's done loading before we even started it? that can't be right...
+      // ??? renderer has signaled it's done loading before we even started it?
+      // that can't be right...
       app.exit();
       return;
     }

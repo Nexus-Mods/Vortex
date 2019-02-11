@@ -4,7 +4,6 @@ import * as path from 'path';
 import * as tmp from 'tmp';
 import * as winapi from 'winapi-bindings';
 
-
 function elevatedMain(moduleRoot: string, ipcPath: string,
                       main: (ipc, req: NodeRequireFunction) =>
                         void | Promise<void> | Bluebird<void>) {

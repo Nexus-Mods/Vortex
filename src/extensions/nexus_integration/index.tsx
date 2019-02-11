@@ -3,12 +3,13 @@ import { IDialogResult, showDialog } from '../../actions/notifications';
 import InputButton from '../../controls/InputButton';
 import { IExtensionApi, IExtensionContext, ILookupResult } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
-import { ProcessCanceled, DataInvalid, UserCanceled, HTTPError, ServiceTemporarilyUnavailable } from '../../util/CustomErrors';
+import { DataInvalid, HTTPError, ProcessCanceled,
+         ServiceTemporarilyUnavailable, UserCanceled } from '../../util/CustomErrors';
 import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import opn from '../../util/opn';
-import { activeGameId, gameById, downloadPathForGame, knownGames } from '../../util/selectors';
+import { activeGameId, downloadPathForGame, gameById, knownGames } from '../../util/selectors';
 import { currentGame, getSafe } from '../../util/storeHelper';
 import { decodeHTML, truthy } from '../../util/util';
 
@@ -25,9 +26,9 @@ import { accountReducer } from './reducers/account';
 import { persistentReducer } from './reducers/persistent';
 import { sessionReducer } from './reducers/session';
 import { settingsReducer } from './reducers/settings';
-import { nexusGameId, convertNXMIdReverse } from './util/convertGameId';
-import { getPageURL } from './util/sso';
+import { convertNXMIdReverse, nexusGameId } from './util/convertGameId';
 import retrieveCategoryList from './util/retrieveCategories';
+import { getPageURL } from './util/sso';
 import DashboardBanner from './views/DashboardBanner';
 import GoPremiumDashlet from './views/GoPremiumDashlet';
 import LoginDialog from './views/LoginDialog';
@@ -38,19 +39,19 @@ import { genEndorsedAttribute, genGameAttribute, genModIdAttribute } from './att
 import * as eh from './eventHandlers';
 import NXMUrl from './NXMUrl';
 import * as sel from './selectors';
-import { processErrorMessage, startDownload, nexusGames, endorseModImpl, updateKey } from './util';
+import { endorseModImpl, nexusGames, processErrorMessage, startDownload, updateKey } from './util';
 
 import * as Promise from 'bluebird';
 import { remote } from 'electron';
 import * as fuzz from 'fuzzball';
 import * as I18next from 'i18next';
-import NexusT, { IDownloadURL, TimeoutError, NexusError } from 'nexus-api';
+import NexusT, { IDownloadURL, NexusError, RateLimitError, TimeoutError } from 'nexus-api';
 import * as path from 'path';
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
 import {} from 'uuid';
 import * as WebSocket from 'ws';
-import { RateLimitError } from 'nexus-api/lib/customErrors';
+import { IResolvedURL } from '../download_management';
 
 let nexus: NexusT;
 
@@ -91,7 +92,7 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
         .then((game: IGameStored) => {
           gameId = game.id;
           const nexusId = nexusGameId(game);
-          if (nexusGames().find(game => game.domain_name === nexusId) === undefined) {
+          if (nexusGames().find(ngame => ngame.domain_name === nexusId) === undefined) {
             // for all we know there could be another extension providing categories for this game
             // so we can't really display an error message or anything
             log('debug', 'game unknown on nexus', { gameId: nexusId });
@@ -271,9 +272,10 @@ function requestLogin(api: IExtensionApi, callback: (err: Error) => void) {
             if (error !== undefined) {
               callback(error);
             } else {
-              let error = new ProcessCanceled(`Log-in connection closed prematurely (Code ${code})`);
-              error.stack = stackErr.stack;
-              callback(error);
+              const err = new ProcessCanceled(
+                `Log-in connection closed prematurely (Code ${code})`);
+              err.stack = stackErr.stack;
+              callback(err);
             }
           }
         }
@@ -285,7 +287,7 @@ function requestLogin(api: IExtensionApi, callback: (err: Error) => void) {
       .on('message', data => {
         try {
           const response = JSON.parse(data.toString());
-          
+
           if (response.success) {
               if (response.data.connection_token !== undefined) {
                 loginMessage.token = response.data.connection_token;
@@ -316,7 +318,7 @@ function requestLogin(api: IExtensionApi, callback: (err: Error) => void) {
 
         connection.close();
       });
-  }
+  };
 
   try {
     connect();
@@ -383,7 +385,7 @@ function once(api: IExtensionApi) {
           api.showErrorNotification('Log-in failed', err, { allowReport: false });
         })
         .catch(ServiceTemporarilyUnavailable, err => {
-          api.showErrorNotification('Service temporarily unavailable', err, { allowReport: false },)
+          api.showErrorNotification('Service temporarily unavailable', err, { allowReport: false });
         })
         .catch(err => {
           api.showErrorNotification('Failed to get access key', err);
@@ -395,18 +397,19 @@ function once(api: IExtensionApi) {
         actions: [
           { title: 'More', action: () => {
             api.showDialog('info', 'Download link handling', {
-              text: 'Only one application can be set up to handle Nexus "Mod Manager Download" links, Vortex is now '
-                  + 'registered to do that.\n\n'
-                  + 'To use a different application for these links, please go to Settings->Downloads, disable '
-                  + 'the "Handle Nexus Links" option, then go to the application you do want to handle the links '
-                  + 'and enable the corresponding option there.',
+              text: 'Only one application can be set up to handle Nexus "Mod Manager Download" '
+                  + 'links, Vortex is now registered to do that.\n\n'
+                  + 'To use a different application for these links, please go to '
+                  + 'Settings->Downloads, disable the "Handle Nexus Links" option, then go to '
+                  + 'the application you do want to handle the links and enable the corresponding '
+                  + 'option there.',
             }, [
               { label: 'Close' },
             ]);
           } },
-        ]
+        ],
       });
-    };
+    }
   };
 
   { // limit lifetime of state
@@ -441,9 +444,10 @@ function once(api: IExtensionApi) {
   api.onStateChange(['confidential', 'account', 'nexus', 'APIKey'],
     eh.onAPIKeyChanged(api, nexus));
   api.onStateChange(['persistent', 'mods'], eh.onChangeMods(api, nexus));
-  api.onStateChange(['persistent', 'downloads', 'files'], eh.onChangeDownloads(api, nexus))
+  api.onStateChange(['persistent', 'downloads', 'files'], eh.onChangeDownloads(api, nexus));
 
-  api.addMetaServer('nexus_api', { nexus, url: 'https://api.nexusmods.com', cacheDurationSec: 86400 });
+  api.addMetaServer('nexus_api',
+                    { nexus, url: 'https://api.nexusmods.com', cacheDurationSec: 86400 });
 
   nexus.getModInfo(1, 'site')
     .then(info => {
@@ -457,14 +461,15 @@ function once(api: IExtensionApi) {
 
 function toolbarBanner(t: I18next.TranslationFunction): React.StatelessComponent<any> {
   return () => {
-    return (<div className='nexus-main-banner' style={{ background: 'url(assets/images/ad-banner.png)' }}>
-      <div>{t('Go Premium')}</div>
-      <div>{t('Uncapped downloads, no adverts')}</div>
-      <div>{t('Support Nexus Mods')}</div>
-      <div className='right-center'>
-        <Button bsStyle='ad' onClick={goBuyPremium}>{t('Go Premium')}</Button>
-      </div>
-    </div>);
+    return (
+      <div className='nexus-main-banner' style={{ background: 'url(assets/images/ad-banner.png)' }}>
+        <div>{t('Go Premium')}</div>
+        <div>{t('Uncapped downloads, no adverts')}</div>
+        <div>{t('Support Nexus Mods')}</div>
+        <div className='right-center'>
+          <Button bsStyle='ad' onClick={goBuyPremium}>{t('Go Premium')}</Button>
+        </div>
+      </div>);
   };
 }
 
@@ -515,18 +520,22 @@ function queryInfo(api: IExtensionApi, instanceIds: string[]) {
 
 function init(context: IExtensionContextExt): boolean {
   context.registerAction('application-icons', 200, LoginIcon, {}, () => ({ nexus }));
-  context.registerAction('mods-action-icons', 999, 'open-ext', {}, 'Open on Nexus Mods', instanceIds => {
+  context.registerAction('mods-action-icons', 999, 'open-ext', {}, 'Open on Nexus Mods',
+                         instanceIds => {
     const state: IState = context.api.store.getState();
     const gameMode = activeGameId(state);
     const mod: IMod = getSafe(state.persistent.mods, [gameMode, instanceIds[0]], undefined);
     if (mod !== undefined) {
-      const gameId = mod.attributes.downloadGame !== undefined ? mod.attributes.downloadGame : gameMode;
+      const gameId = mod.attributes.downloadGame !== undefined
+        ? mod.attributes.downloadGame
+        : gameMode;
       context.api.events.emit('open-mod-page', gameId, mod.attributes.modId);
     }
   }, instanceIds => {
     const state: IState = context.api.store.getState();
     const gameMode = activeGameId(state);
-    return getSafe(state.persistent.mods, [gameMode, instanceIds[0], 'attributes', 'source'], undefined) === 'nexus';
+    return getSafe(state.persistent.mods, [gameMode, instanceIds[0], 'attributes', 'source'],
+                   undefined) === 'nexus';
   });
   context.registerAction('downloads-action-icons', 100, 'refresh', {}, 'Query Info',
     (instanceIds: string[]) => queryInfo(context.api, instanceIds));
@@ -534,7 +543,7 @@ function init(context: IExtensionContextExt): boolean {
     (instanceIds: string[]) => queryInfo(context.api, instanceIds));
 
   // this makes it so the download manager can use nxm urls as download urls
-  context.registerDownloadProtocol('nxm', (input: string): Promise<{ urls: string[], meta: any }> => {
+  context.registerDownloadProtocol('nxm', (input: string): Promise<IResolvedURL> => {
     const state = context.api.store.getState();
 
     let url: NXMUrl;
@@ -546,10 +555,11 @@ function init(context: IExtensionContextExt): boolean {
 
     const userId: number = getSafe(state, ['persistent', 'nexus', 'userInfo', 'userId'], undefined);
     if ((url.userId !== undefined) && (url.userId !== userId)) {
-      const userName: string = getSafe(state, ['persistent', 'nexus', 'userInfo', 'name'], undefined);
+      const userName: string =
+        getSafe(state, ['persistent', 'nexus', 'userInfo', 'name'], undefined);
       context.api.showErrorNotification('Invalid download links',
-        'The link was not created for this account ({{userName}}). You have to be logged into nexusmods.com with the same account '
-        + 'that you use in Vortex.',
+        'The link was not created for this account ({{userName}}). '
+        + 'You have to be logged into nexusmods.com with the same account that you use in Vortex.',
         { allowReport: false, replace: { userName } });
       return Promise.reject(new ProcessCanceled('Wrong user id'));
     }
@@ -557,8 +567,9 @@ function init(context: IExtensionContextExt): boolean {
     const games = knownGames(state);
     const gameId = convertNXMIdReverse(games, url.gameId);
     const pageId = nexusGameId(gameById(state, gameId));
-    return Promise.resolve().then(() => nexus.getDownloadURLs(url.modId, url.fileId, url.key, url.expires, pageId))
-      .then((res: IDownloadURL[]) => ({ urls: res.map(url => url.URI), meta: {} }))
+    return Promise.resolve()
+      .then(() => nexus.getDownloadURLs(url.modId, url.fileId, url.key, url.expires, pageId))
+      .then((res: IDownloadURL[]) => ({ urls: res.map(u => u.URI), meta: {} }))
       .catch(NexusError, err => {
         const newError = new HTTPError(err.statusCode, err.message, err.request);
         newError.stack = err.stack;
@@ -580,7 +591,7 @@ function init(context: IExtensionContextExt): boolean {
       if (cancelLogin !== undefined) {
         cancelLogin();
       }
-    }
+    },
   }));
   context.registerBanner('downloads', () => {
     const t = context.api.translate;
@@ -627,11 +638,13 @@ function init(context: IExtensionContextExt): boolean {
     () => retrieveCategories(context.api, true));
 
   context.registerTableAttribute('mods', genEndorsedAttribute(context.api,
-    (gameId: string, modId: string, endorseStatus: string) => endorseModImpl(context.api, nexus, gameId, modId, endorseStatus)));
+    (gameId: string, modId: string, endorseStatus: string) =>
+      endorseModImpl(context.api, nexus, gameId, modId, endorseStatus)));
   context.registerTableAttribute('mods', genGameAttribute(context.api));
   context.registerTableAttribute('mods', genModIdAttribute(context.api));
 
-  context.registerDashlet('Nexus Mods Account Banner', 3, 1, 0, DashboardBanner, undefined, undefined, {
+  context.registerDashlet('Nexus Mods Account Banner', 3, 1, 0, DashboardBanner,
+                          undefined, undefined, {
     fixed: true,
     closable: true,
   });

@@ -27,7 +27,8 @@
     "object-literal-key-quotes": [true, "as-needed"],
     "arrow-parens": false,
     "no-duplicate-imports": false,
-    "no-implicit-dependencies": false
+    "no-implicit-dependencies": false,
+    "no-bitwise": false
   },
   "rulesDirectory": []
 }

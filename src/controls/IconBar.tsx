@@ -221,7 +221,8 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
         </ButtonGroup>
       );
     } else {
-      const grouped: { [key: string]: IActionDefinition[] } = actions.reduce((prev, action, idx) => {
+      const grouped: { [key: string]: IActionDefinition[] } =
+        actions.reduce((prev, action, idx) => {
         if ((action.icon !== undefined) && (groupByIcon !== false)) {
           setdefault(prev, action.icon, []).push(action);
         } else {
@@ -231,7 +232,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
       }, {});
       const byFirstPrio = (lhs: IActionDefinition[], rhs: IActionDefinition[]) => {
         return lhs[0].position - rhs[0].position;
-      }
+      };
       return (
         <ButtonGroup
           id={id}

@@ -1,23 +1,24 @@
 import * as Promise from 'bluebird';
 import * as I18next from 'i18next';
-import Nexus, { IFileInfo, IGameListEntry, IModInfo, NexusError, RateLimitError, TimeoutError } from 'nexus-api';
+import Nexus, { IFileInfo, IGameListEntry, IModInfo, NexusError,
+                RateLimitError, TimeoutError } from 'nexus-api';
 import * as Redux from 'redux';
 import * as util from 'util';
 import { setModAttribute } from '../../actions';
 import { IExtensionApi, IMod } from '../../types/api';
-import { getSafe, showError, calcDuration, prettifyNodeErrorMessage } from '../../util/api';
+import { calcDuration, getSafe, prettifyNodeErrorMessage, showError } from '../../util/api';
+import { setApiKey } from '../../util/errorHandling';
 import { log } from '../../util/log';
+import { activeGameId } from '../../util/selectors';
 import { truthy } from '../../util/util';
+import { gameById, knownGames } from '../gamemode_management/selectors';
 import modName from '../mod_management/util/modName';
 import { setUserInfo } from './actions/persistent';
 import NXMUrl from './NXMUrl';
 import { checkModVersion } from './util/checkModsVersion';
-import { nexusGameId, convertNXMIdReverse, convertGameIdReverse } from './util/convertGameId';
+import { convertNXMIdReverse, nexusGameId } from './util/convertGameId';
 import sendEndorseMod from './util/endorseMod';
 import transformUserInfo from './util/transformUserInfo';
-import { gameById, knownGames } from '../gamemode_management/selectors';
-import { activeGameId } from '../../util/selectors';
-import { setApiKey } from '../../util/errorHandling';
 
 const UPDATE_CHECK_DELAY = 60 * 60 * 1000;
 
@@ -105,7 +106,7 @@ export function startDownload(api: IExtensionApi, nexus: Nexus, nxmurl: string):
           }),
           localize: {
             message: false,
-          }
+          },
         });
       } else if (err instanceof RateLimitError) {
         api.sendNotification({
@@ -174,7 +175,7 @@ export function processErrorMessage(err: NexusError): IRequestError {
       message: 'Unexpected error reported by the server',
       Servermessage: (errorMessage || '') + ' ( Status Code: ' + err.statusCode + ')',
       URL: err.request,
-      stack: err.stack
+      stack: err.stack,
     };
   }
 }
@@ -186,7 +187,8 @@ function resolveEndorseError(t: I18next.TranslationFunction, err: Error): string
   } else if ((err as any).statusCode === 403) {
     const msg = {
       NOT_DOWNLOADED_MOD: 'You have not downloaded this mod from Nexus Mods yet.',
-      TOO_SOON_AFTER_DOWNLOAD: 'You have to wait 15 minutes after downloading a mod before you can endorse it.',
+      TOO_SOON_AFTER_DOWNLOAD: 'You have to wait 15 minutes after downloading a '
+                             + 'mod before you can endorse it.',
       IS_OWN_MOD: 'You can\'t endorse your own mods.',
     }[err.message];
     if (msg !== undefined) {
@@ -287,7 +289,6 @@ export function checkModVersionsImpl(
     ;
 
   log('info', 'checking mods for update (nexus)', { count: modsList.length });
-  const {TimeoutError} = require('nexus-api');
 
   return Promise.map(modsList, mod =>
     checkModVersion(store, nexus, gameId, mod)

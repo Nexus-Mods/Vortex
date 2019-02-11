@@ -10,11 +10,11 @@ import {reduxSanity, StateError} from './reduxSanity';
 
 import * as Promise from 'bluebird';
 import { dialog } from 'electron';
+import { forwardToRenderer, replayActionMain } from 'electron-redux';
 import * as levelup from 'levelup';
 import * as path from 'path';
 import * as Redux from 'redux';
 import { applyMiddleware, compose, createStore } from 'redux';
-import { forwardToRenderer, replayActionMain } from 'electron-redux';
 import thunkMiddleware from 'redux-thunk';
 
 let basePersistor: ReduxPersistor<IState>;

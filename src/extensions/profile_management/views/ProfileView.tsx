@@ -282,7 +282,8 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
   }
 
   private onRemoveProfile = (profileId: string) => {
-    const { currentProfile, onRemoveProfile, onWillRemoveProfile, onSetNextProfile, onShowDialog, profiles } = this.props;
+    const { currentProfile, onRemoveProfile, onWillRemoveProfile, onSetNextProfile,
+            onShowDialog, profiles } = this.props;
     onShowDialog('question', 'Confirm', {
       text: 'Remove this profile? This can\'t be undone!',
     }, [

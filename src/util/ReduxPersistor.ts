@@ -115,7 +115,8 @@ class ReduxPersistor<T> {
         if (err.stack.indexOf('not enough space on the disk') !== -1) {
           terminate({
             message: 'There is not enough space on the disk, Vortex needs to quit now to '
-                   + 'ensure you\'re not losing further work. Please free up some space, then restart Vortex.',
+                   + 'ensure you\'re not losing further work. Please free up some space, '
+                   + 'then restart Vortex.',
           }, undefined, false);
           // If we get here, the user has ignored us. What an idiot.
           // Oh well, try to retry the store,otherwise things will just get worse.
@@ -174,7 +175,7 @@ class ReduxPersistor<T> {
       } else { 
         return (newState !== undefined)
           ? this.add(persistor, statePath, newState)
-          : this.remove(persistor, statePath, oldState)
+          : this.remove(persistor, statePath, oldState);
       }
     } catch (err) {
       return Promise.reject(err);

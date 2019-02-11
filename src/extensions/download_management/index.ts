@@ -11,13 +11,13 @@ import { sum, truthy } from '../../util/util';
 
 import {
   addLocalDownload,
+  downloadProgress,
   removeDownload,
   setDownloadHashByFile,
   setDownloadInterrupted,
   setDownloadModInfo,
   setDownloadSpeed,
   setDownloadSpeeds,
-  downloadProgress,
 } from './actions/state';
 import { settingsReducer } from './reducers/settings';
 import { stateReducer } from './reducers/state';
@@ -81,7 +81,12 @@ function refreshDownloads(downloadPath: string, knownDLs: string[],
     });
 }
 
-export type ProtocolHandler = (inputUrl: string) => Promise<{ urls: string[], meta: any }>;
+export interface IResolvedURL {
+  urls: string[];
+  meta: any;
+}
+
+export type ProtocolHandler = (inputUrl: string) => Promise<IResolvedURL>;
 
 export interface IExtensionContextExt extends IExtensionContext {
   // register a download protocol handler
@@ -123,11 +128,11 @@ function genDownloadChangeHandler(api: IExtensionApi,
   const store: Redux.Store<any> = api.store;
 
   const findDownload = (fileName: string): string => {
-    const state = store.getState()
+    const state = store.getState();
     return Object.keys(state.persistent.downloads.files)
       .find(iterId =>
         state.persistent.downloads.files[iterId].localPath === fileName);
-  }
+  };
 
   return (evt: string, fileName: string) => {
     if (!watchEnabled
@@ -298,7 +303,7 @@ function removeArchive(store: Redux.Store<IState>, destination: string) {
         .filter(dlId => files[dlId].localPath === fileName)
         .forEach(dlId => {
           store.dispatch(removeDownload(dlId));
-        })
+        });
     });
 }
 
@@ -507,7 +512,7 @@ function init(context: IExtensionContextExt): boolean {
     context.api.events.on('import-downloads', genImportDownloadsHandler(context.api));
 
     {
-      let speedsDebouncer = new Debouncer(() => {
+      const speedsDebouncer = new Debouncer(() => {
         store.dispatch(setDownloadSpeeds(store.getState().persistent.downloads.speedHistory));
         return null;
       }, 10000, false);
