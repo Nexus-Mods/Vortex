@@ -1,66 +1,71 @@
 import { setDownloadModInfo } from '../../actions';
+import { IDownload, IModTable, IState, StateChangeCallback } from '../../types/api';
 import { IExtensionApi } from '../../types/IExtensionContext';
+import { DataInvalid } from '../../util/api';
 import Debouncer from '../../util/Debouncer';
+import { log } from '../../util/log';
+import { showError } from '../../util/message';
 import opn from '../../util/opn';
 import { activeGameId, gameById } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
-import { IModTable, IState, StateChangeCallback, IDownload } from '../../types/api';
 
+import { DownloadIsHTML } from '../download_management/DownloadManager';
+import { setUpdatingMods } from '../mod_management/actions/session';
+
+import { setUserInfo } from './actions/persistent';
 import { retrieveModInfo } from './util/checkModsVersion';
 import submitFeedback from './util/submitFeedback';
+
+import { checkModVersionsImpl, endorseModImpl, startDownload, updateKey } from './util';
+
 import * as Promise from 'bluebird';
-import Nexus, { IIssue, IFeedbackResponse } from 'nexus-api';
+import Nexus, { IFeedbackResponse, IIssue } from 'nexus-api';
 import { nexusGameId, toNXMId } from './util/convertGameId';
-import { log } from '../../util/log';
-import { DownloadIsHTML } from '../download_management/DownloadManager';
-import { showError } from '../../util/message';
-import { startDownload, endorseModImpl, checkModVersionsImpl, updateKey } from './util';
-import { setUserInfo } from './actions/persistent';
-import { setUpdatingMods } from '../mod_management/actions/session';
 
 export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
   const state: IState = api.store.getState();
   let lastDownloadTable = state.persistent.downloads.files;
 
-  const updateDebouncer: Debouncer = new Debouncer((newDownloadTable: {[id: string]: IDownload }) => {
-    const state = api.store.getState();
-    if (lastDownloadTable !== newDownloadTable) {
-      Promise.map(Object.keys(newDownloadTable), dlId => {
-        const download = newDownloadTable[dlId];
-        const oldModId = getSafe(lastDownloadTable, [dlId, 'modInfo', 'nexus', 'ids', 'modId'], undefined);
-        const oldFileId = getSafe(lastDownloadTable, [dlId, 'modInfo', 'nexus', 'ids', 'fileId'], undefined);
-        const modId = getSafe(download, ['modInfo', 'nexus', 'ids', 'modId'], undefined);
-        const fileId = getSafe(download, ['modInfo', 'nexus', 'ids', 'fileId'], undefined);
-        const gameId = getSafe(download, ['modInfo', 'nexus', 'ids', 'gameId'], download.game[0]);
-        if ((modId !== undefined)
+  const updateDebouncer: Debouncer = new Debouncer(
+    (newDownloadTable: { [id: string]: IDownload }) => {
+      if (lastDownloadTable !== newDownloadTable) {
+        const idsPath = ['modInfo', 'nexus', 'ids'];
+        Promise.map(Object.keys(newDownloadTable), dlId => {
+          const download = newDownloadTable[dlId];
+          const oldModId = getSafe(lastDownloadTable, [dlId, ...idsPath, 'modId'], undefined);
+          const oldFileId = getSafe(lastDownloadTable, [dlId, ...idsPath, 'fileId'], undefined);
+          const modId = getSafe(download, [...idsPath, 'modId'], undefined);
+          const fileId = getSafe(download, [...idsPath, 'fileId'], undefined);
+          const gameId = getSafe(download, [...idsPath, 'gameId'], download.game[0]);
+          if ((modId !== undefined)
             && ((oldModId !== modId) || (oldFileId !== fileId))) {
-          return nexus.getModInfo(modId, gameId)
-          .then(modInfo => {
-            api.store.dispatch(setDownloadModInfo(dlId, 'nexus.modInfo', modInfo));
-            return (fileId !== undefined)
-              ? nexus.getFileInfo(modId, fileId, gameId)
-                .catch(err => {
-                  log('warn', 'failed to query file info', { message: err.message });
-                  return Promise.resolve(undefined);
-                })
-              : Promise.resolve(undefined);
-          })
-          .then(fileInfo => {
-            api.store.dispatch(setDownloadModInfo(dlId, 'nexus.fileInfo', fileInfo));
-          })
-          .catch(err => {
-            log('warn', 'failed to query mod info', { message: err.message });
+            return nexus.getModInfo(modId, gameId)
+              .then(modInfo => {
+                api.store.dispatch(setDownloadModInfo(dlId, 'nexus.modInfo', modInfo));
+                return (fileId !== undefined)
+                  ? nexus.getFileInfo(modId, fileId, gameId)
+                    .catch(err => {
+                      log('warn', 'failed to query file info', { message: err.message });
+                      return Promise.resolve(undefined);
+                    })
+                  : Promise.resolve(undefined);
+              })
+              .then(fileInfo => {
+                api.store.dispatch(setDownloadModInfo(dlId, 'nexus.fileInfo', fileInfo));
+              })
+              .catch(err => {
+                log('warn', 'failed to query mod info', { message: err.message });
+              });
+          } else {
+            return Promise.resolve();
+          }
+        })
+          .then(() => {
+            lastDownloadTable = newDownloadTable;
           });
-        } else {
-          return Promise.resolve();
-        }
-      })
-      .then(() => {
-        lastDownloadTable = newDownloadTable;
-      });
-    }
-    return null;
-  }, 2000);
+      }
+      return null;
+    }, 2000);
 
   return (oldValue: IModTable, newValue: IModTable) =>
       updateDebouncer.schedule(undefined, newValue);
@@ -114,13 +119,13 @@ export function onOpenModPage(api: IExtensionApi) {
   };
 }
 
-export function onChangeNXMAssociation(registerFunc: (def: boolean) => void, api: IExtensionApi): StateChangeCallback {
+export function onChangeNXMAssociation(registerFunc: (def: boolean) => void,
+                                       api: IExtensionApi): StateChangeCallback {
   return (oldValue: boolean, newValue: boolean) => {
     log('info', 'associate', { oldValue, newValue });
     if (newValue === true) {
       registerFunc(true);
-    }
-    else {
+    } else {
       api.deregisterProtocol('nxm');
     }
   };
@@ -156,18 +161,21 @@ export function onModUpdate(api: IExtensionApi, nexus: Nexus): (...args: any[]) 
       getSafe(downloads, [downloadId, 'modInfo', 'nexus', 'ids', 'fileId'], undefined) === fileId);
     if (existingId !== undefined) {
       api.events.emit('start-install-download', existingId);
-    }
-    else {
+    } else {
       startDownload(api, nexus, url)
         .then(downloadId => {
           if (downloadId !== undefined) {
             api.events.emit('start-install-download', downloadId);
           } else {
-            api.showErrorNotification('Failed to download update file, please download it manually.',
-                                      undefined, { allowReport: false });
+            api.showErrorNotification(
+              'Failed to download update file, please download it manually.',
+              undefined, { allowReport: false });
           }
         })
         .catch(DownloadIsHTML, err => undefined)
+        .catch(DataInvalid, () => {
+          api.showErrorNotification('Invalid URL', url, { allowReport: false });
+        })
         .catch(err => {
           api.showErrorNotification('failed to start download', err);
         });
@@ -176,7 +184,8 @@ export function onModUpdate(api: IExtensionApi, nexus: Nexus): (...args: any[]) 
 }
 
 export function onSubmitFeedback(nexus: Nexus): (...args: any[]) => void {
-  return (title: string, message: string, hash: string, feedbackFiles: string[], anonymous: boolean, callback: (err: Error, respones?: IFeedbackResponse) => void) => {
+  return (title: string, message: string, hash: string, feedbackFiles: string[],
+          anonymous: boolean, callback: (err: Error, respones?: IFeedbackResponse) => void) => {
     submitFeedback(nexus, title, message, feedbackFiles, anonymous, hash)
       .then(response => callback(null, response))
       .catch(err => callback(err));
@@ -185,11 +194,13 @@ export function onSubmitFeedback(nexus: Nexus): (...args: any[]) => void {
 
 export function onEndorseMod(api: IExtensionApi, nexus: Nexus): (...args: any[]) => void {
   return (gameId, modId, endorsedStatus) => {
-    const APIKEY = getSafe(api.store.getState(), ['confidential', 'account', 'nexus', 'APIKey'], '');
+    const APIKEY = getSafe(api.store.getState(),
+                           ['confidential', 'account', 'nexus', 'APIKey'], '');
     if (APIKEY === '') {
-      api.showErrorNotification('An error occurred endorsing a mod', 'You are not logged in to Nexus Mods!', { allowReport: false });
-    }
-    else {
+      api.showErrorNotification('An error occurred endorsing a mod',
+                                'You are not logged in to Nexus Mods!',
+                                { allowReport: false });
+    } else {
       endorseModImpl(api, nexus, gameId, modId, endorsedStatus);
     }
   };
@@ -204,20 +215,27 @@ export function onAPIKeyChanged(api: IExtensionApi, nexus: Nexus): StateChangeCa
   };
 }
 
-export function onCheckModsVersion(api: IExtensionApi, nexus: Nexus): (...args: any[]) => Promise<void> {
+export function onCheckModsVersion(api: IExtensionApi,
+                                   nexus: Nexus): (...args: any[]) => Promise<void> {
   return (gameId, mods) => {
-    const APIKEY = getSafe(api.store.getState(), ['confidential', 'account', 'nexus', 'APIKey'], '');
+    const APIKEY = getSafe(api.store.getState(),
+                           ['confidential', 'account', 'nexus', 'APIKey'],
+                           '');
     if (APIKEY === '') {
-      api.showErrorNotification('An error occurred checking for mod updates', 'You are not logged in to Nexus Mods!', { allowReport: false });
+      api.showErrorNotification('An error occurred checking for mod updates',
+                                'You are not logged in to Nexus Mods!',
+                                { allowReport: false });
       return Promise.resolve();
-    }
-    else {
+    } else {
       api.store.dispatch(setUpdatingMods(gameId, true));
       const start = Date.now();
       return checkModVersionsImpl(api.store, nexus, gameId, mods)
         .then((errorMessages: string[]) => {
           if (errorMessages.length !== 0) {
-            showError(api.store.dispatch, 'Some mods could not be checked for updates', errorMessages.join('\n\n'), { allowReport: false });
+            showError(api.store.dispatch,
+                      'Some mods could not be checked for updates',
+                      errorMessages.join('\n\n'),
+                      { allowReport: false });
           }
         })
         .catch(err => {
