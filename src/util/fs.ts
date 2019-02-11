@@ -210,6 +210,7 @@ const fsyncAsync = genWrapperAsync(fs.fsyncAsync);
 const linkAsync = genWrapperAsync(fs.linkAsync);
 const lstatAsync = genWrapperAsync(fs.lstatAsync);
 const mkdirAsync = genWrapperAsync(fs.mkdirAsync);
+const mkdirsAsync = genWrapperAsync(fs.mkdirsAsync);
 const moveAsync = genWrapperAsync(fs.moveAsync);
 const openAsync = genWrapperAsync(fs.openAsync);
 const readdirAsync = genWrapperAsync(fs.readdirAsync);
@@ -229,6 +230,7 @@ export {
   linkAsync,
   lstatAsync,
   mkdirAsync,
+  mkdirsAsync,
   moveAsync,
   openAsync,
   readlinkAsync,

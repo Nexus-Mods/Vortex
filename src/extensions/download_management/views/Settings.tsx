@@ -6,13 +6,15 @@ import { Button } from '../../../controls/TooltipControls';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
 import { ValidationState } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { UserCanceled, InsufficientDiskSpace, UnsupportedOperatingSystem } from '../../../util/CustomErrors';
+import { InsufficientDiskSpace, UnsupportedOperatingSystem,
+         UserCanceled } from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
 import { log } from '../../../util/log';
 import { showError } from '../../../util/message';
 import opn from '../../../util/opn';
 import { getSafe } from '../../../util/storeHelper';
-import { isChildPath, transferPath, testPathTransfer } from '../../../util/util';
+import { testPathTransfer, transferPath } from '../../../util/transferPath';
+import { isChildPath } from '../../../util/util';
 import { setDownloadPath, setMaxDownloads } from '../actions/settings';
 
 import getDownloadPath, {getDownloadPathPattern} from '../util/getDownloadPath';
@@ -23,12 +25,12 @@ import getText from '../texts';
 import * as Promise from 'bluebird';
 import { remote } from 'electron';
 import * as path from 'path';
+import * as process from 'process';
 import * as React from 'react';
 import { Button as BSButton, ControlLabel, FormControl, FormGroup, HelpBlock, InputGroup,
          Jumbotron, Modal, ProgressBar } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
-import * as process from 'process';
 
 interface IConnectedProps {
   parallelDownloads: number;
@@ -77,54 +79,6 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     }
   }
 
-  private validateDownloadPath(input: string): { state: ValidationState, reason?: string } {
-    const { currentPlatform } = this.state;
-
-    const invalidCharacters = currentPlatform === 'win32' 
-      ? ['/', '?', '%', '*', ':', '|', '"', '<', '>', '.']
-      : [];
-
-    let vortexPath = remote.app.getAppPath();
-    if (path.basename(vortexPath) === 'app.asar') {
-      // in asar builds getAppPath returns the path of the asar so need to go up 2 levels
-      // (resources/app.asar)
-      vortexPath = path.dirname(path.dirname(vortexPath));
-    }
-    
-    if (isChildPath(input, vortexPath)) {
-      return {
-        state: 'error',
-        reason: 'Download folder can\'t be a subdirectory of the Vortex application folder.',
-      };
-    }
-
-    if (input.length > 100) {
-      return {
-        state: (input.length > 200) ? 'error' : 'warning',
-        reason: 'Download path shouldn\'t be too long, otherwise downloads may fail.',
-      };
-    }
-
-    if (!path.isAbsolute(input)) {
-      return {
-        state: 'error',
-        reason: 'Download folder needs to be an absolute path.'
-      };
-    }
-
-    const removedWinRoot = currentPlatform === 'win32' ? input.substr(3) : input;
-    if (invalidCharacters.find(inv => removedWinRoot.indexOf(inv) !== -1) !== undefined) {
-      return {
-        state: 'error',
-        reason: 'Path cannot contain illegal characters'
-      };
-    }
-
-    return {
-      state: 'success',
-    }
-  }
-
   public render(): JSX.Element {
     const { t, isPremium, parallelDownloads } = this.props;
     const { downloadPath, progress } = this.state;
@@ -132,6 +86,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     const changed = this.props.downloadPath !== downloadPath;
     const pathPreview = getDownloadPath(downloadPath, undefined);
     const validationState = this.validateDownloadPath(pathPreview);
+
+    const pathValid = validationState.state !== 'error';
 
     return (
       // Supressing default form submission event.
@@ -152,7 +108,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                     value={getDownloadPathPattern(downloadPath)}
                     placeholder={t('Download Folder')}
                     onChange={this.setDownloadPathEvt as any}
-                    onKeyPress={changed && (validationState.state !== 'error') ? this.keyPressEvt : null}
+                    onKeyPress={changed && pathValid ? this.keyPressEvt : null}
                   />
                   <InputGroup.Button className='inset-btn'>
                     <Button
@@ -166,15 +122,21 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               </FlexLayout.Fixed>
               <FlexLayout.Fixed>
                 <InputGroup.Button>
-                  <BSButton 
-                    disabled={!changed || (validationState.state === 'error')} 
-                    onClick={this.apply}>{t('Apply')}
+                  <BSButton
+                    disabled={!changed || (validationState.state === 'error')}
+                    onClick={this.apply}
+                  >
+                    {t('Apply')}
                   </BSButton>
                 </InputGroup.Button>
               </FlexLayout.Fixed>
             </FlexLayout>
-            <HelpBlock><a data-url={pathPreview} onClick={this.openUrl}>{pathPreview}</a></HelpBlock>
-            {validationState.reason ? <ControlLabel>{t(validationState.reason)}</ControlLabel> : null}
+            <HelpBlock>
+              <a data-url={pathPreview} onClick={this.openUrl}>{pathPreview}</a>
+            </HelpBlock>
+            {validationState.reason ? (
+              <ControlLabel>{t(validationState.reason)}</ControlLabel>
+             ) : null}
             <Modal show={this.state.busy !== undefined} onHide={nop}>
               <Modal.Body>
                 <Jumbotron>
@@ -203,7 +165,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             {!isPremium ? (
               <BSButton
                 onClick={this.goBuyPremium}
-                className='btn-download-go-premium'    
+                className='btn-download-go-premium'
               >
                 {t('Go Premium')}
               </BSButton>
@@ -211,13 +173,64 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           </div>
           <div>
             {!isPremium ? (
-              <p>{t('Regular users are restricted to 1 download thread - Go Premium for up to 10 download threads!')}</p>
+              <p>
+                {t('Regular users are restricted to 1 download thread - '
+                 + 'Go Premium for up to 10 download threads!')}
+              </p>
               ) : null
             }
           </div>
         </FormGroup>
       </form>
     );
+  }
+
+  private validateDownloadPath(input: string): { state: ValidationState, reason?: string } {
+    const { currentPlatform } = this.state;
+
+    const invalidCharacters = currentPlatform === 'win32'
+      ? ['/', '?', '%', '*', ':', '|', '"', '<', '>', '.']
+      : [];
+
+    let vortexPath = remote.app.getAppPath();
+    if (path.basename(vortexPath) === 'app.asar') {
+      // in asar builds getAppPath returns the path of the asar so need to go up 2 levels
+      // (resources/app.asar)
+      vortexPath = path.dirname(path.dirname(vortexPath));
+    }
+
+    if (isChildPath(input, vortexPath)) {
+      return {
+        state: 'error',
+        reason: 'Download folder can\'t be a subdirectory of the Vortex application folder.',
+      };
+    }
+
+    if (input.length > 100) {
+      return {
+        state: (input.length > 200) ? 'error' : 'warning',
+        reason: 'Download path shouldn\'t be too long, otherwise downloads may fail.',
+      };
+    }
+
+    if (!path.isAbsolute(input)) {
+      return {
+        state: 'error',
+        reason: 'Download folder needs to be an absolute path.',
+      };
+    }
+
+    const removedWinRoot = currentPlatform === 'win32' ? input.substr(3) : input;
+    if (invalidCharacters.find(inv => removedWinRoot.indexOf(inv) !== -1) !== undefined) {
+      return {
+        state: 'error',
+        reason: 'Path cannot contain illegal characters',
+      };
+    }
+
+    return {
+      state: 'success',
+    };
   }
 
   private submitEvt = (evt) => {
@@ -287,7 +300,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       return onShowDialog('error', 'Invalid path selected', {
                 text: 'You can\'t change the download folder to be the parent of the old folder. '
                     + 'This is because the new download folder has to be empty and it isn\'t '
-                    + 'empty if it contains the old download folder.'
+                    + 'empty if it contains the old download folder.',
       }, [ { label: 'Close' } ]);
     }
 
@@ -295,9 +308,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       return onShowDialog('error', 'Insufficient disk space', {
         text: 'You do not have enough disk space to move the downloads folder to your '
             + 'proposed destination folder.\n\n'
-            + 'Please select a different destination or free up some space and try again!'
+            + 'Please select a different destination or free up some space and try again!',
       }, [ { label: 'Close' } ]);
-    }
+    };
 
     this.nextState.progress = 0;
     this.nextState.busy = t('Moving');
@@ -336,9 +349,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       })
       .catch(UserCanceled, () => null)
       .catch(InsufficientDiskSpace, () => notEnoughDiskSpace())
-      .catch(UnsupportedOperatingSystem, () => 
-        onShowError('Unsupported operating system', 
-        'This functionality is currently unavailable for your operating system!', 
+      .catch(UnsupportedOperatingSystem, () =>
+        onShowError('Unsupported operating system',
+        'This functionality is currently unavailable for your operating system!',
         false))
       .catch((err) => {
         if (err !== null) {

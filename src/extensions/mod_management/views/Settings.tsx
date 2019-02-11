@@ -15,7 +15,8 @@ import { log } from '../../../util/log';
 import { showError } from '../../../util/message';
 import opn from '../../../util/opn';
 import { getSafe } from '../../../util/storeHelper';
-import { isChildPath, testPathTransfer, transferPath } from '../../../util/util';
+import { testPathTransfer, transferPath } from '../../../util/transferPath';
+import { isChildPath } from '../../../util/util';
 import { currentGame, currentGameDiscovery } from '../../gamemode_management/selectors';
 import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../../gamemode_management/types/IGameStored';
@@ -214,9 +215,12 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     if (isChildPath(newInstallPath, discovery.path)) {
       return onShowDialog('error', 'Invalid path selected', {
                 text: 'You can not put mods into the game directory. '
-                  + 'This directory is under the control of the game (and potentially Steam or similar) '
-                  + 'so your mods might be deleted or moved or otherwise damaged by foreign software.\n'
-                  + 'Please choose a separate folder for staging folder, one that no other application uses.'
+                  + 'This directory is under the control of the game '
+                  + '(and potentially Steam or similar) '
+                  + 'so your mods might be deleted or moved or otherwise damaged by '
+                  + 'foreign software.\n'
+                  + 'Please choose a separate folder for staging folder, one that no other '
+                  + 'application uses.',
       }, [ { label: 'Close' } ]);
     }
 
@@ -228,7 +232,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                     + 'If your current staging folder is "{USERDATA}\\{game}\\mods\\foobar"\n'
                     + 'and you want it to be "{USERDATA}\\{game}\\mods"\n'
                     + 'you first have to set it to something like "{USERDATA}\\{game}\\mods_temp"\n'
-                    + 'and then you can change it to "{USERDATA}\\{game}\\mods".'
+                    + 'and then you can change it to "{USERDATA}\\{game}\\mods".',
       }, [ { label: 'Close' } ]);
     }
 

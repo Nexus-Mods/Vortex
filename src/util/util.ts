@@ -1,7 +1,7 @@
 import { showDialog } from '../actions/notifications';
 import { IDialogResult } from '../types/IDialog';
 import { ThunkStore } from '../types/IExtensionContext';
-import { UserCanceled, ProcessCanceled, InsufficientDiskSpace, UnsupportedOperatingSystem } from './CustomErrors';
+import { UserCanceled } from './CustomErrors';
 import delayed from './delayed';
 import getVortexPath from './getVortexPath';
 import { log } from './log';
@@ -13,12 +13,6 @@ import * as fs from 'fs-extra-promise';
 import * as _ from 'lodash';
 import * as path from 'path';
 import { file } from 'tmp';
-import * as diskusage from 'diskusage';
-import * as winapi from 'winapi-bindings';
-import turbowalk, { IEntry } from 'turbowalk';
-
-  // 500MB or 524288000 Bytes in binary.
-  const MIN_DISK_SPACE_OFFSET = ((512 * 1024) * 1000);
 
 /**
  * count the elements in an array for which the predicate matches
@@ -341,7 +335,7 @@ const PROP_BLACKLIST = ['constructor',
   '__proto__',
   'toLocaleString' ];
 
-export function getAllPropertyNames(obj: Object) {
+export function getAllPropertyNames(obj: object) {
   let props: string[] = [];
 
   while (obj !== null) {
@@ -379,137 +373,4 @@ export function isChildPath(child: string, parent: string): boolean {
   const childTokens = childNorm.split(path.sep).filter(token => token.length > 0);
 
   return tokens.every((token: string, idx: number) => childTokens[idx] === token);
-}
-
-/**
- * Test whether it is viable to transfer files and directories from
- *  a source directory to a new proposed destination directory.
- * Note:
- * - Currently will only test whether there's enough disk space at the destination
- *    folder.
- *
- * @param source The current source folder.
- * @param destination The proposed destination folder.
- */
-export function testPathTransfer(source: string, destination: string): Promise<void> {
-  if (process.platform !== 'win32') {
-    return Promise.reject(new UnsupportedOperatingSystem());
-  }
-
-  let destinationRoot;
-  try {
-    destinationRoot = winapi.GetVolumePathName(destination);
-  } catch (err) {
-    return Promise.reject(err);
-  }
-
-  const isOnSameVolume = (): Promise<boolean> => {
-    return Promise.all([fs.statAsync(source), fs.statAsync(destinationRoot)])
-      .then(stats => stats[0].dev === stats[1].dev);
-  };
-
-  const calculate = (filePath: string): Promise<number> => {
-    let total = 0;
-    return turbowalk(filePath, entries => {
-      const files = entries.filter(entry => !entry.isDirectory);
-      total = files.reduce((lhs, rhs) => lhs + rhs.size, 0);
-    }).then(() => Promise.resolve(total));
-  };
-
-  let totalNeededBytes = 0;
-  return isOnSameVolume()
-    .then(res => res
-      ? Promise.reject(new ProcessCanceled('Disk space calculations are unnecessary.'))
-      : calculate(source))
-    .then(totalSize => {
-      totalNeededBytes = totalSize;
-      try {
-        return diskusage.check(destinationRoot);
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    })
-    .then(res =>
-      (totalNeededBytes < (res.free - MIN_DISK_SPACE_OFFSET))
-        ? Promise.resolve()
-        : Promise.reject(new InsufficientDiskSpace(destinationRoot)))
-    .catch(ProcessCanceled, () => Promise.resolve());
-}
-
-export type ProgressCallback = (from: string, to: string, percentage: number) => void;
-
-/**
- * Move the content of a directory to another - Using a move operation if it's on the same
- * drive and a copy+delete if not.
- * This works around or properly reports common problems, like when the destination directory
- * is a parent of the source directory
- * @param source 
- * @param dest 
- */
-export function transferPath(source: string,
-                             dest: string,
-                             progress: ProgressCallback): Promise<void> {
-  const moveDown = isChildPath(dest, source);
-
-  let func = fs.copyAsync;
-
-  let completed = 0;
-  let count: number = 0;
-  let lastPerc = 0;
-
-  let copyPromise = Promise.resolve();
-
-  return Promise.join(fs.statAsync(source), fs.statAsync(dest),
-    (statOld: fs.Stats, statNew: fs.Stats) =>
-      Promise.resolve(statOld.dev === statNew.dev))
-    .then((sameVolume: boolean) => {
-      func = sameVolume ? fs.renameAsync : fs.copyAsync;
-    })
-    .then(() => turbowalk(source, (entries: IEntry[]) => {
-      count += entries.length;
-      copyPromise = copyPromise.then(() => Promise.map(entries, entry => {
-        const sourcePath = entry.filePath;
-        const destPath = path.join(dest, path.relative(source, entry.filePath));
-        if (sourcePath === dest) {
-          // if the target directory is a subdirectory of the old one, don't try
-          // to move it into itself, that's just weird. Also it fails
-          // (e.g. ...\mods -> ...\mods\newMods)
-          return Promise.resolve();
-        }
-
-        if (entry.isDirectory) {
-          return fs.mkdirsAsync(destPath);
-        }
-
-        const perc = Math.floor((completed * 100) / count);
-        if (perc !== lastPerc) {
-          lastPerc = perc;
-          progress(sourcePath, destPath, perc);
-        }
-        return func(sourcePath, destPath)
-          .catch(err => {
-            // EXDEV implies we tried to rename when source and destination are
-            // not in fact on the same volume. This is what comparing the stat.dev
-            // was supposed to prevent.
-            if (err.code === 'EXDEV') {
-              func = fs.copyAsync;
-              return func(sourcePath, destPath);
-            } else if (err.code === 'ENOENT') {
-              return Promise.resolve();
-            } else {
-              return Promise.reject(err);
-            }
-          })
-          .then(() => {
-            ++completed;
-          });
-      }).then(() => null));
-    }, { details: false, skipHidden: false }))
-    .then(() => copyPromise)
-    .then(() => moveDown
-      ? Promise.resolve()
-      : fs.removeAsync(source))
-    .catch(err => (err.code === 'ENOENT')
-      ? Promise.resolve()
-      : Promise.reject(err));
 }
