@@ -1,4 +1,4 @@
-import { ProcessCanceled, HTTPError } from '../../util/CustomErrors';
+import { HTTPError, ProcessCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 import { countIf, truthy } from '../../util/util';
@@ -27,10 +27,10 @@ const MAX_REDIRECT_FOLLOW = 2;
 
 export class DownloadIsHTML extends Error {
   private mUrl: string;
-  constructor(url: string) {
+  constructor(inputUrl: string) {
     super('');
     this.name = this.constructor.name;
-    this.mUrl = url;
+    this.mUrl = inputUrl;
   }
 
   public get url() {
@@ -233,10 +233,10 @@ class DownloadWorker {
     return true;
   }
 
-  private handleHTML(url: string) {
+  private handleHTML(inputUrl: string) {
     this.abort(false);
     if (this.mJob.errorCB !== undefined) {
-      this.mJob.errorCB(new DownloadIsHTML(url));
+      this.mJob.errorCB(new DownloadIsHTML(inputUrl));
     }
   }
 
@@ -267,7 +267,8 @@ class DownloadWorker {
     // it. If it contains any redirect, the browser window will follow it and initiate a
     // download.
     if (response.statusCode >= 300) {
-      if (([301, 302].indexOf(response.statusCode) !== -1) && (this.mRedirectsFollowed < MAX_REDIRECT_FOLLOW)) {
+      if (([301, 302].indexOf(response.statusCode) !== -1)
+          && (this.mRedirectsFollowed < MAX_REDIRECT_FOLLOW)) {
         const newUrl = url.resolve(jobUrl, response.headers['location'] as string);
         log('info', 'redirected', { newUrl, loc: response.headers['location'] });
         this.mJob.url = () => Promise.resolve(newUrl);
@@ -372,7 +373,8 @@ class DownloadWorker {
 
   private handleData(data: Buffer) {
     if (this.mEnded) {
-      log('debug', 'got data after ended', { workerId: this.mJob.workerId, ended: this.mEnded, aborted: this.mRequest.aborted });
+      log('debug', 'got data after ended',
+          { workerId: this.mJob.workerId, ended: this.mEnded, aborted: this.mRequest.aborted });
       this.mRequest.abort();
       return;
     }
@@ -544,7 +546,8 @@ class DownloadManager {
         promises: [],
       };
       const isPending = received === 0;
-      download.chunks = (chunks || []).map((chunk, idx) => this.toJob(download, chunk, isPending && (idx === 0)));
+      download.chunks = (chunks || [])
+        .map((chunk, idx) => this.toJob(download, chunk, isPending && (idx === 0)));
       if (download.chunks.length > 0) {
         download.chunks[0].errorCB = (err) => { this.cancelDownload(download, err); };
         this.mQueue.push(download);
@@ -646,10 +649,15 @@ class DownloadManager {
     const handler = this.mProtocolHandlers[protocol.slice(0, protocol.length - 1)];
 
     return (handler !== undefined)
-      ? handler(input).then(res => {
-        this.mResolveCache[input] = { time: Date.now(), urls: res.urls };
-        return res.urls;
-      })
+      ? handler(input)
+        .catch(err => {
+          log('warn', 'failed to resolve', err.message);
+          return Promise.resolve({ urls: [] });
+        })
+        .then(res => {
+          this.mResolveCache[input] = { time: Date.now(), urls: res.urls };
+          return res.urls;
+        })
       : Promise.resolve([input]);
   }
 
