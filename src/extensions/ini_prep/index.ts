@@ -241,7 +241,14 @@ function main(context: IExtensionContext) {
 
       return discoverSettingsChanges(context.api.translate, profile.gameId, discovery)
         .then(() => bakeSettings(context.api.translate, profile.gameId, discovery,
-                                 mods, state, onApplySettings));
+                                 mods, state, onApplySettings))
+        .catch(UserCanceled, () => {
+          // nop
+          log('info', 'user canceled baking game settings');
+        })
+        .catch(err => {
+          context.api.showErrorNotification('Failed to bake settings files', err);
+        });
     });
 
     context.api.events.on('purge-mods', () => {
