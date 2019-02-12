@@ -75,7 +75,7 @@ export interface IUnavailableReason {
    */
   description: (t: i18next.TranslationFunction) => string;
   /**
-   * describes the solution to make this 
+   * describes the solution to make this
    */
   solution?: (t: i18next.TranslationFunction) => string;
   /**
@@ -120,7 +120,7 @@ export interface IDeploymentMethod {
   /**
    * true if it's "safe" to purge files from this method from another instance,
    * that is: without knowing where the "original" files are.
-   * 
+   *
    * @type {boolean}
    * @memberOf IModActivator
    */

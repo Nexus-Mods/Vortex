@@ -9,11 +9,13 @@ import { IUnavailableReason } from '../types/IDeploymentMethod';
 import allTypesSupported from '../util/allTypesSupported';
 import { getAllActivators } from '../util/deploymentMethods';
 import getModPaths from '../util/getModPaths';
+
 import * as React from 'react';
-import * as Redux from 'redux';
-import { ThunkDispatch } from 'redux-thunk';
 import { Button } from 'react-bootstrap';
 import { Trans } from 'react-i18next';
+import * as Redux from 'redux';
+import { ThunkDispatch } from 'redux-thunk';
+import { log } from '../../../util/log';
 
 export interface IFixDeploymentDialogProps {
 
@@ -33,13 +35,15 @@ interface IFixDeploymentDialogState {
   step: number;
 }
 
-function nop() {}
+function nop() {
+  // nop
+}
 
 class FixDeploymentDialog extends ComponentEx<IProps, IFixDeploymentDialogState> {
   private deploymentMethods: IDeploymentMethod[];
   constructor(props: IProps) {
     super(props);
-    
+
     this.initState({
       step: -1,
     });
@@ -109,7 +113,7 @@ class FixDeploymentDialog extends ComponentEx<IProps, IFixDeploymentDialogState>
     const { t, problems } = this.props;
     const { step } = this.state;
 
-    const method = this.deploymentMethods.find(method => method.id === problems[step].activator);
+    const method = this.deploymentMethods.find(iter => iter.id === problems[step].activator);
 
     return (
       <div>
@@ -117,13 +121,17 @@ class FixDeploymentDialog extends ComponentEx<IProps, IFixDeploymentDialogState>
         <h5>{t('Problem')}</h5>
         <div>{problems[step].message}</div>
         <h5>{t('Solution')}</h5>
-        <div>{(problems[step].solution !== undefined) ? problems[step].solution : t('Can\'t be solved.')}</div>
+        <div>
+          {(problems[step].solution !== undefined)
+            ? problems[step].solution
+            : t('Can\'t be solved.')}
+        </div>
       </div>
     );
   }
 
   private applyFix = () => {
-    const { problems, onClear } = this.props;
+    const { t, problems, onClear } = this.props;
     const { step } = this.state;
     const method = this.deploymentMethods.find(iter => iter.id === problems[step].activator);
     const state = this.context.api.store.getState();
@@ -131,9 +139,31 @@ class FixDeploymentDialog extends ComponentEx<IProps, IFixDeploymentDialogState>
     const gameId = activeGameId(state);
     const modPaths = getModPaths(state, gameId);
     if (truthy(modPaths)) {
-      const reason: IUnavailableReason = allTypesSupported(method, state, gameId, Object.keys(modPaths));
-      onClear();
-      return reason.fixCallback(this.context.api);
+      // we have to find the unavailable reason again because the data we have doesn't contain
+      // the actual fix function (since we can't put functions into the store)
+      // However, it's technically possible that we find a different fail reason this time around
+      // and that may not have a fix callback
+      const reason: IUnavailableReason =
+        allTypesSupported(method, state, gameId, Object.keys(modPaths));
+      if (reason === undefined) {
+        // the failure no longer applies? Hrmm...
+        log('warn', 'The reason the deployment method was unavailable was apparently temporary',
+          { reason: method.description });
+        onClear();
+      } else if (reason.fixCallback !== undefined) {
+        onClear();
+        return reason.fixCallback(this.context.api);
+      } else {
+        onClear();
+        this.context.api.sendNotification({
+          type: 'warning',
+          message: 'The reason this deployment method is unavaible has changed since the '
+                 + 'notification was produced. This indicates a random or temporary factor '
+                 + 'affecting it.',
+        });
+        log('warn', 'The reason the deployment method is unavailable changed',
+          { before: method.description, after: reason.description(t) });
+      }
     } else {
       const discovery = currentGameDiscovery(state);
       this.context.api.showErrorNotification('Failed to apply fix', {
