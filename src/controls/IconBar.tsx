@@ -223,13 +223,13 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
     } else {
       const grouped: { [key: string]: IActionDefinition[] } =
         actions.reduce((prev, action, idx) => {
-        if ((action.icon !== undefined) && (groupByIcon !== false)) {
-          setdefault(prev, action.icon, []).push(action);
-        } else {
-          prev[idx.toString()] = [action];
-        }
-        return prev;
-      }, {});
+          if ((action.icon !== undefined) && (groupByIcon !== false)) {
+            setdefault(prev, action.icon, []).push(action);
+          } else {
+            prev[idx.toString()] = [action];
+          }
+          return prev;
+        }, {});
       const byFirstPrio = (lhs: IActionDefinition[], rhs: IActionDefinition[]) => {
         return lhs[0].position - rhs[0].position;
       };
@@ -323,7 +323,8 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
 
     const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
 
-    const id = `${instanceId || '1'}_${index}`;
+    let actionId = (icon.title || index.toString()).toLowerCase().replace(/ /g, '-');
+    actionId = `action-${actionId}`;
     if (icon.icon !== undefined) {
       // simple case
 
@@ -339,8 +340,8 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
 
       return (
         <ToolbarIcon
-          key={id}
-          id={id}
+          key={actionId}
+          className={actionId}
           instanceId={instanceIds}
           icon={hasIcon ? icon.icon : undefined}
           text={hasText ? t(icon.title) : undefined}
@@ -350,7 +351,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
         />
       );
     } else {
-      return this.renderCustomIcon(id, icon);
+      return this.renderCustomIcon(actionId, icon);
     }
   }
 
