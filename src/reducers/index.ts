@@ -79,7 +79,7 @@ export function verify(statePath: string,
       res = (sane === undefined)
         ? deleteOrNop(res, [mapKey])
         : update(res, { [mapKey]: { $set: sane } });
-      }
+    }
   };
 
   const doTest = (key: string, realKey: string) => {
@@ -127,7 +127,6 @@ export enum Decision {
   QUIT,
 }
 
-let sanitizeDecision: Decision;
 let backupTime: number;
 
 function deriveReducer(statePath: string,
@@ -143,8 +142,7 @@ function deriveReducer(statePath: string,
       red = {
         ...ele.reducers,
         ['__hydrate']: (state, payload) => {
-          if ((ele.verifiers !== undefined)
-              && (sanitizeDecision !== Decision.IGNORE)) {
+          if (ele.verifiers !== undefined) {
             const input = getSafe(payload, pathArray, undefined);
             const errors: string[] = [];
             let moreCount = 0;
@@ -160,8 +158,7 @@ function deriveReducer(statePath: string,
               if (moreCount > 0) {
                 errors.push(`... ${moreCount} more errors ...`);
               }
-              const decision = sanitizeDecision !== undefined ? sanitizeDecision : querySanitize(errors);
-              // sanitizeDecision = decision;
+              const decision = querySanitize(errors);
               if (decision === Decision.SANITIZE) {
                 const backupPath = path.join(app.getPath('temp'), 'state_backups');
                 log('info', 'sanitizing application state');

@@ -136,6 +136,17 @@ export const modsReducer: IReducerSpec = {
               required: true,
               deleteBroken: 'parent',
             },
+            attributes: {
+              type: 'object',
+              description: () => '',
+              elements: {
+                newestChangelog: {
+                  type: 'object',
+                  description: () => 'Corrupted mod changelog will be reset',
+                  deleteBroken: true,
+                },
+              },
+            },
           },
         },
       },

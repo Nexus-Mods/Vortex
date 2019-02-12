@@ -1,5 +1,6 @@
 import {IPersistor} from '../types/IExtensionContext';
 import { terminate } from '../util/errorHandling';
+import { log } from '../util/log';
 
 import * as Promise from 'bluebird';
 import * as Redux from 'redux';
@@ -11,6 +12,11 @@ function insert(target: any, key: string[], value: any, hive: string) {
         // this could cause an exception if prev isn't an object, but only if
         // we previously stored incorrect data. We'd want to fix the error that
         // caused that, so we allow the exception to bubble up
+        if (typeof prev !== 'object') {
+          log('error', 'invalid application state',
+              { key: fullKey.slice(0, idx).join('.'), was: prev });
+          prev = {};
+        }
         prev[keySegment] = value;
         return prev;
       } else {
@@ -172,7 +178,7 @@ class ReduxPersistor<T> {
                 // keys that exist in both - already handled above
               : Promise.resolve()))
           .then(() => undefined);
-      } else { 
+      } else {
         return (newState !== undefined)
           ? this.add(persistor, statePath, newState)
           : this.remove(persistor, statePath, oldState);
