@@ -1,5 +1,5 @@
 import {IExtensionContext} from '../../types/IExtensionContext';
-import { IState, IProfile } from '../../types/IState';
+import { IProfile, IState } from '../../types/IState';
 import { UserCanceled } from '../../util/CustomErrors';
 import deepMerge from '../../util/deepMerge';
 import * as fs from '../../util/fs';
@@ -20,7 +20,7 @@ import renderINITweaks from './TweakList';
 import * as Promise from 'bluebird';
 import { TranslationFunction } from 'i18next';
 import * as path from 'path';
-import IniParser, {WinapiFormat, IniFile} from 'vortex-parse-ini';
+import IniParser, { IniFile, WinapiFormat } from 'vortex-parse-ini';
 
 function ensureIniBackups(t: TranslationFunction, gameMode: string,
                           discovery: IDiscoveryResult): Promise<void> {
@@ -108,10 +108,12 @@ function getBaseFile(input: string): string {
   }
 }
 
+type ApplySettings = (fileName: string, parser: IniFile<any>) => Promise<void>;
+
 function bakeSettings(t: TranslationFunction,
                       gameMode: string, discovery: IDiscoveryResult,
                       mods: IMod[], state: IState,
-                      onApplySettings: (fileName: string, parser: IniFile<any>) => Promise<void>): Promise<void> {
+                      onApplySettings: ApplySettings): Promise<void> {
   const modsPath = installPathForGame(state, gameMode);
   const format = iniFormat(gameMode);
   if (format === undefined) {
@@ -152,7 +154,8 @@ function bakeSettings(t: TranslationFunction,
         .catch(err => (err.code === 'ENOENT')
           ? Promise.resolve()
           : Promise.reject(err))
-        .then(() => fs.copyAsync(iniFileName + '.base', iniFileName + '.baked', { noSelfCopy: true })
+        .then(() => fs.copyAsync(iniFileName + '.base', iniFileName + '.baked',
+                                 { noSelfCopy: true })
         .then(() => fs.ensureFileWritableAsync(iniFileName + '.baked'))
           // base might not exist, in that case copy from the original ini
           .catch(err => (err.code === 'ENOENT')
@@ -226,6 +229,7 @@ function main(context: IExtensionContext) {
     });
 
     context.api.onAsync('bake-settings', (gameId: string, mods: IMod[], profile: IProfile) => {
+      log('debug', 'baking settings', { gameId, deactivated });
       if (deactivated) {
         return;
       }
@@ -236,7 +240,8 @@ function main(context: IExtensionContext) {
         context.api.emitAndAwait('apply-settings', profile, fileName, parser);
 
       return discoverSettingsChanges(context.api.translate, profile.gameId, discovery)
-        .then(() => bakeSettings(context.api.translate, profile.gameId, discovery, mods, state, onApplySettings));
+        .then(() => bakeSettings(context.api.translate, profile.gameId, discovery,
+                                 mods, state, onApplySettings));
     });
 
     context.api.events.on('purge-mods', () => {
@@ -249,10 +254,12 @@ function main(context: IExtensionContext) {
       discoverSettingsChanges(context.api.translate, gameMode, discovery)
         .then(() => purgeChanges(context.api.translate, gameMode, discovery))
         .catch(UserCanceled, () => {
-          context.api.showErrorNotification('Ini files were not restored', undefined, { allowReport: false });
+          context.api.showErrorNotification('Ini files were not restored',
+                                            undefined, { allowReport: false });
         })
         .catch(err => {
-          context.api.showErrorNotification('Failed to purge ini edits', err, { allowReport: (err as any).code !== 'ENOENT' });
+          context.api.showErrorNotification('Failed to purge ini edits', err,
+                                            { allowReport: (err as any).code !== 'ENOENT' });
         });
     });
   });

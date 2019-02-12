@@ -10,7 +10,7 @@ export interface IDeploymentProblem {
   solution: string;
   order: number;
   hasAutomaticFix: boolean;
-};
+}
 
 /**
  * sets the updating mods flag

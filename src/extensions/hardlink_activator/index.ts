@@ -4,10 +4,11 @@ import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 import { installPathForGame } from '../../util/selectors';
 
-import { getGame } from '../gamemode_management/util/getGame';
 import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
+import { getGame } from '../gamemode_management/util/getGame';
 import LinkingDeployment from '../mod_management/LinkingDeployment';
-import { IDeployedFile, IDeploymentMethod, IUnavailableReason } from '../mod_management/types/IDeploymentMethod';
+import { IDeployedFile, IDeploymentMethod,
+         IUnavailableReason } from '../mod_management/types/IDeploymentMethod';
 
 import * as Promise from 'bluebird';
 import * as I18next from 'i18next';
@@ -77,10 +78,11 @@ class DeploymentMethod extends LinkingDeployment {
       return {
         description: t => t('Can\'t write to output directory'),
         order: 3,
-        solution: t => t('To resolve this problem, the current user account needs to be given write permission to "{{modPath}}".', {
+        solution: t => t('To resolve this problem, the current user account needs to be given '
+                       + 'write permission to "{{modPath}}".', {
           replace: {
             modPath: modPaths[typeId],
-          }
+          },
         }),
       };
     }
@@ -93,16 +95,18 @@ class DeploymentMethod extends LinkingDeployment {
         return {
           description: t => t('Works only if mods are installed on the same drive as the game.'),
           order: 5,
-          solution: t => t('Please go to Settings->Mods and set the mod staging folder to be on the same '
-            + 'drive as the game ({{gameVolume}}).', {
+          solution: t => t('Please go to Settings->Mods and set the mod staging folder to be on '
+            + 'the same drive as the game ({{gameVolume}}).', {
               replace: {
                 gameVolume: winapi.GetVolumePathName(modPaths[typeId]),
-              }
+              },
             }),
           fixCallback: (api: IExtensionApi) => new Promise((resolve, reject) => {
             api.events.emit('show-main-page', 'application_settings');
             api.store.dispatch(setSettingsPage('Mods'));
-            api.highlightControl('#install-path-form', 5000, 'Change this to be on the same drive as the game.');
+            api.highlightControl('#install-path-form',
+                                 5000,
+                                 'Change this to be on the same drive as the game.');
           }),
         };
       }
@@ -144,7 +148,8 @@ class DeploymentMethod extends LinkingDeployment {
         .then(() => fs.removeAsync(canary))
         .catch(err => {
           log('error', 'failed to clean up canary file. This indicates we were able to create '
-              + 'a file in the target directory but not delete it', { installationPath, message: err.message });
+              + 'a file in the target directory but not delete it',
+              { installationPath, message: err.message });
         });
     }
 
@@ -187,9 +192,7 @@ class DeploymentMethod extends LinkingDeployment {
         {
           details: true,
         })
-        .then(() => {
-          return Promise.resolve(this.mInstallationFiles)
-        });
+        .then(() => Promise.resolve(this.mInstallationFiles));
     }
 
     // now remove all files in the game directory that have the same id
