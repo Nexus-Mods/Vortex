@@ -1,9 +1,11 @@
-import { IDeploymentMethod } from '../types/IDeploymentMethod';
 import { IState } from '../../../types/IState';
 import { getSafe } from '../../../util/storeHelper';
 import { getGame } from '../../gamemode_management/util/getGame';
-import allTypesSupported from './allTypesSupported';
 import { activeGameId } from '../../profile_management/selectors';
+
+import { IDeploymentMethod } from '../types/IDeploymentMethod';
+
+import allTypesSupported from './allTypesSupported';
 
 const activators: IDeploymentMethod[] = [];
 
@@ -36,26 +38,35 @@ export function getSupportedActivators(state: IState): IDeploymentMethod[] {
     act => allTypesSupported(act, state, gameId, modTypes) === undefined);
 }
 
-export function getCurrentActivator(state: IState, gameId: string, allowFallback: boolean): IDeploymentMethod {
+export function getSelectedActivator(state: IState, gameId: string) {
   const activatorId = state.settings.mods.activator[gameId];
 
-  let activator: IDeploymentMethod;
-  if (activatorId !== undefined) {
-    activator = activators.find((act: IDeploymentMethod) => act.id === activatorId);
+  return (activatorId !== undefined)
+    ? activators.find((act: IDeploymentMethod) => act.id === activatorId)
+    : undefined;
+}
+
+export function getCurrentActivator(state: IState,
+                                    gameId: string,
+                                    allowDefault: boolean): IDeploymentMethod {
+  let activator: IDeploymentMethod = getSelectedActivator(state, gameId);
+
+  if (allowDefault && (activator === undefined)) {
+    activator = activators.find(act =>
+      allTypesSupported(act, state, gameId, types) === undefined);
+  }
+
+  if (activator === undefined) {
+    return undefined;
   }
 
   const gameDiscovery =
     getSafe(state, ['settings', 'gameMode', 'discovered', gameId], undefined);
   const types = Object.keys(getGame(gameId).getModPaths(gameDiscovery.path));
 
-  if (allowFallback && (allTypesSupported(activator, state, gameId, types) !== undefined)) {
+  if (allTypesSupported(activator, state, gameId, types) !== undefined) {
     // if the selected activator is no longer supported, don't use it
-    activator = undefined;
-  }
-
-  if (activator === undefined) {
-    activator = activators.find(act =>
-      allTypesSupported(act, state, gameId, types) === undefined);
+    return undefined;
   }
 
   return activator;

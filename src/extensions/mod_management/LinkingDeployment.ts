@@ -40,7 +40,9 @@ interface IDeploymentContext {
  */
 abstract class LinkingActivator implements IDeploymentMethod {
   public static OLD_TAG_NAME = '__delete_if_empty';
-  public static NEW_TAG_NAME = process.platform === 'win32' ? '__folder_managed_by_vortex' : '.__folder_managed_by_vortex';
+  public static NEW_TAG_NAME = process.platform === 'win32'
+    ? '__folder_managed_by_vortex'
+    : '.__folder_managed_by_vortex';
 
   public id: string;
   public name: string;
@@ -53,7 +55,8 @@ abstract class LinkingActivator implements IDeploymentMethod {
   private mQueue: Promise<void> = Promise.resolve();
   private mContext: IDeploymentContext;
 
-  constructor(id: string, name: string, description: string, fallbackPurgeSafe: boolean, api: IExtensionApi) {
+  constructor(id: string, name: string, description: string,
+              fallbackPurgeSafe: boolean, api: IExtensionApi) {
     this.id = id;
     this.name = name;
     this.description = description;
@@ -105,40 +108,6 @@ abstract class LinkingActivator implements IDeploymentMethod {
             this.mContext.newDeployment[key] = file;
           }
         });
-      });
-  }
-
-  private removeDeployedFile(installationPath: string, dataPath: string, key: string, restoreBackup: boolean): Promise<void> {
-    const outputPath = path.join(dataPath,
-      this.mContext.previousDeployment[key].target || '',
-      this.mContext.previousDeployment[key].relPath);
-    const sourcePath = path.join(installationPath,
-      this.mContext.previousDeployment[key].source,
-      this.mContext.previousDeployment[key].relPath);
-    return this.unlinkFile(outputPath, sourcePath)
-      .catch(err => (err.code !== 'ENOENT')
-        // treat an ENOENT error for the unlink as if it was a success.
-        // The end result either way is the link doesn't exist now.
-        ? Promise.reject(err)
-        : Promise.resolve())
-      .then(() => restoreBackup
-        ? fs.renameAsync(outputPath + BACKUP_TAG, outputPath).catch(() => undefined)
-        : Promise.resolve())
-      .then(() => {
-        delete this.mContext.previousDeployment[key];
-      })
-      .catch(err => {
-        log('warn', 'failed to unlink', {
-          path: this.mContext.previousDeployment[key].relPath,
-          error: err.message,
-        });
-        // need to make sure the deployment manifest
-        // reflects the actual state, otherwise we may
-        // leave files orphaned
-        this.mContext.newDeployment[key] =
-          this.mContext.previousDeployment[key];
-
-        return Promise.reject(err);
       });
   }
 
@@ -419,6 +388,43 @@ abstract class LinkingActivator implements IDeploymentMethod {
     return fs.lstatAsync(filePath);
   }
 
+  private removeDeployedFile(installationPath: string,
+                             dataPath: string,
+                             key: string,
+                             restoreBackup: boolean): Promise<void> {
+    const outputPath = path.join(dataPath,
+      this.mContext.previousDeployment[key].target || '',
+      this.mContext.previousDeployment[key].relPath);
+    const sourcePath = path.join(installationPath,
+      this.mContext.previousDeployment[key].source,
+      this.mContext.previousDeployment[key].relPath);
+    return this.unlinkFile(outputPath, sourcePath)
+      .catch(err => (err.code !== 'ENOENT')
+        // treat an ENOENT error for the unlink as if it was a success.
+        // The end result either way is the link doesn't exist now.
+        ? Promise.reject(err)
+        : Promise.resolve())
+      .then(() => restoreBackup
+        ? fs.renameAsync(outputPath + BACKUP_TAG, outputPath).catch(() => undefined)
+        : Promise.resolve())
+      .then(() => {
+        delete this.mContext.previousDeployment[key];
+      })
+      .catch(err => {
+        log('warn', 'failed to unlink', {
+          path: this.mContext.previousDeployment[key].relPath,
+          error: err.message,
+        });
+        // need to make sure the deployment manifest
+        // reflects the actual state, otherwise we may
+        // leave files orphaned
+        this.mContext.newDeployment[key] =
+          this.mContext.previousDeployment[key];
+
+        return Promise.reject(err);
+      });
+  }
+
   private deployFile(key: string, installPathStr: string, dataPath: string,
                      replace: boolean): Promise<IDeployedFile> {
     const fullPath =
@@ -471,9 +477,9 @@ abstract class LinkingActivator implements IDeploymentMethod {
       doRemove = doRemove ||
         (entries.find(entry =>
           !entry.isDirectory
-          && (   (path.basename(entry.filePath) === LinkingActivator.OLD_TAG_NAME)
-              || (path.basename(entry.filePath) === LinkingActivator.NEW_TAG_NAME))
-          ) !== undefined);
+          && ((path.basename(entry.filePath) === LinkingActivator.OLD_TAG_NAME)
+              || (path.basename(entry.filePath) === LinkingActivator.NEW_TAG_NAME)))
+         !== undefined);
       const dirs = entries.filter(entry => entry.isDirectory);
       // recurse into subdirectories
       queue = queue.then(() =>
@@ -527,8 +533,8 @@ abstract class LinkingActivator implements IDeploymentMethod {
         // the purge process for different mod types may come across the same directory if
         // the base directory of one is a parent of the base directory of another
         // (say .../Fallout4 and .../Fallout4/data)
-        // to fix that we'd have to blacklist directories that are the base of another mod type which
-        // would speed this up in general but it feels like a lot can go wrong with that
+        // to fix that we'd have to blacklist directories that are the base of another mod type
+        // which would speed this up in general but it feels like a lot can go wrong with that
         return this.mApi.showDialog('question', 'Confirm', {
           text: 'Are you sure you want to cancel? This will leave backup files '
             + 'unrestored, you will have to clean those up manually.',

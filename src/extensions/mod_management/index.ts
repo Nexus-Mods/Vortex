@@ -53,7 +53,7 @@ import {TestSupported} from './types/TestSupported';
 import { loadActivation, saveActivation } from './util/activationStore';
 import allTypesSupported from './util/allTypesSupported';
 import * as basicInstaller from './util/basicInstaller';
-import { getAllActivators, getCurrentActivator,
+import { getAllActivators, getCurrentActivator, getSelectedActivator,
          getSupportedActivators, registerDeploymentMethod } from './util/deploymentMethods';
 import { NoDeployment } from './util/exceptions';
 import { registerAttributeExtractor } from './util/filterModInfo';
@@ -166,9 +166,9 @@ function applyFileActions(sourcePath: string,
       ? (value.sourceModified > value.destModified) ? 'drop' : 'import'
       : value.action;
 
-      setdefault(prev, action, []).push(value);
-      return prev;
-    }, {});
+    setdefault(prev, action, []).push(value);
+    return prev;
+  }, {});
 
   // not doing anything with 'nop'. The regular deployment code is responsible for doing the right
   // thing in this case.
@@ -268,20 +268,28 @@ function genUpdateModDeployment() {
       api.store.dispatch(dismissNotification(notificationId));
       return Promise.resolve();
     }
-    const instPath = installPathForGame(state, profile.gameId);
+    const gameId = profile.gameId;
+    const instPath = installPathForGame(state, gameId);
     const gameDiscovery =
-      getSafe(state, ['settings', 'gameMode', 'discovered', profile.gameId], undefined);
-    const game = getGame(profile.gameId);
+      getSafe(state, ['settings', 'gameMode', 'discovered', gameId], undefined);
+    const game = getGame(gameId);
     if (game === undefined) {
       return Promise.reject(new Error('Game no longer available'));
     }
     const modPaths = game.getModPaths(gameDiscovery.path);
     const t = api.translate;
-    const activator = getCurrentActivator(state, profile.gameId, true);
+    const activator = getCurrentActivator(state, gameId, true);
 
     if (activator === undefined) {
-      // this situation (no supported activator) should already be reported
-      // elsewhere.
+      const selectedActivator = getSelectedActivator(state, gameId);
+      const types = Object.keys(getGame(gameId).getModPaths(gameDiscovery.path));
+
+      const err = allTypesSupported(selectedActivator, state, gameId, types);
+      if (selectedActivator !== undefined) {
+        api.showErrorNotification('Deployment not possible',
+                                  err.description(t),
+                                  { allowReport: false });
+      } // otherwise there should already be a notification
       return Promise.resolve();
     }
 
@@ -491,7 +499,7 @@ function genUpdateModDeployment() {
                               .forEach(modId => {
                                 api.store.dispatch(setModEnabled(profile.id, modId, false));
                               });
-                              dismiss();
+                            dismiss();
                           }
                         });
                       } },
@@ -557,7 +565,7 @@ function doSaveActivation(api: IExtensionApi, typeId: string, modPath: string,
       { label: 'Retry' },
       { label: 'Ignore' },
     ])
-    .then(result => (result.action === 'Retry') 
+    .then(result => (result.action === 'Retry')
       ? doSaveActivation(api, typeId, modPath, files, activatorId)
       : Promise.resolve()));
 }

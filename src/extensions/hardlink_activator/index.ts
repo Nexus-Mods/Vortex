@@ -76,7 +76,7 @@ class DeploymentMethod extends LinkingDeployment {
       log('info', 'hardlink deployment not supported due to lack of write access',
           { typeId, path: modPaths[typeId] });
       return {
-        description: t => t('Can\'t write to output directory'),
+        description: t => t('Can\'t write to output directory.'),
         order: 3,
         solution: t => t('To resolve this problem, the current user account needs to be given '
                        + 'write permission to "{{modPath}}".', {
