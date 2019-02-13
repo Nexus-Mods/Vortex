@@ -31,6 +31,7 @@ function ensureIniBackups(t: TranslationFunction, gameMode: string,
       copy => fs.statAsync(copy)
         .catch(err =>
           fs.copyAsync(file, copy, { noSelfCopy: true })
+            .then(() => fs.ensureFileWritableAsync(copy))
             .catch(copyErr => {
               if (copyErr.code === 'ENOENT') {
                 log('warn', 'ini file missing', file);
