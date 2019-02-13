@@ -63,8 +63,6 @@ export interface IMainWindowState {
 
 export interface IConnectedProps {
   tabsMinimized: boolean;
-  advancedMode: boolean;
-  profilesVisible: boolean;
   visibleDialog: string;
   mainPage: string;
   secondaryPage: string;
@@ -132,6 +130,10 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       this.setMainPage(pageId, false);
     });
 
+    this.props.api.events.on('refresh-main-page', () => {
+      this.forceUpdate();
+    });
+
     this.props.api.events.on('show-modal', id => {
       this.updateState({
         showLayer: { $set: id },
@@ -181,12 +183,10 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       || this.props.activeProfileId !== nextProps.activeProfileId
       || this.props.nextProfileId !== nextProps.nextProfileId
       || this.props.progressProfile !== nextProps.progressProfile
+      || this.props.userInfo !== nextProps.userInfo
       || this.state.showLayer !== nextState.showLayer
       || this.state.hidpi !== nextState.hidpi
       || this.state.focused !== nextState.focused
-      || this.props.userInfo !== nextProps.userInfo
-      || this.props.advancedMode !== nextProps.advancedMode
-      || this.props.profilesVisible !== nextProps.profilesVisible
       ;
   }
 
@@ -492,8 +492,6 @@ function emptyFunc() {
 function mapStateToProps(state: IState): IConnectedProps {
   return {
     tabsMinimized: getSafe(state, ['settings', 'window', 'tabsMinimized'], false),
-    profilesVisible: getSafe(state, ['settings', 'interface', 'profilesVisible'], false),
-    advancedMode: getSafe(state, ['settings', 'interface', 'advanced'], false),
     visibleDialog: state.session.base.visibleDialog,
     mainPage: state.session.base.mainPage,
     secondaryPage: state.session.base.secondaryPage,
