@@ -5,8 +5,8 @@ import { log } from '../../util/log';
 import { activeGameId, gameName, installPathForGame } from '../../util/selectors';
 import walk from '../../util/walk';
 
-import { getGame } from '../gamemode_management/util/getGame';
 import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
+import { getGame } from '../gamemode_management/util/getGame';
 import LinkingDeployment from '../mod_management/LinkingDeployment';
 import { IDeploymentMethod, IUnavailableReason } from '../mod_management/types/IDeploymentMethod';
 
@@ -59,7 +59,7 @@ class DeploymendMethod extends LinkingDeployment {
         description: t => t('Incompatible with "{{name}}".', {
           replace: {
             name: gameName(state, gameId),
-          }
+          },
         }),
       };
     }

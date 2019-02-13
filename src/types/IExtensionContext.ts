@@ -37,8 +37,10 @@ import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 
 export { TestSupported, IInstallResult, IInstruction, IDeployedFile, IDeploymentMethod,
-         IFileChange, ILookupResult, IModInfo, IReference, InstallFunc, ISupportedResult, ProgressDelegate };
+         IFileChange, ILookupResult, IModInfo, IReference, InstallFunc, ISupportedResult,
+         ProgressDelegate };
 
+// tslint:disable-next-line:interface-name
 export interface ThunkStore<S> extends Redux.Store<S> {
   dispatch: ThunkDispatch<S, null, Redux.Action>;
 }
@@ -910,18 +912,19 @@ export interface IExtensionContext {
     (extension: string, apply: (call: IRunParameters) => IRunParameters) => void;
 
   /**
-   * register a hook to be called before Vortex starts any tool and is allowed to replace parameter or
-   * cancel the start by rejecting with ProcessCanceled or UserCanceled.
+   * register a hook to be called before Vortex starts any tool and is allowed to replace parameter
+   * or cancel the start by rejecting with ProcessCanceled or UserCanceled.
    * This could be used as a more powerful replacement for registerInterpreter.
    * Interpreters registered with registerInterpreter will be processed before any hooks are applied
-   * @param {number} priority Hooks are applied in ascending priority order. Please choose priorities
-   *                          with a bit of space between hooks you know about so that other extension
-   *                          developers can insert their own hooks between. non-extension hooks will be
-   *                          applied in steps of 100
+   * @param {number} priority Hooks are applied in ascending priority order. Please choose
+   *                          priorities with a bit of space between hooks you know about so that
+   *                          other extension developers can insert their own hooks between.
+   *                          Non-extension hooks will be applied in steps of 100
    * @param {string} id identifier for the hook. This will only be used for logging
    * @param {function} hook the hook to be called
    */
-  registerStartHook: (priority: number, id: string, hook: (call: IRunParameters) => Promise<IRunParameters>) => void;
+  registerStartHook: (priority: number, id: string,
+                      hook: (call: IRunParameters) => Promise<IRunParameters>) => void;
 
   /**
    * specify that a certain range of versions of vortex is required

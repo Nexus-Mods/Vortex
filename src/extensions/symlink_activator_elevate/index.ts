@@ -73,12 +73,12 @@ class DeploymentMethod extends LinkingDeployment {
 
       if (report === 'not-supported') {
         api.showErrorNotification('Symlinks not support',
-          'It appears symbolic links aren\'t supported between your mod staging folder and game folder. '
-          + 'On Windows, symbolic links only work on NTFS drives', { allowReport: false });
+          'It appears symbolic links aren\'t supported between your mod staging folder and game '
+          + 'folder. On Windows, symbolic links only work on NTFS drives', { allowReport: false });
       } else {
         api.showErrorNotification('Unknown error', report);
       }
-    }
+    };
   }
 
   public detailedDescription(t: I18next.TranslationFunction): string {
@@ -118,7 +118,7 @@ class DeploymentMethod extends LinkingDeployment {
     });
     this.mOpenRequests = {};
     return this.startElevated()
-        .tapCatch(() =>this.context.onComplete())
+        .tapCatch(() => this.context.onComplete())
         .then(() => super.finalize(gameId, dataPath, installationPath))
         .then(result => this.stopElevated().then(() => result));
   }
@@ -136,13 +136,14 @@ class DeploymentMethod extends LinkingDeployment {
         description: t => t('Incompatible with "{{name}}".', {
           replace: {
             name: gameName(state, gameId),
-          }
+          },
         }),
       };
     }
     if (this.ensureAdmin()) {
       return {
-        description: t => t('No need to use the elevated variant, use the regular symlink deployment'),
+        description: t =>
+          t('No need to use the elevated variant, use the regular symlink deployment'),
       };
     }
     return undefined;
@@ -275,15 +276,14 @@ class DeploymentMethod extends LinkingDeployment {
         .tapCatch(() => {
           ipc.server.stop();
         })
-        // Error 1223 is the current standard Windows system error code 
+        // Error 1223 is the current standard Windows system error code
         //  for ERROR_CANCELLED, which in this case is raised if the user
         //  selects to deny elevation when prompted.
         //  https://docs.microsoft.com/en-us/windows/desktop/debug/system-error-codes--1000-1299-
-        .catch(err => (err.code === 5) 
+        .catch(err => (err.code === 5)
           || ((process.platform === 'win32') && (err.errno === 1223))
             ? reject(new UserCanceled())
-            : reject(err)
-        )
+            : reject(err))
         .catch(reject);
     });
   }

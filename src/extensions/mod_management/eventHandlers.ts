@@ -1,5 +1,5 @@
 import {IExtensionApi} from '../../types/IExtensionContext';
-import {IState, IModTable} from '../../types/IState';
+import {IModTable, IState} from '../../types/IState';
 import { ProcessCanceled, TemporaryError, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
@@ -16,7 +16,7 @@ import {addMod, removeMod} from './actions/mods';
 import {setActivator} from './actions/settings';
 import {IDeploymentMethod} from './types/IDeploymentMethod';
 import {IMod} from './types/IMod';
-import {loadActivation, saveActivation, fallbackPurge} from './util/activationStore';
+import {fallbackPurge, loadActivation, saveActivation} from './util/activationStore';
 import { getSupportedActivators } from './util/deploymentMethods';
 
 import {getGame} from '../gamemode_management/util/getGame';
@@ -60,10 +60,10 @@ export function onGameModeActivated(
   let activatorProm = fs.statAsync(instPath)
     .catch(err =>
       api.showDialog('error', 'Mod Staging Folder missing!', {
-        text: 'Your mod staging folder (see below) is missing. This might happen because you deleted it '
-            + 'or - if you have it on a removable drive - it is not currently connected.\n'
-            + 'If you continue now, a new staging folder will be created but all your previously managed mods '
-            + 'will be lost.',
+        text: 'Your mod staging folder (see below) is missing. This might happen because you '
+            + 'deleted it or - if you have it on a removable drive - it is not currently '
+            + 'connected.\nIf you continue now, a new staging folder will be created but all '
+            + 'your previously managed mods will be lost.',
         message: instPath,
       }, [
         { label: 'Quit Vortex' },
@@ -82,10 +82,12 @@ export function onGameModeActivated(
           });
           return fallbackPurge(api)
             .then(() => fs.ensureDirWritableAsync(instPath, () => Promise.resolve()))
-            .catch(err => {
+            .catch(() => {
               api.showDialog('error', 'Mod Staging Folder missing!', {
-                bbcode: 'The staging folder could not be created. You [b][color=red]have[/color][/b] to go to settings->mods and change it '
-                      + 'to a valid directory [b][color=red]before doing anything else[/color][/b] or you will get further error messages.',
+                bbcode: 'The staging folder could not be created. '
+                      + 'You [b][color=red]have[/color][/b] to go to settings->mods and change it '
+                      + 'to a valid directory [b][color=red]before doing anything else[/color][/b] '
+                      + 'or you will get further error messages.',
               }, [
                 { label: 'Close' },
               ]);
@@ -276,7 +278,6 @@ export function onRemoveMod(api: IExtensionApi,
       ? lastActive
       : lastActive.profileId;
   }
-
   const profile: IProfile = getSafe(state, ['persistent', 'profiles', profileId], undefined);
   const wasEnabled: boolean = getSafe(profile, ['modState', modId, 'enabled'], false);
 

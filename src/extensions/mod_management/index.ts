@@ -53,6 +53,7 @@ import {TestSupported} from './types/TestSupported';
 import { loadActivation, saveActivation } from './util/activationStore';
 import allTypesSupported from './util/allTypesSupported';
 import * as basicInstaller from './util/basicInstaller';
+import { purgeMods } from './util/deploy';
 import { getAllActivators, getCurrentActivator, getSelectedActivator,
          getSupportedActivators, registerDeploymentMethod } from './util/deploymentMethods';
 import { NoDeployment } from './util/exceptions';
@@ -106,40 +107,6 @@ function registerModSource(id: string, name: string, onBrowse: () => void) {
 
 function registerMerge(test: MergeTest, merge: MergeFunc, modType: string) {
   mergers.push({ test, merge, modType });
-}
-
-function purgeMods(api: IExtensionApi): Promise<void> {
-  const state = api.store.getState();
-  const instPath = installPath(state);
-  const gameId = activeGameId(state);
-  const gameDiscovery = currentGameDiscovery(state);
-  const t = api.translate;
-  const activator = getCurrentActivator(state, gameId, false);
-
-  if (activator === undefined) {
-    return Promise.reject(new NoDeployment());
-  }
-
-  const notificationId = api.sendNotification({
-    type: 'activity',
-    message: t('Purging mods'),
-    title: t('Purging'),
-  });
-
-  const game: IGame = getGame(gameId);
-  const modPaths = game.getModPaths(gameDiscovery.path);
-
-  return activator.prePurge(instPath)
-    .then(() => Promise.each(Object.keys(modPaths), typeId =>
-    loadActivation(api, typeId, modPaths[typeId], activator)
-      .then(() => activator.purge(instPath, modPaths[typeId]))
-      .then(() => saveActivation(typeId, state.app.instanceId,
-                                 modPaths[typeId], [], activator.id))))
-    .then(() => Promise.resolve())
-  .finally(() => {
-    api.dismissNotification(notificationId);
-    return activator.postPurge();
-  });
 }
 
 /**
@@ -252,6 +219,7 @@ function genUpdateModDeployment() {
     let notificationId: string;
 
     const progress = (text: string, percent: number) => {
+      log('debug', 'deployment progress', { text, percent });
       if (progressCB !== undefined) {
         progressCB(text, percent);
       }
@@ -440,6 +408,8 @@ function genUpdateModDeployment() {
                 Object.keys(modPaths).filter(typeId => undiscovered.indexOf(typeId) === -1),
                 typeId => {
                   const filteredModList = sortedModList.filter(mod => (mod.type || '') === typeId);
+                  log('debug', 'Deploying mod type',
+                      { typeId, path: modPaths[typeId], count: lastDeployment[typeId].length });
                   return deployMods(api,
                                     game.id,
                                     instPath, modPaths[typeId],
