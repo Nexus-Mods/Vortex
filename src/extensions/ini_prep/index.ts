@@ -161,7 +161,8 @@ function bakeSettings(t: TranslationFunction,
           .catch(err => (err.code === 'ENOENT')
             ? fs.copyAsync(iniFileName, iniFileName + '.base')
               .then(() => fs.copyAsync(iniFileName, iniFileName + '.baked', { noSelfCopy: true }))
-              .then(() => fs.ensureFileWritableAsync(iniFileName + '.baked'))
+              .then(() => Promise.all([fs.ensureFileWritableAsync(iniFileName + '.base'),
+                                       fs.ensureFileWritableAsync(iniFileName + '.baked')]))
             : Promise.reject(err))))
       .then(() => parser.read(iniFileName + '.baked'))
       .then(ini => Promise.each(enabledTweaks[baseName] || [],
