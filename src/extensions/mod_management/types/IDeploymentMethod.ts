@@ -192,11 +192,22 @@ export interface IDeploymentMethod {
              progressCB?: (files: number, total: number) => void) => Promise<IDeployedFile[]>;
 
   /**
+   * if defined, this gets called instead of finalize if an error occurred since prepare was called.
+   * This allows the deployment method to reset all state without actually doing anything in case
+   * things went wrong.
+   * If this is not defined, nothing gets called. In this case the deployment method can't have any
+   * state set up in prepare that would cause issues if finalize doesn't get called.
+   */
+  cancel?: (gameId: string,
+            dataPath: string,
+            installationPath: string) => Promise<void>;
+
+  /**
    * activate the specified mod in the specified location
    * @param {string} sourcePath source where the mod is installed
    * @param {string} sourceName name to be stored as the source of files. usually the path of the
    *                            mod subdirectory
-   * @param {string} dataPath game path where mods are installed to (destination)
+   * @param {string} dataPath relative path within the data path where mods are installed to
    * @param {Set<string>} blacklist list of files to skip
    *
    * @memberOf IModActivator
@@ -206,8 +217,10 @@ export interface IDeploymentMethod {
 
   /**
    * deactivate the specified mod, removing all files it has deployed to the destination
+   * @param {string} sourcePath source where the mod is installed
+   * @param {string} dataPath relative path within the data path where mods are installed to
    */
-  deactivate: (installPath: string, dataPath: string, mod: IMod) => Promise<void>;
+  deactivate: (sourcePath: string, dataPath: string) => Promise<void>;
 
   /**
    * called before mods are being purged. If multiple mod types are going to be purged,

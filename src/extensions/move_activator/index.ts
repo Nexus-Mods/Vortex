@@ -140,16 +140,14 @@ class DeploymentMethod extends LinkingDeployment {
     });
   }
 
-  public deactivate(installPath: string, dataPath: string,
-                    mod: IMod): Promise<void> {
-    const sourceBase = path.join(installPath, mod.installationPath);
-    return turbowalk(sourceBase, entries => {
+  public deactivate(sourcePath: string, dataPath: string): Promise<void> {
+    return turbowalk(sourcePath, entries => {
       if (this.context === undefined) {
         return;
       }
       entries.forEach(entry => {
         if (!entry.isDirectory && (path.extname(entry.filePath) === LNK_EXT)) {
-          const relPath: string = path.relative(sourceBase,
+          const relPath: string = path.relative(sourcePath,
             entry.filePath.substring(0, entry.filePath.length - LNK_EXT.length));
           delete this.context.newDeployment[this.normalize(relPath)];
         }

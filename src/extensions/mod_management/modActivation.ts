@@ -70,6 +70,11 @@ function deployMods(api: IExtensionApi,
       return method.activate(path.join(installationPath, mergePath),
                              mergePath, '', new Set<string>());
     })
+    .tapCatch(() => {
+      if (method.cancel !== undefined) {
+        method.cancel(gameId, destinationPath, installationPath);
+      }
+    })
     .then(() => {
       const cb = progressCB === undefined
         ? undefined

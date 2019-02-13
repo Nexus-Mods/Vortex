@@ -217,6 +217,15 @@ abstract class LinkingActivator implements IDeploymentMethod {
         });
   }
 
+  public cancel(gameId: string, dataPath: string, installationPath: string) {
+    if (this.mContext !== undefined) {
+      const context = this.mContext;
+      this.mContext = undefined;
+      context.onComplete();
+    }
+    return Promise.resolve();
+  }
+
   public activate(sourcePath: string, sourceName: string, dataPath: string,
                   blackList: Set<string>): Promise<void> {
     return fs.statAsync(sourcePath)
@@ -242,16 +251,14 @@ abstract class LinkingActivator implements IDeploymentMethod {
       .catch({ code: 'ENOENT' }, () => null);
   }
 
-  public deactivate(installPath: string, dataPath: string,
-                    mod: IMod): Promise<void> {
-    const sourceBase = path.join(installPath, mod.installationPath);
-    return turbowalk(sourceBase, entries => {
+  public deactivate(sourcePath: string, dataPath: string): Promise<void> {
+    return turbowalk(sourcePath, entries => {
       if (this.mContext === undefined) {
         return;
       }
       entries.forEach(entry => {
         if (!entry.isDirectory) {
-          const relPath: string = path.relative(sourceBase, entry.filePath);
+          const relPath: string = path.relative(sourcePath, entry.filePath);
           delete this.mContext.newDeployment[this.mNormalize(path.join(dataPath, relPath))];
         }
       });

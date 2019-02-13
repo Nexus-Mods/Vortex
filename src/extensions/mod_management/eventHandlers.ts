@@ -24,6 +24,7 @@ import {setModEnabled} from '../profile_management/actions/profiles';
 import {IProfile} from '../profile_management/types/IProfile';
 
 import allTypesSupported from './util/allTypesSupported';
+import { genSubDirFunc } from './util/deploy';
 import queryGameId from './util/queryGameId';
 import refreshMods from './util/refreshMods';
 
@@ -237,6 +238,7 @@ function undeploy(api: IExtensionApi,
 
   const installationPath = installPathForGame(state, gameMode);
 
+  const subdir = genSubDirFunc(game);
   const dataPath = modPaths[mod.type || ''];
   let normalize: Normalize;
   return getNormalizeFunc(dataPath)
@@ -246,10 +248,16 @@ function undeploy(api: IExtensionApi,
     })
     .then(lastActivation => activator.prepare(dataPath, false, lastActivation, normalize))
     .then(() => (mod !== undefined)
-      ? activator.deactivate(installationPath, dataPath, mod)
+      ? activator.deactivate(path.join(installationPath, mod.installationPath), subdir(mod))
       : Promise.resolve())
+    .tapCatch(() => {
+      if (activator.cancel !== undefined) {
+        activator.cancel(gameMode, dataPath, installationPath);
+      }
+    })
     .then(() => activator.finalize(gameMode, dataPath, installationPath))
-    .then(newActivation => saveActivation(mod.type, state.app.instanceId, dataPath, newActivation, activator.id));
+    .then(newActivation =>
+      saveActivation(mod.type, state.app.instanceId, dataPath, newActivation, activator.id));
 }
 
 export function onRemoveMod(api: IExtensionApi,
@@ -310,7 +318,41 @@ export function onRemoveMod(api: IExtensionApi,
   //   we used to remove the mod right away but then if undeployment failed the mod was gone
   //   anyway
 
-  (wasEnabled ? undeploy(api, activators, gameMode, mod) : Promise.resolve())
+  const undeployMod = () => {
+    if (!wasEnabled) {
+      return Promise.resolve();
+    }
+    return undeploy(api, activators, gameMode, mod)
+      .catch({ code: 'ENOTFOUND' }, err => {
+        return api.showDialog('error', 'Mod not found', {
+          text: 'The mod you\'re removing has already been deleted on disk.\n'
+              + 'This makes it impossible for Vortex to cleanly undeploy the mod '
+              + 'so you may be left with files left over in your game directory.\n'
+              + 'You should allow Vortex to do a full deployment now to try and '
+              + 'clean up as best as possible.\n'
+              + 'The mod will be removed after deployment is finished.',
+        }, [
+          { label: 'Ignore' },
+          { label: 'Deploy' },
+        ])
+          .then(result => {
+            if (result.action === 'Deploy') {
+              return new Promise((resolve, reject) => {
+                api.events.emit('deploy-mods', (deployErr) => {
+                  if (deployErr !== null) {
+                    return reject(deployErr);
+                  }
+                  return resolve();
+                });
+              });
+            } else {
+              return Promise.resolve();
+            }
+          });
+      });
+  };
+
+  undeployMod()
   .then(() => truthy(mod)
     ? fs.removeAsync(path.join(installationPath, mod.installationPath))
         .catch(err => err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err))

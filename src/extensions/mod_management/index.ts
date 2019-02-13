@@ -732,8 +732,13 @@ function onDeploySingleMod(api: IExtensionApi) {
         ? (enable !== false)
           ? activator.activate(path.join(installationPath, mod.installationPath),
                                mod.installationPath, subdir(mod), new Set())
-          : activator.deactivate(installationPath, dataPath, mod)
+          : activator.deactivate(path.join(installationPath, mod.installationPath), subdir(mod))
         : Promise.resolve())
+      .tapCatch(() => {
+        if (activator.cancel !== undefined) {
+          activator.cancel(gameId, dataPath, installationPath);
+        }
+      })
       .then(() => activator.finalize(gameId, dataPath, installationPath))
       .then(newActivation =>
         doSaveActivation(api, mod.type, dataPath, newActivation, activator.id));
