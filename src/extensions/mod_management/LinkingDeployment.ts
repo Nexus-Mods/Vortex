@@ -506,6 +506,11 @@ abstract class LinkingActivator implements IDeploymentMethod {
           }
         }));
     }, { recurse: false, skipHidden: false })
+      .catch({ code: 'ENOTFOUND' }, err => {
+        // was only able to reproduce this by removing directory manually while purge was happening
+        // still, if the directory doesn't exist, there is nothing to clean up, so - job done?
+        log('error', 'mod directory not found wrapping up deployment', err.message);
+      })
       .then(() => queue)
       .then(() => (empty && doRemove)
         ? fs.statAsync(path.join(baseDir, LinkingActivator.NEW_TAG_NAME))
