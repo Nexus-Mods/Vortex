@@ -23,6 +23,25 @@ export interface ISteamExec {
   arguments: string[];
 }
 
+export class GamePathNotMatched extends Error {
+  private mGamePath: string;
+  private mEntryPaths: string[];
+  constructor(gamePath: string, entries: string[]) {
+    super('Unable to find matching steam path - Please include your latest Vortex log file when reporting this issue!');
+    this.name = this.constructor.name;
+    this.mGamePath = gamePath;
+    this.mEntryPaths = entries;
+  }
+
+  public get gamePath() {
+    return this.mGamePath;
+  }
+
+  public get steamEntryPaths() {
+    return this.mEntryPaths;
+  }
+}
+
 export class GameNotFound extends Error {
   private mSearch;
   constructor(search: string) {
@@ -95,21 +114,22 @@ class Steam implements ISteam {
    */
   public getSteamExecutionPath(gamePath: string, args?: string[]): Promise<ISteamExec> {
     return this.allGames()
-      .then(entries => entries.find(entry => gamePath.indexOf(entry.gamePath) !== -1 ))
-      .then(entry => {
-        if (entry === undefined) {
-          return Promise.resolve(undefined);
+      .then(entries => {
+        const found = entries.find(entry => gamePath.indexOf(entry.gamePath) !== -1);
+        if (found === undefined) {
+          return Promise.reject(new GamePathNotMatched(gamePath, entries.map(entry => entry.gamePath)));
         }
+
         return this.mBaseFolder.then((basePath: string) => {
-              const steamExec: ISteamExec = {
-                steamPath: basePath + '\\Steam.exe',
-                arguments: args !== undefined 
-                  ? ['-applaunch', entry.appid, ...args] 
-                  : ['-applaunch', entry.appid]
-              };
-              return Promise.resolve(steamExec);
-            });
-      });
+          const steamExec: ISteamExec = {
+            steamPath: basePath + '\\Steam.exe',
+            arguments: args !== undefined
+              ? ['-applaunch', found.appid, ...args]
+              : ['-applaunch', found.appid]
+          };
+          return Promise.resolve(steamExec);
+        });
+      })
   }
 
   /**

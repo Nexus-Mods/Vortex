@@ -1,8 +1,9 @@
 import { IDiscoveredTool } from '../types/IDiscoveredTool';
 import { IGame } from '../types/IGame';
 import opn from '../util/opn';
-import Steam from '../util/Steam';
+import Steam, { GamePathNotMatched } from '../util/Steam';
 import { getSafe } from '../util/storeHelper';
+import { log } from '../util/log';
 
 import { IDiscoveryResult } from '../extensions/gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../extensions/gamemode_management/types/IGameStored';
@@ -71,6 +72,12 @@ class StarterInfo implements IStarterInfo {
     return launcherPromise.then(res => {
       if (res !== undefined) {
         return StarterInfo.runThroughLauncher(res.launcher, info, api, res.addInfo)
+          .catch(GamePathNotMatched, err => {
+            const errorMsg = [err.message, err.gamePath, err.steamEntryPaths].join(' - ');
+            log('error', errorMsg);
+            onShowError('Failed to start game through launcher', err, true);
+            return StarterInfo.runGameExecutable(info, api, onShowError);
+          })
           .catch(err => {
             onShowError('Failed to start game through launcher', err, true);
             return StarterInfo.runGameExecutable(info, api, onShowError);
