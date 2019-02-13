@@ -22,13 +22,16 @@ function minDiskSpace(required: number, key: string) {
     const checkPath = props[key];
     if ((freeSpace[key] === undefined) || (freeSpace[key].path !== checkPath)) {
       try {
-        freeSpace[key] = { path: checkPath, free: winapi.GetDiskFreeSpaceEx(checkPath).freeToCaller };
+        freeSpace[key] = {
+          path: checkPath,
+          free: winapi.GetDiskFreeSpaceEx(checkPath).freeToCaller,
+        };
       } catch (err) {
         return false;
       }
     }
     return freeSpace[key].free < required;
-  }
+  };
 }
 
 function todos(api: IExtensionApi): IToDo[] {
@@ -92,7 +95,13 @@ function todos(api: IExtensionApi): IToDo[] {
       priority: 31,
       props: state => ({ instPath: selectors.installPath(state) }),
       text: 'Mods are staged on drive',
-      value: (t: TranslationFunction, props: any) => winapi.GetVolumePathName(props.instPath) as any,
+      value: (t: TranslationFunction, props: any) => {
+        try {
+          return winapi.GetVolumePathName(props.instPath);
+        } catch (err) {
+          return t('<Invalid Drive>');
+        }
+      },
       action: () => {
         openSettingsPage('Mods');
         api.highlightControl('#settings-tab-pane-Mods #install-path-form', 5000,
