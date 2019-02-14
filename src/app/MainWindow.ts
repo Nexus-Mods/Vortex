@@ -15,6 +15,40 @@ import { screen } from 'electron';
 import * as Redux from 'redux';
 import TrayIcon from './TrayIcon';
 
+interface IRect {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+}
+
+function bounds2rect(bounds): IRect {
+  return {
+    x1: bounds.x,
+    y1: bounds.y,
+    x2: bounds.x + bounds.width,
+    y2: bounds.y + bounds.height,
+  };
+}
+
+function intersect(lhs: IRect, rhs: IRect): IRect {
+  const res = {
+    x1: Math.max(lhs.x1, rhs.x1),
+    y1: Math.max(lhs.y1, rhs.y1),
+    x2: Math.min(lhs.x2, rhs.x2),
+    y2: Math.min(lhs.y2, rhs.y2),
+  };
+
+  if ((res.x1 > res.x2) || (res.y1 > res.y2)) {
+    res.x1 = res.x2 = res.y1 = res.y2 = 0;
+  }
+  return res;
+}
+
+function reactArea(input: IRect): number {
+  return (input.x2 - input.x1) * (input.y2 - input.y1);
+}
+
 class MainWindow {
   private mWindow: Electron.BrowserWindow = null;
   // timers used to prevent window resize/move from constantly causeing writes to the
@@ -145,6 +179,22 @@ class MainWindow {
       this.mWindow.show();
       if (maximized) {
         this.mWindow.maximize();
+      }
+
+      let overlap = 0;
+      const bounds = this.mWindow.getBounds();
+      const winRect = bounds2rect(bounds);
+      screen.getAllDisplays().forEach(display => {
+        const displayRect = bounds2rect(display.bounds);
+        overlap += reactArea(intersect(winRect, displayRect));
+      });
+
+      const visible = overlap / reactArea(winRect);
+      if (visible < 0.25) {
+        const pBounds = screen.getPrimaryDisplay().bounds;
+        log('warn', 'The Vortex window was found to be mostly offscreen. '
+                  + 'Moving to a sensible location.', { bounds });
+        this.mWindow.setPosition(pBounds.x, pBounds.y);
       }
     }
   }
