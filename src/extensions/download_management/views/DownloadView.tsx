@@ -60,7 +60,8 @@ interface IActionProps {
   onShowGraph: (show: boolean) => void;
 }
 
-export type IDownloadViewProps = IDownloadViewBaseProps & IConnectedProps & IActionProps & { t: I18next.TranslationFunction };
+export type IDownloadViewProps =
+  IDownloadViewBaseProps & IConnectedProps & IActionProps & { t: I18next.TranslationFunction };
 
 interface IComponentState {
   viewAll: boolean;
@@ -71,7 +72,7 @@ const nop = () => null;
 class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
   public context: IComponentContext;
   private actions: ITableRowAction[];
-  private mColumns: ITableAttribute<IDownload>[] = [];
+  private mColumns: Array<ITableAttribute<IDownload>> = [];
 
   constructor(props: IDownloadViewProps) {
     super(props);
@@ -292,23 +293,27 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
     downloadIds.forEach((downloadId: string) => {
       this.context.api.events.emit('resume-download', downloadId, (err) => {
         if (err !== null) {
+          const urlInvalid = ['moved permanently', 'forbidden', 'gone'];
           if (err instanceof ProcessCanceled) {
             this.props.onShowError('Failed to download',
                                    'Sorry, this download is missing info necessary to resume. '
                                    + 'Please try restarting it.',
                                    undefined, false);
           } else if ((err.HTTPStatus !== undefined)
-                     && (['moved permanently', 'forbidden', 'gone'].indexOf(err.HTTPStatus.toLowerCase()) !== -1)) {
-            this.props.onShowError('Failed to resume download', 'Sorry, the download link is no longer valid. '
-                                 + 'Please restart the download.',
+                     && (urlInvalid.indexOf(err.HTTPStatus.toLowerCase()) !== -1)) {
+            this.props.onShowError('Failed to resume download',
+                                   'Sorry, the download link is no longer valid. '
+                                   + 'Please restart the download.',
               undefined, false);
           } else if (err.code === 'ECONNRESET') {
-            this.props.onShowError('Failed to resume download', 'Server closed the connection, please '
-                                  + 'check your internet connection',
+            this.props.onShowError('Failed to resume download',
+                                   'Server closed the connection, please '
+                                   + 'check your internet connection',
               undefined, false);
           } else if (err.code === 'ETIMEDOUT') {
-            this.props.onShowError('Failed to resume download', 'Connection timed out, please check '
-                                  + 'your internet connection',
+            this.props.onShowError('Failed to resume download',
+                                   'Connection timed out, please check '
+                                   + 'your internet connection',
               undefined, false);
           } else if (err.code === 'ENOSPC') {
             this.props.onShowError('Failed to resume download', 'The disk is full',
@@ -419,8 +424,15 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
     if (type === 'urls') {
       dlPaths.forEach(url => this.context.api.events.emit('start-download', [url], {}, undefined,
         (error: Error) => {
-        if ((error !== null) && !(error instanceof DownloadIsHTML) && !(error instanceof UserCanceled)) {
+        if ((error !== null)
+            && !(error instanceof DownloadIsHTML)
+            && !(error instanceof UserCanceled)) {
           if (error instanceof ProcessCanceled) {
+            this.context.api.showErrorNotification('Failed to start download',
+              error.message, {
+              allowReport: false,
+            });
+          } else if (error.message.match(/Protocol .* not supported/) !== null) {
             this.context.api.showErrorNotification('Failed to start download',
               error.message, {
               allowReport: false,

@@ -140,43 +140,47 @@ class DownloadWorker {
     const lib: IHTTP = parsed.protocol === 'https:' ? https : http;
 
     remote.getCurrentWebContents().session.cookies.get({ url: jobUrl }, (cookieErr, cookies) => {
-      this.mRequest = lib.request({
-        method: 'GET',
-        protocol: parsed.protocol,
-        port: parsed.port,
-        hostname: parsed.hostname,
-        path: parsed.path,
-        headers: {
-          Range: `bytes=${job.offset}-${job.offset + job.size}`,
-          'User-Agent': this.mUserAgent,
-          'Accept-Encoding': 'gzip',
-          Cookie: (cookies || []).map(cookie => `${cookie.name}=${cookie.value}`),
-        },
-        agent: false,
-      }, (res) => {
-        log('debug', 'downloading from',
+      try {
+        this.mRequest = lib.request({
+          method: 'GET',
+          protocol: parsed.protocol,
+          port: parsed.port,
+          hostname: parsed.hostname,
+          path: parsed.path,
+          headers: {
+            Range: `bytes=${job.offset}-${job.offset + job.size}`,
+            'User-Agent': this.mUserAgent,
+            'Accept-Encoding': 'gzip',
+            Cookie: (cookies || []).map(cookie => `${cookie.name}=${cookie.value}`),
+          },
+          agent: false,
+        }, (res) => {
+          log('debug', 'downloading from',
             { address: `${res.connection.remoteAddress}:${res.connection.remotePort}` });
-        this.mResponse = res;
-        this.handleResponse(res, jobUrl);
-        res
-          .on('data', (data: Buffer) => {
-            this.handleData(data);
-          })
-          .on('error', err => this.handleError(err))
-          .on('end', () => {
-            if (!this.mRedirected) {
-              this.handleComplete();
-            }
-            this.mRequest.abort();
-          });
-      });
+          this.mResponse = res;
+          this.handleResponse(res, jobUrl);
+          res
+            .on('data', (data: Buffer) => {
+              this.handleData(data);
+            })
+            .on('error', err => this.handleError(err))
+            .on('end', () => {
+              if (!this.mRedirected) {
+                this.handleComplete();
+              }
+              this.mRequest.abort();
+            });
+        });
 
-      this.mRequest
-        .on('error', (err) => {
-          this.handleError(err);
-        })
-        .end();
-     });
+        this.mRequest
+          .on('error', (err) => {
+            this.handleError(err);
+          })
+          .end();
+      } catch (err) {
+        this.handleError(err);
+      }
+    });
   }
 
   public cancel() {

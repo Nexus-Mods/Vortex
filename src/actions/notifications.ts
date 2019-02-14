@@ -23,7 +23,8 @@ const identity = input => input;
 export const startNotification = safeCreateAction('ADD_NOTIFICATION', identity);
 
 export const updateNotification = safeCreateAction('UPDATE_NOTIFICATION',
-  (id: string, progress: number, message: string) => ({ id, progress, message }), () => ({ forward: false }));
+  (id: string, progress: number, message: string) => ({ id, progress, message }),
+  () => ({ forward: false }));
 
 /**
  * dismiss a notification. Takes the id of the notification
@@ -181,7 +182,7 @@ export function showDialog(type: DialogType, title: string,
             if ((res !== undefined) && (res.catch !== undefined)) {
               res.catch(err => {
                 log('error', 'rejection from dialog callback', {
-                  title: title,
+                  title,
                   action: action.label,
                   message: err.message,
                 });
