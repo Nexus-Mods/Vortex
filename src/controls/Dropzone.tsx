@@ -1,6 +1,6 @@
-import { DialogActions, DialogType, IDialogContent,
-         IDialogResult, showDialog, IConditionResult, IInput } from '../actions/notifications';
-         
+import { DialogActions, DialogType, IConditionResult, IDialogContent,
+         IDialogResult, IInput, showDialog } from '../actions/notifications';
+
 import { IState } from '../types/IState';
 import { ComponentEx, connect, translate } from '../util/ComponentEx';
 import { truthy } from '../util/util';
@@ -140,9 +140,8 @@ class Dropzone extends ComponentEx<IProps, IComponentState> {
   }
 
   private onDragEnter = (evt: React.DragEvent<any>) => {
-    if (evt.preventDefault()) {
-      this.setDropMode(evt);
-    }
+    evt.preventDefault();
+    this.setDropMode(evt);
   }
 
   private onDragOver = (evt: React.DragEvent<any>) => {
@@ -190,9 +189,9 @@ class Dropzone extends ComponentEx<IProps, IComponentState> {
     const { accept, drop } = this.props;
     evt.preventDefault();
 
-    const url = evt.dataTransfer.getData('Url');
-    if ((url !== '') && (accept.indexOf('urls') !== -1)) {
-      drop('urls', [url]);
+    const dropUrl = evt.dataTransfer.getData('Url');
+    if ((dropUrl !== '') && (accept.indexOf('urls') !== -1)) {
+      drop('urls', [dropUrl]);
     }
 
     if ((evt.dataTransfer.files.length > 0) && (accept.indexOf('files') !== -1)) {
@@ -227,7 +226,7 @@ class Dropzone extends ComponentEx<IProps, IComponentState> {
           value: dialogDefault,
         }],
         condition: this.validateURL,
-      }, [ { label: 'Cancel' }, { label: 'Download' } ])
+      }, [ { label: 'Cancel' }, { label: 'Download', default: true } ])
       .then(result => {
           if (result.action === 'Download') {
             let inputUrl = result.input.url;
@@ -253,14 +252,14 @@ class Dropzone extends ComponentEx<IProps, IComponentState> {
   private hasEmptyInput = (input: IInput): IConditionResult => {
     const { t } = this.props;
     return (input.value === undefined) || ((input.value === ''))
-      ? { 
-          id: input.id || 'url', 
-          actions: ['Download'], 
-          errorText: t('{{label}} cannot be empty.', { 
-            replace: { label: input.label ? input.label : 'Field' }
-          }) 
+      ? {
+          id: input.id || 'url',
+          actions: ['Download'],
+          errorText: t('{{label}} cannot be empty.', {
+            replace: { label: input.label ? input.label : 'Field' },
+          }),
         }
-      : undefined
+      : undefined;
   }
 
   private validateURL = (content: IDialogContent): IConditionResult[] => {

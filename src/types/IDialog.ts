@@ -10,15 +10,15 @@ export interface IDialogAction {
 export interface IConditionResult {
   // Array of actions that should be disabled
   //  as part of this error result.
-  actions: string[],
+  actions: string[];
 
   // The error/reason string why the actions
   //  should be disabled.
-  errorText: string,
+  errorText: string;
 
   // The id of the control which is reporting
   //  this error.
-  id: string,
+  id: string;
 }
 
 export type ConditionResults = IConditionResult[];

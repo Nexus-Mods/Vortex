@@ -4,8 +4,8 @@ import Collapse from '../controls/Collapse';
 import Icon from '../controls/Icon';
 import Webview from '../controls/Webview';
 import {
-  DialogType, ICheckbox, IDialog,
-  IDialogContent, IInput, ConditionResults, IConditionResult
+  ConditionResults, DialogType, ICheckbox, IConditionResult, IDialog,
+  IDialogContent, IInput,
 } from '../types/IDialog';
 import { IState } from '../types/IState';
 import bbcode from '../util/bbcode';
@@ -98,7 +98,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
 
       const validationResults = this.validateContent(newState.dialogState);
       if (validationResults !== undefined) {
-        newState = {...newState, conditionResults: validationResults}
+        newState = {...newState, conditionResults: validationResults};
       }
 
       this.setState(newState);
@@ -136,7 +136,12 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
       ? 'wide'
       : 'regular';
     return (
-      <Modal className={`common-dialog-${type}`} show={dialog !== undefined} onHide={nop}>
+      <Modal
+        className={`common-dialog-${type}`}
+        show={dialog !== undefined}
+        onHide={nop}
+        onKeyPress={this.handleKeyPress}
+      >
         <Modal.Header>
           <Modal.Title>{this.iconForType(dialog.type)}{' '}{t(dialog.title)}</Modal.Title>
         </Modal.Header>
@@ -182,7 +187,8 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     }
 
     if (content.message !== undefined) {
-      const wrap = ((content.options !== undefined) && (content.options.wrap === true)) ? 'on' : 'off';
+      const wrap = ((content.options !== undefined) && (content.options.wrap === true))
+                 ? 'on' : 'off';
       const ctrl = (
         <textarea
           key='dialog-content-message'
@@ -194,7 +200,11 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
       );
       if ((content.options !== undefined) && (content.options.hideMessage === true)) {
         controls.push((
-          <Collapse key='dialog-content-message-wrapper' showText={t('Show Details')} hideText={t('Hide Details')}>
+          <Collapse
+            key='dialog-content-message-wrapper'
+            showText={t('Show Details')}
+            hideText={t('Hide Details')}
+          >
             {ctrl}
           </Collapse>));
       } else {
@@ -255,6 +265,27 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     return <div className='dialog-container'>{controls}</div>;
   }
 
+  private handleKeyPress = (evt: React.KeyboardEvent<Modal>) => {
+    const { conditionResults } = this.state;
+
+    if (!evt.defaultPrevented) {
+      const { dialogs } = this.props;
+      const dialog = dialogs[0];
+      if (evt.key === 'Enter') {
+        if (dialog.defaultAction !== undefined) {
+          evt.preventDefault();
+
+          const filterFunc = res =>
+            res.actions.find(act => act === dialog.defaultAction) !== undefined;
+          const isDisabled = conditionResults.find(filterFunc) !== undefined;
+          if (!isDisabled) {
+            this.dismiss(dialog.defaultAction);
+          }
+        }
+      }
+    }
+  }
+
   private validateContent(dialogState: IDialogContent): ConditionResults {
     const { conditionResults } = this.state;
     if ((conditionResults === undefined) || (dialogState.condition === undefined)) {
@@ -277,10 +308,10 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
       valRes = this.getValidationResult(input);
     }
 
-    const validationState = valRes !== undefined 
+    const validationState = valRes !== undefined
         ? (valRes.length !== 0) ? 'error' : 'success'
         : null;
-    
+
     return (
       <FormGroup key={input.id} validationState={validationState}>
       { input.label ? (
@@ -295,8 +326,8 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         onChange={this.changeInput}
         ref={idx === 0 ? this.focusMe : undefined}
       />
-      {((valRes !== undefined) && (valRes.length !== 0)) 
-        ? <label className='control-label'>{valRes.map(res => res.errorText).join('\n')}</label> 
+      {((valRes !== undefined) && (valRes.length !== 0))
+        ? <label className='control-label'>{valRes.map(res => res.errorText).join('\n')}</label>
         : null}
       </FormGroup>
     );
@@ -370,7 +401,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
 
     const validationResults = this.validateContent(newState.dialogState);
     if (validationResults !== undefined) {
-      newState = {...newState, conditionResults: validationResults}
+      newState = {...newState, conditionResults: validationResults};
     }
 
     this.setState(newState);
@@ -393,7 +424,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
 
     const validationResults = this.validateContent(newState.dialogState);
     if (validationResults !== undefined) {
-      newState = {...newState, conditionResults: validationResults}
+      newState = {...newState, conditionResults: validationResults};
     }
 
     this.setState(newState);
@@ -417,7 +448,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
 
     const validationResults = this.validateContent(newState.dialogState);
     if (validationResults !== undefined) {
-      newState = {...newState, conditionResults: validationResults}
+      newState = {...newState, conditionResults: validationResults};
     }
 
     this.setState(newState);
@@ -426,10 +457,17 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
   private renderAction = (action: string, isDefault: boolean): JSX.Element => {
     const { conditionResults } = this.state;
     const { t } = this.props;
-    const isDisabled = conditionResults.find(res => res.actions.find(act => act === action) !== undefined) !== undefined;
+    const isDisabled = conditionResults
+      .find(res => res.actions.find(act => act === action) !== undefined) !== undefined;
     return (
-      <Action t={t} key={action} action={action} isDefault={isDefault} onDismiss={this.dismiss} isDisabled={isDisabled} />
-    );
+      <Action
+        t={t}
+        key={action}
+        action={action}
+        isDefault={isDefault}
+        onDismiss={this.dismiss}
+        isDisabled={isDisabled}
+      />);
   }
 
   private iconForType(type: DialogType) {
