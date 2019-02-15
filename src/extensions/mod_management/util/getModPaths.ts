@@ -1,6 +1,6 @@
-import { IState } from "../../../types/IState";
-import { getGame } from "../../gamemode_management/util/getGame";
-import { currentGameDiscovery } from "../../../util/selectors";
+import { IState } from '../../../types/IState';
+import { currentGameDiscovery } from '../../../util/selectors';
+import { getGame } from '../../gamemode_management/util/getGame';
 
 function getModPaths(state: IState, gameId: string): { [typeId: string]: string } {
   const game = getGame(gameId);
