@@ -51,6 +51,10 @@ export function getCurrentActivator(state: IState,
                                     allowDefault: boolean): IDeploymentMethod {
   let activator: IDeploymentMethod = getSelectedActivator(state, gameId);
 
+  const gameDiscovery =
+    getSafe(state, ['settings', 'gameMode', 'discovered', gameId], undefined);
+  const types = Object.keys(getGame(gameId).getModPaths(gameDiscovery.path));
+
   if (allowDefault && (activator === undefined)) {
     activator = activators.find(act =>
       allTypesSupported(act, state, gameId, types) === undefined);
@@ -59,10 +63,6 @@ export function getCurrentActivator(state: IState,
   if (activator === undefined) {
     return undefined;
   }
-
-  const gameDiscovery =
-    getSafe(state, ['settings', 'gameMode', 'discovered', gameId], undefined);
-  const types = Object.keys(getGame(gameId).getModPaths(gameDiscovery.path));
 
   if (allTypesSupported(activator, state, gameId, types) !== undefined) {
     // if the selected activator is no longer supported, don't use it
