@@ -23,6 +23,7 @@ export interface IFixDeploymentDialogProps {
 
 interface IConnectedProps {
   problems: IDeploymentProblem[];
+  gameId: string;
 }
 
 interface IActionProps {
@@ -57,11 +58,15 @@ class FixDeploymentDialog extends ComponentEx<IProps, IFixDeploymentDialogState>
   }
 
   public render() {
-    const { t, problems } = this.props;
+    const { t, gameId, problems } = this.props;
     const { step } = this.state;
     const automaticFix = step !== -1 && problems[step].hasAutomaticFix;
     return (
-      <Modal id='fix-deployment-dialog' show={problems.length > 0} onHide={nop}>
+      <Modal
+        id='fix-deployment-dialog'
+        show={gameId !== undefined && problems.length > 0}
+        onHide={nop}
+      >
         <Modal.Header>
           <Modal.Title>{t('Deployment Methods')}</Modal.Title>
         </Modal.Header>
@@ -131,12 +136,16 @@ class FixDeploymentDialog extends ComponentEx<IProps, IFixDeploymentDialogState>
   }
 
   private applyFix = () => {
-    const { t, problems, onClear } = this.props;
+    const { t, gameId, problems, onClear } = this.props;
     const { step } = this.state;
     const method = this.deploymentMethods.find(iter => iter.id === problems[step].activator);
     const state = this.context.api.store.getState();
 
-    const gameId = activeGameId(state);
+    if (gameId === undefined) {
+      // the dialog shouldn't have been shown if there is no game active
+      return;
+    }
+
     const modPaths = getModPaths(state, gameId);
     if (truthy(modPaths)) {
       // we have to find the unavailable reason again because the data we have doesn't contain
@@ -192,6 +201,7 @@ class FixDeploymentDialog extends ComponentEx<IProps, IFixDeploymentDialogState>
 function mapStateToProps(state: any): IConnectedProps {
   return {
     problems: state.session.mods.deploymentProblems,
+    gameId: activeGameId(state),
   };
 }
 
