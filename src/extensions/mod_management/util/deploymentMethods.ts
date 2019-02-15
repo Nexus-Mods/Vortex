@@ -56,8 +56,13 @@ export function getCurrentActivator(state: IState,
   const types = Object.keys(getGame(gameId).getModPaths(gameDiscovery.path));
 
   if (allowDefault && (activator === undefined)) {
-    activator = activators.find(act =>
-      allTypesSupported(act, state, gameId, types) === undefined);
+    const game = getGame(gameId);
+    const discovery = state.settings.gameMode.discovered[gameId];
+    if ((game !== undefined) && (discovery !== undefined)) {
+      const modTypes = Object.keys(game.getModPaths(discovery.path));
+      activator = activators.find(act =>
+        allTypesSupported(act, state, gameId, modTypes) === undefined);
+    }
   }
 
   if (activator === undefined) {
