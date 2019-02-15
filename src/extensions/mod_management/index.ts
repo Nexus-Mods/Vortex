@@ -888,7 +888,9 @@ function checkStagingFolder(api: IExtensionApi): Promise<ITestResult> {
           + 'lose all your files on the next update.',
       },
     };
-  } else if (isChildPath(instPath, discovery.path)) {
+  } else if ((discovery !== undefined)
+          && (discovery.path !== undefined) 
+          && isChildPath(instPath, discovery.path)) {
     result = {
       severity: 'warning',
       description: {
