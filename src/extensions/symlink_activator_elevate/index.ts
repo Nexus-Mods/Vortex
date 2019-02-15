@@ -327,7 +327,7 @@ class DeploymentMethod extends LinkingDeployment {
   }
 
   private isUnsupportedGame(gameId: string): boolean {
-    return ['nomanssky', 'stateofdecay'].indexOf(gameId) !== -1;
+    return ['nomanssky', 'stateofdecay', 'factorio'].indexOf(gameId) !== -1;
   }
 }
 
