@@ -102,7 +102,7 @@ class LoginDialog extends ComponentEx<IProps, { troubleshoot: boolean, apiKeyInp
           <IconButton
             className='close-button'
             id='btn-close-login'
-            onClick={this.closeConfirmationDialog}
+            onClick={this.close}
             tooltip={t('Close')}
             icon='close'
           />
@@ -213,6 +213,18 @@ class LoginDialog extends ComponentEx<IProps, { troubleshoot: boolean, apiKeyInp
     );
   }
 
+  private renderConfirmDialog() {
+    return this.context.api.showDialog('question', 'Login process unfinished', {
+      text: 'Vortex is not logged in yet, are you sure you wish to cancel the login process ?',
+    }, [
+      { label: 'No' }, { label: 'Yes' }
+    ]).then(result => {
+      if (result.action === 'Yes') {
+        this.hide();
+      }
+    });
+  }
+
   private openApiAccess = () => {
     opn(API_ACCESS_URL).catch(() => null);
   }
@@ -235,16 +247,8 @@ class LoginDialog extends ComponentEx<IProps, { troubleshoot: boolean, apiKeyInp
     onHide();
   }
 
-  private closeConfirmationDialog = () => {
-    return this.context.api.showDialog('question', 'Login process unfinished', {
-      text: 'Vortex is not logged in yet, are you sure you wish to cancel the login process ?',
-    }, [
-      { label: 'No' }, { label: 'Yes' }
-    ]).then(result => {
-      if (result.action === 'Yes') {
-        this.hide();
-      }
-    });
+  private close = () => {
+    this.renderConfirmDialog();
   }
 
   private troubleshoot = () => {
