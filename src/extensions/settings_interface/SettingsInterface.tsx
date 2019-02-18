@@ -15,7 +15,8 @@ import getTextModManagement from '../mod_management/texts';
 import getTextProfiles from '../profile_management/texts';
 
 import { setAutoDeployment } from './actions/automation';
-import { setAdvancedMode, setLanguage, setProfilesVisible, setDesktopNotifications, setHideTopLevelCategory } from './actions/interface';
+import { setAdvancedMode, setDesktopNotifications, setHideTopLevelCategory,
+         setLanguage, setProfilesVisible } from './actions/interface';
 import { nativeCountryName, nativeLanguageName } from './languagemap';
 import getText from './texts';
 
@@ -327,7 +328,7 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
     },
     onSetHideTopLevelCategory: (skip: boolean) => {
       dispatch(setHideTopLevelCategory(skip));
-    }
+    },
   };
 }
 

@@ -15,6 +15,8 @@ import { screen } from 'electron';
 import * as Redux from 'redux';
 import TrayIcon from './TrayIcon';
 
+const MIN_HEIGHT = 700;
+
 interface IRect {
   x1: number;
   y1: number;
@@ -210,13 +212,13 @@ class MainWindow {
     const screenArea = screen.getPrimaryDisplay().workAreaSize;
     const width = Math.max(1024, getSafe(windowMetrics, ['size', 'width'],
                                          Math.floor(screenArea.width * 0.8)));
-    const height = Math.max(768, getSafe(windowMetrics, ['size', 'height'],
-                                         Math.floor(screenArea.height * 0.8)));
+    const height = Math.max(MIN_HEIGHT, getSafe(windowMetrics, ['size', 'height'],
+                                                Math.floor(screenArea.height * 0.8)));
     return {
       width,
       height,
       minWidth: 1024,
-      minHeight: 768,
+      minHeight: MIN_HEIGHT,
       x: getSafe(windowMetrics, ['position', 'x'], undefined),
       y: getSafe(windowMetrics, ['position', 'y'], undefined),
       autoHideMenuBar: true,

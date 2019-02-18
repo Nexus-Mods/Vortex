@@ -95,7 +95,9 @@ class Settings extends ComponentEx<IProps, {}> {
 
     return (
       <Tab key={page.title} eventKey={page.title} title={t(page.title)}>
-        {content}
+        <div>
+          {content}
+        </div>
       </Tab>
     );
   }

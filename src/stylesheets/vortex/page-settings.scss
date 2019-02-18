@@ -24,7 +24,14 @@
 
 #settings-tab > .tab-content {
   flex: 1;
-  overflow-y: auto;
+  overflow-y: hidden;
+  > .tab-pane {
+    height: 100%;
+    > div {
+      height: 100%;
+      overflow-y: auto;
+    }
+  }
 }
 
 .list-game-search {
