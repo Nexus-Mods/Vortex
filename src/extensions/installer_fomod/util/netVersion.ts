@@ -1,4 +1,5 @@
 import * as fs from '../../../util/fs';
+
 import * as Promise from 'bluebird';
 import * as path from 'path';
 import * as winapi from 'winapi-bindings';
@@ -31,7 +32,9 @@ const REQUIRED_ASSEMBLIES = [
 
 function getRegValue(key: string, expectedType: string): any {
   try {
-    const res = winapi.RegGetValue('HKEY_LOCAL_MACHINE', 'SOFTWARE\\Microsoft\\NET Framework Setup\\NDP\\v4\\Full', key);
+    const res = winapi.RegGetValue('HKEY_LOCAL_MACHINE',
+                                   'SOFTWARE\\Microsoft\\NET Framework Setup\\NDP\\v4\\Full',
+                                   key);
     if ((res === undefined) || (res.type !== expectedType)) {
       return undefined;
     }

@@ -36,8 +36,8 @@ export const settingsReducer: IReducerSpec = {
         _: {
           description: () => 'Severe! A mod staging folder was corrupted and has to be reset',
           type: 'string',
-        }
-      }
-    }
-  }
+        },
+      },
+    },
+  },
 };
