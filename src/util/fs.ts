@@ -350,20 +350,27 @@ function unlinkInt(dirPath: string, stackErr: Error): PromiseBB<void> {
 }
 
 export function renameAsync(sourcePath: string, destinationPath: string): PromiseBB<void> {
-  return renameInt(sourcePath, destinationPath, new Error());
+  return renameInt(sourcePath, destinationPath, new Error(), NUM_RETRIES);
 }
 
-function renameInt(sourcePath: string, destinationPath: string, stackErr: Error): PromiseBB<void> {
+function renameInt(sourcePath: string, destinationPath: string,
+                   stackErr: Error, tries: number): PromiseBB<void> {
   return fs.renameAsync(sourcePath, destinationPath)
-    .catch((err: NodeJS.ErrnoException) => (err.code === 'EPERM')
-      ? fs.statAsync(destinationPath)
-        .then(stat => stat.isDirectory()
-          ? PromiseBB.reject(restackErr(err, stackErr))
-          : errorHandler(err, stackErr)
-            .then(() => renameInt(sourcePath, destinationPath, stackErr)))
-        .catch(newErr => PromiseBB.reject(restackErr(newErr, stackErr)))
-      : errorHandler(err, stackErr)
-        .then(() => renameInt(sourcePath, destinationPath, stackErr)));
+    .catch((err: NodeJS.ErrnoException) => {
+      if ((tries > 0) && RETRY_ERRORS.has(err.code)) {
+        return PromiseBB.delay(RETRY_DELAY_MS)
+          .then(() => renameInt(sourcePath, destinationPath, stackErr, tries - 1));
+      }
+      return (err.code === 'EPERM')
+        ? fs.statAsync(destinationPath)
+          .then(stat => stat.isDirectory()
+            ? PromiseBB.reject(restackErr(err, stackErr))
+            : errorHandler(err, stackErr)
+              .then(() => renameInt(sourcePath, destinationPath, stackErr, tries)))
+          .catch(newErr => PromiseBB.reject(restackErr(newErr, stackErr)))
+        : errorHandler(err, stackErr)
+          .then(() => renameInt(sourcePath, destinationPath, stackErr, tries));
+    });
 }
 
 export function rmdirAsync(dirPath: string): PromiseBB<void> {
