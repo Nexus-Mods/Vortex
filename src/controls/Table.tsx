@@ -12,7 +12,7 @@ import {IExtensibleProps} from '../util/ExtensionProvider';
 import { log } from '../util/log';
 import smoothScroll from '../util/smoothScroll';
 import { getSafe, setSafe } from '../util/storeHelper';
-import {truthy} from '../util/util';
+import {sanitizeCSSId, truthy} from '../util/util';
 
 import IconBar from './IconBar';
 import HeaderCell from './table/HeaderCell';
@@ -26,10 +26,10 @@ import * as Promise from 'bluebird';
 import update from 'immutability-helper';
 import * as _ from 'lodash';
 import * as React from 'react';
+import { Button } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
 import * as Redux from 'redux';
 import { createSelector, OutputSelector } from 'reselect';
-import { Button } from 'react-bootstrap';
 
 export type ChangeDataHandler = (rowId: string, attributeId: string, newValue: any) => void;
 
@@ -328,8 +328,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     if (selected.length < 2) {
       return (
         <Usage infoId='table-multiselect'>
-          {t('Did you know? You can select multiple items using ctrl+click or shift+click or select everything using ctrl+a '
-            + 'and then do things with all selected items at once.')}
+          {t('Did you know? You can select multiple items using ctrl+click or shift+click or '
+            + 'select everything using ctrl+a and then do things with all selected items at once.')}
         </Usage>
       );
     }
@@ -531,12 +531,14 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
     const attributes = this.mVisibleAttributes;
 
+    const tableRowId = sanitizeCSSId(rowId);
+
     return (
       <TableRow
         t={t}
         tableId={tableId}
-        id={rowId}
-        key={rowId}
+        id={tableRowId}
+        key={tableRowId}
         data={calculatedValues[rowId]}
         rawData={data[rowId]}
         attributes={attributes}
@@ -744,7 +746,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     }
 
     this.mProxyHeaderRef.childNodes.forEach((node, index) => {
-      (this.mVisibleHeaderRef.childNodes.item(index) as HTMLElement).style.width = `${(node as HTMLElement).clientWidth}px`;
+      (this.mVisibleHeaderRef.childNodes.item(index) as HTMLElement).style.width =
+        `${(node as HTMLElement).clientWidth}px`;
     });
 
     const height = this.mVisibleHeaderRef.clientHeight;
@@ -757,7 +760,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
   private setRowRef = (ref: any) => {
     if (ref !== null) {
-      this.mRowRefs[ref.props.id] = ref;
+      this.mRowRefs[ref.props['data-rowid']] = ref;
     }
   }
 
@@ -783,7 +786,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
   private postScroll() {
     if ((Date.now() - this.mLastScroll) < SuperTable.SCROLL_DEBOUNCE) {
-      this.mDelayedVisibilityTimer = setTimeout(() => this.postScroll(), SuperTable.SCROLL_DEBOUNCE + 100);
+      this.mDelayedVisibilityTimer = setTimeout(() =>
+        this.postScroll(), SuperTable.SCROLL_DEBOUNCE + 100);
     } else {
       this.mDelayedVisibilityTimer = undefined;
       this.mNextVisibility = this.mDelayedVisibility;
@@ -819,11 +823,13 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private onScroll = (event) => {
     this.mLastScroll = Date.now();
     if (this.mDelayedVisibilityTimer === undefined) {
-      this.mDelayedVisibilityTimer = setTimeout(() => this.postScroll(), SuperTable.SCROLL_DEBOUNCE + 100);
+      this.mDelayedVisibilityTimer = setTimeout(() =>
+        this.postScroll(), SuperTable.SCROLL_DEBOUNCE + 100);
     }
     window.requestAnimationFrame(() => {
       if (truthy(this.mPinnedRef)) {
-        this.mPinnedRef.className = event.target.scrollTop === 0 ? 'table-pinned' : 'table-pinned-hidden';
+        this.mPinnedRef.className =
+          event.target.scrollTop === 0 ? 'table-pinned' : 'table-pinned-hidden';
       }
     });
     Object.keys(this.mNoShrinkColumns).forEach(colId => {
@@ -1082,17 +1088,18 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     }
 
     const row = (evt.currentTarget as HTMLTableRowElement);
+    const rowId = row.getAttribute('data-rowid');
 
     if (this.useMultiSelect() && evt.ctrlKey) {
       // ctrl-click -> toggle the selected row, leave remaining selection intact
-      this.selectToggle(row.id);
+      this.selectToggle(rowId);
     } else if (this.useMultiSelect() && evt.shiftKey) {
       // shift-click -> select everything between this row and the last one clicked,
       //                deselect everything else
-      this.selectTo(row.id);
+      this.selectTo(rowId);
     } else {
       // regular click -> select only the clicked row, everything else get deselected
-      this.selectOnly(row.id, true);
+      this.selectOnly(rowId, true);
     }
   }
 
@@ -1192,7 +1199,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       if (selecting) {
         selection.add(iterId);
         if (isBracket) {
-          selecting = false;;
+          selecting = false;
         }
       }
     });
@@ -1211,7 +1218,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     return attributes.filter((attribute: ITableAttribute) => {
       if ((attribute.condition !== undefined) && !attribute.condition()) {
         return false;
-      } 
+      }
       const state = this.getAttributeState(attribute, attributeStates);
       if (attribute.placement === 'detail') {
         return false;
@@ -1309,7 +1316,9 @@ function getTableState(state: IState, tableId: string) {
   return state.settings.tables[tableId];
 }
 
-export function makeGetSelection(tableId: string): OutputSelector<any, string[], (res: ITableState) => string[]> {
+type GetSelection = OutputSelector<any, string[], (res: ITableState) => string[]>;
+
+export function makeGetSelection(tableId: string): GetSelection {
   const getTableStateInst = (state: any) => getTableState(state, tableId);
   return createSelector(getTableStateInst, (tableState: ITableState) => {
     return Object.keys(tableState.rows).filter((rowId: string) => (

@@ -374,3 +374,10 @@ export function isChildPath(child: string, parent: string): boolean {
 
   return tokens.every((token: string, idx: number) => childTokens[idx] === token);
 }
+
+/**
+ * take any input string and sanitize it into a valid css id
+ */
+export function sanitizeCSSId(input: string) {
+  return input.toLowerCase().replace(/[ .#]/g, '-');
+}

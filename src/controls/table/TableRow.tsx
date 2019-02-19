@@ -11,8 +11,8 @@ import VisibilityProxy from '../VisibilityProxy';
 
 import { TD } from './MyTable';
 
-import * as _ from 'lodash';
 import * as I18next from 'i18next';
+import * as _ from 'lodash';
 import * as React from 'react';
 import { MenuItem } from 'react-bootstrap';
 import Select from 'react-select';
@@ -47,7 +47,8 @@ class TableCell extends React.Component<ICellProps, { isOpen: boolean }> {
   }
 
   public shouldComponentUpdate(newProps: ICellProps, newState: { isOpen: boolean }) {
-    return ((newProps.attribute.customRenderer !== undefined) && (this.props.rawData !== newProps.rawData))
+    return ((newProps.attribute.customRenderer !== undefined)
+            && (this.props.rawData !== newProps.rawData))
         || this.props.data !== newProps.data
         || this.props.language !== newProps.language
         || this.state.isOpen !== newState.isOpen;
@@ -263,7 +264,7 @@ class TableRow extends React.Component<IRowProps, IRowState> {
   }
 
   public render(): JSX.Element {
-    const { data, domRef, highlighted, onClick,
+    const { data, domRef, highlighted, id, onClick,
             selected } = this.props;
 
     const classes = ['xtr'];
@@ -277,7 +278,8 @@ class TableRow extends React.Component<IRowProps, IRowState> {
 
     return (
       <VisibilityProxy
-        id={data.__id}
+        id={id}
+        data-rowid={data.__id}
         key={data.__id}
         className={classes.join(' ')}
         onClick={onClick}
