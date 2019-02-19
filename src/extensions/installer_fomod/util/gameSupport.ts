@@ -164,6 +164,15 @@ const gameSupport: { [gameId: string]: IGameSupport } = {
       'update.esm',
     ],
   },
+  enderal: {
+    iniPath: () => bethIni('Enderal', 'Enderal'),
+    stopPatterns: stopPatterns('skyrim'),
+    pluginPath: 'Data',
+    nativePlugins: [
+      'skyrim.esm',
+      'update.esm',
+    ],
+  },
   skyrimse: {
     iniPath: () => bethIni('Skyrim Special Edition', 'Skyrim'),
     stopPatterns: stopPatterns('skyrimse'),

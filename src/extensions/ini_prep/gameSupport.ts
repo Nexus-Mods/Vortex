@@ -15,6 +15,13 @@ const gameSupport = {
     ],
     iniFormat: 'winapi',
   },
+  enderal: {
+    iniFiles: [
+      path.join('{mygames}', 'Enderal', 'Enderal.ini'),
+      path.join('{mygames}', 'Enderal', 'EnderalPrefs.ini'),
+    ],
+    iniFormat: 'winapi',
+  },
   skyrimse: {
     iniFiles: [
       path.join('{mygames}', 'Skyrim Special Edition', 'Skyrim.ini'),

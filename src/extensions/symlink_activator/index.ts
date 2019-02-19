@@ -176,7 +176,7 @@ class DeploymendMethod extends LinkingDeployment {
 
   private isGamebryoGame(gameId: string): boolean {
     return [
-      'morrowind', 'oblivion', 'skyrim', 'skyrimse', 'skyrimvr',
+      'morrowind', 'oblivion', 'skyrim', 'enderal', 'skyrimse', 'skyrimvr',
       'fallout3', 'fallout4', 'fallout4vr', 'falloutnv',
     ].indexOf(gameId) !== -1;
   }
