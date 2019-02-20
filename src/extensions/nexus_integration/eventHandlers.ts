@@ -71,34 +71,40 @@ export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
       updateDebouncer.schedule(undefined, newValue);
 }
 
+/**
+ * callback for when mods are changed
+ *
+ * @export
+ * @param {IExtensionApi} api
+ * @param {Nexus} nexus
+ * @returns
+ */
 export function onChangeMods(api: IExtensionApi, nexus: Nexus) {
-  let lastModTable = api.store.getState().persistent.mods;
-  let lastGameMode = activeGameId(api.store.getState());
-
-  const updateDebouncer: Debouncer = new Debouncer(newModTable => {
+  const updateDebouncer: Debouncer = new Debouncer(
+      (oldModTable: IModTable, newModTable: IModTable) => {
     const state = api.store.getState();
     const gameMode = activeGameId(state);
-    if (lastGameMode === undefined) {
+    // ensure anything changed for the actiave game
+    if ((oldModTable[gameMode] !== newModTable[gameMode])
+        && (oldModTable[gameMode] !== undefined)
+        && (newModTable[gameMode] !== undefined)) {
+      // for any mod where modid or download section have been changed,
+      // retrieve the new mod info
+      Object.keys(newModTable[gameMode]).forEach(modId => {
+        const modSource =
+          getSafe(newModTable, [gameMode, modId, 'attributes', 'source'], undefined);
+        if (modSource !== 'nexus') {
       return;
     }
-    if ((lastModTable[lastGameMode] !== newModTable[gameMode])
-      && (lastModTable[lastGameMode] !== undefined)
-      && (newModTable[gameMode] !== undefined)) {
-      Object.keys(newModTable[gameMode]).forEach(modId => {
-        const lastPath = [lastGameMode, modId, 'attributes', 'modId'];
-        const newPath = [gameMode, modId, 'attributes', 'modId'];
-        const lastDLGamePath = [lastGameMode, modId, 'attributes', 'downloadGame'];
-        const newDLGamePath = [gameMode, modId, 'attributes', 'downloadGame'];
-        if ((getSafe(lastModTable, lastPath, undefined)
-              !== getSafe(newModTable, newPath, undefined))
-           || (getSafe(lastModTable, lastDLGamePath, undefined)
-              !== getSafe(newModTable, newDLGamePath, undefined))) {
+
+        const idPath = [gameMode, modId, 'attributes', 'modId'];
+        const dlGamePath = [gameMode, modId, 'attributes', 'downloadGame'];
+        if ((getSafe(oldModTable, idPath, undefined)
+              !== getSafe(newModTable, idPath, undefined))
+            || (getSafe(oldModTable, dlGamePath, undefined)
+              !== getSafe(newModTable, dlGamePath, undefined))) {
           return retrieveModInfo(nexus, api,
-            gameMode, newModTable[gameMode][modId], api.translate)
-            .then(() => {
-              lastModTable = newModTable;
-              lastGameMode = gameMode;
-            });
+            gameMode, newModTable[gameMode][modId], api.translate);
         }
       });
     } else {
