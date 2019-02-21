@@ -5,7 +5,8 @@ import IconBar from '../../../controls/IconBar';
 import { IconButton } from '../../../controls/TooltipControls';
 import { IActionDefinition } from '../../../types/IActionDefinition';
 import { IComponentContext } from '../../../types/IComponentContext';
-import { DialogActions, DialogType, IDialogContent, IDialogResult, IConditionResult, IInput } from '../../../types/IDialog';
+import { DialogActions, DialogType, IConditionResult, IDialogContent,
+         IDialogResult, IInput } from '../../../types/IDialog';
 import { IErrorOptions } from '../../../types/IExtensionContext';
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
@@ -247,7 +248,8 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
       this.nextState.showEmpty = !showEmpty;
       this.updateExpandedTreeData(categories);
     } catch (err) {
-      onShowError('An error occurred hiding/showing the empty categories', err, { allowReport: false });
+      onShowError('An error occurred hiding/showing the empty categories',
+                  err, { allowReport: false });
     }
   }
 
@@ -266,10 +268,15 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
     const {categories, gameMode, onShowDialog, onRenameCategory} = this.props;
 
     const category = categories[categoryId];
+    // one user seems to have managed to get this called on a category that (no longer?)
+    // exists
+    if (category === undefined) {
+      return;
+    }
 
     onShowDialog('info', 'Rename Category', {
       input: [{ id: 'newCategory', value: category.name, label: 'Category' }],
-      condition: this.validateCategoryDialog
+      condition: this.validateCategoryDialog,
     }, [ { label: 'Cancel' }, { label: 'Rename' } ])
     .then((result: IDialogResult) => {
         if (result.action === 'Rename') {
@@ -289,7 +296,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
     onShowDialog('question', 'Add Child Category', {
       input: [
         { id: 'newCategory', value: '', label: 'Category Name' },
-        { id: 'newCategoryId', value: lastIndex.toString(), label: 'Category ID' }
+        { id: 'newCategoryId', value: lastIndex.toString(), label: 'Category ID' },
       ],
       condition: this.validateCategoryDialog,
     }, [{ label: 'Cancel' }, { label: 'Add' }])
@@ -307,14 +314,14 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
   private hasEmptyInput = (input: IInput): IConditionResult => {
     const { t } = this.props;
     return input.value === ''
-      ? { 
-          id: input.id, 
-          actions: ['Add', 'Rename'], 
-          errorText: t('{{label}} cannot be empty.', { 
-            replace: { label: input.label ? input.label : 'Field' }
-          }) 
+      ? {
+          id: input.id,
+          actions: ['Add', 'Rename'],
+          errorText: t('{{label}} cannot be empty.', {
+            replace: { label: input.label ? input.label : 'Field' },
+          }),
         }
-      : undefined
+      : undefined;
   }
 
   private idExists = (input: IInput): IConditionResult => {
@@ -327,14 +334,14 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
   }
 
   private validateCategoryDialog = (content: IDialogContent): IConditionResult[] => {
-    let results: IConditionResult[] = [];
+    const results: IConditionResult[] = [];
     content.input.forEach(inp => {
       results.push(this.hasEmptyInput(inp));
       if (inp.id === 'newCategoryId') {
         results.push(this.idExists(inp));
       }
     });
-    
+
     return results.filter(res => res !== undefined);
   }
 
@@ -350,7 +357,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
           label: 'Category ID',
         },
       ],
-      condition: this.validateCategoryDialog
+      condition: this.validateCategoryDialog,
     }, [{ label: 'Cancel' }, { label: 'Add', default: true }])
       .then((result: IDialogResult) => {
         if (result.action === 'Add') {
