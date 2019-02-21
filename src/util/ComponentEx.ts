@@ -77,7 +77,7 @@ export class StateProxyHandler<T extends object> implements ProxyHandler<T> {
     if (!(key in this.mSubProxies) || (obj[key] !== this.mSubProxies[key].obj)) {
       this.mSubProxies[key] = {
         proxy: new Proxy(obj[key],
-        new StateProxyHandler(this.mComponent, null, this, [].concat(this.mPath, key))),
+          new StateProxyHandler(this.mComponent, null, this, [].concat(this.mPath, key))),
         obj: obj[key],
       };
     }

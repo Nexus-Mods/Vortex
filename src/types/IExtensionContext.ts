@@ -184,7 +184,7 @@ export type PersistorKey = string[];
  * @interface IPersistor
  */
 export interface IPersistor {
-  setResetCallback(cb: () => void): void;
+  setResetCallback(cb: () => Promise<void>): void;
   getItem(key: PersistorKey): Promise<string>;
   setItem(key: PersistorKey, value: string): Promise<void>;
   removeItem(key: PersistorKey): Promise<void>;

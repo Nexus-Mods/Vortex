@@ -53,9 +53,7 @@ class ReduxPersistor<T> {
     return this.resetData(hive, persistor)
         .then(() => {
           this.mPersistors[hive] = persistor;
-          persistor.setResetCallback(() => {
-            this.resetData(hive, persistor);
-          });
+          persistor.setResetCallback(() => this.resetData(hive, persistor));
         });
   }
 
@@ -74,9 +72,11 @@ class ReduxPersistor<T> {
           type: '__hydrate',
           payload: { [hive]: res },
         });
-        this.storeDiff(persistor, [], res, this.mStore.getState()[hive]);
-        this.mHydrating.delete(hive);
-        return Promise.resolve();
+        return this.storeDiff(persistor, [], res, this.mStore.getState()[hive])
+          .then(() => {
+            this.mHydrating.delete(hive);
+            return Promise.resolve();
+          });
       });
   }
 
@@ -173,9 +173,9 @@ class ReduxPersistor<T> {
             : this.storeDiff(persistor, [].concat(statePath, key), oldState[key], newState[key]))
           .then(() => Promise.mapSeries(newkeys,
             key => ((oldState[key] === undefined) && (newState[key] !== undefined))
-                // keys that exist in newState but not oldState
+              // keys that exist in newState but not oldState
               ? this.add(persistor, [].concat(statePath, key), newState[key])
-                // keys that exist in both - already handled above
+              // keys that exist in both - already handled above
               : Promise.resolve()))
           .then(() => undefined);
       } else {

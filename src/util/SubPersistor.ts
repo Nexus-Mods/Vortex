@@ -11,7 +11,7 @@ class SubPersistor implements IPersistor {
     this.mHive = hive;
   }
 
-  public setResetCallback(cb: () => void): void {
+  public setResetCallback(cb: () => Promise<void>): void {
     this.mWrapped.setResetCallback(cb);
   }
 

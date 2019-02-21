@@ -48,7 +48,7 @@ class LevelPersist implements IPersistor {
     this.mDB = db;
   }
 
-  public setResetCallback(cb: () => void): void {
+  public setResetCallback(cb: () => Promise<void>): void {
     return undefined;
   }
 
