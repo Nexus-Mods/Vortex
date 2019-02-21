@@ -311,6 +311,11 @@ export function prettifyNodeErrorMessage(err: any): IPrettifiedError {
       message: 'Vortex expected a directory but found a file.',
       allowReport: false,
     };
+  } else if (err.code === 'EROFS') {
+    return {
+      message: 'The filesystem is read-only.',
+      allowReport: false,
+    };
   }
 
   return {
