@@ -145,12 +145,23 @@ class Debouncer {
               this.run();
             } else if (this.mReschedule === 'yes') {
               this.mReschedule = 'no';
-              this.schedule(undefined);
+              this.reschedule();
             }
           });
     } else {
       this.mRunning = false;
       this.invokeCallbacks(callbacks, prom as Error);
+    }
+  }
+
+  private reschedule() {
+    if ((this.mTimer !== undefined) && this.mResetting) {
+      clearTimeout(this.mTimer);
+      this.mTimer = undefined;
+    }
+
+    if (this.mTimer === undefined) {
+      this.startTimer();
     }
   }
 
