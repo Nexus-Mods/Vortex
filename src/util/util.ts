@@ -221,11 +221,14 @@ export function truthy(val: any): boolean {
  * @param lhs the left, "before", object
  * @param rhs the right, "after", object
  */
-export function objDiff(lhs: any, rhs: any): any {
+export function objDiff(lhs: any, rhs: any, skip?: string[]): any {
   const res = {};
 
   if ((typeof(lhs) === 'object') && (typeof(rhs) === 'object')) {
     Object.keys(lhs || {}).forEach(key => {
+      if ((skip !== undefined) && (skip.indexOf(key) !== -1)) {
+        return;
+      }
       if ((rhs[key] === undefined) && (lhs[key] !== undefined)) {
         res['-' + key] = lhs[key];
       } else {

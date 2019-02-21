@@ -348,6 +348,9 @@ class TableRow extends React.Component<IRowProps, IRowState> {
   }
 
   private setVisible = (visible: boolean) => {
+    // it may be that this visible value is the same as the one in props, but
+    // since rows are turned invisible with a delay, it's possible a row becomes invisible
+    // and visible again without the prop changing, so we have to call this anyway.
     this.props.onSetVisible(this.props.data.__id, visible);
   }
 

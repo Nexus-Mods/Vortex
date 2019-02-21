@@ -132,8 +132,8 @@ export interface ITableAttribute<T = any> {
    * if specified this function is used to render the value in the table instead of the usual cell
    * renderer. Please note that if you want caching or asynchronous calculation for this cell you'll
    * have to implement it yourself.
-   * Also note that table cells using customRenderer will do more unnecessary rerenders than a calc-based
-   * field so please use customRenderer only when neccessary.
+   * Also note that table cells using customRenderer will do more unnecessary rerenders than a
+   * calc-based field so please use customRenderer only when neccessary.
    */
   customRenderer?: (object: T | T[], detailCell: boolean,
                     t: I18next.TranslationFunction, props: ICustomProps) => JSX.Element;
@@ -165,7 +165,10 @@ export interface ITableAttribute<T = any> {
   sortFuncRaw?: (lhs: T, rhs: T, locale: string) => number;
   /**
    * if specified, this is called to determine if the attribute is visible at all.
-   * This can be used to hide attributes on game where they aren't supported
+   * This can be used to hide attributes on game where they aren't supported.
+   * This will only be evaluated when the table is created, when the user switches column visibility
+   * manually or when the list of table columns programatically changes but you can not use it
+   * to dynamically hide columns _without_ changing any table props.
    */
   condition?: () => boolean;
   /**
@@ -206,8 +209,8 @@ export interface ITableAttribute<T = any> {
     actions?: boolean,
 
     /**
-     * if set, this is called to determine the placeholder to be displayed when the input box is empty.
-     * Has no effect if this edit config doesn't generate an input box
+     * if set, this is called to determine the placeholder to be displayed when the input box is
+     * empty. Has no effect if this edit config doesn't generate an input box
      */
     placeholder?: () => string,
 

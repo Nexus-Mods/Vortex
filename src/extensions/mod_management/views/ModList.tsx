@@ -40,8 +40,8 @@ import VersionFilter from '../util/VersionFilter';
 import VersionChangelogButton from '../views/VersionChangelogButton';
 import VersionIconButton from '../views/VersionIconButton';
 
-import { INSTALL_TIME, PICTURE } from '../modAttributes';
 import * as selectors from '../../../util/selectors';
+import { INSTALL_TIME, PICTURE } from '../modAttributes';
 import getText from '../texts';
 
 import CheckModVersionsButton from './CheckModVersionsButton';
@@ -148,6 +148,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   private modVersionDetailAttribute: ITableAttribute;
   private modVariantDetailAttribute: ITableAttribute;
   private modAuthorAttribute: ITableAttribute<IModWithState>;
+  private mAttributes: ITableAttribute[];
   private mUpdateDebouncer: Debouncer;
   private mLastUpdateProps: IModProps = { mods: {}, modState: {}, downloads: {} };
   private mIsMounted: boolean = false;
@@ -177,7 +178,8 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         title: 'Remove',
         action: this.removeSelected,
         condition: instanceId => (typeof(instanceId) === 'string')
-            ? (['downloaded', 'installed'].indexOf(this.state.modsWithState[instanceId].state) !== -1)
+            ? (['downloaded', 'installed']
+                .indexOf(this.state.modsWithState[instanceId].state) !== -1)
             : true,
         hotKey: { code: 46 },
       },
@@ -215,7 +217,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         condition: (instanceId: string | string[]) => {
           const cond = (id: string) => (this.props.mods[id] !== undefined)
               && (truthy(this.props.mods[id].archiveId)
-                || this.props.t('No associated archive.'))
+                || this.props.t('No associated archive.'));
           if (typeof(instanceId) === 'string') {
             return cond(instanceId);
           } else {
@@ -234,6 +236,17 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         component: CheckModVersionsButton,
         props: () => ({groupedMods: this.state.groupedMods}),
       },
+    ];
+
+    this.mAttributes = [
+      PICTURE,
+      this.modEnabledAttribute,
+      this.modNameAttribute,
+      this.modVersionAttribute,
+      this.modAuthorAttribute,
+      this.modVersionDetailAttribute,
+      this.modVariantDetailAttribute,
+      INSTALL_TIME,
     ];
 
     this.mUpdateDebouncer = new Debouncer((newProps) => {
@@ -314,16 +327,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
               detailsTitle={t('Mod Attributes')}
 
               data={this.state.primaryMods}
-              staticElements={[
-                PICTURE,
-                this.modEnabledAttribute,
-                this.modNameAttribute,
-                this.modVersionAttribute,
-                this.modAuthorAttribute,
-                this.modVersionDetailAttribute,
-                this.modVariantDetailAttribute,
-                INSTALL_TIME,
-              ]}
+              staticElements={this.mAttributes}
               actions={this.modActions}
             >
               {this.renderMoreMods(modSources)}

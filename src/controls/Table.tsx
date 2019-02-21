@@ -237,6 +237,21 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     this.mHeaderUpdateDebouncer.schedule();
   }
 
+  public shouldComponentUpdate(newProps: IProps, newState: IComponentState) {
+    return (
+      (newState !== this.state)
+      || (newProps.dataId !== this.props.dataId)
+      || (newProps.tableId !== this.props.tableId)
+      || (newProps.actions !== this.props.actions)
+      || (newProps.attributeState !== this.props.attributeState)
+      || (newProps.filter !== this.props.filter)
+      || (newProps.defaultSort !== this.props.defaultSort)
+      || (newProps.showHeader !== this.props.showHeader)
+      || (newProps.detailsTitle !== this.props.detailsTitle)
+      || (newProps.showDetails !== this.props.showDetails)
+    );
+  }
+
   public render(): JSX.Element {
     const { showHeader, showDetails, tableId } = this.props;
     const { detailsOpen } = this.state;
@@ -765,10 +780,15 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private setRowVisible = (rowId: string, visible: boolean) => {
+    // turn rows visible asap, turning them invisible can be done when scrolling ends
     if (visible || (this.mDelayedVisibilityTimer === undefined)) {
       this.mNextVisibility[rowId] = visible;
       this.mDelayedVisibility[rowId] = visible;
-      this.triggerUpdateVisibility();
+      // it's possible that a previous visibility change hadn't even been
+      // rendered yet, in this case we don't have to trigger an update
+      if (visible !== this.state.rowVisibility[rowId]) {
+        this.triggerUpdateVisibility();
+      }
     } else {
       this.mDelayedVisibility[rowId] = visible;
     }
@@ -779,7 +799,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       this.mWillSetVisibility = true;
       window.requestAnimationFrame(() => {
         this.mWillSetVisibility = false;
-        this.updateState(setSafe(this.mNextState, ['rowVisibility'], this.mNextVisibility));
+        this.updateState(setSafe(this.mNextState, ['rowVisibility'], { ...this.mNextVisibility }));
       });
     }
   }
@@ -790,7 +810,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         this.postScroll(), SuperTable.SCROLL_DEBOUNCE + 100);
     } else {
       this.mDelayedVisibilityTimer = undefined;
-      this.mNextVisibility = this.mDelayedVisibility;
+      this.mNextVisibility = { ...this.mDelayedVisibility };
       this.triggerUpdateVisibility();
     }
   }
@@ -1273,6 +1293,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private updateState(newState: IComponentState, callback?: () => void) {
+    if (_.isEqual(newState, this.state)) {
+      return;
+    }
     this.mNextState = newState;
     if (this.mMounted) {
       this.setState(newState, callback);
