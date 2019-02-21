@@ -6,11 +6,18 @@ import bbcode, { stripBBCode } from '../../util/bbcode';
 import { ComponentEx, translate } from '../../util/ComponentEx';
 import opn from '../../util/opn';
 import { getSafe } from '../../util/storeHelper';
-
+import { currentGame } from '../gamemode_management/selectors';
+import { REPLACEABLE_GAMEID } from './constants';
 import rss, {IFeedMessage} from './rss';
+import { nexusGameId } from '../nexus_integration/util/convertGameId';
 
 import * as React from 'react';
 import { Alert, ListGroup, ListGroupItem } from 'react-bootstrap';
+import { connect as redConnect } from 'react-redux';
+
+export interface IConnectedProps {
+  nexusGameId: string;
+}
 
 export interface IExtra {
   attribute: string;
@@ -31,7 +38,7 @@ interface IComponentState {
   error?: string;
 }
 
-type IProps = IBaseProps;
+type IProps = IConnectedProps & IBaseProps;
 
 class RSSDashlet extends ComponentEx<IProps, IComponentState> {
   private static MAX_MESSAGE_LENGTH = 200;
@@ -50,6 +57,12 @@ class RSSDashlet extends ComponentEx<IProps, IComponentState> {
 
   public componentWillUnmount() {
     this.mMounted = false;
+  }
+
+  public componentDidUpdate(oldProps: IConnectedProps) {
+    if (oldProps.nexusGameId !== this.props.nexusGameId) {
+      this.refresh();
+    }
   }
 
   public render(): JSX.Element {
@@ -82,7 +95,13 @@ class RSSDashlet extends ComponentEx<IProps, IComponentState> {
   }
 
   private refresh = () => {
-    rss(this.props.url)
+    const { url } = this.props;
+    const rssUrl = ((this.props.nexusGameId !== undefined) 
+                 && (url.indexOf(REPLACEABLE_GAMEID) !== -1))
+      ? url.replace(REPLACEABLE_GAMEID, this.props.nexusGameId)
+      : url;
+
+    rss(rssUrl)
     .then(result => {
       if (this.mMounted) {
         this.setState({
@@ -176,4 +195,15 @@ class RSSDashlet extends ComponentEx<IProps, IComponentState> {
   }
 }
 
-export default translate([ 'common' ], { wait: true })(RSSDashlet);
+function mapStateToProps(state: any): IConnectedProps {
+  const game = currentGame(state);
+  const gameId = (game !== undefined)
+    ? nexusGameId(game)
+    : undefined;
+  return {
+    nexusGameId: gameId,
+  };
+}
+
+export default translate([ 'common' ], { wait: true })
+  (redConnect(mapStateToProps)(RSSDashlet)) as React.ComponentClass<{}>;
