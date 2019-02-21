@@ -14,23 +14,24 @@ import { setUpdatingMods } from '../mod_management/actions/session';
 
 import { setUserInfo } from './actions/persistent';
 import { retrieveModInfo } from './util/checkModsVersion';
+import { nexusGameId, toNXMId } from './util/convertGameId';
 import submitFeedback from './util/submitFeedback';
 
 import { checkModVersionsImpl, endorseModImpl, startDownload, updateKey } from './util';
 
 import * as Promise from 'bluebird';
 import Nexus, { IFeedbackResponse, IIssue } from 'nexus-api';
-import { nexusGameId, toNXMId } from './util/convertGameId';
 
 export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
   const state: IState = api.store.getState();
+  // contains the state from before the debouncer last triggered
   let lastDownloadTable = state.persistent.downloads.files;
 
   const updateDebouncer: Debouncer = new Debouncer(
     (newDownloadTable: { [id: string]: IDownload }) => {
       if (lastDownloadTable !== newDownloadTable) {
         const idsPath = ['modInfo', 'nexus', 'ids'];
-        Promise.map(Object.keys(newDownloadTable), dlId => {
+        return Promise.map(Object.keys(newDownloadTable), dlId => {
           const download = newDownloadTable[dlId];
           const oldModId = getSafe(lastDownloadTable, [dlId, ...idsPath, 'modId'], undefined);
           const oldFileId = getSafe(lastDownloadTable, [dlId, ...idsPath, 'fileId'], undefined);
@@ -80,38 +81,51 @@ export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
  * @returns
  */
 export function onChangeMods(api: IExtensionApi, nexus: Nexus) {
+  // the state from before the debouncer last triggered
+  let lastModTable = api.store.getState().persistent.mods;
+
   const updateDebouncer: Debouncer = new Debouncer(
-      (oldModTable: IModTable, newModTable: IModTable) => {
+      (newModTable: IModTable) => {
+    if ((lastModTable === undefined) || (newModTable === undefined)) {
+      return;
+    }
     const state = api.store.getState();
     const gameMode = activeGameId(state);
     // ensure anything changed for the actiave game
-    if ((oldModTable[gameMode] !== newModTable[gameMode])
-        && (oldModTable[gameMode] !== undefined)
+    if ((lastModTable[gameMode] !== newModTable[gameMode])
+        && (lastModTable[gameMode] !== undefined)
         && (newModTable[gameMode] !== undefined)) {
       // for any mod where modid or download section have been changed,
       // retrieve the new mod info
-      Object.keys(newModTable[gameMode]).forEach(modId => {
+      return Promise.map(Object.keys(newModTable[gameMode]), modId => {
         const modSource =
           getSafe(newModTable, [gameMode, modId, 'attributes', 'source'], undefined);
         if (modSource !== 'nexus') {
-      return;
-    }
+          return Promise.resolve();
+        }
 
         const idPath = [gameMode, modId, 'attributes', 'modId'];
         const dlGamePath = [gameMode, modId, 'attributes', 'downloadGame'];
-        if ((getSafe(oldModTable, idPath, undefined)
+        if ((getSafe(lastModTable, idPath, undefined)
               !== getSafe(newModTable, idPath, undefined))
-            || (getSafe(oldModTable, dlGamePath, undefined)
+            || (getSafe(lastModTable, dlGamePath, undefined)
               !== getSafe(newModTable, dlGamePath, undefined))) {
           return retrieveModInfo(nexus, api,
-            gameMode, newModTable[gameMode][modId], api.translate);
+            gameMode, newModTable[gameMode][modId], api.translate)
+            .then(() => {
+              lastModTable = newModTable;
+            });
+        } else {
+          return Promise.resolve();
         }
-      });
+      }).then(() => null);
     } else {
       return Promise.resolve();
     }
   }, 2000);
 
+  // we can't pass oldValue to the debouncer because that would only include the state
+  // for the last time the debouncer is triggered, missing all other updates
   return (oldValue: IModTable, newValue: IModTable) =>
       updateDebouncer.schedule(undefined, newValue);
 }
