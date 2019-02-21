@@ -43,9 +43,9 @@ export interface IGame extends ITool {
 
   /**
    * Determine whether the game needs to be executed via a launcher, like Steam or EpicGamesLauncher
-   * 
+   *
    * If this returns a value, Vortex will use appropriate code for that launcher
-   * 
+   *
    * @param gamePath path where the game is installed.
    */
   requiresLauncher?: (gamePath: string) => Promise<{ launcher: string, addInfo?: any }>;
@@ -120,7 +120,8 @@ export interface IGame extends ITool {
   details?: { [key: string]: any };
 
   /**
-   * set to name of the contributor that added support for this game. For officialy supported games this is undefined
+   * set to name of the contributor that added support for this game. For officialy supported
+   * games this is undefined
    */
   contributed?: string;
 

@@ -1,9 +1,9 @@
 import { IDiscoveredTool } from '../types/IDiscoveredTool';
 import { IGame } from '../types/IGame';
+import { log } from '../util/log';
 import opn from '../util/opn';
 import Steam, { GamePathNotMatched } from '../util/Steam';
 import { getSafe } from '../util/storeHelper';
-import { log } from '../util/log';
 
 import { IDiscoveryResult } from '../extensions/gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../extensions/gamemode_management/types/IGameStored';
@@ -228,6 +228,7 @@ class StarterInfo implements IStarterInfo {
   public commandLine: string[];
   public workingDirectory: string;
   public environment: { [key: string]: string };
+  public originalEnvironment: { [key: string]: string };
   public shell: boolean;
   private mExtensionPath: string;
   private mLogoName: string;
@@ -269,9 +270,12 @@ class StarterInfo implements IStarterInfo {
   private initFromGame(game: IGameStored, gameDiscovery: IDiscoveryResult) {
     this.name = gameDiscovery.name || game.name;
     this.exePath = path.join(gameDiscovery.path, gameDiscovery.executable || game.executable);
-    this.commandLine = [];
+    this.commandLine = getSafe(gameDiscovery, ['parameters'], getSafe(game, ['parameters'], []));
     this.workingDirectory = path.dirname(this.exePath);
-    this.environment = gameDiscovery.environment || {};
+    this.originalEnvironment = getSafe(game, ['environment'], {});
+    this.environment = getSafe(gameDiscovery, ['envCustomized'], false)
+      ? getSafe(gameDiscovery, ['environment'], {})
+      : this.originalEnvironment;
     this.iconOutPath = StarterInfo.gameIconRW(this.gameId);
     this.shell = gameDiscovery.shell || game.shell;
     this.mLogoName = gameDiscovery.logo || game.logo;

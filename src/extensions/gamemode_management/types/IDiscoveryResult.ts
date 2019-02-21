@@ -26,6 +26,7 @@ export interface IDiscoveryResult {
   name?: string;
   shortName?: string;
   executable?: string;
+  parameters?: string[];
   logo?: string;
   extensionPath?: string;
   mergeMods?: boolean;

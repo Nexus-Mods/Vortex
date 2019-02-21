@@ -19,6 +19,7 @@ import ToolIcon from './ToolIcon';
 import * as Promise from 'bluebird';
 import * as I18next from 'i18next';
 import { extractIconToFile } from 'icon-extract';
+import * as _ from 'lodash';
 import * as path from 'path';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
@@ -532,11 +533,13 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
     const { onAddTool, onClose, onSetGameParameters } = this.props;
     const { tool } = this.state;
     if (tool.isGame) {
+      const envCustomized = !_.isEqual(tool.environment, this.props.tool.originalEnvironment);
       onSetGameParameters(tool.gameId, {
         workingDirectory: tool.workingDirectory,
         iconPath: tool.iconPath,
         environment: tool.environment,
-        commandLine: this.splitCommandLine(tool.commandLine),
+        envCustomized,
+        parameters: this.splitCommandLine(tool.commandLine),
         shell: tool.shell,
       });
     } else {
