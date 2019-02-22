@@ -1310,6 +1310,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
   private updateState(newState: IComponentState, callback?: () => void) {
     if (_.isEqual(newState, this.state)) {
+      if (callback !== undefined) {
+        callback();
+      }
       return;
     }
     this.mNextState = newState;
