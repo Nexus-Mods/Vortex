@@ -43,7 +43,6 @@ import Zip = require('node-7z');
 import * as os from 'os';
 import * as path from 'path';
 import * as Redux from 'redux';
-import * as rimraf from 'rimraf';
 
 export class ArchiveBrokenError extends Error {
   constructor(message: string) {
@@ -52,18 +51,6 @@ export class ArchiveBrokenError extends Error {
     this.name = this.constructor.name;
   }
 }
-
-// TODO: the type declaration for rimraf is actually wrong atm (v0.0.28)
-interface IRimrafOptions {
-  glob?: { nosort: boolean, silent: boolean } | false;
-  disableGlob?: boolean;
-  emfileWait?: number;
-  maxBusyTries?: number;
-  lstat?: any;
-}
-type rimrafType = (path: string, options: IRimrafOptions, callback: (err?) => void) => void;
-const rimrafAsync: (path: string, options: IRimrafOptions) => Promise<void> =
-  Promise.promisify(rimraf as rimrafType) as any;
 
 interface IReplaceChoice {
   id: string;
@@ -284,10 +271,7 @@ class InstallManager {
       .then(result => this.processInstructions(api, archivePath, tempPath, destinationPath,
                                                installGameId, modId, result))
       .finally(() => (tempPath !== undefined)
-        ? rimrafAsync(tempPath, {
-            glob: false,
-            lstat: this.lstat,
-        }) : Promise.resolve())
+        ? fs.removeAsync(tempPath) : Promise.resolve())
       .then(() => filterModInfo(fullInfo, destinationPath))
       .then(modInfo => {
         installContext.finishInstallCB('success', modInfo);
@@ -316,7 +300,7 @@ class InstallManager {
                          || ((err.stack !== undefined)
                              && err.stack.startsWith('UserCanceled: canceled by user'));
         let prom = destinationPath !== undefined
-          ? rimrafAsync(destinationPath, { glob: false, maxBusyTries: 10 })
+          ? fs.removeAsync(destinationPath)
             .catch(innerErr => {
               installContext.reportError(
                 'Failed to clean up installation directory "{{destinationPath}}", '
@@ -429,25 +413,6 @@ class InstallManager {
   private isCritical(error: string): boolean {
     return (error.indexOf('Unexpected end of archive') !== -1)
         || (error.indexOf('ERROR: Data Error') !== -1);
-  }
-
-  private lstat = (input: string, callback: (err: Error, stat?: fs.Stats) => void) => {
-    const skipAsar = (path.extname(input).toLowerCase() === '.asar') && !process.noAsar;
-    if (skipAsar) {
-      process.noAsar = true;
-    }
-    fs.lstatAsync(input)
-      .then(stats => {
-        callback(null, stats);
-      })
-      .catch(err => {
-        callback(err);
-      })
-      .finally(() => {
-        if (skipAsar) {
-          process.noAsar = false;
-        }
-      });
   }
 
   /**
@@ -664,7 +629,7 @@ class InstallManager {
               api.store.dispatch(setModType(gameId, modId, mod.submoduleType));
             }
           })
-          .finally(() => rimrafAsync(tempPath, { glob: false, maxBusyTries: 1 }));
+          .finally(() => fs.removeAsync(tempPath));
       })
         .then(() => undefined);
   }
@@ -1070,6 +1035,8 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
                 .catch(err => {
                   if (err.code === 'ENOENT') {
                     missingFiles.push(srcRel);
+                  } else if (err.code === 'EPERM') {
+                    return this.transferFile(sourcePath, destPath, false);
                   } else {
                     return Promise.reject(err);
                   }

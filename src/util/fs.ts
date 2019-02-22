@@ -216,6 +216,7 @@ const openAsync = genWrapperAsync(fs.openAsync);
 const readdirAsync = genWrapperAsync(fs.readdirAsync);
 const readFileAsync = genWrapperAsync(fs.readFileAsync);
 const readlinkAsync = genWrapperAsync(fs.readlinkAsync);
+const removeAsync = genWrapperAsync(fs.removeAsync);
 const statAsync = genWrapperAsync(fs.statAsync);
 const symlinkAsync = genWrapperAsync(fs.symlinkAsync);
 const utimesAsync = genWrapperAsync(fs.utimesAsync);
@@ -236,6 +237,7 @@ export {
   readlinkAsync,
   readdirAsync,
   readFileAsync,
+  removeAsync,
   statAsync,
   symlinkAsync,
   utimesAsync,
@@ -312,28 +314,7 @@ function copyInt(
 }
 
 export function removeSync(dirPath: string) {
-  rimraf.sync(dirPath, { maxBusyTries: 10 });
-}
-
-export function removeAsync(dirPath: string): PromiseBB<void> {
-  return removeInt(dirPath, new Error());
-}
-
-function removeInt(dirPath: string, stackErr: Error): PromiseBB<void> {
-  return new PromiseBB<void>((resolve, reject) => {
-    rimraf(dirPath, { maxBusyTries: 10 }, err => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve();
-      }
-    });
-  })
-    .catch((err: NodeJS.ErrnoException) => (err.code === 'ENOENT')
-      // don't mind if a file we wanted deleted was already gone
-      ? PromiseBB.resolve()
-      : errorHandler(err, stackErr)
-        .then(() => removeInt(dirPath, stackErr)));
+  fs.removeSync(dirPath);
 }
 
 export function unlinkAsync(dirPath: string): PromiseBB<void> {
