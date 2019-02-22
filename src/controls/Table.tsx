@@ -97,9 +97,6 @@ type IProps = IBaseProps & IConnectedProps & IActionProps & IExtensionProps & II
  * - a detail-pane that gives additional detail on the (last) selected row
  */
 class SuperTable extends ComponentEx<IProps, IComponentState> {
-  // minimum distance of the focused item to the table header when navigating with the
-  // keyboard
-  private static SCROLL_OFFSET = 100;
   private static SCROLL_DURATION = 200;
   // delay certain actions (like hiding offscreen items) until after scrolling ends.
   // this improves scroll smoothness at the expense of memory
@@ -402,10 +399,14 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       const node = ReactDOM.findDOMNode(this.mRowRefs[id]) as HTMLElement;
       if (node !== null) {
         this.scrollToItem(node, false);
+      } else if (mayRetry !== false) {
+        setTimeout(() => {
+          this.scrollTo(id, false);
+        }, 2000);
+      } else {
+        console.log('node not found', this.mRowRefs);
       }
     } catch (err) {
-      // nop. I think this can happen if the event is emitted before the window has
-      // been activated
       if (mayRetry !== false) {
         setTimeout(() => {
           this.scrollTo(id, false);
@@ -819,23 +820,38 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     this.updateState(setSafe(this.mNextState, ['rowState', rowId, 'highlighted'], highlighted));
   }
 
-  private scrollToItem = (item: HTMLElement, smooth: boolean) => {
-    const topLimit = this.mScrollRef.scrollTop + SuperTable.SCROLL_OFFSET;
+  private scrollToItem = (item: HTMLElement, smooth: boolean, iterations: number = 3) => {
+    const height = this.mScrollRef.offsetHeight;
+    const offset = height / 5;
+    const topLimit = this.mScrollRef.scrollTop + offset;
     const bottomLimit =
-      this.mScrollRef.scrollTop + this.mScrollRef.clientHeight - SuperTable.SCROLL_OFFSET;
+      this.mScrollRef.scrollTop + this.mScrollRef.clientHeight - offset;
     const itemBottom = item.offsetTop + item.offsetHeight;
 
     let targetPos: number;
     if (item.offsetTop < topLimit) {
-      targetPos = Math.max(item.offsetTop - SuperTable.SCROLL_OFFSET, 0);
+      targetPos = Math.max(item.offsetTop - offset, 0);
     } else if (itemBottom > bottomLimit) {
-      targetPos = itemBottom - this.mScrollRef.clientHeight + SuperTable.SCROLL_OFFSET;
+      targetPos = itemBottom - this.mScrollRef.clientHeight + offset;
     }
-    if ((targetPos !== undefined) && (targetPos !== this.mScrollRef.scrollTop)) {
+    if ((targetPos !== undefined)
+        && (targetPos !== this.mScrollRef.scrollTop)) {
       if (smooth) {
-        smoothScroll(this.mScrollRef, targetPos, SuperTable.SCROLL_DURATION);
+        smoothScroll(this.mScrollRef, targetPos, SuperTable.SCROLL_DURATION)
+          .then(() => (iterations > 0)
+            ? this.scrollToItem(item, smooth)
+            : Promise.resolve());
       } else {
         this.mScrollRef.scrollTop = targetPos;
+
+        if (iterations > 0) {
+          // workaround: since we're not rendering off-screen rows it's possible for row heights to
+          //  change as we scroll and then the offset we calculated might not be in the visible
+          //  range after all.
+          setTimeout(() => {
+            this.scrollToItem(item, smooth, iterations - 1);
+          }, 100);
+        }
       }
     }
   }
