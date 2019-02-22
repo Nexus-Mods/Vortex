@@ -1,8 +1,8 @@
 import * as Promise from 'bluebird';
 import * as https from 'https';
-import * as url from 'url';
 import * as _ from 'lodash';
 import * as Redux from 'redux';
+import * as url from 'url';
 
 import { IExtensionContext } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
@@ -10,14 +10,15 @@ import { log } from '../../util/log';
 import { getSafe } from '../../util/storeHelper';
 
 import { setAnnouncements } from './actions';
-import sessionReducer from './reducers';
 import AnnouncementDashlet from './AnnouncementDashlet';
-import { IAnnouncement, AnnouncementParseError } from './types';
+import sessionReducer from './reducers';
+import { AnnouncementParseError, IAnnouncement } from './types';
 
-const ANNOUNCEMENT_LINK = 'https://raw.githubusercontent.com/Nexus-Mods/Vortex/announcements/announcements.json';
+const ANNOUNCEMENT_LINK =
+  'https://raw.githubusercontent.com/Nexus-Mods/Vortex/announcements/announcements.json';
 
 function updateAnnouncements(store: Redux.Store<any>): Promise<void> {
-  const getHTTPData = (link): Promise<any> => {
+  const getHTTPData = (link: string): Promise<IAnnouncement[]> => {
     const sanitizedURL = url.parse(link);
     return new Promise((resolve, reject) => {
       https.get(sanitizedURL.href, res => {
@@ -27,17 +28,17 @@ function updateAnnouncements(store: Redux.Store<any>): Promise<void> {
           .on('data', (data) => output += data)
           .on('end', () => {
             try {
-              const parsed: IAnnouncement[] = JSON.parse(output)
+              const parsed: IAnnouncement[] = JSON.parse(output);
               resolve(parsed);
             } catch (err) {
               reject(new AnnouncementParseError(res.statusCode, err.message, link, output));
             }
-        })
+        });
       }).on('error', (e) => {
         reject(e);
       }).end();
-    })
-  }
+    });
+  };
 
   return getHTTPData(ANNOUNCEMENT_LINK).then((res) => {
     store.dispatch(setAnnouncements(res));
