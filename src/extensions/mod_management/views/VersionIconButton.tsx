@@ -88,7 +88,7 @@ class VersionIconButton extends ComponentEx<IProps, {}> {
 
     if ((state === 'update') || (state === 'bug-update')) {
       this.context.api.events.emit('mod-update',
-        gameMode, getSafe(mod.attributes, ['modId'], undefined), newestFileId);
+        downloadGame, getSafe(mod.attributes, ['modId'], undefined), newestFileId);
     } else if ((state === 'update-site') || (state === 'bug-update-site')) {
       this.context.api.events.emit('open-mod-page',
         downloadGame, getSafe(mod.attributes, ['modId'], undefined));
