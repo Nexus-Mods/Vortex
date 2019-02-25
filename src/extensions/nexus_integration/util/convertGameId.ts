@@ -1,17 +1,23 @@
-import { IGameStored } from "../../../types/IState";
+import { IGameStored } from '../../../types/IState';
 
 /**
  * get the nexus page id for a game
  * TODO: some games have hard-coded transformations here, should move all of that to game.details
  */
-export function nexusGameId(game: IGameStored): string {
-  if (game === undefined) {
+export function nexusGameId(game: IGameStored, fallbackGameId?: string): string {
+  if ((game === undefined) && (fallbackGameId === undefined)) {
     return undefined;
   }
 
-  if ((game.details !== undefined) && (game.details.nexusPageId !== undefined)) {
+  if ((game !== undefined)
+      && (game.details !== undefined)
+      && (game.details.nexusPageId !== undefined)) {
     return game.details.nexusPageId;
   }
+
+  const gameId = (game !== undefined)
+    ? game.id
+    : fallbackGameId;
 
   return {
     skyrimse: 'skyrimspecialedition',
@@ -19,7 +25,7 @@ export function nexusGameId(game: IGameStored): string {
     falloutnv: 'newvegas',
     fallout4vr: 'fallout4',
     teso: 'elderscrollsonline',
-  }[game.id.toLowerCase()] || game.id;
+  }[gameId.toLowerCase()] || gameId;
 }
 
 /**
@@ -30,7 +36,8 @@ export function convertGameIdReverse(knownGames: IGameStored[], input: string): 
     return undefined;
   }
 
-  const game = knownGames.find(game => (game.details !== undefined) && (game.details.nexusPageId === input));
+  const game = knownGames.find(iter =>
+    (iter.details !== undefined) && (iter.details.nexusPageId === input));
   if (game !== undefined) {
     return game.id;
   }
@@ -50,9 +57,9 @@ export function convertNXMIdReverse(knownGames: IGameStored[], input: string): s
     return undefined;
   }
 
-  const game = knownGames.find(game =>
-    (game.details !== undefined) &&
-    ((game.details.nxmLinkId === input) || (game.details.nexusPageId === input)));
+  const game = knownGames.find(iter =>
+    (iter.details !== undefined) &&
+    ((iter.details.nxmLinkId === input) || (iter.details.nexusPageId === input)));
 
   if (game !== undefined) {
     return game.id;

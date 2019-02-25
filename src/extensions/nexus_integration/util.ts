@@ -37,7 +37,7 @@ export function startDownload(api: IExtensionApi, nexus: Nexus, nxmurl: string):
   const state = api.store.getState();
   const games = knownGames(state);
   const gameId = convertNXMIdReverse(games, url.gameId);
-  const pageId = nexusGameId(gameById(state, gameId));
+  const pageId = nexusGameId(gameById(state, gameId), url.gameId);
 
   return Promise.resolve(nexus.getModInfo(url.modId, pageId))
     .then((modInfo: IModInfo) => {

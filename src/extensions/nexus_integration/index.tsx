@@ -566,7 +566,7 @@ function init(context: IExtensionContextExt): boolean {
 
     const games = knownGames(state);
     const gameId = convertNXMIdReverse(games, url.gameId);
-    const pageId = nexusGameId(gameById(state, gameId));
+    const pageId = nexusGameId(gameById(state, gameId), url.gameId);
     return Promise.resolve()
       .then(() => nexus.getDownloadURLs(url.modId, url.fileId, url.key, url.expires, pageId))
       .then((res: IDownloadURL[]) => ({ urls: res.map(u => u.URI), meta: {} }))
