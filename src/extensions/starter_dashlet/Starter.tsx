@@ -319,7 +319,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
     const userTasks = starters
       .filter(starter =>
         (truthy(starter.exePath))
-        && (Object.keys(starter.environment).length === 0))
+        && (Object.keys(starter.environment || {}).length === 0))
       .map(starter => ({
         arguments: starter.commandLine.join(' '),
         description: starter.name,
