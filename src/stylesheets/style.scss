@@ -326,6 +326,7 @@ div:hover > .hover-expand {
 
 .datetime-filter {
   width: 100%;
+  line-height: 0;
   >div {
     // not sure why this is necessary, without reducing the line-height
     // the input box takes more vertical space than it should but only when there is no content
