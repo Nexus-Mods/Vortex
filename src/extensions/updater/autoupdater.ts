@@ -27,20 +27,23 @@ function setupAutoUpdate(api: IExtensionApi) {
         message: 'After installing this update you shouldn\'t go back to an older version.',
         noDismiss: true,
         actions: [
-          { title: 'Download', action: dismiss => {
-            dismiss();
-            resolve();
-           } },
           {
-            title: 'Remind me later', action: dismiss => {
+            title: 'Download', action: dismiss => {
+              dismiss();
+              resolve();
+            },
+          },
+          {
+            title: 'Remind me later',
+            action: dismiss => {
               dismiss();
               reject(new UserCanceled());
-            }
+            },
           },
-        ]
+        ],
       });
-    })
-  }
+    });
+  };
 
   autoUpdater.on('error', (err) => {
     if ((err.cmd !== undefined) && err.cmd.startsWith('powershell.exe')) {
@@ -77,53 +80,64 @@ function setupAutoUpdate(api: IExtensionApi) {
         }))
       .catch(() => null);
   });
+
   autoUpdater.on('update-not-available', () => {
-                 log('info', 'no update available'); });
+    log('info', 'no update available');
+  });
+
   autoUpdater.on('update-downloaded',
-                 (info: UpdateInfo) => {
-                   log('info', 'update installed');
-                   api.sendNotification({
-                     type: 'success',
-                     message: 'Update available',
-                     actions: [
-                       {
-                         title: 'Changelog',
-                         action: () => {
-                           api.store.dispatch(showDialog('info', `Changelog ${info.version}`, {
-                             htmlText: info.releaseNotes as string,
-                           }, [
-                             { label: 'Close' },
-                           ]));
-                         },
-                       },
-                       {
-                         title: 'Restart & Install',
-                         action: () => {
-                           autoUpdater.quitAndInstall();
-                         },
-                       },
-                     ],
-                   });
-                 });
+    (info: UpdateInfo) => {
+      log('info', 'update installed');
+      api.sendNotification({
+        type: 'success',
+        message: 'Update available',
+        actions: [
+          {
+            title: 'Changelog',
+            action: () => {
+              api.store.dispatch(showDialog('info', `Changelog ${info.version}`, {
+                htmlText: info.releaseNotes as string,
+              }, [
+                  { label: 'Close' },
+                ]));
+            },
+          },
+          {
+            title: 'Restart & Install',
+            action: () => {
+              autoUpdater.quitAndInstall();
+            },
+          },
+        ],
+      });
+    });
+
+  const checkNow = (channel: string) => {
+    autoUpdater.allowPrerelease = channel === 'beta';
+    autoUpdater.autoDownload = false;
+    autoUpdater.checkForUpdates()
+      .then(check => {
+        if (truthy(check.downloadPromise)) {
+          check.downloadPromise.catch(err => {
+            log('warn', 'Checking for update failed', err);
+          });
+        }
+      })
+      .catch(err => {
+        log('warn', 'Checking for update failed', err);
+      });
+  };
+
+  ipcMain.on('check-for-updates', (channel: string) => {
+    checkNow(channel);
+  });
 
   ipcMain.on('set-update-channel', (event) => {
     try {
       log('info', 'set channel');
       const { channel } = state.settings.update;
       if ((channel !== 'none') && (process.env.NODE_ENV !== 'development')) {
-        autoUpdater.allowPrerelease = channel === 'beta';
-        autoUpdater.autoDownload = false;
-        autoUpdater.checkForUpdates()
-        .then(check => {
-          if (truthy(check.downloadPromise)) {
-            check.downloadPromise.catch(err => {
-              log('warn', 'Checking for update failed', err);
-            });
-          }
-        })
-        .catch(err => {
-          log('warn', 'Checking for update failed', err);
-        });
+        checkNow(channel);
       }
     } catch (err) {
       log('warn', 'Checking for update failed', err);

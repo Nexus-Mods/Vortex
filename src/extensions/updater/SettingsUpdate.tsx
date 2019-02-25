@@ -4,8 +4,9 @@ import { log } from '../../util/log';
 import { setUpdateChannel } from './actions';
 import getText from './texts';
 
+import { ipcRenderer } from 'electron';
 import * as React from 'react';
-import { ControlLabel, FormControl, FormGroup } from 'react-bootstrap';
+import { Alert, Button, ControlLabel, FormControl, FormGroup } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 
@@ -40,9 +41,23 @@ class SettingsUpdate extends ComponentEx<IProps, {}> {
             <option value='beta'>{t('Testing')}</option>
             <option value='none'>{t('No automatic updates')}</option>
           </FormControl>
+          <ControlLabel>
+            {updateChannel === 'none' ? [(
+              <Alert bsStyle='warning'>
+                {t('Very old versions of Vortex will be locked out of network features eventually '
+                  + 'so please do keep Vortex up-to-date.')}
+              </Alert>
+            ), (<Button onClick={this.checkNow}>
+              {t('Check now')}
+            </Button>)] : null}
+          </ControlLabel>
         </FormGroup>
       </form>
     );
+  }
+
+  private checkNow = () => {
+    ipcRenderer.send('check-for-updates', 'stable');
   }
 
   private selectChannel = (evt) => {
