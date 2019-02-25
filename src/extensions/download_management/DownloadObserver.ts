@@ -3,7 +3,7 @@ import { IState } from '../../types/IState';
 import {ProcessCanceled, UserCanceled} from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import {log} from '../../util/log';
-import {showError, renderError} from '../../util/message';
+import {renderError, showError} from '../../util/message';
 import * as selectors from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { truthy } from '../../util/util';
@@ -81,7 +81,8 @@ export class DownloadObserver {
     const t = this.mApi.translate;
 
     const details = renderError(err);
-    return `${t(details.text, {replace: details.parameters})}\n\n${t(details.message, { replace: details.parameters })}`;
+    return `${t(details.text, {replace: details.parameters})}\n\n`
+         + `${t(details.message, { replace: details.parameters })}`;
   }
 
   private handleStartDownload(urls: string[],
@@ -141,8 +142,8 @@ export class DownloadObserver {
           }
           if (filePath !== undefined) {
             fs.removeAsync(path.join(downloadPath, filePath))
-              .catch(err => {
-                this.mApi.showErrorNotification('Failed to remove failed download', err);
+              .catch(innerErr => {
+                this.mApi.showErrorNotification('Failed to remove failed download', innerErr);
               });
           }
         })
@@ -161,8 +162,8 @@ export class DownloadObserver {
             : Promise.resolve();
 
           prom
-            .catch(err => {
-              this.mApi.showErrorNotification('Failed to remove failed download', err);
+            .catch(innerErr => {
+              this.mApi.showErrorNotification('Failed to remove failed download', innerErr);
             })
             .then(() => {
               this.mApi.store.dispatch(removeDownload(id));
@@ -259,7 +260,8 @@ export class DownloadObserver {
       this.mManager.stop(downloadId);
     }
     if (truthy(download.localPath) && truthy(download.game)) {
-      const dlPath = selectors.downloadPathForGame(this.mApi.store.getState(), getDownloadGames(download)[0]);
+      const dlPath = selectors.downloadPathForGame(this.mApi.store.getState(),
+                                                   getDownloadGames(download)[0]);
       fs.removeAsync(path.join(dlPath, download.localPath))
           .then(() => { this.mApi.store.dispatch(removeDownload(downloadId)); })
           .catch(UserCanceled, () => undefined)
@@ -315,7 +317,9 @@ export class DownloadObserver {
     }
   }
 
-  private handleDownloadError(err: any, downloadId: string, callback: (err: Error, id?: string) => void) {
+  private handleDownloadError(err: any,
+                              downloadId: string,
+                              callback: (err: Error, id?: string) => void) {
     if (['ESOCKETTIMEDOUT', 'ECONNRESET'].indexOf(err.code) !== -1) {
       // may be resumable
       // this.mManager.pause(downloadId);
@@ -324,12 +328,12 @@ export class DownloadObserver {
       const message = this.translateError(err);
 
       this.mApi.store.dispatch(finishDownload(downloadId, 'failed', {
-        message
+        message,
       }));
       if (callback !== undefined) {
         callback(err, downloadId);
       } else {
-        // only report error if there was no callback, otherwise it's the job of the caller to report
+        // only report error if there was no callback, otherwise it's the caller's job to report
         showError(this.mApi.store.dispatch, 'Download failed', message, {
           allowReport: false,
         });

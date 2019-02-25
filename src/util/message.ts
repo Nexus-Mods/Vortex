@@ -371,11 +371,29 @@ function renderCustomError(err: any) {
 }
 
 function prettifyHTTPError(err: HTTPError) {
-  const fallback = () => ({
-    text: err.statusMessage,
-    message: err.url,
-    allowReport: true,
-  });
+  const fallback = () => {
+    const rangeDescription = (err.statusCode >= 500)
+      ? 'This code is usually the responsibility of the server and will likely be temporary'
+      : (err.statusCode >= 400)
+        ? 'This code is usually caused by an invalid request, maybe you followed a link '
+          + 'that has expired or you lack permission to access it.'
+        : (err.statusCode >= 300)
+          ? 'This code indicates the url is no longer valid.'
+          : 'This code isn\'t an error and shouldn\'t have been reported';
+
+    return {
+      text: 'Requesting url "{{url}}" failed with status "{{statusCode}} {{message}}".\n'
+             + rangeDescription,
+      parameters: {
+        message: err.statusMessage,
+        url: err.url,
+        statusCode: err.statusCode,
+      },
+      // 3xx errors are redirections and should have been followed,
+      // 2xx aren't errors and shouldn't have been reported.
+      allowReport: err.statusCode < 400,
+    };
+  };
 
   const func = {
   }[err.statusCode] || fallback;
