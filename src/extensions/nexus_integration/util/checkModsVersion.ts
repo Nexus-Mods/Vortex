@@ -51,12 +51,9 @@ export function checkModVersion(store: Redux.Store<any>, nexus: NexusT,
  */
 function findLatestUpdate(fileUpdates: IFileUpdate[], updateChain: IFileUpdate[], fileId: number) {
   const updatedFile = fileUpdates.find(file => file.old_file_id === fileId);
-  if (updatedFile !== undefined) {
-    return findLatestUpdate(fileUpdates,
-      updateChain.concat([ updatedFile ]), updatedFile.new_file_id);
-  } else {
-    return updateChain;
-  }
+  return (updatedFile !== undefined)
+    ? findLatestUpdate(fileUpdates, updateChain.concat([ updatedFile ]), updatedFile.new_file_id)
+    : updateChain;
 }
 
 function update(dispatch: Redux.Dispatch<any>,
@@ -98,6 +95,13 @@ function updateLatestFileAttributes(dispatch: Redux.Dispatch<any>,
   } else {
     update(dispatch, gameId, mod, 'newestFileId', file.file_id);
   }
+}
+
+function setNoUpdateAttributes(dispatch: Redux.Dispatch<any>,
+                               gameId: string,
+                               mod: IMod) {
+  update(dispatch, gameId, mod, 'newestVersion', undefined);
+  update(dispatch, gameId, mod, 'newestFileId', undefined);
 }
 
 function updateFileAttributes(dispatch: Redux.Dispatch<any>,
@@ -150,6 +154,8 @@ function updateFileAttributes(dispatch: Redux.Dispatch<any>,
   }
   if (updatedFile !== undefined) {
     updateLatestFileAttributes(dispatch, gameId, mod, updatedFile);
+  } else {
+    setNoUpdateAttributes(dispatch, gameId, mod);
   }
 }
 
