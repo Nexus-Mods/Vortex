@@ -438,7 +438,9 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
               allowReport: false,
             });
           } else {
-            this.context.api.showErrorNotification('Failed to start download', error);
+            this.context.api.showErrorNotification('Failed to start download', error, {
+              allowReport: false,
+            });
           }
         }
       }));
