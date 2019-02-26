@@ -72,6 +72,7 @@ class StarterInfo implements IStarterInfo {
     return launcherPromise.then(res => {
       if (res !== undefined) {
         return StarterInfo.runThroughLauncher(res.launcher, info, api, res.addInfo)
+          .catch(UserCanceled, () => null)
           .catch(GamePathNotMatched, err => {
             const errorMsg = [err.message, err.gamePath, err.steamEntryPaths].join(' - ');
             log('error', errorMsg);
