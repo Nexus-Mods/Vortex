@@ -4,6 +4,7 @@ import Spinner from '../../../controls/Spinner';
 import { Button, IconButton } from '../../../controls/TooltipControls';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { UserCanceled } from '../../../util/CustomErrors';
+import { log } from '../../../util/log';
 import opn from '../../../util/opn';
 
 import { setUserAPIKey } from '../actions/account';
@@ -73,6 +74,9 @@ function LoginInProgress(props: ILoginInProgressProps) {
   );
 }
 
+function nop() {
+}
+
 type IProps = IBaseProps & IConnectedProps & IActionProps;
 
 class LoginDialog extends ComponentEx<IProps, { troubleshoot: boolean, apiKeyInput: string }> {
@@ -87,6 +91,11 @@ class LoginDialog extends ComponentEx<IProps, { troubleshoot: boolean, apiKeyInp
 
   public componentWillReceiveProps(newProps: IProps) {
     if (newProps.visible && !this.props.visible) {
+      this.nextState.troubleshoot = false;
+      this.nextState.apiKeyInput = '';
+    }
+    if ((newProps.loginId !== this.props.loginId)
+        && (this.props.loginId === undefined)) {
       this.nextState.troubleshoot = false;
       this.nextState.apiKeyInput = '';
     }
@@ -128,33 +137,42 @@ class LoginDialog extends ComponentEx<IProps, { troubleshoot: boolean, apiKeyInp
         <div className='login-instructions'>
           {t('Please log in or register on the Nexus Mods website to log in on vortex!')}
         </div>
-        {loginId !== undefined ? [
+        {loginId !== undefined ? [(
           <LoginInProgress
             key='login-in-progress'
             t={t}
             loginId={loginId}
             onCopyToClipboard={this.copyToClipboard}
-          />,
+          />
+        ), (
           <Button
-            key='troubleshoot-button'
-            onClick={this.troubleshoot}
-            tooltip={t('Use if the regular login doesn\'t work')}
+            key='login-press-authorise'
+            onClick={nop}
+            tooltip={t('Please click "Authorise" on the website')}
+            disabled={true}
           >
-            {t('Troubleshoot')}
-          </Button>,
-        ] : null}
-        <Button
-          onClick={this.login}
-          tooltip={t('Opens the Nexus Mods page in your default browser')}
-          disabled={loginId !== undefined}
-        >
-          {(loginId !== undefined) ? (
             <div>
               <Spinner />
               {t('Please click "Authorise" on the website')}
             </div>
-          ) : t('Log In On Website')}
-        </Button>
+          </Button>
+        ), (
+          <a
+            key='troubleshoot-button'
+            onClick={this.troubleshoot}
+          >
+            {t('Not working? Try manual login.')}
+          </a>
+        ),
+        ] : (
+          <Button
+            onClick={this.login}
+            tooltip={t('Opens the Nexus Mods page in your default browser')}
+            disabled={false}
+          >
+            {t('Log In On Website')}
+          </Button>
+        )}
       </div>
     );
   }
@@ -170,7 +188,7 @@ class LoginDialog extends ComponentEx<IProps, { troubleshoot: boolean, apiKeyInp
           svgStyle='#login-dialog path { fill: black }'
         />
         <h3>
-          {t('If you\'re having trouble logging in in the normal way, there is another way.')}
+          {t('If you\'re having trouble logging in in the normal way, there is another option.')}
         </h3>
         <ul style={{ textAlign: 'left' }}>
           <li>
@@ -214,15 +232,14 @@ class LoginDialog extends ComponentEx<IProps, { troubleshoot: boolean, apiKeyInp
   }
 
   private renderConfirmDialog() {
-    return this.context.api.showDialog('question', 'Login process unfinished', {
-      text: 'Vortex is not logged in yet, are you sure you wish to cancel the login process ?',
+    return this.context.api.showDialog('question', 'Login incomplete', {
+      text: 'Vortex is not logged in yet, are you sure you wish to abort the login process?',
     }, [
-      { label: 'No' }, { label: 'Yes' }
-    ]).then(result => {
-      if (result.action === 'Yes') {
+      { label: 'Cancel' },
+      { label: 'Abort Login', action: () => {
         this.hide();
-      }
-    });
+      } },
+    ]);
   }
 
   private openApiAccess = () => {
@@ -248,14 +265,22 @@ class LoginDialog extends ComponentEx<IProps, { troubleshoot: boolean, apiKeyInp
   }
 
   private close = () => {
-    this.renderConfirmDialog();
+    const { loginId } = this.props;
+    // only request confirmation if the login has actually been started!
+    if (loginId === undefined) {
+      this.hide();
+      return;
+    }
+    this.renderConfirmDialog().catch(err => {
+      log('error', 'failed to show dialog', err.message)
+    });
   }
 
   private troubleshoot = () => {
     this.nextState.troubleshoot = true;
   }
 
-  private copyToClipboard() {
+  private copyToClipboard = () => {
     clipboard.writeText(getPageURL(this.props.loginId));
   }
 
