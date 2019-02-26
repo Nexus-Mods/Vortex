@@ -1,7 +1,7 @@
 import * as Promise from 'bluebird';
 import * as I18next from 'i18next';
-import Nexus, { IFileInfo, IGameListEntry, IModInfo, NexusError,
-                RateLimitError, TimeoutError } from 'nexus-api';
+import Nexus, { IFileInfo, IGameListEntry, IModInfo, IUpdateEntry,
+                NexusError, RateLimitError, TimeoutError } from 'nexus-api';
 import * as Redux from 'redux';
 import * as util from 'util';
 import { setModAttribute } from '../../actions';
@@ -15,7 +15,7 @@ import { gameById, knownGames } from '../gamemode_management/selectors';
 import modName from '../mod_management/util/modName';
 import { setUserInfo } from './actions/persistent';
 import NXMUrl from './NXMUrl';
-import { checkModVersion } from './util/checkModsVersion';
+import { checkModVersion, fetchRecentUpdates } from './util/checkModsVersion';
 import { convertNXMIdReverse, nexusGameId } from './util/convertGameId';
 import sendEndorseMod from './util/endorseMod';
 import transformUserInfo from './util/transformUserInfo';
@@ -273,6 +273,65 @@ export function endorseModImpl(
     });
 }
 
+function filterByUpdateList(store: Redux.Store<any>,
+                            nexus: Nexus,
+                            gameId: string,
+                            input: IMod[]): Promise<IMod[]> {
+  const getGameId = (mod: IMod) => getSafe(mod.attributes, ['downloadGame'], undefined) || gameId;
+
+  // all game ids for which we have mods installed
+  const gameIds = Array.from(new Set(input.map(getGameId)));
+
+  console.log('game ids', gameIds);
+
+  type MinAgeMap = { [gameId: string]: number };
+  type UpdateMap = { [gameId: string]: IUpdateEntry[] };
+
+  // for each game, stores the update time of the least recently updated mod
+  const minAge: MinAgeMap = input.reduce((prev: MinAgeMap, mod: IMod) => {
+    const gameId = getGameId(mod);
+    const lastUpdate = getSafe(mod.attributes, ['lastUpdateTime'], undefined);
+    if ((lastUpdate !== undefined)
+        && ((prev[gameId] === undefined) || (prev[gameId] > lastUpdate))) {
+      prev[gameId] = lastUpdate;
+    }
+    return prev;
+  }, {});
+
+  console.log('min ages', minAge);
+
+  return Promise.reduce(gameIds, (prev: UpdateMap, gameId: string) =>
+    fetchRecentUpdates(store, nexus, gameId, minAge[gameId])
+      .then(entries => {
+        prev[gameId] = entries;
+        return prev;
+      }), {})
+      .then((updateLists: UpdateMap) => {
+        const updateMap: { [gameId: string]: { [modId: string]: number } } = {};
+
+        Object.keys(updateLists).forEach(iterGameId => {
+          updateMap[iterGameId] = updateLists[iterGameId].reduce((prev, entry) => {
+            prev[entry.mod_id] = Math.max((entry as any).latest_file_update,
+                                          (entry as any).latest_mod_activity);
+            return prev;
+          }, {});
+        });
+
+        return input.filter(mod => {
+          const gameId = getGameId(mod);
+          if (updateMap[gameId] === undefined) {
+            // the game hasn't been checked for updates for so long we can't fetch an update range
+            // long enough
+            return true;
+          }
+          const lastUpdate = getSafe(mod.attributes, ['lastUpdateTime'], 0);
+          // if the file is not in the update list, only allow it to be updated if it has never been
+          // updated before
+          return lastUpdate < getSafe(updateMap, [gameId, mod.id], 1);
+        });
+      })
+}
+
 export function checkModVersionsImpl(
   store: Redux.Store<any>,
   nexus: Nexus,
@@ -290,30 +349,32 @@ export function checkModVersionsImpl(
 
   log('info', 'checking mods for update (nexus)', { count: modsList.length });
 
-  return Promise.map(modsList, mod =>
-    checkModVersion(store, nexus, gameId, mod)
-      .then(() => {
-        store.dispatch(setModAttribute(gameId, mod.id, 'lastUpdateTime', now));
-      })
-      .catch(TimeoutError, err => {
-        const name = modName(mod, { version: true });
-        return Promise.resolve(`${name}:\nRequest timeout`);
-      })
-      .catch(err => {
-        const detail = processErrorMessage(err);
-        if (detail.fatal) {
-          return Promise.reject(detail);
-        }
+  return filterByUpdateList(store, nexus, gameId, modsList)
+    .then((filtered: IMod[]) =>
+      Promise.map(filtered,
+        (mod: IMod) => checkModVersion(store, nexus, gameId, mod)
+          .then(() => {
+            store.dispatch(setModAttribute(gameId, mod.id, 'lastUpdateTime', now));
+          })
+          .catch(TimeoutError, err => {
+            const name = modName(mod, { version: true });
+            return Promise.resolve(`${name}:\nRequest timeout`);
+          })
+          .catch(err => {
+            const detail = processErrorMessage(err);
+            if (detail.fatal) {
+              return Promise.reject(detail);
+            }
 
-        if (detail.message === undefined) {
-          return undefined;
-        }
+            if (detail.message === undefined) {
+              return undefined;
+            }
 
-        const name = modName(mod, { version: true });
-        return (detail.Servermessage !== undefined)
-          ? `${name}:\n${detail.message}\nServer said: "${detail.Servermessage}"`
-          : `${name}:\n${detail.message}`;
-      }), { concurrency: 4 })
+            const name = modName(mod, { version: true });
+            return (detail.Servermessage !== undefined)
+              ? `${name}:\n${detail.message}\nServer said: "${detail.Servermessage}"`
+              : `${name}:\n${detail.message}`;
+          }), { concurrency: 4 }))
     .then((errorMessages: string[]): string[] => errorMessages.filter(msg => msg !== undefined));
 }
 
