@@ -956,7 +956,7 @@ class ExtensionManager {
       .then((handler: IArchiveHandler) => Promise.resolve(new Archive(handler)));
   }
 
-  private applyStartHooks(input: IRunParameters) : Promise<IRunParameters> {
+  private applyStartHooks(input: IRunParameters): Promise<IRunParameters> {
     let updated = input;
     return Promise.each(this.mStartHooks, hook => hook.hook(updated)
       .then((newParameters: IRunParameters) => {
@@ -1025,7 +1025,8 @@ class ExtensionManager {
               const game = activeGameId(this.mApi.store.getState());
               if ((game === 'fallout3') && (code === 3221225781)) {
                 // FO3 is dependent on several redistributables being installed to run.
-                //  code 3221225781 suggests that xlive and possibly other redistribs are not installed.
+                //  code 3221225781 suggests that xlive and possibly other redistribs are
+                //  not installed.
                 reject(new MissingDependency());
               } else if (code !== 0) {
                 // TODO: the child process returns an exit code of 53 for SSE and
