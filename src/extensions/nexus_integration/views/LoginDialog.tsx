@@ -97,7 +97,7 @@ class LoginDialog extends ComponentEx<IProps, { troubleshoot: boolean, apiKeyInp
     const { t, loginId, visible } = this.props;
 
     return (
-      <Modal id='login-dialog' show={visible || (loginId !== undefined)} onHide={this.hide}>
+      <Modal backdrop='static' id='login-dialog' show={visible || (loginId !== undefined)} onHide={this.hide}>
         <Modal.Body>
           <IconButton
             className='close-button'
