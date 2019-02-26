@@ -43,11 +43,11 @@ class SettingsUpdate extends ComponentEx<IProps, {}> {
           </FormControl>
           <ControlLabel>
             {updateChannel === 'none' ? [(
-              <Alert bsStyle='warning'>
+              <Alert key='manual-update-warning' bsStyle='warning'>
                 {t('Very old versions of Vortex will be locked out of network features eventually '
                   + 'so please do keep Vortex up-to-date.')}
               </Alert>
-            ), (<Button onClick={this.checkNow}>
+            ), (<Button key='manual-update-button' onClick={this.checkNow}>
               {t('Check now')}
             </Button>)] : null}
           </ControlLabel>

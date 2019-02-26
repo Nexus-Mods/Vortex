@@ -221,6 +221,7 @@ class MainWindow {
       minHeight: MIN_HEIGHT,
       x: getSafe(windowMetrics, ['position', 'x'], undefined),
       y: getSafe(windowMetrics, ['position', 'y'], undefined),
+      backgroundColor: '#fff',
       autoHideMenuBar: true,
       frame: !getSafe(windowMetrics, ['customTitlebar'], true),
       show: false,
