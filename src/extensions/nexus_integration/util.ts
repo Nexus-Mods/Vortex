@@ -9,7 +9,7 @@ import * as util from 'util';
 import { setModAttribute } from '../../actions';
 import { IExtensionApi, IMod } from '../../types/api';
 import { setApiKey } from '../../util/errorHandling';
-import github from '../../util/github';
+import github, { RateLimitExceeded } from '../../util/github';
 import { log } from '../../util/log';
 import { calcDuration, prettifyNodeErrorMessage, showError } from '../../util/message';
 import { activeGameId } from '../../util/selectors';
@@ -366,6 +366,8 @@ export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promis
         });
       }
     })
+    // don't stop the login just because the github rate limit is exceeded
+    .catch(RateLimitExceeded, () => Promise.resolve())
     .catch(TimeoutError, () => {
       showError(api.store.dispatch,
         'API Key validation timed out',
