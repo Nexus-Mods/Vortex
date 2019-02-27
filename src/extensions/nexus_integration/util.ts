@@ -1,15 +1,19 @@
 import * as Promise from 'bluebird';
+import { app as appIn, ipcRenderer, remote } from 'electron';
 import * as I18next from 'i18next';
 import Nexus, { IFileInfo, IGameListEntry, IModInfo, NexusError,
                 RateLimitError, TimeoutError } from 'nexus-api';
 import * as Redux from 'redux';
+import * as semver from 'semver';
 import * as util from 'util';
 import { setModAttribute } from '../../actions';
 import { IExtensionApi, IMod } from '../../types/api';
-import { calcDuration, getSafe, prettifyNodeErrorMessage, showError } from '../../util/api';
 import { setApiKey } from '../../util/errorHandling';
+import github from '../../util/github';
 import { log } from '../../util/log';
+import { calcDuration, prettifyNodeErrorMessage, showError } from '../../util/message';
 import { activeGameId } from '../../util/selectors';
+import { getSafe } from '../../util/storeHelper';
 import { truthy } from '../../util/util';
 import { gameById, knownGames } from '../gamemode_management/selectors';
 import modName from '../mod_management/util/modName';
@@ -21,6 +25,8 @@ import sendEndorseMod from './util/endorseMod';
 import transformUserInfo from './util/transformUserInfo';
 
 const UPDATE_CHECK_DELAY = 60 * 60 * 1000;
+
+const app = remote !== undefined ? remote.app : appIn;
 
 export function startDownload(api: IExtensionApi, nexus: Nexus, nxmurl: string): Promise<string> {
   let url: NXMUrl;
@@ -324,6 +330,15 @@ function errorFromNexusError(err: NexusError): string {
   }
 }
 
+function majorVer(input: string) {
+  let major = semver.major(input);
+  if (major === 0) {
+    // support pre-1.0 versions
+    major = semver.minor(input);
+  }
+  return major;
+}
+
 export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promise<void> {
   setApiKey(key);
   return Promise.resolve(nexus.setKey(key))
@@ -331,6 +346,24 @@ export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promis
       if (userInfo !== null) {
         api.store.dispatch(setUserInfo(transformUserInfo(userInfo)));
         retrieveNexusGames(nexus);
+      }
+      return github.releases();
+    }).then(releases => {
+      const latestStable = releases.reverse().find(rel => !rel.prerelease);
+      const currentVer = app.getVersion();
+      if ((currentVer !== '0.0.1')
+          && (majorVer(latestStable.name) - majorVer(currentVer) > 1)) {
+        (nexus as any).disable();
+        api.sendNotification({
+          type: 'warning',
+          title: 'Vortex outdated',
+          message: 'Your version of Vortex is quite outdated. Network features disabled.',
+          actions: [
+            { title: 'Check for update', action: () => {
+              ipcRenderer.send('check-for-updates', 'stable');
+            } },
+          ],
+        });
       }
     })
     .catch(TimeoutError, () => {

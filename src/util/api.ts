@@ -24,6 +24,7 @@ import epicGamesLauncher from './EpicGamesLauncher';
 import { terminate } from './errorHandling';
 import { extend } from './ExtensionProvider';
 import getNormalizeFunc, { Normalize } from './getNormalizeFunc';
+import github from './github';
 import { getCurrentLanguage } from './i18n';
 import LazyComponent from './LazyComponent';
 import lazyRequire from './lazyRequire';
@@ -59,6 +60,7 @@ export {
   getGames,
   getNormalizeFunc,
   getReduxLog,
+  github,
   isChildPath,
   LazyComponent,
   lazyRequire,

@@ -55,6 +55,27 @@ import { IResolvedURL } from '../download_management';
 
 let nexus: NexusT;
 
+export class APIDisabled extends Error {
+  constructor() {
+    super('Network functionality disabled');
+    this.name = this.constructor.name;
+  }
+}
+
+const disableable = {
+  disabled: false,
+  nonPromiseFuncs: new Set(['setGame', 'getValidationResult', 'getRateLimits']),
+  get(obj, prop) {
+    if (prop === 'disable') {
+      return () => this.disabled = true;
+    } else if ((!this.disabled) || (this.nonPromiseFuncs.has(prop))) {
+      return obj[prop];
+    } else {
+      return () => Promise.reject(new APIDisabled());
+    }
+  }
+};
+
 export interface IExtensionContextExt extends IExtensionContext {
   registerDownloadProtocol: (
     schema: string,
@@ -419,7 +440,7 @@ function once(api: IExtensionApi) {
     const apiKey = getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], undefined);
     const gameMode = activeGameId(state);
 
-    nexus = new Nexus('Vortex', remote.app.getVersion(), gameMode, 30000);
+    nexus = new Proxy(new Nexus('Vortex', remote.app.getVersion(), gameMode, 30000), disableable);
 
     updateKey(api, nexus, apiKey);
 
