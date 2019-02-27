@@ -111,6 +111,9 @@ export function verify(statePath: string,
   };
 
   Object.keys(verifiers).forEach(key => {
+    if (res === undefined) {
+      return;
+    }
     // _ is placeholder for every item
     if (key === '_') {
       Object.keys(res).forEach(mapKey => doTest(key, mapKey));
