@@ -169,18 +169,28 @@ function mergeMods(api: IExtensionApi,
 
                 return Promise.all([fileExists(file.in),
                                     fileExists(file.in + BACKUP_TAG)]).then(res => {
-                  // Check if we had created a backup file of the input file.
-                  //  This would suggest that this is a more complex merge operation
-                  //  and we should re-instate the backup file before we start merging.
+                  // res[0] indicates whether we were able to find the input file inside
+                  //  the mods folder. Its existence can mean 2 things depending on circumstances:
+                  //  1. The file is a symlink and has been deployed using Vortex. We can confirm
+                  //   this by checking the deployed files array for this modtype.
+                  //  2. The file exists by default (created by the game itself).
+
+                  // res[1] indicates whether we are able to find an input file backup which is
+                  //  created by Vortex when deploying the output file, and a pre-existing input
+                  //  file was found during deployment. (See res[0], item 2). When res[1] === true,
+                  //  this is a clear indication that we have previously deployed mods for this
+                  //  modType; to avoid losing default game generated data, we MUST use the backup 
+                  //  file as the base for the merge.
                   if (res[1]) {
+                    // We found a backup file, use this file as the base for the merge.
                     return fs.copyAsync(file.in + BACKUP_TAG, path.join(realDest, file.out));
                   }
 
-                  // The existence of the input file within the deployment manifest
-                  //  suggests that the input file has already been replaced and should
-                  //  be considered a symbolic link. In this case, the input file should
-                  //  be removed as it will be replaced by the merge.
                   if (res[0] && isDeployed(file.in)) {
+                    // The input file has been previously deployed by Vortex; in its current state
+                    //  the file is a symbolic link and should be removed before the merge to ensure
+                    //  that Vortex does not create a backup of it during deployment.
+                    //  The file will be re-created during the merge.
                     return fs.removeAsync(file.in);
                   }
 
