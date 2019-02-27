@@ -351,31 +351,18 @@ function genUpdateModDeployment() {
         progress(t('Merging mods'), 35);
 
         const mergeModTypes = Object.keys(modPaths)
-          .filter(modType => fileMergers
-           .find(merger => merger.modType === modType));
+          .filter(modType => fileMergers.find(merger => merger.modType === modType) !== undefined);
 
-        const purgePromise = activator !== undefined
-          ? activator.prePurge(instPath)
-            .then(() => Promise.each(mergeModTypes,
-              typeId => {
-                lastDeployment[typeId] = [];
-                return activator.purge(instPath, modPaths[typeId]);
-              }))
-            .finally(() => activator.postPurge())
-        : Promise.resolve([]);
-
-        // merge mods
-        return purgePromise.then(() => Promise.mapSeries(mergeModTypes,
-          typeId => {
+          return Promise.mapSeries(mergeModTypes, typeId => {
             const mergePath = truthy(typeId)
               ? MERGED_PATH + '.' + typeId
               : MERGED_PATH;
-
             return removePersistent(api.store, path.join(instPath, mergePath));
-          }))
+          })
           .then(() => Promise.each(mergeModTypes,
             typeId => mergeMods(api, game, instPath, modPaths[typeId],
                                 sortedModList.filter(mod => (mod.type || '') === typeId),
+                                lastDeployment[typeId],
                                 fileMergers)
           .then(mergedFiles => {
             mergedFileMap[typeId] = mergedFiles;
@@ -889,7 +876,7 @@ function checkStagingFolder(api: IExtensionApi): Promise<ITestResult> {
       },
     };
   } else if ((discovery !== undefined)
-          && (discovery.path !== undefined) 
+          && (discovery.path !== undefined)
           && isChildPath(instPath, discovery.path)) {
     result = {
       severity: 'warning',

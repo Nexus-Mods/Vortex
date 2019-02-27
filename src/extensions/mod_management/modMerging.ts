@@ -1,4 +1,4 @@
-import {IExtensionApi} from '../../types/IExtensionContext';
+import {IExtensionApi, IDeployedFile} from '../../types/IExtensionContext';
 import {IGame} from '../../types/IGame';
 import * as fs from '../../util/fs';
 import getFileList, { IFileEntry } from '../../util/getFileList';
@@ -123,6 +123,7 @@ function mergeMods(api: IExtensionApi,
                    modBasePath: string,
                    destinationPath: string,
                    mods: IMod[],
+                   deployedFiles: IDeployedFile[],
                    mergers: IResolvedMerger[]): Promise<string[]> {
   if ((mergers.length === 0) && (game.mergeArchive === undefined)) {
     return Promise.resolve([]);
@@ -136,6 +137,9 @@ function mergeMods(api: IExtensionApi,
   const fileExists = (file: string) => fs.statAsync(file)
     .then(() => Promise.resolve(true))
     .catch(() => Promise.resolve(false));
+
+  const isDeployed = (filePath: string) => deployedFiles.find(file =>
+    path.join(destinationPath, file.relPath).toLowerCase() === filePath.toLowerCase()) !== undefined
 
   // go through all files of all mods. do "mergers" immediately, store
   // archives to be merged for later
@@ -156,21 +160,34 @@ function mergeMods(api: IExtensionApi,
             const relPath = path.relative(modPath, fileEntry.filePath);
             mergedFiles.push(relPath);
             return fs.ensureDirAsync(realDest)
-              .then(() => Promise.map(merger.match.baseFiles(),
-                // Check whether the output file is already inside the destination folder
-                //  as this would signify that a previous merge has occurred and therefore
-                //  setup is not required.
-                file => fileExists(path.join(realDest, file.out)).then(outputExists => {
-                  return outputExists 
-                    ? Promise.resolve()
-                    // Output file is missing, check whether the game has a 
-                    //  pre-existing input file and use that as the base for the merge.
-                    : fileExists(file.in).then(inputExists => inputExists 
-                      ? fs.copyAsync(file.in, path.join(realDest, file.out))
-                      : Promise.resolve());
+              .then(() => Promise.map(merger.match.baseFiles(), file => {
+                if (mergedFiles.length !== 1) {
+                  // We've already started merging at this point, no reason
+                  //  to continue through merge setup.
+                  return Promise.resolve();
+                }
+
+                return Promise.all([fileExists(file.in),
+                                    fileExists(file.in + BACKUP_TAG)]).then(res => {
+                  // Check if we had created a backup file of the input file.
+                  //  This would suggest that this is a more complex merge operation
+                  //  and we should re-instate the backup file before we start merging.
+                  if (res[1]) {
+                    return fs.copyAsync(file.in + BACKUP_TAG, path.join(realDest, file.out));
+                  }
+
+                  // The existence of the input file within the deployment manifest
+                  //  suggests that the input file has already been replaced and should
+                  //  be considered a symbolic link. In this case, the input file should
+                  //  be removed as it will be replaced by the merge.
+                  if (res[0] && isDeployed(file.in)) {
+                    return fs.removeAsync(file.in);
+                  }
+
+                  return Promise.resolve();
                 })
-                .catch(err => Promise.reject(err))))
-              .then(() => merger.merge(fileEntry.filePath, realDest))
+            }))
+            .then(() => merger.merge(fileEntry.filePath, realDest))
           }
         }
         return Promise.resolve();
