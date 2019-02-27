@@ -253,9 +253,12 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       : Promise.resolve();
 
     this.nextState.progress = 0;
-    this.nextState.busy = t('Moving');
+    this.nextState.busy = t('Calculating required disk space');
     return testPathTransfer(oldInstallPath, newInstallPath)
-      .then(() => doPurge())
+      .then(() => {
+        this.nextState.busy = t('Purging previous deployment');
+        doPurge();
+      })
       .then(() => fs.ensureDirAsync(newInstallPath))
       .then(() => {
         let queue = Promise.resolve();

@@ -112,11 +112,6 @@ export function transferPath(source: string,
           return fs.mkdirsAsync(destPath);
         }
 
-        const perc = Math.floor((completed * 100) / count);
-        if (perc !== lastPerc) {
-          lastPerc = perc;
-          progress(sourcePath, destPath, perc);
-        }
         return func(sourcePath, destPath)
           .catch(err => {
             // EXDEV implies we tried to rename when source and destination are
@@ -133,6 +128,11 @@ export function transferPath(source: string,
           })
           .then(() => {
             ++completed;
+            const perc = Math.floor((completed * 100) / count);
+            if (perc !== lastPerc) {
+              lastPerc = perc;
+              progress(sourcePath, destPath, perc);
+            }
           });
       }).then(() => null));
     }, { details: false, skipHidden: false }))
