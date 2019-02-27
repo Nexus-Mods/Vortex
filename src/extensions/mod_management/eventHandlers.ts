@@ -23,6 +23,7 @@ import {getGame} from '../gamemode_management/util/getGame';
 import {setModEnabled} from '../profile_management/actions/profiles';
 import {IProfile} from '../profile_management/types/IProfile';
 
+import { setInstallPath } from './actions/settings';
 import allTypesSupported from './util/allTypesSupported';
 import { genSubDirFunc } from './util/deploy';
 import queryGameId from './util/queryGameId';
@@ -37,6 +38,50 @@ import * as path from 'path';
 import { generate as shortid } from 'shortid';
 
 const app = remote !== undefined ? remote.app : appIn;
+
+const STAGING_DIR_TAG = '__vortex_staging_folder';
+
+function writeStagingTag(api: IExtensionApi, tagPath: string) {
+  const state: IState = api.store.getState();
+  const data = {
+    instance: state.app.instanceId,
+  };
+  return fs.writeFileAsync(tagPath, JSON.stringify(data), {  encoding: 'utf8' });
+}
+
+function validateStagingTag(api: IExtensionApi, tagPath: string): Promise<void> {
+  return fs.readFileAsync(tagPath, { encoding: 'utf8' })
+    .then(data => {
+      const state: IState = api.store.getState();
+      const tag = JSON.parse(data);
+      if (tag.instance !== state.app.instanceId) {
+        return api.showDialog('question', 'Confirm', {
+          text: 'This is a staging folder but it appears to belong to a different Vortex '
+              + 'instance. If you\'re using Vortex in shared and "regular" mod, do not use '
+              + 'the same staging folder for both!',
+        }, [
+          { label: 'Cancel' },
+          { label: 'Continue' },
+        ])
+        .then(result => (result.action === 'Cancel')
+          ? Promise.reject(new UserCanceled())
+          : Promise.resolve());
+      }
+      return Promise.resolve();
+    })
+    .catch(() => {
+      return api.showDialog('question', 'Confirm', {
+        text: 'This directory is not marked as a staging folder. '
+            + 'Are you *sure* it\'s the right directory?',
+      }, [
+        { label: 'Cancel' },
+        { label: 'I\'m sure' },
+      ])
+      .then(result => result.action === 'Cancel'
+        ? Promise.reject(new UserCanceled())
+        : Promise.resolve());
+    });
+}
 
 export function onGameModeActivated(
     api: IExtensionApi, activators: IDeploymentMethod[], newGame: string) {
@@ -56,25 +101,29 @@ export function onGameModeActivated(
     return;
   }
 
-  const instPath = installPath(state);
+  let instPath = installPath(state);
 
-  let activatorProm = fs.statAsync(instPath)
+  const ensureStagingDirectory = () => fs.statAsync(instPath)
     .catch(err =>
       api.showDialog('error', 'Mod Staging Folder missing!', {
         text: 'Your mod staging folder (see below) is missing. This might happen because you '
             + 'deleted it or - if you have it on a removable drive - it is not currently '
             + 'connected.\nIf you continue now, a new staging folder will be created but all '
-            + 'your previously managed mods will be lost.',
+            + 'your previously managed mods will be lost.\n\n'
+            + 'If you have moved the folder or the drive letter changed, you can browse '
+            + 'for the new location manually, but please be extra careful to select the right '
+            + 'folder!',
         message: instPath,
       }, [
         { label: 'Quit Vortex' },
-        { label: 'Reinitialize staging folder' },
+        { label: 'Reinitialize' },
+        { label: 'Browse...' },
       ])
       .then(dialogResult => {
         if (dialogResult.action === 'Quit Vortex') {
           app.exit(0);
           return Promise.reject(new UserCanceled());
-        } else {
+        } else if (dialogResult.action === 'Reinitialize') {
           const id = shortid();
           api.sendNotification({
             id,
@@ -96,8 +145,27 @@ export function onGameModeActivated(
             .finally(() => {
               api.dismissNotification(id);
             });
+        } else { // Browse...
+          return api.selectDir({
+            defaultPath: instPath,
+            title: api.translate('Select staging folder'),
+          })
+            .then((selectedPath) => {
+              if (!truthy(selectedPath)) {
+                return Promise.reject(new UserCanceled());
+              }
+              return validateStagingTag(api, path.join(selectedPath, STAGING_DIR_TAG))
+                .then(() => {
+                  instPath = selectedPath;
+                  store.dispatch(setInstallPath(gameId, instPath));
+                });
+            })
+            .catch(() => ensureStagingDirectory());
         }
-      }));
+      }))
+      .then(() => writeStagingTag(api, path.join(instPath, STAGING_DIR_TAG)));
+
+  let activatorProm = ensureStagingDirectory();
 
   if (configuredActivator === undefined) {
     // current activator is not valid for this game. This should only occur
