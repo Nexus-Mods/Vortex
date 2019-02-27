@@ -149,18 +149,30 @@ abstract class LinkingActivator implements IDeploymentMethod {
 
     return Promise.map(removed, key =>
         this.removeDeployedFile(installationPath, dataPath, key, true)
-          .catch(() => {
+          .catch(err => {
+            log('warn', 'failed to remove deployed file', {
+              link: this.mContext.newDeployment[key].relPath,
+              error: err.message,
+            });
             ++errorCount;
           }))
       .then(() => Promise.map(sourceChanged, (key: string, idx: number) =>
           this.removeDeployedFile(installationPath, dataPath, key, false)
-          .catch(() => {
+          .catch(err => {
+            log('warn', 'failed to remove deployed file', {
+              link: this.mContext.newDeployment[key].relPath,
+              error: err.message,
+            });
             ++errorCount;
             sourceChanged.splice(idx, 1);
           })))
       .then(() => Promise.map(contentChanged, (key: string, idx: number) =>
           this.removeDeployedFile(installationPath, dataPath, key, false)
-          .catch(() => {
+          .catch(err => {
+            log('warn', 'failed to remove deployed file', {
+              link: this.mContext.newDeployment[key].relPath,
+              error: err.message,
+            });
             ++errorCount;
             contentChanged.splice(idx, 1);
           })))
