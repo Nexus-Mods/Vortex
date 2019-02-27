@@ -27,7 +27,8 @@ export class GamePathNotMatched extends Error {
   private mGamePath: string;
   private mEntryPaths: string[];
   constructor(gamePath: string, entries: string[]) {
-    super('Unable to find matching steam path - Please include your latest Vortex log file when reporting this issue!');
+    super('Unable to find matching steam path - '
+        + 'Please include your latest Vortex log file when reporting this issue!');
     this.name = this.constructor.name;
     this.mGamePath = gamePath;
     this.mEntryPaths = entries;
@@ -77,10 +78,10 @@ class Steam implements ISteam {
     if (process.platform === 'win32') {
         // windows
         try {
-          const steamPath = winapi.RegGetValue('HKEY_CURRENT_USER', 'Software\\Valve\\Steam', 'SteamPath');
+          const steamPath =
+            winapi.RegGetValue('HKEY_CURRENT_USER', 'Software\\Valve\\Steam', 'SteamPath');
           this.mBaseFolder = Promise.resolve(steamPath.value as string);
-        }
-        catch (err) {
+        } catch (err) {
           log('info', 'steam not found', { error: err.message });
           this.mBaseFolder = Promise.resolve(undefined);
         }
@@ -106,7 +107,7 @@ class Steam implements ISteam {
   }
 
   /**
-   * Look up Steam's executable path and launch arguments for 
+   * Look up Steam's executable path and launch arguments for
    *  the game we're attempting to start-up.
    * @param gamePath - Used to identify the game's cache entry and retrieve the
    *  corresponding appId.
@@ -117,7 +118,8 @@ class Steam implements ISteam {
       .then(entries => {
         const found = entries.find(entry => gamePath.indexOf(entry.gamePath) !== -1);
         if (found === undefined) {
-          return Promise.reject(new GamePathNotMatched(gamePath, entries.map(entry => entry.gamePath)));
+          return Promise.reject(
+            new GamePathNotMatched(gamePath, entries.map(entry => entry.gamePath)));
         }
 
         return this.mBaseFolder.then((basePath: string) => {
@@ -125,11 +127,11 @@ class Steam implements ISteam {
             steamPath: basePath + '\\Steam.exe',
             arguments: args !== undefined
               ? ['-applaunch', found.appid, ...args]
-              : ['-applaunch', found.appid]
+              : ['-applaunch', found.appid],
           };
           return Promise.resolve(steamExec);
         });
-      })
+      });
   }
 
   /**

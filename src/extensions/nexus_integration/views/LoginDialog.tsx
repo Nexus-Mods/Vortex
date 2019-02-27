@@ -190,7 +190,7 @@ class LoginDialog extends ComponentEx<IProps, { troubleshoot: boolean, apiKeyInp
         <h3>
           {t('If you\'re having trouble logging in in the normal way, there is another option.')}
         </h3>
-        <ul style={{ textAlign: 'left' }}>
+        <ol style={{ textAlign: 'left' }}>
           <li>
             {t('Open the Nexus Mods page and log in if you\'re not already.')}
           </li>
@@ -210,7 +210,7 @@ class LoginDialog extends ComponentEx<IProps, { troubleshoot: boolean, apiKeyInp
           <li>
             <FormControl
               componentClass='textarea'
-              style={{display: 'inline'}}
+              style={{display: 'inline', verticalAlign: 'top'}}
               placeholder={t('Paste that api key into this input field')}
               value={apiKeyInput}
               onChange={this.updateAPIKey}
@@ -226,7 +226,7 @@ class LoginDialog extends ComponentEx<IProps, { troubleshoot: boolean, apiKeyInp
               {t('Save')}
             </Button>
           </li>
-        </ul>
+        </ol>
       </div>
     );
   }
