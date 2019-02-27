@@ -20,7 +20,7 @@ import * as semvish from 'semvish';
 const ONE_MINUTE = 60 * 1000;
 const ONE_DAY = 24 * 60 * ONE_MINUTE;
 const ONE_WEEK = 7 * ONE_DAY;
-const ONE_MONTH = 30 * ONE_DAY;
+export const ONE_MONTH = 30 * ONE_DAY;
 const UPDATE_CHECK_TIMEOUT = 5 * ONE_MINUTE;
 
 /**
@@ -68,9 +68,7 @@ export function fetchRecentUpdates(store: Redux.Store<any>,
           period, nexusGameId(gameById(state, gameId), gameId)))
       .then(recentUpdates => {
         store.dispatch(setLastUpdateCheck(gameId, now, range, recentUpdates));
-        return Promise.resolve(((now - minAge) > ONE_MONTH)
-          ? undefined
-          : recentUpdates);
+        return Promise.resolve(recentUpdates);
       });
   }
 }
