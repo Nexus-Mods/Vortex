@@ -162,9 +162,7 @@ export function transferPath(source: string,
     }, { details: false, skipHidden: false }))
     .then(() => copyPromise)
     .then(() => moveDown
-      ? (removableDirectories !== undefined)
-        ? removeDirectories(removableDirectories)
-        : Promise.resolve()
+      ? removeDirectories(removableDirectories)
       : fs.removeAsync(source))
     .catch(err => (err.code === 'ENOENT')
       ? Promise.resolve()
