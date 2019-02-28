@@ -116,7 +116,11 @@ class Steam implements ISteam {
   public getSteamExecutionPath(gamePath: string, args?: string[]): Promise<ISteamExec> {
     return this.allGames()
       .then(entries => {
-        const found = entries.find(entry => gamePath.indexOf(entry.gamePath) !== -1);
+        const found = entries.find(entry => {
+          const steamPath = entry.gamePath.toLowerCase();
+          const discoveryPath = gamePath.toLowerCase();
+          return discoveryPath.indexOf(steamPath) !== -1
+        });
         if (found === undefined) {
           return Promise.reject(
             new GamePathNotMatched(gamePath, entries.map(entry => entry.gamePath)));
