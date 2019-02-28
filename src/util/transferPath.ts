@@ -94,7 +94,7 @@ export function transferPath(source: string,
   // Used to keep track of leftover empty directories when
   //  the user moves the staging folder to a directory
   //  on the same volume.
-  let removableDirectories: string[];
+  let removableDirectories: string[] = moveDown ? [] : undefined;
 
   const removeDirectories = (directories: string[]) => {
     return directories.forEach(dir => fs.removeAsync(dir)
@@ -115,7 +115,6 @@ export function transferPath(source: string,
     (statOld: fs.Stats, statNew: fs.Stats) =>
       Promise.resolve(statOld.dev === statNew.dev))
     .then((sameVolume: boolean) => {
-      removableDirectories = (sameVolume && moveDown) ? [] : undefined;
       func = sameVolume ? fs.renameAsync : fs.copyAsync;
     })
     .then(() => turbowalk(source, (entries: IEntry[]) => {
