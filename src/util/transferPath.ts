@@ -2,6 +2,7 @@ import { InsufficientDiskSpace, ProcessCanceled,
          UnsupportedOperatingSystem } from './CustomErrors';
 import * as fs from './fs';
 import { isChildPath } from './util';
+import { log } from './log';
 
 import * as Promise from 'bluebird';
 import * as diskusage from 'diskusage';
@@ -90,10 +91,31 @@ export function transferPath(source: string,
 
   let copyPromise = Promise.resolve();
 
+  // Used to remove leftover empty directories when
+  //  the user moves the staging folder to a directory
+  //  on the same volume.
+  let removableDirectories: string[];
+
+  const removeDirectories = (directories: string[]) => {
+    return directories.forEach(dir => fs.removeAsync(dir)
+      .catch(err => {
+        if (err.code === 'ENOENT') {
+          // Directory is missing - that's fine.
+          return Promise.resolve();
+        } else {
+          // Something went wrong but we expect any transfers to be completed
+          //  at this point, so we might as well just log this and keep going
+          log('warn', `${err.code} - Cannot remove ${dir}`);
+          return Promise.resolve();
+        }
+      }));
+  }
+
   return Promise.join(fs.statAsync(source), fs.statAsync(dest),
     (statOld: fs.Stats, statNew: fs.Stats) =>
       Promise.resolve(statOld.dev === statNew.dev))
     .then((sameVolume: boolean) => {
+      removableDirectories = (sameVolume && moveDown) ? [] : undefined;
       func = sameVolume ? fs.renameAsync : fs.copyAsync;
     })
     .then(() => turbowalk(source, (entries: IEntry[]) => {
@@ -109,6 +131,9 @@ export function transferPath(source: string,
         }
 
         if (entry.isDirectory) {
+          if (removableDirectories !== undefined) {
+            removableDirectories.push(entry.filePath);
+          }
           return fs.mkdirsAsync(destPath);
         }
 
@@ -138,7 +163,9 @@ export function transferPath(source: string,
     }, { details: false, skipHidden: false }))
     .then(() => copyPromise)
     .then(() => moveDown
-      ? Promise.resolve()
+      ? (removableDirectories !== undefined)
+        ? removeDirectories(removableDirectories)
+        : Promise.resolve()
       : fs.removeAsync(source))
     .catch(err => (err.code === 'ENOENT')
       ? Promise.resolve()
