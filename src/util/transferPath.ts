@@ -159,10 +159,14 @@ function removeEmptyDirectories(directories: string[]) {
         // Directory is missing - that's fine.
         return Promise.resolve();
       } else if (err.code === 'ENOTEMPTY') {
+        // The directories parameter is expected to provide filePaths to
+        //  empty directories!
         return Promise.reject(err);
       } else {
-        // Something went wrong but we expect any transfers to be completed
-        //  at this point, so we might as well just log this and keep going
+        // Something went wrong but we expect all transfers to have completed
+        //  successfully at this point. Given that reporting this to the user
+        //  via an error/warn notification would create needless panic, we log
+        //  this as a warning instead and keep going.
         log('warn', `${err.code} - Cannot remove ${dir}`);
         return Promise.resolve();
       }
