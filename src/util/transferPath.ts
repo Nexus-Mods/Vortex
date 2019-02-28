@@ -91,7 +91,7 @@ export function transferPath(source: string,
 
   let copyPromise = Promise.resolve();
 
-  // Used to remove leftover empty directories when
+  // Used to keep track of leftover empty directories when
   //  the user moves the staging folder to a directory
   //  on the same volume.
   let removableDirectories: string[];
