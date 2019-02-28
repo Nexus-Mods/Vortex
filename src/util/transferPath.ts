@@ -92,24 +92,9 @@ export function transferPath(source: string,
   let copyPromise = Promise.resolve();
 
   // Used to keep track of leftover empty directories when
-  //  the user moves the staging folder to a directory
-  //  on the same volume.
-  let removableDirectories: string[] = moveDown ? [] : undefined;
-
-  const removeDirectories = (directories: string[]) => {
-    return directories.forEach(dir => fs.removeAsync(dir)
-      .catch(err => {
-        if (err.code === 'ENOENT') {
-          // Directory is missing - that's fine.
-          return Promise.resolve();
-        } else {
-          // Something went wrong but we expect any transfers to be completed
-          //  at this point, so we might as well just log this and keep going
-          log('warn', `${err.code} - Cannot remove ${dir}`);
-          return Promise.resolve();
-        }
-      }));
-  }
+  //  the user moves the staging folder to a nested directory
+  //  within the current staging folder.
+  const removableDirectories: string[] = [];
 
   return Promise.join(fs.statAsync(source), fs.statAsync(dest),
     (statOld: fs.Stats, statNew: fs.Stats) =>
@@ -130,9 +115,7 @@ export function transferPath(source: string,
         }
 
         if (entry.isDirectory) {
-          if (removableDirectories !== undefined) {
-            removableDirectories.push(entry.filePath);
-          }
+          removableDirectories.push(entry.filePath);
           return fs.mkdirsAsync(destPath);
         }
 
@@ -162,9 +145,26 @@ export function transferPath(source: string,
     }, { details: false, skipHidden: false }))
     .then(() => copyPromise)
     .then(() => moveDown
-      ? removeDirectories(removableDirectories)
+      ? removeEmptyDirectories(removableDirectories)
       : fs.removeAsync(source))
     .catch(err => (err.code === 'ENOENT')
       ? Promise.resolve()
       : Promise.reject(err));
+}
+
+function removeEmptyDirectories(directories: string[]) {
+  return directories.forEach(dir => fs.removeAsync(dir)
+    .catch(err => {
+      if (err.code === 'ENOENT') {
+        // Directory is missing - that's fine.
+        return Promise.resolve();
+      } else if (err.code === 'ENOTEMPTY') {
+        return Promise.reject(err);
+      } else {
+        // Something went wrong but we expect any transfers to be completed
+        //  at this point, so we might as well just log this and keep going
+        log('warn', `${err.code} - Cannot remove ${dir}`);
+        return Promise.resolve();
+      }
+    }));
 }
