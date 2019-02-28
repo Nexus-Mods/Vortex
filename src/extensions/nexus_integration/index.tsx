@@ -68,7 +68,9 @@ const disableable = {
   get(obj, prop) {
     if (prop === 'disable') {
       return () => this.disabled = true;
-    } else if ((!this.disabled) || (this.nonPromiseFuncs.has(prop))) {
+    } else if ((!this.disabled)
+               || this.nonPromiseFuncs.has(prop)
+               || (typeof obj[prop] !== 'function')) {
       return obj[prop];
     } else {
       return () => Promise.reject(new APIDisabled());

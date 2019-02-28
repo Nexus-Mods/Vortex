@@ -83,9 +83,14 @@ class GitHub {
   // oldest release to be returned when retrieving releases
   private static RELEASE_CUTOFF = '0.12.7';
   private static USER_AGENT = 'Vortex';
+  private static CONFIG_BRANCH = 'announcements';
 
   private static repoUrl() {
     return 'https://api.github.com/repos/Nexus-Mods/Vortex';
+  }
+
+  private static rawUrl() {
+    return 'https://raw.githubusercontent.com/Nexus-Mods/Vortex';
   }
 
   private mReleaseCache: Promise<IGitHubRelease[]>;
@@ -103,13 +108,17 @@ class GitHub {
     return this.mReleaseCache;
   }
 
-  private query(request: string): Promise<any> {
+  public fetchConfig(config: string): Promise<any> {
+    return this.query(GitHub.rawUrl(), `${GitHub.CONFIG_BRANCH}/${config}.json`);
+  }
+
+  private query(baseUrl: string, request: string): Promise<any> {
     if ((this.mRatelimitReset !== undefined) && (this.mRatelimitReset > Date.now())) {
       return Promise.reject(new RateLimitExceeded());
     }
 
     return new Promise((resolve, reject) => {
-        const relUrl = url.parse(`${GitHub.repoUrl()}/${request}`);
+        const relUrl = url.parse(`${baseUrl}/${request}`);
         https.get({
           ..._.pick(relUrl, ['port', 'hostname', 'path']),
           headers: {
@@ -145,7 +154,7 @@ class GitHub {
   }
 
   private queryReleases(): Promise<IGitHubRelease[]> {
-    return this.query('releases')
+    return this.query(GitHub.repoUrl(), 'releases')
       .then((releases: IGitHubRelease[]) => {
         if (!Array.isArray(releases)) {
           return Promise.reject(new DataInvalid('expected array of github releases'));

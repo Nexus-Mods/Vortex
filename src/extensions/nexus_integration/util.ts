@@ -330,15 +330,6 @@ function errorFromNexusError(err: NexusError): string {
   }
 }
 
-function majorVer(input: string) {
-  let major = semver.major(input);
-  if (major === 0) {
-    // support pre-1.0 versions
-    major = semver.minor(input);
-  }
-  return major;
-}
-
 export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promise<void> {
   setApiKey(key);
   return Promise.resolve(nexus.setKey(key))
@@ -347,12 +338,11 @@ export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promis
         api.store.dispatch(setUserInfo(transformUserInfo(userInfo)));
         retrieveNexusGames(nexus);
       }
-      return github.releases();
-    }).then(releases => {
-      const latestStable = releases.reverse().find(rel => !rel.prerelease);
+      return github.fetchConfig('api');
+    }).then(configObj => {
       const currentVer = app.getVersion();
       if ((currentVer !== '0.0.1')
-          && (majorVer(latestStable.name) - majorVer(currentVer) > 1)) {
+          && (semver.lt(currentVer, configObj.minversion))) {
         (nexus as any).disable();
         api.sendNotification({
           type: 'warning',
