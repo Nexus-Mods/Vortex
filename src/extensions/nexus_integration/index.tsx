@@ -551,12 +551,28 @@ function init(context: IExtensionContextExt): boolean {
         ? mod.attributes.downloadGame
         : gameMode;
       context.api.events.emit('open-mod-page', gameId, mod.attributes.modId);
+    } else {
+      const ids = getSafe(state.persistent.downloads,
+                          ['files', instanceIds[0], 'modInfo', 'nexus', 'ids'],
+                          undefined);
+      if (ids !== undefined) {
+        context.api.events.emit('open-mod-page', ids.gameId || gameMode, ids.modId);
+      }
     }
   }, instanceIds => {
     const state: IState = context.api.store.getState();
     const gameMode = activeGameId(state);
-    return getSafe(state.persistent.mods, [gameMode, instanceIds[0], 'attributes', 'source'],
-                   undefined) === 'nexus';
+
+    let modSource = getSafe(state.persistent.mods,
+                            [gameMode, instanceIds[0], 'attributes', 'source'],
+                            undefined);
+    if (modSource === undefined) {
+      modSource = getSafe(state.persistent.downloads,
+                          ['files', instanceIds[0], 'modInfo', 'source'],
+                          undefined);
+    }
+
+    return modSource === 'nexus';
   });
   context.registerAction('downloads-action-icons', 100, 'refresh', {}, 'Query Info',
     (instanceIds: string[]) => queryInfo(context.api, instanceIds));
