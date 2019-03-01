@@ -194,7 +194,6 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
           key='dialog-content-message'
           wrap={wrap}
           value={this.translateParts(content.message, t, content.parameters)}
-          defaultValue={''}
           readOnly={true}
         />
       );
