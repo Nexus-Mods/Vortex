@@ -43,7 +43,7 @@ export function testPathTransfer(source: string, destination: string): Promise<v
     let total = 0;
     return turbowalk(filePath, entries => {
       const files = entries.filter(entry => !entry.isDirectory);
-      total = files.reduce((lhs, rhs) => lhs + rhs.size, 0);
+      total += files.reduce((lhs, rhs) => lhs + rhs.size, 0);
     }).then(() => Promise.resolve(total));
   };
 
