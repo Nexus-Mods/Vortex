@@ -510,7 +510,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           modId={modId}
           altId={altId}
           mod={this.state.modsWithState[altId]}
-          onRemove={this.removeMod}
+          onRemove={this.removeSelectedMod}
         />
       </li>
     );
@@ -753,24 +753,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     if (value === 'uninstalled') {
       // selected "not installed"
       if (this.state.modsWithState[modId].state !== 'downloaded') {
-        this.context.api.events.emit('remove-mod', gameMode, modId, (err) => {
-          if (err !== null) {
-            if (err instanceof UserCanceled) {
-              // the user knows that he cancelled, no need to notify
-              return;
-            } else if (err instanceof TemporaryError) {
-              return this.context.api.showErrorNotification(
-                'Failed to remove mod, please try again',
-                err.message, { allowReport: false });
-            } else if (err instanceof ProcessCanceled) {
-              return this.context.api.showErrorNotification('Failed to remove mod', err.message,
-                { allowReport: false });
-            } else {
-              return this.context.api.showErrorNotification('Failed to remove mod', err);
-            }
-          }
-          this.context.api.events.emit('mods-enabled', [modId], value, gameMode);
-        });
+        this.removeMods([modId]);
       }
     } else if (this.state.modsWithState[modId].state === 'downloaded') {
       // selected "enabled" or "disabled" from "not installed" so first the mod
@@ -885,34 +868,30 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     });
   }
 
-  private removeMod = (modId: string) => {
-    this.removeSelected([modId]);
+  private removeMod(modId: string): Promise<void> {
+    const { gameMode } = this.props;
+    return new Promise((resolve, reject) => {
+      this.context.api.events.emit('remove-mod', gameMode, modId, err => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve();
+        }
+      });
+    });
   }
 
   private removeMods(modIds: string[]): Promise<void> {
-    const { installPath, mods } = this.props;
+    const { gameMode } = this.props;
+    return Promise
+      .map(modIds, modId => this.removeMod(modId))
+      .then(() => {
+        this.context.api.events.emit('mods-enabled', modIds, true, gameMode);
+      });
+  }
 
-    this.disableModsInner(modIds);
-    return new Promise<void>((resolve, reject) => {
-      this.context.api.events.emit('deploy-mods', onceCB((err: Error) => {
-        if (err === null) {
-          resolve();
-        } else {
-          reject(err);
-        }
-      }));
-    })
-      .then(() => Promise.map(modIds, key =>
-        ((mods[key] !== undefined)
-         && truthy(mods[key].installationPath)
-         && (['downloaded', 'installed'].indexOf(mods[key].state) !== -1))
-          ? fs.removeAsync(path.join(installPath, mods[key].installationPath))
-              .catch(UserCanceled, () => undefined)
-              .catch(err => {
-                this.context.api.showErrorNotification('Failed to remove mod', err);
-              })
-            : Promise.resolve())
-        .then(() => undefined));
+  private removeSelectedMod = (modId: string) => {
+    this.removeSelected([modId]);
   }
 
   private removeSelected = (modIds: string[]) => {

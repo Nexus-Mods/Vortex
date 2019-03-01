@@ -353,127 +353,126 @@ function genUpdateModDeployment() {
         const mergeModTypes = Object.keys(modPaths)
           .filter(modType => fileMergers.find(merger => merger.modType === modType) !== undefined);
 
-          return Promise.mapSeries(mergeModTypes, typeId => {
-            const mergePath = truthy(typeId)
-              ? MERGED_PATH + '.' + typeId
-              : MERGED_PATH;
-            return removePersistent(api.store, path.join(instPath, mergePath));
-          })
-          .then(() => Promise.each(mergeModTypes,
-            typeId => mergeMods(api, game, instPath, modPaths[typeId],
-                                sortedModList.filter(mod => (mod.type || '') === typeId),
-                                lastDeployment[typeId],
-                                fileMergers)
-          .then(mergedFiles => {
-            mergedFileMap[typeId] = mergedFiles;
-          }))
-          // activate them all, once per mod type
-          .then(() => {
-            progress(t('Starting deployment'), 35);
-            const deployProgress =
-              (name, percent) => progress(t('Deploying: ') + name, 50 + percent / 2);
+        return Promise.mapSeries(mergeModTypes, typeId => {
+          const mergePath = truthy(typeId)
+            ? MERGED_PATH + '.' + typeId
+            : MERGED_PATH;
+          return removePersistent(api.store, path.join(instPath, mergePath));
+        })
+        .then(() => Promise.each(mergeModTypes,
+          typeId => mergeMods(api, game, instPath, modPaths[typeId],
+                              sortedModList.filter(mod => (mod.type || '') === typeId),
+                              lastDeployment[typeId],
+                              fileMergers)
+        .then(mergedFiles => {
+          mergedFileMap[typeId] = mergedFiles;
+        }))
+        // activate them all, once per mod type
+        .then(() => {
+          progress(t('Starting deployment'), 35);
+          const deployProgress =
+            (name, percent) => progress(t('Deploying: ') + name, 50 + percent / 2);
 
-            const undiscovered = Object.keys(modPaths).filter(typeId => !truthy(modPaths[typeId]));
-            let prom = Promise.resolve();
-            if (undiscovered.length !== 0) {
-              prom = api.showDialog('error', 'Deployment target unknown', {
-                text: 'The deployment directory for some mod type(s) ({{ types }}) '
-                    + 'is unknown. Mods of these types will not be deployed. '
-                    + 'Maybe this/these type(s) require further configuration or '
-                    + 'external tools.',
-                parameters: {
-                  types: undiscovered.join(', '),
-                },
-              }, [ { label: 'Cancel' }, { label: 'Ignore' } ])
-              .then(result => (result.action === 'Cancel')
-                  ? Promise.reject(new UserCanceled())
-                  : Promise.resolve());
-            }
-            const overwritten: IMod[] = [];
-            return prom
-              .then(() => Promise.each(
-                Object.keys(modPaths).filter(typeId => undiscovered.indexOf(typeId) === -1),
-                typeId => {
-                  const filteredModList = sortedModList.filter(mod => (mod.type || '') === typeId);
-                  log('debug', 'Deploying mod type',
-                      { typeId, path: modPaths[typeId], count: lastDeployment[typeId].length });
-                  return deployMods(api,
-                                    game.id,
-                                    instPath, modPaths[typeId],
-                                    filteredModList,
-                                    activator, lastDeployment[typeId],
-                                    typeId, new Set(mergedFileMap[typeId]),
-                                    genSubDirFunc(game),
-                                    deployProgress)
-                    .then(newActivation => {
-                      overwritten.push(...filteredModList.filter(mod =>
-                        newActivation.find(entry =>
-                          entry.source === mod.installationPath) === undefined));
+          const undiscovered = Object.keys(modPaths).filter(typeId => !truthy(modPaths[typeId]));
+          let prom = Promise.resolve();
+          if (undiscovered.length !== 0) {
+            prom = api.showDialog('error', 'Deployment target unknown', {
+              text: 'The deployment directory for some mod type(s) ({{ types }}) '
+                  + 'is unknown. Mods of these types will not be deployed. '
+                  + 'Maybe this/these type(s) require further configuration or '
+                  + 'external tools.',
+              parameters: {
+                types: undiscovered.join(', '),
+              },
+            }, [ { label: 'Cancel' }, { label: 'Ignore' } ])
+            .then(result => (result.action === 'Cancel')
+                ? Promise.reject(new UserCanceled())
+                : Promise.resolve());
+          }
+          const overwritten: IMod[] = [];
+          return prom
+            .then(() => Promise.each(
+              Object.keys(modPaths).filter(typeId => undiscovered.indexOf(typeId) === -1),
+              typeId => {
+                const filteredModList = sortedModList.filter(mod => (mod.type || '') === typeId);
+                log('debug', 'Deploying mod type',
+                    { typeId, path: modPaths[typeId], count: lastDeployment[typeId].length });
+                return deployMods(api,
+                                  game.id,
+                                  instPath, modPaths[typeId],
+                                  filteredModList,
+                                  activator, lastDeployment[typeId],
+                                  typeId, new Set(mergedFileMap[typeId]),
+                                  genSubDirFunc(game),
+                                  deployProgress)
+                  .then(newActivation => {
+                    overwritten.push(...filteredModList.filter(mod =>
+                      newActivation.find(entry =>
+                        entry.source === mod.installationPath) === undefined));
 
-                      newDeployment[typeId] = newActivation;
+                    newDeployment[typeId] = newActivation;
 
-                      return doSaveActivation(api, typeId, modPaths[typeId],
-                                              newActivation, activator.id)
-                        .catch(err => api.showDialog('error', 'Saving manifest failed', {
-                          text: 'Saving the manifest failed (see error below). '
-                              + 'This could lead to errors later on, ',
-                          message: err.message,
-                        }, []));
-                    });
-                }))
-              .then(() => {
-                progress(t('Running post-deployment events'), 99);
-                return api.emitAndAwait('did-deploy', profile.id, newDeployment,
-                                        (title: string) => {
-                  progress(title, 99);
-                });
-                })
-              .then(() => {
-                if (overwritten.length > 0) {
-                  api.sendNotification({
-                    id: 'redundant-mods',
-                    type: 'info',
-                    message: 'Some mods are redundant',
-                    actions: [
-                      { title: 'Show', action: dismiss => {
-                        return api.showDialog('info', 'Redundant mods', {
-                          text: 'Some of the enabled mods either contain no files or all files '
-                              + 'they do contain are entirely overwritten by another mod. '
-                              + 'These redundant mods don\'t do any harm except slow down '
-                              + 'deployment a bit.',
-                          checkboxes: overwritten.map((mod: IMod): ICheckbox => ({
-                            id: mod.id,
-                            text: renderModName(mod),
-                            value: true,
-                          })),
-                        }, [
-                          { label: 'Disable selected' },
-                          { label: 'Close', default: true },
-                        ]).then(result => {
-                          if (result.action === 'Disable selected') {
-                            Object.keys(result.input)
-                              .filter(modId => result.input[modId])
-                              .forEach(modId => {
-                                api.store.dispatch(setModEnabled(profile.id, modId, false));
-                              });
-                            dismiss();
-                          }
-                        });
-                      } },
-                    ],
+                    return doSaveActivation(api, typeId, modPaths[typeId],
+                                            newActivation, activator.id)
+                      .catch(err => api.showDialog('error', 'Saving manifest failed', {
+                        text: 'Saving the manifest failed (see error below). '
+                            + 'This could lead to errors later on, ',
+                        message: err.message,
+                      }, []));
                   });
-                }
+              }))
+            .then(() => {
+              progress(t('Running post-deployment events'), 99);
+              return api.emitAndAwait('did-deploy', profile.id, newDeployment,
+                                      (title: string) => {
+                progress(title, 99);
               });
-          })
-          .then(() => {
-            progress(t('Preparing game settings'), 100);
-            return bakeSettings(api, profile, sortedModList);
-          }))
-          .then(() => {
-            api.store.dispatch(setDeploymentNecessary(game.id, false));
-          });
+              })
+            .then(() => {
+              if (overwritten.length > 0) {
+                api.sendNotification({
+                  id: 'redundant-mods',
+                  type: 'info',
+                  message: 'Some mods are redundant',
+                  actions: [
+                    { title: 'Show', action: dismiss => {
+                      return api.showDialog('info', 'Redundant mods', {
+                        text: 'Some of the enabled mods either contain no files or all files '
+                            + 'they do contain are entirely overwritten by another mod. '
+                            + 'These redundant mods don\'t do any harm except slow down '
+                            + 'deployment a bit.',
+                        checkboxes: overwritten.map((mod: IMod): ICheckbox => ({
+                          id: mod.id,
+                          text: renderModName(mod),
+                          value: true,
+                        })),
+                      }, [
+                        { label: 'Disable selected' },
+                        { label: 'Close', default: true },
+                      ]).then(result => {
+                        if (result.action === 'Disable selected') {
+                          Object.keys(result.input)
+                            .filter(modId => result.input[modId])
+                            .forEach(modId => {
+                              api.store.dispatch(setModEnabled(profile.id, modId, false));
+                            });
+                          dismiss();
+                        }
+                      });
+                    } },
+                  ],
+                });
+              }
+            });
+        })
+        .then(() => {
+          progress(t('Preparing game settings'), 100);
+          return bakeSettings(api, profile, sortedModList);
+        }))
+        .then(() => {
+          api.store.dispatch(setDeploymentNecessary(game.id, false));
+        });
       })
-
       .catch(UserCanceled, () => undefined)
       .catch(ProcessCanceled, err => {
         api.sendNotification({
@@ -678,10 +677,8 @@ function onModsEnabled(api: IExtensionApi, deploymentTimer: Debouncer) {
     });
     if (state.settings.automation.deploy) {
       deploymentTimer.schedule(undefined, false);
-    } else {
-      if (!state.persistent.deployment.needToDeploy[gameId]) {
-        store.dispatch(setDeploymentNecessary(gameId, true));
-  }
+    } else if (!state.persistent.deployment.needToDeploy[gameId]) {
+      store.dispatch(setDeploymentNecessary(gameId, true));
     }
   };
 }

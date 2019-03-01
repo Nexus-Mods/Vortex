@@ -1,4 +1,4 @@
-import {IExtensionApi, IDeployedFile} from '../../types/IExtensionContext';
+import {IDeployedFile, IExtensionApi} from '../../types/IExtensionContext';
 import {IGame} from '../../types/IGame';
 import * as fs from '../../util/fs';
 import getFileList, { IFileEntry } from '../../util/getFileList';
@@ -139,7 +139,8 @@ function mergeMods(api: IExtensionApi,
     .catch(() => Promise.resolve(false));
 
   const isDeployed = (filePath: string) => deployedFiles.find(file =>
-    path.join(destinationPath, file.relPath).toLowerCase() === filePath.toLowerCase()) !== undefined
+    path.join(destinationPath, file.relPath).toLowerCase()
+    === filePath.toLowerCase()) !== undefined;
 
   // go through all files of all mods. do "mergers" immediately, store
   // archives to be merged for later
@@ -179,7 +180,7 @@ function mergeMods(api: IExtensionApi,
                   //  created by Vortex when deploying the output file, and a pre-existing input
                   //  file was found during deployment. (See res[0], item 2). When res[1] === true,
                   //  this is a clear indication that we have previously deployed mods for this
-                  //  modType; to avoid losing default game generated data, we MUST use the backup 
+                  //  modType; to avoid losing default game generated data, we MUST use the backup
                   //  file as the base for the merge.
                   if (res[1]) {
                     // We found a backup file, use this file as the base for the merge.
@@ -195,9 +196,9 @@ function mergeMods(api: IExtensionApi,
                   }
 
                   return Promise.resolve();
-                })
+                });
             }))
-            .then(() => merger.merge(fileEntry.filePath, realDest))
+            .then(() => merger.merge(fileEntry.filePath, realDest));
           }
         }
         return Promise.resolve();

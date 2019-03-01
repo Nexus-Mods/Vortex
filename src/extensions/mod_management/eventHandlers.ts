@@ -355,7 +355,6 @@ export function onRemoveMod(api: IExtensionApi,
       : lastActive.profileId;
   }
   const profile: IProfile = getSafe(state, ['persistent', 'profiles', profileId], undefined);
-  const wasEnabled: boolean = getSafe(profile, ['modState', modId, 'enabled'], false);
 
   store.dispatch(setModEnabled(profileId, modId, false));
 
@@ -387,9 +386,6 @@ export function onRemoveMod(api: IExtensionApi,
   //   anyway
 
   const undeployMod = () => {
-    if (!wasEnabled) {
-      return Promise.resolve();
-    }
     return undeploy(api, activators, gameMode, mod)
       .catch({ code: 'ENOTFOUND' }, err => {
         return api.showDialog('error', 'Mod not found', {
