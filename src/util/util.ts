@@ -59,6 +59,21 @@ function checksum(input: string | Buffer): string {
     .digest('hex');
 }
 
+export function fileMD5(filePath: string): Promise<string> {
+  return new Promise<string>((resolve, reject) => {
+    const hash = createHash('md5');
+    const stream = fs.createReadStream(filePath);
+    stream.on('readable', () => {
+      const data = stream.read();
+      if (data) {
+        hash.update(data);
+      }
+    });
+    stream.on('end', () => resolve(hash.digest('hex')));
+    stream.on('error', reject);
+  });
+}
+
 export function writeFileAtomic(filePath: string, input: string | Buffer,
                                 options?: fs.WriteFileOptions) {
   let cleanup: () => void;
