@@ -249,7 +249,8 @@ function main(context: IExtensionContext) {
           log('info', 'user canceled baking game settings');
         })
         .catch(err => {
-          context.api.showErrorNotification('Failed to bake settings files', err);
+          context.api.showErrorNotification('Failed to bake settings files', err,
+            { allowReport: (err.stack.indexOf('not enough space on the disk') === -1) });
         });
     });
 
