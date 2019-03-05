@@ -8,11 +8,13 @@ import FormFeedback from './FormFeedback';
 export interface IProps {
   value: string;
   onChange: (newValue: string) => void;
+  onFocus?: (focused: boolean) => void;
   id?: string;
   label?: string;
   readOnly?: boolean;
   placeholder?: string;
   validate?: (value: any) => ValidationState;
+  debounceTimer?: number;
 }
 
 interface IComponentState {
@@ -44,7 +46,7 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
         this.props.onChange(newValue);
       }
       return null;
-    }, 1000);
+    }, this.props.debounceTimer | 1000);
   }
 
   public componentWillReceiveProps(newProps: IProps) {
@@ -68,6 +70,8 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
         onChange={this.onChange}
         readOnly={readOnly}
         placeholder={placeholder}
+        onBlur={this.onBlur}
+        onFocus={this.onFocus}
       />
     );
 
@@ -84,6 +88,22 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
       );
     } else {
       return content;
+    }
+  }
+
+  private onBlur = (evt: React.FocusEvent<HTMLInputElement>) => {
+    const { onFocus } = this.props;
+    evt.preventDefault();
+    if (onFocus) {
+      onFocus(false);
+    }
+  }
+
+  private onFocus = (evt: React.FocusEvent<HTMLInputElement>) => {
+    const { onFocus } = this.props;
+    evt.preventDefault();
+    if (onFocus) {
+      onFocus(true);
     }
   }
 
