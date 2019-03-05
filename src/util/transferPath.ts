@@ -96,6 +96,8 @@ export function transferPath(source: string,
   //  within the current staging folder.
   const removableDirectories: string[] = [];
 
+  let exception: Error;
+
   return Promise.join(fs.statAsync(source), fs.statAsync(dest),
     (statOld: fs.Stats, statNew: fs.Stats) =>
       Promise.resolve(statOld.dev === statNew.dev))
@@ -141,15 +143,22 @@ export function transferPath(source: string,
               progress(sourcePath, destPath, perc);
             }
           });
-      }).then(() => null));
+      })
+      .then(() => null)
+      .catch(err => {
+        exception = err;
+        return null;
+      }));
     }, { details: false, skipHidden: false }))
-    .then(() => copyPromise)
+    .then(() => copyPromise.then(() => (exception !== undefined)
+        ? Promise.reject(exception)
+        : Promise.resolve()))
     .then(() => moveDown
       ? removeEmptyDirectories(removableDirectories)
       : fs.removeAsync(source))
     .catch(err => (err.code === 'ENOENT')
-      ? Promise.resolve()
-      : Promise.reject(err));
+        ? Promise.resolve()
+        : Promise.reject(err));
 }
 
 function removeEmptyDirectories(directories: string[]) {
