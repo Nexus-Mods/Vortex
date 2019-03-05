@@ -134,6 +134,15 @@ function errorHandler(evt: any) {
     return;
   }
 
+  if (error.name === 'Invariant Violation') {
+    // these may not get caught, even when we have an ErrorBoundary, if the exception happens
+    // in some callback. Onfortunately this also makes these errors almost impossible to find,
+    // the code-stack is pointless (it's only react interna) and the component-stack gets
+    // stripped in production builds.
+    log('error', 'react invariant violation', { error: error.message, stack: error.stack });
+    return;
+  }
+
   if ((error !== undefined)
       && (error.stack !== undefined)
       // TODO: socket hang up should trigger another error that we catch,
