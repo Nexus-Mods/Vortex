@@ -216,7 +216,6 @@ const openAsync = genWrapperAsync(fs.openAsync);
 const readdirAsync = genWrapperAsync(fs.readdirAsync);
 const readFileAsync = genWrapperAsync(fs.readFileAsync);
 const readlinkAsync = genWrapperAsync(fs.readlinkAsync);
-const removeAsync = genWrapperAsync(fs.removeAsync);
 const statAsync = genWrapperAsync(fs.statAsync);
 const symlinkAsync = genWrapperAsync(fs.symlinkAsync);
 const utimesAsync = genWrapperAsync(fs.utimesAsync);
@@ -237,7 +236,6 @@ export {
   readlinkAsync,
   readdirAsync,
   readFileAsync,
-  removeAsync,
   statAsync,
   symlinkAsync,
   utimesAsync,
@@ -370,6 +368,33 @@ function rmdirInt(dirPath: string, stackErr: Error, tries: number): PromiseBB<vo
       }
       throw restackErr(err, stackErr);
     });
+}
+
+export function removeAsync(remPath: string): PromiseBB<void> {
+  const stackErr = new Error();
+  return removeInt(remPath, stackErr);
+}
+
+function removeInt(remPath: string, stackErr: Error): PromiseBB<void> {
+  return rimrafAsync(remPath)
+    .catch(err => errorHandler(err, stackErr)
+      .then(() => removeInt(remPath, stackErr)));
+}
+
+function rimrafAsync(remPath: string): PromiseBB<void> {
+  return new PromiseBB((resolve, reject) => {
+    // don't use the rimraf implementation of busy retries because it's f*cked:
+    // https://github.com/isaacs/rimraf/issues/187
+    rimraf(remPath, {
+      maxBusyTries: 0,
+    }, err => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve();
+      }
+    });
+  });
 }
 
 function elevated(func: (ipc, req: NodeRequireFunction) => Promise<void>,
