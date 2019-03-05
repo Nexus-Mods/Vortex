@@ -41,7 +41,7 @@ describe('relativeTime', () => {
 
    it('returns a time value (month test)', function () {
     let now = new Date();
-    now.setMonth(now.getMonth() - 1);
+    now.setMonth(now.getMonth() - 2);
     const result = relativeTime(now, t)
     expect(result).toEqual('{{ count }} month ago');
   });
