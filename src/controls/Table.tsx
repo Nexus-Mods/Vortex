@@ -670,7 +670,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     if (offset !== 0) {
       evt.preventDefault();
       const newItem = this.selectRelative(offset);
-      if (this.mRowRefs[newItem] !== undefined) {
+      if ((this.mRowRefs[newItem] !== undefined) && this.mMounted) {
         this.scrollToItem(
           ReactDOM.findDOMNode(this.mRowRefs[newItem]) as HTMLElement, Math.abs(offset) > 1);
       }
