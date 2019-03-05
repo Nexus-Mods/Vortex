@@ -39,12 +39,13 @@ import { generate as shortid } from 'shortid';
 
 const app = remote !== undefined ? remote.app : appIn;
 
-const STAGING_DIR_TAG = '__vortex_staging_folder';
+export const STAGING_DIR_TAG = '__vortex_staging_folder';
 
-function writeStagingTag(api: IExtensionApi, tagPath: string) {
+function writeStagingTag(api: IExtensionApi, tagPath: string, gameId: string) {
   const state: IState = api.store.getState();
   const data = {
     instance: state.app.instanceId,
+    game: gameId,
   };
   return fs.writeFileAsync(tagPath, JSON.stringify(data), {  encoding: 'utf8' });
 }
@@ -163,7 +164,7 @@ export function onGameModeActivated(
             .catch(() => ensureStagingDirectory());
         }
       }))
-      .then(() => writeStagingTag(api, path.join(instPath, STAGING_DIR_TAG)));
+      .then(() => writeStagingTag(api, path.join(instPath, STAGING_DIR_TAG), gameId));
 
   let activatorProm = ensureStagingDirectory();
 
