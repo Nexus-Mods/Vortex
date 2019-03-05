@@ -266,13 +266,15 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         if (oldInstallPath !== newInstallPath) {
           queue = queue
             .then(() => fs.readdirAsync(newInstallPath))
-            .then(files => { fileCount += files.length; });
+            .then(files => {
+              fileCount += files.length;
+            });
         }
         // ensure the destination directories are empty
         return queue.then(() => new Promise((resolve, reject) => {
-          if (fileCount > 0) {
+         if (fileCount > 0) {
             this.props.onShowDialog('info', 'Invalid Destination', {
-              message: 'The destination directory has to be empty',
+              message: 'The destination folder has to be empty',
             }, [{ label: 'Ok', action: () => reject(null) }]);
           } else {
             resolve();

@@ -6,8 +6,8 @@ import {log} from '../../../util/log';
 import {getSafe} from '../../../util/storeHelper';
 import {isNullOrWhitespace} from '../../../util/util';
 
-import {getGame} from '../../gamemode_management/util/getGame';
 import {IDiscoveryResult} from '../../gamemode_management/types/IDiscoveryResult';
+import {getGame} from '../../gamemode_management/util/getGame';
 
 import DelegateBase from './DelegateBase';
 
@@ -15,8 +15,8 @@ import * as Promise from 'bluebird';
 import { app as appIn, remote} from 'electron';
 import getVersion from 'exe-version';
 import * as path from 'path';
-import * as util from 'util';
 import turbowalk from 'turbowalk';
+import * as util from 'util';
 
 const app = appIn || remote.app;
 
@@ -144,8 +144,7 @@ export class Context extends DelegateBase {
         entries
           .filter(iter => !iter.isDirectory)
           .filter(filterFunc)
-          .map(iter => path.relative(rootPath, iter.filePath))
-      );
+          .map(iter => path.relative(rootPath, iter.filePath)));
     })
     .then(() => fileList);
   }

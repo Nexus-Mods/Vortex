@@ -50,7 +50,7 @@ process.env.SASS_BINARY_PATH = path.resolve(getVortexPath('modules'), 'node-sass
 
 import { addNotification } from './actions/notifications';
 import reducer, { Decision } from './reducers/index';
-import { terminate, toError, setOutdated } from './util/errorHandling';
+import { setOutdated, terminate, toError } from './util/errorHandling';
 import ExtensionManager from './util/ExtensionManager';
 import { ExtensionProvider } from './util/ExtensionProvider';
 import GlobalNotifications from './util/GlobalNotifications';
@@ -63,6 +63,7 @@ import MainWindow from './views/MainWindow';
 
 import * as Promise from 'bluebird';
 import { ipcRenderer, remote, webFrame } from 'electron';
+import { forwardToMain, getInitialStateRenderer, replayActionRenderer } from 'electron-redux';
 import { EventEmitter } from 'events';
 import * as I18next from 'i18next';
 import { changeLanguage } from 'i18next';
@@ -71,18 +72,17 @@ import * as ReactDOM from 'react-dom';
 import { I18nextProvider } from 'react-i18next';
 import { Provider } from 'react-redux';
 import { applyMiddleware, compose, createStore } from 'redux';
-import { forwardToMain, getInitialStateRenderer, replayActionRenderer } from 'electron-redux';
 import thunkMiddleware from 'redux-thunk';
 
 import crashDump from 'crash-dump';
 
 // ensures tsc includes this dependency
+import { ThunkStore } from './types/IExtensionContext';
+import { UserCanceled } from './util/CustomErrors';
 import {} from './util/extensionRequire';
 import { reduxLogger } from './util/reduxLogger';
-import { ThunkStore } from './types/IExtensionContext';
-import { getAllPropertyNames } from './util/util';
-import { UserCanceled } from './util/CustomErrors';
 import { getSafe } from './util/storeHelper';
+import { getAllPropertyNames } from './util/util';
 
 log('debug', 'renderer process started', { pid: process.pid });
 
