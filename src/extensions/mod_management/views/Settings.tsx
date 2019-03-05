@@ -356,6 +356,11 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       onShowError('Failed to purge previous deployment, please try again',
                   err, false);
     })
+    .catch(NoDeployment, err => {
+      onShowError('Failed to purge previous deployment, '
+                + 'please select a mods deployment method in the settings page',
+                  err, false);
+    })
     .catch(err => {
       onShowError('Failed to purge previous deployment', err, true);
     });
