@@ -16,6 +16,7 @@ import { getSafe } from '../../../util/storeHelper';
 import { testPathTransfer, transferPath } from '../../../util/transferPath';
 import { isChildPath } from '../../../util/util';
 import { setDownloadPath, setMaxDownloads } from '../actions/settings';
+import { setTransferDownloads } from '../actions/transfer';
 
 import getDownloadPath, {getDownloadPathPattern} from '../util/getDownloadPath';
 
@@ -40,6 +41,7 @@ interface IConnectedProps {
 
 interface IActionProps {
   onSetDownloadPath: (newPath: string) => void;
+  onSetTransfer: (dest: string) => void;
   onSetMaxDownloads: (value: number) => void;
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
                  actions: DialogActions) => Promise<IDialogResult>;
@@ -56,7 +58,7 @@ interface IComponentState {
 }
 
 const nop = () => null;
-
+/* tslint:disable:no-namespace no-internal-module whitespace */
 class Settings extends ComponentEx<IProps, IComponentState> {
   constructor(props: IProps) {
     super(props);
@@ -276,7 +278,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private apply = () => {
-    const { t, onSetDownloadPath, onShowDialog, onShowError } = this.props;
+    const { t, onSetDownloadPath, onShowDialog, onShowError, onSetTransfer } = this.props;
     const newPath: string = getDownloadPath(this.state.downloadPath);
     const oldPath: string = getDownloadPath(this.props.downloadPath);
 
@@ -347,7 +349,22 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         onSetDownloadPath(this.state.downloadPath);
         this.context.api.events.emit('did-move-downloads');
       })
-      .catch(UserCanceled, () => null)
+      .catch(UserCanceled, () => {
+        // Clean up the destination folder.
+        return fs.removeAsync(newPath)
+          .then(() => onSetTransfer(undefined))
+          .catch(err => {
+            if (err.code === 'ENOENT') {
+              // Folder is already gone, that's fine.
+              onSetTransfer(undefined)
+            } else if (err.code === 'EPERM') {
+              onShowError('Destination folder is not writable', 'Vortex is unable to clean up the '
+                        + 'destination folder due to a permissions issue.', false);
+            } else {
+              onShowError('Transfer clean-up failed', err, false);
+            }
+          })
+      })
       .catch(InsufficientDiskSpace, () => notEnoughDiskSpace())
       .catch(UnsupportedOperatingSystem, () =>
         onShowError('Unsupported operating system',
@@ -386,17 +403,19 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private transferPath() {
+    const { onSetTransfer } = this.props;
     const oldPath = getDownloadPath(this.props.downloadPath);
     const newPath = getDownloadPath(this.state.downloadPath);
 
     this.context.api.events.emit('will-move-downloads');
 
+    onSetTransfer(newPath);
     return transferPath(oldPath, newPath, (from: string, to: string, progress: number) => {
       log('debug', 'transfer download', { from, to });
       if (progress > this.state.progress) {
         this.nextState.progress = progress;
       }
-    });
+    }).then(() => onSetTransfer(undefined));
   }
 }
 
@@ -413,6 +432,7 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
   return {
     onSetDownloadPath: (newPath: string) => dispatch(setDownloadPath(newPath)),
     onSetMaxDownloads: (value: number) => dispatch(setMaxDownloads(value)),
+    onSetTransfer: (dest: string) => dispatch(setTransferDownloads(dest)),
     onShowDialog: (type, title, content, actions) =>
       dispatch(showDialog(type, title, content, actions)),
     onShowError: (message: string, details: string | Error, allowReport): void =>

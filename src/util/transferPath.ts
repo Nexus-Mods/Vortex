@@ -1,5 +1,5 @@
 import { InsufficientDiskSpace, ProcessCanceled,
-         UnsupportedOperatingSystem } from './CustomErrors';
+         UnsupportedOperatingSystem, UserCanceled } from './CustomErrors';
 import * as fs from './fs';
 import { isChildPath } from './util';
 import { log } from './log';
@@ -9,6 +9,7 @@ import * as diskusage from 'diskusage';
 import * as path from 'path';
 import turbowalk, { IEntry } from 'turbowalk';
 import * as winapi from 'winapi-bindings';
+import { STAGING_DIR_TAG } from '../extensions/mod_management/eventHandlers';
 
 const MIN_DISK_SPACE_OFFSET = 512 * 1024 * 1024;
 
@@ -85,9 +86,9 @@ export function transferPath(source: string,
 
   let func = fs.copyAsync;
 
-  let completed = 0;
+  let completed: number = 0;
   let count: number = 0;
-  let lastPerc = 0;
+  let lastPerc: number = 0;
 
   let copyPromise = Promise.resolve();
 
@@ -102,7 +103,7 @@ export function transferPath(source: string,
     (statOld: fs.Stats, statNew: fs.Stats) =>
       Promise.resolve(statOld.dev === statNew.dev))
     .then((sameVolume: boolean) => {
-      func = sameVolume ? fs.renameAsync : fs.copyAsync;
+      func = sameVolume ? linkFile : fs.copyAsync;
     })
     .then(() => turbowalk(source, (entries: IEntry[]) => {
       count += entries.length;
@@ -118,7 +119,10 @@ export function transferPath(source: string,
 
         if (entry.isDirectory) {
           removableDirectories.push(entry.filePath);
-          return fs.mkdirsAsync(destPath);
+          return fs.mkdirsAsync(destPath).catch(err =>
+            (exception instanceof UserCanceled)
+              ? Promise.resolve()
+              : Promise.reject(err));
         }
 
         return func(sourcePath, destPath)
@@ -132,7 +136,9 @@ export function transferPath(source: string,
             } else if (err.code === 'ENOENT') {
               return Promise.resolve();
             } else {
-              return Promise.reject(err);
+              return fs.removeAsync(dest).then(() => {
+                return Promise.reject(err);
+              });
             }
           })
           .then(() => {
@@ -151,14 +157,29 @@ export function transferPath(source: string,
       }));
     }, { details: false, skipHidden: false }))
     .then(() => copyPromise.then(() => (exception !== undefined)
-        ? Promise.reject(exception)
-        : Promise.resolve()))
+      ? Promise.reject(exception)
+      : Promise.resolve()))
     .then(() => moveDown
-      ? removeEmptyDirectories(removableDirectories)
+      ? removeStagingTag(source)
+          .then(() => removeEmptyDirectories(removableDirectories))
       : fs.removeAsync(source))
     .catch(err => (err.code === 'ENOENT')
-        ? Promise.resolve()
-        : Promise.reject(err));
+      ? Promise.resolve()
+      : Promise.reject(err));
+}
+
+function removeStagingTag(sourceDir: string) {
+  // Attempt to remove the staging folder tag.
+  //  This should only be called when the staging folder is
+  //  moved down a layer.
+  return fs.removeAsync(path.join(sourceDir, STAGING_DIR_TAG))
+    .catch(err => {
+      if (err.code !== 'ENOENT') {
+        // No point reporting this
+        log('error', 'Unable to remove staging directory tag', err);
+      }
+      return Promise.resolve()
+    });
 }
 
 function removeEmptyDirectories(directories: string[]) {
@@ -180,4 +201,14 @@ function removeEmptyDirectories(directories: string[]) {
         return Promise.resolve();
       }
     }));
+}
+
+function linkFile(source: string, dest: string): Promise<void> {
+  return fs.ensureDirAsync(path.dirname(dest))
+    .then(() => {
+      return fs.linkAsync(source, dest)
+        .catch(err => (err.code !== 'EEXIST')
+          ? Promise.reject(err)
+          : Promise.resolve());
+  });
 }
