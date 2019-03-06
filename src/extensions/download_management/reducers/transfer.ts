@@ -12,6 +12,6 @@ export const transferReducer: IReducerSpec = {
     }
   },
   defaults: {
-    downloads: {},
+    downloads: undefined,
   },
 };

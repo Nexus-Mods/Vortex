@@ -22,6 +22,7 @@ import {
 } from './actions/state';
 import { settingsReducer } from './reducers/settings';
 import { stateReducer } from './reducers/state';
+import { transferReducer } from './reducers/transfer';
 import { IDownload } from './types/IDownload';
 import { IProtocolHandlers } from './types/ProtocolHandlers';
 import getDownloadGames from './util/getDownloadGames';
@@ -38,7 +39,6 @@ import * as _ from 'lodash';
 import * as path from 'path';
 import * as Redux from 'redux';
 import {generate as shortid} from 'shortid';
-import { transferReducer } from '../mod_management/reducers/transfer';
 import { setTransferDownloads } from './actions/transfer';
 
 const app = remote !== undefined ? remote.app : appIn;
@@ -400,8 +400,7 @@ function checkPendingTransfer(api: IExtensionApi): Promise<ITestResult> {
     return Promise.resolve(result);
   }
 
-  const transferDestination = getSafe(state,
-    ['settings', 'transfer', 'mods', gameMode], undefined);
+  const transferDestination = getSafe(state, ['settings', 'transfer', 'downloads'], undefined);
   if (transferDestination === undefined) {
     return Promise.resolve(result);
   }
