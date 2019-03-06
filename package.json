@@ -9,7 +9,7 @@
     "url": "https://github.com/Nexus-Mods/Vortex"
   },
   "vortex": {
-    "electron": "2.0.16"
+    "electron": "2.0.17"
   },
   "scripts": {
     "_assets_out": "node InstallAssets.js out",
@@ -20,6 +20,7 @@
     "build_api": "cd api && yarn run build",
     "build_rest": "yarn run _assets_out && yarn run build_api && yarn run subprojects",
     "build_dist": "webpack --config webpack.main.config.js && webpack --config webpack.renderer.config.js",
+    "extract_sourcemaps": "copyfiles -u 1 app/**/*.js.map sourcemaps",
     "package": "electron-builder --config electron-builder-oneclick.json && electron-builder --config electron-builder-advanced.json",
     "predist": "yarn run --non-interactive build_api && yarn run --non-interactive _install_app && yarn run --non-interactive subprojects_app && yarn run --non-interactive _assets_app",
     "dist": "yarn run build_dist && yarn run package",
@@ -127,7 +128,7 @@
     "copyfiles": "^2.0.0",
     "cross-env": "^5.1.0",
     "devtron": "^1.4.0",
-    "electron": "2.0.16",
+    "electron": "2.0.17",
     "electron-builder": "20.15.0",
     "electron-devtools-installer": "^2.2.1",
     "electron-download-tf": "^4.3.4",
@@ -146,15 +147,15 @@
     "redux-devtools-log-monitor": "^1.4.0",
     "redux-freeze": "^0.1.5",
     "rm-local-modules": "^0.0.2",
-    "rollup-plugin-typescript": "^0.8.1",
+    "terser-webpack-plugin": "^1.2.3",
     "ts-jest": "^23.0.1",
-    "ts-loader": "^5.3.0",
+    "ts-loader": "^5.3.3",
     "tslint": "^5.8.0",
     "tslint-eslint-rules": "^5.3.1",
     "tslint-react": "^3.2.0",
     "typescript": "^2.9.2",
-    "webpack": "^4.25.1",
-    "webpack-cli": "^3.1.2",
+    "webpack": "^4.29.6",
+    "webpack-cli": "^3.2.3",
     "webpack-node-externals": "^1.7.2"
   },
   "dependencies": {
@@ -231,7 +232,6 @@
     "semvish": "^1.1.0",
     "shortid": "^2.2.13",
     "simple-vdf": "^1.1.1",
-    "source-map-support": "^0.5.9",
     "string-template": "^1.0.0",
     "tmp": "^0.0.33",
     "turbowalk": "Nexus-Mods/node-turbowalk",

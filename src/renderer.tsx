@@ -20,9 +20,6 @@ console.error = (...args) => {
 window.addEventListener('error', earlyErrHandler);
 window.addEventListener('unhandledrejection', earlyErrHandler);
 
-import * as sourceMapSupport from 'source-map-support';
-sourceMapSupport.install();
-
 import requireRemap from './util/requireRemap';
 requireRemap();
 

@@ -1,6 +1,6 @@
 const webpack = require('webpack');
 const nodeExternals = require('webpack-node-externals');
-const UglifyJSPlugin = require('uglifyjs-webpack-plugin')
+const TerserPlugin = require('terser-webpack-plugin');
 
 const mode = 'production';
 
@@ -31,12 +31,15 @@ module.exports = {
   devtool: 'source-map',
   optimization: {
     minimizer: [
-      new UglifyJSPlugin({
+      new TerserPlugin({
         cache: true,
         parallel: true,
         sourceMap: true,
-        uglifyOptions: {
-          compress: true,
+        terserOptions: {
+          compress: {},
+          output: {
+            max_line_len: 256,
+          },
           mangle: false,
           keep_fnames: true, // required atm, name mangling breaks extensions
         }

@@ -87,7 +87,6 @@
     "semvish": "^1.1.0",
     "shortid": "^2.2.13",
     "simple-vdf": "^1.1.1",
-    "source-map-support": "^0.5.9",
     "string-template": "^1.0.0",
     "tmp": "^0.0.33",
     "turbowalk": "Nexus-Mods/node-turbowalk",
