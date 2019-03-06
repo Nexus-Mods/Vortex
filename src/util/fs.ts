@@ -60,8 +60,7 @@ function nospcQuery(): PromiseBB<boolean> {
     title: 'Disk full',
     message: `Operation can't continue because the disk is full. `
            + 'Please free up some space and click retry. Cancelling the transfer operation '
-           + 'at this point will remove the destination folder and revert back to the previous '
-           + 'state.',
+           + 'at this point will remove any changes and revert back to the previous state.',
     buttons: ['Cancel', 'Retry'],
     type: 'warning',
     noLink: true,
