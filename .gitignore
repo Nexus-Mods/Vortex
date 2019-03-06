@@ -1,4 +1,4 @@
-node_modules/*
+**/node_modules/*
 typings
 dist
 dist_custom
@@ -10,6 +10,8 @@ coverage
 .vscode/.BROWSE.VC.DB*
 *.VC.db
 app/bundledPlugins
+attachments
+sourcemaps
 
 extensions/usvfs-deploy/node_modules/*
 
