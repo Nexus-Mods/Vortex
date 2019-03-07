@@ -172,8 +172,7 @@ export function onModUpdate(api: IExtensionApi, nexus: Nexus): (...args: any[]) 
   return (gameId, modId, fileId) => {
     const state: IState = api.store.getState();
     const game = gameById(api.store.getState(), gameId);
-    if (!getSafe(state, ['persistent', 'nexus', 'userInfo', 'isPremium'], false)
-      && !getSafe(state, ['persistent', 'nexus', 'userInfo', 'isSupporter'], false)) {
+    if (!getSafe(state, ['persistent', 'nexus', 'userInfo', 'isPremium'], false)) {
       // nexusmods can't let users download files directly from client, without
       // showing ads
       opn(['https://www.nexusmods.com', nexusGameId(game), 'mods', modId].join('/'))
