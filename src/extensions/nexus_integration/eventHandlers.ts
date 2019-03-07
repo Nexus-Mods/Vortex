@@ -37,7 +37,14 @@ export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
           const oldFileId = getSafe(lastDownloadTable, [dlId, ...idsPath, 'fileId'], undefined);
           const modId = getSafe(download, [...idsPath, 'modId'], undefined);
           const fileId = getSafe(download, [...idsPath, 'fileId'], undefined);
-          const gameId = getSafe(download, [...idsPath, 'gameId'], download.game[0]);
+          let gameId = getSafe(download, [...idsPath, 'gameId'], undefined);
+          if (gameId === undefined) {
+            if (Array.isArray(download.game)) {
+              gameId = download.game[0];
+            } else {
+              gameId = activeGameId(api.store.getState());
+            }
+          }
           if ((modId !== undefined)
             && ((oldModId !== modId) || (oldFileId !== fileId))) {
             return nexus.getModInfo(modId, gameId)
