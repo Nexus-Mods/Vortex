@@ -119,13 +119,11 @@ export function transferPath(source: string,
 
         if (entry.isDirectory) {
           removableDirectories.push(entry.filePath);
-          return fs.mkdirsAsync(destPath).catch(err =>
-            (exception instanceof UserCanceled)
-              ? Promise.resolve()
-              : Promise.reject(err));
+          return fs.mkdirsAsync(destPath);
         }
 
         return func(sourcePath, destPath)
+          .catch(UserCanceled, () => copyPromise.cancel())
           .catch(err => {
             // EXDEV implies we tried to rename when source and destination are
             // not in fact on the same volume. This is what comparing the stat.dev

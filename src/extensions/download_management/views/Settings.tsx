@@ -349,22 +349,6 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         onSetDownloadPath(this.state.downloadPath);
         this.context.api.events.emit('did-move-downloads');
       })
-      .catch(UserCanceled, () => {
-        // Clean up the destination folder.
-        return fs.removeAsync(newPath)
-          .then(() => onSetTransfer(undefined))
-          .catch(err => {
-            if (err.code === 'ENOENT') {
-              // Folder is already gone, that's fine.
-              onSetTransfer(undefined)
-            } else if (err.code === 'EPERM') {
-              onShowError('Destination folder is not writable', 'Vortex is unable to clean up the '
-                        + 'destination folder due to a permissions issue.', false);
-            } else {
-              onShowError('Transfer clean-up failed', err, false);
-            }
-          })
-      })
       .catch(InsufficientDiskSpace, () => notEnoughDiskSpace())
       .catch(UnsupportedOperatingSystem, () =>
         onShowError('Unsupported operating system',
@@ -383,6 +367,27 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         }
       })
       .finally(() => {
+        const state = this.context.api.store.getState();
+        // Any transfers would've completed at this point.
+        //  Check if we still have the transfer state populated,
+        //  if it is - that means that the user has cancelled the transfer,
+        //  we need to cleanup.
+        if (getSafe(state, ['settings', 'transfer', 'downloads'], undefined) !== undefined) {
+          fs.removeAsync(newPath)
+            .then(() => onSetTransfer(undefined))
+            .catch(err => {
+              if (err.code === 'ENOENT') {
+                // Folder is already gone, that's fine.
+                onSetTransfer(undefined)
+              } else if (err.code === 'EPERM') {
+                onShowError('Destination folder is not writable', 'Vortex is unable to clean up '
+                          + 'the destination folder due to a permissions issue.', false);
+              } else {
+                onShowError('Transfer clean-up failed', err, false);
+              }
+            });
+        }
+
         this.nextState.busy = undefined;
       });
   }
