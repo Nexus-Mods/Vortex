@@ -104,6 +104,7 @@ export function transferPath(source: string,
       Promise.resolve(statOld.dev === statNew.dev))
     .then((sameVolume: boolean) => {
       func = sameVolume ? linkFile : fs.copyAsync;
+      return Promise.resolve();
     })
     .then(() => turbowalk(source, (entries: IEntry[]) => {
       count += entries.length;
@@ -123,10 +124,6 @@ export function transferPath(source: string,
         }
 
         return func(sourcePath, destPath)
-          .catch(UserCanceled, (err) => {
-            copyPromise.cancel();
-            return Promise.resolve();
-          })
           .catch(err => {
             // EXDEV implies we tried to rename when source and destination are
             // not in fact on the same volume. This is what comparing the stat.dev
@@ -137,9 +134,7 @@ export function transferPath(source: string,
             } else if (err.code === 'ENOENT') {
               return Promise.resolve();
             } else {
-              return fs.removeAsync(dest).then(() => {
-                return Promise.reject(err);
-              });
+              return Promise.reject(err);
             }
           })
           .then(() => {
@@ -153,6 +148,9 @@ export function transferPath(source: string,
       })
       .then(() => null)
       .catch(err => {
+        if (err instanceof UserCanceled) {
+          copyPromise.cancel();
+        }
         exception = err;
         return null;
       }));
@@ -164,9 +162,18 @@ export function transferPath(source: string,
       ? removeStagingTag(source)
           .then(() => removeEmptyDirectories(removableDirectories))
       : fs.removeAsync(source))
-    .catch(err => (err.code === 'ENOENT')
-      ? Promise.resolve()
-      : Promise.reject(err));
+    .catch(err => {
+      if (['ENOENT', 'EPERM'].indexOf(err.code) !== -1) {
+        // We shouldn't report failure just because we encountered
+        //  a permissions issue or a missing folder.
+        //  this is a very ugly workaround to the permissions issue
+        //  we sometimes encounter due to file handles not being released.
+        log('warn', `${err.code} - Cannot remove ${source}`);
+        return Promise.resolve();
+      } else {
+        return Promise.reject(err);
+      }
+    });
 }
 
 function removeStagingTag(sourceDir: string) {
@@ -176,28 +183,26 @@ function removeStagingTag(sourceDir: string) {
   return fs.removeAsync(path.join(sourceDir, STAGING_DIR_TAG))
     .catch(err => {
       if (err.code !== 'ENOENT') {
-        // No point reporting this
+        // No point reporting this.
         log('error', 'Unable to remove staging directory tag', err);
       }
-      return Promise.resolve()
+      return Promise.resolve();
     });
 }
 
 function removeEmptyDirectories(directories: string[]) {
   return directories.forEach(dir => fs.removeAsync(dir)
     .catch(err => {
-      if (err.code === 'ENOENT') {
-        // Directory is missing - that's fine.
-        return Promise.resolve();
-      } else if (err.code === 'ENOTEMPTY') {
+      if (err.code === 'ENOTEMPTY') {
         // The directories parameter is expected to provide filePaths to
-        //  empty directories!
+        //  empty directories! In this case, clearly something went wrong with
+        //  the transfer!
         return Promise.reject(err);
       } else {
         // Something went wrong but we expect all transfers to have completed
-        //  successfully at this point. Given that reporting this to the user
-        //  via an error/warn notification would create needless panic, we log
-        //  this as a warning instead and keep going.
+        //  successfully at this point; we can't stop now as we have
+        //  already started to clean-up the source directories, and reporting an
+        //  error at this point would leave the user's transfer in a questionable state!
         log('warn', `${err.code} - Cannot remove ${dir}`);
         return Promise.resolve();
       }
