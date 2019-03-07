@@ -346,6 +346,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         }
       })
       .then(() => {
+        onSetTransfer(undefined);
         onSetDownloadPath(this.state.downloadPath);
         this.context.api.events.emit('did-move-downloads');
       })
@@ -420,7 +421,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       if (progress > this.state.progress) {
         this.nextState.progress = progress;
       }
-    }).then(() => onSetTransfer(undefined));
+    });
   }
 }
 

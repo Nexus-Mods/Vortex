@@ -197,7 +197,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       if (progress > this.state.progress) {
         this.nextState.progress = progress;
       }
-    }).then(() => onSetTransfer(gameMode, undefined));
+    });
   }
 
   private applyPaths = () => {
@@ -296,6 +296,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         }
       })
       .then(() => {
+        onSetTransfer(gameMode, undefined);
         onSetInstallPath(gameMode, this.state.installPath);
       })
       .catch(TemporaryError, err => {
