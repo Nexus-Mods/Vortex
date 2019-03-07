@@ -28,6 +28,8 @@ if (process.env.NODE_ENV === 'development') {
   const rebuildRequire = require('./util/requireRebuild').default;
   rebuildRequire();
   process.traceProcessWarnings = true;
+  const sourceMapSupport = require('source-map-support');
+  sourceMapSupport.install();
 } else {
   // webpack will replace every occurrence of process.env.NODE_ENV in its endeavour to eliminate
   // dead code. It doesn't however set the environment variable itself for externals and the

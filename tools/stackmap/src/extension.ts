@@ -60,7 +60,9 @@ export class StackItem extends vscode.TreeItem {
 	}
 
 	private sanitizeRel(input: string | null): string {
-		let res = (input || '').replace(/(.*\\webpack:\\)|(.*\\app.asar\\)|(.*\\app.asar.unpacked\\)/, 'app\\');
+		let res = (input || '')
+			.replace(/(.*\\webpack:\\)|(.*\\app.asar\\)|(.*\\app.asar.unpacked\\)/,
+					 `sourcemaps\\${version}\\`);
 		return res;
 	}
 
