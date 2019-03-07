@@ -936,7 +936,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         + '\n' + modNames.join('\n'),
       checkboxes,
     }, [ { label: 'Cancel' }, { label: 'Remove' } ])
-    .then((result: IDialogResult) => {
+      .then((result: IDialogResult) => {
         removeMods = result.action === 'Remove' && result.input.mod;
         removeArchive = result.action === 'Remove' && result.input.archive;
 
@@ -953,6 +953,10 @@ class ModList extends ComponentEx<IProps, IComponentState> {
               }
             }
           }));
+      })
+      .catch(ProcessCanceled, () => null)
+      .catch(err => {
+        this.context.api.showErrorNotification('Failed to remove mod', err);
       });
   }
 
