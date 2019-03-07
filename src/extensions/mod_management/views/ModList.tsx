@@ -15,10 +15,9 @@ import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../
 import { IState } from '../../../types/IState';
 import { ITableAttribute } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { ProcessCanceled, TemporaryError, UserCanceled } from '../../../util/CustomErrors';
+import { ProcessCanceled } from '../../../util/CustomErrors';
 import Debouncer from '../../../util/Debouncer';
-import * as fs from '../../../util/fs';
-import onceCB from '../../../util/onceCB';
+import * as selectors from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
 import MainPage from '../../../views/MainPage';
@@ -40,7 +39,6 @@ import VersionFilter from '../util/VersionFilter';
 import VersionChangelogButton from '../views/VersionChangelogButton';
 import VersionIconButton from '../views/VersionIconButton';
 
-import * as selectors from '../../../util/selectors';
 import { INSTALL_TIME, PICTURE } from '../modAttributes';
 import getText from '../texts';
 
@@ -50,14 +48,12 @@ import InstallArchiveButton from './InstallArchiveButton';
 import * as Promise from 'bluebird';
 import * as I18next from 'i18next';
 import * as _ from 'lodash';
-import * as path from 'path';
 import * as React from 'react';
 import { Button, ButtonGroup, MenuItem, Panel } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import * as semver from 'semver';
-import { profileById } from '../../../util/selectors';
 
 const PanelX: any = Panel;
 
@@ -746,16 +742,32 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
   private setModState(profileId: string, modId: string, value: string) {
     const { gameMode, onSetModEnabled } = this.props;
-    if (this.state.modsWithState[modId] === undefined) {
+    const { modsWithState } = this.state;
+    if (modsWithState[modId] === undefined) {
       return;
     }
     // direct selection
     if (value === 'uninstalled') {
       // selected "not installed"
-      if (this.state.modsWithState[modId].state !== 'downloaded') {
-        this.removeMods([modId]);
+      if (modsWithState[modId].state !== 'downloaded') {
+        this.removeMods([modId])
+        .then(() => null)
+        .catch(ProcessCanceled, err => {
+          this.context.api.sendNotification({
+            id: 'cant-remove-mod',
+            type: 'warning',
+            title: 'Failed to remove "{{modName}}"',
+            message: err.message,
+            replace: {
+              modName: modName(modsWithState[modId]),
+            }
+          });
+        })
+        .catch(err => {
+          this.context.api.showErrorNotification('Failed to remove mod', err);
+        });
       }
-    } else if (this.state.modsWithState[modId].state === 'downloaded') {
+    } else if (modsWithState[modId].state === 'downloaded') {
       // selected "enabled" or "disabled" from "not installed" so first the mod
       // needs to be installed
       this.context.api.events.emit('start-install-download', modId, (err, id) => {
@@ -954,7 +966,14 @@ class ModList extends ComponentEx<IProps, IComponentState> {
             }
           }));
       })
-      .catch(ProcessCanceled, () => null)
+      .catch(ProcessCanceled, err => {
+        this.context.api.sendNotification({
+          id: 'cant-remove-mod',
+          type: 'warning',
+          title: 'Failed to remove mods',
+          message: err.message,
+        });
+      })
       .catch(err => {
         this.context.api.showErrorNotification('Failed to remove mod', err);
       });
