@@ -65,6 +65,7 @@ function createTreeDataObject(t: I18next.TranslationFunction,
           .sort((lhs, rhs) => (categories[lhs].order - categories[rhs].order));
 
   roots.forEach(rootElement => {
+    let childCategoryModCount = 0;
     const children = Object.keys(categories)
     .filter((id: string) => (rootElement === categories[id].parentCategory))
     .sort((lhs, rhs) => (categories[lhs].order - categories[rhs].order));
@@ -74,6 +75,7 @@ function createTreeDataObject(t: I18next.TranslationFunction,
     children.forEach(element => {
       const subtitle: string = generateSubtitle(t, element, modsByCategory);
       const modCount = getSafe(modsByCategory, [element], []).length;
+      childCategoryModCount += modCount;
       const child: ICategoriesTree = {
         categoryId: element,
         title: categories[element].name,
@@ -90,7 +92,7 @@ function createTreeDataObject(t: I18next.TranslationFunction,
     categoryList.push({
       categoryId: rootElement,
       title: categories[rootElement].name,
-      subtitle: generateSubtitle(t, rootElement, modsByCategory),
+      subtitle: generateSubtitle(t, rootElement, modsByCategory, childCategoryModCount),
       expanded: false,
       parentId: undefined,
       modCount: getSafe(modsByCategory, [rootElement], []).length,

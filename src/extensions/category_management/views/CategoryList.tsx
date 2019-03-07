@@ -71,6 +71,7 @@ type IProps = IConnectedProps & IActionProps;
  * displays the list of categories related for the current game.
  *
  */
+/* tslint:disable:no-namespace no-internal-module whitespace space-within-parens */
 class CategoryList extends ComponentEx<IProps, IComponentState> {
   public context: IComponentContext;
   private mButtons: IActionDefinition[];

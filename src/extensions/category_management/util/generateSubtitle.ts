@@ -15,14 +15,17 @@ import * as I18next from 'i18next';
 
 function generateSubtitle(t: I18next.TranslationFunction,
                           categoryId: string,
-                          mods: { [categoryId: string]: IMod[] }) {
+                          mods: { [categoryId: string]: IMod[] },
+                          totalChildModCount?: number) {
   const modsCount = getSafe(mods, [categoryId], []).length;
+  let subt: string = (modsCount === 0)
+    ? t('Empty') : t('{{ count }} mods installed', {count: modsCount});
 
-  if (modsCount === 0) {
-    return t('Empty');
-  } else {
-    return t('{{ count }} mod installed', {count: modsCount});
+  if ((totalChildModCount !== undefined) && (totalChildModCount > 0)) {
+    subt = subt + t(' ({{ count }} mods in sub-categories)', {count: totalChildModCount});
   }
+
+  return subt;
 }
 
 export default generateSubtitle;
