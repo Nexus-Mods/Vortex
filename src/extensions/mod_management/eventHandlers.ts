@@ -443,6 +443,11 @@ export function onRemoveMod(api: IExtensionApi,
       api.showErrorNotification('Failed to remove mod', err.message, { allowReport: false });
     }
   })
+  .catch(UserCanceled, err => {
+    if (callback !== undefined) {
+      callback(err);
+    }
+  })
   .catch(err => {
     if (callback !== undefined) {
       callback(err);
