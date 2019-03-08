@@ -103,18 +103,19 @@ export function initApplicationMenu(extensions: ExtensionManager) {
         click(item, focusedWindow) {
           recordTranslation = !recordTranslation;
           debugTranslations(recordTranslation);
-          log('info', 'toogle', { recordTranslation, label: viewMenu[viewMenu.length - 1].label });
           const subMenu: Electron.Menu = (menu.items[1] as any).submenu as Electron.Menu;
-          subMenu.items[viewMenu.length - 1].enabled = recordTranslation;
+          subMenu.items[copyTranslationsIdx].enabled = recordTranslation;
         },
       });
+
+      let copyTranslationsIdx = viewMenu.length;
       viewMenu.push({
         label: 'Copy missing translations to clipboard',
         click(item, focusedWindow) {
           clipboard.writeText(JSON.stringify(getMissingTranslations(), undefined, 2));
         },
       });
-      viewMenu[viewMenu.length - 1].enabled = false;
+      viewMenu[copyTranslationsIdx].enabled = false;
     }
 
     viewMenu.push(...[{
