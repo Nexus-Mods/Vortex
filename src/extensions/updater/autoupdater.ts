@@ -9,10 +9,18 @@ import {ipcMain} from 'electron';
 import {autoUpdater as AUType, UpdateInfo} from 'electron-updater';
 import * as semver from 'semver';
 
+interface IProgressInfo {
+  bps: number;
+  percent: number;
+  total: number;
+  transferred: number;
+}
+
 function setupAutoUpdate(api: IExtensionApi) {
   const autoUpdater: typeof AUType = require('electron-updater').autoUpdater;
 
   const state: IState = api.store.getState();
+  let notified: boolean = false;
 
   const queryUpdate = (version: string): Promise<void> => {
     return new Promise<void>((resolve, reject) => {
@@ -21,7 +29,10 @@ function setupAutoUpdate(api: IExtensionApi) {
         return resolve();
       }
 
+      notified = true;
+
       api.sendNotification({
+        id: 'vortex-update-notification',
         type: 'info',
         title: 'Major update available',
         message: 'After installing this update you shouldn\'t go back to an older version.',
@@ -85,10 +96,22 @@ function setupAutoUpdate(api: IExtensionApi) {
     log('info', 'no update available');
   });
 
+  autoUpdater.on('download-progress', (progress: IProgressInfo) => {
+    if (notified) {
+      api.sendNotification({
+        id: 'vortex-update-notification',
+        type: 'activity',
+        message: 'Downloading update',
+        progress: progress.percent,
+      });
+    }
+  });
+
   autoUpdater.on('update-downloaded',
     (info: UpdateInfo) => {
       log('info', 'update installed');
       api.sendNotification({
+        id: 'vortex-update-notification',
         type: 'success',
         message: 'Update available',
         actions: [
