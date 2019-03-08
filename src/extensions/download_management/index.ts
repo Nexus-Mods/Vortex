@@ -19,10 +19,10 @@ import {
   setDownloadModInfo,
   setDownloadSpeed,
   setDownloadSpeeds,
+  setTransferDownloads,
 } from './actions/state';
 import { settingsReducer } from './reducers/settings';
 import { stateReducer } from './reducers/state';
-import { transferReducer } from './reducers/transfer';
 import { IDownload } from './types/IDownload';
 import { IProtocolHandlers } from './types/ProtocolHandlers';
 import getDownloadGames from './util/getDownloadGames';
@@ -39,7 +39,6 @@ import * as _ from 'lodash';
 import * as path from 'path';
 import * as Redux from 'redux';
 import {generate as shortid} from 'shortid';
-import { setTransferDownloads } from './actions/transfer';
 
 const app = remote !== undefined ? remote.app : appIn;
 
@@ -400,7 +399,8 @@ function checkPendingTransfer(api: IExtensionApi): Promise<ITestResult> {
     return Promise.resolve(result);
   }
 
-  const transferDestination = getSafe(state, ['settings', 'transfer', 'downloads'], undefined);
+  const pendingTransfer: string[] = ['persistent', 'downloads', 'pendingTransfer'];
+  const transferDestination = getSafe(state, pendingTransfer, undefined);
   if (transferDestination === undefined) {
     return Promise.resolve(result);
   }
@@ -408,11 +408,9 @@ function checkPendingTransfer(api: IExtensionApi): Promise<ITestResult> {
   result = {
     severity: 'warning',
     description: {
-      short: 'Downloads folder transfer cleanup',
-      long: 'Vortex was unable to finalize the downloads folder transfer. No worries, you can '
-          + 'still find ALL your archives in the original downloads folder! Some files '
-          + 'may have been copied over to the destination folder and may require cleanup - '
-          + 'Vortex can attempt to remove these automatically for you. (click the fix button)',
+      short: 'Folder transfer was interrupted',
+      long: 'An attempt to move the download folder was interrupted. You should let '
+          + 'Vortex clean up now, otherwise you may be left with unnecessary copies of files.',
     },
     automaticFix: () => new Promise<void>((fixResolve, fixReject) => {
       return fs.removeAsync(transferDestination)
@@ -429,8 +427,8 @@ function checkPendingTransfer(api: IExtensionApi): Promise<ITestResult> {
             fixReject();
           }
         });
-    })
-  }
+    }),
+  };
 
   return Promise.resolve(result);
 }
@@ -456,7 +454,6 @@ function init(context: IExtensionContextExt): boolean {
 
   context.registerReducer(['persistent', 'downloads'], stateReducer);
   context.registerReducer(['settings', 'downloads'], settingsReducer);
-  context.registerReducer(['settings', 'transfer'], transferReducer);
 
   context.registerDownloadProtocol = (schema: string, handler: ProtocolHandler) => {
     protocolHandlers[schema] = handler;
@@ -472,7 +469,7 @@ function init(context: IExtensionContextExt): boolean {
   });
 
   context.registerTest('verify-downloads-transfers', 'gamemode-activated',
-    () => checkPendingTransfer(context.api))
+    () => checkPendingTransfer(context.api));
 
   context.once(() => {
     const DownloadManagerImpl: typeof DownloadManager = require('./DownloadManager').default;

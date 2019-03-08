@@ -115,8 +115,15 @@ export const modsReducer: IReducerSpec = {
       const { gameId, modId, files }  = payload;
       return setSafe(state, [gameId, modId, 'fileOverrides'], files);
     },
+    [actions.setTransferMods as any]: (state, payload) => {
+      const { gameId, destination } = payload;
+      return ((destination === undefined) || (destination === ''))
+        ? deleteOrNop(state, ['pendingTransfer', gameId])
+        : setSafe(state, ['pendingTransfer', gameId], destination);
+    },
   },
   defaults: {
+    pendingTransfer: undefined,
   },
   verifiers: {
     _: {

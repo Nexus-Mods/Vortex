@@ -167,7 +167,7 @@ export function transferPath(source: string,
         //  a permissions issue or a missing folder.
         //  this is a very ugly workaround to the permissions issue
         //  we sometimes encounter due to file handles not being released.
-        log('warn', `${err.code} - Cannot remove ${source}`);
+        log('warn', 'Failed to remove source directory', err);
         return Promise.resolve();
       } else {
         return Promise.reject(err);
@@ -202,7 +202,7 @@ function removeEmptyDirectories(directories: string[]) {
         //  successfully at this point; we can't stop now as we have
         //  already started to clean-up the source directories, and reporting an
         //  error at this point would leave the user's transfer in a questionable state!
-        log('warn', `${err.code} - Cannot remove ${dir}`);
+        log('warn', 'Failed to remove leftover empty directories', err);
         return Promise.resolve();
       }
     }));

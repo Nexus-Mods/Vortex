@@ -90,3 +90,9 @@ export const setDownloadTime = safeCreateAction('SET_DOWNLOAD_TIME',
 
 export const setCompatibleGames = safeCreateAction('SET_COMPATIBLE_GAMES',
   (id: string, games: string[]) => ({ id, games }));
+
+/**
+ * Used to track transfer attempts and correctly recover if it gets interrupted.
+ */
+export const setTransferDownloads = safeCreateAction('SET_TRANSFER_DOWNLOADS',
+  (destination: string) => ({ destination }));

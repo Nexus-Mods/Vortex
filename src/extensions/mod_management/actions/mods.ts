@@ -72,3 +72,9 @@ export const setINITweakEnabled = safeCreateAction(
  */
 export const setFileOverride = safeCreateAction('SET_FILE_OVERRIDE',
   (gameId: string, modId: string, files: string[]) => ({ gameId, modId, files }));
+
+/**
+ * Used to track transfer attempts and correctly recover if it gets interrupted.
+ */
+export const setTransferMods = safeCreateAction('SET_TRANSFER_MODS',
+  (gameId: string, destination: string) => ({ gameId, destination }));

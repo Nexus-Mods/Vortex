@@ -16,7 +16,7 @@ import { getSafe } from '../../../util/storeHelper';
 import { testPathTransfer, transferPath } from '../../../util/transferPath';
 import { isChildPath } from '../../../util/util';
 import { setDownloadPath, setMaxDownloads } from '../actions/settings';
-import { setTransferDownloads } from '../actions/transfer';
+import { setTransferDownloads } from '../actions/state';
 
 import getDownloadPath, {getDownloadPathPattern} from '../util/getDownloadPath';
 
@@ -350,6 +350,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         onSetDownloadPath(this.state.downloadPath);
         this.context.api.events.emit('did-move-downloads');
       })
+      .catch(UserCanceled, () => null)
       .catch(InsufficientDiskSpace, () => notEnoughDiskSpace())
       .catch(UnsupportedOperatingSystem, () =>
         onShowError('Unsupported operating system',
@@ -373,10 +374,15 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         //  Check if we still have the transfer state populated,
         //  if it is - that means that the user has cancelled the transfer,
         //  we need to cleanup.
-        if (getSafe(state, ['settings', 'transfer', 'downloads'], undefined) !== undefined) {
-          fs.removeAsync(newPath)
-            .then(() => onSetTransfer(undefined))
+        const pendingTransfer: string[] = ['persistent', 'downloads', 'pendingTransfer'];
+        if (getSafe(state, pendingTransfer, undefined) !== undefined) {
+          return fs.removeAsync(newPath)
+            .then(() => {
+              onSetTransfer(undefined);
+              this.nextState.busy = undefined;
+            })
             .catch(err => {
+              this.nextState.busy = undefined;
               if (err.code === 'ENOENT') {
                 // Folder is already gone, that's fine.
                 onSetTransfer(undefined);
@@ -387,9 +393,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                 onShowError('Transfer clean-up failed', err, true);
               }
             });
+        } else {
+          this.nextState.busy = undefined;
         }
-
-        this.nextState.busy = undefined;
       });
   }
 

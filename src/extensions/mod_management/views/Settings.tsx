@@ -20,9 +20,11 @@ import { isChildPath } from '../../../util/util';
 import { currentGame, currentGameDiscovery } from '../../gamemode_management/selectors';
 import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../../gamemode_management/types/IGameStored';
+
 import { setDeploymentNecessary } from '../actions/deployment';
+import { setTransferMods } from '../actions/mods';
 import { setActivator, setInstallPath } from '../actions/settings';
-import { setTransferMods } from '../actions/transfer';
+
 import { IDeploymentMethod } from '../types/IDeploymentMethod';
 import { getSupportedActivators } from '../util/deploymentMethods';
 import { NoDeployment } from '../util/exceptions';
@@ -301,6 +303,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       .catch(TemporaryError, err => {
         onShowError('Failed to move directories, please try again', err, false);
       })
+      .catch(UserCanceled, () => null)
       .catch(InsufficientDiskSpace, () => notEnoughDiskSpace())
       .catch(UnsupportedOperatingSystem, () =>
         onShowError('Unsupported operating system',
@@ -327,10 +330,15 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         //  Check if we still have the transfer state populated,
         //  if it is - that means that the user has cancelled the transfer,
         //  we need to cleanup.
-        if (getSafe(state, ['settings', 'transfer', 'mods', gameMode], undefined) !== undefined) {
-          fs.removeAsync(newInstallPath)
-            .then(() => onSetTransfer(gameMode, undefined))
+        const pendingTransfer: string[] = ['persistent', 'mods', 'pendingTransfer', gameMode];
+        if (getSafe(state, pendingTransfer, undefined) !== undefined) {
+          return fs.removeAsync(newInstallPath)
+            .then(() => {
+              onSetTransfer(gameMode, undefined);
+              this.nextState.busy = undefined;
+            })
             .catch(err => {
+              this.nextState.busy = undefined;
               if (err.code === 'ENOENT') {
                 // Folder is already gone, that's fine.
                 onSetTransfer(gameMode, undefined);
@@ -341,9 +349,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                 onShowError('Transfer clean-up failed', err, true);
               }
             });
+        } else {
+          this.nextState.busy = undefined;
         }
-
-        this.nextState.busy = undefined;
       });
   }
 

@@ -157,11 +157,18 @@ export const stateReducer: IReducerSpec = {
         { gameId: payload.gameId, modId: payload.modId }),
     [action.setCompatibleGames as any]: (state, payload) =>
       setSafe(state, ['files', payload.id, 'game'], payload.games),
+    [action.setTransferDownloads as any]: (state, payload) => {
+      const { destination } = payload;
+      return ((destination === undefined) || (destination === ''))
+        ? deleteOrNop(state, ['pendingTransfer'])
+        : setSafe(state, ['pendingTransfer'], destination);
+    },
   },
   defaults: {
     speed: 0,
     speedHistory: [],
     files: {},
+    pendingTransfer: undefined,
   },
   verifiers: {
     files: {
@@ -185,10 +192,10 @@ export const stateReducer: IReducerSpec = {
                   throw new VerifierDropParent();
                  }
               },
-            }
-          }
-        }
-      }
-    }
-  }
+            },
+          },
+        },
+      },
+    },
+  },
 };

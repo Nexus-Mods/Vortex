@@ -36,14 +36,12 @@ import { setModEnabled } from '../profile_management/actions/profiles';
 import { IProfile, IProfileMod } from '../profile_management/types/IProfile';
 
 import { setDeploymentNecessary } from './actions/deployment';
-import {removeMod, setModAttribute} from './actions/mods';
+import {removeMod, setModAttribute, setTransferMods} from './actions/mods';
 import { setDeploymentProblem, showExternalChanges } from './actions/session';
-import { setTransferMods } from './actions/transfer';
 import {deploymentReducer} from './reducers/deployment';
 import {modsReducer} from './reducers/mods';
 import {sessionReducer} from './reducers/session';
 import {settingsReducer} from './reducers/settings';
-import {transferReducer} from './reducers/transfer';
 import {IDeployedFile, IFileChange, IUnavailableReason} from './types/IDeploymentMethod';
 import {IFileEntry} from './types/IFileEntry';
 import {IFileMerge} from './types/IFileMerge';
@@ -861,8 +859,8 @@ function checkPendingTransfer(api: IExtensionApi): Promise<ITestResult> {
     return Promise.resolve(result);
   }
 
-  const transferDestination = getSafe(state,
-    ['settings', 'transfer', 'mods', gameMode], undefined);
+  const pendingTransfer: string[] = ['persistent', 'mods', 'pendingTransfer', gameMode];
+  const transferDestination = getSafe(state, pendingTransfer, undefined);
   if (transferDestination === undefined) {
     return Promise.resolve(result);
   }
@@ -870,11 +868,9 @@ function checkPendingTransfer(api: IExtensionApi): Promise<ITestResult> {
   result = {
     severity: 'warning',
     description: {
-      short: 'Staging folder transfer cleanup ',
-      long: 'Vortex was unable to finalize the staging folder transfer. No worries, you can '
-          + 'still find ALL your mod files in the original staging folder! Some files '
-          + 'may have been copied over to the destination folder and may require cleanup - '
-          + 'Vortex can attempt to remove these automatically for you. (click the fix button)',
+      short: 'Folder transfer was interrupted',
+      long: 'An attempt to move the staging folder was interrupted. You should let '
+          + 'Vortex clean up now, otherwise you may be left with unnecessary copies of files.',
     },
     automaticFix: () => new Promise<void>((fixResolve, fixReject) => {
       return fs.removeAsync(transferDestination)
@@ -988,7 +984,6 @@ function init(context: IExtensionContext): boolean {
     });
 
   context.registerReducer(['session', 'mods'], sessionReducer);
-  context.registerReducer(['settings', 'transfer'], transferReducer);
   context.registerReducer(['settings', 'mods'], settingsReducer);
   context.registerReducer(['persistent', 'mods'], modsReducer);
   context.registerReducer(['persistent', 'deployment'], deploymentReducer);
