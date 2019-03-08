@@ -15,7 +15,7 @@ import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../
 import { IState } from '../../../types/IState';
 import { ITableAttribute } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { ProcessCanceled } from '../../../util/CustomErrors';
+import { ProcessCanceled, UserCanceled } from '../../../util/CustomErrors';
 import Debouncer from '../../../util/Debouncer';
 import * as selectors from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
@@ -752,6 +752,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       if (modsWithState[modId].state !== 'downloaded') {
         this.removeMods([modId])
         .then(() => null)
+        .catch(UserCanceled, () => null)
         .catch(ProcessCanceled, err => {
           this.context.api.sendNotification({
             id: 'cant-remove-mod',
@@ -974,6 +975,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           message: err.message,
         });
       })
+      .catch(UserCanceled, () => null)
       .catch(err => {
         this.context.api.showErrorNotification('Failed to remove mod', err);
       });
