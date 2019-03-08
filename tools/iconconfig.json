@@ -152,6 +152,10 @@
       "path": "{nucleo}/design-development/{nucleo_simple}_spray-2",
       "rmFill": true
     },
+    "plugin-cleaned": {
+      "path": "{nucleo}/weather/{nucleo_simple}_drop-15",
+      "rmFill": true
+    },
     "plugin-native": "{fa}/lock",
     "plugin-dont-clean": {
       "path": "{nucleo}/ui/{nucleo_simple}_security",

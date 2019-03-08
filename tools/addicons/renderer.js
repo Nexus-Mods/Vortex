@@ -48,8 +48,7 @@ const locations = [
 let config;
 
 function refreshIcons() {
-  return fs.readFile(configPath)
-  .then(data => {
+  return fs.readFile(configPath, (err, data) => {
     config = JSON.parse(data.toString());
 
     while (icons.hasChildNodes()) {

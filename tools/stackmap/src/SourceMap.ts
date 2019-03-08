@@ -7,11 +7,9 @@ const sourceMappingRE = /^\/\/# sourceMappingURL=([a-zA-Z0-9._\-\/\\]+)$/;
 class SourceMap {
   private mConsumers: { [fileName: string]: Promise<SourceMapConsumer | null>} = {};
   private mSourcePath: string;
-  private mVersion: string;
 
-  constructor(sourcePath: string, version: string) {
+  constructor(sourcePath: string) {
     this.mSourcePath = sourcePath;
-    this.mVersion = version;
     if ((process.platform === 'win32') && (sourcePath.startsWith('/'))) {
       this.mSourcePath = sourcePath.slice(1);
     }
@@ -51,9 +49,8 @@ class SourceMap {
           if (sourceMapPath === undefined) {
             return Promise.reject(null);
           }
-          const fullPath: string = (sourceMapPath.startsWith('/'))
-            ? this.mSourcePath + sourceMapPath
-            : path.resolve(this.mSourcePath, 'sourcemaps', this.mVersion, sourceMapPath);
+          const fullPath: string =
+            path.resolve(this.mSourcePath, path.dirname(filePath), sourceMapPath);
           console.log('res', sourceMapPath, this.mSourcePath, fullPath);
           return fs.readFile(fullPath, { encoding: 'utf8' });
         })
