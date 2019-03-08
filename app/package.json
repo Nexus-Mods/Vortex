@@ -1,6 +1,6 @@
 {
   "name": "vortex",
-  "version": "0.17.7",
+  "version": "0.17.8",
   "productName": "Vortex",
   "description": "Vortex",
   "author": "Black Tree Gaming Ltd.",
@@ -16,7 +16,7 @@
   "dependencies": {
     "bbcode-to-react": "TanninOne/bbcode-to-react",
     "bluebird": "^3.5.1",
-    "bootstrap-sass": "^3.3.7",
+    "bootstrap-sass": "^3.4.1",
     "classnames": "^2.2.6",
     "commander": "^2.16.0",
     "content-disposition": "^0.5.2",
