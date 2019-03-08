@@ -1,8 +1,8 @@
 import { InsufficientDiskSpace, ProcessCanceled,
          UnsupportedOperatingSystem, UserCanceled } from './CustomErrors';
 import * as fs from './fs';
-import { isChildPath } from './util';
 import { log } from './log';
+import { isChildPath } from './util';
 
 import * as Promise from 'bluebird';
 import * as diskusage from 'diskusage';
@@ -28,7 +28,7 @@ export function testPathTransfer(source: string, destination: string): Promise<v
     return Promise.reject(new UnsupportedOperatingSystem());
   }
 
-  let destinationRoot;
+  let destinationRoot: string;
   try {
     destinationRoot = winapi.GetVolumePathName(destination);
   } catch (err) {
@@ -112,7 +112,8 @@ export function transferPath(source: string,
         const sourcePath = entry.filePath;
         const destPath = path.join(dest, path.relative(source, entry.filePath));
         const matchIndex = sourcePath.indexOf(dest);
-        if ((matchIndex !== -1) && (sourcePath.substr(matchIndex + dest.length, 1) === path.sep)) {
+        if ((sourcePath === dest)
+        || ((matchIndex !== -1) && (sourcePath.substr(matchIndex + dest.length, 1) === path.sep))) {
           // if the target directory is a subdirectory of the old one, don't try
           // to move it into itself, that's just weird. Also it fails
           // (e.g. ...\mods -> ...\mods\newMods)
@@ -158,8 +159,7 @@ export function transferPath(source: string,
       ? Promise.reject(exception)
       : Promise.resolve()))
     .then(() => moveDown
-      ? removeStagingTag(source)
-          .then(() => removeEmptyDirectories(removableDirectories))
+      ? removeStagingTag(source).then(() => removeEmptyDirectories(removableDirectories))
       : fs.removeAsync(source))
     .catch(err => {
       if (['ENOENT', 'EPERM'].indexOf(err.code) !== -1) {
