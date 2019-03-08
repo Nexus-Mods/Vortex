@@ -1,6 +1,7 @@
 import { paste } from 'copy-paste';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as semver from 'semver';
 import { parse, StackFrame } from 'stack-trace';
 import * as vscode from 'vscode';
 import SourceMap from './SourceMap';
@@ -22,7 +23,7 @@ export class StackItem extends vscode.TreeItem {
 			name: frame.getFunctionName(),
 			source: this.sanitizeRel(frame.getFileName()),
 		};
-		this.mIsExtension = (this.mFrame.source || '').startsWith(path.join('app', 'bundledPlugins'));
+		this.mIsExtension = (this.mFrame.source || '').indexOf('bundledPlugins') !== -1;
 
 		this.updateLabel();
 
@@ -34,7 +35,7 @@ export class StackItem extends vscode.TreeItem {
 					this.updateLabel();
 					onChanged();
 				}, err => {
-					console.error('failed to resolve', this.mFrame, err);
+					vscode.window.showErrorMessage(`Failed to resolve "${this.mFrame}": ${err}`);
 				});
 		}
 	}
@@ -96,6 +97,7 @@ export class StackProvider implements vscode.TreeDataProvider<StackItem> {
 				}
 				refreshDebounce = setTimeout(() => {
 					this.refresh();
+					vscode.window.showInformationMessage(`Resolved with ${version} sourcemap`);
 				}, 100);
 			}));
 		this.refresh();
@@ -121,20 +123,26 @@ export function activate(context: vscode.ExtensionContext) {
 	const provider = new StackProvider();
 	vscode.window.registerTreeDataProvider('stackmap', provider);
 
-	let { workspaceFolders } = vscode.workspace;
-	if (workspaceFolders !== undefined) {
-		sourcemap = new SourceMap(workspaceFolders[0].uri.fsPath, version);
+	let workspaceFolders: vscode.WorkspaceFolder[] | undefined = undefined;
+
+	let updateWSFolders = () => {
+		workspaceFolders = vscode.workspace.workspaceFolders;
+
+		if (workspaceFolders !== undefined) {
+			const workspacePath = workspaceFolders[0].uri.fsPath;
+
+			const sourcemapsPath = path.join(workspacePath, 'sourcemaps');
+			fs.readdir(sourcemapsPath, (err, files) => {
+				version = files.sort((lhs, rhs) => semver.compare(rhs, lhs))[0];
+				sourcemap = new SourceMap(workspacePath);
+			});
+		}
 	}
 
+	updateWSFolders();
+
 	vscode.workspace.onDidChangeWorkspaceFolders(evt => {
-		const newFolders = vscode.workspace.workspaceFolders;
-		if (newFolders === undefined) {
-			return;
-		}
-		if ((workspaceFolders === undefined) || (newFolders[0] !== workspaceFolders[0])) {
-			sourcemap = new SourceMap(newFolders[0].uri.fsPath, version);
-		}
-		workspaceFolders = newFolders;
+		updateWSFolders();
 	});
 
 	{
@@ -150,10 +158,10 @@ export function activate(context: vscode.ExtensionContext) {
 					const pos = new vscode.Position(line - 1, col);
 					editor.selection = new vscode.Selection(pos, pos);
 				}, err => {
-					console.error('failed to show doc', fullPath, err.message);
+					vscode.window.showErrorMessage(`Failed to show document "${fullPath}": ${err.message}`);
 				})
 			}, err => {
-				console.error('failed to open', fullPath, err.message);
+				vscode.window.showErrorMessage(`failed to open "${fullPath}": ${err.message}`);
 			});
 		});
 
@@ -170,7 +178,7 @@ export function activate(context: vscode.ExtensionContext) {
 			const sourcemapsPath = path.join(workspacePath, 'sourcemaps');
 			fs.readdir(sourcemapsPath, (err, files) => {
 				if (err !== null) {
-					console.error('failed to read', sourcemapsPath, err.message);
+					vscode.window.showErrorMessage(`Failed to read "${sourcemapsPath}": ${err.message}`);
 					return;
 				}
 				let items: vscode.QuickPickItem[] = files.map(filePath => ({
@@ -183,7 +191,7 @@ export function activate(context: vscode.ExtensionContext) {
 					}
 
 					version = selection.label;
-					sourcemap = new SourceMap(workspacePath, version);
+					sourcemap = new SourceMap(workspacePath);
 				});
 			});
 		});

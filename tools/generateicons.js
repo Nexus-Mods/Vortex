@@ -66,8 +66,8 @@ function sanitize(svg, iconCfg) {
 }
 
 function extractIcon(iconPath, iconCfg) {
-  return fs.readFile(iconPath)
-    .then(data => new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
+    fs.readFile(iconPath, (err, data) => {
       xml2js.parseString(data.toString(), (err, result) => {
         if (err !== null) {
           return reject(err);
@@ -75,7 +75,8 @@ function extractIcon(iconPath, iconCfg) {
 
         resolve(sanitize(result.svg, iconCfg));
       });
-    }));
+    });
+  });
 }
 
 function processConfig(basePath, config) {
@@ -95,21 +96,37 @@ function processConfig(basePath, config) {
       const builder = new xml2js.Builder();
       const outputPath = path.resolve('..', 'assets', 'fonts', 'icons.svg');
 
-      return fs.writeFile(outputPath, builder.buildObject({
-        svg: {
-          $: { xmlns: 'http://www.w3.org/2000/svg', style: 'display: none;' },
-          symbol,
-        }
-      }))
-      .then(() => console.log('done'));
+      return new Promise((resolve, reject) => {
+        fs.writeFile(outputPath, builder.buildObject({
+          svg: {
+            $: { xmlns: 'http://www.w3.org/2000/svg', style: 'display: none;' },
+            symbol,
+          }
+        }), (err) => {
+          if (err !== null) {
+            return reject(err);
+          }
+          resolve();
+        });
+      });
     });
 }
 
 function main() {
   const params = commandLine();
-  return fs.readFile(params.config || 'iconconfig.json')
-    .then(data => processConfig(params.base || '../icons', JSON.parse(data.toString())))
-    .catch(err => console.error('failed', require('util').inspect(err)));
+  return new Promise((resolve, reject) => {
+    fs.readFile(params.config || 'iconconfig.json', (err, data) => {
+      if (err !== null) {
+        console.error('failed', require('util').inspect(err));
+        resolve(1);
+      } else {
+        processConfig(params.base || '../icons', JSON.parse(data.toString()))
+          .then(() => {
+            resolve(0);
+          });
+      }
+    });
+  });
 }
 
 main().then(exitCode => process.exit(exitCode));
