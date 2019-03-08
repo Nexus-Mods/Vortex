@@ -124,6 +124,7 @@ export function transferPath(source: string,
         }
 
         return func(sourcePath, destPath)
+          .catch(UserCanceled, () => copyPromise.cancel())
           .catch(err => {
             // EXDEV implies we tried to rename when source and destination are
             // not in fact on the same volume. This is what comparing the stat.dev
@@ -148,9 +149,6 @@ export function transferPath(source: string,
       })
       .then(() => null)
       .catch(err => {
-        if (err instanceof UserCanceled) {
-          copyPromise.cancel();
-        }
         exception = err;
         return null;
       }));
