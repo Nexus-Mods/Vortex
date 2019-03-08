@@ -83,7 +83,6 @@ type IProps = IBaseProps & IActionProps & IConnectedProps;
 
 const nop = () => undefined;
 
-/* tslint:disable:no-namespace no-internal-module whitespace */
 class Settings extends ComponentEx<IProps, IComponentState> {
   constructor(props: IProps) {
     super(props);
@@ -202,7 +201,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
   private applyPaths = () => {
     const { t, discovery, gameMode, onSetInstallPath,
-      onShowDialog, onShowError, onSetTransfer } = this.props;
+            onShowDialog, onShowError, onSetTransfer } = this.props;
 
     const newInstallPath: string = getInstallPath(this.state.installPath, gameMode);
     const oldInstallPath: string = getInstallPath(this.props.installPath, gameMode);
@@ -334,12 +333,12 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             .catch(err => {
               if (err.code === 'ENOENT') {
                 // Folder is already gone, that's fine.
-                onSetTransfer(gameMode, undefined)
+                onSetTransfer(gameMode, undefined);
               } else if (err.code === 'EPERM') {
                 onShowError('Destination folder is not writable', 'Vortex is unable to clean up '
                           + 'the destination folder due to a permissions issue.', false);
               } else {
-                onShowError('Transfer clean-up failed', err, false);
+                onShowError('Transfer clean-up failed', err, true);
               }
             });
         }

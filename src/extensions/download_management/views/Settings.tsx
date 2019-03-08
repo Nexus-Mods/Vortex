@@ -58,7 +58,7 @@ interface IComponentState {
 }
 
 const nop = () => null;
-/* tslint:disable:no-namespace no-internal-module whitespace */
+
 class Settings extends ComponentEx<IProps, IComponentState> {
   constructor(props: IProps) {
     super(props);
@@ -379,12 +379,12 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             .catch(err => {
               if (err.code === 'ENOENT') {
                 // Folder is already gone, that's fine.
-                onSetTransfer(undefined)
+                onSetTransfer(undefined);
               } else if (err.code === 'EPERM') {
                 onShowError('Destination folder is not writable', 'Vortex is unable to clean up '
                           + 'the destination folder due to a permissions issue.', false);
               } else {
-                onShowError('Transfer clean-up failed', err, false);
+                onShowError('Transfer clean-up failed', err, true);
               }
             });
         }
