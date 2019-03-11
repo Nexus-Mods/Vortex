@@ -278,7 +278,9 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
     .then(() => {
       onAddProfile(newProfile);
       this.editExistingProfile(newProfile.id);
-    });
+    })
+    .catch(err => this.context.api.showErrorNotification('Failed to clone profile',
+      err, { allowReport: err.code !== 'EPERM' }));
   }
 
   private onRemoveProfile = (profileId: string) => {
