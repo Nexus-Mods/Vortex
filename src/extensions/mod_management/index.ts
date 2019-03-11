@@ -308,6 +308,9 @@ function genUpdateModDeployment() {
         profile = profileId !== undefined
           ? getSafe(state, ['persistent', 'profiles', profileId], undefined)
           : activeProfile(state);
+        if (profile === undefined) {
+          return Promise.reject(new ProcessCanceled('Profile no longer exists.'));
+        }
         progress(t('Checking for external changes'), 5);
         return Promise.each(Object.keys(modPaths),
           typeId => {
