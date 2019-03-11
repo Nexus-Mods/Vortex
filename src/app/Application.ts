@@ -19,7 +19,7 @@ import { allHives, createVortexStore, currentStatePath, extendStore,
          importState, insertPersistor, markImported, querySanitize } from '../util/store';
 import {} from '../util/storeHelper';
 import SubPersistor from '../util/SubPersistor';
-import { spawnSelf } from '../util/util';
+import { spawnSelf, truthy } from '../util/util';
 
 import { addNotification } from '../actions';
 
@@ -146,8 +146,13 @@ class Application {
         return;
       }
 
-      if (error === undefined) {
+      if (!truthy(error)) {
         log('error', 'empty error unhandled', { wasPromise: promise !== undefined });
+        return;
+      }
+
+      if (['net::ERR_CONNECTION_RESET', 'net::ERR_ABORTED'].indexOf(error.message) !== -1) {
+        log('warn', 'network error unhandled', error.stack);
         return;
       }
 
