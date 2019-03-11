@@ -575,6 +575,10 @@ function genValidActivatorCheck(api: IExtensionApi) {
     const gameId = activeGameId(state);
     const modPaths = getModPaths(state, gameId);
 
+    if (modPaths === undefined) {
+      return resolve(undefined);
+    }
+
     type IUnavailableReasonEx = IUnavailableReason & { activator?: string };
 
     const reasons: IUnavailableReasonEx[] = getAllActivators().map(activator => {
