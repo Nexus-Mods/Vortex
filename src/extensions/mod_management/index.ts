@@ -255,7 +255,7 @@ function genUpdateModDeployment() {
       const types = Object.keys(getGame(gameId).getModPaths(gameDiscovery.path));
 
       const err = allTypesSupported(selectedActivator, state, gameId, types);
-      if (selectedActivator !== undefined) {
+      if ((selectedActivator !== undefined) && (err !== undefined)) {
         api.showErrorNotification('Deployment not possible',
                                   err.description(t),
                                   { allowReport: false });
@@ -893,8 +893,8 @@ function checkPendingTransfer(api: IExtensionApi): Promise<ITestResult> {
             fixReject();
           }
         });
-    })
-  }
+    }),
+  };
 
   return Promise.resolve(result);
 }
