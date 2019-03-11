@@ -16,6 +16,7 @@ import { getSafe } from '../../../util/storeHelper';
 import { testPathTransfer, transferPath } from '../../../util/transferPath';
 import { isChildPath } from '../../../util/util';
 import { setDownloadPath, setMaxDownloads } from '../actions/settings';
+import { setTransferDownloads } from '../actions/transactions';
 
 import getDownloadPath, {getDownloadPathPattern} from '../util/getDownloadPath';
 
@@ -40,6 +41,7 @@ interface IConnectedProps {
 
 interface IActionProps {
   onSetDownloadPath: (newPath: string) => void;
+  onSetTransfer: (dest: string) => void;
   onSetMaxDownloads: (value: number) => void;
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
                  actions: DialogActions) => Promise<IDialogResult>;
@@ -276,7 +278,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private apply = () => {
-    const { t, onSetDownloadPath, onShowDialog, onShowError } = this.props;
+    const { t, onSetDownloadPath, onShowDialog, onShowError, onSetTransfer } = this.props;
     const newPath: string = getDownloadPath(this.state.downloadPath);
     const oldPath: string = getDownloadPath(this.props.downloadPath);
 
@@ -344,6 +346,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         }
       })
       .then(() => {
+        onSetTransfer(undefined);
         onSetDownloadPath(this.state.downloadPath);
         this.context.api.events.emit('did-move-downloads');
       })
@@ -366,7 +369,33 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         }
       })
       .finally(() => {
-        this.nextState.busy = undefined;
+        const state = this.context.api.store.getState();
+        // Any transfers would've completed at this point.
+        //  Check if we still have the transfer state populated,
+        //  if it is - that means that the user has cancelled the transfer,
+        //  we need to cleanup.
+        const pendingTransfer: string[] = ['persistent', 'transactions', 'transfer', 'downloads'];
+        if (getSafe(state, pendingTransfer, undefined) !== undefined) {
+          return fs.removeAsync(newPath)
+            .then(() => {
+              onSetTransfer(undefined);
+              this.nextState.busy = undefined;
+            })
+            .catch(err => {
+              this.nextState.busy = undefined;
+              if (err.code === 'ENOENT') {
+                // Folder is already gone, that's fine.
+                onSetTransfer(undefined);
+              } else if (err.code === 'EPERM') {
+                onShowError('Destination folder is not writable', 'Vortex is unable to clean up '
+                          + 'the destination folder due to a permissions issue.', false);
+              } else {
+                onShowError('Transfer clean-up failed', err, true);
+              }
+            });
+        } else {
+          this.nextState.busy = undefined;
+        }
       });
   }
 
@@ -386,11 +415,13 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private transferPath() {
+    const { onSetTransfer } = this.props;
     const oldPath = getDownloadPath(this.props.downloadPath);
     const newPath = getDownloadPath(this.state.downloadPath);
 
     this.context.api.events.emit('will-move-downloads');
 
+    onSetTransfer(newPath);
     return transferPath(oldPath, newPath, (from: string, to: string, progress: number) => {
       log('debug', 'transfer download', { from, to });
       if (progress > this.state.progress) {
@@ -413,6 +444,7 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
   return {
     onSetDownloadPath: (newPath: string) => dispatch(setDownloadPath(newPath)),
     onSetMaxDownloads: (value: number) => dispatch(setMaxDownloads(value)),
+    onSetTransfer: (dest: string) => dispatch(setTransferDownloads(dest)),
     onShowDialog: (type, title, content, actions) =>
       dispatch(showDialog(type, title, content, actions)),
     onShowError: (message: string, details: string | Error, allowReport): void =>

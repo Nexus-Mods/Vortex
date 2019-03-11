@@ -1,5 +1,6 @@
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
+import { ITestResult } from '../../types/ITestResult';
 import { getNormalizeFunc, Normalize, UserCanceled } from '../../util/api';
 import Debouncer from '../../util/Debouncer';
 import * as fs from '../../util/fs';
@@ -19,8 +20,11 @@ import {
   setDownloadSpeed,
   setDownloadSpeeds,
 } from './actions/state';
+
+import { setTransferDownloads } from './actions/transactions';
 import { settingsReducer } from './reducers/settings';
 import { stateReducer } from './reducers/state';
+import { transactionsReducer } from './reducers/transactions';
 import { IDownload } from './types/IDownload';
 import { IProtocolHandlers } from './types/ProtocolHandlers';
 import getDownloadGames from './util/getDownloadGames';
@@ -388,6 +392,49 @@ function genImportDownloadsHandler(api: IExtensionApi) {
   };
 }
 
+function checkPendingTransfer(api: IExtensionApi): Promise<ITestResult> {
+  let result: ITestResult;
+  const state = api.store.getState();
+
+  const gameMode = selectors.activeGameId(state);
+  if (gameMode === undefined) {
+    return Promise.resolve(result);
+  }
+
+  const pendingTransfer: string[] = ['persistent', 'transactions', 'transfer', 'downloads'];
+  const transferDestination = getSafe(state, pendingTransfer, undefined);
+  if (transferDestination === undefined) {
+    return Promise.resolve(result);
+  }
+
+  result = {
+    severity: 'warning',
+    description: {
+      short: 'Folder transfer was interrupted',
+      long: 'An attempt to move the download folder was interrupted. You should let '
+          + 'Vortex clean up now, otherwise you may be left with unnecessary copies of files.',
+    },
+    automaticFix: () => new Promise<void>((fixResolve, fixReject) => {
+      return fs.removeAsync(transferDestination)
+        .then(() => {
+          api.store.dispatch(setTransferDownloads(undefined));
+          fixResolve();
+        })
+        .catch(err => {
+          if (err.code === 'ENOENT') {
+            // Destination is already gone, that's fine.
+            api.store.dispatch(setTransferDownloads(undefined));
+            fixResolve();
+          } else {
+            fixReject();
+          }
+        });
+    }),
+  };
+
+  return Promise.resolve(result);
+}
+
 function init(context: IExtensionContextExt): boolean {
   const downloadCount = new ReduxProp(context.api, [
     ['persistent', 'downloads', 'files'],
@@ -408,6 +455,7 @@ function init(context: IExtensionContextExt): boolean {
   context.registerFooter('speed-o-meter', SpeedOMeter);
 
   context.registerReducer(['persistent', 'downloads'], stateReducer);
+  context.registerReducer(['persistent', 'transactions'], transactionsReducer);
   context.registerReducer(['settings', 'downloads'], settingsReducer);
 
   context.registerDownloadProtocol = (schema: string, handler: ProtocolHandler) => {
@@ -422,6 +470,9 @@ function init(context: IExtensionContextExt): boolean {
     }
     return undefined;
   });
+
+  context.registerTest('verify-downloads-transfers', 'gamemode-activated',
+    () => checkPendingTransfer(context.api));
 
   context.once(() => {
     const DownloadManagerImpl: typeof DownloadManager = require('./DownloadManager').default;

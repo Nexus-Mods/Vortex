@@ -59,7 +59,8 @@ function nospcQuery(): PromiseBB<boolean> {
   const options: Electron.MessageBoxOptions = {
     title: 'Disk full',
     message: `Operation can't continue because the disk is full. `
-           + 'Please free up some space and retry.',
+           + 'Please free up some space and click retry. Cancelling the transfer operation '
+           + 'at this point will remove any changes and revert back to the previous state.',
     buttons: ['Cancel', 'Retry'],
     type: 'warning',
     noLink: true,

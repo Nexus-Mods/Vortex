@@ -207,6 +207,10 @@ export interface ISettings {
   update: ISettingsUpdate;
 }
 
+export interface IStateTransactions {
+  transfer: {};
+}
+
 export interface ISessionGameMode {
   known: IGameStored[];
   addDialogVisible: boolean;
@@ -266,6 +270,7 @@ export interface IState {
     categories: { [gameId: string]: ICategoryDictionary },
     gameMode: IStateGameMode,
     deployment: { needToDeploy: { [gameId: string]: boolean } },
+    transactions: IStateTransactions,
   };
 }
 

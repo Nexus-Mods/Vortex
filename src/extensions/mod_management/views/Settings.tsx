@@ -20,8 +20,11 @@ import { isChildPath } from '../../../util/util';
 import { currentGame, currentGameDiscovery } from '../../gamemode_management/selectors';
 import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../../gamemode_management/types/IGameStored';
+
 import { setDeploymentNecessary } from '../actions/deployment';
 import { setActivator, setInstallPath } from '../actions/settings';
+import { setTransferMods } from '../actions/transactions';
+
 import { IDeploymentMethod } from '../types/IDeploymentMethod';
 import { getSupportedActivators } from '../util/deploymentMethods';
 import { NoDeployment } from '../util/exceptions';
@@ -58,6 +61,7 @@ interface IConnectedProps {
 interface IActionProps {
   onSetInstallPath: (gameMode: string, path: string) => void;
   onSetActivator: (gameMode: string, id: string) => void;
+  onSetTransfer: (gameMode: string, dest: string) => void;
   onShowDialog: (
     type: DialogType,
     title: string,
@@ -185,10 +189,11 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private transferPath() {
-    const { gameMode } = this.props;
+    const { gameMode, onSetTransfer } = this.props;
     const oldPath = getInstallPath(this.props.installPath, gameMode);
     const newPath = getInstallPath(this.state.installPath, gameMode);
 
+    onSetTransfer(gameMode, newPath);
     return transferPath(oldPath, newPath, (from: string, to: string, progress: number) => {
       if (progress > this.state.progress) {
         this.nextState.progress = progress;
@@ -197,7 +202,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private applyPaths = () => {
-    const { t, discovery, gameMode, onSetInstallPath, onShowDialog, onShowError } = this.props;
+    const { t, discovery, gameMode, onSetInstallPath,
+            onShowDialog, onShowError, onSetTransfer } = this.props;
+
     const newInstallPath: string = getInstallPath(this.state.installPath, gameMode);
     const oldInstallPath: string = getInstallPath(this.props.installPath, gameMode);
     log('info', 'changing staging directory', { from: oldInstallPath, to: newInstallPath });
@@ -257,7 +264,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     return testPathTransfer(oldInstallPath, newInstallPath)
       .then(() => {
         this.nextState.busy = t('Purging previous deployment');
-        doPurge();
+        return doPurge();
       })
       .then(() => fs.ensureDirAsync(newInstallPath))
       .then(() => {
@@ -290,6 +297,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         }
       })
       .then(() => {
+        onSetTransfer(gameMode, undefined);
         onSetInstallPath(gameMode, this.state.installPath);
       })
       .catch(TemporaryError, err => {
@@ -317,7 +325,33 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         }
       })
       .finally(() => {
-        this.nextState.busy = undefined;
+        const state = this.context.api.store.getState();
+        // Any transfers would've completed at this point.
+        //  Check if we still have the transfer state populated,
+        //  if it is - that means that the user has cancelled the transfer,
+        //  we need to cleanup.
+        const pendingTransfer: string[] = ['persistent', 'transactions', 'transfer', gameMode];
+        if (getSafe(state, pendingTransfer, undefined) !== undefined) {
+          return fs.removeAsync(newInstallPath)
+            .then(() => {
+              onSetTransfer(gameMode, undefined);
+              this.nextState.busy = undefined;
+            })
+            .catch(err => {
+              this.nextState.busy = undefined;
+              if (err.code === 'ENOENT') {
+                // Folder is already gone, that's fine.
+                onSetTransfer(gameMode, undefined);
+              } else if (err.code === 'EPERM') {
+                onShowError('Destination folder is not writable', 'Vortex is unable to clean up '
+                          + 'the destination folder due to a permissions issue.', false);
+              } else {
+                onShowError('Transfer clean-up failed', err, true);
+              }
+            });
+        } else {
+          this.nextState.busy = undefined;
+        }
       });
   }
 
@@ -610,6 +644,9 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
       if (newPath !== undefined) {
         dispatch(setInstallPath(gameMode, newPath));
       }
+    },
+    onSetTransfer: (gameMode: string, dest: string): void => {
+      dispatch(setTransferMods(gameMode, dest));
     },
     onSetActivator: (gameMode: string, id: string): void => {
       dispatch(setActivator(gameMode, id));

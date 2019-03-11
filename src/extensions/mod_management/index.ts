@@ -38,10 +38,12 @@ import { IProfile, IProfileMod } from '../profile_management/types/IProfile';
 import { setDeploymentNecessary } from './actions/deployment';
 import {removeMod, setModAttribute} from './actions/mods';
 import { setDeploymentProblem, showExternalChanges } from './actions/session';
+import {setTransferMods} from './actions/transactions';
 import {deploymentReducer} from './reducers/deployment';
 import {modsReducer} from './reducers/mods';
 import {sessionReducer} from './reducers/session';
 import {settingsReducer} from './reducers/settings';
+import {transactionsReducer} from './reducers/transactions';
 import {IDeployedFile, IFileChange, IUnavailableReason} from './types/IDeploymentMethod';
 import {IFileEntry} from './types/IFileEntry';
 import {IFileMerge} from './types/IFileMerge';
@@ -850,6 +852,49 @@ function once(api: IExtensionApi) {
   cleanupIncompleteInstalls(api);
 }
 
+function checkPendingTransfer(api: IExtensionApi): Promise<ITestResult> {
+  let result: ITestResult;
+  const state = api.store.getState();
+
+  const gameMode = activeGameId(state);
+  if (gameMode === undefined) {
+    return Promise.resolve(result);
+  }
+
+  const pendingTransfer: string[] = ['persistent', 'transactions', 'transfer', gameMode];
+  const transferDestination = getSafe(state, pendingTransfer, undefined);
+  if (transferDestination === undefined) {
+    return Promise.resolve(result);
+  }
+
+  result = {
+    severity: 'warning',
+    description: {
+      short: 'Folder transfer was interrupted',
+      long: 'An attempt to move the staging folder was interrupted. You should let '
+          + 'Vortex clean up now, otherwise you may be left with unnecessary copies of files.',
+    },
+    automaticFix: () => new Promise<void>((fixResolve, fixReject) => {
+      return fs.removeAsync(transferDestination)
+        .then(() => {
+          api.store.dispatch(setTransferMods(gameMode, undefined));
+          fixResolve();
+        })
+        .catch(err => {
+          if (err.code === 'ENOENT') {
+            // Destination is already gone, that's fine.
+            api.store.dispatch(setTransferMods(gameMode, undefined));
+            fixResolve();
+          } else {
+            fixReject();
+          }
+        });
+    })
+  }
+
+  return Promise.resolve(result);
+}
+
 function checkStagingFolder(api: IExtensionApi): Promise<ITestResult> {
   let result: ITestResult;
   const state = api.store.getState();
@@ -944,6 +989,7 @@ function init(context: IExtensionContext): boolean {
   context.registerReducer(['settings', 'mods'], settingsReducer);
   context.registerReducer(['persistent', 'mods'], modsReducer);
   context.registerReducer(['persistent', 'deployment'], deploymentReducer);
+  context.registerReducer(['persistent', 'transactions'], transactionsReducer);
 
   context.registerTableAttribute('mods', genModsSourceAttribute(context.api));
 
@@ -951,6 +997,8 @@ function init(context: IExtensionContext): boolean {
     () => checkStagingFolder(context.api));
   context.registerTest('validate-staging-folder', 'settings-changed',
     () => checkStagingFolder(context.api));
+  context.registerTest('verify-mod-transfers', 'gamemode-activated',
+    () => checkPendingTransfer(context.api));
 
   context.registerDeploymentMethod = registerDeploymentMethod;
   context.registerInstaller = registerInstaller;

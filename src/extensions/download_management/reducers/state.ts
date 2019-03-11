@@ -185,10 +185,10 @@ export const stateReducer: IReducerSpec = {
                   throw new VerifierDropParent();
                  }
               },
-            }
-          }
-        }
-      }
-    }
-  }
+            },
+          },
+        },
+      },
+    },
+  },
 };
