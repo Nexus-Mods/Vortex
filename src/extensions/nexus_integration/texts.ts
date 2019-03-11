@@ -1,11 +1,9 @@
 import chromePath from './util/chromePath';
 
 import * as Promise from 'bluebird';
-import { remote } from 'electron';
-import * as I18next from 'i18next';
-import * as path from 'path';
+import I18next from 'i18next';
 
-function getText(id: string, t: I18next.TranslationFunction): Promise<string> {
+function getText(id: string, t: I18next.TFunction): Promise<string> {
   switch (id) {
     case 'chrome-fix': return chromePath()
       .catch(() => '%LOCALAPPDATA%\\Google\\Chrome\\User Data')

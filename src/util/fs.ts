@@ -17,7 +17,7 @@ import { log } from './log';
 import * as PromiseBB from 'bluebird';
 import { dialog as dialogIn, remote } from 'electron';
 import * as fs from 'fs-extra-promise';
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import * as ipc from 'node-ipc';
 import * as path from 'path';
 import { allow as allowT, getUserId } from 'permissions';
@@ -526,7 +526,7 @@ export function ensureFileWritableAsync(filePath: string): PromiseBB<void> {
   });
 }
 
-export function forcePerm<T>(t: I18next.TranslationFunction,
+export function forcePerm<T>(t: I18next.TFunction,
                              op: () => PromiseBB<T>,
                              filePath?: string): PromiseBB<T> {
   const raiseUACDialog = (err): PromiseBB<T> => {

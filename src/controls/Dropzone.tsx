@@ -282,6 +282,6 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
 }
 
 export default
-  translate(['common'], { wait: false })(
+  translate(['common'])(
     connect<{}, IActionProps, IBaseProps, IState>(mapStateToProps, mapDispatchToProps)(
       Dropzone)) as React.ComponentClass<IBaseProps>;

@@ -2,11 +2,11 @@ import IconBar from '../controls/IconBar';
 import { IActionDefinition } from '../types/IActionDefinition';
 import { ComponentEx } from '../util/ComponentEx';
 
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import * as React from 'react';
 
 export interface IBaseProps {
-  t: I18next.TranslationFunction;
+  t: I18next.TFunction;
 }
 
 type IProps = IBaseProps;

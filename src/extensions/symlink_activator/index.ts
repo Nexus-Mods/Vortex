@@ -12,7 +12,7 @@ import { IDeploymentMethod, IUnavailableReason } from '../mod_management/types/I
 
 import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import * as path from 'path';
 
 const app = appIn || remote.app;
@@ -30,7 +30,7 @@ class DeploymendMethod extends LinkingDeployment {
         api);
   }
 
-  public detailedDescription(t: I18next.TranslationFunction): string {
+  public detailedDescription(t: I18next.TFunction): string {
     return t(
       'Symbolic links are special files containing a reference to another file. '
       + 'They are supported directly by the low-level API of the operating system '

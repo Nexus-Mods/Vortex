@@ -13,12 +13,12 @@ import { IProfileFeature } from '../types/IProfileFeature';
 import TransferIcon from './TransferIcon';
 
 import { nativeImage, remote } from 'electron';
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
 
 export interface IProps {
-  t: I18next.TranslationFunction;
+  t: I18next.TFunction;
   active: boolean;
   available: boolean;
   profile: IProfile;

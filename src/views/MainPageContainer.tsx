@@ -10,6 +10,7 @@ import { remote } from 'electron';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
 import { Alert, Button, Jumbotron } from 'react-bootstrap';
+import { WithTranslation } from 'react-i18next';
 
 export interface IBaseProps {
   page: IMainPage;
@@ -21,14 +22,14 @@ export interface IMainPageContext {
   globalOverlay: JSX.Element;
 }
 
-type IProps = IBaseProps;
+type IProps = IBaseProps & WithTranslation;
 
 interface IComponentState {
   error: Error;
   errorInfo: React.ErrorInfo;
 }
 
-class MainPageContainer extends ComponentEx<IBaseProps, IComponentState> {
+class MainPageContainer extends ComponentEx<IProps, IComponentState> {
   public static childContextTypes: React.ValidationMap<any> = {
     api: PropTypes.object.isRequired,
     headerPortal: PropTypes.func,
@@ -37,7 +38,7 @@ class MainPageContainer extends ComponentEx<IBaseProps, IComponentState> {
 
   private headerRef: HTMLElement;
 
-  constructor(props: IBaseProps) {
+  constructor(props: IProps) {
     super(props);
 
     this.state = {
@@ -130,4 +131,4 @@ ComponentStack:
   }
 }
 
-export default translate(['common'], { wait: false })(MainPageContainer);
+export default translate(['common'])(MainPageContainer);

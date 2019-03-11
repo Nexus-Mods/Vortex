@@ -204,6 +204,6 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
   };
 }
 
-export default translate([ 'common' ], { wait: true })(
+export default translate([ 'common' ])(
     connect(mapStateToProps, mapDispatchToProps)(
       Dashboard)) as React.ComponentClass<{}>;

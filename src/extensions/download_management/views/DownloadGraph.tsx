@@ -5,13 +5,13 @@ import { bytesToString, truthy } from '../../../util/util';
 
 import {speedDataPoints} from '../reducers/state';
 
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import * as React from 'react';
 import ResizeDetector from 'react-resize-detector';
 import * as recharts from 'recharts';
 
 interface IBaseProps {
-  t: I18next.TranslationFunction;
+  t: I18next.TFunction;
 }
 
 interface IConnectedProps {

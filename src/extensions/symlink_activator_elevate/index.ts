@@ -18,7 +18,7 @@ import walk from './walk';
 
 import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import * as ipc from 'node-ipc';
 import * as path from 'path';
 import { generate as shortid } from 'shortid';
@@ -81,7 +81,7 @@ class DeploymentMethod extends LinkingDeployment {
     };
   }
 
-  public detailedDescription(t: I18next.TranslationFunction): string {
+  public detailedDescription(t: I18next.TFunction): string {
     return t(
       'Symbolic links are special files containing a reference to another file. '
       + 'They are supported directly by the low-level API of the operating system '

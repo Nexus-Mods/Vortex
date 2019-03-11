@@ -9,7 +9,7 @@ import { setModAttribute } from '../../mod_management/actions/mods';
 import { IMod } from '../../mod_management/types/IMod';
 
 import * as Promise from 'bluebird';
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import NexusT, { IFileInfo, IFileUpdate, IModFiles, IModInfo,
                  NexusError, RateLimitError } from 'nexus-api';
 import * as Redux from 'redux';
@@ -174,7 +174,7 @@ export function retrieveModInfo(
     api: IExtensionApi,
     gameMode: string,
     mod: IMod,
-    t: I18next.TranslationFunction): Promise<void> {
+    t: I18next.TFunction): Promise<void> {
   const store = api.store;
   const nexusModId: string = getSafe(mod.attributes, ['modId'], undefined);
   if ((nexusModId === undefined) || (nexusModId.length === 0)) {

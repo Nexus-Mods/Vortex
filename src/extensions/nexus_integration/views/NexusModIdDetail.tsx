@@ -6,7 +6,7 @@ import { truthy } from '../../../util/util';
 import { setDownloadModInfo } from '../../download_management/actions/state';
 import { setModAttribute } from '../../mod_management/actions/mods';
 
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import * as React from 'react';
 import { Button, ControlLabel, FormGroup, InputGroup } from 'react-bootstrap';
 import * as Redux from 'redux';
@@ -19,7 +19,7 @@ export interface IProps {
   isDownload: boolean;
   nexusModId: string;
   fileName: string;
-  t: I18next.TranslationFunction;
+  t: I18next.TFunction;
   store: Redux.Store<any>;
 }
 

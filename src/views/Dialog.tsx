@@ -12,7 +12,7 @@ import bbcode from '../util/bbcode';
 import { ComponentEx, connect, translate } from '../util/ComponentEx';
 
 import { remote } from 'electron';
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import update from 'immutability-helper';
 import * as React from 'react';
 import {
@@ -158,7 +158,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private translateParts(message: string, t: I18next.TranslationFunction, parameters?: any) {
+  private translateParts(message: string, t: I18next.TFunction, parameters?: any) {
     // split by linebreak, then by tab, apply translation function, then join
     // again (replacing tabs with spaces)
     return message
@@ -524,6 +524,6 @@ function mapDispatchToProps<S>(dispatch: ThunkDispatch<S, null, Redux.Action>): 
   };
 }
 
-export default translate(['common'], { wait: false })(
+export default translate(['common'])(
   connect(mapStateToProps, mapDispatchToProps)(
     Dialog)) as React.ComponentClass<{}>;

@@ -7,7 +7,7 @@ import { activeGameId, gameById, currentGame, knownGames } from '../../util/sele
 import { setModAttribute } from '../../actions';
 import EndorseModButton from './views/EndorseModButton';
 import NexusModIdDetail from './views/NexusModIdDetail';
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import * as React from 'react';
 import * as Redux from 'redux';
 import { nexusGames } from './util';
@@ -16,7 +16,7 @@ import { nexusGames } from './util';
 function renderNexusModIdDetail(
   store: Redux.Store<any>,
   mod: IModWithState,
-  t: I18next.TranslationFunction) {
+  t: I18next.TFunction) {
   const nexusModId: string = getSafe(mod.attributes, ['modId'], undefined);
   const fileName: string =
     getSafe(mod.attributes, ['fileName'],
@@ -40,7 +40,7 @@ function renderNexusModIdDetail(
 
 export type EndorseMod = (gameId: string, modId: string, endorsedStatus: string) => void;
 
-function createEndorsedIcon(store: Redux.Store<any>, mod: IMod, onEndorse: EndorseMod, t: I18next.TranslationFunction) {
+function createEndorsedIcon(store: Redux.Store<any>, mod: IMod, onEndorse: EndorseMod, t: I18next.TFunction) {
   const nexusModId: string = getSafe(mod.attributes, ['modId'], undefined);
   const version: string = getSafe(mod.attributes, ['version'], undefined);
   const state: string = getSafe(mod, ['state'], undefined);
@@ -84,7 +84,7 @@ export function genEndorsedAttribute(api: IExtensionApi, onEndorseMod: EndorseMo
     name: 'Endorsed',
     description: 'Endorsement state on Nexus',
     icon: 'star',
-    customRenderer: (mod: IMod, detail: boolean, t: I18next.TranslationFunction) =>
+    customRenderer: (mod: IMod, detail: boolean, t: I18next.TFunction) =>
       getSafe(mod.attributes, ['source'], undefined) === 'nexus'
         ? createEndorsedIcon(api.store, mod, onEndorseMod, t)
         : null,
@@ -106,7 +106,7 @@ export function genModIdAttribute(api: IExtensionApi): ITableAttribute {
     name: 'Nexus Mod ID',
     description: 'Internal ID used by www.nexusmods.com',
     icon: 'external-link',
-    customRenderer: (mod: IModWithState, detail: boolean, t: I18next.TranslationFunction) => {
+    customRenderer: (mod: IModWithState, detail: boolean, t: I18next.TFunction) => {
       const res = getSafe(mod.attributes, ['source'], undefined) === 'nexus'
         ? renderNexusModIdDetail(api.store, mod, t)
         : null;

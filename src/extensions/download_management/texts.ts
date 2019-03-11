@@ -1,6 +1,6 @@
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 
-function getText(id: string, t: I18next.TranslationFunction) {
+function getText(id: string, t: I18next.TFunction) {
   switch (id) {
     case 'download-threads':
       return t(

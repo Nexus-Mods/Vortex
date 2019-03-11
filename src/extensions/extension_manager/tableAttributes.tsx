@@ -4,7 +4,7 @@ import { getSafe } from '../../util/storeHelper';
 
 import { IExtensionWithState } from './types';
 
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import * as React from 'react';
 
 interface IAttributesContext {
@@ -12,7 +12,7 @@ interface IAttributesContext {
   onToggleExtensionEnabled: (extensionName: string) => void;
 }
 
-function renderLoadFailure(t: I18next.TranslationFunction, fail: IExtensionLoadFailure) {
+function renderLoadFailure(t: I18next.TFunction, fail: IExtensionLoadFailure) {
   const pattern = getSafe({
     'unsupported-version': 'Not compatible with this version of Vortex',
     'unsupported-api': 'Unsupported API',

@@ -6,7 +6,7 @@ import getAttr from '../../util/getAttr';
 import { TH } from './MyTable';
 import SortIndicator from './SortIndicator';
 
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import * as _ from 'lodash';
 import * as React from 'react';
 
@@ -17,7 +17,7 @@ export interface IHeaderProps {
   doFilter: boolean;
   onSetSortDirection: (id: string, dir: SortDirection) => void;
   onSetFilter: (id?: string, filter?: any) => void;
-  t: I18next.TranslationFunction;
+  t: I18next.TFunction;
 }
 
 function nextDirection(direction: SortDirection): SortDirection {

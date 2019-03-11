@@ -1,6 +1,6 @@
 import * as Promise from 'bluebird';
 import { app as appIn, ipcRenderer, remote } from 'electron';
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import Nexus, { IFileInfo, IGameListEntry, IModInfo, NexusError,
                 RateLimitError, TimeoutError } from 'nexus-api';
 import * as Redux from 'redux';
@@ -186,7 +186,7 @@ export function processErrorMessage(err: NexusError): IRequestError {
   }
 }
 
-function resolveEndorseError(t: I18next.TranslationFunction, err: Error): string {
+function resolveEndorseError(t: I18next.TFunction, err: Error): string {
   if (err.message === 'You must provide a version') {
     // is this still reported in this way?
     return t('You can\'t endorse a mod that has no version set.');

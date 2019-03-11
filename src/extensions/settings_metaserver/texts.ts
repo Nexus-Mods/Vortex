@@ -1,7 +1,6 @@
-import * as I18next from 'i18next';
-import * as path from 'path';
+import I18next from 'i18next';
 
-function getText(id: string, t: I18next.TranslationFunction) {
+function getText(id: string, t: I18next.TFunction) {
   switch (id) {
     case 'meta-server': return t(
       'A meta server provides additional information about mods, giving you '

@@ -31,7 +31,7 @@ class ExtensionGate extends React.Component<{ id: string }, {}> {
       return;
     }
     try {
-      const props = React.Children.only(this.props.children).props;
+      const props = (React.Children.only(this.props.children) as React.ReactElement<any>).props;
       Object.keys(props).forEach(key => {
         if (truthy(props[key])
           && (props[key].attach !== undefined)
@@ -52,7 +52,7 @@ class ExtensionGate extends React.Component<{ id: string }, {}> {
 
   public componentWillUnmount() {
     if (this.mValid) {
-      const props = React.Children.only(this.props.children).props;
+      const props = (React.Children.only(this.props.children) as React.ReactElement<any>).props;
       Object.keys(props).forEach(key => {
         if (truthy(props[key])
           && (props[key].attach !== undefined)
@@ -76,8 +76,9 @@ class ExtensionGate extends React.Component<{ id: string }, {}> {
           name='exclamation-triangle'
         />);
     }
-    this.updateWrappers(React.Children.only(this.props.children).props);
-    return React.cloneElement(React.Children.only(this.props.children), this.mWrappers);
+    this.updateWrappers((React.Children.only(this.props.children) as React.ReactElement<any>).props);
+    return React.cloneElement(React.Children.only(this.props.children) as React.ReactElement<any>,
+                              this.mWrappers);
   }
 
   private updateWrappers(props: { [key: string]: any }) {

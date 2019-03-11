@@ -106,11 +106,9 @@ class Application {
       }
     });
 
-    /* electron 3
     app.on('second-instance', (event: Event, secondaryArgv: string[]) => {
       this.applyArguments(commandLine(secondaryArgv));
     });
-    */
 
     app.on('ready', () => {
       if (args.get) {
@@ -623,7 +621,6 @@ class Application {
   }
 
   private testShouldQuit(): Promise<void> {
-    /* electron 3
     const primaryInstance: boolean = app.requestSingleInstanceLock();
 
     if (primaryInstance) {
@@ -632,26 +629,6 @@ class Application {
       app.exit();
       return Promise.reject(new ProcessCanceled('should quit'));
     }
-    */
-
-    const remoteCallback = (secondaryArgv, workingDirectory) => {
-      // this is called inside the primary process
-      // with the parameters of
-      // the secondary one whenever an additional
-      // instance is started
-      this.applyArguments(commandLine(secondaryArgv));
-    };
-
-    const shouldQuit: boolean = app.makeSingleInstance(remoteCallback);
-
-    if (shouldQuit) {
-      // exit instead of quit so events don't get triggered. Otherwise an exception may be caused
-      // by failures to require modules
-      app.exit();
-      return Promise.reject(new ProcessCanceled('should quit'));
-    }
-
-    return Promise.resolve();
   }
 
   private applyArguments(args: IParameters) {

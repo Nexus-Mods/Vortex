@@ -3,7 +3,7 @@ import { log } from './log';
 
 import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import * as FSBackend from 'i18next-node-fs-backend';
 
 import * as path from 'path';
@@ -13,7 +13,10 @@ const app = remote !== undefined ? remote.app : appIn;
 
 let debugging = false;
 let currentLanguage = 'en';
-let globalTFunc: I18next.TranslationFunction = str => str;
+let fallbackTFunc: I18next.TFunction =
+  str => (Array.isArray(str) ? str[0].toString() : str.toString()) as any;
+
+export { fallbackTFunc };
 
 interface ITranslationEntry {
   lng: string;
@@ -24,7 +27,7 @@ let missingKeys = { common: {} };
 
 export interface IInitResult {
   i18n: I18next.i18n;
-  tFunc: I18next.TranslationFunction;
+  tFunc: I18next.TFunction;
   error?: Error;
 }
 
@@ -83,59 +86,57 @@ class MultiBackend {
 function init(language: string): Promise<IInitResult> {
   currentLanguage = language;
 
-  return new Promise<IInitResult>((resolve, reject) => {
-    const res: I18next.i18n = I18next.use(MultiBackend).init(
-        {
-          lng: language,
-          fallbackLng: 'en',
-          fallbackNS: 'common',
+  const i18n = I18next.use(MultiBackend);
 
-          ns: ['common'],
-          defaultNS: 'common',
+  return Promise.resolve(i18n.init(
+    {
+      lng: language,
+      fallbackLng: 'en',
+      fallbackNS: 'common',
 
-          nsSeparator: ':::',
-          keySeparator: '::',
+      ns: ['common'],
+      defaultNS: 'common',
 
-          debug: false,
+      nsSeparator: ':::',
+      keySeparator: '::',
 
-          saveMissing: debugging,
+      debug: false,
 
-          missingKeyHandler: (lng, ns, key, fallbackValue) => {
-            if (missingKeys[ns] === undefined) {
-              missingKeys[ns] = {};
-            }
-            missingKeys[ns][key] = key;
-          },
+      saveMissing: debugging,
 
-          interpolation: {
-            escapeValue: false,
-          },
+      missingKeyHandler: (lng, ns, key, fallbackValue) => {
+        if (missingKeys[ns] === undefined) {
+          missingKeys[ns] = {};
+        }
+        missingKeys[ns][key] = key;
+      },
 
-          backend: {
-            bundled: getVortexPath('locales'),
-            user: path.normalize(path.join(app.getPath('userData'), 'locales')),
-          },
-        },
-        (error, tFunc) => {
-          if ((error !== null) && (error !== undefined)) {
-            const trans = str => str;
-            return resolve({i18n: res, tFunc: trans, error});
-          }
-          globalTFunc = tFunc;
-          resolve({i18n: res, tFunc});
-        });
-    res.on('languageChanged', (newLanguage: string) => {
-      currentLanguage = newLanguage;
-    });
-  });
+      interpolation: {
+        escapeValue: false,
+      },
+
+      backend: {
+        bundled: getVortexPath('locales'),
+        user: path.normalize(path.join(app.getPath('userData'), 'locales')),
+      },
+    }))
+    .then(tFunc => Promise.resolve({
+      i18n,
+      tFunc,
+    }))
+    .catch((error) => ({
+      i18n,
+      tFunc: fallbackTFunc,
+      error,
+    }));
 }
 
 export function getCurrentLanguage() {
   return currentLanguage;
 }
 
-export function globalT(key: string | string[], options: I18next.TranslationOptions) {
-  return globalTFunc(key, options);
+export function globalT(key: string | string[], options: I18next.TOptions) {
+  return fallbackTFunc(key, options);
 }
 
 export function debugTranslations(enable?: boolean) {

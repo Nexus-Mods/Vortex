@@ -482,11 +482,11 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
 
   private moveNode =
     (args: { treeData: SortableTreeT.TreeItem[], node: SortableTreeT.TreeItem,
-             treeIndex: number, path: string[] | number[] }): void => {
+             treeIndex: number, path: string[] | number[] | React.ReactText[] }): void => {
     const { gameMode, onSetCategory, onSetCategoryOrder } = this.props;
     if (args.path[args.path.length - 2] !== args.node.parentId) {
       onSetCategory(gameMode, args.node.categoryId, {
-        name: args.node.title,
+        name: args.node.title as string,
         order: args.node.order,
         parentCategory: (args.path as string[])[args.path.length - 2],
       });
@@ -530,6 +530,6 @@ function mapDispatchToProps(dispatch: ThunkDispatch<IState, null, Redux.Action>)
 }
 
 export default
-  translate(['common'], { wait: false })(
+  translate(['common'])(
     connect(mapStateToProps, mapDispatchToProps)(
       CategoryList))as React.ComponentClass<{}>;

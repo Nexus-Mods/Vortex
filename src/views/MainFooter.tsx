@@ -48,6 +48,6 @@ function registerFooter(instanceGroup: undefined,
 }
 
 export default
-  translate(['common'], { wait: false })(
+  translate(['common'])(
     extend(registerFooter)(MainFooter),
   ) as React.ComponentClass<IBaseProps>;

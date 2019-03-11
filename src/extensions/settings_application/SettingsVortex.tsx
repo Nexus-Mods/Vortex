@@ -94,6 +94,6 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
   };
 }
 
-export default translate(['common'], { wait: false })(
+export default translate(['common'])(
   connect(mapStateToProps, mapDispatchToProps)(
     SettingsVortex)) as React.ComponentClass<{}>;

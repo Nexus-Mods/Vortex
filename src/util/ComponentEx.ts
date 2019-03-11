@@ -6,7 +6,8 @@ import { II18NProps } from '../types/II18NProps';
 import { deleteOrNop, setSafe } from './storeHelper';
 
 import * as PropTypes from 'prop-types';
-export { translate } from 'react-i18next';
+import { WithTranslation } from 'react-i18next';
+export { withTranslation as translate } from 'react-i18next';
 export { connect } from 'react-redux';
 export { extend } from './ExtensionProvider';
 
@@ -98,7 +99,7 @@ export class StateProxyHandler<T extends object> implements ProxyHandler<T> {
  * @template P
  * @template S
  */
-export class ComponentEx<P, S extends object> extends React.Component<P & II18NProps, S> {
+export class ComponentEx<P, S extends object> extends React.Component<P & Partial<WithTranslation>, S> {
   public static contextTypes: React.ValidationMap<any> = {
     api: PropTypes.object.isRequired,
     menuLayer: PropTypes.object,

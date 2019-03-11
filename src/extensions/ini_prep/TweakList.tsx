@@ -11,7 +11,6 @@ import { installPath } from '../mod_management/selectors';
 import { IMod } from '../mod_management/types/IMod';
 import { activeGameId } from '../profile_management/selectors';
 
-import * as I18next from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
 import { ListGroup, ListGroupItem } from 'react-bootstrap';
@@ -141,7 +140,7 @@ function mapDispatchToProps(dispatch: ThunkDispatch<IState, null, Redux.Action>)
   };
 }
 
-const TweakListConnected = translate(['common'], { wait: true })(
+const TweakListConnected = translate(['common'])(
   connect(mapStateToProps, mapDispatchToProps)(
     TweakList)) as React.ComponentClass<IBaseProps>;
 

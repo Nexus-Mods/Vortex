@@ -15,7 +15,7 @@ import {
 import {IMod} from './types/IMod';
 
 import * as Promise from 'bluebird';
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import * as _ from 'lodash';
 import * as path from 'path';
 import turbowalk from 'turbowalk';
@@ -79,7 +79,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
     return Promise.resolve();
   }
 
-  public detailedDescription(t: I18next.TranslationFunction): string {
+  public detailedDescription(t: I18next.TFunction): string {
     return t(this.description);
   }
 

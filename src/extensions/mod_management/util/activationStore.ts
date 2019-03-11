@@ -16,7 +16,7 @@ import format_1 from './manifest_formats/format_1';
 import { getActivator, getCurrentActivator } from './deploymentMethods';
 
 import * as Promise from 'bluebird';
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import * as path from 'path';
 
 const CURRENT_VERSION = 1;
@@ -99,7 +99,7 @@ function doFallbackPurge(basePath: string,
   .then(() => undefined);
 }
 
-function queryPurgeTextSafe(t: I18next.TranslationFunction) {
+function queryPurgeTextSafe(t: I18next.TFunction) {
   return t('IMPORTANT: This game was modded by another instance of Vortex.\n\n' +
       'If you switch between different instances (or between shared and ' +
       'single-user mode) it\'s better if you purge mods before switching.\n\n' +
@@ -115,7 +115,7 @@ function queryPurgeTextSafe(t: I18next.TranslationFunction) {
       'be removed.');
 }
 
-function queryPurgeTextUnsafe(t: I18next.TranslationFunction) {
+function queryPurgeTextUnsafe(t: I18next.TFunction) {
   return t('IMPORTANT: This game was modded by another instance of Vortex.\n\n' +
       'Vortex can only proceed by purging the mods from that other instance.\n\n' +
       'This will irreversably **destroy** the mod installations from that other ' +

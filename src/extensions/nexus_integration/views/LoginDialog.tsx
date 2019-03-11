@@ -13,15 +13,16 @@ import { IValidateKeyData } from '../types/IValidateKeyData';
 import { getPageURL } from '../util/sso';
 
 import { clipboard } from 'electron';
-import { TranslationFunction } from 'i18next';
+import I18next from 'i18next';
 import * as React from 'react';
 import { ControlLabel, FormControl, FormGroup, InputGroup, Modal } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
+import { WithTranslation } from 'react-i18next';
 
 const API_ACCESS_URL = 'https://www.nexusmods.com/users/myaccount?tab=api+access';
 
-export interface IBaseProps {
+export interface IBaseProps extends WithTranslation {
   visible: boolean;
   onHide: () => void;
   onCancelLogin: () => void;
@@ -40,7 +41,7 @@ interface IActionProps {
 }
 
 interface ILoginInProgressProps {
-  t: TranslationFunction;
+  t: I18next.TFunction;
   loginId: string;
   onCopyToClipboard: () => void;
 }
@@ -316,5 +317,5 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
 
 export default
   connect(mapStateToProps, mapDispatchToProps)(
-    translate(['common'], { wait: false })(
+    translate(['common'])(
       LoginDialog)) as React.ComponentClass<IBaseProps>;

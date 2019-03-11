@@ -32,7 +32,7 @@ class Steps extends React.Component<IProps, {}> {
         }));
         return prev;
     }, [] as any);
-    return (<div className='steps' {..._.omit(this.props, ['step'])}>{newChildren}</div>);
+    return (<div className='steps' {..._.omit(this.props, ['step']) as any}>{newChildren}</div>);
   }
 
   private classByIdx(currentIdx: number, itemIdx: number) {

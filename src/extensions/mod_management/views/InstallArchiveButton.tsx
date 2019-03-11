@@ -53,6 +53,6 @@ function mapStateToProps(state: any): IConnectedProps {
 }
 
 export default
-  translate(['common'], { wait: false })(
+  translate(['common'])(
     connect(mapStateToProps)(
       InstallButton)) as React.ComponentClass<IBaseProps>;

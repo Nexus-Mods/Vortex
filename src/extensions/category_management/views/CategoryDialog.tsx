@@ -56,6 +56,6 @@ function mapDispatchToProps(dispatch: Redux.Dispatch): IActionProps {
 }
 
 export default
-  translate(['common'], { wait: false })(
+  translate(['common'])(
     connect(mapStateToProps, mapDispatchToProps)(
       CategoryDialog)) as React.ComponentClass<{}>;

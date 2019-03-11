@@ -426,5 +426,5 @@ function mapDispatchToProps(dispatch): IActionProps {
 }
 
 export default
-  translate(['common'], { wait: false })(
+  translate(['common'])(
     connect(mapStateToProps, mapDispatchToProps)(GamePicker)) as React.ComponentClass<{}>;

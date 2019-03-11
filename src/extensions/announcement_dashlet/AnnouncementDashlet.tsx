@@ -10,6 +10,7 @@ import { Icon, IconButton } from '../../controls/TooltipControls';
 
 import { IAnnouncement, AnnouncementSeverity } from './types';
 import { FlexLayout, EmptyPlaceholder } from '../../controls/api';
+import { WithTranslation } from 'react-i18next';
 
 interface IConnectedProps {
   gameMode: string;
@@ -19,7 +20,7 @@ interface IConnectedProps {
 interface IActionProps {
 }
 
-type IProps = IConnectedProps & IActionProps;
+type IProps = WithTranslation & IConnectedProps & IActionProps;
 
 class AnnouncementDashlet extends ComponentEx<IProps, {}> {
   private mAppVersion: string;
@@ -149,5 +150,5 @@ function mapDispatchToProps(dispatch: any): IActionProps {
 
 export default
   connect(mapStateToProps, mapDispatchToProps)(
-    translate(['common'], { wait: true })(
+    translate(['common'])(
       AnnouncementDashlet));

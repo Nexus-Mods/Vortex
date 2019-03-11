@@ -205,5 +205,5 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-export default translate([ 'common' ], { wait: true })
+export default translate([ 'common' ])
   (redConnect(mapStateToProps)(RSSDashlet)) as React.ComponentClass<{}>;

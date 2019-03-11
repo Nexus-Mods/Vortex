@@ -26,7 +26,7 @@ export class ExtensionProvider extends React.Component<IExtensionProps, {}> {
     return { extensions };
   }
 
-  public render(): JSX.Element {
+  public render() {
     return React.Children.only(this.props.children);
   }
 }

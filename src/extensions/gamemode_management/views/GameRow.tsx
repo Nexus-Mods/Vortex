@@ -13,13 +13,13 @@ import { IGameStored } from '../types/IGameStored';
 import GameInfoPopover from './GameInfoPopover';
 
 import * as Promise from 'bluebird';
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
 import { ListGroupItem, Media, Popover } from 'react-bootstrap';
 
 export interface IProps {
-  t: I18next.TranslationFunction;
+  t: I18next.TFunction;
   game: IGameStored;
   discovery?: IDiscoveryResult;
   mods?: { [modId: string]: IMod };

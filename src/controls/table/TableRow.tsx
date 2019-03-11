@@ -11,7 +11,7 @@ import VisibilityProxy from '../VisibilityProxy';
 
 import { TD } from './MyTable';
 
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import * as _ from 'lodash';
 import * as React from 'react';
 import { MenuItem } from 'react-bootstrap';
@@ -32,7 +32,7 @@ interface ICellProps {
   data: any;
   rawData: any;
   tableId: string;
-  t: I18next.TranslationFunction;
+  t: I18next.TFunction;
   container: HTMLElement;
   onHighlight: (highlight: boolean) => void;
   right: boolean;
@@ -218,7 +218,7 @@ class TableCell extends React.Component<ICellProps, { isOpen: boolean }> {
 }
 
 export interface IRowProps {
-  t: I18next.TranslationFunction;
+  t: I18next.TFunction;
   id: string;
   tableId: string;
   data: any;
@@ -386,7 +386,7 @@ class TableRow extends React.Component<IRowProps, IRowState> {
     attribute: ITableAttribute,
     rawData: any,
     calculatedData: any,
-    t: I18next.TranslationFunction,
+    t: I18next.TFunction,
     right: boolean): JSX.Element {
 
     const { container, data, language, tableId } = this.props;

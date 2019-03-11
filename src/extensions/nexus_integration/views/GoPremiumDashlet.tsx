@@ -4,8 +4,9 @@ import opn from '../../../util/opn';
 
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
+import { WithTranslation } from 'react-i18next';
 
-class GoPremiumDashlet extends ComponentEx<{}, {}> {
+class GoPremiumDashlet extends ComponentEx<WithTranslation, {}> {
   public render(): JSX.Element {
     const { t } = this.props;
     return (
@@ -26,4 +27,4 @@ class GoPremiumDashlet extends ComponentEx<{}, {}> {
   }
 }
 
-export default translate(['common'], { wait: false })(GoPremiumDashlet);
+export default translate(['common'])(GoPremiumDashlet);

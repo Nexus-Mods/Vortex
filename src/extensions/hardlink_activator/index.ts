@@ -11,7 +11,7 @@ import { IDeployedFile, IDeploymentMethod,
          IUnavailableReason } from '../mod_management/types/IDeploymentMethod';
 
 import * as Promise from 'bluebird';
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import * as path from 'path';
 import turbowalk from 'turbowalk';
 import * as util from 'util';
@@ -37,7 +37,7 @@ class DeploymentMethod extends LinkingDeployment {
         api);
   }
 
-  public detailedDescription(t: I18next.TranslationFunction): string {
+  public detailedDescription(t: I18next.TFunction): string {
     return t(
       'File Systems store files in two parts: \n'
       + ' - an index entry that contains the file name, '

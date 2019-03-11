@@ -12,6 +12,6 @@ export const downloadPath: OutputSelector<any, string, (inPath: string, inGameMo
     downloadPathPattern, activeGameId, (inPath: string, inGameMode: string) =>
       getDownloadPath(inPath, inGameMode));
 
-export const downloadPathForGame: OutputParametricSelector<IState, string, string, (inPath: string, gameId: string) => string> =
+export const downloadPathForGame: OutputParametricSelector<IState, string, string, (inPath: string, gameId: string) => string, any> =
   createCachedSelector(downloadPathPattern, (state: IState, gameId: string) => gameId,
     (inPath: string, gameId: string) => getDownloadPath(inPath, gameId))((state, gameId) => gameId);

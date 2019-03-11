@@ -78,4 +78,4 @@ class PluginList extends ComponentEx<IPluginListProps, {}> {
   }
 }
 
-export default translate(['common', 'morrowind-plugins'], { wait: false })(PluginList);
+export default translate(['common', 'morrowind-plugins'])(PluginList);

@@ -41,7 +41,7 @@ import { spawn, SpawnOptions } from 'child_process';
 import { app as appIn, dialog as dialogIn, ipcMain, ipcRenderer, remote } from 'electron';
 import { EventEmitter } from 'events';
 import * as fs from 'fs';
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import { IHashResult, ILookupResult, IModInfo, IReference } from 'modmeta-db';
 import * as modmetaT from 'modmeta-db';
 const modmeta = lazyRequire<typeof modmetaT>(() => require('modmeta-db'));
@@ -365,9 +365,9 @@ class ExtensionManager {
       selectExecutable: this.selectExecutable,
       selectDir: this.selectDir,
       events: this.mEventEmitter,
-      translate: (input, options?) => {
-        return this.mTranslator !== undefined ? this.mTranslator.t(input, options) : input;
-      },
+      translate: (input, options?) => this.mTranslator !== undefined
+          ? this.mTranslator.t(input, options)
+          : (Array.isArray(input) ? input[0].toString() : input.toString()) as any,
       locale: () => this.mTranslator.language,
       getI18n: () => this.mTranslator,
       getPath: this.getPath,

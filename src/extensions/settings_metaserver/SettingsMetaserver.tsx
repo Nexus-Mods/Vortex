@@ -10,7 +10,7 @@ import DNDContainer from '../../views/DNDContainer';
 import { addMetaserver, removeMetaserver, setPriorities } from './actions';
 import getText from './texts';
 
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import * as _ from 'lodash';
 import * as React from 'react';
 import { ControlLabel, FormGroup, HelpBlock,
@@ -41,7 +41,7 @@ interface IState {
 
 type IProps = IActionProps & IConnectedProps;
 
-const serverSource: DragSourceSpec<any, any, any, any> = {
+const serverSource: DragSourceSpec<any, any> = {
   beginDrag(props) {
     return { id: props.serverId };
   },
@@ -59,7 +59,7 @@ const serverSource: DragSourceSpec<any, any, any, any> = {
   },
 };
 
-const serverTarget: DropTargetSpec<any, any, any> = {
+const serverTarget: DropTargetSpec<any> = {
   hover(props, monitor, component) {
     const source = (monitor.getItem() as any).id;
     const target = props.serverId;
@@ -95,7 +95,7 @@ function collectDrop(connector: DropTargetConnector,
 }
 
 interface IRowProps {
-  t: I18next.TranslationFunction;
+  t: I18next.TFunction;
   server: IServerEntry;
   serverId: string;
   onRemoveMetaserver: (id: string) => void;
@@ -152,7 +152,7 @@ const ServerRowDrag =
       ServerRow)) as any;
 
 interface IListProps {
-  t: I18next.TranslationFunction;
+  t: I18next.TFunction;
   metaservers: { [id: string]: IServerEntry };
   onAddMetaserver: (url: string) => void;
   onRemoveMetaserver: (id: string) => void;
@@ -320,6 +320,6 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
 }
 
 export default
-  translate(['common'], { wait: false })(
+  translate(['common'])(
     connect(mapStateToProps, mapDispatchToProps)(
       SettingsMetaserver)) as React.ComponentClass<{}>;

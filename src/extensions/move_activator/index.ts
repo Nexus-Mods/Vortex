@@ -11,7 +11,7 @@ import { IMod } from '../mod_management/types/IMod';
 import { IDeployedFile, IDeploymentMethod, IUnavailableReason } from '../mod_management/types/IDeploymentMethod';
 
 import * as Promise from 'bluebird';
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import * as path from 'path';
 import turbowalk, { IEntry } from 'turbowalk';
 import * as util from 'util';
@@ -39,7 +39,7 @@ class DeploymentMethod extends LinkingDeployment {
         api);
   }
 
-  public detailedDescription(t: I18next.TranslationFunction): string {
+  public detailedDescription(t: I18next.TFunction): string {
     return t(
       'This deployment method doesn\'t use links but actually moves files to the destination '
       + 'directory.\nFor every deployed file it creates a lnk file in the source location to '

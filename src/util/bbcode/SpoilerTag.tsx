@@ -1,11 +1,11 @@
 import { Tag } from 'bbcode-to-react';
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
-import { translate } from 'react-i18next';
+import { withTranslation } from 'react-i18next';
 
 interface ISpoilerProps {
-  t: I18next.TranslationFunction;
+  t: I18next.TFunction;
   content: any;
 }
 
@@ -33,7 +33,7 @@ class Spoiler extends React.Component<ISpoilerProps, { display: boolean }> {
   }
 }
 
-const SpoilerTrans = translate(['common'], { wait: true })(Spoiler) as React.ComponentClass<any>;
+const SpoilerTrans = withTranslation(['common'])(Spoiler) as React.ComponentClass<any>;
 
 class SpoilerTag extends Tag {
   public toHTML(): string[] {

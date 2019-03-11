@@ -53,7 +53,7 @@ import { setOutdated, terminate, toError } from './util/errorHandling';
 import ExtensionManager from './util/ExtensionManager';
 import { ExtensionProvider } from './util/ExtensionProvider';
 import GlobalNotifications from './util/GlobalNotifications';
-import getI18n from './util/i18n';
+import getI18n, { fallbackTFunc } from './util/i18n';
 import { log } from './util/log';
 import { initApplicationMenu } from './util/menu';
 import { showError } from './util/message';
@@ -64,8 +64,7 @@ import * as Promise from 'bluebird';
 import { ipcRenderer, remote, webFrame } from 'electron';
 import { forwardToMain, getInitialStateRenderer, replayActionRenderer } from 'electron-redux';
 import { EventEmitter } from 'events';
-import * as I18next from 'i18next';
-import { changeLanguage } from 'i18next';
+import I18next from 'i18next';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import { I18nextProvider } from 'react-i18next';
@@ -201,7 +200,7 @@ if (process.env.NODE_ENV === 'development') {
 // extensions are to be loaded has to be retrieved from the main process
 const extensions: ExtensionManager = new ExtensionManager(undefined, eventEmitter);
 const extReducers = extensions.getReducers();
-let tFunc: I18next.TranslationFunction = (input, options) => input;
+let tFunc: I18next.TFunction = fallbackTFunc;
 
 // I only want to add reducers, but redux-electron-store seems to break
 // when calling replaceReducer in the renderer
@@ -260,7 +259,7 @@ store.subscribe(() => {
   const newLanguage: string = store.getState().settings.interface.language;
   if (newLanguage !== currentLanguage) {
     currentLanguage = newLanguage;
-    changeLanguage(newLanguage, (err, t) => {
+    I18next.changeLanguage(newLanguage, (err, t) => {
       if (err !== undefined) {
         if (Array.isArray(err)) {
           // don't show ENOENT errors because it shouldn't really matter

@@ -52,10 +52,13 @@ class ActionControl extends React.Component<IProps, { actions: IActionDefinition
 
   public render() {
     const { children, instanceId } = this.props;
-    return React.cloneElement(React.Children.only(children), {
-      instanceId,
-      actions: this.state.actions,
-    });
+    const child = React.Children.only(children);
+    if (React.isValidElement(child)) {
+      return React.cloneElement(child, {
+        instanceId,
+        actions: this.state.actions,
+      } as any);
+    }
   }
 
   private actionsToShow(props: IProps): IActionDefinitionEx[] {

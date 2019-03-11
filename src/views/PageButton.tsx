@@ -2,12 +2,12 @@ import Icon from '../controls/Icon';
 import Spinner from '../controls/Spinner';
 import { IMainPage } from '../types/IMainPage';
 
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import * as React from 'react';
 import { Badge } from 'react-bootstrap';
 
 interface IPageButtonProps {
-  t: I18next.TranslationFunction;
+  t: I18next.TFunction;
   page: IMainPage;
 }
 

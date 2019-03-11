@@ -1,7 +1,8 @@
 import * as React from 'react';
 import { PureComponentEx, translate } from '../util/ComponentEx';
+import { WithTranslation } from 'react-i18next';
 
-export class ICollapseProps {
+export interface ICollapseProps extends WithTranslation {
   showText?: string;
   hideText?: string;
 }
@@ -49,4 +50,4 @@ class Collapse extends PureComponentEx<ICollapseProps, ICollapseState> {
   }
 }
 
-export default translate(['common'], { wait: true })(Collapse);
+export default translate(['common'])(Collapse);

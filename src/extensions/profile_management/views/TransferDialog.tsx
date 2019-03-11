@@ -1,6 +1,6 @@
 import { IconButton } from '../../../controls/TooltipControls';
 import { IState } from '../../../types/IState';
-import { ComponentEx } from '../../../util/ComponentEx';
+import { ComponentEx, translate } from '../../../util/ComponentEx';
 import { getSafe } from '../../../util/storeHelper';
 
 import { IMod } from '../../mod_management/types/IMod';
@@ -11,7 +11,6 @@ import { IProfile } from '../types/IProfile';
 
 import * as React from 'react';
 import { Button, Checkbox, FormControl, Modal } from 'react-bootstrap';
-import { translate } from 'react-i18next';
 import { connect } from 'react-redux';
 
 interface IDialog {
@@ -139,5 +138,5 @@ function mapDispatchToProps(dispatch): IActionProps {
   };
 }
 
-export default translate(['common', 'profile-management'], { wait: false })(
+export default translate(['common', 'profile-management'])(
   connect(mapStateToProps, mapDispatchToProps)(Editor)) as React.ComponentClass<{}>;

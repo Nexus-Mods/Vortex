@@ -28,7 +28,7 @@ import QuickLauncher from './QuickLauncher';
 import Settings from './Settings';
 import WindowControls from './WindowControls';
 
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import update from 'immutability-helper';
 import * as _ from 'lodash';
 import * as PropTypes from 'prop-types';
@@ -45,7 +45,7 @@ addStyle(ReactButton, 'ghost');
 addStyle(ReactButton, 'inverted');
 
 export interface IBaseProps {
-  t: I18next.TranslationFunction;
+  t: I18next.TFunction;
   className: string;
   api: IExtensionApi;
 }
