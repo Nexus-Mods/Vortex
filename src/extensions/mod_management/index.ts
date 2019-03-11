@@ -36,12 +36,14 @@ import { setModEnabled } from '../profile_management/actions/profiles';
 import { IProfile, IProfileMod } from '../profile_management/types/IProfile';
 
 import { setDeploymentNecessary } from './actions/deployment';
-import {removeMod, setModAttribute, setTransferMods} from './actions/mods';
+import {removeMod, setModAttribute} from './actions/mods';
 import { setDeploymentProblem, showExternalChanges } from './actions/session';
+import {setTransferMods} from './actions/transactions';
 import {deploymentReducer} from './reducers/deployment';
 import {modsReducer} from './reducers/mods';
 import {sessionReducer} from './reducers/session';
 import {settingsReducer} from './reducers/settings';
+import {transactionsReducer} from './reducers/transactions';
 import {IDeployedFile, IFileChange, IUnavailableReason} from './types/IDeploymentMethod';
 import {IFileEntry} from './types/IFileEntry';
 import {IFileMerge} from './types/IFileMerge';
@@ -859,7 +861,7 @@ function checkPendingTransfer(api: IExtensionApi): Promise<ITestResult> {
     return Promise.resolve(result);
   }
 
-  const pendingTransfer: string[] = ['persistent', 'mods', 'pendingTransfer', gameMode];
+  const pendingTransfer: string[] = ['persistent', 'transactions', 'transfer', gameMode];
   const transferDestination = getSafe(state, pendingTransfer, undefined);
   if (transferDestination === undefined) {
     return Promise.resolve(result);
@@ -987,6 +989,7 @@ function init(context: IExtensionContext): boolean {
   context.registerReducer(['settings', 'mods'], settingsReducer);
   context.registerReducer(['persistent', 'mods'], modsReducer);
   context.registerReducer(['persistent', 'deployment'], deploymentReducer);
+  context.registerReducer(['persistent', 'transactions'], transactionsReducer);
 
   context.registerTableAttribute('mods', genModsSourceAttribute(context.api));
 

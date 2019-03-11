@@ -16,7 +16,7 @@ import { getSafe } from '../../../util/storeHelper';
 import { testPathTransfer, transferPath } from '../../../util/transferPath';
 import { isChildPath } from '../../../util/util';
 import { setDownloadPath, setMaxDownloads } from '../actions/settings';
-import { setTransferDownloads } from '../actions/state';
+import { setTransferDownloads } from '../actions/transactions';
 
 import getDownloadPath, {getDownloadPathPattern} from '../util/getDownloadPath';
 
@@ -374,7 +374,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         //  Check if we still have the transfer state populated,
         //  if it is - that means that the user has cancelled the transfer,
         //  we need to cleanup.
-        const pendingTransfer: string[] = ['persistent', 'downloads', 'pendingTransfer'];
+        const pendingTransfer: string[] = ['persistent', 'transactions', 'transfer', 'downloads'];
         if (getSafe(state, pendingTransfer, undefined) !== undefined) {
           return fs.removeAsync(newPath)
             .then(() => {

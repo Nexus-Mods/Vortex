@@ -19,10 +19,12 @@ import {
   setDownloadModInfo,
   setDownloadSpeed,
   setDownloadSpeeds,
-  setTransferDownloads,
 } from './actions/state';
+
+import { setTransferDownloads } from './actions/transactions';
 import { settingsReducer } from './reducers/settings';
 import { stateReducer } from './reducers/state';
+import { transactionsReducer } from './reducers/transactions';
 import { IDownload } from './types/IDownload';
 import { IProtocolHandlers } from './types/ProtocolHandlers';
 import getDownloadGames from './util/getDownloadGames';
@@ -399,7 +401,7 @@ function checkPendingTransfer(api: IExtensionApi): Promise<ITestResult> {
     return Promise.resolve(result);
   }
 
-  const pendingTransfer: string[] = ['persistent', 'downloads', 'pendingTransfer'];
+  const pendingTransfer: string[] = ['persistent', 'transactions', 'transfer', 'downloads'];
   const transferDestination = getSafe(state, pendingTransfer, undefined);
   if (transferDestination === undefined) {
     return Promise.resolve(result);
@@ -453,6 +455,7 @@ function init(context: IExtensionContextExt): boolean {
   context.registerFooter('speed-o-meter', SpeedOMeter);
 
   context.registerReducer(['persistent', 'downloads'], stateReducer);
+  context.registerReducer(['persistent', 'transactions'], transactionsReducer);
   context.registerReducer(['settings', 'downloads'], settingsReducer);
 
   context.registerDownloadProtocol = (schema: string, handler: ProtocolHandler) => {

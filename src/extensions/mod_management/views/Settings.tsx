@@ -22,8 +22,8 @@ import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResu
 import { IGameStored } from '../../gamemode_management/types/IGameStored';
 
 import { setDeploymentNecessary } from '../actions/deployment';
-import { setTransferMods } from '../actions/mods';
 import { setActivator, setInstallPath } from '../actions/settings';
+import { setTransferMods } from '../actions/transactions';
 
 import { IDeploymentMethod } from '../types/IDeploymentMethod';
 import { getSupportedActivators } from '../util/deploymentMethods';
@@ -330,7 +330,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         //  Check if we still have the transfer state populated,
         //  if it is - that means that the user has cancelled the transfer,
         //  we need to cleanup.
-        const pendingTransfer: string[] = ['persistent', 'mods', 'pendingTransfer', gameMode];
+        const pendingTransfer: string[] = ['persistent', 'transactions', 'transfer', gameMode];
         if (getSafe(state, pendingTransfer, undefined) !== undefined) {
           return fs.removeAsync(newInstallPath)
             .then(() => {
