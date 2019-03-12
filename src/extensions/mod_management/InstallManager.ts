@@ -369,33 +369,23 @@ class InstallManager {
               }
             });
         } else {
-          // TODO: This drops the original error stack and makes the errors reported here ugly
-          //   and harder to diagnoes
           const { genHash } = require('modmeta-db');
-          let errMessage: string;
-          let allowReport = true;
-          if (typeof err === 'string') {
-            errMessage = err;
-          } else {
-            const pretty = prettifyNodeErrorMessage(err);
-            errMessage = api.translate(pretty.message, { replace: pretty.replace });
-            if (pretty.allowReport !== undefined) {
-              allowReport = pretty.allowReport;
-            }
-          }
 
           return prom
             .then(() => genHash(archivePath).catch(() => ({})))
             .then((hashResult: IHashResult) => {
               const id = `${path.basename(archivePath)} (md5: ${hashResult.md5sum})`;
-              if (installContext !== undefined) {
-                installContext.reportError(
-                    'Installation failed',
-                    `The installer "{{ id }}" failed: {{ message }}`,
-                    allowReport, {
+              let message = err;
+              let replace = {};
+              if (typeof err === 'string') {
+                message = 'The installer "{{ id }}" failed: {{ message }}';
+                replace = {
                       id,
-                      message: errMessage,
-                    });
+                      message: err,
+                    };
+              }
+              if (installContext !== undefined) {
+                installContext.reportError('Installation failed', message, undefined, replace);
               }
               if (callback !== undefined) {
                 callback(err, modId);
@@ -483,7 +473,11 @@ class InstallManager {
 
   private determineModType(gameId: string, installInstructions: IInstruction[]): Promise<string> {
     log('info', 'determine mod type', { gameId });
-    const modTypes: IModType[] = getGame(gameId).modTypes;
+    const game = getGame(gameId);
+    if (game === undefined) {
+      return Promise.reject(new Error(`Invalid game "${gameId}"`));
+    }
+    const modTypes: IModType[] = game.modTypes;
     // sort with priority descending so we can stop as soon as we've hit the first match
     const sorted = modTypes.sort((lhs, rhs) => rhs.priority - lhs.priority);
     let found = false;
