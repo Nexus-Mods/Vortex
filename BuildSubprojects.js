@@ -180,17 +180,6 @@ function updateLock(modulePath, feedback) {
   }
 }
 
-function removeModules(project, feedback) {
-  if (project.removeModules === undefined) {
-    return Promise.resolve();
-  }
-
-  return Promise.map(project.removeModules,
-                     (mod) => rimrafAsync(path.join(__dirname, project.path,
-                                                    'node_modules', mod)))
-    .then(() => updateLock(path.join(__dirname, project.path), feedback));
-}
-
 function processCustom(project, buildType, feedback) {
   const start = Date.now();
   let res = npm('install', [], { cwd: project.path }, feedback)
@@ -258,7 +247,7 @@ function processProject(project, buildType, feedback) {
 function main(args) {
   if (args.length === 0) {
     console.error('No command line parameters specified');
-    return;
+    return Promise.reject(1);
   }
 
   const globalFeedback = new ProcessFeedback('global');
@@ -277,9 +266,11 @@ function main(args) {
     buildState = {};
   }
 
+  let failed = false;
+
   // the projects file contains groups of projects
   // each group is processed in parallel
-  Promise.each(projectGroups, (projects) => Promise.map(projects, (project) => {
+  return Promise.each(projectGroups, (projects) => Promise.map(projects, (project) => {
     let feedback = new ProcessFeedback(project.name);
     return changes(project.path || '.', project.sources, args.f || (buildState[project.name] === undefined))
         .then((lastChange) => {
@@ -299,10 +290,13 @@ function main(args) {
             console.log('condition wasn\'t met', project.name);
           } else {
             console.error('failed ', project.name, err);
+            failed = true;
           }
         })
         ;
-  }, { concurrency: 4 }));
+  }, { concurrency: 4 }))
+  .then(() => failed ? 1 : 0);
 }
 
-main(minimist(process.argv.slice(2)));
+main(minimist(process.argv.slice(2)))
+  .then(res => process.exit(res));
