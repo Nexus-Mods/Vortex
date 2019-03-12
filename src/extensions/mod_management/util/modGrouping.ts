@@ -17,15 +17,29 @@ function byModId(input: IModWithState[]): IModWithState[][] {
   return Object.keys(grouped).map(modId => grouped[modId]);
 }
 
+function logicalName(attributes: any) {
+  if ((attributes.logicalFileName === undefined)
+      || (attributes.version === undefined)) {
+    return attributes.logicalFileName;
+  }
+  return attributes.logicalFileName.replace(attributes.version, '').trim();
+}
+
 function fileMatch(lhs: IModWithState, rhs: IModWithState): boolean {
   if ((lhs.attributes === undefined) || (rhs.attributes === undefined)) {
     return false;
   }
-  if (truthy(lhs.attributes.logicalFileName) && truthy(rhs.attributes.logicalFileName)) {
-    return lhs.attributes.logicalFileName === rhs.attributes.logicalFileName;
-  } else if (truthy(lhs.attributes.newestFileId) && truthy(rhs.attributes.newestFileId)) {
-    return lhs.attributes.newestFileId === rhs.attributes.newestFileId;
+
+  if (truthy(lhs.attributes.newestFileId)
+      && (lhs.attributes.newestFileId === rhs.attributes.newestFileId)) {
+    return true;
   }
+
+  if (truthy(lhs.attributes.logicalFileName)
+      && (logicalName(lhs.attributes) === logicalName(rhs.attributes))) {
+    return true;
+  }
+
   return false;
 }
 
