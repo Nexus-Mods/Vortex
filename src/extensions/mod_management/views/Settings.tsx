@@ -512,7 +512,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private suggestPath = () => {
-    const { discovery } = this.props;
+    const { discovery, onShowError } = this.props;
     Promise.join(fs.statAsync(discovery.path), fs.statAsync(remote.app.getPath('userData')))
       .then(stats => {
         let suggestion: string;
@@ -523,6 +523,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           suggestion = path.join(volume, 'Vortex Mods', '{game}');
         }
         this.changePath(suggestion);
+      })
+      .catch(err => {
+        onShowError('Failed to suggest path', err);
       });
   }
 
@@ -653,7 +656,7 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
     },
     onShowDialog: (type, title, content, actions) =>
       dispatch(showDialog(type, title, content, actions)),
-    onShowError: (message: string, details: string | Error, allowReport): void => {
+    onShowError: (message: string, details: string | Error, allowReport?: boolean): void => {
       showError(dispatch, message, details, { allowReport });
     },
   };
