@@ -523,12 +523,18 @@ function queryInfo(api: IExtensionApi, instanceIds: string[]) {
     })
     .then((modInfo: ILookupResult[]) => {
       if (modInfo.length > 0) {
+        const info = modInfo[0].value;
         try {
-          const nxmUrl = new NXMUrl(modInfo[0].value.sourceURI);
+          const nxmUrl = new NXMUrl(info.sourceURI);
           api.store.dispatch(setDownloadModInfo(dlId, 'source', 'nexus'));
           api.store.dispatch(setDownloadModInfo(dlId, 'nexus.ids.gameId', nxmUrl.gameId));
           api.store.dispatch(setDownloadModInfo(dlId, 'nexus.ids.fileId', nxmUrl.fileId));
           api.store.dispatch(setDownloadModInfo(dlId, 'nexus.ids.modId', nxmUrl.modId));
+
+          api.store.dispatch(setDownloadModInfo(dlId, 'version', info.fileVersion));
+          api.store.dispatch(setDownloadModInfo(dlId, 'game', info.gameId));
+          api.store.dispatch(setDownloadModInfo(dlId, 'name',
+                                                info.logicalFileName || info.fileName));
         } catch (err) {
           // failed to parse the uri as an nxm link - that's not an error in this case, if
           // the meta server wasn't nexus mods this is to be expected
