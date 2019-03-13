@@ -89,6 +89,7 @@ export function transferPath(source: string,
   let completed: number = 0;
   let count: number = 0;
   let lastPerc: number = 0;
+  let lastProgress: number = 0;
 
   let copyPromise = Promise.resolve();
 
@@ -143,8 +144,9 @@ export function transferPath(source: string,
           .then(() => {
             ++completed;
             const perc = Math.floor((completed * 100) / count);
-            if (perc !== lastPerc) {
+            if ((perc !== lastPerc) || ((Date.now() - lastProgress) > 1000)) {
               lastPerc = perc;
+              lastProgress = Date.now();
               progress(sourcePath, destPath, perc);
             }
           });

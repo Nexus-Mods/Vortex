@@ -75,6 +75,7 @@ interface IComponentState {
   installPath: string;
   busy: string;
   progress: number;
+  progressFile: string;
   supportedActivators: IDeploymentMethod[];
   currentActivator: string;
   changingActivator: boolean;
@@ -86,11 +87,13 @@ type IProps = IBaseProps & IActionProps & IConnectedProps;
 const nop = () => undefined;
 
 class Settings extends ComponentEx<IProps, IComponentState> {
+  private mLastFileUpdate: number = 0;
   constructor(props: IProps) {
     super(props);
     this.initState({
       busy: undefined,
       progress: 0,
+      progressFile: undefined,
       supportedActivators: [],
       currentActivator: props.currentActivator,
       installPath: props.installPath,
@@ -120,7 +123,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
   public render(): JSX.Element {
     const { t, discovery, game } = this.props;
-    const { currentActivator, progress, supportedActivators } = this.state;
+    const { currentActivator, progress, progressFile, supportedActivators } = this.state;
 
     if (game === undefined) {
       return (
@@ -147,8 +150,11 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             <Modal show={this.state.busy !== undefined} onHide={nop}>
               <Modal.Body>
                 <Jumbotron>
-                  <p>{this.state.busy}</p>
-                  <ProgressBar style={{ height: '1.5em' }} now={progress} />
+                  <div className='container'>
+                    <h2>{this.state.busy}</h2>
+                    {(progressFile !== undefined) ? (<p>{progressFile}</p>) : null}
+                    <ProgressBar style={{ height: '1.5em' }} now={progress} />
+                  </div>
                 </Jumbotron>
               </Modal.Body>
             </Modal>
@@ -197,6 +203,10 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     return transferPath(oldPath, newPath, (from: string, to: string, progress: number) => {
       if (progress > this.state.progress) {
         this.nextState.progress = progress;
+      }
+      if ((this.state.progressFile !== from)
+          && ((Date.now() - this.mLastFileUpdate) > 1000)) {
+        this.nextState.progressFile = path.basename(from);
       }
     });
   }

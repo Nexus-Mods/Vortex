@@ -54,12 +54,14 @@ interface IComponentState {
   downloadPath: string;
   busy: string;
   progress: number;
+  progressFile: string;
   currentPlatform: string;
 }
 
 const nop = () => null;
 
 class Settings extends ComponentEx<IProps, IComponentState> {
+  private mLastFileUpdate: number = 0;
   constructor(props: IProps) {
     super(props);
 
@@ -67,6 +69,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       downloadPath: props.downloadPath,
       busy: undefined,
       progress: 0,
+      progressFile: undefined,
       currentPlatform: '',
     });
   }
@@ -83,7 +86,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
   public render(): JSX.Element {
     const { t, isPremium, parallelDownloads } = this.props;
-    const { downloadPath, progress } = this.state;
+    const { downloadPath, progress, progressFile } = this.state;
 
     const changed = this.props.downloadPath !== downloadPath;
     const pathPreview = getDownloadPath(downloadPath, undefined);
@@ -142,8 +145,11 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             <Modal show={this.state.busy !== undefined} onHide={nop}>
               <Modal.Body>
                 <Jumbotron>
-                  <p>{this.state.busy}</p>
-                  <ProgressBar style={{ height: '1.5em' }} now={progress} max={100}/>
+                  <div className='container'>
+                    <h2>{this.state.busy}</h2>
+                    {(progressFile !== undefined) ? (<p>{progressFile}</p>) : null}
+                    <ProgressBar style={{ height: '1.5em' }} now={progress} max={100} />
+                  </div>
                 </Jumbotron>
               </Modal.Body>
             </Modal>
@@ -426,6 +432,10 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       log('debug', 'transfer download', { from, to });
       if (progress > this.state.progress) {
         this.nextState.progress = progress;
+      }
+      if ((this.state.progressFile !== from)
+          && ((Date.now() - this.mLastFileUpdate) > 1000)) {
+        this.nextState.progressFile = path.basename(from);
       }
     });
   }
