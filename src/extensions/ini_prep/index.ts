@@ -1,5 +1,6 @@
 import {IExtensionContext} from '../../types/IExtensionContext';
 import { IProfile, IState } from '../../types/IState';
+import { ITestResult } from '../../types/ITestResult';
 import { UserCanceled } from '../../util/CustomErrors';
 import deepMerge from '../../util/deepMerge';
 import * as fs from '../../util/fs';
@@ -21,6 +22,9 @@ import * as Promise from 'bluebird';
 import { TranslationFunction } from 'i18next';
 import * as path from 'path';
 import IniParser, { IniFile, WinapiFormat } from 'vortex-parse-ini';
+import * as winapi from 'winapi-bindings';
+
+import * as os from 'os';
 
 function ensureIniBackups(t: TranslationFunction, gameMode: string,
                           discovery: IDiscoveryResult): Promise<void> {
@@ -186,6 +190,63 @@ function purgeChanges(t: TranslationFunction, gameMode: string, discovery: IDisc
             .then(() => fs.copyAsync(iniFileName + '.base', iniFileName, { noSelfCopy: true })));
 }
 
+function testControlledFolderAccess(): Promise<ITestResult> {
+  if ((process.platform !== 'win32') || (os.release().substr(0, 2) !== '10')) {
+    // This is a windows 10 only check.
+    return Promise.resolve(undefined);
+  }
+
+  try {
+    const controlledFolderAccessEnabled = winapi.RegGetValue(
+      'HKEY_LOCAL_MACHINE',
+      // tslint:disable-next-line: max-line-length
+      'SOFTWARE\\Microsoft\\Windows Defender\\Windows Defender Exploit Guard\\Controlled Folder Access',
+      'EnableControlledFolderAccess');
+    if (!controlledFolderAccessEnabled || (controlledFolderAccessEnabled.type !== 'REG_DWORD')) {
+      // The registry value doesn't exist, or we got back an unexpected type.
+      //  This shouldn't happen....
+      const addendum = (controlledFolderAccessEnabled !== undefined)
+        ? `Unexpected type: ${controlledFolderAccessEnabled.type}`
+        : 'Missing key';
+      log('warn', 'Unable to ascertain the status of Microsoft\'s '
+                + 'controlled folder access feature', addendum);
+      return Promise.resolve(undefined);
+    } else {
+      if (controlledFolderAccessEnabled.value === 0) {
+        return Promise.resolve(undefined);
+      }
+    }
+  } catch (err) {
+    // Something went wrong with the native code...
+    //  We log this and resolve.
+    log('error', 'winapi.RegGetValue failed to retrieve controlled folder access status', err);
+    return Promise.resolve(undefined);
+  }
+
+  const result: ITestResult = {
+    description: {
+      short: 'Controlled folder access detected',
+      long: 'Microsoft\'s Windows Defender application provides its users with a ransomware '
+        + 'protection service called "Controlled Folder Access". This service blocks applications '
+        + 'from making changes to certain protected paths such as My Documents, Downloads, '
+        + 'etc.<br/><br />'
+        + 'In order to function correctly, Vortex requires access to these protected paths and '
+        + 'therefore requires you to manually add an exception for Vortex. To do this:<br />'
+        + '1. Click the start button and type-in for "Windows Defender Settings" and open it.<br />'
+        + '2. Click on "Virus & threat protection".<br />'
+        + '3. Click on "Ransomware protection".<br />'
+        + '4. Select "Allow an app through Controlled folder access".<br />'
+        + '5. Finally, click on "Add an allowed app" and browse to Vortex\'s executable file '
+        + 'which by default can be found in '
+        + '"C:\\Program Files\\Black Tree Gaming Ltd\\Vortex\\Vortex.exe"<br /><br />'
+        + 'For a more in-depth guide please view: {{link}}',
+    },
+    severity: 'error',
+  };
+
+  return Promise.resolve(result);
+}
+
 function main(context: IExtensionContext) {
   context.registerTableAttribute('mods', {
     id: 'ini-edits',
@@ -195,6 +256,9 @@ function main(context: IExtensionContext) {
     placement: 'detail',
     edit: {},
   });
+
+  context.registerTest('controlled-folder-access', 'gamemode-activated',
+    () => testControlledFolderAccess());
 
   context.once(() => {
     let deactivated: boolean = false;
