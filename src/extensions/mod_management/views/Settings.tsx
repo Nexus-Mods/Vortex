@@ -64,7 +64,7 @@ interface IActionProps {
     content: IDialogContent,
     actions: DialogActions,
   ) => Promise<IDialogResult>;
-  onShowError: (message: string, details: string | Error, allowReport: boolean) => void;
+  onShowError: (message: string, details: string | Error, allowReport?: boolean) => void;
 }
 
 interface IComponentState {
