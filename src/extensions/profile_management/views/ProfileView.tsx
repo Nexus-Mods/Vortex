@@ -136,7 +136,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
   private sortProfiles(profiles: { [id: string]: IProfile }, language: string) {
     return Object.keys(profiles).sort(
       (lhs: string, rhs: string): number =>
-        profiles[lhs].gameId !== profiles[rhs].gameId
+        (profiles[lhs].gameId !== profiles[rhs].gameId)
           ? profiles[lhs].gameId.localeCompare(profiles[rhs].gameId)
           : profiles[lhs].name.localeCompare(profiles[rhs].name, language,
             { sensitivity: 'base' }));

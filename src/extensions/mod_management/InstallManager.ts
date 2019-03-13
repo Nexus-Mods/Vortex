@@ -752,7 +752,7 @@ class InstallManager {
       store.dispatch(showDialog(
           'question', modName(oldMod),
           {
-            message:
+            text:
             'An older version of this mod is already installed.' +
             'You can replace the existing one or install this one alongside it. ' +
             'If you have other profiles they will continue using the old version.',
