@@ -1209,9 +1209,11 @@ class ExtensionManager {
 
     const res = fs.readdirSync(extensionsPath)
       .filter(name => !loadedExtensions.has(name))
-      .filter(name => getSafe(this.mExtensionState, [name, 'enabled'], true))
       .filter(name => fs.statSync(path.join(extensionsPath, name)).isDirectory())
       .map(name => {
+        if (!getSafe(this.mExtensionState, [name, 'enabled'], true)) {
+          log('debug', 'extension disabled', { name });
+        }
         try {
           // first, mark this extension as loaded. If this is a user extension and there is an
           // extension with the same name in the bundle we could otherwise end up loading the

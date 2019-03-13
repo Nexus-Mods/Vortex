@@ -516,8 +516,8 @@ function doSaveActivation(api: IExtensionApi, typeId: string, modPath: string,
   return saveActivation(typeId, state.app.instanceId, modPath, files, activatorId)
     .catch(err => api.showDialog('error', 'Saving manifest failed', {
       text: 'Saving the manifest failed (see error below). This could lead to errors '
-        + '(e.g. orphaned files in the game directory, external changes not being detected). '
-        + 'later on, please either retry or immediately "purge" after this and try '
+        + '(e.g. orphaned files in the game directory, external changes not being detected) '
+        + 'later on. Please either retry or immediately "purge" after this and try '
         + 'deploying again.',
       message: err.stack,
     }, [
@@ -820,12 +820,12 @@ function once(api: IExtensionApi) {
 
   api.onStateChange(
       ['persistent', 'deployment', 'needToDeploy'],
-      (previous, current) => {
-        const gameMode = activeGameId(store.getState());
-        if (previous[gameMode] !== current[gameMode]) {
+    (previous, current) => {
+      const gameMode = activeGameId(store.getState());
+      if (previous[gameMode] !== current[gameMode]) {
         onNeedToDeploy(api, current[gameMode]);
-                  }
-                },
+      }
+    },
   );
 
   api.events.on('start-install', (archivePath: string,
