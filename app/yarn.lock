@@ -3638,8 +3638,8 @@ tunnel-agent@^0.6.0:
     safe-buffer "^5.0.1"
 
 turbowalk@Nexus-Mods/node-turbowalk:
-  version "1.3.5"
-  resolved "https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/ff7a1a676f1e7e4674f54ce189c3f868413bef0a"
+  version "1.3.6"
+  resolved "https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/bad1894e0d672d0c46f84cafffce5cf548de0040"
   dependencies:
     autogypi "^0.2.2"
     fs-extra-promise "^1.0.1"
