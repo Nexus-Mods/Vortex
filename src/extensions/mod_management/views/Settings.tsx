@@ -7,7 +7,7 @@ import { Button } from '../../../controls/TooltipControls';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
 import { ValidationState } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { InsufficientDiskSpace, TemporaryError,
+import { InsufficientDiskSpace, ProcessCanceled, TemporaryError,
          UnsupportedOperatingSystem, UserCanceled } from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
 import getVortexPath from '../../../util/getVortexPath';
@@ -195,20 +195,56 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private transferPath() {
-    const { gameMode, onSetTransfer } = this.props;
+    const { gameMode, onSetTransfer, onShowDialog } = this.props;
     const oldPath = getInstallPath(this.props.installPath, gameMode);
     const newPath = getInstallPath(this.state.installPath, gameMode);
 
-    onSetTransfer(gameMode, newPath);
-    return transferPath(oldPath, newPath, (from: string, to: string, progress: number) => {
-      if (progress > this.state.progress) {
-        this.nextState.progress = progress;
-      }
-      if ((this.state.progressFile !== from)
-          && ((Date.now() - this.mLastFileUpdate) > 1000)) {
-        this.nextState.progressFile = path.basename(from);
-      }
-    });
+    return fs.statAsync(oldPath)
+      .catch(err => {
+        // The initial mods staging folder is missing! - this may be a valid case if:
+        //  1. HDD or removable media is faulty or has become unseated and is
+        //  no longer detectable by the OS.
+        //  2. Source folder was located on a network drive which is no longer available.
+        //  3. User has changed drive letter for whatever reason.
+        //
+        //  Currently we have confirmed that the error code will be set to "UNKNOWN"
+        //  for all these cases, but we may have to add other error codes if different
+        //  error cases pop up.
+        log('warn', 'Transfer failed - missing source directory', err);
+        return (err.code === 'UNKNOWN')
+          ? Promise.reject(new ProcessCanceled('Source directory does not exist!'))
+          : Promise.reject(err);
+      })
+      .then(() => {
+        onSetTransfer(gameMode, newPath);
+        return transferPath(oldPath, newPath, (from: string, to: string, progress: number) => {
+          if (progress > this.state.progress) {
+            this.nextState.progress = progress;
+          }
+          if ((this.state.progressFile !== from)
+              && ((Date.now() - this.mLastFileUpdate) > 1000)) {
+            this.nextState.progressFile = path.basename(from);
+          }
+        });
+      }).catch(ProcessCanceled, () => new Promise((resolve, reject) => {
+        onShowDialog('question', 'Missing staging folder', {
+          bbcode: 'Vortex is unable to find your current mods staging folder. '
+                 + 'This can happen when: <br />'
+                 + '1. You or an external application removed this folder.<br />'
+                 + '2. Your HDD/removable drive became faulty or unseated.<br />'
+                 + '3. The staging folder was located on a network drive which has been '
+                 + 'disconnected for some reason.<br /><br />'
+                 + 'Please diagnose your system and ensure that the source folder is detectable '
+                 + 'by your operating system.<br /><br />'
+                 + 'Alternatively, if you want to force Vortex to "re-initialize" your staging '
+                 + 'folder at the destination you have chosen, Vortex can do this for you but '
+                 + 'note that the folder will be empty as nothing will be transferred inside it!',
+        },
+        [
+          { label: 'Cancel', action: () => reject(new UserCanceled()) },
+          { label: 'Re-initialize', action: () => resolve() },
+        ]);
+      }));
   }
 
   private applyPaths = () => {
