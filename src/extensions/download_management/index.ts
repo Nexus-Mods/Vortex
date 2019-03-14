@@ -63,7 +63,8 @@ function writeDownloadsTag(api: IExtensionApi, tagPath: string) {
   const data = {
     instance: state.app.instanceId,
   };
-  return fs.writeFileAsync(tagPath, JSON.stringify(data), {  encoding: 'utf8' });
+  return fs.writeFileAsync(path.join(tagPath, DOWNLOADS_DIR_TAG),
+    JSON.stringify(data), {  encoding: 'utf8' });
 }
 
 function validateDownloadsTag(api: IExtensionApi, tagPath: string): Promise<void> {
@@ -349,7 +350,7 @@ function removeDownloadsMetadata(api: IExtensionApi): Promise<void> {
 
 function testDownloadPath(api: IExtensionApi): Promise<void> {
   const state: IState = api.store.getState();
-  let currentDownloadPath = selectors.downloadPath(state);
+  let currentDownloadPath = state.settings.downloads.path;
   const ensureDownloadsDirectory = (): Promise<void> => fs.statAsync(currentDownloadPath)
     .catch(err =>
       api.showDialog('error', ' Downloads Folder missing!', {
