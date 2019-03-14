@@ -409,7 +409,7 @@ function testDownloadPath(api: IExtensionApi): Promise<void> {
           .catch(() => ensureDownloadsDirectory());
         }
       }))
-      .then(() => writeDownloadsTag(api, DOWNLOADS_DIR_TAG));
+      .then(() => writeDownloadsTag(api, currentDownloadPath));
 
   return ensureDownloadsDirectory().then(() => Promise.resolve());
 }
