@@ -239,7 +239,8 @@ function testControlledFolderAccess(): Promise<ITestResult> {
         + '5. Finally, click on "Add an allowed app" and browse to Vortex\'s executable file '
         + 'which by default can be found in '
         + '"C:\\Program Files\\Black Tree Gaming Ltd\\Vortex\\Vortex.exe"<br /><br />'
-        + 'For a more in-depth guide please view: {{link}}',
+        + 'For a more in-depth guide please view: '
+        + '[url]https://wiki.nexusmods.com/index.php/Controlled_Folder_Access[/url]',
     },
     severity: 'error',
   };
@@ -257,7 +258,7 @@ function main(context: IExtensionContext) {
     edit: {},
   });
 
-  context.registerTest('controlled-folder-access', 'gamemode-activated',
+  context.registerTest('controlled-folder-access', 'startup',
     () => testControlledFolderAccess());
 
   context.once(() => {
