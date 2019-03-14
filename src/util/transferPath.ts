@@ -48,7 +48,17 @@ export function testPathTransfer(source: string, destination: string): Promise<v
   };
 
   let totalNeededBytes = 0;
-  return isOnSameVolume()
+  return fs.statAsync(source)
+    .catch(err => {
+      // We were unable to confirm the existence of the source directory!
+      //  This is a valid use case when the source was a directory on
+      //  a removable drive or network drive that is no longer there, or
+      //  possibly a faulty HDD that was replaced.
+      //  For that reason, we're going to skip disk calculations entirely.
+      log('warn', 'Transfer disk space test failed - missing source directory', err);
+      return Promise.reject(new ProcessCanceled('Missing source directory'));
+    })
+    .then(() => isOnSameVolume())
     .then(res => res
       ? Promise.reject(new ProcessCanceled('Disk space calculations are unnecessary.'))
       : calculate(source))
