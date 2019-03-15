@@ -12,5 +12,11 @@ module.exports = {
       throw new Error(error);
     }
   },
+  RegGetValue: () => {
+    return {
+      type: 'REG_SZ',
+      value: 'foobar',
+    };
+  },
   __setError: (err) => { error = err; },
 };
