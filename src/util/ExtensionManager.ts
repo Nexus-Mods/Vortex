@@ -42,6 +42,7 @@ import { app as appIn, dialog as dialogIn, ipcMain, ipcRenderer, remote } from '
 import { EventEmitter } from 'events';
 import * as fs from 'fs';
 import * as I18next from 'i18next';
+import * as _ from 'lodash';
 import { IHashResult, ILookupResult, IModInfo, IReference } from 'modmeta-db';
 import * as modmetaT from 'modmeta-db';
 const modmeta = lazyRequire<typeof modmetaT>(() => require('modmeta-db'));
@@ -781,9 +782,12 @@ class ExtensionManager {
   private selectFile(options: IOpenOptions) {
     return new Promise<string>((resolve, reject) => {
       const fullOptions: Electron.OpenDialogOptions = {
-        ...options,
+        ..._.omit(options, ['create']),
         properties: ['openFile'],
       };
+      if (options.create === true) {
+        fullOptions.properties.push('promptToCreate');
+      }
       const win = remote !== undefined ? remote.getCurrentWindow() : null;
       dialog.showOpenDialog(win, fullOptions, (fileNames: string[]) => {
         if ((fileNames !== undefined) && (fileNames.length > 0)) {
@@ -799,7 +803,7 @@ class ExtensionManager {
     return new Promise<string>((resolve, reject) => {
       // TODO: make the filter list dynamic based on the list of registered interpreters?
       const fullOptions: Electron.OpenDialogOptions = {
-        ...options,
+        ..._.omit(options, ['create']),
         properties: ['openFile'],
         filters: [
           { name: 'All Executables', extensions: ['exe', 'cmd', 'bat', 'jar', 'py'] },
@@ -822,7 +826,7 @@ class ExtensionManager {
   private selectDir(options: IOpenOptions) {
     return new Promise<string>((resolve, reject) => {
       const fullOptions: Electron.OpenDialogOptions = {
-        ...options,
+        ..._.omit(options, ['create']),
         properties: ['openDirectory'],
       };
       const win = remote !== undefined ? remote.getCurrentWindow() : null;
