@@ -17,6 +17,6 @@ function extend(registerFunc) {
   };
 }
 
-ext.extend = extend;
+ext['extend'] = extend;
 
 module.exports = ext;

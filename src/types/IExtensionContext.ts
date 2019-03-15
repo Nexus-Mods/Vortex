@@ -154,6 +154,7 @@ export interface IOpenOptions {
   title?: string;
   defaultPath?: string;
   filters?: IFileFilter[];
+  create?: boolean;
 }
 
 export type StateChangeCallback =
