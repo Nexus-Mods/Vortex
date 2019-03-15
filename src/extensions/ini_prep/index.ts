@@ -4,6 +4,7 @@ import { ITestResult } from '../../types/ITestResult';
 import { UserCanceled } from '../../util/CustomErrors';
 import deepMerge from '../../util/deepMerge';
 import * as fs from '../../util/fs';
+import getVortexPath from '../../util/getVortexPath';
 import {log} from '../../util/log';
 import { installPathForGame } from '../../util/selectors';
 import {getSafe} from '../../util/storeHelper';
@@ -24,6 +25,7 @@ import * as path from 'path';
 import IniParser, { IniFile, WinapiFormat } from 'vortex-parse-ini';
 import * as winapi from 'winapi-bindings';
 
+import { remote } from 'electron';
 import * as os from 'os';
 
 function ensureIniBackups(t: TranslationFunction, gameMode: string,
@@ -212,14 +214,26 @@ function testControlledFolderAccess(): Promise<ITestResult> {
                 + 'controlled folder access feature', addendum);
       return Promise.resolve(undefined);
     } else {
-      if (controlledFolderAccessEnabled.value === 0) {
+      // Check if Vortex has already been excluded.
+      let isVortexExcluded = false;
+      const currentAppPath = (remote.app !== undefined)
+        ? remote.app.getPath('exe').toLowerCase()
+        : path.join(getVortexPath('base').toLowerCase(), 'vortex.exe');
+      winapi.WithRegOpen('HKEY_LOCAL_MACHINE',
+        // tslint:disable-next-line: max-line-length
+        'SOFTWARE\\Microsoft\\Windows Defender\\Windows Defender Exploit Guard\\Controlled Folder Access\\AllowedApplications',
+        (hkey: Buffer) => {
+          isVortexExcluded = winapi.RegEnumValues(hkey).find(value =>
+            (value.key.toLowerCase() === currentAppPath)) !== undefined;
+        });
+      if ((controlledFolderAccessEnabled.value === 0) || isVortexExcluded) {
         return Promise.resolve(undefined);
       }
     }
   } catch (err) {
     // Something went wrong with the native code...
     //  We log this and resolve.
-    log('error', 'winapi.RegGetValue failed to retrieve controlled folder access status', err);
+    log('error', 'Winapi failed to retrieve controlled folder access status', err);
     return Promise.resolve(undefined);
   }
 
