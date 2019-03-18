@@ -2,6 +2,7 @@ import { IExtensionApi } from '../../../types/IExtensionContext';
 import { IGame } from '../../../types/IGame';
 import { getCurrentActivator, getGame } from '../../../util/api';
 import { activeGameId, currentGameDiscovery } from '../../../util/selectors';
+import { truthy } from '../../../util/util';
 import { installPath } from '../selectors';
 import { loadActivation, saveActivation } from './activationStore';
 import { NoDeployment } from './exceptions';
@@ -40,12 +41,14 @@ export function purgeMods(api: IExtensionApi): Promise<void> {
   const game: IGame = getGame(gameId);
   const modPaths = game.getModPaths(gameDiscovery.path);
 
+  const modTypes = Object.keys(modPaths).filter(typeId => truthy(modPaths[typeId]));
+
   return activator.prePurge(instPath)
-    .then(() => Promise.each(Object.keys(modPaths), typeId =>
-    loadActivation(api, typeId, modPaths[typeId], activator)
-      .then(() => activator.purge(instPath, modPaths[typeId]))
-      .then(() => saveActivation(typeId, state.app.instanceId,
-                                 modPaths[typeId], [], activator.id))))
+    .then(() => Promise.each(modTypes, typeId =>
+        loadActivation(api, typeId, modPaths[typeId], activator)
+          .then(() => activator.purge(instPath, modPaths[typeId]))
+          .then(() => saveActivation(typeId, state.app.instanceId,
+            modPaths[typeId], [], activator.id))))
     .then(() => Promise.resolve())
   .finally(() => {
     api.dismissNotification(notificationId);

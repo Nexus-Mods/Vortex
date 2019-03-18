@@ -70,6 +70,10 @@ class DeploymentMethod extends LinkingDeployment {
     const game: IGame = getGame(gameId);
     const modPaths = game.getModPaths(discovery.path);
 
+    if (modPaths[typeId] === undefined) {
+      return undefined;
+    }
+
     try {
       fs.accessSync(modPaths[typeId], fs.constants.W_OK);
     } catch (err) {

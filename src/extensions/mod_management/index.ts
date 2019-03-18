@@ -252,7 +252,9 @@ function genUpdateModDeployment() {
 
     if (activator === undefined) {
       const selectedActivator = getSelectedActivator(state, gameId);
-      const types = Object.keys(getGame(gameId).getModPaths(gameDiscovery.path));
+      const modPaths = getGame(gameId).getModPaths(gameDiscovery.path)
+      const types = Object.keys(modPaths)
+        .filter(typeId => truthy(modPaths[typeId]));
 
       const err = allTypesSupported(selectedActivator, state, gameId, types);
       if ((selectedActivator !== undefined) && (err !== undefined)) {
@@ -289,7 +291,7 @@ function genUpdateModDeployment() {
         api.store.dispatch(startActivity('mods', 'deployment'));
 
         log('debug', 'load activation');
-        return Promise.each(Object.keys(modPaths),
+        return Promise.each(Object.keys(modPaths).filter(typeId => truthy(modPaths[typeId])),
           typeId => loadActivation(api, typeId, modPaths[typeId], activator).then(
             deployedFiles => lastDeployment[typeId] = deployedFiles));
       })
@@ -711,6 +713,9 @@ function onDeploySingleMod(api: IExtensionApi) {
     }
 
     const dataPath = game.getModPaths(discovery.path)[mod.type || ''];
+    if (!truthy(dataPath)) {
+      return Promise.resolve();
+    }
     const installationPath = installPathForGame(state, gameId);
 
     const subdir = genSubDirFunc(game);

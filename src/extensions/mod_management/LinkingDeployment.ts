@@ -12,7 +12,6 @@ import {
   IFileChange,
   IUnavailableReason,
 } from './types/IDeploymentMethod';
-import {IMod} from './types/IMod';
 
 import * as Promise from 'bluebird';
 import * as I18next from 'i18next';
@@ -283,7 +282,9 @@ abstract class LinkingActivator implements IDeploymentMethod {
 
   public purge(installPath: string, dataPath: string): Promise<void> {
     if (!truthy(dataPath)) {
-      return Promise.reject(new Error('invalid data path'));
+      // previously we reported an issue here, but we want the ability to have mod types
+      // that don't actually deploy
+      return Promise.resolve();
     }
     // purge
     return this.purgeLinks(installPath, dataPath)

@@ -309,6 +309,9 @@ function undeploy(api: IExtensionApi,
 
   const subdir = genSubDirFunc(game);
   const dataPath = modPaths[mod.type || ''];
+  if (dataPath === undefined) {
+    return Promise.resolve();
+  }
   let normalize: Normalize;
   return getNormalizeFunc(dataPath)
     .then(norm => {
