@@ -1,6 +1,7 @@
 import { InsufficientDiskSpace, ProcessCanceled,
          UnsupportedOperatingSystem } from './CustomErrors';
 import * as fs from './fs';
+import getNormalizeFunc, { Normalize } from './getNormalizeFunc';
 import { isChildPath } from './util';
 import { log } from './log';
 
@@ -91,8 +92,6 @@ export type ProgressCallback = (from: string, to: string, percentage: number) =>
 export function transferPath(source: string,
                              dest: string,
                              progress: ProgressCallback): Promise<void> {
-  const moveDown = isChildPath(dest, source);
-
   let func = fs.copyAsync;
 
   let completed = 0;
@@ -102,63 +101,83 @@ export function transferPath(source: string,
   let copyPromise = Promise.resolve();
 
   // Used to keep track of leftover empty directories when
-  //  the user moves the staging folder to a nested directory
-  //  within the current staging folder.
+  //  the user moves the directory to a nested one
   const removableDirectories: string[] = [];
 
   let exception: Error;
 
-  return Promise.join(fs.statAsync(source), fs.statAsync(dest),
-    (statOld: fs.Stats, statNew: fs.Stats) =>
-      Promise.resolve(statOld.dev === statNew.dev))
+  let normalize: Normalize;
+  let moveDown: boolean;
+
+  return getNormalizeFunc(dest)
+    .then(norm => {
+      normalize = norm;
+      moveDown = isChildPath(dest, source, norm);
+    })
+    .then(() => Promise.join(fs.statAsync(source), fs.statAsync(dest),
+      (statOld: fs.Stats, statNew: fs.Stats) =>
+        Promise.resolve(statOld.dev === statNew.dev)))
     .then((sameVolume: boolean) => {
       func = sameVolume ? fs.renameAsync : fs.copyAsync;
     })
     .then(() => turbowalk(source, (entries: IEntry[]) => {
-      count += entries.length;
-      copyPromise = copyPromise.then(() => Promise.map(entries, entry => {
-        const sourcePath = entry.filePath;
-        const destPath = path.join(dest, path.relative(source, entry.filePath));
-        if (sourcePath === dest) {
-          // if the target directory is a subdirectory of the old one, don't try
-          // to move it into itself, that's just weird. Also it fails
-          // (e.g. ...\mods -> ...\mods\newMods)
+      if (moveDown) {
+        // when moving files into a subdirectory from where they were, the
+        // walk function may come across the directory that we're moving into.
+        // obviously we don't want to copy _that_
+        entries = entries.filter(entry =>
+          (entry.filePath !== dest) && !isChildPath(entry.filePath, dest, normalize));
+      }
+
+      const directories = entries.filter(entry => entry.isDirectory);
+      const files = entries.filter(entry => !entry.isDirectory);
+
+      count += files.length;
+
+      copyPromise = copyPromise.then(() => Promise.map(directories, entry => {
+        if (moveDown && isChildPath(dest, entry.filePath)) {
+          // this catches the case where we transfer .../mods to .../mods/foo/bar
+          // and we come across the path .../mods/foo. Wouldn't want to try to remove
+          // that, do we?
           return Promise.resolve();
         }
-
-        if (entry.isDirectory) {
-          removableDirectories.push(entry.filePath);
-          return fs.mkdirsAsync(destPath);
-        }
-
-        return func(sourcePath, destPath)
-          .catch(err => {
-            // EXDEV implies we tried to rename when source and destination are
-            // not in fact on the same volume. This is what comparing the stat.dev
-            // was supposed to prevent.
-            if (err.code === 'EXDEV') {
-              func = fs.copyAsync;
-              return func(sourcePath, destPath);
-            } else if (err.code === 'ENOENT') {
-              return Promise.resolve();
-            } else {
-              return Promise.reject(err);
-            }
-          })
-          .then(() => {
-            ++completed;
-            const perc = Math.floor((completed * 100) / count);
-            if (perc !== lastPerc) {
-              lastPerc = perc;
-              progress(sourcePath, destPath, perc);
-            }
-          });
+        removableDirectories.push(entry.filePath);
+        const destPath = path.join(dest, path.relative(source, entry.filePath));
+        return fs.mkdirsAsync(destPath);
       })
-      .then(() => null)
-      .catch(err => {
-        exception = err;
-        return null;
-      }));
+        .then(() => null))
+        .then(() => Promise.map(files, entry => {
+          const sourcePath = entry.filePath;
+          const destPath = path.join(dest, path.relative(source, entry.filePath));
+
+          return func(sourcePath, destPath)
+            .catch(err => {
+              // EXDEV implies we tried to rename when source and destination are
+              // not in fact on the same volume. This is what comparing the stat.dev
+              // was supposed to prevent.
+              if (err.code === 'EXDEV') {
+                func = fs.copyAsync;
+                return func(sourcePath, destPath);
+              } else if (err.code === 'ENOENT') {
+                return Promise.resolve();
+              } else {
+                return Promise.reject(err);
+              }
+            })
+            .then(() => {
+              ++completed;
+              const perc = Math.floor((completed * 100) / count);
+              if (perc !== lastPerc) {
+                lastPerc = perc;
+                progress(sourcePath, destPath, perc);
+              }
+            });
+        })
+          .then(() => null)
+          .catch(err => {
+            exception = err;
+            return null;
+          }));
     }, { details: false, skipHidden: false }))
     .then(() => copyPromise.then(() => (exception !== undefined)
         ? Promise.reject(exception)
@@ -171,8 +190,9 @@ export function transferPath(source: string,
         : Promise.reject(err));
 }
 
-function removeEmptyDirectories(directories: string[]) {
-  return directories.forEach(dir => fs.removeAsync(dir)
+function removeEmptyDirectories(directories: string[]): Promise<void> {
+  const longestFirst = (lhs, rhs) => rhs.length - lhs.length;
+  return Promise.each(directories.sort(longestFirst), dir => fs.rmdirAsync(dir)
     .catch(err => {
       if (err.code === 'ENOENT') {
         // Directory is missing - that's fine.
@@ -189,5 +209,5 @@ function removeEmptyDirectories(directories: string[]) {
         log('warn', `${err.code} - Cannot remove ${dir}`);
         return Promise.resolve();
       }
-    }));
+    })).then(() => null);
 }
