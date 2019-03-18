@@ -122,9 +122,8 @@ export function transferPath(source: string,
       copyPromise = copyPromise.then(() => Promise.map(entries, entry => {
         const sourcePath = entry.filePath;
         const destPath = path.join(dest, path.relative(source, entry.filePath));
-        const matchIndex = sourcePath.indexOf(dest);
         if ((sourcePath === dest)
-        || ((matchIndex !== -1) && (sourcePath.substr(matchIndex + dest.length, 1) === path.sep))) {
+        || (sourcePath.split(path.sep).indexOf(dest) !== -1)) {
           // if the target directory is a subdirectory of the old one, don't try
           // to move it into itself, that's just weird. Also it fails
           // (e.g. ...\mods -> ...\mods\newMods)
