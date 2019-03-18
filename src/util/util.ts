@@ -76,6 +76,7 @@ export function fileMD5(filePath: string): Promise<string> {
 
 export function writeFileAtomic(filePath: string, input: string | Buffer,
                                 options?: fs.WriteFileOptions) {
+  const stackErr = new Error();
   let cleanup: () => void;
   let tmpPath: string;
   const hash = checksum(input);
@@ -106,7 +107,11 @@ export function writeFileAtomic(filePath: string, input: string | Buffer,
   .then(data => (checksum(data) !== hash)
       ? Promise.reject(new Error('Write failed, checksums differ'))
       : Promise.resolve())
-  .then(() => fs.renameAsync(tmpPath, filePath));
+  .then(() => fs.renameAsync(tmpPath, filePath))
+  .catch(err => {
+    err.stack = err.message + '\n' + stackErr.stack;
+    return Promise.reject(err);
+  });
 }
 
 /**
