@@ -1,5 +1,5 @@
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
-import { IState } from '../../types/IState';
+import { IGameStored, IState } from '../../types/IState';
 import { ITestResult } from '../../types/ITestResult';
 import { getNormalizeFunc, Normalize, UserCanceled } from '../../util/api';
 import Debouncer from '../../util/Debouncer';
@@ -41,6 +41,7 @@ import * as _ from 'lodash';
 import * as path from 'path';
 import * as Redux from 'redux';
 import {generate as shortid} from 'shortid';
+import turbowalk, { IEntry } from 'turbowalk';
 import { setDownloadPath } from '../../actions';
 
 const app = remote !== undefined ? remote.app : appIn;
@@ -252,6 +253,76 @@ function watchDownloads(api: IExtensionApi, downloadPath: string,
   }
 }
 
+function refreshDownloadPath(api: IExtensionApi, downloadPath: string): Promise<void> {
+  const { store } = api;
+  const state = store.getState();
+
+  const downloads: {[id: string]: IDownload} = state.persistent.downloads.files;
+  const knownGames: {[id: string]: IGameStored} = state.session.gameMode.known;
+
+  let nameIdMap: {[name: string]: string} = {};
+  return getNormalizeFunc(downloadPath, {separators: false, relative: false})
+    .then(normalize => {
+      nameIdMap = Object.keys(downloads).reduce((prev, value) => {
+        if (downloads[value].localPath !== undefined) {
+          prev[normalize(downloads[value].localPath)] = value;
+        }
+        return prev;
+      }, {});
+      const knownDLs = Object.keys(downloads)
+        .map(dlId => normalize(downloads[dlId].localPath || ''));
+
+      return fs.ensureDirWritableAsync(downloadPath, () => new Promise((resolve, reject) => {
+        api.showDialog('question', 'Access Denied', {
+          text: 'The download directory is not writable to your user account.\n'
+            + 'If you have admin rights on this system, Vortex can change the permissions '
+            + 'to allow it write access.',
+          }, [
+              { label: 'Cancel', action: () => reject(new UserCanceled()) },
+              { label: 'Allow access', action: () => resolve() },
+            ]);
+      }))
+      .then(() => turbowalk(downloadPath, entries => {
+        const filtered = entries
+          .filter((entry: IEntry) => !entry.isDirectory)
+          .filter((entry: IEntry) => knownArchiveExt(entry.filePath));
+
+        const downloadNames = filtered.map(entry => {
+          const gameId = path.relative(downloadPath, path.dirname(entry.filePath));
+          const idx = Object.keys(knownGames).find(key => knownGames[key].id === gameId);
+          const fileName = normalize(path.basename(entry.filePath));
+          return {
+            gameId: knownGames[idx].id,
+            fileName,
+            filePath: entry.filePath,
+          };
+        });
+
+        const duplicateDLs = knownDLs.filter((name: string) =>
+          downloadNames.find(dl => dl.fileName === name) !== undefined);
+
+        const addedDLs = downloadNames.filter(dl =>
+          (knownDLs.find(known => known === dl.fileName) === undefined)
+          && (duplicateDLs.indexOf(dl.fileName) === -1));
+
+        const removedDLs = knownDLs.filter((name: string) =>
+          downloadNames.find(dl => dl.fileName === name) === undefined);
+
+        return Promise.map(addedDLs, dl => {
+          return fs.statAsync(dl.filePath)
+            .then(stats => {
+              const dlId = shortid();
+              api.store.dispatch(addLocalDownload(dlId, dl.gameId, dl.filePath, stats.size));
+              nameIdMap[dl.fileName] = dlId;
+              return Promise.resolve();
+            });
+        }).then(() => Promise.map(removedDLs, dl => {
+          api.store.dispatch(removeDownload(nameIdMap[dl]));
+        }));
+      }));
+    });
+}
+
 function updateDownloadPath(api: IExtensionApi, gameId?: string) {
   const { store } = api;
 
@@ -402,9 +473,11 @@ function testDownloadPath(api: IExtensionApi): Promise<void> {
             }
             return validateDownloadsTag(api, path.join(selectedPath, DOWNLOADS_DIR_TAG))
               .then(() => {
+                watchEnabled = false;
                 currentDownloadPath = selectedPath;
                 api.store.dispatch(setDownloadPath(currentDownloadPath));
-                return Promise.resolve();
+                return refreshDownloadPath(api, currentDownloadPath)
+                  .then(() => { watchEnabled = true; });
               });
           })
           .catch(() => ensureDownloadsDirectory());
@@ -412,11 +485,14 @@ function testDownloadPath(api: IExtensionApi): Promise<void> {
       }))
       .then(() => writeDownloadsTag(api, currentDownloadPath));
 
-  return ensureDownloadsDirectory().then(() => Promise.resolve());
+  return ensureDownloadsDirectory().catch(UserCanceled, () => Promise.resolve());
 }
 
 function genGameModeActivated(api: IExtensionApi) {
-  return () => testDownloadPath(api).then(() => updateDownloadPath(api));
+  return () => {
+    return testDownloadPath(api)
+      .then(() => updateDownloadPath(api));
+  };
 }
 
 function removeArchive(store: Redux.Store<IState>, destination: string) {
