@@ -897,7 +897,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   private removeMods(modIds: string[]): Promise<void> {
     const { gameMode } = this.props;
     return Promise
-      .map(modIds, modId => this.removeMod(modId))
+      .mapSeries(modIds, modId => this.removeMod(modId))
       .then(() => {
         this.context.api.events.emit('mods-enabled', modIds, true, gameMode);
       });
