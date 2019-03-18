@@ -1,7 +1,7 @@
 import { showDialog } from '../../actions/notifications';
 import { IDialogResult } from '../../types/IDialog';
 import { IExtensionApi, ThunkStore } from '../../types/IExtensionContext';
-import {IState} from '../../types/IState';
+import {IState, IProfile} from '../../types/IState';
 import { DataInvalid, ProcessCanceled, SetupError, TemporaryError,
          UserCanceled} from '../../util/CustomErrors';
 import { createErrorReport, isOutdated } from '../../util/errorHandling';
@@ -9,7 +9,7 @@ import * as fs from '../../util/fs';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
 import { log } from '../../util/log';
 import { prettifyNodeErrorMessage } from '../../util/message';
-import { activeProfile, downloadPath } from '../../util/selectors';
+import { activeProfile, downloadPathForGame } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { setdefault, truthy } from '../../util/util';
 import walk from '../../util/walk';
@@ -281,8 +281,12 @@ class InstallManager {
         }
         if (processDependencies) {
           log('info', 'process dependencies', { modId });
-          this.installDependencies(modInfo.rules, this.mGetInstallPath(installGameId),
-            installContext, api);
+          const state: IState = api.store.getState();
+          const mod: IMod = getSafe(state, ['persistent', 'mods', installGameId, modId], undefined);
+
+          this.installDependencies([].concat(modInfo.rules || [], mod.rules || []),
+                                   this.mGetInstallPath(installGameId),
+                                   currentProfile, installContext, api);
         }
         if (callback !== undefined) {
           callback(null, modId);
@@ -931,6 +935,7 @@ class InstallManager {
   private installDependencies(
     rules: IRule[],
     installPath: string,
+    profile: IProfile,
     installContext: InstallContext,
     api: IExtensionApi): Promise<void> {
     const notificationId = `${installPath}_activity`;
@@ -973,14 +978,14 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
       });
   }
 
-  private installModAsync(
-    requirement: IReference,
+  private installModAsync(requirement: IReference,
     api: IExtensionApi,
     downloadId: string): Promise<string> {
     return new Promise<string>((resolve, reject) => {
       const state = api.store.getState();
       const download: IDownload = state.persistent.downloads.files[downloadId];
-      const fullPath: string = path.join(downloadPath(state), download.localPath);
+      const downloadGame: string = Array.isArray(download.game) ? download.game[0] : download.game;
+      const fullPath: string = path.join(downloadPathForGame(state, downloadGame), download.localPath);
       this.install(downloadId, fullPath, getDownloadGames(download),
         api, { download }, false, false, (error, id) => {
           if (error === null) {
