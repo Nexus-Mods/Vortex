@@ -1,6 +1,9 @@
+import { IRule } from './IMod';
+
 export type InstructionType =
   'copy' | 'submodule' | 'generatefile' | 'iniedit'
-  | 'unsupported' | 'attribute' | 'setmodtype' | 'error';
+  | 'unsupported' | 'attribute' | 'setmodtype' | 'error'
+  | 'rule';
 
 export interface IInstruction {
   type: InstructionType;
@@ -12,6 +15,7 @@ export interface IInstruction {
   key?: string;
   value?: string;
   submoduleType?: string;
+  rule?: IRule;
 }
 
 export interface IInstallResult {

@@ -21,7 +21,7 @@ import { getGame } from '../gamemode_management/util/getGame';
 import modName from '../mod_management/util/modName';
 import { setModEnabled } from '../profile_management/actions/profiles';
 
-import {setModAttribute, setModType} from './actions/mods';
+import {setModAttribute, setModType, addModRule} from './actions/mods';
 import {IDependency} from './types/IDependency';
 import { IInstallContext } from './types/IInstallContext';
 import { IInstallResult, IInstruction } from './types/IInstallResult';
@@ -74,6 +74,7 @@ class InstructionGroups {
   public attribute: IInstruction[] = [];
   public setmodtype: IInstruction[] = [];
   public error: IInstruction[] = [];
+  public rule: IInstruction[] = [];
 }
 
 export const INI_TWEAKS_PATH = 'Ini Tweaks';
@@ -485,6 +486,7 @@ class InstallManager {
     // sort with priority descending so we can stop as soon as we've hit the first match
     const sorted = modTypes.sort((lhs, rhs) => rhs.priority - lhs.priority);
     let found = false;
+
     return Promise.mapSeries(sorted, (type: IModType): Promise<string> => {
       if (found) {
         return Promise.resolve<string>(null);
@@ -651,6 +653,14 @@ class InstallManager {
     return Promise.resolve();
   }
 
+  private processRule(api: IExtensionApi, rules: IInstruction[],
+                      gameId: string, modId: string): Promise<void> {
+    rules.forEach(rule => {
+      api.store.dispatch(addModRule(gameId, modId, rule.rule));
+    })
+    return Promise.resolve();
+  }
+
   private processIniEdits(iniEdits: IInstruction[], destinationPath: string): Promise<void> {
     if (iniEdits.length === 0) {
       return Promise.resolve();
@@ -703,7 +713,7 @@ class InstallManager {
 
     if (instructionGroups.error.length > 0) {
       api.showErrorNotification('Installer reported errors',
-        'Errors were reported processing this installer. '
+        'Errors were reported processing the installer for "{{ modId }}". '
         + 'It\'s possible the mod works (partially) anyway. '
         + 'Please note that NMM tends to ignore errors so just because NMM doesn\'t '
         + 'report a problem with this installer doesn\'t mean it doesn\'t have any.\n'
@@ -711,6 +721,7 @@ class InstallManager {
         , {
           replace: {
             errors: instructionGroups.error.map(err => err.source).join('\n'),
+            modId,
           },
           allowReport: false,
         });
@@ -729,6 +740,7 @@ class InstallManager {
                                         destinationPath, gameId, modId))
       .then(() => this.processAttribute(api, instructionGroups.attribute, gameId, modId))
       .then(() => this.processSetModType(api, instructionGroups.setmodtype, gameId, modId))
+      .then(() => this.processRule(api, instructionGroups.rule, gameId, modId))
       ;
     }
 
@@ -890,7 +902,7 @@ class InstallManager {
 
   private doInstallDependencies(dependencies: IDependency[],
                                 profile: IProfile,
-    api: IExtensionApi): Promise<void> {
+                                api: IExtensionApi): Promise<void> {
     return Promise.all(dependencies.map((dep: IDependency) => {
       let dlPromise = Promise.resolve(dep.download);
       if (dep.download === undefined) {
@@ -898,26 +910,23 @@ class InstallManager {
           dlPromise = Promise.reject(new ProcessCanceled('Failed to determine download url'));
         } else {
           dlPromise = this.downloadModAsync(
-          dep.reference,
-          dep.lookupResults[0].value.sourceURI,
+            dep.reference,
+            dep.lookupResults[0].value.sourceURI,
             api);
         }
       }
       return dlPromise
         .then((downloadId: string) => this.installModAsync(dep.reference, api, downloadId))
-          api)
-          .then((downloadId: string) => {
-            return this.installModAsync(dep.reference, api,
-              downloadId);
+        .then((modId: string) => api.store.dispatch(setModEnabled(profile.id, modId, true)))
         // don't cancel the whole process if one dependency fails to install
         .catch(ProcessCanceled, err => {
           api.showErrorNotification('Failed to install dependency', err.message,
                                     { allowReport: false });
-          })
-          .catch(UserCanceled, () => undefined)
-          .catch(err => {
-            api.showErrorNotification('Failed to install dependency', err);
-          });
+        })
+        .catch(UserCanceled, () => undefined)
+        .catch(err => {
+          api.showErrorNotification('Failed to install dependency', err);
+        });
     }))
       .catch(ProcessCanceled, err => {
         // This indicates an error in the dependency rules so it's
@@ -979,8 +988,8 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
   }
 
   private installModAsync(requirement: IReference,
-    api: IExtensionApi,
-    downloadId: string): Promise<string> {
+                          api: IExtensionApi,
+                          downloadId: string): Promise<string> {
     return new Promise<string>((resolve, reject) => {
       const state = api.store.getState();
       const download: IDownload = state.persistent.downloads.files[downloadId];
