@@ -153,6 +153,9 @@ function getManifest(instanceId: string, filePath: string): Promise<any> {
   return fs.readFileAsync(filePath, 'utf8')
     .then(data => readManifest(data))
     .catch(err => {
+      if (err instanceof UserCanceled) {
+        return Promise.reject(err);
+      }
       if (err.code === 'ENOENT') {
         return emptyManifest(instanceId);
       }
