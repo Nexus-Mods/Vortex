@@ -1,4 +1,4 @@
-import { HTTPError, ProcessCanceled } from '../../util/CustomErrors';
+import { HTTPError, ProcessCanceled, DataInvalid } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 import { countIf, truthy } from '../../util/util';
@@ -485,7 +485,12 @@ class DownloadManager {
       return Promise.reject(new Error('No download urls'));
     }
     log('info', 'queueing download', id);
-    const nameTemplate: string = fileName || decodeURI(path.basename(url.parse(urls[0]).pathname));
+    let nameTemplate: string;
+    try {
+      nameTemplate = fileName || decodeURI(path.basename(url.parse(urls[0]).pathname));
+    } catch (err) {
+      return Promise.reject(new DataInvalid(`failed to parse url "${urls[0]}"`));
+    }
     const destPath = destinationPath || this.mDownloadPath;
     let download: IRunningDownload;
     return fs.ensureDirAsync(destPath)

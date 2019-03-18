@@ -884,28 +884,36 @@ class InstallManager {
     });
   }
 
-  private doInstallDependencies(
-    dependencies: IDependency[],
+  private doInstallDependencies(dependencies: IDependency[],
+                                profile: IProfile,
     api: IExtensionApi): Promise<void> {
     return Promise.all(dependencies.map((dep: IDependency) => {
+      let dlPromise = Promise.resolve(dep.download);
       if (dep.download === undefined) {
-        return this.downloadModAsync(
+        if (getSafe(dep, ['lookupResults', 0, 'value', 'sourceURI'], '') === '') {
+          dlPromise = Promise.reject(new ProcessCanceled('Failed to determine download url'));
+        } else {
+          dlPromise = this.downloadModAsync(
           dep.reference,
           dep.lookupResults[0].value.sourceURI,
+            api);
+        }
+      }
+      return dlPromise
+        .then((downloadId: string) => this.installModAsync(dep.reference, api, downloadId))
           api)
           .then((downloadId: string) => {
             return this.installModAsync(dep.reference, api,
               downloadId);
+        // don't cancel the whole process if one dependency fails to install
+        .catch(ProcessCanceled, err => {
+          api.showErrorNotification('Failed to install dependency', err.message,
+                                    { allowReport: false });
           })
-          .catch(ProcessCanceled, () => undefined)
           .catch(UserCanceled, () => undefined)
           .catch(err => {
             api.showErrorNotification('Failed to install dependency', err);
           });
-      } else {
-        return this.installModAsync(dep.reference, api,
-          dep.download);
-      }
     }))
       .catch(ProcessCanceled, err => {
         // This indicates an error in the dependency rules so it's
@@ -954,7 +962,7 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
                 {label: 'Don\'t install'},
                 {
                   label: 'Install',
-                  action: () => this.doInstallDependencies(dependencies, api),
+                  action: () => this.doInstallDependencies(dependencies, profile, api),
                 },
               ]));
         });
