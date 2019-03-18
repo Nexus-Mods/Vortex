@@ -149,13 +149,13 @@ function shouldAllowReport(err: string | Error | any, options?: IErrorOptions): 
  * @export
  * @template S
  * @param {Redux.Dispatch<S>} dispatch
- * @param {string} message
+ * @param {string} title
  * @param {any} [details] further details about the error (stack and such). The api says we only
  *                        want string or Errors but since some node apis return non-Error objects
  *                        where Errors are expected we have to be a bit more flexible here.
  */
 export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
-                          message: string,
+                          title: string,
                           details?: string | Error | any,
                           options?: IErrorOptions) {
   const err = renderError(details);
@@ -164,7 +164,7 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
     ? err.allowReport
     : shouldAllowReport(details, options);
 
-  log(allowReport ? 'error' : 'warn', message, err);
+  log(allowReport ? 'error' : 'warn', title, err);
 
   const content: IDialogContent = (truthy(options) && options.isHTML) ? {
     htmlText: err.message || err.text,
@@ -208,10 +208,13 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
 
   actions.push({ label: 'Close', default: true });
 
+  let haveMessage = (options !== undefined) && (options.message !== undefined);
+
   dispatch(addNotification({
     id: (options !== undefined) ? options.id : undefined,
     type: 'error',
-    message,
+    title: haveMessage ? title : undefined,
+    message: haveMessage ? options.message : title,
     replace: (options !== undefined) ? options.replace : undefined,
     actions: details !== undefined ? [{
       title: 'More',
