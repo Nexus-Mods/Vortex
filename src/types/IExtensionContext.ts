@@ -238,6 +238,7 @@ export interface IGameDetail {
 
 export interface IErrorOptions {
   id?: string;
+  message?: string;
   isHTML?: boolean;
   allowReport?: boolean;
   hideDetails?: boolean;
