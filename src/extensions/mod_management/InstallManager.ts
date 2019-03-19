@@ -417,7 +417,7 @@ class InstallManager {
         installContext.setProgress(percent);
       }
     };
-    process.noAsar = true;
+    // process.noAsar = true;
     log('debug', 'extracting mod archive', { archivePath, tempPath });
     return this.mTask.extractFull(archivePath, tempPath, {ssc: false},
                                   progress,
@@ -454,7 +454,7 @@ class InstallManager {
                            return Promise.resolve();
                          }))
         .finally(() => {
-          process.noAsar = false;
+          // process.noAsar = false;
         })
         .then(() => this.getInstaller(fileList, gameId))
         .then(supportedInstaller => {
