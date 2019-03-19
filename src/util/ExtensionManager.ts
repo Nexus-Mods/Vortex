@@ -1207,7 +1207,12 @@ class ExtensionManager {
                                 loadedExtensions: Set<string>): IRegisteredExtension[] {
     if (!fs.existsSync(extensionsPath)) {
       log('info', 'failed to load dynamic extensions, path doesn\'t exist', extensionsPath);
-      fs.mkdirSync(extensionsPath);
+      try {
+        fs.mkdirSync(extensionsPath);
+      } catch (err) {
+        log('warn', 'extension path missing and can\'t be created',
+            { path: extensionsPath, error: err.message});
+      }
       return [];
     }
 
