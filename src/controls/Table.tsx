@@ -362,7 +362,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
           />
 
           <div className='menubar'>
-            <p>{t('{{count}} item selected', { count: selected.length })}</p>
+            <p>{t('{{ count }} item selected', { count: selected.length })}</p>
             <ToolbarIcon
               key='btn-deselect'
               icon='deselect'
