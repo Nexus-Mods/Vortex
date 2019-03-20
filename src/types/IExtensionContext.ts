@@ -239,6 +239,7 @@ export interface IGameDetail {
 export interface IErrorOptions {
   id?: string;
   message?: string;
+  isBBCode?: boolean;
   isHTML?: boolean;
   allowReport?: boolean;
   hideDetails?: boolean;

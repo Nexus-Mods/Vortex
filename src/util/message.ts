@@ -171,6 +171,11 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
     options: {
       wrap: false,
     },
+  } : (truthy(options) && options.isBBCode) ? {
+    bbcode: err.message || err.text,
+    options: {
+      wrap: false,
+    },
   } : {
     text: err.text,
     message: err.message,
