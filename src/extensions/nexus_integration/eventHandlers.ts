@@ -261,7 +261,7 @@ export function onCheckModsVersion(api: IExtensionApi,
             showError(api.store.dispatch,
                       'Some mods could not be checked for updates',
                       errorMessages.join('\n\n'),
-                      { allowReport: false });
+                      { allowReport: false, isBBCode: true });
           }
         })
         .catch(err => {

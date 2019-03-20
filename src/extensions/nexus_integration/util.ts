@@ -279,6 +279,12 @@ export function endorseModImpl(
     });
 }
 
+function nexusLink(mod: IMod, gameMode: string) {
+  const gameId = getSafe(mod.attributes, ['downloadGame'], undefined) || gameMode;
+  const nexusModId: number = parseInt(getSafe(mod.attributes, ['modId'], undefined), 10);
+  return `https://www.nexusmods.com/${gameId}/mods/${nexusModId}`;
+}
+
 export function checkModVersionsImpl(
   store: Redux.Store<any>,
   nexus: Nexus,
@@ -316,9 +322,11 @@ export function checkModVersionsImpl(
         }
 
         const name = modName(mod, { version: true });
+        const nameLink = `[url=${nexusLink(mod, gameId)}]${name}[/url]`;
+
         return (detail.Servermessage !== undefined)
-          ? `${name}:\n${detail.message}\nServer said: "${detail.Servermessage}"`
-          : `${name}:\n${detail.message}`;
+          ? `${nameLink}:<br/>${detail.message}<br/>Server said: "${detail.Servermessage}"<br/>`
+          : `${nameLink}:<br/>${detail.message}`;
       }), { concurrency: 4 })
     .then((errorMessages: string[]): string[] => errorMessages.filter(msg => msg !== undefined));
 }
