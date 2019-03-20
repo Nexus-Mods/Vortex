@@ -215,7 +215,7 @@ export function onGameModeActivated(
 
   const knownMods: { [modId: string]: IMod } = getSafe(state, ['persistent', 'mods', newGame], {});
   activatorProm
-    .then(() => refreshMods(instPath, Object.keys(knownMods), (mod: IMod) => {
+    .then(() => refreshMods(api, instPath, Object.keys(knownMods), (mod: IMod) => {
       api.store.dispatch(addMod(newGame, mod));
     }, (modNames: string[]) => {
       modNames.forEach((name: string) => {
@@ -243,7 +243,7 @@ export function onPathsChanged(api: IExtensionApi,
   const gameMode = activeGameId(state);
   if (previous[gameMode] !== current[gameMode]) {
     const knownMods = state.persistent.mods[gameMode];
-    refreshMods(installPath(state), Object.keys(knownMods || {}), (mod: IMod) =>
+    refreshMods(api, installPath(state), Object.keys(knownMods || {}), (mod: IMod) =>
       store.dispatch(addMod(gameMode, mod))
       , (modNames: string[]) => {
         modNames.forEach((name: string) => {

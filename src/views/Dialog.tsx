@@ -186,6 +186,14 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
       ));
     }
 
+    if (content.bbcode !== undefined) {
+      controls.push((
+        <div key='dialog-content-bbcode' className='dialog-content-bbcode'>
+          {bbcode(content.bbcode)}
+        </div>
+      ));
+    }
+
     if (content.message !== undefined) {
       const wrap = ((content.options !== undefined) && (content.options.wrap === true))
                  ? 'on' : 'off';
@@ -209,14 +217,6 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
       } else {
         controls.push(ctrl);
       }
-    }
-
-    if (content.bbcode !== undefined) {
-      controls.push((
-        <div key='dialog-content-bbcode' className='dialog-content-bbcode'>
-          {bbcode(content.bbcode)}
-        </div>
-      ));
     }
 
     if (content.htmlFile !== undefined) {
