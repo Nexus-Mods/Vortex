@@ -287,39 +287,50 @@ function refreshDownloadPath(api: IExtensionApi, downloadPath: string): Promise<
           .filter((entry: IEntry) => !entry.isDirectory)
           .filter((entry: IEntry) => knownArchiveExt(entry.filePath));
 
-        const downloadNames = filtered.map(entry => {
+        const downloadFiles = filtered.map(entry => {
+          // We expect the file to be located within its "gameId" directory.
+          //  if it's not - we're going to ignore the file as we don't know which game.
+          //  to assign it to.
           const gameId = path.relative(downloadPath, path.dirname(entry.filePath));
           const idx = Object.keys(knownGames).find(key => knownGames[key].id === gameId);
-          const fileName = normalize(path.basename(entry.filePath));
-          return {
-            gameId: knownGames[idx].id,
-            fileName,
-            filePath: entry.filePath,
-          };
+          if (idx !== undefined) {
+            return {
+              gameId: knownGames[idx].id,
+              normalizedName: normalize(path.basename(entry.filePath)),
+              filePath: entry.filePath,
+            };
+          }
         });
 
         const duplicateDLs = knownDLs.filter((name: string) =>
-          downloadNames.find(dl => dl.fileName === name) !== undefined);
+          downloadFiles.find(dl => dl.normalizedName === name) !== undefined);
 
-        const addedDLs = downloadNames.filter(dl =>
-          (knownDLs.find(known => known === dl.fileName) === undefined)
-          && (duplicateDLs.indexOf(dl.fileName) === -1));
+        const addedDLs = downloadFiles.filter(dl =>
+          (knownDLs.find(known => known === dl.normalizedName) === undefined)
+          && (duplicateDLs.indexOf(dl.normalizedName) === -1));
 
         const removedDLs = knownDLs.filter((name: string) =>
-          downloadNames.find(dl => dl.fileName === name) === undefined);
+          downloadFiles.find(dl => dl.normalizedName === name) === undefined);
 
-        return Promise.map(addedDLs, dl => {
-          return fs.statAsync(dl.filePath)
+        return Promise.each(addedDLs, dl =>
+          fs.statAsync(dl.filePath)
             .then(stats => {
               const dlId = shortid();
               api.store.dispatch(addLocalDownload(dlId, dl.gameId, dl.filePath, stats.size));
-              nameIdMap[dl.fileName] = dlId;
+              nameIdMap[dl.normalizedName] = dlId;
               return Promise.resolve();
-            });
-        }).then(() => Promise.map(removedDLs, dl => {
+        }))
+        .then(() => Promise.each(removedDLs, dl => {
           api.store.dispatch(removeDownload(nameIdMap[dl]));
+          return Promise.resolve();
         }));
       }));
+    })
+    .catch(UserCanceled, () => null)
+    .catch(err => {
+      api.showErrorNotification('Failed to manually set download directory', err, {
+        allowReport: err.code !== 'EPERM',
+      });
     });
 }
 
@@ -477,7 +488,7 @@ function testDownloadPath(api: IExtensionApi): Promise<void> {
                 currentDownloadPath = selectedPath;
                 api.store.dispatch(setDownloadPath(currentDownloadPath));
                 return refreshDownloadPath(api, currentDownloadPath)
-                  .then(() => { watchEnabled = true; });
+                  .finally(() => { watchEnabled = true; });
               });
           })
           .catch(() => ensureDownloadsDirectory());
@@ -485,7 +496,8 @@ function testDownloadPath(api: IExtensionApi): Promise<void> {
       }))
       .then(() => writeDownloadsTag(api, currentDownloadPath));
 
-  return ensureDownloadsDirectory().catch(UserCanceled, () => Promise.resolve());
+  return ensureDownloadsDirectory()
+    .catch(UserCanceled, () => Promise.resolve());
 }
 
 function genGameModeActivated(api: IExtensionApi) {
