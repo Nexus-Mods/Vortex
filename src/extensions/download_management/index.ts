@@ -501,10 +501,8 @@ function testDownloadPath(api: IExtensionApi): Promise<void> {
 }
 
 function genGameModeActivated(api: IExtensionApi) {
-  return () => {
-    return testDownloadPath(api)
-      .then(() => updateDownloadPath(api));
-  };
+  return () => testDownloadPath(api)
+    .then(() => updateDownloadPath(api));
 }
 
 function removeArchive(store: Redux.Store<IState>, destination: string) {
