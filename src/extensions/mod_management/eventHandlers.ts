@@ -93,6 +93,11 @@ export function onGameModeActivated(
   const configuredActivator =
     supported.find(activator => activator.id === configuredActivatorId);
   const gameId = activeGameId(state);
+  if (gameId !== newGame) {
+    // this should never happen
+    api.showErrorNotification('Event was triggered with incorrect parameter',
+      new Error(`game id mismatch "${newGame}" vs "${gameId}"`));
+  }
   const gameDiscovery = state.settings.gameMode.discovered[gameId];
   const game = getGame(gameId);
 
@@ -207,20 +212,20 @@ export function onGameModeActivated(
       activatorProm = activatorProm.then(() => {
         if (supported.length > 0) {
           api.store.dispatch(
-            setActivator(newGame, supported[0].id));
+            setActivator(gameId, supported[0].id));
         }
       });
     }
   }
 
-  const knownMods: { [modId: string]: IMod } = getSafe(state, ['persistent', 'mods', newGame], {});
+  const knownMods: { [modId: string]: IMod } = getSafe(state, ['persistent', 'mods', gameId], {});
   activatorProm
     .then(() => refreshMods(api, instPath, Object.keys(knownMods), (mod: IMod) => {
-      api.store.dispatch(addMod(newGame, mod));
+      api.store.dispatch(addMod(gameId, mod));
     }, (modNames: string[]) => {
       modNames.forEach((name: string) => {
         if (['downloaded', 'installed'].indexOf(knownMods[name].state) !== -1) {
-          api.store.dispatch(removeMod(newGame, name));
+          api.store.dispatch(removeMod(gameId, name));
         }
       });
     }))
