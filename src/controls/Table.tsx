@@ -762,8 +762,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     }
 
     this.mProxyHeaderRef.childNodes.forEach((node, index) => {
-      (this.mVisibleHeaderRef.childNodes.item(index) as HTMLElement).style.width =
-        `${(node as HTMLElement).clientWidth}px`;
+      (this.mVisibleHeaderRef.childNodes.item(index) as HTMLElement).style.minWidth =
+        (this.mVisibleHeaderRef.childNodes.item(index) as HTMLElement).style.maxWidth =
+          `${(node as HTMLElement).clientWidth}px`;
     });
 
     const height = this.mVisibleHeaderRef.clientHeight;
