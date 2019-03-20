@@ -3,6 +3,7 @@ import { DialogActions, DialogType, IDialogContent, IDialogResult,
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import * as fs from '../../../util/fs';
+import { log } from '../../../util/log';
 import { activeGameId } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import MainPage from '../../../views/MainPage';
@@ -22,7 +23,7 @@ import { remote } from 'electron';
 import update from 'immutability-helper';
 import * as path from 'path';
 import * as React from 'react';
-import { Button, Collapse, ListGroup, ListGroupItem, Panel } from 'react-bootstrap';
+import { Button, Collapse } from 'react-bootstrap';
 import { generate as shortid } from 'shortid';
 
 export interface IBaseProps {
@@ -293,6 +294,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
         {
           label: 'Remove', action:
             () => {
+              log('info', 'user removing profile', { id: profileId });
               onWillRemoveProfile(profileId);
               if (profileId === currentProfile) {
                 onSetNextProfile(undefined);

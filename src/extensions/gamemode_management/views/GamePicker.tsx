@@ -25,7 +25,6 @@ import * as Promise from 'bluebird';
 import update from 'immutability-helper';
 import * as React from 'react';
 import { ListGroup, ProgressBar, Tab, Tabs, FormControl, InputGroup } from 'react-bootstrap';
-import { IGameDetail } from '../../../types/api';
 
 function gameFromDiscovery(id: string, discovered: IDiscoveryResult): IGameStored {
   return {
