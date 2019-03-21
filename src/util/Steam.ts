@@ -15,6 +15,7 @@ export interface ISteamEntry {
   appid: string;
   name: string;
   gamePath: string;
+  lastUser: string;
   lastUpdated: Date;
 }
 
@@ -119,7 +120,7 @@ class Steam implements ISteam {
         const found = entries.find(entry => {
           const steamPath = entry.gamePath.toLowerCase();
           const discoveryPath = gamePath.toLowerCase();
-          return discoveryPath.indexOf(steamPath) !== -1
+          return discoveryPath.indexOf(steamPath) !== -1;
         });
         if (found === undefined) {
           return Promise.reject(
@@ -211,6 +212,7 @@ class Steam implements ISteam {
                   appid: obj['AppState']['appid'],
                   name: obj['AppState']['name'],
                   gamePath: path.join(steamAppsPath, 'common', obj['AppState']['installdir']),
+                  lastUser: obj['AppState']['LastOwner'],
                   lastUpdated: new Date(obj['AppState']['LastUpdated'] * 1000),
                 }));
             })
