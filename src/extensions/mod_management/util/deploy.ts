@@ -22,7 +22,7 @@ export function genSubDirFunc(game: IGame): (mod: IMod) => string {
 
 export function purgeMods(api: IExtensionApi): Promise<void> {
   const state = api.store.getState();
-  const instPath = installPath(state);
+  const stagingPath = installPath(state);
   const gameId = activeGameId(state);
   const gameDiscovery = currentGameDiscovery(state);
   const t = api.translate;
@@ -43,12 +43,12 @@ export function purgeMods(api: IExtensionApi): Promise<void> {
 
   const modTypes = Object.keys(modPaths).filter(typeId => truthy(modPaths[typeId]));
 
-  return activator.prePurge(instPath)
+  return activator.prePurge(stagingPath)
     .then(() => Promise.each(modTypes, typeId =>
-        loadActivation(api, typeId, modPaths[typeId], activator)
-          .then(() => activator.purge(instPath, modPaths[typeId]))
-          .then(() => saveActivation(typeId, state.app.instanceId,
-            modPaths[typeId], [], activator.id))))
+    loadActivation(api, typeId, modPaths[typeId], stagingPath, activator)
+      .then(() => activator.purge(stagingPath, modPaths[typeId]))
+      .then(() => saveActivation(typeId, state.app.instanceId,
+                                 modPaths[typeId], stagingPath, [], activator.id))))
     .then(() => Promise.resolve())
   .finally(() => {
     api.dismissNotification(notificationId);

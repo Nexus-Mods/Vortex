@@ -4,7 +4,7 @@ import { IGame } from '../../../types/IGame';
 import {IState} from '../../../types/IState';
 import {UserCanceled} from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
-import { activeGameId, currentGameDiscovery } from '../../../util/selectors';
+import { activeGameId, currentGameDiscovery, installPathForGame } from '../../../util/selectors';
 import { truthy, writeFileAtomic } from '../../../util/util';
 
 import { getGame } from '../../gamemode_management/util/getGame';
@@ -149,9 +149,14 @@ function queryPurge(api: IExtensionApi,
     });
 }
 
-function getManifest(instanceId: string, filePath: string): Promise<any> {
+function readManifestFile(filePath: string): Promise<any> {
   return fs.readFileAsync(filePath, 'utf8')
-    .then(data => readManifest(data))
+    .then(data => readManifest(data));
+}
+
+function getManifest(api: IExtensionApi, instanceId: string,
+                     filePath: string, backupPath: string): Promise<any> {
+  return readManifestFile(filePath)
     .catch(err => {
       if (err instanceof UserCanceled) {
         return Promise.reject(err);
@@ -159,9 +164,34 @@ function getManifest(instanceId: string, filePath: string): Promise<any> {
       if (err.code === 'ENOENT') {
         return emptyManifest(instanceId);
       }
-      return Promise.reject(
-        new Error(`${err.message}.\n*** When you report this, `
-          + `please include the file "${filePath}" ***`));
+
+      if (err.message.startsWith('Unexpected token')) {
+        err.message = `The manifest file "${filePath}" is corrupted.\n`
+                    + 'You should delete it, then immediately click the "Purge" button '
+                    + 'on the "Mods" page, then deploy again.';
+      }
+
+      return readManifestFile(backupPath)
+        .then(data =>
+          api.showDialog('question', 'Manifest damaged', {
+            text: 'The deployment manifest has been corrupted.\n'
+                + 'Fortunately we have a backup that seems to be intact.',
+            parameters: {
+              filePath,
+            },
+          }, [
+            { label: 'Cancel' },
+            { label: 'Restore from backup' },
+          ])
+          .then(result => {
+            if (result.action === 'Cancel') {
+              err.allowReport = false;
+              return Promise.reject(err);
+            } else {
+              return Promise.resolve(data);
+            }
+          }))
+        .catch(() => Promise.reject(err));
     })
     .then(manifest => (manifest !== undefined)
       ? manifest
@@ -169,13 +199,15 @@ function getManifest(instanceId: string, filePath: string): Promise<any> {
 }
 
 function fallbackPurgeType(api: IExtensionApi, activator: IDeploymentMethod,
-                           modType: string, modPath: string): Promise<void> {
+                           modType: string, deployPath: string, stagingPath: string): Promise<void> {
   const state: IState = api.store.getState();
   const typeTag = (modType !== undefined) && (modType.length > 0) ? modType + '.' : '';
-  const tagFile = path.join(modPath, `vortex.deployment.${typeTag}json`);
+  const tagFileName = `vortex.deployment.${typeTag}json`;
+  const tagFilePath = path.join(deployPath, tagFileName);
+  const tagBackupPath = path.join(stagingPath, tagFileName);
   const instanceId = state.app.instanceId;
 
-  return getManifest(instanceId, tagFile)
+  return getManifest(api, instanceId, tagFilePath, tagBackupPath)
       .then(tagObject => {
         let result: Promise<void>;
         if (tagObject.files.length > 0) {
@@ -186,8 +218,10 @@ function fallbackPurgeType(api: IExtensionApi, activator: IDeploymentMethod,
               safe = false;
             }
           }
-          result = doFallbackPurge(modPath, tagObject.files)
-              .then(() => saveActivation(modType, state.app.instanceId, modPath, [], activator.id))
+          result = doFallbackPurge(deployPath, tagObject.files)
+              .then(() => saveActivation(modType, state.app.instanceId,
+                                         deployPath, stagingPath,
+                                         [], activator.id))
               .then(() => Promise.resolve());
         } else {
           result = Promise.resolve();
@@ -206,24 +240,27 @@ export function fallbackPurge(api: IExtensionApi): Promise<void> {
   const gameDiscovery = currentGameDiscovery(state);
   const game: IGame = getGame(gameId);
   const modPaths = game.getModPaths(gameDiscovery.path);
+  const stagingPath = installPathForGame(state, gameId);
   const activator = getCurrentActivator(state, gameId, false);
 
   return Promise.each(Object.keys(modPaths), typeId =>
-    fallbackPurgeType(api, activator, typeId, modPaths[typeId]))
+    fallbackPurgeType(api, activator, typeId, modPaths[typeId], stagingPath))
     .then(() => undefined);
 }
 
 export function loadActivation(api: IExtensionApi, modType: string,
-                               modPath: string,
+                               deployPath: string, stagingPath: string,
                                activator: IDeploymentMethod): Promise<IDeployedFile[]> {
-  if (modPath === undefined) {
+  if (deployPath === undefined) {
     return Promise.resolve([]);
   }
   const typeTag = (modType !== undefined) && (modType.length > 0) ? modType + '.' : '';
-  const tagFile = path.join(modPath, `vortex.deployment.${typeTag}json`);
+  const tagFileName = `vortex.deployment.${typeTag}json`;
+  const tagFilePath = path.join(deployPath, tagFileName);
+  const tagBackupPath = path.join(stagingPath, tagFileName);
   const state: IState = api.store.getState();
   const instanceId = state.app.instanceId;
-  return getManifest(instanceId, tagFile)
+  return getManifest(api, instanceId, tagFilePath, tagBackupPath)
       .then(tagObject => {
         let result: Promise<IDeployedFile[]>;
         if ((tagObject.instance !== instanceId) && (tagObject.files.length > 0)) {
@@ -234,8 +271,8 @@ export function loadActivation(api: IExtensionApi, modType: string,
               safe = false;
             }
           }
-          result = queryPurge(api, modPath, tagObject.files, safe)
-              .then(() => saveActivation(modType, state.app.instanceId, modPath, [], activator.id))
+          result = queryPurge(api, deployPath, tagObject.files, safe)
+              .then(() => saveActivation(modType, state.app.instanceId, deployPath, stagingPath, [], activator.id))
               .then(() => Promise.resolve([]));
         } else {
           result = Promise.resolve(tagObject.files);
@@ -245,10 +282,9 @@ export function loadActivation(api: IExtensionApi, modType: string,
 }
 
 export function saveActivation(modType: string, instance: string,
-                               gamePath: string, activation: IDeployedFile[],
-                               activatorId: string) {
+                               gamePath: string, stagingPath: string,
+                               activation: IDeployedFile[], activatorId: string) {
   const typeTag = (modType !== undefined) && (modType.length > 0) ? modType + '.' : '';
-  const tagFile = path.join(gamePath, `vortex.deployment.${typeTag}json`);
   const data = JSON.stringify({
     instance,
     version: CURRENT_VERSION,
@@ -261,7 +297,12 @@ export function saveActivation(modType: string, instance: string,
     return Promise.reject(
       new Error(`failed to serialize deployment information: "${err.message}"`));
   }
+  const tagFileName = `vortex.deployment.${typeTag}json`;
+  const tagFilePath = path.join(gamePath, tagFileName);
+  const tagBackupPath = path.join(stagingPath, tagFileName);
+
   return (activation.length === 0)
-    ? fs.removeAsync(tagFile).catch(() => undefined)
-    : writeFileAtomic(tagFile, data);
+    ? fs.removeAsync(tagFilePath).catch(() => undefined)
+    : writeFileAtomic(tagFilePath, data)
+        .then(() => writeFileAtomic(tagBackupPath, data));
 }

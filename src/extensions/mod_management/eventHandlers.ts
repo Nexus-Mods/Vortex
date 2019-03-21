@@ -305,31 +305,31 @@ function undeploy(api: IExtensionApi,
     return Promise.reject(new ProcessCanceled('No deployment method active'));
   }
 
-  const installationPath = installPathForGame(state, gameMode);
+  const stagingPath = installPathForGame(state, gameMode);
 
   const subdir = genSubDirFunc(game);
-  const dataPath = modPaths[mod.type || ''];
-  if (dataPath === undefined) {
+  const deployPath = modPaths[mod.type || ''];
+  if (deployPath === undefined) {
     return Promise.resolve();
   }
   let normalize: Normalize;
-  return getNormalizeFunc(dataPath)
+  return getNormalizeFunc(deployPath)
     .then(norm => {
       normalize = norm;
-      return loadActivation(api, mod.type, dataPath, activatorId);
+      return loadActivation(api, mod.type, deployPath, stagingPath, activatorId);
     })
-    .then(lastActivation => activator.prepare(dataPath, false, lastActivation, normalize))
+    .then(lastActivation => activator.prepare(deployPath, false, lastActivation, normalize))
     .then(() => (mod !== undefined)
-      ? activator.deactivate(path.join(installationPath, mod.installationPath), subdir(mod))
+      ? activator.deactivate(path.join(stagingPath, mod.installationPath), subdir(mod))
       : Promise.resolve())
     .tapCatch(() => {
       if (activator.cancel !== undefined) {
-        activator.cancel(gameMode, dataPath, installationPath);
+        activator.cancel(gameMode, deployPath, stagingPath);
       }
     })
-    .then(() => activator.finalize(gameMode, dataPath, installationPath))
+    .then(() => activator.finalize(gameMode, deployPath, stagingPath))
     .then(newActivation =>
-      saveActivation(mod.type, state.app.instanceId, dataPath, newActivation, activator.id));
+      saveActivation(mod.type, state.app.instanceId, deployPath, stagingPath, newActivation, activator.id));
 }
 
 export function onRemoveMod(api: IExtensionApi,

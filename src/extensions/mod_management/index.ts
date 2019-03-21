@@ -239,7 +239,7 @@ function genUpdateModDeployment() {
       return Promise.resolve();
     }
     const gameId = profile.gameId;
-    const instPath = installPathForGame(state, gameId);
+    const stagingPath = installPathForGame(state, gameId);
     const gameDiscovery =
       getSafe(state, ['settings', 'gameMode', 'discovered', gameId], undefined);
     const game = getGame(gameId);
@@ -292,7 +292,7 @@ function genUpdateModDeployment() {
 
         log('debug', 'load activation');
         return Promise.each(Object.keys(modPaths).filter(typeId => truthy(modPaths[typeId])),
-          typeId => loadActivation(api, typeId, modPaths[typeId], activator).then(
+          typeId => loadActivation(api, typeId, modPaths[typeId], stagingPath, activator).then(
             deployedFiles => lastDeployment[typeId] = deployedFiles));
       })
       .then(() => {
@@ -318,7 +318,7 @@ function genUpdateModDeployment() {
           typeId => {
             log('debug', 'checking external changes',
                 { modType: typeId, count: lastDeployment[typeId].length });
-            return activator.externalChanges(profile.gameId, instPath, modPaths[typeId],
+            return activator.externalChanges(profile.gameId, stagingPath, modPaths[typeId],
                                              lastDeployment[typeId])
               .then(fileChanges => {
                 if (fileChanges.length > 0) {
@@ -336,7 +336,7 @@ function genUpdateModDeployment() {
                    api.store.dispatch(showExternalChanges(changes));
       })
       .then((fileActions: IFileEntry[]) => Promise.mapSeries(Object.keys(lastDeployment),
-        typeId => applyFileActions(instPath, modPaths[typeId],
+        typeId => applyFileActions(stagingPath, modPaths[typeId],
                                    lastDeployment[typeId],
                                    fileActions.filter(action => action.modTypeId === typeId))
                 .then(newLastDeployment => lastDeployment[typeId] = newLastDeployment)))
@@ -364,10 +364,10 @@ function genUpdateModDeployment() {
           const mergePath = truthy(typeId)
             ? MERGED_PATH + '.' + typeId
             : MERGED_PATH;
-          return removePersistent(api.store, path.join(instPath, mergePath));
+          return removePersistent(api.store, path.join(stagingPath, mergePath));
         })
         .then(() => Promise.each(mergeModTypes,
-          typeId => mergeMods(api, game, instPath, modPaths[typeId],
+          typeId => mergeMods(api, game, stagingPath, modPaths[typeId],
                               sortedModList.filter(mod => (mod.type || '') === typeId),
                               lastDeployment[typeId],
                               fileMergers)
@@ -406,7 +406,7 @@ function genUpdateModDeployment() {
                     { typeId, path: modPaths[typeId], count: lastDeployment[typeId].length });
                 return deployMods(api,
                                   game.id,
-                                  instPath, modPaths[typeId],
+                                  stagingPath, modPaths[typeId],
                                   filteredModList,
                                   activator, lastDeployment[typeId],
                                   typeId, new Set(mergedFileMap[typeId]),
@@ -419,7 +419,8 @@ function genUpdateModDeployment() {
 
                     newDeployment[typeId] = newActivation;
 
-                    return doSaveActivation(api, typeId, modPaths[typeId],
+                    return doSaveActivation(api, typeId,
+                                            modPaths[typeId], stagingPath,
                                             newActivation, activator.id)
                       .catch(err => api.showDialog('error', 'Saving manifest failed', {
                         text: 'Saving the manifest failed (see error below). '
@@ -505,7 +506,7 @@ function genUpdateModDeployment() {
         });
       })
       .catch(err => api.showErrorNotification('Failed to deploy mods', err, {
-        allowReport: err.code !== 'EPERM',
+        allowReport: (err.code !== 'EPERM') && (err.allowReport !== false),
       }))
       .finally(() => {
         api.store.dispatch(stopActivity('mods', 'deployment'));
@@ -514,10 +515,11 @@ function genUpdateModDeployment() {
   };
 }
 
-function doSaveActivation(api: IExtensionApi, typeId: string, modPath: string,
+function doSaveActivation(api: IExtensionApi, typeId: string,
+                          deployPath: string, stagingPath: string,
                           files: IDeployedFile[], activatorId: string) {
   const state: IState = api.store.getState();
-  return saveActivation(typeId, state.app.instanceId, modPath, files, activatorId)
+  return saveActivation(typeId, state.app.instanceId, deployPath, stagingPath, files, activatorId)
     .catch(err => api.showDialog('error', 'Saving manifest failed', {
       text: 'Saving the manifest failed (see error below). This could lead to errors '
         + '(e.g. orphaned files in the game directory, external changes not being detected) '
@@ -529,7 +531,7 @@ function doSaveActivation(api: IExtensionApi, typeId: string, modPath: string,
       { label: 'Ignore' },
     ])
     .then(result => (result.action === 'Retry')
-      ? doSaveActivation(api, typeId, modPath, files, activatorId)
+      ? doSaveActivation(api, typeId, deployPath, stagingPath, files, activatorId)
       : Promise.resolve()));
 }
 
@@ -716,30 +718,30 @@ function onDeploySingleMod(api: IExtensionApi) {
     if (!truthy(dataPath)) {
       return Promise.resolve();
     }
-    const installationPath = installPathForGame(state, gameId);
+    const stagingPath = installPathForGame(state, gameId);
 
     const subdir = genSubDirFunc(game);
     let normalize: Normalize;
     return getNormalizeFunc(dataPath)
       .then(norm => {
         normalize = norm;
-        return loadActivation(api, mod.type, dataPath, activator);
+        return loadActivation(api, mod.type, dataPath, stagingPath, activator);
       })
       .then(lastActivation => activator.prepare(dataPath, false, lastActivation, normalize))
       .then(() => (mod !== undefined)
         ? (enable !== false)
-          ? activator.activate(path.join(installationPath, mod.installationPath),
+          ? activator.activate(path.join(stagingPath, mod.installationPath),
                                mod.installationPath, subdir(mod), new Set())
-          : activator.deactivate(path.join(installationPath, mod.installationPath), subdir(mod))
+          : activator.deactivate(path.join(stagingPath, mod.installationPath), subdir(mod))
         : Promise.resolve())
       .tapCatch(() => {
         if (activator.cancel !== undefined) {
-          activator.cancel(gameId, dataPath, installationPath);
+          activator.cancel(gameId, dataPath, stagingPath);
         }
       })
-      .then(() => activator.finalize(gameId, dataPath, installationPath))
+      .then(() => activator.finalize(gameId, dataPath, stagingPath))
       .then(newActivation =>
-        doSaveActivation(api, mod.type, dataPath, newActivation, activator.id));
+        doSaveActivation(api, mod.type, dataPath, stagingPath, newActivation, activator.id));
   };
 }
 
