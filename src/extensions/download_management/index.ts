@@ -697,7 +697,7 @@ function init(context: IExtensionContextExt): boolean {
     //  2. Due to the gamemode-activated event.
     updateDebouncer = new Debouncer(() => {
       return updateDownloadPath(context.api);
-    }, 200);
+    }, 1000);
 
     {
       const speedsDebouncer = new Debouncer(() => {
