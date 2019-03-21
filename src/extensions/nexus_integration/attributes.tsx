@@ -156,6 +156,7 @@ export function genGameAttribute(api: IExtensionApi): ITableAttribute<IMod> {
       + 'Otherwise, please don\'t change this. It is required to be correct so '
       + 'Vortex can retrieve the correct mod information (including update info).'),
     edit: {
+      readOnly: (mod: IModWithState) => mod.state === 'downloaded',
       choices: () => nexusGames().sort().map(game => ({ key: game.domain_name, text: game.name })),
       onChangeValue: (mods, value) => {
         const gameMode = activeGameId(api.store.getState());
