@@ -82,6 +82,11 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
     const otherProfiles: { [id: string]: IProfile } = {};
 
     Object.keys(profiles).forEach(profileId => {
+      if ((profiles[profileId].gameId === undefined)
+          || (profiles[profileId].name === undefined)) {
+        return;
+      }
+
       if (profiles[profileId].gameId === gameId) {
         currentGameProfiles[profileId] = profiles[profileId];
       } else {
