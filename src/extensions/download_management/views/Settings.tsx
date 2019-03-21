@@ -336,7 +336,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         return queue.then(() => new Promise((resolve, reject) => {
           if (fileCount > 0) {
             this.props.onShowDialog('info', 'Invalid Destination', {
-              message: 'The destination directory has to be empty',
+              text: 'The destination folder has to be empty',
             }, [{ label: 'Ok', action: () => reject(null) }]);
           } else {
             resolve();
@@ -439,26 +439,15 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         //  for all these cases, but we may have to add other error codes if different
         //  error cases pop up.
         log('warn', 'Transfer failed - missing source directory', err);
-        return (err.code === 'UNKNOWN')
-          ? Promise.reject(new ProcessCanceled('Source directory does not exist!'))
+        return (['ENOENT', 'UNKNOWN'].indexOf(err.code) !== -1)
+          ? Promise.resolve(undefined)
           : Promise.reject(err);
       })
-      .then(() => {
-        onSetTransfer(newPath);
-        return transferPath(oldPath, newPath, (from: string, to: string, progress: number) => {
-          log('debug', 'transfer download', { from, to });
-          if (progress > this.state.progress) {
-            this.nextState.progress = progress;
-          }
-          if ((this.state.progressFile !== from)
-              && ((Date.now() - this.mLastFileUpdate) > 1000)) {
-            this.nextState.progressFile = path.basename(from);
-          }
-        });
-      })
-      .catch(ProcessCanceled, () => new Promise((resolve, reject) => {
-        onShowDialog('question', 'Missing downloads folder', {
-          bbcode: 'Vortex is unable to find your current downloads folder; '
+      .then(stats => {
+        const queryReset = (stats !== undefined)
+          ? Promise.resolve()
+          : onShowDialog('question', 'Missing downloads folder', {
+            bbcode: 'Vortex is unable to find your current downloads folder; '
               + 'this can happen when: <br />'
               + '1. You or an external application removed this folder.<br />'
               + '2. Your HDD/removable drive became faulty or unseated.<br />'
@@ -469,12 +458,30 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               + 'Alternatively, if you want to force Vortex to "re-initialize" your downloads '
               + 'folder at the destination you have chosen, Vortex can do this for you but '
               + 'note that the folder will be empty as nothing will be transferred inside it!',
-        },
-        [
-          { label: 'Cancel', action: () => reject(new UserCanceled()) },
-          { label: 'Re-initialize', action: () => resolve() },
-        ]);
-      }));
+          },
+            [
+              { label: 'Cancel' },
+              { label: 'Reinitialize' },
+            ])
+            .then(result => (result.action === 'Cancel')
+              ? Promise.reject(new UserCanceled())
+              : Promise.resolve());
+
+        return queryReset
+          .then(() => {
+            onSetTransfer(newPath);
+            return transferPath(oldPath, newPath, (from: string, to: string, progress: number) => {
+              log('debug', 'transfer downloads', { from, to });
+              if (progress > this.state.progress) {
+                this.nextState.progress = progress;
+              }
+              if ((this.state.progressFile !== from)
+                && ((Date.now() - this.mLastFileUpdate) > 1000)) {
+                this.nextState.progressFile = path.basename(from);
+              }
+            });
+          });
+      });
   }
 }
 
