@@ -44,14 +44,13 @@ class DeactivationButton extends ComponentEx<IProps, {}> {
     const { t, activator, buttonType } = this.props;
 
     return (
-      <Advanced><ToolbarIcon
+      <ToolbarIcon
         id='purge-mods'
         icon='purge'
         text={t('Purge Mods')}
         onClick={activator !== undefined ? this.activate : nop}
         disabled={activator === undefined}
-      /></Advanced>
-    );
+      />);
   }
 
   private activate = () => {
