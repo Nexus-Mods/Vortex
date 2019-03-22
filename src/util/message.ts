@@ -324,6 +324,12 @@ export function prettifyNodeErrorMessage(err: any): IPrettifiedError {
       message: 'The filesystem is read-only.',
       allowReport: false,
     };
+  } else if (err.code === 'UNKNOWN') {
+    return {
+      message: 'An unknown error occurred. What this means is that Windows or the framework don\'t '
+             + 'provide any useful information to diagnose this problem. '
+             + 'Please do not report this issue without saying what exactly you were doing.',
+    }
   }
 
   return {
