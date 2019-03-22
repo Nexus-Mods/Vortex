@@ -1,5 +1,5 @@
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
-import { IState } from '../../types/IState';
+import { IGameStored, IState } from '../../types/IState';
 import { ITestResult } from '../../types/ITestResult';
 import { getNormalizeFunc, Normalize, UserCanceled } from '../../util/api';
 import Debouncer from '../../util/Debouncer';
@@ -41,11 +41,16 @@ import * as _ from 'lodash';
 import * as path from 'path';
 import * as Redux from 'redux';
 import {generate as shortid} from 'shortid';
+import turbowalk, { IEntry } from 'turbowalk';
+import { setDownloadPath } from '../../actions';
 
 const app = remote !== undefined ? remote.app : appIn;
 
+export const DOWNLOADS_DIR_TAG = '__vortex_downloads_folder';
+
 let observer: DownloadObserver;
 let manager: DownloadManager;
+let updateDebouncer: Debouncer;
 
 const protocolHandlers: IProtocolHandlers = {};
 
@@ -54,6 +59,49 @@ const archiveExtLookup = new Set<string>([
   '.xz', '.z',
   '.fomod',
 ]);
+
+function writeDownloadsTag(api: IExtensionApi, tagPath: string) {
+  const state: IState = api.store.getState();
+  const data = {
+    instance: state.app.instanceId,
+  };
+  return fs.writeFileAsync(path.join(tagPath, DOWNLOADS_DIR_TAG),
+    JSON.stringify(data), {  encoding: 'utf8' });
+}
+
+function validateDownloadsTag(api: IExtensionApi, tagPath: string): Promise<void> {
+  return fs.readFileAsync(tagPath, { encoding: 'utf8' })
+    .then(data => {
+      const state: IState = api.store.getState();
+      const tag = JSON.parse(data);
+      if (tag.instance !== state.app.instanceId) {
+        return api.showDialog('question', 'Confirm', {
+          text: 'This is a downloads folder but it appears to belong to a different Vortex '
+              + 'instance. If you\'re using Vortex in shared and "regular" mode, do not use '
+              + 'the same downloads folder for both!',
+        }, [
+          { label: 'Cancel' },
+          { label: 'Continue' },
+        ])
+        .then(result => (result.action === 'Cancel')
+          ? Promise.reject(new UserCanceled())
+          : Promise.resolve());
+      }
+      return Promise.resolve();
+    })
+    .catch(() => {
+      return api.showDialog('question', 'Confirm', {
+        text: 'This directory is not marked as a downloads folder. '
+            + 'Are you *sure* it\'s the right directory?',
+      }, [
+        { label: 'Cancel' },
+        { label: 'I\'m sure' },
+      ])
+      .then(result => result.action === 'Cancel'
+        ? Promise.reject(new UserCanceled())
+        : Promise.resolve());
+    });
+}
 
 function knownArchiveExt(filePath: string): boolean {
   if (!truthy(filePath)) {
@@ -293,8 +341,86 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
     });
 }
 
+function removeDownloadsMetadata(api: IExtensionApi): Promise<void> {
+  const state: IState = api.store.getState();
+  const downloads: {[id: string]: IDownload} = state.persistent.downloads.files;
+  return Promise.each(Object.keys(downloads), dlId => {
+    api.store.dispatch(removeDownload(dlId));
+    return Promise.resolve();
+  }).then(() => Promise.resolve());
+}
+
+function testDownloadPath(api: IExtensionApi): Promise<void> {
+  const state: IState = api.store.getState();
+  let currentDownloadPath = state.settings.downloads.path;
+  const ensureDownloadsDirectory = (): Promise<void> => fs.statAsync(currentDownloadPath)
+    .catch(err =>
+      api.showDialog('error', ' Downloads Folder missing!', {
+        text: 'Your downloads folder (see below) is missing. This might happen because you '
+            + 'deleted it or - if you have it on a removable drive - it is not currently '
+            + 'connected.\nIf you continue now, a new downloads folder will be created but all '
+            + 'your previous mod archives will be lost.\n\n'
+            + 'If you have moved the folder or the drive letter changed, you can browse '
+            + 'for the new location manually, but please be extra careful to select the right '
+            + 'folder!',
+        message: currentDownloadPath,
+      }, [
+        { label: 'Quit Vortex' },
+        { label: 'Reinitialize' },
+        { label: 'Browse...' },
+      ]).then(result => {
+        if (result.action === 'Quit Vortex') {
+          app.exit(0);
+          return Promise.reject(new UserCanceled());
+        } else if (result.action === 'Reinitialize') {
+          const id = shortid();
+          api.sendNotification({
+            id,
+            type: 'activity',
+            message: 'Cleaning downloads metadata',
+          });
+          return removeDownloadsMetadata(api)
+            .then(() => fs.ensureDirWritableAsync(currentDownloadPath, () => Promise.resolve()))
+            .catch(() => {
+              api.showDialog('error', 'Downloads Folder missing!', {
+                bbcode: 'The downloads folder could not be created. '
+                      + 'You [b][color=red]have[/color][/b] to go to settings->downloads and '
+                      + 'change it to a valid directory [b][color=red]before doing anything '
+                      + 'else[/color][/b] or you will get further error messages.',
+              }, [
+                { label: 'Close' },
+              ]);
+            })
+            .finally(() => {
+              api.dismissNotification(id);
+            });
+        } else { // Browse...
+          return api.selectDir({
+            defaultPath: currentDownloadPath,
+            title: api.translate('Select downloads folder'),
+          }).then((selectedPath) => {
+            if (!truthy(selectedPath)) {
+              return Promise.reject(new UserCanceled());
+            }
+            return validateDownloadsTag(api, path.join(selectedPath, DOWNLOADS_DIR_TAG))
+              .then(() => {
+                currentDownloadPath = selectedPath;
+                api.store.dispatch(setDownloadPath(currentDownloadPath));
+                return Promise.resolve();
+              });
+          })
+          .catch(() => ensureDownloadsDirectory());
+        }
+      }))
+      .then(() => writeDownloadsTag(api, currentDownloadPath));
+
+  return ensureDownloadsDirectory()
+    .catch(UserCanceled, () => Promise.resolve());
+}
+
 function genGameModeActivated(api: IExtensionApi) {
-  return () => updateDownloadPath(api);
+  return () => testDownloadPath(api)
+    .then(() => updateDebouncer.schedule());
 }
 
 function removeArchive(store: Redux.Store<IState>, destination: string) {
@@ -502,7 +628,7 @@ function init(context: IExtensionContextExt): boolean {
     });
 
     context.api.onStateChange(['settings', 'downloads', 'path'], (prev, cur) => {
-      updateDownloadPath(context.api);
+      updateDebouncer.schedule();
     });
 
     context.api.onStateChange(['persistent', 'downloads', 'files'],
@@ -561,6 +687,17 @@ function init(context: IExtensionContextExt): boolean {
     });
 
     context.api.events.on('import-downloads', genImportDownloadsHandler(context.api));
+
+    // This debouncer is only needed to avoid a race condition caused primarily by the
+    //  testDownloadPath functionality, where the update downloads function gets called twice
+    //  in quick succession when the user browses and selects a new downloads folder. This causes,
+    //  duplicate archives to get added.
+    //   It gets called:
+    //  1. Due to change in settings.downloads.path.
+    //  2. Due to the gamemode-activated event.
+    updateDebouncer = new Debouncer(() => {
+      return updateDownloadPath(context.api);
+    }, 1000);
 
     {
       const speedsDebouncer = new Debouncer(() => {
