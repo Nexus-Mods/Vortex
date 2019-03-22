@@ -21,7 +21,7 @@ import { getGame } from '../gamemode_management/util/getGame';
 import modName from '../mod_management/util/modName';
 import { setModEnabled } from '../profile_management/actions/profiles';
 
-import {setModAttribute, setModType, addModRule} from './actions/mods';
+import {setModAttribute, setModType, addModRule, setFileOverride} from './actions/mods';
 import {IDependency} from './types/IDependency';
 import { IInstallContext } from './types/IInstallContext';
 import { IInstallResult, IInstruction } from './types/IInstallResult';
@@ -149,6 +149,8 @@ class InstallManager {
     }
 
     const fullInfo = { ...info };
+    let rules: IRule[] = [];
+    let overrides: string[] = [];
     let destinationPath: string;
     let tempPath: string;
 
@@ -223,6 +225,8 @@ class InstallManager {
                 }
                 return Promise.resolve();
               } else if (action === 'Replace') {
+                rules = oldMod.rules;
+                overrides = oldMod.fileOverrides;
                 // we need to remove the old mod before continuing. This ensures
                 // the mod is deactivated and undeployed (so we're not leave dangling
                 // links) and it ensures we do a clean install of the mod
@@ -276,6 +280,10 @@ class InstallManager {
       .then(() => filterModInfo(fullInfo, destinationPath))
       .then(modInfo => {
         installContext.finishInstallCB('success', modInfo);
+        rules.forEach(rule => {
+          api.store.dispatch(addModRule(installGameId, modId, rule));
+        });
+        api.store.dispatch(setFileOverride(installGameId, modId, overrides));
         if (enable) {
           api.store.dispatch(setModEnabled(currentProfile.id, modId, true));
           api.events.emit('mods-enabled', [modId], true, currentProfile.gameId);
