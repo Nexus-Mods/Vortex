@@ -342,7 +342,9 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
     } else {
       const { t, onShowDialog } = this.props;
 
-      const downloadNames = downloadIds.map((downloadId: string) => (
+      const downloadNames = downloadIds
+        .filter(downloadId => this.getDownload(downloadId) !== undefined)
+        .map((downloadId: string) => (
         this.getDownload(downloadId).localPath
       ));
 
