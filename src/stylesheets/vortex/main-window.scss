@@ -239,9 +239,12 @@
 // footer
 #main-footer {
   background-color: $brand-bg;
-  * {
+  > * {
     overflow-x: hidden;
     text-overflow: ellipsis;
+  }
+  .progressbar-container {
+    max-width: 15em;
   }
 }
 
