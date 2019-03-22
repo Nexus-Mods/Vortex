@@ -61,6 +61,18 @@ function updatePluginOrder(iniFilePath: string, plugins: string[]) {
     });
 }
 
+function updatePluginTimestamps(dataPath: string, plugins: string[]): Promise<void> {
+  const offset = 946684800;
+  const oneDay = 24 * 60 * 60;
+  return Promise.mapSeries(plugins, (fileName, idx) => {
+    const mtime = offset + oneDay * idx;
+    return fs.utimesAsync(path.join(dataPath, fileName), mtime, mtime)
+      .catch(err => err.code === 'ENOENT'
+        ? Promise.resolve()
+        : Promise.reject(err));
+  }).then(() => undefined);
+}
+
 function refreshPlugins(api: types.IExtensionApi): Promise<void> {
   const state = api.store.getState();
   const discovery = state.settings.gameMode.discovered['morrowind'];
@@ -94,6 +106,7 @@ function init(context: types.IExtensionContext) {
         const discovery = state.settings.gameMode.discovered['morrowind'];
         const iniFilePath = path.join(discovery.path, 'Morrowind.ini');
         updatePluginOrder(iniFilePath, plugins)
+          .then(() => updatePluginTimestamps(path.join(discovery.path, 'Data Files'), plugins))
           .catch(err => {
             context.api.showErrorNotification('Failed to update morrowind.ini', err, { allowReport: false });
           });
