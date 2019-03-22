@@ -407,7 +407,8 @@ function elevated(func: (ipc, req: NodeRequireFunction) => Promise<void>,
     ipcInst.serve(`__fs_elevated_${id}`, () => {
       runElevated(`__fs_elevated_${id}`, func, parameters)
         .catch(err => {
-          if (err.code === 5) {
+          if ((err.code === 5)
+              || ((process.platform === 'win32') && (err.errno === 1223))) {
             // this code is returned when the user rejected the UAC dialog. Not currently
             // aware of another case
             reject(new UserCanceled());

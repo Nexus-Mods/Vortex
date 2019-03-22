@@ -59,7 +59,6 @@ const profileFeatures: IProfileFeature[] = [];
 function profilePath(store: Redux.Store<any>, profile: IProfile): string {
   const app = appIn || remote.app;
 
-  log('debug', 'profile path', profile);
   return path.join(app.getPath('userData'), profile.gameId, 'profiles', profile.id);
 }
 
@@ -82,6 +81,7 @@ function sanitizeProfile(store: Redux.Store<any>, profile: IProfile): void {
 
 function refreshProfile(store: Redux.Store<any>, profile: IProfile,
                         direction: 'import' | 'export'): Promise<void> {
+  log('debug', 'refresh profile', profile);
   if (profile === undefined) {
     return Promise.resolve();
   }
@@ -123,6 +123,7 @@ function refreshProfile(store: Redux.Store<any>, profile: IProfile,
  * @param {string} gameId
  */
 function activateGame(store: ThunkStore<IState>, gameId: string) {
+  log('info', 'activating game', { gameId });
   const state: IState = store.getState();
   if (getSafe(state, ['settings', 'gameMode', 'discovered', gameId, 'path'], undefined)
       === undefined) {
@@ -134,6 +135,7 @@ function activateGame(store: ThunkStore<IState>, gameId: string) {
         gameId,
       },
     }));
+    log('info', 'unselecting profile because game no longer discovered', { gameId });
     store.dispatch(setNextProfile(undefined));
     return;
   }
@@ -155,10 +157,12 @@ function activateGame(store: ThunkStore<IState>, gameId: string) {
         if (dialogResult.action === 'Activate') {
           const selectedId = Object.keys(dialogResult.input).find(
             (id: string) => dialogResult.input[id]);
+          log('info', 'user selected profile', { selectedId });
           store.dispatch(setNextProfile(selectedId));
         }
       });
   } else {
+    log('info', 'using last active profile', { profileId });
     store.dispatch(setNextProfile(profileId));
   }
 }
@@ -250,6 +254,7 @@ function genOnProfileChange(api: IExtensionApi, onFinishProfileSwitch: (callback
       api.events.emit('profile-will-change', current, enqueue);
 
       if (current === undefined) {
+        log('info', 'switched to no profile');
         store.dispatch(setCurrentProfile(undefined, undefined));
         return queue;
       }
@@ -264,6 +269,7 @@ function genOnProfileChange(api: IExtensionApi, onFinishProfileSwitch: (callback
           api.store.dispatch(
             setProgress('profile', 'deploying', undefined, undefined));
           const gameId = profile !== undefined ? profile.gameId : undefined;
+          log('info', 'switched to profile', { gameId, current });
           store.dispatch(setCurrentProfile(gameId, current));
           store.dispatch(setProfileActivated(current));
           return null;
@@ -311,6 +317,7 @@ function init(context: IExtensionContextExt): boolean {
       const instPath = installPathForGame(context.api.store.getState(), gameId);
       fs.ensureDirWritableAsync(instPath, () => Promise.resolve())
         .then(() => {
+          log('info', 'user managing game for the first time', { gameId });
           context.api.store.dispatch(setProfile({
             id: profileId,
             gameId,
@@ -318,6 +325,7 @@ function init(context: IExtensionContextExt): boolean {
             modState: {},
           }));
           context.api.store.dispatch(setNextProfile(profileId));
+          
         });
   });
 
@@ -452,7 +460,7 @@ function init(context: IExtensionContextExt): boolean {
         }
         const discovery = state.settings.gameMode.discovered[profile.gameId];
         if ((discovery === undefined) || (discovery.path === undefined)) {
-          log('debug', 'active game no longer discovered, deactivate');
+          log('info', 'active game no longer discovered, deactivate');
           store.dispatch(setNextProfile(undefined));
         }
       }

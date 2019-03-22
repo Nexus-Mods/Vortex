@@ -1,10 +1,10 @@
 import { setDownloadModInfo } from '../../actions';
 import { IDialogResult, showDialog } from '../../actions/notifications';
-import InputButton from '../../controls/InputButton';
 import { IExtensionApi, IExtensionContext, ILookupResult } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
 import { DataInvalid, HTTPError, ProcessCanceled,
          ServiceTemporarilyUnavailable, UserCanceled } from '../../util/CustomErrors';
+import * as fs from '../../util/fs';
 import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
@@ -42,7 +42,7 @@ import * as sel from './selectors';
 import { endorseModImpl, nexusGames, processErrorMessage, startDownload, updateKey } from './util';
 
 import * as Promise from 'bluebird';
-import { remote } from 'electron';
+import { app as appIn, remote } from 'electron';
 import * as fuzz from 'fuzzball';
 import * as I18next from 'i18next';
 import NexusT, { IDownloadURL, NexusError, RateLimitError, TimeoutError } from 'nexus-api';
@@ -52,6 +52,9 @@ import { Button } from 'react-bootstrap';
 import {} from 'uuid';
 import * as WebSocket from 'ws';
 import { IResolvedURL } from '../download_management';
+import Debouncer from '../../util/Debouncer';
+
+const app = remote !== undefined ? remote.app : appIn;
 
 let nexus: NexusT;
 
@@ -62,14 +65,17 @@ export class APIDisabled extends Error {
   }
 }
 
+// functions in the nexus api that don't trigger requests but instead are
+// management functions to control the our api connection
+const mgmtFuncs = new Set(['setGame', 'getValidationResult', 'getRateLimits']);
+
 const disableable = {
   disabled: false,
-  nonPromiseFuncs: new Set(['setGame', 'getValidationResult', 'getRateLimits']),
   get(obj, prop) {
     if (prop === 'disable') {
       return () => this.disabled = true;
     } else if ((!this.disabled)
-               || this.nonPromiseFuncs.has(prop)
+               || mgmtFuncs.has(prop)
                || (typeof obj[prop] !== 'function')) {
       return obj[prop];
     } else {
@@ -77,6 +83,81 @@ const disableable = {
     }
   }
 };
+
+function getCaller() {
+  // save original values
+  const origLimit = Error.stackTraceLimit;
+  const origHandler = Error.prepareStackTrace;
+
+  // set up error to return the vanilla v8 stack trace
+  const dummyObject: { stack?: any } = {};
+  Error.stackTraceLimit = Infinity;
+  Error.prepareStackTrace = (dummyObject, v8StackTrace) => v8StackTrace;
+  Error.captureStackTrace(dummyObject, getCaller);
+  const v8StackTrace = dummyObject.stack;
+
+  // restore original values
+  Error.prepareStackTrace = origHandler;
+  Error.stackTraceLimit = origLimit;
+
+  return v8StackTrace;
+}
+
+const requestLog = {
+  requests: [],
+  logPath: path.join(app.getPath('userData'), 'network.log'),
+  debouncer: new Debouncer(() => {
+    // TODO: why does "this" not point to the right object here?
+    const reqs = requestLog.requests;
+    requestLog.requests = [];
+    return fs.writeFileAsync(requestLog.logPath, reqs.join('\n') + '\n', { flag: 'a' })
+  }, 500),
+  log(prop: string, args: any[], caller: string) {
+    this.requests.push(`success - (${Date.now()}) ${prop} (${args.join(', ')}) from ${caller}`);
+    this.debouncer.schedule();
+  },
+  logErr(prop: string, args: any[], caller: string, err: Error) {
+    this.requests.push(`failed - (${Date.now()}) ${prop} (${args.join(', ')}) from ${caller}: ${err.message}`);
+    this.debouncer.schedule();
+  },
+  get(obj, prop) {
+    if (mgmtFuncs.has(prop)
+        || (typeof obj[prop] !== 'function')) {
+          return obj[prop];
+    } else {
+      return (...args) => {
+        const prom = obj[prop](...args);
+        if (prom.then !== undefined) {
+          const stack = getCaller();
+          let caller = stack[1].getFunctionName();
+          if (caller === null) {
+            caller = `${stack.getFileName()}:${stack.getLineNumber()}:${stack.getColumnNumber()}`;
+          }
+          return prom.then(res => {
+            if (prop === 'setKey') {
+              // don't log sensitive data
+              this.log(prop, [], caller);
+            } else {
+              this.log(prop, args || [], caller);
+            }
+            return Promise.resolve(res);
+          })
+          .catch(err => {
+            if (prop === 'setKey') {
+              // don't log sensitive data
+              this.logErr(prop, [], caller, err);
+            } else {
+              this.logErr(prop, args || [], caller, err);
+            }
+            return Promise.reject(err);
+          })
+        } else {
+          return prom;
+        }
+      };
+    }
+  }
+}
 
 export interface IExtensionContextExt extends IExtensionContext {
   registerDownloadProtocol: (
@@ -392,6 +473,17 @@ function ensureLoggedIn(api: IExtensionApi): Promise<void> {
   }
 }
 
+function onceMain(api: IExtensionApi) {
+  try {
+    const stat = fs.statSync(requestLog.logPath);
+    const now = new Date();
+    if (stat.mtime.getUTCDate() !== now.getUTCDate()) {
+      fs.removeSync(requestLog.logPath);
+    }
+  } catch (err) {
+  }
+}
+
 function once(api: IExtensionApi) {
   const registerFunc = (def?: boolean) => {
     if (def === undefined) {
@@ -442,7 +534,11 @@ function once(api: IExtensionApi) {
     const apiKey = getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], undefined);
     const gameMode = activeGameId(state);
 
-    nexus = new Proxy(new Nexus('Vortex', remote.app.getVersion(), gameMode, 30000), disableable);
+    nexus = new Proxy(
+      new Proxy(
+        new Nexus('Vortex', remote.app.getVersion(), gameMode, 30000),
+        requestLog),
+      disableable);
 
     updateKey(api, nexus, apiKey);
 
@@ -709,6 +805,7 @@ function init(context: IExtensionContextExt): boolean {
                          (games: string[]) => openNexusPage(context.api.store.getState(), games));
 
   context.once(() => once(context.api));
+  context.onceMain(() => onceMain(context.api));
 
   return true;
 }

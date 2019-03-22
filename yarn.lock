@@ -4023,10 +4023,10 @@ electron-updater@^3.1.2:
     semver "^5.6.0"
     source-map-support "^0.5.9"
 
-electron@2.0.17:
-  version "2.0.17"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-2.0.17.tgz#871c02eabcdfe11f7452c01b2f36510241b6de19"
-  integrity sha512-lbACWEiuiHFeSps3rB9DclD2zvwAIrTc2wmHUjZ3NAS64/jY5zXZuGxw0E28zVzCvMLtvvfF5wc5m1PIlz2TGA==
+electron@2.0.18:
+  version "2.0.18"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-2.0.18.tgz#52f1b248c3cc013b5a870094de3b6ba5de313a0f"
+  integrity sha512-PQRHtFvLxHdJzMMIwTddUtkS+Te/fZIs+PHO+zPmTUTBE76V3Od3WRGzMQwiJHxN679licmCKhJpMyxZfDEVWQ==
   dependencies:
     "@types/node" "^8.0.24"
     electron-download "^3.0.1"
@@ -6977,8 +6977,8 @@ next-tick@1:
   resolved "https://registry.yarnpkg.com/next-tick/-/next-tick-1.0.0.tgz#ca86d1fe8828169b0120208e3dc8424b9db8342c"
 
 nexus-api@Nexus-Mods/node-nexus-api:
-  version "1.0.0-rc4"
-  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/6b41eb892f361578d63fdeab2a7116d7b639604e"
+  version "1.0.0-rc5"
+  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/371e034bb48a7ff1ca859a8d7721eb87ded2ede8"
   dependencies:
     request "^2.85.0"
     string-template "^1.0.0"
@@ -10290,8 +10290,8 @@ widest-line@^2.0.0:
     string-width "^2.1.1"
 
 winapi-bindings@Nexus-Mods/node-winapi-bindings:
-  version "1.4.7"
-  resolved "https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/1b4cbba1344391b04366e4cbdb4b464d5dcd3045"
+  version "1.5.0"
+  resolved "https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/2e84ebf61fcb83bcbc36115481791da36c573f20"
   dependencies:
     autogypi "^0.2.2"
     nan "^2.11.0"

@@ -138,7 +138,8 @@ class StarterInfo implements IStarterInfo {
       if (err.errno === 'ENOENT') {
         onShowError('Failed to run tool', {
           Executable: info.exePath,
-          message: 'Executable doesn\'t exist, please check the configuration for info tool.',
+          message: 'Executable doesn\'t exist, please check the configuration for the '
+                 + 'tool you tried to start.',
           stack: err.stack,
         }, false);
       } else if (err.errno === 'UNKNOWN') {
@@ -147,7 +148,8 @@ class StarterInfo implements IStarterInfo {
         // get as feedback
         onShowError('Failed to run tool', {
           Executable: info.exePath,
-          message: 'File is not executable, please check the configuration for info tool.',
+          message: 'File is not executable, please check the configuration for the '
+                 + 'tool you tried to start.',
           stack: err.stack,
         }, false);
       } else if (err instanceof MissingInterpreter) {

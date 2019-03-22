@@ -2249,8 +2249,8 @@ negotiator@0.6.1:
   resolved "https://registry.yarnpkg.com/negotiator/-/negotiator-0.6.1.tgz#2b327184e8992101177b28563fb5e7102acd0ca9"
 
 nexus-api@Nexus-Mods/node-nexus-api:
-  version "1.0.0-rc4"
-  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/6b41eb892f361578d63fdeab2a7116d7b639604e"
+  version "1.0.0-rc5"
+  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/371e034bb48a7ff1ca859a8d7721eb87ded2ede8"
   dependencies:
     request "^2.85.0"
     string-template "^1.0.0"
@@ -3878,8 +3878,8 @@ wide-align@^1.1.0:
     string-width "^1.0.2 || 2"
 
 winapi-bindings@Nexus-Mods/node-winapi-bindings:
-  version "1.4.7"
-  resolved "https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/1b4cbba1344391b04366e4cbdb4b464d5dcd3045"
+  version "1.5.0"
+  resolved "https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/2e84ebf61fcb83bcbc36115481791da36c573f20"
   dependencies:
     autogypi "^0.2.2"
     nan "^2.11.0"

@@ -3,6 +3,7 @@ import { IDialogResult } from '../types/IDialog';
 import { ThunkStore } from '../types/IExtensionContext';
 import { UserCanceled } from './CustomErrors';
 import delayed from './delayed';
+import { Normalize } from './getNormalizeFunc';
 import getVortexPath from './getVortexPath';
 import { log } from './log';
 
@@ -379,12 +380,12 @@ export function getAllPropertyNames(obj: object) {
  * @param child path of the presumed sub-directory
  * @param parent path of the presumed parent directory
  */
-export function isChildPath(child: string, parent: string): boolean {
-  // TODO: should be using a FS-specific normalize function but then
-  //   this would have to be asynchronous.
-  const normalize = (input) => process.platform === 'win32'
-    ? path.normalize(input.toLowerCase())
-    : path.normalize(input);
+export function isChildPath(child: string, parent: string, normalize?: Normalize): boolean {
+  if (normalize === undefined) {
+    normalize = (input) => process.platform === 'win32'
+      ? path.normalize(input.toLowerCase())
+      : path.normalize(input);
+  }
 
   const childNorm = normalize(child);
   const parentNorm = normalize(parent);

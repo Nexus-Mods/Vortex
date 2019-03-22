@@ -49,7 +49,7 @@
   position: absolute;
   top: 0;
   left: 0;
-  right: calc($half-gutter + $scrollbar-width);
+  right: calc(#{$half-gutter} + #{$scrollbar-width});
 
 }
 

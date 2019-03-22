@@ -294,3 +294,11 @@ textarea {
 .breadcrumb {
   margin-bottom: 0;
 }
+
+@media (min-width: $screen-sm-min) {
+  .form-horizontal {
+    .control-label {
+      padding-top: calc(#{$padding-base-vertical} + 2px) !important;
+    }
+  }
+}

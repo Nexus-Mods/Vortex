@@ -281,7 +281,12 @@ class LoginDialog extends ComponentEx<IProps, { troubleshoot: boolean, apiKeyInp
   }
 
   private copyToClipboard = () => {
-    clipboard.writeText(getPageURL(this.props.loginId));
+    try {
+      clipboard.writeText(getPageURL(this.props.loginId));
+    } catch (err) {
+      // apparently clipboard gets lazy-loaded and that load may fail for some reason
+      this.context.api.showErrorNotification('Failed to access clipboard', err, { allowReport: false });
+    }
   }
 
   private login = () => {

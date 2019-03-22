@@ -566,7 +566,9 @@ class Application {
               }
               terminate({
                 message: 'Failed to restore backup',
-                details: err.code !== 'ENOENT' ? err : 'Specified backup file doesn\'t exist',
+                details: err.code !== 'ENOENT' ? err.message : 'Specified backup file doesn\'t exist',
+                stack: err.stack,
+                path: restoreBackup,
               }, {}, err.code !== 'ENOENT');
             });
         } else {
