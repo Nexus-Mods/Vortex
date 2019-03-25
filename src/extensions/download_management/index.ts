@@ -352,7 +352,12 @@ function removeDownloadsMetadata(api: IExtensionApi): Promise<void> {
 
 function testDownloadPath(api: IExtensionApi): Promise<void> {
   const state: IState = api.store.getState();
-  let currentDownloadPath = state.settings.downloads.path;
+  const gameId = selectors.activeGameId(state);
+  if (gameId === undefined) {
+    return Promise.resolve();
+  }
+
+  let currentDownloadPath = selectors.downloadPathForGame(state, gameId).replace(gameId, '');
   const ensureDownloadsDirectory = (): Promise<void> => fs.statAsync(currentDownloadPath)
     .catch(err =>
       api.showDialog('error', ' Downloads Folder missing!', {
