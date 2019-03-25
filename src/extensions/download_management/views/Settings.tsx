@@ -43,7 +43,8 @@ interface IActionProps {
   onSetMaxDownloads: (value: number) => void;
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
                  actions: DialogActions) => Promise<IDialogResult>;
-  onShowError: (message: string, details: string | Error, allowReport: boolean) => void;
+  onShowError: (message: string, details: string | Error,
+                allowReport: boolean, isBBCode?: boolean) => void;
 }
 
 type IProps = IActionProps & IConnectedProps;
@@ -364,6 +365,22 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           } else if (err.code === 'EINVAL') {
             onShowError(
               'Invalid path', err.message, false);
+          } else if (err.code === 'EIO') {
+            // Input/Output file operations have been interrupted.
+            //  this is not a bug in Vortex but rather a hardware/networking
+            //  issue (depending on the user's setup).
+            onShowError('File operations interrupted',
+              'Input/Output file operations have been interrupted. This is not a bug in Vortex, '
+            + 'but rather a problem with your environment!<br /><br />'
+            + 'Possible reasons behind this issue:<br />'
+            + '1. Your HDD/Removable drive has become unseated during transfer.<br />'
+            + '2. File operations were running on a network drive and said drive has become '
+            + 'disconnected for some reason (Network hiccup?)<br />'
+            + '3. An overzealous third party tool (possibly Anti-Virus or virus) '
+            + 'which is blocking Vortex from completing its operations.<br />'
+            + '4. A faulty HDD/Removable drive.<br /><br />'
+            + 'Please test your environment and try again once you\'ve confirmed it\'s fixed.',
+            false, true);
           } else {
             onShowError('Failed to move directories', err, true);
           }
@@ -419,8 +436,9 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
     onSetMaxDownloads: (value: number) => dispatch(setMaxDownloads(value)),
     onShowDialog: (type, title, content, actions) =>
       dispatch(showDialog(type, title, content, actions)),
-    onShowError: (message: string, details: string | Error, allowReport): void =>
-      showError(dispatch, message, details, { allowReport }),
+    onShowError: (message: string, details: string | Error,
+                  allowReport: boolean, isBBCode?: boolean): void =>
+      showError(dispatch, message, details, { allowReport, isBBCode }),
   };
 }
 
