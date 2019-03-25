@@ -1,4 +1,4 @@
-import { InsufficientDiskSpace, ProcessCanceled,
+import { InsufficientDiskSpace, NotFound, ProcessCanceled,
          UnsupportedOperatingSystem } from './CustomErrors';
 import * as fs from './fs';
 import getNormalizeFunc, { Normalize } from './getNormalizeFunc';
@@ -32,7 +32,12 @@ export function testPathTransfer(source: string, destination: string): Promise<v
   try {
     destinationRoot = winapi.GetVolumePathName(destination);
   } catch (err) {
-    return Promise.reject(err);
+    // On Windows, error number 2 (0x2) translates to ERROR_FILE_NOT_FOUND.
+    //  the only way for this error to be reported at this point is when
+    //  the destination path is pointing towards a non-existing partition.
+    return (err.errno === 2)
+      ? Promise.reject(new NotFound(err.path))
+      : Promise.reject(err);
   }
 
   const isOnSameVolume = (): Promise<boolean> => {

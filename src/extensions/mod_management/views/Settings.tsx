@@ -7,7 +7,7 @@ import { Button } from '../../../controls/TooltipControls';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
 import { ValidationState } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { InsufficientDiskSpace, TemporaryError,
+import { InsufficientDiskSpace, NotFound, TemporaryError,
          UnsupportedOperatingSystem, UserCanceled } from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
 import getVortexPath from '../../../util/getVortexPath';
@@ -301,6 +301,10 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         onShowError('Unsupported operating system',
         'This functionality is currently unavailable for your operating system!',
         false))
+      .catch(NotFound, () =>
+        onShowError('Invalid destination',
+        'The destination partition you selected is invalid - please choose a different '
+      + 'destination', false))
       .catch((err) => {
         if (err !== null) {
           if (err.code === 'EPERM') {
