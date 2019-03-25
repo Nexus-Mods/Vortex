@@ -169,7 +169,16 @@ describe('pushSafe', () => {
     let result = helper.pushSafe(undefined, ['a', 'b'], 42);
     expect(result).toEqual({ a: { b: [42] } });
   });
-});
+  it('turns intermediate non-objects into objects', () => {
+    let input = { a: 13 };
+    let result = helper.pushSafe(input, ['a', 'b'], 42);
+    expect(result).toEqual({ a: { b: [42] } });
+  });
+  it('turns final element into array if it isn\'t one', () => {
+    let input = { a: 13 };
+    let result = helper.pushSafe(input, ['a'], 42);
+    expect(result).toEqual({ a: [42] });
+  });});
 
 describe('addUniqueSafe', () => {
   it('leaves the original unmodified', () => {

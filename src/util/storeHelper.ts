@@ -217,11 +217,11 @@ function setDefaultArray<T>(state: T, path: Array<(string | number)>, fallback: 
       ? copy
       : fallback as any;
   } else if (path.length === 1) {
-    copy[firstElement] = (!copy.hasOwnProperty(firstElement) || (copy[firstElement] === undefined))
+    copy[firstElement] = (!copy.hasOwnProperty(firstElement) || !Array.isArray(copy[firstElement]))
       ? fallback
       : copy[firstElement].slice();
   } else {
-    if (!copy.hasOwnProperty(firstElement)) {
+    if (!copy.hasOwnProperty(firstElement) || (typeof(copy[firstElement]) !== 'object')) {
       copy[firstElement] = {};
     }
     copy[firstElement] = setDefaultArray(copy[firstElement], path.slice(1), fallback);
