@@ -387,6 +387,11 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
   private inspect = (downloadId: string) => {
     const { t, onShowDialog } = this.props;
     const download = this.getDownload(downloadId);
+    if (download === undefined) {
+      // the download has been removed in the meantime?
+      return;
+    }
+
     if (download.state === 'failed') {
       const actions = [
             { label: 'Delete',
