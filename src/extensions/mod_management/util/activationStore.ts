@@ -2,7 +2,7 @@ import {showDialog} from '../../../actions/notifications';
 import {IExtensionApi} from '../../../types/IExtensionContext';
 import { IGame } from '../../../types/IGame';
 import {IState} from '../../../types/IState';
-import {UserCanceled} from '../../../util/CustomErrors';
+import {UserCanceled, ProcessCanceled} from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
 import { activeGameId, currentGameDiscovery } from '../../../util/selectors';
 import { truthy, writeFileAtomic } from '../../../util/util';
@@ -205,6 +205,9 @@ export function fallbackPurge(api: IExtensionApi): Promise<void> {
   const gameId = activeGameId(state);
   const gameDiscovery = currentGameDiscovery(state);
   const game: IGame = getGame(gameId);
+  if (game === undefined) {
+    return Promise.reject(new ProcessCanceled('game got disabled'));
+  }
   const modPaths = game.getModPaths(gameDiscovery.path);
   const activator = getCurrentActivator(state, gameId, false);
 

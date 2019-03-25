@@ -3,6 +3,7 @@ import {IModTable, IState} from '../../types/IState';
 import { ProcessCanceled, TemporaryError, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
+import { log } from '../../util/log';
 import {showError} from '../../util/message';
 import { downloadPathForGame } from '../../util/selectors';
 import {getSafe} from '../../util/storeHelper';
@@ -138,7 +139,10 @@ export function onGameModeActivated(
           });
           return fallbackPurge(api)
             .then(() => fs.ensureDirWritableAsync(instPath, () => Promise.resolve()))
-            .catch(() => {
+            .catch((err) => {
+              if (err instanceof ProcessCanceled) {
+                log('warn', 'Mods not purged', err.message);
+              } else {
               api.showDialog('error', 'Mod Staging Folder missing!', {
                 bbcode: 'The staging folder could not be created. '
                       + 'You [b][color=red]have[/color][/b] to go to settings->mods and change it '
@@ -147,6 +151,8 @@ export function onGameModeActivated(
               }, [
                 { label: 'Close' },
               ]);
+              }
+              throw new ProcessCanceled('not purged');
             })
             .finally(() => {
               api.dismissNotification(id);
@@ -234,6 +240,9 @@ export function onGameModeActivated(
       return null;
     })
     .catch(UserCanceled, () => undefined)
+    .catch(ProcessCanceled, err => {
+      log('warn', 'Failed to refresh mods', err.message);
+    })
     .catch((err: Error) => {
       showError(store.dispatch, 'Failed to refresh mods', err,
                 { allowReport: (err as any).code !== 'ENOENT' });
