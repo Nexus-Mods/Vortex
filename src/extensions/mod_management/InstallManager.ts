@@ -4,7 +4,7 @@ import { IExtensionApi, ThunkStore } from '../../types/IExtensionContext';
 import {IState, IProfile} from '../../types/IState';
 import { DataInvalid, ProcessCanceled, SetupError, TemporaryError,
          UserCanceled} from '../../util/CustomErrors';
-import { createErrorReport, isOutdated } from '../../util/errorHandling';
+import { createErrorReport, isOutdated, withContext } from '../../util/errorHandling';
 import * as fs from '../../util/fs';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
 import { log } from '../../util/log';
@@ -163,7 +163,7 @@ class InstallManager {
     let installContext: InstallContext;
 
     this.mQueue = this.mQueue
-      .then(() => forceGameId !== undefined
+      .then(() => withContext('Installing', baseName, () => ((forceGameId !== undefined)
         ? Promise.resolve(forceGameId)
         : queryGameId(api.store, downloadGameIds))
       .then(gameId => {
@@ -410,7 +410,7 @@ class InstallManager {
         if (installContext !== undefined) {
           installContext.stopIndicator();
         }
-      });
+      })));
   }
 
   private isCritical(error: string): boolean {
@@ -580,7 +580,7 @@ class InstallManager {
                           `Missing instructions: ${missing.join(', ')}\n` +
                               `Installer name: ${path.basename(archivePath)}\n` +
                               `MD5 checksum: ${hashResult.md5sum}\n`,
-                    },
+                    }, {},
                     ['installer'], api.store.getState()));
     const showUnsupportedDialog = () => api.store.dispatch(showDialog(
         'info', 'Installer unsupported',

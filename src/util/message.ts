@@ -9,7 +9,7 @@ import { IState } from '../types/IState';
 import { jsonRequest } from '../util/network';
 
 import { HTTPError } from './CustomErrors';
-import { isOutdated, sendReport, toError } from './errorHandling';
+import { isOutdated, sendReport, toError, getErrorContext } from './errorHandling';
 import { log } from './log';
 import { truthy } from './util';
 
@@ -191,10 +191,12 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
 
   const actions: IDialogAction[] = [];
 
+  const context = getErrorContext();
+
   if (!isOutdated() && allowReport) {
     actions.push({
       label: 'Report',
-      action: () => sendReport('error', toError(details, options), ['error'], '', process.type)
+      action: () => sendReport('error', toError(details, options), context, ['error'], '', process.type)
         .then(response => {
           if (response !== undefined) {
             const { issue_number } = response.github_issue;

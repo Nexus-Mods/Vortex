@@ -6,6 +6,7 @@ import { IChunk } from './types/IChunk';
 import { IDownloadJob } from './types/IDownloadJob';
 import { IDownloadResult } from './types/IDownloadResult';
 import { ProgressCallback } from './types/ProgressCallback';
+import { IProtocolHandlers } from './types/ProtocolHandlers';
 
 import FileAssembler from './FileAssembler';
 import SpeedCalculator from './SpeedCalculator';
@@ -18,7 +19,6 @@ import * as http from 'http';
 import * as https from 'https';
 import * as path from 'path';
 import * as url from 'url';
-import { IProtocolHandlers } from './types/ProtocolHandlers';
 
 // assume urls are valid for at least 5 minutes
 const URL_RESOLVE_EXPIRE_MS = 1000 * 60 * 5;

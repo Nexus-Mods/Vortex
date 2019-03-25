@@ -9,6 +9,7 @@ import { ValidationState } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { InsufficientDiskSpace, NotFound, TemporaryError,
          UnsupportedOperatingSystem, UserCanceled } from '../../../util/CustomErrors';
+import { withContext } from '../../../util/errorHandling';
 import * as fs from '../../../util/fs';
 import getVortexPath from '../../../util/getVortexPath';
 import { log } from '../../../util/log';
@@ -200,7 +201,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     const oldPath = getInstallPath(this.props.installPath, gameMode);
     const newPath = getInstallPath(this.state.installPath, gameMode);
 
-    return fs.statAsync(oldPath)
+    return withContext('Transferring Staging', `from ${oldPath} to ${newPath}`,
+      () => fs.statAsync(oldPath)
       .catch(err => {
         // The initial mods staging folder is missing! - this may be a valid case if:
         //  1. HDD or removable media is faulty or has become unseated and is
@@ -254,7 +256,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               }
             });
           });
-      });
+      }));
   }
 
   private applyPaths = () => {

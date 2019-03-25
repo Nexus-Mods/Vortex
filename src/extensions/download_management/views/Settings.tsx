@@ -8,6 +8,7 @@ import { ValidationState } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { InsufficientDiskSpace, NotFound, UnsupportedOperatingSystem,
          UserCanceled } from '../../../util/CustomErrors';
+import { withContext } from '../../../util/errorHandling';
 import * as fs from '../../../util/fs';
 import { log } from '../../../util/log';
 import { showError } from '../../../util/message';
@@ -323,7 +324,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
     this.nextState.progress = 0;
     this.nextState.busy = t('Moving');
-    return testPathTransfer(oldPath, newPath)
+    return withContext('Transferring Downloads', `from ${oldPath} to ${newPath}`,
+      () => testPathTransfer(oldPath, newPath)
       .then(() => fs.ensureDirWritableAsync(newPath, this.confirmElevate))
       .then(() => {
         let queue = Promise.resolve();
@@ -423,7 +425,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         } else {
           this.nextState.busy = undefined;
         }
-      });
+      }));
   }
 
   private confirmElevate = (): Promise<void> => {

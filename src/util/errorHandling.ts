@@ -30,8 +30,14 @@ function createTitle(type: string, error: IError, hash: string) {
   return `${type}: ${error.message}`;
 }
 
-function createReport(type: string, error: IError, version: string,
-                      reporterProcess: string, sourceProcess: string) {
+interface IErrorContext {
+  [id: string]: string,
+}
+
+const context: IErrorContext = {};
+
+function createReport(type: string, error: IError, context: IErrorContext,
+                      version: string, reporterProcess: string, sourceProcess: string) {
   let proc: string = reporterProcess || 'unknown';
   if (sourceProcess !== undefined) {
     proc = `${sourceProcess} -> ${proc}`;
@@ -55,6 +61,13 @@ ${error.details}
 \`\`\``);
   }
 
+  if (Object.keys(context).length > 0) {
+    sections.push(`#### Context
+\`\`\`
+${Object.keys(context).map(key => `${key} = ${context[key]}`)}
+\`\`\``)
+  }
+
   if (error.path) {
     sections.push(`#### Path
 \`\`\`
@@ -72,12 +85,12 @@ ${error.stack}
   return `### Application ${type}\n` + sections.join('\n');
 }
 
-export function createErrorReport(type: string, error: IError, labels: string[],
-                                  state: any, sourceProcess?: string) {
+export function createErrorReport(type: string, error: IError, context: IErrorContext,
+                                  labels: string[], state: any, sourceProcess?: string) {
   const app = appIn || remote.app;
   const reportPath = path.join(app.getPath('userData'), 'crashinfo.json');
   fs.writeFileSync(reportPath, JSON.stringify({
-    type, error, labels: labels || [],
+    type, error, labels: labels || [], context,
     reporterId: getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], undefined),
     reportProcess: process.type, sourceProcess,
   }));
@@ -85,7 +98,7 @@ export function createErrorReport(type: string, error: IError, labels: string[],
 }
 
 function nexusReport(hash: string, type: string, error: IError, labels: string[],
-                     apiKey: string, reporterProcess: string,
+                     context: IErrorContext, apiKey: string, reporterProcess: string,
                      sourceProcess: string): Promise<IFeedbackResponse> {
   const app = appIn || remote.app;
   const Nexus: typeof NexusT = require('nexus-api').default;
@@ -94,7 +107,7 @@ function nexusReport(hash: string, type: string, error: IError, labels: string[]
   return Promise.resolve(Nexus.create(apiKey, 'Vortex', app.getVersion(), undefined))
     .then(nexus => nexus.sendFeedback(
       createTitle(type, error, hash),
-      createReport(type, error, app.getVersion(), reporterProcess, sourceProcess),
+      createReport(type, error, context, app.getVersion(), reporterProcess, sourceProcess),
       undefined,
       apiKey === undefined,
       hash,
@@ -147,18 +160,19 @@ export function sendReportFile(fileName: string): Promise<IFeedbackResponse> {
   });
 }
 
-export function sendReport(type: string, error: IError, labels: string[],
+export function sendReport(type: string, error: IError, context: IErrorContext,
+                           labels: string[],
                            reporterId?: string, reporterProcess?: string,
                            sourceProcess?: string): Promise<IFeedbackResponse> {
   const hash = genHash(error);
   if (process.env.NODE_ENV === 'development') {
     const dialog = dialogIn || remote.dialog;
     dialog.showErrorBox(error.message, JSON.stringify({
-      type, error, labels, reporterId, reporterProcess, sourceProcess,
+      type, error, labels, context, reporterId, reporterProcess, sourceProcess,
     }));
     return Promise.resolve(undefined);
   } else {
-    return nexusReport(hash, type, error, labels, reporterId || fallbackAPIKey,
+    return nexusReport(hash, type, error, labels, context, reporterId || fallbackAPIKey,
                        reporterProcess, sourceProcess);
   }
 }
@@ -179,6 +193,8 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
   if (truthy(win) && !win.isVisible()) {
     win = null;
   }
+
+  const contextNow = { ...context };
 
   log('error', 'unrecoverable error', { error, process: process.type });
 
@@ -206,7 +222,7 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
 
     if (action === 2) {
       // Report
-      createErrorReport('Crash', error, ['bug', 'crash'], state, source);
+      createErrorReport('Crash', error, contextNow, ['bug', 'crash'], state, source);
     } else if (action === 0) {
       // Ignore
       action = dialog.showMessageBox(win, {
@@ -323,4 +339,15 @@ export function toError(input: any, options?: IErrorOptions): IError {
       return { message: 'Unknown exception: ' + inspect(input) };
     }
   }
+}
+
+export function withContext(id: string, value: string, fun: () => Promise<any>) {
+  context[id] = value;
+  return fun().finally(() => {
+    delete context[id];
+  });
+}
+
+export function getErrorContext(): IErrorContext {
+  return { ...context };
 }
