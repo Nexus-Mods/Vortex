@@ -22,7 +22,7 @@ import { setProgress } from '../../actions/session';
 import { needToDeployForGame, installPathForGame } from '../../util/selectors';
 import { IExtensionContext, IExtensionApi, ThunkStore } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
-import { SetupError } from '../../util/CustomErrors';
+import { SetupError, ProcessCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
@@ -216,16 +216,19 @@ function genOnProfileChange(api: IExtensionApi, onFinishProfileSwitch: (callback
 
       const profile = state.persistent.profiles[current];
       if ((profile === undefined) && (current !== undefined)) {
-        return Promise.reject('Tried to set invalid profile');;
+        return Promise.reject(new Error('Tried to set invalid profile'));
       }
 
       if (profile !== undefined) {
-        const game = getGame(profile.gameId);
+        const { gameId } = profile;
+        const game = getGame(gameId);
         if (game === undefined) {
           showError(store.dispatch,
             'Game no longer supported, please install the game extension',
             profile.gameId, { allowReport: false });
+          return Promise.reject(new ProcessCanceled('Game no longer supported'));
         }
+
         const discovery = state.settings.gameMode.discovered[profile.gameId];
         // only calling to check if it works, some game extensions might discover
         // a setup-error when trying to resolve the mod path
@@ -271,6 +274,12 @@ function genOnProfileChange(api: IExtensionApi, onFinishProfileSwitch: (callback
           return null;
         });
     })
+      .catch(ProcessCanceled, err => {
+        showError(store.dispatch, 'Failed to set profile', err.message,
+          { allowReport: false });
+        store.dispatch(setCurrentProfile(undefined, undefined));
+        store.dispatch(setNextProfile(undefined));
+      })
       .catch(SetupError, err => {
         showError(store.dispatch, 'Failed to set profile', err.message,
           { allowReport: false });

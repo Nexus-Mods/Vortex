@@ -93,7 +93,7 @@ class StarterInfo implements IStarterInfo {
     // Should never happen but it's worth adding
     //  the game check just in case.
     if (!info.isGame) {
-      return Promise.reject(`Attempted to execute a tool via Steam - ${info.exePath}`);
+      return Promise.reject(new Error(`Attempted to execute a tool via Steam - ${info.exePath}`));
     }
 
     return new Promise((resolve, reject) => {
