@@ -4,7 +4,7 @@ import { IExtensionApi, ThunkStore } from '../../types/IExtensionContext';
 import {IState, IProfile} from '../../types/IState';
 import { DataInvalid, ProcessCanceled, SetupError, TemporaryError,
          UserCanceled} from '../../util/CustomErrors';
-import { createErrorReport, isOutdated, withContext } from '../../util/errorHandling';
+import { createErrorReport, isOutdated, withContext, didIgnoreError } from '../../util/errorHandling';
 import * as fs from '../../util/fs';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
 import { log } from '../../util/log';
@@ -589,7 +589,7 @@ class InstallManager {
               'This installer is (partially) unsupported as it\'s ' +
               'using functionality that hasn\'t been implemented yet. ' +
               'Please help us fix this by submitting an error report with a link to this mod.',
-        }, isOutdated() ? [
+        }, (isOutdated() || didIgnoreError()) ? [
           { label: 'Close' },
         ] : [
           { label: 'Report', action: makeReport },

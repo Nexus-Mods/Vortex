@@ -1,5 +1,5 @@
 import { ComponentEx } from '../util/ComponentEx';
-import { isOutdated } from '../util/errorHandling';
+import { isOutdated, didIgnoreError } from '../util/errorHandling';
 import { genHash } from '../util/genHash';
 
 import Icon from './Icon';
@@ -53,7 +53,7 @@ class ErrorBoundary extends ComponentEx<IErrorBoundaryProps, IErrorBoundaryState
           <Icon className='render-failure-icon' name='sad' />
           <div className='render-failure-text'>{t('Failed to render.')}</div>
           <div className='render-failure-buttons'>
-            {isOutdated() ? null : <Button onClick={this.report}>{t('Report')}</Button>}
+            {(isOutdated() || didIgnoreError()) ? null : <Button onClick={this.report}>{t('Report')}</Button>}
             <Button onClick={this.retryRender}>{t('Retry')}</Button>
           </div>
           {(onHide !== undefined)

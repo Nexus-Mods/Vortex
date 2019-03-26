@@ -65,6 +65,9 @@ class SplashScreen {
     });
   }
 
+  public getHandle(): Electron.BrowserWindow {
+    return this.mWindow;
+  }
 }
 
 export default SplashScreen;

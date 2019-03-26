@@ -9,7 +9,8 @@ import { IState } from '../types/IState';
 import { jsonRequest } from '../util/network';
 
 import { HTTPError } from './CustomErrors';
-import { isOutdated, sendReport, toError, getErrorContext } from './errorHandling';
+import { isOutdated, sendReport, toError,
+         getErrorContext, didIgnoreError } from './errorHandling';
 import { log } from './log';
 import { truthy } from './util';
 
@@ -193,7 +194,7 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
 
   const context = getErrorContext();
 
-  if (!isOutdated() && allowReport) {
+  if (!isOutdated() && !didIgnoreError() && allowReport) {
     actions.push({
       label: 'Report',
       action: () => sendReport('error', toError(details, options), context, ['error'], '', process.type)

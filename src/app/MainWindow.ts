@@ -207,6 +207,10 @@ class MainWindow {
     }
   }
 
+  public getHandle(): Electron.BrowserWindow {
+    return this.mWindow;
+  }
+
   private getWindowSettings(windowMetrics: IWindow): Electron.BrowserWindowConstructorOptions {
     const {getSafe} = require('../util/storeHelper') as typeof storeHelperT;
     const screenArea = screen.getPrimaryDisplay().workAreaSize;

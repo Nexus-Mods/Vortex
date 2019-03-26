@@ -122,6 +122,7 @@ function nexusReport(hash: string, type: string, error: IError, labels: string[]
 
 let fallbackAPIKey: string;
 let outdated: boolean = false;
+let errorIgnored: boolean = false;
 
 export function setApiKey(key: string) {
   fallbackAPIKey = key;
@@ -151,6 +152,10 @@ export function isOutdated(): boolean {
   return outdated;
 }
 
+export function didIgnoreError(): boolean {
+  return errorIgnored;
+}
+
 export function sendReportFile(fileName: string): Promise<IFeedbackResponse> {
   return fs.readFileAsync(fileName)
     .then(reportData => {
@@ -177,6 +182,12 @@ export function sendReport(type: string, error: IError, context: IErrorContext,
   }
 }
 
+let defaultWindow: Electron.BrowserWindow = null;
+
+export function setWindow(window: Electron.BrowserWindow) {
+  defaultWindow = window;
+}
+
 /**
  * display an error message and quit the application
  * on confirmation.
@@ -189,7 +200,7 @@ export function sendReport(type: string, error: IError, context: IErrorContext,
 export function terminate(error: IError, state: any, allowReport?: boolean, source?: string) {
   const app = appIn || remote.app;
   const dialog = dialogIn || remote.dialog;
-  let win = remote !== undefined ? remote.getCurrentWindow() : null;
+  let win = remote !== undefined ? remote.getCurrentWindow() : defaultWindow;
   if (truthy(win) && !win.isVisible()) {
     win = null;
   }
@@ -207,7 +218,7 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
       detail = error.details + '\n' + detail;
     }
     const buttons = ['Ignore', 'Quit'];
-    if ((allowReport !== false) && !outdated) {
+    if ((allowReport !== false) && !outdated && !errorIgnored) {
       buttons.push('Report and Quit');
     }
     let action = dialog.showMessageBox(win, {
@@ -237,6 +248,7 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
         noLink: true,
       });
       if (action === 1) {
+        errorIgnored = true;
         return;
       }
     }

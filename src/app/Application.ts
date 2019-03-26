@@ -6,7 +6,7 @@ import commandLine, {IParameters} from '../util/commandLine';
 import { ProcessCanceled, UserCanceled } from '../util/CustomErrors';
 import { } from '../util/delayed';
 import * as develT from '../util/devel';
-import { setOutdated, terminate, toError } from '../util/errorHandling';
+import { setOutdated, terminate, toError, setWindow } from '../util/errorHandling';
 import ExtensionManagerT from '../util/ExtensionManager';
 import * as fs from '../util/fs';
 import lazyRequire from '../util/lazyRequire';
@@ -87,9 +87,12 @@ class Application {
 
   private startSplash(): Promise<SplashScreenT> {
     const SplashScreen = require('./SplashScreen').default;
-    const splash = new SplashScreen();
+    const splash: SplashScreenT = new SplashScreen();
     return splash.create()
-      .then(() => splash);
+      .then(() => {
+        setWindow(splash.getHandle());
+        return splash;
+      });
   }
 
   private setupAppEvents(args: IParameters) {
@@ -627,6 +630,7 @@ class Application {
     const windowMetrics = this.mStore.getState().settings.window;
     const maximized: boolean = windowMetrics.maximized || false;
     this.mMainWindow.show(maximized);
+    setWindow(this.mMainWindow.getHandle());
   }
 
   private testShouldQuit(): Promise<void> {
