@@ -233,7 +233,13 @@ function testControlledFolderAccess(): Promise<ITestResult> {
   } catch (err) {
     // Something went wrong with the native code...
     //  We log this and resolve.
-    log('error', 'Winapi failed to retrieve controlled folder access status', err);
+    if (err.errno === 2) {
+      // This is a valid scenario if the user had not updated his Windows copy for a while.
+      //  CFA was added as part of the Windows 10 version 1709 Fall Creators Update.
+      log('info', 'Winapi unable to retrieve controlled folder access status', err);
+    } else {
+      log('warn', 'Winapi unable to retrieve controlled folder access status', err);
+    }
     return Promise.resolve(undefined);
   }
 
