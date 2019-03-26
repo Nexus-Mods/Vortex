@@ -220,20 +220,12 @@ abstract class LinkingActivator implements IDeploymentMethod {
             }));
           }
 
-          const currentGame: IGame = getGame(gameId);
-          let targetDirectories: string[] = [];
-          if ((total > 0) && currentGame.requiresCleanup) {
-            const newFiles = added.map(key => this.mContext.newDeployment[key]);
-            const filtered = removed.filter(rem => newFiles.find(newFile => this.mNormalize(newFile.relPath) === rem) === undefined);
-            filtered.forEach(removedItem => {
-              const fileEntry = initialDeployment[removedItem];
-              const targetDir = path.join(dataPath, fileEntry.target || '');
-
-              if (targetDirectories.find(dir => dir === targetDir) === undefined) {
-                targetDirectories.push(targetDir);
-              }
-            });
-            this.cleanupDeployment(targetDirectories);
+          if ((removed.length > 0) && getGame(gameId).requiresCleanup) {
+            this.postLinkPurge(dataPath, false)
+              .catch(err => {
+                this.mApi.showErrorNotification('Failed to clean up',
+                  err, { message: dataPath });
+              });
           }
 
           const context = this.mContext;
@@ -507,24 +499,6 @@ abstract class LinkingActivator implements IDeploymentMethod {
     };
   }
 
-  public cleanupDeployment(paths: string[]): Promise<void> {
-    return Promise.map(paths, dirPath => {
-      return this.postLinkPurge(dirPath, true)
-        .then(res => {
-          if (!res) {
-            return Promise.resolve(dirPath);
-          }
-        });
-    })
-    .then(results => {
-      if (results.length > 0) {
-        log('error', 'Failed to clean up some directories', results.join('; '));
-      }
-
-      return Promise.resolve();
-    });
-  }
-
   private postLinkPurge(baseDir: string, doRemove: boolean): Promise<boolean> {
     // recursively go through directories and remove empty ones !if! we encountered a
     // __delete_if_empty file in the hierarchy so far
@@ -562,7 +536,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
             return Promise.resolve();
           }
         }));
-    }, { recurse: false, skipHidden: false })
+    }, { recurse: false, skipHidden: false, skipLinks: false })
       .catch({ code: 'ENOTFOUND' }, err => {
         // was only able to reproduce this by removing directory manually while purge was happening
         // still, if the directory doesn't exist, there is nothing to clean up, so - job done?
@@ -570,20 +544,20 @@ abstract class LinkingActivator implements IDeploymentMethod {
       })
       .then(() => queue)
       .then(() => (empty && doRemove)
-        ? fs.statAsync(path.join(baseDir, LinkingActivator.NEW_TAG_NAME))
-          .then(() => fs.unlinkAsync(path.join(baseDir, LinkingActivator.NEW_TAG_NAME)))
-          .catch(() => fs.unlinkAsync(path.join(baseDir, LinkingActivator.OLD_TAG_NAME)))
-          .catch(err =>
-            err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err))
-          .then(() => fs.rmdirAsync(baseDir)
-            .catch(err => {
-              log('error', 'failed to remove directory, it was supposed to be empty', {
-                error: err.message,
-                path: baseDir,
-              });
-            }))
-          .then(() => true)
-        : Promise.resolve(false));
+          ? fs.statAsync(path.join(baseDir, LinkingActivator.NEW_TAG_NAME))
+            .then(() => fs.unlinkAsync(path.join(baseDir, LinkingActivator.NEW_TAG_NAME)))
+            .catch(() => fs.unlinkAsync(path.join(baseDir, LinkingActivator.OLD_TAG_NAME)))
+            .catch(err =>
+              err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err))
+            .then(() => fs.rmdirAsync(baseDir)
+              .catch(err => {
+                log('error', 'failed to remove directory, it was supposed to be empty', {
+                  error: err.message,
+                  path: baseDir,
+                });
+              }))
+            .then(() => true)
+          : Promise.resolve(false));
   }
 
   private restoreBackup(backupPath: string) {
