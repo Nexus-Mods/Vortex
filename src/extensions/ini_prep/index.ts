@@ -231,9 +231,9 @@ function testControlledFolderAccess(): Promise<ITestResult> {
       }
     }
   } catch (err) {
-    // Something went wrong with the native code...
-    //  We log this and resolve.
-    log('error', 'Winapi failed to retrieve controlled folder access status', err);
+    // on systems where controlled folder access hasn't been configured the registry access
+    // produces a "not found" error, that's not an issue
+    log('warn', 'failed to retrieve controlled folder access status', err);
     return Promise.resolve(undefined);
   }
 
