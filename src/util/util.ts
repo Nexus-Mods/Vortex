@@ -101,7 +101,11 @@ export function writeFileAtomic(filePath: string, input: string | Buffer,
   })
   .tapCatch(() => {
     if (cleanup !== undefined) {
-      cleanup();
+      try {
+        cleanup();
+      } catch (err) {
+        log('error', 'failed to clean up temporary file', err.message);
+      }
     }
   })
   .then(() => fs.readFileAsync(tmpPath))
@@ -165,7 +169,11 @@ export function copyFileAtomic(srcPath: string,
       .catch(err => {
         log('info', 'failed to copy', {srcPath, destPath, err: err.stack});
         if (cleanup !== undefined) {
-          cleanup();
+          try {
+            cleanup();
+          } catch (cleanupErr) {
+            log('error', 'failed to clean up temporary file', cleanupErr.message);
+          }
         }
         return Promise.reject(err);
       });

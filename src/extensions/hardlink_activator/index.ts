@@ -174,6 +174,7 @@ class DeploymentMethod extends LinkingDeployment {
 
   public postPurge(): Promise<void> {
     delete this.mInstallationFiles;
+    this.mInstallationFiles = undefined;
     return Promise.resolve();
   }
 
@@ -187,6 +188,11 @@ class DeploymentMethod extends LinkingDeployment {
       this.mInstallationFiles = new Set<number>();
       installEntryProm = turbowalk(installationPath,
         entries => {
+          if (this.mInstallationFiles === undefined) {
+            // don't know when this would be necessary but apparently
+            // it is, see https://github.com/Nexus-Mods/Vortex/issues/3684
+            return;
+          }
           entries.forEach(entry => {
             if (entry.linkCount > 1) {
               this.mInstallationFiles.add(entry.id);
@@ -261,7 +267,13 @@ class DeploymentMethod extends LinkingDeployment {
 
   private ensureDir(dirPath: string): Promise<void> {
     return (this.mDirCache === undefined) || !this.mDirCache.has(dirPath)
-      ? fs.ensureDirAsync(dirPath).then(created => { this.mDirCache.add(dirPath); return created; })
+      ? fs.ensureDirAsync(dirPath).then(created => {
+        if (this.mDirCache === undefined) {
+          this.mDirCache = new Set<string>();
+        }
+        this.mDirCache.add(dirPath);
+        return created;
+      })
       : Promise.resolve(null);
   }
 }

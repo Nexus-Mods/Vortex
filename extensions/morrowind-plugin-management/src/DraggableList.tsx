@@ -11,7 +11,7 @@ interface IItemBaseProps {
   itemRenderer: React.ComponentClass<{ className?: string, item: any }>;
   containerId: string;
   take: (item: any, list: any[]) => any;
-  onChangeIndex: (oldIndex: number, newIndex: number, take: (list: any[]) => any) => void;
+  onChangeIndex: (oldIndex: number, newIndex: number, changeContainer: boolean, take: (list: any[]) => any) => void;
   apply: () => void;
 }
 
@@ -103,7 +103,7 @@ const entryTarget: DropTargetSpec<IItemProps, any, any> = {
       return;
     }
 
-    props.onChangeIndex(index, hoverIndex, take);
+    props.onChangeIndex(index, hoverIndex, containerId !== props.containerId, take);
 
     (monitor.getItem() as any).index = hoverIndex;
     if (containerId !== props.containerId) {
@@ -174,13 +174,14 @@ class DraggableList extends ComponentEx<IProps, IState> {
       </div>);
   }
 
-  public changeIndex = (oldIndex: number, newIndex: number, take: (list: any[]) => any) => {
+  public changeIndex = (oldIndex: number, newIndex: number, changeContainer: boolean,
+                        take: (list: any[]) => any) => {
     if (oldIndex === undefined) {
       return;
     }
 
-    const copy = this.nextState.ordered.slice(0);
-    const item = take(copy);
+    const copy = this.state.ordered.slice();
+    const item = take(changeContainer ? undefined : copy);
     copy.splice(newIndex, 0, item);
 
     this.nextState.ordered = copy;
@@ -192,7 +193,13 @@ class DraggableList extends ComponentEx<IProps, IState> {
     let res = item;
     const index = ordered.indexOf(item);
     if (index !== -1) {
-      res = list.splice(index, 1)[0];
+      if (list !== undefined) {
+        res = list.splice(index, 1)[0];
+      } else {
+        const copy = ordered.slice();
+        res = copy.splice(index, 1)[0];
+        this.nextState.ordered = copy;
+      }
     }
     return res;
   }
@@ -203,16 +210,15 @@ class DraggableList extends ComponentEx<IProps, IState> {
 }
 
 const containerTarget: DropTargetSpec<IProps, any, any> = {
-
   hover(props: IProps, monitor: DropTargetMonitor, component) {
     const { containerId, index, item, take } = (monitor.getItem() as any);
 
     if (containerId !== props.id) {
-      (component as any).changeIndex(index, 0, take);
+      (component as any).changeIndex(index, 0, true, take);
 
       (monitor.getItem() as any).index = 0;
       (monitor.getItem() as any).containerId = props.id;
-      (monitor.getItem() as any).take = () => (component as any).take(item);
+      (monitor.getItem() as any).take = (list) => (component as any).take(item, list);
     }
   },
 };

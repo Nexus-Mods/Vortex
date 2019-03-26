@@ -91,7 +91,11 @@ function runElevated(ipcPath: string, func: (ipc: any, req: NodeRequireFunction)
 
       fs.write(fd, prog, (writeErr: Error, written: number, str: string) => {
         if (writeErr) {
-          cleanup();
+          try {
+            cleanup();
+          } catch (cleanupErr) {
+            console.error('failed to clean up temporary script', cleanupErr.message);
+          }
           return reject(writeErr);
         }
 

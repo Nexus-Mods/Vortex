@@ -339,7 +339,9 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
 
     const { t, onShowDialog } = this.props;
 
-    const downloadNames = downloadIds.map((downloadId: string) => (
+    const downloadNames = downloadIds
+      .filter(downloadId => this.getDownload(downloadId) !== undefined)
+      .map((downloadId: string) => (
       this.getDownload(downloadId).localPath
     ));
 
@@ -381,6 +383,11 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
   private inspect = (downloadId: string) => {
     const { t, onShowDialog } = this.props;
     const download = this.getDownload(downloadId);
+    if (download === undefined) {
+      // the download has been removed in the meantime?
+      return;
+    }
+
     if (download.state === 'failed') {
       const actions = [
             { label: 'Delete',
