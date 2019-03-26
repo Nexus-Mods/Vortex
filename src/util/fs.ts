@@ -448,6 +448,7 @@ function elevated(func: (ipc, req: NodeRequireFunction) => Promise<void>,
 
 export function ensureDirWritableAsync(dirPath: string,
                                        confirm: () => PromiseBB<void>): PromiseBB<void> {
+  const stackErr = new Error();
   return fs.ensureDirAsync(dirPath)
     .then(() => {
       const canary = path.join(dirPath, '__vortex_canary');
@@ -455,7 +456,10 @@ export function ensureDirWritableAsync(dirPath: string,
                     .then(() => fs.removeAsync(canary));
     })
     .catch(err => {
-      if (err.code === 'EPERM') {
+      // weirdly we get EBADF from ensureFile sometimes when the
+      // directory isn't writeable instead of EPERM. More weirdly, this seems to happen
+      // only on startup.
+      if (['EPERM', 'EBADF'].indexOf(err.code) !== -1) {
         return confirm()
           .then(() => {
             const userId = getUserId();
@@ -468,7 +472,7 @@ export function ensureDirWritableAsync(dirPath: string,
             }, { dirPath, userId });
           });
       } else {
-        return PromiseBB.reject(err);
+        return PromiseBB.reject(restackErr(err, stackErr));
       }
     });
 }

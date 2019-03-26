@@ -62,7 +62,11 @@ function runThreaded(func: (...args: any[]) => any,
 
       fs.write(fd, program, (writeErr: any, written: number, str: string) => {
         if (writeErr) {
-          cleanup();
+          try {
+            cleanup();
+          } catch (cleanupErr) {
+            console.error('failed to clean up temporary script', cleanupErr.message);
+          }
           return reject(writeErr);
         }
         fs.close(fd, () => {
