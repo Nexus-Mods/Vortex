@@ -103,6 +103,10 @@ function getCaller() {
   return v8StackTrace;
 }
 
+function framePos(frame: any) {
+  return `${frame.getFileName()}:${frame.getLineNumber()}:${frame.getColumnNumber()}`;
+}
+
 const requestLog = {
   requests: [],
   logPath: path.join(app.getPath('userData'), 'network.log'),
@@ -131,7 +135,7 @@ const requestLog = {
           const stack = getCaller();
           let caller = stack[1].getFunctionName();
           if (caller === null) {
-            caller = `${stack.getFileName()}:${stack.getLineNumber()}:${stack.getColumnNumber()}`;
+            caller = framePos(stack[1]);
           }
           return prom.then(res => {
             if (prop === 'setKey') {
@@ -149,6 +153,10 @@ const requestLog = {
             } else {
               this.logErr(prop, args || [], caller, err);
             }
+            err.stack += '\n\nCalled from:\n\n'
+              + stack.map(frame =>
+                `  at ${frame.getFunctionName()} (${framePos(frame)})`)
+                .join('\n');
             return Promise.reject(err);
           })
         } else {
