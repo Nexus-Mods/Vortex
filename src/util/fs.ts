@@ -116,6 +116,37 @@ function unlockConfirm(filePath: string): PromiseBB<boolean> {
     : PromiseBB.resolve(choice === 2);
 }
 
+function unknownErrorRetry(filePath: string): PromiseBB<boolean> {
+  if (dialog === undefined) {
+    return PromiseBB.resolve(false);
+  }
+
+  const options: Electron.MessageBoxOptions = {
+    title: 'Unknown error',
+    message:
+      `The operating system has reported an error without details when accessing "${filePath}" `
+      + 'This is usually due the user\'s environment and not a bug in Vortex.\n'
+      + 'Please diagonse your environment and then retry',
+    detail: 'Possible error causes:\n'
+      + `1. ${filePath} is a removable, possibly network drive which has been disconnected.\n`
+      + '2. An External application has interferred with file operations'
+      + '(Anti-virus, Disk Management Utility, Virus)\n',
+    buttons: [
+      'Cancel',
+      'Retry',
+    ],
+    type: 'warning',
+    noLink: true,
+  };
+
+  const choice = dialog.showMessageBox(
+    remote !== undefined ? remote.getCurrentWindow() : null,
+    options);
+  return (choice === 0)
+    ? PromiseBB.reject(new UserCanceled())
+    : PromiseBB.resolve(true);
+}
+
 function busyRetry(filePath: string): PromiseBB<boolean> {
   if (dialog === undefined) {
     return PromiseBB.resolve(false);
@@ -172,6 +203,8 @@ function errorRepeat(error: NodeJS.ErrnoException, filePath: string): PromiseBB<
           return PromiseBB.resolve(true);
         }
       });
+  } else if (error.code === 'UNKNOWN') {
+    return unknownErrorRetry(filePath);
   } else {
     return PromiseBB.resolve(false);
   }
