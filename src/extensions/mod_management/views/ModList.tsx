@@ -960,19 +960,27 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         removeMods = result.action === 'Remove' && result.input.mod;
         removeArchive = result.action === 'Remove' && result.input.archive;
 
-        return (removeMods ? this.removeMods(filteredIds) : Promise.resolve())
-          .then(() => filteredIds.forEach(key => {
-            if (removeMods && this.state.modsWithState[key].state === 'installed') {
-              onRemoveMod(gameMode, key);
-            }
+        const wereInstalled = filteredIds
+          .filter(key => (this.state.modsWithState[key] !== undefined)
+                && (this.state.modsWithState[key].state === 'installed'))
 
-            if (removeArchive && (this.state.modsWithState[key] !== undefined)) {
-              const archiveId = this.state.modsWithState[key].archiveId;
-              if (removeArchive) {
+        const archiveIds = filteredIds
+          .filter(key => (this.state.modsWithState[key] !== undefined)
+                      && (this.state.modsWithState[key].archiveId !== undefined))
+          .map(key => this.state.modsWithState[key].archiveId);
+
+        return (removeMods
+            ? this.removeMods(filteredIds)
+              .then(() => wereInstalled.forEach(key => onRemoveMod(gameMode, key)))
+            : Promise.resolve())
+          .then(() => {
+            if (removeArchive) {
+              archiveIds.forEach(archiveId => {
                 this.context.api.events.emit('remove-download', archiveId);
-              }
+              });
             }
-          }));
+            return Promise.resolve();
+          });
       })
       .catch(ProcessCanceled, err => {
         this.context.api.sendNotification({
