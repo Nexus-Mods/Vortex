@@ -258,7 +258,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     return testPathTransfer(oldInstallPath, newInstallPath)
       .then(() => {
         this.nextState.busy = t('Purging previous deployment');
-        doPurge();
+        return doPurge();
       })
       .then(() => fs.ensureDirAsync(newInstallPath))
       .then(() => {
