@@ -12,14 +12,12 @@ import {
   IFileChange,
   IUnavailableReason,
 } from './types/IDeploymentMethod';
-import {IMod} from './types/IMod';
 
 import * as Promise from 'bluebird';
 import * as I18next from 'i18next';
 import * as _ from 'lodash';
 import * as path from 'path';
 import turbowalk from 'turbowalk';
-import { IGame } from '../../types/api';
 
 export interface IDeployment {
   [relPath: string]: IDeployedFile;
