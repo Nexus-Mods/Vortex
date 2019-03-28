@@ -1,5 +1,5 @@
 import { InsufficientDiskSpace, NotFound, ProcessCanceled,
-         UnsupportedOperatingSystem } from './CustomErrors';
+         UnsupportedOperatingSystem, UserCanceled } from './CustomErrors';
 import * as fs from './fs';
 import getNormalizeFunc, { Normalize } from './getNormalizeFunc';
 import { log } from './log';
@@ -159,6 +159,7 @@ export function transferPath(source: string,
           const destPath = path.join(dest, path.relative(source, entry.filePath));
 
           return func(sourcePath, destPath)
+            .catch(UserCanceled, () => copyPromise.cancel())
             .catch(err => {
               // EXDEV implies we tried to rename when source and destination are
               // not in fact on the same volume. This is what comparing the stat.dev
@@ -175,8 +176,9 @@ export function transferPath(source: string,
             .then(() => {
               ++completed;
               const perc = Math.floor((completed * 100) / count);
-              if (perc !== lastPerc) {
+              if ((perc !== lastPerc) || ((Date.now() - lastProgress) > 1000)) {
                 lastPerc = perc;
+                lastProgress = Date.now();
                 progress(sourcePath, destPath, perc);
               }
             });
