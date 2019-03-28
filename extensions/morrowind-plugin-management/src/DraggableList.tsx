@@ -111,6 +111,9 @@ const entryTarget: DropTargetSpec<IItemProps, any, any> = {
       (monitor.getItem() as any).take = (list: any[]) => props.take(item, list);
     }
   },
+  drop(props) {
+    props.apply();
+  }
 };
 
 const Draggable = DropTarget(DND_TYPE, entryTarget, collectDrop)(
