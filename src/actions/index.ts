@@ -3,6 +3,7 @@ export * from './notifications';
 export * from './session';
 export * from './tables';
 export * from './window';
+export * from './loadOrder';
 
 export * from '../extensions/category_management/actions/category';
 
