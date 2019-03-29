@@ -1,4 +1,4 @@
-import { HTTPError, ProcessCanceled } from '../../util/CustomErrors';
+import { HTTPError, ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 import { countIf, truthy } from '../../util/util';
@@ -260,6 +260,7 @@ class DownloadWorker {
         }
         this.abort(false);
       })
+      .catch(UserCanceled, () => null)
       .catch(ProcessCanceled, () => null)
       .catch(err => this.handleError(err));
   }
@@ -396,6 +397,7 @@ class DownloadWorker {
       if (!this.mWriting) {
         this.mWriting = true;
         this.writeBuffer()
+          .catch(UserCanceled, () => null)
           .catch(ProcessCanceled, () => null)
           .catch(err => {
             this.handleError(err);
