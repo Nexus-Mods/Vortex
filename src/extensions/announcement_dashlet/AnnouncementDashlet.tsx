@@ -18,7 +18,7 @@ interface IConnectedProps {
     description: string,
     severity: AnnouncementSeverity,
     link?: string,
-    gameMode?: string,
+    gamemode?: string,
     icon?: string,
     version?: string }>;
 }
@@ -44,13 +44,13 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
     // Filter announcements by gamemode.
     let filtered = gameMode !== undefined
       ? announcements.filter(announce =>
-        ((announce.gameMode !== undefined) && (announce.gameMode === gameMode))
-        || announce.gameMode === undefined)
-      : announcements.filter(announce => announce.gameMode === undefined);
+        ((announce.gamemode !== undefined) && (announce.gamemode === gameMode))
+        || announce.gamemode === undefined)
+      : announcements.filter(announce => announce.gamemode === undefined);
 
     // Filter out any announcements that have a specific version set and don't match
     //  the current version of the application.
-    filtered = announcements.filter(announce => (announce.version === undefined)
+    filtered = filtered.filter(announce => (announce.version === undefined)
         || ((announce.version !== undefined) && (announce.version === this.mAppVersion)));
 
     return (
