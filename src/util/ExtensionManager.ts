@@ -579,7 +579,18 @@ class ExtensionManager {
    */
   public apply(funcName: string, func: (...args: any[]) => void) {
     this.mContextProxyHandler.getCalls(funcName).forEach(call => {
-      func(...call.arguments);
+      try {
+        func(...call.arguments);
+      } catch (err) {
+        this.mApi.showErrorNotification(
+          'Extension failed to initialize. If this isn\'t an official extension, ' +
+          'please report the error to the respective author.',
+          {
+            extension: call.extension,
+            err: err.message,
+            stack: err.stack,
+          });
+      }
     });
   }
 

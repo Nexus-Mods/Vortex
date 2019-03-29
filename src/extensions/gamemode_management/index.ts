@@ -527,9 +527,11 @@ function init(context: IExtensionContext): boolean {
           } else if ((err instanceof ProcessCanceled)
                     || (err instanceof SetupError)) {
             showError(store.dispatch, 'Failed to set game mode',
-                      err.message, { allowReport: false });
+                      err.message, { allowReport: false, message: newGameId });
           } else {
-            showError(store.dispatch, 'Failed to set game mode', err);
+            showError(store.dispatch, 'Failed to set game mode', err, {
+              message: newGameId,
+            });
           }
           // unset profile
           store.dispatch(setNextProfile(undefined));
