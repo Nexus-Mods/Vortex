@@ -1,19 +1,26 @@
+import { remote } from 'electron';
 import * as React from 'react';
 import { connect } from 'react-redux';
-import { remote } from 'electron';
 
-import { ComponentEx, translate } from '../../util/ComponentEx';
 import Dashlet from '../../controls/Dashlet';
+import { Icon, IconButton } from '../../controls/TooltipControls';
+import { ComponentEx, translate } from '../../util/ComponentEx';
 import opn from '../../util/opn';
 import * as selectors from '../../util/selectors';
-import { Icon, IconButton } from '../../controls/TooltipControls';
 
-import { IAnnouncement, AnnouncementSeverity } from './types';
-import { FlexLayout, EmptyPlaceholder } from '../../controls/api';
+import { EmptyPlaceholder, FlexLayout } from '../../controls/api';
+import { AnnouncementSeverity, IAnnouncement } from './types';
 
 interface IConnectedProps {
   gameMode: string;
-  announcements: Array<{ date: string, description: string, severity: AnnouncementSeverity, link?: string, gameMode?: string, icon? :string, version?: string }>;
+  announcements: Array<{
+    date: string,
+    description: string,
+    severity: AnnouncementSeverity,
+    link?: string,
+    gameMode?: string,
+    icon?: string,
+    version?: string }>;
 }
 
 interface IActionProps {
@@ -33,21 +40,23 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
 
   public render(): JSX.Element {
     const { t, announcements, gameMode } = this.props;
-    
+
     // Filter announcements by gamemode.
-    let filtered = gameMode !== undefined 
-      ? announcements.filter(announce => ((announce.gameMode !== undefined) && (announce.gameMode === gameMode)) 
+    let filtered = gameMode !== undefined
+      ? announcements.filter(announce =>
+        ((announce.gameMode !== undefined) && (announce.gameMode === gameMode))
         || announce.gameMode === undefined)
       : announcements.filter(announce => announce.gameMode === undefined);
 
     // Filter out any announcements that have a specific version set and don't match
     //  the current version of the application.
-    filtered = announcements.filter(announce => (announce.version === undefined) 
+    filtered = announcements.filter(announce => (announce.version === undefined)
         || ((announce.version !== undefined) && (announce.version === this.mAppVersion)));
 
-    return <Dashlet className='dashlet-announcement' title={t('Announcements')}>
-            {filtered.length > 0 ? this.renderContent(filtered) : this.renderPlaceholder()}
-          </Dashlet>;
+    return (
+      <Dashlet className='dashlet-announcement' title={t('Announcements')}>
+        {filtered.length > 0 ? this.renderContent(filtered) : this.renderPlaceholder()}
+      </Dashlet>);
   }
 
   private renderPlaceholder(): JSX.Element {
@@ -71,7 +80,13 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
     const { t } = this.props;
     const sev = announcement.severity !== undefined ? announcement.severity : 'information';
     if ((sev !== 'information') && (announcement.icon !== undefined)) {
-      return <Icon className={`announcement-icon-${sev}`} key='attention-required' name={announcement.icon} tooltip={t('Icon')} />;
+      return (
+      <Icon
+        className={`announcement-icon-${sev}`}
+        key='attention-required'
+        name={announcement.icon}
+        tooltip={t('Icon')}
+      />);
     } else {
       return null;
     }
@@ -81,13 +96,14 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
     const { t } = this.props;
     const generateLinkButton = (): JSX.Element => {
       return (
-        <IconButton 
+        <IconButton
           className='announcement-open-link-icon'
           data-link={announcement.link}
           icon='about'
           tooltip={t('View Issue')}
-          onClick={this.openLink}/>
-      )
+          onClick={this.openLink}
+        />
+      );
     };
 
     const generateDate = (): JSX.Element => (
@@ -106,14 +122,12 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
 
   private generateDescription = (announcement: IAnnouncement): JSX.Element => {
     const { t } = this.props;
-    
-
     return (
       <FlexLayout type='row' className='announcement-description'>
         {this.renderIcon(announcement)}
         <p>{announcement.description}</p>
       </FlexLayout>
-    )
+    );
   }
 
   private renderContent(filtered: IAnnouncement[]) {
@@ -124,8 +138,8 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
               {this.generateDescription(announcement)}
               {this.generateExtraPanel(announcement)}
             </FlexLayout>
-        </li>)
-    }
+        </li>);
+    };
 
     return (
       <ul className='list-announcements'>
