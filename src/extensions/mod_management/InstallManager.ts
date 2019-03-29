@@ -709,6 +709,7 @@ class InstallManager {
             errors: instructionGroups.error.map(err => err.source).join('\n'),
           },
           allowReport: false,
+          message: modId,
         });
     }
 
