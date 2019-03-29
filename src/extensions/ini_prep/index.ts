@@ -225,7 +225,7 @@ function testProtectedFolderAccess(): Promise<ITestResult> {
           + 'Most Anti-Virus applications should inform you of this attempt while others such as '
           + 'Windows 10\'s Windows Defender will block access without prompt.<br /><br />'
           + 'For more information please visit our wiki: '
-          + '[url]https://wiki.nexusmods.com/index.php/Controlled_Folder_Access[/url]',
+          + '[url]https://wiki.nexusmods.com/index.php/Configuring_your_anti-virus_to_work_with_Vortex[/url]',
         },
         severity: 'error',
       };
