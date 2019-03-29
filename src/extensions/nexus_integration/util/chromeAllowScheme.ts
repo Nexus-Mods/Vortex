@@ -1,6 +1,7 @@
 import * as fs from '../../../util/fs';
 import { log } from '../../../util/log';
 import { getSafe } from '../../../util/storeHelper';
+import { deBOM } from '../../../util/util';
 
 import chromePath from './chromePath';
 
@@ -15,9 +16,9 @@ function chromeAllowScheme(scheme: string): Promise<boolean> {
   let changed = false;
 
   return chromePath()
-  .then((statePath) => fs.readFileAsync(statePath)
-    .then((content: Buffer) => {
-      const state = JSON.parse(content.toString());
+  .then((statePath) => fs.readFileAsync(statePath, { encoding: 'utf8' })
+    .then((content: string) => {
+      const state = JSON.parse(deBOM(content));
       log('info', 'protocol handler', state.protocol_handler);
       const currentState = getSafe(state, ['protocol_handler', 'excluded_schemes', scheme], false);
       log('info', 'current state', currentState);

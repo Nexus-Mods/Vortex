@@ -413,3 +413,10 @@ export function isChildPath(child: string, parent: string, normalize?: Normalize
 export function sanitizeCSSId(input: string) {
   return input.toLowerCase().replace(/[ .#]/g, '-');
 }
+
+/**
+ * remove the BOM from the input string. doesn't do anything if there is none.
+ */
+export function deBOM(input: string) {
+  return input.replace(/^\uFEFF/, '');
+}
