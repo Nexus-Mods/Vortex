@@ -1,4 +1,4 @@
-import { forgetExtension, setExtensionEnabled } from '../actions/app';
+import { forgetExtension, setExtensionEnabled, setExtensionVersion } from '../actions/app';
 import { addNotification, dismissNotification, closeDialog } from '../actions/notifications';
 import { setExtensionLoadFailures } from '../actions/session';
 
@@ -69,6 +69,7 @@ if (remote !== undefined) {
 interface IRegisteredExtension {
   name: string;
   path: string;
+  dynamic: boolean;
   initFunc: ExtensionInit;
 }
 
@@ -257,6 +258,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
       registerMerge: undefined,
       registerInterpreter: undefined,
       registerStartHook: undefined,
+      registerMigration: undefined,
       requireVersion: undefined,
       requireExtension: undefined,
       api: undefined,
@@ -487,6 +489,8 @@ class ExtensionManager {
       });
 
       store.dispatch(setExtensionLoadFailures(this.mLoadFailures));
+    } else {
+      this.migrateExtensions();
     }
   }
 
@@ -784,6 +788,47 @@ class ExtensionManager {
       // renderer process
       log('info', 'all extensions initialized');
     }
+  }
+
+  private migrateExtensions() {
+    type MigrationFunc = (oldVersion: string) => Promise<void>;
+
+    const migrations: { [ext: string]: MigrationFunc[] } = {};
+
+    this.mContextProxyHandler.getCalls('registerMigration').forEach(call => {
+      setdefault(migrations, call.extension, []).push(call.arguments[0]);
+    });
+
+    const state: IState = this.mApi.store.getState();
+    this.mExtensions
+      .filter(ext => ext.dynamic)
+      .forEach(ext => {
+        try {
+          const oldVersion = getSafe(state.app, ['extensions', ext.name, 'version'], '0.0.0');
+          const info = JSON.parse(fs.readFileSync(path.join(ext.path, 'info.json'),
+            { encoding: 'utf8' }));
+          if (oldVersion !== info.version) {
+            if (migrations[ext.name] === undefined) {
+              this.mApi.store.dispatch(setExtensionVersion(ext.name, info.version));
+            } else {
+              Promise.mapSeries(migrations[ext.name], mig => mig(oldVersion))
+                .then(() => {
+                  this.mApi.store.dispatch(setExtensionVersion(ext.name, info.version));
+                })
+                .catch(err => {
+                  this.mApi.showErrorNotification('Extension failed to migrate', err, {
+                    allowReport: info.author === 'Black Tree Gaming Ltd.',
+                  })
+                });
+            }
+          }
+        } catch (err) {
+          this.mApi.showErrorNotification('Extension invalid', err, {
+            allowReport: false,
+            message: ext.name,
+          });
+        }
+      });
   }
 
   private getPath(name: string) {
@@ -1208,6 +1253,7 @@ class ExtensionManager {
         name: path.basename(extensionPath),
         initFunc: dynreq(indexPath).default,
         path: extensionPath,
+        dynamic: true,
       };
     } else {
       return undefined;
@@ -1303,6 +1349,7 @@ class ExtensionManager {
           name,
           path: path.join(extensionPaths[0], name),
           initFunc: require(`../extensions/${name}/index`).default,
+          dynamic: false,
         }))
       .concat(...extensionPaths.map(ext => this.loadDynamicExtensions(ext, loadedExtensions)));
   }

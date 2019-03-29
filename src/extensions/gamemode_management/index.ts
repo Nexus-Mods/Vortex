@@ -357,6 +357,7 @@ function init(context: IExtensionContext): boolean {
         ? undefined
         : gameExtInfo.author;
       game.final = semver.gte(gameExtInfo.version, '1.0.0');
+      game.version = gameExtInfo.version;
       extensionGames.push(game);
     } catch (err) {
       context.api.showErrorNotification('Game Extension not loaded', err, {

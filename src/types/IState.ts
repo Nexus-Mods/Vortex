@@ -101,6 +101,7 @@ export interface ITableState {
 
 export interface IExtensionState {
   enabled: boolean | 'failed';
+  version: string;
   remove: boolean;
 }
 
