@@ -4,7 +4,7 @@ import { delayed } from '../../util/delayed';
 import * as fs from '../../util/fs';
 import { Normalize } from '../../util/getNormalizeFunc';
 import { log } from '../../util/log';
-import { activeGameId, gameName } from '../../util/selectors';
+import { activeGameId, gameName, installPathForGame } from '../../util/selectors';
 
 import LinkingDeployment from '../mod_management/LinkingDeployment';
 import {
@@ -146,7 +146,45 @@ class DeploymentMethod extends LinkingDeployment {
           t('No need to use the elevated variant, use the regular symlink deployment'),
       };
     }
-    return undefined;
+
+    const installationPath = installPathForGame(state, gameId);
+    const canary = path.join(installationPath, '__vortex_canary.tmp');
+
+    let res: IUnavailableReason;
+    try {
+      try {
+        fs.removeSync(canary + '.link');
+      } catch (err) {}
+      fs.writeFileSync(canary, 'Should only exist temporarily, feel free to delete');
+      fs.symlinkSync(canary, canary + '.link');
+    } catch (err) {
+      // EMFILE shouldn't keep us from using hard linking
+      if (err.code !== 'EMFILE') {
+        // the error code we're actually getting is EISDIR, which makes no sense at all
+        res = {
+          description: t => t('Filesystem doesn\'t support symbolic links.'),
+        };
+      }
+    }
+
+    try {
+      fs.removeSync(canary + '.link');
+      fs.removeSync(canary);
+    } catch (err) {
+      // cleanup failed, this is almost certainly due to an AV jumping in to check these new files,
+      // I mean, why would I be able to create the files but not delete them?
+      // just try again later - can't do that synchronously though
+      Promise.delay(100)
+        .then(() => fs.removeAsync(canary + '.link'))
+        .then(() => fs.removeAsync(canary))
+        .catch(err => {
+          log('error', 'failed to clean up canary file. This indicates we were able to create '
+              + 'a file in the target directory but not delete it',
+              { installationPath, message: err.message });
+        });
+    }
+
+    return res;
   }
 
   protected linkFile(linkPath: string, sourcePath: string): Promise<void> {
@@ -202,7 +240,11 @@ class DeploymentMethod extends LinkingDeployment {
     const srcFile = path.join(userData, 'Cookies');
     const destFile = path.join(userData, '__link_test');
     try {
-      fs.linkSync(srcFile, destFile);
+      try {
+        // ensure the dummy file wasn't left over from a previous test
+        fs.removeSync(destFile);
+      } catch (err) {}
+      fs.symlinkSync(srcFile, destFile);
       fs.removeSync(destFile);
       return true;
     } catch (err) {

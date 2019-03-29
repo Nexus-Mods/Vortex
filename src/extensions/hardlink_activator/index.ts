@@ -123,14 +123,19 @@ class DeploymentMethod extends LinkingDeployment {
 
     const canary = path.join(installationPath, '__vortex_canary.tmp');
 
+    let res: IUnavailableReason;
+
     try {
+      try {
+        fs.removeSync(canary + '.link');
+      } catch (err) {}
       fs.writeFileSync(canary, 'Should only exist temporarily, feel free to delete');
       fs.linkSync(canary, canary + '.link');
     } catch (err) {
       // EMFILE shouldn't keep us from using hard linking
       if (err.code !== 'EMFILE') {
         // the error code we're actually getting is EISDIR, which makes no sense at all
-        return {
+        res = {
           description: t => t('Filesystem doesn\'t support hard links.'),
         };
       }
@@ -153,7 +158,7 @@ class DeploymentMethod extends LinkingDeployment {
         });
     }
 
-    return undefined;
+    return res;
   }
 
   public finalize(gameId: string,
