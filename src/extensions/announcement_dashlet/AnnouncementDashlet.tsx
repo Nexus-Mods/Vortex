@@ -13,7 +13,14 @@ import { FlexLayout, EmptyPlaceholder } from '../../controls/api';
 
 interface IConnectedProps {
   gameMode: string;
-  announcements: Array<{ date: string, description: string, severity: AnnouncementSeverity, link?: string, gameMode?: string, icon? :string, version?: string }>;
+  announcements: Array<{
+    date: string,
+    description: string,
+    severity: AnnouncementSeverity,
+    link?: string,
+    gamemode?: string,
+    icon?: string,
+    version?: string }>;
 }
 
 interface IActionProps {
@@ -35,14 +42,15 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
     const { t, announcements, gameMode } = this.props;
     
     // Filter announcements by gamemode.
-    let filtered = gameMode !== undefined 
-      ? announcements.filter(announce => ((announce.gameMode !== undefined) && (announce.gameMode === gameMode)) 
-        || announce.gameMode === undefined)
-      : announcements.filter(announce => announce.gameMode === undefined);
+    let filtered = gameMode !== undefined
+      ? announcements.filter(announce =>
+        ((announce.gamemode !== undefined) && (announce.gamemode === gameMode))
+        || announce.gamemode === undefined)
+      : announcements.filter(announce => announce.gamemode === undefined);
 
     // Filter out any announcements that have a specific version set and don't match
     //  the current version of the application.
-    filtered = announcements.filter(announce => (announce.version === undefined) 
+    filtered = filtered.filter(announce => (announce.version === undefined)
         || ((announce.version !== undefined) && (announce.version === this.mAppVersion)));
 
     return <Dashlet className='dashlet-announcement' title={t('Announcements')}>
