@@ -30,6 +30,18 @@ function createTitle(type: string, error: IError, hash: string) {
   return `${type}: ${error.message}`;
 }
 
+function isWine() {
+  if (process.platform !== 'win32') {
+    return false;
+  }
+  try {
+    const winapi = require('winapi-bindings');
+    return winapi.IsThisWine();
+  } catch (err) {
+    return false;
+  }
+}
+
 function createReport(type: string, error: IError, version: string,
                       reporterProcess: string, sourceProcess: string) {
   let proc: string = reporterProcess || 'unknown';
@@ -40,7 +52,7 @@ function createReport(type: string, error: IError, version: string,
     `#### System
 | | |
 |------------ | -------------|
-|Platform | ${process.platform} ${os.release()} |
+|Platform | ${process.platform} ${os.release()} ${isWine() ? '(Wine)' : ''} |
 |Architecture | ${process.arch} |
 |Application Version | ${version} |
 |Process | ${proc} |`,
