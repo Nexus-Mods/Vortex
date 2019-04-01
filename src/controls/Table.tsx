@@ -839,8 +839,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         && (targetPos !== this.mScrollRef.scrollTop)) {
       if (smooth) {
         smoothScroll(this.mScrollRef, targetPos, SuperTable.SCROLL_DURATION)
-          .then(() => (iterations > 0)
-            ? this.scrollToItem(item, smooth)
+          .then((cont: boolean) => cont && (iterations > 0)
+            ? this.scrollToItem(item, false, iterations - 1)
             : Promise.resolve());
       } else {
         this.mScrollRef.scrollTop = targetPos;
