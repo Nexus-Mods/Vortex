@@ -3,7 +3,7 @@ import PluginList from './PluginList';
 import * as Promise from 'bluebird';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
-import { selectors, types, util } from 'vortex-api';
+import { selectors, types, util, log } from 'vortex-api';
 import IniParser, { WinapiFormat } from 'vortex-parse-ini';
 
 let watcher: fs.FSWatcher;
@@ -30,7 +30,10 @@ function startWatch(state: types.IState) {
     // game is activated and it has to be discovered for that
     throw new Error('Morrowind wasn\'t discovered');
   }
-  watcher = fs.watch(path.join(discovery.path, 'Data Files'), {}, onFileChanged);
+  watcher = fs.watch(path.join(discovery.path, 'Data Files'), {}, onFileChanged)
+    .on('error', err => {
+      log('error', 'failed to watch morrowind mod directory for changes', { message: err.message });
+    });
 }
 
 function stopWatch() {
