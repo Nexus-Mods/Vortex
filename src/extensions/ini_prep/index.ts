@@ -166,7 +166,7 @@ function bakeSettings(t: TranslationFunction,
         .then(() => fs.ensureFileWritableAsync(iniFileName + '.baked'))
           // base might not exist, in that case copy from the original ini
           .catch(err => (err.code === 'ENOENT')
-            ? fs.copyAsync(iniFileName, iniFileName + '.base')
+            ? fs.copyAsync(iniFileName, iniFileName + '.base', { noSelfCopy: true })
               .then(() => fs.copyAsync(iniFileName, iniFileName + '.baked', { noSelfCopy: true }))
               .then(() => Promise.all([fs.ensureFileWritableAsync(iniFileName + '.base'),
                                        fs.ensureFileWritableAsync(iniFileName + '.baked')]))
