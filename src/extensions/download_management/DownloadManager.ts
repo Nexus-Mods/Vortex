@@ -272,7 +272,7 @@ class DownloadWorker {
     // it. If it contains any redirect, the browser window will follow it and initiate a
     // download.
     if (response.statusCode >= 300) {
-      if (([301, 302].indexOf(response.statusCode) !== -1)
+      if (([301, 302, 307, 308].indexOf(response.statusCode) !== -1)
           && (this.mRedirectsFollowed < MAX_REDIRECT_FOLLOW)) {
         const newUrl = url.resolve(jobUrl, response.headers['location'] as string);
         log('info', 'redirected', { newUrl, loc: response.headers['location'] });
