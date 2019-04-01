@@ -316,7 +316,11 @@ class DeploymentMethod extends LinkingDeployment {
           }
         })
         .tapCatch(() => {
-          ipc.server.stop();
+          try { 
+            ipc.server.stop();
+          } catch (err) {
+            log('warn', 'Failed to close ipc server', err.message);
+          }
         })
         // Error 1223 is the current standard Windows system error code
         //  for ERROR_CANCELLED, which in this case is raised if the user
