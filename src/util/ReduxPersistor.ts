@@ -9,9 +9,11 @@ function insert(target: any, key: string[], value: any, hive: string) {
   try {
     key.reduce((prev, keySegment: string, idx: number, fullKey: string[]) => {
       if (idx === fullKey.length - 1) {
-        // this could cause an exception if prev isn't an object, but only if
-        // we previously stored incorrect data. We'd want to fix the error that
-        // caused that, so we allow the exception to bubble up
+        // previously we allowed this to cause a crash so we'd get the error reports,
+        // but since that doesn't give the user any way to fix the issue, we now
+        // fix it on the fly. The error was extremely rare anyway and was caused
+        // by very early alpha versions storing some data differently from released
+        // versions.
         if (typeof prev !== 'object') {
           log('error', 'invalid application state',
               { key: fullKey.slice(0, idx).join('.'), was: prev });

@@ -112,7 +112,8 @@ export function quickDiscovery(knownGames: IGame[],
             .then(normalize =>
               discoverRelativeTools(game, resolvedPath, discoveredGames, onDiscoveredTool, normalize))
             .then(() => resolve(game.id));
-        }).catch((err) => {
+        })
+        .catch((err) => {
           log('debug', 'game not found',
             { id: game.id, err: err.message.replace(/(?:\r\n|\r|\n)/g, '; ') });
           resolve();
