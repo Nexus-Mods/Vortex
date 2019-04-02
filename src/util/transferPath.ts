@@ -99,9 +99,10 @@ export function transferPath(source: string,
                              progress: ProgressCallback): Promise<void> {
   let func = fs.copyAsync;
 
-  let completed = 0;
+  let completed: number = 0;
   let count: number = 0;
-  let lastPerc = 0;
+  let lastPerc: number = 0;
+  let lastProgress: number = 0;
 
   let copyPromise = Promise.resolve();
 
