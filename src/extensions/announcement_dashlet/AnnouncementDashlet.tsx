@@ -1,4 +1,5 @@
 import { remote } from 'electron';
+import * as minimatch from 'minimatch';
 import * as React from 'react';
 import { connect } from 'react-redux';
 import * as semver from 'semver';
@@ -40,23 +41,27 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
   }
 
   public render(): JSX.Element {
-    const { t, announcements, gameMode } = this.props;
+    const { t, announcements } = this.props;
 
-    // Filter announcements by gamemode.
-    let filtered = gameMode !== undefined
-      ? announcements.filter(announce =>
-        ((announce.gamemode !== undefined) && (announce.gamemode === gameMode))
-        || announce.gamemode === undefined)
-      : announcements.filter(announce => announce.gamemode === undefined);
-
-    // Filter out any announcements that have a specific version set and don't match
-    //  the current version of the application.
-    filtered = filtered.filter(announce => this.matchesVersion(announce));
+    // Filter announcements by gamemode and version.
+    const filtered = announcements.filter(announce => this.matchesGameMode(announce)
+                                                   && this.matchesVersion(announce));
 
     return (
       <Dashlet className='dashlet-announcement' title={t('Announcements')}>
         {filtered.length > 0 ? this.renderContent(filtered) : this.renderPlaceholder()}
       </Dashlet>);
+  }
+
+  private matchesGameMode(announcement: IAnnouncement): boolean {
+    const { gameMode } = this.props;
+    if ((gameMode === undefined) && (announcement.gamemode === undefined)) {
+      return true;
+    }
+
+    return (announcement.gamemode !== undefined)
+      ? minimatch(gameMode, announcement.gamemode)
+      : true;
   }
 
   private matchesVersion(announcement: IAnnouncement): boolean {
@@ -66,9 +71,7 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
     }
 
     return (announcement.version !== undefined)
-      ? (announcement.version.startsWith('^'))
-        ? semver.gte(this.mAppVersion, announcement.version.substr(1))
-        : (announcement.version === this.mAppVersion)
+      ? semver.satisfies(this.mAppVersion, announcement.version)
       : true;
   }
 
