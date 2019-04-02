@@ -1,1 +1,7 @@
-[]
+[{
+	"date": "2019-04-02T12:31:10",
+	"description": "Darkest Dungeon mods without project.xml file are currently not supported.",
+	"severity": "information",
+    "gamemode": "darkestdungeon",
+    "version": "0.17.10"
+}]
