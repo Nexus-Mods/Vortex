@@ -1,6 +1,7 @@
 import { remote } from 'electron';
 import * as React from 'react';
 import { connect } from 'react-redux';
+import * as semver from 'semver';
 
 import Dashlet from '../../controls/Dashlet';
 import { Icon, IconButton } from '../../controls/TooltipControls';
@@ -50,13 +51,25 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
 
     // Filter out any announcements that have a specific version set and don't match
     //  the current version of the application.
-    filtered = filtered.filter(announce => (announce.version === undefined)
-        || ((announce.version !== undefined) && (announce.version === this.mAppVersion)));
+    filtered = filtered.filter(announce => this.matchesVersion(announce));
 
     return (
       <Dashlet className='dashlet-announcement' title={t('Announcements')}>
         {filtered.length > 0 ? this.renderContent(filtered) : this.renderPlaceholder()}
       </Dashlet>);
+  }
+
+  private matchesVersion(announcement: IAnnouncement): boolean {
+    if (this.mAppVersion === undefined) {
+      // How is this even possible ?
+      return false;
+    }
+
+    return (announcement.version !== undefined)
+      ? (announcement.version.startsWith('^'))
+        ? semver.gte(this.mAppVersion, announcement.version.substr(1))
+        : (announcement.version === this.mAppVersion)
+      : true;
   }
 
   private renderPlaceholder(): JSX.Element {
