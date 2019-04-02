@@ -1,9 +1,8 @@
 import PluginList from './PluginList';
 
 import * as Promise from 'bluebird';
-import * as fs from 'fs-extra-promise';
 import * as path from 'path';
-import { selectors, types, util, log } from 'vortex-api';
+import { fs, selectors, types, util, log } from 'vortex-api';
 import IniParser, { WinapiFormat } from 'vortex-parse-ini';
 
 let watcher: fs.FSWatcher;
