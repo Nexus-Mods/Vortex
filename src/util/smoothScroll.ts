@@ -27,29 +27,40 @@ function smoothScroll(element: HTMLElement, targetPos: number, duration: number)
     scrollJobs[element.id]();
   }
 
-  let timer: NodeJS.Timer;
+  return new Promise<boolean>((resolve, reject) => {
+    let canceled = false;
+    let timer: number;
 
-  return new Promise<void>((resolve, reject) => {
     scrollJobs[element.id] = () => {
-      clearTimeout(timer);
-      resolve();
+        canceled = true;
+        window.cancelAnimationFrame(timer);
+        scrollJobs[element.id] = undefined;
+        resolve(false);
     };
+
     const tick = () => {
+      if (canceled) {
+        return;
+      }
       const now = Date.now();
       const percent = step(startTime, endTime, now);
       const newPos = Math.round(startPos + (distance * percent));
+      if (element.scrollTop === newPos) {
+        return resolve(true);
+      }
       element.scrollTop = newPos;
 
-      if ((now >= endTime) || (element.scrollTop !== newPos)) {
-        // failed to scroll all the way to the destination pos,
-        // probably hit bounds
-        return resolve();
+      if ((now >= endTime) || (element.scrollTop !== newPos) || (newPos === targetPos)) {
+        // done or failed to scroll all the way to the destination pos,
+        // in which case we probably hit bounds
+        scrollJobs[element.id] = undefined;
+        return resolve(true);
+      } else {
+        timer = window.requestAnimationFrame(tick);
       }
-
-      timer = setTimeout(tick, 16);
     };
 
-    setImmediate(tick);
+    timer = window.requestAnimationFrame(tick);
   });
 }
 

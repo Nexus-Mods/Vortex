@@ -732,6 +732,7 @@ class InstallManager {
             modId,
           },
           allowReport: false,
+          message: modId,
         });
     }
 

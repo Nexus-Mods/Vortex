@@ -24,7 +24,7 @@ interface IConnectedProps {
 }
 
 interface IActionProps {
-  onShowError: (message: string, details?: string, allowReport?: boolean) => void;
+  onShowError: (message: string, details?: string | any, allowReport?: boolean) => void;
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
                  actions: DialogActions) => Promise<IDialogResult>;
   onSetConfirmPurge: (enabled: boolean) => void;
@@ -74,7 +74,15 @@ class DeactivationButton extends ComponentEx<IProps, {}> {
                     undefined, false);
       })
       .catch(err => {
-        onShowError('Failed to purge mods', err, err.code !== 'ENOTFOUND');
+        if ((err.code === undefined) && (err.errno !== undefined)) {
+          // unresolved windows error code
+          onShowError('Failed to purge mods', {
+            error: err,
+            ErrorCode: err.errno
+          }, true);
+        } else {
+          onShowError('Failed to purge mods', err, err.code !== 'ENOTFOUND');
+        }
       });
   }
 

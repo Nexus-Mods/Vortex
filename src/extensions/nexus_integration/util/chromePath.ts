@@ -1,5 +1,5 @@
 import * as fs from '../../../util/fs';
-import { truthy } from '../../../util/util';
+import { truthy, deBOM } from '../../../util/util';
 
 import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
@@ -21,7 +21,7 @@ function chromePath(): Promise<string> {
     return fs.readFileAsync(path.join(userData, 'Local State'), { encoding: 'utf-8' })
       .then(state => {
         try {
-          const dat = JSON.parse(state);
+          const dat = JSON.parse(deBOM(state));
           const prof = truthy(dat) && truthy(dat.profile) && truthy(dat.profile.last_used)
             ? dat.profile.last_used
             : 'Default';

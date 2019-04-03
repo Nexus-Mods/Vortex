@@ -82,23 +82,51 @@ class DeploymendMethod extends LinkingDeployment {
       return { description: t => err.message };
     }
 
-    const installationPath = installPathForGame(state, gameId);
-    const canary = path.join(installationPath, '__vortex_canary.tmp');
+    const canary = path.join(modPaths[typeId], '__vortex_canary.tmp');
 
+    let res: IUnavailableReason;
     try {
+      try {
+        fs.removeSync(canary + '.link');
+      } catch (err) {}
       fs.writeFileSync(canary, 'Should only exist temporarily, feel free to delete');
       fs.symlinkSync(canary, canary + '.link');
     } catch (err) {
-      // EMFILE shouldn't keep us from using hard linking
-      if (err.code !== 'EMFILE') {
-        // the error code we're actually getting is EISDIR, which makes no sense at all
-        return {
-          description: t => t('Filesystem doesn\'t support hard links.'),
+      if (err.code === 'EMFILE') {
+        // EMFILE shouldn't keep us from using links
+      } else if (err.code === 'EISDIR') {
+        // the error code we're actually getting when symlinks aren't supported is EISDIR,
+        // which makes no sense at all
+        res = {
+          description: t => t('Filesystem doesn\'t support symbolic links.'),
+        };
+      } else {
+        // unexpected error code
+        res = {
+          description: t => t('Filesystem doesn\'t support symbolic links. Error: "{{error}}"',
+            { replace: { error: err.message } }),
         };
       }
     }
 
-    return undefined;
+    try {
+      fs.removeSync(canary + '.link');
+      fs.removeSync(canary);
+    } catch (err) {
+      // cleanup failed, this is almost certainly due to an AV jumping in to check these new files,
+      // I mean, why would I be able to create the files but not delete them?
+      // just try again later - can't do that synchronously though
+      Promise.delay(100)
+        .then(() => fs.removeAsync(canary + '.link'))
+        .then(() => fs.removeAsync(canary))
+        .catch(err => {
+          log('error', 'failed to clean up canary file. This indicates we were able to create '
+              + 'a file in the target directory but not delete it',
+              { targetPath: modPaths[typeId], message: err.message });
+        });
+    }
+
+    return res;
   }
 
   protected linkFile(linkPath: string, sourcePath: string): Promise<void> {
@@ -166,7 +194,11 @@ class DeploymendMethod extends LinkingDeployment {
     const srcFile = path.join(userData, 'Cookies');
     const destFile = path.join(userData, '__link_test');
     try {
-      fs.linkSync(srcFile, destFile);
+      try {
+        // ensure the dummy file wasn't left over from a previous test
+        fs.removeSync(destFile);
+      } catch (err) {}
+      fs.symlinkSync(srcFile, destFile);
       fs.removeSync(destFile);
       return true;
     } catch (err) {

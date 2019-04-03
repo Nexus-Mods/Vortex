@@ -154,7 +154,10 @@ class Application {
         return;
       }
 
-      if (['net::ERR_CONNECTION_RESET', 'net::ERR_ABORTED'].indexOf(error.message) !== -1) {
+      if (['net::ERR_CONNECTION_RESET',
+           'net::ERR_ABORTED',
+           'net::ERR_CONTENT_LENGTH_MISMATCH',
+           'net::ERR_INCOMPLETE_CHUNKED_ENCODING'].indexOf(error.message) !== -1) {
         log('warn', 'network error unhandled', error.stack);
         return;
       }
@@ -205,6 +208,13 @@ class Application {
         .catch(DatabaseLocked, () => {
           dialog.showErrorBox('Startup failed', 'Vortex seems to be running already. '
             + 'If you can\'t see it, please check the task manager.');
+          app.quit();
+        })
+        .catch({ code: 'ENOSPC' }, () => {
+          dialog.showErrorBox('Startup failed', 'Your system drive is full. '
+            + 'You should always ensure your system drive has some space free (ideally '
+            + 'at least 10% of the total capacity, especially on SSDs). '
+            + 'Vortex can\'t start until you have freed up some space.');
           app.quit();
         })
         .catch((err) => {

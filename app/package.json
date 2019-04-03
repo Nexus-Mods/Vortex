@@ -1,6 +1,6 @@
 {
   "name": "vortex",
-  "version": "0.17.9",
+  "version": "0.17.11",
   "productName": "Vortex",
   "description": "Vortex",
   "author": "Black Tree Gaming Ltd.",
@@ -80,6 +80,7 @@
     "redux-act": "^1.7.4",
     "redux-thunk": "^2.3.0",
     "redux-watcher": "^1.0.1",
+    "relaxed-json": "^1.0.3",
     "request": "^2.88.0",
     "reselect": "^3.0.1",
     "resolve": "^1.8.1",

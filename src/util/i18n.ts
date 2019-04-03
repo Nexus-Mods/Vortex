@@ -15,11 +15,6 @@ let debugging = false;
 let currentLanguage = 'en';
 let globalTFunc: I18next.TranslationFunction = str => str;
 
-interface ITranslationEntry {
-  lng: string;
-  ns: string;
-  key: string;
-}
 let missingKeys = { common: {} };
 
 export interface IInitResult {
@@ -81,6 +76,13 @@ class MultiBackend {
  * @returns {I18next.I18n}
  */
 function init(language: string): Promise<IInitResult> {
+  // reset to english if the language isn't valid
+  try {
+    new Date().toLocaleString(language);
+  } catch (err) {
+    language = 'en';
+  }
+
   currentLanguage = language;
 
   return new Promise<IInitResult>((resolve, reject) => {

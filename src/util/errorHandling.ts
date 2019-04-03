@@ -36,6 +36,18 @@ interface IErrorContext {
 
 const context: IErrorContext = {};
 
+function isWine() {
+  if (process.platform !== 'win32') {
+    return false;
+  }
+  try {
+    const winapi = require('winapi-bindings');
+    return winapi.IsThisWine();
+  } catch (err) {
+    return false;
+  }
+}
+
 function createReport(type: string, error: IError, context: IErrorContext,
                       version: string, reporterProcess: string, sourceProcess: string) {
   let proc: string = reporterProcess || 'unknown';
@@ -46,13 +58,21 @@ function createReport(type: string, error: IError, context: IErrorContext,
     `#### System
 | | |
 |------------ | -------------|
-|Platform | ${process.platform} ${os.release()} |
+|Platform | ${process.platform} ${os.release()} ${isWine() ? '(Wine)' : ''} |
 |Architecture | ${process.arch} |
 |Application Version | ${version} |
 |Process | ${proc} |`,
     `#### Message
 ${error.message}`,
   ];
+
+  if (error.title) {
+    sections.push(`#### Title
+\`\`\`
+${error.title}
+\`\`\`
+`)
+  }
 
   if (error.details) {
     sections.push(`#### Details
@@ -172,7 +192,10 @@ export function sendReport(type: string, error: IError, context: IErrorContext,
   const hash = genHash(error);
   if (process.env.NODE_ENV === 'development') {
     const dialog = dialogIn || remote.dialog;
-    dialog.showErrorBox(error.message, JSON.stringify({
+    const fullMessage = error.title !== undefined
+      ? error.message + `\n(${error.title})`
+      : error.message;
+    dialog.showErrorBox(fullMessage, JSON.stringify({
       type, error, labels, context, reporterId, reporterProcess, sourceProcess,
     }));
     return Promise.resolve(undefined);
@@ -284,7 +307,7 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
  * render error message for internal processing (issue tracker and such).
  * It's important this doesn't translate the error message or lose information
  */
-export function toError(input: any, options?: IErrorOptions): IError {
+export function toError(input: any, title?: string, options?: IErrorOptions): IError {
   let ten = getFixedT('en');
   try {
     ten('dummy');
@@ -298,7 +321,7 @@ export function toError(input: any, options?: IErrorOptions): IError {
   const t = (text: string) => ten(text, { replace: (options || {}).replace });
 
   if (input instanceof Error) {
-    return { message: t(input.message), stack: input.stack };
+    return { message: t(input.message), title, stack: input.stack };
   }
 
   switch (typeof input) {
@@ -342,13 +365,13 @@ export function toError(input: any, options?: IErrorOptions): IError {
           .map(key => key + ':\t' + input[key])
           .join('\n');
 
-      return {message, stack, details};
+      return {message, title, stack, details};
     }
     case 'string': {
-      return { message: 'String exception: ' + t(input) };
+      return { message: 'String exception: ' + t(input), title };
     }
     default: {
-      return { message: 'Unknown exception: ' + inspect(input) };
+      return { message: 'Unknown exception: ' + inspect(input), title };
     }
   }
 }

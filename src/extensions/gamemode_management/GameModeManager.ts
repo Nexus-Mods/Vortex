@@ -8,6 +8,7 @@ import { getNormalizeFunc } from '../../util/api';
 import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
+import { activeProfile } from '../../util/selectors';
 
 import {
   discoveryFinished,
@@ -69,7 +70,8 @@ class GameModeManager {
    *
    * @memberOf GameModeManager
    */
-  public setGameMode(oldMode: string, newMode: string): Promise<void> {
+  public setGameMode(oldMode: string, newMode: string, profileId): Promise<void> {
+    log('debug', 'set game mode', { oldMode, newMode });
     const game = this.mKnownGames.find(knownGame => knownGame.id === newMode);
     const discoveredGames = this.mStore.getState().settings.gameMode.discovered;
     const gameDiscovery = discoveredGames[newMode];
@@ -97,8 +99,13 @@ class GameModeManager {
         discoverRelativeTools(game, gameDiscovery.path, discoveredGames,
                               this.onDiscoveredTool, normalize))
       .then(() => {
-        log('info', 'changed game mode', {oldMode, newMode});
-        this.mOnGameModeActivated(newMode);
+        const currentProfile = activeProfile(this.mStore.getState());
+        if ((currentProfile !== undefined) && (profileId === currentProfile.id)) {
+          log('info', 'changed game mode', {oldMode, newMode});
+          this.mOnGameModeActivated(newMode);
+        } else {
+          log('info', 'game prepared but it\'s no longer active');
+        }
       })
       .catch(err => {
         return (err.code === 'ENOENT')
@@ -119,6 +126,7 @@ class GameModeManager {
     const game = this.mKnownGames.find(knownGame => knownGame.id === gameMode);
     const gameDiscovery = this.mStore.getState().settings.gameMode.discovered[gameMode];
 
+    log('debug', 'setup game mode', gameMode);
     if ((game === undefined) && (gameDiscovery === undefined)) {
       return Promise.reject(new Error('invalid game mode'));
     } else if ((game === undefined) || (game.setup === undefined)) {

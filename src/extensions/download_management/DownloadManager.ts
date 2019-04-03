@@ -1,4 +1,4 @@
-import { HTTPError, ProcessCanceled, DataInvalid } from '../../util/CustomErrors';
+import { HTTPError, ProcessCanceled, DataInvalid, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 import { countIf, truthy } from '../../util/util';
@@ -260,6 +260,7 @@ class DownloadWorker {
         }
         this.abort(false);
       })
+      .catch(UserCanceled, () => null)
       .catch(ProcessCanceled, () => null)
       .catch(err => this.handleError(err));
   }
@@ -271,7 +272,7 @@ class DownloadWorker {
     // it. If it contains any redirect, the browser window will follow it and initiate a
     // download.
     if (response.statusCode >= 300) {
-      if (([301, 302].indexOf(response.statusCode) !== -1)
+      if (([301, 302, 307, 308].indexOf(response.statusCode) !== -1)
           && (this.mRedirectsFollowed < MAX_REDIRECT_FOLLOW)) {
         const newUrl = url.resolve(jobUrl, response.headers['location'] as string);
         log('info', 'redirected', { newUrl, loc: response.headers['location'] });
@@ -396,6 +397,7 @@ class DownloadWorker {
       if (!this.mWriting) {
         this.mWriting = true;
         this.writeBuffer()
+          .catch(UserCanceled, () => null)
           .catch(ProcessCanceled, () => null)
           .catch(err => {
             this.handleError(err);

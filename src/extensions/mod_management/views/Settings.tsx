@@ -69,7 +69,7 @@ interface IActionProps {
     content: IDialogContent,
     actions: DialogActions,
   ) => Promise<IDialogResult>;
-  onShowError: (message: string, details: string | Error,
+  onShowError: (message: string, details: string | Error | any,
                 allowReport?: boolean, isBBCode?: boolean) => void;
 }
 
@@ -469,7 +469,15 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                   err, false);
     })
     .catch(err => {
-      onShowError('Failed to purge previous deployment', err, true);
+      if ((err.code === undefined) && (err.errno !== undefined)) {
+        // unresolved windows error code
+        onShowError('Failed to purge previous deployment', {
+          error: err,
+          ErrorCode: err.errno
+        }, true);
+      } else {
+        onShowError('Failed to purge previous deployment', err, err.code !== 'ENOTFOUND');
+      }
     });
   }
 

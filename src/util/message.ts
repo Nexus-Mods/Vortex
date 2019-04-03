@@ -197,7 +197,7 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
   if (!isOutdated() && !didIgnoreError() && allowReport) {
     actions.push({
       label: 'Report',
-      action: () => sendReport('error', toError(details, options), context, ['error'], '', process.type)
+      action: () => sendReport('error', toError(details, title, options), context, ['error'], '', process.type)
         .then(response => {
           if (response !== undefined) {
             const { issue_number } = response.github_issue;

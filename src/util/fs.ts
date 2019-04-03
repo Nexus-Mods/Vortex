@@ -13,6 +13,7 @@
 
 import { DataInvalid, ProcessCanceled, UserCanceled } from './CustomErrors';
 import { log } from './log';
+import { truthy } from './util';
 
 import * as PromiseBB from 'bluebird';
 import { dialog as dialogIn, remote } from 'electron';
@@ -75,7 +76,7 @@ function nospcQuery(): PromiseBB<boolean> {
 }
 
 function unlockConfirm(filePath: string): PromiseBB<boolean> {
-  if (dialog === undefined) {
+  if ((dialog === undefined) || !truthy(filePath)) {
     return PromiseBB.resolve(false);
   }
 
@@ -117,7 +118,7 @@ function unlockConfirm(filePath: string): PromiseBB<boolean> {
 }
 
 function unknownErrorRetry(filePath: string): PromiseBB<boolean> {
-  if (dialog === undefined) {
+  if ((dialog === undefined) || !truthy(filePath)) {
     return PromiseBB.resolve(false);
   }
 
@@ -148,7 +149,7 @@ function unknownErrorRetry(filePath: string): PromiseBB<boolean> {
 }
 
 function busyRetry(filePath: string): PromiseBB<boolean> {
-  if (dialog === undefined) {
+  if ((dialog === undefined) || !truthy(filePath)) {
     return PromiseBB.resolve(false);
   }
 

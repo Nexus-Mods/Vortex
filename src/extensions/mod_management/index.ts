@@ -505,9 +505,18 @@ function genUpdateModDeployment() {
           ],
         });
       })
-      .catch(err => api.showErrorNotification('Failed to deploy mods', err, {
-        allowReport: (err.code !== 'EPERM') && (err.allowReport !== false),
-      }))
+      .catch(err => {
+        if ((err.code === undefined) && (err.errno !== undefined)) {
+          // unresolved windows error code
+          return api.showErrorNotification('Failed to deploy mods', {
+            error: err,
+            ErrorCode: err.errno
+          });
+        }
+        return api.showErrorNotification('Failed to deploy mods', err, {
+          allowReport: (err.code !== 'EPERM') && (err.allowReport !== false),
+        });
+      })
       .finally(() => {
         api.store.dispatch(stopActivity('mods', 'deployment'));
         api.dismissNotification(notificationId);

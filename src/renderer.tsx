@@ -82,6 +82,7 @@ import {} from './util/extensionRequire';
 import { reduxLogger } from './util/reduxLogger';
 import { getSafe } from './util/storeHelper';
 import { getAllPropertyNames } from './util/util';
+import { setLanguage } from './actions';
 
 log('debug', 'renderer process started', { pid: process.pid });
 
@@ -260,6 +261,13 @@ let currentLanguage: string = store.getState().settings.interface.language;
 store.subscribe(() => {
   const newLanguage: string = store.getState().settings.interface.language;
   if (newLanguage !== currentLanguage) {
+    try {
+      new Date().toLocaleString(newLanguage);
+    } catch (err) {
+      store.dispatch(setLanguage(currentLanguage));
+      log('warn', 'Attempt to set invalid language', newLanguage);
+      return;
+    }
     currentLanguage = newLanguage;
     changeLanguage(newLanguage, (err, t) => {
       if (err !== undefined) {

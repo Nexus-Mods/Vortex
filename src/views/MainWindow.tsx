@@ -192,7 +192,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   }
 
   public componentWillReceiveProps(newProps: IProps) {
-    const page = newProps.objects.find(iter => iter.title === newProps.mainPage);
+    const page = newProps.objects.find(iter => iter.id === newProps.mainPage);
     if ((page !== undefined) && !page.visible()) {
       this.setMainPage('Dashboard', false);
     }
