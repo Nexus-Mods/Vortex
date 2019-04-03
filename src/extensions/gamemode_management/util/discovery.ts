@@ -105,9 +105,12 @@ export function quickDiscovery(knownGames: IGame[],
             return resolve(undefined);
           }
           log('info', 'found game', { name: game.name, location: resolvedPath });
-          onDiscoveredGame(game.id, {
+          const exe = game.executable(resolvedPath);
+          const disco: IDiscoveryResult = {
             path: resolvedPath,
-          });
+            executable: (exe !== game.executable()) ? exe : undefined,
+          };
+          onDiscoveredGame(game.id, disco);
           return getNormalizeFunc(resolvedPath)
             .then(normalize =>
               discoverRelativeTools(game, resolvedPath, discoveredGames, onDiscoveredTool, normalize))
@@ -272,16 +275,19 @@ function testApplicationDirValid(application: ITool, testPath: string, gameId: s
     .then(() => {
       const game = application as IGame;
       if (game.queryModPath !== undefined) {
-        onDiscoveredGame(gameId, {
+        const exe = game.executable(testPath);
+        const disco: IDiscoveryResult = {
           path: testPath,
-        });
+          executable: (exe !== game.executable()) ? exe : undefined,
+        };
+        onDiscoveredGame(gameId, disco);
 
         return discoverRelativeTools(game, testPath, discoveredGames,
                                      onDiscoveredTool, normalize);
       } else {
         onDiscoveredTool(gameId, {
           ...application,
-          path: path.join(testPath, application.executable()),
+          path: path.join(testPath, application.executable(testPath)),
           hidden: false,
           custom: false,
           workingDirectory: testPath,
