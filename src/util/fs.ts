@@ -13,6 +13,7 @@
 
 import { DataInvalid, ProcessCanceled, UserCanceled } from './CustomErrors';
 import { log } from './log';
+import { truthy } from './util';
 
 import * as PromiseBB from 'bluebird';
 import { dialog as dialogIn, remote } from 'electron';
@@ -74,7 +75,7 @@ function nospcQuery(): PromiseBB<boolean> {
 }
 
 function unlockConfirm(filePath: string): PromiseBB<boolean> {
-  if (dialog === undefined) {
+  if ((dialog === undefined) || !truthy(filePath)) {
     return PromiseBB.resolve(false);
   }
 
@@ -127,7 +128,7 @@ function unknownErrorRetry(filePath: string): PromiseBB<boolean> {
       + 'This is usually due the user\'s environment and not a bug in Vortex.\n'
       + 'Please diagonse your environment and then retry',
     detail: 'Possible error causes:\n'
-      + `1. ${filePath} is a removable, possibly network drive which has been disconnected.\n`
+      + `1. ${filePath || 'The file'} is on a removable, possibly network drive which has been disconnected.\n`
       + '2. An External application has interferred with file operations'
       + '(Anti-virus, Disk Management Utility, Virus)\n',
     buttons: [
@@ -147,7 +148,7 @@ function unknownErrorRetry(filePath: string): PromiseBB<boolean> {
 }
 
 function busyRetry(filePath: string): PromiseBB<boolean> {
-  if (dialog === undefined) {
+  if ((dialog === undefined) || !truthy(filePath)) {
     return PromiseBB.resolve(false);
   }
 
