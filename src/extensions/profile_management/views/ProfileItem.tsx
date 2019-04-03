@@ -3,6 +3,7 @@ import { Table, TD, TR } from '../../../controls/table/MyTable';
 import { IActionDefinition } from '../../../types/api';
 import { ComponentEx } from '../../../util/ComponentEx';
 import * as fs from '../../../util/fs';
+import { log } from '../../../util/log';
 import { getSafe } from '../../../util/storeHelper';
 
 import { getGame } from '../../gamemode_management/util/getGame';
@@ -59,9 +60,13 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
     if (this.props.profile === undefined) {
       this.setHasProfileImage(false);
     } else {
-      fs.statAsync(this.imagePath)
-        .then(() => this.setHasProfileImage(true))
-        .catch(() => this.setHasProfileImage(false));
+      try {
+        fs.statAsync(this.imagePath)
+          .then(() => this.setHasProfileImage(true))
+          .catch(() => this.setHasProfileImage(false));
+      } catch (err) {
+        this.setHasProfileImage(false);
+      }
     }
   }
 
@@ -97,9 +102,15 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
 
     const game = getGame(profile.gameId);
 
-    let logo = hasProfileImage || (game === undefined)
-      ? this.imagePath
-      : path.join(game.extensionPath, game.logo);
+    let logo = '';
+    
+    try {
+      logo = hasProfileImage || (game === undefined)
+        ? this.imagePath
+        : path.join(game.extensionPath, game.logo);
+    } catch (err) {
+      log('warn', 'failed to identify profile logo path', { profile, hasProfileImage });
+    }
 
     const gameName = (game !== undefined)
       ? game.name
@@ -219,11 +230,15 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
         return;
       }
       const img = nativeImage.createFromPath(file);
-      // TODO: could resize here to save some disc space
-      return fs.writeFileAsync(this.imagePath, img.toPNG())
-       .then(() => {
-         this.setHasProfileImage(true);
-       });
+      try {
+        // TODO: could resize here to save some disc space
+        return fs.writeFileAsync(this.imagePath, img.toPNG())
+          .then(() => {
+            this.setHasProfileImage(true);
+          });
+      } catch (err) {
+        log('warn', 'failed to get path for profile image', { profile: this.props.profile });
+      }
     });
   }
 
