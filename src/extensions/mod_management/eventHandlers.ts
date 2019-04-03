@@ -369,7 +369,6 @@ export function onRemoveMod(api: IExtensionApi,
       ? lastActive
       : lastActive.profileId;
   }
-  const profile: IProfile = getSafe(state, ['persistent', 'profiles', profileId], undefined);
 
   store.dispatch(setModEnabled(profileId, modId, false));
 
@@ -401,8 +400,13 @@ export function onRemoveMod(api: IExtensionApi,
   //   anyway
 
   const undeployMod = () => {
+    if (mod.installationPath === undefined) {
+      // don't try to undeploy a mod that has no installation path (it can't be deployed
+      // anyway)
+      return Promise.resolve();
+    }
     return undeploy(api, activators, gameMode, mod)
-      .catch({ code: 'ENOTFOUND' }, err => {
+      .catch({ code: 'ENOTFOUND' }, () => {
         return api.showDialog('error', 'Mod not found', {
           text: 'The mod you\'re removing has already been deleted on disk.\n'
               + 'This makes it impossible for Vortex to cleanly undeploy the mod '
@@ -428,11 +432,11 @@ export function onRemoveMod(api: IExtensionApi,
               return Promise.resolve();
             }
           });
-      });
-  };
+      })
+    };
 
   undeployMod()
-  .then(() => truthy(mod)
+  .then(() => truthy(mod) && truthy(mod.installationPath)
     ? fs.removeAsync(path.join(installationPath, mod.installationPath))
         .catch(err => err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err))
     : Promise.resolve())
