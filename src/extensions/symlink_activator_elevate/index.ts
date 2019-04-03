@@ -147,44 +147,10 @@ class DeploymentMethod extends LinkingDeployment {
       };
     }
 
-    const installationPath = installPathForGame(state, gameId);
-    const canary = path.join(installationPath, '__vortex_canary.tmp');
+    // unfortunately we can't test whether symlinks are supported on the filesystem if
+    // creating a link requires elevation
 
-    let res: IUnavailableReason;
-    try {
-      try {
-        fs.removeSync(canary + '.link');
-      } catch (err) {}
-      fs.writeFileSync(canary, 'Should only exist temporarily, feel free to delete');
-      fs.symlinkSync(canary, canary + '.link');
-    } catch (err) {
-      // EMFILE shouldn't keep us from using hard linking
-      if (err.code !== 'EMFILE') {
-        // the error code we're actually getting is EISDIR, which makes no sense at all
-        res = {
-          description: t => t('Filesystem doesn\'t support symbolic links.'),
-        };
-      }
-    }
-
-    try {
-      fs.removeSync(canary + '.link');
-      fs.removeSync(canary);
-    } catch (err) {
-      // cleanup failed, this is almost certainly due to an AV jumping in to check these new files,
-      // I mean, why would I be able to create the files but not delete them?
-      // just try again later - can't do that synchronously though
-      Promise.delay(100)
-        .then(() => fs.removeAsync(canary + '.link'))
-        .then(() => fs.removeAsync(canary))
-        .catch(err => {
-          log('error', 'failed to clean up canary file. This indicates we were able to create '
-              + 'a file in the target directory but not delete it',
-              { installationPath, message: err.message });
-        });
-    }
-
-    return res;
+    return undefined;
   }
 
   protected linkFile(linkPath: string, sourcePath: string): Promise<void> {

@@ -82,8 +82,7 @@ class DeploymendMethod extends LinkingDeployment {
       return { description: t => err.message };
     }
 
-    const installationPath = installPathForGame(state, gameId);
-    const canary = path.join(installationPath, '__vortex_canary.tmp');
+    const canary = path.join(modPaths[typeId], '__vortex_canary.tmp');
 
     let res: IUnavailableReason;
     try {
@@ -93,11 +92,19 @@ class DeploymendMethod extends LinkingDeployment {
       fs.writeFileSync(canary, 'Should only exist temporarily, feel free to delete');
       fs.symlinkSync(canary, canary + '.link');
     } catch (err) {
-      // EMFILE shouldn't keep us from using hard linking
-      if (err.code !== 'EMFILE') {
-        // the error code we're actually getting is EISDIR, which makes no sense at all
+      if (err.code === 'EMFILE') {
+        // EMFILE shouldn't keep us from using links
+      } else if (err.code === 'EISDIR') {
+        // the error code we're actually getting when symlinks aren't supported is EISDIR,
+        // which makes no sense at all
         res = {
           description: t => t('Filesystem doesn\'t support symbolic links.'),
+        };
+      } else {
+        // unexpected error code
+        res = {
+          description: t => t('Filesystem doesn\'t support symbolic links. Error: "{{error}}"',
+            { replace: { error: err.message } }),
         };
       }
     }
@@ -115,7 +122,7 @@ class DeploymendMethod extends LinkingDeployment {
         .catch(err => {
           log('error', 'failed to clean up canary file. This indicates we were able to create '
               + 'a file in the target directory but not delete it',
-              { installationPath, message: err.message });
+              { targetPath: modPaths[typeId], message: err.message });
         });
     }
 
