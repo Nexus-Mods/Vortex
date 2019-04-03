@@ -207,6 +207,13 @@ class Application {
             + 'If you can\'t see it, please check the task manager.');
           app.quit();
         })
+        .catch({ code: 'ENOSPC' }, () => {
+          dialog.showErrorBox('Startup failed', 'Your system drive is full. '
+            + 'You should always ensure your system drive has some space free (ideally '
+            + 'at least 10% of the total capacity, especially on SSDs). '
+            + 'Vortex can\'t start until you have freed up some space.');
+          app.quit();
+        })
         .catch((err) => {
           try {
             terminate({
