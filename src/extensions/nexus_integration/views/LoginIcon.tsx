@@ -122,6 +122,6 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
 }
 
 export default
-  connect(mapStateToProps, mapDispatchToProps)(
-    translate(['common'])(
+  translate(['common'])(
+    connect(mapStateToProps, mapDispatchToProps)(
       LoginIcon)) as React.ComponentClass<IBaseProps>;

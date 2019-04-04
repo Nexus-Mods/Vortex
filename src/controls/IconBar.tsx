@@ -37,21 +37,6 @@ export interface IBaseProps {
 
 type IProps = IBaseProps & { actions?: IActionDefinitionEx[] } & React.HTMLAttributes<any>;
 
-// takes the props of a Popover. ignores the arrow, applies the absolute
-// position
-function Positioner(props: any): JSX.Element {
-  const { children, positionLeft, positionTop } = props;
-
-  return (
-    <div
-      className={props.className}
-      style={{ top: positionTop, left: positionLeft, position: 'absolute' }}
-    >
-      <div className='menu-content'>{children}</div>
-    </div>
-  );
-}
-
 interface IPortalMenuProps {
   open: boolean;
   target: JSX.Element;
@@ -76,18 +61,20 @@ class PortalMenu extends React.Component<IPortalMenuProps, {}> {
         placement='bottom'
         target={target}
       >
-      {({ props, arrowProps, placement }) => (
-        <Positioner className='icon-menu-positioner'>
-          <Dropdown.Menu
-            style={{ display: 'block', position: 'initial' }}
-            onClose={onClose}
-            open={open}
-            onClick={onClick}
-          >
-            {this.props.children}
-          </Dropdown.Menu>
-        </Positioner>
-      )}
+        {({ props, arrowProps, placement }) => (
+            <div {...props} className='icon-menu-positioner'>
+              <div className='menu-content'>
+                <Dropdown.Menu
+                  style={{ display: 'block', position: 'initial' }}
+                  onClose={onClose}
+                  open={open}
+                  onClick={onClick}
+                >
+                  {this.props.children}
+                </Dropdown.Menu>
+              </div>
+            </div>
+          )}
       </Overlay>
     );
   }
