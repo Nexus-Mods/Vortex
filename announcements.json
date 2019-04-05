@@ -8,6 +8,7 @@
     "date": "2019-04-05T12:28:10",
     "description": "Please don't use symlink deployment in version 0.17.10, your mods might get damaged (in staging). If you do need symlink deployment, please downgrade to 0.17.9 and disable automatic updating until 0.17.11 is out.",
     "severity": "critical",
+    "icon": "feedback-warning",
     "version": "0.17.10"
 }
 ]
