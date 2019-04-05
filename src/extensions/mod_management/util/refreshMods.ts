@@ -23,7 +23,9 @@ function refreshMods(api: IExtensionApi, installPath: string, knownMods: string[
       .then(stats => stats.isDirectory())
       .catch(() => Promise.resolve(false)))
     .then((modNames: string[]) => {
-      const filtered = modNames.filter(name => !name.startsWith('__'));
+      const filtered = modNames
+        .filter(name => !name.startsWith('__'))
+        .map(name => name.replace(/.installing$/, ''));
       const addedMods =
           filtered.filter((name: string) => knownMods.indexOf(name) === -1);
       const removedMods =
