@@ -79,7 +79,13 @@ function unlockConfirm(filePath: string): PromiseBB<boolean> {
     return PromiseBB.resolve(false);
   }
 
-  const processes = wholocks(filePath);
+  let processes = [];
+  try {
+    processes = wholocks(filePath);
+  } catch (err) {
+    log('warn', 'failed to determine list of processes locking file',
+        { filePath, error: err.message });
+  }
 
   const baseMessage = processes.length === 0
     ? `Vortex needs to access "${filePath}" but doesn\'t have permission to.`
@@ -152,7 +158,14 @@ function busyRetry(filePath: string): PromiseBB<boolean> {
     return PromiseBB.resolve(false);
   }
 
-  const processes = wholocks(filePath);
+  let processes = [];
+  try {
+    processes = wholocks(filePath);
+  } catch (err) {
+    log('warn', 'failed to determine list of processes locking file',
+        { filePath, error: err.message });
+  }
+
   const options: Electron.MessageBoxOptions = {
     title: 'File busy',
     message: `Vortex needs to access "${filePath}" but it\'s open in another application. `
