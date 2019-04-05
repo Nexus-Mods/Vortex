@@ -254,6 +254,9 @@ function resetSearchPaths(api: IExtensionApi) {
   let list;
   try {
     list = require('drivelist').list;
+    if (typeof(list) !== 'function') {
+      throw new Error('Failed to load "drivelist" module');
+    }
   } catch (err) {
     api.showErrorNotification('Failed to query list of system drives',
       {
