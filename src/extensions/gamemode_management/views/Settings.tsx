@@ -9,7 +9,7 @@ import { addSearchPath, removeSearchPath } from '../actions/settings';
 
 import * as React from 'react';
 import { Button, ControlLabel, FormGroup, HelpBlock,
-         ListGroup, ListGroupItem } from 'react-bootstrap';
+         ListGroup, ListGroupItem, Alert } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 
@@ -89,7 +89,13 @@ class Settings extends ComponentEx<IProps, {}> {
           <Button onClick={this.resetSearchPaths}>
             {t('Reset')}
           </Button>
-          <HelpBlock>{t('Directories to search when looking for games.')}</HelpBlock>
+          <HelpBlock>
+            {t('Directories to search when looking for games.')}
+            <Alert bsStyle='info'>
+              {t('This affects only the Full Scan! The quick scan that happens on every start looks at the windows registry, steam config, ... and finds '
+                + 'games listed there no matter where they are installed.')}
+            </Alert>
+          </HelpBlock>
         </FormGroup>
       </form>
     );
