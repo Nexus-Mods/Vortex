@@ -162,19 +162,35 @@ class DeploymendMethod extends LinkingDeployment {
   }
 
   protected purgeLinks(installPath: string, dataPath: string): Promise<void> {
+    let hadErrors = false;
     // purge by removing all symbolic links that point to a file inside the install directory
     return walk(dataPath, (iterPath: string, stats: fs.Stats) => {
       if (!stats.isSymbolicLink()) {
         return Promise.resolve();
       }
       return fs.readlinkAsync(iterPath)
-      .then((symlinkPath) => {
-        const relPath = path.relative(installPath, symlinkPath);
-        if (!relPath.startsWith('..') && !path.isAbsolute(relPath)) {
-          return fs.removeAsync(symlinkPath);
+        .then((symlinkPath) => {
+          const relPath = path.relative(installPath, symlinkPath);
+          if (!relPath.startsWith('..') && !path.isAbsolute(relPath)) {
+            return fs.unlinkAsync(iterPath);
+          }
+        })
+        .catch(err => {
+          if (err.code === 'ENOENT') {
+            log('debug', 'link already gone', { iterPath, error: err.message });
+          } else {
+            hadErrors = true;
+            log('error', 'failed to remove link', { iterPath, error: err.message });
+          }
+        });
+    })
+      .then(() => {
+        if (hadErrors) {
+          return Promise.reject(new Error('Some files could not be purged, please check the log file'));
+        } else {
+          return Promise.resolve();
         }
       });
-    });
   }
 
   protected isLink(linkPath: string, sourcePath: string): Promise<boolean> {
