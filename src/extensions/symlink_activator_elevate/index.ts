@@ -172,6 +172,7 @@ class DeploymentMethod extends LinkingDeployment {
   }
 
   protected purgeLinks(installPath: string, dataPath: string): Promise<void> {
+    let hadErrors = false;
     // purge by removing all symbolic links that point to a file inside
     // the install directory
     return this.startElevated()
@@ -179,14 +180,30 @@ class DeploymentMethod extends LinkingDeployment {
             if (!stats.isSymbolicLink()) {
               return Promise.resolve();
             }
-            return fs.readlinkAsync(iterPath).then((symlinkPath) => {
-              if (!path.relative(installPath, symlinkPath).startsWith('..')) {
-                ipc.server.emit(this.mElevatedClient, 'remove-link',
-                                {destination: iterPath});
-              }
-            });
+            return fs.readlinkAsync(iterPath)
+              .then((symlinkPath) => {
+                if (!path.relative(installPath, symlinkPath).startsWith('..')) {
+                  ipc.server.emit(this.mElevatedClient, 'remove-link',
+                    { destination: iterPath });
+                }
+              })
+              .catch(err => {
+                if (err.code === 'ENOENT') {
+                  log('debug', 'link already gone', { iterPath, error: err.message });
+                } else {
+                  hadErrors = true;
+                  log('error', 'failed to remove link', { iterPath, error: err.message });
+                }
+              });
           }))
-      .then(() => this.stopElevated());
+      .then(() => this.stopElevated())
+      .then(() => {
+        if (hadErrors) {
+          return Promise.reject(new Error('Some files could not be purged, please check the log file'));
+        } else {
+          return Promise.resolve();
+        }
+      });
   }
 
   protected isLink(linkPath: string, sourcePath: string): Promise<boolean> {
