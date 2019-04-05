@@ -3,7 +3,7 @@ import PluginEntry from './PluginEntry';
 
 import * as React from 'react';
 import { Panel } from 'react-bootstrap';
-import { translate } from 'react-i18next';
+import { withTranslation } from 'react-i18next';
 import { ComponentEx, DNDContainer, FlexLayout, MainPage } from 'vortex-api';
 
 const PanelX: any = Panel;
@@ -78,4 +78,5 @@ class PluginList extends ComponentEx<IPluginListProps, {}> {
   }
 }
 
-export default translate(['common', 'morrowind-plugins'])(PluginList);
+export default withTranslation(['common', 'morrowind-plugins'])(
+  PluginList as any) as React.ComponentClass<IPluginListProps>;
