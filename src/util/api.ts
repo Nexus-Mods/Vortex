@@ -35,7 +35,7 @@ import { getReduxLog } from './reduxLogger';
 import ReduxProp from './ReduxProp';
 import relativeTime from './relativeTime';
 import steam, { GameNotFound, ISteamEntry } from './Steam';
-import { bytesToString, copyFileAtomic, fileMD5, isChildPath, objDiff,
+import { bytesToString, copyFileAtomic, deBOM, fileMD5, isChildPath, objDiff,
          removePersistent, sanitizeCSSId, setdefault } from './util';
 import walk from './walk';
 
@@ -49,6 +49,7 @@ export {
   CycleError,
   DataInvalid,
   Debouncer,
+  deBOM,
   delayed,
   deriveModInstallName as deriveInstallName,
   epicGamesLauncher,
