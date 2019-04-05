@@ -59,7 +59,7 @@
   flex-direction: column;
   ul {
     margin-bottom: 0;
-    padding: 0 5px;
+    padding: 0 4px;
   }
   .placeholder {
     height: 100%;
@@ -143,17 +143,21 @@
     overflow-y: auto;
     list-style: none;
 
-    padding: 5px 2px;
+    padding: 0 4px;
 
     .announcement-list-item {
       .announcement-description {
-        padding: 0 10px;
+        padding: 0 8px;
 
-        svg {
-          padding-top: 12px;
-          padding-right: 3px;
-          height: 2.4em;
-          width: 1.6em;
+        .announcement-icon {
+          display: flex;
+          align-items: center;
+          margin-right: 4px;
+
+          svg {
+            height: 3em;
+            width: 3em;
+          }
         }
 
         .announcement-icon-critical {

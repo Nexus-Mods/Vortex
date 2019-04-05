@@ -1,3 +1,4 @@
+import * as I18next from 'i18next';
 import * as React from 'react';
 import { connect } from 'react-redux';
 import { remote } from 'electron';
@@ -13,20 +14,10 @@ import { FlexLayout, EmptyPlaceholder } from '../../controls/api';
 
 interface IConnectedProps {
   gameMode: string;
-  announcements: Array<{
-    date: string,
-    description: string,
-    severity: AnnouncementSeverity,
-    link?: string,
-    gamemode?: string,
-    icon?: string,
-    version?: string }>;
+  announcements: IAnnouncement[];
 }
 
-interface IActionProps {
-}
-
-type IProps = IConnectedProps & IActionProps;
+type IProps = IConnectedProps;
 
 class AnnouncementDashlet extends ComponentEx<IProps, {}> {
   private mAppVersion: string;
@@ -78,11 +69,35 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
   private renderIcon(announcement: IAnnouncement): JSX.Element {
     const { t } = this.props;
     const sev = announcement.severity !== undefined ? announcement.severity : 'information';
-    if ((sev !== 'information') && (announcement.icon !== undefined)) {
-      return <Icon className={`announcement-icon-${sev}`} key='attention-required' name={announcement.icon} tooltip={t('Icon')} />;
+    const icon = this.severityToIcon(sev);
+    if (icon !== undefined) {
+      return (
+        <Icon
+          className={`announcement-icon announcement-icon-${sev}`}
+          name={icon}
+          tooltip={this.severityToTooltip(t, sev)}
+        />
+      );
     } else {
       return null;
     }
+  }
+
+  private severityToIcon(severity: AnnouncementSeverity): string {
+    switch (severity) {
+      case 'warning': return 'feedback-warning';
+      case 'critical': return 'feedback-warning';
+    }
+    return undefined;
+  }
+
+  private severityToTooltip(t: I18next.TranslationFunction, severity: AnnouncementSeverity): string {
+    switch (severity) {
+      case 'warning': return t('Warning');
+      case 'critical': return t('Critical');
+      case 'information': return t('Information');
+    }
+    return '';
   }
 
   private generateExtraPanel(announcement: IAnnouncement): JSX.Element {
@@ -150,12 +165,7 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: any): IActionProps {
-  return {
-  };
-}
-
 export default
-  connect(mapStateToProps, mapDispatchToProps)(
+  connect(mapStateToProps)(
     translate(['common'], { wait: true })(
       AnnouncementDashlet));

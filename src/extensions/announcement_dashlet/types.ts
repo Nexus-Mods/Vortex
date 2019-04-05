@@ -4,8 +4,7 @@ export interface IAnnouncement {
   date: string,
   description: string,
   link?: string,
-  gameMode?: string,
-  icon?: string,
+  gamemode?: string,
   severity?: AnnouncementSeverity,
   version?: string,
 }
