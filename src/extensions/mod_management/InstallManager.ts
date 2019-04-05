@@ -301,6 +301,7 @@ class InstallManager {
                              && err.stack.startsWith('UserCanceled: canceled by user'));
         let prom = destinationPath !== undefined
           ? fs.removeAsync(destinationPath)
+            .catch(UserCanceled, () => null)
             .catch(innerErr => {
               installContext.reportError(
                 'Failed to clean up installation directory "{{destinationPath}}", '
