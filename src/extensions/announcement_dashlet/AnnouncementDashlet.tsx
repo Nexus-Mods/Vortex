@@ -1,5 +1,6 @@
 import { remote } from 'electron';
 import * as minimatch from 'minimatch';
+import I18next from 'i18next';
 import * as React from 'react';
 import { connect } from 'react-redux';
 import * as semver from 'semver';
@@ -16,14 +17,7 @@ import { WithTranslation } from 'react-i18next';
 
 interface IConnectedProps {
   gameMode: string;
-  announcements: Array<{
-    date: string,
-    description: string,
-    severity: AnnouncementSeverity,
-    link?: string,
-    gamemode?: string,
-    icon?: string,
-    version?: string }>;
+  announcements: IAnnouncement[];
 }
 
 interface IActionProps {
@@ -99,17 +93,35 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
   private renderIcon(announcement: IAnnouncement): JSX.Element {
     const { t } = this.props;
     const sev = announcement.severity !== undefined ? announcement.severity : 'information';
-    if ((sev !== 'information') && (announcement.icon !== undefined)) {
+    const icon = this.severityToIcon(sev);
+    if (icon !== undefined) {
       return (
-      <Icon
-        className={`announcement-icon-${sev}`}
-        key='attention-required'
-        name={announcement.icon}
-        tooltip={t('Icon')}
-      />);
+        <Icon
+          className={`announcement-icon announcement-icon-${sev}`}
+          name={icon}
+          tooltip={this.severityToTooltip(t, sev)}
+        />
+      );
     } else {
       return null;
     }
+  }
+
+  private severityToIcon(severity: AnnouncementSeverity): string {
+    switch (severity) {
+      case 'warning': return 'feedback-warning';
+      case 'critical': return 'feedback-warning';
+    }
+    return undefined;
+  }
+
+  private severityToTooltip(t: typeof I18next.t, severity: AnnouncementSeverity): string {
+    switch (severity) {
+      case 'warning': return t('Warning');
+      case 'critical': return t('Critical');
+      case 'information': return t('Information');
+    }
+    return '';
   }
 
   private generateExtraPanel(announcement: IAnnouncement): JSX.Element {
@@ -176,12 +188,7 @@ function mapStateToProps(state: any): IConnectedProps {
   };
 }
 
-function mapDispatchToProps(dispatch: any): IActionProps {
-  return {
-  };
-}
-
 export default
-  connect(mapStateToProps, mapDispatchToProps)(
+  connect(mapStateToProps)(
     translate(['common'])(
       AnnouncementDashlet));
