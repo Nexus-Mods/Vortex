@@ -218,6 +218,7 @@ class DeploymendMethod extends LinkingDeployment {
       fs.removeSync(destFile);
       return true;
     } catch (err) {
+      log('debug', 'assuming user needs elevation to create symlinks', { error: err.message });
       return false;
     }
   }
