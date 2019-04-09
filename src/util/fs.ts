@@ -494,7 +494,7 @@ export function ensureDirWritableAsync(dirPath: string,
       // weirdly we get EBADF from ensureFile sometimes when the
       // directory isn't writeable instead of EPERM. More weirdly, this seems to happen
       // only on startup.
-      if (['EPERM', 'EBADF'].indexOf(err.code) !== -1) {
+      if (['EPERM', 'EBADF', 'UNKNOWN'].indexOf(err.code) !== -1) {
         return confirm()
           .then(() => {
             const userId = getUserId();

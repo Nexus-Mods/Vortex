@@ -23,7 +23,7 @@ function parseCommandline(argv: string[]): IParameters {
   return program
     .command('Vortex')
     .version(app.getVersion())
-    .option('-d, --download [url]', 'Start downloadling the specified url.')
+    .option('-d, --download [url]', 'Start downloadling the specified url (any supported protocol like nxm:, https:, ...).')
     .option('-g, --get [path]', 'Print the state variable at the specified path and quit. '
                               + 'For debugging')
     .option('-s, --set [path]=[value]', 'Change a value in the state. Please be very careful '
