@@ -55,6 +55,7 @@ class Application {
   private mExtensions: ExtensionManagerT;
   private mTray: TrayIconT;
   private mFirstStart: boolean = false;
+  private mDeinitCrashDump: () => void = undefined;
 
   constructor(args: IParameters) {
     this.mArgs = args;
@@ -70,7 +71,7 @@ class Application {
     app.setPath('temp', tempPath);
     fs.ensureDirSync(path.join(tempPath, 'dumps'));
 
-    crashDump(path.join(tempPath, 'dumps', `crash-main-${Date.now()}.dmp`));
+    this.mDeinitCrashDump = crashDump(path.join(tempPath, 'dumps', `crash-main-${Date.now()}.dmp`));
 
     this.setupAppEvents(args);
   }
@@ -95,6 +96,8 @@ class Application {
   private setupAppEvents(args: IParameters) {
     app.on('window-all-closed', () => {
       log('info', 'clean application end');
+      this.mTray.close();
+      this.mDeinitCrashDump();
       if (process.platform !== 'darwin') {
         app.quit();
       }

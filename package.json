@@ -9,7 +9,7 @@
     "url": "https://github.com/Nexus-Mods/Vortex"
   },
   "vortex": {
-    "electron": "4.0.7"
+    "electron": "3.1.8"
   },
   "scripts": {
     "_assets_out": "node InstallAssets.js out",
@@ -127,7 +127,7 @@
     "copyfiles": "^2.1.0",
     "cross-env": "^5.2.0",
     "devtron": "^1.4.0",
-    "electron": "^4.0.7",
+    "electron": "^3.1.8",
     "electron-builder": "^20.38.5",
     "electron-devtools-installer": "^2.2.4",
     "electron-download-tf": "^4.3.4",

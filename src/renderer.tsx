@@ -87,7 +87,7 @@ log('debug', 'renderer process started', { pid: process.pid });
 const tempPath = path.join(remote.app.getPath('userData'), 'temp');
 remote.app.setPath('temp', tempPath);
 
-crashDump(path.join(remote.app.getPath('temp'), 'dumps', `crash-renderer-${Date.now()}.dmp`));
+const deinitCrashDump = crashDump(path.join(remote.app.getPath('temp'), 'dumps', `crash-renderer-${Date.now()}.dmp`));
 
 // allow promises to be cancelled.
 Promise.config({
@@ -171,6 +171,9 @@ window.addEventListener('error', errorHandler);
 window.addEventListener('unhandledrejection', errorHandler);
 window.removeEventListener('error', earlyErrHandler);
 window.removeEventListener('unhandledrejection', earlyErrHandler);
+window.addEventListener('close', () => {
+  deinitCrashDump();
+})
 
 const eventEmitter: NodeJS.EventEmitter = new EventEmitter();
 

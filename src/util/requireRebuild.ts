@@ -41,7 +41,7 @@ const differentVersionExp = /was compiled against a different Node\.js version/;
 const winExp = /A dynamic link library \(DLL\) initialization routine failed./;
 const noBindingsExp = /Could not locate the bindings file/;
 const noModuleExp = /Cannot find module/;
-const fckingNodeSassExp = /Node Sass does not yet support your current environment/;
+const fckingNodeSassExp = /Node Sass could not find a binding for your current environment/;
 const edgeExp = /The edge module has not been pre-compiled/;
 
 // modules that we will build even if they haven't been build yet

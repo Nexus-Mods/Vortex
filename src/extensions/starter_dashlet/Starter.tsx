@@ -316,7 +316,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
   }
 
   private updateJumpList(starters: IStarterInfo[]) {
-    const userTasks = starters
+    const userTasks: Electron.Task[] = starters
       .filter(starter =>
         (truthy(starter.exePath))
         && (Object.keys(starter.environment || {}).length === 0))

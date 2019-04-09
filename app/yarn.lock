@@ -521,8 +521,8 @@ core-util-is@1.0.2, core-util-is@~1.0.0:
   integrity sha1-tf1UIgqivFq1eqtxQMlAdUUDwac=
 
 crash-dump@Nexus-Mods/node-crash-dump:
-  version "1.0.4"
-  resolved "https://codeload.github.com/Nexus-Mods/node-crash-dump/tar.gz/204baba864af93629c8d1fe62c1f76c1938de783"
+  version "1.1.1"
+  resolved "https://codeload.github.com/Nexus-Mods/node-crash-dump/tar.gz/60e799c611fe56bb3f5a7dfc2ff36eff33908e36"
   dependencies:
     autogypi "^0.2.2"
     nan "^2.8.0"
