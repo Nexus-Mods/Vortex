@@ -15,8 +15,8 @@
   },
   "dependencies": {
     "bbcode-to-react": "TanninOne/bbcode-to-react",
-    "bluebird": "^3.5.3",
     "big.js": "^5.2.2",
+    "bluebird": "^3.5.3",
     "bootstrap-sass": "^3.4.1",
     "classnames": "^2.2.6",
     "commander": "^2.19.0",
