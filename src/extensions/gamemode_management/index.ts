@@ -426,7 +426,11 @@ function init(context: IExtensionContext): boolean {
 
   context.registerAction('game-icons', 110, 'refresh', {}, 'Scan: Full', () => {
     if (($.gameModeManager !== undefined) && !$.gameModeManager.isSearching()) {
-      $.gameModeManager.startSearchDiscovery();
+      try {
+        $.gameModeManager.startSearchDiscovery();
+      } catch (err) {
+        context.api.showErrorNotification('Failed to search for games', err);
+      }
     }
   });
 
