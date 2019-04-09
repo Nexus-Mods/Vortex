@@ -9,7 +9,8 @@ import { IState } from '../types/IState';
 import { jsonRequest } from '../util/network';
 
 import { HTTPError } from './CustomErrors';
-import { isOutdated, sendReport, toError } from './errorHandling';
+import { isOutdated, sendReport, toError,
+         getErrorContext, didIgnoreError } from './errorHandling';
 import { log } from './log';
 import { truthy } from './util';
 
@@ -149,13 +150,13 @@ function shouldAllowReport(err: string | Error | any, options?: IErrorOptions): 
  * @export
  * @template S
  * @param {Redux.Dispatch<S>} dispatch
- * @param {string} message
+ * @param {string} title
  * @param {any} [details] further details about the error (stack and such). The api says we only
  *                        want string or Errors but since some node apis return non-Error objects
  *                        where Errors are expected we have to be a bit more flexible here.
  */
 export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
-                          message: string,
+                          title: string,
                           details?: string | Error | any,
                           options?: IErrorOptions) {
   const err = renderError(details);
@@ -164,10 +165,15 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
     ? err.allowReport
     : shouldAllowReport(details, options);
 
-  log(allowReport ? 'error' : 'warn', message, err);
+  log(allowReport ? 'error' : 'warn', title, err);
 
   const content: IDialogContent = (truthy(options) && options.isHTML) ? {
     htmlText: err.message || err.text,
+    options: {
+      wrap: false,
+    },
+  } : (truthy(options) && options.isBBCode) ? {
+    bbcode: err.message || err.text,
     options: {
       wrap: false,
     },
@@ -186,10 +192,12 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
 
   const actions: IDialogAction[] = [];
 
-  if (!isOutdated() && allowReport) {
+  const context = getErrorContext();
+
+  if (!isOutdated() && !didIgnoreError() && allowReport) {
     actions.push({
       label: 'Report',
-      action: () => sendReport('error', toError(details, options), ['error'], '', process.type)
+      action: () => sendReport('error', toError(details, title, options), context, ['error'], '', process.type)
         .then(response => {
           if (response !== undefined) {
             const { issue_number } = response.github_issue;
@@ -208,10 +216,13 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
 
   actions.push({ label: 'Close', default: true });
 
+  let haveMessage = (options !== undefined) && (options.message !== undefined);
+
   dispatch(addNotification({
     id: (options !== undefined) ? options.id : undefined,
     type: 'error',
-    message,
+    title: haveMessage ? title : undefined,
+    message: haveMessage ? options.message : title,
     replace: (options !== undefined) ? options.replace : undefined,
     actions: details !== undefined ? [{
       title: 'More',
@@ -316,6 +327,12 @@ export function prettifyNodeErrorMessage(err: any): IPrettifiedError {
       message: 'The filesystem is read-only.',
       allowReport: false,
     };
+  } else if (err.code === 'UNKNOWN') {
+    return {
+      message: 'An unknown error occurred. What this means is that Windows or the framework don\'t '
+             + 'provide any useful information to diagnose this problem. '
+             + 'Please do not report this issue without saying what exactly you were doing.',
+    }
   }
 
   return {

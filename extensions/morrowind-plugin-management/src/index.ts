@@ -1,9 +1,8 @@
 import PluginList from './PluginList';
 
 import * as Promise from 'bluebird';
-import * as fs from 'fs-extra-promise';
 import * as path from 'path';
-import { selectors, types, util } from 'vortex-api';
+import { fs, selectors, types, util, log } from 'vortex-api';
 import IniParser, { WinapiFormat } from 'vortex-parse-ini';
 
 let watcher: fs.FSWatcher;
@@ -30,7 +29,10 @@ function startWatch(state: types.IState) {
     // game is activated and it has to be discovered for that
     throw new Error('Morrowind wasn\'t discovered');
   }
-  watcher = fs.watch(path.join(discovery.path, 'Data Files'), {}, onFileChanged);
+  watcher = fs.watch(path.join(discovery.path, 'Data Files'), {}, onFileChanged)
+    .on('error', err => {
+      log('error', 'failed to watch morrowind mod directory for changes', { message: err.message });
+    });
 }
 
 function stopWatch() {
@@ -59,6 +61,18 @@ function updatePluginOrder(iniFilePath: string, plugins: string[]) {
       }, {});
       return parser.write(iniFilePath, ini);
     });
+}
+
+function updatePluginTimestamps(dataPath: string, plugins: string[]): Promise<void> {
+  const offset = 946684800;
+  const oneDay = 24 * 60 * 60;
+  return Promise.mapSeries(plugins, (fileName, idx) => {
+    const mtime = offset + oneDay * idx;
+    return fs.utimesAsync(path.join(dataPath, fileName), mtime, mtime)
+      .catch(err => err.code === 'ENOENT'
+        ? Promise.resolve()
+        : Promise.reject(err));
+  }).then(() => undefined);
 }
 
 function refreshPlugins(api: types.IExtensionApi): Promise<void> {
@@ -94,6 +108,7 @@ function init(context: types.IExtensionContext) {
         const discovery = state.settings.gameMode.discovered['morrowind'];
         const iniFilePath = path.join(discovery.path, 'Morrowind.ini');
         updatePluginOrder(iniFilePath, plugins)
+          .then(() => updatePluginTimestamps(path.join(discovery.path, 'Data Files'), plugins))
           .catch(err => {
             context.api.showErrorNotification('Failed to update morrowind.ini', err, { allowReport: false });
           });

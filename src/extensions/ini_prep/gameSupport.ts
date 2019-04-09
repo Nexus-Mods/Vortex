@@ -82,8 +82,8 @@ const gameSupport = {
 export function iniFiles(gameMode: string, discovery: IDiscoveryResult) {
   const mygames = path.join(app.getPath('documents'), 'My Games');
 
-  return getSafe(gameSupport, [gameMode, 'iniFiles'], []).map(file => format(file, {
-    mygames, game: discovery.path }));
+  return getSafe(gameSupport, [gameMode, 'iniFiles'], [])
+    .map(file => format(file, { mygames, game: discovery.path }));
 }
 
 export function iniFormat(gameMode: string) {

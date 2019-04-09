@@ -48,6 +48,8 @@ const edgeExp = /The edge module has not been pre-compiled/;
 const initBuild = [
   'turbowalk',
   'icon-extract',
+  'winapi',
+  'wholocks'
 ];
 
 const headerURL = 'https://atom.io/download/electron';
@@ -70,7 +72,7 @@ function patchedLoad(orig) {
           && !noBindingsExp.test(err.message)
           && !fckingNodeSassExp.test(err.message)
           && !edgeExp.test(err.message)
-          && (!noModuleExp.test(err.message) || (initBuild.indexOf(request) === -1))) {
+          && (!noModuleExp.test(err.message) || (initBuild.find(name => request.indexOf(name) !== -1) === undefined))) {
         throw err;
       }
 

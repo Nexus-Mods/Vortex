@@ -621,6 +621,26 @@ $colors: ( white: $white, gray-lighter: $gray-lighter, gray-light: $gray-light,
             link-hover-color: $link-hover-color,
             );
 
+$other: (
+  font-family-sans-serif: $font-family-sans-serif,
+  font-family-serif: $font-family-serif,
+  font-family-monospace: $font-family-monospace,
+  font-family-base: $font-family-base,
+  font-family-headings: $font-family-headings,
+  font-size-base: $font-size-base,
+  headings-font-weight: $headings-font-weight,
+  gutter-width: $gutter-width,
+  half-gutter: $half-gutter,
+  line-height-large: $line-height-large,
+  line-height-small: $line-height-small,
+  border-radius-base: $border-radius-base,
+  border-radius-large: $border-radius-large,
+  border-radius-small: $border-radius-small,
+  border-width: $border-width,
+  caret-width-base: $caret-width-base,
+  caret-width-large: $caret-width-large,
+);
+
 #variables {
   .color {
     @each $id,
@@ -631,6 +651,22 @@ $colors: ( white: $white, gray-lighter: $gray-lighter, gray-light: $gray-light,
     }
   }
 }
+
+///////////////////////////////////////
+// make scss variables available to css
+
+:root {
+  @each $id,
+  $col in $colors {
+    --#{$id}: #{$col};
+  }
+
+  @each $id,
+  $val in $other {
+    --#{$id}: #{$val};
+  }
+}
+
 
 @keyframes highlightPulse {
   0% {border-color: $brand-highlight;}

@@ -81,6 +81,7 @@ import {} from './util/extensionRequire';
 import { reduxLogger } from './util/reduxLogger';
 import { getSafe } from './util/storeHelper';
 import { getAllPropertyNames } from './util/util';
+import { setLanguage } from './actions';
 
 log('debug', 'renderer process started', { pid: process.pid });
 
@@ -151,6 +152,7 @@ function errorHandler(evt: any) {
           (error.message === 'socket hang up')
           || (error.stack.indexOf('net::ERR_CONNECTION_RESET') !== -1)
           || (error.stack.indexOf('net::ERR_ABORTED') !== -1)
+          || (error.stack.indexOf('PackeryItem.proto.positionDropPlaceholder') !== -1)
          )
       ) {
     log('warn', 'suppressing error message', { message: error.message, stack: error.stack });
@@ -261,6 +263,13 @@ let currentLanguage: string = store.getState().settings.interface.language;
 store.subscribe(() => {
   const newLanguage: string = store.getState().settings.interface.language;
   if (newLanguage !== currentLanguage) {
+    try {
+      new Date().toLocaleString(newLanguage);
+    } catch (err) {
+      store.dispatch(setLanguage(currentLanguage));
+      log('warn', 'Attempt to set invalid language', newLanguage);
+      return;
+    }
     currentLanguage = newLanguage;
     I18next.changeLanguage(newLanguage, (err, t) => {
       if (err !== undefined) {

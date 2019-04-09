@@ -10,5 +10,6 @@
   "{{ count }} year ago_plural": "{{ count }} years ago",
   "{{ count }} error_plural": "{{ count }} errors",
   "{{ count }} active mod_plural": "{{ count }} active mods",
-  "{{ count }} file_plural": "{{ count }} files"
+  "{{ count }} file_plural": "{{ count }} files",
+  "{{ count }} item selected_plural": "{{ count }} items selected"
 }

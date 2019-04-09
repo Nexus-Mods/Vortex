@@ -319,11 +319,13 @@ export class DownloadObserver {
 
   private handleDownloadError(err: any,
                               downloadId: string,
-                              callback: (err: Error, id?: string) => void) {
+                              callback?: (err: Error, id?: string) => void) {
     if (['ESOCKETTIMEDOUT', 'ECONNRESET'].indexOf(err.code) !== -1) {
       // may be resumable
       // this.mManager.pause(downloadId);
-      callback(null, downloadId);
+      if (callback !== undefined) {
+        callback(null, downloadId);
+      }
     } else {
       const message = this.translateError(err);
 

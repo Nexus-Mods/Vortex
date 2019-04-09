@@ -2,6 +2,7 @@ import { IExtensionApi } from '../../../types/IExtensionContext';
 import { IGame } from '../../../types/IGame';
 import { getCurrentActivator, getGame } from '../../../util/api';
 import { activeGameId, currentGameDiscovery } from '../../../util/selectors';
+import { truthy } from '../../../util/util';
 import { installPath } from '../selectors';
 import { loadActivation, saveActivation } from './activationStore';
 import { NoDeployment } from './exceptions';
@@ -21,7 +22,7 @@ export function genSubDirFunc(game: IGame): (mod: IMod) => string {
 
 export function purgeMods(api: IExtensionApi): Promise<void> {
   const state = api.store.getState();
-  const instPath = installPath(state);
+  const stagingPath = installPath(state);
   const gameId = activeGameId(state);
   const gameDiscovery = currentGameDiscovery(state);
   const t = api.translate;
@@ -40,12 +41,14 @@ export function purgeMods(api: IExtensionApi): Promise<void> {
   const game: IGame = getGame(gameId);
   const modPaths = game.getModPaths(gameDiscovery.path);
 
-  return activator.prePurge(instPath)
-    .then(() => Promise.each(Object.keys(modPaths), typeId =>
-    loadActivation(api, typeId, modPaths[typeId], activator)
-      .then(() => activator.purge(instPath, modPaths[typeId]))
+  const modTypes = Object.keys(modPaths).filter(typeId => truthy(modPaths[typeId]));
+
+  return activator.prePurge(stagingPath)
+    .then(() => Promise.each(modTypes, typeId =>
+    loadActivation(api, typeId, modPaths[typeId], stagingPath, activator)
+      .then(() => activator.purge(stagingPath, modPaths[typeId]))
       .then(() => saveActivation(typeId, state.app.instanceId,
-                                 modPaths[typeId], [], activator.id))))
+                                 modPaths[typeId], stagingPath, [], activator.id))))
     .then(() => Promise.resolve())
   .finally(() => {
     api.dismissNotification(notificationId);

@@ -3,6 +3,7 @@ import { DialogActions, DialogType, IDialogContent, IDialogResult,
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import * as fs from '../../../util/fs';
+import { log } from '../../../util/log';
 import { activeGameId } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import MainPage from '../../../views/MainPage';
@@ -22,7 +23,7 @@ import { remote } from 'electron';
 import update from 'immutability-helper';
 import * as path from 'path';
 import * as React from 'react';
-import { Button, Collapse, ListGroup, ListGroupItem, Panel } from 'react-bootstrap';
+import { Button, Collapse } from 'react-bootstrap';
 import { generate as shortid } from 'shortid';
 import { WithTranslation } from 'react-i18next';
 
@@ -82,6 +83,11 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
     const otherProfiles: { [id: string]: IProfile } = {};
 
     Object.keys(profiles).forEach(profileId => {
+      if ((profiles[profileId].gameId === undefined)
+          || (profiles[profileId].name === undefined)) {
+        return;
+      }
+
       if (profiles[profileId].gameId === gameId) {
         currentGameProfiles[profileId] = profiles[profileId];
       } else {
@@ -137,7 +143,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
   private sortProfiles(profiles: { [id: string]: IProfile }, language: string) {
     return Object.keys(profiles).sort(
       (lhs: string, rhs: string): number =>
-        profiles[lhs].gameId !== profiles[rhs].gameId
+        (profiles[lhs].gameId !== profiles[rhs].gameId)
           ? profiles[lhs].gameId.localeCompare(profiles[rhs].gameId)
           : profiles[lhs].name.localeCompare(profiles[rhs].name, language,
             { sensitivity: 'base' }));
@@ -279,7 +285,9 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
     .then(() => {
       onAddProfile(newProfile);
       this.editExistingProfile(newProfile.id);
-    });
+    })
+    .catch(err => this.context.api.showErrorNotification('Failed to clone profile',
+      err, { allowReport: err.code !== 'EPERM' }));
   }
 
   private onRemoveProfile = (profileId: string) => {
@@ -292,6 +300,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
         {
           label: 'Remove', action:
             () => {
+              log('info', 'user removing profile', { id: profileId });
               onWillRemoveProfile(profileId);
               if (profileId === currentProfile) {
                 onSetNextProfile(undefined);

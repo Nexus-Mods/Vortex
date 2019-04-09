@@ -10,8 +10,8 @@ interface IItemBaseProps {
   item: any;
   itemRenderer: React.ComponentClass<{ className?: string, item: any }>;
   containerId: string;
-  take: (item: any) => any;
-  onChangeIndex: (oldIndex: number, newIndex: number, take: () => any) => void;
+  take: (item: any, list: any[]) => any;
+  onChangeIndex: (oldIndex: number, newIndex: number, changeContainer: boolean, take: (list: any[]) => any) => void;
   apply: () => void;
 }
 
@@ -72,7 +72,7 @@ const entrySource: DragSourceSpec<IItemProps, any> = {
       index: props.index,
       item: props.item,
       containerId: props.containerId,
-      take: () => props.take(props.item),
+      take: (list: any[]) => props.take(props.item, list),
     };
   },
   endDrag(props, monitor: DragSourceMonitor) {
@@ -103,14 +103,17 @@ const entryTarget: DropTargetSpec<IItemProps> = {
       return;
     }
 
-    props.onChangeIndex(index, hoverIndex, take);
+    props.onChangeIndex(index, hoverIndex, containerId !== props.containerId, take);
 
     (monitor.getItem() as any).index = hoverIndex;
     if (containerId !== props.containerId) {
       (monitor.getItem() as any).containerId = props.containerId;
-      (monitor.getItem() as any).take = () => props.take(item);
+      (monitor.getItem() as any).take = (list: any[]) => props.take(item, list);
     }
   },
+  drop(props) {
+    props.apply();
+  }
 };
 
 const Draggable = DropTarget(DND_TYPE, entryTarget, collectDrop)(
@@ -147,7 +150,9 @@ class DraggableList extends ComponentEx<IProps, IState> {
   }
 
   public componentWillReceiveProps(newProps: IProps) {
-    this.nextState.ordered = newProps.items.slice(0);
+    if (this.props.items !== newProps.items) {
+      this.nextState.ordered = newProps.items.slice(0);
+    }
   }
 
   public render(): JSX.Element {
@@ -172,29 +177,34 @@ class DraggableList extends ComponentEx<IProps, IState> {
       </div>);
   }
 
-  public changeIndex = (oldIndex: number, newIndex: number, take: () => any) => {
+  public changeIndex = (oldIndex: number, newIndex: number, changeContainer: boolean,
+                        take: (list: any[]) => any) => {
     if (oldIndex === undefined) {
       return;
     }
 
-    const item = take();
-    const copy = this.nextState.ordered.slice(0);
+    const copy = this.state.ordered.slice();
+    const item = take(changeContainer ? undefined : copy);
     copy.splice(newIndex, 0, item);
 
     this.nextState.ordered = copy;
     this.applyDebouncer.schedule();
   }
 
-  private take = (item: any) => {
+  private take = (item: any, list: any[]) => {
     const { ordered } = this.nextState;
     let res = item;
     const index = ordered.indexOf(item);
-    const copy = ordered.slice(0);
     if (index !== -1) {
-      res = copy.splice(index, 1)[0];
+      if (list !== undefined) {
+        res = list.splice(index, 1)[0];
+      } else {
+        const copy = ordered.slice();
+        res = copy.splice(index, 1)[0];
+        this.nextState.ordered = copy;
+      }
     }
-    this.nextState.ordered = copy;
-    return item;
+    return res;
   }
 
   private apply = () => {
@@ -203,16 +213,15 @@ class DraggableList extends ComponentEx<IProps, IState> {
 }
 
 const containerTarget: DropTargetSpec<IProps> = {
-
   hover(props: IProps, monitor: DropTargetMonitor, component) {
     const { containerId, index, item, take } = (monitor.getItem() as any);
 
     if (containerId !== props.id) {
-      (component as any).changeIndex(index, 0, take);
+      (component as any).changeIndex(index, 0, true, take);
 
       (monitor.getItem() as any).index = 0;
       (monitor.getItem() as any).containerId = props.id;
-      (monitor.getItem() as any).take = () => (component as any).take(item);
+      (monitor.getItem() as any).take = (list) => (component as any).take(item, list);
     }
   },
 };

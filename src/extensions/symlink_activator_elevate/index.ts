@@ -4,7 +4,7 @@ import { delayed } from '../../util/delayed';
 import * as fs from '../../util/fs';
 import { Normalize } from '../../util/getNormalizeFunc';
 import { log } from '../../util/log';
-import { activeGameId, gameName } from '../../util/selectors';
+import { activeGameId, gameName, installPathForGame } from '../../util/selectors';
 
 import LinkingDeployment from '../mod_management/LinkingDeployment';
 import {
@@ -146,6 +146,10 @@ class DeploymentMethod extends LinkingDeployment {
           t('No need to use the elevated variant, use the regular symlink deployment'),
       };
     }
+
+    // unfortunately we can't test whether symlinks are supported on the filesystem if
+    // creating a link requires elevation
+
     return undefined;
   }
 
@@ -202,7 +206,11 @@ class DeploymentMethod extends LinkingDeployment {
     const srcFile = path.join(userData, 'Cookies');
     const destFile = path.join(userData, '__link_test');
     try {
-      fs.linkSync(srcFile, destFile);
+      try {
+        // ensure the dummy file wasn't left over from a previous test
+        fs.removeSync(destFile);
+      } catch (err) {}
+      fs.symlinkSync(srcFile, destFile);
       fs.removeSync(destFile);
       return true;
     } catch (err) {
@@ -274,7 +282,11 @@ class DeploymentMethod extends LinkingDeployment {
           }
         })
         .tapCatch(() => {
-          ipc.server.stop();
+          try { 
+            ipc.server.stop();
+          } catch (err) {
+            log('warn', 'Failed to close ipc server', err.message);
+          }
         })
         // Error 1223 is the current standard Windows system error code
         //  for ERROR_CANCELLED, which in this case is raised if the user

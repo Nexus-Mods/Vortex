@@ -3,6 +3,7 @@ import { IDialogResult } from '../types/IDialog';
 import { ThunkStore } from '../types/IExtensionContext';
 import { UserCanceled } from './CustomErrors';
 import delayed from './delayed';
+import { Normalize } from './getNormalizeFunc';
 import getVortexPath from './getVortexPath';
 import { log } from './log';
 
@@ -76,6 +77,7 @@ export function fileMD5(filePath: string): Promise<string> {
 
 export function writeFileAtomic(filePath: string, input: string | Buffer,
                                 options?: fs.WriteFileOptions) {
+  const stackErr = new Error();
   let cleanup: () => void;
   let tmpPath: string;
   const hash = checksum(input);
@@ -99,14 +101,22 @@ export function writeFileAtomic(filePath: string, input: string | Buffer,
   })
   .tapCatch(() => {
     if (cleanup !== undefined) {
-      cleanup();
+      try {
+        cleanup();
+      } catch (err) {
+        log('error', 'failed to clean up temporary file', err.message);
+      }
     }
   })
   .then(() => fs.readFileAsync(tmpPath))
   .then(data => (checksum(data) !== hash)
       ? Promise.reject(new Error('Write failed, checksums differ'))
       : Promise.resolve())
-  .then(() => fs.renameAsync(tmpPath, filePath));
+  .then(() => fs.renameAsync(tmpPath, filePath))
+  .catch(err => {
+    err.stack = err.message + '\n' + stackErr.stack;
+    return Promise.reject(err);
+  });
 }
 
 /**
@@ -159,7 +169,11 @@ export function copyFileAtomic(srcPath: string,
       .catch(err => {
         log('info', 'failed to copy', {srcPath, destPath, err: err.stack});
         if (cleanup !== undefined) {
-          cleanup();
+          try {
+            cleanup();
+          } catch (cleanupErr) {
+            log('error', 'failed to clean up temporary file', cleanupErr.message);
+          }
         }
         return Promise.reject(err);
       });
@@ -374,12 +388,12 @@ export function getAllPropertyNames(obj: object) {
  * @param child path of the presumed sub-directory
  * @param parent path of the presumed parent directory
  */
-export function isChildPath(child: string, parent: string): boolean {
-  // TODO: should be using a FS-specific normalize function but then
-  //   this would have to be asynchronous.
-  const normalize = (input) => process.platform === 'win32'
-    ? path.normalize(input.toLowerCase())
-    : path.normalize(input);
+export function isChildPath(child: string, parent: string, normalize?: Normalize): boolean {
+  if (normalize === undefined) {
+    normalize = (input) => process.platform === 'win32'
+      ? path.normalize(input.toLowerCase())
+      : path.normalize(input);
+  }
 
   const childNorm = normalize(child);
   const parentNorm = normalize(parent);
@@ -398,4 +412,11 @@ export function isChildPath(child: string, parent: string): boolean {
  */
 export function sanitizeCSSId(input: string) {
   return input.toLowerCase().replace(/[ .#]/g, '-');
+}
+
+/**
+ * remove the BOM from the input string. doesn't do anything if there is none.
+ */
+export function deBOM(input: string) {
+  return input.replace(/^\uFEFF/, '');
 }

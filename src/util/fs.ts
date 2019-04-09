@@ -13,6 +13,7 @@
 
 import { DataInvalid, ProcessCanceled, UserCanceled } from './CustomErrors';
 import { log } from './log';
+import { truthy } from './util';
 
 import * as PromiseBB from 'bluebird';
 import { dialog as dialogIn, remote } from 'electron';
@@ -59,7 +60,8 @@ function nospcQuery(): PromiseBB<boolean> {
   const options: Electron.MessageBoxOptions = {
     title: 'Disk full',
     message: `Operation can't continue because the disk is full. `
-           + 'Please free up some space and retry.',
+           + 'Please free up some space and click retry. Cancelling the transfer operation '
+           + 'at this point will remove any changes and revert back to the previous state.',
     buttons: ['Cancel', 'Retry'],
     type: 'warning',
     noLink: true,
@@ -74,7 +76,7 @@ function nospcQuery(): PromiseBB<boolean> {
 }
 
 function unlockConfirm(filePath: string): PromiseBB<boolean> {
-  if (dialog === undefined) {
+  if ((dialog === undefined) || !truthy(filePath)) {
     return PromiseBB.resolve(false);
   }
 
@@ -115,8 +117,39 @@ function unlockConfirm(filePath: string): PromiseBB<boolean> {
     : PromiseBB.resolve(choice === 2);
 }
 
+function unknownErrorRetry(filePath: string): PromiseBB<boolean> {
+  if ((dialog === undefined) || !truthy(filePath)) {
+    return PromiseBB.resolve(false);
+  }
+
+  const options: Electron.MessageBoxOptions = {
+    title: 'Unknown error',
+    message:
+      `The operating system has reported an error without details when accessing "${filePath}" `
+      + 'This is usually due the user\'s environment and not a bug in Vortex.\n'
+      + 'Please diagonse your environment and then retry',
+    detail: 'Possible error causes:\n'
+      + `1. ${filePath} is a removable, possibly network drive which has been disconnected.\n`
+      + '2. An External application has interferred with file operations'
+      + '(Anti-virus, Disk Management Utility, Virus)\n',
+    buttons: [
+      'Cancel',
+      'Retry',
+    ],
+    type: 'warning',
+    noLink: true,
+  };
+
+  const choice = dialog.showMessageBox(
+    remote !== undefined ? remote.getCurrentWindow() : null,
+    options);
+  return (choice === 0)
+    ? PromiseBB.reject(new UserCanceled())
+    : PromiseBB.resolve(true);
+}
+
 function busyRetry(filePath: string): PromiseBB<boolean> {
-  if (dialog === undefined) {
+  if ((dialog === undefined) || !truthy(filePath)) {
     return PromiseBB.resolve(false);
   }
 
@@ -171,6 +204,8 @@ function errorRepeat(error: NodeJS.ErrnoException, filePath: string): PromiseBB<
           return PromiseBB.resolve(true);
         }
       });
+  } else if (error.code === 'UNKNOWN') {
+    return unknownErrorRetry(filePath);
   } else {
     return PromiseBB.resolve(false);
   }
@@ -406,7 +441,8 @@ function elevated(func: (ipc, req: NodeRequireFunction) => Promise<void>,
     ipcInst.serve(`__fs_elevated_${id}`, () => {
       runElevated(`__fs_elevated_${id}`, func, parameters)
         .catch(err => {
-          if (err.code === 5) {
+          if ((err.code === 5)
+              || ((process.platform === 'win32') && (err.errno === 1223))) {
             // this code is returned when the user rejected the UAC dialog. Not currently
             // aware of another case
             reject(new UserCanceled());
@@ -447,6 +483,7 @@ function elevated(func: (ipc, req: NodeRequireFunction) => Promise<void>,
 
 export function ensureDirWritableAsync(dirPath: string,
                                        confirm: () => PromiseBB<void>): PromiseBB<void> {
+  const stackErr = new Error();
   return fs.ensureDirAsync(dirPath)
     .then(() => {
       const canary = path.join(dirPath, '__vortex_canary');
@@ -454,7 +491,10 @@ export function ensureDirWritableAsync(dirPath: string,
                     .then(() => fs.removeAsync(canary));
     })
     .catch(err => {
-      if (err.code === 'EPERM') {
+      // weirdly we get EBADF from ensureFile sometimes when the
+      // directory isn't writeable instead of EPERM. More weirdly, this seems to happen
+      // only on startup.
+      if (['EPERM', 'EBADF', 'UNKNOWN'].indexOf(err.code) !== -1) {
         return confirm()
           .then(() => {
             const userId = getUserId();
@@ -467,7 +507,7 @@ export function ensureDirWritableAsync(dirPath: string,
             }, { dirPath, userId });
           });
       } else {
-        return PromiseBB.reject(err);
+        return PromiseBB.reject(restackErr(err, stackErr));
       }
     });
 }

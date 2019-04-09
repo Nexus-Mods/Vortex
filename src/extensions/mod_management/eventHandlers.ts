@@ -3,6 +3,7 @@ import {IModTable, IState} from '../../types/IState';
 import { ProcessCanceled, TemporaryError, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
+import { log } from '../../util/log';
 import {showError} from '../../util/message';
 import { downloadPathForGame } from '../../util/selectors';
 import {getSafe} from '../../util/storeHelper';
@@ -93,6 +94,11 @@ export function onGameModeActivated(
   const configuredActivator =
     supported.find(activator => activator.id === configuredActivatorId);
   const gameId = activeGameId(state);
+  if (gameId !== newGame) {
+    // this should never happen
+    api.showErrorNotification('Event was triggered with incorrect parameter',
+      new Error(`game id mismatch "${newGame}" vs "${gameId}"`));
+  }
   const gameDiscovery = state.settings.gameMode.discovered[gameId];
   const game = getGame(gameId);
 
@@ -133,7 +139,10 @@ export function onGameModeActivated(
           });
           return fallbackPurge(api)
             .then(() => fs.ensureDirWritableAsync(instPath, () => Promise.resolve()))
-            .catch(() => {
+            .catch((err) => {
+              if (err instanceof ProcessCanceled) {
+                log('warn', 'Mods not purged', err.message);
+              } else {
               api.showDialog('error', 'Mod Staging Folder missing!', {
                 bbcode: 'The staging folder could not be created. '
                       + 'You [b][color=red]have[/color][/b] to go to settings->mods and change it '
@@ -142,6 +151,8 @@ export function onGameModeActivated(
               }, [
                 { label: 'Close' },
               ]);
+              }
+              throw new ProcessCanceled('not purged');
             })
             .finally(() => {
               api.dismissNotification(id);
@@ -207,20 +218,20 @@ export function onGameModeActivated(
       activatorProm = activatorProm.then(() => {
         if (supported.length > 0) {
           api.store.dispatch(
-            setActivator(newGame, supported[0].id));
+            setActivator(gameId, supported[0].id));
         }
       });
     }
   }
 
-  const knownMods: { [modId: string]: IMod } = getSafe(state, ['persistent', 'mods', newGame], {});
+  const knownMods: { [modId: string]: IMod } = getSafe(state, ['persistent', 'mods', gameId], {});
   activatorProm
-    .then(() => refreshMods(instPath, Object.keys(knownMods), (mod: IMod) => {
-      api.store.dispatch(addMod(newGame, mod));
+    .then(() => refreshMods(api, instPath, Object.keys(knownMods), (mod: IMod) => {
+      api.store.dispatch(addMod(gameId, mod));
     }, (modNames: string[]) => {
       modNames.forEach((name: string) => {
         if (['downloaded', 'installed'].indexOf(knownMods[name].state) !== -1) {
-          api.store.dispatch(removeMod(newGame, name));
+          api.store.dispatch(removeMod(gameId, name));
         }
       });
     }))
@@ -229,6 +240,9 @@ export function onGameModeActivated(
       return null;
     })
     .catch(UserCanceled, () => undefined)
+    .catch(ProcessCanceled, err => {
+      log('warn', 'Failed to refresh mods', err.message);
+    })
     .catch((err: Error) => {
       showError(store.dispatch, 'Failed to refresh mods', err,
                 { allowReport: (err as any).code !== 'ENOENT' });
@@ -243,7 +257,7 @@ export function onPathsChanged(api: IExtensionApi,
   const gameMode = activeGameId(state);
   if (previous[gameMode] !== current[gameMode]) {
     const knownMods = state.persistent.mods[gameMode];
-    refreshMods(installPath(state), Object.keys(knownMods || {}), (mod: IMod) =>
+    refreshMods(api, installPath(state), Object.keys(knownMods || {}), (mod: IMod) =>
       store.dispatch(addMod(gameMode, mod))
       , (modNames: string[]) => {
         modNames.forEach((name: string) => {
@@ -305,28 +319,31 @@ function undeploy(api: IExtensionApi,
     return Promise.reject(new ProcessCanceled('No deployment method active'));
   }
 
-  const installationPath = installPathForGame(state, gameMode);
+  const stagingPath = installPathForGame(state, gameMode);
 
   const subdir = genSubDirFunc(game);
-  const dataPath = modPaths[mod.type || ''];
+  const deployPath = modPaths[mod.type || ''];
+  if (deployPath === undefined) {
+    return Promise.resolve();
+  }
   let normalize: Normalize;
-  return getNormalizeFunc(dataPath)
+  return getNormalizeFunc(deployPath)
     .then(norm => {
       normalize = norm;
-      return loadActivation(api, mod.type, dataPath, activatorId);
+      return loadActivation(api, mod.type, deployPath, stagingPath, activatorId);
     })
-    .then(lastActivation => activator.prepare(dataPath, false, lastActivation, normalize))
+    .then(lastActivation => activator.prepare(deployPath, false, lastActivation, normalize))
     .then(() => (mod !== undefined)
-      ? activator.deactivate(path.join(installationPath, mod.installationPath), subdir(mod))
+      ? activator.deactivate(path.join(stagingPath, mod.installationPath), subdir(mod))
       : Promise.resolve())
     .tapCatch(() => {
       if (activator.cancel !== undefined) {
-        activator.cancel(gameMode, dataPath, installationPath);
+        activator.cancel(gameMode, deployPath, stagingPath);
       }
     })
-    .then(() => activator.finalize(gameMode, dataPath, installationPath))
+    .then(() => activator.finalize(gameMode, deployPath, stagingPath))
     .then(newActivation =>
-      saveActivation(mod.type, state.app.instanceId, dataPath, newActivation, activator.id));
+      saveActivation(mod.type, state.app.instanceId, deployPath, stagingPath, newActivation, activator.id));
 }
 
 export function onRemoveMod(api: IExtensionApi,
@@ -355,7 +372,6 @@ export function onRemoveMod(api: IExtensionApi,
       ? lastActive
       : lastActive.profileId;
   }
-  const profile: IProfile = getSafe(state, ['persistent', 'profiles', profileId], undefined);
 
   store.dispatch(setModEnabled(profileId, modId, false));
 
@@ -387,8 +403,13 @@ export function onRemoveMod(api: IExtensionApi,
   //   anyway
 
   const undeployMod = () => {
+    if (mod.installationPath === undefined) {
+      // don't try to undeploy a mod that has no installation path (it can't be deployed
+      // anyway)
+      return Promise.resolve();
+    }
     return undeploy(api, activators, gameMode, mod)
-      .catch({ code: 'ENOTFOUND' }, err => {
+      .catch({ code: 'ENOTFOUND' }, () => {
         return api.showDialog('error', 'Mod not found', {
           text: 'The mod you\'re removing has already been deleted on disk.\n'
               + 'This makes it impossible for Vortex to cleanly undeploy the mod '
@@ -414,11 +435,11 @@ export function onRemoveMod(api: IExtensionApi,
               return Promise.resolve();
             }
           });
-      });
-  };
+      })
+    };
 
   undeployMod()
-  .then(() => truthy(mod)
+  .then(() => truthy(mod) && truthy(mod.installationPath)
     ? fs.removeAsync(path.join(installationPath, mod.installationPath))
         .catch(err => err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err))
     : Promise.resolve())

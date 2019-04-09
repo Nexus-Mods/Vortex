@@ -6,7 +6,7 @@ import commandLine, {IParameters} from '../util/commandLine';
 import { ProcessCanceled, UserCanceled } from '../util/CustomErrors';
 import { } from '../util/delayed';
 import * as develT from '../util/devel';
-import { setOutdated, terminate, toError } from '../util/errorHandling';
+import { setOutdated, terminate, toError, setWindow } from '../util/errorHandling';
 import ExtensionManagerT from '../util/ExtensionManager';
 import * as fs from '../util/fs';
 import lazyRequire from '../util/lazyRequire';
@@ -19,7 +19,7 @@ import { allHives, createVortexStore, currentStatePath, extendStore,
          importState, insertPersistor, markImported, querySanitize } from '../util/store';
 import {} from '../util/storeHelper';
 import SubPersistor from '../util/SubPersistor';
-import { spawnSelf } from '../util/util';
+import { spawnSelf, truthy } from '../util/util';
 
 import { addNotification } from '../actions';
 
@@ -88,9 +88,12 @@ class Application {
 
   private startSplash(): Promise<SplashScreenT> {
     const SplashScreen = require('./SplashScreen').default;
-    const splash = new SplashScreen();
+    const splash: SplashScreenT = new SplashScreen();
     return splash.create()
-      .then(() => splash);
+      .then(() => {
+        setWindow(splash.getHandle());
+        return splash;
+      });
   }
 
   private setupAppEvents(args: IParameters) {
@@ -147,8 +150,16 @@ class Application {
         return;
       }
 
-      if (error === undefined) {
+      if (!truthy(error)) {
         log('error', 'empty error unhandled', { wasPromise: promise !== undefined });
+        return;
+      }
+
+      if (['net::ERR_CONNECTION_RESET',
+           'net::ERR_ABORTED',
+           'net::ERR_CONTENT_LENGTH_MISMATCH',
+           'net::ERR_INCOMPLETE_CHUNKED_ENCODING'].indexOf(error.message) !== -1) {
+        log('warn', 'network error unhandled', error.stack);
         return;
       }
 
@@ -198,6 +209,13 @@ class Application {
         .catch(DatabaseLocked, () => {
           dialog.showErrorBox('Startup failed', 'Vortex seems to be running already. '
             + 'If you can\'t see it, please check the task manager.');
+          app.quit();
+        })
+        .catch({ code: 'ENOSPC' }, () => {
+          dialog.showErrorBox('Startup failed', 'Your system drive is full. '
+            + 'You should always ensure your system drive has some space free (ideally '
+            + 'at least 10% of the total capacity, especially on SSDs). '
+            + 'Vortex can\'t start until you have freed up some space.');
           app.quit();
         })
         .catch((err) => {
@@ -562,7 +580,9 @@ class Application {
               }
               terminate({
                 message: 'Failed to restore backup',
-                details: err.code !== 'ENOENT' ? err : 'Specified backup file doesn\'t exist',
+                details: err.code !== 'ENOENT' ? err.message : 'Specified backup file doesn\'t exist',
+                stack: err.stack,
+                path: restoreBackup,
               }, {}, err.code !== 'ENOENT');
             });
         } else {
@@ -621,6 +641,7 @@ class Application {
     const windowMetrics = this.mStore.getState().settings.window;
     const maximized: boolean = windowMetrics.maximized || false;
     this.mMainWindow.show(maximized);
+    setWindow(this.mMainWindow.getHandle());
   }
 
   private testShouldQuit(): Promise<void> {

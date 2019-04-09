@@ -22,7 +22,7 @@ import { setProgress } from '../../actions/session';
 import { needToDeployForGame, installPathForGame } from '../../util/selectors';
 import { IExtensionContext, IExtensionApi, ThunkStore } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
-import { SetupError } from '../../util/CustomErrors';
+import { SetupError, ProcessCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
@@ -59,7 +59,6 @@ const profileFeatures: IProfileFeature[] = [];
 function profilePath(store: Redux.Store<any>, profile: IProfile): string {
   const app = appIn || remote.app;
 
-  log('debug', 'profile path', profile);
   return path.join(app.getPath('userData'), profile.gameId, 'profiles', profile.id);
 }
 
@@ -71,6 +70,10 @@ function sanitizeProfile(store: Redux.Store<any>, profile: IProfile): void {
   const state: IState = store.getState();
   Object.keys(profile.modState || {}).forEach(modId => {
     if (getSafe(state.persistent.mods, [profile.gameId, modId], undefined) === undefined) {
+      log('debug', 'removing info of missing mod from profile', {
+        profile: profile.id,
+        game: profile.gameId,
+        modId });
       store.dispatch(forgetMod(profile.id, modId));
     }
   });
@@ -78,6 +81,7 @@ function sanitizeProfile(store: Redux.Store<any>, profile: IProfile): void {
 
 function refreshProfile(store: Redux.Store<any>, profile: IProfile,
                         direction: 'import' | 'export'): Promise<void> {
+  log('debug', 'refresh profile', profile);
   if (profile === undefined) {
     return Promise.resolve();
   }
@@ -119,6 +123,7 @@ function refreshProfile(store: Redux.Store<any>, profile: IProfile,
  * @param {string} gameId
  */
 function activateGame(store: ThunkStore<IState>, gameId: string) {
+  log('info', 'activating game', { gameId });
   const state: IState = store.getState();
   if (getSafe(state, ['settings', 'gameMode', 'discovered', gameId, 'path'], undefined)
       === undefined) {
@@ -130,6 +135,7 @@ function activateGame(store: ThunkStore<IState>, gameId: string) {
         gameId,
       },
     }));
+    log('info', 'unselecting profile because game no longer discovered', { gameId });
     store.dispatch(setNextProfile(undefined));
     return;
   }
@@ -151,10 +157,12 @@ function activateGame(store: ThunkStore<IState>, gameId: string) {
         if (dialogResult.action === 'Activate') {
           const selectedId = Object.keys(dialogResult.input).find(
             (id: string) => dialogResult.input[id]);
+          log('info', 'user selected profile', { selectedId });
           store.dispatch(setNextProfile(selectedId));
         }
       });
   } else {
+    log('info', 'using last active profile', { profileId });
     store.dispatch(setNextProfile(profileId));
   }
 }
@@ -212,16 +220,19 @@ function genOnProfileChange(api: IExtensionApi, onFinishProfileSwitch: (callback
 
       const profile = state.persistent.profiles[current];
       if ((profile === undefined) && (current !== undefined)) {
-        return Promise.reject('Tried to set invalid profile');;
+        return Promise.reject(new Error('Tried to set invalid profile'));
       }
 
       if (profile !== undefined) {
-        const game = getGame(profile.gameId);
+        const { gameId } = profile;
+        const game = getGame(gameId);
         if (game === undefined) {
           showError(store.dispatch,
             'Game no longer supported, please install the game extension',
             profile.gameId, { allowReport: false });
+          return Promise.reject(new ProcessCanceled('Game no longer supported'));
         }
+
         const discovery = state.settings.gameMode.discovered[profile.gameId];
         // only calling to check if it works, some game extensions might discover
         // a setup-error when trying to resolve the mod path
@@ -246,6 +257,7 @@ function genOnProfileChange(api: IExtensionApi, onFinishProfileSwitch: (callback
       api.events.emit('profile-will-change', current, enqueue);
 
       if (current === undefined) {
+        log('info', 'switched to no profile');
         store.dispatch(setCurrentProfile(undefined, undefined));
         return queue;
       }
@@ -260,11 +272,18 @@ function genOnProfileChange(api: IExtensionApi, onFinishProfileSwitch: (callback
           api.store.dispatch(
             setProgress('profile', 'deploying', undefined, undefined));
           const gameId = profile !== undefined ? profile.gameId : undefined;
+          log('info', 'switched to profile', { gameId, current });
           store.dispatch(setCurrentProfile(gameId, current));
           store.dispatch(setProfileActivated(current));
           return null;
         });
     })
+      .catch(ProcessCanceled, err => {
+        showError(store.dispatch, 'Failed to set profile', err.message,
+          { allowReport: false });
+        store.dispatch(setCurrentProfile(undefined, undefined));
+        store.dispatch(setNextProfile(undefined));
+      })
       .catch(SetupError, err => {
         showError(store.dispatch, 'Failed to set profile', err.message,
           { allowReport: false });
@@ -307,6 +326,7 @@ function init(context: IExtensionContextExt): boolean {
       const instPath = installPathForGame(context.api.store.getState(), gameId);
       fs.ensureDirWritableAsync(instPath, () => Promise.resolve())
         .then(() => {
+          log('info', 'user managing game for the first time', { gameId });
           context.api.store.dispatch(setProfile({
             id: profileId,
             gameId,
@@ -314,6 +334,7 @@ function init(context: IExtensionContextExt): boolean {
             modState: {},
           }));
           context.api.store.dispatch(setNextProfile(profileId));
+          
         });
   });
 
@@ -448,7 +469,7 @@ function init(context: IExtensionContextExt): boolean {
         }
         const discovery = state.settings.gameMode.discovered[profile.gameId];
         if ((discovery === undefined) || (discovery.path === undefined)) {
-          log('debug', 'active game no longer discovered, deactivate');
+          log('info', 'active game no longer discovered, deactivate');
           store.dispatch(setNextProfile(undefined));
         }
       }

@@ -1,5 +1,6 @@
 import { IState } from '../../../types/IState';
 import { getSafe } from '../../../util/storeHelper';
+import { truthy } from '../../../util/util';
 import { getGame } from '../../gamemode_management/util/getGame';
 import { activeGameId } from '../../profile_management/selectors';
 
@@ -33,7 +34,9 @@ export function getSupportedActivators(state: IState): IDeploymentMethod[] {
   if (game === undefined) {
     return [];
   }
-  const modTypes = Object.keys(game.getModPaths(discovery.path));
+  const modPaths = game.getModPaths(discovery.path);
+  const modTypes = Object.keys(modPaths)
+    .filter(typeId => truthy(modPaths[typeId]));
   return activators.filter(
     act => allTypesSupported(act, state, gameId, modTypes) === undefined);
 }
@@ -53,7 +56,9 @@ export function getCurrentActivator(state: IState,
 
   const gameDiscovery =
     getSafe(state, ['settings', 'gameMode', 'discovered', gameId], undefined);
-  const types = Object.keys(getGame(gameId).getModPaths(gameDiscovery.path));
+  const modPaths = getGame(gameId).getModPaths(gameDiscovery.path);
+  const types = Object.keys(modPaths)
+    .filter(typeId => truthy(modPaths[typeId]));
 
   if (allowDefault && (activator === undefined)) {
     const game = getGame(gameId);

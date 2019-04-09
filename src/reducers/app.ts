@@ -11,6 +11,8 @@ export const appReducer: IReducerSpec = {
       (state, payload) => setSafe(state, ['appVersion'], payload),
     [actions.setExtensionEnabled as any]: (state, payload) =>
       setSafe(state, ['extensions', payload.extensionId, 'enabled'], payload.enabled),
+    [actions.setExtensionVersion as any]: (state, payload) =>
+      setSafe(state, ['extensions', payload.extensionId, 'version'], payload.version),
     [actions.removeExtension as any]: (state, payload) =>
       setSafe(state, ['extensions', payload, 'remove'], true),
     [actions.forgetExtension as any]: (state, payload) =>

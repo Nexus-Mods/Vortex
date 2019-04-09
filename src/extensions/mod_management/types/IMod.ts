@@ -1,5 +1,7 @@
 import { IReference, IRule } from 'modmeta-db';
 
+export { IReference, IRule };
+
 export type ModState =
   'downloading' | 'downloaded' | 'installing' | 'installed';
 

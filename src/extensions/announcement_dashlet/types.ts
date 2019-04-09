@@ -1,13 +1,13 @@
 import { HTTPError } from '../../util/CustomErrors';
 
 export interface IAnnouncement {
-  date: string,
-  description: string,
-  link?: string,
-  gameMode?: string,
-  icon?: string,
-  severity?: AnnouncementSeverity,
-  version?: string,
+  date: string;
+  description: string;
+  link?: string;
+  gamemode?: string;
+  icon?: string;
+  severity?: AnnouncementSeverity;
+  version?: string;
 }
 
 export type AnnouncementSeverity = 'information' | 'warning' | 'critical';

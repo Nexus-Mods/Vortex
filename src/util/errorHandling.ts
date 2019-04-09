@@ -31,8 +31,26 @@ function createTitle(type: string, error: IError, hash: string) {
   return `${type}: ${error.message}`;
 }
 
-function createReport(type: string, error: IError, version: string,
-                      reporterProcess: string, sourceProcess: string) {
+interface IErrorContext {
+  [id: string]: string,
+}
+
+const context: IErrorContext = {};
+
+function isWine() {
+  if (process.platform !== 'win32') {
+    return false;
+  }
+  try {
+    const winapi = require('winapi-bindings');
+    return winapi.IsThisWine();
+  } catch (err) {
+    return false;
+  }
+}
+
+function createReport(type: string, error: IError, context: IErrorContext,
+                      version: string, reporterProcess: string, sourceProcess: string) {
   let proc: string = reporterProcess || 'unknown';
   if (sourceProcess !== undefined) {
     proc = `${sourceProcess} -> ${proc}`;
@@ -41,7 +59,7 @@ function createReport(type: string, error: IError, version: string,
     `#### System
 | | |
 |------------ | -------------|
-|Platform | ${process.platform} ${os.release()} |
+|Platform | ${process.platform} ${os.release()} ${isWine() ? '(Wine)' : ''} |
 |Architecture | ${process.arch} |
 |Application Version | ${version} |
 |Process | ${proc} |`,
@@ -49,11 +67,26 @@ function createReport(type: string, error: IError, version: string,
 ${error.message}`,
   ];
 
+  if (error.title) {
+    sections.push(`#### Title
+\`\`\`
+${error.title}
+\`\`\`
+`)
+  }
+
   if (error.details) {
     sections.push(`#### Details
 \`\`\`
 ${error.details}
 \`\`\``);
+  }
+
+  if (Object.keys(context).length > 0) {
+    sections.push(`#### Context
+\`\`\`
+${Object.keys(context).map(key => `${key} = ${context[key]}`)}
+\`\`\``)
   }
 
   if (error.path) {
@@ -73,12 +106,12 @@ ${error.stack}
   return `### Application ${type}\n` + sections.join('\n');
 }
 
-export function createErrorReport(type: string, error: IError, labels: string[],
-                                  state: any, sourceProcess?: string) {
+export function createErrorReport(type: string, error: IError, context: IErrorContext,
+                                  labels: string[], state: any, sourceProcess?: string) {
   const app = appIn || remote.app;
   const reportPath = path.join(app.getPath('userData'), 'crashinfo.json');
   fs.writeFileSync(reportPath, JSON.stringify({
-    type, error, labels: labels || [],
+    type, error, labels: labels || [], context,
     reporterId: getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], undefined),
     reportProcess: process.type, sourceProcess,
   }));
@@ -86,7 +119,7 @@ export function createErrorReport(type: string, error: IError, labels: string[],
 }
 
 function nexusReport(hash: string, type: string, error: IError, labels: string[],
-                     apiKey: string, reporterProcess: string,
+                     context: IErrorContext, apiKey: string, reporterProcess: string,
                      sourceProcess: string): Promise<IFeedbackResponse> {
   const app = appIn || remote.app;
   const Nexus: typeof NexusT = require('nexus-api').default;
@@ -95,7 +128,7 @@ function nexusReport(hash: string, type: string, error: IError, labels: string[]
   return Promise.resolve(Nexus.create(apiKey, 'Vortex', app.getVersion(), undefined))
     .then(nexus => nexus.sendFeedback(
       createTitle(type, error, hash),
-      createReport(type, error, app.getVersion(), reporterProcess, sourceProcess),
+      createReport(type, error, context, app.getVersion(), reporterProcess, sourceProcess),
       undefined,
       apiKey === undefined,
       hash,
@@ -110,6 +143,7 @@ function nexusReport(hash: string, type: string, error: IError, labels: string[]
 
 let fallbackAPIKey: string;
 let outdated: boolean = false;
+let errorIgnored: boolean = false;
 
 export function setApiKey(key: string) {
   fallbackAPIKey = key;
@@ -139,6 +173,10 @@ export function isOutdated(): boolean {
   return outdated;
 }
 
+export function didIgnoreError(): boolean {
+  return errorIgnored;
+}
+
 export function sendReportFile(fileName: string): Promise<IFeedbackResponse> {
   return fs.readFileAsync(fileName)
     .then(reportData => {
@@ -148,20 +186,30 @@ export function sendReportFile(fileName: string): Promise<IFeedbackResponse> {
   });
 }
 
-export function sendReport(type: string, error: IError, labels: string[],
+export function sendReport(type: string, error: IError, context: IErrorContext,
+                           labels: string[],
                            reporterId?: string, reporterProcess?: string,
                            sourceProcess?: string): Promise<IFeedbackResponse> {
   const hash = genHash(error);
   if (process.env.NODE_ENV === 'development') {
     const dialog = dialogIn || remote.dialog;
-    dialog.showErrorBox(error.message, JSON.stringify({
-      type, error, labels, reporterId, reporterProcess, sourceProcess,
+    const fullMessage = error.title !== undefined
+      ? error.message + `\n(${error.title})`
+      : error.message;
+    dialog.showErrorBox(fullMessage, JSON.stringify({
+      type, error, labels, context, reporterId, reporterProcess, sourceProcess,
     }));
     return Promise.resolve(undefined);
   } else {
-    return nexusReport(hash, type, error, labels, reporterId || fallbackAPIKey,
+    return nexusReport(hash, type, error, labels, context, reporterId || fallbackAPIKey,
                        reporterProcess, sourceProcess);
   }
+}
+
+let defaultWindow: Electron.BrowserWindow = null;
+
+export function setWindow(window: Electron.BrowserWindow) {
+  defaultWindow = window;
 }
 
 /**
@@ -176,10 +224,12 @@ export function sendReport(type: string, error: IError, labels: string[],
 export function terminate(error: IError, state: any, allowReport?: boolean, source?: string) {
   const app = appIn || remote.app;
   const dialog = dialogIn || remote.dialog;
-  let win = remote !== undefined ? remote.getCurrentWindow() : null;
+  let win = remote !== undefined ? remote.getCurrentWindow() : defaultWindow;
   if (truthy(win) && !win.isVisible()) {
     win = null;
   }
+
+  const contextNow = { ...context };
 
   log('error', 'unrecoverable error', { error, process: process.type });
 
@@ -192,7 +242,7 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
       detail = error.details + '\n' + detail;
     }
     const buttons = ['Ignore', 'Quit'];
-    if ((allowReport !== false) && !outdated) {
+    if ((allowReport !== false) && !outdated && !errorIgnored) {
       buttons.push('Report and Quit');
     }
     let action = dialog.showMessageBox(win, {
@@ -207,7 +257,7 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
 
     if (action === 2) {
       // Report
-      createErrorReport('Crash', error, ['bug', 'crash'], state, source);
+      createErrorReport('Crash', error, contextNow, ['bug', 'crash'], state, source);
     } else if (action === 0) {
       // Ignore
       action = dialog.showMessageBox(win, {
@@ -222,6 +272,7 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
         noLink: true,
       });
       if (action === 1) {
+        errorIgnored = true;
         return;
       }
     }
@@ -257,7 +308,7 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
  * render error message for internal processing (issue tracker and such).
  * It's important this doesn't translate the error message or lose information
  */
-export function toError(input: any, options?: IErrorOptions): IError {
+export function toError(input: any, title?: string, options?: IErrorOptions): IError {
   let ten = i18next.getFixedT('en');
   try {
     ten('dummy');
@@ -271,7 +322,7 @@ export function toError(input: any, options?: IErrorOptions): IError {
   const t = (text: string) => ten(text, { replace: (options || {}).replace });
 
   if (input instanceof Error) {
-    return { message: t(input.message), stack: input.stack };
+    return { message: t(input.message), title, stack: input.stack };
   }
 
   switch (typeof input) {
@@ -315,13 +366,24 @@ export function toError(input: any, options?: IErrorOptions): IError {
           .map(key => key + ':\t' + input[key])
           .join('\n');
 
-      return {message, stack, details};
+      return {message, title, stack, details};
     }
     case 'string': {
-      return { message: 'String exception: ' + t(input) };
+      return { message: 'String exception: ' + t(input), title };
     }
     default: {
-      return { message: 'Unknown exception: ' + inspect(input) };
+      return { message: 'Unknown exception: ' + inspect(input), title };
     }
   }
+}
+
+export function withContext(id: string, value: string, fun: () => Promise<any>) {
+  context[id] = value;
+  return fun().finally(() => {
+    delete context[id];
+  });
+}
+
+export function getErrorContext(): IErrorContext {
+  return { ...context };
 }

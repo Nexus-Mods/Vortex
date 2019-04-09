@@ -7,8 +7,9 @@ import { Button } from '../../../controls/TooltipControls';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
 import { ValidationState } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { InsufficientDiskSpace, TemporaryError,
+import { InsufficientDiskSpace, NotFound, TemporaryError,
          UnsupportedOperatingSystem, UserCanceled } from '../../../util/CustomErrors';
+import { withContext } from '../../../util/errorHandling';
 import * as fs from '../../../util/fs';
 import getVortexPath from '../../../util/getVortexPath';
 import { log } from '../../../util/log';
@@ -20,8 +21,11 @@ import { isChildPath } from '../../../util/util';
 import { currentGame, currentGameDiscovery } from '../../gamemode_management/selectors';
 import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../../gamemode_management/types/IGameStored';
+
 import { setDeploymentNecessary } from '../actions/deployment';
 import { setActivator, setInstallPath } from '../actions/settings';
+import { setTransferMods } from '../actions/transactions';
+
 import { IDeploymentMethod } from '../types/IDeploymentMethod';
 import { getSupportedActivators } from '../util/deploymentMethods';
 import { NoDeployment } from '../util/exceptions';
@@ -58,19 +62,22 @@ interface IConnectedProps {
 interface IActionProps {
   onSetInstallPath: (gameMode: string, path: string) => void;
   onSetActivator: (gameMode: string, id: string) => void;
+  onSetTransfer: (gameMode: string, dest: string) => void;
   onShowDialog: (
     type: DialogType,
     title: string,
     content: IDialogContent,
     actions: DialogActions,
   ) => Promise<IDialogResult>;
-  onShowError: (message: string, details: string | Error, allowReport: boolean) => void;
+  onShowError: (message: string, details: string | Error | any,
+                allowReport?: boolean, isBBCode?: boolean) => void;
 }
 
 interface IComponentState {
   installPath: string;
   busy: string;
   progress: number;
+  progressFile: string;
   supportedActivators: IDeploymentMethod[];
   currentActivator: string;
   changingActivator: boolean;
@@ -82,11 +89,13 @@ type IProps = IBaseProps & IActionProps & IConnectedProps;
 const nop = () => undefined;
 
 class Settings extends ComponentEx<IProps, IComponentState> {
+  private mLastFileUpdate: number = 0;
   constructor(props: IProps) {
     super(props);
     this.initState({
       busy: undefined,
       progress: 0,
+      progressFile: undefined,
       supportedActivators: [],
       currentActivator: props.currentActivator,
       installPath: props.installPath,
@@ -116,7 +125,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
   public render(): JSX.Element {
     const { t, discovery, game } = this.props;
-    const { currentActivator, progress, supportedActivators } = this.state;
+    const { currentActivator, progress, progressFile, supportedActivators } = this.state;
 
     if (game === undefined) {
       return (
@@ -143,8 +152,11 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             <Modal show={this.state.busy !== undefined} onHide={nop}>
               <Modal.Body>
                 <Jumbotron>
-                  <p>{this.state.busy}</p>
-                  <ProgressBar style={{ height: '1.5em' }} now={progress} />
+                  <div className='container'>
+                    <h2>{this.state.busy}</h2>
+                    {(progressFile !== undefined) ? (<p>{progressFile}</p>) : null}
+                    <ProgressBar style={{ height: '1.5em' }} now={progress} />
+                  </div>
                 </Jumbotron>
               </Modal.Body>
             </Modal>
@@ -185,19 +197,72 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private transferPath() {
-    const { gameMode } = this.props;
+    const { gameMode, onSetTransfer, onShowDialog } = this.props;
     const oldPath = getInstallPath(this.props.installPath, gameMode);
     const newPath = getInstallPath(this.state.installPath, gameMode);
 
-    return transferPath(oldPath, newPath, (from: string, to: string, progress: number) => {
-      if (progress > this.state.progress) {
-        this.nextState.progress = progress;
-      }
-    });
+    return withContext('Transferring Staging', `from ${oldPath} to ${newPath}`,
+      () => fs.statAsync(oldPath)
+      .catch(err => {
+        // The initial mods staging folder is missing! - this may be a valid case if:
+        //  1. HDD or removable media is faulty or has become unseated and is
+        //  no longer detectable by the OS.
+        //  2. Source folder was located on a network drive which is no longer available.
+        //  3. User has changed drive letter for whatever reason.
+        //
+        //  Currently we have confirmed that the error code will be set to "UNKNOWN"
+        //  for all these cases, but we may have to add other error codes if different
+        //  error cases pop up.
+        log('warn', 'Transfer failed - missing source directory', err);
+        return (['ENOENT', 'UNKNOWN'].indexOf(err.code) !== -1)
+          ? Promise.resolve(undefined)
+          : Promise.reject(err);
+      })
+      .then(stats => {
+        const queryReset = (stats !== undefined)
+          ? Promise.resolve()
+          : onShowDialog('question', 'Missing staging folder', {
+            bbcode: 'Vortex is unable to find your current mods staging folder. '
+              + 'This can happen when: <br />'
+              + '1. You or an external application removed this folder.<br />'
+              + '2. Your HDD/removable drive became faulty or unseated.<br />'
+              + '3. The staging folder was located on a network drive which has been '
+              + 'disconnected for some reason.<br /><br />'
+              + 'Please diagnose your system and ensure that the source folder is detectable '
+              + 'by your operating system.<br /><br />'
+              + 'Alternatively, if you want to force Vortex to "re-initialize" your staging '
+              + 'folder at the destination you have chosen, Vortex can do this for you but '
+              + 'note that the folder will be empty as nothing will be transferred inside it!',
+          },
+            [
+              { label: 'Cancel' },
+              { label: 'Reinitialize' },
+            ])
+            .then(result => (result.action === 'Cancel')
+              ? Promise.reject(new UserCanceled())
+              : Promise.resolve());
+
+        return queryReset
+          .then(() => {
+            onSetTransfer(gameMode, newPath);
+            return transferPath(oldPath, newPath, (from: string, to: string, progress: number) => {
+              log('debug', 'transfer staging', { from, to });
+              if (progress > this.state.progress) {
+                this.nextState.progress = progress;
+              }
+              if ((this.state.progressFile !== from)
+                && ((Date.now() - this.mLastFileUpdate) > 1000)) {
+                this.nextState.progressFile = path.basename(from);
+              }
+            });
+          });
+      }));
   }
 
   private applyPaths = () => {
-    const { t, discovery, gameMode, onSetInstallPath, onShowDialog, onShowError } = this.props;
+    const { t, discovery, gameMode, onSetInstallPath,
+            onShowDialog, onShowError, onSetTransfer } = this.props;
+
     const newInstallPath: string = getInstallPath(this.state.installPath, gameMode);
     const oldInstallPath: string = getInstallPath(this.props.installPath, gameMode);
     log('info', 'changing staging directory', { from: oldInstallPath, to: newInstallPath });
@@ -257,7 +322,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     return testPathTransfer(oldInstallPath, newInstallPath)
       .then(() => {
         this.nextState.busy = t('Purging previous deployment');
-        doPurge();
+        return doPurge();
       })
       .then(() => fs.ensureDirAsync(newInstallPath))
       .then(() => {
@@ -274,7 +339,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         return queue.then(() => new Promise((resolve, reject) => {
          if (fileCount > 0) {
             this.props.onShowDialog('info', 'Invalid Destination', {
-              message: 'The destination folder has to be empty',
+              text: 'The destination folder has to be empty',
             }, [{ label: 'Ok', action: () => reject(null) }]);
           } else {
             resolve();
@@ -290,6 +355,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         }
       })
       .then(() => {
+        onSetTransfer(gameMode, undefined);
         onSetInstallPath(gameMode, this.state.installPath);
       })
       .catch(TemporaryError, err => {
@@ -301,6 +367,10 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         onShowError('Unsupported operating system',
         'This functionality is currently unavailable for your operating system!',
         false))
+      .catch(NotFound, () =>
+        onShowError('Invalid destination',
+        'The destination partition you selected is invalid - please choose a different '
+      + 'destination', false))
       .catch((err) => {
         if (err !== null) {
           if (err.code === 'EPERM') {
@@ -311,13 +381,55 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           } else if (err.code === 'EINVAL') {
             onShowError(
               'Invalid path', err.message, false);
+          } else if (err.code === 'EIO') {
+            // Input/Output file operations have been interrupted.
+            //  this is not a bug in Vortex but rather a hardware/networking
+            //  issue (depending on the user's setup).
+            onShowError('File operations interrupted',
+              'Input/Output file operations have been interrupted. This is not a bug in Vortex, '
+            + 'but rather a problem with your environment!<br /><br />'
+            + 'Possible reasons behind this issue:<br />'
+            + '1. Your HDD/Removable drive has become unseated during transfer.<br />'
+            + '2. File operations were running on a network drive and said drive has become '
+            + 'disconnected for some reason (Network hiccup?)<br />'
+            + '3. An overzealous third party tool (possibly Anti-Virus or virus) '
+            + 'which is blocking Vortex from completing its operations.<br />'
+            + '4. A faulty HDD/Removable drive.<br /><br />'
+            + 'Please test your environment and try again once you\'ve confirmed it\'s fixed.',
+            false, true);
           } else {
             onShowError('Failed to move directories', err, true);
           }
         }
       })
       .finally(() => {
-        this.nextState.busy = undefined;
+        const state = this.context.api.store.getState();
+        // Any transfers would've completed at this point.
+        //  Check if we still have the transfer state populated,
+        //  if it is - that means that the user has cancelled the transfer,
+        //  we need to cleanup.
+        const pendingTransfer: string[] = ['persistent', 'transactions', 'transfer', gameMode];
+        if (getSafe(state, pendingTransfer, undefined) !== undefined) {
+          return fs.removeAsync(newInstallPath)
+            .then(() => {
+              onSetTransfer(gameMode, undefined);
+              this.nextState.busy = undefined;
+            })
+            .catch(err => {
+              this.nextState.busy = undefined;
+              if (err.code === 'ENOENT') {
+                // Folder is already gone, that's fine.
+                onSetTransfer(gameMode, undefined);
+              } else if (err.code === 'EPERM') {
+                onShowError('Destination folder is not writable', 'Vortex is unable to clean up '
+                          + 'the destination folder due to a permissions issue.', false);
+              } else {
+                onShowError('Transfer clean-up failed', err, true);
+              }
+            });
+        } else {
+          this.nextState.busy = undefined;
+        }
       });
   }
 
@@ -357,7 +469,15 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                   err, false);
     })
     .catch(err => {
-      onShowError('Failed to purge previous deployment', err, true);
+      if ((err.code === undefined) && (err.errno !== undefined)) {
+        // unresolved windows error code
+        onShowError('Failed to purge previous deployment', {
+          error: err,
+          ErrorCode: err.errno
+        }, true);
+      } else {
+        onShowError('Failed to purge previous deployment', err, err.code !== 'ENOTFOUND');
+      }
     });
   }
 
@@ -478,7 +598,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private suggestPath = () => {
-    const { discovery } = this.props;
+    const { discovery, onShowError } = this.props;
     Promise.join(fs.statAsync(discovery.path), fs.statAsync(remote.app.getPath('userData')))
       .then(stats => {
         let suggestion: string;
@@ -489,6 +609,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           suggestion = path.join(volume, 'Vortex Mods', '{game}');
         }
         this.changePath(suggestion);
+      })
+      .catch(err => {
+        onShowError('Failed to suggest path', err);
       });
   }
 
@@ -611,13 +734,16 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
         dispatch(setInstallPath(gameMode, newPath));
       }
     },
+    onSetTransfer: (gameMode: string, dest: string): void => {
+      dispatch(setTransferMods(gameMode, dest));
+    },
     onSetActivator: (gameMode: string, id: string): void => {
       dispatch(setActivator(gameMode, id));
     },
     onShowDialog: (type, title, content, actions) =>
       dispatch(showDialog(type, title, content, actions)),
-    onShowError: (message: string, details: string | Error, allowReport): void => {
-      showError(dispatch, message, details, { allowReport });
+    onShowError: (message: string, details: string | Error, allowReport?: boolean, isBBCode?: boolean): void => {
+      showError(dispatch, message, details, { allowReport, isBBCode });
     },
   };
 }

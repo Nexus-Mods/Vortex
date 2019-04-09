@@ -1,4 +1,4 @@
-import { forgetExtension, setExtensionEnabled } from '../actions/app';
+import { forgetExtension, setExtensionEnabled, setExtensionVersion } from '../actions/app';
 import { addNotification, dismissNotification, closeDialog } from '../actions/notifications';
 import { setExtensionLoadFailures } from '../actions/session';
 
@@ -42,6 +42,7 @@ import { app as appIn, dialog as dialogIn, ipcMain, ipcRenderer, remote } from '
 import { EventEmitter } from 'events';
 import * as fs from 'fs';
 import I18next from 'i18next';
+import * as _ from 'lodash';
 import { IHashResult, ILookupResult, IModInfo, IReference } from 'modmeta-db';
 import * as modmetaT from 'modmeta-db';
 const modmeta = lazyRequire<typeof modmetaT>(() => require('modmeta-db'));
@@ -68,6 +69,7 @@ if (remote !== undefined) {
 interface IRegisteredExtension {
   name: string;
   path: string;
+  dynamic: boolean;
   initFunc: ExtensionInit;
 }
 
@@ -256,6 +258,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
       registerMerge: undefined,
       registerInterpreter: undefined,
       registerStartHook: undefined,
+      registerMigration: undefined,
       requireVersion: undefined,
       requireExtension: undefined,
       api: undefined,
@@ -486,6 +489,8 @@ class ExtensionManager {
       });
 
       store.dispatch(setExtensionLoadFailures(this.mLoadFailures));
+    } else {
+      this.migrateExtensions();
     }
   }
 
@@ -578,7 +583,18 @@ class ExtensionManager {
    */
   public apply(funcName: string, func: (...args: any[]) => void) {
     this.mContextProxyHandler.getCalls(funcName).forEach(call => {
-      func(...call.arguments);
+      try {
+        func(...call.arguments);
+      } catch (err) {
+        this.mApi.showErrorNotification(
+          'Extension failed to initialize. If this isn\'t an official extension, ' +
+          'please report the error to the respective author.',
+          {
+            extension: call.extension,
+            err: err.message,
+            stack: err.stack,
+          });
+      }
     });
   }
 
@@ -774,6 +790,47 @@ class ExtensionManager {
     }
   }
 
+  private migrateExtensions() {
+    type MigrationFunc = (oldVersion: string) => Promise<void>;
+
+    const migrations: { [ext: string]: MigrationFunc[] } = {};
+
+    this.mContextProxyHandler.getCalls('registerMigration').forEach(call => {
+      setdefault(migrations, call.extension, []).push(call.arguments[0]);
+    });
+
+    const state: IState = this.mApi.store.getState();
+    this.mExtensions
+      .filter(ext => ext.dynamic)
+      .forEach(ext => {
+        try {
+          const oldVersion = getSafe(state.app, ['extensions', ext.name, 'version'], '0.0.0');
+          const info = JSON.parse(fs.readFileSync(path.join(ext.path, 'info.json'),
+            { encoding: 'utf8' }));
+          if (oldVersion !== info.version) {
+            if (migrations[ext.name] === undefined) {
+              this.mApi.store.dispatch(setExtensionVersion(ext.name, info.version));
+            } else {
+              Promise.mapSeries(migrations[ext.name], mig => mig(oldVersion))
+                .then(() => {
+                  this.mApi.store.dispatch(setExtensionVersion(ext.name, info.version));
+                })
+                .catch(err => {
+                  this.mApi.showErrorNotification('Extension failed to migrate', err, {
+                    allowReport: info.author === 'Black Tree Gaming Ltd.',
+                  })
+                });
+            }
+          }
+        } catch (err) {
+          this.mApi.showErrorNotification('Extension invalid', err, {
+            allowReport: false,
+            message: ext.name,
+          });
+        }
+      });
+  }
+
   private getPath(name: string) {
     return app.getPath(name);
   }
@@ -781,9 +838,12 @@ class ExtensionManager {
   private selectFile(options: IOpenOptions) {
     return new Promise<string>((resolve, reject) => {
       const fullOptions: Electron.OpenDialogOptions = {
-        ...options,
+        ..._.omit(options, ['create']),
         properties: ['openFile'],
       };
+      if (options.create === true) {
+        fullOptions.properties.push('promptToCreate');
+      }
       const win = remote !== undefined ? remote.getCurrentWindow() : null;
       dialog.showOpenDialog(win, fullOptions, (fileNames: string[]) => {
         if ((fileNames !== undefined) && (fileNames.length > 0)) {
@@ -799,7 +859,7 @@ class ExtensionManager {
     return new Promise<string>((resolve, reject) => {
       // TODO: make the filter list dynamic based on the list of registered interpreters?
       const fullOptions: Electron.OpenDialogOptions = {
-        ...options,
+        ..._.omit(options, ['create']),
         properties: ['openFile'],
         filters: [
           { name: 'All Executables', extensions: ['exe', 'cmd', 'bat', 'jar', 'py'] },
@@ -822,7 +882,7 @@ class ExtensionManager {
   private selectDir(options: IOpenOptions) {
     return new Promise<string>((resolve, reject) => {
       const fullOptions: Electron.OpenDialogOptions = {
-        ...options,
+        ..._.omit(options, ['create']),
         properties: ['openDirectory'],
       };
       const win = remote !== undefined ? remote.getCurrentWindow() : null;
@@ -1193,6 +1253,7 @@ class ExtensionManager {
         name: path.basename(extensionPath),
         initFunc: dynreq(indexPath).default,
         path: extensionPath,
+        dynamic: true,
       };
     } else {
       return undefined;
@@ -1203,15 +1264,22 @@ class ExtensionManager {
                                 loadedExtensions: Set<string>): IRegisteredExtension[] {
     if (!fs.existsSync(extensionsPath)) {
       log('info', 'failed to load dynamic extensions, path doesn\'t exist', extensionsPath);
-      fs.mkdirSync(extensionsPath);
+      try {
+        fs.mkdirSync(extensionsPath);
+      } catch (err) {
+        log('warn', 'extension path missing and can\'t be created',
+            { path: extensionsPath, error: err.message});
+      }
       return [];
     }
 
     const res = fs.readdirSync(extensionsPath)
       .filter(name => !loadedExtensions.has(name))
-      .filter(name => getSafe(this.mExtensionState, [name, 'enabled'], true))
       .filter(name => fs.statSync(path.join(extensionsPath, name)).isDirectory())
       .map(name => {
+        if (!getSafe(this.mExtensionState, [name, 'enabled'], true)) {
+          log('debug', 'extension disabled', { name });
+        }
         try {
           // first, mark this extension as loaded. If this is a user extension and there is an
           // extension with the same name in the bundle we could otherwise end up loading the
@@ -1281,6 +1349,7 @@ class ExtensionManager {
           name,
           path: path.join(extensionPaths[0], name),
           initFunc: require(`../extensions/${name}/index`).default,
+          dynamic: false,
         }))
       .concat(...extensionPaths.map(ext => this.loadDynamicExtensions(ext, loadedExtensions)));
   }

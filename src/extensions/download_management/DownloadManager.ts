@@ -1,4 +1,4 @@
-import { HTTPError, ProcessCanceled } from '../../util/CustomErrors';
+import { HTTPError, ProcessCanceled, DataInvalid, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 import { countIf, truthy } from '../../util/util';
@@ -6,6 +6,7 @@ import { IChunk } from './types/IChunk';
 import { IDownloadJob } from './types/IDownloadJob';
 import { IDownloadResult } from './types/IDownloadResult';
 import { ProgressCallback } from './types/ProgressCallback';
+import { IProtocolHandlers } from './types/ProtocolHandlers';
 
 import FileAssembler from './FileAssembler';
 import SpeedCalculator from './SpeedCalculator';
@@ -18,7 +19,6 @@ import * as http from 'http';
 import * as https from 'https';
 import * as path from 'path';
 import * as url from 'url';
-import { IProtocolHandlers } from './types/ProtocolHandlers';
 
 // assume urls are valid for at least 5 minutes
 const URL_RESOLVE_EXPIRE_MS = 1000 * 60 * 5;
@@ -260,6 +260,7 @@ class DownloadWorker {
         }
         this.abort(false);
       })
+      .catch(UserCanceled, () => null)
       .catch(ProcessCanceled, () => null)
       .catch(err => this.handleError(err));
   }
@@ -271,7 +272,7 @@ class DownloadWorker {
     // it. If it contains any redirect, the browser window will follow it and initiate a
     // download.
     if (response.statusCode >= 300) {
-      if (([301, 302].indexOf(response.statusCode) !== -1)
+      if (([301, 302, 307, 308].indexOf(response.statusCode) !== -1)
           && (this.mRedirectsFollowed < MAX_REDIRECT_FOLLOW)) {
         const newUrl = url.resolve(jobUrl, response.headers['location'] as string);
         log('info', 'redirected', { newUrl, loc: response.headers['location'] });
@@ -396,6 +397,7 @@ class DownloadWorker {
       if (!this.mWriting) {
         this.mWriting = true;
         this.writeBuffer()
+          .catch(UserCanceled, () => null)
           .catch(ProcessCanceled, () => null)
           .catch(err => {
             this.handleError(err);
@@ -485,7 +487,12 @@ class DownloadManager {
       return Promise.reject(new Error('No download urls'));
     }
     log('info', 'queueing download', id);
-    const nameTemplate: string = fileName || decodeURI(path.basename(url.parse(urls[0]).pathname));
+    let nameTemplate: string;
+    try {
+      nameTemplate = fileName || decodeURI(path.basename(url.parse(urls[0]).pathname));
+    } catch (err) {
+      return Promise.reject(new DataInvalid(`failed to parse url "${urls[0]}"`));
+    }
     const destPath = destinationPath || this.mDownloadPath;
     let download: IRunningDownload;
     return fs.ensureDirAsync(destPath)

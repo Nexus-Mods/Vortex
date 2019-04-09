@@ -36,7 +36,7 @@ import ReduxProp from './ReduxProp';
 import relativeTime from './relativeTime';
 import steam, { GameNotFound, ISteamEntry } from './Steam';
 import { bytesToString, copyFileAtomic, fileMD5, isChildPath, objDiff,
-         removePersistent, sanitizeCSSId, setdefault } from './util';
+         pad, removePersistent, sanitizeCSSId, setdefault } from './util';
 import walk from './walk';
 
 import { runElevated, runThreaded } from 'vortex-run';
@@ -73,6 +73,7 @@ export {
   objDiff,
   onceCB,
   opn,
+  pad,
   ProcessCanceled,
   ReduxProp,
   relativeTime,

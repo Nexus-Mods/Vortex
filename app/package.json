@@ -11,11 +11,12 @@
     "url": "https://github.com/Nexus-Mods/Vortex"
   },
   "vortex": {
-    "electron": "2.0.17"
+    "electron": "2.0.18"
   },
   "dependencies": {
     "bbcode-to-react": "TanninOne/bbcode-to-react",
     "bluebird": "^3.5.3",
+    "big.js": "^5.2.2",
     "bootstrap-sass": "^3.4.1",
     "classnames": "^2.2.6",
     "commander": "^2.19.0",
@@ -79,6 +80,7 @@
     "redux-act": "^1.7.4",
     "redux-thunk": "^2.3.0",
     "redux-watcher": "^1.0.1",
+    "relaxed-json": "^1.0.3",
     "request": "^2.88.0",
     "reselect": "^4.0.0",
     "resolve": "^1.10.0",

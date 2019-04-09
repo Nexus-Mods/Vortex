@@ -338,24 +338,22 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
       this.context.api.events.emit('remove-download', id);
     };
 
-    if (downloadIds.length === 1) {
-      removeId(downloadIds[0]);
-    } else {
-      const { t, onShowDialog } = this.props;
+    const { t, onShowDialog } = this.props;
 
-      const downloadNames = downloadIds.map((downloadId: string) => (
-        this.getDownload(downloadId).localPath
-      ));
+    const downloadNames = downloadIds
+      .filter(downloadId => this.getDownload(downloadId) !== undefined)
+      .map((downloadId: string) => (
+      this.getDownload(downloadId).localPath
+    ));
 
-      onShowDialog('question', 'Confirm Removal', {
-        message: t('Do you really want to delete this archive?',
-          { count: downloadIds.length, replace: { count: downloadIds.length } })
-        + '\n' + downloadNames.join('\n'),
-      }, [
-          { label: 'Cancel' },
-          { label: 'Remove', action: () => downloadIds.forEach(removeId) },
-      ]);
-    }
+    onShowDialog('question', 'Confirm Removal', {
+      text: t('Do you really want to delete this archive?',
+        { count: downloadIds.length, replace: { count: downloadIds.length } }),
+      message: downloadNames.join('\n'),
+    }, [
+        { label: 'Cancel' },
+        { label: 'Remove', action: () => downloadIds.forEach(removeId) },
+    ]);
   }
 
   private removable = (downloadIds: string[]) => {
@@ -386,6 +384,11 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
   private inspect = (downloadId: string) => {
     const { t, onShowDialog } = this.props;
     const download = this.getDownload(downloadId);
+    if (download === undefined) {
+      // the download has been removed in the meantime?
+      return;
+    }
+
     if (download.state === 'failed') {
       const actions = [
             { label: 'Delete',

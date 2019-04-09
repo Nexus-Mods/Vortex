@@ -1,6 +1,6 @@
 import {addNotification} from '../../actions/notifications';
 import {IExtensionApi} from '../../types/IExtensionContext';
-import { UserCanceled } from '../../util/api';
+import { UserCanceled, getGame } from '../../util/api';
 import * as fs from '../../util/fs';
 import {Normalize} from '../../util/getNormalizeFunc';
 import {log} from '../../util/log';
@@ -12,13 +12,13 @@ import {
   IFileChange,
   IUnavailableReason,
 } from './types/IDeploymentMethod';
-import {IMod} from './types/IMod';
 
 import * as Promise from 'bluebird';
 import I18next from 'i18next';
 import * as _ from 'lodash';
 import * as path from 'path';
 import turbowalk from 'turbowalk';
+import { IGame } from '../../types/api';
 
 export interface IDeployment {
   [relPath: string]: IDeployedFile;
@@ -102,7 +102,8 @@ abstract class LinkingActivator implements IDeploymentMethod {
           onComplete: queueResolve,
         };
         lastDeployment.forEach(file => {
-          const key = this.mNormalize(file.relPath);
+          const outputPath = [file.target || null, file.relPath].filter(i => i !== null).join(path.sep);
+          const key = this.mNormalize(outputPath);
           this.mContext.previousDeployment[key] = file;
           if (!clean) {
             this.mContext.newDeployment[key] = file;
@@ -146,6 +147,8 @@ abstract class LinkingActivator implements IDeploymentMethod {
         }
       }
     };
+
+    const initialDeployment = {...this.mContext.previousDeployment};
 
     return Promise.map(removed, key =>
         this.removeDeployedFile(installationPath, dataPath, key, true)
@@ -216,6 +219,14 @@ abstract class LinkingActivator implements IDeploymentMethod {
             }));
           }
 
+          if ((removed.length > 0) && getGame(gameId).requiresCleanup) {
+            this.postLinkPurge(dataPath, false)
+              .catch(err => {
+                this.mApi.showErrorNotification('Failed to clean up',
+                  err, { message: dataPath });
+              });
+          }
+
           const context = this.mContext;
           this.mContext = undefined;
           context.onComplete();
@@ -283,7 +294,9 @@ abstract class LinkingActivator implements IDeploymentMethod {
 
   public purge(installPath: string, dataPath: string): Promise<void> {
     if (!truthy(dataPath)) {
-      return Promise.reject(new Error('invalid data path'));
+      // previously we reported an issue here, but we want the ability to have mod types
+      // that don't actually deploy
+      return Promise.resolve();
     }
     // purge
     return this.purgeLinks(installPath, dataPath)
@@ -524,7 +537,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
             return Promise.resolve();
           }
         }));
-    }, { recurse: false, skipHidden: false })
+    }, { recurse: false, skipHidden: false, skipLinks: false })
       .catch({ code: 'ENOTFOUND' }, err => {
         // was only able to reproduce this by removing directory manually while purge was happening
         // still, if the directory doesn't exist, there is nothing to clean up, so - job done?
@@ -532,20 +545,20 @@ abstract class LinkingActivator implements IDeploymentMethod {
       })
       .then(() => queue)
       .then(() => (empty && doRemove)
-        ? fs.statAsync(path.join(baseDir, LinkingActivator.NEW_TAG_NAME))
-          .then(() => fs.unlinkAsync(path.join(baseDir, LinkingActivator.NEW_TAG_NAME)))
-          .catch(() => fs.unlinkAsync(path.join(baseDir, LinkingActivator.OLD_TAG_NAME)))
-          .catch(err =>
-            err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err))
-          .then(() => fs.rmdirAsync(baseDir)
-            .catch(err => {
-              log('error', 'failed to remove directory, it was supposed to be empty', {
-                error: err.message,
-                path: baseDir,
-              });
-            }))
-          .then(() => true)
-        : Promise.resolve(false));
+          ? fs.statAsync(path.join(baseDir, LinkingActivator.NEW_TAG_NAME))
+            .then(() => fs.unlinkAsync(path.join(baseDir, LinkingActivator.NEW_TAG_NAME)))
+            .catch(() => fs.unlinkAsync(path.join(baseDir, LinkingActivator.OLD_TAG_NAME)))
+            .catch(err =>
+              err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err))
+            .then(() => fs.rmdirAsync(baseDir)
+              .catch(err => {
+                log('error', 'failed to remove directory, it was supposed to be empty', {
+                  error: err.message,
+                  path: baseDir,
+                });
+              }))
+            .then(() => true)
+          : Promise.resolve(false));
   }
 
   private restoreBackup(backupPath: string) {

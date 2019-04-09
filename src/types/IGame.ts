@@ -129,4 +129,15 @@ export interface IGame extends ITool {
    * set to true if support for this game has been fully tested
    */
   final?: boolean;
+
+  /**
+   * contains the version of the game extension
+   */
+  version?: string;
+
+  /**
+   * should be set to true only if the game in question needs its mod folders
+   *  cleaned up on each deploy event.
+   */
+  requiresCleanup?: boolean;
 }

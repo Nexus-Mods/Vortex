@@ -12,7 +12,10 @@ const gameExHandler = {
     if (key === 'getModPaths') {
       const applicableExtensions = getModTypeExtensions().filter(ex => ex.isSupported(target.id));
       const extTypes = applicableExtensions.reduce((prev, val) => {
-        prev[val.typeId] = val.getPath(target);
+        const typePath = val.getPath(target);
+        if (typePath !== undefined) {
+          prev[val.typeId] = typePath;
+        }
         return prev;
       }, {});
 

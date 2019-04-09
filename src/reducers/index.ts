@@ -15,6 +15,7 @@ import { log } from '../util/log';
 import { deleteOrNop, getSafe, rehydrate, setSafe } from '../util/storeHelper';
 
 import { appReducer } from './app';
+import { loReducer } from './loadOrder';
 import { notificationsReducer } from './notifications';
 import { sessionReducer } from './session';
 import { tableReducer } from './tables';
@@ -234,6 +235,9 @@ function reducers(extensionReducers: IExtensionReducer[],
   const tree = {
     user: userReducer,
     app: appReducer,
+    persistent: {
+      loadOrder: loReducer,
+    },
     session: {
       base: sessionReducer,
       notifications: notificationsReducer,

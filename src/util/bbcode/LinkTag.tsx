@@ -17,7 +17,7 @@ class LinkTag extends Tag {
 
     return this.renderer.context(
       { linkify: false },
-      () => [`<a href="${url}" target="_blank">`, this.getContent(), '</a>'],
+      () => [`<a href="${url}" target="_blank" title="${url}">`, this.getContent(), '</a>'],
     );
   }
 
@@ -36,7 +36,7 @@ class LinkTag extends Tag {
     }
 
     return (
-      <a href={url} onClick={this.clicked}>
+      <a href={url} onClick={this.clicked} title={url}>
         {this.getComponents()}
       </a>
     );

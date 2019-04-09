@@ -154,6 +154,7 @@ export interface IOpenOptions {
   title?: string;
   defaultPath?: string;
   filters?: IFileFilter[];
+  create?: boolean;
 }
 
 export type StateChangeCallback =
@@ -237,6 +238,8 @@ export interface IGameDetail {
 
 export interface IErrorOptions {
   id?: string;
+  message?: string;
+  isBBCode?: boolean;
   isHTML?: boolean;
   allowReport?: boolean;
   hideDetails?: boolean;
@@ -925,6 +928,27 @@ export interface IExtensionContext {
    */
   registerStartHook: (priority: number, id: string,
                       hook: (call: IRunParameters) => Promise<IRunParameters>) => void;
+
+  /**
+   * register a migration step. This migration is always called when the loaded extension has
+   * a different version from the one that was used last.
+   * This way when the new version requires any form of migration (upgrading state for example)
+   * it can be done from there. The version that was previously run is being passed to the migration
+   * function so the extension can determine if the upgrade is actually necessary and if so, which
+   * (if there are multiple).
+   * If the extension was never loaded before, the version "0.0.0" is passed in.
+   * Please note: Vortex will continue running, with the extension loaded, after migrate is called,
+   *   it is not currently possible to delay loading an extension until the migration is complete.
+   *   This means one of these to be true:
+   *     - the extension is functional without the migration, at least so much so that it doesn't
+   *       cause "damage"
+   *     - the extension disables/blocks itself until the migration is done
+   *     - the migration is synchronous so that the migrate function doesn't return until it's done.
+   * @param {function} migrate called if the running extension version differs from the old one.
+   *                           As soon as the promise returned from this is resolved, the stored version
+   *                           number is updated.
+   */
+  registerMigration: (migrate: (oldVersion: string) => Promise<void>) => void;
 
   /**
    * specify that a certain range of versions of vortex is required

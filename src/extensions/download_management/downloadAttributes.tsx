@@ -8,7 +8,7 @@ import { ITableAttribute } from '../../types/ITableAttribute';
 import * as fs from '../../util/fs';
 import { getCurrentLanguage } from '../../util/i18n';
 import { getSafe } from '../../util/storeHelper';
-import { bytesToString } from '../../util/util';
+import { bytesToString, truthy } from '../../util/util';
 
 import { gameName } from '../gamemode_management/selectors';
 
@@ -66,7 +66,7 @@ function nameFromUrl(input: string) {
   }
 
   const pathname = url.parse(input).pathname;
-  if (pathname === undefined) {
+  if (!truthy(pathname)) {
     return undefined;
   }
 

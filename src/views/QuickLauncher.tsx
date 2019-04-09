@@ -1,5 +1,5 @@
 import { showDialog } from '../actions/notifications';
-import { EmptyPlaceholder } from '../controls/api';
+import EmptyPlaceholder from '../controls/EmptyPlaceholder';
 import { IconButton } from '../controls/TooltipControls';
 import { IDiscoveryResult } from '../extensions/gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../extensions/gamemode_management/types/IGameStored';

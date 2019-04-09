@@ -1,8 +1,10 @@
 import {IExtensionContext} from '../../types/IExtensionContext';
 import { IProfile, IState } from '../../types/IState';
+import { ITestResult } from '../../types/ITestResult';
 import { UserCanceled } from '../../util/CustomErrors';
 import deepMerge from '../../util/deepMerge';
 import * as fs from '../../util/fs';
+import getVortexPath from '../../util/getVortexPath';
 import {log} from '../../util/log';
 import { installPathForGame } from '../../util/selectors';
 import {getSafe} from '../../util/storeHelper';
@@ -21,6 +23,11 @@ import * as Promise from 'bluebird';
 import I18next from 'i18next';
 import * as path from 'path';
 import IniParser, { IniFile, WinapiFormat } from 'vortex-parse-ini';
+import * as winapi from 'winapi-bindings';
+
+import { app as appIn, remote } from 'electron';
+import * as os from 'os';
+const app = appIn || remote.app;
 
 function ensureIniBackups(t: I18next.TFunction, gameMode: string,
                           discovery: IDiscoveryResult): Promise<void> {
@@ -29,7 +36,7 @@ function ensureIniBackups(t: I18next.TFunction, gameMode: string,
     const bakedFile = file + '.baked';
     return Promise.map([backupFile, bakedFile],
       copy => fs.statAsync(copy)
-        .catch(err =>
+        .catch(() =>
           fs.copyAsync(file, copy, { noSelfCopy: true })
             .then(() => fs.ensureFileWritableAsync(copy))
             .catch(copyErr => {
@@ -123,7 +130,10 @@ function bakeSettings(t: I18next.TFunction,
 
   const enabledTweaks: { [baseFile: string]: string[] } = {};
 
-  const baseFiles = iniFiles(gameMode, discovery);
+  const baseFiles = iniFiles(gameMode, discovery)
+    // got an error report that I can only explain by baseFiles containing undefined
+    // but I don't see how that could happen.
+    .filter(name => name !== undefined);
   const baseFileNames = baseFiles.map(name => path.basename(name).toLowerCase());
   const parser = new IniParser(genIniFormat(format));
 
@@ -160,7 +170,7 @@ function bakeSettings(t: I18next.TFunction,
         .then(() => fs.ensureFileWritableAsync(iniFileName + '.baked'))
           // base might not exist, in that case copy from the original ini
           .catch(err => (err.code === 'ENOENT')
-            ? fs.copyAsync(iniFileName, iniFileName + '.base')
+            ? fs.copyAsync(iniFileName, iniFileName + '.base', { noSelfCopy: true })
               .then(() => fs.copyAsync(iniFileName, iniFileName + '.baked', { noSelfCopy: true }))
               .then(() => Promise.all([fs.ensureFileWritableAsync(iniFileName + '.base'),
                                        fs.ensureFileWritableAsync(iniFileName + '.baked')]))
@@ -172,8 +182,13 @@ function bakeSettings(t: I18next.TFunction,
         }))
         .then(() => onApplySettings(iniFileName, ini))
         .then(() => fs.forcePerm(t, () => parser.write(iniFileName + '.baked', ini)))
-        .then(() => fs.copyAsync(iniFileName + '.baked',
-          iniFileName, { noSelfCopy: true })));
+        .then(() => {
+          if (iniFileName === undefined) {
+            return Promise.reject(new Error(`Path is undefined. Game="${gameMode}"; FileList="${baseFiles.join(', ')}"`));
+          }
+          return fs.copyAsync(iniFileName + '.baked',
+                              iniFileName, { noSelfCopy: true })
+        }));
   }))
   .then(() => undefined);
 }
@@ -186,6 +201,37 @@ function purgeChanges(t: I18next.TFunction, gameMode: string, discovery: IDiscov
             .then(() => fs.copyAsync(iniFileName + '.base', iniFileName, { noSelfCopy: true })));
 }
 
+function testProtectedFolderAccess(): Promise<ITestResult> {
+  if (process.platform !== 'win32') {
+    // Windows only! (for now)
+    return Promise.resolve(undefined);
+  }
+
+  const protectedDirectory = app.getPath('documents');
+  const canary = path.join(protectedDirectory, '__vortex_canary.tmp');
+  return fs.writeFileAsync(canary, 'Should only exist temporarily, feel free to delete')
+    .then(() => fs.removeAsync(canary))
+    .then(() => Promise.resolve(undefined))
+    .catch(err => {
+      // Theoretically the only reason why writing/removing this file would fail is if/when
+      //  an external application has blocked Vortex from running the file operation.
+      //  in this case it's safe to assume that an AV or possibly Windows Defender
+      //  have stepped in and blocked Vortex.
+      return {
+        description: {
+          short: 'Anti-Virus protection detected',
+          long: 'Vortex is being blocked from running file operations by your Anti-Virus software '
+          + 'and will not function correctly unless an exception is added manually. <br /><br />'
+          + 'Most Anti-Virus applications should inform you of this attempt while others such as '
+          + 'Windows 10\'s Windows Defender will block access without prompt.<br /><br />'
+          + 'For more information please visit our wiki: '
+          + '[url]https://wiki.nexusmods.com/index.php/Configuring_your_anti-virus_to_work_with_Vortex[/url]',
+        },
+        severity: 'error',
+      };
+    });
+}
+
 function main(context: IExtensionContext) {
   context.registerTableAttribute('mods', {
     id: 'ini-edits',
@@ -195,6 +241,9 @@ function main(context: IExtensionContext) {
     placement: 'detail',
     edit: {},
   });
+
+  context.registerTest('controlled-folder-access', 'startup',
+    () => testProtectedFolderAccess());
 
   context.once(() => {
     let deactivated: boolean = false;
@@ -221,10 +270,10 @@ function main(context: IExtensionContext) {
           context.api.showErrorNotification(
             'Failed to create backups of the ini files for this game.',
             {
-              Warning:
+              message:
                 'To avoid data loss, ini tweaks are not going to be applied in this session.\n' +
                 'Please fix the problem and restart Vortex.',
-              Reason: err.message,
+              error: err,
             });
         }
       });
@@ -237,6 +286,10 @@ function main(context: IExtensionContext) {
       }
       const state: IState = context.api.store.getState();
       const discovery: IDiscoveryResult = state.settings.gameMode.discovered[profile.gameId];
+
+      if ((discovery === undefined) || (discovery.path === undefined)) {
+        return Promise.resolve();
+      }
 
       const onApplySettings = (fileName: string, parser: IniFile<any>): Promise<void> =>
         context.api.emitAndAwait('apply-settings', profile, fileName, parser);

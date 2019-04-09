@@ -101,6 +101,7 @@ export interface ITableState {
 
 export interface IExtensionState {
   enabled: boolean | 'failed';
+  version: string;
   remove: boolean;
 }
 
@@ -207,6 +208,10 @@ export interface ISettings {
   update: ISettingsUpdate;
 }
 
+export interface IStateTransactions {
+  transfer: {};
+}
+
 export interface ISessionGameMode {
   known: IGameStored[];
   addDialogVisible: boolean;
@@ -266,6 +271,7 @@ export interface IState {
     categories: { [gameId: string]: ICategoryDictionary },
     gameMode: IStateGameMode,
     deployment: { needToDeploy: { [gameId: string]: boolean } },
+    transactions: IStateTransactions,
   };
 }
 

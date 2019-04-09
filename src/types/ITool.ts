@@ -69,8 +69,16 @@ export interface ITool {
    * the operating system for example but be aware that it will be evaluated at
    * application start and only once, so the return value can not depend on things
    * that change at runtime.
+   *
+   * Optional: Game extensions are free to ignore the parameter and they have
+   *   to work if the parameter is undefined.
+   *   executable will be called with the parameter set at the time the game is discovered.
+   *   If there are multiple versions of the game with different executables, it can return
+   *   the correct executable based on the variant installed.
+   *   This is a synchronous function so game extensions will probably want to use something
+   *   like fs.statSync to text for file existance
    */
-  executable: () => string;
+  executable: (discoveredPath?: string) => string;
 
   /**
    * list of files that have to exist in the directory of this tool.

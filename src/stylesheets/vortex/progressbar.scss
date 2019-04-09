@@ -27,10 +27,11 @@
         white-space: nowrap;
       }
       > *:first-child {
-        max-width: 80%;
+        flex: 1 1 0;
       }
       > *:last-child {
-        max-width: 10%;
+        width: 4em;
+        text-align: right;
       }
     }
   }

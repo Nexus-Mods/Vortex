@@ -362,7 +362,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
           />
 
           <div className='menubar'>
-            <p>{t('{{count}} item selected', { count: selected.length })}</p>
+            <p>{t('{{ count }} item selected', { count: selected.length })}</p>
             <ToolbarIcon
               key='btn-deselect'
               icon='deselect'
@@ -762,8 +762,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     }
 
     this.mProxyHeaderRef.childNodes.forEach((node, index) => {
-      (this.mVisibleHeaderRef.childNodes.item(index) as HTMLElement).style.width =
-        `${(node as HTMLElement).clientWidth}px`;
+      (this.mVisibleHeaderRef.childNodes.item(index) as HTMLElement).style.minWidth =
+        (this.mVisibleHeaderRef.childNodes.item(index) as HTMLElement).style.maxWidth =
+          `${(node as HTMLElement).clientWidth}px`;
     });
 
     const height = this.mVisibleHeaderRef.clientHeight;
@@ -838,8 +839,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         && (targetPos !== this.mScrollRef.scrollTop)) {
       if (smooth) {
         smoothScroll(this.mScrollRef, targetPos, SuperTable.SCROLL_DURATION)
-          .then(() => (iterations > 0)
-            ? this.scrollToItem(item, smooth)
+          .then((cont: boolean) => cont && (iterations > 0)
+            ? this.scrollToItem(item, false, iterations - 1)
             : Promise.resolve());
       } else {
         this.mScrollRef.scrollTop = targetPos;

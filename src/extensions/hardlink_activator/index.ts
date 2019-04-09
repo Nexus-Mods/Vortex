@@ -70,6 +70,10 @@ class DeploymentMethod extends LinkingDeployment {
     const game: IGame = getGame(gameId);
     const modPaths = game.getModPaths(discovery.path);
 
+    if (modPaths[typeId] === undefined) {
+      return undefined;
+    }
+
     try {
       fs.accessSync(modPaths[typeId], fs.constants.W_OK);
     } catch (err) {
@@ -123,14 +127,19 @@ class DeploymentMethod extends LinkingDeployment {
 
     const canary = path.join(installationPath, '__vortex_canary.tmp');
 
+    let res: IUnavailableReason;
+
     try {
+      try {
+        fs.removeSync(canary + '.link');
+      } catch (err) {}
       fs.writeFileSync(canary, 'Should only exist temporarily, feel free to delete');
       fs.linkSync(canary, canary + '.link');
     } catch (err) {
       // EMFILE shouldn't keep us from using hard linking
       if (err.code !== 'EMFILE') {
         // the error code we're actually getting is EISDIR, which makes no sense at all
-        return {
+        res = {
           description: t => t('Filesystem doesn\'t support hard links.'),
         };
       }
@@ -153,7 +162,7 @@ class DeploymentMethod extends LinkingDeployment {
         });
     }
 
-    return undefined;
+    return res;
   }
 
   public finalize(gameId: string,
@@ -170,6 +179,7 @@ class DeploymentMethod extends LinkingDeployment {
 
   public postPurge(): Promise<void> {
     delete this.mInstallationFiles;
+    this.mInstallationFiles = undefined;
     return Promise.resolve();
   }
 
@@ -183,6 +193,11 @@ class DeploymentMethod extends LinkingDeployment {
       this.mInstallationFiles = new Set<number>();
       installEntryProm = turbowalk(installationPath,
         entries => {
+          if (this.mInstallationFiles === undefined) {
+            // don't know when this would be necessary but apparently
+            // it is, see https://github.com/Nexus-Mods/Vortex/issues/3684
+            return;
+          }
           entries.forEach(entry => {
             if (entry.linkCount > 1) {
               this.mInstallationFiles.add(entry.id);
@@ -257,7 +272,13 @@ class DeploymentMethod extends LinkingDeployment {
 
   private ensureDir(dirPath: string): Promise<void> {
     return (this.mDirCache === undefined) || !this.mDirCache.has(dirPath)
-      ? fs.ensureDirAsync(dirPath).then(created => { this.mDirCache.add(dirPath); return created; })
+      ? fs.ensureDirAsync(dirPath).then(created => {
+        if (this.mDirCache === undefined) {
+          this.mDirCache = new Set<string>();
+        }
+        this.mDirCache.add(dirPath);
+        return created;
+      })
       : Promise.resolve(null);
   }
 }

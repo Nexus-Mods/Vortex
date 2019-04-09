@@ -18,11 +18,6 @@ let fallbackTFunc: I18next.TFunction =
 
 export { fallbackTFunc };
 
-interface ITranslationEntry {
-  lng: string;
-  ns: string;
-  key: string;
-}
 let missingKeys = { common: {} };
 
 export interface IInitResult {
@@ -84,6 +79,13 @@ class MultiBackend {
  * @returns {I18next.I18n}
  */
 function init(language: string): Promise<IInitResult> {
+  // reset to english if the language isn't valid
+  try {
+    new Date().toLocaleString(language);
+  } catch (err) {
+    language = 'en';
+  }
+
   currentLanguage = language;
 
   const i18n = I18next.use(MultiBackend);

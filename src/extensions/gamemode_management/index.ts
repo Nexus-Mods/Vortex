@@ -6,7 +6,7 @@ import {
   IInstruction,
 } from '../../types/IExtensionContext';
 import {IGame} from '../../types/IGame';
-import { IState } from '../../types/IState';
+import { IState, IProfile } from '../../types/IState';
 import { IEditChoice, ITableAttribute } from '../../types/ITableAttribute';
 import {ProcessCanceled, SetupError, UserCanceled} from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
@@ -16,7 +16,7 @@ import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import opn from '../../util/opn';
 import ReduxProp from '../../util/ReduxProp';
-import { activeGameId } from '../../util/selectors';
+import { activeGameId, activeProfile } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 
 import { setModType } from '../mod_management/actions/mods';
@@ -350,10 +350,21 @@ function init(context: IExtensionContext): boolean {
   //   is only added internally and not part of the public api
   context.registerGame = ((game: IGame, extensionPath: string) => {
     game.extensionPath = extensionPath;
-    const gameExtInfo = JSON.parse(fs.readFileSync(path.join(extensionPath, 'info.json'), { encoding: 'utf8' }));
-    game.contributed = gameExtInfo.author === 'Black Tree Gaming Ltd.' ? undefined : gameExtInfo.author;
-    game.final = semver.gte(gameExtInfo.version, '1.0.0');
-    extensionGames.push(game);
+    try {
+      const gameExtInfo = JSON.parse(
+        fs.readFileSync(path.join(extensionPath, 'info.json'), { encoding: 'utf8' }));
+      game.contributed = (gameExtInfo.author === 'Black Tree Gaming Ltd.')
+        ? undefined
+        : gameExtInfo.author;
+      game.final = semver.gte(gameExtInfo.version, '1.0.0');
+      game.version = gameExtInfo.version;
+      extensionGames.push(game);
+    } catch (err) {
+      context.api.showErrorNotification('Game Extension not loaded', err, {
+        allowReport: false,
+        message: game.name,
+      });
+    }
   }) as any;
 
   context.registerGameInfoProvider =
@@ -415,7 +426,11 @@ function init(context: IExtensionContext): boolean {
 
   context.registerAction('game-icons', 110, 'refresh', {}, 'Scan: Full', () => {
     if (($.gameModeManager !== undefined) && !$.gameModeManager.isSearching()) {
-      $.gameModeManager.startSearchDiscovery();
+      try {
+        $.gameModeManager.startSearchDiscovery();
+      } catch (err) {
+        context.api.showErrorNotification('Failed to search for games', err);
+      }
     }
   });
 
@@ -504,25 +519,41 @@ function init(context: IExtensionContext): boolean {
     }
 
     const changeGameMode = (oldGameId: string, newGameId: string,
-                            oldProfileId: string): Promise<void> => {
+                            currentProfileId: string): Promise<void> => {
       if (newGameId === undefined) {
         return Promise.resolve();
       }
+      log('debug', 'change game mode', { oldGameId, newGameId });
 
+
+      const id = context.api.sendNotification({
+        title: 'Preparing game for modding',
+        message: getGame(newGameId).name,
+        type: 'activity',
+      })
+
+      // Important: This happens after the profile has already been activated
+      //   and while the ui is usable again so at this point the user can already
+      //   switch the game/profile again. The code below has to be able to deal with that
       return $.gameModeManager.setupGameMode(newGameId)
-        .then(() => $.gameModeManager.setGameMode(oldGameId, newGameId))
+        .then(() => $.gameModeManager.setGameMode(oldGameId, newGameId, currentProfileId))
         .catch((err) => {
           if (err instanceof UserCanceled) {
             // nop
           } else if ((err instanceof ProcessCanceled)
                     || (err instanceof SetupError)) {
             showError(store.dispatch, 'Failed to set game mode',
-                      err.message, { allowReport: false });
+                      err.message, { allowReport: false, message: newGameId });
           } else {
-            showError(store.dispatch, 'Failed to set game mode', err);
+            showError(store.dispatch, 'Failed to set game mode', err, {
+              message: newGameId,
+            });
           }
           // unset profile
           store.dispatch(setNextProfile(undefined));
+        })
+        .finally(() => {
+          context.api.dismissNotification(id);
         });
     };
 
@@ -533,7 +564,7 @@ function init(context: IExtensionContext): boolean {
         const newGameId = getSafe(state, ['persistent', 'profiles', current, 'gameId'], undefined);
         log('debug', 'active profile id changed', { prev, current, oldGameId, newGameId });
         const prom = (oldGameId !== newGameId)
-          ? changeGameMode(oldGameId, newGameId, prev)
+          ? changeGameMode(oldGameId, newGameId, current)
           : Promise.resolve();
 
         prom.then(() => {
@@ -560,11 +591,15 @@ function init(context: IExtensionContext): boolean {
       });
 
     {
-      const gameMode = activeGameId(store.getState());
-      const discovery = store.getState().settings.gameMode.discovered[gameMode];
-      if ((discovery !== undefined) && (discovery.path !== undefined)) {
-        changeGameMode(undefined, gameMode, undefined)
-          .then(() => null);
+      const profile: IProfile = activeProfile(store.getState());
+      if (profile !== undefined) {
+        const gameMode = profile.gameId;
+        const discovery = store.getState().settings.gameMode.discovered[gameMode];
+        if ((discovery !== undefined) && (discovery.path !== undefined)) {
+          log('debug', 'init game mode', gameMode);
+          changeGameMode(undefined, gameMode, profile.id)
+            .then(() => null);
+        }
       }
     }
   });

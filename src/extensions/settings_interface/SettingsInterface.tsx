@@ -83,17 +83,16 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
 
     Promise.join(readdirAsync(bundledLanguages), readdirAsync(userLanguages).catch(() => []))
       .then(fileLists => Array.from(new Set([].concat(...fileLists))))
+      .filter(langId => this.isValidLanguageCode(langId))
       .then(files => {
         const locales = files.map(key => {
           let language;
           let country;
 
-          if (key.includes('-')) {
-            const [languageKey, countryKey] = key.split('-');
-            language = nativeLanguageName(languageKey);
+          const [languageKey, countryKey] = key.split('-');
+          language = nativeLanguageName(languageKey);
+          if (countryKey !== undefined) {
             country = nativeCountryName(countryKey);
-          } else {
-            language = nativeLanguageName(key);
           }
           return { key, language, country };
         });
@@ -222,6 +221,16 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
         {restartNotification}
       </form>
     );
+  }
+
+  private isValidLanguageCode(langId: string) {
+    try {
+      new Date().toLocaleString(langId);
+      return true;
+    } catch (err) {
+      log('warn', 'Not a valid language code', langId);
+      return false;
+    }
   }
 
   private selectLanguage = (evt) => {

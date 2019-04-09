@@ -30,6 +30,7 @@ import {} from './util/extensionRequire';
 
 import { app, dialog } from 'electron';
 import * as path from 'path';
+import { truthy } from './util/util';
 
 process.env.Path = process.env.Path + path.delimiter + __dirname;
 
@@ -40,7 +41,14 @@ const handleError = (error: any) => {
     return;
   }
 
-  if (error === undefined) {
+  if (!truthy(error)) {
+    return;
+  }
+
+  if (['net::ERR_CONNECTION_RESET',
+       'net::ERR_ABORTED',
+       'net::ERR_CONTENT_LENGTH_MISMATCH',
+       'net::ERR_INCOMPLETE_CHUNKED_ENCODING'].indexOf(error.message) !== -1) {
     return;
   }
 

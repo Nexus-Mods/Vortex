@@ -15,6 +15,7 @@ import { IModifiers } from '../types/IModifiers';
 import { INotification } from '../types/INotification';
 import { IProgress, IState } from '../types/IState';
 import { connect, extend } from '../util/ComponentEx';
+import { log } from '../util/log';
 import { getSafe } from '../util/storeHelper';
 import { truthy } from '../util/util';
 import Dialog from './Dialog';
@@ -191,7 +192,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   }
 
   public componentWillReceiveProps(newProps: IProps) {
-    const page = newProps.objects.find(iter => iter.title === newProps.mainPage);
+    const page = newProps.objects.find(iter => iter.id === newProps.mainPage);
     if ((page !== undefined) && !page.visible()) {
       this.setMainPage('Dashboard', false);
     }
@@ -353,7 +354,14 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
   private renderPageGroup = ({ title, key }: { title: string, key: string }): JSX.Element => {
     const { mainPage, objects, tabsMinimized } = this.props;
-    const pages = objects.filter(page => (page.group === key) && page.visible());
+    const pages = objects.filter(page => {
+      try {
+        return (page.group === key) && page.visible(); 
+      } catch (err) {
+        log('error', 'Failed to determine page visibility', { error: err.message, page: page.id });
+        return false;
+      }
+    });
     if (key === 'global') {
       pages.push(this.settingsPage);
     }

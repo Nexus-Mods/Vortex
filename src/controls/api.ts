@@ -4,6 +4,7 @@ import Advanced from './Advanced';
 import Banner from './Banner';
 import ContextMenu from './ContextMenu';
 import Dashlet from './Dashlet';
+import DraggableList from './DraggableList';
 import Dropdown from './Dropdown';
 import Dropzone from './Dropzone';
 import EmptyPlaceholder from './EmptyPlaceholder';
@@ -30,7 +31,7 @@ import Webview from './Webview';
 
 export {
   ActionContextMenu, ActionDropdown, Advanced, Banner, ChangeDataHandler, ContextMenu, Dashlet,
-  Dropdown, Dropzone, EmptyPlaceholder,
+  DraggableList, Dropdown, Dropzone, EmptyPlaceholder,
   FlexLayout, FormFeedback, FormInput, Icon, IconBar, ITableRowAction, Modal,
   More, Overlay, OverlayTrigger, Table, TableDateTimeFilter, TableNumericFilter, TableTextFilter,
   Spinner, Steps, makeGetSelection, Toggle, ToolbarIcon, tooltip, Usage, Webview};
