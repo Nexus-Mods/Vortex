@@ -104,6 +104,15 @@ function init(language: string): Promise<IInitResult> {
 
       debug: false,
 
+      react: {
+        // afaict this is simply broken at this time. With this enabled the React.Suspense will
+        // render the fallback on certain operations after the UI has been started, why I don't know,
+        // and that unmounts all components in the dom but it doesn't seem to fire the
+        // componentDidUnmount lifecycle functions meaning we can't stop delayed operations that will
+        // then break since the component is unmounted
+        useSuspense: false,
+      } as any,
+
       saveMissing: debugging,
 
       missingKeyHandler: (lng, ns, key, fallbackValue) => {

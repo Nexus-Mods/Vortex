@@ -1,28 +1,11 @@
-import { DragDropManager, createDragDropManager } from 'dnd-core';
-import * as PropTypes from 'prop-types';
 import * as React from 'react';
-import HTML5Backend from 'react-dnd-html5-backend';
 
-let globalDNDManager: DragDropManager<any>;
-
-function getContext(): DragDropManager<any> {
-  if (globalDNDManager === undefined) {
-    globalDNDManager = createDragDropManager(HTML5Backend, undefined);
-  }
-  
-  return globalDNDManager;
-}
-
+/**
+ * This is pointless at this point and could probably be removed, moving the style
+ * up to the parent, but I'll have to admit I don't understand 100% how "context" and
+ * "manager" work in react-dnd and what changed in its api since we needed this.
+ */
 class DNDContainer extends React.Component<{ style?: React.CSSProperties }, {}> {
-  public static childContextTypes: React.ValidationMap<any> = {
-    dragDropManager: PropTypes.object.isRequired,
-  };
-
-  public getChildContext() {
-    return {
-      dragDropManager: getContext(),
-    };
-  }
 
   public render(): JSX.Element {
     const {children, style} = this.props;
@@ -34,7 +17,11 @@ class DNDContainer extends React.Component<{ style?: React.CSSProperties }, {}> 
       return null;
     }
 
-    return <div style={style}>{children}</div>;
+    return (
+      <div style={style}>
+        {children}
+      </div>
+    );
   }
 }
 

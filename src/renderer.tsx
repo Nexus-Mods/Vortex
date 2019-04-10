@@ -82,6 +82,8 @@ import { reduxLogger } from './util/reduxLogger';
 import { getSafe } from './util/storeHelper';
 import { getAllPropertyNames } from './util/util';
 import { setLanguage } from './actions';
+import { DragDropContextProvider } from 'react-dnd';
+import HTML5Backend from 'react-dnd-html5-backend';
 
 log('debug', 'renderer process started', { pid: process.pid });
 
@@ -319,11 +321,13 @@ function renderer() {
       // render the page content
       ReactDOM.render(
         <Provider store={store}>
-          <I18nextProvider i18n={i18n}>
-            <ExtensionProvider extensions={extensions}>
-              <MainWindow className='full-height' api={extensions.getApi()} t={tFunc} />
-            </ExtensionProvider>
-          </I18nextProvider>
+          <DragDropContextProvider backend={HTML5Backend}>
+            <I18nextProvider i18n={i18n}>
+              <ExtensionProvider extensions={extensions}>
+                <MainWindow className='full-height' api={extensions.getApi()} t={tFunc} />
+              </ExtensionProvider>
+            </I18nextProvider>
+          </DragDropContextProvider>
         </Provider>,
         document.getElementById('content'),
       );

@@ -215,19 +215,19 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       classes.push('window-frame');
     }
     return (
-      <React.Suspense fallback={<Spinner />}>
-        {switchingProfile ? this.renderWait() : null}
-        <div key='main' className={classes.join(' ')} style={{ display: switchingProfile ? 'none' : undefined }}>
-          <div className='menu-layer' ref={this.setMenuLayer} />
-          <FlexLayout id='main-window-content' type='column'>
-            {this.renderToolbar(switchingProfile)}
-            {customTitlebar ? <div className='dragbar' /> : null}
-            {this.renderBody()}
-          </FlexLayout>
-          <Dialog />
-          <DialogContainer visibleDialog={visibleDialog} onHideDialog={onHideDialog} />
-          {customTitlebar ? <WindowControls /> : null}
-        </div>
+      <React.Suspense fallback={<Spinner className='suspense-spinner' />}>
+          {switchingProfile ? this.renderWait() : null}
+          <div key='main' className={classes.join(' ')} style={{ display: switchingProfile ? 'none' : undefined }}>
+            <div className='menu-layer' ref={this.setMenuLayer} />
+            <FlexLayout id='main-window-content' type='column'>
+              {this.renderToolbar(switchingProfile)}
+              {customTitlebar ? <div className='dragbar' /> : null}
+              {this.renderBody()}
+            </FlexLayout>
+            <Dialog />
+            <DialogContainer visibleDialog={visibleDialog} onHideDialog={onHideDialog} />
+            {customTitlebar ? <WindowControls /> : null}
+          </div>
       </React.Suspense>);
   }
 
