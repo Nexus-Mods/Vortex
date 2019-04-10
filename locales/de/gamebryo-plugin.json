@@ -1,7 +1,7 @@
 {
-  "Autosort enabled (using LOOT)": "Automatisches Sortieren aktiviert (nutzt LOOT)",
-  "Autosort disabled (using LOOT)": "Automatisches Sortieren deaktiviert (nutzt LOOT)",
-  "Sort now": "Jetzt sortieren",
+  "Autosort Enabled": "Automatisches Sortieren",
+  "Autosort Disabled": "Manuelles Sortieren",
+  "Sort Now": "Jetzt sortieren",
   "Name": "Name",
   "Flags": "Eigenschaften",
   "Load Order": "Ladereihenfolge",
@@ -10,10 +10,6 @@
   "Requires cleaning (LOOT)": "Benötigt Reinigung (LOOT)",
   "Master": "Master",
   "Save": "Speichern",
-  "Autosort enabled": "Automatisches Sortieren aktiv",
   "Loads after:": "Lädt nach:",
-  "load after {{ reference }}": "Nach {{ reference }} laden",
-  "Autosort Enabled": "Automatisches Sortieren aktiv",
-  "Sort Now": "Jetzt sortieren",
-  "Autosort Disabled": "Automatisches Sortieren inaktiv"
+  "load after {{ reference }}": "Nach {{ reference }} laden"
 }
