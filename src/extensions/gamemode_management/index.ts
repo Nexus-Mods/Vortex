@@ -189,11 +189,13 @@ function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
         if (fileNames !== undefined) {
           verifyGamePath(game, fileNames[0])
             .then(() => {
+              const exe = game.executable(fileNames[0]);
               api.store.dispatch(addDiscoveredGame(game.id, {
                 path: fileNames[0],
                 tools: {},
                 hidden: false,
                 environment: game.environment,
+                executable: (exe !== game.executable()) ? exe : undefined,
               }));
               resolve();
             })
