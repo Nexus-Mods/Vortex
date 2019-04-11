@@ -2,6 +2,7 @@ import SvgIcon from './Icon';
 import { ButtonType } from './IconBar';
 
 import update from 'immutability-helper';
+import * as _ from 'lodash';
 import * as React from 'react';
 
 import { Button as BootstrapButton, NavItem as BootstrapNavItem,
@@ -221,8 +222,7 @@ type FontAwesomeSize = 'lg' | '2x' | '3x' | '4x' | '5x';
  *
  * @interface FontAwesomeProps
  */
-export interface IFontAwesomeProps {
-
+export interface ITooltipIconProps {
   border?: boolean;
   className?: string;
   fixedWidth?: boolean;
@@ -234,10 +234,12 @@ export interface IFontAwesomeProps {
   rotateId?: string;
   spin?: boolean;
   stack?: string;
+  stroke?: boolean;
+  hollow?: boolean;
   style?: React.CSSProperties;
 }
 
-export type IconProps = ITooltipProps & IFontAwesomeProps;
+export type IconProps = ITooltipProps & ITooltipIconProps;
 /**
  * Icon with a tooltip
  *
@@ -246,9 +248,7 @@ export type IconProps = ITooltipProps & IFontAwesomeProps;
  */
 export class Icon extends React.Component<IconProps, {}> {
   public render() {
-    const relayProps: any = { ...this.props };
-    delete relayProps.tooltip;
-    delete relayProps.placement;
+   const relayProps: any = _.omit(this.props, ['tooltip', 'placement']);
 
     const classes = ['fake-link'].concat((this.props.className || '').split(' '));
 

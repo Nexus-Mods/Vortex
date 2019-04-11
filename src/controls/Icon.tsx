@@ -21,6 +21,7 @@ export interface IIconProps {
   spin?: boolean;
   pulse?: boolean;
   stroke?: boolean;
+  hollow?: boolean;
   border?: boolean;
   flip?: 'horizontal' | 'vertical';
   rotate?: number;
@@ -62,6 +63,10 @@ class Icon extends React.Component<IIconProps, {}> {
 
     if (this.props.stroke) {
       classes.push('icon-stroke');
+    }
+
+    if (this.props.hollow) {
+      classes.push('icon-hollow');
     }
 
     if (this.props.flip) {
