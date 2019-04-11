@@ -740,7 +740,12 @@ function onDeploySingleMod(api: IExtensionApi) {
       })
       .then(() => activator.finalize(gameId, dataPath, installationPath))
       .then(newActivation =>
-        doSaveActivation(api, mod.type, dataPath, newActivation, activator.id));
+        doSaveActivation(api, mod.type, dataPath, newActivation, activator.id))
+      .catch(err => {
+        api.showErrorNotification('Failed to deploy mod', err, {
+          message: modId,
+        });
+      });
   };
 }
 
