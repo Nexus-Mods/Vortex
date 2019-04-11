@@ -195,7 +195,7 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         {/* this.renderChangedFile(t('These files were modified'), 'valchange', valChanged) */}
-        {this.renderChangedFile(t('File content modified'
+        {this.renderChangedFile(t('File content modified '
                     + '("Save" will apply the changed file from the game directory permanently, '
                     + '"Revert" will restore the original file from the mod directory)'),
           'refchange', refChanged)}

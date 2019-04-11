@@ -52,7 +52,7 @@ class MainPageContainer extends ComponentEx<IProps, IComponentState> {
     return {
       api: this.context.api,
       headerPortal: () => this.headerRef,
-      page: page.title,
+      page: page.id,
     };
   }
 
@@ -72,7 +72,7 @@ class MainPageContainer extends ComponentEx<IProps, IComponentState> {
 
     if (error !== undefined) {
       return (
-        <div className={classes.join(' ')}>
+        <div id={`page-${page.id}`} className={classes.join(' ')}>
           <Alert className='render-failure' bsStyle='danger'>
             <Icon className='render-failure-icon' name='sad' />
             <div className='render-failure-text'>{t('Failed to render.')}</div>
@@ -89,7 +89,7 @@ class MainPageContainer extends ComponentEx<IProps, IComponentState> {
       const props = page.propsFunc();
 
       return (
-        <div className={classes.join(' ')}>
+        <div id={`page-${page.id}`} className={classes.join(' ')}>
           <div className='mainpage-header-container' ref={this.setHeaderRef} />
           <div className='mainpage-body-container'>
             <ExtensionGate id={page.id}>
