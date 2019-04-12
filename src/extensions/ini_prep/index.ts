@@ -23,10 +23,8 @@ import * as Promise from 'bluebird';
 import { TranslationFunction } from 'i18next';
 import * as path from 'path';
 import IniParser, { IniFile, WinapiFormat } from 'vortex-parse-ini';
-import * as winapi from 'winapi-bindings';
 
 import { app as appIn, remote } from 'electron';
-import * as os from 'os';
 const app = appIn || remote.app;
 
 function ensureIniBackups(t: TranslationFunction, gameMode: string,
@@ -252,6 +250,11 @@ function main(context: IExtensionContext) {
       const state: IState = context.api.store.getState();
       ensureIniBackups(context.api.translate, gameMode,
                        state.settings.gameMode.discovered[gameMode])
+      .catch(UserCanceled, () => {
+        log('warn', 'User has canceled creation of ini backups. Well, the user is boss I guess...', {
+          allowReport: false,
+        });
+      })
       .catch(err => {
         deactivated = true;
         if ((err.code === 'EINVAL') && (err.path.toLowerCase().indexOf('onedrive') !== -1)) {
