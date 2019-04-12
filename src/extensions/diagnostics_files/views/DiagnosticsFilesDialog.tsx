@@ -308,12 +308,13 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
 
     this.props.onHide();
     const logPath = path.join(nativeCrashesPath, 'session.log');
-    fs.writeFileAsync(logPath, fullLog)
+    fs.ensureDirWritableAsync(nativeCrashesPath, () => Promise.resolve())
+      .then(() => fs.writeFileAsync(logPath, fullLog))
       .then(() => {
         this.context.api.events.emit('report-log-error', logPath);
       })
       .catch((err) => {
-        onShowError('Failed to write log session file', err.message);
+        onShowError('Failed to write log session file', err);
       })
       .then(() => null);
   }
