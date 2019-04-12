@@ -6,7 +6,7 @@ import {
   IInstruction,
 } from '../../types/IExtensionContext';
 import {IGame} from '../../types/IGame';
-import { IState, IProfile } from '../../types/IState';
+import { IProfile, IState } from '../../types/IState';
 import { IEditChoice, ITableAttribute } from '../../types/ITableAttribute';
 import {ProcessCanceled, SetupError, UserCanceled} from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
@@ -255,11 +255,11 @@ function resetSearchPaths(api: IExtensionApi) {
   try {
     list = require('drivelist').list;
   } catch (err) {
-    api.showErrorNotification('Failed to query list of system drives', 
+    api.showErrorNotification('Failed to query list of system drives',
       {
         message: 'Vortex was not able to query the operating system for the list of system drives. '
             + 'If this error persists, please configure the list manually.',
-        error: err
+        error: err,
       }, { allowReport: false });
     return;
   }
@@ -494,7 +494,7 @@ function init(context: IExtensionContext): boolean {
     events.on('start-discovery', () => {
       try {
         $.gameModeManager.startSearchDiscovery();
-      } catch(err) {
+      } catch (err) {
         context.api.showErrorNotification('Failed to search for games', err);
       }
     });
