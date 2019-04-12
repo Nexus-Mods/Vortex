@@ -95,12 +95,20 @@ class DeploymentMethod extends LinkingDeployment {
         return {
           description: t => t('Works only if mods are installed on the same drive as the game.'),
           order: 5,
-          solution: t => t('Please go to Settings->Mods and set the mod staging folder to be on '
-            + 'the same drive as the game ({{gameVolume}}).', {
-              replace: {
-                gameVolume: winapi.GetVolumePathName(modPaths[typeId]),
-              },
-            }),
+          solution: t => {
+            let displayPath = modPaths[typeId];
+            try {
+              displayPath = winapi.GetVolumePathName(modPaths[typeId]);
+            } catch (err) {
+              log('warn', 'Failed to resolve volume path', { path: modPaths[typeId] });
+            }
+            return t('Please go to Settings->Mods and set the mod staging folder to be on '
+              + 'the same drive as the game ({{gameVolume}}).', {
+                replace: {
+                  gameVolume: displayPath,
+                },
+              });
+          },
           fixCallback: (api: IExtensionApi) => new Promise((resolve, reject) => {
             api.events.emit('show-main-page', 'application_settings');
             api.store.dispatch(setSettingsPage('Mods'));
