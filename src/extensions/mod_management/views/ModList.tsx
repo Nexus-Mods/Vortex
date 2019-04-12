@@ -765,7 +765,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           });
         })
         .catch(err => {
-          this.context.api.showErrorNotification('Failed to remove mod', err);
+          this.context.api.showErrorNotification('Failed to set mod to uninstalled', err);
         });
       }
     } else if (modsWithState[modId].state === 'downloaded') {
@@ -993,7 +993,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       })
       .catch(UserCanceled, () => null)
       .catch(err => {
-        this.context.api.showErrorNotification('Failed to remove mod', err);
+        this.context.api.showErrorNotification('Failed to remove selected mods', err);
       });
   }
 

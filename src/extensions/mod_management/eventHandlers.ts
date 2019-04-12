@@ -309,7 +309,7 @@ function undeploy(api: IExtensionApi,
   const modPaths = game.getModPaths(discovery.path);
   const modTypes = Object.keys(modPaths);
 
-  const activatorId = getSafe(state, ['settings', 'mods', 'activator', gameMode], undefined);
+  const activatorId: string = getSafe(state, ['settings', 'mods', 'activator', gameMode], undefined);
   // TODO: can only use one activator that needs to support the whole game
   const activator: IDeploymentMethod = activatorId !== undefined
     ? activators.find(act => act.id === activatorId)
@@ -327,7 +327,7 @@ function undeploy(api: IExtensionApi,
   return getNormalizeFunc(dataPath)
     .then(norm => {
       normalize = norm;
-      return loadActivation(api, mod.type, dataPath, activatorId);
+      return loadActivation(api, mod.type, dataPath, activator);
     })
     .then(lastActivation => activator.prepare(dataPath, false, lastActivation, normalize))
     .then(() => (mod !== undefined)
@@ -383,7 +383,7 @@ export function onRemoveMod(api: IExtensionApi,
     if (callback !== undefined) {
       callback(err);
     } else {
-      api.showErrorNotification('Failed to remove mod', err);
+      api.showErrorNotification('Failed to remove mod (not found)', err);
     }
     return;
   }
