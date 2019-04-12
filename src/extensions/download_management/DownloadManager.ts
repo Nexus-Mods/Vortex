@@ -1,7 +1,7 @@
 import { HTTPError, ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
-import { countIf, truthy } from '../../util/util';
+import { countIf, truthy, INVALID_FILENAME_CHARACTERS, escapeRE } from '../../util/util';
 import { IChunk } from './types/IChunk';
 import { IDownloadJob } from './types/IDownloadJob';
 import { IDownloadResult } from './types/IDownloadResult';
@@ -984,6 +984,11 @@ class DownloadManager {
     delete this.mSlowWorkers[id];
   }
 
+  private sanitizeFilename(input: string): string {
+    const expr = new RegExp(`[${escapeRE(INVALID_FILENAME_CHARACTERS.join(''))}]`, 'g');
+    return input.replace(expr, '_');
+  }
+
   /**
    * finds and reserves a not-yet-used file name.
    * If the input filename is sample.txt then this function will try
@@ -996,6 +1001,7 @@ class DownloadManager {
    * @returns {Promise<string>}
    */
   private unusedName(destination: string, fileName: string): Promise<string> {
+    fileName = this.sanitizeFilename(fileName);
     if (fileName === '') {
       fileName = 'unnamed';
     }

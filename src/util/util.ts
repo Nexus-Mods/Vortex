@@ -420,3 +420,28 @@ export function sanitizeCSSId(input: string) {
 export function deBOM(input: string) {
   return input.replace(/^\uFEFF/, '');
 }
+
+/**
+ * escape a string for use in a regular expression
+ * @param string 
+ */
+export function escapeRE(input: string): string {
+  return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * characters invalid in a file path
+ */
+const INVALID_FILEPATH_CHARACTERS = process.platform === 'win32'
+      ? ['/', '?', '%', '*', ':', '|', '"', '<', '>', '.']
+      : [];
+
+/**
+ * characters invalid in a file name
+ */
+const INVALID_FILENAME_CHARACTERS = [].concat(INVALID_FILEPATH_CHARACTERS, path.sep);
+
+export {
+  INVALID_FILEPATH_CHARACTERS,
+  INVALID_FILENAME_CHARACTERS,
+}
