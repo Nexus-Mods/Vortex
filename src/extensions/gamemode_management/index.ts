@@ -527,12 +527,24 @@ function init(context: IExtensionContext): boolean {
       }
       log('debug', 'change game mode', { oldGameId, newGameId });
 
+      let newGame;
+      try {
+        newGame = getGame(newGameId);
+      } catch (err) {
+        showError(store.dispatch, 'Failed to set game mode', err, {
+          message: newGameId,
+        });
+
+        // unset profile
+        store.dispatch(setNextProfile(undefined));
+        return Promise.resolve();
+      }
 
       const id = context.api.sendNotification({
         title: 'Preparing game for modding',
-        message: getGame(newGameId).name,
+        message: newGame.name,
         type: 'activity',
-      })
+      });
 
       // Important: This happens after the profile has already been activated
       //   and while the ui is usable again so at this point the user can already
