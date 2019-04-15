@@ -51,6 +51,10 @@ function stopPatterns(gameMode: string) {
       return ['[^/]*\\.pak$'].concat(['mod.manifest'].map(toWordExp), uniPatterns);
     case 'pillarsofeternity2':
       return ['manifest.json', 'thumb.png', 'localized', 'conversations', 'atlases'].map(toWordExp);
+    case 'vampirebloodlines':
+      return ['[^/]*\\.vpk$', 'cfg', 'cl_dlls', 'dlg', 'dlls', 'maps', 'materials', 'models',
+              'particles', 'python', 'resource', 'save', 'scripts', 'sound',
+              'vdata'].map(toWordExp);
     default: return [].concat(uniPatterns);
   }
 }
@@ -213,6 +217,9 @@ const gameSupport: { [gameId: string]: IGameSupport } = {
   },
   pillarsofeternity2: {
     stopPatterns: stopPatterns('pillarsofeternity2'),
+  },
+  vampirebloodlines: {
+    stopPatterns: stopPatterns('vampirebloodlines'),
   },
 };
 
