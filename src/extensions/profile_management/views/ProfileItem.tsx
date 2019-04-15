@@ -38,6 +38,8 @@ interface IComponentState {
   counter: number;
 }
 
+function nop() {}
+
 /**
  * presents profiles and allows creation of new ones
  *
@@ -205,7 +207,7 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
     return (
       <TR key={id}>
         <TD>
-          {feature.label}
+          <a className='fake-link' title={feature.description} onClick={nop}>{feature.label}</a>
         </TD>
         <TD>
           {this.renderFeatureValue(feature.type, value)}
