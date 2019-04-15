@@ -54,7 +54,7 @@ function stopPatterns(gameMode: string) {
     case 'vampirebloodlines':
       return ['[^/]*\\.vpk$'].concat(['cfg', 'cl_dlls', 'dlg', 'dlls', 'maps', 'materials',
               'models', 'particles', 'python', 'resource', 'save', 'scripts', 'sound',
-              'vdata']).map(toWordExp);
+              'vdata'].map(toWordExp));
     default: return [].concat(uniPatterns);
   }
 }
