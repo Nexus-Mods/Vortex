@@ -1,7 +1,7 @@
 import { HTTPError, ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
-import { countIf, truthy, INVALID_FILENAME_CHARACTERS, escapeRE } from '../../util/util';
+import { countIf, truthy, INVALID_FILENAME_RE } from '../../util/util';
 import { IChunk } from './types/IChunk';
 import { IDownloadJob } from './types/IDownloadJob';
 import { IDownloadResult } from './types/IDownloadResult';
@@ -985,8 +985,7 @@ class DownloadManager {
   }
 
   private sanitizeFilename(input: string): string {
-    const expr = new RegExp(`[${escapeRE(INVALID_FILENAME_CHARACTERS.join(''))}]`, 'g');
-    return input.replace(expr, '_');
+    return input.replace(INVALID_FILENAME_RE, '_');
   }
 
   /**

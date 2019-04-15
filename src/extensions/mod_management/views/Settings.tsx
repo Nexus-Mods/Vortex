@@ -16,7 +16,7 @@ import { showError } from '../../../util/message';
 import opn from '../../../util/opn';
 import { getSafe } from '../../../util/storeHelper';
 import { testPathTransfer, transferPath } from '../../../util/transferPath';
-import { isChildPath, INVALID_FILEPATH_CHARACTERS } from '../../../util/util';
+import { isChildPath, isPathValid } from '../../../util/util';
 import { currentGame, currentGameDiscovery } from '../../gamemode_management/selectors';
 import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../../gamemode_management/types/IGameStored';
@@ -415,11 +415,10 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       };
     }
 
-    const removedWinRoot = process.platform === 'win32' ? input.substr(3) : input;
-    if (INVALID_FILEPATH_CHARACTERS.find(inv => removedWinRoot.indexOf(inv) !== -1) !== undefined) {
+    if (!isPathValid(input)) {
       return {
         state: 'error',
-        reason: 'Path cannot contain illegal characters',
+        reason: 'Path cannot contain illegal characters or reserved names',
       };
     }
 
