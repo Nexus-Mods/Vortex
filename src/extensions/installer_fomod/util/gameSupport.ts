@@ -52,9 +52,9 @@ function stopPatterns(gameMode: string) {
     case 'pillarsofeternity2':
       return ['manifest.json', 'thumb.png', 'localized', 'conversations', 'atlases'].map(toWordExp);
     case 'vampirebloodlines':
-      return ['[^/]*\\.vpk$', 'cfg', 'cl_dlls', 'dlg', 'dlls', 'maps', 'materials', 'models',
-              'particles', 'python', 'resource', 'save', 'scripts', 'sound',
-              'vdata'].map(toWordExp);
+      return ['[^/]*\\.vpk$'].concat(['cfg', 'cl_dlls', 'dlg', 'dlls', 'maps', 'materials',
+              'models', 'particles', 'python', 'resource', 'save', 'scripts', 'sound',
+              'vdata']).map(toWordExp);
     default: return [].concat(uniPatterns);
   }
 }
