@@ -299,6 +299,8 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
                                    'Sorry, this download is missing info necessary to resume. '
                                    + 'Please try restarting it.',
                                    undefined, false);
+          } else if (err instanceof UserCanceled) {
+            // nop
           } else if ((err.HTTPStatus !== undefined)
                      && (urlInvalid.indexOf(err.HTTPStatus.toLowerCase()) !== -1)) {
             this.props.onShowError('Failed to resume download',
