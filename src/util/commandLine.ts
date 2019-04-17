@@ -10,6 +10,7 @@ export interface IParameters {
   del?: string;
   run?: string;
   shared?: boolean;
+  maxMemory?: string;
 }
 
 function assign(input: string): string[] {
@@ -35,6 +36,7 @@ function parseCommandline(argv: string[]): IParameters {
     .option('--restore [path]', 'Restore a state backup')
     .option('--shared', 'Used in conjunction with set, get or del, this will access the database'
                                        + 'in the shared location instead of the per-user one')
+    .option('--max-memory [size in MB]', 'Maximum amount of memory Vortex may use in MB (defaults to 4096)')
     // allow unknown options since they may be interpreted by electron/node
     .allowUnknownOption()
     .parse(argv || []) as IParameters;

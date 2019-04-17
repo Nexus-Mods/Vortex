@@ -61,7 +61,7 @@ class Application {
 
     ipcMain.on('show-window', () => this.showMainWindow());
 
-    app.commandLine.appendSwitch('js-flags', '--max-old-space-size=4096');
+    app.commandLine.appendSwitch('js-flags', `--max-old-space-size=${args.maxMemory || 4096}`);
 
     this.mBasePath = app.getPath('userData');
     fs.ensureDirSync(this.mBasePath);
@@ -81,7 +81,8 @@ class Application {
     return this.mMainWindow.create(this.mStore).then(webContents => {
       this.mExtensions.setupApiMain(this.mStore, webContents);
       setOutdated(this.mExtensions.getApi());
-      return this.applyArguments(this.mArgs);
+      this.applyArguments(this.mArgs);
+      return Promise.resolve();
     });
   }
 
