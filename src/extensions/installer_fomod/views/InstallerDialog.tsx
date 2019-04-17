@@ -325,7 +325,10 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
         onHide={this.nop}
       >
         <Modal.Header>
-          <Modal.Title>{installerInfo.moduleName}</Modal.Title>
+          <Modal.Title>
+            {installerInfo.moduleName}
+          </Modal.Title>
+          {steps[idx].name}
           <IconButton
             id='fomod-cancel'
             className='close-button'
