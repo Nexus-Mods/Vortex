@@ -84,7 +84,7 @@ class MyDropdown extends React.Component<IProps, { up: boolean }> {
     }
 
     if (this.props.onToggle) {
-      this.props.onToggle.apply(this, isOpen);
+      this.props.onToggle.apply(this, [isOpen]);
     }
   }
 }

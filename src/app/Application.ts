@@ -114,6 +114,7 @@ class Application {
     });
 
     app.on('second-instance', (event: Event, secondaryArgv: string[]) => {
+      log('debug', 'getting arguments from second instance', secondaryArgv);
       this.applyArguments(commandLine(secondaryArgv));
     });
 

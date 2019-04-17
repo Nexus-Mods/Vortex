@@ -203,7 +203,11 @@ class MainWindow {
 
   public sendExternalURL(url: string) {
     if (this.mWindow !== null) {
-      this.mWindow.webContents.send('external-url', url);
+      try {
+        this.mWindow.webContents.send('external-url', url);
+      } catch (err) {
+        log('error', 'failed to send external url', { url, error: err.message });
+      }
     }
   }
 
