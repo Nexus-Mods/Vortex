@@ -17,7 +17,7 @@ import { showError } from '../../../util/message';
 import opn from '../../../util/opn';
 import { getSafe } from '../../../util/storeHelper';
 import { testPathTransfer, transferPath } from '../../../util/transferPath';
-import { isChildPath } from '../../../util/util';
+import { isChildPath, isPathValid } from '../../../util/util';
 import { currentGame, currentGameDiscovery } from '../../gamemode_management/selectors';
 import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../../gamemode_management/types/IGameStored';
@@ -81,7 +81,6 @@ interface IComponentState {
   supportedActivators: IDeploymentMethod[];
   currentActivator: string;
   changingActivator: boolean;
-  currentPlatform: string;
 }
 
 type IProps = IBaseProps & IActionProps & IConnectedProps;
@@ -100,13 +99,11 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       currentActivator: props.currentActivator,
       installPath: props.installPath,
       changingActivator: false,
-      currentPlatform: '',
     });
   }
 
   public componentWillMount() {
     this.nextState.supportedActivators = this.supportedActivators();
-    this.nextState.currentPlatform = process.platform;
   }
 
   public componentWillReceiveProps(newProps: IProps) {
@@ -482,12 +479,6 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private validateModPath(input: string): { state: ValidationState, reason?: string } {
-    const { currentPlatform } = this.state;
-
-    const invalidCharacters = currentPlatform === 'win32'
-      ? ['/', '?', '%', '*', ':', '|', '"', '<', '>', '.']
-      : [];
-
     let vortexPath = remote.app.getAppPath();
     if (path.basename(vortexPath) === 'app.asar') {
       // in asar builds getAppPath returns the path of the asar so need to go up 2 levels
@@ -515,11 +506,10 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       };
     }
 
-    const removedWinRoot = currentPlatform === 'win32' ? input.substr(3) : input;
-    if (invalidCharacters.find(inv => removedWinRoot.indexOf(inv) !== -1) !== undefined) {
+    if (!isPathValid(input)) {
       return {
         state: 'error',
-        reason: 'Path cannot contain illegal characters',
+        reason: 'Path cannot contain illegal characters or reserved names',
       };
     }
 

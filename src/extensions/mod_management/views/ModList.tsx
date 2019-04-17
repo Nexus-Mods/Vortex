@@ -765,7 +765,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           });
         })
         .catch(err => {
-          this.context.api.showErrorNotification('Failed to remove mod', err);
+          this.context.api.showErrorNotification('Failed to set mod to uninstalled', err);
         });
       }
     } else if (modsWithState[modId].state === 'downloaded') {
@@ -899,7 +899,8 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     const { modsWithState } = this.state;
     return Promise
       .mapSeries(modIds, modId => {
-        if (modsWithState[modId].state === 'installed') {
+        if ((modsWithState[modId] !== undefined)
+            && (modsWithState[modId].state === 'installed')) {
           return this.removeMod(modId);
         } else {
           return Promise.resolve();
@@ -970,7 +971,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           .map(key => this.state.modsWithState[key].archiveId);
 
         return (removeMods
-            ? this.removeMods(filteredIds)
+            ? this.removeMods(wereInstalled)
               .then(() => wereInstalled.forEach(key => onRemoveMod(gameMode, key)))
             : Promise.resolve())
           .then(() => {
@@ -992,7 +993,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       })
       .catch(UserCanceled, () => null)
       .catch(err => {
-        this.context.api.showErrorNotification('Failed to remove mod', err);
+        this.context.api.showErrorNotification('Failed to remove selected mods', err);
       });
   }
 

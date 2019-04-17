@@ -230,6 +230,13 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
               message: 'Timeout retrieving categories from server, please try again later.',
             });
             return;
+          } else if (err.code === 'ENOTFOUND') {
+            api.sendNotification({
+              type: 'warning',
+              message: 'Failed to resolve address of server. This is probably a temporary problem '
+                      + 'with your own internet connection.',
+            });
+            return;
           } else if (['ECONNRESET', 'ECONNREFUSED', 'ECONNABORTED'].indexOf(err.code) !== -1) {
             api.sendNotification({
               type: 'warning',
