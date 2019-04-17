@@ -719,13 +719,17 @@ class InstallManager {
     const instructionGroups = this.transformInstructions(result.instructions);
 
     if (instructionGroups.error.length > 0) {
-      api.showErrorNotification('Installer reported errors',
-        'Errors were reported processing the installer for "{{ modId }}". '
-        + 'It\'s possible the mod works (partially) anyway. '
+      const fatal = instructionGroups.error.find(err => err.value === 'fatal');
+      let error = 'Errors were reported processing the installer for "{{ modId }}". ';
+
+      if (fatal === undefined) {
+        error += 'It\'s possible the mod works (partially) anyway. '
         + 'Please note that NMM tends to ignore errors so just because NMM doesn\'t '
-        + 'report a problem with this installer doesn\'t mean it doesn\'t have any.\n'
-        + '{{ errors }}'
-        , {
+        + 'report a problem with this installer doesn\'t mean it doesn\'t have any.';
+      }
+
+      api.showErrorNotification('Installer reported errors',
+        error + '\n{{ errors }}', {
           replace: {
             errors: instructionGroups.error.map(err => err.source).join('\n'),
             modId,
@@ -733,9 +737,13 @@ class InstallManager {
           allowReport: false,
           message: modId,
         });
+      if (fatal !== undefined) {
+        return Promise.reject(new ProcessCanceled('Installer script failed'));
+      }
     }
 
-    log('debug', 'installer instructions', instructionGroups);
+    log('debug', 'installer instructions',
+        JSON.stringify(result.instructions.map(instr => _.omit(instr, ['data']))));
     this.reportUnsupported(api, instructionGroups.unsupported, archivePath);
 
     return this.processMKDir(instructionGroups.mkdir, destinationPath)
