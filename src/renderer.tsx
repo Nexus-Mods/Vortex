@@ -224,6 +224,29 @@ setOutdated(extensions.getApi());
 extensions.applyExtensionsOfExtensions();
 log('debug', 'renderer connected to store');
 
+let lastHeapSize = 0;
+const REPORT_HEAP_INCREASE = 100 * 1024;
+let highUsageReport = false;
+setInterval(() => {
+  const stat = process.getHeapStatistics();
+  const heapPerc = stat.totalHeapSize / stat.heapSizeLimit;
+  if ((heapPerc > 0.75) && !highUsageReport) {
+    extensions.getApi().sendNotification({
+      id: 'high-memory-usage',
+      type: 'warning',
+      title: 'Vortex is using a lot of memory and may crash',
+      message: `${Math.floor(stat.totalHeapSize / 1024)} MB`,
+    });
+    log('warn', 'High memory usage', { usage: stat.totalHeapSize, max: stat.heapSizeLimit });
+  }
+  highUsageReport = heapPerc > 0.75;
+  if ((lastHeapSize > 0) && ((stat.totalHeapSize - lastHeapSize) > REPORT_HEAP_INCREASE)) {
+    log('info', 'memory usage growing fast',
+        { usage: stat.totalHeapSize, previous: lastHeapSize, max: stat.heapSizeLimit });
+  }
+  lastHeapSize = stat.totalHeapSize;
+}, 5000);
+
 let startupFinished: () => void;
 const startupPromise = new Promise((resolve) => startupFinished = resolve);
 
