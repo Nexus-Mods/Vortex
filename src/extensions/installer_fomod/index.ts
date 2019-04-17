@@ -11,6 +11,8 @@ import getVortexPath from '../../util/getVortexPath';
 import lazyRequire from '../../util/lazyRequire';
 import {truthy} from '../../util/util';
 
+import { ArchiveBrokenError } from '../mod_management/InstallManager';
+
 import { endDialog, setInstallerDataPath } from './actions/installerUI';
 import Core from './delegates/Core';
 import { installerUIReducer } from './reducers/installerUI';
@@ -52,10 +54,13 @@ function transformError(err: any): Error {
         result = new SetupError(`Your installation is missing "${fileName}" which is part of the `
           + 'Vortex installer. This would only happen if you use an inofficial installer or the '
           + 'Vortex installation was modified.');
-      } else {
-        result = new Error();
       }
     }
+  } else if (err.name === 'System.IO.DirectoryNotFoundException') {
+    result = new ArchiveBrokenError('The install directory is incomplete, this may mean the '
+                                  + 'archive is damaged, extraction failed or the directory '
+                                  + 'was externally modified between extraction and now. '
+                                  + `"${err.Message}"`);
   } else if (err.name === 'System.IO.FileLoadException') {
     if (err.FileName.indexOf('node_modules\\fomod-installer') !== -1) {
       const fileName = err.FileName.replace(/^file:\/*/, '');
