@@ -6,7 +6,7 @@ import * as selectors from '../selectors';
 import { setCreateTransfer, setSource, setTarget } from '../actions/transferSetup';
 import { IProfile } from '../types/IProfile';
 
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import * as React from 'react';
 import { Overlay, Popover } from 'react-bootstrap';
 import { DragSource, DropTarget, ConnectDragSource, ConnectDragPreview, ConnectDropTarget, DragSourceMonitor, DragSourceSpec, DropTargetSpec, DropTargetMonitor, DragSourceConnector, DropTargetConnector } from 'react-dnd';
@@ -16,7 +16,7 @@ import { connect } from 'react-redux';
 
 export interface IBaseProps {
   profile: IProfile;
-  t: I18next.TranslationFunction;
+  t: I18next.TFunction;
   onSetHighlightGameId: (gameId: string) => void;
   disabled: boolean;
 }
@@ -85,7 +85,7 @@ function updateCursorPos(monitor: DragSourceMonitor,
     updateCursorPos(monitor, component, onSetSource, onSetTarget), 50);
 }
 
-const transferSource: DragSourceSpec<IProps, any, any, any> = {
+const transferSource: DragSourceSpec<IProps, any> = {
   beginDrag(props: IProps, monitor: DragSourceMonitor, component) {
     props.onSetHighlightGameId(props.profile.gameId);
     updateCursorPos(monitor, component, props.onSetSource, props.onSetTarget);
@@ -116,7 +116,7 @@ const transferSource: DragSourceSpec<IProps, any, any, any> = {
   },
 };
 
-const transferTarget: DropTargetSpec<IProps, any, any> = {
+const transferTarget: DropTargetSpec<IProps> = {
   drop(props: IProps, monitor: DropTargetMonitor, component) {
     return {
       id: props.profile.id,

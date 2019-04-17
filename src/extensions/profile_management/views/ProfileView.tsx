@@ -25,6 +25,7 @@ import * as path from 'path';
 import * as React from 'react';
 import { Button, Collapse } from 'react-bootstrap';
 import { generate as shortid } from 'shortid';
+import { WithTranslation } from 'react-i18next';
 
 export interface IBaseProps {
   features: IProfileFeature[];
@@ -56,7 +57,7 @@ interface IViewState {
   showOther: boolean;
 }
 
-type IProps = IBaseProps & IConnectedProps & IActionProps;
+type IProps = IBaseProps & IConnectedProps & IActionProps & WithTranslation;
 
 /**
  * presents profiles and allows creation of new ones
@@ -351,6 +352,6 @@ function mapDispatchToProps(dispatch): IActionProps {
 }
 
 export default
-  translate(['common'], { wait: false })(
+  translate(['common'])(
     connect(mapStateToProps, mapDispatchToProps)(
       ProfileView)) as React.ComponentClass<{}>;

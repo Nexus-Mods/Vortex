@@ -6,6 +6,7 @@ import { translate, ComponentEx } from '../util/ComponentEx';
 
 import * as React from 'react';
 import {Popover} from 'react-bootstrap';
+import { WithTranslation } from 'react-i18next';
 
 let _haveKnowledgeBase: boolean;
 
@@ -17,7 +18,7 @@ function haveKnowledgeBase(api: IExtensionApi): boolean {
   return _haveKnowledgeBase;
 }
 
-export interface IProps {
+export interface IMoreProps {
   id: string;
   name: string;
   wikiId?: string;
@@ -29,6 +30,8 @@ export interface IProps {
 export interface IComponentState {
   open: boolean;
 }
+
+type IProps = IMoreProps & WithTranslation;
 
 /**
  * Component to make additional information available to the user without taking much
@@ -128,4 +131,4 @@ class More extends ComponentEx<IProps, IComponentState> {
   }
 }
 
-export default translate(['common'], { wait: false })(More) as React.ComponentClass<IProps>;
+export default translate(['common'])(More) as React.ComponentClass<IMoreProps>;

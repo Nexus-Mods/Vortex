@@ -13,6 +13,7 @@ import * as React from 'react';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import * as url from 'url';
+import { WithTranslation } from 'react-i18next';
 
 export type DropType = 'urls' | 'files';
 
@@ -42,7 +43,7 @@ interface IComponentState {
   dropActive: DropMode;
 }
 
-type IProps = IBaseProps & IConnectedProps & IActionProps;
+type IProps = IBaseProps & IConnectedProps & IActionProps & WithTranslation;
 
 class Dropzone extends ComponentEx<IProps, IComponentState> {
   private mWrapperMode: boolean = false;
@@ -282,6 +283,6 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
 }
 
 export default
-  translate(['common'], { wait: false })(
+  translate(['common'])(
     connect<{}, IActionProps, IBaseProps, IState>(mapStateToProps, mapDispatchToProps)(
       Dropzone)) as React.ComponentClass<IBaseProps>;

@@ -3,13 +3,13 @@ import Spinner from '../controls/Spinner';
 import { INotification, NotificationType } from '../types/INotification';
 import { ComponentEx } from '../util/ComponentEx';
 
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
 import { fireNotificationAction } from '../actions';
 
 interface IActionProps {
-  t: I18next.TranslationFunction;
+  t: I18next.TFunction;
   notificationId: string;
   notificationProcess: string;
   title: string;
@@ -37,7 +37,7 @@ class Action extends React.Component<IActionProps, {}> {
 }
 
 export interface IProps {
-  t: I18next.TranslationFunction;
+  t: I18next.TFunction;
   collapsed: number;
   params: INotification & { process?: string };
   onExpand: (groupId: string) => void;

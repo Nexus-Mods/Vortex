@@ -101,5 +101,5 @@ function mapStateToProps(state: IState): IConnectedProps {
 }
 
 export default
-  translate(['common'], { wait: false })(
+  translate(['common'])(
     connect(mapStateToProps)(RecentlyManaged)) as React.ComponentClass<{}>;

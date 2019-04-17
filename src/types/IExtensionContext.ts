@@ -30,7 +30,7 @@ import { ITableAttribute } from './ITableAttribute';
 import { ITestResult } from './ITestResult';
 
 import * as Promise from 'bluebird';
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import { ILookupResult, IModInfo, IReference } from 'modmeta-db';
 import * as React from 'react';
 import * as Redux from 'redux';
@@ -114,7 +114,7 @@ export interface IDashletOptions {
 
 export type RegisterDashlet =
   (title: string, width: 1 | 2 | 3, height: 1 | 2 | 3 | 4 | 5, position: number,
-   component: React.ComponentClass<any>, isVisible: (state) => boolean,
+   component: React.ComponentClass<any> | React.FunctionComponent<any>, isVisible: (state) => boolean,
    props: PropsCallback, options: IDashletOptions) => void;
 
 export type RegisterDialog =
@@ -135,10 +135,10 @@ export type RegisterToDo =
      type: ToDoType,
      props: (state: any) => any,
      icon: ((props: any) => JSX.Element) | string,
-     text: ((t: I18next.TranslationFunction, props: any) => JSX.Element) | string,
+     text: ((t: I18next.TFunction, props: any) => JSX.Element) | string,
      action: (props: any) => void,
      condition: (props: any) => boolean,
-     value: ((t: I18next.TranslationFunction, props: any) => JSX.Element) | string,
+     value: ((t: I18next.TFunction, props: any) => JSX.Element) | string,
      priority: number) => void;
 
 export interface IRegisterProtocol {
@@ -389,7 +389,7 @@ export interface IExtensionApi {
   /**
    * translation function
    */
-  translate: I18next.TranslationFunction;
+  translate: I18next.TFunction;
 
   /**
    * active locale

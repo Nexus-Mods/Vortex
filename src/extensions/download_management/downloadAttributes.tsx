@@ -18,7 +18,7 @@ import { IDownload } from './types/IDownload';
 import getDownloadGames from './util/getDownloadGames';
 import DownloadGameList from './views/DownloadGameList';
 
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
 import * as url from 'url';
@@ -129,7 +129,7 @@ function createColumns(api: IExtensionApi, props: () => IDownloadViewProps): ITa
           + 'when managing those games as well.',
       icon: 'game',
       customRenderer: (download: IDownload, detailCell: boolean,
-                       t: I18next.TranslationFunction) => {
+                       t: I18next.TFunction) => {
         const { downloads, knownGames } = props();
         const { store } = api;
         // TODO: awkward!
@@ -217,7 +217,7 @@ function createColumns(api: IExtensionApi, props: () => IDownloadViewProps): ITa
       name: 'File Size',
       description: 'Total size of the file',
       icon: 'chart-bars',
-      customRenderer: (download: IDownload, detailCell: boolean, t: I18next.TranslationFunction) =>
+      customRenderer: (download: IDownload, detailCell: boolean, t: I18next.TFunction) =>
         <span>{download.size !== undefined ? bytesToString(download.size) : '???'}</span>,
       calc: (download: IDownload) => download.size,
       placement: 'table',
@@ -229,9 +229,9 @@ function createColumns(api: IExtensionApi, props: () => IDownloadViewProps): ITa
       name: 'Progress',
       description: 'Download progress',
       icon: 'clock-o',
-      customRenderer: (download: IDownload, detailCell: boolean, t: I18next.TranslationFunction) =>
+      customRenderer: (download: IDownload, detailCell: boolean, t: I18next.TFunction) =>
         progress({ download, t }),
-      calc: (download: IDownload, t: I18next.TranslationFunction) => calc({ download, t }),
+      calc: (download: IDownload, t: I18next.TFunction) => calc({ download, t }),
       placement: 'table',
       isToggleable: true,
       edit: {},

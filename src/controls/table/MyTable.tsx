@@ -66,7 +66,7 @@ export class TH extends React.Component<DProps<HTMLTableHeaderCellElement> & { d
         style={{ ...style, display: 'table-cell' }}
         className={classes.join(' ')}
         ref={domRef}
-        {..._.omit(this.props, ['style', 'className', 'domRef'])}
+        {..._.omit(this.props, ['style', 'className', 'domRef']) as any}
       >
         {children}
       </div>
@@ -93,7 +93,7 @@ export function TD(props: DProps<HTMLTableCellElement> & { domRef?: (ref: HTMLDi
     <div
       style={{ ...props.style, display: 'table-cell' }}
       className={classes.join(' ')}
-      {..._.omit(props, ['style', 'className'])}
+      {..._.omit(props, ['style', 'className']) as any}
       ref={props.domRef}
     >
       {props.children}

@@ -103,7 +103,7 @@ class DraggableList extends ComponentEx<IProps, IDraggableListState> {
   }
 }
 
-const containerTarget: DropTargetSpec<IProps, any, any> = {
+const containerTarget: DropTargetSpec<IProps> = {
   hover(props: IProps, monitor: DropTargetMonitor, component) {
     const { containerId, index, item, take } = (monitor.getItem() as any);
 

@@ -20,7 +20,7 @@ import {iniFiles, iniFormat} from './gameSupport';
 import renderINITweaks from './TweakList';
 
 import * as Promise from 'bluebird';
-import { TranslationFunction } from 'i18next';
+import I18next from 'i18next';
 import * as path from 'path';
 import IniParser, { IniFile, WinapiFormat } from 'vortex-parse-ini';
 import * as winapi from 'winapi-bindings';
@@ -29,7 +29,7 @@ import { app as appIn, remote } from 'electron';
 import * as os from 'os';
 const app = appIn || remote.app;
 
-function ensureIniBackups(t: TranslationFunction, gameMode: string,
+function ensureIniBackups(t: I18next.TFunction, gameMode: string,
                           discovery: IDiscoveryResult): Promise<void> {
   return Promise.map(iniFiles(gameMode, discovery), file => {
     const backupFile = file + '.base';
@@ -77,7 +77,7 @@ function applyDelta(data: any, delta: any) {
   });
 }
 
-function discoverSettingsChanges(t: TranslationFunction, gameMode: string,
+function discoverSettingsChanges(t: I18next.TFunction, gameMode: string,
                                  discovery: IDiscoveryResult): Promise<void> {
   const format = iniFormat(gameMode);
   if (format === undefined) {
@@ -118,7 +118,7 @@ function getBaseFile(input: string): string {
 
 type ApplySettings = (fileName: string, parser: IniFile<any>) => Promise<void>;
 
-function bakeSettings(t: TranslationFunction,
+function bakeSettings(t: I18next.TFunction,
                       gameMode: string, discovery: IDiscoveryResult,
                       mods: IMod[], state: IState,
                       onApplySettings: ApplySettings): Promise<void> {
@@ -193,7 +193,7 @@ function bakeSettings(t: TranslationFunction,
   .then(() => undefined);
 }
 
-function purgeChanges(t: TranslationFunction, gameMode: string, discovery: IDiscoveryResult) {
+function purgeChanges(t: I18next.TFunction, gameMode: string, discovery: IDiscoveryResult) {
   return Promise.map(
       iniFiles(gameMode, discovery),
       iniFileName =>

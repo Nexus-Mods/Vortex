@@ -188,6 +188,6 @@ function mapDispatchToProps(dispatch): IActionProps {
 }
 
 export default
-  translate(['common'], { wait: true })(
+  translate(['common'])(
     connect(mapStateToProps, mapDispatchToProps)(
       NotificationButton)) as React.ComponentClass<IBaseProps>;

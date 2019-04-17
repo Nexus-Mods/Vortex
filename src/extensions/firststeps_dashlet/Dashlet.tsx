@@ -7,14 +7,14 @@ import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import { dismissStep } from './actions';
 import { IToDo } from './IToDo';
 
-import { TranslationFunction } from 'i18next';
+import I18next from 'i18next';
 import * as _ from 'lodash';
 import * as React from 'react';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 
 interface ITodoProps {
-  t: TranslationFunction;
+  t: I18next.TFunction;
   todo: IToDo;
   extensionProps: any;
   dismiss: (id: string) => void;
@@ -23,8 +23,8 @@ interface ITodoProps {
 class Todo extends React.PureComponent<ITodoProps, {}> {
   public render(): JSX.Element {
     const { t, extensionProps, todo } = this.props;
-    const text: JSX.Element = this.resolveElement(todo.text, 'todo-text');
-    const value: JSX.Element = this.resolveElement(todo.value, 'todo-value');
+    const text: JSX.Element = this.resolveElement(todo.text as string, 'todo-text');
+    const value: JSX.Element = this.resolveElement(todo.value as string, 'todo-value');
     const icon = typeof (todo.icon) === 'string'
       ? <Icon name={todo.icon} />
       : todo.icon(extensionProps);
@@ -60,7 +60,7 @@ class Todo extends React.PureComponent<ITodoProps, {}> {
   }
 
 
-  private resolveElement(input: string | ((t: TranslationFunction, props: any) => JSX.Element),
+  private resolveElement(input: string | ((t: I18next.TFunction, props: any) => JSX.Element),
                          className: string): JSX.Element {
     const { t, extensionProps } = this.props;
     return input === undefined
@@ -161,6 +161,6 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
   };
 }
 
-export default translate(['common'], { wait: true })(
+export default translate(['common'])(
   connect(mapStateToProps, mapDispatchToProps)(
     TodoDashlet)) as React.ComponentClass<IBaseProps>;

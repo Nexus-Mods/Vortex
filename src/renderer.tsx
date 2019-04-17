@@ -53,7 +53,7 @@ import { setOutdated, terminate, toError } from './util/errorHandling';
 import ExtensionManager from './util/ExtensionManager';
 import { ExtensionProvider } from './util/ExtensionProvider';
 import GlobalNotifications from './util/GlobalNotifications';
-import getI18n from './util/i18n';
+import getI18n, { fallbackTFunc } from './util/i18n';
 import { log } from './util/log';
 import { initApplicationMenu } from './util/menu';
 import { showError } from './util/message';
@@ -64,8 +64,7 @@ import * as Promise from 'bluebird';
 import { ipcRenderer, remote, webFrame } from 'electron';
 import { forwardToMain, getInitialStateRenderer, replayActionRenderer } from 'electron-redux';
 import { EventEmitter } from 'events';
-import * as I18next from 'i18next';
-import { changeLanguage } from 'i18next';
+import I18next from 'i18next';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import { I18nextProvider } from 'react-i18next';
@@ -83,13 +82,15 @@ import { reduxLogger } from './util/reduxLogger';
 import { getSafe } from './util/storeHelper';
 import { getAllPropertyNames } from './util/util';
 import { setLanguage } from './actions';
+import { DragDropContextProvider } from 'react-dnd';
+import HTML5Backend from 'react-dnd-html5-backend';
 
 log('debug', 'renderer process started', { pid: process.pid });
 
 const tempPath = path.join(remote.app.getPath('userData'), 'temp');
 remote.app.setPath('temp', tempPath);
 
-crashDump(path.join(remote.app.getPath('temp'), 'dumps', `crash-renderer-${Date.now()}.dmp`));
+const deinitCrashDump = crashDump(path.join(remote.app.getPath('temp'), 'dumps', `crash-renderer-${Date.now()}.dmp`));
 
 // allow promises to be cancelled.
 Promise.config({
@@ -174,6 +175,9 @@ window.addEventListener('error', errorHandler);
 window.addEventListener('unhandledrejection', errorHandler);
 window.removeEventListener('error', earlyErrHandler);
 window.removeEventListener('unhandledrejection', earlyErrHandler);
+window.addEventListener('close', () => {
+  deinitCrashDump();
+})
 
 const eventEmitter: NodeJS.EventEmitter = new EventEmitter();
 
@@ -203,7 +207,7 @@ if (process.env.NODE_ENV === 'development') {
 // extensions are to be loaded has to be retrieved from the main process
 const extensions: ExtensionManager = new ExtensionManager(undefined, eventEmitter);
 const extReducers = extensions.getReducers();
-let tFunc: I18next.TranslationFunction = (input, options) => input;
+let tFunc: I18next.TFunction = fallbackTFunc;
 
 // I only want to add reducers, but redux-electron-store seems to break
 // when calling replaceReducer in the renderer
@@ -269,7 +273,7 @@ store.subscribe(() => {
       return;
     }
     currentLanguage = newLanguage;
-    changeLanguage(newLanguage, (err, t) => {
+    I18next.changeLanguage(newLanguage, (err, t) => {
       if (err !== undefined) {
         if (Array.isArray(err)) {
           // don't show ENOENT errors because it shouldn't really matter
@@ -317,11 +321,13 @@ function renderer() {
       // render the page content
       ReactDOM.render(
         <Provider store={store}>
-          <I18nextProvider i18n={i18n}>
-            <ExtensionProvider extensions={extensions}>
-              <MainWindow className='full-height' api={extensions.getApi()} t={tFunc} />
-            </ExtensionProvider>
-          </I18nextProvider>
+          <DragDropContextProvider backend={HTML5Backend}>
+            <I18nextProvider i18n={i18n}>
+              <ExtensionProvider extensions={extensions}>
+                <MainWindow className='full-height' api={extensions.getApi()} t={tFunc} />
+              </ExtensionProvider>
+            </I18nextProvider>
+          </DragDropContextProvider>
         </Provider>,
         document.getElementById('content'),
       );

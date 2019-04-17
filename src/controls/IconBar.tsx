@@ -9,7 +9,7 @@ import ToolbarDropdown from './ToolbarDropdown';
 import ToolbarIcon from './ToolbarIcon';
 import { IconButton } from './TooltipControls';
 
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import update from 'immutability-helper';
 import * as _ from 'lodash';
 import * as PropTypes from 'prop-types';
@@ -32,25 +32,10 @@ export interface IBaseProps {
   icon?: string;
   pullRight?: boolean;
   clickAnywhere?: boolean;
-  t: I18next.TranslationFunction;
+  t: I18next.TFunction;
 }
 
 type IProps = IBaseProps & { actions?: IActionDefinitionEx[] } & React.HTMLAttributes<any>;
-
-// takes the props of a Popover. ignores the arrow, applies the absolute
-// position
-function Positioner(props: any): JSX.Element {
-  const { children, positionLeft, positionTop } = props;
-
-  return (
-    <div
-      className={props.className}
-      style={{ top: positionTop, left: positionLeft, position: 'absolute' }}
-    >
-      <div className='menu-content'>{children}</div>
-    </div>
-  );
-}
 
 interface IPortalMenuProps {
   open: boolean;
@@ -76,22 +61,26 @@ class PortalMenu extends React.Component<IPortalMenuProps, {}> {
         placement='bottom'
         target={target}
       >
-        <Positioner className='icon-menu-positioner'>
-          <Dropdown.Menu
-            style={{ display: 'block', position: 'initial' }}
-            onClose={onClose}
-            open={open}
-            onClick={onClick}
-          >
-            {this.props.children}
-          </Dropdown.Menu>
-        </Positioner>
+        {({ props, arrowProps, placement }) => (
+            <div {...props} className='icon-menu-positioner'>
+              <div className='menu-content'>
+                <Dropdown.Menu
+                  style={{ display: 'block', position: 'initial' }}
+                  onClose={onClose}
+                  open={open}
+                  onClick={onClick}
+                >
+                  {this.props.children}
+                </Dropdown.Menu>
+              </div>
+            </div>
+          )}
       </Overlay>
     );
   }
 }
 
-function genTooltip(t: I18next.TranslationFunction, show: boolean | string): string {
+function genTooltip(t: I18next.TFunction, show: boolean | string): string {
   return typeof (show) === 'string'
     ? t(show)
     : undefined;
@@ -101,7 +90,7 @@ interface IMenuActionProps {
   id: string;
   action: IActionDefinitionEx;
   instanceId: string | string[];
-  t: I18next.TranslationFunction;
+  t: I18next.TFunction;
 }
 
 class MenuAction extends React.PureComponent<IMenuActionProps, {}> {

@@ -55,6 +55,7 @@ class Application {
   private mExtensions: ExtensionManagerT;
   private mTray: TrayIconT;
   private mFirstStart: boolean = false;
+  private mDeinitCrashDump: () => void = undefined;
 
   constructor(args: IParameters) {
     this.mArgs = args;
@@ -70,7 +71,7 @@ class Application {
     app.setPath('temp', tempPath);
     fs.ensureDirSync(path.join(tempPath, 'dumps'));
 
-    crashDump(path.join(tempPath, 'dumps', `crash-main-${Date.now()}.dmp`));
+    this.mDeinitCrashDump = crashDump(path.join(tempPath, 'dumps', `crash-main-${Date.now()}.dmp`));
 
     this.setupAppEvents(args);
   }
@@ -99,6 +100,8 @@ class Application {
   private setupAppEvents(args: IParameters) {
     app.on('window-all-closed', () => {
       log('info', 'clean application end');
+      this.mTray.close();
+      this.mDeinitCrashDump();
       if (process.platform !== 'darwin') {
         app.quit();
       }
@@ -110,11 +113,9 @@ class Application {
       }
     });
 
-    /* electron 3
     app.on('second-instance', (event: Event, secondaryArgv: string[]) => {
       this.applyArguments(commandLine(secondaryArgv));
     });
-    */
 
     app.on('ready', () => {
       if (args.get) {
@@ -645,7 +646,6 @@ class Application {
   }
 
   private testShouldQuit(): Promise<void> {
-    /* electron 3
     const primaryInstance: boolean = app.requestSingleInstanceLock();
 
     if (primaryInstance) {
@@ -654,26 +654,6 @@ class Application {
       app.exit();
       return Promise.reject(new ProcessCanceled('should quit'));
     }
-    */
-
-    const remoteCallback = (secondaryArgv, workingDirectory) => {
-      // this is called inside the primary process
-      // with the parameters of
-      // the secondary one whenever an additional
-      // instance is started
-      this.applyArguments(commandLine(secondaryArgv));
-    };
-
-    const shouldQuit: boolean = app.makeSingleInstance(remoteCallback);
-
-    if (shouldQuit) {
-      // exit instead of quit so events don't get triggered. Otherwise an exception may be caused
-      // by failures to require modules
-      app.exit();
-      return Promise.reject(new ProcessCanceled('should quit'));
-    }
-
-    return Promise.resolve();
   }
 
   private applyArguments(args: IParameters) {

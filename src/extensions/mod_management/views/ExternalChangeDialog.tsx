@@ -10,7 +10,7 @@ import { confirmExternalChanges, setExternalChangeAction } from '../actions/sess
 
 import { FileAction, IFileEntry } from '../types/IFileEntry';
 
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import update from 'immutability-helper';
 import * as React from 'react';
 import * as Redux from 'redux';
@@ -195,7 +195,7 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         {/* this.renderChangedFile(t('These files were modified'), 'valchange', valChanged) */}
-        {this.renderChangedFile(t('File content modified'
+        {this.renderChangedFile(t('File content modified '
                     + '("Save" will apply the changed file from the game directory permanently, '
                     + '"Revert" will restore the original file from the mod directory)'),
           'refchange', refChanged)}
@@ -297,7 +297,7 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
         id: 'file_count',
         name: 'File Count',
         description: 'Number of files in this mod that were changed',
-        calc: (source: ISourceEntry, t: I18next.TranslationFunction) =>
+        calc: (source: ISourceEntry, t: I18next.TFunction) =>
           t('{{count}} file', {
             count: source.filePaths !== undefined ? source.filePaths.length : 0 }),
         placement: 'table',
@@ -441,6 +441,6 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
   };
 }
 
-export default translate(['common'], { wait: false })(
+export default translate(['common'])(
   connect(mapStateToProps, mapDispatchToProps)(ExternalChangeDialog),
 ) as React.ComponentClass<IBaseProps>;

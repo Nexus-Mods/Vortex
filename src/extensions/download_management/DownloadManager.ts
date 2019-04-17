@@ -91,7 +91,7 @@ class DownloadWorker {
   private mBuffers: Buffer[] = [];
   private mDataHistory: Array<{ time: number, size: number }> = [];
   private mEnded: boolean = false;
-  private mResponse: http.ClientResponse;
+  private mResponse: http.IncomingMessage;
   private mWriting: boolean = false;
   private mRedirected: boolean = false;
   private mRedirectsFollowed: number = 0;

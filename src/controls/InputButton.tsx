@@ -136,6 +136,6 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
 }
 
 export default
-  translate([ 'common' ], { wait: false })(
+  translate([ 'common' ])(
     connect<IConnectedProps, IActionProps, IBaseProps, IState>(mapStateToProps, mapDispatchToProps)(
       InputButton)) as React.ComponentClass<IBaseProps>;

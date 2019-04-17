@@ -2,6 +2,9 @@ import ExtensionManager from './ExtensionManager';
 
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
+import * as _ from 'lodash';
+
+type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
 
 export interface IExtensionProps {
   extensions: ExtensionManager;
@@ -26,7 +29,7 @@ export class ExtensionProvider extends React.Component<IExtensionProps, {}> {
     return { extensions };
   }
 
-  public render(): JSX.Element {
+  public render() {
     return React.Children.only(this.props.children);
   }
 }
@@ -36,6 +39,18 @@ export interface IExtensibleProps {
   staticElements?: any[];
 }
 
+export interface IExtendedProps {
+  objects: any[];
+}
+
+/*
+export function withTranslation(
+  ns?: Namespace,
+): <P extends WithTranslation>(
+  component: React.ComponentType<P>,
+) => React.ComponentType<Omit<P, keyof IExtensionProps>>;
+*/
+
 /**
  * extension function. This function creates a wrapper around a component that
  * binds the extensions of a component to its props
@@ -44,7 +59,8 @@ export interface IExtensibleProps {
  * @param {(React.ComponentClass<P & IExtensionProps>)} ComponentToWrap the component to wrap
  * @returns {React.ComponentClass<P>} the wrapper component
  */
-export function extend(registerFunc: (...args) => void, groupProp?: string) {
+export function extend(registerFunc: (...args) => void, groupProp?: string):
+    <P extends IExtendedProps>(component: React.ComponentType<P>) => React.ComponentType<Omit<P, keyof IExtendedProps> & IExtensibleProps> {
   const ExtensionManagerImpl: typeof ExtensionManager = require('./ExtensionManager').default;
   ExtensionManagerImpl.registerUIAPI(registerFunc.name);
   const extensions: { [group: string]: any } = {};
@@ -59,9 +75,9 @@ export function extend(registerFunc: (...args) => void, groupProp?: string) {
     });
   };
 
-  return <P, S>(ComponentToWrap: React.ComponentClass<P>): any => {
+  return <P extends IExtendedProps, S>(ComponentToWrap: React.ComponentType<P>): React.ComponentType<Omit<P, keyof IExtendedProps>> => {
     // tslint:disable-next-line:class-name
-    return class __ExtendedComponent extends React.Component<IExtensibleProps & P, S> {
+    return class __ExtendedComponent extends React.Component<Omit<P, keyof IExtendedProps> & IExtensibleProps, S> {
       public static contextTypes: React.ValidationMap<any> = {
         extensions: PropTypes.object.isRequired,
       };
@@ -94,11 +110,9 @@ export function extend(registerFunc: (...args) => void, groupProp?: string) {
         }
 
         const wrapProps: any = {
-          ...(this.props as any),
+          ..._.omit(this.props, ['staticElements', 'group']),
           objects: this.mObjects,
         };
-        delete wrapProps.staticElements;
-        delete wrapProps.group;
         return React.createElement(ComponentToWrap, wrapProps, children);
       }
     };

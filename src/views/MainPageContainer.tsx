@@ -10,6 +10,7 @@ import { remote } from 'electron';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
 import { Alert, Button, Jumbotron } from 'react-bootstrap';
+import { WithTranslation } from 'react-i18next';
 
 export interface IBaseProps {
   page: IMainPage;
@@ -21,14 +22,14 @@ export interface IMainPageContext {
   globalOverlay: JSX.Element;
 }
 
-type IProps = IBaseProps;
+type IProps = IBaseProps & WithTranslation;
 
 interface IComponentState {
   error: Error;
   errorInfo: React.ErrorInfo;
 }
 
-class MainPageContainer extends ComponentEx<IBaseProps, IComponentState> {
+class MainPageContainer extends ComponentEx<IProps, IComponentState> {
   public static childContextTypes: React.ValidationMap<any> = {
     api: PropTypes.object.isRequired,
     headerPortal: PropTypes.func,
@@ -37,7 +38,7 @@ class MainPageContainer extends ComponentEx<IBaseProps, IComponentState> {
 
   private headerRef: HTMLElement;
 
-  constructor(props: IBaseProps) {
+  constructor(props: IProps) {
     super(props);
 
     this.state = {
@@ -51,7 +52,7 @@ class MainPageContainer extends ComponentEx<IBaseProps, IComponentState> {
     return {
       api: this.context.api,
       headerPortal: () => this.headerRef,
-      page: page.title,
+      page: page.id,
     };
   }
 
@@ -71,7 +72,7 @@ class MainPageContainer extends ComponentEx<IBaseProps, IComponentState> {
 
     if (error !== undefined) {
       return (
-        <div className={classes.join(' ')}>
+        <div id={`page-${page.id}`} className={classes.join(' ')}>
           <Alert className='render-failure' bsStyle='danger'>
             <Icon className='render-failure-icon' name='sad' />
             <div className='render-failure-text'>{t('Failed to render.')}</div>
@@ -88,7 +89,7 @@ class MainPageContainer extends ComponentEx<IBaseProps, IComponentState> {
       const props = page.propsFunc();
 
       return (
-        <div className={classes.join(' ')}>
+        <div id={`page-${page.id}`} className={classes.join(' ')}>
           <div className='mainpage-header-container' ref={this.setHeaderRef} />
           <div className='mainpage-body-container'>
             <ExtensionGate id={page.id}>
@@ -130,4 +131,4 @@ ComponentStack:
   }
 }
 
-export default translate(['common'], { wait: false })(MainPageContainer);
+export default translate(['common'])(MainPageContainer);

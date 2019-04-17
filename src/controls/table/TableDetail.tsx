@@ -8,7 +8,7 @@ import FormInput from '../FormInput';
 import Icon from '../Icon';
 import More from '../More';
 
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import * as _ from 'lodash';
 import * as React from 'react';
 import { Button, ControlLabel, FormControl, FormGroup,
@@ -21,7 +21,7 @@ interface ICellProps {
   rowIds: string[];
   rowData: { [rowId: string]: any };
   rawData: { [rowId: string]: any };
-  t: I18next.TranslationFunction;
+  t: I18next.TFunction;
   onChangeData: (rowIds: string[], attributeId: string, value: any) => void;
 }
 
@@ -259,7 +259,7 @@ export interface IDetailProps {
   rowData: { [rowId: string]: any };
   rawData: { [rowId: string]: any };
   attributes: ITableAttribute[];
-  t: I18next.TranslationFunction;
+  t: I18next.TFunction;
   show: boolean;
   title: string;
   onToggleShow: () => void;

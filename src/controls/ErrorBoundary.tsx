@@ -1,4 +1,4 @@
-import { ComponentEx } from '../util/ComponentEx';
+import { ComponentEx, translate } from '../util/ComponentEx';
 import { isOutdated, didIgnoreError } from '../util/errorHandling';
 import { genHash } from '../util/genHash';
 
@@ -6,12 +6,11 @@ import Icon from './Icon';
 import { IconButton } from './TooltipControls';
 
 import { remote } from 'electron';
-import * as I18next from 'i18next';
 import * as React from 'react';
 import { Alert, Button } from 'react-bootstrap';
-import { translate } from 'react-i18next';
+import { WithTranslation } from 'react-i18next';
 
-export interface IErrorBoundaryProps {
+export interface IErrorBoundaryProps extends WithTranslation {
   visible?: boolean;
   onHide?: () => void;
   className?: string;
@@ -36,7 +35,7 @@ class ErrorBoundary extends ComponentEx<IErrorBoundaryProps, IErrorBoundaryState
     this.setState({ error, errorInfo });
   }
 
-  public render(): JSX.Element {
+  public render(): React.ReactNode {
     const { t, className, onHide, visible } = this.props;
     const { error } = this.state;
 
@@ -94,4 +93,4 @@ ComponentStack:
 
 }
 
-export default translate(['common'], {})(ErrorBoundary);
+export default translate(['common'])(ErrorBoundary);

@@ -1,14 +1,22 @@
 import * as React from 'react';
 
 import { IComponentContext } from '../types/IComponentContext';
-import { II18NProps } from '../types/II18NProps';
 
 import { deleteOrNop, setSafe } from './storeHelper';
 
 import * as PropTypes from 'prop-types';
-export { translate } from 'react-i18next';
+import { WithTranslation, withTranslation } from 'react-i18next';
 export { connect } from 'react-redux';
 export { extend } from './ExtensionProvider';
+
+let translate: any = withTranslation;
+
+// react-i18next typings are borked atm, forcing the props of the wrapped class
+// to declare all parameter it injects as non-optional, meaning you're not allowed
+// to have a class that can also work without (some of) them.
+export {
+  translate,
+};
 
 export class StateProxyHandler<T extends object> implements ProxyHandler<T> {
   private mComponent: ComponentEx<any, T> | PureComponentEx<any, T>;
@@ -98,7 +106,7 @@ export class StateProxyHandler<T extends object> implements ProxyHandler<T> {
  * @template P
  * @template S
  */
-export class ComponentEx<P, S extends object> extends React.Component<P & II18NProps, S> {
+export class ComponentEx<P, S extends object> extends React.Component<P & Partial<WithTranslation>, S> {
   public static contextTypes: React.ValidationMap<any> = {
     api: PropTypes.object.isRequired,
     menuLayer: PropTypes.object,
@@ -118,7 +126,7 @@ export class ComponentEx<P, S extends object> extends React.Component<P & II18NP
   }
 }
 
-export class PureComponentEx<P, S extends object> extends React.PureComponent<P & II18NProps, S> {
+export class PureComponentEx<P, S extends object> extends React.PureComponent<P & Partial<WithTranslation>, S> {
   public static contextTypes: React.ValidationMap<any> = {
     api: PropTypes.object.isRequired,
     menuLayer: PropTypes.object,

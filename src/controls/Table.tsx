@@ -1371,7 +1371,7 @@ export function makeGetSelection(tableId: string): GetSelection {
 }
 
 export default
-  translate(['common'], { wait: false })(
+  translate(['common'])(
     extend(registerTableAttribute, 'tableId')(
       connect(mapStateToProps, mapDispatchToProps)(
         SuperTable))) as React.ComponentClass<IBaseProps & IExtensibleProps>;

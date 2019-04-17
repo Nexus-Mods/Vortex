@@ -2,14 +2,14 @@ import FormFeedback from './FormFeedback';
 import { IconButton } from './TooltipControls';
 
 import { remote } from 'electron';
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import * as React from 'react';
 import { Checkbox, Col, ControlLabel,
          FormControl, FormGroup,
          InputGroup } from 'react-bootstrap';
 
 export interface IFormItemProps {
-  t: I18next.TranslationFunction;
+  t: I18next.TFunction;
   controlId: string;
   label: string;
   placeholder?: string;

@@ -3,7 +3,7 @@ import { truthy } from '../../../util/util';
 
 import { IMod } from '../../mod_management/types/IMod';
 
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 
 /**
  * generate the category's subtitle
@@ -13,7 +13,7 @@ import * as I18next from 'i18next';
  * @return {string}
  */
 
-function generateSubtitle(t: I18next.TranslationFunction,
+function generateSubtitle(t: I18next.TFunction,
                           categoryId: string,
                           mods: { [categoryId: string]: IMod[] },
                           totalChildModCount?: number) {

@@ -2,6 +2,7 @@ import { setDialogVisible } from '../../../actions/session';
 import Spinner from '../../../controls/Spinner';
 import { IconButton } from '../../../controls/TooltipControls';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
+import { UserCanceled } from '../../../util/CustomErrors';
 import opn from '../../../util/opn';
 import { setUserAPIKey } from '../actions/account';
 import { IValidateKeyData } from '../types/IValidateKeyData';
@@ -10,7 +11,7 @@ import * as React from 'react';
 import { Button, Image } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
-import { UserCanceled } from '../../../util/CustomErrors';
+import { WithTranslation } from 'react-i18next';
 
 interface IConnectedProps {
   userInfo: IValidateKeyData;
@@ -22,7 +23,7 @@ interface IActionProps {
   onSetDialogVisible: (id: string) => void;
 }
 
-type IProps = IConnectedProps & IActionProps;
+type IProps = WithTranslation & IConnectedProps & IActionProps;
 
 class DashboardBanner extends ComponentEx<IProps, { }> {
   public render(): JSX.Element {
@@ -120,5 +121,5 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
 
 export default
   connect(mapStateToProps, mapDispatchToProps)(
-    translate(['common'], { wait: false })(
+    translate(['common'])(
       DashboardBanner)) as React.ComponentClass<{}>;

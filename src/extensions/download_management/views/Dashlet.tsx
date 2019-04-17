@@ -7,11 +7,11 @@ import { bytesToString } from '../../../util/util';
 import {speedDataPoints} from '../reducers/state';
 import {IDownload} from '../types/IDownload';
 
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import * as React from 'react';
 
 interface IBaseProps {
-  t: I18next.TranslationFunction;
+  t: I18next.TFunction;
 }
 
 interface IConnectedProps {

@@ -7,11 +7,11 @@ import { IGameStored } from '../types/IGameStored';
 import { IDiscoveryResult } from '../types/IDiscoveryResult';
 
 import * as Promise from 'bluebird';
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import * as React from 'react';
 
 export interface IBaseProps {
-  t: I18next.TranslationFunction;
+  t: I18next.TFunction;
   game: IGameStored;
   onRefreshGameInfo: (gameId: string) => Promise<void>;
   onChange: () => void;

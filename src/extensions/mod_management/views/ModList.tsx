@@ -46,7 +46,7 @@ import CheckModVersionsButton from './CheckModVersionsButton';
 import InstallArchiveButton from './InstallArchiveButton';
 
 import * as Promise from 'bluebird';
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import * as _ from 'lodash';
 import * as React from 'react';
 import { Button, ButtonGroup, MenuItem, Panel } from 'react-bootstrap';
@@ -60,7 +60,7 @@ const PanelX: any = Panel;
 type IModWithState = IMod & IProfileMod;
 
 interface IVersionOptionProps {
-  t: I18next.TranslationFunction;
+  t: I18next.TFunction;
   modId: string;
   altId: string;
   mod: IModWithState;
@@ -212,13 +212,13 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         action: this.reinstall,
         condition: (instanceId: string | string[]) => {
           const cond = (id: string) => (this.props.mods[id] !== undefined)
-              && (truthy(this.props.mods[id].archiveId)
-                || this.props.t('No associated archive.'));
-          if (typeof(instanceId) === 'string') {
-            return cond(instanceId);
-          } else {
-            return instanceId.find(cond) !== undefined;
-          }
+              && (truthy(this.props.mods[id].archiveId));
+          const res: boolean = (typeof(instanceId) === 'string')
+            ? cond(instanceId)
+            : instanceId.find(cond) !== undefined;
+          return res
+            ? true
+            : this.props.t('No associated archive.') as string;
         },
       },
     ];
@@ -1088,6 +1088,6 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
 }
 
 export default
-  translate(['common'], { wait: false })(
+  translate(['common'])(
     connect(mapStateToProps, mapDispatchToProps)(
       ModList)) as React.ComponentClass<{}>;

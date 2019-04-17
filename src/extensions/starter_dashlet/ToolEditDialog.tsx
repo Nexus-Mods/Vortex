@@ -17,7 +17,7 @@ import { addDiscoveredTool, setGameParameters } from '../gamemode_management/act
 import ToolIcon from './ToolIcon';
 
 import * as Promise from 'bluebird';
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import { extractIconToFile } from 'icon-extract';
 import * as _ from 'lodash';
 import * as path from 'path';
@@ -29,7 +29,7 @@ import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 
 interface IEnvButtonProps {
-  t: I18next.TranslationFunction;
+  t: I18next.TFunction;
   variable?: { key: string, value: string };
   open: boolean;
   onOpen: (itemId: string) => void;
@@ -564,6 +564,6 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
 }
 
 export default
-  translate([ 'common' ], { wait: false })(
+  translate([ 'common' ])(
     connect(mapStateToProps, mapDispatchToProps)(
       ToolEditDialog)) as React.ComponentClass<IBaseProps>;

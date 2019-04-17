@@ -39,7 +39,7 @@ class MyDropdownButton extends React.Component<IProps, { up: boolean, right: boo
     const { up, right } = this.state;
     const relayProps: any =
       _.omit(this.props, ['container', 'dropup', 'onToggle', 'split', 'children']);
-    const Comp = this.props.split ? SplitButton : DropdownButton;
+    const Comp: any = this.props.split ? SplitButton : DropdownButton;
     return (
       <Comp dropup={up} pullRight={right} onToggle={this.onToggle} {...relayProps}>
         {this.mOpen ? this.props.children : null}
@@ -71,7 +71,7 @@ class MyDropdownButton extends React.Component<IProps, { up: boolean, right: boo
     }
 
     if (this.props.onToggle) {
-      this.props.onToggle.apply(this, arguments);
+      this.props.onToggle.apply(this, isOpen);
     }
   }
 }

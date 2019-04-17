@@ -16,14 +16,15 @@ import { getSafe } from '../util/storeHelper';
 import { truthy } from '../util/util';
 
 import * as Promise from 'bluebird';
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import * as React from 'react';
 import { DropdownButton, MenuItem } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
+import { WithTranslation } from 'react-i18next';
 
 export interface IBaseProps {
-  t: I18next.TranslationFunction;
+  t: I18next.TFunction;
 }
 
 interface IConnectedProps {
@@ -46,7 +47,7 @@ interface IActionProps {
                  actions: DialogActions) => Promise<IDialogResult>;
 }
 
-type IProps = IBaseProps & IConnectedProps & IActionProps;
+type IProps = IBaseProps & IConnectedProps & IActionProps & WithTranslation;
 
 interface IComponentState {
   starter: StarterInfo;

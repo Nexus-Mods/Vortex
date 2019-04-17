@@ -65,7 +65,7 @@ function collectDrop(connect: DropTargetConnector,
   };
 }
 
-const entrySource: DragSourceSpec<IProps, any, any, any> = {
+const entrySource: DragSourceSpec<IProps, any> = {
   beginDrag(props: IProps) {
     return {
       index: props.index,
@@ -79,7 +79,7 @@ const entrySource: DragSourceSpec<IProps, any, any, any> = {
   },
 };
 
-const entryTarget: DropTargetSpec<IProps, any, any> = {
+const entryTarget: DropTargetSpec<IProps> = {
   hover(props: IProps, monitor: DropTargetMonitor, component) {
     const { containerId, index, item, take } = (monitor.getItem() as any);
     const hoverIndex = props.index;

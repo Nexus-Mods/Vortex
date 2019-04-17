@@ -332,6 +332,6 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
   };
 }
 
-export default translate(['common'], { wait: true })(
+export default translate(['common'])(
   connect<IConnectedProps, IActionProps, IBaseProps, IState>(mapStateToProps, mapDispatchToProps)
     (DiagnosticsFilesDialog)) as React.ComponentClass<IBaseProps>;

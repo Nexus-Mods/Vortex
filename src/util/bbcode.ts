@@ -5,6 +5,7 @@ import IdentityTag from './bbcode/IdentityTag';
 import LineTag from './bbcode/LineTag';
 import LinkTag from './bbcode/LinkTag';
 import MoreTag from './bbcode/MoreTag';
+import TooltipTag from './bbcode/TooltipTag';
 import SizeTag from './bbcode/SizeTag';
 import SpoilerTag from './bbcode/SpoilerTag';
 import SvgTag from './bbcode/SvgTag';
@@ -27,6 +28,7 @@ fullParser.registerTag('line', LineTag);
 fullParser.registerTag('heading', HeadingTag);
 fullParser.registerTag('svg', SvgTag);
 fullParser.registerTag('more', MoreTag);
+fullParser.registerTag('tooltip', TooltipTag);
 
 const stripParser = new bbcode.Parser();
 stripParser.registerTag('br', BrTag);

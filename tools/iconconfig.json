@@ -540,6 +540,10 @@
     "announcements": {
       "path": "{nucleo}/user interface/{nucleo_simple}_megaphone",
       "rmFill": true
+    },
+    "archive": {
+      "path": "{nucleo}/files-folders/32px_box",
+      "rmFill": true
     }
   }
 }

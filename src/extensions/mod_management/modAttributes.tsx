@@ -8,13 +8,13 @@ import { getSafe } from '../../util/storeHelper';
 import { IModWithState } from './types/IModProps';
 import Description from './views/Description';
 
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import * as React from 'react';
 
 export const PICTURE: ITableAttribute<IModWithState> = {
   id: 'picture',
   description: 'A picture provided by the author',
-  customRenderer: (mod: IModWithState, detail: boolean, t: I18next.TranslationFunction) => {
+  customRenderer: (mod: IModWithState, detail: boolean, t: I18next.TFunction) => {
     const long = getSafe(mod, ['attributes', 'description'], '');
     const short = getSafe(mod, ['attributes', 'shortDescription'], t('Description'));
 

@@ -14,12 +14,12 @@ import { IProfileFeature } from '../types/IProfileFeature';
 import TransferIcon from './TransferIcon';
 
 import { nativeImage, remote } from 'electron';
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
 
 export interface IProps {
-  t: I18next.TranslationFunction;
+  t: I18next.TFunction;
   active: boolean;
   available: boolean;
   profile: IProfile;
@@ -37,6 +37,8 @@ interface IComponentState {
   hasProfileImage: boolean;
   counter: number;
 }
+
+function nop() {}
 
 /**
  * presents profiles and allows creation of new ones
@@ -205,7 +207,7 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
     return (
       <TR key={id}>
         <TD>
-          {feature.label}
+          <a className='fake-link' title={feature.description} onClick={nop}>{feature.label}</a>
         </TD>
         <TD>
           {this.renderFeatureValue(feature.type, value)}

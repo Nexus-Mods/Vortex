@@ -7,13 +7,13 @@ import { truthy } from '../../util/util';
 
 import ToolIcon from './ToolIcon';
 
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import * as React from 'react';
 
 export type RemoveTool = (gameId: string, toolId: string) => void;
 
 export interface IProps {
-  t: I18next.TranslationFunction;
+  t: I18next.TFunction;
   counter: number;
   starter: StarterInfo;
   primary: boolean;
@@ -44,7 +44,7 @@ class ToolButton extends PureComponentEx<IProps, {}> {
         icon: 'bookmark',
         action: this.setPrimaryTool,
         condition: () => truthy(this.props.starter.exePath)
-          ? true : props.t('Not configured'),
+          ? true : props.t('Not configured') as string,
       },
       {
         title: props.t('Edit'),

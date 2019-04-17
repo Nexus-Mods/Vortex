@@ -224,6 +224,6 @@ function mapDispatchToProps(dispatch: ThunkDispatch<IState, null, Redux.Action>)
 }
 
 export default
-  translate(['common'], { wait: false })(
+  translate(['common'])(
     connect(mapStateToProps, mapDispatchToProps)(
       BrowserView)) as React.ComponentClass<IBaseProps>;

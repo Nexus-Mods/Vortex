@@ -28,15 +28,16 @@ import { DownloadIsHTML } from '../DownloadManager';
 import DownloadGraph from './DownloadGraph';
 
 import * as Promise from 'bluebird';
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import * as React from 'react';
 import { Button, Panel } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
+import { WithTranslation } from 'react-i18next';
 
 const PanelX: any = Panel;
 
-export interface IDownloadViewBaseProps {
+export interface IDownloadViewBaseProps extends WithTranslation {
   active: boolean;
   secondary: boolean;
 }
@@ -61,7 +62,7 @@ interface IActionProps {
 }
 
 export type IDownloadViewProps =
-  IDownloadViewBaseProps & IConnectedProps & IActionProps & { t: I18next.TranslationFunction };
+  IDownloadViewBaseProps & IConnectedProps & IActionProps & { t: I18next.TFunction };
 
 interface IComponentState {
   viewAll: boolean;
@@ -479,4 +480,4 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
 
 export default
   connect(mapStateToProps, mapDispatchToProps)(
-    translate(['common'], { wait: false })(DownloadView));
+    translate(['common'])(DownloadView));

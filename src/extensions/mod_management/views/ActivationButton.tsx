@@ -83,6 +83,6 @@ function mapDispatchToProps(dispatch: ThunkDispatch<IState, null, Redux.Action>)
 }
 
 export default
-  translate(['common'], { wait: false })(
+  translate(['common'])(
     connect(mapStateToProps, mapDispatchToProps)(ActivationButton),
   ) as React.ComponentClass<IBaseProps>;

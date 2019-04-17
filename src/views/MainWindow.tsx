@@ -29,7 +29,7 @@ import QuickLauncher from './QuickLauncher';
 import Settings from './Settings';
 import WindowControls from './WindowControls';
 
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import update from 'immutability-helper';
 import * as _ from 'lodash';
 import * as PropTypes from 'prop-types';
@@ -46,7 +46,7 @@ addStyle(ReactButton, 'ghost');
 addStyle(ReactButton, 'inverted');
 
 export interface IBaseProps {
-  t: I18next.TranslationFunction;
+  t: I18next.TFunction;
   className: string;
   api: IExtensionApi;
 }
@@ -215,20 +215,20 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       classes.push('window-frame');
     }
     return (
-      <>
-        {switchingProfile ? this.renderWait() : null}
-        <div key='main' className={classes.join(' ')} style={{ display: switchingProfile ? 'none' : undefined }}>
-          <div className='menu-layer' ref={this.setMenuLayer} />
-          <FlexLayout id='main-window-content' type='column'>
-            {this.renderToolbar(switchingProfile)}
-            {customTitlebar ? <div className='dragbar' /> : null}
-            {this.renderBody()}
-          </FlexLayout>
-          <Dialog />
-          <DialogContainer visibleDialog={visibleDialog} onHideDialog={onHideDialog} />
-          {customTitlebar ? <WindowControls /> : null}
-        </div>
-      </>);
+      <React.Suspense fallback={<Spinner className='suspense-spinner' />}>
+          {switchingProfile ? this.renderWait() : null}
+          <div key='main' className={classes.join(' ')} style={{ display: switchingProfile ? 'none' : undefined }}>
+            <div className='menu-layer' ref={this.setMenuLayer} />
+            <FlexLayout id='main-window-content' type='column'>
+              {this.renderToolbar(switchingProfile)}
+              {customTitlebar ? <div className='dragbar' /> : null}
+              {this.renderBody()}
+            </FlexLayout>
+            <Dialog />
+            <DialogContainer visibleDialog={visibleDialog} onHideDialog={onHideDialog} />
+            {customTitlebar ? <WindowControls /> : null}
+          </div>
+      </React.Suspense>);
   }
 
   private renderWait() {

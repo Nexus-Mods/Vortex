@@ -7,7 +7,7 @@ import MainPage from '../../../views/MainPage';
 import { ILicense } from '../types/ILicense';
 
 import { remote } from 'electron';
-import * as i18next from 'i18next';
+import I18next from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
 import { Image, Media, Panel } from 'react-bootstrap';
@@ -145,7 +145,7 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
                 {(releaseDate !== undefined) ? (
                   <div>
                     {t('Released on {{date}}', { replace:
-                      { date: releaseDate.toLocaleDateString(i18next.language) } })}
+                      { date: releaseDate.toLocaleDateString(I18next.language) } })}
                     <More id='about-vortex-changelog' name='changelog'>
                       {changelog}
                     </More>
@@ -230,5 +230,5 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
 }
 
 export default
-  translate(['common'], { wait: false })(
+  translate(['common'])(
     AboutPage) as React.ComponentClass<IBaseProps>;

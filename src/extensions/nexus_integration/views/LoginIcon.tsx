@@ -12,8 +12,9 @@ import * as React from 'react';
 import { Image } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
+import { WithTranslation } from 'react-i18next';
 
-export interface IBaseProps {
+export interface IBaseProps extends WithTranslation {
   nexus: NexusT;
 }
 
@@ -121,6 +122,6 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
 }
 
 export default
-  connect(mapStateToProps, mapDispatchToProps)(
-    translate(['common'], { wait: false })(
+  translate(['common'])(
+    connect(mapStateToProps, mapDispatchToProps)(
       LoginIcon)) as React.ComponentClass<IBaseProps>;

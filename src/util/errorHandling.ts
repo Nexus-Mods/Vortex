@@ -3,6 +3,7 @@ import { IError } from '../types/IError';
 
 import { UserCanceled } from './CustomErrors';
 import { genHash } from './genHash';
+import { fallbackTFunc } from './i18n';
 import { log } from './log';
 import { getSafe } from './storeHelper';
 import { getAllPropertyNames, spawnSelf, truthy } from './util';
@@ -14,7 +15,7 @@ import {
   remote,
 } from 'electron';
 import * as fs from 'fs-extra-promise';
-import { getFixedT } from 'i18next';
+import i18next from 'i18next';
 import NexusT, { IFeedbackResponse } from 'nexus-api';
 import { } from 'opn';
 import * as os from 'os';
@@ -312,14 +313,14 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
  * It's important this doesn't translate the error message or lose information
  */
 export function toError(input: any, title?: string, options?: IErrorOptions): IError {
-  let ten = getFixedT('en');
+  let ten = i18next.getFixedT('en');
   try {
     ten('dummy');
   } catch (err) {
     // can't actually be sure if i18next is initialized - especially if this is the
     // main process. We could use require('i18next').isInitialized but no clue if
     // that's reliable.
-    ten = tinput => tinput;
+    ten = fallbackTFunc;
   }
 
   const t = (text: string) => ten(text, { replace: (options || {}).replace });

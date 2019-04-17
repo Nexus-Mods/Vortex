@@ -3,14 +3,14 @@ import Spinner from '../../../controls/Spinner';
 import { IconButton } from '../../../controls/TooltipControls';
 import { ComponentEx } from '../../../util/ComponentEx';
 
-import * as I18next from 'i18next';
+import I18next from 'i18next';
 import * as React from 'react';
 
 export interface IProps {
   gameId: string;
   modId: string;
   endorsedStatus: string;
-  t: I18next.TranslationFunction;
+  t: I18next.TFunction;
   onEndorseMod: (gameId: string, modId: string, endorsedStatus) => void;
 }
 
