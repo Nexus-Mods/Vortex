@@ -55,6 +55,8 @@ function stopPatterns(gameMode: string) {
       return ['[^/]*\\.vpk$'].concat(['cfg', 'cl_dlls', 'dlg', 'dlls', 'maps', 'materials',
               'models', 'particles', 'python', 'resource', 'save', 'scripts', 'sound',
               'vdata'].map(toWordExp));
+    case 'sekiro':
+      return ['menu', 'sound', 'parts'].map(toWordExp);
     default: return [].concat(uniPatterns);
   }
 }
@@ -220,6 +222,9 @@ const gameSupport: { [gameId: string]: IGameSupport } = {
   },
   vampirebloodlines: {
     stopPatterns: stopPatterns('vampirebloodlines'),
+  },
+  sekiro: {
+    stopPatterns: stopPatterns('sekiro'),
   },
 };
 
