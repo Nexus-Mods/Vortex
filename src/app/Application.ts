@@ -6,7 +6,7 @@ import commandLine, {IParameters} from '../util/commandLine';
 import { ProcessCanceled, UserCanceled } from '../util/CustomErrors';
 import { } from '../util/delayed';
 import * as develT from '../util/devel';
-import { setOutdated, terminate, toError, setWindow } from '../util/errorHandling';
+import { setOutdated, terminate, toError, setWindow, getWindow } from '../util/errorHandling';
 import ExtensionManagerT from '../util/ExtensionManager';
 import * as fs from '../util/fs';
 import lazyRequire from '../util/lazyRequire';
@@ -242,7 +242,7 @@ class Application {
           return Promise.resolve();
         }
         return new Promise((resolve, reject) => {
-          dialog.showMessageBox(null, {
+          dialog.showMessageBox(getWindow(), {
             title: 'Admin rights detected',
             message:
               'Vortex is not intended to be run as administrator!\n'

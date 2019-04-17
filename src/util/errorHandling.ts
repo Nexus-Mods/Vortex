@@ -207,8 +207,12 @@ export function sendReport(type: string, error: IError, context: IErrorContext,
 
 let defaultWindow: Electron.BrowserWindow = null;
 
-export function setWindow(window: Electron.BrowserWindow) {
+export function setWindow(window: Electron.BrowserWindow): void {
   defaultWindow = window;
+}
+
+export function getWindow(): Electron.BrowserWindow {
+  return defaultWindow;
 }
 
 /**
