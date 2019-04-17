@@ -614,11 +614,10 @@ class InstallManager {
   private processGenerateFiles(generatefile: IInstruction[],
                                destinationPath: string): Promise<void> {
     return Promise.each(generatefile, gen => {
-                    const outputPath =
-                        path.join(destinationPath, gen.destination);
-                    return fs.ensureDirAsync(path.dirname(outputPath))
-                        .then(() => fs.writeFileAsync(outputPath, gen.source));
-                  }).then(() => undefined);
+      const outputPath = path.join(destinationPath, gen.destination);
+      return fs.ensureDirAsync(path.dirname(outputPath))
+        .then(() => fs.writeFileAsync(outputPath, gen.data));
+    }).then(() => undefined);
   }
 
   private processSubmodule(api: IExtensionApi, submodule: IInstruction[],
