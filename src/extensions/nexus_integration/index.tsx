@@ -224,12 +224,20 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
           });
         })
         .catch(err => {
-          if (err.code === 'ESOCKETTIMEOUT') {
+          if (err.code === 'ESOCKETTIMEDOUT') {
             api.sendNotification({
               type: 'warning',
               message: 'Timeout retrieving categories from server, please try again later.',
             });
             return;
+          } else if (err.syscall === 'getaddrinfo') {
+            api.sendNotification({
+              type: 'warning',
+              message: 'Failed to retrieve categories from server because network address '
+                     + '"{{host}}" could not be resolved. This is often a temporary error, '
+                     + 'please try again later.',
+              replace: { host: err.host || err.hostname },
+            });
           } else if (err.code === 'ENOTFOUND') {
             api.sendNotification({
               type: 'warning',
