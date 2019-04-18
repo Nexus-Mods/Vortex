@@ -163,7 +163,7 @@ class StarterInfo implements IStarterInfo {
       } else {
         onShowError('Failed to run tool', {
           executable: info.exePath,
-          error: err.stack,
+          error: err,
         });
       }
     });

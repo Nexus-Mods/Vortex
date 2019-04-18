@@ -251,9 +251,11 @@ export function prettifyNodeErrorMessage(err: any): IPrettifiedError {
     };
   } else if (err.code === 'EPERM') {
     const filePath = err.path || err.filename;
+    let firstLine = filePath !== undefined
+      ? 'Vortex needs to access "{{filePath}}" but it\'s write protected.\n'
+      : 'Vortex needs to access a file that is write protected.\n'
     return {
-      message: 'Vortex needs to access "{{filePath}}" but it\'s write protected.\n'
-
+      message: firstLine
             + 'When you configure directories and access rights you need to ensure Vortex can '
             + 'still access data directories.\n'
             + 'This is usually not a bug in Vortex.',

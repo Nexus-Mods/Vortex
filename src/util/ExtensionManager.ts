@@ -1056,14 +1056,16 @@ class ExtensionManager {
           return Promise.reject(err);
         }
       }
+
+      const cwd = options.cwd || path.dirname(executable);
+      const env = { ...process.env, ...options.env };
+
       return this.applyStartHooks({ executable, args, options })
       .then(updatedParameters => {
         ({ executable, args, options } = updatedParameters);
         return Promise.resolve();
       })
       .then(() => new Promise<void>((resolve, reject) => {
-        const cwd = options.cwd || path.dirname(executable);
-        const env = { ...process.env, ...options.env };
         try {
           const runExe = options.shell
             ? `"${executable}"`
@@ -1096,28 +1098,32 @@ class ExtensionManager {
               }
               resolve();
           });
-          child.stderr.on('data', chunk => {
-            log('error', executable + ': ', chunk.toString());
-          });
-        } catch (err) {
-          const ipcPath = shortid();
-          this.startIPC(ipcPath);
-          if (err.errno === 'EACCES') {
-            return resolve(runElevated(ipcPath, runElevatedCustomTool, {
-              toolPath: executable,
-              toolCWD: cwd,
-              parameters: args,
-              environment: env,
-            }));
-          } else {
-            return reject(err);
+          if (child.stderr !== undefined) {
+            child.stderr.on('data', chunk => {
+              log('error', executable + ': ', chunk.toString());
+            });
           }
+        } catch (err) {
+          return reject(err);
         }
       }))
         .catch(ProcessCanceled, () => null)
-        .catch(err => (err.errno === 1223)
-          ? Promise.reject(new UserCanceled())
-          : Promise.reject(err));
+        .catch({ code: 'EACCES' }, () => this.runElevated(executable, cwd, args, env))
+        .catch({ errno: 1223 }, () => Promise.reject(new UserCanceled()))
+        .catch((err) => {
+          return Promise.reject(err);
+        });
+  }
+
+  private runElevated(executable: string, cwd: string, args: string[], env: { [key: string]: string }) {
+    const ipcPath = shortid();
+    this.startIPC(ipcPath);
+    return Promise.resolve(runElevated(ipcPath, runElevatedCustomTool, {
+      toolPath: executable,
+      toolCWD: cwd,
+      parameters: args,
+      environment: env,
+    }));
   }
 
   private emitAndAwait = (event: string, ...args: any[]): Promise<void> => {
