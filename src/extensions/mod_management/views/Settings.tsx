@@ -455,8 +455,23 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
     this.nextState.changingActivator = true;
     this.purgeActivation()
+    .catch(NoDeployment, () =>
+      this.context.api.showDialog('error', 'Purge not possible', {
+        text: 'Previous deployment couldn\'t be cleaned up because the deployment method is no '
+            + 'longer available (maybe you removed the corresponding extension?). '
+            + 'If you continue now you may get orphaned files that Vortex can no longer clean up '
+            + 'for you.\n'
+      }, [
+        { label: 'Cancel' },
+        { label: 'Continue' },
+      ])
+      .then(result => result.action === 'Cancel'
+        ? Promise.reject(new UserCanceled())
+        : Promise.resolve()))
     .then(() => {
       onSetActivator(gameMode, currentActivator);
+    })
+    .finally(() => {
       this.nextState.changingActivator = false;
     })
     .then(() => { this.context.api.store.dispatch(setDeploymentNecessary(gameMode, true)); })
