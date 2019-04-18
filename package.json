@@ -221,7 +221,7 @@
     "react-resize-detector": "^4.0.2",
     "react-safe-html": "^0.6.1",
     "react-select": "^1.2.1",
-    "react-sortable-tree": "^2.6.0",
+    "react-sortable-tree": "^2.6.2",
     "recharts": "^1.5.0",
     "redux": "^4.0.1",
     "redux-act": "^1.7.4",
