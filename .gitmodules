@@ -74,10 +74,6 @@
 	path = extensions/modtype-gedosato
 	url = https://github.com/Nexus-Mods/extension-modtype-gedosato.git
 	branch = master
-[submodule "extensions\\modtype-umm"]
-	path = extensions/modtype-umm
-	url = https://github.com/Nexus-Mods/extension-modtype-umm.git
-	branch = master
 [submodule "extensions\\mtframework-arc-support"]
 	path = extensions/mtframework-arc-support
 	url = https://github.com/Nexus-Mods/extension-arc-support.git
@@ -126,6 +122,3 @@
 	path = extensions/documentation
 	url = https://github.com/Nexus-Mods/extension-documentation.git
   branch = master
-[submodule "extensions/modtype-umm"]
-	path = extensions/modtype-umm
-	url = https://github.com/nexus-mods/extension-modtype-umm.git

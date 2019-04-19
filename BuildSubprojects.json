@@ -178,14 +178,6 @@
     },
     {
       "type": "build-copy",
-      "name": "modtype-umm",
-      "path": "extensions/modtype-umm",
-      "removeModules": ["vortex-api"],
-      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
-      "copyTo": "{BUILD_DIR}/bundledPlugins/modtype-umm"
-    },
-    {
-      "type": "build-copy",
       "name": "open-directory",
       "path": "extensions/open-directory",
       "removeModules": ["vortex-api"],
