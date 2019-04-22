@@ -205,7 +205,22 @@ function testProtectedFolderAccess(): Promise<ITestResult> {
     return Promise.resolve(undefined);
   }
 
-  const protectedDirectory = app.getPath('documents');
+  let protectedDirectory;
+  try {
+    // Technically this try/catch block shouldn't be necessary but some users
+    //  seem to encounter a crash (Windows only) when attempting to retrieve
+    //  the documents path. This may be related to:
+    // https://forums.asp.net/t/1889407.aspx?GetFolderPath+Environment+GetFolderPath+Environment+SpecialFolder+MyDocuments+returning+blank+when+hosted+on+IIS
+    protectedDirectory = app.getPath('documents');
+  } catch (err) {
+    // We can't retrieve the documents path, but for the purpose of completing this
+    //  test, we can simply query a different folder which is also guaranteed to trigger
+    //  folder protection functionality.
+    // tslint:disable-next-line
+    log('error', 'Unable to get path to my documents folder - user environment is misconfigured!', err);
+    protectedDirectory = app.getPath('home');
+  }
+
   const canary = path.join(protectedDirectory, '__vortex_canary.tmp');
   return fs.writeFileAsync(canary, 'Should only exist temporarily, feel free to delete')
     .then(() => fs.removeAsync(canary))
