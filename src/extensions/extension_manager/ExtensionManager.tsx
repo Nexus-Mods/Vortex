@@ -153,6 +153,7 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
                     accept={['files']}
                     drop={this.dropExtension}
                     dialogHint={t('Select extension file')}
+                    icon='folder-download'
                   />
                 </FlexLayout.Fixed>
               </FlexLayout>
