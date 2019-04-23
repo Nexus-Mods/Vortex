@@ -207,7 +207,5 @@ export function retrieveModInfo(
         gameId,
         modId: nexusModId,
       });
-      // prevent this error from coming up every time the icon is re-rendered
-      store.dispatch(setModAttribute(gameMode, mod.id, 'endorsed', 'Undecided'));
     });
 }

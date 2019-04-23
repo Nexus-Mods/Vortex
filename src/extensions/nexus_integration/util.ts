@@ -2,12 +2,12 @@ import * as Promise from 'bluebird';
 import { app as appIn, ipcRenderer, remote } from 'electron';
 import I18next from 'i18next';
 import Nexus, { IFileInfo, IGameListEntry, IModInfo, NexusError,
-                RateLimitError, TimeoutError } from 'nexus-api';
+                RateLimitError, TimeoutError, IEndorsement, EndorsedStatus } from 'nexus-api';
 import * as Redux from 'redux';
 import * as semver from 'semver';
 import * as util from 'util';
 import { setModAttribute } from '../../actions';
-import { IExtensionApi, IMod } from '../../types/api';
+import { IExtensionApi, IMod, IState } from '../../types/api';
 import { setApiKey } from '../../util/errorHandling';
 import github, { RateLimitExceeded } from '../../util/github';
 import { log } from '../../util/log';
@@ -20,7 +20,7 @@ import modName from '../mod_management/util/modName';
 import { setUserInfo } from './actions/persistent';
 import NXMUrl from './NXMUrl';
 import { checkModVersion } from './util/checkModsVersion';
-import { convertNXMIdReverse, nexusGameId } from './util/convertGameId';
+import { convertNXMIdReverse, nexusGameId, convertGameIdReverse } from './util/convertGameId';
 import sendEndorseMod from './util/endorseMod';
 import transformUserInfo from './util/transformUserInfo';
 
@@ -285,6 +285,36 @@ function nexusLink(mod: IMod, gameMode: string) {
   return `https://www.nexusmods.com/${gameId}/mods/${nexusModId}`;
 }
 
+export function refreshEndorsements(store: Redux.Store<any>, nexus: Nexus) {
+  return Promise.resolve(nexus.getEndorsements())
+    .then(endorsements => {
+      const endorseMap: { [gameId: string]: { [modId: string]: EndorsedStatus } } =
+        endorsements.reduce((prev, endorsement: IEndorsement) => {
+          const gameId = convertGameIdReverse(knownGames(store.getState()), endorsement.domain_name);
+          const modId = endorsement.mod_id;
+          if (prev[gameId] === undefined) {
+            prev[gameId] = {};
+          }
+          prev[gameId][modId] = endorsement.status;
+          return prev;
+        }, {});
+      const state: IState = store.getState();
+      const allMods = state.persistent.mods;
+      Object.keys(allMods).forEach(gameId => {
+        Object.keys(allMods[gameId]).forEach(modId => {
+          const dlGame = getSafe(allMods, [gameId, modId, 'attributes', 'downloadGame'], gameId);
+          const nexModId = getSafe(allMods, [gameId, modId, 'attributes', 'modId'], undefined);
+          const oldEndorsed =
+            getSafe(allMods, [gameId, modId, 'attributes', 'endorsed'], 'Undecided');
+          const endorsed = getSafe(endorseMap, [dlGame, nexModId], 'Undecided');
+          if (endorsed !== oldEndorsed) {
+            store.dispatch(setModAttribute(gameId, modId, 'endorsed', endorsed));
+          }
+        });
+      });
+    })
+}
+
 export function checkModVersionsImpl(
   store: Redux.Store<any>,
   nexus: Nexus,
@@ -302,32 +332,33 @@ export function checkModVersionsImpl(
 
   log('info', 'checking mods for update (nexus)', { count: modsList.length });
 
-  return Promise.map(modsList, mod =>
-    checkModVersion(store, nexus, gameId, mod)
-      .then(() => {
-        store.dispatch(setModAttribute(gameId, mod.id, 'lastUpdateTime', now));
-      })
-      .catch(TimeoutError, err => {
-        const name = modName(mod, { version: true });
-        return Promise.resolve(`${name}:\nRequest timeout`);
-      })
-      .catch(err => {
-        const detail = processErrorMessage(err);
-        if (detail.fatal) {
-          return Promise.reject(detail);
-        }
+  return refreshEndorsements(store, nexus)
+    .then(() => Promise.map(modsList, mod =>
+      checkModVersion(store, nexus, gameId, mod)
+        .then(() => {
+          store.dispatch(setModAttribute(gameId, mod.id, 'lastUpdateTime', now));
+        })
+        .catch(TimeoutError, err => {
+          const name = modName(mod, { version: true });
+          return Promise.resolve(`${name}:\nRequest timeout`);
+        })
+        .catch(err => {
+          const detail = processErrorMessage(err);
+          if (detail.fatal) {
+            return Promise.reject(detail);
+          }
 
-        if (detail.message === undefined) {
-          return undefined;
-        }
+          if (detail.message === undefined) {
+            return undefined;
+          }
 
-        const name = modName(mod, { version: true });
-        const nameLink = `[url=${nexusLink(mod, gameId)}]${name}[/url]`;
+          const name = modName(mod, { version: true });
+          const nameLink = `[url=${nexusLink(mod, gameId)}]${name}[/url]`;
 
-        return (detail.Servermessage !== undefined)
-          ? `${nameLink}:<br/>${detail.message}<br/>Server said: "${detail.Servermessage}"<br/>`
-          : `${nameLink}:<br/>${detail.message}`;
-      }), { concurrency: 4 })
+          return (detail.Servermessage !== undefined)
+            ? `${nameLink}:<br/>${detail.message}<br/>Server said: "${detail.Servermessage}"<br/>`
+            : `${nameLink}:<br/>${detail.message}`;
+        }), { concurrency: 4 }))
     .then((errorMessages: string[]): string[] => errorMessages.filter(msg => msg !== undefined));
 }
 
