@@ -112,6 +112,10 @@ export function addNotification(notification: INotification) {
       delete notificationActions[noti.id];
     }
 
+    if (noti.createdTime === undefined) {
+      noti.createdTime = Date.now();
+    }
+
     notificationActions[noti.id] = noti.actions === undefined
       ? []
       : noti.actions.map(action => action.action);

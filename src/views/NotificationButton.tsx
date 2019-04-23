@@ -130,7 +130,7 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
   }
 
   private inverseSort(lhs: INotification, rhs: INotification) {
-    return lhs.id < rhs.id ? 1 : (lhs.id > rhs.id ? -1 : 0);
+    return lhs.createdTime - rhs.createdTime;
   }
 
   private renderNotification = (notification: INotification,

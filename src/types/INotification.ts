@@ -68,6 +68,7 @@ export interface INotification {
    * @memberOf INotification
    */
   title?: string;
+
   /**
    * the message to display. This shouldn't be long
    *
@@ -75,11 +76,18 @@ export interface INotification {
    * @memberOf INotification
    */
   message: string;
+
+  /**
+   * time the notification was created
+   */
+  createdTime?: number;
+
   /**
    * replacement parameters for the localisation of title and message (the same
    * replacement dictionary will be used for both)
    */
   replace?: { [key: string]: string };
+
   /**
    * control which part of the notification gets localized. default is true for both
    */
@@ -87,6 +95,7 @@ export interface INotification {
     title?: boolean,
     message?: boolean,
   };
+
   /**
    * the duration to display the message. If this is undefined, the
    * message has to be dismissed by the user.
@@ -105,15 +114,18 @@ export interface INotification {
    * @memberOf INotification
    */
   displayMS?: number;
+
   /**
    * if set, notifications with the same group will be grouped together and shown as
    * one entry that can be expanded.
    */
   group?: string;
+
   /**
    * if set, no Dismiss button is provided automatically
    */
   noDismiss?: boolean;
+  
   /**
    * actions to offer with the notification. These will be presented as buttons.
    * Due to limited space you should not have more than one or two actions and
