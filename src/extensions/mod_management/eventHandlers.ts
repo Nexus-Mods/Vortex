@@ -498,6 +498,7 @@ export function onAddMod(api: IExtensionApi, gameId: string,
 export function onStartInstallDownload(api: IExtensionApi,
                                        installManager: InstallManager,
                                        downloadId: string,
+                                       allowAutoEnable?: boolean,
                                        callback?: (error, id: string) => void): Promise<void> {
   const store = api.store;
   const state: IState = store.getState();
@@ -533,8 +534,9 @@ export function onStartInstallDownload(api: IExtensionApi,
         return;
       }
       const fullPath: string = path.join(downloadPath, download.localPath);
+      const { enable } = state.settings.automation;
       installManager.install(downloadId, fullPath, download.game, api,
-        { download }, true, false, callback, gameId);
+        { download }, true, enable && (allowAutoEnable !== false), callback, gameId);
     })
     .catch(err => {
       if (callback !== undefined) {

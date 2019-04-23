@@ -1,6 +1,6 @@
 import { IReducerSpec } from '../../../types/IExtensionContext';
 
-import { setAutoDeployment } from '../actions/automation';
+import * as actions from '../actions/automation';
 
 import update from 'immutability-helper';
 
@@ -9,10 +9,12 @@ import update from 'immutability-helper';
  */
 const automationReducer: IReducerSpec = {
   reducers: {
-    [setAutoDeployment as any]: (state, payload) => update(state, { deploy: { $set: payload } }),
+    [actions.setAutoDeployment as any]: (state, payload) => update(state, { deploy: { $set: payload } }),
+    [actions.setAutoEnable as any]: (state, payload) => update(state, { enable: { $set: payload } }),
   },
   defaults: {
     deploy: true,
+    enable: false,
   },
 };
 

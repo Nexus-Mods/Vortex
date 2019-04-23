@@ -853,19 +853,20 @@ function once(api: IExtensionApi) {
 
   api.events.on('start-install', (archivePath: string,
                                   callback?: (error, id: string) => void) => {
+    const { enable } = api.store.getState().settings.automation;
     installManager.install(null, archivePath, [ activeGameId(store.getState()) ],
           api, {
             download: {
               localPath: path.basename(archivePath),
             },
           },
-          true, false, callback);
+          true, enable, callback);
   });
 
   api.events.on(
       'start-install-download',
-      (downloadId: string, callback?: (error, id: string) => void) =>
-          onStartInstallDownload(api, installManager, downloadId, callback));
+      (downloadId: string, allowAutoEnable?: boolean, callback?: (error, id: string) => void) =>
+          onStartInstallDownload(api, installManager, downloadId, allowAutoEnable, callback));
 
   api.events.on(
       'remove-mod',

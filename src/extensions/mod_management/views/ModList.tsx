@@ -771,7 +771,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     } else if (modsWithState[modId].state === 'downloaded') {
       // selected "enabled" or "disabled" from "not installed" so first the mod
       // needs to be installed
-      this.context.api.events.emit('start-install-download', modId, (err, id) => {
+      this.context.api.events.emit('start-install-download', modId, false, (err, id) => {
         if (value === 'enabled') {
           onSetModEnabled(profileId, id, true);
           this.context.api.events.emit('mods-enabled', [modId], value, gameMode);
@@ -842,7 +842,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     onSetModEnabled(profileId, modId, false);
     if ((this.state.modsWithState[altId] !== undefined)
         && (this.state.modsWithState[altId].state === 'downloaded')) {
-      this.context.api.events.emit('start-install-download', altId, (err, id) => {
+      this.context.api.events.emit('start-install-download', altId, true, (err, id) => {
         if (err === null) {
           onSetModEnabled(profileId, id, true);
         }
@@ -1010,7 +1010,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     const { gameMode, mods, modState } = this.props;
     if (Array.isArray(modIds)) {
       modIds.filter(modId => mods[modId] !== undefined).forEach(modId =>
-        this.context.api.events.emit('start-install-download', mods[modId].archiveId, (err) => {
+        this.context.api.events.emit('start-install-download', mods[modId].archiveId, false, (err) => {
           if (err === null) {
             const enabled = modIds.filter(id => getSafe(modState, [id, 'enabled'], false));
             if (enabled.length > 0) {
@@ -1019,7 +1019,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           }
         }));
     } else if (mods[modIds] !== undefined) {
-      this.context.api.events.emit('start-install-download', mods[modIds].archiveId, (err) => {
+      this.context.api.events.emit('start-install-download', mods[modIds].archiveId, false, (err) => {
         if (err === null) {
           if (modState[modIds].enabled) {
             // reinstalling an enabled mod automatically enables the new one so we also need

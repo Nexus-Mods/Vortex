@@ -155,6 +155,7 @@ export interface ISettingsInterface {
 
 export interface ISettingsAutomation {
   deploy: boolean;
+  enable: boolean;
 }
 
 export interface ISettingsProfiles {

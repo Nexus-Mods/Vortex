@@ -14,7 +14,7 @@ import { spawnSelf } from '../../util/util';
 import getTextModManagement from '../mod_management/texts';
 import getTextProfiles from '../profile_management/texts';
 
-import { setAutoDeployment } from './actions/automation';
+import { setAutoDeployment, setAutoEnable } from './actions/automation';
 import { setAdvancedMode, setDesktopNotifications, setHideTopLevelCategory,
          setLanguage, setProfilesVisible } from './actions/interface';
 import { nativeCountryName, nativeLanguageName } from './languagemap';
@@ -40,6 +40,7 @@ interface IConnectedProps {
   currentLanguage: string;
   profilesVisible: boolean;
   autoDeployment: boolean;
+  autoEnable: boolean;
   advanced: boolean;
   customTitlebar: boolean;
   minimizeToTray: boolean;
@@ -50,6 +51,7 @@ interface IConnectedProps {
 interface IActionProps {
   onSetLanguage: (language: string) => void;
   onSetAutoDeployment: (enabled: boolean) => void;
+  onSetAutoEnable: (enabled: boolean) => void;
   onSetProfilesVisible: (visible: boolean) => void;
   onSetAdvancedMode: (advanced: boolean) => void;
   onShowDialog: (type: DialogType, title: string,
@@ -118,7 +120,7 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, advanced, autoDeployment, currentLanguage,
+    const { t, advanced, autoDeployment, autoEnable, currentLanguage,
             customTitlebar, desktopNotifications, profilesVisible,
             hideTopLevelCategory } = this.props;
 
@@ -216,6 +218,12 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
                 {getTextModManagement('deployment', t)}
               </More>
             </Toggle>
+            <Toggle
+              checked={autoEnable}
+              onToggle={this.toggleAutoEnable}
+            >
+              {t('Enable Mods when installed (in current profile)')}
+            </Toggle>
           </div>
         </FormGroup>
         {restartNotification}
@@ -255,6 +263,11 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
   private toggleAutoDeployment = () => {
     const { autoDeployment, onSetAutoDeployment } = this.props;
     onSetAutoDeployment(!autoDeployment);
+  }
+
+  private toggleAutoEnable = () => {
+    const { autoEnable, onSetAutoEnable } = this.props;
+    onSetAutoEnable(!autoEnable);
   }
 
   private toggleDesktopNotifications = () => {
@@ -309,6 +322,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     advanced: state.settings.interface.advanced,
     desktopNotifications: state.settings.interface.desktopNotifications,
     autoDeployment: state.settings.automation.deploy,
+    autoEnable: state.settings.automation.enable,
     customTitlebar: state.settings.window.customTitlebar,
     minimizeToTray: state.settings.window.minimizeToTray,
   };
@@ -321,6 +335,9 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
     },
     onSetAutoDeployment: (enabled: boolean) => {
       dispatch(setAutoDeployment(enabled));
+    },
+    onSetAutoEnable: (enabled: boolean) => {
+      dispatch(setAutoEnable(enabled));
     },
     onSetProfilesVisible: (visible: boolean) => {
       dispatch(setProfilesVisible(visible));
