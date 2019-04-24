@@ -5,9 +5,11 @@ import { UserCanceled } from '../../util/api';
 import { log } from '../../util/log';
 import { truthy } from '../../util/util';
 
-import {ipcMain} from 'electron';
+import {app as appIn, ipcMain, remote} from 'electron';
 import {autoUpdater as AUType, UpdateInfo} from 'electron-updater';
 import * as semver from 'semver';
+
+const app = remote !== undefined ? remote.app : appIn;
 
 interface IProgressInfo {
   bps: number;
@@ -83,7 +85,10 @@ function setupAutoUpdate(api: IExtensionApi) {
   });
 
   autoUpdater.on('update-available', (info: UpdateInfo) => {
-    log('info', 'update available');
+    log('info', 'update available', {
+      current: app.getVersion(),
+      update: info.version,
+    });
     queryUpdate(info.version)
       .then(() => autoUpdater.downloadUpdate()
         .catch(err => {
@@ -155,10 +160,9 @@ function setupAutoUpdate(api: IExtensionApi) {
     checkNow(channel);
   });
 
-  ipcMain.on('set-update-channel', (event) => {
+  ipcMain.on('set-update-channel', (event, channel) => {
     try {
-      log('info', 'set channel');
-      const { channel } = state.settings.update;
+      log('info', 'set channel', channel);
       if ((channel !== 'none') && (process.env.NODE_ENV !== 'development')) {
         checkNow(channel);
       }
