@@ -3,7 +3,7 @@ import {} from '../reducers/index';
 import { ThunkStore } from '../types/api';
 import {IState} from '../types/IState';
 import commandLine, {IParameters} from '../util/commandLine';
-import { ProcessCanceled, SetupError, UserCanceled } from '../util/CustomErrors';
+import { DocumentsPathMissing, ProcessCanceled, UserCanceled } from '../util/CustomErrors';
 import { } from '../util/delayed';
 import * as develT from '../util/devel';
 import { setOutdated, terminate, toError, setWindow, getWindow } from '../util/errorHandling';
@@ -209,7 +209,7 @@ class Application {
         .catch(ProcessCanceled, () => {
           app.quit();
         })
-        .catch(SetupError, () => {
+        .catch(DocumentsPathMissing, () => {
           dialog.showErrorBox('Startup failed', 'Your "My Documents" folder is missing or is '
                             + 'misconfigured. Please ensure that the folder is properly '
                             + 'configured and accessible. For more information please view '
@@ -664,9 +664,9 @@ class Application {
         const documentsFolder = app.getPath('documents');
         return (documentsFolder !== '')
           ? Promise.resolve()
-          : Promise.reject(new SetupError('Failed to retrieve documents folder'));
+          : Promise.reject(new DocumentsPathMissing());
       } catch (err) {
-        return Promise.reject(new SetupError('Failed to retrieve documents folder'));
+        return Promise.reject(new DocumentsPathMissing());
       }
     } else {
       // No tests needed.

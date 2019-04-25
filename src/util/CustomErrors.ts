@@ -56,6 +56,13 @@ export class MissingDependency extends Error {
   }
 }
 
+export class DocumentsPathMissing extends Error {
+  constructor() {
+    super('Failed to query the current user\'s documents folder');
+    this.name = this.constructor.name;
+  }
+}
+
 export class SetupError extends Error {
   constructor(message: string) {
     super(message);
