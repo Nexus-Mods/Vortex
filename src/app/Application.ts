@@ -29,7 +29,7 @@ import TrayIconT from './TrayIcon';
 
 import * as Promise from 'bluebird';
 import crashDump from 'crash-dump';
-import {app, dialog, ipcMain} from 'electron';
+import {app, dialog, ipcMain, shell} from 'electron';
 import * as isAdmin from 'is-admin';
 import * as _ from 'lodash';
 import * as path from 'path';
@@ -210,11 +210,21 @@ class Application {
           app.quit();
         })
         .catch(DocumentsPathMissing, () => {
-          dialog.showErrorBox('Startup failed', 'Your "My Documents" folder is missing or is '
-                            + 'misconfigured. Please ensure that the folder is properly '
-                            + 'configured and accessible. For more information please view '
-                            + 'https://github.com/Nexus-Mods/Vortex/issues/4221');
-          app.quit();
+          dialog.showMessageBox(null, {
+            type: 'error',
+            buttons: ['Close', 'More info'],
+            defaultId: 1,
+            title: 'Error',
+            message: 'Startup failed',
+            detail: 'Your "My Documents" folder is missing or is '
+              + 'misconfigured. Please ensure that the folder is properly '
+              + 'configured and accessible, then try again.',
+          }, response => {
+            if (response === 1) {
+              shell.openExternal('https://wiki.nexusmods.com/index.php/Misconfigured_Documents_Folder');
+            }
+            app.quit();
+          });
         })
         .catch(DatabaseLocked, () => {
           dialog.showErrorBox('Startup failed', 'Vortex seems to be running already. '
