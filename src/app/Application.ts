@@ -3,7 +3,7 @@ import {} from '../reducers/index';
 import { ThunkStore } from '../types/api';
 import {IState} from '../types/IState';
 import commandLine, {IParameters} from '../util/commandLine';
-import { ProcessCanceled, UserCanceled } from '../util/CustomErrors';
+import { ProcessCanceled, SetupError, UserCanceled } from '../util/CustomErrors';
 import { } from '../util/delayed';
 import * as develT from '../util/devel';
 import { setOutdated, terminate, toError, setWindow, getWindow } from '../util/errorHandling';
@@ -173,6 +173,7 @@ class Application {
     let splash: SplashScreenT;
 
     return this.testShouldQuit()
+        .then(() => this.testUserEnvironment())
         .then(() => {
           setupLogging(app.getPath('userData'), process.env.NODE_ENV === 'development');
           log('info', '--------------------------');
@@ -206,6 +207,13 @@ class Application {
         })
         .catch(UserCanceled, () => app.exit())
         .catch(ProcessCanceled, () => {
+          app.quit();
+        })
+        .catch(SetupError, () => {
+          dialog.showErrorBox('Startup failed', 'Your "My Documents" folder is missing or is '
+                            + 'misconfigured. Please ensure that the folder is properly '
+                            + 'configured and accessible. For more information please view '
+                            + 'https://github.com/Nexus-Mods/Vortex/issues/4221');
           app.quit();
         })
         .catch(DatabaseLocked, () => {
@@ -644,6 +652,26 @@ class Application {
     const maximized: boolean = windowMetrics.maximized || false;
     this.mMainWindow.show(maximized);
     setWindow(this.mMainWindow.getHandle());
+  }
+
+  private testUserEnvironment(): Promise<void> {
+    // Should be used to test the user's environment for known
+    //  issues before starting up Vortex.
+    // On Windows:
+    //  - Ensure we're able to retrieve the user's documents folder.
+    if (process.platform === 'win32') {
+      try {
+        const documentsFolder = app.getPath('documents');
+        return (documentsFolder !== '')
+          ? Promise.resolve()
+          : Promise.reject(new SetupError('Failed to retrieve documents folder'));
+      } catch (err) {
+        return Promise.reject(new SetupError('Failed to retrieve documents folder'));
+      }
+    } else {
+      // No tests needed.
+      return Promise.resolve();
+    }
   }
 
   private testShouldQuit(): Promise<void> {
