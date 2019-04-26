@@ -78,6 +78,13 @@ function transformError(err: any): Error {
              || (err.StackTrace.indexOf('XmlScriptType.GetXmlScriptVersion') !== -1)
              ) {
     result = new DataInvalid('Invalid installer script: ' + err.message);
+  } else if (err.name === 'System.AggregateException') {
+    return transformError(err.InnerException);
+  } else if (err.Message === 'task timeout') {
+    result = new SetupError('A task in the script didn\'t complete in time. The timeouts are set '
+                          + 'very generously so it\'s more likely that this is either caused '
+                          + 'by a broken .Net installation or something else on your system '
+                          + 'interrupted the process (like a debugger).');
   }
 
   if (result === undefined) {
