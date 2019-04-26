@@ -225,7 +225,7 @@ class InstallManager {
                 }
                 return Promise.resolve();
               } else if (action === 'Replace') {
-                rules = oldMod.rules;
+                rules = oldMod.rules || [];
                 overrides = oldMod.fileOverrides;
                 // we need to remove the old mod before continuing. This ensures
                 // the mod is deactivated and undeployed (so we're not leave dangling
