@@ -62,7 +62,7 @@ export interface ISteam {
   findByName(namePattern: string): Promise<ISteamEntry>;
   findByAppId(appId: string | string[]): Promise<ISteamEntry>;
   allGames(): Promise<ISteamEntry[]>;
-  getSteamExecutionPath(gamePath: string, args?: string[]): Promise<ISteamExec>;
+  getGameExecutionInfo(gamePath: string, appId?: number, args?: string[]): Promise<ISteamExec>;
 }
 
 /**
@@ -112,17 +112,29 @@ class Steam implements ISteam {
    *  the game we're attempting to start-up.
    * @param gamePath - Used to identify the game's cache entry and retrieve the
    *  corresponding appId.
+   * @param appId - the application id, may be left undefined if the caller doesn't know
    * @param args - Can be used to add additional launch arguments.
    */
-  public getSteamExecutionPath(gamePath: string, args?: string[]): Promise<ISteamExec> {
+  public getGameExecutionInfo(gamePath: string, appId?: number, args?: string[]): Promise<ISteamExec> {
     return this.allGames()
       .then(entries => {
+        // TODO: This is not a reliable way of finding a game in this list, it will fail on junction points
+        //   or multiple mount points for the same disk, it will also get confused by something like
+        //   steamapps/common/../common/gamename
         const found = entries.find(entry => {
           const steamPath = entry.gamePath.toLowerCase();
           const discoveryPath = gamePath.toLowerCase();
           return discoveryPath.indexOf(steamPath) !== -1;
         });
-        if (found === undefined) {
+        if (found !== undefined) {
+          appId = parseInt(found.appid);
+        } else {
+          log('warn', 'game not listed in steam manifest', {
+            gamePath,
+            entries: entries.map(iter => iter.gamePath),
+          });
+        }
+        if (appId === undefined) {
           return Promise.reject(
             new GamePathNotMatched(gamePath, entries.map(entry => entry.gamePath)));
         }
@@ -131,8 +143,8 @@ class Steam implements ISteam {
           const steamExec: ISteamExec = {
             steamPath: basePath + '\\Steam.exe',
             arguments: args !== undefined
-              ? ['-applaunch', found.appid, ...args]
-              : ['-applaunch', found.appid],
+              ? ['-applaunch', appId.toString(), ...args]
+              : ['-applaunch', appId.toString()],
           };
           return Promise.resolve(steamExec);
         });

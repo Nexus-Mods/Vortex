@@ -97,15 +97,17 @@ class StarterInfo implements IStarterInfo {
     }
 
     return new Promise((resolve, reject) => {
-      Steam.getSteamExecutionPath(path.dirname(info.exePath)).then(execInfo =>
-        api.runExecutable(execInfo.steamPath, execInfo.arguments, {
-          cwd: path.dirname(execInfo.steamPath),
-          env: info.environment,
-          suggestDeploy: true,
-          shell: true,
-      }))
-      .then(() => resolve())
-      .catch(err => reject(err));
+      Steam.getGameExecutionInfo(path.dirname(info.exePath),
+                                 getSafe(info.details, ['steamAppId'], undefined))
+        .then(execInfo =>
+          api.runExecutable(execInfo.steamPath, execInfo.arguments, {
+            cwd: path.dirname(execInfo.steamPath),
+            env: info.environment,
+            suggestDeploy: true,
+            shell: true,
+          }))
+        .then(() => resolve())
+        .catch(err => reject(err));
     });
   }
 
@@ -233,6 +235,7 @@ class StarterInfo implements IStarterInfo {
   public environment: { [key: string]: string };
   public originalEnvironment: { [key: string]: string };
   public shell: boolean;
+  public details: { [key: string]: any } = {};
   private mExtensionPath: string;
   private mLogoName: string;
   private mIconPathCache: string;
@@ -282,6 +285,7 @@ class StarterInfo implements IStarterInfo {
     this.iconOutPath = StarterInfo.gameIconRW(this.gameId);
     this.shell = gameDiscovery.shell || game.shell;
     this.mLogoName = gameDiscovery.logo || game.logo;
+    this.details = game.details;
   }
 
   private initFromTool(gameId: string, tool: IToolStored, toolDiscovery: IDiscoveredTool) {
