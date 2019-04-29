@@ -334,7 +334,13 @@ function init(context: IExtensionContextExt): boolean {
             modState: {},
           }));
           context.api.store.dispatch(setNextProfile(profileId));
-          
+        })
+        .catch(err => {
+          context.api.showErrorNotification('The game location doesn\'t exist or isn\'t writeable',
+            err, {
+              allowReport: false,
+              message: instPath,
+            });
         });
   });
 
