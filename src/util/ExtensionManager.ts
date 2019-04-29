@@ -23,7 +23,7 @@ import { INotification } from '../types/INotification';
 import { IExtensionLoadFailure, IExtensionState, IState } from '../types/IState';
 
 import { Archive } from './archives';
-import { ProcessCanceled, UserCanceled, MissingDependency } from './CustomErrors';
+import { ProcessCanceled, UserCanceled, MissingDependency, NotSupportedError } from './CustomErrors';
 import { isOutdated } from './errorHandling';
 import getVortexPath from './getVortexPath';
 import lazyRequire from './lazyRequire';
@@ -1010,7 +1010,7 @@ class ExtensionManager {
     }
     const creator = this.mArchiveHandlers[ext];
     if (creator === undefined) {
-      return Promise.reject(new Error('unsupported archive format ' + ext));
+      return Promise.reject(new NotSupportedError());
     }
     return creator(archivePath, options || {})
       .then((handler: IArchiveHandler) => Promise.resolve(new Archive(handler)));
