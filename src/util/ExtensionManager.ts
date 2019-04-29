@@ -1285,6 +1285,7 @@ class ExtensionManager {
       .map(name => {
         if (!getSafe(this.mExtensionState, [name, 'enabled'], true)) {
           log('debug', 'extension disabled', { name });
+          return undefined;
         }
         try {
           // first, mark this extension as loaded. If this is a user extension and there is an
