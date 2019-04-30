@@ -6,7 +6,6 @@ environment:
   nodejs_version: 8
 platform:
   - x64
-cache: '%LOCALAPPDATA%\Yarn'
 configuration:
   - Release
 install:
