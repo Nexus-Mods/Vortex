@@ -212,8 +212,10 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
 
 function mapStateToProps(state: IState, ownProps: IBaseProps): IConnectedProps {
   const profiles = state.persistent.profiles;
-  const lastActiveProfile =
-    getSafe(state.settings.profiles, ['lastActiveProfile', ownProps.game.id], undefined);
+
+  const lastActiveProfile = ownProps.game !== undefined
+    ? getSafe(state.settings.profiles, ['lastActiveProfile', ownProps.game.id], undefined)
+    : undefined;
   return {
     profile: lastActiveProfile !== undefined ? profiles[lastActiveProfile] : undefined,
   };

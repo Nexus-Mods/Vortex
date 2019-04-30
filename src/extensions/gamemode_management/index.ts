@@ -233,6 +233,7 @@ function removeDisapearedGames(api: IExtensionApi): Promise<void> {
           file => fs.statAsync(path.join(discovered[gameId].path, file)))
           .then(() => undefined)
           .catch(err => {
+            log('info', 'game no longer found', stored.name);
             api.sendNotification({
               type: 'info',
               message: api.translate('{{gameName}} no longer found',
@@ -240,12 +241,14 @@ function removeDisapearedGames(api: IExtensionApi): Promise<void> {
             });
 
             api.store.dispatch(setGamePath(gameId, undefined));
-            const gameMode = activeGameId(state);
-            if (gameMode === gameId) {
-              api.store.dispatch(setNextProfile(undefined));
-            }
           });
-    }).then(() => undefined);
+    }).then(() => {
+      const gameMode = activeGameId(state);
+      if (known.find(game => game.id === gameMode) === undefined) {
+        log('info', 'the active game is no longer known, resetting', gameMode);
+        api.store.dispatch(setNextProfile(undefined));
+      }
+    });
 }
 
 function resetSearchPaths(api: IExtensionApi) {
@@ -600,8 +603,9 @@ function init(context: IExtensionContext): boolean {
       if (profile !== undefined) {
         const gameMode = profile.gameId;
         const discovery = store.getState().settings.gameMode.discovered[gameMode];
-        if ((discovery !== undefined) && (discovery.path !== undefined)) {
-          log('debug', 'init game mode', gameMode);
+        if ((discovery !== undefined)
+            && (discovery.path !== undefined)
+            && (getGame(gameMode) !== undefined)) {
           changeGameMode(undefined, gameMode, profile.id)
             .then(() => null);
         }
