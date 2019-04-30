@@ -7,7 +7,7 @@ import { DataInvalid, HTTPError, ProcessCanceled,
 import * as fs from '../../util/fs';
 import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
-import { showError } from '../../util/message';
+import { showError, prettifyNodeErrorMessage } from '../../util/message';
 import opn from '../../util/opn';
 import { activeGameId, downloadPathForGame, gameById, knownGames } from '../../util/selectors';
 import { currentGame, getSafe } from '../../util/storeHelper';
@@ -20,7 +20,7 @@ import { IMod } from '../mod_management/types/IMod';
 
 import { setUserAPIKey } from './actions/account';
 import { setNewestVersion } from './actions/persistent';
-import { setLoginId } from './actions/session';
+import { setLoginId, setLoginError } from './actions/session';
 import { setAssociatedWithNXMURLs } from './actions/settings';
 import { accountReducer } from './reducers/account';
 import { persistentReducer } from './reducers/persistent';
@@ -393,17 +393,20 @@ function requestLogin(api: IExtensionApi, callback: (err: Error) => void) {
             // automatic reconnect
             connect();
           } else {
-            api.store.dispatch(setLoginId(undefined));
             cancelLogin = undefined;
             bringToFront();
-            if (error !== undefined) {
-              callback(error);
-            } else {
-              const err = new ProcessCanceled(
+            api.store.dispatch(setLoginId('__failed'));
+            api.store.dispatch(setLoginError((error !== undefined)
+              ? prettifyNodeErrorMessage(error).message
+              : 'Log-in connection closed prematurely'));
+
+            let err = error;
+            if (err === undefined) {
+              err = new ProcessCanceled(
                 `Log-in connection closed prematurely (Code ${code})`);
               err.stack = stackErr.stack;
-              callback(err);
             }
+            callback(err);
           }
         }
       })
@@ -755,6 +758,7 @@ function init(context: IExtensionContextExt): boolean {
       if (cancelLogin !== undefined) {
         cancelLogin();
       }
+      context.api.store.dispatch(setLoginId(undefined));
     },
   }));
   context.registerBanner('downloads', () => {

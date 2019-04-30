@@ -15,7 +15,7 @@ import { getPageURL } from '../util/sso';
 import { clipboard } from 'electron';
 import I18next from 'i18next';
 import * as React from 'react';
-import { ControlLabel, FormControl, FormGroup, InputGroup, Modal } from 'react-bootstrap';
+import { ControlLabel, FormControl, FormGroup, InputGroup, Modal, Alert } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { WithTranslation } from 'react-i18next';
@@ -32,6 +32,7 @@ interface IConnectedProps {
   APIKey: string;
   userInfo: IValidateKeyData;
   loginId: string;
+  loginError: string;
 }
 
 interface IActionProps {
@@ -80,13 +81,14 @@ function nop() {
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
 
-class LoginDialog extends ComponentEx<IProps, { troubleshoot: boolean, apiKeyInput: string }> {
+class LoginDialog extends ComponentEx<IProps, { troubleshoot: boolean, apiKeyInput: string, requested: boolean }> {
   constructor(props: IProps) {
     super(props);
 
     this.initState({
       troubleshoot: false,
       apiKeyInput: '',
+      requested: false,
     });
   }
 
@@ -99,6 +101,9 @@ class LoginDialog extends ComponentEx<IProps, { troubleshoot: boolean, apiKeyInp
         && (this.props.loginId === undefined)) {
       this.nextState.troubleshoot = false;
       this.nextState.apiKeyInput = '';
+    }
+    if (newProps.loginError !== this.props.loginError) {
+      this.nextState.troubleshoot = true;
     }
   }
 
@@ -128,6 +133,7 @@ class LoginDialog extends ComponentEx<IProps, { troubleshoot: boolean, apiKeyInp
 
   private renderRegular(): JSX.Element {
     const { t, loginId } = this.props;
+    const { requested } = this.state;
     return (
       <div className='login-content'>
         <Icon
@@ -169,9 +175,9 @@ class LoginDialog extends ComponentEx<IProps, { troubleshoot: boolean, apiKeyInp
           <Button
             onClick={this.login}
             tooltip={t('Opens the Nexus Mods page in your default browser')}
-            disabled={false}
+            disabled={requested || (loginId !== undefined)}
           >
-            {t('Log In On Website')}
+            {(requested || (loginId !== undefined)) ? <Spinner /> : t('Log In On Website')}
           </Button>
         )}
       </div>
@@ -180,7 +186,7 @@ class LoginDialog extends ComponentEx<IProps, { troubleshoot: boolean, apiKeyInp
 
   private renderTroubleshoot() {
     const { apiKeyInput } = this.state;
-    const { t } = this.props;
+    const { t, loginError } = this.props;
     return (
       <div className='login-content'>
         <Icon
@@ -191,6 +197,11 @@ class LoginDialog extends ComponentEx<IProps, { troubleshoot: boolean, apiKeyInp
         <h3>
           {t('If you\'re having trouble logging in in the normal way, there is another option.')}
         </h3>
+        {loginError === undefined ? null : (
+          <Alert bsStyle='warning'>
+            {loginError}
+          </Alert>
+        )}
         <ol style={{ textAlign: 'left' }}>
           <li>
             {t('Open the Nexus Mods page and log in if you\'re not already.')}
@@ -292,7 +303,9 @@ class LoginDialog extends ComponentEx<IProps, { troubleshoot: boolean, apiKeyInp
 
   private login = () => {
     const { onHide } = this.props;
+    this.nextState.requested = true;
     this.context.api.events.emit('request-nexus-login', (err: Error) => {
+      this.nextState.requested = false;
       if ((err !== null) && !(err instanceof UserCanceled)) {
         this.context.api.showErrorNotification(
           'Failed to get access key', err, { allowReport: false });
@@ -307,6 +320,7 @@ function mapStateToProps(state: any): IConnectedProps {
     APIKey: state.confidential.account.nexus.APIKey,
     userInfo: state.persistent.nexus.userInfo,
     loginId: state.session.nexus.loginId,
+    loginError: state.session.nexus.loginError,
   };
 }
 
