@@ -438,9 +438,12 @@ export function onRemoveMod(api: IExtensionApi,
       })
     };
 
+  const fullModPath = path.join(installationPath, mod.installationPath);
+
   undeployMod()
   .then(() => truthy(mod) && truthy(mod.installationPath)
-    ? fs.removeAsync(path.join(installationPath, mod.installationPath))
+    ? fs.removeAsync(fullModPath)
+        .catch({ code: 'ENOTEMPTY' }, () => fs.removeAsync(fullModPath))
         .catch(err => err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err))
     : Promise.resolve())
   .then(() => {
@@ -461,7 +464,7 @@ export function onRemoveMod(api: IExtensionApi,
     if (callback !== undefined) {
       callback(err);
     } else {
-      api.showErrorNotification('Failed to remove mod', err.message, { allowReport: false });
+      api.showErrorNotification('Failed to remove mod', err, { allowReport: false });
     }
   })
   .catch(UserCanceled, err => {

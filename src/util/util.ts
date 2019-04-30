@@ -475,7 +475,6 @@ export function isPathValid(input: string, allowRelative: boolean = false): bool
     // UNC path, skip the leading \\ for validation
     input = input.slice(2);
   }
-  console.log('is path valid', input, input.replace(trimTrailingSep, ''));
   let split = input.replace(trimTrailingSep, '').split(path.sep);
   if (allowRelative) {
     split = split.filter(segment => (segment !== '.') && (segment !== '..'));
