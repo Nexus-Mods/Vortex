@@ -105,6 +105,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private mVisibleAttributes: ITableAttribute[];
   private mPinnedRef: HTMLElement;
   private mScrollRef: HTMLElement;
+  private mHeaderRef: HTMLElement;
   private mRowRefs: { [id: string]: HTMLElement } = {};
   private mLastSelectOnly: number = 0;
   private mLastDetailIds: string[] = [];
@@ -275,6 +276,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         {showHeader === false ? null : (
           <div
             className='table-header-pane'
+            ref={this.mainHeaderRef}
           >
             <Table hover>
               {this.renderHeader(false)}
@@ -868,6 +870,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         this.mPinnedRef.className =
           event.target.scrollTop === 0 ? 'table-pinned' : 'table-pinned-hidden';
       }
+      if (truthy(this.mHeaderRef)) {
+        this.mHeaderRef.style.left = `-${event.target.scrollLeft}px`;
+      }
     });
     Object.keys(this.mNoShrinkColumns).forEach(colId => {
       this.mNoShrinkColumns[colId].updateWidth();
@@ -885,6 +890,10 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     // translate the header so that it remains in view during scrolling
     ref.addEventListener('scroll', this.onScroll);
     this.mScrollRef = ref;
+  }
+
+  private mainHeaderRef = (ref) => {
+    this.mHeaderRef = ref;
   }
 
   private updateCalculatedValues(props: IProps, forceUpdateId?: string): Promise<string[]> {
