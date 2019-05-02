@@ -606,6 +606,13 @@ function genValidActivatorCheck(api: IExtensionApi) {
       return reason;
     });
 
+    if (reasons.indexOf(undefined) !== -1) {
+      // why didn't getSupportedActivators not find this? Only reason I can think of
+      // is the early-out conditions, getSupportedActivators returns an empty list
+      // if the game isn't discovered or not known any more
+      return resolve(undefined);
+    }
+
     return resolve({
       description: {
         short: 'Mods can\'t be deployed.',
