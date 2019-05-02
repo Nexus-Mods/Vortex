@@ -41,7 +41,10 @@ export function checkModVersion(store: Redux.Store<any>, nexus: NexusT,
 
   return Promise.resolve(nexus.getModFiles(nexusModId,
     nexusGameId(game)))
-      .then(result => updateFileAttributes(store.dispatch, gameMode, mod, result));
+      .then(result => updateFileAttributes(store.dispatch, gameMode, mod, result))
+      .tapCatch(() => {
+        setNoUpdateAttributes(store.dispatch, gameId, mod);
+      });
 }
 
 /**

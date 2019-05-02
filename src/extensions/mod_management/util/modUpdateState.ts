@@ -1,12 +1,17 @@
 import { getSafe } from '../../../util/storeHelper';
 
 import versionClean from './versionClean';
+import { truthy } from '../../../util/util';
 
 export type UpdateState =
   'bug-update' | 'bug-update-site' | 'bug-disable' |
   'update' | 'update-site' | 'current' | 'install';
 
 function updateState(attributes: { [id: string]: any }): UpdateState {
+  if (!truthy(getSafe(attributes, ['source'], undefined))) {
+    // if no source associated there can't be an update
+    return 'current';
+  }
   const fileId: string = getSafe(attributes, ['fileId'], undefined);
   const version: string = getSafe(attributes, ['version'], undefined);
   const newestFileId: string = getSafe(attributes, ['newestFileId'], undefined);
