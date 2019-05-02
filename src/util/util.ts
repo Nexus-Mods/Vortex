@@ -75,8 +75,11 @@ export function fileMD5(filePath: string): Promise<string> {
   });
 }
 
-export function writeFileAtomic(filePath: string, input: string | Buffer,
-                                options?: fs.WriteFileOptions) {
+export function writeFileAtomic(filePath: string, input: string | Buffer) {
+  return writeFileAtomicImpl(filePath, input, 3);
+}
+
+function writeFileAtomicImpl(filePath: string, input: string | Buffer, attempts: number) {
   const stackErr = new Error();
   let cleanup: () => void;
   let tmpPath: string;
@@ -99,7 +102,25 @@ export function writeFileAtomic(filePath: string, input: string | Buffer,
     return fs.writeAsync(fd, buf, 0, buf.byteLength, 0)
       .then(() => fs.closeAsync(fd));
   })
-  .tapCatch(() => {
+  .then(() => fs.readFileAsync(tmpPath))
+  .then(data => (checksum(data) !== hash)
+      ? attempts > 0
+        // retry
+        ? writeFileAtomicImpl(filePath, input, attempts - 1)
+        : Promise.reject(new Error('Write failed, checksums differ'))
+      : Promise.resolve())
+  .then(() => fs.renameAsync(tmpPath, filePath)
+    .then(() => {
+      cleanup = undefined;
+    })
+    .catch({ code: 'EEXIST' }, () =>
+      // renameAsync is supposed to overwrite so this is likely to fail as well
+      fs.removeAsync(filePath).then(() => fs.renameAsync(tmpPath, filePath))))
+  .catch(err => {
+    err.stack = err.message + '\n' + stackErr.stack;
+    return Promise.reject(err);
+  })
+  .finally(() => {
     if (cleanup !== undefined) {
       try {
         cleanup();
@@ -107,15 +128,6 @@ export function writeFileAtomic(filePath: string, input: string | Buffer,
         log('error', 'failed to clean up temporary file', err.message);
       }
     }
-  })
-  .then(() => fs.readFileAsync(tmpPath))
-  .then(data => (checksum(data) !== hash)
-      ? Promise.reject(new Error('Write failed, checksums differ'))
-      : Promise.resolve())
-  .then(() => fs.renameAsync(tmpPath, filePath))
-  .catch(err => {
-    err.stack = err.message + '\n' + stackErr.stack;
-    return Promise.reject(err);
   });
 }
 
