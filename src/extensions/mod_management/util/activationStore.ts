@@ -4,8 +4,9 @@ import { IGame } from '../../../types/IGame';
 import {IState} from '../../../types/IState';
 import {UserCanceled, ProcessCanceled} from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
+import { writeFileAtomic } from '../../../util/fsAtomic';
 import { activeGameId, currentGameDiscovery, installPathForGame } from '../../../util/selectors';
-import { deBOM, truthy, writeFileAtomic } from '../../../util/util';
+import { deBOM, truthy } from '../../../util/util';
 
 import { getGame } from '../../gamemode_management/util/getGame';
 

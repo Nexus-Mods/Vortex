@@ -28,7 +28,7 @@ import {
   installPathForGame,
 } from '../../util/selectors';
 import {getSafe} from '../../util/storeHelper';
-import { isChildPath, removePersistent, setdefault, truthy } from '../../util/util';
+import { isChildPath, setdefault, truthy } from '../../util/util';
 
 import {setDownloadModInfo} from '../download_management/actions/state';
 import {getGame} from '../gamemode_management/util/getGame';
@@ -364,7 +364,7 @@ function genUpdateModDeployment() {
           const mergePath = truthy(typeId)
             ? MERGED_PATH + '.' + typeId
             : MERGED_PATH;
-          return removePersistent(api.store, path.join(stagingPath, mergePath));
+          return fs.removeAsync(path.join(stagingPath, mergePath));
         })
         .then(() => Promise.each(mergeModTypes,
           typeId => mergeMods(api, game, stagingPath, modPaths[typeId],

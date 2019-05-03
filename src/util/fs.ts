@@ -135,7 +135,7 @@ function unknownErrorRetry(filePath: string): PromiseBB<boolean> {
       + 'This is usually due the user\'s environment and not a bug in Vortex.\n'
       + 'Please diagonse your environment and then retry',
     detail: 'Possible error causes:\n'
-      + `1. ${filePath} is a removable, possibly network drive which has been disconnected.\n`
+      + `1. "${filePath}" is a removable, possibly network drive which has been disconnected.\n`
       + '2. An External application has interferred with file operations'
       + '(Anti-virus, Disk Management Utility, Virus)\n',
     buttons: [

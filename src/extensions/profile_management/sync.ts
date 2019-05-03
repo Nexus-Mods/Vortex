@@ -1,6 +1,6 @@
 import * as fs from '../../util/fs';
 import {log} from '../../util/log';
-import {copyFileAtomic} from '../../util/util';
+import {copyFileAtomic} from '../../util/fsAtomic';
 
 import * as Promise from 'bluebird';
 import * as path from 'path';
