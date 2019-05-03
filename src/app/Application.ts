@@ -4,7 +4,6 @@ import { ThunkStore } from '../types/api';
 import {IState} from '../types/IState';
 import commandLine, {IParameters} from '../util/commandLine';
 import { DocumentsPathMissing, ProcessCanceled, UserCanceled } from '../util/CustomErrors';
-import { } from '../util/delayed';
 import * as develT from '../util/devel';
 import { setOutdated, terminate, toError, setWindow, getWindow } from '../util/errorHandling';
 import ExtensionManagerT from '../util/ExtensionManager';
@@ -12,7 +11,7 @@ import * as fs from '../util/fs';
 import lazyRequire from '../util/lazyRequire';
 import LevelPersist, { DatabaseLocked } from '../util/LevelPersist';
 import {log, setLogPath, setupLogging} from '../util/log';
-import { showError } from '../util/message';
+import { showError, prettifyNodeErrorMessage } from '../util/message';
 import migrate from '../util/migrate';
 import { StateError } from '../util/reduxSanity';
 import { allHives, createVortexStore, currentStatePath, extendStore,
@@ -240,11 +239,21 @@ class Application {
         })
         .catch((err) => {
           try {
-            terminate({
-              message: 'Startup failed',
-              details: err.message,
-              stack: err.stack,
-            }, this.mStore !== undefined ? this.mStore.getState() : {});
+            if (err instanceof Error) {
+              const pretty = prettifyNodeErrorMessage(err);
+              terminate({
+                message: 'Startup failed',
+                details: pretty.message,
+                stack: err.stack,
+              }, this.mStore !== undefined ? this.mStore.getState() : {},
+                pretty.allowReport);
+            } else {
+              terminate({
+                message: 'Startup failed',
+                details: err.message,
+                stack: err.stack,
+              }, this.mStore !== undefined ? this.mStore.getState() : {});
+            }
           } catch (err) {
             // nop
           }
