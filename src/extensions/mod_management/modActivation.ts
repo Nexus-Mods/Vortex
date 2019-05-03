@@ -1,6 +1,7 @@
 import { IExtensionApi } from '../../types/IExtensionContext';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
 import { log } from '../../util/log';
+import * as fs from '../../util/fs';
 import { truthy } from '../../util/util';
 
 import { IDeployedFile, IDeploymentMethod } from './types/IDeploymentMethod';
@@ -11,6 +12,22 @@ import { MERGED_PATH } from './modMerging';
 
 import * as Promise from 'bluebird';
 import * as path from 'path';
+import { UserCanceled } from '../../util/api';
+
+function ensureWritable(api: IExtensionApi, modPath: string): Promise<void> {
+  return fs.ensureDirWritableAsync(modPath, () => api.showDialog('question', 'Access Denied', {
+    text: 'The mod folder for this game is not writable to your user account.\n'
+      + 'If you have admin rights on this system, Vortex can change the permissions '
+      + 'to allow it write access.',
+  }, [
+      { label: 'Cancel' },
+      { label: 'Allow access' },
+    ]).then(result => (result.action === 'Cancel')
+      ? Promise.reject(new UserCanceled())
+      : Promise.resolve()
+    ));
+}
+
 
 /**
  * activate a list of mod
@@ -41,7 +58,8 @@ function deployMods(api: IExtensionApi,
 
   let skipFilesNormalized: Set<string>;
   let normalize: Normalize;
-  return getNormalizeFunc(destinationPath)
+  return ensureWritable(api, destinationPath)
+    .then(() => getNormalizeFunc(destinationPath))
     .then(norm => {
       normalize = norm;
       skipFilesNormalized = new Set(Array.from(skipFiles).map(norm));
