@@ -1,5 +1,4 @@
 import {IPersistor} from '../types/IExtensionContext';
-import delayed from './delayed';
 import { log } from './log';
 
 import * as Promise from 'bluebird';
@@ -37,7 +36,7 @@ class LevelPersist implements IPersistor {
           log('info', 'failed to open db', err);
           return Promise.reject(new DatabaseLocked());
         } else {
-          return delayed(500).then(() => LevelPersist.create(persistPath, tries - 1));
+          return Promise.delay(500).then(() => LevelPersist.create(persistPath, tries - 1));
         }
       });
   }

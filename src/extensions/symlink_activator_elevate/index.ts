@@ -1,6 +1,5 @@
 import {IExtensionApi, IExtensionContext} from '../../types/IExtensionContext';
 import {ProcessCanceled, TemporaryError, UserCanceled} from '../../util/CustomErrors';
-import { delayed } from '../../util/delayed';
 import * as fs from '../../util/fs';
 import { Normalize } from '../../util/getNormalizeFunc';
 import { log } from '../../util/log';
@@ -286,7 +285,7 @@ class DeploymentMethod extends LinkingDeployment {
         log('error', 'Failed to start symlink activator', err);
       });
       return runElevated(ipcPath, remoteCode, {})
-        .then(() => delayed(15000))
+        .then(() => Promise.delay(15000))
         .then(() => {
           if (!connected) {
             // still no connection, something must have gone wrong

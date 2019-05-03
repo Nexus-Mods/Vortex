@@ -19,10 +19,10 @@ import copyRecursive from './copyRecursive';
 import { DataInvalid, MissingInterpreter, NotFound, NotSupportedError, ProcessCanceled,
          SetupError, UserCanceled } from './CustomErrors';
 import Debouncer from './Debouncer';
-import delayed from './delayed';
 import epicGamesLauncher from './EpicGamesLauncher';
 import { terminate } from './errorHandling';
 import { extend } from './ExtensionProvider';
+import { copyFileAtomic, fileMD5 } from './fsAtomic';
 import getNormalizeFunc, { Normalize } from './getNormalizeFunc';
 import github from './github';
 import { getCurrentLanguage } from './i18n';
@@ -35,8 +35,8 @@ import { getReduxLog } from './reduxLogger';
 import ReduxProp from './ReduxProp';
 import relativeTime from './relativeTime';
 import steam, { GameNotFound, ISteamEntry } from './Steam';
-import { bytesToString, copyFileAtomic, deBOM, fileMD5, isChildPath, objDiff,
-         pad, removePersistent, sanitizeCSSId, setdefault } from './util';
+import { bytesToString, deBOM, isChildPath, objDiff,
+         pad, sanitizeCSSId, setdefault } from './util';
 import walk from './walk';
 
 import { runElevated, runThreaded } from 'vortex-run';
@@ -50,7 +50,6 @@ export {
   DataInvalid,
   Debouncer,
   deBOM,
-  delayed,
   deriveModInstallName as deriveInstallName,
   epicGamesLauncher,
   extend,
@@ -78,7 +77,6 @@ export {
   ProcessCanceled,
   ReduxProp,
   relativeTime,
-  removePersistent,
   renderModName,
   resolveCategoryName,
   resolveCategoryPath,
