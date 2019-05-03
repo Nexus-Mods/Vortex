@@ -2776,8 +2776,8 @@ performance-now@^2.1.0:
   integrity sha1-Ywn04OX6kT7BxpMHrjZLSzd8nns=
 
 permissions@Nexus-Mods/node-permissions:
-  version "1.1.5"
-  resolved "https://codeload.github.com/Nexus-Mods/node-permissions/tar.gz/192cfe25ab887b2a7e9ed04df915e595efa9046f"
+  version "1.1.6"
+  resolved "https://codeload.github.com/Nexus-Mods/node-permissions/tar.gz/64fce2edd2285c3aacbfe2dfbb8f38fb726b6b4f"
   dependencies:
     autogypi "^0.2.2"
     nbind "^0.3.15"
