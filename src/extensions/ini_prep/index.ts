@@ -205,23 +205,23 @@ function testProtectedFolderAccess(): Promise<ITestResult> {
     return Promise.resolve(undefined);
   }
 
-  let protectedDirectory;
+  let writablePath;
   try {
     // Technically this try/catch block shouldn't be necessary but some users
     //  seem to encounter a crash (Windows only) when attempting to retrieve
     //  the documents path. This may be related to:
     // https://forums.asp.net/t/1889407.aspx?GetFolderPath+Environment+GetFolderPath+Environment+SpecialFolder+MyDocuments+returning+blank+when+hosted+on+IIS
-    protectedDirectory = app.getPath('documents');
+    writablePath = app.getPath('documents');
   } catch (err) {
     // We can't retrieve the documents path, but for the purpose of completing this
     //  test, we can simply query a different folder which is also guaranteed to trigger
     //  folder protection functionality.
     // tslint:disable-next-line
     log('error', 'Unable to get path to my documents folder - user environment is misconfigured!', err);
-    protectedDirectory = app.getPath('home');
+    writablePath = app.getPath('home');
   }
 
-  const canary = path.join(protectedDirectory, '__vortex_canary.tmp');
+  const canary = path.join(writablePath, '__vortex_canary.tmp');
   return fs.writeFileAsync(canary, 'Should only exist temporarily, feel free to delete')
     .then(() => fs.removeAsync(canary))
     .then(() => Promise.resolve(undefined))
@@ -230,6 +230,7 @@ function testProtectedFolderAccess(): Promise<ITestResult> {
       //  an external application has blocked Vortex from running the file operation.
       //  in this case it's safe to assume that an AV or possibly Windows Defender
       //  have stepped in and blocked Vortex.
+      log('warn', 'reporting AV blocking access to documents', { documentsPath: writablePath, error: err.message });
       return {
         description: {
           short: 'Anti-Virus protection detected',
