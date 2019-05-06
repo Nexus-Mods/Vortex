@@ -329,6 +329,13 @@ export function prettifyNodeErrorMessage(err: any): IPrettifiedError {
       message: 'The filesystem is read-only.',
       allowReport: false,
     };
+  } else if (err.code === 'EIO') {
+    return {
+      message: 'A general I/O error was reported. This may indicate a hardware defect or a '
+             + 'removable medium got disconnected, sometimes it may also be caused by the '
+             + 'disk being almost full.',
+      allowReport: false,
+    };
   } else if (err.code === 'UNKNOWN') {
     return {
       message: 'An unknown error occurred. What this means is that Windows or the framework don\'t '

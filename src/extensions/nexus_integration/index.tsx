@@ -442,7 +442,7 @@ function requestLogin(api: IExtensionApi, callback: (err: Error) => void) {
       .on('error', err => {
         // Cloudflare will serve 503 service unavailable errors when/if
         //  it is unable to reach the SSO server.
-        error = err.message === 'Unexpected server response: 503'
+        error = err.message.startsWith('Unexpected server response')
           ? new ServiceTemporarilyUnavailable('Login')
           : err;
 

@@ -20,7 +20,7 @@ import submitFeedback from './util/submitFeedback';
 import { checkModVersionsImpl, endorseModImpl, startDownload, updateKey } from './util';
 
 import * as Promise from 'bluebird';
-import Nexus, { IFeedbackResponse, IIssue } from 'nexus-api';
+import Nexus, { IFeedbackResponse, IIssue, NexusError } from 'nexus-api';
 
 export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
   const state: IState = api.store.getState();
@@ -263,6 +263,11 @@ export function onCheckModsVersion(api: IExtensionApi,
                       errorMessages.join('[br][/br]'),
                       { allowReport: false, isBBCode: true });
           }
+        })
+        .catch(NexusError, err => {
+          showError(api.store.dispatch, 'An error occurred checking for mod updates', err, {
+            allowReport: false,
+          });
         })
         .catch(err => {
           showError(api.store.dispatch, 'An error occurred checking for mod updates', err);
