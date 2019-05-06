@@ -254,6 +254,8 @@ function removeDisapearedGames(api: IExtensionApi): Promise<void> {
 function resetSearchPaths(api: IExtensionApi) {
   const store = api.store;
 
+  store.dispatch(clearSearchPaths());
+
   let list;
   try {
     list = require('drivelist').list;
@@ -269,30 +271,29 @@ function resetSearchPaths(api: IExtensionApi) {
       }, { allowReport: false });
     return;
   }
-  store.dispatch(clearSearchPaths());
-  list((error, disks) => {
-    if (error) {
+  list()
+    .then(disks => {
+      for (const disk of disks.sort()) {
+        // note: isRemovable is set correctly on windows, on MacOS (and presumably linux)
+        // it will, as of this writing, be null. The isSystem flag should suffice as a
+        // filter though.
+        if (disk.isSystem && !disk.isRemovable) {
+          if (disk.mountpoints) {
+            disk.mountpoints.forEach(
+                mp => { store.dispatch(addSearchPath(mp.path)); });
+          } else {
+            store.dispatch(addSearchPath(disk.mountpoint));
+          }
+        }
+      }
+    })
+    .catch(err => {
       api.showErrorNotification(
           'Failed to determine list of disk drives. ' +
               'Please review the settings before scanning for games.',
-          error, { allowReport: false });
+          err, { allowReport: false });
       store.dispatch(addSearchPath('C:'));
-      return;
-    }
-    for (const disk of disks.sort()) {
-      // note: isRemovable is set correctly on windows, on MacOS (and presumably linux)
-      // it will, as of this writing, be null. The isSystem flag should suffice as a
-      // filter though.
-      if (disk.isSystem && !disk.isRemovable) {
-        if (disk.mountpoints) {
-          disk.mountpoints.forEach(
-              mp => { store.dispatch(addSearchPath(mp.path)); });
-        } else {
-          store.dispatch(addSearchPath(disk.mountpoint));
-        }
-      }
-    }
-  });
+    });
 }
 
 function genModTypeAttribute(api: IExtensionApi): ITableAttribute<IModWithState> {

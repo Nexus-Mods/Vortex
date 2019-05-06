@@ -91,11 +91,6 @@ ansi-styles@^3.2.1:
   dependencies:
     color-convert "^1.9.0"
 
-any-promise@^1.0.0:
-  version "1.3.0"
-  resolved "https://registry.yarnpkg.com/any-promise/-/any-promise-1.3.0.tgz#abc6afeedcea52e809cdc0376aed3ce39635d17f"
-  integrity sha1-q8av7tzqUugJzcA3au0845Y10X8=
-
 aproba@^1.0.3:
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/aproba/-/aproba-1.2.0.tgz#6802e6264efd18c790a1b0d517f0f2627bf2c94a"
@@ -1072,14 +1067,13 @@ draggabilly@^2.2.0:
     get-size "^2.0.2"
     unidragger "^2.3.0"
 
-drivelist@^8.0.2:
-  version "8.0.6"
-  resolved "https://registry.yarnpkg.com/drivelist/-/drivelist-8.0.6.tgz#152ada25583857be25cddab682c9c34c580ade81"
-  integrity sha512-KkXaGslqZP7Y13rofyFZBUl9dQrs0wqT5aXq5PAr67uPE2IDXEUYH+LNGTv69xpd7cUImjQvvB9H4bkziLIs1w==
+drivelist@TanninOne/drivelist:
+  version "8.0.7"
+  resolved "https://codeload.github.com/TanninOne/drivelist/tar.gz/9127de3a854bf0b25683fdee8d11453f313c1d96"
   dependencies:
     bindings "^1.3.0"
     debug "^3.1.0"
-    mz "^2.7.0"
+    es6-promisify "^6.0.1"
     nan "^2.10.0"
     prebuild-install "^5.2.4"
 
@@ -1194,6 +1188,11 @@ es6-promise@^4.2.5:
   version "4.2.6"
   resolved "https://registry.yarnpkg.com/es6-promise/-/es6-promise-4.2.6.tgz#b685edd8258886365ea62b57d30de28fadcd974f"
   integrity sha512-aRVgGdnmW2OiySVPUC9e6m+plolMAJKjZnQlCwNSuK5yQ0JN61DZSO1X1Ufd1foqWRAlig0rhduTCHe7sVtK5Q==
+
+es6-promisify@^6.0.1:
+  version "6.0.1"
+  resolved "https://registry.yarnpkg.com/es6-promisify/-/es6-promisify-6.0.1.tgz#6edaa45f3bd570ffe08febce66f7116be4b1cdb6"
+  integrity sha512-J3ZkwbEnnO+fGAKrjVpeUAnZshAdfZvbhQpqfIH9kSAspReRC4nJnu8ewm55b4y9ElyeuhCTzJD0XiH8Tsbhlw==
 
 escape-html@~1.0.3:
   version "1.0.3"
@@ -2395,15 +2394,6 @@ msbuild@^1.0.3:
     async "*"
     colors "*"
     events "*"
-
-mz@^2.7.0:
-  version "2.7.0"
-  resolved "https://registry.yarnpkg.com/mz/-/mz-2.7.0.tgz#95008057a56cafadc2bc63dde7f9ff6955948e32"
-  integrity sha512-z81GNO7nnYMEhrGh9LeymoE4+Yr0Wn5McHIZMK5cfQCl+NDX08sCZgUc9/6MHni9IWuFLm1Z3HTCXu2z9fN62Q==
-  dependencies:
-    any-promise "^1.0.0"
-    object-assign "^4.0.1"
-    thenify-all "^1.0.0"
 
 nan@^2.10.0, nan@^2.11.0, nan@^2.11.1, nan@^2.13.1, nan@^2.13.2, nan@^2.4.0, nan@^2.8.0, nan@^2.9.2:
   version "2.13.2"
@@ -3933,20 +3923,6 @@ tar@^4:
     mkdirp "^0.5.0"
     safe-buffer "^5.1.2"
     yallist "^3.0.2"
-
-thenify-all@^1.0.0:
-  version "1.6.0"
-  resolved "https://registry.yarnpkg.com/thenify-all/-/thenify-all-1.6.0.tgz#1a1918d402d8fc3f98fbf234db0bcc8cc10e9726"
-  integrity sha1-GhkY1ALY/D+Y+/I02wvMjMEOlyY=
-  dependencies:
-    thenify ">= 3.1.0 < 4"
-
-"thenify@>= 3.1.0 < 4":
-  version "3.3.0"
-  resolved "https://registry.yarnpkg.com/thenify/-/thenify-3.3.0.tgz#e69e38a1babe969b0108207978b9f62b88604839"
-  integrity sha1-5p44obq+lpsBCCB5eLn2K4hgSDk=
-  dependencies:
-    any-promise "^1.0.0"
 
 through2@^2.0.1:
   version "2.0.5"

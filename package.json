@@ -174,7 +174,7 @@
     "diskusage": "^1.0.0",
     "dnd-core": "^7.2.0",
     "draggabilly": "^2.2.0",
-    "drivelist": "^8.0.2",
+    "drivelist": "TanninOne/drivelist",
     "electron-edge-js": "^10.11.1",
     "electron-redux": "TanninOne/electron-redux",
     "electron-updater": "^4.0.6",
