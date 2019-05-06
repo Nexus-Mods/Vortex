@@ -85,7 +85,7 @@ export function startDownload(api: IExtensionApi, nexus: Nexus, nxmurl: string):
         message: nexusFileInfo.name,
         actions: [
           {
-            title: 'Install', action: dismiss => {
+            title: 'Install All', action: dismiss => {
               api.events.emit('start-install-download', downloadId);
               dismiss();
             },

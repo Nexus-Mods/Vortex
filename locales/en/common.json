@@ -11,5 +11,9 @@
   "{{ count }} error_plural": "{{ count }} errors",
   "{{ count }} active mod_plural": "{{ count }} active mods",
   "{{ count }} file_plural": "{{ count }} files",
-  "{{ count }} item selected_plural": "{{ count }} items selected"
+  "{{ count }} item selected_plural": "{{ count }} items selected",
+  "Enable All": "Enable",
+  "Enable All_plural": "Enable All",
+  "Install All": "Install",
+  "Install All_plural": "Install All"
 }

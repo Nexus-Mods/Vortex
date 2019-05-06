@@ -136,4 +136,9 @@ export interface INotification {
    * @memberOf INotification
    */
   actions?: INotificationAction[];
+
+  /**
+   * id of the process that triggered this action
+   */
+  process?: string;
 }

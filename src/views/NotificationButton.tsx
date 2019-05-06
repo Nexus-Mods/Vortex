@@ -1,5 +1,5 @@
-import { dismissNotification } from '../actions/notifications';
-import { INotification } from '../types/INotification';
+import { dismissNotification, fireNotificationAction } from '../actions/notifications';
+import { INotification, INotificationAction } from '../types/INotification';
 import { IState } from '../types/IState';
 import { ComponentEx, connect, translate } from '../util/ComponentEx';
 
@@ -154,12 +154,43 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
         params={translated}
         collapsed={collapsed[notification.group]}
         onExpand={this.expand}
-        onDismiss={this.dismiss}
+        onTriggerAction={this.triggerAction}
+        onDismiss={this.dismissAll}
       />
     );
   }
 
-  private dismiss = (notificationId: string) => {
+  private triggerAction = (notificationId: string, actionTitle: string) => {
+    const { notifications, onDismiss } = this.props;
+    const noti = notifications.find(iter => iter.id === notificationId);
+    if (noti === undefined) {
+      return;
+    }
+
+    const callAction = (id: string, action: INotificationAction, idx: number) => {
+      if (idx === -1) {
+        return;
+      }
+
+      if (action.action !== undefined) {
+        action.action(() => onDismiss(id));
+      } else {
+        fireNotificationAction(id, noti.process, idx, () => onDismiss(id));
+      }
+    }
+
+    if ((noti.group === undefined) || (noti.group === this.state.expand)) {
+      const actionIdx = noti.actions.findIndex(iter => iter.title === actionTitle);
+      callAction(noti.id, noti.actions[actionIdx], actionIdx);
+    } else {
+      notifications.filter(iter => iter.group === noti.group).forEach(iter => {
+        const actionIdx = iter.actions.findIndex(iter => iter.title === actionTitle);
+        callAction(iter.id, iter.actions[actionIdx], actionIdx);
+      });
+    }
+  }
+
+  private dismissAll = (notificationId: string) => {
     const { notifications, onDismiss } = this.props;
     const noti = notifications.find(iter => iter.id === notificationId);
     if (noti === undefined) {

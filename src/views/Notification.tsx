@@ -10,29 +10,20 @@ import { fireNotificationAction } from '../actions';
 
 interface IActionProps {
   t: I18next.TFunction;
-  notificationId: string;
-  notificationProcess: string;
   title: string;
-  actionIdx: number;
-  actionFunc: () => void;
-  onDismiss: () => void;
+  count: number;
+  onTrigger: (actionTitle: string) => void
 }
 
 class Action extends React.Component<IActionProps, {}> {
   public render(): JSX.Element {
-    const { t, title } = this.props;
-    return <Button onClick={this.trigger}>{t(title)}</Button>;
+    const { t, count, title } = this.props;
+    return <Button onClick={this.trigger}>{t(title, { count })}</Button>;
   }
 
   private trigger = () => {
-    const { actionFunc, actionIdx, notificationId, notificationProcess, onDismiss } = this.props;
-    if (actionFunc !== undefined) {
-      // renderer-only action
-      actionFunc();
-    } else {
-      // could be in renderer or browser
-      fireNotificationAction(notificationId, notificationProcess, actionIdx, onDismiss);
-    }
+    const { onTrigger, title } = this.props;
+    onTrigger(title);
   }
 }
 
@@ -41,6 +32,7 @@ export interface IProps {
   collapsed: number;
   params: INotification & { process?: string };
   onExpand: (groupId: string) => void;
+  onTriggerAction: (notificationId: string, actionTitle: string) => void;
   onDismiss: (id: string) => void;
 }
 
@@ -70,7 +62,9 @@ class Notification extends ComponentEx<IProps, {}> {
           </div>
         </div>
         <div className='notification-buttons'>
-          {actions !== undefined ? actions.map(this.renderAction) : null}
+          {actions !== undefined
+            ? actions.map(action => this.renderAction(action, collapsed))
+            : null}
           {!noDismiss ? (
             <Button onClick={this.dismiss}>
               {(collapsed > 1) ? t('Dismiss All') : t('Dismiss')}
@@ -86,19 +80,22 @@ class Notification extends ComponentEx<IProps, {}> {
     );
   }
 
-  private renderAction = (action, idx) => {
+  private renderAction = (action, count) => {
     return (
       <Action
         key={action.title}
         t={this.props.t}
         title={action.title}
-        notificationId={this.props.params.id}
-        notificationProcess={this.props.params.process}
-        actionIdx={idx}
-        actionFunc={action.action}
-        onDismiss={this.dismiss}
+        count={count}
+        onTrigger={this.trigger}
       />
     );
+  }
+
+  private trigger = (actionTitle: string) => {
+    const { onTriggerAction, params } = this.props;
+
+    onTriggerAction(params.id, actionTitle);
   }
 
   private expand = () => {

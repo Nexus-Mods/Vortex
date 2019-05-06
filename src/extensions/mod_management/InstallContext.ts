@@ -223,7 +223,7 @@ class InstallContext implements IInstallContext {
           displayMS: isEnabled ? 4000 : undefined,
           actions: isEnabled ? [] : [
             {
-              title: 'Enable',
+              title: 'Enable All',
               action: dismiss => {
                 this.mEnableMod(this.mAddedId);
                 dismiss();
