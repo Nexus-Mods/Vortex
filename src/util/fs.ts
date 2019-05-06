@@ -48,9 +48,23 @@ export {
   writeSync,
 } from 'fs-extra-promise';
 
-const NUM_RETRIES = 3;
+const NUM_RETRIES = 5;
 const RETRY_DELAY_MS = 100;
-const RETRY_ERRORS = new Set(['EPERM', 'EBUSY', 'UNKNOWN']);
+const RETRY_ERRORS = new Set(['EPERM', 'EBUSY', 'EIO', 'UNKNOWN']);
+
+const simfail = (process.env.SIMULATE_FS_ERRORS === 'true')
+  ? (func: () => PromiseBB<any>): PromiseBB<any> => {
+    if (Math.random() < 0.25) {
+      let code = Math.random() < 0.33 ? 'EBUSY' : Math.random() < 0.5 ? 'EIO' : 'UNKNOWN';
+      let res: any = new Error(`fake error ${code}`);
+      res.code = code;
+      res.path = 'foobar file';
+      return PromiseBB.reject(res);
+    } else {
+      return func();
+    }
+  }
+  : (func: () => PromiseBB<any>) => func();
 
 function nospcQuery(): PromiseBB<boolean> {
   if (dialog === undefined) {
@@ -189,7 +203,11 @@ function busyRetry(filePath: string): PromiseBB<boolean> {
     : PromiseBB.resolve(true);
 }
 
-function errorRepeat(error: NodeJS.ErrnoException, filePath: string): PromiseBB<boolean> {
+function errorRepeat(error: NodeJS.ErrnoException, filePath: string, retries: number): PromiseBB<boolean> {
+  if ((retries > 0) && RETRY_ERRORS.has(error.code)) {
+    // retry these errors without query for a few times
+    return PromiseBB.delay(100).then(() => PromiseBB.resolve(true));
+  }
   if (error.code === 'EBUSY') {
     return busyRetry(filePath);
   } else if (error.code === 'ENOSPC') {
@@ -234,8 +252,8 @@ function restackErr(error: Error, stackErr: Error): Error {
   return error;
 }
 
-function errorHandler(error: NodeJS.ErrnoException, stackErr: Error): PromiseBB<void> {
-  return errorRepeat(error, (error as any).dest || error.path)
+function errorHandler(error: NodeJS.ErrnoException, stackErr: Error, tries: number): PromiseBB<void> {
+  return errorRepeat(error, (error as any).dest || error.path, tries)
     .then(repeat => repeat
       ? PromiseBB.resolve()
       : PromiseBB.reject(restackErr(error, stackErr)))
@@ -243,12 +261,16 @@ function errorHandler(error: NodeJS.ErrnoException, stackErr: Error): PromiseBB<
 }
 
 function genWrapperAsync<T extends (...args) => any>(func: T): T {
-  const wrapper = (stackErr: Error, ...args) =>
-    func(...args)
-      .catch(err => errorHandler(err, stackErr)
-        .then(() => wrapper(stackErr, ...args)));
+  const wrapper = (stackErr: Error, tries: number, ...args) =>
+    simfail(() => func(...args))
+      .catch(err => errorHandler(err, stackErr, tries)
+        .then(() => {
+          return wrapper(stackErr, tries - 1, ...args);
+        }));
 
-  const res = (...args) => wrapper(new Error(), ...args);
+  const res = (...args) => {
+    return wrapper(new Error(), NUM_RETRIES, ...args);
+  };
   return res as T;
 }
 
@@ -346,17 +368,18 @@ export function copyAsync(src: string, dest: string,
     ? PromiseBB.resolve()
     : selfCopyCheck(src, dest);
   return check
-    .then(() => copyInt(src, dest, options || undefined, stackErr))
+    .then(() => copyInt(src, dest, options || undefined, stackErr, NUM_RETRIES))
     .catch(err => PromiseBB.reject(restackErr(err, stackErr)));
 }
 
 function copyInt(
     src: string, dest: string,
     options: fs.CopyOptions,
-    stackErr: Error) {
-  return fs.copyAsync(src, dest, options)
+    stackErr: Error,
+    tries: number) {
+  return simfail(() => fs.copyAsync(src, dest, options))
     .catch((err: NodeJS.ErrnoException) =>
-      errorHandler(err, stackErr).then(() => copyInt(src, dest, options, stackErr)));
+      errorHandler(err, stackErr, tries).then(() => copyInt(src, dest, options, stackErr, tries - 1)));
 }
 
 export function removeSync(dirPath: string) {
@@ -364,16 +387,16 @@ export function removeSync(dirPath: string) {
 }
 
 export function unlinkAsync(dirPath: string): PromiseBB<void> {
-  return unlinkInt(dirPath, new Error());
+  return unlinkInt(dirPath, new Error(), NUM_RETRIES);
 }
 
-function unlinkInt(dirPath: string, stackErr: Error): PromiseBB<void> {
-  return fs.unlinkAsync(dirPath)
+function unlinkInt(dirPath: string, stackErr: Error, tries: number): PromiseBB<void> {
+  return simfail(() => fs.unlinkAsync(dirPath))
     .catch((err: NodeJS.ErrnoException) => (err.code === 'ENOENT')
         // don't mind if a file we wanted deleted was already gone
         ? PromiseBB.resolve()
-        : errorHandler(err, stackErr)
-          .then(() => unlinkInt(dirPath, stackErr)));
+        : errorHandler(err, stackErr, tries)
+          .then(() => unlinkInt(dirPath, stackErr, tries - 1)));
 }
 
 export function renameAsync(sourcePath: string, destinationPath: string): PromiseBB<void> {
@@ -382,21 +405,21 @@ export function renameAsync(sourcePath: string, destinationPath: string): Promis
 
 function renameInt(sourcePath: string, destinationPath: string,
                    stackErr: Error, tries: number): PromiseBB<void> {
-  return fs.renameAsync(sourcePath, destinationPath)
+  return simfail(() => fs.renameAsync(sourcePath, destinationPath))
     .catch((err: NodeJS.ErrnoException) => {
       if ((tries > 0) && RETRY_ERRORS.has(err.code)) {
-        return PromiseBB.delay(RETRY_DELAY_MS)
+        return PromiseBB.delay((NUM_RETRIES - tries + 1) * RETRY_DELAY_MS)
           .then(() => renameInt(sourcePath, destinationPath, stackErr, tries - 1));
       }
       return (err.code === 'EPERM')
         ? fs.statAsync(destinationPath)
           .then(stat => stat.isDirectory()
             ? PromiseBB.reject(restackErr(err, stackErr))
-            : errorHandler(err, stackErr)
-              .then(() => renameInt(sourcePath, destinationPath, stackErr, tries)))
+            : errorHandler(err, stackErr, tries)
+              .then(() => renameInt(sourcePath, destinationPath, stackErr, tries - 1)))
           .catch(newErr => PromiseBB.reject(restackErr(newErr, stackErr)))
-        : errorHandler(err, stackErr)
-          .then(() => renameInt(sourcePath, destinationPath, stackErr, tries));
+        : errorHandler(err, stackErr, tries)
+          .then(() => renameInt(sourcePath, destinationPath, stackErr, tries - 1));
     });
 }
 
@@ -405,7 +428,7 @@ export function rmdirAsync(dirPath: string): PromiseBB<void> {
 }
 
 function rmdirInt(dirPath: string, stackErr: Error, tries: number): PromiseBB<void> {
-  return fs.rmdirAsync(dirPath)
+  return simfail(() => fs.rmdirAsync(dirPath))
     .catch((err: NodeJS.ErrnoException) => {
       if (err.code === 'ENOENT') {
         // don't mind if a file we wanted deleted was already gone
@@ -420,13 +443,13 @@ function rmdirInt(dirPath: string, stackErr: Error, tries: number): PromiseBB<vo
 
 export function removeAsync(remPath: string): PromiseBB<void> {
   const stackErr = new Error();
-  return removeInt(remPath, stackErr);
+  return removeInt(remPath, stackErr, NUM_RETRIES);
 }
 
-function removeInt(remPath: string, stackErr: Error): PromiseBB<void> {
-  return rimrafAsync(remPath)
-    .catch(err => errorHandler(err, stackErr)
-      .then(() => removeInt(remPath, stackErr)));
+function removeInt(remPath: string, stackErr: Error, tries: number): PromiseBB<void> {
+  return simfail(() => rimrafAsync(remPath))
+    .catch(err => errorHandler(err, stackErr, tries)
+      .then(() => removeInt(remPath, stackErr, tries - 1)));
 }
 
 function rimrafAsync(remPath: string): PromiseBB<void> {
