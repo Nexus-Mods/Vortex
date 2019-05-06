@@ -515,7 +515,7 @@ export function onStartInstallDownload(api: IExtensionApi,
     return Promise.resolve();
   }
 
-  return queryGameId(api.store, download.game)
+  return queryGameId(api.store, download.game, download.localPath)
     .then(gameId => {
       if (!truthy(download.localPath)) {
         api.events.emit('refresh-downloads', gameId, () => {

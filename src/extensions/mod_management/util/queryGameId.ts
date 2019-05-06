@@ -10,7 +10,7 @@ import * as Promise from 'bluebird';
  * Determine which game to install a download for.
  * If the currently managed game is compatible, just pick that, otherwise ask the user
  */
-function queryGameId(store: ThunkStore<any>, downloadGameIds: string[]): Promise<string> {
+function queryGameId(store: ThunkStore<any>, downloadGameIds: string[], fileName: string): Promise<string> {
   const state: IState = store.getState();
   const gameMode = activeGameId(state);
 
@@ -56,8 +56,11 @@ function queryGameId(store: ThunkStore<any>, downloadGameIds: string[]): Promise
         'question', 'Download is for a different game',
         {
           text:
-            'This download is not marked compatible with the managed game. ' +
+            'The download "{{fileName}}" is not marked compatible with the managed game. ' +
             'Which one do you want to install it for?',
+          parameters: {
+            fileName,
+          },
         },
         options.concat(managed.map(gameId => (
           { label: gameName(store.getState(), gameId), action: () => resolve(gameId) }

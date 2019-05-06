@@ -165,7 +165,7 @@ class InstallManager {
     this.mQueue = this.mQueue
       .then(() => withContext('Installing', baseName, () => ((forceGameId !== undefined)
         ? Promise.resolve(forceGameId)
-        : queryGameId(api.store, downloadGameIds))
+        : queryGameId(api.store, downloadGameIds, modId))
       .then(gameId => {
         installGameId = gameId;
         if (installGameId === undefined) {
