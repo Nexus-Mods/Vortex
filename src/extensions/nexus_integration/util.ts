@@ -279,8 +279,8 @@ export function endorseModImpl(
     });
 }
 
-function nexusLink(mod: IMod, gameMode: string) {
-  const gameId = getSafe(mod.attributes, ['downloadGame'], undefined) || gameMode;
+function nexusLink(state: IState, mod: IMod, gameMode: string) {
+  const gameId = nexusGameId(gameById(state, getSafe(mod.attributes, ['downloadGame'], undefined) || gameMode));
   const nexusModId: number = parseInt(getSafe(mod.attributes, ['modId'], undefined), 10);
   return `https://www.nexusmods.com/${gameId}/mods/${nexusModId}`;
 }
@@ -353,7 +353,7 @@ export function checkModVersionsImpl(
           }
 
           const name = modName(mod, { version: true });
-          const nameLink = `[url=${nexusLink(mod, gameId)}]${name}[/url]`;
+          const nameLink = `[url=${nexusLink(store.getState(), mod, gameId)}]${name}[/url]`;
 
           return (detail.Servermessage !== undefined)
             ? `${nameLink}:<br/>${detail.message}<br/>Server said: "${detail.Servermessage}"<br/>`
