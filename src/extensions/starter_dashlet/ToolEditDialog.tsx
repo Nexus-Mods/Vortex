@@ -6,7 +6,7 @@ import { Button, IconButton } from '../../controls/TooltipControls';
 import { IComponentContext } from '../../types/IComponentContext';
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
-import { ProcessCanceled } from '../../util/CustomErrors';
+import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import Debouncer from '../../util/Debouncer';
 import * as fs from '../../util/fs';
 import StarterInfo, { IStarterInfo } from '../../util/StarterInfo';
@@ -495,10 +495,10 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
         this.clearCache();
         this.nextState.tool.iconPath = destPath;
       })
+      .catch(UserCanceled, () => null)
+      .catch(ProcessCanceled, () => null)
       .catch((err) => {
-        if ((err !== null) && !(err instanceof ProcessCanceled)) {
-          this.context.api.showErrorNotification('Failed to change tool icon', err);
-        }
+        this.context.api.showErrorNotification('Failed to change tool icon', err);
       });
   }
 
