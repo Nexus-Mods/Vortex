@@ -53,7 +53,11 @@ class FileTime extends ComponentEx<IFileTimeProps, { mtime: Date }> {
     }
 
     if (detail) {
-      return <span>{mtime.toLocaleString(language)}</span>;
+      try {
+        return <span>{mtime.toLocaleString(language)}</span>;
+      } catch (err) {
+        return <span>{mtime.toISOString()}</span>;
+      }
     } else {
       return <span>{relativeTime(mtime, t)}</span>;
     }
