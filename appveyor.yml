@@ -3,13 +3,18 @@ clone_depth: 1
 image:
   - Visual Studio 2017
 environment:
-  nodejs_version: 8
+  nodejs_version: 11
 platform:
   - x64
 configuration:
   - Release
 install:
 - ps: Install-Product node $env:nodejs_version x64
+- ps: >-
+    Write-Host "Installing newest Yarn!"
+    (New-Object Net.WebClient).DownloadFile("https://yarnpkg.com/latest.msi", "$env:temp\yarn.msi")
+    cmd /c start /wait msiexec.exe /i $env:temp\yarn.msi /quiet /qn /norestart
+    yarn --version
 - set EDGE_USE_CORECLR= && yarn install
 branches:
   except:
