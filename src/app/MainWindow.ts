@@ -134,17 +134,20 @@ class MainWindow {
       log('error', 'failed to load page', { code, description, url });
     });
 
-    this.mWindow.webContents.session.on(
-        'will-download', (event, item) => {
+    this.mWindow.webContents.session.on('will-download', (event, item) => {
           event.preventDefault();
-          if (this.mWindow !== null) {
-            this.mWindow.webContents.send('external-url', item.getURL());
-            store.dispatch(addNotification({
-              type: 'info',
-              title: 'Download started',
-              message: item.getFilename(),
-              displayMS: 4000,
-            }));
+          if (truthy(this.mWindow) && !this.mWindow.isDestroyed()) {
+            try {
+              this.mWindow.webContents.send('external-url', item.getURL());
+              store.dispatch(addNotification({
+                type: 'info',
+                title: 'Download started',
+                message: item.getFilename(),
+                displayMS: 4000,
+              }));
+            } catch (err) {
+              log('warn', 'starting download failed', err.message);
+            }
           }
         });
 

@@ -1,4 +1,5 @@
 import getVortexPath from '../util/getVortexPath';
+import { log } from '../util/log';
 import * as Promise from 'bluebird';
 
 class SplashScreen {
@@ -17,7 +18,11 @@ class SplashScreen {
     return Promise.delay(200)
         .then(() => {
           if (!this.mWindow.isDestroyed()) {
-            this.mWindow.webContents.send('fade-out');
+            try {
+              this.mWindow.webContents.send('fade-out');
+            } catch (err) {
+              log('warn', 'failed to fade out splash screen', err.message);
+            }
           }
         })
         // wait for the fade out animation to finish before destroying
