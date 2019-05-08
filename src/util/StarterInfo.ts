@@ -226,6 +226,9 @@ class StarterInfo implements IStarterInfo {
       fs.statSync(iconPath);
       return iconPath;
     } catch (err) {
+      if (toolLogo === undefined) {
+        return undefined;
+      }
       try {
         const iconPath = path.join(extensionPath, toolLogo);
         fs.statSync(iconPath);
@@ -319,7 +322,7 @@ class StarterInfo implements IStarterInfo {
         ? toolDiscovery.workingDirectory
         : path.dirname(toolDiscovery.path || '');
       this.shell = getSafe(toolDiscovery, ['shell'], getSafe(tool, ['shell'], undefined));
-      this.exclusive = tool.exclusive || false;
+      this.exclusive = getSafe(tool, ['exclusive'], false) || false;
     } else {
       // defaults for undiscovered & unconfigured tools
       this.name = tool.name;
