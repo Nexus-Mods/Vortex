@@ -36,7 +36,6 @@ import getText from '../texts';
 import * as Promise from 'bluebird';
 import { remote } from 'electron';
 import * as path from 'path';
-import * as process from 'process';
 import * as React from 'react';
 import {
   Alert, Button as BSButton, ControlLabel, FormControl, FormGroup,

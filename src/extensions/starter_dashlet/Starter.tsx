@@ -5,8 +5,10 @@ import EmptyPlaceholder from '../../controls/EmptyPlaceholder';
 import Icon from '../../controls/Icon';
 import Spinner from '../../controls/Spinner';
 import { IconButton } from '../../controls/TooltipControls';
+import { makeExeId } from '../../reducers/session';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../types/IDialog';
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
+import { IRunningTool } from '../../types/IState';
 import { ComponentEx, connect } from '../../util/ComponentEx';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
@@ -63,6 +65,7 @@ interface IConnectedProps {
   discoveredGames: { [id: string]: IDiscoveryResult };
   discoveredTools: { [id: string]: IDiscoveredTool };
   primaryTool: string;
+  toolsRunning: { [exePath: string]: IRunningTool };
 }
 
 type IStarterProps = IConnectedProps & IActionProps;
@@ -237,11 +240,13 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
   }
 
   private renderTool = (starter: StarterInfo) => {
-    const { t, primaryTool } = this.props;
+    const { t, primaryTool, toolsRunning } = this.props;
     const { counter } = this.state;
     if (starter === undefined) {
       return null;
     }
+
+    const running = toolsRunning[makeExeId(starter.exePath)] !== undefined;
 
     return (
       <ToolButton
@@ -250,6 +255,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
         primary={starter.id === primaryTool}
         counter={counter}
         starter={starter}
+        running={running}
         onRun={this.startTool}
         onEdit={this.editTool}
         onRemove={this.removeTool}
@@ -434,6 +440,7 @@ function mapStateToProps(state: any): IConnectedProps {
     discoveredTools: getSafe(state, ['settings', 'gameMode',
       'discovered', gameMode, 'tools'], emptyObj),
     primaryTool: getSafe(state, ['settings', 'interface', 'primaryTool', gameMode], undefined),
+    toolsRunning: state.session.base.toolsRunning,
   };
 }
 

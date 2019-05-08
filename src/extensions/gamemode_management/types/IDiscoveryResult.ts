@@ -1,4 +1,4 @@
-import { IToolStored } from './IToolStored';
+import { IDiscoveredTool } from '../../../types/IDiscoveredTool';
 
 /**
  * describes parameters for the game set by the user
@@ -16,7 +16,7 @@ export interface IDiscoveryResult {
   path?: string;
   pathSetManually?: boolean;
   tools?: {
-    [id: string]: IToolStored;
+    [id: string]: IDiscoveredTool;
   };
   environment?: { [key: string]: string };
 

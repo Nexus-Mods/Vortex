@@ -28,5 +28,14 @@ export const setProgress = safeCreateAction('SET_PROGRESS',
   (group: string, progressId: string, text: string, percent: number) =>
     ({ group, progressId, text, percent }));
 
+export const setToolRunning = safeCreateAction('SET_TOOL_RUNNING',
+  (exePath: string, started: number, exclusive: boolean) => ({ exePath, started, exclusive }));
+
+export const setToolPid = safeCreateAction('SET_TOOL_RUNNING',
+  (exePath: string, pid: number, exclusive: boolean) => ({ exePath, pid, exclusive }));
+
+export const setToolStopped = safeCreateAction('SET_TOOL_STOPPED',
+  (exePath: string) => ({ exePath }));
+
 export const setExtensionLoadFailures =
   safeCreateAction('SET_EXT_LOAD_FAILURES', failures => failures);

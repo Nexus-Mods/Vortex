@@ -1,7 +1,18 @@
 import * as actions from '../actions/session';
 import { IReducerSpec } from '../types/IExtensionContext';
 
-import { pushSafe, removeValue, setSafe } from '../util/storeHelper';
+import { pushSafe, removeValue, setSafe, deleteOrNop } from '../util/storeHelper';
+
+import * as path from 'path';
+
+export function makeExeId(exePath: string): string {
+  // TODO: stripping the path means that we can't distinguish between different installations
+  // of the same exe running at the same time, we might see an exe as "not running" when it
+  // actually is. This is rather unlikely though.
+  // On the flipside, if we _don't_ use the basename, lookup will be more complicated and
+  // thus slower.
+  return path.basename(exePath).toLowerCase();
+}
 
 /**
  * reducer for changes to the window state
@@ -32,6 +43,22 @@ export const sessionReducer: IReducerSpec = {
     },
     [actions.setExtensionLoadFailures as any]: (state, payload) =>
       setSafe(state, ['extLoadFailures'], payload),
+    [actions.setToolRunning as any]: (state, payload) =>
+      setSafe(state, ['toolsRunning', makeExeId(payload.exePath)], {
+        exePath: payload.exePath,
+        started: payload.started,
+        pid: undefined,
+        exclusive: payload.exclusive || false,
+      }),
+    [actions.setToolPid as any]: (state, payload) =>
+      setSafe(state, ['toolsRunning', makeExeId(payload.exePath)], {
+        exePath: payload.exePath,
+        started: payload.started,
+        pid: payload.pid,
+        exclusive: payload.exclusive || false,
+      }),
+    [actions.setToolStopped as any]: (state, payload) =>
+      deleteOrNop(state, ['toolsRunning', makeExeId(payload.exePath)]),
   },
   defaults: {
     displayGroups: {},
@@ -43,5 +70,6 @@ export const sessionReducer: IReducerSpec = {
     progress: {},
     settingsPage: undefined,
     extLoadFailures: {},
+    toolsRunning: {},
   },
 };

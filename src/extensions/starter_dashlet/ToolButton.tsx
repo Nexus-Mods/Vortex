@@ -17,6 +17,7 @@ export interface IProps {
   counter: number;
   starter: StarterInfo;
   primary: boolean;
+  running: boolean;
   onRun: (starter: StarterInfo) => void;
   onMakePrimary: (starter: StarterInfo) => void;
   onRemove: (starter: StarterInfo) => void;
@@ -61,7 +62,7 @@ class ToolButton extends PureComponentEx<IProps, {}> {
   }
 
   public render() {
-    const { t, counter, primary, starter } = this.props;
+    const { t, counter, running, primary, starter } = this.props;
     const valid = (starter.exePath !== undefined) && (starter.exePath !== '');
 
     const classes = [
@@ -76,7 +77,10 @@ class ToolButton extends PureComponentEx<IProps, {}> {
         <div className='tool-icon-container'>
           <ToolIcon imageUrl={starter.iconPath} imageId={counter} valid={valid} />
         </div>
-        <span>{starter.name}</span>
+        <div className='tool-icon-text'>
+          <div className='tool-icon-name'>{starter.name}</div>
+          {running ? <div className='tool-icon-running'>{t('Running...')}</div> : null}
+        </div>
         {primary ? <Icon className='tool-bookmark' name='bookmark'/> : null}
         <IconBar
           id={`tool-starter-${starter.id}`}

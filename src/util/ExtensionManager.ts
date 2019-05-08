@@ -1078,7 +1078,9 @@ class ExtensionManager {
           };
           const child = spawn(runExe, options.shell ? args : args.map(arg => arg.replace(/"/g, '')),
                               spawnOptions);
-
+          if (options.onSpawned !== undefined) {
+            options.onSpawned();
+          }
           child
             .on('error', err => {
               reject(err);

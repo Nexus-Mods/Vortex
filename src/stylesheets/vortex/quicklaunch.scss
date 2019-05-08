@@ -59,7 +59,9 @@
       max-height: 100%;
       display: block;
     }
+
   }
+
   .item-more-games {
     width: 100%;
     line-height: 40px;
@@ -83,6 +85,13 @@
     bottom: 0;
     right: 0;
     display: flex;
+
+    align-items: center;
+
+    .icon-spinner {
+      width: 3em;
+      height: 3em;
+    }
   }
 }
 
@@ -93,4 +102,24 @@
 
 #dropdown-quicklaunch {
   border: 0;
+}
+
+.tool-icon-text {
+  flex: 1 1 0;
+  margin-left: 4px;
+  white-space: nowrap;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  .tool-icon-name {
+    overflow-x: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .tool-icon-running {
+    color: $text-color-disabled;
+    font-size: x-small;
+  }
 }

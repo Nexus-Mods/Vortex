@@ -70,6 +70,12 @@ export interface IProgress {
   percent: number;
 }
 
+export interface IRunningTool {
+  started: number;
+  exclusive: boolean;
+  pid: number;
+}
+
 /**
  * "ephemeral" session state.
  * This state is generated at startup and forgotten at application exit
@@ -87,6 +93,7 @@ export interface ISession {
   progress: { [group: string]: { [id: string]: IProgress } };
   settingsPage: string;
   extLoadFailures: { [extId: string]: IExtensionLoadFailure[] };
+  toolsRunning: { [exeId: string]: IRunningTool };
 }
 
 export interface IRowState {

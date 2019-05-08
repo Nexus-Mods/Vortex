@@ -1,3 +1,4 @@
+import { setToolRunning } from '../actions';
 import { IDiscoveredTool } from '../types/IDiscoveredTool';
 import { IGame } from '../types/IGame';
 import { log } from '../util/log';
@@ -30,6 +31,7 @@ export interface IStarterInfo {
   exePath: string;
   commandLine: string[];
   workingDirectory: string;
+  exclusive: boolean;
   environment: { [key: string]: string };
 }
 
@@ -69,22 +71,32 @@ class StarterInfo implements IStarterInfo {
         })
       : Promise.resolve(undefined);
 
+    const onSpawned = () => {
+      api.store.dispatch(setToolRunning(info.exePath, Date.now(), info.exclusive));
+    };
+
+
     return launcherPromise.then(res => {
       if (res !== undefined) {
         return StarterInfo.runThroughLauncher(res.launcher, info, api, res.addInfo)
+          .then(() => {
+            // assuming that runThroughLauncher returns immediately on handing things off
+            // to the launcher
+            api.store.dispatch(setToolRunning(info.exePath, Date.now(), info.exclusive));
+          })
           .catch(UserCanceled, () => null)
           .catch(GamePathNotMatched, err => {
             const errorMsg = [err.message, err.gamePath, err.steamEntryPaths].join(' - ');
             log('error', errorMsg);
             onShowError('Failed to start game through launcher', err, true);
-            return StarterInfo.runGameExecutable(info, api, onShowError);
+            return StarterInfo.runGameExecutable(info, api, onShowError, onSpawned);
           })
           .catch(err => {
             onShowError('Failed to start game through launcher', err, true);
-            return StarterInfo.runGameExecutable(info, api, onShowError);
+            return StarterInfo.runGameExecutable(info, api, onShowError, onSpawned);
           });
       } else {
-        return StarterInfo.runGameExecutable(info, api, onShowError);
+        return StarterInfo.runGameExecutable(info, api, onShowError, onSpawned);
       }
     });
   }
@@ -120,12 +132,15 @@ class StarterInfo implements IStarterInfo {
 
   private static runGameExecutable(info: StarterInfo,
                                    api: IExtensionApi,
-                                   onShowError: OnShowErrorFunc): Promise<void> {
+                                   onShowError: OnShowErrorFunc,
+                                   onSpawned: () => void,
+                                   ): Promise<void> {
     return api.runExecutable(info.exePath, info.commandLine, {
       cwd: info.workingDirectory,
       env: info.environment,
       suggestDeploy: true,
       shell: info.shell,
+      onSpawned: onSpawned,
     })
     .catch(ProcessCanceled, () => undefined)
     .catch(UserCanceled, () => undefined)
@@ -236,6 +251,7 @@ class StarterInfo implements IStarterInfo {
   public originalEnvironment: { [key: string]: string };
   public shell: boolean;
   public details: { [key: string]: any } = {};
+  public exclusive: boolean;
   private mExtensionPath: string;
   private mLogoName: string;
   private mIconPathCache: string;
@@ -286,11 +302,14 @@ class StarterInfo implements IStarterInfo {
     this.shell = gameDiscovery.shell || game.shell;
     this.mLogoName = gameDiscovery.logo || game.logo;
     this.details = game.details;
+    this.exclusive = true;
   }
 
   private initFromTool(gameId: string, tool: IToolStored, toolDiscovery: IDiscoveredTool) {
     if (toolDiscovery !== undefined) {
       this.name = getSafe(toolDiscovery, ['name'], getSafe(tool, ['name'], undefined));
+      // TODO: umm, the discovery path here stores the path to the exe, whereas for a game it
+      //   stores the base path of the game? That's not confusing at all...
       this.exePath = toolDiscovery.path;
       this.commandLine = getSafe(toolDiscovery, ['parameters'], getSafe(tool, ['parameters'], []));
       this.environment =
@@ -300,6 +319,7 @@ class StarterInfo implements IStarterInfo {
         ? toolDiscovery.workingDirectory
         : path.dirname(toolDiscovery.path || '');
       this.shell = getSafe(toolDiscovery, ['shell'], getSafe(tool, ['shell'], undefined));
+      this.exclusive = tool.exclusive || false;
     } else {
       // defaults for undiscovered & unconfigured tools
       this.name = tool.name;

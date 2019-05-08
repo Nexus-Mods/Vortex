@@ -128,4 +128,10 @@ export interface ITool {
    * if true, the tool will be run inside a shell
    */
   shell?: boolean;
+
+  /**
+   * if true, running this tool will block any other applications be run from vortex until it's
+   * done. Defaults to false
+   */
+  exclusive?: boolean;
 }

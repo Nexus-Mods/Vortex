@@ -3,10 +3,9 @@ import {
   GameInfoQuery,
   IExtensionApi,
   IExtensionContext,
-  IInstruction,
 } from '../../types/IExtensionContext';
 import {IGame} from '../../types/IGame';
-import { IProfile, IState } from '../../types/IState';
+import { IProfile, IState, IRunningTool } from '../../types/IState';
 import { IEditChoice, ITableAttribute } from '../../types/ITableAttribute';
 import {ProcessCanceled, SetupError, UserCanceled} from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
@@ -36,6 +35,7 @@ import { IGameStored } from './types/IGameStored';
 import { IModType } from './types/IModType';
 import { getGame } from './util/getGame';
 import { getModTypeExtensions, registerModType } from './util/modTypeExtensions';
+import ProcessMonitor from './util/ProcessMonitor';
 import queryGameInfo from './util/queryGameInfo';
 import {} from './views/GamePicker';
 import HideGameIcon from './views/HideGameIcon';
@@ -597,6 +597,19 @@ function init(context: IExtensionContext): boolean {
           }
           return null;
         });
+      });
+
+    let processMonitor = new ProcessMonitor(context.api);
+    type RunningMap = { [exePath: string]: IRunningTool };
+    context.api.onStateChange(['session', 'base', 'toolsRunning'],
+      (prev: RunningMap, current: RunningMap) => {
+        const exePaths = Object.keys(current);
+        if (exePaths.length > 0) {
+          // no effect if it's already running
+          processMonitor.start();
+        } else {
+          processMonitor.end();
+        }
       });
 
     {

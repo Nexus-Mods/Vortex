@@ -1,12 +1,14 @@
 import { showDialog } from '../actions/notifications';
 import EmptyPlaceholder from '../controls/EmptyPlaceholder';
+import Spinner from '../controls/Spinner';
 import { IconButton } from '../controls/TooltipControls';
 import { IDiscoveryResult } from '../extensions/gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../extensions/gamemode_management/types/IGameStored';
 import { IProfile } from '../extensions/profile_management/types/IProfile';
+import { makeExeId } from '../reducers/session';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../types/IDialog';
 import { IDiscoveredTool } from '../types/IDiscoveredTool';
-import { IState } from '../types/IState';
+import { IState, IRunningTool } from '../types/IState';
 import { ComponentEx, connect, translate } from '../util/ComponentEx';
 import { log } from '../util/log';
 import { showError } from '../util/message';
@@ -39,6 +41,7 @@ interface IConnectedProps {
   knownGames: IGameStored[];
   profilesVisible: boolean;
   lastActiveProfile: { [gameId: string]: string };
+  toolsRunning: { [exePath: string]: IRunningTool };
 }
 
 interface IActionProps {
@@ -69,7 +72,6 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
   }
 
   public componentWillReceiveProps(nextProps: IProps) {
-    // { discoveredTools, game, gameDiscovery, primaryTool }
     if ((nextProps.discoveredTools !== this.props.discoveredTools)
         || (nextProps.game !== this.props.game)
         || (nextProps.gameDiscovery !== this.props.primaryTool)) {
@@ -83,12 +85,17 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, game } = this.props;
+    const { t, game, toolsRunning } = this.props;
     const { starter } = this.state;
 
     if (starter === undefined) {
       return null;
     }
+
+    const exclusiveRunning =
+      Object.keys(toolsRunning).find(exeId => toolsRunning[exeId].exclusive) !== undefined;
+    const primaryRunning =
+      Object.keys(toolsRunning).find(exeId => exeId === makeExeId(starter.exePath));
 
     return (
       <div className='container-quicklaunch'>
@@ -103,12 +110,16 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
           {this.renderGameOptions()}
         </DropdownButton>
         <div className='container-quicklaunch-launch'>
-          <IconButton
-            id='btn-quicklaunch-play'
-            onClick={this.start}
-            tooltip={t('Launch')}
-            icon='launch-application'
-          />
+          {exclusiveRunning || primaryRunning ? (
+            <Spinner />
+          ) : (
+            <IconButton
+              id = 'btn-quicklaunch-play'
+              onClick = {this.start}
+              tooltip={t('Launch')}
+              icon='launch-application'
+            />
+          )}
         </div>
       </div>
     );
@@ -258,6 +269,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     discoveredGames: state.settings.gameMode.discovered,
     profilesVisible: state.settings.interface.profilesVisible,
     lastActiveProfile: state.settings.profiles.lastActiveProfile,
+    toolsRunning: state.session.base.toolsRunning,
   };
 }
 

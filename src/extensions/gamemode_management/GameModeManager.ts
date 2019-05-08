@@ -257,6 +257,7 @@ class GameModeManager {
       executable: tool.executable(),
       parameters: tool.parameters || [],
       environment: tool.environment,
+      exclusive: tool.exclusive,
     };
   }
 

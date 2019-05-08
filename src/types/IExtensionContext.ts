@@ -284,6 +284,7 @@ export interface IRunOptions {
   suggestDeploy?: boolean;
   shell?: boolean;
   detach?: boolean;
+  onSpawned?: () => void;
 }
 
 /**
