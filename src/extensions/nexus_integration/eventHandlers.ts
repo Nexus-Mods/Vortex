@@ -45,13 +45,14 @@ export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
               gameId = activeGameId(api.store.getState());
             }
           }
+          const gameDomain = nexusGameId(gameById(state, gameId), gameId);
           if ((modId !== undefined)
             && ((oldModId !== modId) || (oldFileId !== fileId))) {
-            return nexus.getModInfo(modId, gameId)
+            return nexus.getModInfo(modId, gameDomain)
               .then(modInfo => {
                 api.store.dispatch(setDownloadModInfo(dlId, 'nexus.modInfo', modInfo));
                 return (fileId !== undefined)
-                  ? nexus.getFileInfo(modId, fileId, gameId)
+                  ? nexus.getFileInfo(modId, fileId, gameDomain)
                     .catch(err => {
                       log('warn', 'failed to query file info', { message: err.message });
                       return Promise.resolve(undefined);
