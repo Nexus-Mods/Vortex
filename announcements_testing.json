@@ -3,4 +3,9 @@
 	"description": "DD mods must include a project.xml file to function correctly!",
 	"severity": "information",
 	"gamemode": "darkestdungeon"
+}, {
+	"date": "2019-05-09T14:52:10",
+	"description": "Due to a bug in our updating framework the testing releases 0.18.0 and 0.18.1 will not automatically update, please install 0.18.2 manually. We apologize for the inconvenience."
+	"severity": "warning",
+	"version": "0.18.0 || 0.18.1"
 }]
