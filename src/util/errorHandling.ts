@@ -180,9 +180,9 @@ export function didIgnoreError(): boolean {
 export function sendReportFile(fileName: string): Promise<IFeedbackResponse> {
   return fs.readFileAsync(fileName)
     .then(reportData => {
-      const {type, error, labels, reporterId, reportProcess, sourceProcess} =
+      const {type, error, labels, reporterId, reportProcess, sourceProcess, context} =
         JSON.parse(reportData.toString());
-      return sendReport(type, error, labels, reporterId, reportProcess, sourceProcess);
+      return sendReport(type, error, context, labels, reporterId, reportProcess, sourceProcess);
   });
 }
 
