@@ -166,23 +166,10 @@ function processModule(project, buildType, feedback) {
     .then(() => npm('add', [project.module], options, feedback));
 }
 
-function updateLock(modulePath, feedback) {
-  if (useYarn) {
-    // with yarn we can update the lock file ...
-    return spawnAsync(yarncli, ['install', '--check-files', '--mutex', 'file'], {
-      cwd: modulePath,
-    }, feedback);
-  } else {
-    // ... but apparently not in npm. I think there is a fix in the current
-    // npm version but since we're using npm from the node bundle and don't want to strictly
-    // enforce a node version we can't expect it to be available
-    return fs.removeAsync(path.join(modulePath));
-  }
-}
-
-function processCustom(project, buildType, feedback) {
+function processCustom(project, buildType, feedback, noparallel) {
   const start = Date.now();
-  let res = npm('install', [], { cwd: project.path }, feedback)
+  let instArgs = noparallel ? ['--network-concurrency', '1'] : [];
+  let res = npm('install', instArgs, { cwd: project.path }, feedback)
       .then(() => npm('run', [typeof project.build === 'string' ? project.build : 'build'], { cwd: project.path }, feedback));
   if (project.copyTo !== undefined) {
     const source = path.join(project.path, 'dist', '**', '*');
@@ -227,14 +214,14 @@ function evalCondition(condition, context) {
   return script.runInNewContext(context);
 }
 
-function processProject(project, buildType, feedback) {
+function processProject(project, buildType, feedback, noparallel) {
   if (!evalCondition(project.condition, { buildType })) {
     return Promise.reject(new ConditionNotMet());
   }
   if (project.type === 'install-module') {
     return processModule(project, buildType, feedback);
   } else if (project.type === 'build-copy') {
-    return processCustom(project, buildType, feedback);
+    return processCustom(project, buildType, feedback, noparallel);
   } else if (project.type === 'electron-rebuild') {
     return processRebuild(project, buildType, feedback);
   }
@@ -249,7 +236,7 @@ function main(args) {
     console.error('No command line parameters specified');
     return Promise.reject(1);
   }
-
+  
   const globalFeedback = new ProcessFeedback('global');
 
   const buildType = args._[0];
@@ -277,7 +264,7 @@ function main(args) {
           if ((lastChange !== undefined) && (lastChange < buildState[project.name])) {
             return Promise.reject(new Unchanged());
           }
-          return processProject(project, buildType, feedback);
+          return processProject(project, buildType, feedback, args.noparallel);
         })
         .then(() => {
           buildState[project.name] = Date.now();
