@@ -29,5 +29,5 @@ checker.init(
 
     deleteKeys.forEach(key => delete json[key]);
 
-    fs.writeFile(path.join('assets', 'modules.json'), JSON.stringify(json, undefined, 2));
+    fs.writeFile(path.join('assets', 'modules.json'), JSON.stringify(json, undefined, 2), () => null);
   });
