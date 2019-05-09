@@ -115,9 +115,9 @@ function sanityCheckCB(err: StateError) {
 
 let store: ThunkStore<any>;
 
-const terminateFromError = (error: any) => {
+const terminateFromError = (error: any, allowReport?: boolean) => {
   log('warn', 'about to report an error', { stack: new Error().stack });
-  terminate(toError(error), store !== undefined ? store.getState() : {});
+  terminate(toError(error), store !== undefined ? store.getState() : {}, allowReport);
 };
 
 function errorHandler(evt: any) {
@@ -144,8 +144,16 @@ function errorHandler(evt: any) {
     return;
   }
 
-  if ((error !== undefined)
-      && (error.stack !== undefined)
+  if (error.message === 'Array buffer allocation failed') {
+    terminateFromError({
+      message: 'Your system has run out of memory. '
+             + 'This only happens if both your physical and virtual memory have run out',
+      stack: error.stack,
+    }, false);
+    return;
+  }
+
+  if ((error.stack !== undefined)
       // TODO: socket hang up should trigger another error that we catch,
       //  unfortunately I don't know yet if this is caused by mod download
       //  or vortex update check or api requests and why it's unhandled but
