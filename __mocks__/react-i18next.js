@@ -16,6 +16,6 @@ function translate(namespace) {
   } 
 }
 
-react_i18n.translate = translate;
+react_i18n.withTranslation = translate;
 
 module.exports = react_i18n;
