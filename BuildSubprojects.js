@@ -108,20 +108,7 @@ function npm(command, args, options, out) {
   if (!useYarn && (command === 'add')) {
     command = 'install';
   }
-  return spawnAsync(useYarn ? yarncli : npmcli, [command, ...args, '--mutex', 'file'], options, out)
-  .catch((err) => {
-    // npm is so f***ing unreliable and random,
-    // a simple retry may help...
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        spawnAsync(useYarn ? yarncli : npmcli, [command, ...args, '--mutex', 'file'], options, out)
-        .then(resolve)
-        .catch(reject)
-        ;
-      }, 500);
-    });
-  })
-  ;
+  return spawnAsync(useYarn ? yarncli : npmcli, [command, ...args, '--mutex', 'file'], options, out);
 }
 
 function changes(basePath, patterns, force) {
@@ -285,5 +272,8 @@ function main(args) {
   .then(() => failed ? 1 : 0);
 }
 
-main(minimist(process.argv.slice(2)))
+const args = minimist(process.argv.slice(2));
+main(args)
+  // just run a second time, to repeat all failed builds
+  .then(() => main(args))
   .then(res => process.exit(res));
