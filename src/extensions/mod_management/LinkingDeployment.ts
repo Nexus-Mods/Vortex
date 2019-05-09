@@ -18,7 +18,6 @@ import I18next from 'i18next';
 import * as _ from 'lodash';
 import * as path from 'path';
 import turbowalk from 'turbowalk';
-import { IGame } from '../../types/api';
 
 export interface IDeployment {
   [relPath: string]: IDeployedFile;
@@ -298,8 +297,9 @@ abstract class LinkingActivator implements IDeploymentMethod {
       // that don't actually deploy
       return Promise.resolve();
     }
-    // purge
-    return this.purgeLinks(installPath, dataPath)
+    // stat to ensure the target directory exists
+    return fs.statAsync(dataPath)
+      .then(() => this.purgeLinks(installPath, dataPath))
       .then(() => this.postLinkPurge(dataPath, false))
       .then(() => undefined);
   }

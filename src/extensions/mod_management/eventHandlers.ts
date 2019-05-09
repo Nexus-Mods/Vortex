@@ -206,6 +206,7 @@ export function onGameModeActivated(
           .then(() => Promise.mapSeries(Object.keys(modPaths),
             typeId => oldActivator.purge(instPath, modPaths[typeId]))
               .then(() => undefined)
+              .catch(ProcessCanceled, () => Promise.resolve())
               .catch(TemporaryError, err =>
                   api.showErrorNotification('Purge failed, please try again',
                     err.message, { allowReport: false }))

@@ -1,5 +1,6 @@
+import { setDownloadPath } from '../../actions';
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
-import { IGameStored, IState } from '../../types/IState';
+import { IState } from '../../types/IState';
 import { ITestResult } from '../../types/ITestResult';
 import { getNormalizeFunc, Normalize, UserCanceled } from '../../util/api';
 import Debouncer from '../../util/Debouncer';
@@ -41,8 +42,6 @@ import * as _ from 'lodash';
 import * as path from 'path';
 import * as Redux from 'redux';
 import {generate as shortid} from 'shortid';
-import turbowalk, { IEntry } from 'turbowalk';
-import { setDownloadPath } from '../../actions';
 
 const app = remote !== undefined ? remote.app : appIn;
 

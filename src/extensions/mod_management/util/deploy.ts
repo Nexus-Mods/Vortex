@@ -1,14 +1,17 @@
 import { IExtensionApi } from '../../../types/IExtensionContext';
 import { IGame } from '../../../types/IGame';
-import { getCurrentActivator, getGame } from '../../../util/api';
+import { ProcessCanceled } from '../../../util/CustomErrors';
+import * as fs from '../../../util/fs';
 import { activeGameId, currentGameDiscovery } from '../../../util/selectors';
 import { truthy } from '../../../util/util';
+import { getGame } from '../../gamemode_management/util/getGame';
 import { installPath } from '../selectors';
+import { IMod } from '../types/IMod';
 import { loadActivation, saveActivation } from './activationStore';
+import { getCurrentActivator } from './deploymentMethods';
 import { NoDeployment } from './exceptions';
 
 import * as Promise from 'bluebird';
-import { IMod } from '../types/IMod';
 
 export function genSubDirFunc(game: IGame): (mod: IMod) => string {
   if (typeof(game.mergeMods) === 'boolean') {
@@ -45,10 +48,14 @@ export function purgeMods(api: IExtensionApi): Promise<void> {
 
   return activator.prePurge(stagingPath)
     .then(() => Promise.each(modTypes, typeId =>
-    loadActivation(api, typeId, modPaths[typeId], stagingPath, activator)
+      fs.statAsync(modPaths[typeId])
+      .catch({ code: 'ENOTFOUND' }, () =>
+          Promise.reject(new ProcessCanceled('target directory missing')))
+      .then(() => loadActivation(api, typeId, modPaths[typeId], stagingPath, activator))
       .then(() => activator.purge(stagingPath, modPaths[typeId]))
       .then(() => saveActivation(typeId, state.app.instanceId,
-                                 modPaths[typeId], stagingPath, [], activator.id))))
+                                 modPaths[typeId], stagingPath, [], activator.id)))
+      .catch(ProcessCanceled, () => null))
     .then(() => Promise.resolve())
   .finally(() => {
     api.dismissNotification(notificationId);
