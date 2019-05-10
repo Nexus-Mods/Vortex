@@ -29,9 +29,6 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
   private mAppVersion: string;
   constructor(props: IProps) {
     super(props);
-  }
-
-  public componentDidMount() {
     this.mAppVersion = remote.app.getVersion();
   }
 
@@ -64,7 +61,9 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
 
   private matchesVersion(announcement: IAnnouncement): boolean {
     if (this.mAppVersion === undefined) {
-      // How is this even possible ?
+      // TODO: should never happen. This check was added when mAppVersion was assigned during
+      // componentDidMount and this got called before that. Now it's only here because
+      // I'm too scared to remove it.
       return false;
     }
 

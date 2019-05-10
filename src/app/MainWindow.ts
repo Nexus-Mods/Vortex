@@ -238,6 +238,7 @@ class MainWindow {
       show: false,
       title: 'Vortex',
       webPreferences: {
+        nodeIntegration: true,
         nodeIntegrationInWorker: true,
       },
     };

@@ -19,12 +19,12 @@ import { gameById, knownGames } from '../gamemode_management/selectors';
 import modName from '../mod_management/util/modName';
 import { setUserInfo } from './actions/persistent';
 import NXMUrl from './NXMUrl';
-import { checkModVersion, fetchRecentUpdates, ONE_MONTH } from './util/checkModsVersion';
+import { checkModVersion, fetchRecentUpdates, ONE_MONTH, ONE_MINUTE } from './util/checkModsVersion';
 import { convertNXMIdReverse, nexusGameId, convertGameIdReverse } from './util/convertGameId';
 import sendEndorseMod from './util/endorseMod';
 import transformUserInfo from './util/transformUserInfo';
 
-const UPDATE_CHECK_DELAY = 60 * 60 * 1000;
+const UPDATE_CHECK_DELAY = 60 * 60 * 1000 * 0;
 
 const app = remote !== undefined ? remote.app : appIn;
 
@@ -390,11 +390,16 @@ export function checkModVersionsImpl(
 
   return refreshEndorsements(store, nexus)
     .then(() => filterByUpdateList(store, nexus, gameId, modsList))
-    .then((filtered: IMod[]) => {
+    .then((filteredMods: IMod[]) => {
+      const filtered = new Set(filteredMods.map(mod => mod.id));
       log('info', 'checking mods for update (nexus)',
-          { count: filtered.length, of: modsList.length });
-      return Promise.map(filtered,
-        (mod: IMod) => checkModVersion(store, nexus, gameId, mod)
+        { count: filteredMods.length, of: modsList.length });
+      return Promise.map(modsList, (mod: IMod) => {
+        if (!filtered.has(mod.id)) {
+          store.dispatch(setModAttribute(gameId, mod.id, 'lastUpdateTime', now - 5 * ONE_MINUTE));
+          return;
+        }
+        return checkModVersion(store, nexus, gameId, mod)
           .then(() => {
             store.dispatch(setModAttribute(gameId, mod.id, 'lastUpdateTime', now));
           })
@@ -418,8 +423,9 @@ export function checkModVersionsImpl(
             return (detail.Servermessage !== undefined)
               ? `${nameLink}:<br/>${detail.message}<br/>Server said: "${detail.Servermessage}"<br/>`
               : `${nameLink}:<br/>${detail.message}`;
-          }), { concurrency: 4 });
-        })
+          })
+      }, { concurrency: 4 });
+    })
     .then((errorMessages: string[]): string[] => errorMessages.filter(msg => msg !== undefined));
 }
 

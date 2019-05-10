@@ -56,6 +56,8 @@ function deployMods(api: IExtensionApi,
     return Promise.resolve([]);
   }
 
+  log('info', 'deploying', { gameId, typeId, installationPath, destinationPath });
+
   let skipFilesNormalized: Set<string>;
   let normalize: Normalize;
   return ensureWritable(api, destinationPath)

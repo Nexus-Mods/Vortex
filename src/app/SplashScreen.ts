@@ -63,6 +63,7 @@ class SplashScreen {
           webgl: false,
           backgroundThrottling: false,
           sandbox: false,
+          nodeIntegration: true,
         },
       });
       this.mWindow.loadURL(`file://${getVortexPath('base')}/splash.html`);

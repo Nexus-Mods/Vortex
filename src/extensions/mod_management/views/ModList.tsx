@@ -226,10 +226,12 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     this.staticButtons = [
       {
         component: InstallArchiveButton,
+        position: 25,
         props: () => ({}),
       },
       {
         component: CheckModVersionsButton,
+        position: 50,
         props: () => ({groupedMods: this.state.groupedMods}),
       },
     ];
