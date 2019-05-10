@@ -534,6 +534,9 @@ function init(context: IExtensionContext): boolean {
       }
       log('debug', 'change game mode', { oldGameId, newGameId });
 
+      if (getGame(newGameId) === undefined) {
+        return Promise.reject(new Error(`Attempt to switch to unknown game "${newGameId}"`));
+      }
 
       const id = context.api.sendNotification({
         title: 'Preparing game for modding',
