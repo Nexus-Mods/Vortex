@@ -1,6 +1,7 @@
 import { IExtensionApi } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
 import {ProcessCanceled, UserCanceled} from '../../util/CustomErrors';
+import { withContext } from '../../util/errorHandling';
 import * as fs from '../../util/fs';
 import {log} from '../../util/log';
 import {renderError, showError} from '../../util/message';
@@ -32,8 +33,6 @@ import {IHashResult} from 'modmeta-db';
 import * as path from 'path';
 import * as Redux from 'redux';
 import {generate as shortid} from 'shortid';
-
-import * as util from 'util';
 
 function progressUpdate(store: Redux.Store<any>, dlId: string, received: number,
                         total: number, chunks: IChunk[], urls: string[], filePath: string,
@@ -125,7 +124,8 @@ export class DownloadObserver {
 
     const processCB = this.genProgressCB(id);
 
-    return this.mManager.enqueue(id, urls, fileName, processCB, downloadPath)
+    return withContext(`Downloading "${fileName || urls[0]}"`, urls[0],
+                       () =>this.mManager.enqueue(id, urls, fileName, processCB, downloadPath)
         .then((res: IDownloadResult) => {
           log('debug', 'download finished', { file: res.filePath });
           this.handleDownloadFinished(id, callback, res);
@@ -178,7 +178,7 @@ export class DownloadObserver {
         })
         .catch((err: any) => {
           this.handleDownloadError(err, id, callback);
-        });
+        }));
   }
 
   private handleDownloadFinished(id: string,
@@ -300,20 +300,22 @@ export class DownloadObserver {
 
       const fullPath = path.join(downloadPath, download.localPath);
       this.mApi.store.dispatch(pauseDownload(downloadId, false, undefined));
-      this.mManager.resume(downloadId, fullPath, download.urls,
-                           download.received, download.size, download.startTime, download.chunks,
-                           this.genProgressCB(downloadId))
-        .then(res => {
-          log('debug', 'download finished (resumed)', { file: res.filePath });
-          this.handleDownloadFinished(downloadId, callback, res);
-        })
-        .catch(UserCanceled, err => {
-          this.mApi.store.dispatch(removeDownload(downloadId));
-          if (callback !== undefined) {
-            callback(err, downloadId);
-          }
-        })
-        .catch(err => this.handleDownloadError(err, downloadId, callback));
+
+      withContext(`Resuming "${download.localPath}"`, download.urls[0], () =>
+        this.mManager.resume(downloadId, fullPath, download.urls,
+                             download.received, download.size, download.startTime, download.chunks,
+                             this.genProgressCB(downloadId))
+          .then(res => {
+            log('debug', 'download finished (resumed)', { file: res.filePath });
+            this.handleDownloadFinished(downloadId, callback, res);
+          })
+          .catch(UserCanceled, err => {
+            this.mApi.store.dispatch(removeDownload(downloadId));
+            if (callback !== undefined) {
+              callback(err, downloadId);
+            }
+          })
+          .catch(err => this.handleDownloadError(err, downloadId, callback)));
     }
   }
 

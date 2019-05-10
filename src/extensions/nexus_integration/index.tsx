@@ -518,9 +518,9 @@ function once(api: IExtensionApi) {
 
     if (api.registerProtocol('nxm', def !== false, (url: string) => {
       ensureLoggedIn(api)
-        .then(() => {
-          doDownload(api, url);
-        })
+        .then(() => doDownload(api, url))
+        // doDownload handles all download errors so the catches below are
+        //  only for log in errors
         .catch(UserCanceled, () => null)
         .catch(ProcessCanceled, err => {
           api.showErrorNotification('Log-in failed', err, { allowReport: false });

@@ -388,6 +388,15 @@ export function withContext(id: string, value: string, fun: () => Promise<any>) 
   });
 }
 
+/**
+ * attach context to an error that may be caught after the global context has been reset
+ * @param err 
+ */
+export function contextify(err: Error): Error {
+  (err as any).context = getErrorContext();
+  return err;
+}
+
 export function getErrorContext(): IErrorContext {
   return { ...context };
 }

@@ -8,7 +8,7 @@ import * as semver from 'semver';
 import * as util from 'util';
 import { setModAttribute } from '../../actions';
 import { IExtensionApi, IMod, IState } from '../../types/api';
-import { setApiKey } from '../../util/errorHandling';
+import { setApiKey, contextify } from '../../util/errorHandling';
 import github, { RateLimitExceeded } from '../../util/github';
 import { log } from '../../util/log';
 import { calcDuration, prettifyNodeErrorMessage, showError } from '../../util/message';
@@ -24,7 +24,7 @@ import { convertNXMIdReverse, nexusGameId, convertGameIdReverse } from './util/c
 import sendEndorseMod from './util/endorseMod';
 import transformUserInfo from './util/transformUserInfo';
 
-const UPDATE_CHECK_DELAY = 60 * 60 * 1000 * 0;
+const UPDATE_CHECK_DELAY = 60 * 60 * 1000;
 
 const app = remote !== undefined ? remote.app : appIn;
 
@@ -72,7 +72,7 @@ export function startDownload(api: IExtensionApi, nexus: Nexus, nxmurl: string):
         },
         nexusFileInfo.file_name,
         (err, downloadId) => (truthy(err)
-          ? reject(err)
+          ? reject(contextify(err))
           : resolve(downloadId)));
       });
     })
@@ -122,13 +122,7 @@ export function startDownload(api: IExtensionApi, nexus: Nexus, nxmurl: string):
           message: 'You wont be able to use network features until the next full hour.',
         });
       } else {
-        api.sendNotification({
-          id: url.fileId.toString(),
-          type: 'global',
-          title: 'Download failed',
-          message: err.message,
-          displayMS: 2000,
-        });
+        api.showErrorNotification('Download failed', err);
       }
       log('warn', 'failed to get mod info', { err: util.inspect(err) });
       return undefined;
