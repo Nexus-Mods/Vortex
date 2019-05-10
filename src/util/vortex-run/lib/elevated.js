@@ -22,11 +22,16 @@ function elevatedMain(moduleRoot, ipcPath, main) {
         ipc.of[ipcPath].on('quit', () => {
             process.exit(0);
         });
-        Promise.resolve()
+        // TODO: having a weird problem where messages emitted right away
+        //   are simply lost. Am I doing something wrong or is this a bug
+        //   in node-ipc?
+        new Promise(resolve => setTimeout(resolve, 100))
             .then(() => Promise.resolve(main(ipc.of[ipcPath], require)))
             .catch(error => {
             ipc.of[ipcPath].emit('error', error.message);
-            return new Promise((resolve) => setTimeout(resolve, 200));
+            // TODO: apparently also need to delay disconnection to ensure
+            //   the error gets delivered. This can't be right?
+            return new Promise((resolve) => setTimeout(resolve, 100));
         })
             .then(() => {
             ipc.disconnect(ipcPath);
@@ -81,11 +86,14 @@ function runElevated(ipcPath, func, args) {
       `;
             fs.write(fd, prog, (writeErr, written, str) => {
                 if (writeErr) {
-                    cleanup();
+                    try {
+                        cleanup();
+                    }
+                    catch (cleanupErr) {
+                        console.error('failed to clean up temporary script', cleanupErr.message);
+                    }
                     return reject(writeErr);
                 }
-                // we can't call GetLastError through node-ffi so when using ShellExecuteExA we won't be
-                // able to get an error code. With ShellExecuteA we can
                 try {
                     winapi.ShellExecuteEx({
                         verb: 'runas',
@@ -94,7 +102,7 @@ function runElevated(ipcPath, func, args) {
                         directory: path.dirname(process.execPath),
                         show: 'shownormal',
                     });
-                    return Promise.resolve();
+                    return resolve();
                 }
                 catch (err) {
                     return reject(err);

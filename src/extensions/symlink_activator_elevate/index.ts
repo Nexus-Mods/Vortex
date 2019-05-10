@@ -238,9 +238,12 @@ class DeploymentMethod extends LinkingDeployment {
     this.mOpenRequests = {};
     this.mDone = null;
     const ipcPath: string = `vortex_elevate_symlink_${shortid()}`;
+    let pongTimer: NodeJS.Timer;
 
     return new Promise<void>((resolve, reject) => {
       let connected: boolean = false;
+      let error: string;
+      let ponged: boolean = true;
       if (this.mQuitTimer !== undefined) {
         // if there is already an elevated process, just keep it around a bit longer
         clearTimeout(this.mQuitTimer);
@@ -274,6 +277,7 @@ class DeploymentMethod extends LinkingDeployment {
         } catch (err) {
           log('warn', 'Failed to close ipc server', err.message);
         }
+        reject(new Error(error || 'Elevated code quit unexpectedly'));
       });
       ipc.server.on('log', (data: any) => {
         log(data.level, data.message, data.meta);
@@ -281,23 +285,29 @@ class DeploymentMethod extends LinkingDeployment {
       ipc.server.on('report', (data: string) => {
         this.mOnReport(data);
       });
+      ipc.server.on('pong', () => {
+        ponged = true;
+      })
       ipc.server.on('error', err => {
-        log('error', 'Failed to start symlink activator', err);
+        log('error', 'elevated code reported error', err);
+        error = err;
       });
-      return runElevated(ipcPath, remoteCode, {})
-        .then(() => Promise.delay(15000))
-        .then(() => {
-          if (!connected) {
-            // still no connection, something must have gone wrong
-            try {
-              ipc.server.stop();
-            } catch (err) {
-              log('warn', 'Failed to close ipc server', err.message);
-            }
-            reject(new TemporaryError('failed to run deployment helper'));
+      pongTimer = setInterval(() => {
+        if (!ponged || !connected) {
+          try {
+            ipc.server.stop();
+          } catch (err) {
+            log('warn', 'Failed to close ipc server', err.message);
           }
-        })
+          return reject(new TemporaryError('deployment helper didn\'t respond, please check your log'));
+        }
+        ponged = false;
+        ipc.server.emit('ping');
+      }, 15000);
+
+      return runElevated(ipcPath, remoteCode, {})
         .tapCatch(() => {
+          log('error', 'failed to run remote process');
           try { 
             ipc.server.stop();
           } catch (err) {
@@ -313,6 +323,11 @@ class DeploymentMethod extends LinkingDeployment {
             ? reject(new UserCanceled())
             : reject(err))
         .catch(reject);
+    })
+    .finally(() => {
+      if (pongTimer !== undefined) {
+        clearInterval(pongTimer);
+      }
     });
   }
 

@@ -23,16 +23,21 @@ function elevatedMain(moduleRoot: string, ipcPath: string,
     ipc.of[ipcPath].on('quit', () => {
       process.exit(0);
     });
-    Promise.resolve()
-      .then(() => Promise.resolve(main(ipc.of[ipcPath], require)))
-      .catch(error => {
-        ipc.of[ipcPath].emit('error', error.message);
-        return new Promise((resolve) => setTimeout(resolve, 200));
-      })
-      .then(() => {
-        ipc.disconnect(ipcPath);
-        process.exit(0);
-      });
+    // TODO: having a weird problem where messages emitted right away
+    //   are simply lost. Am I doing something wrong or is this a bug
+    //   in node-ipc?
+    new Promise(resolve => setTimeout(resolve, 100))
+    .then(() => Promise.resolve(main(ipc.of[ipcPath], require)))
+    .catch(error => {
+      ipc.of[ipcPath].emit('error', error.message);
+      // TODO: apparently also need to delay disconnection to ensure
+      //   the error gets delivered. This can't be right?
+      return new Promise((resolve) => setTimeout(resolve, 100));
+    })
+    .then(() => {
+      ipc.disconnect(ipcPath);
+      process.exit(0);
+    });
   });
 }
 

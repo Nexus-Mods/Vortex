@@ -54,7 +54,12 @@ function runThreaded(func, moduleBase, ...args) {
             const program = writeProgram(func, moduleBase, args);
             fs.write(fd, program, (writeErr, written, str) => {
                 if (writeErr) {
-                    cleanup();
+                    try {
+                        cleanup();
+                    }
+                    catch (cleanupErr) {
+                        console.error('failed to clean up temporary script', cleanupErr.message);
+                    }
                     return reject(writeErr);
                 }
                 fs.close(fd, () => {
