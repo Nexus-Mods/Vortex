@@ -246,7 +246,8 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
       return null;
     }
 
-    const running = toolsRunning[makeExeId(starter.exePath)] !== undefined;
+    const running = (starter.exePath !== undefined)
+                 && (toolsRunning[makeExeId(starter.exePath)] !== undefined);
 
     return (
       <ToolButton

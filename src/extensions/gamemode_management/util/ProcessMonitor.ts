@@ -3,6 +3,7 @@ import { makeExeId } from '../../../reducers/session';
 import { IDiscoveredTool } from '../../../types/IDiscoveredTool';
 import { IExtensionApi } from '../../../types/IExtensionContext';
 import { IState } from '../../../types/IState';
+import { log } from '../../../util/log';
 import { currentGameDiscovery, currentGame } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 
@@ -15,6 +16,7 @@ class ProcessMonitor {
   private mTimer: NodeJS.Timer;
   private mStore: Redux.Store<IState>;
   private mWindow: BrowserWindow;
+  private mActive: boolean = false;
 
   constructor(api: IExtensionApi) {
     this.mStore = api.store;
@@ -25,16 +27,23 @@ class ProcessMonitor {
       // Linux, MacOS
       return;
     }
-    if (this.mTimer !== undefined) {
+    if (this.mActive) {
       // already running
       return;
+    }
+
+    if (this.mTimer !== undefined) {
+      // ensure we don't have multiple timers running in parallel
+      clearTimeout(this.mTimer);
     }
 
     if (remote !== undefined) {
       this.mWindow = remote.getCurrentWindow();
     }
 
+    log('debug', 'start process monitor');
     this.mTimer = setTimeout(() => this.check(), 2000);
+    this.mActive = true;
   }
 
   public end(): void {
@@ -44,13 +53,20 @@ class ProcessMonitor {
     }
     clearTimeout(this.mTimer);
     this.mTimer = undefined;
+    this.mActive = false;
+    log('debug', 'stop process monitor');
   }
 
   private check(): void {
+    if (!this.mActive) {
+      return;
+    }
     // skip check and tick slower when in background, for performance reasons
     if ((this.mWindow === undefined) || this.mWindow.isFocused()) {
       this.doCheck();
-      this.mTimer = setTimeout(() => this.check(), 2000);
+      if (this.mActive) {
+        this.mTimer = setTimeout(() => this.check(), 2000);
+      }
     } else {
       this.mTimer = setTimeout(() => this.check(), 5000);
     }
@@ -107,6 +123,9 @@ class ProcessMonitor {
       getSafe(state, ['settings', 'gameMode', 'discovered', game.id, 'tools'], {});
 
     Object.keys(discoveredTools).forEach(toolId => {
+      if (discoveredTools[toolId].path === undefined) {
+        return;
+      }
       update(discoveredTools[toolId].path, discoveredTools[toolId].exclusive || false);
     });
   }
