@@ -8,12 +8,74 @@ import { gameById } from '../../gamemode_management/selectors';
 import { setModAttribute } from '../../mod_management/actions/mods';
 import { IMod } from '../../mod_management/types/IMod';
 
+import { setLastUpdateCheck } from '../actions/session';
+
 import * as Promise from 'bluebird';
 import I18next from 'i18next';
 import NexusT, { IFileInfo, IFileUpdate, IModFiles, IModInfo,
-                 NexusError, RateLimitError } from 'nexus-api';
+                 IUpdateEntry, NexusError, RateLimitError } from 'nexus-api';
 import * as Redux from 'redux';
 import * as semvish from 'semvish';
+
+export const ONE_MINUTE = 60 * 1000;
+const ONE_DAY = 24 * 60 * ONE_MINUTE;
+const ONE_WEEK = 7 * ONE_DAY;
+export const ONE_MONTH = 30 * ONE_DAY;
+const UPDATE_CHECK_TIMEOUT = 5 * ONE_MINUTE;
+
+/**
+ * fetch a list of mods, updated within a certain time range
+ *
+ * @param {Redux.Store<any>} store
+ * @param {NexusT} nexus
+ * @param {string} gameId game to fetch for
+ * @param {number} minAge timestamp of the least recently updated mod we're interested in
+ * @returns {Promise<IUpdateEntry[]>}
+ */
+export function fetchRecentUpdates(store: Redux.Store<any>,
+                                   nexus: NexusT,
+                                   gameId: string,
+                                   minAge: number): Promise<IUpdateEntry[]> {
+  const state = store.getState();
+  const now = Date.now();
+  const lastUpdate = getSafe(state, ['session', 'nexus', 'lastUpdate', gameId], {
+    time: 0,
+    range: 0,
+    updateList: [],
+  });
+
+  const timeSinceUpdate = now - lastUpdate.time;
+
+  if ((timeSinceUpdate < UPDATE_CHECK_TIMEOUT) && ((now - minAge) < lastUpdate.range)) {
+    // don't fetch same or smaller range again within 5 minutes
+    return Promise.resolve(
+      getSafe(state, ['session', 'nexus', 'lastUpdate', gameId, 'updateList'], []));
+  } else {
+    // round elapsed time since minAge to day/week/month
+    const period = (now - minAge) < ONE_DAY
+      ? '1d'
+      : (now - minAge) < ONE_WEEK
+      ? '1w'
+      : '1m';
+
+    const range = {
+      '1d': ONE_DAY,
+      '1w': ONE_WEEK,
+      '1m': ONE_MONTH,
+    }[period];
+
+    log('debug', '[update check] using range', { gameId, period });
+
+    return Promise.resolve(nexus.getRecentlyUpdatedMods(
+          period, nexusGameId(gameById(state, gameId), gameId)))
+      .then(recentUpdates => {
+        // store 5 minutes ago for the time of the last update check, since
+        // the list is cached and might be that outdated
+        store.dispatch(setLastUpdateCheck(gameId, now - 5 * ONE_MINUTE, range, recentUpdates));
+        return Promise.resolve(recentUpdates);
+      });
+  }
+}
 
 /**
  * check if there is a newer mod version on the server
@@ -24,7 +86,7 @@ import * as semvish from 'semvish';
  * @param {number} newestFileId
  * @param {string} version
  * @param {number} uploadedTimestamp
- * @return {Promise<IFileInfo>} updatedMod
+ * @return {Promise<IFileInfo>}
  *
  */
 export function checkModVersion(store: Redux.Store<any>, nexus: NexusT,
@@ -39,8 +101,7 @@ export function checkModVersion(store: Redux.Store<any>, nexus: NexusT,
   const gameId = getSafe(mod.attributes, ['downloadGame'], undefined) || gameMode;
   const game = gameById(store.getState(), gameId);
 
-  return Promise.resolve(nexus.getModFiles(nexusModId,
-    nexusGameId(game)))
+  return Promise.resolve(nexus.getModFiles(nexusModId, nexusGameId(game)))
       .then(result => updateFileAttributes(store.dispatch, gameMode, mod, result))
       .tapCatch(() => {
         setNoUpdateAttributes(store.dispatch, gameId, mod);

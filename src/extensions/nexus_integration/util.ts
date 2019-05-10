@@ -2,7 +2,7 @@ import * as Promise from 'bluebird';
 import { app as appIn, ipcRenderer, remote } from 'electron';
 import I18next from 'i18next';
 import Nexus, { IFileInfo, IGameListEntry, IModInfo, NexusError,
-                RateLimitError, TimeoutError, IEndorsement, EndorsedStatus } from 'nexus-api';
+                RateLimitError, TimeoutError, IEndorsement, EndorsedStatus, IUpdateEntry } from 'nexus-api';
 import * as Redux from 'redux';
 import * as semver from 'semver';
 import * as util from 'util';
@@ -19,7 +19,7 @@ import { gameById, knownGames } from '../gamemode_management/selectors';
 import modName from '../mod_management/util/modName';
 import { setUserInfo } from './actions/persistent';
 import NXMUrl from './NXMUrl';
-import { checkModVersion } from './util/checkModsVersion';
+import { checkModVersion, fetchRecentUpdates, ONE_MONTH } from './util/checkModsVersion';
 import { convertNXMIdReverse, nexusGameId, convertGameIdReverse } from './util/convertGameId';
 import sendEndorseMod from './util/endorseMod';
 import transformUserInfo from './util/transformUserInfo';
@@ -312,7 +312,63 @@ export function refreshEndorsements(store: Redux.Store<any>, nexus: Nexus) {
           }
         });
       });
-    })
+    });
+}
+
+function filterByUpdateList(store: Redux.Store<any>,
+                            nexus: Nexus,
+                            gameId: string,
+                            input: IMod[]): Promise<IMod[]> {
+  const getGameId = (mod: IMod) => getSafe(mod.attributes, ['downloadGame'], undefined) || gameId;
+
+  // all game ids for which we have mods installed
+  const gameIds = Array.from(new Set(input.map(getGameId)));
+
+  interface IMinAgeMap { [gameId: string]: number; }
+  interface IUpdateMap { [gameId: string]: IUpdateEntry[]; }
+
+  // for each game, stores the update time of the least recently updated mod
+  const minAge: IMinAgeMap = input.reduce((prev: IMinAgeMap, mod: IMod) => {
+    const modGameId = getGameId(mod);
+    const lastUpdate = getSafe(mod.attributes, ['lastUpdateTime'], undefined);
+    if ((lastUpdate !== undefined)
+        && ((prev[modGameId] === undefined) || (prev[modGameId] > lastUpdate))) {
+      prev[modGameId] = lastUpdate;
+    }
+    return prev;
+  }, {});
+
+  return Promise.reduce(gameIds, (prev: IUpdateMap, iterGameId: string) =>
+    fetchRecentUpdates(store, nexus, iterGameId, minAge[iterGameId])
+      .then(entries => {
+        prev[iterGameId] = entries;
+        return prev;
+      }), {})
+      .then((updateLists: IUpdateMap) => {
+        const updateMap: { [gameId: string]: { [modId: string]: number } } = {};
+
+        Object.keys(updateLists).forEach(iterGameId => {
+          updateMap[iterGameId] = updateLists[iterGameId].reduce((prev, entry) => {
+            prev[entry.mod_id] = Math.max((entry as any).latest_file_update,
+                                          (entry as any).latest_mod_activity);
+            return prev;
+          }, {});
+        });
+
+        return input.filter(mod => {
+          const modGameId = getGameId(mod);
+          if (updateMap[modGameId] === undefined) {
+            // the game hasn't been checked for updates for so long we can't fetch an update range
+            // long enough
+            return true;
+          }
+          const lastUpdate = getSafe(mod.attributes, ['lastUpdateTime'], 0);
+          // if the file is not in the update list, only allow it to be updated if it has never been
+          // updated before
+          return lastUpdate < getSafe(updateMap, [modGameId, mod.attributes.modId], 1)
+              || (Date.now() - lastUpdate) > ONE_MONTH;
+        });
+      });
 }
 
 export function checkModVersionsImpl(
@@ -333,32 +389,37 @@ export function checkModVersionsImpl(
   log('info', 'checking mods for update (nexus)', { count: modsList.length });
 
   return refreshEndorsements(store, nexus)
-    .then(() => Promise.map(modsList, mod =>
-      checkModVersion(store, nexus, gameId, mod)
-        .then(() => {
-          store.dispatch(setModAttribute(gameId, mod.id, 'lastUpdateTime', now));
+    .then(() => filterByUpdateList(store, nexus, gameId, modsList))
+    .then((filtered: IMod[]) => {
+      log('info', 'checking mods for update (nexus)',
+          { count: filtered.length, of: modsList.length });
+      return Promise.map(filtered,
+        (mod: IMod) => checkModVersion(store, nexus, gameId, mod)
+          .then(() => {
+            store.dispatch(setModAttribute(gameId, mod.id, 'lastUpdateTime', now));
+          })
+          .catch(TimeoutError, err => {
+            const name = modName(mod, { version: true });
+            return Promise.resolve(`${name}:\nRequest timeout`);
+          })
+          .catch(err => {
+            const detail = processErrorMessage(err);
+            if (detail.fatal) {
+              return Promise.reject(detail);
+            }
+
+            if (detail.message === undefined) {
+              return undefined;
+            }
+
+            const name = modName(mod, { version: true });
+            const nameLink = `[url=${nexusLink(store.getState(), mod, gameId)}]${name}[/url]`;
+
+            return (detail.Servermessage !== undefined)
+              ? `${nameLink}:<br/>${detail.message}<br/>Server said: "${detail.Servermessage}"<br/>`
+              : `${nameLink}:<br/>${detail.message}`;
+          }), { concurrency: 4 });
         })
-        .catch(TimeoutError, err => {
-          const name = modName(mod, { version: true });
-          return Promise.resolve(`${name}:\nRequest timeout`);
-        })
-        .catch(err => {
-          const detail = processErrorMessage(err);
-          if (detail.fatal) {
-            return Promise.reject(detail);
-          }
-
-          if (detail.message === undefined) {
-            return undefined;
-          }
-
-          const name = modName(mod, { version: true });
-          const nameLink = `[url=${nexusLink(store.getState(), mod, gameId)}]${name}[/url]`;
-
-          return (detail.Servermessage !== undefined)
-            ? `${nameLink}:<br/>${detail.message}<br/>Server said: "${detail.Servermessage}"<br/>`
-            : `${nameLink}:<br/>${detail.message}`;
-        }), { concurrency: 4 }))
     .then((errorMessages: string[]): string[] => errorMessages.filter(msg => msg !== undefined));
 }
 

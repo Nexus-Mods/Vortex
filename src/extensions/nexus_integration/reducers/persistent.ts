@@ -17,10 +17,13 @@ export const persistentReducer: IReducerSpec = {
   defaults: {
     userInfo: undefined,
     newestVersion: undefined,
+    lastUpdate: {
+    }
   },
   verifiers: {
     userInfo: {
-      description: () => 'Invalid Nexus user info will be removed, this should resolve itself automatically.',
+      description: () => 'Invalid Nexus user info will be removed, '
+                       + 'this should resolve itself automatically.',
       type: 'object',
       noNull: true,
     },

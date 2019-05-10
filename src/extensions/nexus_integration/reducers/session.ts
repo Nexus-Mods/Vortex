@@ -1,7 +1,7 @@
 import { IReducerSpec } from '../../../types/IExtensionContext';
 import { setSafe } from '../../../util/storeHelper';
 
-import { setLoginError, setLoginId } from '../actions/session';
+import { setLastUpdateCheck, setLoginError, setLoginId } from '../actions/session';
 
 /**
  * reducer for changes to the authentication
@@ -17,9 +17,16 @@ export const sessionReducer: IReducerSpec = {
     },
     [setLoginError as any]: (state, payload) =>
      setSafe(state, [ 'loginError' ], payload),
+    [setLastUpdateCheck as any]: (state, payload) =>
+      setSafe(state, ['lastUpdate', payload.gameId], {
+        time: payload.time,
+        updateList: payload.updateList,
+        range: payload.range,
+      }),
   },
   defaults: {
     loginId: undefined,
     loginError: undefined,
+    lastUpdate: {},
   },
 };
