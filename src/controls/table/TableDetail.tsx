@@ -374,9 +374,13 @@ class DetailBox extends ComponentEx<IDetailProps, { hovered: boolean }> {
     const attribute = this.props.attributes
       .find((attr: ITableAttribute) => attr.id === attributeId);
     if (attribute.supportsMultiple === true) {
-      attribute.edit.onChangeValue(rowIds.map(rowId => rawData[rowId]), value);
+      attribute.edit.onChangeValue(
+        rowIds.map(rowId => rawData[rowId]).filter(value => value !== undefined), value);
     } else if (rowIds.length === 1) {
-      attribute.edit.onChangeValue(rawData[rowIds[0]], value);
+      let data = rawData[rowIds[0]];
+      if (data !== undefined) {
+        attribute.edit.onChangeValue(data, value);
+      }
     } else {
       log('error', 'attempt to change an attribute for multiple rows that doesn\'t support it',
         { rowIds, attribute, value });
