@@ -608,11 +608,9 @@ function init(context: IExtensionContext): boolean {
       (prev: RunningMap, current: RunningMap) => {
         const exePaths = Object.keys(current);
         if (exePaths.length > 0) {
-          log('debug', 'start process monitoring');
           // no effect if it's already running
           processMonitor.start();
         } else {
-          log('debug', 'stop process monitoring');
           processMonitor.end();
         }
       });

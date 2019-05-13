@@ -93,8 +93,12 @@ class ProcessMonitor {
     //   this feels a bit complicated...
     const game = currentGame(state);
     const gameDiscovery = currentGameDiscovery(state);
-    const gameExe = gameDiscovery.executable || game.executable;
+    const gameExe = getSafe(gameDiscovery, ['executable'], undefined)
+                 || getSafe(game, ['executable'], undefined);
 
+    if (gameExe === undefined) {
+      return;
+    }
 
     const update = (exePath: string, exclusive: boolean) => {
       const exeId = makeExeId(exePath);
