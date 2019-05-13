@@ -9,6 +9,7 @@ import { DataInvalid, SetupError, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import getVortexPath from '../../util/getVortexPath';
 import lazyRequire from '../../util/lazyRequire';
+import { log } from '../../util/log';
 import {truthy} from '../../util/util';
 
 import { ArchiveBrokenError } from '../mod_management/InstallManager';
@@ -111,9 +112,20 @@ function transformError(err: any): Error {
   return result;
 }
 
+function assertEdgeValid() {
+  if (typeof(edge.func) !== 'function') {
+    log('error', 'edge.func isn\'t a function', { type: typeof(edge.func) });
+    throw new SetupError(
+      '.Net interface library not loaded correctly. This usually means your .Net framework '
+      + 'is damaged or outdated. Please report this only if you have further insight into '
+      + 'what might have caused this and how to fix.');
+  }
+}
+
 function testSupported(files: string[]): Promise<ISupportedResult> {
   if (testSupportedLib === undefined) {
     try {
+      assertEdgeValid();
       testSupportedLib = edge.func({
         assemblyFile: path.join(basePath, 'ModInstaller.dll'),
         typeName: 'FomodInstaller.ModInstaller.InstallerProxy',
@@ -152,6 +164,7 @@ function install(files: string[],
                  coreDelegates: Core): Promise<IInstallResult> {
   if (installLib === undefined) {
     try {
+      assertEdgeValid();
       installLib = edge.func({
         assemblyFile: path.join(basePath, 'ModInstaller.dll'),
         typeName: 'FomodInstaller.ModInstaller.InstallerProxy',
