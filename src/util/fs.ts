@@ -223,6 +223,9 @@ function errorRepeat(error: NodeJS.ErrnoException, filePath: string, retries: nu
           }, { filePath, userId })
             .then(() => true)
             .catch(elevatedErr => {
+              if (elevatedErr.message.indexOf('The operation was canceled by the user') !== -1) {
+                return Promise.reject(new UserCanceled());
+              }
               // if elevation failed, return the original error because the one from
               // elevate - while interesting as well - would make error handling too complicated
               log('error', 'failed to acquire permission', {
@@ -540,7 +543,18 @@ export function ensureDirWritableAsync(dirPath: string,
               const { allow } = req('permissions');
               return fs.ensureDirAsync(dirPath)
                 .then(() => allow(dirPath, userId, 'rwx'));
-            }, { dirPath, userId });
+            }, { dirPath, userId })
+            // if elevation fails, rethrow the original error, not the failure to elevate
+            .catch(elevatedErr => {
+              if (elevatedErr.message.indexOf('The operation was canceled by the user') !== -1) {
+                return Promise.reject(new UserCanceled());
+              }
+              // if elevation failed, return the original error because the one from
+              // elevate, while interesting as well, would make error handling too complicated
+              log('error', 'failed to acquire permission', elevatedErr.message);
+
+              PromiseBB.reject(restackErr(err, stackErr));
+            });
           });
       } else {
         return PromiseBB.reject(restackErr(err, stackErr));
