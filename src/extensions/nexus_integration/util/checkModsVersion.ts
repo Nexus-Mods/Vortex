@@ -51,6 +51,8 @@ export function fetchRecentUpdates(store: Redux.Store<any>,
     return Promise.resolve(
       getSafe(state, ['session', 'nexus', 'lastUpdate', gameId, 'updateList'], []));
   } else {
+    log('debug', '[update check] lru', (new Date(minAge)).toISOString());
+
     // round elapsed time since minAge to day/week/month
     const period = (now - minAge) < ONE_DAY
       ? '1d'

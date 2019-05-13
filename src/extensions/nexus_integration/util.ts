@@ -6,8 +6,8 @@ import Nexus, { IFileInfo, IGameListEntry, IModInfo, NexusError,
 import * as Redux from 'redux';
 import * as semver from 'semver';
 import * as util from 'util';
-import { setModAttribute } from '../../actions';
-import { IExtensionApi, IMod, IState } from '../../types/api';
+import { setModAttribute, addNotification, dismissNotification } from '../../actions';
+import { IExtensionApi, IMod, IState, ThunkStore } from '../../types/api';
 import { setApiKey, contextify } from '../../util/errorHandling';
 import github, { RateLimitExceeded } from '../../util/github';
 import { log } from '../../util/log';
@@ -386,6 +386,18 @@ export function checkModVersionsImpl(
     .then(() => filterByUpdateList(store, nexus, gameId, modsList))
     .then((filteredMods: IMod[]) => {
       const filtered = new Set(filteredMods.map(mod => mod.id));
+      const tStore = (store as ThunkStore<any>);
+      let pos = 0;
+      const progress = () => {
+        tStore.dispatch(addNotification({
+          id: 'check-update-progress',
+          type: 'activity',
+          message: 'Checking mods for update',
+          progress: (pos * 100) / filteredMods.length,
+        }));
+        ++pos;
+      };
+      progress();
       log('info', 'checking mods for update (nexus)',
         { count: filteredMods.length, of: modsList.length });
       return Promise.map(modsList, (mod: IMod) => {
@@ -418,7 +430,14 @@ export function checkModVersionsImpl(
               ? `${nameLink}:<br/>${detail.message}<br/>Server said: "${detail.Servermessage}"<br/>`
               : `${nameLink}:<br/>${detail.message}`;
           })
-      }, { concurrency: 4 });
+          .finally(() => {
+            progress();
+          });
+
+      }, { concurrency: 4 })
+      .finally(() => {
+        tStore.dispatch(dismissNotification('check-update-progress'));
+      });
     })
     .then((errorMessages: string[]): string[] => errorMessages.filter(msg => msg !== undefined));
 }
