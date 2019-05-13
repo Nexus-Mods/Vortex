@@ -243,7 +243,9 @@ function genUpdateModDeployment() {
     const gameDiscovery =
       getSafe(state, ['settings', 'gameMode', 'discovered', gameId], undefined);
     const game = getGame(gameId);
-    if (game === undefined) {
+    if ((game === undefined)
+        || (gameDiscovery === undefined)
+        || (gameDiscovery.path === undefined)) {
       return Promise.reject(new Error('Game no longer available'));
     }
     const modPaths = game.getModPaths(gameDiscovery.path);
