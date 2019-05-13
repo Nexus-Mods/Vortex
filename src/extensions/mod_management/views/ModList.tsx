@@ -909,7 +909,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         }
       })
       .then(() => {
-        this.context.api.events.emit('mods-enabled', modIds, true, gameMode);
+        this.context.api.events.emit('mods-enabled', modIds, false, gameMode);
       });
   }
 
