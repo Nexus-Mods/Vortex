@@ -164,6 +164,14 @@ class DeploymentMethod extends LinkingDeployment {
     });
   }
 
+  public getDeployedPath(input: string): string {
+    if (path.extname(input) === LNK_EXT) {
+      let res = input.substring(0, input.length - LNK_EXT.length);
+      return res;
+    }
+    return input;
+  }
+
   protected purgeLinks(installationPath: string, dataPath: string): Promise<void> {
     let links: IEntry[] = [];
 

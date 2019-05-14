@@ -267,4 +267,14 @@ export interface IDeploymentMethod {
    * @memberOf IModActivator
    */
   isActive: () => boolean;
+
+  /**
+   * given a file path (relative to a staging path), return the name under which the
+   * file would be deployed.
+   * This is used in cases where the deployment method may rename files during
+   * deployment for whatever reason.
+   * An example would be move deployment where the file that remains in the staging
+   * folder is just a (differently named) placeholder.
+   */
+  getDeployedPath?: (input: string) => string;
 }
