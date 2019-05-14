@@ -3,7 +3,7 @@ import { getSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
 import { IModWithState } from '../types/IModProps';
 
-import { compare } from 'semvish';
+import { compare, valid } from 'semvish';
 
 function byModId(input: IModWithState[]): IModWithState[][] {
   const grouped = input.reduce((prev: { [modId: string]: IModWithState[] }, value) => {
@@ -60,6 +60,19 @@ function byFile(input: IModWithState[]): IModWithState[][] {
   return groups;
 }
 
+function newestFirst(lhs: IModWithState, rhs: IModWithState) {
+  if (lhs.enabled !== rhs.enabled) {
+    return rhs.enabled ? 1 : -1;
+  }
+  const lVersion = getSafe(lhs, ['attributes', 'version'], '0.0.0');
+  const rVersion = getSafe(rhs, ['attributes', 'version'], '0.0.0');
+  if (valid(lVersion) && valid(rVersion)) {
+    return compare(rVersion, lVersion);
+  } else {
+    return rVersion.localeCompare(lVersion);
+  }
+}
+
 /**
  * contrary to what the name implies, this doesn't group enabled mods with other enabled ones but
  * it ensures that only one enabled mod is in the output.
@@ -75,26 +88,15 @@ function byEnabled(input: IModWithState[]): IModWithState[][] {
     return [ input ];
   }
   // disabled mods are only added to the group with the highest version enabled mod
-  const primaryGroup = groups.sort(
-    (lhs, rhs) => {
-      try {
-        return compare(rhs[0].attributes['version'] || '0.0.0',
-                       lhs[0].attributes['version'] || '0.0.0');
-      } catch (err) {
-        log('warn', 'failed to compare mod versions', {
-          err: err.message, lhs: lhs[0].attributes['version'], rhs: rhs[0].attributes['version'] });
-        return 0;
-      }
-    })[0];
+  const primaryGroup = groups.sort((lhs, rhs) => newestFirst(lhs[0], rhs[0]))[0];
   input.filter((mod => !mod.enabled)).forEach(mod => primaryGroup.push(mod));
   return groups;
 }
 
 function group(input: IModWithState[][],
                groupFunc: (input: IModWithState[]) => IModWithState[][]): IModWithState[][] {
-  return input.reduce((prev: IModWithState[][], value: IModWithState[]) => {
-    return [].concat(prev, groupFunc(value));
-  }, []);
+  return input.reduce((prev: IModWithState[][], value: IModWithState[]) =>
+    [].concat(prev, groupFunc(value)), []);
 }
 
 export interface IGroupingOptions {
@@ -103,7 +105,7 @@ export interface IGroupingOptions {
 }
 
 function groupMods(mods: IModWithState[], options: IGroupingOptions): IModWithState[][] {
-  const modList: IModWithState[][] = [ Object.keys(mods).map(key => mods[key]) ];
+  const modList: IModWithState[][] = [ mods ];
 
   let temp: IModWithState[][] = (options.groupBy === 'modId')
     ? group(modList, byModId)
@@ -113,7 +115,7 @@ function groupMods(mods: IModWithState[], options: IGroupingOptions): IModWithSt
     temp = group(temp, byEnabled);
   }
 
-  return temp;
+  return temp.map(group => group.sort(newestFirst));
 }
 
 export default groupMods;
