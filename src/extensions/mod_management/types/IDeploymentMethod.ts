@@ -276,5 +276,5 @@ export interface IDeploymentMethod {
    * An example would be move deployment where the file that remains in the staging
    * folder is just a (differently named) placeholder.
    */
-  getDeployedPath?: (input: string) => string;
+  getDeployedPath: (input: string) => string;
 }

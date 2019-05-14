@@ -312,6 +312,10 @@ abstract class LinkingActivator implements IDeploymentMethod {
     return false;
   }
 
+  public getDeployedPath(input: string): string {
+    return input;
+  }
+
   public externalChanges(gameId: string,
                          installPath: string,
                          dataPath: string,
