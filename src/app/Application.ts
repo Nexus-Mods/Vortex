@@ -78,7 +78,9 @@ class Application {
   private startUi(): Promise<void> {
     const MainWindow = require('./MainWindow').default;
     this.mMainWindow = new MainWindow(this.mStore);
+    log('debug', 'creating main window');
     return this.mMainWindow.create(this.mStore).then(webContents => {
+      log('debug', 'window created');
       this.mExtensions.setupApiMain(this.mStore, webContents);
       setOutdated(this.mExtensions.getApi());
       this.applyArguments(this.mArgs);
@@ -177,15 +179,20 @@ class Application {
           setupLogging(app.getPath('userData'), process.env.NODE_ENV === 'development');
           log('info', '--------------------------');
           log('info', 'Vortex Version', app.getVersion());
+          log('info', 'Parameters', process.argv.join(' '));
           return this.startSplash();
         })
         // start initialization
+        .tap(() => log('debug', 'showing splash screen'))
         .then(splashIn => {
           splash = splashIn;
           return this.createStore(args.restore);
         })
+        .tap(() => log('debug', 'checking admin rights'))
         .then(() => this.warnAdmin())
+        .tap(() => log('debug', 'checking if migration is required'))
         .then(() => this.checkUpgrade())
+        .tap(() => log('debug', 'setting up error handlers'))
         .then(() => {
           // as soon as we have a store, install an extended error handler that has
           // access to application state
@@ -196,14 +203,17 @@ class Application {
           process.on('unhandledRejection', handleError);
         })
         .then(() => this.initDevel())
+        .tap(() => log('debug', 'starting user interface'))
         .then(() => this.startUi())
+        .tap(() => log('debug', 'setting up tray icon'))
         .then(() => this.createTray())
         // end initialization
-        .then(() => splash.fadeOut())
+        .tap(() => log('debug', 'removing splash screen'))
         .then(() => {
           this.connectTrayAndWindow();
           return splash.fadeOut();
         })
+        .tapCatch((err) => log('debug', 'quitting with exception', err.message))
         .catch(UserCanceled, () => app.exit())
         .catch(ProcessCanceled, () => {
           app.quit();
