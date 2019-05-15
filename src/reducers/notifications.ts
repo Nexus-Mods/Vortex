@@ -1,7 +1,7 @@
 import * as actions from '../actions/notifications';
 import { IReducerSpec } from '../types/IExtensionContext';
 
-import { pushSafe, removeValueIf, setSafe } from '../util/storeHelper';
+import { pushSafe, removeValueIf, setSafe, getSafe } from '../util/storeHelper';
 
 import update from 'immutability-helper';
 import { generate as shortid } from 'shortid';
@@ -17,7 +17,14 @@ export const notificationsReducer: IReducerSpec = {
       if (payload.id === undefined) {
         payload.id = shortid();
       } else {
-        temp = removeValueIf(state, statePath, (noti) => noti.id === payload.id);
+        let existing = getSafe(state, statePath, []).find(noti => noti.id === payload.id);
+        if (existing !== undefined) {
+          // don't update creation time if we're updating an existing notification
+          payload.createdTime = existing.createdTime;
+          temp = removeValueIf(state, statePath, (noti) => noti.id === payload.id);
+        } else {
+          temp = state;
+        }
       }
       return pushSafe(temp, statePath, payload);
     },
