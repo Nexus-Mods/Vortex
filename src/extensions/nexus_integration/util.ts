@@ -333,7 +333,11 @@ function filterByUpdateList(store: Redux.Store<any>,
   }, {});
 
   return Promise.reduce(gameIds, (prev: IUpdateMap, iterGameId: string) =>
-    fetchRecentUpdates(store, nexus, iterGameId, minAge[iterGameId])
+    // minAge map may be missing certain gameIds when none of the installed mods
+    //  for that gameId have the lastUpdateTime attribute. We still want to check for
+    //  updates in this scenario - the lastUpdateTime attribute will be populated immediately
+    //  after the update.
+    fetchRecentUpdates(store, nexus, iterGameId, minAge[iterGameId] || 0)
       .then(entries => {
         prev[iterGameId] = entries;
         return prev;
