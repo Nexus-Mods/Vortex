@@ -16,6 +16,7 @@
       ],
       "env": {
         "NODE_ENV": "development",
+        "SIMULATE_FS_ERRORS": "false",
         "BLUEBIRD_DEBUG": "0"
       },
       "console": "integratedTerminal",
