@@ -428,7 +428,9 @@ function init(context: IExtensionContextExt): boolean {
           return null;
         })
         .catch((err: Error) => {
-          showError(store.dispatch, 'Failed to set profile', err);
+          showError(store.dispatch, 'Failed to set profile', err, { allowReport: false });
+          store.dispatch(setCurrentProfile(undefined, undefined));
+          store.dispatch(setNextProfile(undefined));
           if (finishProfileSwitch !== undefined) {
             finishProfileSwitch();
           }
