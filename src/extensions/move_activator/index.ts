@@ -1,5 +1,7 @@
+import { setSettingsPage } from '../../actions/session';
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
 import { IGame } from '../../types/IGame';
+import { UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 
@@ -7,7 +9,6 @@ import { getGame } from '../gamemode_management/util/getGame';
 import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
 import LinkingDeployment, { IDeployment } from '../mod_management/LinkingDeployment';
 import { installPathForGame } from '../mod_management/selectors';
-import { IMod } from '../mod_management/types/IMod';
 import { IDeployedFile, IDeploymentMethod, IUnavailableReason } from '../mod_management/types/IDeploymentMethod';
 
 import * as Promise from 'bluebird';
@@ -16,7 +17,6 @@ import * as path from 'path';
 import turbowalk, { IEntry } from 'turbowalk';
 import * as util from 'util';
 import * as winapi from 'winapi-bindings';
-import { setSettingsPage } from '../../actions/session';
 
 const LNK_EXT = '.vortex_lnk';
 
@@ -30,6 +30,8 @@ export class FileFound extends Error {
 class DeploymentMethod extends LinkingDeployment {
   private mDirCache: Set<string>;
   private mLnkExpression = new RegExp(LNK_EXT + '$');
+
+  public priority: number = 50;
 
   constructor(api: IExtensionApi) {
     super(
@@ -119,6 +121,23 @@ class DeploymentMethod extends LinkingDeployment {
     }
 
     return undefined;
+  }
+
+  public onSelected(api: IExtensionApi): Promise<void> {
+    return api.showDialog('question', 'Move Deployment', {
+      text: 'You\'re about to enable "Move Deployment".\n'
+          + 'Please note that move deployment is slightly slower, uses more disk space and is less '
+          + 'robust regarding changes from external applications than "Hardlink Deployment".\n'
+          + 'There are no advantages compared to hardlink deployment except that it also works '
+          + 'on FAT32 formatted drives.\n'
+          + 'So please only use this if hardlink really is no option.',
+    }, [
+      { label: 'Cancel' },
+      { label: 'Continue' },
+    ])
+    .then(result => result.action === 'Cancel'
+      ? Promise.reject(new UserCanceled())
+      : Promise.resolve());
   }
 
   public finalize(gameId: string,

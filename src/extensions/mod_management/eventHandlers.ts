@@ -18,7 +18,7 @@ import {setActivator} from './actions/settings';
 import {IDeploymentMethod} from './types/IDeploymentMethod';
 import {IMod} from './types/IMod';
 import {fallbackPurge, loadActivation, saveActivation} from './util/activationStore';
-import { getSupportedActivators } from './util/deploymentMethods';
+import { getSupportedActivators, getCurrentActivator } from './util/deploymentMethods';
 
 import {getGame} from '../gamemode_management/util/getGame';
 import {setModEnabled} from '../profile_management/actions/profiles';
@@ -89,10 +89,8 @@ export function onGameModeActivated(
     api: IExtensionApi, activators: IDeploymentMethod[], newGame: string) {
   const store = api.store;
   const state: IState = store.getState();
-  const configuredActivatorId = currentActivator(state);
   const supported = getSupportedActivators(state);
-  const configuredActivator =
-    supported.find(activator => activator.id === configuredActivatorId);
+  const configuredActivator = getCurrentActivator(state, newGame, true);
   const gameId = activeGameId(state);
   if (gameId !== newGame) {
     // this should never happen
@@ -180,46 +178,71 @@ export function onGameModeActivated(
   let activatorProm = ensureStagingDirectory();
 
   if (configuredActivator === undefined) {
+    const configuredActivatorId = currentActivator(state);
     // current activator is not valid for this game. This should only occur
     // if compatibility of the activator has changed
 
+    let changeActivator = true;
     const oldActivator = activators.find(iter => iter.id === configuredActivatorId);
+    const modPaths = game.getModPaths(gameDiscovery.path);
 
     if ((configuredActivatorId !== undefined) && (oldActivator === undefined)) {
       api.showErrorNotification(
         'Deployment method no longer available',
         {
           message:
-          'The deployment method used with this game is no longer available. ' +
-          'This probably means you removed the corresponding extension or ' +
-          'it can no longer be loaded due to a bug.\n' +
-          'Vortex can\'t clean up files deployed with an unsupported method. ' +
-          'You should try to restore it, purge deployment and then switch ' +
-          'to a different method.',
+            'The deployment method used with this game is no longer available. ' +
+            'This probably means you removed the corresponding extension or ' +
+            'it can no longer be loaded due to a bug.\n' +
+            'Vortex can\'t clean up files deployed with an unsupported method. ' +
+            'You should try to restore it, purge deployment and then switch ' +
+            'to a different method.',
           method: configuredActivatorId,
         }, { allowReport: false });
-    } else {
-      const modPaths = game.getModPaths(gameDiscovery.path);
+      return;
+    } else if ((configuredActivatorId !== undefined) && (oldActivator !== undefined)) {
+      const modTypes = Object.keys(modPaths);
+
+      const reason = allTypesSupported(oldActivator, state, gameId, modTypes);
+      if (reason === undefined) {
+        // wut? Guess the problem was temporary
+        changeActivator = false;
+      } else {
+        api.showErrorNotification(
+          'Deployment method no longer supported',
+          {
+            message:
+              'The deployment method you had configured is no longer applicable.\n' +
+              'Please resolve the problem described below or go to "Settings" and ' +
+              'change the deployment method.',
+            reason: reason.description(api.translate),
+          },
+          { allowReport: false },
+        );
+        return;
+      }
+    }
+
+    if (changeActivator) {
       if (oldActivator !== undefined) {
         activatorProm = activatorProm
           .then(() => oldActivator.prePurge(instPath))
           .then(() => Promise.mapSeries(Object.keys(modPaths),
             typeId => oldActivator.purge(instPath, modPaths[typeId]))
-              .then(() => undefined)
-              .catch(ProcessCanceled, () => Promise.resolve())
-              .catch(TemporaryError, err =>
-                  api.showErrorNotification('Purge failed, please try again',
-                    err.message, { allowReport: false }))
-              .catch(err => api.showErrorNotification('Purge failed', err, {
-                allowReport: ['ENOENT', 'ENOTFOUND'].indexOf(err.code) !== -1,
-              })))
+            .then(() => undefined)
+            .catch(ProcessCanceled, () => Promise.resolve())
+            .catch(TemporaryError, err =>
+              api.showErrorNotification('Purge failed, please try again',
+                err.message, { allowReport: false }))
+            .catch(err => api.showErrorNotification('Purge failed', err, {
+              allowReport: ['ENOENT', 'ENOTFOUND'].indexOf(err.code) !== -1,
+            })))
           .finally(() => oldActivator.postPurge());
       }
 
       activatorProm = activatorProm.then(() => {
         if (supported.length > 0) {
-          api.store.dispatch(
-            setActivator(gameId, supported[0].id));
+          api.store.dispatch(setActivator(gameId, supported[0].id));
         }
       });
     }

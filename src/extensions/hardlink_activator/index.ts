@@ -29,6 +29,8 @@ class DeploymentMethod extends LinkingDeployment {
   private mDirCache: Set<string>;
   private mInstallationFiles: Set<number>;
 
+  public priority: number = 5;
+
   constructor(api: IExtensionApi) {
     super(
         'hardlink_activator', 'Hardlink Deployment',

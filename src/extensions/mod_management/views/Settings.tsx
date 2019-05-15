@@ -102,7 +102,12 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   public componentWillMount() {
-    this.nextState.supportedActivators = this.supportedActivators();
+    const activators = this.supportedActivators();
+    this.nextState.supportedActivators = activators;
+    if (activators.find(act => act.id === this.state.currentActivator) === undefined) {
+      // configured activator isn't supported anymore, update selection
+      this.nextState.currentActivator = activators[0].id;
+    }
   }
 
   public componentWillReceiveProps(newProps: IProps) {
@@ -442,10 +447,20 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     }
 
     return new Promise((resolve, reject) => {
-      this.context.api.events.emit('purge-mods', err => err !== null
+      this.context.api.events.emit('purge-mods', true, err => err !== null
         ? reject(err)
         : resolve());
     });
+  }
+
+  private querySwitch(newActivatorId: string): Promise<void> {
+    const { activators } = this.props;
+    const activator = activators.find(iter => iter.id === newActivatorId);
+    if ((activator === undefined) || (activator.onSelected === undefined)) {
+      return Promise.resolve();
+    }
+
+    return activator.onSelected(this.context.api);
   }
 
   private applyActivator = () => {
@@ -453,43 +468,44 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     const { currentActivator } = this.state;
 
     this.nextState.changingActivator = true;
-    this.purgeActivation()
-    .catch(NoDeployment, () =>
-      this.context.api.showDialog('error', 'Purge not possible', {
-        text: 'Previous deployment couldn\'t be cleaned up because the deployment method is no '
-            + 'longer available (maybe you removed the corresponding extension?). '
-            + 'If you continue now you may get orphaned files that Vortex can no longer clean up '
-            + 'for you.\n'
-      }, [
-        { label: 'Cancel' },
-        { label: 'Continue' },
-      ])
-      .then(result => result.action === 'Cancel'
-        ? Promise.reject(new UserCanceled())
-        : Promise.resolve()))
-    .then(() => {
-      onSetActivator(gameMode, currentActivator);
-    })
-    .finally(() => {
-      this.nextState.changingActivator = false;
-    })
-    .then(() => { this.context.api.store.dispatch(setDeploymentNecessary(gameMode, true)); })
-    .catch(UserCanceled, () => null)
-    .catch(TemporaryError, err => {
-      onShowError('Failed to purge previous deployment, please try again',
-                  err, false);
-    })
-    .catch(err => {
-      if ((err.code === undefined) && (err.errno !== undefined)) {
-        // unresolved windows error code
-        onShowError('Failed to purge previous deployment', {
-          error: err,
-          ErrorCode: err.errno
-        }, true);
-      } else {
-        onShowError('Failed to purge previous deployment', err, err.code !== 'ENOTFOUND');
-      }
-    });
+    this.querySwitch(currentActivator)
+      .then(() => this.purgeActivation())
+      .catch(NoDeployment, () =>
+        this.context.api.showDialog('error', 'Purge not possible', {
+          text: 'Previous deployment couldn\'t be cleaned up because the deployment method is no '
+              + 'longer available (maybe you removed the corresponding extension?). '
+              + 'If you continue now you may get orphaned files that Vortex can no longer clean up '
+              + 'for you.\n'
+        }, [
+          { label: 'Cancel' },
+          { label: 'Continue' },
+        ])
+        .then(result => result.action === 'Cancel'
+          ? Promise.reject(new UserCanceled())
+          : Promise.resolve()))
+      .then(() => {
+        onSetActivator(gameMode, currentActivator);
+      })
+      .finally(() => {
+        this.nextState.changingActivator = false;
+      })
+      .then(() => { this.context.api.store.dispatch(setDeploymentNecessary(gameMode, true)); })
+      .catch(UserCanceled, () => null)
+      .catch(TemporaryError, err => {
+        onShowError('Failed to purge previous deployment, please try again',
+                    err, false);
+      })
+      .catch(err => {
+        if ((err.code === undefined) && (err.errno !== undefined)) {
+          // unresolved windows error code
+          onShowError('Failed to purge previous deployment', {
+            error: err,
+            ErrorCode: err.errno
+          }, true);
+        } else {
+          onShowError('Failed to purge previous deployment', err, err.code !== 'ENOTFOUND');
+        }
+      });
   }
 
   private validateModPath(input: string): { state: ValidationState, reason?: string } {

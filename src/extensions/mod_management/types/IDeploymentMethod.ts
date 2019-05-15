@@ -126,6 +126,11 @@ export interface IDeploymentMethod {
   readonly isFallbackPurgeSafe: boolean;
 
   /**
+   * low value means: prefer this method over those with higher value
+   */
+  readonly priority: number;
+
+  /**
    * returns more extensive description/explanation of the activator.
    *
    * @type {string}
@@ -151,6 +156,12 @@ export interface IDeploymentMethod {
    * @memberof IModActivator
    */
   userGate: () => Promise<void>;
+
+  /**
+   * called before the deployment method is selected. Primary use is to show usage instructions
+   * the user needs to know before using it
+   */
+  onSelected?: (api: IExtensionApi) => Promise<void>;
 
   /**
    * called before any calls to activate/deactivate, in case the

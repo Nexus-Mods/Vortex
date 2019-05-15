@@ -32,6 +32,8 @@ class DeploymentMethod extends LinkingDeployment {
   public name: string;
   public description: string;
 
+  public priority: number = 20;
+
   private mElevatedClient: any;
   private mQuitTimer: NodeJS.Timer;
   private mCounter: number;

@@ -52,7 +52,7 @@ import {IModSource} from './types/IModSource';
 import {InstallFunc} from './types/InstallFunc';
 import {IResolvedMerger} from './types/IResolvedMerger';
 import {TestSupported} from './types/TestSupported';
-import { loadActivation, saveActivation } from './util/activationStore';
+import { loadActivation, saveActivation, fallbackPurge } from './util/activationStore';
 import allTypesSupported from './util/allTypesSupported';
 import * as basicInstaller from './util/basicInstaller';
 import { purgeMods } from './util/deploy';
@@ -260,9 +260,10 @@ function genUpdateModDeployment() {
 
       const err = allTypesSupported(selectedActivator, state, gameId, types);
       if ((selectedActivator !== undefined) && (err !== undefined)) {
-        api.showErrorNotification('Deployment not possible',
-                                  err.description(t),
-                                  { allowReport: false });
+        api.showErrorNotification('Deployment not possible', err.description(t), {
+          id: 'deployment-not-possible',
+          allowReport: false,
+        });
       } // otherwise there should already be a notification
       return Promise.resolve();
     }
@@ -827,8 +828,11 @@ function once(api: IExtensionApi) {
 
   api.onAsync('deploy-single-mod', onDeploySingleMod(api));
 
-  api.events.on('purge-mods', (callback: (err: Error) => void) => {
+  api.events.on('purge-mods', (allowFallback: boolean, callback: (err: Error) => void) => {
     blockDeploy = blockDeploy.then(() => purgeMods(api)
+      .catch(err => allowFallback
+        ? fallbackPurge(api)
+        : Promise.reject(err))
       .then(() => callback(null))
       .catch(err => callback(err)));
   });

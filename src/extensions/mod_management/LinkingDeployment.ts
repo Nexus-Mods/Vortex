@@ -46,6 +46,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
   public id: string;
   public name: string;
   public description: string;
+  public priority: number;
   public isFallbackPurgeSafe: boolean;
 
   private mApi: IExtensionApi;

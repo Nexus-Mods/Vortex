@@ -22,6 +22,8 @@ class DeploymendMethod extends LinkingDeployment {
   public name: string;
   public description: string;
 
+  public priority: number = 10;
+
   constructor(api: IExtensionApi) {
     super(
         'symlink_activator', 'Symlink Deployment',

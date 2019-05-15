@@ -58,7 +58,7 @@ class DeactivationButton extends ComponentEx<IProps, {}> {
     const prom = confirmPurge ? this.confirmPurge() : Promise.resolve();
     prom
       .then(() => new Promise((resolve, reject) => {
-        this.context.api.events.emit('purge-mods', (err) => {
+        this.context.api.events.emit('purge-mods', false, (err) => {
           if (err !== null) {
             reject(err);
           } else {

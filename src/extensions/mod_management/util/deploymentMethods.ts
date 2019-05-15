@@ -10,8 +10,13 @@ import allTypesSupported from './allTypesSupported';
 
 const activators: IDeploymentMethod[] = [];
 
+function byPriority(lhs: IDeploymentMethod, rhs: IDeploymentMethod) {
+  return lhs.priority - rhs.priority;
+}
+
 export function registerDeploymentMethod(activator: IDeploymentMethod) {
   activators.push(activator);
+  activators.sort(byPriority);
 }
 
 export function getAllActivators(): IDeploymentMethod[] {
@@ -60,6 +65,7 @@ export function getCurrentActivator(state: IState,
   const types = Object.keys(modPaths)
     .filter(typeId => truthy(modPaths[typeId]));
 
+  // if no activator has been selected for the game, allow using a default
   if (allowDefault && (activator === undefined)) {
     const game = getGame(gameId);
     const discovery = state.settings.gameMode.discovered[gameId];
