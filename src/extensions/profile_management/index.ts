@@ -37,6 +37,7 @@ import { setCurrentProfile, setNextProfile } from './actions/settings';
 import { profilesReducer } from './reducers/profiles';
 import { settingsReducer } from './reducers/settings';
 import transferSetupReducer from './reducers/transferSetup';
+import { CorruptActiveProfile } from './types/Errors';
 import { IProfile } from './types/IProfile';
 import { IProfileFeature } from './types/IProfileFeature';
 import Connector from './views/Connector';
@@ -86,7 +87,7 @@ function refreshProfile(store: Redux.Store<any>, profile: IProfile,
     return Promise.resolve();
   }
   if ((profile.gameId === undefined) || (profile.id === undefined)) {
-    return Promise.reject(new Error('The active profile is corrupted, please create a new one.'));
+    return Promise.reject(new CorruptActiveProfile(profile));
   }
   return checkProfile(store, profile)
       .then(() => profilePath(store, profile))
@@ -428,7 +429,7 @@ function init(context: IExtensionContextExt): boolean {
           return null;
         })
         .catch((err: Error) => {
-          showError(store.dispatch, 'Failed to set profile', err, { allowReport: false });
+          showError(store.dispatch, 'Failed to set profile', err);
           store.dispatch(setCurrentProfile(undefined, undefined));
           store.dispatch(setNextProfile(undefined));
           if (finishProfileSwitch !== undefined) {
