@@ -7548,8 +7548,8 @@ mkdirp@0.5.1, mkdirp@0.x, "mkdirp@>=0.5 0", mkdirp@^0.5.0, mkdirp@^0.5.1, mkdirp
     minimist "0.0.8"
 
 modmeta-db@Nexus-Mods/modmeta-db:
-  version "0.4.3"
-  resolved "https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/3aaf347a05d3c7a708c48591840fccb2aac57f80"
+  version "0.4.4"
+  resolved "https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/0d9199ad82bea45c00636b8e30778562bdc86b1d"
   dependencies:
     bluebird "^3.4.6"
     minimatch "^3.0.4"
@@ -11261,7 +11261,7 @@ vortex-parse-ini@Nexus-Mods/vortex-parse-ini:
     winapi-bindings Nexus-Mods/node-winapi-bindings
 
 "vortex-run@file:src/util/vortex-run":
-  version "0.0.7"
+  version "0.0.8"
 
 w3c-hr-time@^1.0.1:
   version "1.0.1"

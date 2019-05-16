@@ -69,14 +69,30 @@ export class APIDisabled extends Error {
 // management functions to control the our api connection
 const mgmtFuncs = new Set(['setGame', 'getValidationResult', 'getRateLimits']);
 
-const disableable = {
-  disabled: false,
+class Disableable {
+  private mDisabled = false;
+  private mApi: IExtensionApi;
+
+  constructor(api: IExtensionApi) {
+    this.mApi = api;
+  }
+
   get(obj, prop) {
     if (prop === 'disable') {
-      return () => this.disabled = true;
-    } else if ((!this.disabled)
+      return () => this.mDisabled = true;
+    } else if ((!this.mDisabled)
                || mgmtFuncs.has(prop)
                || (typeof obj[prop] !== 'function')) {
+      if (prop === 'getFileByMD5') {
+        return (hash: string, gameId: string) => {
+          if (gameId.toLowerCase() === 'skyrimse') {
+            this.mApi.showErrorNotification('Attempt to send invalid API request, please report this (once)',
+              new Error(`getFileByMD5 called with game id ${gameId}`), { id: 'api-invalid-gameid' });
+            gameId = 'skyrimspecialedition';
+          }
+          return obj[prop](hash, gameId);
+        }
+      }
       return obj[prop];
     } else {
       return () => Promise.reject(new APIDisabled());
@@ -564,7 +580,7 @@ function once(api: IExtensionApi) {
       new Proxy(
         new Nexus('Vortex', remote.app.getVersion(), gameMode, 30000),
         requestLog),
-      disableable);
+      new Disableable(api));
 
     updateKey(api, nexus, apiKey);
 
