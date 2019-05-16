@@ -296,12 +296,17 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
         if (err !== null) {
           const urlInvalid = ['moved permanently', 'forbidden', 'gone'];
           if (err instanceof ProcessCanceled) {
-            this.props.onShowError('Failed to download',
+            this.props.onShowError('Failed to resume download',
                                    'Sorry, this download is missing info necessary to resume. '
                                    + 'Please try restarting it.',
                                    undefined, false);
           } else if (err instanceof UserCanceled) {
             // nop
+          } else if (err instanceof DownloadIsHTML) {
+            this.props.onShowError('Failed to resume download',
+                                   'Sorry, the download link is no longer valid. '
+                                   + 'Please restart the download.',
+              undefined, false);
           } else if ((err.HTTPStatus !== undefined)
                      && (urlInvalid.indexOf(err.HTTPStatus.toLowerCase()) !== -1)) {
             this.props.onShowError('Failed to resume download',
@@ -322,7 +327,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
             this.props.onShowError('Failed to resume download', 'The disk is full',
               undefined, false);
           } else {
-            this.props.onShowError('Failed to download', err);
+            this.props.onShowError('Failed to resume download', err);
           }
         }
       });
