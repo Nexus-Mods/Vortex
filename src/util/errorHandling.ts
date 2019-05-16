@@ -326,7 +326,13 @@ export function toError(input: any, title?: string, options?: IErrorOptions): IE
   const t = (text: string) => ten(text, { replace: (options || {}).replace });
 
   if (input instanceof Error) {
-    return { message: t(input.message), title, stack: input.stack };
+    return {
+      message: t(input.message),
+      title,
+      subtitle: (options || {}).message,
+      stack: input.stack,
+      details: Object.keys(input).map(key => `${key}: ${input[key]}`).join('\n'),
+    };
   }
 
   switch (typeof input) {
@@ -370,7 +376,7 @@ export function toError(input: any, title?: string, options?: IErrorOptions): IE
           .map(key => key + ':\t' + input[key])
           .join('\n');
 
-      return {message, title, stack, details};
+      return {message, title, subtitle: (options || {}).message, stack, details};
     }
     case 'string': {
       return { message: 'String exception: ' + t(input), title };
