@@ -105,8 +105,12 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     const activators = this.supportedActivators();
     this.nextState.supportedActivators = activators;
     if (activators.find(act => act.id === this.state.currentActivator) === undefined) {
-      // configured activator isn't supported anymore, update selection
-      this.nextState.currentActivator = activators[0].id;
+      // Configured activator isn't supported anymore, update selection.
+      // Some games such as Skyrim may have no supported activators at all,
+      //  in which case we set the current activator to undefined.
+      this.nextState.currentActivator = (activators.length > 0)
+        ? activators[0].id
+        : undefined;
     }
   }
 
