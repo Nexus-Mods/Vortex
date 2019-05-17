@@ -1,12 +1,12 @@
 import { Button } from '../../controls/TooltipControls';
 import { IFilterProps, ITableFilter } from '../../types/ITableAttribute';
+import { ComponentEx } from '../../util/ComponentEx';
+import { getLocale, getDateFormat } from '../../util/datelocales';
 import { truthy } from '../../util/util';
 
-import * as moment from 'moment';
 import * as React from 'react';
 import { InputGroup } from 'react-bootstrap';
 import ReactDatePicker from 'react-datepicker';
-import { ComponentEx } from '../../util/ComponentEx';
 
 export class DateTimeFilterComponent extends ComponentEx<IFilterProps, {}> {
   private currentComparison: 'eq' | 'ge' | 'le';
@@ -43,6 +43,8 @@ export class DateTimeFilterComponent extends ComponentEx<IFilterProps, {}> {
 
     const currentComparison = this.comparisons[filt.comparison];
 
+    const locale = this.context.api.locale();
+
     return (
         <InputGroup className='datetime-filter'>
           <InputGroup.Addon className='group-addon-btn'>
@@ -56,9 +58,10 @@ export class DateTimeFilterComponent extends ComponentEx<IFilterProps, {}> {
             </Button>
           </InputGroup.Addon>
           <ReactDatePicker
-            selected={truthy(filt.value) ? moment(filt.value).toDate() : null}
+            selected={truthy(filt.value) ? new Date(filt.value) : null}
             onChange={this.changeFilter}
-            locale={this.context.api.locale()}
+            locale={getLocale(locale)}
+            dateFormat={getDateFormat(locale)}
             isClearable={true}
             className='datetime-picker'
           />
@@ -68,7 +71,7 @@ export class DateTimeFilterComponent extends ComponentEx<IFilterProps, {}> {
 
   private changeFilter = (date) => {
     const { attributeId, onSetFilter } = this.props;
-    this.currentValue = date !== null ? date.toDate() : null;
+    this.currentValue = date;
     onSetFilter(attributeId,
       { comparison: this.currentComparison, value: this.currentValue });
   }
