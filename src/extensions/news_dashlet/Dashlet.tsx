@@ -178,13 +178,22 @@ class RSSDashlet extends ComponentEx<IProps, IComponentState> {
       return null;
     }
 
+    let count = undefined;
+
     if ((typeof(value) === 'object') && (value['#'] !== undefined)) {
       value = value['#'];
     }
 
+    {
+      const tmp = (new Number(value).valueOf());
+      if (!Number.isNaN(tmp)) {
+        count = tmp;
+      }
+    }
+
     return (
       <div key={extra.attribute}>
-        <Icon name={extra.icon} />{t(extra.text, { replace: { value } })}
+        <Icon name={extra.icon} />{t(extra.text, { replace: { value, count }, count })}
       </div>
     );
   }

@@ -12,6 +12,8 @@
   "{{ count }} active mod_plural": "{{ count }} active mods",
   "{{ count }} file_plural": "{{ count }} files",
   "{{ count }} item selected_plural": "{{ count }} items selected",
+  "{{ count }} comments": "One comment",
+  "{{ count }} comments_plural": "{{ count }} comments",
   "Enable All": "Enable",
   "Enable All_plural": "Enable All",
   "Install All": "Install",

@@ -12,7 +12,7 @@ function init(context: IExtensionContext): boolean {
     url: 'https://www.nexusmods.com/rss/news/',
     maxLength: 400,
     extras: [
-      { attribute: 'nexusmods:comments', icon: 'comments', text: '{{ value }} comments'},
+      { attribute: 'nexusmods:comments', icon: 'comments', text: '{{ count }} comments'},
     ],
   }), undefined);
 
