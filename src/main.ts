@@ -27,10 +27,11 @@ import { UserCanceled } from './util/CustomErrors';
 import { sendReportFile, terminate, toError } from './util/errorHandling';
 // ensures tsc includes this dependency
 import {} from './util/extensionRequire';
+import { log } from './util/log';
+import { truthy } from './util/util';
 
 import { app, dialog } from 'electron';
 import * as path from 'path';
-import { truthy } from './util/util';
 
 process.env.Path = process.env.Path + path.delimiter + __dirname;
 
@@ -110,3 +111,4 @@ function main() {
 }
 
 main();
+log('debug', 'done?');

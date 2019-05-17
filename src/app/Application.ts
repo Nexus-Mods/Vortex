@@ -72,6 +72,7 @@ class Application {
 
     this.mDeinitCrashDump = crashDump(path.join(tempPath, 'dumps', `crash-main-${Date.now()}.dmp`));
 
+    setupLogging(app.getPath('userData'), process.env.NODE_ENV === 'development');
     this.setupAppEvents(args);
   }
 
@@ -107,6 +108,14 @@ class Application {
         app.quit();
       }
     });
+
+    if (!app.requestSingleInstanceLock()) {
+      app.disableHardwareAcceleration();
+      app.commandLine.appendSwitch('--in-process-gpu');
+      app.commandLine.appendSwitch('--disable-software-rasterizer');
+      app.quit();
+      return;
+    }
 
     app.on('activate', () => {
       if (this.mMainWindow !== undefined) {
@@ -173,10 +182,8 @@ class Application {
   private regularStart(args: IParameters): Promise<void> {
     let splash: SplashScreenT;
 
-    return this.testShouldQuit()
-        .then(() => this.testUserEnvironment())
+    return this.testUserEnvironment()
         .then(() => {
-          setupLogging(app.getPath('userData'), process.env.NODE_ENV === 'development');
           log('info', '--------------------------');
           log('info', 'Vortex Version', app.getVersion());
           log('info', 'Parameters', process.argv.join(' '));
@@ -700,17 +707,6 @@ class Application {
     } else {
       // No tests needed.
       return Promise.resolve();
-    }
-  }
-
-  private testShouldQuit(): Promise<void> {
-    const primaryInstance: boolean = app.requestSingleInstanceLock();
-
-    if (primaryInstance) {
-      return Promise.resolve();
-    } else {
-      app.exit();
-      return Promise.reject(new ProcessCanceled('should quit'));
     }
   }
 
