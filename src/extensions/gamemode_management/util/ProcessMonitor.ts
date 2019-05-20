@@ -114,8 +114,8 @@ class ProcessMonitor {
       }
 
       if ((state.session.base.toolsRunning[exeId] === undefined)
-          || (state.session.base.toolsRunning[exeId].pid !== exeRunning.processId)) {
-        this.mStore.dispatch(setToolPid(exePath, exeRunning.processId, exclusive));
+          || (state.session.base.toolsRunning[exeId].pid !== exeRunning.processID)) {
+        this.mStore.dispatch(setToolPid(exePath, exeRunning.processID, exclusive));
       }
     };
 

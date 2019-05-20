@@ -107,7 +107,7 @@ class StyleManager {
       },
         (err, output) => {
           if (err !== null) {
-            // the error has its own class and it's message is missing relevant information
+            // the error has its own class and its message is missing relevant information
             reject(new Error(err.formatted));
           } else {
             // remove utf8-bom if it's there
