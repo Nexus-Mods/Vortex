@@ -18,6 +18,13 @@ if (process.env.NODE_ENV !== 'development') {
   rebuildRequire();
 }
 
+// Produce english error messages (windows only atm), otherwise they don't get
+// grouped correctly when reported through our feedback system
+import { SetProcessPreferredUILanguages } from 'winapi-bindings';
+if (SetProcessPreferredUILanguages !== undefined) {
+  SetProcessPreferredUILanguages(['en-US']);
+}
+
 import {} from './util/requireRebuild';
 
 import Application from './app/Application';
