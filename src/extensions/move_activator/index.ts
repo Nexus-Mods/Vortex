@@ -20,6 +20,10 @@ import * as winapi from 'winapi-bindings';
 
 const LNK_EXT = '.vortex_lnk';
 
+interface ILinkData {
+  target: string;
+}
+
 export class FileFound extends Error {
   constructor(name) {
     super(name);
@@ -237,7 +241,7 @@ class DeploymentMethod extends LinkingDeployment {
         try {
           return JSON.parse(data).target === linkPath;
         } catch (err) {
-          log('error', 'invalid link', data);
+          log('error', 'invalid link', { link: sourcePath + LNK_EXT, data });
           return false;
         }
       })
@@ -252,7 +256,7 @@ class DeploymentMethod extends LinkingDeployment {
 
   protected stat(filePath: string): Promise<fs.Stats> {
     return fs.statAsync(filePath)
-      .catch(err => err.code === 'ENOENT'
+      .catch(err => (err.code === 'ENOENT')
         ? this.statVortexLink(filePath)
         : Promise.reject(err));
   }
@@ -261,14 +265,16 @@ class DeploymentMethod extends LinkingDeployment {
     return fs.lstatAsync(filePath);
   }
 
-  private statVortexLink(filePath: string): Promise<fs.Stats> {
+  private readLink(filePath: string): Promise<ILinkData> {
     return fs.readFileAsync(filePath + LNK_EXT, { encoding: 'utf-8' })
       .then(data => {
         try {
-          const dat = JSON.parse(data);
-          return fs.statAsync(dat.target);
+          const obj: ILinkData = JSON.parse(data);
+          if (obj.target === undefined) {
+            throw new Error('target missing');
+          }
+          return Promise.resolve(obj);
         } catch (err) {
-          log('error', 'invalid link', data);
           const error: any = new Error('Invalid link');
           error.code = 'ENOENT';
           error.path = filePath;
@@ -277,11 +283,23 @@ class DeploymentMethod extends LinkingDeployment {
       });
   }
 
+  private statVortexLink(filePath: string): Promise<fs.Stats> {
+    return this.readLink(filePath)
+      .then(linkInfo => fs.statAsync(linkInfo.target));
+  }
+
   private createLink(sourcePath: string, linkPath: string): Promise<void> {
     const linkInfo = JSON.stringify({
       target: linkPath,
     });
-    return fs.writeFileAsync(sourcePath + LNK_EXT, linkInfo, { encoding: 'utf-8' })
+    // if the sourcePath doesn't exist but a link placeholder, restore the link
+    // first before creating it again
+    return fs.statAsync(sourcePath)
+      .catch({ code: 'ENOENT' }, () => fs.statAsync(sourcePath + LNK_EXT)
+        .then(() => this.restoreLink(sourcePath + LNK_EXT)))
+      .then(() => fs.writeFileAsync(sourcePath + LNK_EXT, linkInfo, { encoding: 'utf-8' }))
+      .then(() => fs.statAsync(sourcePath).then(stat =>
+        fs.utimesAsync(sourcePath + LNK_EXT, stat.atime as any, stat.mtime as any)))
       .then(() => fs.renameAsync(sourcePath, linkPath));
   }
 
@@ -298,7 +316,7 @@ class DeploymentMethod extends LinkingDeployment {
               : Promise.reject(err))
             .then(() => fs.removeAsync(linkPath));
         } catch (err) {
-          log('error', 'invalid link', data);
+          log('error', 'invalid link', { linkPath, data });
           const error: any = new Error('Invalid link');
           error.code = 'ENOENT';
           error.path = linkPath;
