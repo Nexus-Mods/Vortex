@@ -282,9 +282,18 @@ function genUpdateModDeployment() {
       return prev;
     }, []);
 
+    let lockResolve: () => void;
+
     // test if anything was changed by an external application
     return gate
-      .then(() => withActivationLock(() => Promise.resolve().then(() => {
+      .then(() => {
+        // ugly workaround I don't dare refactor the code below but we need to
+        // release the lock before running post-deployment handlers
+        withActivationLock(() => new Promise((res) => {
+          lockResolve = res;
+        }));
+      })
+      .then(() => {
         notificationId = api.sendNotification({
           type: 'activity',
           message: t('Deploying mods'),
@@ -433,6 +442,8 @@ function genUpdateModDeployment() {
                   });
               }))
             .then(() => {
+              lockResolve();
+              lockResolve = undefined;
               progress(t('Running post-deployment events'), 99);
               return api.emitAndAwait('did-deploy', profile.id, newDeployment,
                                       (title: string) => {
@@ -521,11 +532,13 @@ function genUpdateModDeployment() {
         });
       })
       .finally(() => {
+        if (lockResolve !== undefined) {
+          lockResolve();
+        }
         api.store.dispatch(stopActivity('mods', 'deployment'));
         api.dismissNotification(notificationId);
-      })
-    ).then(() => null));
-  };
+      });
+    }
 }
 
 function doSaveActivation(api: IExtensionApi, typeId: string,
