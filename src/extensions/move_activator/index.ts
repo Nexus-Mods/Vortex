@@ -299,6 +299,10 @@ class DeploymentMethod extends LinkingDeployment {
         .then(() => this.restoreLink(sourcePath + LNK_EXT)))
       .then(() => fs.writeFileAsync(sourcePath + LNK_EXT, linkInfo, { encoding: 'utf-8' }))
       .then(() => fs.statAsync(sourcePath).then(stat =>
+        // TODO: Hmm, unfortunately this seems to be really slow (on windows at least)
+        //   The alternative would be to store mtime in the linkInfo and then use that when
+        //   checking if the content has changed (not that that could happen with move
+        //   deployment anyway)
         fs.utimesAsync(sourcePath + LNK_EXT, stat.atime as any, stat.mtime as any)))
       .then(() => fs.renameAsync(sourcePath, linkPath));
   }
