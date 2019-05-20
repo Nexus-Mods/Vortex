@@ -52,7 +52,7 @@ import {IModSource} from './types/IModSource';
 import {InstallFunc} from './types/InstallFunc';
 import {IResolvedMerger} from './types/IResolvedMerger';
 import {TestSupported} from './types/TestSupported';
-import { loadActivation, saveActivation, fallbackPurge } from './util/activationStore';
+import { loadActivation, saveActivation, fallbackPurge, withActivationLock } from './util/activationStore';
 import allTypesSupported from './util/allTypesSupported';
 import * as basicInstaller from './util/basicInstaller';
 import { purgeMods } from './util/deploy';
@@ -284,7 +284,7 @@ function genUpdateModDeployment() {
 
     // test if anything was changed by an external application
     return gate
-      .then(() => {
+      .then(() => withActivationLock(() => Promise.resolve().then(() => {
         notificationId = api.sendNotification({
           type: 'activity',
           message: t('Deploying mods'),
@@ -523,7 +523,8 @@ function genUpdateModDeployment() {
       .finally(() => {
         api.store.dispatch(stopActivity('mods', 'deployment'));
         api.dismissNotification(notificationId);
-      });
+      })
+    ).then(() => null));
   };
 }
 
@@ -532,19 +533,27 @@ function doSaveActivation(api: IExtensionApi, typeId: string,
                           files: IDeployedFile[], activatorId: string) {
   const state: IState = api.store.getState();
   return saveActivation(typeId, state.app.instanceId, deployPath, stagingPath, files, activatorId)
-    .catch(err => api.showDialog('error', 'Saving manifest failed', {
-      text: 'Saving the manifest failed (see error below). This could lead to errors '
-        + '(e.g. orphaned files in the game directory, external changes not being detected) '
-        + 'later on. Please either retry or immediately "purge" after this and try '
-        + 'deploying again.',
-      message: err.stack,
-    }, [
-      { label: 'Retry' },
-      { label: 'Ignore' },
-    ])
-    .then(result => (result.action === 'Retry')
-      ? doSaveActivation(api, typeId, deployPath, stagingPath, files, activatorId)
-      : Promise.resolve()));
+    .catch(err => {
+      const canceled = err instanceof UserCanceled;
+      let text = canceled
+        ? 'You canceled the writing of the manifest file.'
+        : 'Saving the manifest failed (see error below).';
+
+      text += 'This could lead to errors '
+          + '(e.g. orphaned files in the game directory, external changes not being detected) '
+          + 'later on. Please either retry or immediately "purge" after this and try '
+          + 'deploying again.';
+      return api.showDialog('error', 'Saving manifest failed', {
+        text,
+        message: canceled ? undefined : err.stack,
+      }, [
+          { label: 'Retry' },
+          { label: 'Ignore' },
+        ])
+        .then(result => (result.action === 'Retry')
+          ? doSaveActivation(api, typeId, deployPath, stagingPath, files, activatorId)
+          : Promise.resolve());
+    });
 }
 
 function genModsSourceAttribute(api: IExtensionApi): ITableAttribute<IMod> {
@@ -741,7 +750,7 @@ function onDeploySingleMod(api: IExtensionApi) {
 
     const subdir = genSubDirFunc(game);
     let normalize: Normalize;
-    return getNormalizeFunc(dataPath)
+    return withActivationLock(() => getNormalizeFunc(dataPath)
       .then(norm => {
         normalize = norm;
         return loadActivation(api, mod.type, dataPath, stagingPath, activator);
@@ -765,7 +774,8 @@ function onDeploySingleMod(api: IExtensionApi) {
         api.showErrorNotification('Failed to deploy mod', err, {
           message: modId,
         });
-      });
+      })
+    ).then(() => null);
   };
 }
 

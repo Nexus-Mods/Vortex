@@ -1,6 +1,7 @@
 import { Normalize } from './getNormalizeFunc';
 import getVortexPath from './getVortexPath';
 
+import * as Promise from 'bluebird';
 import { spawn } from 'child_process';
 import * as _ from 'lodash';
 import * as path from 'path';
@@ -119,6 +120,20 @@ export function objDiff(lhs: any, rhs: any, skip?: string[]): any {
   }
 
   return res;
+}
+
+/**
+ * create a "queue".
+ * Returns an enqueue function such that that the callback passed to it
+ * will be called only after everything before it in the queue is finished
+ * and with the promise that nothing else in the queue is run in parallel.
+ */
+export function makeQueue() {
+  let queue = Promise.resolve();
+  return (func: () => Promise<any>) =>
+    new Promise((resolve, reject) => {
+      queue = queue.then(() => func().then(resolve).catch(reject));
+    });
 }
 
 /**

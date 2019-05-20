@@ -6,7 +6,7 @@ import {UserCanceled, ProcessCanceled} from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
 import { writeFileAtomic } from '../../../util/fsAtomic';
 import { activeGameId, currentGameDiscovery, installPathForGame } from '../../../util/selectors';
-import { deBOM, truthy } from '../../../util/util';
+import { deBOM, truthy, makeQueue } from '../../../util/util';
 
 import { getGame } from '../../gamemode_management/util/getGame';
 
@@ -250,6 +250,12 @@ export function fallbackPurge(api: IExtensionApi): Promise<void> {
   return Promise.each(Object.keys(modPaths), typeId =>
     fallbackPurgeType(api, activator, typeId, modPaths[typeId], stagingPath))
     .then(() => undefined);
+}
+
+const activationQueue = makeQueue();
+
+export function withActivationLock(func: () => Promise<any>) {
+  return activationQueue(func);
 }
 
 export function loadActivation(api: IExtensionApi, modType: string,

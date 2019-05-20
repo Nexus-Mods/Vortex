@@ -7,7 +7,7 @@ import { truthy } from '../../../util/util';
 import { getGame } from '../../gamemode_management/util/getGame';
 import { installPath } from '../selectors';
 import { IMod } from '../types/IMod';
-import { loadActivation, saveActivation } from './activationStore';
+import { loadActivation, saveActivation, withActivationLock } from './activationStore';
 import { getCurrentActivator } from './deploymentMethods';
 import { NoDeployment } from './exceptions';
 
@@ -46,20 +46,20 @@ export function purgeMods(api: IExtensionApi): Promise<void> {
 
   const modTypes = Object.keys(modPaths).filter(typeId => truthy(modPaths[typeId]));
 
-  return activator.prePurge(stagingPath)
+  return withActivationLock(() => activator.prePurge(stagingPath)
     .then(() => Promise.each(modTypes, typeId =>
       fs.statAsync(modPaths[typeId])
-      .catch({ code: 'ENOTFOUND' }, () =>
+        .catch({ code: 'ENOTFOUND' }, () =>
           Promise.reject(new ProcessCanceled('target directory missing')))
-      .then(() => loadActivation(api, typeId, modPaths[typeId], stagingPath, activator))
-      .then(() => activator.purge(stagingPath, modPaths[typeId]))
-      .then(() => saveActivation(typeId, state.app.instanceId,
-                                 modPaths[typeId], stagingPath, [], activator.id)))
+        .then(() => loadActivation(api, typeId, modPaths[typeId], stagingPath, activator))
+        .then(() => activator.purge(stagingPath, modPaths[typeId]))
+        .then(() => saveActivation(typeId, state.app.instanceId,
+          modPaths[typeId], stagingPath, [], activator.id)))
       .catch(ProcessCanceled, () => null))
     .then(() => Promise.resolve())
-  .finally(() => {
-    api.dismissNotification(notificationId);
-    return activator.postPurge();
-  });
+    .finally(() => {
+      api.dismissNotification(notificationId);
+      return activator.postPurge();
+    })).then(() => null);
 }
 
