@@ -142,10 +142,15 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
       && ((notification.localize === undefined) || (notification.localize.title !== false)))
       ? t(translated.title, { replace: translated.replace })
       : translated.title;
-    translated.message =
-      ((notification.localize === undefined) || (notification.localize.message !== false))
-      ? t(translated.message, { replace: translated.replace })
-      : translated.message;
+
+      if ((collapsed[notification.group] > 1) && (translated.title !== undefined)) {
+        translated.message = t('<Multiple>');
+      } else {
+        translated.message =
+          ((notification.localize === undefined) || (notification.localize.message !== false))
+            ? t(translated.message, { replace: translated.replace })
+            : translated.message;
+      }
 
     return (
       <Notification

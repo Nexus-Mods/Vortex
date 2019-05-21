@@ -17,9 +17,9 @@ import {
   setModType,
   setModAttributes,
 } from './actions/mods';
-import { IMod, ModState } from './types/IMod';
-
 import { IInstallContext, InstallOutcome } from './types/IInstallContext';
+import { IMod, ModState } from './types/IMod';
+import modName from './util/modName';
 
 import * as Promise from 'bluebird';
 import * as path from 'path';
@@ -114,7 +114,7 @@ class InstallContext implements IInstallContext {
     this.mInstallOutcome = undefined;
   }
 
-  public stopIndicator(): void {
+  public stopIndicator(mod: IMod): void {
     if (this.mIndicatorId === undefined) {
       return;
     }
@@ -125,7 +125,8 @@ class InstallContext implements IInstallContext {
     .then(() => {
       this.mAddNotification(
         this.outcomeNotification(
-          this.mInstallOutcome, this.mIndicatorId, this.mIsEnabled(this.mAddedId)));
+          this.mInstallOutcome, this.mIndicatorId, this.mIsEnabled(this.mAddedId),
+          mod !== undefined ? modName(mod) : this.mIndicatorId));
     });
   }
 
@@ -211,14 +212,14 @@ class InstallContext implements IInstallContext {
   }
 
   private outcomeNotification(outcome: InstallOutcome, id: string,
-                              isEnabled: boolean): INotification {
+                              isEnabled: boolean, modName: string): INotification {
     switch (outcome) {
       case 'success':
         return {
           id: `may-enable-${id}`,
           type: 'success',
-          message: '{{id}} installed',
-          replace: { id },
+          message: modName,
+          title: 'Mod installed',
           group: 'mod-installed',
           displayMS: isEnabled ? 4000 : undefined,
           actions: isEnabled ? [] : [

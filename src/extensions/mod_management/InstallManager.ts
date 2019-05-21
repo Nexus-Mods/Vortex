@@ -409,7 +409,9 @@ class InstallManager {
       })
       .finally(() => {
         if (installContext !== undefined) {
-          installContext.stopIndicator();
+          const state = api.store.getState();
+          const mod: IMod = getSafe(state, ['persistent', 'mods', installGameId, modId], undefined);
+          installContext.stopIndicator(mod);
         }
       })));
   }
