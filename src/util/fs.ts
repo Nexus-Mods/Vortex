@@ -637,7 +637,7 @@ export function forcePerm<T>(t: I18next.TFunction,
       type: 'warning',
     });
     if (choice === 1) { // Retry
-      return forcePerm(t, op);
+      return forcePerm(t, op, filePath);
     } else if (choice === 2) { // Give Permission
       const userId = getUserId();
       return fs.statAsync(fileToAccess)
@@ -661,7 +661,7 @@ export function forcePerm<T>(t: I18next.TFunction,
             log('error', 'failed to acquire permission', elevatedErr.message);
             return Promise.reject(err);
           }))
-        .then(() => forcePerm(t, op));
+        .then(() => forcePerm(t, op, filePath));
     } else {
       return PromiseBB.reject(new UserCanceled());
     }
@@ -670,7 +670,7 @@ export function forcePerm<T>(t: I18next.TFunction,
   return op()
     .catch(err => {
       const fileToAccess = filePath !== undefined ? filePath : err.path;
-      if ((err.code === 'EPERM') || (err.errno === 5)) {
+      if ((['EPERM', 'EACCES'].indexOf(err.code) !== -1) || (err.errno === 5)) {
         const wantedAttributes = process.platform === 'win32'
           ? parseInt('0666', 8)
           : parseInt('0600', 8);
