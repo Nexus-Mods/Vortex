@@ -18,7 +18,7 @@ import { allHives, createVortexStore, currentStatePath, extendStore,
          importState, insertPersistor, markImported, querySanitize } from '../util/store';
 import {} from '../util/storeHelper';
 import SubPersistor from '../util/SubPersistor';
-import { spawnSelf, truthy } from '../util/util';
+import { spawnSelf, truthy, timeout } from '../util/util';
 
 import { addNotification } from '../actions';
 
@@ -279,9 +279,9 @@ class Application {
 
   private warnAdmin(): Promise<void> {
     const state: IState = this.mStore.getState();
-    return isAdmin()
+    return timeout(isAdmin(), 1000)
       .then(admin => {
-        if (!admin) {
+        if ((admin === undefined) || !admin) {
           return Promise.resolve();
         }
         log('warn', 'running as administrator');

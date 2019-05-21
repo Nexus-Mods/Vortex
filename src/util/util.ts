@@ -284,6 +284,27 @@ export function escapeRE(input: string): string {
 }
 
 /**
+ * set a timeout for a promise. When the timeout expires the promise returned by this
+ * resolves with a value of undefined.
+ * @param prom the promise that should be wrapped
+ * @param timeout the time in milliseconds after which this should return
+ * @param cancel if true, the input promise is canceled when the timeout expires. Otherwise
+ *               it's allowed to continue and may finish after all.
+ */
+export function timeout<T>(prom: Promise<T>, timeout: number, cancel: boolean = false): Promise<T> {
+  let timedOut: boolean = false;
+  return Promise.any<T>([prom, Promise.delay(timeout).then(() => {
+    timedOut = true;
+    return undefined;
+  })])
+    .tap(() => {
+      if (timedOut && cancel) {
+        prom.cancel();
+      }
+    });
+}
+
+/**
  * characters invalid in a file path
  */
 const INVALID_FILEPATH_CHARACTERS = process.platform === 'win32'
