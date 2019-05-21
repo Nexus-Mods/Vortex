@@ -32,13 +32,15 @@ function runElevatedCustomTool(ipcClient, req: NodeRequireFunction): Promise<voi
         // which is not something we should react to (when you start from
         // windows explorer or similar you don't get notified of status
         // code != 0 either so it shouldn't be a situation to worry about
-        ipcClient.emit('log', {
-          level: err ? 'error' : 'info',
-          message: 'tool finished',
-          meta: err ? { err } : {},
-        });
         ipcClient.emit('finished', {});
-        resolve();
+        setTimeout(() => {
+          ipcClient.emit('log', {
+            level: err ? 'error' : 'info',
+            message: 'tool finished',
+            meta: err ? { err } : {},
+          });
+          resolve();
+        }, 100);
       });
     } catch (err) {
       ipcClient.emit('log', {

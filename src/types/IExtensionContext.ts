@@ -515,6 +515,8 @@ export interface IExtensionApi {
    * run an executable. This is comparable to node.js child_process.spawn but it allows us to add
    * extensions, like support interpreters and hooks.
    * It will also automatically ask the user to authorize elevation if the executable requires it
+   * The returned promise is resolved when the started process has run to completion.
+   * IRunOptions.onSpawned can be used to react to react to when the process has been started.
    */
   runExecutable: (executable: string, args: string[], options: IRunOptions) => Promise<void>;
 

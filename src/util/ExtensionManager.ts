@@ -1110,22 +1110,37 @@ class ExtensionManager {
         }
       }))
         .catch(ProcessCanceled, () => null)
-        .catch({ code: 'EACCES' }, () => this.runElevated(executable, cwd, args, env))
+        .catch({ code: 'EACCES' }, () =>
+          this.runElevated(executable, cwd, args, env, options.onSpawned))
         .catch({ errno: 1223 }, () => Promise.reject(new UserCanceled()))
         .catch((err) => {
           return Promise.reject(err);
         });
   }
 
-  private runElevated(executable: string, cwd: string, args: string[], env: { [key: string]: string }) {
+  private runElevated(executable: string, cwd: string, args: string[],
+                      env: { [key: string]: string }, onSpawned: () => void) {
     const ipcPath = shortid();
-    this.startIPC(ipcPath);
-    return Promise.resolve(runElevated(ipcPath, runElevatedCustomTool, {
-      toolPath: executable,
-      toolCWD: cwd,
-      parameters: args,
-      environment: env,
-    }));
+    return new Promise((resolve, reject) => {
+      this.startIPC(ipcPath, err => {
+        if (err !== null) {
+          reject(err);
+        } else {
+          resolve();
+        }
+      });
+
+      runElevated(ipcPath, runElevatedCustomTool, {
+        toolPath: executable,
+        toolCWD: cwd,
+        parameters: args,
+        environment: env,
+      }).then(() => {
+        if (onSpawned !== undefined) {
+          onSpawned();
+        }
+      });
+    });
   }
 
   private emitAndAwait = (event: string, ...args: any[]): Promise<void> => {
@@ -1234,7 +1249,7 @@ class ExtensionManager {
     this.mForceDBReconnect = true;
   }
 
-  private startIPC(ipcPath: string) {
+  private startIPC(ipcPath: string, onFinished: (err: Error) => void) {
     const ipcServer = new (nodeIPC as any).IPC();
     ipcServer.serve(ipcPath, () => null);
     ipcServer.server.start();
@@ -1248,9 +1263,10 @@ class ExtensionManager {
     ipcServer.server.on('log', (data: any) => {
       log(data.level, data.message, data.meta);
     });
-    ipcServer.server.on('finished', () => null);
+    ipcServer.server.on('finished', () => onFinished(null));
     ipcServer.server.on('error', nodeIPCErr => {
       log('error', 'ipcServer err', nodeIPCErr);
+      onFinished(nodeIPCErr);
     });
   }
 
