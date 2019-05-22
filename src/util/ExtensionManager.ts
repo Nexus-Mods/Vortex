@@ -1139,6 +1139,8 @@ class ExtensionManager {
         if (onSpawned !== undefined) {
           onSpawned();
         }
+      }).catch(err => {
+        reject(err);
       });
     });
   }
