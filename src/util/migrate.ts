@@ -10,7 +10,7 @@ import { UserCanceled } from './CustomErrors';
 import { log } from './log';
 
 import * as Promise from 'bluebird';
-import { dialog } from 'electron';
+import { BrowserWindow, dialog } from 'electron';
 import * as path from 'path';
 import * as Redux from 'redux';
 import * as semver from 'semver';
@@ -22,14 +22,14 @@ interface IMigration {
   maySkip: boolean;
   doQuery: boolean;
   description: string;
-  apply: (store: Redux.Store<IState>) => Promise<void>;
+  apply: (window: BrowserWindow, store: Redux.Store<IState>) => Promise<void>;
 }
 
-function selectDirectory(defaultPathPattern: string): Promise<string> {
+function selectDirectory(window: BrowserWindow, defaultPathPattern: string): Promise<string> {
   const defaultPath = getDownloadPath(defaultPathPattern, undefined);
   return fs.ensureDirWritableAsync(defaultPath, () => Promise.resolve())
     .then(() => new Promise((resolve, reject) => {
-      dialog.showOpenDialog(null, {
+      dialog.showOpenDialog(window, {
         title: 'Select empty directory to store downloads',
         properties: [ 'openDirectory', 'createDirectory', 'promptToCreate' ],
         defaultPath,
@@ -45,7 +45,7 @@ function selectDirectory(defaultPathPattern: string): Promise<string> {
             if (files.length > 0) {
               dialog.showErrorBox('Invalid path selected',
                 'The directory needs to be empty');
-              selectDirectory(defaultPathPattern)
+              selectDirectory(window, defaultPathPattern)
                 .then(resolve)
                 .catch(reject);
             } else {
@@ -77,9 +77,10 @@ function transferPath(from: string, to: string): Promise<void> {
       : Promise.reject(err));
 }
 
-function dialogProm(type: string, title: string, message: string, options: string[]): Promise<string> {
+function dialogProm(window: BrowserWindow, type: string, title: string,
+                    message: string, options: string[]): Promise<string> {
   return new Promise((resolve, reject) => {
-    dialog.showMessageBox(null, {
+    dialog.showMessageBox(window, {
       type,
       buttons: options,
       title,
@@ -92,13 +93,13 @@ function dialogProm(type: string, title: string, message: string, options: strin
 
 }
 
-function moveDownloads_0_16(store: Redux.Store<IState>): Promise<void> {
+function moveDownloads_0_16(window: BrowserWindow, store: Redux.Store<IState>): Promise<void> {
   const state = store.getState();
   log('info', 'importing downloads from pre-0.16.0 version');
-  return dialogProm('info', 'Moving Downloads',
+  return dialogProm(window, 'info', 'Moving Downloads',
                     'On the next screen, please select an empty directory where all your downloads from Vortex '
                     + '(for all games) will be placed', ['Next'])
-    .then(() => selectDirectory(state.settings.downloads.path))
+    .then(() => selectDirectory(window, state.settings.downloads.path))
     .then(downloadPath => {
       store.dispatch(setDownloadPath(downloadPath));
       return Promise.map(Object.keys(state.settings.gameMode.discovered),
@@ -113,7 +114,7 @@ function moveDownloads_0_16(store: Redux.Store<IState>): Promise<void> {
     });
 }
 
-function updateInstallPath_0_16(store: Redux.Store<IState>): Promise<void> {
+function updateInstallPath_0_16(window: BrowserWindow, store: Redux.Store<IState>): Promise<void> {
   const state = store.getState();
   const { paths } = (state.settings.mods as any);
   return Promise.map(Object.keys(paths || {}), gameId => {
@@ -151,7 +152,7 @@ const migrations: IMigration[] = [
   },
 ];
 
-function queryMigration(migration: IMigration): Promise<boolean> {
+function queryMigration(window: BrowserWindow, migration: IMigration): Promise<boolean> {
   if (!migration.doQuery) {
     return Promise.resolve(true);
   }
@@ -159,7 +160,7 @@ function queryMigration(migration: IMigration): Promise<boolean> {
     const buttons = migration.maySkip
       ? ['Cancel', 'Skip', 'Continue']
       : ['Cancel', 'Continue'];
-    dialog.showMessageBox(null, {
+    dialog.showMessageBox(window, {
       type: 'info',
       buttons,
       title: 'Migration neccessary',
@@ -174,8 +175,8 @@ function queryMigration(migration: IMigration): Promise<boolean> {
   });
 }
 
-function queryContinue(err: Error): Promise<void> {
-  return dialogProm(
+function queryContinue(window: BrowserWindow, err: Error): Promise<void> {
+  return dialogProm(window,
     'error',
     'Migration failed',
     'A migration step failed. You should quit now and resolve the cause of the issue.\n'
@@ -187,20 +188,20 @@ function queryContinue(err: Error): Promise<void> {
     : Promise.reject(err));
 }
 
-function migrate(store: Redux.Store<IState>): Promise<void> {
+function migrate(store: Redux.Store<IState>, window: BrowserWindow): Promise<void> {
   const state = store.getState();
   const oldVersion = state.app.appVersion || '0.0.0';
   const neccessaryMigrations = migrations
     .filter(mig => semver.lt(oldVersion, mig.minVersion))
     .filter(mig => state.app.migrations.indexOf(mig.id) === -1);
   return Promise.each(neccessaryMigrations, migration =>
-      queryMigration(migration)
-        .then((proceed: boolean) => proceed ? migration.apply(store) : Promise.resolve())
+      queryMigration(window, migration)
+        .then((proceed: boolean) => proceed ? migration.apply(window, store) : Promise.resolve())
         .then(() => {
           store.dispatch(completeMigration(migration.id));
           return Promise.resolve();
         })
-        .catch(err => !(err instanceof UserCanceled), (err: Error) => queryContinue(err)))
+        .catch(err => !(err instanceof UserCanceled), (err: Error) => queryContinue(window, err)))
     .then(() => null);
 }
 

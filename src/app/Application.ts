@@ -226,7 +226,7 @@ class Application {
           app.quit();
         })
         .catch(DocumentsPathMissing, () => {
-          dialog.showMessageBox(null, {
+          dialog.showMessageBox(getWindow(), {
             type: 'error',
             buttons: ['Close', 'More info'],
             defaultId: 1,
@@ -336,7 +336,7 @@ class Application {
     }
     if ((semver.major(currentVersion) < semver.major(lastVersion))
         || (semver.minor(currentVersion) < semver.minor(lastVersion))) {
-      if (dialog.showMessageBox(null, {
+      if (dialog.showMessageBox(getWindow(), {
         type: 'warning',
         title: 'Downgrade detected',
         message: 'The version of Vortex you\'re running is older than the one you previously ran. '
@@ -355,7 +355,7 @@ class Application {
       }
     } else if (semver.gt(currentVersion, lastVersion)) {
       log('info', 'Vortex was updated, checking for necessary migrations');
-      return migrate(this.mStore)
+      return migrate(this.mStore, getWindow())
         .then(() => {
           return Promise.resolve();
         })
