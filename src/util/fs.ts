@@ -203,7 +203,11 @@ function busyRetry(filePath: string): PromiseBB<boolean> {
     : PromiseBB.resolve(true);
 }
 
-function errorRepeat(error: NodeJS.ErrnoException, filePath: string, retries: number): PromiseBB<boolean> {
+function errorRepeat(error: NodeJS.ErrnoException, filePath: string, retries: number,
+                     showDialogCallback?: () => boolean): PromiseBB<boolean> {
+  if ((showDialogCallback !== undefined) && !showDialogCallback()) {
+    return PromiseBB.resolve(false);
+  }
   if ((retries > 0) && RETRY_ERRORS.has(error.code)) {
     // retry these errors without query for a few times
     return PromiseBB.delay(100).then(() => PromiseBB.resolve(true));
@@ -255,8 +259,11 @@ function restackErr(error: Error, stackErr: Error): Error {
   return error;
 }
 
-function errorHandler(error: NodeJS.ErrnoException, stackErr: Error, tries: number): PromiseBB<void> {
-  return errorRepeat(error, (error as any).dest || error.path, tries)
+function errorHandler(error: NodeJS.ErrnoException,
+                      stackErr: Error, tries: number,
+                      showDialogCallback?: () => boolean): PromiseBB<void> {
+
+  return errorRepeat(error, (error as any).dest || error.path, tries, showDialogCallback)
     .then(repeat => repeat
       ? PromiseBB.resolve()
       : PromiseBB.reject(restackErr(error, stackErr)))
@@ -364,7 +371,8 @@ function selfCopyCheck(src: string, dest: string) {
  * @param options copy options (see documentation for fs)
  */
 export function copyAsync(src: string, dest: string,
-                          options?: fs.CopyOptions & { noSelfCopy?: boolean }): PromiseBB<void> {
+                          options?: fs.CopyOptions & { noSelfCopy?: boolean,
+                          showDialogCallback?: () => boolean }): PromiseBB<void> {
   const stackErr = new Error();
   // fs.copy in fs-extra has a bug where it doesn't correctly avoid copying files onto themselves
   const check = (options !== undefined) && options.noSelfCopy
@@ -377,12 +385,14 @@ export function copyAsync(src: string, dest: string,
 
 function copyInt(
     src: string, dest: string,
-    options: fs.CopyOptions,
+    options: fs.CopyOptions & { noSelfCopy?: boolean,
+                                showDialogCallback?: () => boolean },
     stackErr: Error,
     tries: number) {
   return simfail(() => fs.copyAsync(src, dest, options))
     .catch((err: NodeJS.ErrnoException) =>
-      errorHandler(err, stackErr, tries).then(() => copyInt(src, dest, options, stackErr, tries - 1)));
+      errorHandler(err, stackErr, tries, options.showDialogCallback)
+      .then(() => copyInt(src, dest, options, stackErr, tries - 1)));
 }
 
 export function removeSync(dirPath: string) {

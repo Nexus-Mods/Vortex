@@ -116,6 +116,14 @@ export function transferPath(source: string,
   let normalize: Normalize;
   let moveDown: boolean;
 
+  let isCancelled: boolean = false;
+
+  const showDialogCallback = () => {
+    return !isCancelled;
+  };
+
+  const longestFirst = (lhs: IEntry, rhs: IEntry) => rhs.filePath.length - lhs.filePath.length;
+
   return getNormalizeFunc(dest)
     .then(norm => {
       normalize = norm;
@@ -142,7 +150,9 @@ export function transferPath(source: string,
 
       count += files.length;
 
-      copyPromise = copyPromise.then(() => Promise.map(directories, entry => {
+      copyPromise = isCancelled
+        ? Promise.resolve()
+        : copyPromise.then(() => Promise.each(directories.sort(longestFirst), entry => {
         if (moveDown && isChildPath(dest, entry.filePath)) {
           // this catches the case where we transfer .../mods to .../mods/foo/bar
           // and we come across the path .../mods/foo. Wouldn't want to try to remove
@@ -151,22 +161,27 @@ export function transferPath(source: string,
         }
         removableDirectories.push(entry.filePath);
         const destPath = path.join(dest, path.relative(source, entry.filePath));
-        return fs.mkdirsAsync(destPath);
+        return isCancelled
+          ? Promise.reject(new UserCanceled())
+          : fs.mkdirsAsync(destPath);
       })
         .then(() => null))
         .then(() => Promise.map(files, entry => {
           const sourcePath = entry.filePath;
           const destPath = path.join(dest, path.relative(source, entry.filePath));
 
-          return func(sourcePath, destPath)
-            .catch(UserCanceled, () => copyPromise.cancel())
+          return func(sourcePath, destPath, { showDialogCallback })
+            .catch(UserCanceled, () => {
+              isCancelled = true;
+              copyPromise = Promise.resolve();
+            })
             .catch(err => {
               // EXDEV implies we tried to rename when source and destination are
               // not in fact on the same volume. This is what comparing the stat.dev
               // was supposed to prevent.
               if (err.code === 'EXDEV') {
                 func = fs.copyAsync;
-                return func(sourcePath, destPath);
+                return func(sourcePath, destPath, { showDialogCallback });
               } else if (err.code === 'ENOENT') {
                 return Promise.resolve();
               } else {
@@ -192,20 +207,26 @@ export function transferPath(source: string,
     .then(() => copyPromise.then(() => (exception !== undefined)
       ? Promise.reject(exception)
       : Promise.resolve()))
-    .then(() => moveDown
-      ? removeStagingTag(source).then(() => removeEmptyDirectories(removableDirectories))
-      : fs.removeAsync(source))
-    .catch(err => {
-      if (['ENOENT', 'EPERM'].indexOf(err.code) !== -1) {
-        // We shouldn't report failure just because we encountered
-        //  a permissions issue or a missing folder.
-        //  this is a very ugly workaround to the permissions issue
-        //  we sometimes encounter due to file handles not being released.
-        log('warn', 'Failed to remove source directory', err);
-        return Promise.resolve();
-      } else {
-        return Promise.reject(err);
-      }
+    .then(() => {
+      const cleanUp = () => {
+        return (moveDown)
+          ? removeStagingTag(source).then(() => removeEmptyDirectories(removableDirectories))
+          : fs.removeAsync(source);
+      };
+
+      return cleanUp()
+        .catch(err => {
+          if (['ENOENT', 'EPERM'].indexOf(err.code) !== -1) {
+            // We shouldn't report failure just because we encountered
+            //  a permissions issue or a missing folder during cleanup.
+            //  this is a very ugly workaround to the permissions issue
+            //  we sometimes encounter due to file handles not being released.
+            log('warn', 'Failed to remove source directory', err);
+            return Promise.resolve();
+          } else {
+            return Promise.reject(err);
+          }
+        });
     });
 }
 
