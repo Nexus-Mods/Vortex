@@ -72,7 +72,10 @@ class ProgressBar extends React.PureComponent<IBaseProps, IProgressBarState> {
   }
 
   private renderPercentage(percent: number): JSX.Element {
-    return <div className='progressbar-percentage'>{percent}%</div>;
+    const percString = ((percent < 0) || (percent > 100))
+      ? '???'
+      : `${percent}`;
+    return <div className='progressbar-percentage'>{percString}%</div>;
   }
 
   private renderTimeLeft(percent: number): JSX.Element {
@@ -83,10 +86,13 @@ class ProgressBar extends React.PureComponent<IBaseProps, IProgressBarState> {
     }
 
     const expected = elapsed / (percent / 100);
+    const timeString = (elapsed < expected)
+      ? timeToString((expected - elapsed) / 1000)
+      : '???';
 
     return (
       <div className='progressbar-timeleft'>
-        {timeToString((expected - elapsed) / 1000)}
+        {timeString}
       </div>
     );
   }

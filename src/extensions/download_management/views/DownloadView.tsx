@@ -198,7 +198,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
                   />
                 </PanelX>
               )}
-            <PanelX.Body>
+              <PanelX.Body>
                 <FlexLayout type='column'>
                   <FlexLayout.Flex>
                     <SuperTable
@@ -207,7 +207,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
                       staticElements={this.mColumns}
                       actions={this.actions}
                     />
-                      </FlexLayout.Flex>
+                  </FlexLayout.Flex>
                   <FlexLayout.Fixed style={{ textAlign: 'center' }}>
                     <Button bsStyle='ghost' onClick={this.toggleViewAll} >
                       {viewAll ? t('View not-yet-installed Downloads') : t('View All Downloads')}

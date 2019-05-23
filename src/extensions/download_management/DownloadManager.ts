@@ -318,7 +318,6 @@ class DownloadWorker {
       } else {
         log('debug', 'download doesn\'t support partial requests');
         this.mJob.offset = 0;
-        size = -1;
       }
       if (size < this.mJob.size + this.mJob.offset) {
         // on the first request it's possible we requested more than the file size if
