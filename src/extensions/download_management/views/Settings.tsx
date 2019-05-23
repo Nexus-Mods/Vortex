@@ -335,7 +335,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           if (fileCount > 0) {
             this.props.onShowDialog('info', 'Invalid Destination', {
               text: 'The destination folder has to be empty',
-            }, [{ label: 'Ok', action: () => reject(null) }]);
+            }, [{ label: 'Ok', action: () => reject(null), default: true }]);
           } else {
             resolve();
           }

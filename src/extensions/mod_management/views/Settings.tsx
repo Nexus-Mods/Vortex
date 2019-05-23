@@ -345,7 +345,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
          if (fileCount > 0) {
             this.props.onShowDialog('info', 'Invalid Destination', {
               text: 'The destination folder has to be empty',
-            }, [{ label: 'Ok', action: () => reject(null) }]);
+            }, [{ label: 'Ok', action: () => reject(null), default: true }]);
           } else {
             resolve();
           }
@@ -479,7 +479,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           text: 'Previous deployment couldn\'t be cleaned up because the deployment method is no '
               + 'longer available (maybe you removed the corresponding extension?). '
               + 'If you continue now you may get orphaned files that Vortex can no longer clean up '
-              + 'for you.\n'
+              + 'for you.\n',
         }, [
           { label: 'Cancel' },
           { label: 'Continue' },
@@ -504,7 +504,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           // unresolved windows error code
           onShowError('Failed to purge previous deployment', {
             error: err,
-            ErrorCode: err.errno
+            ErrorCode: err.errno,
           }, true);
         } else {
           onShowError('Failed to purge previous deployment', err, err.code !== 'ENOTFOUND');
