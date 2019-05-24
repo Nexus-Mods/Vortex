@@ -31,9 +31,6 @@ const dialog = remote !== undefined ? remote.dialog : dialogIn;
 
 export { constants, FSWatcher, Stats, WriteStream } from 'fs';
 
-// Re-export interfaces.
-export { CopyOptions } from 'fs-extra-promise';
-
 // simple re-export of functions we don't touch (yet)
 export {
   accessSync,
@@ -50,6 +47,12 @@ export {
   writeFileSync,
   writeSync,
 } from 'fs-extra-promise';
+
+export interface ILinkFileOptions {
+  // Used to dictate whether error dialogs should
+  //  be displayed upon error repeat.
+  showDialogCallback?: () => boolean;
+}
 
 const NUM_RETRIES = 5;
 const RETRY_DELAY_MS = 100;
@@ -398,20 +401,20 @@ function copyInt(
 
 export function linkAsync(
     src: string, dest: string,
-    showDialogCallback?: () => boolean): PromiseBB<void> {
+    options?: ILinkFileOptions): PromiseBB<void> {
   const stackErr = new Error();
-  return linkInt(src, dest, stackErr, NUM_RETRIES, showDialogCallback || undefined)
+  return linkInt(src, dest, stackErr, NUM_RETRIES, options || undefined)
     .catch(err => PromiseBB.reject(restackErr(err, stackErr)));
 }
 
 function linkInt(
     src: string, dest: string,
     stackErr: Error, tries: number,
-    showDialogCallback?: () => boolean): PromiseBB<void> {
+    options?: ILinkFileOptions): PromiseBB<void> {
   return simfail(() => fs.linkAsync(src, dest))
     .catch((err: NodeJS.ErrnoException) =>
-      errorHandler(err, stackErr, tries, showDialogCallback || undefined)
-        .then(() => linkInt(src, dest, stackErr, tries - 1, showDialogCallback || undefined)));
+      errorHandler(err, stackErr, tries, options.showDialogCallback || undefined)
+        .then(() => linkInt(src, dest, stackErr, tries - 1, options || undefined)));
 }
 
 export function removeSync(dirPath: string) {
