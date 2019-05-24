@@ -269,7 +269,7 @@ function linkFile(
     options?: fs.CopyOptions & { showDialogCallback?: () => boolean }): Promise<void> {
   return fs.ensureDirAsync(path.dirname(dest))
     .then(() => {
-      return fs.linkAsync(source, dest, options)
+      return fs.linkAsync(source, dest, options.showDialogCallback)
         .catch(err => (err.code !== 'EEXIST')
           ? Promise.reject(err)
           : Promise.resolve());

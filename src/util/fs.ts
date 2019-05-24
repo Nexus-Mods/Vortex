@@ -398,20 +398,20 @@ function copyInt(
 
 export function linkAsync(
     src: string, dest: string,
-    options?: fs.CopyOptions & { showDialogCallback?: () => boolean }): PromiseBB<void> {
+    showDialogCallback?: () => boolean): PromiseBB<void> {
   const stackErr = new Error();
-  return linkInt(src, dest, options || undefined, stackErr, NUM_RETRIES)
+  return linkInt(src, dest, stackErr, NUM_RETRIES, showDialogCallback || undefined)
     .catch(err => PromiseBB.reject(restackErr(err, stackErr)));
 }
 
 function linkInt(
     src: string, dest: string,
-    options: fs.CopyOptions & { showDialogCallback?: () => boolean },
-    stackErr: Error, tries: number): PromiseBB<void> {
+    stackErr: Error, tries: number,
+    showDialogCallback?: () => boolean): PromiseBB<void> {
   return simfail(() => fs.linkAsync(src, dest))
     .catch((err: NodeJS.ErrnoException) =>
-      errorHandler(err, stackErr, tries, options.showDialogCallback)
-        .then(() => linkInt(src, dest, options, stackErr, tries - 1)));
+      errorHandler(err, stackErr, tries, showDialogCallback || undefined)
+        .then(() => linkInt(src, dest, stackErr, tries - 1, showDialogCallback || undefined)));
 }
 
 export function removeSync(dirPath: string) {
