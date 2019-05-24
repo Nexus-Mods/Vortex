@@ -264,10 +264,12 @@ function removeEmptyDirectories(directories: string[]): Promise<void> {
     })).then(() => null);
 }
 
-function linkFile(source: string, dest: string): Promise<void> {
+function linkFile(
+    source: string, dest: string,
+    options?: fs.CopyOptions & { showDialogCallback?: () => boolean }): Promise<void> {
   return fs.ensureDirAsync(path.dirname(dest))
     .then(() => {
-      return fs.linkAsync(source, dest)
+      return fs.linkAsync(source, dest, options)
         .catch(err => (err.code !== 'EEXIST')
           ? Promise.reject(err)
           : Promise.resolve());

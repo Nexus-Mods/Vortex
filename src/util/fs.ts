@@ -31,6 +31,9 @@ const dialog = remote !== undefined ? remote.dialog : dialogIn;
 
 export { constants, FSWatcher, Stats, WriteStream } from 'fs';
 
+// Re-export interfaces.
+export { CopyOptions } from 'fs-extra-promise';
+
 // simple re-export of functions we don't touch (yet)
 export {
   accessSync,
@@ -287,7 +290,6 @@ function genWrapperAsync<T extends (...args) => any>(func: T): T {
 const chmodAsync = genWrapperAsync(fs.chmodAsync);
 const closeAsync = genWrapperAsync(fs.closeAsync);
 const fsyncAsync = genWrapperAsync(fs.fsyncAsync);
-const linkAsync = genWrapperAsync(fs.linkAsync);
 const lstatAsync = genWrapperAsync(fs.lstatAsync);
 const mkdirAsync = genWrapperAsync(fs.mkdirAsync);
 const mkdirsAsync = genWrapperAsync(fs.mkdirsAsync);
@@ -307,7 +309,6 @@ export {
   chmodAsync,
   closeAsync,
   fsyncAsync,
-  linkAsync,
   lstatAsync,
   mkdirAsync,
   mkdirsAsync,
@@ -393,6 +394,24 @@ function copyInt(
     .catch((err: NodeJS.ErrnoException) =>
       errorHandler(err, stackErr, tries, options.showDialogCallback)
       .then(() => copyInt(src, dest, options, stackErr, tries - 1)));
+}
+
+export function linkAsync(
+    src: string, dest: string,
+    options?: fs.CopyOptions & { showDialogCallback?: () => boolean }): PromiseBB<void> {
+  const stackErr = new Error();
+  return linkInt(src, dest, options || undefined, stackErr, NUM_RETRIES)
+    .catch(err => PromiseBB.reject(restackErr(err, stackErr)));
+}
+
+function linkInt(
+    src: string, dest: string,
+    options: fs.CopyOptions & { showDialogCallback?: () => boolean },
+    stackErr: Error, tries: number): PromiseBB<void> {
+  return simfail(() => fs.linkAsync(src, dest))
+    .catch((err: NodeJS.ErrnoException) =>
+      errorHandler(err, stackErr, tries, options.showDialogCallback)
+        .then(() => linkInt(src, dest, options, stackErr, tries - 1)));
 }
 
 export function removeSync(dirPath: string) {
