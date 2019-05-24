@@ -280,9 +280,7 @@ function genWrapperAsync<T extends (...args) => any>(func: T): T {
   const wrapper = (stackErr: Error, tries: number, ...args) =>
     simfail(() => func(...args))
       .catch(err => errorHandler(err, stackErr, tries)
-        .then(() => {
-          return wrapper(stackErr, tries - 1, ...args);
-        }));
+        .then(() => wrapper(stackErr, tries - 1, ...args)));
 
   const res = (...args) => {
     return wrapper(new Error(), NUM_RETRIES, ...args);
