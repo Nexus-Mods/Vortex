@@ -1145,22 +1145,29 @@ class ExtensionManager {
     });
   }
 
-  private emitAndAwait = (event: string, ...args: any[]): Promise<void> => {
+  private emitAndAwait = (event: string, ...args: any[]): Promise<any> => {
     let queue = Promise.resolve();
-    const enqueue = (prom: Promise<void>) => {
+    let results: any[] = [];
+    const enqueue = (prom: Promise<any>) => {
       if (prom !== undefined) {
-        queue = queue.then(() => prom.catch(err => {
-          this.mApi.showErrorNotification(`Unhandled error in event "${event}"`, err);
-        }));
+        queue = queue.then(() => prom
+          .then(res => {
+            if ((res !== undefined) && (res !== null)) {
+              results.push(res);
+            }
+          })
+          .catch(err => {
+            this.mApi.showErrorNotification(`Unhandled error in event "${event}"`, err);
+          }));
       }
     }
 
     this.mEventEmitter.emit(event, ...args, enqueue);
 
-    return queue;
+    return queue.then(() => results);
   }
 
-  private onAsync = (event: string, listener: (...args) => Promise<void>) => {
+  private onAsync = (event: string, listener: (...args) => Promise<any>) => {
     this.mEventEmitter.on(event, (...args: any[]) => {
       const enqueue = args.pop();
       if ((enqueue === undefined) || (typeof(enqueue) !== 'function')) {
@@ -1171,7 +1178,6 @@ class ExtensionManager {
         }
         // call the listener anyway
         listener(...args)
-          .then(() => null)
           .catch(err => {
             this.mApi.showErrorNotification(`Failed to call event ${event}`, err);
           });

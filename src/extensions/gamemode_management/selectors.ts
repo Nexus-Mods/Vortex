@@ -44,6 +44,9 @@ export const discoveryByGame =
   )((state, gameId) => gameId);
 
 export function gameName(state: any, gameId: string): string {
+  if (gameId === 'site') {
+    return 'Tools & Extensions';
+  }
   const fromDiscovery = getSafe(
       state, ['settings', 'gameMode', 'discovered', gameId, 'name'], undefined);
   if (fromDiscovery !== undefined) {
