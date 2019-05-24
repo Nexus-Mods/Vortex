@@ -453,7 +453,7 @@ class DownloadManager {
               speedCB: (speed: number) => void, userAgent: string,
               protocolHandlers: IProtocolHandlers) {
     // hard coded chunk size but I doubt this needs to be customized by the user
-    this.mMinChunkSize = 1024 * 1024;
+    this.mMinChunkSize = 20 * 1024 * 1024;
     this.mDownloadPath = downloadPath;
     this.mMaxWorkers = maxWorkers;
     this.mMaxChunks = maxChunks;
