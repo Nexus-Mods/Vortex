@@ -297,8 +297,8 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
     if (
       ((this.props.installerState === undefined) && (nextProps.installerState !== undefined))
       || ((this.props.installerState !== undefined)
-        && ((this.props.installerInfo !== nextProps.installerInfo)
-          || (this.props.installerState.currentStep !== nextProps.installerState.currentStep)))) {
+          && ((this.props.installerInfo !== nextProps.installerInfo)
+            || (this.props.installerState.currentStep !== nextProps.installerState.currentStep)))) {
       this.setState(this.initDescription(nextProps));
     }
   }
