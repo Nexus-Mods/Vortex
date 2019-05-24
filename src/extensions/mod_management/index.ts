@@ -715,8 +715,6 @@ function cleanupIncompleteInstalls(api: IExtensionApi) {
   });
 }
 
-let blockDeploy: Promise<void> = Promise.resolve();
-
 function onModsEnabled(api: IExtensionApi, deploymentTimer: Debouncer) {
   return (mods: string[], enabled: boolean, gameId: string) => {
     const { store } = api;
@@ -836,11 +834,8 @@ function once(api: IExtensionApi) {
 
   const updateModDeployment = genUpdateModDeployment();
   const deploymentTimer = new Debouncer(
-      (manual: boolean, profileId: string, progressCB) => {
-        blockDeploy = blockDeploy
-          .then(() => updateModDeployment(api, manual, profileId, progressCB));
-        return blockDeploy;
-      }, 2000);
+      (manual: boolean, profileId: string, progressCB) =>
+        updateModDeployment(api, manual, profileId, progressCB), 2000);
 
   api.events.on('deploy-mods', (callback: (err: Error) => void, profileId?: string,
                                 progressCB?: (text: string, percent: number) => void) => {
@@ -852,12 +847,12 @@ function once(api: IExtensionApi) {
   api.onAsync('deploy-single-mod', onDeploySingleMod(api));
 
   api.events.on('purge-mods', (allowFallback: boolean, callback: (err: Error) => void) => {
-    blockDeploy = blockDeploy.then(() => purgeMods(api)
+    purgeMods(api)
       .catch(err => allowFallback
         ? fallbackPurge(api)
         : Promise.reject(err))
       .then(() => callback(null))
-      .catch(err => callback(err)));
+      .catch(err => callback(err));
   });
 
   api.events.on('await-activation', (callback: (err: Error) => void) => {
