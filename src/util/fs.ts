@@ -211,12 +211,12 @@ function busyRetry(filePath: string): PromiseBB<boolean> {
 
 function errorRepeat(error: NodeJS.ErrnoException, filePath: string, retries: number,
                      showDialogCallback?: () => boolean): PromiseBB<boolean> {
-  if ((showDialogCallback !== undefined) && !showDialogCallback()) {
-    return PromiseBB.resolve(false);
-  }
   if ((retries > 0) && RETRY_ERRORS.has(error.code)) {
     // retry these errors without query for a few times
     return PromiseBB.delay(100).then(() => PromiseBB.resolve(true));
+  }
+  if ((showDialogCallback !== undefined) && !showDialogCallback()) {
+    return PromiseBB.resolve(false);
   }
   if (error.code === 'EBUSY') {
     return busyRetry(filePath);
