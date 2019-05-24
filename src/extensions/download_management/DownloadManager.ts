@@ -305,8 +305,10 @@ class DownloadWorker {
       return;
     }
 
+    const chunkable = 'content-disposition' in response.headers;
+
     log('debug', 'retrieving range',
-        { id: this.mJob.workerId, range: response.headers['content-range'] });
+        { id: this.mJob.workerId, range: response.headers['content-range'] || 'full' });
     if (this.mJob.responseCB !== undefined) {
       let size: number = parseInt(response.headers['content-length'] as string, 10);
       if ('content-range' in response.headers) {
@@ -326,7 +328,7 @@ class DownloadWorker {
       }
 
       let fileName;
-      if ('content-disposition' in response.headers) {
+      if (chunkable) {
         let cd: string = response.headers['content-disposition'] as string;
         // the content-disposition library can't deal with trailing semi-colon so
         // we have to remove it before parsing
@@ -340,7 +342,7 @@ class DownloadWorker {
         }
         log('debug', 'got file name', fileName);
       }
-      this.mJob.responseCB(size, fileName);
+      this.mJob.responseCB(size, fileName, chunkable);
     }
   }
 
@@ -703,8 +705,8 @@ class DownloadManager {
       received: 0,
       size: this.mMinChunkSize,
       errorCB: (err) => { this.cancelDownload(download, err); },
-      responseCB: (size: number, fileName: string) =>
-        this.updateDownload(download, size, fileName || fileNameFromURL),
+      responseCB: (size: number, fileName: string, chunkable) =>
+        this.updateDownload(download, size, fileName || fileNameFromURL, chunkable),
     };
   }
 
@@ -836,7 +838,7 @@ class DownloadManager {
     };
   }
 
-  private updateDownload(download: IRunningDownload, size: number, fileName?: string) {
+  private updateDownload(download: IRunningDownload, size: number, fileName: string, chunkable: boolean) {
     if ((fileName !== undefined) && (fileName !== download.origName)) {
       const newName = this.unusedName(path.dirname(download.tempName), fileName);
       download.finalName = newName;
@@ -856,17 +858,18 @@ class DownloadManager {
       download.assembler.setTotalSize(size);
     }
 
-    const remainingSize = size - this.mMinChunkSize;
-
     if (download.chunks.length > 1) {
       return;
     }
 
-    const maxChunks = Math.min(this.mMaxChunks, this.mMaxWorkers);
-
-    if (size > this.mMinChunkSize) {
+    if ((size > this.mMinChunkSize) && chunkable) {
       // download the file in chunks. We use a fixed number of variable size chunks.
       // Since the download link may expire we need to start all threads asap
+
+      const remainingSize = size - this.mMinChunkSize;
+
+      const maxChunks = Math.min(this.mMaxChunks, this.mMaxWorkers);
+
       const chunkSize = Math.min(remainingSize,
           Math.max(this.mMinChunkSize, Math.ceil(remainingSize / maxChunks)));
 
@@ -885,7 +888,7 @@ class DownloadManager {
         { size: chunkSize, count: download.chunks.length, max: maxChunks, total: size });
       this.tickQueue();
     } else {
-      log('debug', 'file is too small to be chunked',
+      log('debug', 'download not chunked (no server support or it\'s too small)',
         { name: download.finalName, size });
     }
   }
@@ -913,13 +916,13 @@ class DownloadManager {
       state: 'init',
       size: chunk.size,
       received: chunk.received,
-      responseCB: !first ? undefined : (size: number, fileName: string) =>
-        this.updateDownload(download, size, fileName || fileNameFromURL),
+      responseCB: !first ? undefined : (size: number, fileName: string, chunkable: boolean) =>
+        this.updateDownload(download, size, fileName || fileNameFromURL, chunkable),
     };
     if (download.size === undefined) {
       // if the size isn't known yet, use the first job response to update it
-      job.responseCB = (size: number, fileName: string) =>
-        this.updateDownload(download, size, fileName);
+      job.responseCB = (size: number, fileName: string, chunkable: boolean) =>
+        this.updateDownload(download, size, fileName, chunkable);
     }
     return job;
   }

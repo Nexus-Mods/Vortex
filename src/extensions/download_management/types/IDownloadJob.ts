@@ -8,5 +8,5 @@ export interface IDownloadJob extends IChunk {
   dataCB?: (offset: number, data) => Promise<boolean>;
   completionCB?: () => void;
   errorCB?: (err) => void;
-  responseCB?: (size: number, fileName: string) => void;
+  responseCB?: (size: number, fileName: string, chunkable: boolean) => void;
 }
