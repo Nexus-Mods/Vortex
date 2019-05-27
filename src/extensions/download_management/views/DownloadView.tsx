@@ -49,6 +49,7 @@ interface IConnectedProps {
   gameMode: string;
   knownGames: IGameStored[];
   downloadPath: string;
+  downloadPathForGame: (gameId: string) => string;
   showDropzone: boolean;
   showGraph: boolean;
 }
@@ -398,10 +399,16 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
   }
 
   private open = (downloadId: string) => {
-    const { downloadPath, downloads } = this.props;
+    const { downloadPathForGame, downloads } = this.props;
     const download: IDownload = downloads[downloadId];
     if ((download !== undefined) && (download.localPath !== undefined)) {
-      opn(path.join(downloadPath, download.localPath)).catch(() => null);
+      const downloadGame = Array.isArray(download.game)
+        ? download.game[0]
+        : download.game;
+      opn(path.join(downloadPathForGame(downloadGame), download.localPath))
+        .catch(err => {
+          this.props.onShowError('Failed to open archive', err, undefined, false);
+        });
     }
   }
 
@@ -484,6 +491,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     knownGames: state.session.gameMode.known,
     downloads: state.persistent.downloads.files,
     downloadPath: selectors.downloadPath(state),
+    downloadPathForGame: (game: string) => selectors.downloadPathForGame(state, game),
     showDropzone: state.settings.downloads.showDropzone,
     showGraph: state.settings.downloads.showGraph,
   };
