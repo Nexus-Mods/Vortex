@@ -305,13 +305,13 @@ class DownloadWorker {
       return;
     }
 
-    const chunkable = 'content-disposition' in response.headers;
+    const chunkable = 'content-range' in response.headers;
 
     log('debug', 'retrieving range',
         { id: this.mJob.workerId, range: response.headers['content-range'] || 'full' });
     if (this.mJob.responseCB !== undefined) {
       let size: number = parseInt(response.headers['content-length'] as string, 10);
-      if ('content-range' in response.headers) {
+      if (chunkable) {
         const rangeExp: RegExp = /bytes (\d)*-(\d*)\/(\d*)/i;
         const sizeMatch: string[] = (response.headers['content-range'] as string).match(rangeExp);
         if (sizeMatch.length > 1) {
@@ -323,12 +323,12 @@ class DownloadWorker {
       }
       if (size < this.mJob.size + this.mJob.offset) {
         // on the first request it's possible we requested more than the file size if
-        // the file is smaller than 1MB. offset should always be 0 here
+        // the file is smaller than the minimum size for chunking. offset should always be 0 here
         this.mJob.size = size - this.mJob.offset;
       }
 
       let fileName;
-      if (chunkable) {
+      if ('content-disposition' in response.headers) {
         let cd: string = response.headers['content-disposition'] as string;
         // the content-disposition library can't deal with trailing semi-colon so
         // we have to remove it before parsing
