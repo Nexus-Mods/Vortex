@@ -12,6 +12,7 @@ import { ITableAttribute } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { ProcessCanceled, UserCanceled } from '../../../util/CustomErrors';
 import { showError } from '../../../util/message';
+import opn from '../../../util/opn';
 import * as selectors from '../../../util/selectors';
 import { truthy } from '../../../util/util';
 import MainPage from '../../../views/MainPage';
@@ -29,6 +30,7 @@ import DownloadGraph from './DownloadGraph';
 
 import * as Promise from 'bluebird';
 import I18next from 'i18next';
+import * as path from 'path';
 import * as React from 'react';
 import { Button, Panel } from 'react-bootstrap';
 import * as Redux from 'redux';
@@ -127,6 +129,13 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
         action: this.remove,
         condition: this.cancelable,
       },
+      {
+        icon: 'open-ext',
+        title: 'Open',
+        action: this.open,
+        condition: this.installable,
+        singleRowAction: true,
+      }
     ];
   }
 
@@ -386,6 +395,14 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
   private installable = (downloadIds: string[]) => {
     return downloadIds.find(
       (id: string) => this.getDownload(id).state === 'finished') !== undefined;
+  }
+
+  private open = (downloadId: string) => {
+    const { downloadPath, downloads } = this.props;
+    const download: IDownload = downloads[downloadId];
+    if ((download !== undefined) && (download.localPath !== undefined)) {
+      opn(path.join(downloadPath, download.localPath)).catch(() => null);
+    }
   }
 
   private inspect = (downloadId: string) => {
