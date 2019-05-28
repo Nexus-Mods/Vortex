@@ -1,3 +1,5 @@
+import { log } from '../util/log';
+
 import * as _ from 'lodash';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
@@ -50,7 +52,12 @@ class VisibilityProxy extends React.PureComponent<any, {}> {
 
   private static unobserve(container: HTMLElement, target: HTMLElement) {
     VisibilityProxy.sInstances.delete(target);
-    VisibilityProxy.getObserver(container).unobserve(target);
+    try {
+      VisibilityProxy.getObserver(container).unobserve(target);
+    } catch (err) {
+      // not really critical, just not great for performance
+      log('warn', 'Failed to unobserve', { err: err.message, id: target.id });
+    }
   }
 
   private mLastVisible: boolean = false;
