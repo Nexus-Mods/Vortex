@@ -369,7 +369,7 @@ export function toError(input: any, title?: string, options?: IErrorOptions): IE
       // Otherwise, who knows what this is, just send everything.
       if (attributes.length === 0) {
         attributes = getAllPropertyNames(input || {})
-          .filter(key => ['message', 'error', 'stack'].indexOf(key) === -1);
+          .filter(key => ['message', 'error', 'stack', 'context'].indexOf(key) === -1);
       }
 
       const details = attributes.length === 0 ? undefined : attributes

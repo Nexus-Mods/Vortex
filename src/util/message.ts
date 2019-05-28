@@ -381,7 +381,7 @@ function renderCustomError(err: any) {
       .filter(key => key[0].toUpperCase() === key[0]);
   if (attributes.length === 0) {
     attributes = Object.keys(err || {})
-      .filter(key => ['message', 'error'].indexOf(key) === -1);
+      .filter(key => ['message', 'error', 'context'].indexOf(key) === -1);
   }
   if (attributes.length > 0) {
     const old = res.message;
