@@ -305,7 +305,7 @@ export function prettifyNodeErrorMessage(err: any): IPrettifiedError {
       message: 'Network connection closed unexpectedly.',
       allowReport: false,
     };
-  } else if (err.code === 'ETIMEDOUT') {
+  } else if (['ETIMEDOUT', 'ESOCKETTIMEDOUT'].indexOf(err.code) !== -1) {
     return {
       message: 'Network connection to "{{address}}" timed out, please try again.',
       replace: { address: err.address },
