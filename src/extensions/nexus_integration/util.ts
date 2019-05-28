@@ -494,10 +494,13 @@ export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promis
     // don't stop the login just because the github rate limit is exceeded
     .catch(RateLimitExceeded, () => Promise.resolve())
     .catch(TimeoutError, () => {
-      showError(api.store.dispatch,
-        'API Key validation timed out',
-        'Server didn\'t respond to validation request, web-based '
-        + 'features will be unavailable', { allowReport: false });
+      api.sendNotification({
+        type: 'error',
+        message: 'API Key validation timed out',
+        actions: [
+          { title: 'Retry', action: dismiss => { updateKey(api, nexus, key); dismiss(); } },
+        ],
+      });
       api.store.dispatch(setUserInfo(undefined));
     })
     .catch(NexusError, err => {
