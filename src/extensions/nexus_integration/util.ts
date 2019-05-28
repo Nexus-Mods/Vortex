@@ -8,7 +8,7 @@ import * as semver from 'semver';
 import * as util from 'util';
 import { setModAttribute, addNotification, dismissNotification } from '../../actions';
 import { IExtensionApi, IMod, IState, ThunkStore } from '../../types/api';
-import { UserCanceled } from '../../util/CustomErrors';
+import { UserCanceled, ProcessCanceled } from '../../util/CustomErrors';
 import { setApiKey, contextify } from '../../util/errorHandling';
 import github, { RateLimitExceeded } from '../../util/github';
 import { log } from '../../util/log';
@@ -133,6 +133,11 @@ export function startDownload(api: IExtensionApi, nexus: Nexus, nxmurl: string):
                   { allowReport });
       } else if (err instanceof TimeoutError) {
         api.showErrorNotification('Download failed', err, { allowReport: false });
+      } else if (err instanceof ProcessCanceled) {
+        api.showErrorNotification('Download failed', {
+          error: err,
+          message: 'This may be a temporary issue, please try again later',
+        }, { allowReport: false });
       } else if (err instanceof UserCanceled) {
         // nop
       } else {

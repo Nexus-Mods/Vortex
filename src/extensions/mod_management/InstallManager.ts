@@ -213,7 +213,7 @@ class InstallManager {
           ? this.findPreviousVersionMod(modInfo.fileId, api.store, installGameId)
           : undefined;
 
-        if (oldMod !== undefined) {
+        if ((oldMod !== undefined) && (currentProfile !== undefined)) {
           const wasEnabled = getSafe(currentProfile.modState, [oldMod.id, 'enabled'], false);
           return this.userVersionChoice(oldMod, api.store)
             .then((action: string) => {
@@ -284,18 +284,20 @@ class InstallManager {
           api.store.dispatch(addModRule(installGameId, modId, rule));
         });
         api.store.dispatch(setFileOverride(installGameId, modId, overrides));
-        if (enable) {
-          api.store.dispatch(setModEnabled(currentProfile.id, modId, true));
-          api.events.emit('mods-enabled', [modId], true, currentProfile.gameId);
-        }
-        if (processDependencies) {
-          log('info', 'process dependencies', { modId });
-          const state: IState = api.store.getState();
-          const mod: IMod = getSafe(state, ['persistent', 'mods', installGameId, modId], undefined);
+        if (currentProfile !== undefined) {
+          if (enable) {
+            api.store.dispatch(setModEnabled(currentProfile.id, modId, true));
+            api.events.emit('mods-enabled', [modId], true, currentProfile.gameId);
+          }
+          if (processDependencies) {
+            log('info', 'process dependencies', { modId });
+            const state: IState = api.store.getState();
+            const mod: IMod = getSafe(state, ['persistent', 'mods', installGameId, modId], undefined);
 
-          this.installDependencies([].concat(modInfo.rules || [], mod.rules || []),
-                                   this.mGetInstallPath(installGameId),
-                                   currentProfile, installContext, api);
+            this.installDependencies([].concat(modInfo.rules || [], mod.rules || []),
+                                     this.mGetInstallPath(installGameId),
+                                     currentProfile, installContext, api);
+          }
         }
         if (callback !== undefined) {
           callback(null, modId);
