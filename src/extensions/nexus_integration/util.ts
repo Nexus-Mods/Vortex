@@ -131,6 +131,8 @@ export function startDownload(api: IExtensionApi, nexus: Nexus, nxmurl: string):
         }
         showError(api.store.dispatch, 'Download failed', detail,
                   { allowReport });
+      } else if (err instanceof TimeoutError) {
+        api.showErrorNotification('Download failed', err, { allowReport: false });
       } else if (err instanceof UserCanceled) {
         // nop
       } else {
