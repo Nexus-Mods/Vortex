@@ -421,16 +421,19 @@ function testDownloadPath(api: IExtensionApi): Promise<void> {
   return ensureDownloadsDirectory()
     .catch(UserCanceled, () => Promise.resolve())
     .catch(err => {
-      const allowReport = ['EPERM'].indexOf(err.code) === -1;
       const errTitle = (err.code === 'EPERM')
         ? 'Insufficient permissions'
         : 'Downloads folder error';
 
-      api.showErrorNotification(errTitle, err.message, { allowReport });
-
-      // We resolve instead of quitting the app to allow the user to attempt
-      //  to fix this issue manually.
-      return Promise.resolve();
+      return new Promise<void>((resolve) => {
+        api.showDialog('error', errTitle, {
+          text: 'Unable to finalize downloads folder creation/transfer. Please ensure your OS '
+              + 'account has full read/write permissions for the target destination and try again. '
+              + 'An exception should be added to Anti-Virus apps for Vortex. (where applicable)',
+          message: err.message,
+        }, [{ label: 'Retry', action: () => resolve() }]);
+      })
+      .then(() => testDownloadPath(api));
     });
 }
 
