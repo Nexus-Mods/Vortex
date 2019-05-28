@@ -1,3 +1,4 @@
+import { UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import {log} from '../../util/log';
 import {copyFileAtomic} from '../../util/fsAtomic';
@@ -14,14 +15,17 @@ export function syncToProfile(
       Promise.map(sourceFiles, (filePath: string) => {
         const destPath = path.join(profilePath, path.basename(filePath));
         return copyFileAtomic(filePath, destPath)
-        .catch(err => {
-          log('warn', 'failed to copy to profile', { filePath, destPath });
-          if (err.code !== 'EBADF') {
-            // EBADF would indicate the file doesn't exist, which isn't a problem,
-            // it's as if the file was empty
-            onError('failed to sync to profile: ' + filePath, err);
-          }
-        });
+          .catch(UserCanceled, () => {
+            log('warn', 'user canceled profile sync. That\'s not great...');
+          })
+          .catch(err => {
+            log('warn', 'failed to copy to profile', { filePath, destPath });
+            if (err.code !== 'EBADF') {
+              // EBADF would indicate the file doesn't exist, which isn't a problem,
+              // it's as if the file was empty
+              onError('failed to sync to profile: ' + filePath, err);
+            }
+          });
       }))
     .then(() => {
       log('debug', 'sync to profile complete');
@@ -36,6 +40,9 @@ export function syncFromProfile(
   return Promise.map(sourceFiles, (filePath: string) => {
     const srcPath = path.join(profilePath, path.basename(filePath));
     return copyFileAtomic(srcPath, filePath)
+    .catch(UserCanceled, () => {
+      log('warn', 'user canceled profile sync. That\'s not great...');
+    })
     .catch(err => {
       if (err.code === 'EPERM') {
         onError('failed to sync from profile',

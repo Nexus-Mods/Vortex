@@ -8,6 +8,7 @@ import * as semver from 'semver';
 import * as util from 'util';
 import { setModAttribute, addNotification, dismissNotification } from '../../actions';
 import { IExtensionApi, IMod, IState, ThunkStore } from '../../types/api';
+import { UserCanceled } from '../../util/CustomErrors';
 import { setApiKey, contextify } from '../../util/errorHandling';
 import github, { RateLimitExceeded } from '../../util/github';
 import { log } from '../../util/log';
@@ -130,6 +131,8 @@ export function startDownload(api: IExtensionApi, nexus: Nexus, nxmurl: string):
         }
         showError(api.store.dispatch, 'Download failed', detail,
                   { allowReport });
+      } else if (err instanceof UserCanceled) {
+        // nop
       } else {
         api.showErrorNotification('Download failed', err);
       }
