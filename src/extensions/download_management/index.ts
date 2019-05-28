@@ -419,7 +419,19 @@ function testDownloadPath(api: IExtensionApi): Promise<void> {
       .then(() => writeDownloadsTag(api, currentDownloadPath));
 
   return ensureDownloadsDirectory()
-    .catch(UserCanceled, () => Promise.resolve());
+    .catch(UserCanceled, () => Promise.resolve())
+    .catch(err => {
+      const allowReport = ['EPERM'].indexOf(err.code) === -1;
+      const errTitle = (err.code === 'EPERM')
+        ? 'Insufficient permissions'
+        : 'Downloads folder error';
+
+      api.showErrorNotification(errTitle, err.message, { allowReport });
+
+      // We resolve instead of quitting the app to allow the user to attempt
+      //  to fix this issue manually.
+      return Promise.resolve();
+    });
 }
 
 function genGameModeActivated(api: IExtensionApi) {
