@@ -136,7 +136,7 @@ function shouldAllowReport(err: string | Error | any, options?: IErrorOptions): 
   if ((options !== undefined) && (options.allowReport !== undefined)) {
     return options.allowReport;
   }
-  if (err.code === undefined) {
+  if ((err === undefined) || (err.code === undefined)) {
     return true;
   }
 
