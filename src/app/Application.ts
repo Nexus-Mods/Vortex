@@ -102,7 +102,9 @@ class Application {
   private setupAppEvents(args: IParameters) {
     app.on('window-all-closed', () => {
       log('info', 'clean application end');
-      this.mTray.close();
+      if (this.mTray !== undefined) {
+        this.mTray.close();
+      }
       this.mDeinitCrashDump();
       if (process.platform !== 'darwin') {
         app.quit();
