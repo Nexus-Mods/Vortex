@@ -393,8 +393,9 @@ function copyInt(
     tries: number) {
   return simfail(() => fs.copyAsync(src, dest, options))
     .catch((err: NodeJS.ErrnoException) =>
-      errorHandler(err, stackErr, tries, options.showDialogCallback)
-      .then(() => copyInt(src, dest, options, stackErr, tries - 1)));
+      errorHandler(err, stackErr, tries,
+                  (options !== undefined) ? options.showDialogCallback : undefined)
+        .then(() => copyInt(src, dest, options, stackErr, tries - 1)));
 }
 
 export function linkAsync(
@@ -411,7 +412,8 @@ function linkInt(
     options?: ILinkFileOptions): PromiseBB<void> {
   return simfail(() => fs.linkAsync(src, dest))
     .catch((err: NodeJS.ErrnoException) =>
-      errorHandler(err, stackErr, tries, options.showDialogCallback || undefined)
+      errorHandler(err, stackErr, tries,
+                  (options !== undefined) ? options.showDialogCallback : undefined)
         .then(() => linkInt(src, dest, stackErr, tries - 1, options || undefined)));
 }
 
