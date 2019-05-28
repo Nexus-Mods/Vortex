@@ -121,6 +121,15 @@ export function startDownload(api: IExtensionApi, nexus: Nexus, nxmurl: string):
           title: 'Rate-limit exceeded',
           message: 'You wont be able to use network features until the next full hour.',
         });
+      } else if (err instanceof NexusError) {
+        const detail = processErrorMessage(err);
+        let allowReport = detail.Servermessage === undefined;
+        if (detail.noReport) {
+          allowReport = false;
+          delete detail.noReport;
+        }
+        showError(api.store.dispatch, 'Download failed', detail,
+                  { allowReport });
       } else {
         api.showErrorNotification('Download failed', err);
       }
