@@ -222,7 +222,7 @@ function fallbackPurgeType(api: IExtensionApi, activator: IDeploymentMethod,
           result = doFallbackPurge(deployPath, tagObject.files)
               .then(() => saveActivation(modType, state.app.instanceId,
                                          deployPath, stagingPath,
-                                         [], activator.id))
+                                         [], activator !== undefined ? activator.id : undefined))
               .then(() => Promise.resolve());
         } else {
           result = Promise.resolve();
@@ -293,7 +293,7 @@ export function loadActivation(api: IExtensionApi, modType: string,
 
 export function saveActivation(modType: string, instance: string,
                                gamePath: string, stagingPath: string,
-                               activation: IDeployedFile[], activatorId: string) {
+                               activation: IDeployedFile[], activatorId?: string) {
   const typeTag = (modType !== undefined) && (modType.length > 0) ? modType + '.' : '';
   const data = JSON.stringify({
     instance,
