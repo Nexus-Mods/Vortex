@@ -150,7 +150,7 @@ function activateGame(store: ThunkStore<IState>, gameId: string) {
       .filter((id: string) => profiles[id].gameId === gameId)
       .map((id: string) => profiles[id]);
     store.dispatch(showDialog('question', 'Choose profile', {
-      message: 'Please choose the profile to use with this game',
+      text: 'Please choose the profile to use with this game',
       choices: gameProfiles.map((iter: IProfile, idx: number) =>
         ({ id: iter.id, text: iter.name, value: idx === 0 })),
     }, [ { label: 'Activate' } ]))
