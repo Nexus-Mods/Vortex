@@ -141,16 +141,16 @@ export function onGameModeActivated(
               if (err instanceof ProcessCanceled) {
                 log('warn', 'Mods not purged', err.message);
               } else {
-              api.showDialog('error', 'Mod Staging Folder missing!', {
-                bbcode: 'The staging folder could not be created. '
-                      + 'You [b][color=red]have[/color][/b] to go to settings->mods and change it '
-                      + 'to a valid directory [b][color=red]before doing anything else[/color][/b] '
-                      + 'or you will get further error messages.',
-              }, [
-                { label: 'Close' },
-              ]);
+                api.showDialog('error', 'Mod Staging Folder missing!', {
+                  bbcode: 'The staging folder could not be created. '
+                    + 'You [b][color=red]have[/color][/b] to go to settings->mods and change it '
+                    + 'to a valid directory [b][color=red]before doing anything else[/color][/b] '
+                    + 'or you will get further error messages.',
+                }, [
+                    { label: 'Close' },
+                  ]);
               }
-              throw new ProcessCanceled('not purged');
+              return Promise.reject(new ProcessCanceled('not purged'));
             })
             .finally(() => {
               api.dismissNotification(id);
@@ -175,57 +175,58 @@ export function onGameModeActivated(
       }))
       .then(() => writeStagingTag(api, path.join(instPath, STAGING_DIR_TAG), gameId));
 
-  let activatorProm = ensureStagingDirectory();
+  let initProm = ensureStagingDirectory;
 
   if (configuredActivator === undefined) {
-    const configuredActivatorId = currentActivator(state);
     // current activator is not valid for this game. This should only occur
     // if compatibility of the activator has changed
 
+    const configuredActivatorId = currentActivator(state);
     let changeActivator = true;
     const oldActivator = activators.find(iter => iter.id === configuredActivatorId);
     const modPaths = game.getModPaths(gameDiscovery.path);
 
-    if ((configuredActivatorId !== undefined) && (oldActivator === undefined)) {
-      api.showErrorNotification(
-        'Deployment method no longer available',
-        {
-          message:
-            'The deployment method used with this game is no longer available. ' +
-            'This probably means you removed the corresponding extension or ' +
-            'it can no longer be loaded due to a bug.\n' +
-            'Vortex can\'t clean up files deployed with an unsupported method. ' +
-            'You should try to restore it, purge deployment and then switch ' +
-            'to a different method.',
-          method: configuredActivatorId,
-        }, { allowReport: false });
-      return;
-    } else if ((configuredActivatorId !== undefined) && (oldActivator !== undefined)) {
-      const modTypes = Object.keys(modPaths);
-
-      const reason = allTypesSupported(oldActivator, state, gameId, modTypes);
-      if (reason === undefined) {
-        // wut? Guess the problem was temporary
-        changeActivator = false;
-      } else {
+    if (configuredActivatorId !== undefined) {
+      if (oldActivator === undefined) {
         api.showErrorNotification(
-          'Deployment method no longer supported',
+          'Deployment method no longer available',
           {
             message:
-              'The deployment method you had configured is no longer applicable.\n' +
-              'Please resolve the problem described below or go to "Settings" and ' +
-              'change the deployment method.',
-            reason: reason.description(api.translate),
-          },
-          { allowReport: false },
-        );
-        return;
+              'The deployment method used with this game is no longer available. ' +
+              'This probably means you removed the corresponding extension or ' +
+              'it can no longer be loaded due to a bug.\n' +
+              'Vortex can\'t clean up files deployed with an unsupported method. ' +
+              'You should try to restore it, purge deployment and then switch ' +
+              'to a different method.',
+            method: configuredActivatorId,
+          }, { allowReport: false });
+      } else {
+        const modTypes = Object.keys(modPaths);
+
+        const reason = allTypesSupported(oldActivator, state, gameId, modTypes);
+        if (reason === undefined) {
+          // wut? Guess the problem was temporary
+          changeActivator = false;
+        } else {
+          api.showErrorNotification(
+            'Deployment method no longer supported',
+            {
+              message:
+                'The deployment method you had configured is no longer applicable.\n' +
+                'Please resolve the problem described below or go to "Settings" and ' +
+                'change the deployment method.',
+              reason: reason.description(api.translate),
+            },
+            { allowReport: false },
+          );
+        }
       }
     }
 
     if (changeActivator) {
       if (oldActivator !== undefined) {
-        activatorProm = activatorProm
+        const oldInit = initProm;
+        initProm = () => oldInit()
           .then(() => oldActivator.prePurge(instPath))
           .then(() => Promise.mapSeries(Object.keys(modPaths),
             typeId => oldActivator.purge(instPath, modPaths[typeId]))
@@ -237,19 +238,22 @@ export function onGameModeActivated(
             .catch(err => api.showErrorNotification('Purge failed', err, {
               allowReport: ['ENOENT', 'ENOTFOUND'].indexOf(err.code) !== -1,
             })))
+          .catch(ProcessCanceled, () => Promise.resolve())
           .finally(() => oldActivator.postPurge());
       }
 
-      activatorProm = activatorProm.then(() => {
-        if (supported.length > 0) {
-          api.store.dispatch(setActivator(gameId, supported[0].id));
-        }
-      });
+      const oldInit = initProm;
+      initProm = () => oldInit()
+        .then(() => {
+          if (supported.length > 0) {
+            api.store.dispatch(setActivator(gameId, supported[0].id));
+          }
+        });
     }
   }
 
   const knownMods: { [modId: string]: IMod } = getSafe(state, ['persistent', 'mods', gameId], {});
-  activatorProm
+  initProm()
     .then(() => refreshMods(api, instPath, Object.keys(knownMods), (mod: IMod) => {
       api.store.dispatch(addMod(gameId, mod));
     }, (modNames: string[]) => {
