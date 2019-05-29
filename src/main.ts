@@ -118,4 +118,3 @@ function main() {
 }
 
 main();
-log('debug', 'done?');

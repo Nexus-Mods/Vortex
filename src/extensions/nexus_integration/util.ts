@@ -382,8 +382,8 @@ function filterByUpdateList(store: Redux.Store<any>,
           const lastUpdate = getSafe(mod.attributes, ['lastUpdateTime'], 0);
           // if the file is not in the update list, only allow it to be updated if it has never been
           // updated before
-          return lastUpdate < getSafe(updateMap, [modGameId, mod.attributes.modId], 1)
-              || (Date.now() - lastUpdate) > ONE_MONTH;
+          return (lastUpdate < getSafe(updateMap, [modGameId, mod.attributes.modId], 1))
+              || ((Date.now() - lastUpdate) > ONE_MONTH);
         });
       });
 }
