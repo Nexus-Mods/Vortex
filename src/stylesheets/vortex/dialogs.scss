@@ -22,6 +22,12 @@
   }
 }
 
+.common-dialog-regular {
+  .modal-dialog {
+    width: 60em;
+  }
+}
+
 .common-dialog-wide {
   .modal-dialog {
     height: 80%;
