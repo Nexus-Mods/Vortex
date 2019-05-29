@@ -61,16 +61,19 @@ export function getCurrentActivator(state: IState,
 
   const gameDiscovery =
     getSafe(state, ['settings', 'gameMode', 'discovered', gameId], undefined);
-  const modPaths = getGame(gameId).getModPaths(gameDiscovery.path);
+  if ((gameDiscovery === undefined) || (gameDiscovery.path === undefined)) {
+    // activator for a game that's not discovered doesn't really make sense
+    return undefined;
+  }
+  const game = getGame(gameId);
+  const modPaths = game.getModPaths(gameDiscovery.path);
   const types = Object.keys(modPaths)
     .filter(typeId => truthy(modPaths[typeId]));
 
   // if no activator has been selected for the game, allow using a default
   if (allowDefault && (activator === undefined)) {
-    const game = getGame(gameId);
-    const discovery = state.settings.gameMode.discovered[gameId];
-    if ((game !== undefined) && (discovery !== undefined)) {
-      const modTypes = Object.keys(game.getModPaths(discovery.path));
+    if ((game !== undefined) && (gameDiscovery !== undefined)) {
+      const modTypes = Object.keys(modPaths);
       activator = activators.find(act =>
         allTypesSupported(act, state, gameId, modTypes) === undefined);
     }
