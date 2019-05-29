@@ -585,7 +585,7 @@ export function ensureDirWritableAsync(dirPath: string,
               // elevate, while interesting as well, would make error handling too complicated
               log('error', 'failed to acquire permission', elevatedErr.message);
 
-              PromiseBB.reject(restackErr(err, stackErr));
+              return PromiseBB.reject(restackErr(err, stackErr));
             });
           });
       } else {
