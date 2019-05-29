@@ -1253,6 +1253,7 @@ class ExtensionManager {
 
   private startIPC(ipcPath: string, onFinished: (err: Error) => void) {
     const ipcServer = new (nodeIPC as any).IPC();
+    let finished = false;
     ipcServer.serve(ipcPath, () => null);
     ipcServer.server.start();
     ipcServer.server.on('connect', () => {
@@ -1261,14 +1262,26 @@ class ExtensionManager {
     ipcServer.server.on('socket.disconnected', () => {
       log('debug', 'socket disconnect');
       ipcServer.server.stop();
+      if (!finished) {
+        finished = true;
+        onFinished(null);
+      }
     });
     ipcServer.server.on('log', (data: any) => {
       log(data.level, data.message, data.meta);
     });
-    ipcServer.server.on('finished', () => onFinished(null));
+    ipcServer.server.on('finished', () => {
+      if (!finished) {
+        finished = true;
+        onFinished(null);
+      }
+    });
     ipcServer.server.on('error', nodeIPCErr => {
       log('error', 'ipcServer err', nodeIPCErr);
-      onFinished(nodeIPCErr);
+      if (!finished) {
+        finished = true;
+        onFinished(nodeIPCErr);
+      }
     });
   }
 
