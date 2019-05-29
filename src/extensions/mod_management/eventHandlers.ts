@@ -459,17 +459,20 @@ export function onRemoveMod(api: IExtensionApi,
               return Promise.resolve();
             }
           });
-      })
+      });
     };
 
-  const fullModPath = path.join(installationPath, mod.installationPath);
-
   undeployMod()
-  .then(() => truthy(mod) && truthy(mod.installationPath)
-    ? fs.removeAsync(fullModPath)
+  .then(() => {
+    if (truthy(mod) && truthy(mod.installationPath)) {
+      const fullModPath = path.join(installationPath, mod.installationPath);
+      return fs.removeAsync(fullModPath)
         .catch({ code: 'ENOTEMPTY' }, () => fs.removeAsync(fullModPath))
-        .catch(err => err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err))
-    : Promise.resolve())
+        .catch(err => err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err));
+    } else {
+      return Promise.resolve();
+    }
+  })
   .then(() => {
     store.dispatch(removeMod(gameMode, mod.id));
     if (callback !== undefined) {
