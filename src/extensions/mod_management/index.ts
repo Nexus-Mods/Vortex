@@ -805,7 +805,10 @@ function onNeedToDeploy(api: IExtensionApi, current: any) {
             dismiss();
             api.events.emit('deploy-mods', onceCB((err) => {
               if (err !== null) {
-                if (err instanceof NoDeployment) {
+                if (err instanceof UserCanceled) {
+                  // Nothing to see here, move along.
+                  return;
+                } else if (err instanceof NoDeployment) {
                   showError(api.store.dispatch,
                     'You need to select a deployment method in settings',
                     undefined, { allowReport: false });

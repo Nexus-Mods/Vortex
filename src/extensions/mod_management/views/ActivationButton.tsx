@@ -1,6 +1,7 @@
 import ToolbarIcon from '../../../controls/ToolbarIcon';
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
+import { UserCanceled } from '../../../util/CustomErrors';
 import { showError } from '../../../util/message';
 import onceCB from '../../../util/onceCB';
 import { activeGameId, needToDeploy } from '../../../util/selectors';
@@ -50,7 +51,10 @@ class ActivationButton extends ComponentEx<IProps, {}> {
   private activate = () => {
     this.context.api.events.emit('deploy-mods', onceCB((err) => {
       if (err !== null) {
-        if (err instanceof NoDeployment) {
+        if (err instanceof UserCanceled) {
+          // Nothing to see here, move along.
+          return;
+        } else if (err instanceof NoDeployment) {
           this.props.onShowError(
             'You need to select a deployment method in settings',
             undefined, false);
