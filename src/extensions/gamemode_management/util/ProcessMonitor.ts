@@ -95,8 +95,11 @@ class ProcessMonitor {
     const gameDiscovery = currentGameDiscovery(state);
     const gameExe = getSafe(gameDiscovery, ['executable'], undefined)
                  || getSafe(game, ['executable'], undefined);
-
-    if (gameExe === undefined) {
+    const gamePath = getSafe(gameDiscovery, ['path'], undefined);
+    if ((gameExe === undefined) || (gamePath === undefined)) {
+      // How in the world can we manage to get the executable for the game
+      //  but not the path from the discovery object ?
+      // https://github.com/Nexus-Mods/Vortex/issues/4656
       return;
     }
 
@@ -119,8 +122,7 @@ class ProcessMonitor {
       }
     };
 
-
-    const gameExePath = path.join(gameDiscovery.path, gameExe);
+    const gameExePath = path.join(gamePath, gameExe);
     update(gameExePath, true);
 
     const discoveredTools: { [toolId: string]: IDiscoveredTool } =
