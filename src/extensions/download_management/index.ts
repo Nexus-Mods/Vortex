@@ -352,7 +352,27 @@ function removeDownloadsMetadata(api: IExtensionApi): Promise<void> {
 function testDownloadPath(api: IExtensionApi): Promise<void> {
   const state: IState = api.store.getState();
   const gameId = selectors.activeGameId(state);
-  if (gameId === undefined) {
+  const isNewInstallation = (currentState: IState) => {
+    // We don't want to run this check if the user has just
+    //  installed a fresh copy of Vortex as the downloads folder
+    //  has probably not been created yet.
+    // It is safe to assume that this is a new installation if
+    //  our state holds no mods (for any game) and no download files.
+    const gameModes = getSafe(currentState, ['persistent', 'mods'], undefined);
+    const gamesWithActiveMods = (gameModes !== undefined)
+      ? Object.keys(gameModes).length
+      : 0;
+
+    const downloads = getSafe(currentState,
+      ['persistent', 'downloads', 'files'], undefined);
+    const totalDown = (downloads !== undefined)
+      ? Object.keys(downloads).length
+      : 0;
+
+    return ((gamesWithActiveMods === 0) && (totalDown === 0));
+  };
+
+  if ((gameId === undefined) || isNewInstallation(state)) {
     return Promise.resolve();
   }
 
