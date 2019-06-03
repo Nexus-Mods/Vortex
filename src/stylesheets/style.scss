@@ -437,6 +437,7 @@ div:hover > .hover-expand {
 
 .cell-enabled, .header-enabled {
   text-align: center;
+  min-width: 5em;
 }
 
 .cell-version, .header-version {
