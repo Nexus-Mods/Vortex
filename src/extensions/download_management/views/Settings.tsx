@@ -405,6 +405,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               onSetTransfer(undefined);
               this.nextState.busy = undefined;
             })
+            .catch(UserCanceled, () => null)
             .catch(err => {
               this.nextState.busy = undefined;
               if (err.code === 'ENOENT') {
