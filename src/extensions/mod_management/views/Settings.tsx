@@ -132,7 +132,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     const { t, discovery, game } = this.props;
     const { currentActivator, progress, progressFile, supportedActivators } = this.state;
 
-    if (game === undefined) {
+    if ((game === undefined)
+        || (discovery === undefined)
+        || (discovery.path === undefined)) {
       return (
         <EmptyPlaceholder
           icon='settings'
@@ -267,6 +269,13 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   private applyPaths = () => {
     const { t, discovery, gameMode, onSetInstallPath,
             onShowDialog, onShowError, onSetTransfer } = this.props;
+
+    if (discovery.path === undefined) {
+      return onShowDialog('error', 'Not discovered', {
+        text: 'The active game is not discovered correctly. If you have an idea what '
+            + 'lead to this, please report.',
+      }, [ { label: 'Close' } ]);
+    }
 
     const newInstallPath: string = getInstallPath(this.state.installPath, gameMode);
     const oldInstallPath: string = getInstallPath(this.props.installPath, gameMode);
