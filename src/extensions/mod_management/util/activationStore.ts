@@ -254,8 +254,8 @@ export function fallbackPurge(api: IExtensionApi): Promise<void> {
 
 const activationQueue = makeQueue();
 
-export function withActivationLock(func: () => Promise<any>) {
-  return activationQueue(func);
+export function withActivationLock(func: () => Promise<any>, tryOnly: boolean = false) {
+  return activationQueue(func, tryOnly);
 }
 
 export function loadActivation(api: IExtensionApi, modType: string,

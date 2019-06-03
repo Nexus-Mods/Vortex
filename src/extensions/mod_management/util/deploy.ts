@@ -1,5 +1,6 @@
 import { IExtensionApi } from '../../../types/IExtensionContext';
 import { IGame } from '../../../types/IGame';
+import { INotification } from '../../../types/INotification';
 import { ProcessCanceled } from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
 import { activeGameId, currentGameDiscovery } from '../../../util/selectors';
@@ -35,18 +36,23 @@ export function purgeMods(api: IExtensionApi): Promise<void> {
     return Promise.reject(new NoDeployment());
   }
 
-  const notificationId = api.sendNotification({
+  const notification: INotification = {
     type: 'activity',
-    message: t('Purging mods'),
+    message: t('Waiting for other operations to complete'),
     title: t('Purging'),
-  });
+  };
+
+  notification.id = api.sendNotification(notification);
 
   const game: IGame = getGame(gameId);
   const modPaths = game.getModPaths(gameDiscovery.path);
 
   const modTypes = Object.keys(modPaths).filter(typeId => truthy(modPaths[typeId]));
 
-  return withActivationLock(() => activator.prePurge(stagingPath)
+  return withActivationLock(() => {
+    notification.message = t('Purging mods');
+    api.sendNotification(notification);
+    return activator.prePurge(stagingPath)
     .then(() => Promise.each(modTypes, typeId =>
       fs.statAsync(modPaths[typeId])
         .catch({ code: 'ENOTFOUND' }, () =>
@@ -57,9 +63,11 @@ export function purgeMods(api: IExtensionApi): Promise<void> {
           modPaths[typeId], stagingPath, [], activator.id)))
       .catch(ProcessCanceled, () => null))
     .then(() => Promise.resolve())
+    .finally(() => activator.postPurge())
+  }, true)
+    .then(() => null)
     .finally(() => {
-      api.dismissNotification(notificationId);
-      return activator.postPurge();
-    })).then(() => null);
+      api.dismissNotification(notification.id);
+    });
 }
 
