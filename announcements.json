@@ -16,5 +16,17 @@
 	"severity": "warning",
 	"gamemode": "*",
 	"version": "0.18.0 || 0.18.1"
+}, {
+	"date": "2019-06-03T11:24:10",
+	"description": "KCD patch 1.9 will automatically move installed mods to a new directory within your game path \"../mods_old/\" when the game is run for the first time since the update! To avoid having to manually remove/curate the moved mods, we recommend all KCD users to purge their mod setup and re-deploy once the game has been run at least once since the update. Any mod issues should be reported to the respective mod authors as 1.9 includes some major changes to how the game loads its mods",
+	"severity": "warning",
+	"gamemode": "kingdomcomedeliverance"
+}, {
+	"date": "2019-06-03T11:24:10",
+	"description": "Any users affected by \"missing .node module\" errors, need to install the latest Visual C++ runtime package. Please click the \"i\" button, to be taken to the downloads page and download/install (vc_redist.x64.exe)",
+	"link": "https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads",
+	"severity": "warning",
+	"gamemode": "*",
+	"version": "^0.18.0"
 }
 ]
