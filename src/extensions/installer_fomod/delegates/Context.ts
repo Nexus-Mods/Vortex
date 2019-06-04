@@ -46,7 +46,7 @@ export class Context extends DelegateBase {
         getSafe(api.store.getState(),
                 ['settings', 'gameMode', 'discovered', gameId], undefined);
     this.gameInfo = getGame(this.gameId);
-    if (this.gameDiscovery === undefined) {
+    if ((this.gameDiscovery === undefined) || (this.gameDiscovery.path === undefined)) {
       throw new ProcessCanceled('Game not installed');
     }
   }

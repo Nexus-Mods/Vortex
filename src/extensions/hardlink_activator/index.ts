@@ -63,7 +63,7 @@ class DeploymentMethod extends LinkingDeployment {
 
   public isSupported(state: any, gameId: string, typeId: string): IUnavailableReason {
     const discovery: IDiscoveryResult = state.settings.gameMode.discovered[gameId];
-    if (discovery === undefined) {
+    if ((discovery === undefined) || (discovery.path === undefined)) {
       return {
         description: t => t('Game not discovered.'),
       };

@@ -68,7 +68,7 @@ class DeploymendMethod extends LinkingDeployment {
 
     const discovery: IDiscoveryResult = state.settings.gameMode.discovered[gameId];
 
-    if (discovery === undefined) {
+    if ((discovery === undefined) || (discovery.path === undefined)) {
       return { description: t => t('Game not discovered.') };
     }
 

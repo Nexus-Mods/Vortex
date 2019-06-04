@@ -72,7 +72,9 @@ export function getCurrentActivator(state: IState,
 
   // if no activator has been selected for the game, allow using a default
   if (allowDefault && (activator === undefined)) {
-    if ((game !== undefined) && (gameDiscovery !== undefined)) {
+    if ((game !== undefined)
+        && (gameDiscovery !== undefined)
+        && (gameDiscovery.path !== undefined)) {
       const modTypes = Object.keys(modPaths);
       activator = activators.find(act =>
         allTypesSupported(act, state, gameId, modTypes) === undefined);

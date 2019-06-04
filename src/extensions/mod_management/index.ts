@@ -808,7 +808,7 @@ function onDeploySingleMod(api: IExtensionApi) {
     const state: IState = api.store.getState();
     const game = getGame(gameId);
     const discovery = getSafe(state, ['settings', 'gameMode', 'discovered', gameId], undefined);
-    if ((game === undefined) || (discovery === undefined)) {
+    if ((game === undefined) || (discovery === undefined) || (discovery.path === undefined)) {
       return Promise.resolve();
     }
     const mod: IMod = getSafe(state, ['persistent', 'mods', game.id, modId], undefined);
