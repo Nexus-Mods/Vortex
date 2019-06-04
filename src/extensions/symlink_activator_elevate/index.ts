@@ -18,14 +18,13 @@ import walk from './walk';
 import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import I18next from 'i18next';
-import * as ipc from 'node-ipc';
+import * as JsonSocket from 'json-socket';
+import * as net from 'net';
 import * as path from 'path';
 import { generate as shortid } from 'shortid';
 import { runElevated } from 'vortex-run';
 
 const app = appIn || remote.app;
-
-ipc.config.logger = (message) => log('debug', 'ipc message', { message });
 
 class DeploymentMethod extends LinkingDeployment {
   public id: string;
@@ -38,6 +37,7 @@ class DeploymentMethod extends LinkingDeployment {
   private mQuitTimer: NodeJS.Timer;
   private mCounter: number;
   private mOpenRequests: { [num: number]: { resolve: () => void, reject: (err: Error) => void } };
+  private mIPCServer: net.Server;
   private mDone: () => void;
   private mWaitForUser: () => Promise<void>;
   private mOnReport: (report: string) => void;
@@ -157,8 +157,9 @@ class DeploymentMethod extends LinkingDeployment {
   protected linkFile(linkPath: string, sourcePath: string): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       const num = this.mCounter++;
-      ipc.server.emit(this.mElevatedClient, 'link-file',
-        { source: sourcePath, destination: linkPath, num });
+      this.emit('link-file', {
+        source: sourcePath, destination: linkPath, num,
+      });
       this.mOpenRequests[num] = { resolve, reject };
     });
   }
@@ -166,8 +167,9 @@ class DeploymentMethod extends LinkingDeployment {
   protected unlinkFile(linkPath: string): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       const num = this.mCounter++;
-      ipc.server.emit(this.mElevatedClient, 'remove-link',
-        { destination: linkPath, num });
+      this.emit('remove-link', {
+        destination: linkPath, num,
+      });
       this.mOpenRequests[num] = { resolve, reject };
     });
   }
@@ -184,8 +186,7 @@ class DeploymentMethod extends LinkingDeployment {
             return fs.readlinkAsync(iterPath)
               .then((symlinkPath) => {
                 if (!path.relative(installPath, symlinkPath).startsWith('..')) {
-                  ipc.server.emit(this.mElevatedClient, 'remove-link',
-                    { destination: iterPath });
+                  this.emit('remove-link', { destination: iterPath });
                 }
               })
               .catch(err => {
@@ -236,6 +237,12 @@ class DeploymentMethod extends LinkingDeployment {
     }
   }
 
+  private emit(message, payload) {
+    if (this.mElevatedClient) {
+      this.mElevatedClient.sendMessage({message, payload});
+    }
+  }
+
   private startElevated(): Promise<void> {
     this.mOpenRequests = {};
     this.mDone = null;
@@ -244,74 +251,75 @@ class DeploymentMethod extends LinkingDeployment {
 
     return new Promise<void>((resolve, reject) => {
       let connected: boolean = false;
-      let error: string;
+      let error: Error;
       let ponged: boolean = true;
       if (this.mQuitTimer !== undefined) {
         // if there is already an elevated process, just keep it around a bit longer
         clearTimeout(this.mQuitTimer);
         return resolve();
       }
-      ipc.serve(ipcPath, () => undefined);
-      ipc.server.start();
-      ipc.server.on('initialised', (data, socket) => {
-        this.mElevatedClient = socket;
-        connected = true;
-        resolve();
-      });
-      ipc.server.on('completed', (data, socket) => {
-        const { err, num } = data;
-        const task = this.mOpenRequests[num];
-        if (task !== undefined) {
-          if (err !== null) {
-            task.reject(err);
-          } else {
-            task.resolve();
+
+      this.mIPCServer = net.createServer(connRaw => {
+        const conn = new JsonSocket(connRaw);
+
+        conn
+          .on('message', data => {
+            const { message, payload } = data;
+            if (message === 'initialised') {
+              this.mElevatedClient = conn;
+              connected = true;
+              resolve();
+            } else if (message === 'completed') {
+              const { err, num } = payload;
+              const task = this.mOpenRequests[num];
+              if (task !== undefined) {
+                if (err !== null) {
+                  task.reject(err);
+                } else {
+                  task.resolve();
+                }
+                delete this.mOpenRequests[num];
+              }
+              if ((Object.keys(this.mOpenRequests).length === 0) && (this.mDone !== null)) {
+                this.finish();
+              }
+            } else if (message === 'log') {
+              const { level, message, meta } = payload;
+              log(level, message, meta);
+            } else if (message === 'report') {
+              this.mOnReport(payload);
+            } else if (message === 'pong') {
+              ponged = true;
+            } else {
+              log('error', 'Got unexpected message', { message, payload });
+            }
+          })
+          .on('error', err => {
+            log('error', 'elevated code reported error', err);
+            error = err;
+          })
+        pongTimer = setInterval(() => {
+          if (!ponged || !connected) {
+            try {
+            } catch (err) {
+              log('warn', 'Failed to close ipc server', err.message);
+            }
+            return reject(new TemporaryError('deployment helper didn\'t respond, please check your log'));
           }
-          delete this.mOpenRequests[num];
-        }
-        if ((Object.keys(this.mOpenRequests).length === 0) && (this.mDone !== null)) {
-          this.finish();
-        }
-      });
-      ipc.server.on('socket.disconnected', () => {
-        try {
-          ipc.server.stop();
-        } catch (err) {
-          log('warn', 'Failed to close ipc server', err.message);
-        }
-        reject(new Error(error || 'Elevated code quit unexpectedly'));
-      });
-      ipc.server.on('log', (data: any) => {
-        log(data.level, data.message, data.meta);
-      });
-      ipc.server.on('report', (data: string) => {
-        this.mOnReport(data);
-      });
-      ipc.server.on('pong', () => {
-        ponged = true;
+          ponged = false;
+          this.emit('ping', {});
+        }, 15000);
       })
-      ipc.server.on('error', err => {
-        log('error', 'elevated code reported error', err);
-        error = err;
-      });
-      pongTimer = setInterval(() => {
-        if (!ponged || !connected) {
-          try {
-            ipc.server.stop();
-          } catch (err) {
-            log('warn', 'Failed to close ipc server', err.message);
-          }
-          return reject(new TemporaryError('deployment helper didn\'t respond, please check your log'));
-        }
-        ponged = false;
-        ipc.server.emit('ping');
-      }, 15000);
+      .listen(path.join('\\\\?\\pipe', ipcPath));
+
 
       return runElevated(ipcPath, remoteCode, {})
+        .tap(() => console.log('started elevated process'))
         .tapCatch(() => {
           log('error', 'failed to run remote process');
           try { 
-            ipc.server.stop();
+            this.mIPCServer.close();
+            this.mIPCServer = undefined;
           } catch (err) {
             log('warn', 'Failed to close ipc server', err.message);
           }
@@ -350,8 +358,8 @@ class DeploymentMethod extends LinkingDeployment {
     }
     this.mQuitTimer = setTimeout(() => {
       try {
-        ipc.server.emit(this.mElevatedClient, 'quit');
-        ipc.server.stop();
+        this.emit('quit', {});
+        this.mIPCServer.close();
       } catch (err) {
         // the most likely reason here is that it's already closed
         // and cleaned up

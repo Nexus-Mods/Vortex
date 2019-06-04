@@ -16,29 +16,27 @@ function elevatedMain(moduleRoot: string, ipcPath: string,
   // tslint:disable-next-line:no-shadowed-variable
   (module as any).paths.push(moduleRoot);
   // tslint:disable-next-line:no-shadowed-variable
-  const ipc = require('node-ipc');
-  ipc.config.maxRetries = 5;
-  ipc.config.stopRetrying = 5;
-  ipc.connectTo(ipcPath, ipcPath, () => {
-    ipc.of[ipcPath].on('quit', () => {
-      process.exit(0);
-    });
-    // TODO: having a weird problem where messages emitted right away
-    //   are simply lost. Am I doing something wrong or is this a bug
-    //   in node-ipc?
-    new Promise(resolve => setTimeout(resolve, 100))
-    .then(() => Promise.resolve(main(ipc.of[ipcPath], require)))
+  const net = require('net');
+  const JsonSocket = require('json-socket');
+  const path = require('path');
+
+  const client = new JsonSocket(new net.Socket());
+  client.connect(path.join('\\\\?\\pipe', ipcPath));
+
+  client.on('connect', () => {
+    Promise.resolve(main(client, require))
     .catch(error => {
-      ipc.of[ipcPath].emit('error', error.message);
-      // TODO: apparently also need to delay disconnection to ensure
-      //   the error gets delivered. This can't be right?
-      return new Promise((resolve) => setTimeout(resolve, 100));
+      client.emit('error', error.message);
     })
-    .then(() => {
-      ipc.disconnect(ipcPath);
+    .finally(() => {
+      client.end();
       process.exit(0);
     });
-  });
+  })
+  .on('close', () => {
+    process.exit(0);
+  })
+  .on('error', () => null);
 }
 
 /**
