@@ -1982,6 +1982,10 @@ json-schema@0.2.3:
   resolved "https://registry.yarnpkg.com/json-schema/-/json-schema-0.2.3.tgz#b480c892e59a2f05954ce727bd3f2a4e882f9e13"
   integrity sha1-tIDIkuWaLwWVTOcnvT8qTogvnhM=
 
+json-socket@foi/node-json-socket:
+  version "0.3.0"
+  resolved "https://codeload.github.com/foi/node-json-socket/tar.gz/f0b37215614768a902b4dd6db1f426fcf4b91978"
+
 json-stringify-safe@~5.0.1:
   version "5.0.1"
   resolved "https://registry.yarnpkg.com/json-stringify-safe/-/json-stringify-safe-5.0.1.tgz#1296a2d58fd45f19a0f6ce01d65701e2c735b6eb"
@@ -4202,7 +4206,7 @@ vortex-parse-ini@Nexus-Mods/vortex-parse-ini:
     winapi-bindings Nexus-Mods/node-winapi-bindings
 
 "vortex-run@file:../src/util/vortex-run":
-  version "0.0.8"
+  version "0.0.9"
 
 warning@^3.0.0:
   version "3.0.0"
