@@ -285,6 +285,11 @@ export function prettifyNodeErrorMessage(err: any): IPrettifiedError {
       message: 'The disk is full',
       allowReport: false,
     };
+  } else if ((err.code === 'EACCES') || (err.port !== undefined)) {
+    return {
+      message: 'Network connect was not permitted, please check your firewall settings',
+      allowReport: false,
+    };
   } else if (err.code === 'ENETUNREACH') {
     return {
       message: 'Network server not reachable.',
