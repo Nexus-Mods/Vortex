@@ -45,6 +45,7 @@
     "iconv-lite": "^0.4.24",
     "immutability-helper": "^3.0.0",
     "is-admin": "^2.1.1",
+    "json-socket": "foi/node-json-socket",
     "leveldown": "^4.0.2",
     "levelup": "^4.0.0",
     "libxmljs": "^0.19.5",
