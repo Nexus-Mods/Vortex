@@ -159,6 +159,7 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
             checked={isSelected}
             onChange={readOnly ? nop : this.select}
             disabled={plugin.type === 'NotUsable'}
+            title={plugin.conditionMsg}
           >
             {content}
           </Radio>
@@ -184,6 +185,7 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
             checked={isSelected}
             disabled={plugin.type === 'NotUsable'}
             onChange={readOnly ? nop : this.select}
+            title={plugin.conditionMsg}
           >
             {content}
           </Checkbox>
