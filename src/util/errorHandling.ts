@@ -312,7 +312,7 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
  * render error message for internal processing (issue tracker and such).
  * It's important this doesn't translate the error message or lose information
  */
-export function toError(input: any, title?: string, options?: IErrorOptions): IError {
+export function toError(input: any, title?: string, options?: IErrorOptions, sourceStack?: string): IError {
   let ten = i18next.getFixedT('en');
   try {
     ten('dummy');
@@ -326,11 +326,15 @@ export function toError(input: any, title?: string, options?: IErrorOptions): IE
   const t = (text: string) => ten(text, { replace: (options || {}).replace });
 
   if (input instanceof Error) {
+    let stack = input.stack;
+    if (sourceStack !== undefined) {
+      stack += '\n\nReported from:\n' + sourceStack;
+    }
     return {
       message: t(input.message),
       title,
       subtitle: (options || {}).message,
-      stack: input.stack,
+      stack: stack,
       details: Object.keys(input).map(key => `${key}: ${input[key]}`).join('\n'),
     };
   }
@@ -360,6 +364,14 @@ export function toError(input: any, title?: string, options?: IErrorOptions): IE
           }
         }
         stack = input.stack;
+      }
+
+      if (sourceStack !== undefined) {
+        if (stack === undefined) {
+          stack = sourceStack;
+        } else {
+          stack += '\n\nReported from:\n' + sourceStack;
+        }
       }
 
       let attributes = Object.keys(input || {})

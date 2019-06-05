@@ -37,8 +37,6 @@ import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { WithTranslation } from 'react-i18next';
 
-const PanelX: any = Panel;
-
 export interface IDownloadViewBaseProps extends WithTranslation {
   active: boolean;
   secondary: boolean;
@@ -167,13 +165,13 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
     if (gameMode === undefined) {
       content = (
         <Panel className='placeholder-container'>
-          <PanelX.Body>
+          <Panel.Body>
             <EmptyPlaceholder
               icon='folder-download'
               text={t('Please select a game to manage first')}
               fill={true}
             />
-          </PanelX.Body>
+          </Panel.Body>
         </Panel>
       );
     } else if (Object.keys(this.props.downloads).length === 0) {
@@ -191,24 +189,24 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
         <FlexLayout type='column'>
           {secondary ? null : <Banner group='downloads' />}
           <FlexLayout.Flex>
-            <PanelX className='download-panel' >
+            <Panel className='download-panel' >
               {secondary ? null : (
-                <PanelX
+                <Panel
                   className='download-graph-panel'
                   expanded={showGraph}
                   onToggle={nop}
                 >
-                  <PanelX.Body collapsible={true}>
+                  <Panel.Body collapsible={true}>
                     <DownloadGraph />
-                  </PanelX.Body>
+                  </Panel.Body>
                   <CollapseIcon
                     position='bottomright'
                     onClick={this.toggleGraph}
                     visible={showGraph}
                   />
-                </PanelX>
+                </Panel>
               )}
-              <PanelX.Body>
+              <Panel.Body>
                 <FlexLayout type='column'>
                   <FlexLayout.Flex>
                     <SuperTable
@@ -224,8 +222,8 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
                     </Button>
                   </FlexLayout.Fixed>
                 </FlexLayout>
-              </PanelX.Body>
-            </PanelX>
+              </Panel.Body>
+            </Panel>
           </FlexLayout.Flex>
           <FlexLayout.Fixed>
             {secondary ? null : this.renderDropzone()}
@@ -246,27 +244,27 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
   private renderDropzone(): JSX.Element {
     const { t, showDropzone } = this.props;
     return (
-      <PanelX
+      <Panel
         className='download-drop-panel'
         expanded={showDropzone}
         onToggle={nop}
       >
-        <PanelX.Collapse>
-          <PanelX.Body>
+        <Panel.Collapse>
+          <Panel.Body>
             <Dropzone
               accept={['urls', 'files']}
               drop={this.dropDownload}
               dialogHint={t('Enter download URL')}
               icon='folder-download'
             />
-          </PanelX.Body>
-        </PanelX.Collapse>
+          </Panel.Body>
+        </Panel.Collapse>
         <CollapseIcon
           position='topright'
           onClick={this.toggleDropzone}
           visible={showDropzone}
         />
-      </PanelX>
+      </Panel>
     );
   }
 
