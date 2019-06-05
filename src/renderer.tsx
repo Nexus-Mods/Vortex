@@ -64,6 +64,7 @@ import getI18n, { fallbackTFunc } from './util/i18n';
 import { log } from './util/log';
 import { initApplicationMenu } from './util/menu';
 import { showError } from './util/message';
+import './util/monkeyPatching';
 import { reduxSanity, StateError } from './util/reduxSanity';
 import MainWindow from './views/MainWindow';
 
