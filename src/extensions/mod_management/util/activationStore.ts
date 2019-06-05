@@ -240,7 +240,9 @@ export function fallbackPurge(api: IExtensionApi): Promise<void> {
   const gameId = activeGameId(state);
   const gameDiscovery = currentGameDiscovery(state);
   const game: IGame = getGame(gameId);
-  if (game === undefined) {
+  if ((game === undefined)
+      || (gameDiscovery === undefined)
+      || (gameDiscovery.path === undefined)) {
     return Promise.reject(new ProcessCanceled('game got disabled'));
   }
   const modPaths = game.getModPaths(gameDiscovery.path);
