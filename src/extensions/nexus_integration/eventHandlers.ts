@@ -244,7 +244,7 @@ export function onAPIKeyChanged(api: IExtensionApi, nexus: Nexus): StateChangeCa
 
 export function onCheckModsVersion(api: IExtensionApi,
                                    nexus: Nexus): (...args: any[]) => Promise<void> {
-  return (gameId, mods) => {
+  return (gameId, mods, forceFull) => {
     const APIKEY = getSafe(api.store.getState(),
                            ['confidential', 'account', 'nexus', 'APIKey'],
                            '');
@@ -256,7 +256,7 @@ export function onCheckModsVersion(api: IExtensionApi,
     } else {
       api.store.dispatch(setUpdatingMods(gameId, true));
       const start = Date.now();
-      return checkModVersionsImpl(api.store, nexus, gameId, mods)
+      return checkModVersionsImpl(api.store, nexus, gameId, mods, forceFull)
         .then((errorMessages: string[]) => {
           if (errorMessages.length !== 0) {
             showError(api.store.dispatch,

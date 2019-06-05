@@ -372,10 +372,12 @@ function filterByUpdateList(store: Redux.Store<any>,
         Object.keys(updateLists).forEach(iterGameId => {
           updateMap[iterGameId] = updateLists[iterGameId].reduce((prev, entry) => {
             prev[entry.mod_id] = Math.max((entry as any).latest_file_update,
-                                          (entry as any).latest_mod_activity);
+                                          (entry as any).latest_mod_activity) * 1000;
             return prev;
           }, {});
         });
+
+        const now = Date.now();
 
         return input.filter(mod => {
           const modGameId = getGameId(mod);
@@ -385,10 +387,10 @@ function filterByUpdateList(store: Redux.Store<any>,
             return true;
           }
           const lastUpdate = getSafe(mod.attributes, ['lastUpdateTime'], 0);
-          // if the file is not in the update list, only allow it to be updated if it has never been
-          // updated before
+          // check anything for updates that is either in the update list and has been updated as well
+          // as anything that has last been checked before the range of the update list
           return (lastUpdate < getSafe(updateMap, [modGameId, mod.attributes.modId], 1))
-              || ((Date.now() - lastUpdate) > ONE_MONTH);
+              || ((now - lastUpdate) > ONE_MONTH);
         });
       });
 }
@@ -397,7 +399,8 @@ export function checkModVersionsImpl(
   store: Redux.Store<any>,
   nexus: Nexus,
   gameId: string,
-  mods: { [modId: string]: IMod }): Promise<string[]> {
+  mods: { [modId: string]: IMod },
+  forceFull: boolean): Promise<string[]> {
 
   const now = Date.now();
 
@@ -426,16 +429,42 @@ export function checkModVersionsImpl(
         ++pos;
       };
       progress();
-      log('info', 'checking mods for update (nexus)',
-        { count: filteredMods.length, of: modsList.length });
+      if (forceFull) {
+        log('info', 'forcing full update check (nexus)',
+          { count: modsList.length });
+      } else {
+        log('info', 'checking mods for update (nexus)',
+          { count: filteredMods.length, of: modsList.length });
+      }
+
+      let updatesMissed: IMod[] = [];
+
       return Promise.map(modsList, (mod: IMod) => {
-        if (!filtered.has(mod.id)) {
-          store.dispatch(setModAttribute(gameId, mod.id, 'lastUpdateTime', now - 5 * ONE_MINUTE));
+        if (!forceFull && !filtered.has(mod.id)) {
+          store.dispatch(setModAttribute(gameId, mod.id, 'lastUpdateTime', now - 15 * ONE_MINUTE));
           return;
         }
+
         return checkModVersion(store, nexus, gameId, mod)
           .then(() => {
-            store.dispatch(setModAttribute(gameId, mod.id, 'lastUpdateTime', now));
+            if (forceFull && !filtered.has(mod.id)) {
+              const modNew = getSafe(store.getState(), ['persistent', 'mods', gameId, mod.id], undefined);
+              const verPath = ['attributes', 'newestVersion'];
+              const fileIdPath = ['attributes', 'newestFileId'];
+              if (((getSafe(modNew, verPath, undefined) !== getSafe(mod, verPath, undefined))
+                  && (getSafe(modNew, verPath, undefined) !== getSafe(modNew, ['attributes', 'version'], undefined)))
+                || ((getSafe(modNew, fileIdPath, undefined) !== getSafe(mod, fileIdPath, undefined))
+                  && (getSafe(modNew, fileIdPath, undefined) !== getSafe(modNew, ['attributes', 'fileId'], undefined)))) {
+                log('warn', '[update check] Mod update would have been missed with regular check', {
+                  modId: mod.id,
+                  lastUpdateTime: getSafe(mod, ['attributes', 'lastUpdateTime'], 0),
+                  newestVersion: getSafe(mod, verPath, undefined),
+                  newestFileId: getSafe(mod, fileIdPath, undefined),
+                });
+                updatesMissed.push(mod);
+              }
+              store.dispatch(setModAttribute(gameId, mod.id, 'lastUpdateTime', now));
+            }
           })
           .catch(TimeoutError, err => {
             const name = modName(mod, { version: true });
@@ -465,6 +494,25 @@ export function checkModVersionsImpl(
       }, { concurrency: 4 })
       .finally(() => {
         tStore.dispatch(dismissNotification('check-update-progress'));
+        if (forceFull) {
+          if (updatesMissed.length === 0) {
+            tStore.dispatch(addNotification({
+              id: 'check-update-progress',
+              type: 'info',
+              message: 'Full update check found no updates that the regular check didn\'t.',
+            }));
+          } else {
+            tStore.dispatch(addNotification({
+              id: 'check-update-progress',
+              type: 'info',
+              message: 'Full update found {{count}} updates that the regular check would have missed. '
+                      + 'Please send in a feedback with your log attached to help debug the cause.',
+              replace: {
+                count: updatesMissed.length,
+              },
+            }));
+          }
+        }
       });
     })
     .then((errorMessages: string[]): string[] => errorMessages.filter(msg => msg !== undefined));
