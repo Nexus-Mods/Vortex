@@ -334,13 +334,16 @@ abstract class LinkingActivator implements IDeploymentMethod {
       let sourceTime: Date;
       let destTime: Date;
 
+      let sourceStats: fs.Stats;
+
       return this.stat(fileModPath)
         .catch(err => {
           // can't stat source, probably the file was deleted
           sourceDeleted = true;
           return Promise.resolve(undefined);
         })
-        .then(sourceStats => {
+        .then(sourceStatsIn => {
+          sourceStats = sourceStatsIn;
           if (sourceStats !== undefined) {
             sourceTime = sourceStats.mtime;
           }
@@ -357,7 +360,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
           }
           return sourceDeleted || destDeleted
             ? Promise.resolve(false)
-            : this.isLink(fileDataPath, fileModPath);
+            : this.isLink(fileDataPath, fileModPath, destStats, sourceStats);
         })
         .then((isLink?: boolean) => {
           if (sourceDeleted && !destDeleted && this.canRestore()) {
@@ -401,7 +404,18 @@ abstract class LinkingActivator implements IDeploymentMethod {
   protected abstract linkFile(linkPath: string, sourcePath: string): Promise<void>;
   protected abstract unlinkFile(linkPath: string, sourcePath: string): Promise<void>;
   protected abstract purgeLinks(installPath: string, dataPath: string): Promise<void>;
-  protected abstract isLink(linkPath: string, sourcePath: string): Promise<boolean>;
+  /**
+   * test if a file is a link to another file. The stats parameters may not be available,
+   * they are just intended as an optimization by avoiding doing redundant calls
+   * @param linkPath the path to the presumed link
+   * @param sourcePath the path to the source file
+   * @param linkStats stats of the link. This was acquired with lstats so
+   *                  in case of symlinks this contains info on the link itself
+   * @param sourceStats stats of the source file. This was acquired with stats so should
+   *                    this be a symlink it *was* followed!
+   */
+  protected abstract isLink(linkPath: string, sourcePath: string,
+                            linkStats?: fs.Stats, sourceStats?: fs.Stats): Promise<boolean>;
   /**
    * must return true if this deployment method is able to restore a file after the
    * "original" was deleted. This is essentially true for hard links (since the file
