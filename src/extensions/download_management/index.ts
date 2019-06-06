@@ -29,6 +29,7 @@ import { transactionsReducer } from './reducers/transactions';
 import { IDownload } from './types/IDownload';
 import { IProtocolHandlers } from './types/ProtocolHandlers';
 import getDownloadGames from './util/getDownloadGames';
+import writeDownloadsTag, { DOWNLOADS_DIR_TAG } from './util/writeDownloadsTag';
 import DownloadView from './views/DownloadView';
 import Settings from './views/Settings';
 import SpeedOMeter from './views/SpeedOMeter';
@@ -45,8 +46,6 @@ import {generate as shortid} from 'shortid';
 
 const app = remote !== undefined ? remote.app : appIn;
 
-export const DOWNLOADS_DIR_TAG = '__vortex_downloads_folder';
-
 let observer: DownloadObserver;
 let manager: DownloadManager;
 let updateDebouncer: Debouncer;
@@ -58,15 +57,6 @@ const archiveExtLookup = new Set<string>([
   '.xz', '.z',
   '.fomod',
 ]);
-
-function writeDownloadsTag(api: IExtensionApi, tagPath: string) {
-  const state: IState = api.store.getState();
-  const data = {
-    instance: state.app.instanceId,
-  };
-  return fs.writeFileAsync(path.join(tagPath, DOWNLOADS_DIR_TAG),
-    JSON.stringify(data), {  encoding: 'utf8' });
-}
 
 function validateDownloadsTag(api: IExtensionApi, tagPath: string): Promise<void> {
   return fs.readFileAsync(tagPath, { encoding: 'utf8' })

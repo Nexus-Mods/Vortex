@@ -20,6 +20,7 @@ import { setDownloadPath, setMaxDownloads } from '../actions/settings';
 import { setTransferDownloads } from '../actions/transactions';
 
 import getDownloadPath, {getDownloadPathPattern} from '../util/getDownloadPath';
+import writeDownloadsTag from '../util/writeDownloadsTag';
 
 import getTextMod from '../../mod_management/texts';
 import getText from '../texts';
@@ -344,7 +345,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       .then(() => {
         if (oldPath !== newPath) {
           this.nextState.busy = t('Moving download folder');
-          return this.transferPath();
+          return this.transferPath()
+            .then(() => writeDownloadsTag(this.context.api, newPath));
         } else {
           return Promise.resolve();
         }
@@ -445,7 +447,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     const newPath = getDownloadPath(this.state.downloadPath);
 
     this.context.api.events.emit('will-move-downloads');
-
+    let sourceIsMissing = false;
     return fs.statAsync(oldPath)
       .catch(err => {
         // The initial downloads folder is missing! this may be a valid case if:
@@ -457,8 +459,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         //  Currently we have confirmed that the error code will be set to "UNKNOWN"
         //  for all these cases, but we may have to add other error codes if different
         //  error cases pop up.
+        sourceIsMissing = (['ENOENT', 'UNKNOWN'].indexOf(err.code) !== -1);
         log('warn', 'Transfer failed - missing source directory', err);
-        return (['ENOENT', 'UNKNOWN'].indexOf(err.code) !== -1)
+        return (sourceIsMissing)
           ? Promise.resolve(undefined)
           : Promise.reject(err);
       })
@@ -498,7 +501,10 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                 && ((Date.now() - this.mLastFileUpdate) > 1000)) {
                 this.nextState.progressFile = path.basename(from);
               }
-            });
+            }).catch(err => (sourceIsMissing
+                         && (err.path === oldPath))
+                ? Promise.resolve()
+                : Promise.reject(err));
           });
       });
   }
