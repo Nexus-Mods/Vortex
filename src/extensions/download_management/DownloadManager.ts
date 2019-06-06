@@ -762,7 +762,7 @@ class DownloadManager {
         download.assembler = new FileAssembler(download.tempName);
       } catch (err) {
         if (err.code === 'EBUSY') {
-          throw new Error('output file is locked');
+          throw new ProcessCanceled('output file is locked');
         } else {
           throw err;
         }
