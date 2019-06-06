@@ -129,58 +129,17 @@ class DownloadWorker {
       return;
     }
 
-    let parsed: url.UrlWithStringQuery;
     try {
-      parsed = url.parse(jobUrl);
+      remote.getCurrentWebContents().session.cookies.get({ url: jobUrl }, (cookieErr, cookies) => {
+        if (truthy(cookieErr)) {
+          log('error', 'failed to retrieve cookies', cookieErr.message);
+        }
+        this.startDownload(job, jobUrl, cookies);
+      });
     } catch (err) {
-      this.handleError(new Error('No valid URL for this download'));
-      return;
+      log('error', 'failed to retrieve cookies', err.message);
+      this.startDownload(job, jobUrl, []);
     }
-
-    const lib: IHTTP = parsed.protocol === 'https:' ? https : http;
-
-    remote.getCurrentWebContents().session.cookies.get({ url: jobUrl }, (cookieErr, cookies) => {
-      try {
-        this.mRequest = lib.request({
-          method: 'GET',
-          protocol: parsed.protocol,
-          port: parsed.port,
-          hostname: parsed.hostname,
-          path: parsed.path,
-          headers: {
-            Range: `bytes=${job.offset}-${job.offset + job.size}`,
-            'User-Agent': this.mUserAgent,
-            'Accept-Encoding': 'gzip',
-            Cookie: (cookies || []).map(cookie => `${cookie.name}=${cookie.value}`),
-          },
-          agent: false,
-        }, (res) => {
-          log('debug', 'downloading from',
-            { address: `${res.connection.remoteAddress}:${res.connection.remotePort}` });
-          this.mResponse = res;
-          this.handleResponse(res, jobUrl);
-          res
-            .on('data', (data: Buffer) => {
-              this.handleData(data);
-            })
-            .on('error', err => this.handleError(err))
-            .on('end', () => {
-              if (!this.mRedirected) {
-                this.handleComplete();
-              }
-              this.mRequest.abort();
-            });
-        });
-
-        this.mRequest
-          .on('error', (err) => {
-            this.handleError(err);
-          })
-          .end();
-      } catch (err) {
-        this.handleError(err);
-      }
-    });
   }
 
   public cancel() {
@@ -198,6 +157,59 @@ class DownloadWorker {
   public restart() {
     this.mResponse.removeAllListeners('error');
     this.mRequest.abort();
+  }
+
+  private startDownload(job: IDownloadJob, jobUrl: string, cookies: Electron.Cookie[]) {
+    let parsed: url.UrlWithStringQuery;
+    try {
+      parsed = url.parse(jobUrl);
+    } catch (err) {
+      this.handleError(new Error('No valid URL for this download'));
+      return;
+    }
+
+    const lib: IHTTP = parsed.protocol === 'https:' ? https : http;
+
+    try {
+      this.mRequest = lib.request({
+        method: 'GET',
+        protocol: parsed.protocol,
+        port: parsed.port,
+        hostname: parsed.hostname,
+        path: parsed.path,
+        headers: {
+          Range: `bytes=${job.offset}-${job.offset + job.size}`,
+          'User-Agent': this.mUserAgent,
+          'Accept-Encoding': 'gzip',
+          Cookie: (cookies || []).map(cookie => `${cookie.name}=${cookie.value}`),
+        },
+        agent: false,
+      }, (res) => {
+        log('debug', 'downloading from',
+          { address: `${res.connection.remoteAddress}:${res.connection.remotePort}` });
+        this.mResponse = res;
+        this.handleResponse(res, jobUrl);
+        res
+          .on('data', (data: Buffer) => {
+            this.handleData(data);
+          })
+          .on('error', err => this.handleError(err))
+          .on('end', () => {
+            if (!this.mRedirected) {
+              this.handleComplete();
+            }
+            this.mRequest.abort();
+          });
+      });
+
+      this.mRequest
+        .on('error', (err) => {
+          this.handleError(err);
+        })
+        .end();
+    } catch (err) {
+      this.handleError(err);
+    }
   }
 
   private handleError(err) {
