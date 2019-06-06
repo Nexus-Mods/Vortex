@@ -980,6 +980,12 @@ function once(api: IExtensionApi) {
         onAddMod(api, gameMode, mod, callback);
       });
 
+  api.events.on('profile-will-change', () => {
+    // when the profile changes there is a good chance the cycle warning doesn't apply and if
+    // the game changes the cycle dialog can't even be opened or it would trigger an error
+    api.dismissNotification('mod-cycle-warning');
+  });
+
   cleanupIncompleteInstalls(api);
 }
 
