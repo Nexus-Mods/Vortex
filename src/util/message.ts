@@ -325,7 +325,8 @@ export function prettifyNodeErrorMessage(err: any): IPrettifiedError {
     };
   } else if (err.code === 'EISDIR') {
     return {
-      message: 'Vortex expected a file but found a directory.',
+      message: 'Vortex expected a file but found a directory: "{{path}}".',
+      replace: { path: err.path },
       allowReport: false,
     };
   } else if (err.code === 'ENOTDIR') {

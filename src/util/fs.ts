@@ -423,17 +423,34 @@ export function removeSync(dirPath: string) {
   fs.removeSync(dirPath);
 }
 
-export function unlinkAsync(dirPath: string): PromiseBB<void> {
-  return unlinkInt(dirPath, new Error(), NUM_RETRIES);
+export function unlinkAsync(filePath: string): PromiseBB<void> {
+  return unlinkInt(filePath, new Error(), NUM_RETRIES);
 }
 
-function unlinkInt(dirPath: string, stackErr: Error, tries: number): PromiseBB<void> {
-  return simfail(() => fs.unlinkAsync(dirPath))
-    .catch((err: NodeJS.ErrnoException) => (err.code === 'ENOENT')
+function unlinkInt(filePath: string, stackErr: Error, tries: number): PromiseBB<void> {
+  return simfail(() => fs.unlinkAsync(filePath))
+    .catch((err: NodeJS.ErrnoException) => {
+      const handle = () => errorHandler(err, stackErr, tries)
+          .then(() => unlinkInt(filePath, stackErr, tries - 1));
+
+      if (err.code === 'ENOENT') {
         // don't mind if a file we wanted deleted was already gone
-        ? PromiseBB.resolve()
-        : errorHandler(err, stackErr, tries)
-          .then(() => unlinkInt(dirPath, stackErr, tries - 1)));
+        return PromiseBB.resolve();
+      } else if (err.code === 'EPERM') {
+        // this could be caused by the path actually pointing to a directory,
+        // unlink can only handle files
+        return fs.statAsync(filePath)
+          .then((stats) => {
+            if (stats.isDirectory()) {
+              err.code = 'EISDIR';
+            }
+            return handle();
+          })
+          .catch(() => handle());
+      } else {
+        return handle();
+      }
+    });
 }
 
 export function renameAsync(sourcePath: string, destinationPath: string): PromiseBB<void> {
