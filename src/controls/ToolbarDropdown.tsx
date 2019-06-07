@@ -36,7 +36,7 @@ export interface IToolbarDropdownProps {
   instanceId: string[];
   icons: IActionDefinition[];
   className?: string;
-  buttonType: ButtonType;
+  buttonType?: ButtonType;
   orientation: 'vertical' | 'horizontal';
 }
 
@@ -58,8 +58,8 @@ class ToolbarDropdown extends React.PureComponent<IToolbarDropdownProps, {}> {
           id={id}
           className={classes.join(' ')}
         >
-          <Button onClick={this.invokeDefault}>
-            {this.renderTitle(def.title)}
+          <Button onClick={this.invokeDefault} className='toolbar-dropdown-splitbtn'>
+            {this.renderTitle(shared)}
           </Button>
 
           <Dropdown.Toggle />

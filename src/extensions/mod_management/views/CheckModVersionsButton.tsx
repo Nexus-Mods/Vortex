@@ -50,16 +50,15 @@ class CheckVersionsButton extends ComponentEx<IProps, {}> {
           icons={[
             {
               icon: 'refresh',
-              title: t('Check for Mod Updates (Optimized)'),
+              title: t('Check for Updates (Optimized)'),
               action: this.checkModsVersion,
               default: true,
             }, {
               icon: 'refresh',
-              title: t('Check for Mod Updates (Full)'),
+              title: t('Check for Updates (Full)'),
               action: this.checkForUpdateForce,
             },
           ]}
-          buttonType={'icon'}
           orientation={'horizontal'}
         />
       );
