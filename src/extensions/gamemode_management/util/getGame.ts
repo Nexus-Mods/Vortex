@@ -20,16 +20,7 @@ const gameExHandler = {
       }, {});
 
       return gamePath => {
-        let defaultPath;
-        try {
-          // This try catch block has been added to avoid a very rare bug which causes
-          //  the application to crash when querying a mod path and the game extension
-          //  throws an error. (See https://github.com/Nexus-Mods/Vortex/issues/4720)
-          defaultPath = target.queryModPath(gamePath);
-        } catch (err) {
-          defaultPath = '.';
-        }
-
+        let defaultPath = target.queryModPath(gamePath);
         if (defaultPath === undefined) {
           defaultPath = '.';
         }
@@ -48,6 +39,7 @@ const gameExHandler = {
     }
   },
 };
+
 
 function makeGameProxy(game: IGame): IGame {
   if (game === undefined) {
