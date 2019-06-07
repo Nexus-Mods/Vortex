@@ -4,7 +4,6 @@ import { ITestResult } from '../../types/ITestResult';
 import { UserCanceled } from '../../util/CustomErrors';
 import deepMerge from '../../util/deepMerge';
 import * as fs from '../../util/fs';
-import getVortexPath from '../../util/getVortexPath';
 import {log} from '../../util/log';
 import { installPathForGame } from '../../util/selectors';
 import {getSafe} from '../../util/storeHelper';
@@ -36,7 +35,7 @@ function ensureIniBackups(t: I18next.TFunction, gameMode: string,
       copy => fs.statAsync(copy)
         .catch(() =>
           fs.copyAsync(file, copy, { noSelfCopy: true })
-            .then(() => fs.ensureFileWritableAsync(copy))
+            .then(() => fs.makeFileWritableAsync(copy))
             .catch(copyErr => {
               if (copyErr.code === 'ENOENT') {
                 log('warn', 'ini file missing', file);
@@ -165,13 +164,13 @@ function bakeSettings(t: I18next.TFunction,
           : Promise.reject(err))
         .then(() => fs.copyAsync(iniFileName + '.base', iniFileName + '.baked',
                                  { noSelfCopy: true })
-        .then(() => fs.ensureFileWritableAsync(iniFileName + '.baked'))
+        .then(() => fs.makeFileWritableAsync(iniFileName + '.baked'))
           // base might not exist, in that case copy from the original ini
           .catch(err => (err.code === 'ENOENT')
             ? fs.copyAsync(iniFileName, iniFileName + '.base', { noSelfCopy: true })
               .then(() => fs.copyAsync(iniFileName, iniFileName + '.baked', { noSelfCopy: true }))
-              .then(() => Promise.all([fs.ensureFileWritableAsync(iniFileName + '.base'),
-                                       fs.ensureFileWritableAsync(iniFileName + '.baked')]))
+              .then(() => Promise.all([fs.makeFileWritableAsync(iniFileName + '.base'),
+                                       fs.makeFileWritableAsync(iniFileName + '.baked')]))
             : Promise.reject(err))))
       .then(() => parser.read(iniFileName + '.baked'))
       .then(ini => Promise.each(enabledTweaks[baseName] || [],

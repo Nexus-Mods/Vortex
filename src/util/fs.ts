@@ -11,7 +11,7 @@
  * - ignoring ENOENT error when deleting a file.
  */
 
-import { DataInvalid, ProcessCanceled, UserCanceled } from './CustomErrors';
+import { ProcessCanceled, UserCanceled } from './CustomErrors';
 import { log } from './log';
 import { truthy } from './util';
 
@@ -335,7 +335,9 @@ export function ensureDirSync(dirPath: string) {
 }
 
 export function ensureFileAsync(filePath: string): PromiseBB<void> {
-  return (fs as any).ensureFileAsync(filePath);
+  const stackErr = new Error();
+  return (fs as any).ensureFileAsync(filePath)
+    .catch(err => restackErr(err, stackErr));
 }
 
 export function ensureDirAsync(dirPath: string): PromiseBB<void> {
@@ -635,11 +637,17 @@ export function changeFileAttributes(filePath: string,
     .catch(err => PromiseBB.reject(err));
 }
 
-export function ensureFileWritableAsync(filePath: string): PromiseBB<void> {
+export function makeFileWritableAsync(filePath: string): PromiseBB<void> {
+  const stackErr = new Error();
   const wantedAttributes = process.platform === 'win32' ? parseInt('0666', 8) : parseInt('0600', 8);
   return fs.statAsync(filePath).then(stat => {
     if (!stat.isFile()) {
-      return PromiseBB.reject(new DataInvalid(`${filePath} - is not a file!`));
+      const err: NodeJS.ErrnoException = new Error(`Expected a file, found a directory: "${filePath}"`);
+      err.code = 'EISDIR';
+      err.path = filePath;
+      err.syscall = 'stat';
+      err.stack = stackErr.stack;
+      return PromiseBB.reject(err);
     }
 
     return ((stat.mode & wantedAttributes) !== wantedAttributes)

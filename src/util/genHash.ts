@@ -21,6 +21,8 @@ function sanitizeKnownMessages(input: string): string {
     // reported from loot, the rest of these errors is localized
     .replace(/(boost::filesystem::file_size:) .*/, '$1')
     .replace(/.*(contains invalid WIN32 path characters.)/, '... $1')
+    .replace(/(Error: Cannot get property '[^']*' on missing remote object) [0-9]+/, '$1')
+    .replace(/.*(Cipher functions:OPENSSL_internal).*/, '$1')
     ;
 }
 
@@ -28,7 +30,9 @@ function sanitizeKnownMessages(input: string): string {
 // but tends to be variable
 function removeKnownVariable(input: string): string {
   return input
-    .replace(/HResult: [0-9\-]*/, '');
+    .replace(/HResult: [0-9\-]*/, '')
+    .replace(/[0-9]+:error:[0-9a-f]+:(SSL routines:OPENSSL_internal):.*/, '$1')
+    ;
 }
 
 // replace "at foobar [as somename]" by "at somename"
