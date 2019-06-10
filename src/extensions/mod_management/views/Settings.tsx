@@ -270,10 +270,10 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     const { t, discovery, gameMode, onSetInstallPath,
             onShowDialog, onShowError, onSetTransfer } = this.props;
 
-    if (discovery.path === undefined) {
+    if ((discovery === undefined) || (discovery.path === undefined)) {
       return onShowDialog('error', 'Not discovered', {
         text: 'The active game is not discovered correctly. If you have an idea what '
-            + 'lead to this, please report.',
+            + 'led to this, please report.',
       }, [ { label: 'Close' } ]);
     }
 
