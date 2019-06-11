@@ -90,7 +90,7 @@ export function onGameModeActivated(
   const store = api.store;
   const state: IState = store.getState();
   const supported = getSupportedActivators(state);
-  const configuredActivator = getCurrentActivator(state, newGame, true);
+  const activatorToUse = getCurrentActivator(state, newGame, true);
   const gameId = activeGameId(state);
   if (gameId !== newGame) {
     // this should never happen
@@ -177,11 +177,12 @@ export function onGameModeActivated(
 
   let initProm = ensureStagingDirectory;
 
-  if (configuredActivator === undefined) {
+  const configuredActivatorId = currentActivator(state);
+
+  if (activatorToUse === undefined) {
     // current activator is not valid for this game. This should only occur
     // if compatibility of the activator has changed
 
-    const configuredActivatorId = currentActivator(state);
     let changeActivator = true;
     const oldActivator = activators.find(iter => iter.id === configuredActivatorId);
     const modPaths = game.getModPaths(gameDiscovery.path);
@@ -250,6 +251,15 @@ export function onGameModeActivated(
           }
         });
     }
+  } else if (configuredActivatorId === undefined) {
+    // no activator configured but we have found a valid one. Store this.
+    api.store.dispatch(setActivator(gameId, activatorToUse.id));
+    api.sendNotification({
+      type: 'info',
+      title: 'Using default deployment method',
+      message: activatorToUse.name,
+      displayMS: 5000,
+    });
   }
 
   const knownMods: { [modId: string]: IMod } = getSafe(state, ['persistent', 'mods', gameId], {});
