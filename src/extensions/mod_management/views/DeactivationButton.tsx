@@ -1,8 +1,9 @@
-import { setConfirmPurge } from '../../../actions';
+import { addNotification } from '../../../actions/notifications';
+import { setSettingsPage } from '../../../actions/session';
 import { DialogActions, DialogType, IDialogContent,
          IDialogResult, showDialog} from '../../../actions/notifications';
-import Advanced from '../../../controls/Advanced';
 import ToolbarIcon from '../../../controls/ToolbarIcon';
+import { INotificationAction } from '../../../types/INotification';
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { TemporaryError, UserCanceled } from '../../../util/CustomErrors';
@@ -17,6 +18,7 @@ import * as Promise from 'bluebird';
 import * as React from 'react';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
+import { setConfirmPurge } from '../actions/settings';
 
 interface IConnectedProps {
   activator: IDeploymentMethod;
@@ -28,6 +30,8 @@ interface IActionProps {
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
                  actions: DialogActions) => Promise<IDialogResult>;
   onSetConfirmPurge: (enabled: boolean) => void;
+  onShowWarning: (message: string, dialogAction: INotificationAction, id: string) => void;
+  onSetSettingsPage: (pageId: string) => void;
 }
 
 export interface IBaseProps {
@@ -48,8 +52,7 @@ class DeactivationButton extends ComponentEx<IProps, {}> {
         id='purge-mods'
         icon='purge'
         text={t('Purge Mods')}
-        onClick={activator !== undefined ? this.activate : nop}
-        disabled={activator === undefined}
+        onClick={activator !== undefined ? this.activate : this.noMethod}
       />);
   }
 
@@ -85,6 +88,19 @@ class DeactivationButton extends ComponentEx<IProps, {}> {
         }
       });
   }
+
+  private noMethod = () => {
+    const { onSetSettingsPage, onShowWarning } = this.props;
+    onShowWarning('You have to select a deployment method first', {
+      title: 'Fix',
+      action: (dismiss: () => void) => {
+        this.context.api.events.emit('show-main-page', 'application_settings');
+        onSetSettingsPage('Mods');
+        dismiss();
+      },
+    }, 'select-deployment-method-first');
+  }
+
 
   private confirmPurge(): Promise<void> {
     const { onSetConfirmPurge, onShowDialog } = this.props;
@@ -133,6 +149,14 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
       dispatch(showDialog(type, title, content, dialogActions)),
     onSetConfirmPurge: (enabled: boolean) =>
       dispatch(setConfirmPurge(enabled)),
+    onShowWarning: (message: string, dialogAction: INotificationAction, id: string) =>
+      dispatch(addNotification({
+        id,
+        type: 'warning',
+        message,
+        actions: [ dialogAction ],
+    })),
+    onSetSettingsPage: (pageId: string) => dispatch(setSettingsPage(pageId)),
   };
 }
 

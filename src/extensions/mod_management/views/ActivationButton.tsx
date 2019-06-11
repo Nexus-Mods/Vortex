@@ -1,4 +1,7 @@
+import { addNotification } from '../../../actions/notifications';
+import { setSettingsPage } from '../../../actions/session';
 import ToolbarIcon from '../../../controls/ToolbarIcon';
+import { INotificationAction } from '../../../types/INotification';
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { UserCanceled } from '../../../util/CustomErrors';
@@ -6,6 +9,7 @@ import { showError } from '../../../util/message';
 import onceCB from '../../../util/onceCB';
 import { activeGameId, needToDeploy } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
+
 
 import { IDeploymentMethod } from '../types/IDeploymentMethod';
 import { NoDeployment } from '../util/exceptions';
@@ -21,6 +25,8 @@ interface IConnectedProps {
 
 interface IActionProps {
   onShowError: (message: string, details?: string, allowReport?: boolean) => void;
+  onShowWarning: (message: string, dialogAction: INotificationAction, id: string) => void;
+  onSetSettingsPage: (pageId: string) => void;
 }
 
 export interface IBaseProps {
@@ -42,10 +48,21 @@ class ActivationButton extends ComponentEx<IProps, {}> {
         icon='deploy'
         text={t('Deploy Mods')}
         className={needToDeploy ? 'need-to-deploy' : 'no-deploy'}
-        onClick={activator !== undefined ? this.activate : nop}
-        disabled={activator === undefined}
+        onClick={activator !== undefined ? this.activate : this.noMethod}
       />
     );
+  }
+
+  private noMethod = () => {
+    const { onSetSettingsPage, onShowWarning } = this.props;
+    onShowWarning('You have to select a deployment method first', {
+      title: 'Fix',
+      action: (dismiss: () => void) => {
+        this.context.api.events.emit('show-main-page', 'application_settings');
+        onSetSettingsPage('Mods');
+        dismiss();
+      },
+    }, 'select-deployment-method-first');
   }
 
   private activate = () => {
@@ -83,6 +100,14 @@ function mapDispatchToProps(dispatch: ThunkDispatch<IState, null, Redux.Action>)
   return {
     onShowError: (message: string, details?: string, allowReport?: boolean) =>
       showError(dispatch, message, details, { allowReport }),
+    onShowWarning: (message: string, dialogAction: INotificationAction, id: string) =>
+      dispatch(addNotification({
+        id,
+        type: 'warning',
+        message,
+        actions: [ dialogAction ],
+    })),
+    onSetSettingsPage: (pageId: string) => dispatch(setSettingsPage(pageId)),
   };
 }
 
