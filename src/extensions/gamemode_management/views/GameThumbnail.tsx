@@ -3,7 +3,7 @@ import IconBar from '../../../controls/IconBar';
 import OverlayTrigger from '../../../controls/OverlayTrigger';
 import { IconButton } from '../../../controls/TooltipControls';
 import { IActionDefinition } from '../../../types/api';
-import { IProfile, IState } from '../../../types/IState';
+import { IProfile, IState, IMod } from '../../../types/IState';
 import { connect, PureComponentEx } from '../../../util/ComponentEx';
 import { getSafe } from '../../../util/storeHelper';
 import { countIf } from '../../../util/util';
@@ -31,6 +31,7 @@ export interface IBaseProps {
 
 interface IConnectedProps {
   profile: IProfile;
+  mods: { [modId: string]: IMod };
 }
 
 type IProps = IBaseProps & IConnectedProps;
@@ -46,7 +47,7 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
   private mRef = null;
 
   public render(): JSX.Element {
-    const { t, active, game, profile, type } = this.props;
+    const { t, active, game, mods, profile, type } = this.props;
 
     if (game === undefined) {
       return null;
@@ -57,7 +58,8 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
     // Mod count should only be shown for Managed and Discovered games as
     //  the supported type suggests that the game has been removed from the machine.
     const modCount = ((profile !== undefined) && (type !== 'undiscovered'))
-      ? countIf(Object.keys(profile.modState || {}), id => profile.modState[id].enabled)
+      ? countIf(Object.keys(profile.modState || {}),
+          id => profile.modState[id].enabled && (mods[id] !== undefined))
       : undefined;
 
     return (
@@ -210,14 +212,20 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
   }
 }
 
+const emptyObj = {};
+
 function mapStateToProps(state: IState, ownProps: IBaseProps): IConnectedProps {
   const profiles = state.persistent.profiles;
 
   const lastActiveProfile = ownProps.game !== undefined
     ? getSafe(state.settings.profiles, ['lastActiveProfile', ownProps.game.id], undefined)
     : undefined;
+
+  const profile = lastActiveProfile !== undefined ? profiles[lastActiveProfile] : undefined;
+
   return {
-    profile: lastActiveProfile !== undefined ? profiles[lastActiveProfile] : undefined,
+    profile,
+    mods: ((profile !== undefined) ? state.persistent.mods[profile.gameId] : emptyObj) || emptyObj,
   };
 }
 
