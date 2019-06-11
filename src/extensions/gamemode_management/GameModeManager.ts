@@ -136,7 +136,7 @@ class GameModeManager {
       try {
         return fs.statAsync(gameDiscovery.path)
           .then(() => game.setup(gameDiscovery))
-          .catch(err => (err.code === 'ENOENT')
+          .catch(err => ((err.code === 'ENOENT') && (err.path === gameDiscovery.path))
             ? Promise.reject(new ProcessCanceled(
               `Game folder \"${gameDiscovery.path}\" doesn\'t exist (any more).`))
             : Promise.reject(err));
