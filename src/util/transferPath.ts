@@ -97,7 +97,8 @@ export type ProgressCallback = (from: string, to: string, percentage: number) =>
  */
 export function transferPath(source: string,
                              dest: string,
-                             progress: ProgressCallback): Promise<void> {
+                             progress: ProgressCallback,
+                             cleanUpFailedCallback: () => void): Promise<void> {
   let func = fs.copyAsync;
 
   let completed: number = 0;
@@ -216,16 +217,12 @@ export function transferPath(source: string,
 
       return cleanUp()
         .catch(err => {
-          if (['ENOENT', 'EPERM'].indexOf(err.code) !== -1) {
-            // We shouldn't report failure just because we encountered
-            //  a permissions issue or a missing folder during cleanup.
-            //  this is a very ugly workaround to the permissions issue
-            //  we sometimes encounter due to file handles not being released.
+            // We're in the cleanup process. Regardless of whatever happens
+            //  at this point, the transfer has completed successfully!
+            //  we call the failed clean-up callback, and resolve in order to avoid file loss!
             log('warn', 'Failed to remove source directory', err);
+            cleanUpFailedCallback();
             return Promise.resolve();
-          } else {
-            return Promise.reject(err);
-          }
         });
     });
 }

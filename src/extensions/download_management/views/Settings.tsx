@@ -491,6 +491,13 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
         return queryReset
           .then(() => {
+            const cleanupFailed = () => onShowDialog('info', 'Cleanup failed', {
+              bbcode: 'The downloads folder has transferred [b]successfully[/b] to your chosen '
+                + 'destination!<br />'
+                + 'Unfortunately Vortex was unable to cleanup your initial downloads directory.'
+                + '<br /> Please curate any remaining '
+                + 'files or folders manually and remove these yourself if needed.',
+            }, [ { label: 'Close', action: () => Promise.resolve() } ]);
             onSetTransfer(newPath);
             return transferPath(oldPath, newPath, (from: string, to: string, progress: number) => {
               log('debug', 'transfer downloads', { from, to });
@@ -501,7 +508,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                 && ((Date.now() - this.mLastFileUpdate) > 1000)) {
                 this.nextState.progressFile = path.basename(from);
               }
-            }).catch(err => (sourceIsMissing
+            }, cleanupFailed).catch(err => (sourceIsMissing
                          && (err.path === oldPath))
                 ? Promise.resolve()
                 : Promise.reject(err));
