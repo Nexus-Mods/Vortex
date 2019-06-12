@@ -1,4 +1,4 @@
-import { InsufficientDiskSpace, NotFound, ProcessCanceled,
+import { CleanupFailedException, InsufficientDiskSpace, NotFound, ProcessCanceled,
          UnsupportedOperatingSystem, UserCanceled } from './CustomErrors';
 import * as fs from './fs';
 import getNormalizeFunc, { Normalize } from './getNormalizeFunc';
@@ -10,6 +10,7 @@ import * as diskusage from 'diskusage';
 import * as path from 'path';
 import turbowalk, { IEntry } from 'turbowalk';
 import * as winapi from 'winapi-bindings';
+import { DOWNLOADS_DIR_TAG } from '../extensions/download_management/util/writeDownloadsTag';
 import { STAGING_DIR_TAG } from '../extensions/mod_management/eventHandlers';
 
 const MIN_DISK_SPACE_OFFSET = 512 * 1024 * 1024;
@@ -210,58 +211,59 @@ export function transferPath(source: string,
     .then(() => {
       const cleanUp = () => {
         return (moveDown)
-          ? removeStagingTag(source).then(() => removeEmptyDirectories(removableDirectories))
+          ? removeFolderTags(source).then(() => removeOldDirectories(removableDirectories))
           : fs.removeAsync(source);
       };
 
       return cleanUp()
         .catch(err => {
-          if (['ENOENT', 'EPERM'].indexOf(err.code) !== -1) {
-            // We shouldn't report failure just because we encountered
-            //  a permissions issue or a missing folder during cleanup.
-            //  this is a very ugly workaround to the permissions issue
-            //  we sometimes encounter due to file handles not being released.
-            log('warn', 'Failed to remove source directory', err);
-            return Promise.resolve();
-          } else {
-            return Promise.reject(err);
-          }
+            // We're in the cleanup process. Regardless of whatever happens
+            //  at this point, the transfer has completed successfully!
+            //  We log the error and report an exception but expect the caller
+            //  to resolve successfully and inform the user that we couldn't clean
+            //  up properly.
+            log('error', 'Failed to remove source directory',
+              (err.stack !== undefined) ? err.stack : err);
+
+            return Promise.reject(new CleanupFailedException());
         });
     });
 }
 
-function removeStagingTag(sourceDir: string) {
-  // Attempt to remove the staging folder tag.
-  //  This should only be called when the staging folder is
-  //  moved down a layer.
-  return fs.removeAsync(path.join(sourceDir, STAGING_DIR_TAG))
-    .catch(err => {
-      if (err.code !== 'ENOENT') {
-        // No point reporting this.
-        log('error', 'Unable to remove staging directory tag', err);
-      }
-      return Promise.resolve();
-    });
+function removeFolderTags(sourceDir: string) {
+  // Attempt to remove the folder tag. (either staging folder or downloads tag)
+  //  This should only be called when the folder is moved down a layer.
+  const tagFileExists = (filePath: string): Promise<boolean> => {
+    return fs.statAsync(filePath)
+      .then(() => true)
+      .catch(() => false);
+  };
+
+  const removeTag = (filePath: string): Promise<void> => {
+    return tagFileExists(filePath)
+      .then(exists => exists
+        ? fs.removeAsync(filePath).catch(err => {
+          log('error', 'Unable to remove directory tag', err);
+          return (['ENOENT'].indexOf(err.code) !== -1)
+            // Tag file is gone ? no problem.
+            ? Promise.resolve()
+            : Promise.reject(err);
+        })
+        : Promise.resolve());
+  };
+
+  const stagingFolderTag = path.join(sourceDir, STAGING_DIR_TAG);
+  const downloadsTag = path.join(sourceDir, DOWNLOADS_DIR_TAG);
+  return Promise.all([removeTag(stagingFolderTag), removeTag(downloadsTag)]);
 }
 
-function removeEmptyDirectories(directories: string[]): Promise<void> {
+function removeOldDirectories(directories: string[]): Promise<void> {
   const longestFirst = (lhs, rhs) => rhs.length - lhs.length;
-  return Promise.each(directories.sort(longestFirst), dir => fs.rmdirAsync(dir)
-    .catch(err => {
-      if (err.code === 'ENOTEMPTY') {
-        // The directories parameter is expected to provide filePaths to
-        //  empty directories! In this case, clearly something went wrong with
-        //  the transfer!
-        return Promise.reject(err);
-      } else {
-        // Something went wrong but we expect all transfers to have completed
-        //  successfully at this point; we can't stop now as we have
-        //  already started to clean-up the source directories, and reporting an
-        //  error at this point would leave the user's transfer in a questionable state!
-        log('warn', 'Failed to remove leftover empty directories', err);
-        return Promise.resolve();
-      }
-    })).then(() => null);
+  return Promise.each(directories.sort(longestFirst), dir => fs.removeAsync(dir)
+    .catch(err => (['ENOENT'].indexOf(err.code) !== -1)
+      // Directory missing ? odd but lets keep going.
+      ? Promise.resolve()
+      : Promise.reject(err))).then(() => Promise.resolve());
 }
 
 function linkFile(
