@@ -9,7 +9,7 @@ export class NotSupportedError extends Error {
 
 export class CleanupFailedException extends Error {
   constructor() {
-    super('Cleanup proces has failed');
+    super('Cleanup process has failed');
     this.name = this.constructor.name;
   }
 }
