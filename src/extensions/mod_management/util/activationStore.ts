@@ -330,7 +330,7 @@ export function saveActivation(modType: string, instance: string,
   return (activation.length === 0)
     ? fs.removeAsync(tagFilePath).catch(() => undefined)
     : writeFileAtomic(tagFilePath, dataJSON)
-        .then(() => writeFileAtomic(tagBackupPath, new Buffer(msgpack.encode(dataRaw))))
+        .then(() => writeFileAtomic(tagBackupPath, Buffer.from(msgpack.encode(dataRaw))))
         // remove backup from previous Vortex versions
         .then(() => fs.removeAsync(path.join(stagingPath, tagFileName))
           .catch({ code: 'ENOENT' }, () => null));

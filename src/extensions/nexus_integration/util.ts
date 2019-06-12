@@ -411,7 +411,7 @@ export function checkModVersionsImpl(
       (now - (getSafe(mod.attributes, ['lastUpdateTime'], 0) || 0)) > UPDATE_CHECK_DELAY)
     ;
 
-  log('info', 'checking mods for update (nexus)', { count: modsList.length });
+  log('info', '[update check] checking mods for update (nexus)', { count: modsList.length });
 
   return refreshEndorsements(store, nexus)
     .then(() => filterByUpdateList(store, nexus, gameId, modsList))
@@ -430,10 +430,10 @@ export function checkModVersionsImpl(
       };
       progress();
       if (forceFull) {
-        log('info', 'forcing full update check (nexus)',
+        log('info', '[update check] forcing full update check (nexus)',
           { count: modsList.length });
       } else {
-        log('info', 'checking mods for update (nexus)',
+        log('info', '[update check] optimized update check (nexus)',
           { count: filteredMods.length, of: modsList.length });
       }
 

@@ -36,8 +36,8 @@
   },
   "jest": {
     "transform": {
-      "^.+\\.(ts|tsx)$": "<rootDir>/node_modules/ts-jest",
-      "^.+\\.(js|jsx)$": "<rootDir>/node_modules/babel-jest"
+      "^.+\\.(ts|tsx)$": "ts-jest",
+      "^.+\\.(js|jsx)$": "babel-jest"
     },
     "testRegex": "(/__tests__/.*|\\.(test|spec))\\.(js|jsx|ts|tsx)$",
     "testPathIgnorePatterns": [
@@ -51,10 +51,6 @@
       "jsx",
       "ts",
       "tsx"
-    ],
-    "collectCoverage": true,
-    "setupFilesAfterEnv": [
-      "<rootDir>setupTests.js"
     ]
   },
   "parserOptions": {
@@ -127,6 +123,7 @@
     "@yarnpkg/lockfile": "*",
     "babel-core": "^6.26.3",
     "babel-jest": "^24.8.0",
+    "babel-polyfill": "^6.26.0",
     "bootswatch": "^4.3.1",
     "concurrently": "^4.1.0",
     "copyfiles": "^2.1.0",
@@ -139,8 +136,8 @@
     "electron-rebuild": "^1.8.4",
     "enzyme": "^3.9.0",
     "enzyme-adapter-react-16": "^1.10.0",
-    "jest": "^24.3.1",
-    "jest-cli": "^24.3.1",
+    "jest": "^24.8.0",
+    "jest-cli": "^24.8.0",
     "json-loader": "^0.5.7",
     "license-checker": "^25.0.1",
     "minimist": "^1.2.0",
