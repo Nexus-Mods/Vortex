@@ -6,7 +6,7 @@ import { Button } from '../../../controls/TooltipControls';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
 import { ValidationState } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { InsufficientDiskSpace, NotFound, UnsupportedOperatingSystem,
+import { CleanupFailedException, InsufficientDiskSpace, NotFound, UnsupportedOperatingSystem,
          UserCanceled } from '../../../util/CustomErrors';
 import { withContext } from '../../../util/errorHandling';
 import * as fs from '../../../util/fs';
@@ -442,7 +442,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private transferPath() {
-    const { onSetTransfer, onShowDialog } = this.props;
+    const { t, onSetTransfer, onShowDialog } = this.props;
     const oldPath = getDownloadPath(this.props.downloadPath);
     const newPath = getDownloadPath(this.state.downloadPath);
 
@@ -491,13 +491,6 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
         return queryReset
           .then(() => {
-            const cleanupFailed = () => onShowDialog('info', 'Cleanup failed', {
-              bbcode: 'The downloads folder has transferred [b]successfully[/b] to your chosen '
-                + 'destination!<br />'
-                + 'Unfortunately Vortex was unable to cleanup your initial downloads directory.'
-                + '<br /> Please curate any remaining '
-                + 'files or folders manually and remove these yourself if needed.',
-            }, [ { label: 'Close', action: () => Promise.resolve() } ]);
             onSetTransfer(newPath);
             return transferPath(oldPath, newPath, (from: string, to: string, progress: number) => {
               log('debug', 'transfer downloads', { from, to });
@@ -508,8 +501,19 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                 && ((Date.now() - this.mLastFileUpdate) > 1000)) {
                 this.nextState.progressFile = path.basename(from);
               }
-            }, cleanupFailed).catch(err => (sourceIsMissing
-                         && (err.path === oldPath))
+            })
+              .catch(CleanupFailedException, err => {
+                onShowDialog('info', 'Cleanup failed', {
+                  bbcode: t('The downloads folder has been transferred [b]successfully[/b] to your '
+                    + 'chosen destination!<br />'
+                    + 'During clean-up operations Vortex has encountered a file-system related '
+                    + 'error which remained unresolved before you cancelled the transfer.<br /><br /> '
+                    + 'No need to panic - you simply have to remove any unwanted files manually '
+                    + 'from your old downloads folder.<br />'
+                    + '[url]{{thePath}}[/url]', { replace: { thePath: oldPath } }),
+                }, [ { label: 'Close', action: () => Promise.resolve() } ]);
+              })
+              .catch(err => (sourceIsMissing && (err.path === oldPath))
                 ? Promise.resolve()
                 : Promise.reject(err));
           });

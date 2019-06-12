@@ -1,4 +1,4 @@
-import { InsufficientDiskSpace, NotFound, ProcessCanceled,
+import { CleanupFailedException, InsufficientDiskSpace, NotFound, ProcessCanceled,
          UnsupportedOperatingSystem, UserCanceled } from './CustomErrors';
 import * as fs from './fs';
 import getNormalizeFunc, { Normalize } from './getNormalizeFunc';
@@ -97,8 +97,7 @@ export type ProgressCallback = (from: string, to: string, percentage: number) =>
  */
 export function transferPath(source: string,
                              dest: string,
-                             progress: ProgressCallback,
-                             cleanUpFailedCallback: () => void): Promise<void> {
+                             progress: ProgressCallback): Promise<void> {
   let func = fs.copyAsync;
 
   let completed: number = 0;
@@ -219,10 +218,8 @@ export function transferPath(source: string,
         .catch(err => {
             // We're in the cleanup process. Regardless of whatever happens
             //  at this point, the transfer has completed successfully!
-            //  we call the failed clean-up callback, and resolve in order to avoid file loss!
-            log('warn', 'Failed to remove source directory', err);
-            cleanUpFailedCallback();
-            return Promise.resolve();
+            log('error', 'Failed to remove source directory', err);
+            return Promise.reject(new CleanupFailedException());
         });
     });
 }
