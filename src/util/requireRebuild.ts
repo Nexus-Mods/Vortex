@@ -47,7 +47,6 @@ const edgeExp = /The edge module has not been pre-compiled/;
 // modules that we will build even if they haven't been build yet
 const initBuild = [
   'turbowalk',
-  'icon-extract',
   'winapi',
   'wholocks'
 ];
