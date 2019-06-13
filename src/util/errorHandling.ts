@@ -198,7 +198,7 @@ export function sendReport(type: string, error: IError, context: IErrorContext,
       : error.message;
     dialog.showErrorBox(fullMessage, JSON.stringify({
       type, error, labels, context, reporterId, reporterProcess, sourceProcess,
-    }));
+    }, undefined, 2));
     return Promise.resolve(undefined);
   } else {
     return nexusReport(hash, type, error, labels, context, reporterId || fallbackAPIKey,
@@ -399,10 +399,36 @@ export function toError(input: any, title?: string, options?: IErrorOptions, sou
   }
 }
 
-export function withContext(id: string, value: string, fun: () => Promise<any>) {
+/**
+ * set an error context, that will be reported with every error reported.
+ * Please keep in mind that the error context will remain set
+ * until it's cleared with clearErrorContext and use "withContext" where possible
+ * to ensure the context gets reset
+ * @param id 
+ * @param value 
+ */
+export function setErrorContext(id: string, value: string) {
   context[id] = value;
+}
+
+/**
+ * clear an error context
+ * @param id id of the context
+ */
+export function clearErrorContext(id: string) {
+  delete context[id];
+}
+
+/**
+ * execute a function with the specified error context
+ * @param id identifier of the context to set
+ * @param value context value
+ * @param fun the function to set
+ */
+export function withContext(id: string, value: string, fun: () => Promise<any>) {
+  setErrorContext(id, value);
   return fun().finally(() => {
-    delete context[id];
+    clearErrorContext(id);
   });
 }
 

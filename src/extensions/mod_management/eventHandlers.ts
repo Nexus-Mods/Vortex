@@ -1,6 +1,7 @@
 import {IExtensionApi} from '../../types/IExtensionContext';
 import {IModTable, IState} from '../../types/IState';
 import { ProcessCanceled, TemporaryError, UserCanceled } from '../../util/CustomErrors';
+import { setErrorContext } from '../../util/errorHandling';
 import * as fs from '../../util/fs';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
 import { log } from '../../util/log';
@@ -22,7 +23,6 @@ import { getSupportedActivators, getCurrentActivator } from './util/deploymentMe
 
 import {getGame} from '../gamemode_management/util/getGame';
 import {setModEnabled} from '../profile_management/actions/profiles';
-import {IProfile} from '../profile_management/types/IProfile';
 
 import { setInstallPath } from './actions/settings';
 import allTypesSupported from './util/allTypesSupported';
@@ -103,8 +103,14 @@ export function onGameModeActivated(
   if ((gameDiscovery === undefined)
       || (gameDiscovery.path === undefined)
       || (game === undefined)) {
+    // TODO: I don't think we should ever get here but if we do, is this a
+    //   reasonable way of dealing with it? We're getting this callback because the profile
+    //   has been changed, leaving the profile set without activating the game mode properly
+    //   seems dangerous
     return;
   }
+
+  setErrorContext('gamemode', game.name);
 
   let instPath = installPath(state);
 
