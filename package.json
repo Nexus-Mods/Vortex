@@ -51,6 +51,9 @@
       "jsx",
       "ts",
       "tsx"
+    ],
+    "setupFilesAfterEnv": [
+      "<rootDir>setupTests.js"
     ]
   },
   "parserOptions": {
