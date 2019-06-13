@@ -28,5 +28,11 @@
 	"severity": "warning",
 	"gamemode": "*",
 	"version": "^0.18.0"
+}, {
+	"date": "2019-06-13T14:48:10",
+	"description": "If presented with the \"Folder transfer was interrupted\" notification - DO NOT click the fix button",
+	"severity": "critical",
+	"gamemode": "*",
+	"version": "0.18.8"
 }
 ]
