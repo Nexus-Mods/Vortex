@@ -4,9 +4,9 @@ import { file } from 'tmp';
 import { createHash } from 'crypto';
 import { log } from './log';
 
-function checksum(input: string | Buffer): string {
+export function checksum(input: Buffer): string {
   return createHash('md5')
-    .update(input.toString(), 'utf8')
+    .update(input)
     .digest('hex');
 }
 
@@ -33,7 +33,11 @@ function writeFileAtomicImpl(filePath: string, input: string | Buffer, attempts:
   const stackErr = new Error();
   let cleanup: () => void;
   let tmpPath: string;
-  const hash = checksum(input);
+  const buf: Buffer = input instanceof Buffer
+    ? input
+    : Buffer.from(input);
+
+  const hash = checksum(buf);
   return new Promise<number>((resolve, reject) => {
     file({ template: `${filePath}.XXXXXX.tmp` },
          (err: any, genPath: string, fd: number, cleanupCB: () => void) => {
@@ -46,9 +50,6 @@ function writeFileAtomicImpl(filePath: string, input: string | Buffer, attempts:
     });
   })
   .then(fd => {
-    const buf: Buffer = input instanceof Buffer
-      ? input
-      : Buffer.from(input);
     return fs.writeAsync(fd, buf, 0, buf.byteLength, 0)
       .then(() => fs.closeAsync(fd));
   })
