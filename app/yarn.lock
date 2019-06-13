@@ -21,6 +21,13 @@
   dependencies:
     regenerator-runtime "^0.13.2"
 
+"@msgpack/msgpack@^1.3.2":
+  version "1.4.0"
+  resolved "https://registry.yarnpkg.com/@msgpack/msgpack/-/msgpack-1.4.0.tgz#b9364b134b1b8e36fbd5abceb873f79dff8e822d"
+  integrity sha512-2ZXCcr7JWVQfFlNx0fuC+eJP/cD/DHuqLiQ73E2U5HFAxXDGjRQ5Vj/UsFzoMMjyYa297d5rK0Vt84gdzmgubw==
+  dependencies:
+    base64-js "^1.3.0"
+
 abbrev@1:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/abbrev/-/abbrev-1.1.1.tgz#f8f2c887ad10bf67f634f005b6987fed3179aac8"
@@ -211,6 +218,11 @@ balanced-match@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/balanced-match/-/balanced-match-1.0.0.tgz#89b4d199ab2bee49de164ea02b89ce462d71b767"
   integrity sha1-ibTRmasr7kneFk6gK4nORi1xt2c=
+
+base64-js@^1.3.0:
+  version "1.3.0"
+  resolved "https://registry.yarnpkg.com/base64-js/-/base64-js-1.3.0.tgz#cab1e6118f051095e58b5281aea8c1cd22bfc0e3"
+  integrity sha512-ccav/yGvoa80BQDljCxsmmQ3Xvx60/UpBIij5QN21W3wBi/hhIC9OoO+KLpu9IJTS9j4DRVJ3aDDF9cMSoa2lw==
 
 bbcode-to-react@TanninOne/bbcode-to-react:
   version "0.2.10"
@@ -1395,8 +1407,8 @@ flux-standard-action@^2.0.0:
     lodash "^4.17.11"
 
 fomod-installer@Nexus-Mods/fomod-installer:
-  version "0.1.6"
-  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/31fd3c51765b4b08f6a96275dba0278721c057d7"
+  version "0.1.7"
+  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/942a05d4830e5362adaee60db7cdf117c97b02a5"
   dependencies:
     async "^2.6.2"
     copyfiles "^1.0.0"
