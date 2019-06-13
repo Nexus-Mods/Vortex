@@ -264,13 +264,11 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             })
               .catch(CleanupFailedException, err => {
                 onShowDialog('info', 'Cleanup failed', {
-                  bbcode: t('The mods staging folder has been transferred [b]successfully[/b] to '
+                  bbcode: t('The mods staging folder has been copied [b]successfully[/b] to '
                     + 'your chosen destination!<br />'
-                    + 'During clean-up operations Vortex has encountered a file-system related '
-                    + 'error which remained unresolved before you cancelled the transfer.<br /><br /> '
-                    + 'No need to panic - you simply have to remove any unwanted files manually '
-                    + 'from your old mods staging folder.<br />'
-                    + `[url]{{thePath}}[/url]`, { replace: { thePath: oldPath } }),
+                    + 'Clean-up of the old staging folder has been cancelled.<br /><br />'
+                    + `Old staging folder: [url]{{thePath}}[/url]`,
+                    { replace: { thePath: oldPath } }),
                 }, [ { label: 'Close', action: () => Promise.resolve() } ]);
               });
           });
