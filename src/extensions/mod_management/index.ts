@@ -477,7 +477,6 @@ function genUpdateModDeployment() {
       return Promise.resolve();
     }
     const gameId = profile.gameId;
-    const stagingPath = installPathForGame(state, gameId);
     const gameDiscovery =
       getSafe(state, ['settings', 'gameMode', 'discovered', gameId], undefined);
     const game = getGame(gameId);
@@ -486,6 +485,8 @@ function genUpdateModDeployment() {
         || (gameDiscovery.path === undefined)) {
       return Promise.reject(new Error('Game no longer available'));
     }
+    const stagingPath = installPathForGame(state, gameId);
+
     const modPaths = game.getModPaths(gameDiscovery.path);
     const activator = getCurrentActivator(state, gameId, true);
 
