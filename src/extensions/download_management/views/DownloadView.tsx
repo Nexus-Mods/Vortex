@@ -334,6 +334,11 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
           } else if (err.code === 'ENOSPC') {
             this.props.onShowError('Failed to resume download', 'The disk is full',
               undefined, false);
+          } else if (err.message.indexOf('DECRYPTION_FAILED_OR_BAD_RECORD_MAC') !== -1) {
+            this.props.onShowError('Failed to resume download',
+                                   'Network communication error (SSL payload corrupted). '
+                                   + 'This is likely a temporary issue, please try again later.',
+                                   undefined, false);
           } else {
             this.props.onShowError('Failed to resume download', err);
           }
