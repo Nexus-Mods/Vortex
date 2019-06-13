@@ -225,7 +225,7 @@ export function transferPath(source: string,
             log('error', 'Failed to remove source directory',
               (err.stack !== undefined) ? err.stack : err);
 
-            return Promise.reject(new CleanupFailedException());
+            return Promise.reject(new CleanupFailedException(err));
         });
     });
 }

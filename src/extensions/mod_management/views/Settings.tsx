@@ -261,16 +261,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                 && ((Date.now() - this.mLastFileUpdate) > 1000)) {
                 this.nextState.progressFile = path.basename(from);
               }
-            })
-              .catch(CleanupFailedException, err => {
-                onShowDialog('info', 'Cleanup failed', {
-                  bbcode: t('The mods staging folder has been copied [b]successfully[/b] to '
-                    + 'your chosen destination!<br />'
-                    + 'Clean-up of the old staging folder has been cancelled.<br /><br />'
-                    + `Old staging folder: [url]{{thePath}}[/url]`,
-                    { replace: { thePath: oldPath } }),
-                }, [ { label: 'Close', action: () => Promise.resolve() } ]);
-              });
+            });
           });
       }));
   }
@@ -342,6 +333,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
     this.nextState.progress = 0;
     this.nextState.busy = t('Calculating required disk space');
+    let deleteOldDestination = true;
     return testPathTransfer(oldInstallPath, newInstallPath)
       .then(() => {
         this.nextState.busy = t('Purging previous deployment');
@@ -385,6 +377,21 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         onShowError('Failed to move directories, please try again', err, false);
       })
       .catch(UserCanceled, () => null)
+      .catch(CleanupFailedException, err => {
+        deleteOldDestination = false;
+        onSetInstallPath(gameMode, this.state.installPath);
+        onShowDialog('info', 'Cleanup failed', {
+          bbcode: t('The mods staging folder has been copied [b]successfully[/b] to '
+            + 'your chosen destination!<br />'
+            + 'Clean-up of the old staging folder has been cancelled.<br /><br />'
+            + `Old staging folder: [url]{{thePath}}[/url]`,
+            { replace: { thePath: oldInstallPath } }),
+        }, [ { label: 'Close', action: () => Promise.resolve() } ]);
+
+        if (!(err.errorObject instanceof UserCanceled)) {
+          this.context.api.showErrorNotification('Clean-up failed', err.errorObject);
+        }
+      })
       .catch(InsufficientDiskSpace, () => notEnoughDiskSpace())
       .catch(UnsupportedOperatingSystem, () =>
         onShowError('Unsupported operating system',
@@ -432,7 +439,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         //  if it is - that means that the user has cancelled the transfer,
         //  we need to cleanup.
         const pendingTransfer: string[] = ['persistent', 'transactions', 'transfer', gameMode];
-        if (getSafe(state, pendingTransfer, undefined) !== undefined) {
+        if ((getSafe(state, pendingTransfer, undefined) !== undefined)
+        && deleteOldDestination) {
           return fs.removeAsync(newInstallPath)
             .then(() => {
               onSetTransfer(gameMode, undefined);

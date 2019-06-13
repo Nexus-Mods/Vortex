@@ -318,6 +318,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       }, [ { label: 'Close' } ]);
     };
 
+    let deleteOldDestination = true;
     this.nextState.progress = 0;
     this.nextState.busy = t('Moving');
     return withContext('Transferring Downloads', `from ${oldPath} to ${newPath}`,
@@ -357,6 +358,22 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         this.context.api.events.emit('did-move-downloads');
       })
       .catch(UserCanceled, () => null)
+      .catch(CleanupFailedException, err => {
+        deleteOldDestination = false;
+        onSetDownloadPath(this.state.downloadPath);
+        this.context.api.events.emit('did-move-downloads');
+        onShowDialog('info', 'Cleanup failed', {
+          bbcode: t('The downloads folder has been copied [b]successfully[/b] to '
+            + 'your chosen destination!<br />'
+            + 'Clean-up of the old downloads folder has been cancelled.<br /><br />'
+            + `Old downloads folder: [url]{{thePath}}[/url]`,
+            { replace: { thePath: oldPath } }),
+        }, [ { label: 'Close', action: () => Promise.resolve() } ]);
+
+        if (!(err.errorObject instanceof UserCanceled)) {
+          this.context.api.showErrorNotification('Clean-up failed', err.errorObject);
+        }
+      })
       .catch(InsufficientDiskSpace, () => notEnoughDiskSpace())
       .catch(UnsupportedOperatingSystem, () =>
         onShowError('Unsupported operating system',
@@ -401,7 +418,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         //  if it is - that means that the user has cancelled the transfer,
         //  we need to cleanup.
         const pendingTransfer: string[] = ['persistent', 'transactions', 'transfer', 'downloads'];
-        if (getSafe(state, pendingTransfer, undefined) !== undefined) {
+        if ((getSafe(state, pendingTransfer, undefined) !== undefined)
+          && deleteOldDestination) {
           return fs.removeAsync(newPath)
             .then(() => {
               onSetTransfer(undefined);
@@ -502,15 +520,6 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                 this.nextState.progressFile = path.basename(from);
               }
             })
-              .catch(CleanupFailedException, err => {
-                onShowDialog('info', 'Cleanup failed', {
-                  bbcode: t('The downloads folder has been copied [b]successfully[/b] to your '
-                    + 'chosen destination!<br />'
-                    + 'Clean-up of the old downloads folder has been cancelled.<br /><br />'
-                    + 'Old downloads folder [url]{{thePath}}[/url]',
-                    { replace: { thePath: oldPath } }),
-                }, [ { label: 'Close', action: () => Promise.resolve() } ]);
-              })
               .catch(err => (sourceIsMissing && (err.path === oldPath))
                 ? Promise.resolve()
                 : Promise.reject(err));
