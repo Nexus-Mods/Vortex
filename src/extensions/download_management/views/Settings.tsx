@@ -360,6 +360,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       .catch(UserCanceled, () => null)
       .catch(CleanupFailedException, err => {
         deleteOldDestination = false;
+        onSetTransfer(undefined);
         onSetDownloadPath(this.state.downloadPath);
         this.context.api.events.emit('did-move-downloads');
         onShowDialog('info', 'Cleanup failed', {
