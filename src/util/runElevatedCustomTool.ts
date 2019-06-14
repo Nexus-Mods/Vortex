@@ -9,6 +9,10 @@ let environment: any;
 
 function runElevatedCustomTool(ipcClient, req: NodeRequireFunction): Promise<void> {
   return new Promise((resolve, reject) => {
+    const emit = (message, payload) => {
+      ipcClient.sendMessage({ message, payload });
+    }
+
     const exec = req('child_process').execFile;
     try {
       let params: string[] = [];
@@ -22,7 +26,7 @@ function runElevatedCustomTool(ipcClient, req: NodeRequireFunction): Promise<voi
         };
 
       toolPath = toolPath.replace(/\\/g, '\\\\');
-      ipcClient.emit('log', {
+      emit('log', {
         level: 'info',
         message: 'start tool elevated',
         meta: { toolPath, params },
@@ -32,18 +36,16 @@ function runElevatedCustomTool(ipcClient, req: NodeRequireFunction): Promise<voi
         // which is not something we should react to (when you start from
         // windows explorer or similar you don't get notified of status
         // code != 0 either so it shouldn't be a situation to worry about
-        ipcClient.emit('finished', {});
-        setTimeout(() => {
-          ipcClient.emit('log', {
-            level: err ? 'error' : 'info',
-            message: 'tool finished',
-            meta: err ? { err } : {},
-          });
-          resolve();
-        }, 100);
+        emit('finished', {});
+        emit('log', {
+          level: err ? 'error' : 'info',
+          message: 'tool finished',
+          meta: err ? { err } : {},
+        });
+        resolve();
       });
     } catch (err) {
-      ipcClient.emit('log', {
+      emit('log', {
         level: 'error',
         message: 'Elevation Error',
         meta: { err: err.message },

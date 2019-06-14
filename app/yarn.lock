@@ -4248,7 +4248,7 @@ vortex-parse-ini@Nexus-Mods/vortex-parse-ini:
     winapi-bindings Nexus-Mods/node-winapi-bindings
 
 "vortex-run@file:../src/util/vortex-run":
-  version "0.0.9"
+  version "0.0.10"
 
 warning@^3.0.0:
   version "3.0.0"

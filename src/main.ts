@@ -37,6 +37,7 @@ import { sendReportFile, terminate, toError } from './util/errorHandling';
 import {} from './util/extensionRequire';
 import { truthy } from './util/util';
 
+import * as child_processT from 'child_process';
 import { app, dialog } from 'electron';
 import * as path from 'path';
 
@@ -82,8 +83,8 @@ function main() {
   if (mainArgs.run !== undefined) {
     // Vortex here acts only as a trampoline (probably elevated) to start
     // some other process
-    const { spawn } = require('child_process');
-    spawn(process.execPath, [ mainArgs.run ], {
+    const cp: typeof child_processT = require('child_process');
+    cp.spawn(process.execPath, [ mainArgs.run ], {
       env: {
         ...process.env,
         ELECTRON_RUN_AS_NODE: '1',
@@ -96,6 +97,7 @@ function main() {
       //       at this point
       dialog.showErrorBox('Failed to run script', err.message);
     });
+    // quit this process, the new one is detached
     app.quit();
     return;
   }
