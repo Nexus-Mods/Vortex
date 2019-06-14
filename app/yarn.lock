@@ -1407,8 +1407,8 @@ flux-standard-action@^2.0.0:
     lodash "^4.17.11"
 
 fomod-installer@Nexus-Mods/fomod-installer:
-  version "0.1.8"
-  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/d936d4998476435f9a942545725da38e7016faa2"
+  version "0.1.9"
+  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/1d2daa4b3a777471426e15fe9ae56a5d019b886c"
   dependencies:
     async "^2.6.2"
     copyfiles "^1.0.0"
