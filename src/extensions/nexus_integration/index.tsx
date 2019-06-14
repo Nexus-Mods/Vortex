@@ -4,6 +4,7 @@ import { IExtensionApi, IExtensionContext, ILookupResult } from '../../types/IEx
 import { IState } from '../../types/IState';
 import { DataInvalid, HTTPError, ProcessCanceled,
          ServiceTemporarilyUnavailable, UserCanceled } from '../../util/CustomErrors';
+import Debouncer from '../../util/Debouncer';
 import * as fs from '../../util/fs';
 import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
@@ -17,6 +18,9 @@ import { ICategoryDictionary } from '../category_management/types/ICategoryDicti
 import { DownloadIsHTML } from '../download_management/DownloadManager';
 import { IGameStored } from '../gamemode_management/types/IGameStored';
 import { IMod } from '../mod_management/types/IMod';
+
+import { IResolvedURL } from '../download_management';
+import { DownloadState } from '../download_management/types/IDownload';
 
 import { setUserAPIKey } from './actions/account';
 import { setNewestVersion } from './actions/persistent';
@@ -51,9 +55,6 @@ import * as React from 'react';
 import { Button } from 'react-bootstrap';
 import {} from 'uuid';
 import * as WebSocket from 'ws';
-import { IResolvedURL } from '../download_management';
-import Debouncer from '../../util/Debouncer';
-
 const app = remote !== undefined ? remote.app : appIn;
 
 let nexus: NexusT;
@@ -645,15 +646,15 @@ function queryInfo(api: IExtensionApi, instanceIds: string[]) {
 
   const state: IState = api.store.getState();
 
-  instanceIds.map(dlId => {
+  Promise.map(instanceIds, dlId => {
     const dl = state.persistent.downloads.files[dlId];
     const gameId = Array.isArray(dl.game) ? dl.game[0] : dl.game;
     const downloadPath = downloadPathForGame(state, gameId);
-    if ((downloadPath === undefined) || (dl.localPath === undefined)) {
+    if ((downloadPath === undefined) || (dl.localPath === undefined) || (dl.state !== 'finished')) {
       // almost certainly dl.localPath is undefined with a bugged download
       return;
     }
-    api.lookupModMeta({
+    return api.lookupModMeta({
       fileMD5: dl.fileMD5,
       filePath: path.join(downloadPath, dl.localPath),
       gameId,
@@ -682,6 +683,9 @@ function queryInfo(api: IExtensionApi, instanceIds: string[]) {
     .catch(err => {
       log('warn', 'failed to look up mod meta info', { message: err.message });
     });
+  })
+  .then(() => {
+    log('debug', 'done querying info', { archiveIds: instanceIds });
   });
 }
 
@@ -720,10 +724,20 @@ function init(context: IExtensionContextExt): boolean {
 
     return modSource === 'nexus';
   });
+
+  const queryCondition = (instanceIds: string[]) => {
+    const state: IState = context.api.store.getState();
+    const incomplete = instanceIds.find(instanceId =>
+      getSafe<DownloadState>(state.persistent.downloads.files, [instanceId, 'state'], 'init')
+      !== 'finished');
+    return incomplete === undefined
+      ? true
+      : context.api.translate('Can only query finished downloads') as string;
+  };
   context.registerAction('downloads-action-icons', 100, 'refresh', {}, 'Query Info',
-    (instanceIds: string[]) => queryInfo(context.api, instanceIds));
+    (instanceIds: string[]) => queryInfo(context.api, instanceIds), queryCondition);
   context.registerAction('downloads-multirow-actions', 100, 'refresh', {}, 'Query Info',
-    (instanceIds: string[]) => queryInfo(context.api, instanceIds));
+    (instanceIds: string[]) => queryInfo(context.api, instanceIds), queryCondition);
 
   // this makes it so the download manager can use nxm urls as download urls
   context.registerDownloadProtocol('nxm', (input: string): Promise<IResolvedURL> => {
