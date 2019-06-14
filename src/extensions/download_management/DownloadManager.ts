@@ -740,16 +740,19 @@ class DownloadManager {
     while ((freeSpots > 0) && (idx < this.mQueue.length)) {
       let unstartedChunks = countIf(this.mQueue[idx].chunks, value => value.state === 'init');
       while ((freeSpots > 0) && (unstartedChunks > 0)) {
-        try {
-          --unstartedChunks;
-          this.startWorker(this.mQueue[idx]);
-          --freeSpots;
-        } catch (err) {
-          if (this.mQueue[idx] !== undefined) {
-            this.mQueue[idx].failedCB(err);
-          }
-          this.mQueue.splice(idx, 1);
-        }
+        --unstartedChunks;
+        this.startWorker(this.mQueue[idx])
+          .then(() => {
+            --freeSpots;
+          })
+          .catch(err => {
+            if (this.mQueue[idx] !== undefined) {
+              this.mQueue[idx].failedCB(err);
+            }
+            this.mQueue.splice(idx, 1);
+
+          });
+        --freeSpots;
       }
       ++idx;
     }
@@ -763,53 +766,50 @@ class DownloadManager {
     job.state = 'running';
     job.workerId = workerId;
 
-    this.startJob(download, job);
+    return this.startJob(download, job);
+  }
+
+  private makeProgressCB(job: IDownloadJob, download: IRunningDownload) {
+    return (bytes) => {
+      const starving = this.mSpeedCalculator.addMeasure(job.workerId, bytes);
+      if (starving) {
+        this.mSlowWorkers[job.workerId] = (this.mSlowWorkers[job.workerId] || 0) + 1;
+        // only restart slow workers within 15 minutes after starting the download,
+        // otherwise the url may have expired. There is no way to know how long the
+        // url remains valid, not even with the nexus api (at least not currently)
+        if ((this.mSlowWorkers[job.workerId] > 15)
+          && (download.started !== undefined)
+          && ((Date.now() - download.started.getTime()) < 15 * 60 * 1000)) {
+          log('debug', 'restarting slow worker', { workerId: job.workerId });
+          this.mBusyWorkers[job.workerId].restart();
+          delete this.mSlowWorkers[job.workerId];
+        }
+      } else if (starving === false) {
+        delete this.mSlowWorkers[job.workerId];
+      }
+    };
   }
 
   private startJob(download: IRunningDownload, job: IDownloadJob) {
-    if (download.assembler === undefined) {
-      try {
-        download.progressCB(download.received, download.size, undefined,
-          undefined, download.tempName);
-        download.assembler = new FileAssembler(download.tempName);
-      } catch (err) {
-        if (err.code === 'EBUSY') {
-          throw new ProcessCanceled('output file is locked');
-        } else {
-          throw err;
-        }
-      }
-      if (download.size) {
-        download.assembler.setTotalSize(download.size);
-      }
-    }
+    const assemblerProm = download.assembler !== undefined
+      ? Promise.resolve(download.assembler)
+      : FileAssembler.create(download.tempName)
+        .tap(assembler => assembler.setTotalSize(download.size));
 
-    log('debug', 'start download worker',
-      { name: download.tempName, workerId: job.workerId, size: job.size });
     job.dataCB = this.makeDataCB(download);
 
-    this.mBusyWorkers[job.workerId] = new DownloadWorker(job,
-      (bytes) => {
-        const starving = this.mSpeedCalculator.addMeasure(job.workerId, bytes);
-        if (starving) {
-          this.mSlowWorkers[job.workerId] = (this.mSlowWorkers[job.workerId] || 0) + 1;
-          // only restart slow workers within 15 minutes after starting the download,
-          // otherwise the url may have expired. There is no way to know how long the
-          // url remains valid, not even with the nexus api (at least not currently)
-          if ((this.mSlowWorkers[job.workerId] > 15)
-              && (download.started !== undefined)
-              && ((Date.now() - download.started.getTime()) < 15 * 60 * 1000)) {
-            log('debug', 'restarting slow worker', { workerId: job.workerId });
-            this.mBusyWorkers[job.workerId].restart();
-            delete this.mSlowWorkers[job.workerId];
-          }
-        } else if (starving === false) {
-          delete this.mSlowWorkers[job.workerId];
-        }
-      },
-      (pause) => this.finishChunk(download, job, pause),
-      (headers) => download.headers = headers,
-      this.mUserAgent);
+    return assemblerProm.then(assembler => {
+      download.assembler = assembler;
+
+      log('debug', 'start download worker',
+        { name: download.tempName, workerId: job.workerId, size: job.size });
+
+      this.mBusyWorkers[job.workerId] = new DownloadWorker(job, this.makeProgressCB(job, download),
+        (pause) => this.finishChunk(download, job, pause),
+        (headers) => download.headers = headers,
+        this.mUserAgent);
+    })
+    .catch({ code: 'EBUSY' }, () => Promise.reject(new ProcessCanceled('output file is locked')));
   }
 
   private makeDataCB(download: IRunningDownload) {
