@@ -157,7 +157,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               </Modal.Body>
             </Modal>
           </div>
-
+        </FormGroup>
+        <FormGroup>
           <ControlLabel>
             {t('Download Threads') + ': ' + parallelDownloads.toString()}
             <More id='more-download-threads' name={t('Download Threads')} >
