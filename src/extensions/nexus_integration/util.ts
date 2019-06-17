@@ -439,6 +439,9 @@ export function checkModVersionsImpl(
 
       let updatesMissed: IMod[] = [];
 
+      const verPath = ['attributes', 'newestVersion'];
+      const fileIdPath = ['attributes', 'newestFileId'];
+
       return Promise.map(modsList, (mod: IMod) => {
         if (!forceFull && !filtered.has(mod.id)) {
           store.dispatch(setModAttribute(gameId, mod.id, 'lastUpdateTime', now - 15 * ONE_MINUTE));
@@ -447,22 +450,35 @@ export function checkModVersionsImpl(
 
         return checkModVersion(store, nexus, gameId, mod)
           .then(() => {
-            if (forceFull && !filtered.has(mod.id)) {
-              const modNew = getSafe(store.getState(), ['persistent', 'mods', gameId, mod.id], undefined);
-              const verPath = ['attributes', 'newestVersion'];
-              const fileIdPath = ['attributes', 'newestFileId'];
-              if (((getSafe(modNew, verPath, undefined) !== getSafe(mod, verPath, undefined))
+            const modNew = getSafe(store.getState(), ['persistent', 'mods', gameId, mod.id], undefined);
+            const updateFound =
+                ((getSafe(modNew, verPath, undefined) !== getSafe(mod, verPath, undefined))
                   && (getSafe(modNew, verPath, undefined) !== getSafe(modNew, ['attributes', 'version'], undefined)))
                 || ((getSafe(modNew, fileIdPath, undefined) !== getSafe(mod, fileIdPath, undefined))
-                  && (getSafe(modNew, fileIdPath, undefined) !== getSafe(modNew, ['attributes', 'fileId'], undefined)))) {
+                  && (getSafe(modNew, fileIdPath, undefined) !== getSafe(modNew, ['attributes', 'fileId'], undefined)));
+
+            if (updateFound) {
+              if (forceFull && !filtered.has(mod.id)) {
                 log('warn', '[update check] Mod update would have been missed with regular check', {
                   modId: mod.id,
                   lastUpdateTime: getSafe(mod, ['attributes', 'lastUpdateTime'], 0),
-                  newestVersion: getSafe(mod, verPath, undefined),
-                  newestFileId: getSafe(mod, fileIdPath, undefined),
+                  'before.newestVersion': getSafe(mod, verPath, undefined),
+                  'before.newestFileId': getSafe(mod, fileIdPath, undefined),
+                  'after.newestVersion': getSafe(modNew, verPath, undefined),
+                  'after.newestFileId': getSafe(modNew, fileIdPath, undefined),
                 });
                 updatesMissed.push(mod);
+              } else {
+                log('info', '[update check] Mod update detected', {
+                  modId: mod.id,
+                  lastUpdateTime: getSafe(mod, ['attributes', 'lastUpdateTime'], 0),
+                  'before.newestVersion': getSafe(mod, verPath, undefined),
+                  'before.newestFileId': getSafe(mod, fileIdPath, undefined),
+                  'after.newestVersion': getSafe(modNew, verPath, undefined),
+                  'after.newestFileId': getSafe(modNew, fileIdPath, undefined),
+                });
               }
+
               store.dispatch(setModAttribute(gameId, mod.id, 'lastUpdateTime', now));
             }
           })
@@ -493,6 +509,7 @@ export function checkModVersionsImpl(
 
       }, { concurrency: 4 })
       .finally(() => {
+        log('info', '[update check] done');
         tStore.dispatch(dismissNotification('check-update-progress'));
         if (forceFull) {
           if (updatesMissed.length === 0) {
