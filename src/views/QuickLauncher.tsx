@@ -94,8 +94,9 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
 
     const exclusiveRunning =
       Object.keys(toolsRunning).find(exeId => toolsRunning[exeId].exclusive) !== undefined;
-    const primaryRunning =
-      Object.keys(toolsRunning).find(exeId => exeId === makeExeId(starter.exePath));
+    const primaryRunning = (truthy(starter.exePath))
+      && Object.keys(toolsRunning).find(exeId =>
+        exeId === makeExeId(starter.exePath)) !== undefined;
 
     return (
       <div className='container-quicklaunch'>
@@ -238,9 +239,15 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
         return new StarterInfo(game, gameDiscovery);
       } else {
         try {
-          return new StarterInfo(game, gameDiscovery,
-            game !== undefined ? game.supportedTools[primaryTool] : undefined,
-            discoveredTools[primaryTool]);
+          if (truthy(discoveredTools[primaryTool].path)) {
+            return new StarterInfo(game, gameDiscovery,
+              game !== undefined ? game.supportedTools[primaryTool] : undefined,
+              discoveredTools[primaryTool]);
+          } else {
+            // Annoying, but a valid issue where for some reason the tool's
+            //  path has been manually deleted by the user OR is undefined.
+            throw new Error('invalid path to primary tool');
+          }
         } catch (err) {
           log('warn', 'invalid primary tool', { err });
           return new StarterInfo(game, gameDiscovery);
