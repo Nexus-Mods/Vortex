@@ -162,7 +162,7 @@ class DownloadWorker {
   private startDownload(job: IDownloadJob, jobUrl: string, cookies: Electron.Cookie[]) {
     let parsed: url.UrlWithStringQuery;
     try {
-      parsed = url.parse(jobUrl);
+      parsed = url.parse(encodeURI(jobUrl));
     } catch (err) {
       this.handleError(new Error('No valid URL for this download'));
       return;
@@ -188,7 +188,7 @@ class DownloadWorker {
         log('debug', 'downloading from',
           { address: `${res.connection.remoteAddress}:${res.connection.remotePort}` });
         this.mResponse = res;
-        this.handleResponse(res, jobUrl);
+        this.handleResponse(res, encodeURI(jobUrl));
         res
           .on('data', (data: Buffer) => {
             this.handleData(data);
