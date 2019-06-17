@@ -19,7 +19,8 @@ import * as PromiseBB from 'bluebird';
 import { dialog as dialogIn, remote } from 'electron';
 import * as fs from 'fs-extra-promise';
 import I18next from 'i18next';
-import * as ipc from 'node-ipc';
+import * as JsonSocket from 'json-socket';
+import * as net from 'net';
 import * as path from 'path';
 import { allow as allowT, getUserId } from 'permissions';
 import * as rimraf from 'rimraf';
@@ -524,50 +525,51 @@ function rimrafAsync(remPath: string): PromiseBB<void> {
 
 function elevated(func: (ipc, req: NodeRequireFunction) => Promise<void>,
                   parameters: any): PromiseBB<void> {
+  let server: net.Server;
   return new PromiseBB<void>((resolve, reject) => {
-    const ipcInst = new ipc.IPC();
     const id = shortid();
     let resolved = false;
-    ipcInst.serve(`__fs_elevated_${id}`, () => {
-      runElevated(`__fs_elevated_${id}`, func, parameters)
-        .catch(err => {
-          if ((err.code === 5)
-              || ((process.platform === 'win32') && (err.errno === 1223))) {
-            // this code is returned when the user rejected the UAC dialog. Not currently
-            // aware of another case
-            reject(new UserCanceled());
-          } else {
-            reject(new Error(`OS error ${err.message} (${err.code})`));
-          }
+
+    const ipcPath = `__fs_elevated_${id}`;
+
+    server = net.createServer(connRaw => {
+      const conn = new JsonSocket(connRaw);
+
+      conn
+        .on('message', data => {
+          log('warn', 'got unexpected ipc message', JSON.stringify(data));
         })
-        .catch(err => {
+        .on('end', () => {
           if (!resolved) {
             resolved = true;
-            reject(err);
+            resolve(null);
+          }
+        })
+        .on('error', err => {
+          log('error', 'elevated code reported error', err);
+          if (!resolved) {
+            resolved = true;
+            resolve(err);
           }
         });
-    });
-    ipcInst.server.on('socket.disconnected', () => {
-      ipcInst.server.stop();
-      if (!resolved) {
-        resolved = true;
-        resolve();
-      }
-    });
-    ipcInst.server.on('error', ipcErr => {
-      if (!resolved) {
-        resolved = true;
-        reject(new Error(ipcErr));
-      }
-    });
-    ipcInst.server.on('disconnect', () => {
-      ipcInst.server.stop();
-      if (!resolved) {
-        resolved = true;
-        resolve();
-      }
-    });
-    ipcInst.server.start();
+    })
+    .listen(path.join('\\\\?\\pipe', ipcPath));
+    runElevated(ipcPath, func, parameters)
+      .catch(err => {
+        if ((err.code === 5)
+            || ((process.platform === 'win32') && (err.errno === 1223))) {
+          // this code is returned when the user rejected the UAC dialog. Not currently
+          // aware of another case
+          reject(new UserCanceled());
+        } else {
+          reject(new Error(`OS error ${err.message} (${err.code})`));
+        }
+      });
+  })
+  .finally(() => {
+    if (server !== undefined) {
+      server.close();
+    }
   });
 }
 
