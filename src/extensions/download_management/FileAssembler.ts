@@ -28,24 +28,28 @@ class FileAssembler {
   private mLastFlushedTime: number = 0;
   private mLastFlushedSize: number = 0;
 
-  constructor(fileName: string) {
-    let exists = false;
-    // TODO: currently sync file operations because otherwise
-    //   the download manager becomes considerably more complicated
-    //   and it's already complicated enough
-    try {
-      const stats = fs.statSync(fileName);
-      if (stats.isDirectory()) {
-        throw new Error(`Download target is a directory`);
-      }
-      this.mTotalSize = stats.size;
-      exists = true;
-    } catch (err) {
-      this.mTotalSize = 0;
-    }
-    fs.ensureDirSync(path.dirname(fileName));
+  constructor(fileName: string, size: number, fd: number) {
     this.mFileName = fileName;
-    this.mFD = fs.openSync(fileName, exists ? 'r+' : 'w');
+    this.mTotalSize = size;
+    this.mFD = fd;
+  }
+  
+  public static create(fileName: string): Promise<FileAssembler> {
+    let exists = false;
+    let size = 0;
+    return fs.ensureDirAsync(path.dirname(fileName))
+      .then(() => fs.statAsync(fileName))
+      .then(stats => {
+        if (stats.isDirectory()) {
+          return Promise.reject(new Error('Download target is a directory'));
+        }
+        size = stats.size;
+        exists = true;
+        return Promise.resolve();
+      })
+      .catch(() => null)
+      .then(() => fs.openAsync(fileName, exists ? 'r+' : 'w'))
+      .then(fd => new FileAssembler(fileName, size, fd));
   }
 
   public setTotalSize(size: number) {

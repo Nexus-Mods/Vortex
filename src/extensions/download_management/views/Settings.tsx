@@ -157,7 +157,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               </Modal.Body>
             </Modal>
           </div>
-
+        </FormGroup>
+        <FormGroup>
           <ControlLabel>
             {t('Download Threads') + ': ' + parallelDownloads.toString()}
             <More id='more-download-threads' name={t('Download Threads')} >
@@ -360,6 +361,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       .catch(UserCanceled, () => null)
       .catch(CleanupFailedException, err => {
         deleteOldDestination = false;
+        onSetTransfer(undefined);
         onSetDownloadPath(this.state.downloadPath);
         this.context.api.events.emit('did-move-downloads');
         onShowDialog('info', 'Cleanup failed', {
@@ -425,7 +427,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               onSetTransfer(undefined);
               this.nextState.busy = undefined;
             })
-            .catch(UserCanceled, () => null)
+            .catch(UserCanceled, () => {
+              this.nextState.busy = undefined;
+            })
             .catch(err => {
               this.nextState.busy = undefined;
               if (err.code === 'ENOENT') {

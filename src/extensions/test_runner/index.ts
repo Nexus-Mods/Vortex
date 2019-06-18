@@ -76,7 +76,7 @@ function runCheck(api: IExtensionApi, check: ICheckEntry): Promise<void> {
         }
         api.sendNotification({
           id,
-          type: 'warning',
+          type: result.severity,
           message: result.description.short,
           actions,
           noDismiss: true,

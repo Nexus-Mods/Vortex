@@ -41,6 +41,7 @@ class DeploymentMethod extends LinkingDeployment {
   private mDone: () => void;
   private mWaitForUser: () => Promise<void>;
   private mOnReport: (report: string) => void;
+  private mTmpFilePath: string;
 
   constructor(api: IExtensionApi) {
     super(
@@ -251,7 +252,6 @@ class DeploymentMethod extends LinkingDeployment {
 
     return new Promise<void>((resolve, reject) => {
       let connected: boolean = false;
-      let error: Error;
       let ponged: boolean = true;
       if (this.mQuitTimer !== undefined) {
         // if there is already an elevated process, just keep it around a bit longer
@@ -280,7 +280,8 @@ class DeploymentMethod extends LinkingDeployment {
                 }
                 delete this.mOpenRequests[num];
               }
-              if ((Object.keys(this.mOpenRequests).length === 0) && (this.mDone !== null)) {
+              if ((Object.keys(this.mOpenRequests).length === 0)
+                  && (this.mDone !== null)) {
                 this.finish();
               }
             } else if (message === 'log') {
@@ -296,11 +297,14 @@ class DeploymentMethod extends LinkingDeployment {
           })
           .on('error', err => {
             log('error', 'elevated code reported error', err);
-            error = err;
           })
         pongTimer = setInterval(() => {
           if (!ponged || !connected) {
             try {
+              if (this.mIPCServer !== undefined) {
+                this.mIPCServer.close();
+                this.mIPCServer = undefined;
+              }
             } catch (err) {
               log('warn', 'Failed to close ipc server', err.message);
             }
@@ -312,9 +316,11 @@ class DeploymentMethod extends LinkingDeployment {
       })
       .listen(path.join('\\\\?\\pipe', ipcPath));
 
-
       return runElevated(ipcPath, remoteCode, {})
-        .tap(() => console.log('started elevated process'))
+        .tap(tmpPath => {
+          this.mTmpFilePath = tmpPath;
+          console.log('started elevated process')
+        })
         .tapCatch(() => {
           log('error', 'failed to run remote process');
           try { 
@@ -368,6 +374,13 @@ class DeploymentMethod extends LinkingDeployment {
       this.mElevatedClient = null;
       this.mQuitTimer = undefined;
     }, 1000);
+
+    if (this.mTmpFilePath !== undefined) {
+      try {
+        fs.removeSync(this.mTmpFilePath);
+        this.mTmpFilePath = undefined;
+      } catch (err) { }
+    }
 
     this.mDone();
   }

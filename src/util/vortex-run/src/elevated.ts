@@ -36,7 +36,12 @@ function elevatedMain(moduleRoot: string, ipcPath: string,
   .on('close', () => {
     process.exit(0);
   })
-  .on('error', () => null);
+  .on('error', err => {
+    if (err.code !== 'EPIPE') {
+      // will anyone ever see this?
+      console.error('Connection failed', err.message);
+    }
+  });
 }
 
 /**
@@ -57,8 +62,10 @@ function elevatedMain(moduleRoot: string, ipcPath: string,
  *                        the global require. Regular require calls will not work in production
  *                        builds
  * @param {Object} args arguments to be passed into the elevated process
- * @returns {Bluebird<any>} a promise that will be resolved as soon as the process is started
- *                          (which happens after the user confirmed elevation)
+ * @returns {Bluebird<string>} a promise that will be resolved as soon as the process is started
+ *                             (which happens after the user confirmed elevation). It resolves to
+ *                             the path of the tmpFile we had to create. If the caller can figure
+ *                             out when the process is done (using ipc) it should delete it
  */
 function runElevated(ipcPath: string, func: (ipc: any, req: NodeRequireFunction) =>
                         void | Promise<void> | Bluebird<void>,
@@ -101,6 +108,7 @@ function runElevated(ipcPath: string, func: (ipc: any, req: NodeRequireFunction)
           }
           return reject(writeErr);
         }
+        fs.closeSync(fd);
 
         try {
           winapi.ShellExecuteEx({
@@ -110,7 +118,7 @@ function runElevated(ipcPath: string, func: (ipc: any, req: NodeRequireFunction)
             directory: path.dirname(process.execPath),
             show: 'shownormal',
           });
-          return resolve();
+          return resolve(tmpPath);
         } catch (err) {
           return reject(err);
         }

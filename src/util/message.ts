@@ -4,19 +4,23 @@ import {
   IDialogContent,
   showDialog,
 } from '../actions/notifications';
-import { IErrorOptions } from '../types/IExtensionContext';
+import { IErrorOptions, IAttachment } from '../types/IExtensionContext';
 import { IState } from '../types/IState';
 import { jsonRequest } from '../util/network';
 
 import { HTTPError } from './CustomErrors';
 import { isOutdated, sendReport, toError,
          getErrorContext, didIgnoreError } from './errorHandling';
+import * as fs from './fs';
 import { log } from './log';
 import { truthy } from './util';
 
+import * as Promise from 'bluebird';
 import { IFeedbackResponse } from 'nexus-api';
+import ZipT = require('node-7z');
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
+import { file as tmpFile, tmpName } from 'tmp';
 
 const GITHUB_PROJ = 'Nexus-Mods/Vortex';
 
@@ -143,12 +147,68 @@ function shouldAllowReport(err: string | Error | any, options?: IErrorOptions): 
   return noReportErrors.indexOf(err.code) === -1;
 }
 
+function dataToFile(id, input: any) {
+  return new Promise<string>((resolve, reject) => {
+    const data: Buffer = Buffer.from(JSON.stringify(input));
+    tmpFile({
+      prefix: id,
+      postfix: '.json',
+    }, (err, tmpPath: string, fd: number, cleanup: () => void) => {
+      if (err !== null) {
+        return reject(err);
+      }
+      fs.writeAsync(fd, data, 0, data.byteLength, 0)
+        .then(() => fs.closeAsync(fd))
+        .then(() => {
+          resolve(tmpPath);
+        });
+    });
+  });
+}
+
+function zipFiles(files: string[]): Promise<string> {
+  if (files.length === 0) {
+    return Promise.resolve(undefined);
+  }
+  const Zip: typeof ZipT = require('node-7z');
+  const task: ZipT = new Zip();
+
+  return new Promise<string>((resolve, reject) => {
+    tmpName({
+      postfix: '.7z',
+    }, (err, tmpPath: string) => (err !== null)
+      ? reject(err)
+      : resolve(tmpPath));
+  })
+    .then(tmpPath =>
+      task.add(tmpPath, files, { ssw: true })
+        .then(() => tmpPath));
+}
+
+function serializeAttachments(input: IAttachment): Promise<string> {
+  if (input.type === 'file') {
+    return input.data;
+  } else {
+    return dataToFile(input.id, input.data);
+  }
+}
+
+function bundleAttachment(options?: IErrorOptions): Promise<string> {
+  if ((options === undefined)
+      || (options.attachments === undefined)
+      || (options.attachments.length === 0)) {
+    return undefined;
+  }
+
+  return Promise.map(options.attachments, serializeAttachments)
+    .then(fileNames => zipFiles(fileNames));
+}
+
 /**
  * show an error notification with an optional "more" button that displays further details
  * in a modal dialog.
  *
  * @export
- * @template S
  * @param {Redux.Dispatch<S>} dispatch
  * @param {string} title
  * @param {any} [details] further details about the error (stack and such). The api says we only
@@ -191,6 +251,12 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
     },
   };
 
+  if ((options !== undefined) && (options.attachments !== undefined) && (options.attachments.length > 0)) {
+    content.text = (content.text !== undefined ? (content.text + '\n\n') : '')
+      + 'Note: If you report this error, the following data will be added to the report:\n'
+      + options.attachments.map(attach => ` - ${attach.description}`).join('\n');
+  }
+
   const actions: IDialogAction[] = [];
 
   const context = (details !== undefined) && (details.context !== undefined)
@@ -200,8 +266,11 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
   if (!isOutdated() && !didIgnoreError() && allowReport) {
     actions.push({
       label: 'Report',
-      action: () => sendReport('error', toError(details, title, options, sourceErr.stack),
-                               context, ['error'], '', process.type)
+      action: () => bundleAttachment(options)
+        .then(attachmentBundle => sendReport('error',
+                                             toError(details, title, options, sourceErr.stack),
+                                             context, ['error'], '', process.type, undefined,
+                                             attachmentBundle))
         .then(response => {
           if (response !== undefined) {
             const { issue_number } = response.github_issue;

@@ -8,6 +8,7 @@ checker.init(
   {
     start: basePath,
     customPath: './licenseFormat.json',
+    production: true,
   },
   function (err, json) {
     if (err) {
@@ -16,18 +17,21 @@ checker.init(
 
     const deleteKeys = ['vortex-api', 'vortex'];
     Object.keys(json).forEach(key => {
+      if (key.startsWith('@types')
+          || ((json[key].publisher !== undefined) && json[key].publisher.startsWith('Black Tree Gaming'))) {
+        deleteKeys.push(key);
+        return;
+      }
+
       // make the license path relative. license-checker has an option
       // to do that for us but that causes errors
       if (json[key].licenseFile) {
         json[key].licenseFile = path.relative(basePath, json[key].licenseFile);
       }
       delete json[key].path;
-      if (key.startsWith('@types')) {
-        deleteKeys.push(key);
-      }
     });
 
     deleteKeys.forEach(key => delete json[key]);
 
-    fs.writeFile(path.join('assets', 'modules.json'), JSON.stringify(json, undefined, 2), () => null);
+    fs.writeFile(path.join('assets', 'modules.json'), JSON.stringify(json, undefined, 2), { encoding: 'utf-8' }, () => null);
   });

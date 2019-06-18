@@ -236,6 +236,13 @@ export interface IGameDetail {
   type?: string;
 }
 
+export interface IAttachment {
+  type: 'file' | 'data';
+  data: any;
+  id: string;
+  description: string;
+}
+
 export interface IErrorOptions {
   id?: string;
   message?: string;
@@ -244,6 +251,7 @@ export interface IErrorOptions {
   allowReport?: boolean;
   hideDetails?: boolean;
   replace?: { [key: string]: string };
+  attachments?: IAttachment[];
 }
 
 /**

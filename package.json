@@ -9,7 +9,7 @@
     "url": "https://github.com/Nexus-Mods/Vortex"
   },
   "vortex": {
-    "electron": "4.1.4"
+    "electron": "4.2.4"
   },
   "scripts": {
     "_assets_out": "node InstallAssets.js out",
@@ -91,7 +91,6 @@
     "@types/lodash": "^4.14.122",
     "@types/minimatch": "^3.0.3",
     "@types/node": "^11.10.5",
-    "@types/node-ipc": "^9.1.1",
     "@types/node-uuid": "^0.0.28",
     "@types/opn": "^5.1.0",
     "@types/react": "^16.8.7",
@@ -132,7 +131,7 @@
     "copyfiles": "^2.1.0",
     "cross-env": "^5.2.0",
     "devtron": "^1.4.0",
-    "electron": "^4.1.4",
+    "electron": "^4.2.4",
     "electron-builder": "20.15.0",
     "electron-devtools-installer": "^2.2.4",
     "electron-download-tf": "^4.3.4",
@@ -172,7 +171,7 @@
     "bootstrap-sass": "^3.4.1",
     "classnames": "^2.2.6",
     "commander": "^2.19.0",
-    "content-disposition": "^0.5.3",
+    "content-disposition": "^0.5.2",
     "content-type": "^1.0.4",
     "crash-dump": "Nexus-Mods/node-crash-dump",
     "d3": "^5.9.1",
@@ -206,7 +205,6 @@
     "nbind": "^0.3.15",
     "nexus-api": "Nexus-Mods/node-nexus-api",
     "node-7z": "Nexus-Mods/node-7z",
-    "node-ipc": "^9.1.1",
     "node-sass": "^4.11.0",
     "opn": "TanninOne/opn",
     "packery": "^2.1.2",
@@ -227,7 +225,7 @@
     "react-safe-html": "^0.6.1",
     "react-select": "^1.2.1",
     "react-sortable-tree": "^2.6.2",
-    "recharts": "^1.5.0",
+    "recharts": "^1.6.2",
     "redux": "^4.0.1",
     "redux-act": "^1.7.4",
     "redux-thunk": "^2.3.0",

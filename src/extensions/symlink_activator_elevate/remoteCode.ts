@@ -73,7 +73,11 @@ export function remoteCode(ipcClient, req) {
           .catch((err) => {
             emit('completed', { err, num });
           });
-      }
+      },
+      'quit': () => {
+        // currently don't need this message, the server closes the connection and
+        // we clean up when the ipc is disconnected
+      },
     };
 
     ipcClient.on('message', data => {

@@ -379,6 +379,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       .catch(UserCanceled, () => null)
       .catch(CleanupFailedException, err => {
         deleteOldDestination = false;
+        onSetTransfer(gameMode, undefined);
         onSetInstallPath(gameMode, this.state.installPath);
         onShowDialog('info', 'Cleanup failed', {
           bbcode: t('The mods staging folder has been copied [b]successfully[/b] to '
@@ -444,6 +445,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           return fs.removeAsync(newInstallPath)
             .then(() => {
               onSetTransfer(gameMode, undefined);
+              this.nextState.busy = undefined;
+            })
+            .catch(UserCanceled, () => {
               this.nextState.busy = undefined;
             })
             .catch(err => {

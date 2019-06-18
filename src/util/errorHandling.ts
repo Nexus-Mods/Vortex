@@ -120,7 +120,7 @@ export function createErrorReport(type: string, error: IError, context: IErrorCo
 
 function nexusReport(hash: string, type: string, error: IError, labels: string[],
                      context: IErrorContext, apiKey: string, reporterProcess: string,
-                     sourceProcess: string): Promise<IFeedbackResponse> {
+                     sourceProcess: string, attachment: string): Promise<IFeedbackResponse> {
   const app = appIn || remote.app;
   const Nexus: typeof NexusT = require('nexus-api').default;
 
@@ -129,7 +129,7 @@ function nexusReport(hash: string, type: string, error: IError, labels: string[]
     .then(nexus => nexus.sendFeedback(
       createTitle(type, error, hash),
       createReport(type, error, context, app.getVersion(), reporterProcess, sourceProcess),
-      undefined,
+      attachment,
       apiKey === undefined,
       hash,
       referenceId))
@@ -177,19 +177,23 @@ export function didIgnoreError(): boolean {
   return errorIgnored;
 }
 
+export function disableErrorReport() {
+  errorIgnored = true;
+}
+
 export function sendReportFile(fileName: string): Promise<IFeedbackResponse> {
   return fs.readFileAsync(fileName)
     .then(reportData => {
       const {type, error, labels, reporterId, reportProcess, sourceProcess, context} =
         JSON.parse(reportData.toString());
-      return sendReport(type, error, context, labels, reporterId, reportProcess, sourceProcess);
+      return sendReport(type, error, context, labels, reporterId, reportProcess, sourceProcess, undefined);
   });
 }
 
 export function sendReport(type: string, error: IError, context: IErrorContext,
                            labels: string[],
-                           reporterId?: string, reporterProcess?: string,
-                           sourceProcess?: string): Promise<IFeedbackResponse> {
+                           reporterId: string, reporterProcess: string,
+                           sourceProcess: string, attachment: string): Promise<IFeedbackResponse> {
   const hash = genHash(error);
   if (process.env.NODE_ENV === 'development') {
     const dialog = dialogIn || remote.dialog;
@@ -202,7 +206,7 @@ export function sendReport(type: string, error: IError, context: IErrorContext,
     return Promise.resolve(undefined);
   } else {
     return nexusReport(hash, type, error, labels, context, reporterId || fallbackAPIKey,
-                       reporterProcess, sourceProcess);
+                       reporterProcess, sourceProcess, attachment);
   }
 }
 
