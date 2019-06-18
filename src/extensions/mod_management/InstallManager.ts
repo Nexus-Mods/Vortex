@@ -321,7 +321,7 @@ class InstallManager {
               installContext.reportError(
                 'Failed to clean up installation directory "{{destinationPath}}", '
                 + 'please close Vortex and remove it manually.',
-                innerErr, true, { destinationPath });
+                innerErr, innerErr.code !== 'ENOTEMPTY', { destinationPath });
             })
           : Promise.resolve();
 
