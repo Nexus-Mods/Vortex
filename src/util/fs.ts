@@ -447,7 +447,9 @@ function unlinkInt(filePath: string, stackErr: Error, tries: number): PromiseBB<
             }
             return handle();
           })
-          .catch(() => handle());
+          .catch(errInner => errInner instanceof UserCanceled
+            ? Promise.reject(errInner) 
+            : handle());
       } else {
         return handle();
       }
