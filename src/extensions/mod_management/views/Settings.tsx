@@ -447,6 +447,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               onSetTransfer(gameMode, undefined);
               this.nextState.busy = undefined;
             })
+            .catch(UserCanceled, () => {
+              this.nextState.busy = undefined;
+            })
             .catch(err => {
               this.nextState.busy = undefined;
               if (err.code === 'ENOENT') {
