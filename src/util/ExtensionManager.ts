@@ -1097,7 +1097,7 @@ class ExtensionManager {
                 // TODO: the child process returns an exit code of 53 for SSE and
                 // FO4, and an exit code of 1 for Skyrim. We don't know why but it
                 // doesn't seem to affect anything
-                log('warn', 'child process exited with code: ' + code, {});
+                log('warn', 'child process exited with code: ' + code.toString(16), {});
               }
               resolve();
           });
