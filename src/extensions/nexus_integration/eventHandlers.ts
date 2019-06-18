@@ -20,7 +20,7 @@ import submitFeedback from './util/submitFeedback';
 import { checkModVersionsImpl, endorseModImpl, startDownload, updateKey } from './util';
 
 import * as Promise from 'bluebird';
-import Nexus, { IFeedbackResponse, IIssue, NexusError, TimeoutError } from 'nexus-api';
+import Nexus, { IFeedbackResponse, IIssue, NexusError, TimeoutError, RateLimitError } from 'nexus-api';
 
 export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
   const state: IState = api.store.getState();
@@ -272,6 +272,11 @@ export function onCheckModsVersion(api: IExtensionApi,
         })
         .catch(TimeoutError, err => {
           showError(api.store.dispatch, 'An error occurred checking for mod updates', err, {
+            allowReport: false,
+          });
+        })
+        .catch(RateLimitError, err => {
+          showError(api.store.dispatch, 'Rate limit exceeded, please try again later', err, {
             allowReport: false,
           });
         })
