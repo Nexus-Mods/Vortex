@@ -2,6 +2,7 @@ import { showDialog } from '../../../actions/notifications';
 import FlexLayout from '../../../controls/FlexLayout';
 import Icon from '../../../controls/Icon';
 import More from '../../../controls/More';
+import Spinner from '../../../controls/Spinner';
 import { Button } from '../../../controls/TooltipControls';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
 import { ValidationState } from '../../../types/ITableAttribute';
@@ -14,6 +15,7 @@ import { log } from '../../../util/log';
 import { showError } from '../../../util/message';
 import opn from '../../../util/opn';
 import { getSafe } from '../../../util/storeHelper';
+import { IDownload, IState } from '../../../types/IState';
 import { testPathTransfer, transferPath } from '../../../util/transferPath';
 import { isChildPath, isPathValid } from '../../../util/util';
 import { setDownloadPath, setMaxDownloads } from '../actions/settings';
@@ -39,6 +41,7 @@ interface IConnectedProps {
   parallelDownloads: number;
   isPremium: boolean;
   downloadPath: string;
+  downloads: { [downloadId: string]: IDownload };
 }
 
 interface IActionProps {
@@ -88,7 +91,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, isPremium, parallelDownloads } = this.props;
+    const { t, downloads, isPremium, parallelDownloads } = this.props;
     const { downloadPath, progress, progressFile } = this.state;
 
     const changed = this.props.downloadPath !== downloadPath;
@@ -96,6 +99,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     const validationState = this.validateDownloadPath(pathPreview);
 
     const pathValid = validationState.state !== 'error';
+
+    const hasActivity = Object.keys(downloads)
+      .find(dlId => downloads[dlId].state === 'started') !== undefined;
 
     return (
       // Supressing default form submission event.
@@ -131,10 +137,10 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               <FlexLayout.Fixed>
                 <InputGroup.Button>
                   <BSButton
-                    disabled={!changed || (validationState.state === 'error')}
+                    disabled={!changed || (validationState.state === 'error') || hasActivity}
                     onClick={this.apply}
                   >
-                    {t('Apply')}
+                    {hasActivity ? <Spinner /> : t('Apply')}
                   </BSButton>
                 </InputGroup.Button>
               </FlexLayout.Fixed>
@@ -532,12 +538,13 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 }
 
-function mapStateToProps(state: any): IConnectedProps {
+function mapStateToProps(state: IState): IConnectedProps {
   return {
     parallelDownloads: state.settings.downloads.maxParallelDownloads,
     // TODO: this breaks encapsulation
     isPremium: getSafe(state, ['persistent', 'nexus', 'userInfo', 'isPremium'], false),
     downloadPath: state.settings.downloads.path,
+    downloads: state.persistent.downloads.files,
   };
 }
 

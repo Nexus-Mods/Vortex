@@ -3,6 +3,7 @@ import EmptyPlaceholder from '../../../controls/EmptyPlaceholder';
 import FlexLayout from '../../../controls/FlexLayout';
 import Icon from '../../../controls/Icon';
 import More from '../../../controls/More';
+import Spinner from '../../../controls/Spinner';
 import { Button } from '../../../controls/TooltipControls';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
 import { ValidationState } from '../../../types/ITableAttribute';
@@ -56,6 +57,7 @@ interface IConnectedProps {
   installPath: string;
   currentActivator: string;
   state: any;
+  modActivity: string[];
 }
 
 interface IActionProps {
@@ -583,11 +585,13 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderPathCtrl(label: string, activators: IDeploymentMethod[]): JSX.Element {
-    const { t, gameMode } = this.props;
+    const { t, gameMode, modActivity } = this.props;
     const { installPath } = this.state;
 
     const pathPreview = getInstallPath(installPath, gameMode);
     const validationState = this.validateModPath(pathPreview);
+
+    const hasModActivity = (modActivity.length > 0);
 
     return (
       <FormGroup id='install-path-form' validationState={validationState.state}>
@@ -630,10 +634,10 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                 </Button>
               ) : null}
               <BSButton
-                disabled={!this.pathsChanged() || (validationState.state === 'error')}
+                disabled={!this.pathsChanged() || (validationState.state === 'error') || hasModActivity}
                 onClick={this.applyPaths}
               >
-                {t('Apply')}
+                {hasModActivity ? <Spinner /> : t('Apply')}
               </BSButton>
             </InputGroup.Button>
           </FlexLayout.Fixed>
@@ -737,7 +741,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               disabled={!changed || changingActivator}
               onClick={this.applyActivator}
             >
-              {t('Apply')}
+              {changingActivator ? <Spinner /> : t('Apply')}
             </BSButton>
           </InputGroup.Button>
         </InputGroup>
@@ -777,6 +781,7 @@ function mapStateToProps(state: any): IConnectedProps {
     gameMode,
     installPath: state.settings.mods.installPath[gameMode],
     currentActivator: getSafe(state, ['settings', 'mods', 'activator', gameMode], undefined),
+    modActivity: getSafe(state, ['session', 'base', 'activity', 'mods'], []),
     state,
   };
 }

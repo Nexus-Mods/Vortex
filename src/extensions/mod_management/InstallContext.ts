@@ -1,4 +1,5 @@
 import { addNotification, dismissNotification, updateNotification } from '../../actions/notifications';
+import { startActivity, stopActivity } from '../../actions/session';
 import { IExtensionApi } from '../../types/IExtensionContext';
 import { INotification } from '../../types/INotification';
 import { IState } from '../../types/IState';
@@ -38,7 +39,8 @@ class InstallContext implements IInstallContext {
   private mSetModType: (id: string, modType: string) => void;
   private mEnableMod: (modId: string) => void;
   private mSetDownloadInstalled: (archiveId: string, gameId: string, modId: string) => void;
-
+  private mStartActivity: (activityId: string) => void;
+  private mStopActivity: (activityId: string) => void;
   private mAddedId: string;
   private mIndicatorId: string;
   private mGameId: string;
@@ -47,6 +49,7 @@ class InstallContext implements IInstallContext {
   private mFailReason: string;
   private mIsEnabled: (modId: string) => boolean;
   private mIsDownload: (archiveId: string) => boolean;
+
   private mLastProgress: number = 0;
 
   constructor(gameMode: string, api: IExtensionApi) {
@@ -60,6 +63,8 @@ class InstallContext implements IInstallContext {
       dispatch(updateNotification(id, progress, message));
     this.mDismissNotification = (id) =>
       dispatch(dismissNotification(id));
+    this.mStartActivity = (activity: string) => dispatch(startActivity('mods', 'installing'));
+    this.mStopActivity = (activity: string) => dispatch(stopActivity('mods', 'installing'));
     this.mShowError = (message, details?, allowReport?, replace?) =>
       showError(dispatch, message, details, { allowReport, replace });
     this.mSetModState = (id, state) =>
@@ -112,6 +117,7 @@ class InstallContext implements IInstallContext {
     });
     this.mIndicatorId = id;
     this.mInstallOutcome = undefined;
+    this.mStartActivity(`installing_${id}`);
   }
 
   public stopIndicator(mod: IMod): void {
@@ -120,6 +126,7 @@ class InstallContext implements IInstallContext {
     }
 
     this.mDismissNotification('install_' + this.mIndicatorId);
+    this.mStopActivity(`installing_${this.mIndicatorId}`);
 
     Promise.delay(500)
     .then(() => {

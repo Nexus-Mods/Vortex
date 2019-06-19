@@ -1,3 +1,4 @@
+import { startActivity, stopActivity } from '../../actions/session';
 import {IExtensionApi} from '../../types/IExtensionContext';
 import {IModTable, IState} from '../../types/IState';
 import { ProcessCanceled, TemporaryError, UserCanceled } from '../../util/CustomErrors';
@@ -482,6 +483,8 @@ export function onRemoveMod(api: IExtensionApi,
       });
     };
 
+  store.dispatch(startActivity('mods', `removing_${modId}`))
+
   undeployMod()
   .then(() => {
     if (truthy(mod) && truthy(mod.installationPath)) {
@@ -525,6 +528,9 @@ export function onRemoveMod(api: IExtensionApi,
     } else {
       api.showErrorNotification('Failed to remove mod', err);
     }
+  })
+  .finally(() => {
+    store.dispatch(stopActivity('mods', `removing_${modId}`))
   });
 }
 
