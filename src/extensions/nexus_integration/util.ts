@@ -138,7 +138,8 @@ export function startDownload(api: IExtensionApi, nexus: Nexus, nxmurl: string):
           error: err,
           message: 'This may be a temporary issue, please try again later',
         }, { allowReport: false });
-      } else if (err.message.indexOf('DECRYPTION_FAILED_OR_BAD_RECORD_MAC') !== -1) {
+      } else if ((err.message.indexOf('DECRYPTION_FAILED_OR_BAD_RECORD_MAC') !== -1)
+              || (err.message.indexOf('WRONG_VERSION_NUMBER') !== -1)) {
         api.showErrorNotification('Download failed', {
           error: err,
           message: 'This may be a temporary issue, please try again later',
