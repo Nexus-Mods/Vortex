@@ -62,20 +62,38 @@ function refreshMods(api: IExtensionApi, installPath: string, knownMods: string[
         if (res.action === 'Apply Changes') {
           return Promise.map(addedMods, (modName: string) => {
             const fullPath: string = path.join(installPath, modName);
-            return fs.statAsync(fullPath).then((stat: fs.Stats) => {
-              if (stat.isDirectory()) {
-                onAddMod({
-                  id: modName,
-                  type: '',
-                  installationPath: modName,
-                  state: 'installed',
-                  attributes: {
-                    name: modName,
-                    installTime: stat.ctime,
-                  },
-                });
-              }
-            });
+            return fs.statAsync(fullPath)
+              .then((stat: fs.Stats) => {
+                if (stat.isDirectory()) {
+                  onAddMod({
+                    id: modName,
+                    type: '',
+                    installationPath: modName,
+                    state: 'installed',
+                    attributes: {
+                      name: modName,
+                      installTime: stat.ctime,
+                    },
+                  });
+                }
+              })
+              .catch({ code: 'ENOENT' }, () => fs.statAsync(fullPath + '.installing')
+                .then(() =>
+                  // since we're removing the '.installing' extension above we might be discovering
+                  // a mod here that was not installed successfully but doesn't have an entry in the
+                  // mods database so it wouldn't get cleaned up eiather
+                  api.showDialog('error', modName, {
+                    text: 'This mod was not installed completely, most likely the installation '
+                        + 'got interrupted before. You should delete it now and then install it again.'
+                  }, [
+                    { label: 'Ignore' },
+                    { label: 'Delete' },
+                  ])
+                  .then(res => {
+                    if (res.action === 'Delete') {
+                      return fs.removeAsync(fullPath + '.installing');
+                    }
+                  })));
           })
             .then(() => onRemoveMods(removedMods));
         } else {
