@@ -206,15 +206,6 @@ export class DownloadObserver {
       genHash(res.filePath)
           .then((md5Hash: IHashResult) => {
             this.mApi.store.dispatch(setDownloadHash(id, md5Hash.md5sum));
-          })
-          .catch(err => {
-            if (callback !== undefined) {
-              callback(err, id);
-            }
-          })
-          .finally(() => {
-            this.mApi.store.dispatch(finishDownload(id, 'finished', undefined));
-
             if (callback !== undefined) {
               callback(null, id);
             }
@@ -225,6 +216,8 @@ export class DownloadObserver {
             }
           })
           .finally(() => {
+            // still storing the download as successful even if we didn't manage to calculate its
+            // hash
             this.mApi.store.dispatch(finishDownload(id, 'finished', undefined));
           });
     }
