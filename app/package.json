@@ -42,7 +42,6 @@
     "graphlib": "^2.1.7",
     "i18next": "^15.0.6",
     "i18next-node-fs-backend": "^2.1.1",
-    "icon-extract": "Nexus-Mods/node-icon-extract",
     "iconv-lite": "^0.4.24",
     "immutability-helper": "^3.0.0",
     "is-admin": "^2.1.1",
