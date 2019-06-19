@@ -826,7 +826,21 @@ function onDeploySingleMod(api: IExtensionApi) {
     if (!truthy(dataPath)) {
       return Promise.resolve();
     }
-    const stagingPath = installPathForGame(state, gameId);
+    let stagingPath: string = installPathForGame(state, gameId);
+    let modPath: string;
+
+    try {
+      stagingPath = undefined;
+      modPath = path.join(stagingPath, mod.installationPath);
+    } catch (err) { 
+      err.StagingPath = stagingPath || '<undefined>';
+      err.InstallPath = mod.installationPath || '<undefined>';
+      err.GameId = gameId || '<undefined>';
+      api.showErrorNotification('Failed to deploy mod', err, {
+        message: modId,
+      });
+      return Promise.resolve();
+    }
 
     const subdir = genSubDirFunc(game);
     let normalize: Normalize;
@@ -838,9 +852,8 @@ function onDeploySingleMod(api: IExtensionApi) {
       .then(lastActivation => activator.prepare(dataPath, false, lastActivation, normalize))
       .then(() => (mod !== undefined)
         ? (enable !== false)
-          ? activator.activate(path.join(stagingPath, mod.installationPath),
-                               mod.installationPath, subdir(mod), new Set())
-          : activator.deactivate(path.join(stagingPath, mod.installationPath), subdir(mod))
+          ? activator.activate(modPath, mod.installationPath, subdir(mod), new Set())
+          : activator.deactivate(modPath, subdir(mod))
         : Promise.resolve())
       .tapCatch(() => {
         if (activator.cancel !== undefined) {

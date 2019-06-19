@@ -521,6 +521,23 @@ export function renderError(err: string | Error | any):
     return prettifyHTTPError(err);
   } else if (err instanceof Error) {
     const errMessage = prettifyNodeErrorMessage(err);
+
+    let attributes = Object.keys(err || {})
+        .filter(key => key[0].toUpperCase() === key[0]);
+    if (attributes.length === 0) {
+      attributes = Object.keys(err || {})
+        .filter(key => ['message', 'error', 'context'].indexOf(key) === -1);
+    }
+    if (attributes.length > 0) {
+      const old = errMessage.message;
+      errMessage.message = attributes
+          .map(key => key + ':\t' + err[key])
+          .join('\n');
+      if (old !== undefined) {
+        errMessage.message = old + '\n' + errMessage.message;
+      }
+    }
+
     return {
       text: errMessage.message,
       message: err.stack,
