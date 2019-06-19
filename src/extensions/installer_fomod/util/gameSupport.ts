@@ -63,6 +63,11 @@ function stopPatterns(gameMode: string) {
               'localization', 'loot', 'maps', 'modes', 'monsters', 'overlays', 'panels',
               'props', 'raid', 'raid_results', 'scripts', 'scrolls', 'shaders', 'shared',
               'trinkets', 'upgrades', 'video'].map(toWordExp);
+    case 'bladeandsorcery':
+      return ['Brains', 'Collisions', 'Containers', 'Creatures', 'CreatureTables', 'Damagers',
+              'Effects', 'Expressions', 'FXs', 'HandPoses', 'Interactables', 'Items', 'LootTables',
+              'PhysicMaterials', 'Ragdolls', 'Spells', 'Texts', 'UMAPresets',
+              'Waves'].map(toWordExp);
     default: return [].concat(uniPatterns);
   }
 }
@@ -234,6 +239,9 @@ const gameSupport: { [gameId: string]: IGameSupport } = {
   },
   darkestdungeon: {
     stopPatterns: stopPatterns('darkestdungeon'),
+  },
+  bladeandsorcery: {
+    stopPatterns: stopPatterns('bladeandsorcery'),
   },
 };
 
