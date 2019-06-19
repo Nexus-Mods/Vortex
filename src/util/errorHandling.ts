@@ -5,6 +5,7 @@ import { UserCanceled } from './CustomErrors';
 import { genHash } from './genHash';
 import { fallbackTFunc } from './i18n';
 import { log } from './log';
+import opn from './opn';
 import { getSafe } from './storeHelper';
 import { getAllPropertyNames, spawnSelf, truthy } from './util';
 
@@ -17,15 +18,11 @@ import {
 import * as fs from 'fs-extra-promise';
 import i18next from 'i18next';
 import NexusT, { IFeedbackResponse } from 'nexus-api';
-import { } from 'opn';
 import * as os from 'os';
 import * as path from 'path';
 import * as semver from 'semver';
 import { inspect } from 'util';
 import {} from 'uuid';
-
-// tslint:disable-next-line:no-var-requires
-const opn = require('opn');
 
 function createTitle(type: string, error: IError, hash: string) {
   return `${type}: ${error.message}`;
