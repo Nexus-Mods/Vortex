@@ -100,6 +100,10 @@ function discoverSettingsChanges(api: IExtensionApi, gameMode: string,
       })
       .then(ini => {
         const delta = objDiff(oldContent, newContent);
+        // don't bother if there was no change
+        if (Object.keys(delta).length === 0) {
+          return Promise.resolve();
+        }
         applyDelta(ini.data, delta);
         return fs.forcePerm(t, () =>
           fs.openAsync(iniFileName + '.base', 'w')
