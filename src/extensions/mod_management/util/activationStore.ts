@@ -203,7 +203,10 @@ function getManifest(api: IExtensionApi, instanceId: string,
               return Promise.resolve(data);
             }
           }))
-        .catch(() => Promise.reject(err));
+        .catch(backupErr => {
+          err.message += '\nBackup couldn\'t be read: ' + backupErr.message;
+          return Promise.reject(err);
+        });
     })
     .then(manifest => (manifest !== undefined)
       ? manifest
@@ -327,10 +330,14 @@ export function saveActivation(modType: string, instance: string,
   const tagFilePath = path.join(gamePath, tagFileName);
   const tagBackupPath = path.join(stagingPath, `vortex.deployment.${typeTag}msgpack`);
 
+  if (activation.length > 0) {
+    // write backup synchronously
+    fs.writeFileSync(tagBackupPath, Buffer.from(msgpack.encode(dataRaw)));
+  }
+
   return (activation.length === 0)
     ? fs.removeAsync(tagFilePath).catch(() => undefined)
     : writeFileAtomic(tagFilePath, dataJSON)
-        .then(() => writeFileAtomic(tagBackupPath, Buffer.from(msgpack.encode(dataRaw))))
         // remove backup from previous Vortex versions
         .then(() => fs.removeAsync(path.join(stagingPath, tagFileName))
           .catch({ code: 'ENOENT' }, () => null));
