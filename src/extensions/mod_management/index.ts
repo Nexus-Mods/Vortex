@@ -826,11 +826,10 @@ function onDeploySingleMod(api: IExtensionApi) {
     if (!truthy(dataPath)) {
       return Promise.resolve();
     }
-    let stagingPath: string = installPathForGame(state, gameId);
+    const stagingPath: string = installPathForGame(state, gameId);
     let modPath: string;
 
     try {
-      stagingPath = undefined;
       modPath = path.join(stagingPath, mod.installationPath);
     } catch (err) { 
       err.StagingPath = stagingPath || '<undefined>';
