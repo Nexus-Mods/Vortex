@@ -20,7 +20,7 @@ import { gameById, knownGames } from '../gamemode_management/selectors';
 import modName from '../mod_management/util/modName';
 import { setUserInfo } from './actions/persistent';
 import NXMUrl from './NXMUrl';
-import { checkModVersion, fetchRecentUpdates, ONE_MONTH, ONE_MINUTE } from './util/checkModsVersion';
+import { checkModVersion, fetchRecentUpdates, ONE_MINUTE, ONE_DAY } from './util/checkModsVersion';
 import { convertNXMIdReverse, nexusGameId, convertGameIdReverse } from './util/convertGameId';
 import sendEndorseMod from './util/endorseMod';
 import transformUserInfo from './util/transformUserInfo';
@@ -391,7 +391,7 @@ function filterByUpdateList(store: Redux.Store<any>,
           // check anything for updates that is either in the update list and has been updated as well
           // as anything that has last been checked before the range of the update list
           return (lastUpdate < getSafe(updateMap, [modGameId, mod.attributes.modId], 1))
-              || ((now - lastUpdate) > ONE_MONTH);
+              || ((now - lastUpdate) > 28 * ONE_DAY);
         });
       });
 }

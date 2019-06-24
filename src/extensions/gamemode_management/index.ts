@@ -202,7 +202,7 @@ function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
             })
             .catch(err => {
               api.store.dispatch(showDialog('error', 'Game not found', {
-                message: api.translate('This directory doesn\'t appear to contain the game. '
+                text: api.translate('This directory doesn\'t appear to contain the game. '
                   + 'Expected to find these files: {{ files }}',
                   { replace: { files: game.requiredFiles.join(', ') } }),
               }, [

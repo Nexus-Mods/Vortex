@@ -540,13 +540,21 @@ function once(api: IExtensionApi) {
         //  only for log in errors
         .catch(UserCanceled, () => null)
         .catch(ProcessCanceled, err => {
-          api.showErrorNotification('Log-in failed', err, { allowReport: false });
+          api.showErrorNotification('Log-in failed', err, {
+            id: 'failed-get-nexus-key',
+            allowReport: false,
+          });
         })
         .catch(ServiceTemporarilyUnavailable, err => {
-          api.showErrorNotification('Service temporarily unavailable', err, { allowReport: false });
+          api.showErrorNotification('Service temporarily unavailable', err, {
+            id: 'failed-get-nexus-key',
+            allowReport: false,
+          });
         })
         .catch(err => {
-          api.showErrorNotification('Failed to get access key', err);
+          api.showErrorNotification('Failed to get access key', err, {
+            id: 'failed-get-nexus-key'
+          });
         });
     })) {
       api.sendNotification({

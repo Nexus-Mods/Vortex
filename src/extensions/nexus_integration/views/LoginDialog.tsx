@@ -308,7 +308,7 @@ class LoginDialog extends ComponentEx<IProps, { troubleshoot: boolean, apiKeyInp
       this.nextState.requested = false;
       if ((err !== null) && !(err instanceof UserCanceled)) {
         this.context.api.showErrorNotification(
-          'Failed to get access key', err, { allowReport: false });
+          'Failed to get access key', err, { id: 'failed-get-nexus-key', allowReport: false });
       }
       onHide();
     });
