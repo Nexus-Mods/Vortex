@@ -1,8 +1,9 @@
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
 import { IGame } from '../../types/IGame';
+import { UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
-import { activeGameId, gameName, installPathForGame } from '../../util/selectors';
+import { activeGameId, gameName } from '../../util/selectors';
 import walk from '../../util/walk';
 
 import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
@@ -165,20 +166,27 @@ class DeploymendMethod extends LinkingDeployment {
 
   protected purgeLinks(installPath: string, dataPath: string): Promise<void> {
     let hadErrors = false;
+    let canceled = false;
+
+    let showDialogCallback = () => !canceled;
+
     // purge by removing all symbolic links that point to a file inside the install directory
     return walk(dataPath, (iterPath: string, stats: fs.Stats) => {
-      if (!stats.isSymbolicLink()) {
+      if (canceled || !stats.isSymbolicLink()) {
         return Promise.resolve();
       }
       return fs.readlinkAsync(iterPath)
         .then((symlinkPath) => {
           const relPath = path.relative(installPath, symlinkPath);
           if (!relPath.startsWith('..') && !path.isAbsolute(relPath)) {
-            return fs.unlinkAsync(iterPath);
+            return fs.unlinkAsync(iterPath, { showDialogCallback });
           }
         })
         .catch(err => {
-          if (err.code === 'ENOENT') {
+          if (err instanceof UserCanceled) {
+            canceled = true;
+            return Promise.reject(err);
+          } else if (err.code === 'ENOENT') {
             log('debug', 'link already gone', { iterPath, error: err.message });
           } else {
             hadErrors = true;
