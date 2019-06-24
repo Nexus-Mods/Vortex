@@ -836,7 +836,7 @@ class ExtensionManager {
     return app.getPath(name);
   }
 
-  private selectFile(options: IOpenOptions) {
+  private selectFile(options: IOpenOptions): Promise<string> {
     return new Promise<string>((resolve, reject) => {
       const fullOptions: Electron.OpenDialogOptions = {
         ..._.omit(options, ['create']),
