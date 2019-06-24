@@ -299,7 +299,6 @@ const moveAsync = genWrapperAsync(fs.moveAsync);
 const openAsync = genWrapperAsync(fs.openAsync);
 const readdirAsync = genWrapperAsync(fs.readdirAsync);
 const readFileAsync = genWrapperAsync(fs.readFileAsync);
-const readlinkAsync = genWrapperAsync(fs.readlinkAsync);
 const statAsync = genWrapperAsync(fs.statAsync);
 const symlinkAsync = genWrapperAsync(fs.symlinkAsync);
 const utimesAsync = genWrapperAsync(fs.utimesAsync);
@@ -316,7 +315,6 @@ export {
   mkdirsAsync,
   moveAsync,
   openAsync,
-  readlinkAsync,
   readdirAsync,
   readFileAsync,
   statAsync,
@@ -523,6 +521,32 @@ function rimrafAsync(remPath: string): PromiseBB<void> {
       }
     });
   });
+}
+
+export function readlinkAsync(linkPath: string): PromiseBB<string> {
+  const stackErr = new Error();
+  return readlinkInt(linkPath, stackErr, NUM_RETRIES);
+}
+
+function readlinkInt(linkPath: string, stackErr: Error, tries: number): PromiseBB<string> {
+  return simfail(() => fs.readlinkAsync(linkPath))
+    .catch(err => {
+      if ((err.code === 'UNKNOWN') && (process.platform === 'win32')) {
+        // on windows this return UNKNOWN if the file is not a link.
+        // of course there could be a thousand other things returning UNKNOWN but we'll never
+        // know, will we? libuv? will we?
+        const newErr: any = new Error('Not a link');
+        newErr.code = 'EINVAL';
+        newErr.syscall = 'readlink';
+        newErr.path = linkPath;
+        return Promise.reject(newErr);
+      } else if (err.code === 'EINVAL') {
+        return Promise.reject(err);
+      } else {
+        return errorHandler(err, stackErr, tries)
+          .then(() => readlinkInt(linkPath, stackErr, tries - 1));
+      }
+    });
 }
 
 function elevated(func: (ipc, req: NodeRequireFunction) => Promise<void>,
