@@ -282,6 +282,10 @@ export function endorseModImpl(
           message,
           displayMS: calcDuration(message.length),
         });
+      } else if (err.code === 'ECONNRESET') {
+        api.showErrorNotification('Endorsing mod failed, please try again later', err, {
+          allowReport: false,
+        });
       } else {
         const detail = processErrorMessage(err);
         detail.Game = gameId;
