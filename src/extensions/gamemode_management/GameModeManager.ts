@@ -127,9 +127,8 @@ class GameModeManager {
     const gameDiscovery = this.mStore.getState().settings.gameMode.discovered[gameMode];
 
     log('debug', 'setup game mode', gameMode);
-    if ((game === undefined)
-        && ((gameDiscovery === undefined) || (gameDiscovery.path === undefined))) {
-      return Promise.reject(new Error('invalid game mode'));
+    if ((gameDiscovery === undefined) || (gameDiscovery.path === undefined)) {
+      return Promise.reject(new Error('game not discovered'));
     } else if ((game === undefined) || (game.setup === undefined)) {
       return Promise.resolve();
     } else {
