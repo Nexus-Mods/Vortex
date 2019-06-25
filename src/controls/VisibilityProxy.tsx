@@ -51,6 +51,9 @@ class VisibilityProxy extends React.PureComponent<any, {}> {
   }
 
   private static unobserve(container: HTMLElement, target: HTMLElement) {
+    if (target === null) {
+      return;
+    }
     VisibilityProxy.sInstances.delete(target);
     try {
       VisibilityProxy.getObserver(container).unobserve(target);
