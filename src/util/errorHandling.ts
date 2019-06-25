@@ -230,7 +230,7 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
   const app = appIn || remote.app;
   const dialog = dialogIn || remote.dialog;
   let win = remote !== undefined ? remote.getCurrentWindow() : defaultWindow;
-  if (truthy(win) && !win.isVisible()) {
+  if (truthy(win) && (win.isDestroyed() || !win.isVisible())) {
     win = null;
   }
 
