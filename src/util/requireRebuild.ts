@@ -48,7 +48,8 @@ const edgeExp = /The edge module has not been pre-compiled/;
 const initBuild = [
   'turbowalk',
   'winapi',
-  'wholocks'
+  'wholocks',
+  'ExeVersion'
 ];
 
 const headerURL = 'https://atom.io/download/electron';
