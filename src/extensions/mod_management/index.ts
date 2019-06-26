@@ -516,6 +516,12 @@ function genUpdateModDeployment() {
         notification.id = api.sendNotification(notification);
       })
       .then(() => withActivationLock(() => {
+        log('debug', 'deploying mods', {
+          game: gameId,
+          profile: profileId,
+          method: activator.name,
+        });
+
         let mergedFileMap: { [modType: string]: string[] };
         const lastDeployment: { [typeId: string]: IDeployedFile[] } = {};
         const mods = state.persistent.mods[profile.gameId] || {};
