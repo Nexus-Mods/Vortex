@@ -3,6 +3,7 @@ import { timeToString } from '../util/util';
 
 export interface IBaseProps {
   className?: string;
+  style?: React.CSSProperties;
   min?: number;
   max?: number;
   now: number;
@@ -38,7 +39,8 @@ class ProgressBar extends React.PureComponent<IBaseProps, IProgressBarState> {
   }
 
   public render(): JSX.Element {
-    const { className, labelLeft, labelRight, showPercentage, showTimeLeft, now } = this.props;
+    const { className, labelLeft, labelRight, showPercentage, showTimeLeft,
+            style, now } = this.props;
 
     const min = this.props.min || 0;
     const max = this.props.max || 100;
@@ -47,7 +49,7 @@ class ProgressBar extends React.PureComponent<IBaseProps, IProgressBarState> {
     const hasLabel = (labelLeft !== undefined) || (labelRight !== undefined);
 
     return (
-      <div className={(className || '') + ' progressbar'}>
+      <div className={(className || '') + ' progressbar'} style={style}>
         <div className='progressbar-container'>
           {hasLabel ? this.renderLabels() : null}
           <div className='progressbar-track'>

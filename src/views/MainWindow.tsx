@@ -4,6 +4,7 @@ import Banner from '../controls/Banner';
 import FlexLayout from '../controls/FlexLayout';
 import Icon from '../controls/Icon';
 import IconBar from '../controls/IconBar';
+import ProgressBar from '../controls/ProgressBar';
 import Spinner from '../controls/Spinner';
 import { Button, NavItem } from '../controls/TooltipControls';
 import { IActionDefinition } from '../types/IActionDefinition';
@@ -34,7 +35,7 @@ import update from 'immutability-helper';
 import * as _ from 'lodash';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
-import { Button as ReactButton, Nav, ProgressBar } from 'react-bootstrap';
+import { Button as ReactButton, Nav } from 'react-bootstrap';
 // tslint:disable-next-line:no-submodule-imports
 import {addStyle} from 'react-bootstrap/lib/utils/bootstrapUtils';
 import * as Redux from 'redux';
@@ -235,7 +236,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     const { onHideDialog, progressProfile, visibleDialog } = this.props;
     const progress = getSafe(progressProfile, ['deploying'], undefined);
     const control = progress !== undefined
-      ? <ProgressBar label={progress.text} now={progress.percent} style={{ width: '50%' }} />
+      ? <ProgressBar labelLeft={progress.text} now={progress.percent} style={{ width: '50%' }} />
       : <Spinner style={{ width: 64, height: 64 }} />;
     return (
       <div key='wait'>
