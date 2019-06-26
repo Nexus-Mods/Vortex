@@ -183,14 +183,18 @@ abstract class LinkingActivator implements IDeploymentMethod {
         .then(() => Promise.map(
                   added,
                   key => this.deployFile(key, installationPath, dataPath, false)
-                             .catch(err => {
-                               log('warn', 'failed to link', {
-                                 link: this.mContext.newDeployment[key].relPath,
-                                 source: this.mContext.newDeployment[key].source,
-                                 error: err.message,
-                               });
-                               ++errorCount;
-                             })
+                    .catch(err => {
+                      log('warn', 'failed to link', {
+                        link: this.mContext.newDeployment[key].relPath,
+                        source: this.mContext.newDeployment[key].source,
+                        error: err.message,
+                      });
+                      if (err.code !== 'ENOENT') {
+                        // if the source file doesn't exist it must have been deleted
+                        // in the mean time. That's not really our problem.
+                        ++errorCount;
+                      }
+                    })
                             .then(() => progress()), { concurrency: 100 }))
         // then update modified files
         .then(() => Promise.map(
@@ -203,7 +207,9 @@ abstract class LinkingActivator implements IDeploymentMethod {
                               source: this.mContext.newDeployment[key].source,
                               error: err.message,
                             });
-                            ++errorCount;
+                            if (err.code !== 'ENOENT') {
+                              ++errorCount;
+                            }
                           }).then(() => progress()), { concurrency: 100 }))
         .then(() => {
           if (errorCount > 0) {
