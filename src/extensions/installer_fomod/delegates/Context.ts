@@ -118,7 +118,7 @@ export class Context extends DelegateBase {
           .catch(err => callback(err, null));
       } else {
         fs.readdirAsync(fullPath)
-          .then((fileList) => callback(null, fileList))
+          .then(fileList => callback(null, fileList.map(iter => path.join(fullPath, iter))))
           .catch(err => callback(err, null));
       }
   }
