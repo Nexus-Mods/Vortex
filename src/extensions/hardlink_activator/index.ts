@@ -216,6 +216,7 @@ class DeploymentMethod extends LinkingDeployment {
         },
         {
           details: true,
+          skipHidden: false,
         })
         .then(() => Promise.resolve(this.mInstallationFiles));
     }
@@ -236,7 +237,7 @@ class DeploymentMethod extends LinkingDeployment {
                   log('warn', 'failed to remove', entry.filePath))
               : Promise.resolve())
             .then(() => undefined));
-      }, { details: true })
+      }, { details: true, skipHidden: false })
         .then(() => queue);
     });
   }

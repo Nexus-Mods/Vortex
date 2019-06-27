@@ -589,6 +589,9 @@ abstract class LinkingActivator implements IDeploymentMethod {
   private restoreBackup(backupPath: string) {
     const targetPath = backupPath.substr(0, backupPath.length - BACKUP_TAG.length);
     return fs.renameAsync(backupPath, targetPath)
+      // where has it gone? Oh well, doesn't matter. We wouldn't even be trying to restore
+      // it if it had been removed a bit earlier
+      .catch({ code: 'ENOENT' }, () => null)
       .catch(UserCanceled, cancelErr => {
         // TODO:
         // this dialog may show up multiple times for the same file because
