@@ -106,7 +106,7 @@ function discoverSettingsChanges(api: IExtensionApi, gameMode: string,
         }
         applyDelta(ini.data, delta);
         return fs.forcePerm(t, () =>
-          fs.openAsync(iniFileName + '.base', 'w')
+          fs.openAsync(iniFileName + '.base', 'a')
             .then(fd => fs.closeAsync(fd))
             .then(() => parser.write(iniFileName + '.base', ini))
             .catch({ code: 'ENOENT' }, err => {
