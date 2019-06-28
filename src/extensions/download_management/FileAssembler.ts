@@ -67,7 +67,7 @@ class FileAssembler {
     this.mWork = this.mWork.then(() => Promise.resolve(newName))
     .then(nameResolved => {
       resolved = nameResolved;
-      fs.closeAsync(this.mFD);
+      return fs.closeAsync(this.mFD);
     })
     .then(() => fs.renameAsync(this.mFileName, resolved))
     .then(() => {
@@ -129,7 +129,9 @@ class FileAssembler {
       if (this.mFD !== undefined) {
         const fd = this.mFD;
         this.mFD = undefined;
-        return fs.fsyncAsync(fd).then(() => fs.closeAsync(fd));
+        return fs.fsyncAsync(fd)
+          .catch({ code: 'EBADF' }, () => Promise.resolve())
+          .then(() => fs.closeAsync(fd));
       } else {
         return Promise.resolve();
       }
