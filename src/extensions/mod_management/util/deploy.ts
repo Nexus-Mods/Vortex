@@ -4,6 +4,7 @@ import { INotification } from '../../../types/INotification';
 import { ProcessCanceled } from '../../../util/CustomErrors';
 import { log } from '../../../util/log';
 import { activeGameId, currentGameDiscovery, activeProfile } from '../../../util/selectors';
+import { getSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
 import { getGame } from '../../gamemode_management/util/getGame';
 import { installPath } from '../selectors';
@@ -36,6 +37,16 @@ export function purgeMods(api: IExtensionApi): Promise<void> {
 
   if (activator === undefined) {
     return Promise.reject(new NoDeployment());
+  }
+
+  if (Object.keys(getSafe(state, ['session', 'base', 'toolsRunning'], []).length > 0)) {
+    api.sendNotification({
+      type: 'info',
+      id: 'purge-not-possible',
+      message: 'Can\'t purge while the game or a tool is running',
+      displayMS: 5000,
+    });
+    return Promise.resolve();
   }
 
   const notification: INotification = {

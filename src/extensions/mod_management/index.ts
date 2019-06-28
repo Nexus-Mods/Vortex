@@ -344,6 +344,17 @@ function genUpdateModDeployment() {
     let profile: IProfile = profileId !== undefined
       ? getSafe(state, ['persistent', 'profiles', profileId], undefined)
       : activeProfile(state);
+
+    if (Object.keys(getSafe(state, ['session', 'base', 'toolsRunning'], []).length > 0)) {
+      api.sendNotification({
+        type: 'info',
+        id: 'deployment-not-possible',
+        message: 'Can\'t deploy while the game or a tool is running',
+        displayMS: 5000,
+      });
+      return Promise.resolve();
+    }
+
     if (profile === undefined) {
       // Used to report an exception here but I don't think this is an error, the call
       // can be delayed so it's completely possible there is no profile active at the the time
