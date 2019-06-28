@@ -1027,11 +1027,26 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
     });
   }
 
+  private fixDestination(source: string, destination: string): Promise<string> {
+    // if the source is an existing file an the destination is an existing directory,
+    // copyAsync or renameAsync will not work, they expect the destination to be the
+    // name of the output file.
+    return fs.statAsync(source)
+      .then(sourceStat => sourceStat.isDirectory()
+        ? Promise.resolve(destination)
+        : fs.statAsync(destination)
+          .then(destStat => destStat.isDirectory()
+            ? path.join(destination, path.basename(source))
+            : destination))
+      .catch(() => Promise.resolve(destination));
+  }
+
   private transferFile(source: string, destination: string, move: boolean): Promise<void> {
     return fs.ensureDirAsync(path.dirname(destination))
-      .then(() => move
-        ? fs.renameAsync(source, destination)
-        : fs.copyAsync(source, destination, { noSelfCopy: true }));
+      .then(() => this.fixDestination(source, destination))
+      .then(fixedDest => move
+        ? fs.renameAsync(source, fixedDest)
+        : fs.copyAsync(source, fixedDest, { noSelfCopy: true }));
   }
 
   /**
