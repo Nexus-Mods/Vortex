@@ -347,6 +347,10 @@ export function ensureFileAsync(filePath: string): PromiseBB<void> {
 
 export function ensureDirAsync(dirPath: string): PromiseBB<void> {
   const stackErr = new Error();
+  return ensureDirInt(dirPath, stackErr, NUM_RETRIES);
+}
+
+function ensureDirInt(dirPath: string, stackErr: Error, tries: number) {
   return fs.ensureDirAsync(dirPath)
     .catch(err => {
       // ensureDir isn't supposed to cause EEXIST errors as far as I understood
@@ -355,7 +359,8 @@ export function ensureDirAsync(dirPath: string): PromiseBB<void> {
       if (err.code === 'EEXIST') {
         return PromiseBB.resolve();
       }
-      return PromiseBB.reject(restackErr(err, stackErr));
+      return simfail(() => errorHandler(err, stackErr, tries, undefined))
+        .then(() => ensureDirInt(dirPath, stackErr, tries - 1));
     });
 }
 
