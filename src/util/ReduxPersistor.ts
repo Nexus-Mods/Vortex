@@ -120,7 +120,7 @@ class ReduxPersistor<T> {
       .catch(err => {
         // Only way this has ever gone wrong during alpha is when the disk
         // is full, which is nothing we can fix.
-        if (err.stack.match(/WriteError: IO error: .*Append: cannot write/) !== null) {
+        if (err.stack.match(/IO error: .*Append: cannot write/) !== null) {
           terminate({
             message: 'There is not enough space on the disk, Vortex needs to quit now to '
                    + 'ensure you\'re not losing further work. Please free up some space, '

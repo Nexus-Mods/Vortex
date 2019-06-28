@@ -716,6 +716,7 @@ class ExtensionManager {
 
   private stateChangeHandler = (watchPath: string[],
                                 callback: StateChangeCallback) => {
+    const stackErr = new Error();
     // have to initialize to a value that we _know_ is never set by the user.
     let lastValue = UNDEFINED;
 
@@ -736,7 +737,7 @@ class ExtensionManager {
         } catch (err) {
           log('error', 'state change handler failed', {
             message: err.message,
-            stack: err.stack,
+            stack: stackErr.stack,
             key,
           });
         }
