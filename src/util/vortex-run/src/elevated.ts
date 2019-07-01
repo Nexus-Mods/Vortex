@@ -108,7 +108,16 @@ function runElevated(ipcPath: string, func: (ipc: any, req: NodeRequireFunction)
           }
           return reject(writeErr);
         }
-        fs.closeSync(fd);
+
+        try {
+          fs.closeSync(fd);
+        } catch (err) {
+          if (err.code !== 'EBADF') {
+            return reject(err);
+          }
+          // not sure what causes EBADF, don't want to return now if there is a chance this
+          // will actually work
+        }
 
         try {
           winapi.ShellExecuteEx({
