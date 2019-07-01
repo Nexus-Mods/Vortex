@@ -281,34 +281,40 @@ export class DownloadObserver {
 
   private handleResumeDownload(downloadId: string,
                                callback?: (error: Error, id: string) => void) {
-    const download: IDownload =
+    try {
+      const download: IDownload =
         this.mApi.store.getState().persistent.downloads.files[downloadId];
-    if (download === undefined) {
-      log('warn', 'failed to resume download: unknown', {downloadId});
-      return;
-    }
-    if (download.state === 'paused') {
-      const gameMode = getDownloadGames(download)[0];
-      const downloadPath = selectors.downloadPathForGame(this.mApi.store.getState(), gameMode);
+      if (download === undefined) {
+        log('warn', 'failed to resume download: unknown', { downloadId });
+        return;
+      }
+      if (download.state === 'paused') {
+        const gameMode = getDownloadGames(download)[0];
+        const downloadPath = selectors.downloadPathForGame(this.mApi.store.getState(), gameMode);
 
-      const fullPath = path.join(downloadPath, download.localPath);
-      this.mApi.store.dispatch(pauseDownload(downloadId, false, undefined));
+        const fullPath = path.join(downloadPath, download.localPath);
+        this.mApi.store.dispatch(pauseDownload(downloadId, false, undefined));
 
-      withContext(`Resuming "${download.localPath}"`, download.urls[0], () =>
-        this.mManager.resume(downloadId, fullPath, download.urls,
-                             download.received, download.size, download.startTime, download.chunks,
-                             this.genProgressCB(downloadId))
-          .then(res => {
-            log('debug', 'download finished (resumed)', { file: res.filePath });
-            this.handleDownloadFinished(downloadId, callback, res);
-          })
-          .catch(UserCanceled, err => {
-            this.mApi.store.dispatch(removeDownload(downloadId));
-            if (callback !== undefined) {
-              callback(err, downloadId);
-            }
-          })
-          .catch(err => this.handleDownloadError(err, downloadId, callback)));
+        withContext(`Resuming "${download.localPath}"`, download.urls[0], () =>
+          this.mManager.resume(downloadId, fullPath, download.urls,
+            download.received, download.size, download.startTime, download.chunks,
+            this.genProgressCB(downloadId))
+            .then(res => {
+              log('debug', 'download finished (resumed)', { file: res.filePath });
+              this.handleDownloadFinished(downloadId, callback, res);
+            })
+            .catch(UserCanceled, err => {
+              this.mApi.store.dispatch(removeDownload(downloadId));
+              if (callback !== undefined) {
+                callback(err, downloadId);
+              }
+            })
+            .catch(err => this.handleDownloadError(err, downloadId, callback)));
+      }
+    } catch (err) {
+      if (callback !== undefined) {
+        callback(err, downloadId);
+      }
     }
   }
 
