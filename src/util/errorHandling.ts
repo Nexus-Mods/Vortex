@@ -5,6 +5,7 @@ import { UserCanceled } from './CustomErrors';
 import { genHash } from './genHash';
 import { fallbackTFunc } from './i18n';
 import { log } from './log';
+import opn from './opn';
 import { getSafe } from './storeHelper';
 import { getAllPropertyNames, spawnSelf, truthy } from './util';
 
@@ -17,15 +18,11 @@ import {
 import * as fs from 'fs-extra-promise';
 import i18next from 'i18next';
 import NexusT, { IFeedbackResponse } from 'nexus-api';
-import { } from 'opn';
 import * as os from 'os';
 import * as path from 'path';
 import * as semver from 'semver';
 import { inspect } from 'util';
 import {} from 'uuid';
-
-// tslint:disable-next-line:no-var-requires
-const opn = require('opn');
 
 function createTitle(type: string, error: IError, hash: string) {
   return `${type}: ${error.message}`;
@@ -120,7 +117,7 @@ export function createErrorReport(type: string, error: IError, context: IErrorCo
 
 function nexusReport(hash: string, type: string, error: IError, labels: string[],
                      context: IErrorContext, apiKey: string, reporterProcess: string,
-                     sourceProcess: string): Promise<IFeedbackResponse> {
+                     sourceProcess: string, attachment: string): Promise<IFeedbackResponse> {
   const app = appIn || remote.app;
   const Nexus: typeof NexusT = require('nexus-api').default;
 
@@ -129,7 +126,7 @@ function nexusReport(hash: string, type: string, error: IError, labels: string[]
     .then(nexus => nexus.sendFeedback(
       createTitle(type, error, hash),
       createReport(type, error, context, app.getVersion(), reporterProcess, sourceProcess),
-      undefined,
+      attachment,
       apiKey === undefined,
       hash,
       referenceId))
@@ -177,19 +174,23 @@ export function didIgnoreError(): boolean {
   return errorIgnored;
 }
 
+export function disableErrorReport() {
+  errorIgnored = true;
+}
+
 export function sendReportFile(fileName: string): Promise<IFeedbackResponse> {
   return fs.readFileAsync(fileName)
     .then(reportData => {
       const {type, error, labels, reporterId, reportProcess, sourceProcess, context} =
         JSON.parse(reportData.toString());
-      return sendReport(type, error, context, labels, reporterId, reportProcess, sourceProcess);
+      return sendReport(type, error, context, labels, reporterId, reportProcess, sourceProcess, undefined);
   });
 }
 
 export function sendReport(type: string, error: IError, context: IErrorContext,
                            labels: string[],
-                           reporterId?: string, reporterProcess?: string,
-                           sourceProcess?: string): Promise<IFeedbackResponse> {
+                           reporterId: string, reporterProcess: string,
+                           sourceProcess: string, attachment: string): Promise<IFeedbackResponse> {
   const hash = genHash(error);
   if (process.env.NODE_ENV === 'development') {
     const dialog = dialogIn || remote.dialog;
@@ -198,11 +199,11 @@ export function sendReport(type: string, error: IError, context: IErrorContext,
       : error.message;
     dialog.showErrorBox(fullMessage, JSON.stringify({
       type, error, labels, context, reporterId, reporterProcess, sourceProcess,
-    }));
+    }, undefined, 2));
     return Promise.resolve(undefined);
   } else {
     return nexusReport(hash, type, error, labels, context, reporterId || fallbackAPIKey,
-                       reporterProcess, sourceProcess);
+                       reporterProcess, sourceProcess, attachment);
   }
 }
 
@@ -229,7 +230,7 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
   const app = appIn || remote.app;
   const dialog = dialogIn || remote.dialog;
   let win = remote !== undefined ? remote.getCurrentWindow() : defaultWindow;
-  if (truthy(win) && !win.isVisible()) {
+  if (truthy(win) && (win.isDestroyed() || !win.isVisible())) {
     win = null;
   }
 
@@ -312,7 +313,7 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
  * render error message for internal processing (issue tracker and such).
  * It's important this doesn't translate the error message or lose information
  */
-export function toError(input: any, title?: string, options?: IErrorOptions): IError {
+export function toError(input: any, title?: string, options?: IErrorOptions, sourceStack?: string): IError {
   let ten = i18next.getFixedT('en');
   try {
     ten('dummy');
@@ -326,11 +327,15 @@ export function toError(input: any, title?: string, options?: IErrorOptions): IE
   const t = (text: string) => ten(text, { replace: (options || {}).replace });
 
   if (input instanceof Error) {
+    let stack = input.stack;
+    if (sourceStack !== undefined) {
+      stack += '\n\nReported from:\n' + sourceStack;
+    }
     return {
       message: t(input.message),
       title,
       subtitle: (options || {}).message,
-      stack: input.stack,
+      stack: stack,
       details: Object.keys(input).map(key => `${key}: ${input[key]}`).join('\n'),
     };
   }
@@ -362,6 +367,14 @@ export function toError(input: any, title?: string, options?: IErrorOptions): IE
         stack = input.stack;
       }
 
+      if (sourceStack !== undefined) {
+        if (stack === undefined) {
+          stack = sourceStack;
+        } else {
+          stack += '\n\nReported from:\n' + sourceStack;
+        }
+      }
+
       let attributes = Object.keys(input || {})
           .filter(key => key[0].toUpperCase() === key[0]);
       // if there are upper case characters, this is a custom, not properly typed, error object
@@ -369,7 +382,7 @@ export function toError(input: any, title?: string, options?: IErrorOptions): IE
       // Otherwise, who knows what this is, just send everything.
       if (attributes.length === 0) {
         attributes = getAllPropertyNames(input || {})
-          .filter(key => ['message', 'error', 'stack'].indexOf(key) === -1);
+          .filter(key => ['message', 'error', 'stack', 'context'].indexOf(key) === -1);
       }
 
       const details = attributes.length === 0 ? undefined : attributes
@@ -387,10 +400,36 @@ export function toError(input: any, title?: string, options?: IErrorOptions): IE
   }
 }
 
-export function withContext(id: string, value: string, fun: () => Promise<any>) {
+/**
+ * set an error context, that will be reported with every error reported.
+ * Please keep in mind that the error context will remain set
+ * until it's cleared with clearErrorContext and use "withContext" where possible
+ * to ensure the context gets reset
+ * @param id 
+ * @param value 
+ */
+export function setErrorContext(id: string, value: string) {
   context[id] = value;
+}
+
+/**
+ * clear an error context
+ * @param id id of the context
+ */
+export function clearErrorContext(id: string) {
+  delete context[id];
+}
+
+/**
+ * execute a function with the specified error context
+ * @param id identifier of the context to set
+ * @param value context value
+ * @param fun the function to set
+ */
+export function withContext(id: string, value: string, fun: () => Promise<any>) {
+  setErrorContext(id, value);
   return fun().finally(() => {
-    delete context[id];
+    clearErrorContext(id);
   });
 }
 

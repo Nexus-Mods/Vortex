@@ -29,6 +29,7 @@ import { transactionsReducer } from './reducers/transactions';
 import { IDownload } from './types/IDownload';
 import { IProtocolHandlers } from './types/ProtocolHandlers';
 import getDownloadGames from './util/getDownloadGames';
+import writeDownloadsTag, { DOWNLOADS_DIR_TAG } from './util/writeDownloadsTag';
 import DownloadView from './views/DownloadView';
 import Settings from './views/Settings';
 import SpeedOMeter from './views/SpeedOMeter';
@@ -45,8 +46,6 @@ import {generate as shortid} from 'shortid';
 
 const app = remote !== undefined ? remote.app : appIn;
 
-export const DOWNLOADS_DIR_TAG = '__vortex_downloads_folder';
-
 let observer: DownloadObserver;
 let manager: DownloadManager;
 let updateDebouncer: Debouncer;
@@ -58,15 +57,6 @@ const archiveExtLookup = new Set<string>([
   '.xz', '.z',
   '.fomod',
 ]);
-
-function writeDownloadsTag(api: IExtensionApi, tagPath: string) {
-  const state: IState = api.store.getState();
-  const data = {
-    instance: state.app.instanceId,
-  };
-  return fs.writeFileAsync(path.join(tagPath, DOWNLOADS_DIR_TAG),
-    JSON.stringify(data), {  encoding: 'utf8' });
-}
 
 function validateDownloadsTag(api: IExtensionApi, tagPath: string): Promise<void> {
   return fs.readFileAsync(tagPath, { encoding: 'utf8' })
@@ -352,7 +342,27 @@ function removeDownloadsMetadata(api: IExtensionApi): Promise<void> {
 function testDownloadPath(api: IExtensionApi): Promise<void> {
   const state: IState = api.store.getState();
   const gameId = selectors.activeGameId(state);
-  if (gameId === undefined) {
+  const isNewInstallation = (currentState: IState) => {
+    // We don't want to run this check if the user has just
+    //  installed a fresh copy of Vortex as the downloads folder
+    //  has probably not been created yet.
+    // It is safe to assume that this is a new installation if
+    //  our state holds no mods (for any game) and no download files.
+    const gameModes = getSafe(currentState, ['persistent', 'mods'], undefined);
+    const gamesWithActiveMods = (gameModes !== undefined)
+      ? Object.keys(gameModes).length
+      : 0;
+
+    const downloads = getSafe(currentState,
+      ['persistent', 'downloads', 'files'], undefined);
+    const totalDown = (downloads !== undefined)
+      ? Object.keys(downloads).length
+      : 0;
+
+    return ((gamesWithActiveMods === 0) && (totalDown === 0));
+  };
+
+  if ((gameId === undefined) || isNewInstallation(state)) {
     return Promise.resolve();
   }
 
@@ -419,7 +429,22 @@ function testDownloadPath(api: IExtensionApi): Promise<void> {
       .then(() => writeDownloadsTag(api, currentDownloadPath));
 
   return ensureDownloadsDirectory()
-    .catch(UserCanceled, () => Promise.resolve());
+    .catch(UserCanceled, () => Promise.resolve())
+    .catch(err => {
+      const errTitle = (err.code === 'EPERM')
+        ? 'Insufficient permissions'
+        : 'Downloads folder error';
+
+      return new Promise<void>((resolve) => {
+        api.showDialog('error', errTitle, {
+          text: 'Unable to finalize downloads folder creation/transfer. Please ensure your OS '
+              + 'account has full read/write permissions for the target destination and try again. '
+              + 'An exception should be added to Anti-Virus apps for Vortex. (where applicable)',
+          message: err.message,
+        }, [{ label: 'Retry', action: () => resolve() }]);
+      })
+      .then(() => testDownloadPath(api));
+    });
 }
 
 function genGameModeActivated(api: IExtensionApi) {

@@ -129,58 +129,17 @@ class DownloadWorker {
       return;
     }
 
-    let parsed: url.UrlWithStringQuery;
     try {
-      parsed = url.parse(jobUrl);
+      remote.getCurrentWebContents().session.cookies.get({ url: jobUrl }, (cookieErr, cookies) => {
+        if (truthy(cookieErr)) {
+          log('error', 'failed to retrieve cookies', cookieErr.message);
+        }
+        this.startDownload(job, jobUrl, cookies);
+      });
     } catch (err) {
-      this.handleError(new Error('No valid URL for this download'));
-      return;
+      log('error', 'failed to retrieve cookies', err.message);
+      this.startDownload(job, jobUrl, []);
     }
-
-    const lib: IHTTP = parsed.protocol === 'https:' ? https : http;
-
-    remote.getCurrentWebContents().session.cookies.get({ url: jobUrl }, (cookieErr, cookies) => {
-      try {
-        this.mRequest = lib.request({
-          method: 'GET',
-          protocol: parsed.protocol,
-          port: parsed.port,
-          hostname: parsed.hostname,
-          path: parsed.path,
-          headers: {
-            Range: `bytes=${job.offset}-${job.offset + job.size}`,
-            'User-Agent': this.mUserAgent,
-            'Accept-Encoding': 'gzip',
-            Cookie: (cookies || []).map(cookie => `${cookie.name}=${cookie.value}`),
-          },
-          agent: false,
-        }, (res) => {
-          log('debug', 'downloading from',
-            { address: `${res.connection.remoteAddress}:${res.connection.remotePort}` });
-          this.mResponse = res;
-          this.handleResponse(res, jobUrl);
-          res
-            .on('data', (data: Buffer) => {
-              this.handleData(data);
-            })
-            .on('error', err => this.handleError(err))
-            .on('end', () => {
-              if (!this.mRedirected) {
-                this.handleComplete();
-              }
-              this.mRequest.abort();
-            });
-        });
-
-        this.mRequest
-          .on('error', (err) => {
-            this.handleError(err);
-          })
-          .end();
-      } catch (err) {
-        this.handleError(err);
-      }
-    });
   }
 
   public cancel() {
@@ -198,6 +157,59 @@ class DownloadWorker {
   public restart() {
     this.mResponse.removeAllListeners('error');
     this.mRequest.abort();
+  }
+
+  private startDownload(job: IDownloadJob, jobUrl: string, cookies: Electron.Cookie[]) {
+    let parsed: url.UrlWithStringQuery;
+    try {
+      parsed = url.parse(encodeURI(jobUrl));
+    } catch (err) {
+      this.handleError(new Error('No valid URL for this download'));
+      return;
+    }
+
+    const lib: IHTTP = parsed.protocol === 'https:' ? https : http;
+
+    try {
+      this.mRequest = lib.request({
+        method: 'GET',
+        protocol: parsed.protocol,
+        port: parsed.port,
+        hostname: parsed.hostname,
+        path: parsed.path,
+        headers: {
+          Range: `bytes=${job.offset}-${job.offset + job.size}`,
+          'User-Agent': this.mUserAgent,
+          'Accept-Encoding': 'gzip',
+          Cookie: (cookies || []).map(cookie => `${cookie.name}=${cookie.value}`),
+        },
+        agent: false,
+      }, (res) => {
+        log('debug', 'downloading from',
+          { address: `${res.connection.remoteAddress}:${res.connection.remotePort}` });
+        this.mResponse = res;
+        this.handleResponse(res, encodeURI(jobUrl));
+        res
+          .on('data', (data: Buffer) => {
+            this.handleData(data);
+          })
+          .on('error', err => this.handleError(err))
+          .on('end', () => {
+            if (!this.mRedirected) {
+              this.handleComplete();
+            }
+            this.mRequest.abort();
+          });
+      });
+
+      this.mRequest
+        .on('error', (err) => {
+          this.handleError(err);
+        })
+        .end();
+    } catch (err) {
+      this.handleError(err);
+    }
   }
 
   private handleError(err) {
@@ -305,13 +317,13 @@ class DownloadWorker {
       return;
     }
 
-    const chunkable = 'content-disposition' in response.headers;
+    const chunkable = 'content-range' in response.headers;
 
     log('debug', 'retrieving range',
         { id: this.mJob.workerId, range: response.headers['content-range'] || 'full' });
     if (this.mJob.responseCB !== undefined) {
       let size: number = parseInt(response.headers['content-length'] as string, 10);
-      if ('content-range' in response.headers) {
+      if (chunkable) {
         const rangeExp: RegExp = /bytes (\d)*-(\d*)\/(\d*)/i;
         const sizeMatch: string[] = (response.headers['content-range'] as string).match(rangeExp);
         if (sizeMatch.length > 1) {
@@ -323,12 +335,12 @@ class DownloadWorker {
       }
       if (size < this.mJob.size + this.mJob.offset) {
         // on the first request it's possible we requested more than the file size if
-        // the file is smaller than 1MB. offset should always be 0 here
+        // the file is smaller than the minimum size for chunking. offset should always be 0 here
         this.mJob.size = size - this.mJob.offset;
       }
 
       let fileName;
-      if (chunkable) {
+      if ('content-disposition' in response.headers) {
         let cd: string = response.headers['content-disposition'] as string;
         // the content-disposition library can't deal with trailing semi-colon so
         // we have to remove it before parsing
@@ -728,16 +740,19 @@ class DownloadManager {
     while ((freeSpots > 0) && (idx < this.mQueue.length)) {
       let unstartedChunks = countIf(this.mQueue[idx].chunks, value => value.state === 'init');
       while ((freeSpots > 0) && (unstartedChunks > 0)) {
-        try {
-          --unstartedChunks;
-          this.startWorker(this.mQueue[idx]);
-          --freeSpots;
-        } catch (err) {
-          if (this.mQueue[idx] !== undefined) {
-            this.mQueue[idx].failedCB(err);
-          }
-          this.mQueue.splice(idx, 1);
-        }
+        --unstartedChunks;
+        this.startWorker(this.mQueue[idx])
+          .then(() => {
+            --freeSpots;
+          })
+          .catch(err => {
+            if (this.mQueue[idx] !== undefined) {
+              this.mQueue[idx].failedCB(err);
+            }
+            this.mQueue.splice(idx, 1);
+
+          });
+        --freeSpots;
       }
       ++idx;
     }
@@ -751,53 +766,50 @@ class DownloadManager {
     job.state = 'running';
     job.workerId = workerId;
 
-    this.startJob(download, job);
+    return this.startJob(download, job);
+  }
+
+  private makeProgressCB(job: IDownloadJob, download: IRunningDownload) {
+    return (bytes) => {
+      const starving = this.mSpeedCalculator.addMeasure(job.workerId, bytes);
+      if (starving) {
+        this.mSlowWorkers[job.workerId] = (this.mSlowWorkers[job.workerId] || 0) + 1;
+        // only restart slow workers within 15 minutes after starting the download,
+        // otherwise the url may have expired. There is no way to know how long the
+        // url remains valid, not even with the nexus api (at least not currently)
+        if ((this.mSlowWorkers[job.workerId] > 15)
+          && (download.started !== undefined)
+          && ((Date.now() - download.started.getTime()) < 15 * 60 * 1000)) {
+          log('debug', 'restarting slow worker', { workerId: job.workerId });
+          this.mBusyWorkers[job.workerId].restart();
+          delete this.mSlowWorkers[job.workerId];
+        }
+      } else if (starving === false) {
+        delete this.mSlowWorkers[job.workerId];
+      }
+    };
   }
 
   private startJob(download: IRunningDownload, job: IDownloadJob) {
-    if (download.assembler === undefined) {
-      try {
-        download.progressCB(download.received, download.size, undefined,
-          undefined, download.tempName);
-        download.assembler = new FileAssembler(download.tempName);
-      } catch (err) {
-        if (err.code === 'EBUSY') {
-          throw new Error('output file is locked');
-        } else {
-          throw err;
-        }
-      }
-      if (download.size) {
-        download.assembler.setTotalSize(download.size);
-      }
-    }
+    const assemblerProm = download.assembler !== undefined
+      ? Promise.resolve(download.assembler)
+      : FileAssembler.create(download.tempName)
+        .tap(assembler => assembler.setTotalSize(download.size));
 
-    log('debug', 'start download worker',
-      { name: download.tempName, workerId: job.workerId, size: job.size });
     job.dataCB = this.makeDataCB(download);
 
-    this.mBusyWorkers[job.workerId] = new DownloadWorker(job,
-      (bytes) => {
-        const starving = this.mSpeedCalculator.addMeasure(job.workerId, bytes);
-        if (starving) {
-          this.mSlowWorkers[job.workerId] = (this.mSlowWorkers[job.workerId] || 0) + 1;
-          // only restart slow workers within 15 minutes after starting the download,
-          // otherwise the url may have expired. There is no way to know how long the
-          // url remains valid, not even with the nexus api (at least not currently)
-          if ((this.mSlowWorkers[job.workerId] > 15)
-              && (download.started !== undefined)
-              && ((Date.now() - download.started.getTime()) < 15 * 60 * 1000)) {
-            log('debug', 'restarting slow worker', { workerId: job.workerId });
-            this.mBusyWorkers[job.workerId].restart();
-            delete this.mSlowWorkers[job.workerId];
-          }
-        } else if (starving === false) {
-          delete this.mSlowWorkers[job.workerId];
-        }
-      },
-      (pause) => this.finishChunk(download, job, pause),
-      (headers) => download.headers = headers,
-      this.mUserAgent);
+    return assemblerProm.then(assembler => {
+      download.assembler = assembler;
+
+      log('debug', 'start download worker',
+        { name: download.tempName, workerId: job.workerId, size: job.size });
+
+      this.mBusyWorkers[job.workerId] = new DownloadWorker(job, this.makeProgressCB(job, download),
+        (pause) => this.finishChunk(download, job, pause),
+        (headers) => download.headers = headers,
+        this.mUserAgent);
+    })
+    .catch({ code: 'EBUSY' }, () => Promise.reject(new ProcessCanceled('output file is locked')));
   }
 
   private makeDataCB(download: IRunningDownload) {

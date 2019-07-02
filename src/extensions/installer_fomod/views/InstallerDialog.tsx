@@ -159,6 +159,7 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
             checked={isSelected}
             onChange={readOnly ? nop : this.select}
             disabled={plugin.type === 'NotUsable'}
+            title={plugin.conditionMsg}
           >
             {content}
           </Radio>
@@ -184,6 +185,7 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
             checked={isSelected}
             disabled={plugin.type === 'NotUsable'}
             onChange={readOnly ? nop : this.select}
+            title={plugin.conditionMsg}
           >
             {content}
           </Checkbox>
@@ -297,8 +299,8 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
     if (
       ((this.props.installerState === undefined) && (nextProps.installerState !== undefined))
       || ((this.props.installerState !== undefined)
-        && ((this.props.installerInfo !== nextProps.installerInfo)
-          || (this.props.installerState.currentStep !== nextProps.installerState.currentStep)))) {
+          && ((this.props.installerInfo !== nextProps.installerInfo)
+            || (this.props.installerState.currentStep !== nextProps.installerState.currentStep)))) {
       this.setState(this.initDescription(nextProps));
     }
   }

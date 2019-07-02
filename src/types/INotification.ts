@@ -86,7 +86,7 @@ export interface INotification {
    * replacement parameters for the localisation of title and message (the same
    * replacement dictionary will be used for both)
    */
-  replace?: { [key: string]: string };
+  replace?: { [key: string]: any };
 
   /**
    * control which part of the notification gets localized. default is true for both

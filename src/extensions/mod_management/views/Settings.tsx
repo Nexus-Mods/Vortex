@@ -3,11 +3,12 @@ import EmptyPlaceholder from '../../../controls/EmptyPlaceholder';
 import FlexLayout from '../../../controls/FlexLayout';
 import Icon from '../../../controls/Icon';
 import More from '../../../controls/More';
+import Spinner from '../../../controls/Spinner';
 import { Button } from '../../../controls/TooltipControls';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
 import { ValidationState } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { InsufficientDiskSpace, NotFound, TemporaryError,
+import { CleanupFailedException, InsufficientDiskSpace, NotFound, TemporaryError,
          UnsupportedOperatingSystem, UserCanceled } from '../../../util/CustomErrors';
 import { withContext } from '../../../util/errorHandling';
 import * as fs from '../../../util/fs';
@@ -56,6 +57,7 @@ interface IConnectedProps {
   installPath: string;
   currentActivator: string;
   state: any;
+  modActivity: string[];
 }
 
 interface IActionProps {
@@ -132,7 +134,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     const { t, discovery, game } = this.props;
     const { currentActivator, progress, progressFile, supportedActivators } = this.state;
 
-    if (game === undefined) {
+    if ((game === undefined)
+        || (discovery === undefined)
+        || (discovery.path === undefined)) {
       return (
         <EmptyPlaceholder
           icon='settings'
@@ -202,7 +206,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private transferPath() {
-    const { gameMode, onSetTransfer, onShowDialog } = this.props;
+    const { t, gameMode, onSetTransfer, onShowDialog } = this.props;
     const oldPath = getInstallPath(this.props.installPath, gameMode);
     const newPath = getInstallPath(this.state.installPath, gameMode);
 
@@ -268,6 +272,13 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     const { t, discovery, gameMode, onSetInstallPath,
             onShowDialog, onShowError, onSetTransfer } = this.props;
 
+    if ((discovery === undefined) || (discovery.path === undefined)) {
+      return onShowDialog('error', 'Not discovered', {
+        text: 'The active game is not discovered correctly. If you have an idea what '
+            + 'led to this, please report.',
+      }, [ { label: 'Close' } ]);
+    }
+
     const newInstallPath: string = getInstallPath(this.state.installPath, gameMode);
     const oldInstallPath: string = getInstallPath(this.props.installPath, gameMode);
     log('info', 'changing staging directory', { from: oldInstallPath, to: newInstallPath });
@@ -324,6 +335,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
     this.nextState.progress = 0;
     this.nextState.busy = t('Calculating required disk space');
+    let deleteOldDestination = true;
     return testPathTransfer(oldInstallPath, newInstallPath)
       .then(() => {
         this.nextState.busy = t('Purging previous deployment');
@@ -367,6 +379,22 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         onShowError('Failed to move directories, please try again', err, false);
       })
       .catch(UserCanceled, () => null)
+      .catch(CleanupFailedException, err => {
+        deleteOldDestination = false;
+        onSetTransfer(gameMode, undefined);
+        onSetInstallPath(gameMode, this.state.installPath);
+        onShowDialog('info', 'Cleanup failed', {
+          bbcode: t('The mods staging folder has been copied [b]successfully[/b] to '
+            + 'your chosen destination!<br />'
+            + 'Clean-up of the old staging folder has been cancelled.<br /><br />'
+            + `Old staging folder: [url]{{thePath}}[/url]`,
+            { replace: { thePath: oldInstallPath } }),
+        }, [ { label: 'Close', action: () => Promise.resolve() } ]);
+
+        if (!(err.errorObject instanceof UserCanceled)) {
+          this.context.api.showErrorNotification('Clean-up failed', err.errorObject);
+        }
+      })
       .catch(InsufficientDiskSpace, () => notEnoughDiskSpace())
       .catch(UnsupportedOperatingSystem, () =>
         onShowError('Unsupported operating system',
@@ -414,10 +442,14 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         //  if it is - that means that the user has cancelled the transfer,
         //  we need to cleanup.
         const pendingTransfer: string[] = ['persistent', 'transactions', 'transfer', gameMode];
-        if (getSafe(state, pendingTransfer, undefined) !== undefined) {
+        if ((getSafe(state, pendingTransfer, undefined) !== undefined)
+        && deleteOldDestination) {
           return fs.removeAsync(newInstallPath)
             .then(() => {
               onSetTransfer(gameMode, undefined);
+              this.nextState.busy = undefined;
+            })
+            .catch(UserCanceled, () => {
               this.nextState.busy = undefined;
             })
             .catch(err => {
@@ -553,11 +585,13 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderPathCtrl(label: string, activators: IDeploymentMethod[]): JSX.Element {
-    const { t, gameMode } = this.props;
+    const { t, gameMode, modActivity } = this.props;
     const { installPath } = this.state;
 
     const pathPreview = getInstallPath(installPath, gameMode);
     const validationState = this.validateModPath(pathPreview);
+
+    const hasModActivity = (modActivity.length > 0);
 
     return (
       <FormGroup id='install-path-form' validationState={validationState.state}>
@@ -600,10 +634,10 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                 </Button>
               ) : null}
               <BSButton
-                disabled={!this.pathsChanged() || (validationState.state === 'error')}
+                disabled={!this.pathsChanged() || (validationState.state === 'error') || hasModActivity}
                 onClick={this.applyPaths}
               >
-                {t('Apply')}
+                {hasModActivity ? <Spinner /> : t('Apply')}
               </BSButton>
             </InputGroup.Button>
           </FlexLayout.Fixed>
@@ -707,7 +741,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               disabled={!changed || changingActivator}
               onClick={this.applyActivator}
             >
-              {t('Apply')}
+              {changingActivator ? <Spinner /> : t('Apply')}
             </BSButton>
           </InputGroup.Button>
         </InputGroup>
@@ -747,6 +781,7 @@ function mapStateToProps(state: any): IConnectedProps {
     gameMode,
     installPath: state.settings.mods.installPath[gameMode],
     currentActivator: getSafe(state, ['settings', 'mods', 'activator', gameMode], undefined),
+    modActivity: getSafe(state, ['session', 'base', 'activity', 'mods'], []),
     state,
   };
 }

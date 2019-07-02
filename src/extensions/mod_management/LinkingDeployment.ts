@@ -183,14 +183,18 @@ abstract class LinkingActivator implements IDeploymentMethod {
         .then(() => Promise.map(
                   added,
                   key => this.deployFile(key, installationPath, dataPath, false)
-                             .catch(err => {
-                               log('warn', 'failed to link', {
-                                 link: this.mContext.newDeployment[key].relPath,
-                                 source: this.mContext.newDeployment[key].source,
-                                 error: err.message,
-                               });
-                               ++errorCount;
-                             })
+                    .catch(err => {
+                      log('warn', 'failed to link', {
+                        link: this.mContext.newDeployment[key].relPath,
+                        source: this.mContext.newDeployment[key].source,
+                        error: err.message,
+                      });
+                      if (err.code !== 'ENOENT') {
+                        // if the source file doesn't exist it must have been deleted
+                        // in the mean time. That's not really our problem.
+                        ++errorCount;
+                      }
+                    })
                             .then(() => progress()), { concurrency: 100 }))
         // then update modified files
         .then(() => Promise.map(
@@ -203,7 +207,9 @@ abstract class LinkingActivator implements IDeploymentMethod {
                               source: this.mContext.newDeployment[key].source,
                               error: err.message,
                             });
-                            ++errorCount;
+                            if (err.code !== 'ENOENT') {
+                              ++errorCount;
+                            }
                           }).then(() => progress()), { concurrency: 100 }))
         .then(() => {
           if (errorCount > 0) {
@@ -334,13 +340,16 @@ abstract class LinkingActivator implements IDeploymentMethod {
       let sourceTime: Date;
       let destTime: Date;
 
+      let sourceStats: fs.Stats;
+
       return this.stat(fileModPath)
         .catch(err => {
           // can't stat source, probably the file was deleted
           sourceDeleted = true;
           return Promise.resolve(undefined);
         })
-        .then(sourceStats => {
+        .then(sourceStatsIn => {
+          sourceStats = sourceStatsIn;
           if (sourceStats !== undefined) {
             sourceTime = sourceStats.mtime;
           }
@@ -357,7 +366,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
           }
           return sourceDeleted || destDeleted
             ? Promise.resolve(false)
-            : this.isLink(fileDataPath, fileModPath);
+            : this.isLink(fileDataPath, fileModPath, destStats, sourceStats);
         })
         .then((isLink?: boolean) => {
           if (sourceDeleted && !destDeleted && this.canRestore()) {
@@ -401,7 +410,18 @@ abstract class LinkingActivator implements IDeploymentMethod {
   protected abstract linkFile(linkPath: string, sourcePath: string): Promise<void>;
   protected abstract unlinkFile(linkPath: string, sourcePath: string): Promise<void>;
   protected abstract purgeLinks(installPath: string, dataPath: string): Promise<void>;
-  protected abstract isLink(linkPath: string, sourcePath: string): Promise<boolean>;
+  /**
+   * test if a file is a link to another file. The stats parameters may not be available,
+   * they are just intended as an optimization by avoiding doing redundant calls
+   * @param linkPath the path to the presumed link
+   * @param sourcePath the path to the source file
+   * @param linkStats stats of the link. This was acquired with lstats so
+   *                  in case of symlinks this contains info on the link itself
+   * @param sourceStats stats of the source file. This was acquired with stats so should
+   *                    this be a symlink it *was* followed!
+   */
+  protected abstract isLink(linkPath: string, sourcePath: string,
+                            linkStats?: fs.Stats, sourceStats?: fs.Stats): Promise<boolean>;
   /**
    * must return true if this deployment method is able to restore a file after the
    * "original" was deleted. This is essentially true for hard links (since the file
@@ -569,6 +589,9 @@ abstract class LinkingActivator implements IDeploymentMethod {
   private restoreBackup(backupPath: string) {
     const targetPath = backupPath.substr(0, backupPath.length - BACKUP_TAG.length);
     return fs.renameAsync(backupPath, targetPath)
+      // where has it gone? Oh well, doesn't matter. We wouldn't even be trying to restore
+      // it if it had been removed a bit earlier
+      .catch({ code: 'ENOENT' }, () => null)
       .catch(UserCanceled, cancelErr => {
         // TODO:
         // this dialog may show up multiple times for the same file because

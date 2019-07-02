@@ -1,14 +1,16 @@
 'use strict';
 
 let checkResult = {
-  free: 42,
+  '': {
+    free: 42,
+  },
 }
 
 module.exports = {
-  check: () => {
-    return checkResult;
+  check: (checkPath) => {
+    return checkResult[checkPath] || checkResult[''];
   },
-  __setCheckResult: (res) => {
-    checkResult = res;
+  __setCheckResult: (checkPath, res) => {
+    checkResult[checkPath] = res;
   },
 };

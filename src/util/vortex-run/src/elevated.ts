@@ -16,28 +16,31 @@ function elevatedMain(moduleRoot: string, ipcPath: string,
   // tslint:disable-next-line:no-shadowed-variable
   (module as any).paths.push(moduleRoot);
   // tslint:disable-next-line:no-shadowed-variable
-  const ipc = require('node-ipc');
-  ipc.config.maxRetries = 5;
-  ipc.config.stopRetrying = 5;
-  ipc.connectTo(ipcPath, ipcPath, () => {
-    ipc.of[ipcPath].on('quit', () => {
-      process.exit(0);
-    });
-    // TODO: having a weird problem where messages emitted right away
-    //   are simply lost. Am I doing something wrong or is this a bug
-    //   in node-ipc?
-    new Promise(resolve => setTimeout(resolve, 100))
-    .then(() => Promise.resolve(main(ipc.of[ipcPath], require)))
+  const net = require('net');
+  const JsonSocket = require('json-socket');
+  const path = require('path');
+
+  const client = new JsonSocket(new net.Socket());
+  client.connect(path.join('\\\\?\\pipe', ipcPath));
+
+  client.on('connect', () => {
+    Promise.resolve(main(client, require))
     .catch(error => {
-      ipc.of[ipcPath].emit('error', error.message);
-      // TODO: apparently also need to delay disconnection to ensure
-      //   the error gets delivered. This can't be right?
-      return new Promise((resolve) => setTimeout(resolve, 100));
+      client.emit('error', error.message);
     })
-    .then(() => {
-      ipc.disconnect(ipcPath);
+    .finally(() => {
+      client.end();
       process.exit(0);
     });
+  })
+  .on('close', () => {
+    process.exit(0);
+  })
+  .on('error', err => {
+    if (err.code !== 'EPIPE') {
+      // will anyone ever see this?
+      console.error('Connection failed', err.message);
+    }
   });
 }
 
@@ -59,8 +62,10 @@ function elevatedMain(moduleRoot: string, ipcPath: string,
  *                        the global require. Regular require calls will not work in production
  *                        builds
  * @param {Object} args arguments to be passed into the elevated process
- * @returns {Bluebird<any>} a promise that will be resolved as soon as the process is started
- *                          (which happens after the user confirmed elevation)
+ * @returns {Bluebird<string>} a promise that will be resolved as soon as the process is started
+ *                             (which happens after the user confirmed elevation). It resolves to
+ *                             the path of the tmpFile we had to create. If the caller can figure
+ *                             out when the process is done (using ipc) it should delete it
  */
 function runElevated(ipcPath: string, func: (ipc: any, req: NodeRequireFunction) =>
                         void | Promise<void> | Bluebird<void>,
@@ -105,6 +110,16 @@ function runElevated(ipcPath: string, func: (ipc: any, req: NodeRequireFunction)
         }
 
         try {
+          fs.closeSync(fd);
+        } catch (err) {
+          if (err.code !== 'EBADF') {
+            return reject(err);
+          }
+          // not sure what causes EBADF, don't want to return now if there is a chance this
+          // will actually work
+        }
+
+        try {
           winapi.ShellExecuteEx({
             verb: 'runas',
             file: process.execPath,
@@ -112,7 +127,7 @@ function runElevated(ipcPath: string, func: (ipc: any, req: NodeRequireFunction)
             directory: path.dirname(process.execPath),
             show: 'shownormal',
           });
-          return resolve();
+          return resolve(tmpPath);
         } catch (err) {
           return reject(err);
         }

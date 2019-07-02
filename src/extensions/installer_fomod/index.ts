@@ -80,7 +80,8 @@ function transformError(err: any): Error {
              ) {
     result = new DataInvalid('Invalid installer script: ' + err.message);
   } else if ((err.name === 'System.Xml.XmlException')
-             && (err.StackTrace.indexOf('System.Xml.XmlTextReaderImpl.ParseText') !== -1)) {
+             && ((err.StackTrace.indexOf('System.Xml.XmlTextReaderImpl.ParseText') !== -1)
+                 || (err.message.indexOf('does not match the end tag') !== -1))) {
     result = new DataInvalid('Invalid installer script: ' + err.message);
   } else if (err.name === 'System.AggregateException') {
     return transformError(err.InnerException);

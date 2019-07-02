@@ -51,6 +51,12 @@ function createEndorsedIcon(store: Redux.Store<any>, mod: IMod, onEndorse: Endor
     && !isNaN(parseInt(nexusModId, 10));
 
   let endorsed: string = getSafe(mod.attributes, ['endorsed'], undefined);
+  if ((endorsed === undefined) && (state === 'downloaded')) {
+    // The mod is sourced from nexus but is not installed, which means
+    //  we can't endorse the mod anyway and therefore should just hide the endorse button.
+    return null;
+  }
+
   if ((endorsed === undefined && state === 'installing')
    || (endorsed === undefined && isNexusMod)) {
     endorsed = 'Undecided';

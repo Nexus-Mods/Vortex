@@ -75,9 +75,16 @@ class LevelPersist implements IPersistor {
   }
 
   public setItem(statePath: string[], newState: string): Promise<void> {
+    const stackErr = new Error();
     return new Promise<void>((resolve, reject) => {
       this.mDB.put(statePath.join(SEPARATOR), newState, error => {
         if (error) {
+          error.stack = stackErr.stack;
+          log('error', 'Failed to write to leveldb', {
+            message: error.message,
+            stack: error.message + '\n' + stackErr.stack,
+            insp: require('util').inspect(error),
+          });
           return reject(error);
         }
         return resolve();

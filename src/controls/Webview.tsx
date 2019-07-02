@@ -39,8 +39,6 @@ class Webview extends React.Component<IWebviewProps & IWebView, {}> {
       // this.mNode.openDevTools();
     });
     this.mNode.addEventListener('console-message', this.logMessage);
-
-    // this.mNode.getWebContents().session.cookies.get()
   }
 
   public componentWillUnmount() {

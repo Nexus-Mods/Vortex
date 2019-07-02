@@ -4,19 +4,23 @@ import {
   IDialogContent,
   showDialog,
 } from '../actions/notifications';
-import { IErrorOptions } from '../types/IExtensionContext';
+import { IErrorOptions, IAttachment } from '../types/IExtensionContext';
 import { IState } from '../types/IState';
 import { jsonRequest } from '../util/network';
 
 import { HTTPError } from './CustomErrors';
 import { isOutdated, sendReport, toError,
          getErrorContext, didIgnoreError } from './errorHandling';
+import * as fs from './fs';
 import { log } from './log';
 import { truthy } from './util';
 
+import * as Promise from 'bluebird';
 import { IFeedbackResponse } from 'nexus-api';
+import ZipT = require('node-7z');
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
+import { file as tmpFile, tmpName } from 'tmp';
 
 const GITHUB_PROJ = 'Nexus-Mods/Vortex';
 
@@ -136,11 +140,68 @@ function shouldAllowReport(err: string | Error | any, options?: IErrorOptions): 
   if ((options !== undefined) && (options.allowReport !== undefined)) {
     return options.allowReport;
   }
-  if (err.code === undefined) {
+  if ((err === undefined) || (err.code === undefined)) {
     return true;
   }
 
   return noReportErrors.indexOf(err.code) === -1;
+}
+
+function dataToFile(id, input: any) {
+  return new Promise<string>((resolve, reject) => {
+    const data: Buffer = Buffer.from(JSON.stringify(input));
+    tmpFile({
+      prefix: id,
+      postfix: '.json',
+    }, (err, tmpPath: string, fd: number, cleanup: () => void) => {
+      if (err !== null) {
+        return reject(err);
+      }
+      fs.writeAsync(fd, data, 0, data.byteLength, 0)
+        .then(() => fs.closeAsync(fd))
+        .then(() => {
+          resolve(tmpPath);
+        });
+    });
+  });
+}
+
+function zipFiles(files: string[]): Promise<string> {
+  if (files.length === 0) {
+    return Promise.resolve(undefined);
+  }
+  const Zip: typeof ZipT = require('node-7z');
+  const task: ZipT = new Zip();
+
+  return new Promise<string>((resolve, reject) => {
+    tmpName({
+      postfix: '.7z',
+    }, (err, tmpPath: string) => (err !== null)
+      ? reject(err)
+      : resolve(tmpPath));
+  })
+    .then(tmpPath =>
+      task.add(tmpPath, files, { ssw: true })
+        .then(() => tmpPath));
+}
+
+function serializeAttachments(input: IAttachment): Promise<string> {
+  if (input.type === 'file') {
+    return input.data;
+  } else {
+    return dataToFile(input.id, input.data);
+  }
+}
+
+function bundleAttachment(options?: IErrorOptions): Promise<string> {
+  if ((options === undefined)
+      || (options.attachments === undefined)
+      || (options.attachments.length === 0)) {
+    return undefined;
+  }
+
+  return Promise.map(options.attachments, serializeAttachments)
+    .then(fileNames => zipFiles(fileNames));
 }
 
 /**
@@ -148,7 +209,6 @@ function shouldAllowReport(err: string | Error | any, options?: IErrorOptions): 
  * in a modal dialog.
  *
  * @export
- * @template S
  * @param {Redux.Dispatch<S>} dispatch
  * @param {string} title
  * @param {any} [details] further details about the error (stack and such). The api says we only
@@ -159,6 +219,7 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
                           title: string,
                           details?: string | Error | any,
                           options?: IErrorOptions) {
+  const sourceErr = new Error();
   const err = renderError(details);
 
   const allowReport = err.allowReport !== undefined
@@ -190,6 +251,12 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
     },
   };
 
+  if ((options !== undefined) && (options.attachments !== undefined) && (options.attachments.length > 0)) {
+    content.text = (content.text !== undefined ? (content.text + '\n\n') : '')
+      + 'Note: If you report this error, the following data will be added to the report:\n'
+      + options.attachments.map(attach => ` - ${attach.description}`).join('\n');
+  }
+
   const actions: IDialogAction[] = [];
 
   const context = (details !== undefined) && (details.context !== undefined)
@@ -199,7 +266,11 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
   if (!isOutdated() && !didIgnoreError() && allowReport) {
     actions.push({
       label: 'Report',
-      action: () => sendReport('error', toError(details, title, options), context, ['error'], '', process.type)
+      action: () => bundleAttachment(options)
+        .then(attachmentBundle => sendReport('error',
+                                             toError(details, title, options, sourceErr.stack),
+                                             context, ['error'], '', process.type, undefined,
+                                             attachmentBundle))
         .then(response => {
           if (response !== undefined) {
             const { issue_number } = response.github_issue;
@@ -285,6 +356,11 @@ export function prettifyNodeErrorMessage(err: any): IPrettifiedError {
       message: 'The disk is full',
       allowReport: false,
     };
+  } else if ((err.code === 'EACCES') || (err.port !== undefined)) {
+    return {
+      message: 'Network connect was not permitted, please check your firewall settings',
+      allowReport: false,
+    };
   } else if (err.code === 'ENETUNREACH') {
     return {
       message: 'Network server not reachable.',
@@ -305,7 +381,7 @@ export function prettifyNodeErrorMessage(err: any): IPrettifiedError {
       message: 'Network connection closed unexpectedly.',
       allowReport: false,
     };
-  } else if (err.code === 'ETIMEDOUT') {
+  } else if (['ETIMEDOUT', 'ESOCKETTIMEDOUT'].indexOf(err.code) !== -1) {
     return {
       message: 'Network connection to "{{address}}" timed out, please try again.',
       replace: { address: err.address },
@@ -318,7 +394,8 @@ export function prettifyNodeErrorMessage(err: any): IPrettifiedError {
     };
   } else if (err.code === 'EISDIR') {
     return {
-      message: 'Vortex expected a file but found a directory.',
+      message: 'Vortex expected a file but found a directory: "{{path}}".',
+      replace: { path: err.path },
       allowReport: false,
     };
   } else if (err.code === 'ENOTDIR') {
@@ -381,7 +458,7 @@ function renderCustomError(err: any) {
       .filter(key => key[0].toUpperCase() === key[0]);
   if (attributes.length === 0) {
     attributes = Object.keys(err || {})
-      .filter(key => ['message', 'error'].indexOf(key) === -1);
+      .filter(key => ['message', 'error', 'context'].indexOf(key) === -1);
   }
   if (attributes.length > 0) {
     const old = res.message;
@@ -444,6 +521,23 @@ export function renderError(err: string | Error | any):
     return prettifyHTTPError(err);
   } else if (err instanceof Error) {
     const errMessage = prettifyNodeErrorMessage(err);
+
+    let attributes = Object.keys(err || {})
+        .filter(key => key[0].toUpperCase() === key[0]);
+    if (attributes.length === 0) {
+      attributes = Object.keys(err || {})
+        .filter(key => ['message', 'error', 'context'].indexOf(key) === -1);
+    }
+    if (attributes.length > 0) {
+      const old = errMessage.message;
+      errMessage.message = attributes
+          .map(key => key + ':\t' + err[key])
+          .join('\n');
+      if (old !== undefined) {
+        errMessage.message = old + '\n' + errMessage.message;
+      }
+    }
+
     return {
       text: errMessage.message,
       message: err.stack,

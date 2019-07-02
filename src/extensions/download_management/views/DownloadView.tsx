@@ -12,6 +12,7 @@ import { ITableAttribute } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { ProcessCanceled, UserCanceled } from '../../../util/CustomErrors';
 import { showError } from '../../../util/message';
+import opn from '../../../util/opn';
 import * as selectors from '../../../util/selectors';
 import { truthy } from '../../../util/util';
 import MainPage from '../../../views/MainPage';
@@ -29,13 +30,12 @@ import DownloadGraph from './DownloadGraph';
 
 import * as Promise from 'bluebird';
 import I18next from 'i18next';
+import * as path from 'path';
 import * as React from 'react';
 import { Button, Panel } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { WithTranslation } from 'react-i18next';
-
-const PanelX: any = Panel;
 
 export interface IDownloadViewBaseProps extends WithTranslation {
   active: boolean;
@@ -47,6 +47,7 @@ interface IConnectedProps {
   gameMode: string;
   knownGames: IGameStored[];
   downloadPath: string;
+  downloadPathForGame: (gameId: string) => string;
   showDropzone: boolean;
   showGraph: boolean;
 }
@@ -127,6 +128,13 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
         action: this.remove,
         condition: this.cancelable,
       },
+      {
+        icon: 'open-ext',
+        title: 'Open',
+        action: this.open,
+        condition: this.installable,
+        singleRowAction: true,
+      }
     ];
   }
 
@@ -157,13 +165,13 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
     if (gameMode === undefined) {
       content = (
         <Panel className='placeholder-container'>
-          <PanelX.Body>
+          <Panel.Body>
             <EmptyPlaceholder
               icon='folder-download'
               text={t('Please select a game to manage first')}
               fill={true}
             />
-          </PanelX.Body>
+          </Panel.Body>
         </Panel>
       );
     } else if (Object.keys(this.props.downloads).length === 0) {
@@ -181,24 +189,24 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
         <FlexLayout type='column'>
           {secondary ? null : <Banner group='downloads' />}
           <FlexLayout.Flex>
-            <PanelX className='download-panel' >
+            <Panel className='download-panel' >
               {secondary ? null : (
-                <PanelX
+                <Panel
                   className='download-graph-panel'
                   expanded={showGraph}
                   onToggle={nop}
                 >
-                  <PanelX.Body collapsible={true}>
+                  <Panel.Body collapsible={true}>
                     <DownloadGraph />
-                  </PanelX.Body>
+                  </Panel.Body>
                   <CollapseIcon
                     position='bottomright'
                     onClick={this.toggleGraph}
                     visible={showGraph}
                   />
-                </PanelX>
+                </Panel>
               )}
-              <PanelX.Body>
+              <Panel.Body>
                 <FlexLayout type='column'>
                   <FlexLayout.Flex>
                     <SuperTable
@@ -214,8 +222,8 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
                     </Button>
                   </FlexLayout.Fixed>
                 </FlexLayout>
-              </PanelX.Body>
-            </PanelX>
+              </Panel.Body>
+            </Panel>
           </FlexLayout.Flex>
           <FlexLayout.Fixed>
             {secondary ? null : this.renderDropzone()}
@@ -236,27 +244,27 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
   private renderDropzone(): JSX.Element {
     const { t, showDropzone } = this.props;
     return (
-      <PanelX
+      <Panel
         className='download-drop-panel'
         expanded={showDropzone}
         onToggle={nop}
       >
-        <PanelX.Collapse>
-          <PanelX.Body>
+        <Panel.Collapse>
+          <Panel.Body>
             <Dropzone
               accept={['urls', 'files']}
               drop={this.dropDownload}
               dialogHint={t('Enter download URL')}
               icon='folder-download'
             />
-          </PanelX.Body>
-        </PanelX.Collapse>
+          </Panel.Body>
+        </Panel.Collapse>
         <CollapseIcon
           position='topright'
           onClick={this.toggleDropzone}
           visible={showDropzone}
         />
-      </PanelX>
+      </Panel>
     );
   }
 
@@ -326,6 +334,11 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
           } else if (err.code === 'ENOSPC') {
             this.props.onShowError('Failed to resume download', 'The disk is full',
               undefined, false);
+          } else if (err.message.indexOf('DECRYPTION_FAILED_OR_BAD_RECORD_MAC') !== -1) {
+            this.props.onShowError('Failed to resume download',
+                                   'Network communication error (SSL payload corrupted). '
+                                   + 'This is likely a temporary issue, please try again later.',
+                                   undefined, false);
           } else {
             this.props.onShowError('Failed to resume download', err);
           }
@@ -386,6 +399,20 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
   private installable = (downloadIds: string[]) => {
     return downloadIds.find(
       (id: string) => this.getDownload(id).state === 'finished') !== undefined;
+  }
+
+  private open = (downloadId: string) => {
+    const { downloadPathForGame, downloads } = this.props;
+    const download: IDownload = downloads[downloadId];
+    if ((download !== undefined) && (download.localPath !== undefined)) {
+      const downloadGame = Array.isArray(download.game)
+        ? download.game[0]
+        : download.game;
+      opn(path.join(downloadPathForGame(downloadGame), download.localPath))
+        .catch(err => {
+          this.props.onShowError('Failed to open archive', err, undefined, false);
+        });
+    }
   }
 
   private inspect = (downloadId: string) => {
@@ -467,6 +494,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     knownGames: state.session.gameMode.known,
     downloads: state.persistent.downloads.files,
     downloadPath: selectors.downloadPath(state),
+    downloadPathForGame: (game: string) => selectors.downloadPathForGame(state, game),
     showDropzone: state.settings.downloads.showDropzone,
     showGraph: state.settings.downloads.showGraph,
   };

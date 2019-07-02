@@ -150,7 +150,7 @@ function activateGame(store: ThunkStore<IState>, gameId: string) {
       .filter((id: string) => profiles[id].gameId === gameId)
       .map((id: string) => profiles[id]);
     store.dispatch(showDialog('question', 'Choose profile', {
-      message: 'Please choose the profile to use with this game',
+      text: 'Please choose the profile to use with this game',
       choices: gameProfiles.map((iter: IProfile, idx: number) =>
         ({ id: iter.id, text: iter.name, value: idx === 0 })),
     }, [ { label: 'Activate' } ]))
@@ -235,6 +235,13 @@ function genOnProfileChange(api: IExtensionApi, onFinishProfileSwitch: (callback
         }
 
         const discovery = state.settings.gameMode.discovered[profile.gameId];
+        if ((discovery === undefined) || (discovery.path === undefined)) {
+          showError(store.dispatch,
+            'Game is no longer discoverable, please go to the games page and scan for, or '
+          + 'manually select the game folder.',
+            profile.gameId, { allowReport: false });
+          return Promise.reject(new ProcessCanceled('Game no longer discovered'));
+        }
         // only calling to check if it works, some game extensions might discover
         // a setup-error when trying to resolve the mod path
         game.getModPaths(discovery.path);

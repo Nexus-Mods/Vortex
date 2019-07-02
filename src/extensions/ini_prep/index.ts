@@ -1,10 +1,10 @@
-import {IExtensionContext} from '../../types/IExtensionContext';
+import {IExtensionContext, IExtensionApi} from '../../types/IExtensionContext';
 import { IProfile, IState } from '../../types/IState';
 import { ITestResult } from '../../types/ITestResult';
 import { UserCanceled } from '../../util/CustomErrors';
 import deepMerge from '../../util/deepMerge';
+import { disableErrorReport } from '../../util/errorHandling';
 import * as fs from '../../util/fs';
-import getVortexPath from '../../util/getVortexPath';
 import {log} from '../../util/log';
 import { installPathForGame } from '../../util/selectors';
 import {getSafe} from '../../util/storeHelper';
@@ -36,7 +36,7 @@ function ensureIniBackups(t: I18next.TFunction, gameMode: string,
       copy => fs.statAsync(copy)
         .catch(() =>
           fs.copyAsync(file, copy, { noSelfCopy: true })
-            .then(() => fs.ensureFileWritableAsync(copy))
+            .then(() => fs.makeFileWritableAsync(copy))
             .catch(copyErr => {
               if (copyErr.code === 'ENOENT') {
                 log('warn', 'ini file missing', file);
@@ -75,7 +75,7 @@ function applyDelta(data: any, delta: any) {
   });
 }
 
-function discoverSettingsChanges(t: I18next.TFunction, gameMode: string,
+function discoverSettingsChanges(api: IExtensionApi, gameMode: string,
                                  discovery: IDiscoveryResult): Promise<void> {
   const format = iniFormat(gameMode);
   if (format === undefined) {
@@ -83,6 +83,8 @@ function discoverSettingsChanges(t: I18next.TFunction, gameMode: string,
   }
 
   const parser = new IniParser(genIniFormat(format));
+
+  const t: I18next.TFunction = api.translate;
 
   return Promise.map(iniFiles(gameMode, discovery), iniFileName => {
     let newContent: any;
@@ -98,8 +100,24 @@ function discoverSettingsChanges(t: I18next.TFunction, gameMode: string,
       })
       .then(ini => {
         const delta = objDiff(oldContent, newContent);
+        // don't bother if there was no change
+        if (Object.keys(delta).length === 0) {
+          return Promise.resolve();
+        }
         applyDelta(ini.data, delta);
-        return fs.forcePerm(t, () => parser.write(iniFileName + '.base', ini));
+        return fs.forcePerm(t, () =>
+          fs.openAsync(iniFileName + '.base', 'a')
+            .then(fd => fs.closeAsync(fd))
+            .then(() => parser.write(iniFileName + '.base', ini))
+            .catch({ code: 'ENOENT' }, err => {
+              api.showErrorNotification('Failed to write ini file', err, {
+                allowReport: true,
+                attachments: [
+                  { id: path.basename(iniFileName) + '.base', type: 'data', data: delta,
+                    description: 'Ini file' },
+                ],
+              });
+            }));
       });
   })
   .then(() => undefined);
@@ -165,13 +183,13 @@ function bakeSettings(t: I18next.TFunction,
           : Promise.reject(err))
         .then(() => fs.copyAsync(iniFileName + '.base', iniFileName + '.baked',
                                  { noSelfCopy: true })
-        .then(() => fs.ensureFileWritableAsync(iniFileName + '.baked'))
+        .then(() => fs.makeFileWritableAsync(iniFileName + '.baked'))
           // base might not exist, in that case copy from the original ini
           .catch(err => (err.code === 'ENOENT')
             ? fs.copyAsync(iniFileName, iniFileName + '.base', { noSelfCopy: true })
               .then(() => fs.copyAsync(iniFileName, iniFileName + '.baked', { noSelfCopy: true }))
-              .then(() => Promise.all([fs.ensureFileWritableAsync(iniFileName + '.base'),
-                                       fs.ensureFileWritableAsync(iniFileName + '.baked')]))
+              .then(() => Promise.all([fs.makeFileWritableAsync(iniFileName + '.base'),
+                                       fs.makeFileWritableAsync(iniFileName + '.baked')]))
             : Promise.reject(err))))
       .then(() => parser.read(iniFileName + '.baked'))
       .then(ini => Promise.each(enabledTweaks[baseName] || [],
@@ -231,6 +249,7 @@ function testProtectedFolderAccess(): Promise<ITestResult> {
       //  in this case it's safe to assume that an AV or possibly Windows Defender
       //  have stepped in and blocked Vortex.
       log('warn', 'reporting AV blocking access to documents', { documentsPath: writablePath, error: err.message });
+      disableErrorReport();
       return {
         description: {
           short: 'Anti-Virus protection detected',
@@ -239,7 +258,8 @@ function testProtectedFolderAccess(): Promise<ITestResult> {
           + 'Most Anti-Virus applications should inform you of this attempt while others such as '
           + 'Windows 10\'s Windows Defender will block access without prompt.<br /><br />'
           + 'For more information please visit our wiki: '
-          + '[url]https://wiki.nexusmods.com/index.php/Configuring_your_anti-virus_to_work_with_Vortex[/url]',
+          + '[url]https://wiki.nexusmods.com/index.php/Configuring_your_anti-virus_to_work_with_Vortex[/url]<br /><br />'
+          + '[b][color=red]Important: Error reporting from Vortex will be disabled until you remedy this situation.[/color][/b]',
         },
         severity: 'error',
       };
@@ -313,7 +333,7 @@ function main(context: IExtensionContext) {
       const onApplySettings = (fileName: string, parser: IniFile<any>): Promise<void> =>
         context.api.emitAndAwait('apply-settings', profile, fileName, parser);
 
-      return discoverSettingsChanges(context.api.translate, profile.gameId, discovery)
+      return discoverSettingsChanges(context.api, profile.gameId, discovery)
         .then(() => bakeSettings(context.api.translate, profile.gameId, discovery,
                                  mods, state, onApplySettings))
         .catch(UserCanceled, () => {
@@ -335,7 +355,7 @@ function main(context: IExtensionContext) {
       const state: IState = context.api.store.getState();
       const gameMode = activeGameId(state);
       const discovery: IDiscoveryResult = state.settings.gameMode.discovered[gameMode];
-      discoverSettingsChanges(context.api.translate, gameMode, discovery)
+      discoverSettingsChanges(context.api, gameMode, discovery)
         .then(() => purgeChanges(context.api.translate, gameMode, discovery))
         .catch(UserCanceled, () => {
           context.api.showErrorNotification('Ini files were not restored',

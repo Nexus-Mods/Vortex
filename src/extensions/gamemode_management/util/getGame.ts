@@ -40,7 +40,6 @@ const gameExHandler = {
   },
 };
 
-
 function makeGameProxy(game: IGame): IGame {
   if (game === undefined) {
     return undefined;

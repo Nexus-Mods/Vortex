@@ -23,7 +23,14 @@
       }
     ],
     "forceCodeSigning": true,
-    "publisherName": "Black Tree Gaming Limited"
+    "publisherName": "Black Tree Gaming Limited",
+    "extraFiles": [
+      {
+        "from": "assets/vcruntime",
+        "to": ".",
+        "filter": "*.dll"
+      }
+    ]
   },
   "nsis": {
     "perMachine": true,

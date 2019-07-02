@@ -25,4 +25,8 @@ export interface IActionDefinition {
   condition?: (instanceId: string | string[]) => boolean | string;
   position?: number;
   options?: IActionOptions;
+  // in certain situations where the actions may be grouped together (e.g. in a dropdown button)
+  // a default action can be triggered by the button itself.
+  // The first (lowest position) action with the default flag will get triggered
+  default?: boolean;
 }

@@ -37,7 +37,9 @@ class TrayIcon {
   }
 
   public close() {
-    this.mTrayIcon.destroy();
+    if (this.mTrayIcon !== undefined) {
+      this.mTrayIcon.destroy();
+    }
   }
 
   public setMainWindow(window: BrowserWindow) {

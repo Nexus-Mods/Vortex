@@ -17,8 +17,8 @@ import { addDiscoveredTool, setGameParameters } from '../gamemode_management/act
 import ToolIcon from './ToolIcon';
 
 import * as Promise from 'bluebird';
+import { remote } from 'electron';
 import I18next from 'i18next';
-import { extractIconToFile } from 'icon-extract';
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as PropTypes from 'prop-types';
@@ -27,6 +27,8 @@ import { Col, ControlLabel, Form, FormControl, FormGroup, InputGroup, ListGroup,
          ListGroupItem, Modal } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
+
+const {app} = remote;
 
 interface IEnvButtonProps {
   t: I18next.TFunction;
@@ -481,15 +483,14 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
           : Promise.resolve())
       .then(() => fs.ensureDirAsync(path.dirname(destPath)))
       .then(() => (path.extname(filePath) === '.exe')
-        ? new Promise<void>((resolve, reject) => {
-          extractIconToFile(filePath, destPath, (err) => {
-            if (err !== null) {
-              reject(err);
-            } else {
-              resolve();
-            }
-          }, 32, 'png');
+        ? new Promise<Electron.NativeImage>((resolve, reject) => {
+          app.getFileIcon(filePath, { size: 'normal' }, (err: Error, icon: Electron.NativeImage) =>
+            (err !== null)
+              ? reject(err)
+              : resolve(icon)
+          );
         })
+        .then(icon => fs.writeFileAsync(destPath, icon.toPNG()))
         : fs.copyAsync(filePath, destPath))
       .then(() => {
         this.clearCache();

@@ -130,9 +130,20 @@ export function objDiff(lhs: any, rhs: any, skip?: string[]): any {
  */
 export function makeQueue() {
   let queue = Promise.resolve();
-  return (func: () => Promise<any>) =>
+  let atEnd = true;
+  return (func: () => Promise<any>, tryOnly: boolean) =>
     new Promise((resolve, reject) => {
-      queue = queue.then(() => func().then(resolve).catch(reject));
+      if (tryOnly && !atEnd) {
+        return resolve();
+      }
+      queue = queue
+        .then(() => {
+          atEnd = false;
+          return func().then(resolve).catch(reject)
+        })
+        .finally(() => {
+          atEnd = true;
+        });
     });
 }
 

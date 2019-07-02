@@ -22,6 +22,7 @@ jest.mock('fs', () => ({
       mockWrites.push(data);
       callback(null, data.length, '');
     },
+    closeSync: () => {},
     existsSync: () => {
       return true;
     },

@@ -3,7 +3,7 @@ import { ButtonType } from './IconBar';
 
 import * as React from 'react';
 import { IActionDefinition } from '../types/api';
-import { DropdownButton, MenuItem } from 'react-bootstrap';
+import { DropdownButton, MenuItem, Dropdown, Button } from 'react-bootstrap';
 
 function sharedStart(...input: string[]) {
   const inputArrs = input.map(iter => iter.split(' '));
@@ -36,7 +36,7 @@ export interface IToolbarDropdownProps {
   instanceId: string[];
   icons: IActionDefinition[];
   className?: string;
-  buttonType: ButtonType;
+  buttonType?: ButtonType;
   orientation: 'vertical' | 'horizontal';
 }
 
@@ -48,17 +48,37 @@ class ToolbarDropdown extends React.PureComponent<IToolbarDropdownProps, {}> {
       classes = classes.concat(className.split(' '));
     }
 
-    const shared = sharedStart(...icons.map(icon => icon.title));
+    const shared = sharedStart(...icons.map(icon => icon.title || ''));
 
-    return (
-      <DropdownButton
-        id={id}
-        className={classes.join(' ')}
-        title={this.renderTitle(shared)}
-      >
-        {icons.map(icon => <ToolbarDropdownItem key={icon.title} icon={icon} instanceIds={instanceId} />)}
-      </DropdownButton>
-    );
+    const def = icons.find(i => i.default);
+
+    if (def !== undefined) {
+      return (
+        <Dropdown
+          id={id}
+          className={classes.join(' ')}
+        >
+          <Button onClick={this.invokeDefault} className='toolbar-dropdown-splitbtn'>
+            {this.renderTitle(shared)}
+          </Button>
+
+          <Dropdown.Toggle />
+          <Dropdown.Menu>
+            {icons.map(icon => <ToolbarDropdownItem key={icon.title} icon={icon} instanceIds={instanceId} />)}
+          </Dropdown.Menu>
+        </Dropdown>
+      );
+    } else {
+      return (
+        <DropdownButton
+          id={id}
+          className={classes.join(' ')}
+          title={this.renderTitle(shared)}
+        >
+          {icons.map(icon => <ToolbarDropdownItem key={icon.title} icon={icon} instanceIds={instanceId} />)}
+        </DropdownButton>
+      );
+    }
   }
 
   private renderTitle(shared: string): JSX.Element {
@@ -76,6 +96,14 @@ class ToolbarDropdown extends React.PureComponent<IToolbarDropdownProps, {}> {
         </div>) : null}
       </div>
     );
+  }
+
+  private invokeDefault = () => {
+    const { icons, instanceId } = this.props;
+    const def = icons.find(i => i.default);
+    if (def !== undefined) {
+      def.action(instanceId);
+    }
   }
 }
 

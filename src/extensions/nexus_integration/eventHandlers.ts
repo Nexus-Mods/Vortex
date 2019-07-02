@@ -21,7 +21,7 @@ import submitFeedback from './util/submitFeedback';
 import { checkModVersionsImpl, endorseModImpl, startDownload, updateKey } from './util';
 
 import * as Promise from 'bluebird';
-import Nexus, { IFeedbackResponse, IIssue, NexusError } from 'nexus-api';
+import Nexus, { IFeedbackResponse, IIssue, NexusError, TimeoutError, RateLimitError } from 'nexus-api';
 
 export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
   const state: IState = api.store.getState();
@@ -259,7 +259,7 @@ export function onAPIKeyChanged(api: IExtensionApi, nexus: Nexus): StateChangeCa
 
 export function onCheckModsVersion(api: IExtensionApi,
                                    nexus: Nexus): (...args: any[]) => Promise<void> {
-  return (gameId, mods) => {
+  return (gameId, mods, forceFull) => {
     const APIKEY = getSafe(api.store.getState(),
                            ['confidential', 'account', 'nexus', 'APIKey'],
                            '');
@@ -271,7 +271,7 @@ export function onCheckModsVersion(api: IExtensionApi,
     } else {
       api.store.dispatch(setUpdatingMods(gameId, true));
       const start = Date.now();
-      return checkModVersionsImpl(api.store, nexus, gameId, mods)
+      return checkModVersionsImpl(api.store, nexus, gameId, mods, forceFull)
         .then((errorMessages: string[]) => {
           if (errorMessages.length !== 0) {
             showError(api.store.dispatch,
@@ -282,6 +282,16 @@ export function onCheckModsVersion(api: IExtensionApi,
         })
         .catch(NexusError, err => {
           showError(api.store.dispatch, 'An error occurred checking for mod updates', err, {
+            allowReport: false,
+          });
+        })
+        .catch(TimeoutError, err => {
+          showError(api.store.dispatch, 'An error occurred checking for mod updates', err, {
+            allowReport: false,
+          });
+        })
+        .catch(RateLimitError, err => {
+          showError(api.store.dispatch, 'Rate limit exceeded, please try again later', err, {
             allowReport: false,
           });
         })

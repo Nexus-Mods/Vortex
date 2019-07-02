@@ -63,7 +63,7 @@ class DeploymentMethod extends LinkingDeployment {
 
   public isSupported(state: any, gameId: string, typeId: string): IUnavailableReason {
     const discovery: IDiscoveryResult = state.settings.gameMode.discovered[gameId];
-    if (discovery === undefined) {
+    if ((discovery === undefined) || (discovery.path === undefined)) {
       return {
         description: t => t('Game not discovered.'),
       };
@@ -216,6 +216,7 @@ class DeploymentMethod extends LinkingDeployment {
         },
         {
           details: true,
+          skipHidden: false,
         })
         .then(() => Promise.resolve(this.mInstallationFiles));
     }
@@ -236,7 +237,7 @@ class DeploymentMethod extends LinkingDeployment {
                   log('warn', 'failed to remove', entry.filePath))
               : Promise.resolve())
             .then(() => undefined));
-      }, { details: true })
+      }, { details: true, skipHidden: false })
         .then(() => queue);
     });
   }
@@ -265,7 +266,13 @@ class DeploymentMethod extends LinkingDeployment {
     return fs.unlinkAsync(linkPath);
   }
 
-  protected isLink(linkPath: string, sourcePath: string): Promise<boolean> {
+  protected isLink(linkPath: string, sourcePath: string,
+                   linkStats: fs.Stats, sourceStats: fs.Stats): Promise<boolean> {
+    if ((linkStats !== undefined) && (sourceStats !== undefined)) {
+      return Promise.resolve((linkStats.nlink > 1)
+                          && (linkStats.ino === sourceStats.ino));
+    }
+
     return fs.lstatAsync(linkPath)
       .then(linkStats => linkStats.nlink === 1
         ? Promise.resolve(false)

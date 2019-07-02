@@ -8,7 +8,7 @@ export const installerUIReducer: IReducerSpec = {
     [actions.startDialog as any]:
         (state, payload) => setSafe(state, ['info'], payload),
     [actions.endDialog as any]:
-        (state, payload) => deleteOrNop(state, ['info']),
+        (state, payload) => deleteOrNop(deleteOrNop(state, ['state']), ['info']),
     [actions.setDialogState as any]:
         (state, payload) => setSafe(state, ['state'], payload),
     [actions.setInstallerDataPath as any]:

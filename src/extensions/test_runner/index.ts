@@ -40,6 +40,7 @@ import * as _ from 'lodash';
 interface ICheckEntry {
   id: string;
   check: CheckFunction;
+  stack: () => string;
 }
 const checks: { [type: string]: ICheckEntry[] } = {};
 
@@ -76,7 +77,7 @@ function runCheck(api: IExtensionApi, check: ICheckEntry): Promise<void> {
         }
         api.sendNotification({
           id,
-          type: 'warning',
+          type: result.severity,
           message: result.description.short,
           actions,
           noDismiss: true,
@@ -88,7 +89,7 @@ function runCheck(api: IExtensionApi, check: ICheckEntry): Promise<void> {
         id: check.id,
         event,
         err: err.message,
-        stack: err.stack,
+        stack: check.stack(),
       });
     });
 }
@@ -111,7 +112,8 @@ function runChecks(api: IExtensionApi, event: string, delay?: number) {
 function init(context: IExtensionContext): boolean {
   context.registerTest = (id, eventType, check) => {
     log('debug', 'register test', { id, eventType });
-    setdefault(checks, eventType, []).push({ id, check });
+    const stackErr = new Error();
+    setdefault(checks, eventType, []).push({ id, check, stack: () => stackErr.stack });
   };
 
   context.once(() => {

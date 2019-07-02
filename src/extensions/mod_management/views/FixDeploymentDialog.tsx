@@ -179,7 +179,7 @@ class FixDeploymentDialog extends ComponentEx<IProps, IFixDeploymentDialogState>
         gameId,
         activator: problems[step].activator,
         gameFound: getGame(gameId) !== undefined,
-        discoveryFound: discovery !== undefined,
+        discoveryFound: (discovery !== undefined) && (discovery.path !== undefined),
       });
       onClear();
     }

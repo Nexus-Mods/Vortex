@@ -64,8 +64,8 @@ function newestFirst(lhs: IModWithState, rhs: IModWithState) {
   if (lhs.enabled !== rhs.enabled) {
     return rhs.enabled ? 1 : -1;
   }
-  const lVersion = getSafe(lhs, ['attributes', 'version'], '0.0.0');
-  const rVersion = getSafe(rhs, ['attributes', 'version'], '0.0.0');
+  const lVersion = getSafe(lhs, ['attributes', 'version'], '0.0.0') || '0.0.0';
+  const rVersion = getSafe(rhs, ['attributes', 'version'], '0.0.0') || '0.0.0';
   if (valid(lVersion) && valid(rVersion)) {
     return compare(rVersion, lVersion);
   } else {

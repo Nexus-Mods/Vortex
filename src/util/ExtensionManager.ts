@@ -42,11 +42,12 @@ import { app as appIn, dialog as dialogIn, ipcMain, ipcRenderer, remote } from '
 import { EventEmitter } from 'events';
 import * as fs from 'fs';
 import I18next from 'i18next';
+import * as JsonSocket from 'json-socket';
 import * as _ from 'lodash';
 import { IHashResult, ILookupResult, IModInfo, IReference } from 'modmeta-db';
 import * as modmetaT from 'modmeta-db';
 const modmeta = lazyRequire<typeof modmetaT>(() => require('modmeta-db'));
-import * as nodeIPC from 'node-ipc';
+import * as net from 'net';
 import * as path from 'path';
 import * as Redux from 'redux';
 import {} from 'redux-watcher';
@@ -715,6 +716,7 @@ class ExtensionManager {
 
   private stateChangeHandler = (watchPath: string[],
                                 callback: StateChangeCallback) => {
+    const stackErr = new Error();
     // have to initialize to a value that we _know_ is never set by the user.
     let lastValue = UNDEFINED;
 
@@ -735,7 +737,7 @@ class ExtensionManager {
         } catch (err) {
           log('error', 'state change handler failed', {
             message: err.message,
-            stack: err.stack,
+            stack: stackErr.stack,
             key,
           });
         }
@@ -835,7 +837,7 @@ class ExtensionManager {
     return app.getPath(name);
   }
 
-  private selectFile(options: IOpenOptions) {
+  private selectFile(options: IOpenOptions): Promise<string> {
     return new Promise<string>((resolve, reject) => {
       const fullOptions: Electron.OpenDialogOptions = {
         ..._.omit(options, ['create']),
@@ -1096,7 +1098,7 @@ class ExtensionManager {
                 // TODO: the child process returns an exit code of 53 for SSE and
                 // FO4, and an exit code of 1 for Skyrim. We don't know why but it
                 // doesn't seem to affect anything
-                log('warn', 'child process exited with code: ' + code, {});
+                log('warn', 'child process exited with code: ' + code.toString(16), {});
               }
               resolve();
           });
@@ -1121,6 +1123,7 @@ class ExtensionManager {
   private runElevated(executable: string, cwd: string, args: string[],
                       env: { [key: string]: string }, onSpawned: () => void) {
     const ipcPath = shortid();
+    let tmpFilePath: string;
     return new Promise((resolve, reject) => {
       this.startIPC(ipcPath, err => {
         if (err !== null) {
@@ -1135,13 +1138,21 @@ class ExtensionManager {
         toolCWD: cwd,
         parameters: args,
         environment: env,
-      }).then(() => {
+      }).then(tmpPath => {
+        tmpFilePath = tmpPath;
         if (onSpawned !== undefined) {
           onSpawned();
         }
       }).catch(err => {
         reject(err);
       });
+    })
+    .finally(() => {
+      if (tmpFilePath !== undefined) {
+        try {
+          fs.unlinkSync(tmpFilePath);
+        } catch (err) { }
+      }
     });
   }
 
@@ -1258,24 +1269,37 @@ class ExtensionManager {
   }
 
   private startIPC(ipcPath: string, onFinished: (err: Error) => void) {
-    const ipcServer = new (nodeIPC as any).IPC();
-    ipcServer.serve(ipcPath, () => null);
-    ipcServer.server.start();
-    ipcServer.server.on('connect', () => {
+    let connected: boolean = false;
+    let pongTimer: NodeJS.Timer = undefined;
+
+    const finish = (err: Error) => {
+      server.close();
+      clearInterval(pongTimer);
+      onFinished(err);
+    }
+
+    const server = net.createServer(connRaw => {
+      const conn = new JsonSocket(connRaw);
+
       log('debug', 'ipc client connected');
-    });
-    ipcServer.server.on('socket.disconnected', () => {
-      log('debug', 'socket disconnect');
-      ipcServer.server.stop();
-    });
-    ipcServer.server.on('log', (data: any) => {
-      log(data.level, data.message, data.meta);
-    });
-    ipcServer.server.on('finished', () => onFinished(null));
-    ipcServer.server.on('error', nodeIPCErr => {
-      log('error', 'ipcServer err', nodeIPCErr);
-      onFinished(nodeIPCErr);
-    });
+      connected = true;
+
+      conn
+        .on('message', data => {
+          const { message, payload } = data;
+          if (message === 'log') {
+            const { level, message, meta } = payload;
+            log(level, message, meta);
+          } else if (message === 'finished') {
+            finish(null);
+          }
+        })
+        .on('error', err => {
+          log('error', 'elevated code reported error', err);
+          finish(err);
+        });
+    })
+    .listen(path.join('\\\\?\\pipe', ipcPath));
   }
 
   private loadDynamicExtension(extensionPath: string): IRegisteredExtension {

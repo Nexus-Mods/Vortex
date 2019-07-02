@@ -8,6 +8,7 @@ import * as semver from 'semver';
 import * as util from 'util';
 import { setModAttribute, addNotification, dismissNotification } from '../../actions';
 import { IExtensionApi, IMod, IState, ThunkStore } from '../../types/api';
+import { UserCanceled, ProcessCanceled } from '../../util/CustomErrors';
 import { setApiKey, contextify } from '../../util/errorHandling';
 import github, { RateLimitExceeded } from '../../util/github';
 import { log } from '../../util/log';
@@ -19,7 +20,7 @@ import { gameById, knownGames } from '../gamemode_management/selectors';
 import modName from '../mod_management/util/modName';
 import { setUserInfo } from './actions/persistent';
 import NXMUrl from './NXMUrl';
-import { checkModVersion, fetchRecentUpdates, ONE_MONTH, ONE_MINUTE } from './util/checkModsVersion';
+import { checkModVersion, fetchRecentUpdates, ONE_MINUTE, ONE_DAY } from './util/checkModsVersion';
 import { convertNXMIdReverse, nexusGameId, convertGameIdReverse } from './util/convertGameId';
 import sendEndorseMod from './util/endorseMod';
 import transformUserInfo from './util/transformUserInfo';
@@ -124,6 +125,30 @@ export function startDownload(api: IExtensionApi, nexus: Nexus, nxmurl: string):
           title: 'Rate-limit exceeded',
           message: 'You wont be able to use network features until the next full hour.',
         });
+      } else if (err instanceof NexusError) {
+        const detail = processErrorMessage(err);
+        let allowReport = detail.Servermessage === undefined;
+        if (detail.noReport) {
+          allowReport = false;
+          delete detail.noReport;
+        }
+        showError(api.store.dispatch, 'Download failed', detail,
+                  { allowReport });
+      } else if (err instanceof TimeoutError) {
+        api.showErrorNotification('Download failed', err, { allowReport: false });
+      } else if (err instanceof ProcessCanceled) {
+        api.showErrorNotification('Download failed', {
+          error: err,
+          message: 'This may be a temporary issue, please try again later',
+        }, { allowReport: false });
+      } else if ((err.message.indexOf('DECRYPTION_FAILED_OR_BAD_RECORD_MAC') !== -1)
+              || (err.message.indexOf('WRONG_VERSION_NUMBER') !== -1)) {
+        api.showErrorNotification('Download failed', {
+          error: err,
+          message: 'This may be a temporary issue, please try again later',
+        }, { allowReport: false });
+      } else if (err instanceof UserCanceled) {
+        // nop
       } else {
         api.showErrorNotification('Download failed', err);
       }
@@ -260,6 +285,10 @@ export function endorseModImpl(
           message,
           displayMS: calcDuration(message.length),
         });
+      } else if (['ENOENT', 'ECONNRESET'].indexOf(err.code) !== -1) {
+        api.showErrorNotification('Endorsing mod failed, please try again later', err, {
+          allowReport: false,
+        });
       } else {
         const detail = processErrorMessage(err);
         detail.Game = gameId;
@@ -351,10 +380,12 @@ function filterByUpdateList(store: Redux.Store<any>,
         Object.keys(updateLists).forEach(iterGameId => {
           updateMap[iterGameId] = updateLists[iterGameId].reduce((prev, entry) => {
             prev[entry.mod_id] = Math.max((entry as any).latest_file_update,
-                                          (entry as any).latest_mod_activity);
+                                          (entry as any).latest_mod_activity) * 1000;
             return prev;
           }, {});
         });
+
+        const now = Date.now();
 
         return input.filter(mod => {
           const modGameId = getGameId(mod);
@@ -364,10 +395,10 @@ function filterByUpdateList(store: Redux.Store<any>,
             return true;
           }
           const lastUpdate = getSafe(mod.attributes, ['lastUpdateTime'], 0);
-          // if the file is not in the update list, only allow it to be updated if it has never been
-          // updated before
-          return lastUpdate < getSafe(updateMap, [modGameId, mod.attributes.modId], 1)
-              || (Date.now() - lastUpdate) > ONE_MONTH;
+          // check anything for updates that is either in the update list and has been updated as well
+          // as anything that has last been checked before the range of the update list
+          return (lastUpdate < getSafe(updateMap, [modGameId, mod.attributes.modId], 1))
+              || ((now - lastUpdate) > 28 * ONE_DAY);
         });
       });
 }
@@ -376,7 +407,8 @@ export function checkModVersionsImpl(
   store: Redux.Store<any>,
   nexus: Nexus,
   gameId: string,
-  mods: { [modId: string]: IMod }): Promise<string[]> {
+  mods: { [modId: string]: IMod },
+  forceFull: boolean): Promise<string[]> {
 
   const now = Date.now();
 
@@ -387,7 +419,7 @@ export function checkModVersionsImpl(
       (now - (getSafe(mod.attributes, ['lastUpdateTime'], 0) || 0)) > UPDATE_CHECK_DELAY)
     ;
 
-  log('info', 'checking mods for update (nexus)', { count: modsList.length });
+  log('info', '[update check] checking mods for update (nexus)', { count: modsList.length });
 
   return refreshEndorsements(store, nexus)
     .then(() => filterByUpdateList(store, nexus, gameId, modsList))
@@ -405,16 +437,58 @@ export function checkModVersionsImpl(
         ++pos;
       };
       progress();
-      log('info', 'checking mods for update (nexus)',
-        { count: filteredMods.length, of: modsList.length });
+      if (forceFull) {
+        log('info', '[update check] forcing full update check (nexus)',
+          { count: modsList.length });
+      } else {
+        log('info', '[update check] optimized update check (nexus)',
+          { count: filteredMods.length, of: modsList.length });
+      }
+
+      let updatesMissed: IMod[] = [];
+
+      const verPath = ['attributes', 'newestVersion'];
+      const fileIdPath = ['attributes', 'newestFileId'];
+
       return Promise.map(modsList, (mod: IMod) => {
-        if (!filtered.has(mod.id)) {
-          store.dispatch(setModAttribute(gameId, mod.id, 'lastUpdateTime', now - 5 * ONE_MINUTE));
+        if (!forceFull && !filtered.has(mod.id)) {
+          store.dispatch(setModAttribute(gameId, mod.id, 'lastUpdateTime', now - 15 * ONE_MINUTE));
           return;
         }
+
         return checkModVersion(store, nexus, gameId, mod)
           .then(() => {
-            store.dispatch(setModAttribute(gameId, mod.id, 'lastUpdateTime', now));
+            const modNew = getSafe(store.getState(), ['persistent', 'mods', gameId, mod.id], undefined);
+            const updateFound =
+                ((getSafe(modNew, verPath, undefined) !== getSafe(mod, verPath, undefined))
+                  && (getSafe(modNew, verPath, undefined) !== getSafe(modNew, ['attributes', 'version'], undefined)))
+                || ((getSafe(modNew, fileIdPath, undefined) !== getSafe(mod, fileIdPath, undefined))
+                  && (getSafe(modNew, fileIdPath, undefined) !== getSafe(modNew, ['attributes', 'fileId'], undefined)));
+
+            if (updateFound) {
+              if (forceFull && !filtered.has(mod.id)) {
+                log('warn', '[update check] Mod update would have been missed with regular check', {
+                  modId: mod.id,
+                  lastUpdateTime: getSafe(mod, ['attributes', 'lastUpdateTime'], 0),
+                  'before.newestVersion': getSafe(mod, verPath, undefined),
+                  'before.newestFileId': getSafe(mod, fileIdPath, undefined),
+                  'after.newestVersion': getSafe(modNew, verPath, undefined),
+                  'after.newestFileId': getSafe(modNew, fileIdPath, undefined),
+                });
+                updatesMissed.push(mod);
+              } else {
+                log('info', '[update check] Mod update detected', {
+                  modId: mod.id,
+                  lastUpdateTime: getSafe(mod, ['attributes', 'lastUpdateTime'], 0),
+                  'before.newestVersion': getSafe(mod, verPath, undefined),
+                  'before.newestFileId': getSafe(mod, fileIdPath, undefined),
+                  'after.newestVersion': getSafe(modNew, verPath, undefined),
+                  'after.newestFileId': getSafe(modNew, fileIdPath, undefined),
+                });
+              }
+
+              store.dispatch(setModAttribute(gameId, mod.id, 'lastUpdateTime', now));
+            }
           })
           .catch(TimeoutError, err => {
             const name = modName(mod, { version: true });
@@ -443,7 +517,27 @@ export function checkModVersionsImpl(
 
       }, { concurrency: 4 })
       .finally(() => {
+        log('info', '[update check] done');
         tStore.dispatch(dismissNotification('check-update-progress'));
+        if (forceFull) {
+          if (updatesMissed.length === 0) {
+            tStore.dispatch(addNotification({
+              id: 'check-update-progress',
+              type: 'info',
+              message: 'Full update check found no updates that the regular check didn\'t.',
+            }));
+          } else {
+            tStore.dispatch(addNotification({
+              id: 'check-update-progress',
+              type: 'info',
+              message: 'Full update found {{count}} updates that the regular check would have missed. '
+                      + 'Please send in a feedback with your log attached to help debug the cause.',
+              replace: {
+                count: updatesMissed.length,
+              },
+            }));
+          }
+        }
       });
     })
     .then((errorMessages: string[]): string[] => errorMessages.filter(msg => msg !== undefined));
@@ -485,10 +579,13 @@ export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promis
     // don't stop the login just because the github rate limit is exceeded
     .catch(RateLimitExceeded, () => Promise.resolve())
     .catch(TimeoutError, () => {
-      showError(api.store.dispatch,
-        'API Key validation timed out',
-        'Server didn\'t respond to validation request, web-based '
-        + 'features will be unavailable', { allowReport: false });
+      api.sendNotification({
+        type: 'error',
+        message: 'API Key validation timed out',
+        actions: [
+          { title: 'Retry', action: dismiss => { updateKey(api, nexus, key); dismiss(); } },
+        ],
+      });
       api.store.dispatch(setUserInfo(undefined));
     })
     .catch(NexusError, err => {

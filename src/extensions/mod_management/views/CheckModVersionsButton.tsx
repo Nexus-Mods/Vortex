@@ -1,4 +1,5 @@
 import { ButtonType } from '../../../controls/IconBar';
+import ToolbarDropdown from '../../../controls/ToolbarDropdown';
 import ToolbarIcon from '../../../controls/ToolbarIcon';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { activeGameId } from '../../../util/selectors';
@@ -39,12 +40,26 @@ class CheckVersionsButton extends ComponentEx<IProps, {}> {
         />
       );
     } else {
+      const id = 'check-mod-updates-button';
+
       return (
-        <ToolbarIcon
-          id='check-mods-version'
-          icon='refresh'
-          text={t('Check for Mod Updates')}
-          onClick={this.checkModsVersion}
+        <ToolbarDropdown
+          key={id}
+          id={id}
+          instanceId={[]}
+          icons={[
+            {
+              icon: 'refresh',
+              title: t('Check for Updates (Optimized)'),
+              action: this.checkModsVersion,
+              default: true,
+            }, {
+              icon: 'refresh',
+              title: t('Check for Updates (Full)'),
+              action: this.checkForUpdateForce,
+            },
+          ]}
+          orientation={'horizontal'}
         />
       );
     }
@@ -54,6 +69,19 @@ class CheckVersionsButton extends ComponentEx<IProps, {}> {
     const { gameMode, mods } = this.props;
 
     this.context.api.emitAndAwait('check-mods-version', gameMode, mods)
+      .then(() => {
+        this.context.api.sendNotification({
+          type: 'success',
+          message: 'Check for mod updates complete',
+          displayMS: 5000,
+        });
+      });
+  }
+
+  private checkForUpdateForce = () => {
+    const { gameMode, mods } = this.props;
+
+    this.context.api.emitAndAwait('check-mods-version', gameMode, mods, true)
       .then(() => {
         this.context.api.sendNotification({
           type: 'success',

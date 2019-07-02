@@ -315,7 +315,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
         try {
           starters.push(new StarterInfo(game, discoveredGame, undefined, discoveredTools[toolId]));
         } catch (err) {
-          log('error', 'tool configuration invalid', { gameId, toolId });
+          log('error', 'tool configuration invalid', { gameId, toolId, error: err.message });
         }
       });
 

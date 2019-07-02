@@ -2,11 +2,12 @@ import { showDialog } from '../../../actions/notifications';
 import FlexLayout from '../../../controls/FlexLayout';
 import Icon from '../../../controls/Icon';
 import More from '../../../controls/More';
+import Spinner from '../../../controls/Spinner';
 import { Button } from '../../../controls/TooltipControls';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
 import { ValidationState } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { InsufficientDiskSpace, NotFound, UnsupportedOperatingSystem,
+import { CleanupFailedException, InsufficientDiskSpace, NotFound, UnsupportedOperatingSystem,
          UserCanceled } from '../../../util/CustomErrors';
 import { withContext } from '../../../util/errorHandling';
 import * as fs from '../../../util/fs';
@@ -14,12 +15,14 @@ import { log } from '../../../util/log';
 import { showError } from '../../../util/message';
 import opn from '../../../util/opn';
 import { getSafe } from '../../../util/storeHelper';
+import { IDownload, IState } from '../../../types/IState';
 import { testPathTransfer, transferPath } from '../../../util/transferPath';
 import { isChildPath, isPathValid } from '../../../util/util';
 import { setDownloadPath, setMaxDownloads } from '../actions/settings';
 import { setTransferDownloads } from '../actions/transactions';
 
 import getDownloadPath, {getDownloadPathPattern} from '../util/getDownloadPath';
+import writeDownloadsTag from '../util/writeDownloadsTag';
 
 import getTextMod from '../../mod_management/texts';
 import getText from '../texts';
@@ -38,6 +41,7 @@ interface IConnectedProps {
   parallelDownloads: number;
   isPremium: boolean;
   downloadPath: string;
+  downloads: { [downloadId: string]: IDownload };
 }
 
 interface IActionProps {
@@ -87,7 +91,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, isPremium, parallelDownloads } = this.props;
+    const { t, downloads, isPremium, parallelDownloads } = this.props;
     const { downloadPath, progress, progressFile } = this.state;
 
     const changed = this.props.downloadPath !== downloadPath;
@@ -95,6 +99,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     const validationState = this.validateDownloadPath(pathPreview);
 
     const pathValid = validationState.state !== 'error';
+
+    const hasActivity = Object.keys(downloads)
+      .find(dlId => downloads[dlId].state === 'started') !== undefined;
 
     return (
       // Supressing default form submission event.
@@ -130,10 +137,10 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               <FlexLayout.Fixed>
                 <InputGroup.Button>
                   <BSButton
-                    disabled={!changed || (validationState.state === 'error')}
+                    disabled={!changed || (validationState.state === 'error') || hasActivity}
                     onClick={this.apply}
                   >
-                    {t('Apply')}
+                    {hasActivity ? <Spinner /> : t('Apply')}
                   </BSButton>
                 </InputGroup.Button>
               </FlexLayout.Fixed>
@@ -156,7 +163,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               </Modal.Body>
             </Modal>
           </div>
-
+        </FormGroup>
+        <FormGroup>
           <ControlLabel>
             {t('Download Threads') + ': ' + parallelDownloads.toString()}
             <More id='more-download-threads' name={t('Download Threads')} >
@@ -317,6 +325,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       }, [ { label: 'Close' } ]);
     };
 
+    let deleteOldDestination = true;
     this.nextState.progress = 0;
     this.nextState.busy = t('Moving');
     return withContext('Transferring Downloads', `from ${oldPath} to ${newPath}`,
@@ -344,7 +353,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       .then(() => {
         if (oldPath !== newPath) {
           this.nextState.busy = t('Moving download folder');
-          return this.transferPath();
+          return this.transferPath()
+            .then(() => writeDownloadsTag(this.context.api, newPath));
         } else {
           return Promise.resolve();
         }
@@ -355,6 +365,23 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         this.context.api.events.emit('did-move-downloads');
       })
       .catch(UserCanceled, () => null)
+      .catch(CleanupFailedException, err => {
+        deleteOldDestination = false;
+        onSetTransfer(undefined);
+        onSetDownloadPath(this.state.downloadPath);
+        this.context.api.events.emit('did-move-downloads');
+        onShowDialog('info', 'Cleanup failed', {
+          bbcode: t('The downloads folder has been copied [b]successfully[/b] to '
+            + 'your chosen destination!<br />'
+            + 'Clean-up of the old downloads folder has been cancelled.<br /><br />'
+            + `Old downloads folder: [url]{{thePath}}[/url]`,
+            { replace: { thePath: oldPath } }),
+        }, [ { label: 'Close', action: () => Promise.resolve() } ]);
+
+        if (!(err.errorObject instanceof UserCanceled)) {
+          this.context.api.showErrorNotification('Clean-up failed', err.errorObject);
+        }
+      })
       .catch(InsufficientDiskSpace, () => notEnoughDiskSpace())
       .catch(UnsupportedOperatingSystem, () =>
         onShowError('Unsupported operating system',
@@ -399,10 +426,14 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         //  if it is - that means that the user has cancelled the transfer,
         //  we need to cleanup.
         const pendingTransfer: string[] = ['persistent', 'transactions', 'transfer', 'downloads'];
-        if (getSafe(state, pendingTransfer, undefined) !== undefined) {
+        if ((getSafe(state, pendingTransfer, undefined) !== undefined)
+          && deleteOldDestination) {
           return fs.removeAsync(newPath)
             .then(() => {
               onSetTransfer(undefined);
+              this.nextState.busy = undefined;
+            })
+            .catch(UserCanceled, () => {
               this.nextState.busy = undefined;
             })
             .catch(err => {
@@ -439,12 +470,12 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private transferPath() {
-    const { onSetTransfer, onShowDialog } = this.props;
+    const { t, onSetTransfer, onShowDialog } = this.props;
     const oldPath = getDownloadPath(this.props.downloadPath);
     const newPath = getDownloadPath(this.state.downloadPath);
 
     this.context.api.events.emit('will-move-downloads');
-
+    let sourceIsMissing = false;
     return fs.statAsync(oldPath)
       .catch(err => {
         // The initial downloads folder is missing! this may be a valid case if:
@@ -456,8 +487,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         //  Currently we have confirmed that the error code will be set to "UNKNOWN"
         //  for all these cases, but we may have to add other error codes if different
         //  error cases pop up.
+        sourceIsMissing = (['ENOENT', 'UNKNOWN'].indexOf(err.code) !== -1);
         log('warn', 'Transfer failed - missing source directory', err);
-        return (['ENOENT', 'UNKNOWN'].indexOf(err.code) !== -1)
+        return (sourceIsMissing)
           ? Promise.resolve(undefined)
           : Promise.reject(err);
       })
@@ -497,18 +529,22 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                 && ((Date.now() - this.mLastFileUpdate) > 1000)) {
                 this.nextState.progressFile = path.basename(from);
               }
-            });
+            })
+              .catch(err => (sourceIsMissing && (err.path === oldPath))
+                ? Promise.resolve()
+                : Promise.reject(err));
           });
       });
   }
 }
 
-function mapStateToProps(state: any): IConnectedProps {
+function mapStateToProps(state: IState): IConnectedProps {
   return {
     parallelDownloads: state.settings.downloads.maxParallelDownloads,
     // TODO: this breaks encapsulation
     isPremium: getSafe(state, ['persistent', 'nexus', 'userInfo', 'isPremium'], false),
     downloadPath: state.settings.downloads.path,
+    downloads: state.persistent.downloads.files,
   };
 }
 

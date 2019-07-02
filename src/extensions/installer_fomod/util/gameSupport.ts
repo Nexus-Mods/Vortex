@@ -57,6 +57,17 @@ function stopPatterns(gameMode: string) {
               'vdata'].map(toWordExp));
     case 'sekiro':
       return ['menu', 'sound', 'parts'].map(toWordExp);
+    case 'darkestdungeon':
+      return ['audio', 'campaign', 'colours', 'curios', 'cursors', 'dlc', 'dungeons',
+              'effects', 'fe_flow', 'fonts', 'fx', 'heroes', 'inventory', 'loading_screen',
+              'localization', 'loot', 'maps', 'modes', 'monsters', 'overlays', 'panels',
+              'props', 'raid', 'raid_results', 'scripts', 'scrolls', 'shaders', 'shared',
+              'trinkets', 'upgrades', 'video'].map(toWordExp);
+    case 'bladeandsorcery':
+      return ['Brains', 'Collisions', 'Containers', 'Creatures', 'CreatureTables', 'Damagers',
+              'Effects', 'Expressions', 'FXs', 'HandPoses', 'Interactables', 'Items', 'LootTables',
+              'PhysicMaterials', 'Ragdolls', 'Spells', 'Texts', 'UMAPresets',
+              'Waves'].map(toWordExp);
     default: return [].concat(uniPatterns);
   }
 }
@@ -225,6 +236,12 @@ const gameSupport: { [gameId: string]: IGameSupport } = {
   },
   sekiro: {
     stopPatterns: stopPatterns('sekiro'),
+  },
+  darkestdungeon: {
+    stopPatterns: stopPatterns('darkestdungeon'),
+  },
+  bladeandsorcery: {
+    stopPatterns: stopPatterns('bladeandsorcery'),
   },
 };
 

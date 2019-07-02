@@ -213,7 +213,7 @@ class InstallManager {
           ? this.findPreviousVersionMod(modInfo.fileId, api.store, installGameId)
           : undefined;
 
-        if (oldMod !== undefined) {
+        if ((oldMod !== undefined) && (currentProfile !== undefined)) {
           const wasEnabled = getSafe(currentProfile.modState, [oldMod.id, 'enabled'], false);
           return this.userVersionChoice(oldMod, api.store)
             .then((action: string) => {
@@ -284,18 +284,20 @@ class InstallManager {
           api.store.dispatch(addModRule(installGameId, modId, rule));
         });
         api.store.dispatch(setFileOverride(installGameId, modId, overrides));
-        if (enable) {
-          api.store.dispatch(setModEnabled(currentProfile.id, modId, true));
-          api.events.emit('mods-enabled', [modId], true, currentProfile.gameId);
-        }
-        if (processDependencies) {
-          log('info', 'process dependencies', { modId });
-          const state: IState = api.store.getState();
-          const mod: IMod = getSafe(state, ['persistent', 'mods', installGameId, modId], undefined);
+        if (currentProfile !== undefined) {
+          if (enable) {
+            api.store.dispatch(setModEnabled(currentProfile.id, modId, true));
+            api.events.emit('mods-enabled', [modId], true, currentProfile.gameId);
+          }
+          if (processDependencies) {
+            log('info', 'process dependencies', { modId });
+            const state: IState = api.store.getState();
+            const mod: IMod = getSafe(state, ['persistent', 'mods', installGameId, modId], undefined);
 
-          this.installDependencies([].concat(modInfo.rules || [], mod.rules || []),
-                                   this.mGetInstallPath(installGameId),
-                                   currentProfile, installContext, api);
+            this.installDependencies([].concat(modInfo.rules || [], mod.rules || []),
+                                     this.mGetInstallPath(installGameId),
+                                     currentProfile, installContext, api);
+          }
         }
         if (callback !== undefined) {
           callback(null, modId);
@@ -319,7 +321,7 @@ class InstallManager {
               installContext.reportError(
                 'Failed to clean up installation directory "{{destinationPath}}", '
                 + 'please close Vortex and remove it manually.',
-                innerErr, true, { destinationPath });
+                innerErr, innerErr.code !== 'ENOTEMPTY', { destinationPath });
             })
           : Promise.resolve();
 
@@ -1025,11 +1027,26 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
     });
   }
 
+  private fixDestination(source: string, destination: string): Promise<string> {
+    // if the source is an existing file an the destination is an existing directory,
+    // copyAsync or renameAsync will not work, they expect the destination to be the
+    // name of the output file.
+    return fs.statAsync(source)
+      .then(sourceStat => sourceStat.isDirectory()
+        ? Promise.resolve(destination)
+        : fs.statAsync(destination)
+          .then(destStat => destStat.isDirectory()
+            ? path.join(destination, path.basename(source))
+            : destination))
+      .catch(() => Promise.resolve(destination));
+  }
+
   private transferFile(source: string, destination: string, move: boolean): Promise<void> {
     return fs.ensureDirAsync(path.dirname(destination))
-      .then(() => move
-        ? fs.renameAsync(source, destination)
-        : fs.copyAsync(source, destination, { noSelfCopy: true }));
+      .then(() => this.fixDestination(source, destination))
+      .then(fixedDest => move
+        ? fs.renameAsync(source, fixedDest)
+        : fs.copyAsync(source, fixedDest, { noSelfCopy: true }));
   }
 
   /**

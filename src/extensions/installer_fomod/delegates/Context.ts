@@ -46,7 +46,7 @@ export class Context extends DelegateBase {
         getSafe(api.store.getState(),
                 ['settings', 'gameMode', 'discovered', gameId], undefined);
     this.gameInfo = getGame(this.gameId);
-    if (this.gameDiscovery === undefined) {
+    if ((this.gameDiscovery === undefined) || (this.gameDiscovery.path === undefined)) {
       throw new ProcessCanceled('Game not installed');
     }
   }
@@ -118,7 +118,7 @@ export class Context extends DelegateBase {
           .catch(err => callback(err, null));
       } else {
         fs.readdirAsync(fullPath)
-          .then((fileList) => callback(null, fileList))
+          .then(fileList => callback(null, fileList.map(iter => path.join(fullPath, iter))))
           .catch(err => callback(err, null));
       }
   }

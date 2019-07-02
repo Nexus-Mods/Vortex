@@ -7,7 +7,8 @@ import {
   MergeTest,
 } from '../../types/IExtensionContext';
 import {IGame} from '../../types/IGame';
-import {IState} from '../../types/IState';
+import { INotification } from '../../types/INotification';
+import {IState, IDiscoveryResult} from '../../types/IState';
 import { ITableAttribute } from '../../types/ITableAttribute';
 import {ITestResult} from '../../types/ITestResult';
 import { ProcessCanceled, TemporaryError, UserCanceled } from '../../util/CustomErrors';
@@ -28,7 +29,7 @@ import {
   installPathForGame,
 } from '../../util/selectors';
 import {getSafe} from '../../util/storeHelper';
-import { isChildPath, setdefault, truthy } from '../../util/util';
+import { isChildPath, truthy } from '../../util/util';
 
 import {setDownloadModInfo} from '../download_management/actions/state';
 import {getGame} from '../gamemode_management/util/getGame';
@@ -37,15 +38,14 @@ import { IProfile, IProfileMod } from '../profile_management/types/IProfile';
 
 import { setDeploymentNecessary } from './actions/deployment';
 import {removeMod, setModAttribute} from './actions/mods';
-import { setDeploymentProblem, showExternalChanges } from './actions/session';
+import { setDeploymentProblem } from './actions/session';
 import {setTransferMods} from './actions/transactions';
 import {deploymentReducer} from './reducers/deployment';
 import {modsReducer} from './reducers/mods';
 import {sessionReducer} from './reducers/session';
 import {settingsReducer} from './reducers/settings';
 import {transactionsReducer} from './reducers/transactions';
-import {IDeployedFile, IFileChange, IUnavailableReason} from './types/IDeploymentMethod';
-import {IFileEntry} from './types/IFileEntry';
+import {IDeployedFile, IUnavailableReason, IDeploymentMethod} from './types/IDeploymentMethod';
 import {IFileMerge} from './types/IFileMerge';
 import {IMod} from './types/IMod';
 import {IModSource} from './types/IModSource';
@@ -59,6 +59,7 @@ import { purgeMods } from './util/deploy';
 import { getAllActivators, getCurrentActivator, getSelectedActivator,
          getSupportedActivators, registerDeploymentMethod } from './util/deploymentMethods';
 import { NoDeployment } from './util/exceptions';
+import { dealWithExternalChanges } from './util/externalChanges';
 import { registerAttributeExtractor } from './util/filterModInfo';
 import getModPaths from './util/getModPaths';
 import renderModName from './util/modName';
@@ -111,78 +112,6 @@ function registerMerge(test: MergeTest, merge: MergeFunc, modType: string) {
   mergers.push({ test, merge, modType });
 }
 
-/**
- * look at the file actions and act accordingly. Depending on the action this can
- * be a direct file operation or a modification to the previous manifest so that
- * the deployment ext runs the necessary operation
- * @param {string} sourcePath the "virtual" mod directory
- * @param {string} outputPath the destination directory where the game expects mods
- * @param {IDeployedFile[]} lastDeployment previous deployment to use as reference
- * @param {IFileEntry[]} fileActions actions the user selected for external changes
- * @returns {Promise<IDeployedFile[]>} an updated deployment manifest to use as a reference
- *                                     for the new one
- */
-function applyFileActions(sourcePath: string,
-                          outputPath: string,
-                          lastDeployment: IDeployedFile[],
-                          fileActions: IFileEntry[]): Promise<IDeployedFile[]> {
-  if (fileActions === undefined) {
-    return Promise.resolve(lastDeployment);
-  }
-
-  const actionGroups: { [type: string]: IFileEntry[] } = fileActions.reduce((prev, value) => {
-    const action = (value.action === 'newest')
-      ? (value.sourceModified > value.destModified) ? 'drop' : 'import'
-      : value.action;
-
-    setdefault(prev, action, []).push(value);
-    return prev;
-  }, {});
-
-  // not doing anything with 'nop'. The regular deployment code is responsible for doing the right
-  // thing in this case.
-
-  // process the actions that the user selected in the dialog
-  return Promise.map(actionGroups['drop'] || [],
-      // delete the links the user wants to drop.
-      (entry) => truthy(entry.filePath)
-          ? fs.removeAsync(path.join(outputPath, entry.filePath))
-          : Promise.reject(new Error('invalid file path')))
-    .then(() => Promise.map(actionGroups['delete'] || [],
-      entry => truthy(entry.filePath)
-          ? fs.removeAsync(path.join(sourcePath, entry.source, entry.filePath))
-          : Promise.reject(new Error('invalid file path'))))
-    .then(() => Promise.map(actionGroups['import'] || [],
-      // copy the files the user wants to import
-      (entry) => {
-        const source = path.join(sourcePath, entry.source, entry.filePath);
-        const deployed = path.join(outputPath, entry.filePath);
-        // Very rarely we have a case where the files are links of each other
-        // (or at least node reports that) so the copy would fail.
-        // Instead of handling the errors (when we can't be sure if it's due to a bug in node.js
-        // or the files are actually identical), delete the target first, that way the copy
-        // can't fail
-        return fs.removeAsync(source)
-          .then(() => fs.copyAsync(deployed, source))
-          .catch({ code: 'ENOENT' }, (err: any) => log('warn', 'file disappeared', err.path));
-      }))
-    .then(() => {
-      // remove files that the user wants to restore from
-      // the activation list because then they get reinstalled.
-      // this includes files that were deleted and those replaced
-      const dropSet = new Set([].concat(
-        (actionGroups['restore'] || []).map(entry => entry.filePath),
-        (actionGroups['drop'] || []).map(entry => entry.filePath),
-        // also remove the files that got deleted, except these won't be reinstalled
-        (actionGroups['delete'] || []).map(entry => entry.filePath),
-      ));
-      const newDeployment = lastDeployment.filter(entry => !dropSet.has(entry.relPath));
-      lastDeployment = newDeployment;
-      return Promise.resolve();
-    })
-    .then(() => lastDeployment);
-}
-
 function bakeSettings(api: IExtensionApi, profile: IProfile, sortedModList: IMod[]) {
   return api.emitAndAwait('bake-settings', profile.gameId, sortedModList, profile);
 }
@@ -215,31 +144,225 @@ function showCycles(api: IExtensionApi, cycles: string[][], gameId: string) {
   ], id);
 }
 
+function deployModType(api: IExtensionApi,
+                       activator: IDeploymentMethod,
+                       game: IGame,
+                       sortedModList: IMod[],
+                       typeId: string,
+                       stagingPath: string,
+                       targetPath: string,
+                       overwritten: IMod[],
+                       mergedFileMap: { [modType: string]: string[] },
+                       lastDeployment: IDeployedFile[],
+                       onProgress: (text: string, perc: number) => void): Promise<IDeployedFile[]> {
+  const filteredModList = sortedModList.filter(mod => (mod.type || '') === typeId);
+  log('debug', 'Deploying mod type',
+    { typeId, path: targetPath, count: lastDeployment.length });
+  return deployMods(api,
+                    game.id,
+                    stagingPath, targetPath,
+                    filteredModList,
+                    activator, lastDeployment,
+                    typeId, new Set(mergedFileMap[typeId]),
+                    genSubDirFunc(game),
+                    onProgress)
+    .then(newActivation => {
+      overwritten.push(...filteredModList.filter(mod =>
+        newActivation.find(entry =>
+          entry.source === mod.installationPath) === undefined));
+
+      return doSaveActivation(api, typeId,
+        targetPath, stagingPath,
+        newActivation, activator.id)
+        .catch(err => api.showDialog('error', 'Saving manifest failed', {
+          text: 'Saving the manifest failed (see error below). '
+            + 'This could lead to errors later on, ',
+          message: err.message,
+        }, []))
+        .then(() => newActivation)
+    });
+}
+
+function deployAllModTypes(api: IExtensionApi,
+                       activator: IDeploymentMethod,
+                       profile: IProfile,
+                       sortedModList: IMod[],
+                       stagingPath: string,
+                       mergedFileMap: { [modType: string]: string[] },
+                       modPaths: { [typeId: string]: string },
+                       lastDeployment: { [typeId: string]: IDeployedFile[] },
+                       newDeployment: { [typeId: string]: IDeployedFile[] },
+                       onProgress: (text: string, perc: number) => void) {
+  const game = getGame(profile.gameId);
+  const overwritten: IMod[] = [];
+
+  return Promise.each(deployableModTypes(modPaths),
+    typeId => deployModType(api, activator, game, sortedModList, typeId,
+      stagingPath, modPaths[typeId], overwritten, mergedFileMap,
+      lastDeployment[typeId], onProgress)
+      .then(deployment => newDeployment[typeId] = deployment))
+    .then(() => reportRedundant(api, profile.id, overwritten));
+}
+
+function validateDeploymentTarget(api: IExtensionApi, undiscovered: string[]) {
+  if (undiscovered.length === 0) {
+    return Promise.resolve();
+  }
+  return api.showDialog('error', 'Deployment target unknown', {
+    text: 'The deployment directory for some mod type(s) ({{ types }}) '
+      + 'is unknown. Mods of these types will not be deployed. '
+      + 'Maybe this/these type(s) require further configuration or '
+      + 'external tools.',
+    parameters: {
+      types: undiscovered.join(', '),
+    },
+  }, [{ label: 'Cancel' }, { label: 'Ignore' }])
+    .then(result => (result.action === 'Cancel')
+      ? Promise.reject(new UserCanceled())
+      : Promise.resolve());
+}
+
+function doSortMods(api: IExtensionApi, profile: IProfile, mods: { [modId: string]: IMod }) {
+  // sort (all) mods based on their dependencies so the right files get activated
+  const modState: { [id: string]: IProfileMod } =
+    profile !== undefined ? profile.modState : {};
+  const unsorted = Object.keys(mods)
+    .map((key: string) => mods[key])
+    .filter((mod: IMod) => getSafe(modState, [mod.id, 'enabled'], false));
+
+  return sortMods(profile.gameId, unsorted, api)
+    .catch(CycleError, err => Promise.reject(
+      new ProcessCanceled('Deployment is not possible when you have cyclical mod rules. ' + err.message)));
+}
+
+function doMergeMods(api: IExtensionApi,
+                     game: IGame,
+                     gameDiscovery: IDiscoveryResult,
+                     stagingPath: string,
+                     sortedModList: IMod[],
+                     modPaths: { [typeId: string]: string },
+                     lastDeployment: { [typeId: string]: IDeployedFile[] }):
+    Promise<{ [typeId: string]: string[] }> {
+
+  const fileMergers = mergers.reduce((prev: IResolvedMerger[], merge) => {
+    const match = merge.test(game, gameDiscovery);
+    if (match !== undefined) {
+      prev.push({ match, merge: merge.merge, modType: merge.modType });
+    }
+    return prev;
+  }, []);
+
+  // all mod types that require merging
+  const mergeModTypes = Object.keys(modPaths)
+    .filter(modType => fileMergers.find(merger => merger.modType === modType) !== undefined);
+
+  const result: { [typeId: string]: string[] } = {};
+
+  // clean up merged mods
+  return Promise.mapSeries(mergeModTypes, typeId => {
+    const mergePath = truthy(typeId)
+      ? MERGED_PATH + '.' + typeId
+      : MERGED_PATH;
+    return fs.removeAsync(path.join(stagingPath, mergePath));
+  })
+    // update merged mods
+    .then(() => Promise.each(mergeModTypes,
+      typeId => mergeMods(api, game, stagingPath, modPaths[typeId],
+        sortedModList.filter(mod => (mod.type || '') === typeId),
+        lastDeployment[typeId],
+        fileMergers)
+        .then(mergedFiles => {
+          result[typeId] = mergedFiles;
+        })))
+    .then(() => result);
+}
+
+function reportRedundant(api: IExtensionApi, profileId: string, overwritten: IMod[]) {
+  if (overwritten.length > 0) {
+    api.sendNotification({
+      id: 'redundant-mods',
+      type: 'info',
+      message: 'Some mods are redundant',
+      actions: [
+        {
+          title: 'Show', action: dismiss => {
+            return api.showDialog('info', 'Redundant mods', {
+              text: 'Some of the enabled mods either contain no files or all files '
+                + 'they do contain are entirely overwritten by another mod. '
+                + 'These redundant mods don\'t do any harm except slow down '
+                + 'deployment a bit.',
+              checkboxes: overwritten.map((mod: IMod): ICheckbox => ({
+                id: mod.id,
+                text: renderModName(mod),
+                value: true,
+              })),
+            }, [
+                { label: 'Disable selected' },
+                { label: 'Close', default: true },
+              ]).then(result => {
+                if (result.action === 'Disable selected') {
+                  Object.keys(result.input)
+                    .filter(modId => result.input[modId])
+                    .forEach(modId => {
+                      api.store.dispatch(setModEnabled(profileId, modId, false));
+                    });
+                  dismiss();
+                }
+              });
+          }
+        },
+      ],
+    });
+  }
+  return Promise.resolve();
+}
+
+function deployableModTypes(modPaths: { [typeId: string]: string }) {
+  return Object.keys(modPaths)
+    .filter(typeId => truthy(modPaths[typeId]))
+}
+
 function genUpdateModDeployment() {
   return (api: IExtensionApi, manual: boolean, profileId?: string,
           progressCB?: (text: string, percent: number) => void): Promise<void> => {
-    let notificationId: string;
+    const t = api.translate;
+
+    const notification: INotification = {
+      type: 'activity',
+      message: t('Waiting for other operations to complete'),
+      title: t('Deploying'),
+    };
 
     const progress = (text: string, percent: number) => {
       log('debug', 'deployment progress', { text, percent });
       if (progressCB !== undefined) {
         progressCB(text, percent);
       }
-      api.store.dispatch(updateNotification(notificationId, percent, text));
+      api.store.dispatch(updateNotification(notification.id, percent, text));
     };
     let state = api.store.getState();
     let profile: IProfile = profileId !== undefined
       ? getSafe(state, ['persistent', 'profiles', profileId], undefined)
       : activeProfile(state);
+
+    if (Object.keys(getSafe(state, ['session', 'base', 'toolsRunning'], {})).length > 0) {
+      api.sendNotification({
+        type: 'info',
+        id: 'deployment-not-possible',
+        message: 'Can\'t deploy while the game or a tool is running',
+        displayMS: 5000,
+      });
+      return Promise.resolve();
+    }
+
     if (profile === undefined) {
       // Used to report an exception here but I don't think this is an error, the call
       // can be delayed so it's completely possible there is no profile active at the the time
       // or has been deleted by then. Rare but not a bug
-      api.store.dispatch(dismissNotification(notificationId));
+      api.store.dispatch(dismissNotification(notification.id));
       return Promise.resolve();
     }
     const gameId = profile.gameId;
-    const stagingPath = installPathForGame(state, gameId);
     const gameDiscovery =
       getSafe(state, ['settings', 'gameMode', 'discovered', gameId], undefined);
     const game = getGame(gameId);
@@ -248,15 +371,14 @@ function genUpdateModDeployment() {
         || (gameDiscovery.path === undefined)) {
       return Promise.reject(new Error('Game no longer available'));
     }
+    const stagingPath = installPathForGame(state, gameId);
+
     const modPaths = game.getModPaths(gameDiscovery.path);
-    const t = api.translate;
     const activator = getCurrentActivator(state, gameId, true);
 
     if (activator === undefined) {
       const selectedActivator = getSelectedActivator(state, gameId);
-      const modPaths = getGame(gameId).getModPaths(gameDiscovery.path)
-      const types = Object.keys(modPaths)
-        .filter(typeId => truthy(modPaths[typeId]));
+      const types = deployableModTypes(modPaths);
 
       const err = allTypesSupported(selectedActivator, state, gameId, types);
       if ((selectedActivator !== undefined) && (err !== undefined)) {
@@ -268,276 +390,115 @@ function genUpdateModDeployment() {
       return Promise.resolve();
     }
 
-    const mods = state.persistent.mods[profile.gameId] || {};
-    const gate = manual ? Promise.resolve() : activator.userGate();
-
-    const lastDeployment: { [typeId: string]: IDeployedFile[] } = {};
     const newDeployment: { [typeId: string]: IDeployedFile[] } = {};
 
-    const fileMergers = mergers.reduce((prev: IResolvedMerger[], merge) => {
-      const match = merge.test(game, gameDiscovery);
-      if (match !== undefined) {
-        prev.push({match, merge: merge.merge, modType: merge.modType});
-      }
-      return prev;
-    }, []);
-
-    let lockResolve: () => void;
+    // will contain all mods fully overwritten (this also includes mods that didn't
+    // files to begin with)
+    let sortedModList: IMod[];
 
     // test if anything was changed by an external application
-    return gate
-      .then(() => {
-        // ugly workaround I don't dare refactor the code below but we need to
-        // release the lock before running post-deployment handlers
-        withActivationLock(() => new Promise((res) => {
-          lockResolve = res;
-        }));
+    return (manual ? Promise.resolve() : activator.userGate())
+      .tap(() => {
+        notification.id = api.sendNotification(notification);
       })
-      .then(() => {
-        notificationId = api.sendNotification({
-          type: 'activity',
-          message: t('Deploying mods'),
-          title: t('Deploying'),
+      .then(() => withActivationLock(() => {
+        log('debug', 'deploying mods', {
+          game: gameId,
+          profile: profileId,
+          method: activator.name,
         });
 
+        let mergedFileMap: { [modType: string]: string[] };
+        const lastDeployment: { [typeId: string]: IDeployedFile[] } = {};
+        const mods = state.persistent.mods[profile.gameId] || {};
+        notification.message = t('Deploying mods');
+        api.sendNotification(notification);
         api.store.dispatch(startActivity('mods', 'deployment'));
+        progress(t('Loading deployment manifest'), 0);
 
-        log('debug', 'load activation');
-        return Promise.each(Object.keys(modPaths).filter(typeId => truthy(modPaths[typeId])),
-          typeId => loadActivation(api, typeId, modPaths[typeId], stagingPath, activator).then(
-            deployedFiles => lastDeployment[typeId] = deployedFiles));
-      })
-      .then(() => {
-        progress(t('Running pre-deployment events'), 2);
-        return api.emitAndAwait('will-deploy', profile.id, lastDeployment);
-      })
-      .then(() => {
-        // for each mod type, check if the local files were changed outside vortex
-        const changes: { [typeId: string]: IFileChange[] } = {};
-        log('debug', 'determine external changes');
-        // update mod state again because if the user did have to confirm,
-        // it's more intuitive if we deploy the state at the time he confirmed, not when
-        // the deployment was triggered
-        state = api.store.getState();
-        profile = profileId !== undefined
-          ? getSafe(state, ['persistent', 'profiles', profileId], undefined)
-          : activeProfile(state);
-        if (profile === undefined) {
-          return Promise.reject(new ProcessCanceled('Profile no longer exists.'));
-        }
-        progress(t('Checking for external changes'), 5);
-        return Promise.each(Object.keys(modPaths),
-          typeId => {
-            log('debug', 'checking external changes',
-                { modType: typeId, count: lastDeployment[typeId].length });
-            return activator.externalChanges(profile.gameId, stagingPath, modPaths[typeId],
-                                             lastDeployment[typeId])
-              .then(fileChanges => {
-                if (fileChanges.length > 0) {
-                  changes[typeId] = fileChanges;
-                }
-            });
+        return Promise.each(deployableModTypes(modPaths), typeId =>
+            loadActivation(api, typeId, modPaths[typeId], stagingPath, activator)
+              .then(deployedFiles => lastDeployment[typeId] = deployedFiles))
+          .tap(() => progress(t('Running pre-deployment events'), 2))
+          .then(() => api.emitAndAwait('will-deploy', profile.id, lastDeployment))
+          .tap(() => progress(t('Checking for external changes'), 5))
+          .then(() => dealWithExternalChanges(api, activator, profileId, stagingPath, modPaths,
+            lastDeployment))
+          .tap(() => progress(t('Sorting mods'), 30))
+          .then(() => doSortMods(api, profile, mods)
+            .then((sortedModListIn: IMod[]) => {
+              sortedModList = sortedModListIn;
+            }))
+          .tap(() => progress(t('Merging mods'), 35))
+          .then(() => doMergeMods(api, game, gameDiscovery, stagingPath, sortedModList, modPaths, lastDeployment)
+            .then(mergedFileMapIn => mergedFileMap = mergedFileMapIn ))
+          .tap(() => progress(t('Starting deployment'), 35))
+          .then(() => {
+            const deployProgress = (name, percent) =>
+              progress(t('Deploying: ') + name, 50 + percent / 2);
+
+            const undiscovered = Object.keys(modPaths)
+              .filter(typeId => !truthy(modPaths[typeId]));
+            return validateDeploymentTarget(api, undiscovered)
+              .then(() => deployAllModTypes(api, activator, profile, sortedModList,
+                                            stagingPath, mergedFileMap,
+                                            modPaths, lastDeployment,
+                                            newDeployment, deployProgress));
           })
-          .then(() => changes);
       })
-      .then((changes: { [typeId: string]: IFileChange[] }) => {
-        log('debug', 'done checking for external changes');
-        progress(t('Sorting mods'), 30);
-        return (Object.keys(changes).length === 0) ?
-                   Promise.resolve([]) :
-                   api.store.dispatch(showExternalChanges(changes));
-      })
-      .then((fileActions: IFileEntry[]) => Promise.mapSeries(Object.keys(lastDeployment),
-        typeId => applyFileActions(stagingPath, modPaths[typeId],
-                                   lastDeployment[typeId],
-                                   fileActions.filter(action => action.modTypeId === typeId))
-                .then(newLastDeployment => lastDeployment[typeId] = newLastDeployment)))
-      // sort (all) mods based on their dependencies so the right files get activated
-      .then(() => {
-        const modState: { [id: string]: IProfileMod } =
-          profile !== undefined ? profile.modState : {};
-        const unsorted = Object.keys(mods)
-            .map((key: string) => mods[key])
-            .filter((mod: IMod) => getSafe(modState, [mod.id, 'enabled'], false));
-
-        return sortMods(profile.gameId, unsorted, api)
-          .catch(CycleError, () => Promise.reject(
-            new ProcessCanceled('Deployment is not possible when you have cyclical mod rules.')));
-      })
-      .then((sortedModList: IMod[]) => {
-        const mergedFileMap: { [modType: string]: string[] } = {};
-
-        progress(t('Merging mods'), 35);
-
-        const mergeModTypes = Object.keys(modPaths)
-          .filter(modType => fileMergers.find(merger => merger.modType === modType) !== undefined);
-
-        return Promise.mapSeries(mergeModTypes, typeId => {
-          const mergePath = truthy(typeId)
-            ? MERGED_PATH + '.' + typeId
-            : MERGED_PATH;
-          return fs.removeAsync(path.join(stagingPath, mergePath));
-        })
-        .then(() => Promise.each(mergeModTypes,
-          typeId => mergeMods(api, game, stagingPath, modPaths[typeId],
-                              sortedModList.filter(mod => (mod.type || '') === typeId),
-                              lastDeployment[typeId],
-                              fileMergers)
-        .then(mergedFiles => {
-          mergedFileMap[typeId] = mergedFiles;
-        }))
-        // activate them all, once per mod type
-        .then(() => {
-          progress(t('Starting deployment'), 35);
-          const deployProgress =
-            (name, percent) => progress(t('Deploying: ') + name, 50 + percent / 2);
-
-          const undiscovered = Object.keys(modPaths).filter(typeId => !truthy(modPaths[typeId]));
-          let prom = Promise.resolve();
-          if (undiscovered.length !== 0) {
-            prom = api.showDialog('error', 'Deployment target unknown', {
-              text: 'The deployment directory for some mod type(s) ({{ types }}) '
-                  + 'is unknown. Mods of these types will not be deployed. '
-                  + 'Maybe this/these type(s) require further configuration or '
-                  + 'external tools.',
-              parameters: {
-                types: undiscovered.join(', '),
-              },
-            }, [ { label: 'Cancel' }, { label: 'Ignore' } ])
-            .then(result => (result.action === 'Cancel')
-                ? Promise.reject(new UserCanceled())
-                : Promise.resolve());
-          }
-          const overwritten: IMod[] = [];
-          return prom
-            .then(() => Promise.each(
-              Object.keys(modPaths).filter(typeId => undiscovered.indexOf(typeId) === -1),
-              typeId => {
-                const filteredModList = sortedModList.filter(mod => (mod.type || '') === typeId);
-                log('debug', 'Deploying mod type',
-                    { typeId, path: modPaths[typeId], count: lastDeployment[typeId].length });
-                return deployMods(api,
-                                  game.id,
-                                  stagingPath, modPaths[typeId],
-                                  filteredModList,
-                                  activator, lastDeployment[typeId],
-                                  typeId, new Set(mergedFileMap[typeId]),
-                                  genSubDirFunc(game),
-                                  deployProgress)
-                  .then(newActivation => {
-                    overwritten.push(...filteredModList.filter(mod =>
-                      newActivation.find(entry =>
-                        entry.source === mod.installationPath) === undefined));
-
-                    newDeployment[typeId] = newActivation;
-
-                    return doSaveActivation(api, typeId,
-                                            modPaths[typeId], stagingPath,
-                                            newActivation, activator.id)
-                      .catch(err => api.showDialog('error', 'Saving manifest failed', {
-                        text: 'Saving the manifest failed (see error below). '
-                            + 'This could lead to errors later on, ',
-                        message: err.message,
-                      }, []));
-                  });
-              }))
-            .then(() => {
-              lockResolve();
-              lockResolve = undefined;
-              progress(t('Running post-deployment events'), 99);
-              return api.emitAndAwait('did-deploy', profile.id, newDeployment,
-                                      (title: string) => {
-                progress(title, 99);
-              });
-              })
-            .then(() => {
-              if (overwritten.length > 0) {
-                api.sendNotification({
-                  id: 'redundant-mods',
-                  type: 'info',
-                  message: 'Some mods are redundant',
-                  actions: [
-                    { title: 'Show', action: dismiss => {
-                      return api.showDialog('info', 'Redundant mods', {
-                        text: 'Some of the enabled mods either contain no files or all files '
-                            + 'they do contain are entirely overwritten by another mod. '
-                            + 'These redundant mods don\'t do any harm except slow down '
-                            + 'deployment a bit.',
-                        checkboxes: overwritten.map((mod: IMod): ICheckbox => ({
-                          id: mod.id,
-                          text: renderModName(mod),
-                          value: true,
-                        })),
-                      }, [
-                        { label: 'Disable selected' },
-                        { label: 'Close', default: true },
-                      ]).then(result => {
-                        if (result.action === 'Disable selected') {
-                          Object.keys(result.input)
-                            .filter(modId => result.input[modId])
-                            .forEach(modId => {
-                              api.store.dispatch(setModEnabled(profile.id, modId, false));
-                            });
-                          dismiss();
-                        }
-                      });
-                    } },
-                  ],
-                });
-              }
-            });
-        })
-        .then(() => {
-          progress(t('Preparing game settings'), 100);
-          return bakeSettings(api, profile, sortedModList);
-        }))
+        // at this point the deployment lock gets released so another deployment
+        // can be started during post-deployment
+        .tap(() => progress(t('Running post-deployment events'), 99))
+        .then(() => api.emitAndAwait('did-deploy', profile.id, newDeployment,
+          (title: string) => progress(title, 99)))
+        .tap(() => progress(t('Preparing game settings'), 100))
+        .then(() => bakeSettings(api, profile, sortedModList))
+        // finally wrapping up
         .then(() => {
           api.store.dispatch(setDeploymentNecessary(game.id, false));
-        });
-      })
-      .catch(UserCanceled, () => undefined)
-      .catch(ProcessCanceled, err => {
-        api.sendNotification({
-          type: 'warning',
-          title: 'Deployment interrupted',
-          message: err.message,
-        });
-      })
-      .catch(TemporaryError, err => {
-        api.showErrorNotification('Failed to deploy mods, please try again',
-                                  err.message, { allowReport: false });
-      })
-      .catch(CycleError, err => {
-        api.sendNotification({
-          id: 'mod-cycle-warning',
-          type: 'warning',
-          message: 'Mod rules contain cycles',
-          actions: [
-            { title: 'Show', action: () => {
-              showCycles(api, err.cycles, profile.gameId);
-            } },
-          ],
-        });
-      })
-      .catch(err => {
-        if ((err.code === undefined) && (err.errno !== undefined)) {
-          // unresolved windows error code
-          return api.showErrorNotification('Failed to deploy mods', {
-            error: err,
-            ErrorCode: err.errno
+        })
+        .catch(UserCanceled, () => undefined)
+        .catch(ProcessCanceled, err => {
+          api.sendNotification({
+            type: 'warning',
+            title: 'Deployment interrupted',
+            message: err.message,
           });
-        }
-        return api.showErrorNotification('Failed to deploy mods', err, {
-          allowReport: (err.code !== 'EPERM') && (err.allowReport !== false),
-        });
-      })
-      .finally(() => {
-        if (lockResolve !== undefined) {
-          lockResolve();
-        }
-        api.store.dispatch(stopActivity('mods', 'deployment'));
-        api.dismissNotification(notificationId);
-      });
+        })
+        .catch(TemporaryError, err => {
+          api.showErrorNotification('Failed to deploy mods, please try again',
+            err.message, { allowReport: false });
+        })
+        .catch(CycleError, err => {
+          api.sendNotification({
+            id: 'mod-cycle-warning',
+            type: 'warning',
+            message: 'Mod rules contain cycles',
+            actions: [
+              {
+                title: 'Show', action: () => {
+                  showCycles(api, err.cycles, profile.gameId);
+                }
+              },
+            ],
+          });
+        })
+        .catch(err => {
+          if ((err.code === undefined) && (err.errno !== undefined)) {
+            // unresolved windows error code
+            return api.showErrorNotification('Failed to deploy mods', {
+              error: err,
+              ErrorCode: err.errno
+            });
+          }
+          return api.showErrorNotification('Failed to deploy mods', err, {
+            allowReport: (err.code !== 'EPERM') && (err.allowReport !== false),
+          });
+        })
+        .finally(() => {
+          api.store.dispatch(stopActivity('mods', 'deployment'));
+          api.dismissNotification(notification.id);
+        }));
     }
 }
 
@@ -715,8 +676,6 @@ function cleanupIncompleteInstalls(api: IExtensionApi) {
   });
 }
 
-let blockDeploy: Promise<void> = Promise.resolve();
-
 function onModsEnabled(api: IExtensionApi, deploymentTimer: Debouncer) {
   return (mods: string[], enabled: boolean, gameId: string) => {
     const { store } = api;
@@ -742,7 +701,7 @@ function onDeploySingleMod(api: IExtensionApi) {
     const state: IState = api.store.getState();
     const game = getGame(gameId);
     const discovery = getSafe(state, ['settings', 'gameMode', 'discovered', gameId], undefined);
-    if ((game === undefined) || (discovery === undefined)) {
+    if ((game === undefined) || (discovery === undefined) || (discovery.path === undefined)) {
       return Promise.resolve();
     }
     const mod: IMod = getSafe(state, ['persistent', 'mods', game.id, modId], undefined);
@@ -759,7 +718,20 @@ function onDeploySingleMod(api: IExtensionApi) {
     if (!truthy(dataPath)) {
       return Promise.resolve();
     }
-    const stagingPath = installPathForGame(state, gameId);
+    const stagingPath: string = installPathForGame(state, gameId);
+    let modPath: string;
+
+    try {
+      modPath = path.join(stagingPath, mod.installationPath);
+    } catch (err) { 
+      err.StagingPath = stagingPath || '<undefined>';
+      err.InstallPath = mod.installationPath || '<undefined>';
+      err.GameId = gameId || '<undefined>';
+      api.showErrorNotification('Failed to deploy mod', err, {
+        message: modId,
+      });
+      return Promise.resolve();
+    }
 
     const subdir = genSubDirFunc(game);
     let normalize: Normalize;
@@ -771,9 +743,8 @@ function onDeploySingleMod(api: IExtensionApi) {
       .then(lastActivation => activator.prepare(dataPath, false, lastActivation, normalize))
       .then(() => (mod !== undefined)
         ? (enable !== false)
-          ? activator.activate(path.join(stagingPath, mod.installationPath),
-                               mod.installationPath, subdir(mod), new Set())
-          : activator.deactivate(path.join(stagingPath, mod.installationPath), subdir(mod))
+          ? activator.activate(modPath, mod.installationPath, subdir(mod), new Set())
+          : activator.deactivate(modPath, subdir(mod))
         : Promise.resolve())
       .tapCatch(() => {
         if (activator.cancel !== undefined) {
@@ -804,7 +775,10 @@ function onNeedToDeploy(api: IExtensionApi, current: any) {
             dismiss();
             api.events.emit('deploy-mods', onceCB((err) => {
               if (err !== null) {
-                if (err instanceof NoDeployment) {
+                if (err instanceof UserCanceled) {
+                  // Nothing to see here, move along.
+                  return;
+                } else if (err instanceof NoDeployment) {
                   showError(api.store.dispatch,
                     'You need to select a deployment method in settings',
                     undefined, { allowReport: false });
@@ -836,11 +810,8 @@ function once(api: IExtensionApi) {
 
   const updateModDeployment = genUpdateModDeployment();
   const deploymentTimer = new Debouncer(
-      (manual: boolean, profileId: string, progressCB) => {
-        blockDeploy = blockDeploy
-          .then(() => updateModDeployment(api, manual, profileId, progressCB));
-        return blockDeploy;
-      }, 2000);
+      (manual: boolean, profileId: string, progressCB) =>
+        updateModDeployment(api, manual, profileId, progressCB), 2000);
 
   api.events.on('deploy-mods', (callback: (err: Error) => void, profileId?: string,
                                 progressCB?: (text: string, percent: number) => void) => {
@@ -852,12 +823,12 @@ function once(api: IExtensionApi) {
   api.onAsync('deploy-single-mod', onDeploySingleMod(api));
 
   api.events.on('purge-mods', (allowFallback: boolean, callback: (err: Error) => void) => {
-    blockDeploy = blockDeploy.then(() => purgeMods(api)
+    purgeMods(api)
       .catch(err => allowFallback
         ? fallbackPurge(api)
         : Promise.reject(err))
       .then(() => callback(null))
-      .catch(err => callback(err)));
+      .catch(err => callback(err));
   });
 
   api.events.on('await-activation', (callback: (err: Error) => void) => {
@@ -913,6 +884,12 @@ function once(api: IExtensionApi) {
       (gameMode: string, mod: IMod, callback: (error: Error) => void) => {
         onAddMod(api, gameMode, mod, callback);
       });
+
+  api.events.on('profile-will-change', () => {
+    // when the profile changes there is a good chance the cycle warning doesn't apply and if
+    // the game changes the cycle dialog can't even be opened or it would trigger an error
+    api.dismissNotification('mod-cycle-warning');
+  });
 
   cleanupIncompleteInstalls(api);
 }

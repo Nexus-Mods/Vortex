@@ -97,6 +97,7 @@ class DashboardBanner extends ComponentEx<IProps, { requested: boolean }> {
       this.nextState.requested = false;
       if ((err !== null) && !(err instanceof UserCanceled)) {
         this.context.api.showErrorNotification('Failed to get access key', err, {
+          id: 'failed-get-nexus-key',
           allowReport: false,
         });
       }

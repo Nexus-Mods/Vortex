@@ -1,6 +1,7 @@
 'use strict';
 
 var util = require('util');
+var path = require('path');
 
 let error = undefined;
 
@@ -17,6 +18,16 @@ module.exports = {
       type: 'REG_SZ',
       value: 'foobar',
     };
+  },
+  GetVolumePathName: (input) => {
+    const res = path.dirname(input);
+    if (res === '/missing') {
+      let err = new Error('fake error');
+      err.code = 'ENOTFOUND';
+      err.errno = 2;
+      throw err;
+    }
+    return res;
   },
   __setError: (err) => { error = err; },
 };

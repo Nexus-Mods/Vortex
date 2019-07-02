@@ -7,6 +7,19 @@ export class NotSupportedError extends Error {
   }
 }
 
+export class CleanupFailedException extends Error {
+  private mErrorObject: Error;
+  constructor(error: Error) {
+    super('Cleanup process has failed');
+    this.name = this.constructor.name;
+    this.mErrorObject = error;
+  }
+
+  public get errorObject(): Error {
+    return this.mErrorObject;
+  }
+}
+
 export class ServiceTemporarilyUnavailable extends Error {
   constructor(service: string) {
     super(`${service} service is temporarily unavailable. Please try again later.`);

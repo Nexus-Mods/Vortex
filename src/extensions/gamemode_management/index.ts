@@ -17,6 +17,7 @@ import opn from '../../util/opn';
 import ReduxProp from '../../util/ReduxProp';
 import { activeGameId, activeProfile } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
+import { truthy } from '../../util/util';
 
 import { setModType } from '../mod_management/actions/mods';
 import { IModWithState } from '../mod_management/views/CheckModVersionsButton';
@@ -155,12 +156,12 @@ function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
   const discovery = state.settings.gameMode.discovered[gameId];
 
   return new Promise<void>((resolve, reject) => {
-    if (discovery !== undefined) {
+    if ((discovery !== undefined) && (discovery.path !== undefined)) {
       remote.dialog.showOpenDialog(remote.getCurrentWindow(), {
         properties: ['openDirectory'],
         defaultPath: discovery.path,
       }, (fileNames: string[]) => {
-        if (fileNames !== undefined) {
+        if ((fileNames !== undefined) && truthy(fileNames[0])) {
           verifyGamePath(game, fileNames[0])
             .then(() => {
               api.store.dispatch(setGamePath(game.id, fileNames[0]));
@@ -201,7 +202,7 @@ function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
             })
             .catch(err => {
               api.store.dispatch(showDialog('error', 'Game not found', {
-                message: api.translate('This directory doesn\'t appear to contain the game. '
+                text: api.translate('This directory doesn\'t appear to contain the game. '
                   + 'Expected to find these files: {{ files }}',
                   { replace: { files: game.requiredFiles.join(', ') } }),
               }, [
@@ -218,10 +219,11 @@ function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
   });
 }
 
-function removeDisapearedGames(api: IExtensionApi): Promise<void> {
+function removeDisappearedGames(api: IExtensionApi): Promise<void> {
   const state: IState = api.store.getState();
   const discovered = state.settings.gameMode.discovered;
   const known = state.session.gameMode.known;
+  const gameMode = activeGameId(state);
 
   return Promise.map(
     Object.keys(discovered).filter(gameId => discovered[gameId].path !== undefined),
@@ -240,6 +242,9 @@ function removeDisapearedGames(api: IExtensionApi): Promise<void> {
                                      { replace: { gameName: stored.name } }),
             });
 
+            if (gameId === gameMode) {
+              api.store.dispatch(setNextProfile(undefined));
+            }
             api.store.dispatch(setGamePath(gameId, undefined));
           });
     }).then(() => {
@@ -427,7 +432,7 @@ function init(context: IExtensionContext): boolean {
           const message = newGames.length === 0
             ? 'No new games found'
             : newGames.map(id => '- ' + knownGames.find(iter => iter.id === id).name).join('\n');
-          removeDisapearedGames(context.api);
+          removeDisappearedGames(context.api);
           context.api.sendNotification({
             type: 'success',
             title: 'Discovery completed',
@@ -490,17 +495,17 @@ function init(context: IExtensionContext): boolean {
       });
     $.gameModeManager.attachToStore(store);
     $.gameModeManager.startQuickDiscovery()
-    .then(() => {
-      removeDisapearedGames(context.api);
-    });
+    .then(() => removeDisappearedGames(context.api));
 
     events.on('start-quick-discovery', (cb?: (gameIds: string[]) => void) =>
       $.gameModeManager.startQuickDiscovery()
         .then((gameIds: string[]) => {
-          removeDisapearedGames(context.api);
-          if (cb !== undefined) {
-            cb(gameIds);
-          }
+          return removeDisappearedGames(context.api)
+            .then(() => {
+              if (cb !== undefined) {
+                cb(gameIds);
+              }
+            });
         }));
     events.on('start-discovery', () => {
       try {
@@ -629,6 +634,9 @@ function init(context: IExtensionContext): boolean {
             && (getGame(gameMode) !== undefined)) {
           changeGameMode(undefined, gameMode, profile.id)
             .then(() => null);
+        } else {
+          // if the game is no longer discovered we can't keep this profile as active
+          store.dispatch(setNextProfile(undefined));
         }
       }
     }
