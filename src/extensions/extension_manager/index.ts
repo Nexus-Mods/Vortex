@@ -6,15 +6,26 @@ import ExtensionManager from './ExtensionManager';
 import { IExtension } from './types';
 import { readExtensions } from './util';
 
-const localState: { extensions: { [extId: string]: IExtension } } = makeReactive({
+import * as _ from 'lodash';
+
+interface ILocalState {
+  extensions: { [extId: string]: IExtension };
+  reloadNecessary: boolean;
+}
+
+const localState: ILocalState = makeReactive({
+  reloadNecessary: false,
   extensions: {},
 });
 
 function init(context: IExtensionContext) {
 
-  const updateExtensions = () => {
+  const updateExtensions = (initial: boolean) => {
     readExtensions()
       .then(ext => {
+        if (!initial && !_.isEqual(localState.extensions, ext)) {
+          localState.reloadNecessary = true;
+        }
         localState.extensions = ext;
       })
       .catch(err => {
@@ -41,7 +52,7 @@ function init(context: IExtensionContext) {
   }));
 
   context.once(() => {
-    updateExtensions();
+    updateExtensions(true);
   });
 
   return true;

@@ -26,7 +26,10 @@ import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 
 export interface IExtensionManagerProps {
-  localState: { extensions: { [extId: string]: IExtension } };
+  localState: {
+    reloadNecessary: boolean,
+    extensions: { [extId: string]: IExtension },
+  };
   updateExtensions: () => void;
 }
 
@@ -47,7 +50,6 @@ type IProps = IExtensionManagerProps & IConnectedProps & IActionProps;
 
 interface IComponentState {
   oldExtensionConfig: { [extId: string]: IExtensionState };
-  reloadNecessary: boolean;
 }
 
 class ExtensionManager extends ComponentEx<IProps, IComponentState> {
@@ -62,7 +64,6 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
   
     this.initState({
       oldExtensionConfig: props.extensionConfig,
-      reloadNecessary: false,
     });
 
     this.actions = [
@@ -93,7 +94,7 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
 
   public render(): JSX.Element {
     const {t, localState, extensionConfig} = this.props;
-    const {reloadNecessary, oldExtensionConfig} = this.state;
+    const {oldExtensionConfig} = this.state;
     const { extensions } = localState;
 
     const extensionsWithState = this.mergeExt(extensions, extensionConfig);
@@ -108,7 +109,7 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
               <FlexLayout type='column'>
                 <FlexLayout.Fixed>
                   {
-                    reloadNecessary || !_.isEqual(extensionConfig, oldExtensionConfig)
+                    localState.reloadNecessary || !_.isEqual(extensionConfig, oldExtensionConfig)
                       ? this.renderReload()
                       : null
                   }
@@ -125,13 +126,15 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
                 <FlexLayout.Fixed>
                   <FlexLayout type='row'>
                     <FlexLayout.Flex className='extensions-find-button-container'>
-                      <Button
-                        id='btn-more-extensions'
-                        onClick={this.onBrowse}
-                        bsStyle='ghost'
-                      >
-                        {t('Find more')}
-                      </Button>
+                      <div className='flex-center-both'>
+                        <Button
+                          id='btn-more-extensions'
+                          onClick={this.onBrowse}
+                          bsStyle='ghost'
+                        >
+                          {t('Find more')}
+                        </Button>
+                      </div>
                       </FlexLayout.Flex>
                     <FlexLayout.Flex>
                       <Dropzone
@@ -184,7 +187,6 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
       }));
     prop.then(() => {
       if (success) {
-        this.nextState.reloadNecessary = true;
         this.props.updateExtensions();
       }
     });
@@ -226,7 +228,6 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
 
   private removeExtension = (extId: string) => {
     this.props.onRemoveExtension(extId);
-    this.nextState.reloadNecessary = true;
   }
 }
 

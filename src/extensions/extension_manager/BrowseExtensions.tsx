@@ -8,7 +8,7 @@ import * as path from 'path';
 import * as React from 'react';
 import { ListGroup, Modal, ModalHeader, ListGroupItem, Button } from 'react-bootstrap';
 import { downloadPathForGame } from '../../util/selectors';
-import { IDownload, IState } from '../../types/IState';
+import { IState } from '../../types/IState';
 import { getSafe } from '../../util/storeHelper';
 import { fetchAvailableExtensions, IAvailableExtension, sanitize } from './util';
 import { IExtension } from './types';
@@ -18,7 +18,10 @@ import Spinner from '../../controls/Spinner';
 export interface IBrowseExtensionsProps {
   visible: boolean;
   onHide: () => void;
-  localState: { extensions: { [extId: string]: IExtension } };
+  localState: {
+    reloadNecessary: boolean,
+    extensions: { [extId: string]: IExtension }
+  };
   updateExtensions: () => void;
 }
 
@@ -87,7 +90,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
   }
 
   private renderListEntry = (ext: IAvailableExtension, idx: number) => {
-    const { t } = this.props;
+    const { t, localState } = this.props;
     const { installing, selected } = this.state;
 
     const classes = ['extension-item'];
@@ -96,12 +99,27 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
       classes.push('selected');
     }
 
+    const installed = (localState.extensions[sanitize(ext.name)] !== undefined);
+
+    const action = (installing.indexOf(ext.name) !== -1)
+      ? <Spinner />
+      : installed
+        ? <div>{t('Installed')}</div>
+        : <a
+          className='extension-subscribe'
+          data-idx={idx}
+          onClick={this.install}
+        >
+          {t('Install')}
+        </a>;
+
     return (
       <ListGroupItem
         className={classes.join(' ')}
         key={ext.modId}
         data-idx={idx}
         onClick={this.select}
+        disabled={installed}
       >
         <div className='extension-header'>
           <span className='extension-name'>{ext.name}</span>
@@ -110,28 +128,33 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
         <div className='extension-description'>{ext.description.short}</div>
         <div className='extension-footer'>
           <div className='extension-author'>{ext.author}</div>
-          {
-            (installing.indexOf(ext.name) === -1) ? (
-              <a
-                className='extension-subscribe'
-                data-idx={idx}
-                onClick={this.install}
-              >
-                {t('Install')}
-              </a>
-            ) : <Spinner />
-          }
+          { action }
         </div>
       </ListGroupItem>
     );
   }
 
   private renderDescription = (ext: IAvailableExtension, idx: number) => {
-    const { t } = this.props;
+    const { t, localState } = this.props;
     const { installing } = this.state;
     if (ext === undefined) {
       return null;
     }
+
+    const installed = (localState.extensions[sanitize(ext.name)] !== undefined);
+
+    const action = (installing.indexOf(ext.name) !== -1)
+      ? <Spinner />
+      : installed
+        ? <div>{t('Installed')}</div>
+        : <a
+          className='extension-subscribe'
+          data-idx={idx}
+          onClick={this.install}
+        >
+          {t('Install')}
+        </a>;
+
     return (
       <>
         <FlexLayout type='row' className='description-header' fill={false}>
@@ -150,17 +173,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
                 {ext.description.short}
               </div>
               <div className='description-actions'>
-                {
-                  (installing.indexOf(ext.name) === -1) ? (
-                    <a
-                      className='extension-subscribe'
-                      data-idx={idx}
-                      onClick={this.install}
-                    >
-                      {t('Install')}
-                    </a>
-                  ) : <Spinner />
-                }
+                {action}
               </div>
             </FlexLayout>
           </FlexLayout.Flex>
@@ -174,7 +187,6 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
 
   private updateList(props: IProps) {
     fetchAvailableExtensions()
-      .filter(ext => props.localState.extensions[sanitize(ext.name)] === undefined)
       .then(extensions => {
         this.nextState.availableExtensions = extensions;
       })
