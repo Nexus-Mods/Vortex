@@ -1,6 +1,6 @@
 import bbcode from '../../util/bbcode';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
-import * as fs from '../../util/fs';
+import { ProcessCanceled } from '../../util/api';
 
 import installExtension from './installExtension';
 
@@ -38,6 +38,8 @@ interface IConnectedProps {
 
 type IProps = IBrowseExtensionsProps & IConnectedProps;
 
+function nop() {}
+
 class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
   constructor(props: IProps) {
     super(props);
@@ -67,7 +69,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
     const ext = selected === -1 ? null : availableExtensions[selected];
 
     return (
-      <Modal id='browse-extensions-dialog' show={visible} onHide={null}>
+      <Modal id='browse-extensions-dialog' show={visible} onHide={nop}>
         <ModalHeader>
           <h3>{t('Browse Extensions')}</h3>
         </ModalHeader>
@@ -206,7 +208,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
      .then((dlIds: string[]) => {
        const state: IState = this.context.api.store.getState();
        if ((dlIds === undefined) || (dlIds.length !== 1)) {
-         return Promise.reject(new Error('No download found'));
+         return Promise.reject(new ProcessCanceled('No download found'));
        }
        const download = getSafe(state, ['persistent', 'downloads', 'files', dlIds[0]], undefined)
        if (download === undefined) {
@@ -215,6 +217,13 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
        return installExtension(path.join(downloadPath, download.localPath));
      })
       .then(() => this.props.updateExtensions())
+      .catch(ProcessCanceled, () => {
+        this.context.api.showDialog('error', 'Installation failed', {
+          text: 'Failed to install the extension, please check the notifications.',
+        }, [
+          { label: 'Close' },
+        ])
+      })
       .catch(err => {
         this.context.api.showDialog('error', 'Installation failed', {
           text: 'Failed to install the extension',

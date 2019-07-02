@@ -187,11 +187,8 @@ function download(api: IExtensionApi, nexus: Nexus,
     if (existingId !== undefined) {
       return Promise.resolve(existingId);
     } else {
-      return startDownload(api, nexus, url)
-        .then(downloadId => (downloadId !== undefined)
-          ? Promise.resolve(downloadId)
-          // I don't expect this outcome
-          : Promise.reject(new ProcessCanceled('Download failed for unknown reasons')))
+      // startDownload will report network errors and only reject on usage error
+      return startDownload(api, nexus, url);
     }
 }
 
@@ -221,7 +218,17 @@ export function onNexusDownload(api: IExtensionApi, nexus: Nexus): (...args: any
   return (gameId, modId, fileId): Promise<string> => {
     const game = gameId === 'site' ? null : gameById(api.store.getState(), gameId);
 
-    return download(api,nexus, game, modId, fileId);
+    return download(api,nexus, game, modId, fileId)
+      .catch(ProcessCanceled, err => {
+        api.sendNotification({
+          type: 'error',
+          message: err.message,
+        })
+      })
+      .catch(err => {
+        api.showErrorNotification('Nexus download failed', err);
+        return Promise.resolve(undefined);
+      });
   }
 }
 
