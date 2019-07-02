@@ -345,7 +345,7 @@ function genUpdateModDeployment() {
       ? getSafe(state, ['persistent', 'profiles', profileId], undefined)
       : activeProfile(state);
 
-    if (Object.keys(getSafe(state, ['session', 'base', 'toolsRunning'], []).length > 0)) {
+    if (Object.keys(getSafe(state, ['session', 'base', 'toolsRunning'], {})).length > 0) {
       api.sendNotification({
         type: 'info',
         id: 'deployment-not-possible',
