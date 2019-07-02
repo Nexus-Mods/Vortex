@@ -103,6 +103,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private static SCROLL_DEBOUNCE = 5000;
 
   private mVisibleAttributes: ITableAttribute[];
+  private mVisibleDetails: ITableAttribute[];
+
   private mPinnedRef: HTMLElement;
   private mScrollRef: HTMLElement;
   private mHeaderRef: HTMLElement;
@@ -140,7 +142,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       multiRowActions: this.multiRowActions(props),
       columnToggles: this.columnToggles(props),
     };
-    this.mVisibleAttributes = this.visibleAttributes(props.objects, props.attributeState);
+    const { table, detail } = this.visibleAttributes(props.objects, props.attributeState);
+    this.mVisibleAttributes = table;
+    this.mVisibleDetails = detail;
     this.updateCalculatedValues(props)
     .then(didRun => {
       if (didRun) {
@@ -190,7 +194,10 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     if ((newProps.attributeState !== this.props.attributeState)
         || (newProps.objects !== this.props.objects)) {
       const { attributeState, objects } = newProps;
-      this.mVisibleAttributes = this.visibleAttributes(objects, attributeState);
+
+      const { table, detail } = this.visibleAttributes(objects, attributeState);
+      this.mVisibleAttributes = table;
+      this.mVisibleDetails = detail;
 
       if (Object.keys(newProps.attributeState).find(id =>
             (this.props.attributeState[id] === undefined)
@@ -460,16 +467,13 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       return null;
     }
 
-    const detailAttributes = objects.filter((attribute: ITableAttribute) =>
-      attribute.placement !== 'table');
-
     return (
       <TableDetail
         t={t}
         rowIds={rowIdsDelayed}
         rowData={calculatedValues}
         rawData={data}
-        attributes={detailAttributes}
+        attributes={this.mVisibleDetails}
         language={language}
         show={detailsOpen}
         title={detailsTitle}
@@ -1260,18 +1264,16 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private visibleAttributes(attributes: ITableAttribute[],
-                            attributeStates: { [id: string]: IAttributeState }): ITableAttribute[] {
-    return attributes.filter((attribute: ITableAttribute) => {
-      if ((attribute.condition !== undefined) && !attribute.condition()) {
-        return false;
-      }
-      const state = this.getAttributeState(attribute, attributeStates);
-      if (attribute.placement === 'detail') {
-        return false;
-      } else {
-        return state.enabled;
-      }
-    });
+                            attributeStates: { [id: string]: IAttributeState }):
+                            { table: ITableAttribute[], detail: ITableAttribute[] } {
+    const enabled = attributes.filter(attribute =>
+        ((attribute.condition === undefined) || attribute.condition())
+        && this.getAttributeState(attribute, attributeStates).enabled);
+
+    return {
+      table: enabled.filter(attribute => attribute.placement !== 'detail'),
+      detail: enabled.filter(attribute => attribute.placement !== 'table'),
+    };
   }
 
   private getAttributeState(attribute: ITableAttribute,
