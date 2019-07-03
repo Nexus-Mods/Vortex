@@ -6,6 +6,7 @@ import { remote } from 'electron';
 import * as path from 'path';
 import { IExtension } from './types';
 import { INVALID_FILENAME_RE } from '../../util/util';
+import { jsonRequest } from '../../util/network';
 
 function getAllDirectories(searchPath: string): Promise<string[]> {
   return fs.readdirAsync(searchPath)
@@ -82,6 +83,5 @@ export interface IAvailableExtension {
 }
 
 export function fetchAvailableExtensions(): Promise<IAvailableExtension[]> {
-  return fs.readFileAsync('extensions.json', { encoding: 'utf-8' })
-    .then(data => JSON.parse(data));
+  return Promise.resolve(jsonRequest<IAvailableExtension[]>('http://<insert url>/extensions.json'));
 }

@@ -1,11 +1,16 @@
-import { IncomingMessage } from 'http';
-import { get } from 'https';
+import { get as getHTTP, IncomingMessage } from 'http';
+import { get as getHTTPS } from 'https';
 import * as url from 'url';
 
 export function jsonRequest<T>(apiURL: string): Promise<T> {
     return new Promise((resolve, reject) => {
+      const parsed = url.parse(apiURL);
+      const get = (parsed.protocol === 'http:')
+        ? getHTTP
+        : getHTTPS;
+
       get({
-        ...url.parse(apiURL),
+        ...parsed,
         headers: { 'User-Agent': 'Vortex' },
       } as any, (res: IncomingMessage) => {
         const { statusCode } = res;
