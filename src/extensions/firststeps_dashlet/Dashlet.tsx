@@ -59,7 +59,6 @@ class Todo extends React.PureComponent<ITodoProps, {}> {
     this.props.dismiss(this.props.todo.id);
   }
 
-
   private resolveElement(input: string | ((t: I18next.TFunction, props: any) => JSX.Element),
                          className: string): JSX.Element {
     const { t, extensionProps } = this.props;

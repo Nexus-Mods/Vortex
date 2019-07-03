@@ -42,11 +42,11 @@ export const categoryReducer: IReducerSpec = {
           elements: {
             name: {
               description: () => 'Category without name will be set to default',
-              type: 'string'
+              type: 'string',
             },
             order: {
               description: () => 'Category without sorting order will be reset',
-              type: 'number'
+              type: 'number',
             },
           },
         },

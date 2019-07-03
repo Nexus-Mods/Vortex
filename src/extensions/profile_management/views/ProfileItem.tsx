@@ -38,7 +38,9 @@ interface IComponentState {
   counter: number;
 }
 
-function nop() {}
+function nop() {
+  // nop
+}
 
 /**
  * presents profiles and allows creation of new ones
@@ -105,7 +107,7 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
     const game = getGame(profile.gameId);
 
     let logo = '';
-    
+
     try {
       logo = hasProfileImage || (game === undefined)
         ? this.imagePath

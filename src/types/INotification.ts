@@ -125,7 +125,7 @@ export interface INotification {
    * if set, no Dismiss button is provided automatically
    */
   noDismiss?: boolean;
-  
+
   /**
    * actions to offer with the notification. These will be presented as buttons.
    * Due to limited space you should not have more than one or two actions and

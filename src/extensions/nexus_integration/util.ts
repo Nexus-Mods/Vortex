@@ -1,15 +1,15 @@
 import * as Promise from 'bluebird';
 import { app as appIn, ipcRenderer, remote } from 'electron';
 import I18next from 'i18next';
-import Nexus, { IFileInfo, IGameListEntry, IModInfo, NexusError,
-                RateLimitError, TimeoutError, IEndorsement, EndorsedStatus, IUpdateEntry } from 'nexus-api';
+import Nexus, { EndorsedStatus, IEndorsement, IFileInfo, IGameListEntry, IModInfo,
+                IUpdateEntry, NexusError, RateLimitError, TimeoutError } from 'nexus-api';
 import * as Redux from 'redux';
 import * as semver from 'semver';
 import * as util from 'util';
-import { setModAttribute, addNotification, dismissNotification } from '../../actions';
+import { addNotification, dismissNotification, setModAttribute } from '../../actions';
 import { IExtensionApi, IMod, IState, ThunkStore } from '../../types/api';
-import { UserCanceled, ProcessCanceled } from '../../util/CustomErrors';
-import { setApiKey, contextify } from '../../util/errorHandling';
+import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
+import { contextify, setApiKey } from '../../util/errorHandling';
 import github, { RateLimitExceeded } from '../../util/github';
 import { log } from '../../util/log';
 import { calcDuration, prettifyNodeErrorMessage, showError } from '../../util/message';
@@ -20,8 +20,8 @@ import { gameById, knownGames } from '../gamemode_management/selectors';
 import modName from '../mod_management/util/modName';
 import { setUserInfo } from './actions/persistent';
 import NXMUrl from './NXMUrl';
-import { checkModVersion, fetchRecentUpdates, ONE_MINUTE, ONE_DAY } from './util/checkModsVersion';
-import { convertNXMIdReverse, nexusGameId, convertGameIdReverse } from './util/convertGameId';
+import { checkModVersion, fetchRecentUpdates, ONE_DAY, ONE_MINUTE } from './util/checkModsVersion';
+import { convertGameIdReverse, convertNXMIdReverse, nexusGameId } from './util/convertGameId';
 import sendEndorseMod from './util/endorseMod';
 import transformUserInfo from './util/transformUserInfo';
 
@@ -303,7 +303,8 @@ export function endorseModImpl(
 }
 
 function nexusLink(state: IState, mod: IMod, gameMode: string) {
-  const gameId = nexusGameId(gameById(state, getSafe(mod.attributes, ['downloadGame'], undefined) || gameMode));
+  const gameId = nexusGameId(
+    gameById(state, getSafe(mod.attributes, ['downloadGame'], undefined) || gameMode));
   const nexusModId: number = parseInt(getSafe(mod.attributes, ['modId'], undefined), 10);
   return `https://www.nexusmods.com/${gameId}/mods/${nexusModId}`;
 }
@@ -313,7 +314,8 @@ export function refreshEndorsements(store: Redux.Store<any>, nexus: Nexus) {
     .then(endorsements => {
       const endorseMap: { [gameId: string]: { [modId: string]: EndorsedStatus } } =
         endorsements.reduce((prev, endorsement: IEndorsement) => {
-          const gameId = convertGameIdReverse(knownGames(store.getState()), endorsement.domain_name);
+          const gameId = convertGameIdReverse(knownGames(store.getState()),
+                                              endorsement.domain_name);
           const modId = endorsement.mod_id;
           if (prev[gameId] === undefined) {
             prev[gameId] = {};
@@ -392,8 +394,8 @@ function filterByUpdateList(store: Redux.Store<any>,
             return true;
           }
           const lastUpdate = getSafe(mod.attributes, ['lastUpdateTime'], 0);
-          // check anything for updates that is either in the update list and has been updated as well
-          // as anything that has last been checked before the range of the update list
+          // check anything for updates that is either in the update list and has been updated as
+          // well as anything that has last been checked before the range of the update list
           return (lastUpdate < getSafe(updateMap, [modGameId, mod.attributes.modId], 1))
               || ((now - lastUpdate) > 28 * ONE_DAY);
         });
@@ -442,10 +444,12 @@ export function checkModVersionsImpl(
           { count: filteredMods.length, of: modsList.length });
       }
 
-      let updatesMissed: IMod[] = [];
+      const updatesMissed: IMod[] = [];
 
-      const verPath = ['attributes', 'newestVersion'];
-      const fileIdPath = ['attributes', 'newestFileId'];
+      const verP = ['attributes', 'version'];
+      const fileIdP = ['attributes', 'fileId'];
+      const newWerP = ['attributes', 'newestVersion'];
+      const newFileIdP = ['attributes', 'newestFileId'];
 
       return Promise.map(modsList, (mod: IMod) => {
         if (!forceFull && !filtered.has(mod.id)) {
@@ -455,32 +459,40 @@ export function checkModVersionsImpl(
 
         return checkModVersion(store, nexus, gameId, mod)
           .then(() => {
-            const modNew = getSafe(store.getState(), ['persistent', 'mods', gameId, mod.id], undefined);
-            const updateFound =
-                ((getSafe(modNew, verPath, undefined) !== getSafe(mod, verPath, undefined))
-                  && (getSafe(modNew, verPath, undefined) !== getSafe(modNew, ['attributes', 'version'], undefined)))
-                || ((getSafe(modNew, fileIdPath, undefined) !== getSafe(mod, fileIdPath, undefined))
-                  && (getSafe(modNew, fileIdPath, undefined) !== getSafe(modNew, ['attributes', 'fileId'], undefined)));
+            const modNew = getSafe(store.getState(),
+                                   ['persistent', 'mods', gameId, mod.id], undefined);
+
+            const newestVerChanged =
+              getSafe(modNew, newWerP, undefined) !== getSafe(mod, newWerP, undefined);
+            const verChanged =
+              getSafe(modNew, newWerP, undefined) !== getSafe(modNew, verP, undefined);
+            const newestFileIdChanged =
+              getSafe(modNew, newFileIdP, undefined) !== getSafe(mod, newFileIdP, undefined);
+            const fileIdChanged =
+              getSafe(modNew, newFileIdP, undefined) !== getSafe(modNew, fileIdP, undefined);
+
+            const updateFound = (newestVerChanged && verChanged)
+                             || (newestFileIdChanged && fileIdChanged);
 
             if (updateFound) {
               if (forceFull && !filtered.has(mod.id)) {
                 log('warn', '[update check] Mod update would have been missed with regular check', {
                   modId: mod.id,
                   lastUpdateTime: getSafe(mod, ['attributes', 'lastUpdateTime'], 0),
-                  'before.newestVersion': getSafe(mod, verPath, undefined),
-                  'before.newestFileId': getSafe(mod, fileIdPath, undefined),
-                  'after.newestVersion': getSafe(modNew, verPath, undefined),
-                  'after.newestFileId': getSafe(modNew, fileIdPath, undefined),
+                  'before.newestVersion': getSafe(mod, newWerP, undefined),
+                  'before.newestFileId': getSafe(mod, newFileIdP, undefined),
+                  'after.newestVersion': getSafe(modNew, newWerP, undefined),
+                  'after.newestFileId': getSafe(modNew, newFileIdP, undefined),
                 });
                 updatesMissed.push(mod);
               } else {
                 log('info', '[update check] Mod update detected', {
                   modId: mod.id,
                   lastUpdateTime: getSafe(mod, ['attributes', 'lastUpdateTime'], 0),
-                  'before.newestVersion': getSafe(mod, verPath, undefined),
-                  'before.newestFileId': getSafe(mod, fileIdPath, undefined),
-                  'after.newestVersion': getSafe(modNew, verPath, undefined),
-                  'after.newestFileId': getSafe(modNew, fileIdPath, undefined),
+                  'before.newestVersion': getSafe(mod, newWerP, undefined),
+                  'before.newestFileId': getSafe(mod, newFileIdP, undefined),
+                  'after.newestVersion': getSafe(modNew, newWerP, undefined),
+                  'after.newestFileId': getSafe(modNew, newFileIdP, undefined),
                 });
               }
 
@@ -527,8 +539,9 @@ export function checkModVersionsImpl(
             tStore.dispatch(addNotification({
               id: 'check-update-progress',
               type: 'info',
-              message: 'Full update found {{count}} updates that the regular check would have missed. '
-                      + 'Please send in a feedback with your log attached to help debug the cause.',
+              message:
+                'Full update found {{count}} updates that the regular check would have missed. '
+                + 'Please send in a feedback with your log attached to help debug the cause.',
               replace: {
                 count: updatesMissed.length,
               },

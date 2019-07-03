@@ -1,7 +1,7 @@
 import { IExtensionApi } from '../../types/IExtensionContext';
+import * as fs from '../../util/fs';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
 import { log } from '../../util/log';
-import * as fs from '../../util/fs';
 import { truthy } from '../../util/util';
 
 import { IDeployedFile, IDeploymentMethod } from './types/IDeploymentMethod';
@@ -24,10 +24,8 @@ function ensureWritable(api: IExtensionApi, modPath: string): Promise<void> {
       { label: 'Allow access' },
     ]).then(result => (result.action === 'Cancel')
       ? Promise.reject(new UserCanceled())
-      : Promise.resolve()
-    ));
+      : Promise.resolve()));
 }
-
 
 /**
  * activate a list of mod

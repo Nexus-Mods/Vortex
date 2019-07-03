@@ -357,14 +357,16 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
         id: 'staged_changed',
         name: 'Staged file modified',
         description: 'Last time the stage file (the one in the mod staging folder) was modified',
-        calc: (file: IFileEntry, t) => (file.sourceModified !== undefined) ? file.sourceModified.toLocaleString() : '',
+        calc: (file: IFileEntry, t) => (file.sourceModified !== undefined)
+                                       ? file.sourceModified.toLocaleString() : '',
         placement: 'table',
         edit: {},
       }, {
         id: 'deployment_changed',
         name: 'Deployed file modified',
         description: 'Last time the deployed file (the one in the game folder) was modified',
-        calc: (file: IFileEntry) => (file.destModified !== undefined) ? file.destModified.toLocaleString() : '',
+        calc: (file: IFileEntry) => (file.destModified !== undefined)
+                                    ? file.destModified.toLocaleString() : '',
         placement: 'table',
         edit: {},
       }, {

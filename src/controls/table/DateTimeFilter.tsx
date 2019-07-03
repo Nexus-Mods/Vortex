@@ -1,7 +1,7 @@
 import { Button } from '../../controls/TooltipControls';
 import { IFilterProps, ITableFilter } from '../../types/ITableAttribute';
 import { ComponentEx } from '../../util/ComponentEx';
-import { getLocale, getDateFormat } from '../../util/datelocales';
+import { getDateFormat, getLocale } from '../../util/datelocales';
 import { truthy } from '../../util/util';
 
 import * as React from 'react';

@@ -15,7 +15,9 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import { ControlLabel, FormGroup, HelpBlock,
          ListGroup, ListGroupItem } from 'react-bootstrap';
-import {DragSource, DropTarget, DragSourceMonitor, DropTargetSpec, DragSourceSpec, DragSourceConnector, DropTargetConnector, DropTargetMonitor, ConnectDropTarget, ConnectDragSource} from 'react-dnd';
+import {ConnectDragSource, ConnectDropTarget,
+        DragSource, DragSourceConnector, DragSourceMonitor, DragSourceSpec,
+        DropTarget, DropTargetConnector, DropTargetMonitor, DropTargetSpec} from 'react-dnd';
 import {findDOMNode} from 'react-dom';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';

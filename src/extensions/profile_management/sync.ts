@@ -1,7 +1,7 @@
 import { UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
-import {log} from '../../util/log';
 import {copyFileAtomic} from '../../util/fsAtomic';
+import {log} from '../../util/log';
 
 import * as Promise from 'bluebird';
 import * as path from 'path';

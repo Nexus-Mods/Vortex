@@ -16,7 +16,6 @@ import * as React from 'react';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 
-
 const UPDATE_FREQUENCY_MS = 1000;
 
 interface IBaseProps {
@@ -74,7 +73,7 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
     window.addEventListener('beforeunload', () => {
       win.removeListener('focus', this.onFocus);
       win.removeListener('blur', this.onBlur);
-    })
+    });
   }
 
   public componentWillUnmount() {

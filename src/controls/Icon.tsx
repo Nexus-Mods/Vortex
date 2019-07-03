@@ -3,8 +3,8 @@ import { log } from '../util/log';
 import * as Promise from 'bluebird';
 // using fs directly because the svg may be bundled inside the asar so
 // we need the electron-fs hook here
-import * as fs from 'fs';
 import { remote } from 'electron';
+import * as fs from 'fs';
 import * as path from 'path';
 import * as React from 'react';
 

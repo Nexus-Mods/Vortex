@@ -2,7 +2,7 @@ import getDownloadPath from '../extensions/download_management/util/getDownloadP
 import resolvePath, { pathDefaults } from '../extensions/mod_management/util/resolvePath';
 import { IState } from '../types/IState';
 
-import { setDownloadPath, setInstallPath, completeMigration } from '../actions';
+import { completeMigration, setDownloadPath, setInstallPath } from '../actions';
 import * as fs from '../util/fs';
 import makeCI from '../util/makeCaseInsensitive';
 
@@ -96,9 +96,11 @@ function dialogProm(window: BrowserWindow, type: string, title: string,
 function moveDownloads_0_16(window: BrowserWindow, store: Redux.Store<IState>): Promise<void> {
   const state = store.getState();
   log('info', 'importing downloads from pre-0.16.0 version');
-  return dialogProm(window, 'info', 'Moving Downloads',
-                    'On the next screen, please select an empty directory where all your downloads from Vortex '
-                    + '(for all games) will be placed', ['Next'])
+  return dialogProm(window,
+                    'info', 'Moving Downloads',
+                    'On the next screen, please select an empty directory where all your '
+                    + 'downloads from vortex (for all games) will be placed',
+                    ['Next'])
     .then(() => selectDirectory(window, state.settings.downloads.path))
     .then(downloadPath => {
       store.dispatch(setDownloadPath(downloadPath));

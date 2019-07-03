@@ -18,5 +18,5 @@ export default function() {
   (Module as any)._load = patchedLoad(orig);
   return () => {
     (Module as any)._load = orig;
-  }
+  };
 }

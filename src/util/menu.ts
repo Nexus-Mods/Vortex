@@ -108,7 +108,7 @@ export function initApplicationMenu(extensions: ExtensionManager) {
         },
       });
 
-      let copyTranslationsIdx = viewMenu.length;
+      const copyTranslationsIdx = viewMenu.length;
       viewMenu.push({
         label: 'Copy missing translations to clipboard',
         click(item, focusedWindow) {
