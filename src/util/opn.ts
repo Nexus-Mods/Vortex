@@ -1,7 +1,8 @@
-import * as Promise from 'bluebird';
-import * as winapi from 'winapi-bindings';
 import { MissingInterpreter } from './api';
+
+import * as Promise from 'bluebird';
 import opn = require('opn');
+import * as winapi from 'winapi-bindings';
 
 function open(target: string, wait?: boolean): Promise<void> {
   if ((winapi !== undefined) && !wait) {
@@ -11,7 +12,8 @@ function open(target: string, wait?: boolean): Promise<void> {
       return Promise.resolve();
     } catch (err) {
       if (err.errno === 1155) {
-        return Promise.reject(new MissingInterpreter('No default application set up for file type.', err.path));
+        return Promise.reject(
+          new MissingInterpreter('No default application set up for file type.', err.path));
       } else {
         return Promise.reject(err);
       }

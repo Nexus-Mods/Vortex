@@ -72,8 +72,6 @@ export class RateLimitExceeded extends Error {
   }
 }
 
-
-
 /**
  * wrap requests to the Vortex GitHub repo, caching results where appropriate
  *
@@ -119,12 +117,14 @@ class GitHub {
 
     return new Promise((resolve, reject) => {
         const relUrl = url.parse(`${baseUrl}/${request}`);
-        https.get({
+        const options: https.RequestOptions = {
           ..._.pick(relUrl, ['port', 'hostname', 'path']),
           headers: {
             'User-Agent': GitHub.USER_AGENT,
           },
-        }, res => {
+        };
+
+        https.get(options, res => {
           res.setEncoding('utf-8');
           const callsRemaining = parseInt(res.headers['x-ratelimit-remaining'] as string, 10);
           if ((res.statusCode === 403) && (callsRemaining === 0)) {

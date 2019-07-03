@@ -75,7 +75,6 @@ class StarterInfo implements IStarterInfo {
       api.store.dispatch(setToolRunning(info.exePath, Date.now(), info.exclusive));
     };
 
-
     return launcherPromise.then(res => {
       if (res !== undefined) {
         return StarterInfo.runThroughLauncher(res.launcher, info, api, res.addInfo)
@@ -140,7 +139,7 @@ class StarterInfo implements IStarterInfo {
       env: info.environment,
       suggestDeploy: true,
       shell: info.shell,
-      onSpawned: onSpawned,
+      onSpawned,
     })
     .catch(ProcessCanceled, () => undefined)
     .catch(UserCanceled, () => undefined)

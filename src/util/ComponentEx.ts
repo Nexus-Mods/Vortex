@@ -9,7 +9,7 @@ import { WithTranslation, withTranslation } from 'react-i18next';
 export { connect } from 'react-redux';
 export { extend } from './ExtensionProvider';
 
-let translate: any = withTranslation;
+const translate: any = withTranslation;
 
 // react-i18next typings are borked atm, forcing the props of the wrapped class
 // to declare all parameter it injects as non-optional, meaning you're not allowed
@@ -106,7 +106,8 @@ export class StateProxyHandler<T extends object> implements ProxyHandler<T> {
  * @template P
  * @template S
  */
-export class ComponentEx<P, S extends object> extends React.Component<P & Partial<WithTranslation>, S> {
+export class ComponentEx<P, S extends object>
+    extends React.Component<P & Partial<WithTranslation>, S> {
   public static contextTypes: React.ValidationMap<any> = {
     api: PropTypes.object.isRequired,
     menuLayer: PropTypes.object,
@@ -126,7 +127,8 @@ export class ComponentEx<P, S extends object> extends React.Component<P & Partia
   }
 }
 
-export class PureComponentEx<P, S extends object> extends React.PureComponent<P & Partial<WithTranslation>, S> {
+export class PureComponentEx<P, S extends object>
+    extends React.PureComponent<P & Partial<WithTranslation>, S> {
   public static contextTypes: React.ValidationMap<any> = {
     api: PropTypes.object.isRequired,
     menuLayer: PropTypes.object,

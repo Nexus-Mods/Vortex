@@ -115,7 +115,7 @@ function groupMods(mods: IModWithState[], options: IGroupingOptions): IModWithSt
     temp = group(temp, byEnabled);
   }
 
-  return temp.map(group => group.sort(newestFirst));
+  return temp.map(iter => iter.sort(newestFirst));
 }
 
 export default groupMods;

@@ -134,7 +134,7 @@ function testSupported(files: string[]): Promise<ISupportedResult> {
       });
     } catch (err) {
       if (err.message.startsWith('error: 126')) {
-        let newErr = new SetupError(
+        const newErr = new SetupError(
           'Failed to load the fomod support library. This is an indication your .Net '
           + 'installation is invalid or outdated.');
         newErr.stack = err.stack;

@@ -30,7 +30,7 @@ import {showDialog} from '../../actions/notifications';
 import {CheckFunction, IExtensionApi, IExtensionContext} from '../../types/IExtensionContext';
 import {INotificationAction} from '../../types/INotification';
 import { log } from '../../util/log';
-import { activeProfile, activeGameId } from '../../util/selectors';
+import { activeGameId, activeProfile } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { setdefault } from '../../util/util';
 

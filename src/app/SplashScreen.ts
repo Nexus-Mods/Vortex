@@ -1,6 +1,6 @@
+import * as Promise from 'bluebird';
 import getVortexPath from '../util/getVortexPath';
 import { log } from '../util/log';
-import * as Promise from 'bluebird';
 
 class SplashScreen {
   private mWindow: Electron.BrowserWindow = null;

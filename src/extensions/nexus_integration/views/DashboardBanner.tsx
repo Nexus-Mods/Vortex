@@ -9,9 +9,9 @@ import { IValidateKeyData } from '../types/IValidateKeyData';
 
 import * as React from 'react';
 import { Button, Image } from 'react-bootstrap';
+import { WithTranslation } from 'react-i18next';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
-import { WithTranslation } from 'react-i18next';
 
 interface IConnectedProps {
   userInfo: IValidateKeyData;

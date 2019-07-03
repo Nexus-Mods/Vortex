@@ -24,8 +24,8 @@ import update from 'immutability-helper';
 import * as path from 'path';
 import * as React from 'react';
 import { Button, Collapse } from 'react-bootstrap';
-import { generate as shortid } from 'shortid';
 import { WithTranslation } from 'react-i18next';
+import { generate as shortid } from 'shortid';
 
 export interface IBaseProps {
   features: IProfileFeature[];

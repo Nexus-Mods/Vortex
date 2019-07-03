@@ -7,8 +7,8 @@ import { Button } from '../../../controls/TooltipControls';
 import { DialogActions, DialogType, IDialogContent } from '../../../types/IDialog';
 import { IErrorOptions } from '../../../types/IExtensionContext';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import opn from '../../../util/opn';
 import { showError } from '../../../util/message';
+import opn from '../../../util/opn';
 import { setAssociatedWithNXMURLs } from '../actions/settings';
 
 import chromeAllowScheme from '../util/chromeAllowScheme';

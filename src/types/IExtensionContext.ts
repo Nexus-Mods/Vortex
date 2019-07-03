@@ -114,7 +114,8 @@ export interface IDashletOptions {
 
 export type RegisterDashlet =
   (title: string, width: 1 | 2 | 3, height: 1 | 2 | 3 | 4 | 5, position: number,
-   component: React.ComponentClass<any> | React.FunctionComponent<any>, isVisible: (state) => boolean,
+   component: React.ComponentClass<any> | React.FunctionComponent<any>,
+   isVisible: (state) => boolean,
    props: PropsCallback, options: IDashletOptions) => void;
 
 export type RegisterDialog =
@@ -956,8 +957,8 @@ export interface IExtensionContext {
    *     - the extension disables/blocks itself until the migration is done
    *     - the migration is synchronous so that the migrate function doesn't return until it's done.
    * @param {function} migrate called if the running extension version differs from the old one.
-   *                           As soon as the promise returned from this is resolved, the stored version
-   *                           number is updated.
+   *                           As soon as the promise returned from this is resolved, the stored
+   *                           version number is updated.
    */
   registerMigration: (migrate: (oldVersion: string) => Promise<void>) => void;
 

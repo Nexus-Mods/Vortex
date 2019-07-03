@@ -413,7 +413,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
           this.scrollTo(id, false);
         }, 2000);
       } else {
-        console.log('node not found', this.mRowRefs);
+        log('warn', 'node not found', this.mRowRefs);
       }
     } catch (err) {
       if (mayRetry !== false) {
@@ -789,6 +789,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
   private setRowVisible = (rowId: string, visible: boolean) => {
     // turn rows visible asap, turning them invisible can be done when scrolling ends
+    // Important: This was intended as a performance optimisation but it also fixed
+    //   a problem where drag&drop connectors between rows far apart didn't work because
+    //   the source was hidden before while dragging.
     if (visible || (this.mDelayedVisibilityTimer === undefined)) {
       this.mNextVisibility[rowId] = visible;
       this.mDelayedVisibility[rowId] = visible;

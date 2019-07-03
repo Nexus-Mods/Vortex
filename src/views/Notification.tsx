@@ -12,7 +12,7 @@ interface IActionProps {
   t: I18next.TFunction;
   title: string;
   count: number;
-  onTrigger: (actionTitle: string) => void
+  onTrigger: (actionTitle: string) => void;
 }
 
 class Action extends React.Component<IActionProps, {}> {

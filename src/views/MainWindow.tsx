@@ -218,7 +218,11 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     return (
       <React.Suspense fallback={<Spinner className='suspense-spinner' />}>
           {switchingProfile ? this.renderWait() : null}
-          <div key='main' className={classes.join(' ')} style={{ display: switchingProfile ? 'none' : undefined }}>
+          <div
+            key='main'
+            className={classes.join(' ')}
+            style={{ display: switchingProfile ? 'none' : undefined }}
+          >
             <div className='menu-layer' ref={this.setMenuLayer} />
             <FlexLayout id='main-window-content' type='column'>
               {this.renderToolbar(switchingProfile)}
@@ -357,7 +361,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     const { mainPage, objects, tabsMinimized } = this.props;
     const pages = objects.filter(page => {
       try {
-        return (page.group === key) && page.visible(); 
+        return (page.group === key) && page.visible();
       } catch (err) {
         log('error', 'Failed to determine page visibility', { error: err.message, page: page.id });
         return false;

@@ -46,6 +46,14 @@
           "args": ["run", "buildwatch"],
           "problemMatcher": "$tsc",
           "group": "build"
+        },
+        {
+          "label": "lint",
+          "type": "npm",
+          "script": "lint",
+          "problemMatcher": {
+            "base": "$tslint5"
+          }
         }
     ]
 }

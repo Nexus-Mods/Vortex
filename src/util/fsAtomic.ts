@@ -1,8 +1,9 @@
 import * as fs from './fs';
-import * as Promise from 'bluebird';
-import { file } from 'tmp';
-import { createHash } from 'crypto';
 import { log } from './log';
+
+import * as Promise from 'bluebird';
+import { createHash } from 'crypto';
+import { file } from 'tmp';
 
 export function checksum(input: Buffer): string {
   return createHash('md5')
@@ -141,4 +142,3 @@ export function copyFileAtomic(srcPath: string,
         return Promise.reject(err);
       });
 }
-

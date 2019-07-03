@@ -93,7 +93,7 @@ export class IconButton extends React.Component<IconButtonProps, {}> {
     if (React.Children.count(this.props.children) > 0) {
       buttonProps['className'] += ' has-children';
     }
-    
+
     if (this.props.vertical) {
       buttonProps['className'] += ' icon-button-vertical';
     } else {
@@ -248,7 +248,7 @@ export type IconProps = ITooltipProps & ITooltipIconProps;
  */
 export class Icon extends React.Component<IconProps, {}> {
   public render() {
-   const relayProps: any = _.omit(this.props, ['tooltip', 'placement']);
+    const relayProps: any = _.omit(this.props, ['tooltip', 'placement']);
 
     const classes = ['fake-link'].concat((this.props.className || '').split(' '));
 

@@ -29,10 +29,10 @@ function createTitle(type: string, error: IError, hash: string) {
 }
 
 interface IErrorContext {
-  [id: string]: string,
+  [id: string]: string;
 }
 
-const context: IErrorContext = {};
+const globalContext: IErrorContext = {};
 
 function isWine() {
   if (process.platform !== 'win32') {
@@ -69,7 +69,7 @@ ${error.message}`,
 \`\`\`
 ${error.title}
 \`\`\`
-`)
+`);
   }
 
   if (error.details) {
@@ -83,7 +83,7 @@ ${error.details}
     sections.push(`#### Context
 \`\`\`
 ${Object.keys(context).map(key => `${key} = ${context[key]}`)}
-\`\`\``)
+\`\`\``);
   }
 
   if (error.path) {
@@ -183,7 +183,8 @@ export function sendReportFile(fileName: string): Promise<IFeedbackResponse> {
     .then(reportData => {
       const {type, error, labels, reporterId, reportProcess, sourceProcess, context} =
         JSON.parse(reportData.toString());
-      return sendReport(type, error, context, labels, reporterId, reportProcess, sourceProcess, undefined);
+      return sendReport(type, error, context, labels, reporterId,
+                        reportProcess, sourceProcess, undefined);
   });
 }
 
@@ -234,7 +235,7 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
     win = null;
   }
 
-  const contextNow = { ...context };
+  const contextNow = { ...globalContext };
 
   log('error', 'unrecoverable error', { error, process: process.type });
 
@@ -313,7 +314,8 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
  * render error message for internal processing (issue tracker and such).
  * It's important this doesn't translate the error message or lose information
  */
-export function toError(input: any, title?: string, options?: IErrorOptions, sourceStack?: string): IError {
+export function toError(input: any, title?: string,
+                        options?: IErrorOptions, sourceStack?: string): IError {
   let ten = i18next.getFixedT('en');
   try {
     ten('dummy');
@@ -335,7 +337,7 @@ export function toError(input: any, title?: string, options?: IErrorOptions, sou
       message: t(input.message),
       title,
       subtitle: (options || {}).message,
-      stack: stack,
+      stack,
       details: Object.keys(input).map(key => `${key}: ${input[key]}`).join('\n'),
     };
   }
@@ -405,11 +407,11 @@ export function toError(input: any, title?: string, options?: IErrorOptions, sou
  * Please keep in mind that the error context will remain set
  * until it's cleared with clearErrorContext and use "withContext" where possible
  * to ensure the context gets reset
- * @param id 
- * @param value 
+ * @param id context id
+ * @param value context value
  */
 export function setErrorContext(id: string, value: string) {
-  context[id] = value;
+  globalContext[id] = value;
 }
 
 /**
@@ -417,7 +419,7 @@ export function setErrorContext(id: string, value: string) {
  * @param id id of the context
  */
 export function clearErrorContext(id: string) {
-  delete context[id];
+  delete globalContext[id];
 }
 
 /**
@@ -435,7 +437,7 @@ export function withContext(id: string, value: string, fun: () => Promise<any>) 
 
 /**
  * attach context to an error that may be caught after the global context has been reset
- * @param err 
+ * @param err the error to add context to
  */
 export function contextify(err: Error): Error {
   (err as any).context = getErrorContext();
@@ -443,5 +445,5 @@ export function contextify(err: Error): Error {
 }
 
 export function getErrorContext(): IErrorContext {
-  return { ...context };
+  return { ...globalContext };
 }

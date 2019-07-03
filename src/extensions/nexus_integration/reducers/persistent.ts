@@ -18,7 +18,7 @@ export const persistentReducer: IReducerSpec = {
     userInfo: undefined,
     newestVersion: undefined,
     lastUpdate: {
-    }
+    },
   },
   verifiers: {
     userInfo: {

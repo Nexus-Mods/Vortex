@@ -593,6 +593,10 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
     const hasModActivity = (modActivity.length > 0);
 
+    const applyDisabled = !this.pathsChanged()
+                        || (validationState.state === 'error')
+                        || hasModActivity;
+
     return (
       <FormGroup id='install-path-form' validationState={validationState.state}>
         <ControlLabel>
@@ -634,7 +638,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                 </Button>
               ) : null}
               <BSButton
-                disabled={!this.pathsChanged() || (validationState.state === 'error') || hasModActivity}
+                disabled={applyDisabled}
                 onClick={this.applyPaths}
               >
                 {hasModActivity ? <Spinner /> : t('Apply')}
@@ -801,7 +805,8 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
     },
     onShowDialog: (type, title, content, actions) =>
       dispatch(showDialog(type, title, content, actions)),
-    onShowError: (message: string, details: string | Error, allowReport?: boolean, isBBCode?: boolean): void => {
+    onShowError: (message: string, details: string | Error,
+                  allowReport?: boolean, isBBCode?: boolean): void => {
       showError(dispatch, message, details, { allowReport, isBBCode });
     },
   };

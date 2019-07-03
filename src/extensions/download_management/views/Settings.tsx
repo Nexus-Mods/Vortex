@@ -5,6 +5,7 @@ import More from '../../../controls/More';
 import Spinner from '../../../controls/Spinner';
 import { Button } from '../../../controls/TooltipControls';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
+import { IDownload, IState } from '../../../types/IState';
 import { ValidationState } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { CleanupFailedException, InsufficientDiskSpace, NotFound, UnsupportedOperatingSystem,
@@ -15,7 +16,6 @@ import { log } from '../../../util/log';
 import { showError } from '../../../util/message';
 import opn from '../../../util/opn';
 import { getSafe } from '../../../util/storeHelper';
-import { IDownload, IState } from '../../../types/IState';
 import { testPathTransfer, transferPath } from '../../../util/transferPath';
 import { isChildPath, isPathValid } from '../../../util/util';
 import { setDownloadPath, setMaxDownloads } from '../actions/settings';

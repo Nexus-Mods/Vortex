@@ -487,8 +487,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
           app.getFileIcon(filePath, { size: 'normal' }, (err: Error, icon: Electron.NativeImage) =>
             (err !== null)
               ? reject(err)
-              : resolve(icon)
-          );
+              : resolve(icon));
         })
         .then(icon => fs.writeFileAsync(destPath, icon.toPNG()))
         : fs.copyAsync(filePath, destPath))

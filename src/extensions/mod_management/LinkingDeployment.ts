@@ -1,6 +1,6 @@
 import {addNotification} from '../../actions/notifications';
 import {IExtensionApi} from '../../types/IExtensionContext';
-import { UserCanceled, getGame } from '../../util/api';
+import { getGame, UserCanceled } from '../../util/api';
 import * as fs from '../../util/fs';
 import {Normalize} from '../../util/getNormalizeFunc';
 import {log} from '../../util/log';
@@ -102,7 +102,8 @@ abstract class LinkingActivator implements IDeploymentMethod {
           onComplete: queueResolve,
         };
         lastDeployment.forEach(file => {
-          const outputPath = [file.target || null, file.relPath].filter(i => i !== null).join(path.sep);
+          const outputPath = [file.target || null, file.relPath]
+            .filter(i => i !== null).join(path.sep);
           const key = this.mNormalize(outputPath);
           this.mContext.previousDeployment[key] = file;
           if (!clean) {

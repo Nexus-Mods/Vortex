@@ -73,8 +73,6 @@ function testRef(mod: IModLookupInfo, modId: string, ref: IModReference): boolea
   return true;
 }
 
-
-
 export function testModReference(mod: IMod | IModLookupInfo, reference: IModReference) {
   if (mod === undefined) {
     return false;

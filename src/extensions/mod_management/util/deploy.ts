@@ -39,7 +39,7 @@ export function purgeMods(api: IExtensionApi): Promise<void> {
     return Promise.reject(new NoDeployment());
   }
 
-  if (Object.keys(getSafe(state, ['session', 'base', 'toolsRunning'], [])).length > 0) {
+  if (Object.keys(getSafe(state, ['session', 'base', 'toolsRunning'], {})).length > 0) {
     api.sendNotification({
       type: 'info',
       id: 'purge-not-possible',
