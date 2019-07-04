@@ -28,7 +28,8 @@
     "arrow-parens": false,
     "no-duplicate-imports": false,
     "no-implicit-dependencies": false,
-    "no-bitwise": false
+    "no-bitwise": false,
+    "no-submodule-imports": [true, "date-fns"]
   },
   "rulesDirectory": []
 }

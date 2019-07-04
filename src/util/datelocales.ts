@@ -31,7 +31,6 @@ import * as uk from 'date-fns/locale/uk';
 import * as vi from 'date-fns/locale/vi';
 import * as zh_cn from 'date-fns/locale/zh-CN';
 
-
 const langMap = {
   af, ar_sa, bn, de, el, en_ca, en_gb, en_us,
   eo, es, et, fi, fr, gl, he, hu, id, is, it, lt,
@@ -44,7 +43,7 @@ const langMap = {
 };
 
 export function getLocale(langCode: string) {
-  let code = langCode.split('-').map(k => k.toLowerCase());
+  const code = langCode.split('-').map(k => k.toLowerCase());
   if ((code.length > 1) && (langMap[`${code[0]}_${code[1]}`] !== undefined)) {
     return langMap[`${code[0]}_${code[1]}`];
   } else if ((code.length >= 1) && (langMap[code[0]] !== undefined)) {
@@ -77,7 +76,7 @@ export function getDateFormat(langCode: string) {
   }
 
   const formatted2 = sampleDate2.toLocaleString(langCode);
-  let pad = formatted2.indexOf('05') !== -1;
+  const pad = formatted2.indexOf('05') !== -1;
 
   return formatted
     .replace('12', pad ? 'MM' : 'M')
