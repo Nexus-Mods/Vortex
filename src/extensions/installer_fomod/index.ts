@@ -53,7 +53,7 @@ function transformError(err: any): Error {
       } else if (err.FileName.indexOf('node_modules\\fomod-installer') !== -1) {
         const fileName = err.FileName.replace(/^file:\/*/, '');
         result = new SetupError(`Your installation is missing "${fileName}" which is part of the `
-          + 'Vortex installer. This would only happen if you use an inofficial installer or the '
+          + 'Vortex installer. This would only happen if you use an unofficial installer or the '
           + 'Vortex installation was modified.');
       }
     }
