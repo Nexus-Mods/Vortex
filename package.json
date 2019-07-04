@@ -9,7 +9,7 @@
     "url": "https://github.com/Nexus-Mods/Vortex"
   },
   "vortex": {
-    "electron": "4.2.4"
+    "electron": "4.2.6"
   },
   "scripts": {
     "_assets_out": "node InstallAssets.js out",
@@ -31,6 +31,7 @@
     "clean": "yarn add rm-local-modules && rm-local-modules && yarn install --check-files",
     "preinstall": "git submodule update --init --recursive",
     "test": "jest --no-cache",
+    "lint": "tslint --project . -t verbose || echo 0",
     "build": "yarn run build_rest && tsc -p .",
     "buildwatch": "yarn run build_rest && tsc -p . -w"
   },
@@ -131,7 +132,7 @@
     "copyfiles": "^2.1.0",
     "cross-env": "^5.2.0",
     "devtron": "^1.4.0",
-    "electron": "^4.2.4",
+    "electron": "^4.2.6",
     "electron-builder": "20.15.0",
     "electron-devtools-installer": "^2.2.4",
     "electron-download-tf": "^4.3.4",
@@ -202,6 +203,7 @@
     "lodash": "^4.17.11",
     "minimatch": "^3.0.4",
     "modmeta-db": "Nexus-Mods/modmeta-db",
+    "native-errors": "Nexus-Mods/node-native-errors",
     "nbind": "^0.3.15",
     "nexus-api": "Nexus-Mods/node-nexus-api",
     "node-7z": "Nexus-Mods/node-7z",

@@ -12,10 +12,12 @@ const earlyErrHandler = (evt) => {
 // turn all error logs into a single parameter. The reason is that (at least in production)
 // these only get reported by the main process and due to a "bug" only one parameter gets
 // relayed.
+// tslint:disable-next-line:no-console
 const oldErr = console.error;
+// tslint:disable-next-line:no-console
 console.error = (...args) => {
   oldErr(args.concat(' ') + '\n' + (new Error()).stack);
-}
+};
 
 window.addEventListener('error', earlyErrHandler);
 window.addEventListener('unhandledrejection', earlyErrHandler);
@@ -73,7 +75,10 @@ import { ipcRenderer, remote, webFrame } from 'electron';
 import { forwardToMain, getInitialStateRenderer, replayActionRenderer } from 'electron-redux';
 import { EventEmitter } from 'events';
 import I18next from 'i18next';
+import * as nativeErr from 'native-errors';
 import * as React from 'react';
+import { DragDropContextProvider } from 'react-dnd';
+import HTML5Backend from 'react-dnd-html5-backend';
 import * as ReactDOM from 'react-dom';
 import { I18nextProvider } from 'react-i18next';
 import { Provider } from 'react-redux';
@@ -82,23 +87,34 @@ import thunkMiddleware from 'redux-thunk';
 
 import crashDump from 'crash-dump';
 
-// ensures tsc includes this dependency
+import { setLanguage } from './actions';
 import { ThunkStore } from './types/IExtensionContext';
 import { UserCanceled } from './util/CustomErrors';
 import {} from './util/extensionRequire';
 import { reduxLogger } from './util/reduxLogger';
 import { getSafe } from './util/storeHelper';
 import { getAllPropertyNames } from './util/util';
-import { setLanguage } from './actions';
-import { DragDropContextProvider } from 'react-dnd';
-import HTML5Backend from 'react-dnd-html5-backend';
 
 log('debug', 'renderer process started', { pid: process.pid });
 
 const tempPath = path.join(remote.app.getPath('userData'), 'temp');
 remote.app.setPath('temp', tempPath);
 
-const deinitCrashDump = crashDump(path.join(remote.app.getPath('temp'), 'dumps', `crash-renderer-${Date.now()}.dmp`));
+const deinitCrashDump =
+  crashDump(path.join(remote.app.getPath('temp'), 'dumps', `crash-renderer-${Date.now()}.dmp`));
+
+// on windows, inject the native error code into "unknown" errors to help track those down
+if (process.platform === 'win32') {
+  nativeErr.InitHook();
+  const oldPrep = Error.prepareStackTrace;
+  Error.prepareStackTrace = (error, stack) => {
+    if (error['code'] === 'UNKNOWN') {
+      const native = nativeErr.GetLastError();
+      error.message = `${native.message} (${native.code})`;
+    }
+    return oldPrep(error, stack);
+  };
+}
 
 // allow promises to be cancelled.
 Promise.config({
@@ -180,6 +196,7 @@ function errorHandler(evt: any) {
     // By logging this error here we ensure that even a suppressed error will be reported to
     // user _if_ it managed to prevent the application start. Of course it would be nicer
     // if there was a proper api for that but it's quite the fringe case I think
+    // tslint:disable-next-line:no-console
     console.error(error.stack);
     return true;
   } else {
@@ -193,7 +210,7 @@ window.removeEventListener('error', earlyErrHandler);
 window.removeEventListener('unhandledrejection', earlyErrHandler);
 window.addEventListener('close', () => {
   deinitCrashDump();
-})
+});
 
 const eventEmitter: NodeJS.EventEmitter = new EventEmitter();
 
@@ -202,7 +219,8 @@ let enhancer = null;
 if (process.env.NODE_ENV === 'development') {
   // tslint:disable-next-line:no-var-requires
   const freeze = require('redux-freeze');
-  const devtool = (window as any).__REDUX_DEVTOOLS_EXTENSION__ && (window as any).__REDUX_DEVTOOLS_EXTENSION__();
+  const devtool = (window as any).__REDUX_DEVTOOLS_EXTENSION__
+                && (window as any).__REDUX_DEVTOOLS_EXTENSION__();
   enhancer = compose(
     applyMiddleware(
       forwardToMain,
@@ -214,7 +232,7 @@ if (process.env.NODE_ENV === 'development') {
   enhancer = compose(
     applyMiddleware(
       forwardToMain,
-      ...middleware
+      ...middleware,
     ),
   );
 }

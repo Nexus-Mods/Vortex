@@ -7274,6 +7274,14 @@ napi-build-utils@^1.0.1:
   resolved "https://registry.yarnpkg.com/napi-build-utils/-/napi-build-utils-1.0.1.tgz#1381a0f92c39d66bf19852e7873432fc2123e508"
   integrity sha512-boQj1WFgQH3v4clhu3mTNfP+vOBxorDlE8EKiMjUlLG3C4qAESnn9AxIOkFgTR2c9LtzNjPrjS60cT27ZKBhaA==
 
+native-errors@Nexus-Mods/node-native-errors:
+  version "0.0.2"
+  resolved "https://codeload.github.com/Nexus-Mods/node-native-errors/tar.gz/18d9da8790b53a0ae3c153a79abdf88585aa4e6e"
+  dependencies:
+    autogypi "^0.2.2"
+    nan "^2.14.0"
+    node-gyp "^5.0.0"
+
 natural-compare@^1.4.0:
   version "1.4.0"
   resolved "https://registry.yarnpkg.com/natural-compare/-/natural-compare-1.4.0.tgz#4abebfeed7541f2c27acfb29bdbbd15c8d5ba4f7"

@@ -12,6 +12,7 @@
  */
 
 import { ProcessCanceled, UserCanceled } from './CustomErrors';
+import { createErrorReport } from './errorHandling';
 import { log } from './log';
 import { truthy } from './util';
 
@@ -68,8 +69,8 @@ const RETRY_ERRORS = new Set(['EPERM', 'EBUSY', 'EIO', 'EBADF', 'UNKNOWN']);
 const simfail = (process.env.SIMULATE_FS_ERRORS === 'true')
   ? (func: () => PromiseBB<any>): PromiseBB<any> => {
     if (Math.random() < 0.25) {
-      let code = Math.random() < 0.33 ? 'EBUSY' : Math.random() < 0.5 ? 'EIO' : 'UNKNOWN';
-      let res: any = new Error(`fake error ${code}`);
+      const code = Math.random() < 0.33 ? 'EBUSY' : Math.random() < 0.5 ? 'EIO' : 'UNKNOWN';
+      const res: any = new Error(`fake error ${code}`);
       res.code = code;
       res.path = 'foobar file';
       return PromiseBB.reject(res);
@@ -150,9 +151,18 @@ function unlockConfirm(filePath: string): PromiseBB<boolean> {
     : PromiseBB.resolve(choice === 2);
 }
 
-function unknownErrorRetry(filePath: string): PromiseBB<boolean> {
+function unknownErrorRetry(filePath: string, err: Error): PromiseBB<boolean> {
   if ((dialog === undefined) || !truthy(filePath)) {
     return PromiseBB.resolve(false);
+  }
+
+  const buttons = [
+    'Cancel',
+    'Retry',
+  ];
+
+  if ((err['_native'] !== undefined) && (err['_native'].code !== 0)) {
+    buttons.unshift('Cancel and Report');
   }
 
   const options: Electron.MessageBoxOptions = {
@@ -165,10 +175,7 @@ function unknownErrorRetry(filePath: string): PromiseBB<boolean> {
       + `1. "${filePath}" is a removable, possibly network drive which has been disconnected.\n`
       + '2. An External application has interferred with file operations'
       + '(Anti-virus, Disk Management Utility, Virus)\n',
-    buttons: [
-      'Cancel',
-      'Retry',
-    ],
+    buttons,
     type: 'warning',
     noLink: true,
   };
@@ -176,9 +183,20 @@ function unknownErrorRetry(filePath: string): PromiseBB<boolean> {
   const choice = dialog.showMessageBox(
     remote !== undefined ? remote.getCurrentWindow() : null,
     options);
-  return (choice === 0)
-    ? PromiseBB.reject(new UserCanceled())
-    : PromiseBB.resolve(true);
+
+  if (buttons[choice] === 'Cancel and Report') {
+    const nat = err['_native'];
+    createErrorReport('Unknown error', {
+      message: `${nat.message} (${nat.code})`,
+      stack: err.stack,
+      path: filePath,
+    }, {}, ['bug'], {});
+    return PromiseBB.reject(new UserCanceled());
+  }
+
+  return (buttons[choice] === 'Retry')
+    ? PromiseBB.resolve(true)
+    : PromiseBB.reject(new UserCanceled());
 }
 
 function busyRetry(filePath: string): PromiseBB<boolean> {
@@ -256,7 +274,7 @@ function errorRepeat(error: NodeJS.ErrnoException, filePath: string, retries: nu
         }
       });
   } else if (error.code === 'UNKNOWN') {
-    return unknownErrorRetry(filePath);
+    return unknownErrorRetry(filePath, error);
   } else {
     return PromiseBB.resolve(false);
   }
@@ -275,7 +293,6 @@ function restackErr(error: Error, stackErr: Error): Error {
 function errorHandler(error: NodeJS.ErrnoException,
                       stackErr: Error, tries: number,
                       showDialogCallback?: () => boolean): PromiseBB<void> {
-
   return errorRepeat(error, (error as any).dest || error.path, tries, showDialogCallback)
     .then(repeat => repeat
       ? PromiseBB.resolve()
@@ -385,8 +402,9 @@ function selfCopyCheck(src: string, dest: string) {
  * @param options copy options (see documentation for fs)
  */
 export function copyAsync(src: string, dest: string,
-                          options?: fs.CopyOptions & { noSelfCopy?: boolean,
-                          showDialogCallback?: () => boolean }): PromiseBB<void> {
+                          options?: fs.CopyOptions & {
+                            noSelfCopy?: boolean,
+                            showDialogCallback?: () => boolean }): PromiseBB<void> {
   const stackErr = new Error();
   // fs.copy in fs-extra has a bug where it doesn't correctly avoid copying files onto themselves
   const check = (options !== undefined) && options.noSelfCopy
@@ -458,7 +476,7 @@ function unlinkInt(filePath: string, stackErr: Error, tries: number,
             return handle();
           })
           .catch(errInner => errInner instanceof UserCanceled
-            ? Promise.reject(errInner) 
+            ? Promise.reject(errInner)
             : handle());
       } else {
         return handle();
@@ -700,7 +718,8 @@ export function makeFileWritableAsync(filePath: string): PromiseBB<void> {
   const wantedAttributes = process.platform === 'win32' ? parseInt('0666', 8) : parseInt('0600', 8);
   return fs.statAsync(filePath).then(stat => {
     if (!stat.isFile()) {
-      const err: NodeJS.ErrnoException = new Error(`Expected a file, found a directory: "${filePath}"`);
+      const err: NodeJS.ErrnoException =
+        new Error(`Expected a file, found a directory: "${filePath}"`);
       err.code = 'EISDIR';
       err.path = filePath;
       err.syscall = 'stat';
@@ -763,7 +782,7 @@ function raiseUACDialog<T>(t: I18next.TFunction,
   } else {
     return PromiseBB.reject(new UserCanceled());
   }
-};
+}
 
 export function forcePerm<T>(t: I18next.TFunction,
                              op: () => PromiseBB<T>,

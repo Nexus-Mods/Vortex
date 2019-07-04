@@ -251,7 +251,9 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
     },
   };
 
-  if ((options !== undefined) && (options.attachments !== undefined) && (options.attachments.length > 0)) {
+  if ((options !== undefined)
+      && (options.attachments !== undefined)
+      && (options.attachments.length > 0)) {
     content.text = (content.text !== undefined ? (content.text + '\n\n') : '')
       + 'Note: If you report this error, the following data will be added to the report:\n'
       + options.attachments.map(attach => ` - ${attach.description}`).join('\n');
@@ -289,7 +291,7 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
 
   actions.push({ label: 'Close', default: true });
 
-  let haveMessage = (options !== undefined) && (options.message !== undefined);
+  const haveMessage = (options !== undefined) && (options.message !== undefined);
 
   dispatch(addNotification({
     id: (options !== undefined) ? options.id : undefined,
@@ -324,9 +326,9 @@ export function prettifyNodeErrorMessage(err: any): IPrettifiedError {
     };
   } else if (err.code === 'EPERM') {
     const filePath = err.path || err.filename;
-    let firstLine = filePath !== undefined
+    const firstLine = filePath !== undefined
       ? 'Vortex needs to access "{{filePath}}" but it\'s write protected.\n'
-      : 'Vortex needs to access a file that is write protected.\n'
+      : 'Vortex needs to access a file that is write protected.\n';
     return {
       message: firstLine
             + 'When you configure directories and access rights you need to ensure Vortex can '
@@ -416,10 +418,20 @@ export function prettifyNodeErrorMessage(err: any): IPrettifiedError {
       allowReport: false,
     };
   } else if (err.code === 'UNKNOWN') {
-    return {
-      message: 'An unknown error occurred. What this means is that Windows or the framework don\'t '
-             + 'provide any useful information to diagnose this problem. '
-             + 'Please do not report this issue without saying what exactly you were doing.',
+    if ((err['_native'] !== undefined) && (err['_native'].code !== 0)) {
+      return {
+        message: 'An unrecognized error occurred. The error may contain information '
+               + 'useful for handling it better in the future so please do report it (once): \n'
+               + `${err['_native'].message} (${err['_native'].code})`,
+
+        allowReport: true,
+      };
+    } else {
+      return {
+        message: 'An unknown error occurred. What this means is that Windows or the framework '
+          + 'don\'t provide any useful information to diagnose this problem. '
+          + 'Please do not report this issue without saying what exactly you were doing.',
+      };
     }
   }
 
