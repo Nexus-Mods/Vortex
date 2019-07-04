@@ -4,6 +4,7 @@
 
 const earlyErrHandler = (evt) => {
   const {error} = evt;
+  // tslint:disable-next-line:no-shadowed-variable
   const { remote } = require('electron');
   remote.dialog.showErrorBox('Unhandled error', error.stack);
   remote.app.exit(1);
@@ -30,6 +31,7 @@ if (process.env.NODE_ENV === 'development') {
   const rebuildRequire = require('./util/requireRebuild').default;
   rebuildRequire();
   process.traceProcessWarnings = true;
+  // tslint:disable-next-line:no-var-requires
   const sourceMapSupport = require('source-map-support');
   sourceMapSupport.install();
 } else {
@@ -112,7 +114,9 @@ if (process.platform === 'win32') {
       const native = nativeErr.GetLastError();
       error.message = `${native.message} (${native.code})`;
     }
-    return oldPrep(error, stack);
+    return oldPrep !== undefined
+      ? oldPrep(error, stack)
+      : stack;
   };
 }
 
