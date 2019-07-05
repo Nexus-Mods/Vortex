@@ -4325,10 +4325,10 @@ electron-updater@^4.0.6:
     semver "^5.6.0"
     source-map-support "^0.5.9"
 
-electron@^4.2.4:
-  version "4.2.4"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-4.2.4.tgz#68ca7bd4ff2c16b9205549322f0f1cda4ebc9ff9"
-  integrity sha512-d4wEwJluMsRyRgbukLmFVTb6l1J+mc3RLB1ctbpMlSWDFvs+zknPWa+cHBzTWwrdgwINLddr69qsAW1ku6FqYw==
+electron@^4.2.6:
+  version "4.2.6"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-4.2.6.tgz#533763a7970136011fd36e4a5f2b3715b2015994"
+  integrity sha512-qnaQXQcRKugXoQ7/4J4lYKzyU/RJMK/qrIGyC8KsgGG/IVVagolNPYy7QrsGpJ7YwpQHzNjwtDNaJ/UI7VTCyA==
   dependencies:
     "@types/node" "^10.12.18"
     electron-download "^4.1.0"
@@ -7275,8 +7275,8 @@ napi-build-utils@^1.0.1:
   integrity sha512-boQj1WFgQH3v4clhu3mTNfP+vOBxorDlE8EKiMjUlLG3C4qAESnn9AxIOkFgTR2c9LtzNjPrjS60cT27ZKBhaA==
 
 native-errors@Nexus-Mods/node-native-errors:
-  version "0.0.2"
-  resolved "https://codeload.github.com/Nexus-Mods/node-native-errors/tar.gz/18d9da8790b53a0ae3c153a79abdf88585aa4e6e"
+  version "0.0.3"
+  resolved "https://codeload.github.com/Nexus-Mods/node-native-errors/tar.gz/e8e408e4e3b94f7432088cd0f55ff2a3bb8cbe7a"
   dependencies:
     autogypi "^0.2.2"
     nan "^2.14.0"
