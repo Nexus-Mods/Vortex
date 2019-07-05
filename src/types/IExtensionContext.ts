@@ -555,6 +555,14 @@ export interface IExtensionApi {
    * A text can be added, but no promise that it actually looks good in practice
    */
   highlightControl: (selector: string, durationMS: number, text?: string) => void;
+
+  /**
+   * returns a promise that resolves once the ui has been displayed.
+   * This is useful if you have a callback that may be triggered before the ui is
+   * displayed but may require the UI to be processed.
+   * Specifically events can only be sent once this event has been triggered
+   */
+  awaitUI: () => Promise<void>;
 }
 
 export interface IStateVerifier {
@@ -956,6 +964,7 @@ export interface IExtensionContext {
    *       cause "damage"
    *     - the extension disables/blocks itself until the migration is done
    *     - the migration is synchronous so that the migrate function doesn't return until it's done.
+   * Important: Migration happens in the *main process*, not in the renderer process.
    * @param {function} migrate called if the running extension version differs from the old one.
    *                           As soon as the promise returned from this is resolved, the stored
    *                           version number is updated.

@@ -86,6 +86,7 @@ import { I18nextProvider } from 'react-i18next';
 import { Provider } from 'react-redux';
 import { applyMiddleware, compose, createStore } from 'redux';
 import thunkMiddleware from 'redux-thunk';
+import { generate as shortid } from 'shortid';
 
 import crashDump from 'crash-dump';
 
@@ -318,6 +319,28 @@ ipcRenderer.on('relay-event', (sender, event, ...args) => {
   eventEmitter.emit(event, ...args);
 });
 
+ipcRenderer.on('relay-event-with-cb', (sender, event, ...args) => {
+  const id = args[args.length - 1];
+  const cb = (...cbArgs) => {
+    const newCBArgs = cbArgs.map(arg => {
+      if (!(arg instanceof Promise)) {
+        return arg;
+      }
+      const promId = shortid();
+      arg.then(res => {
+        ipcRenderer.send('relay-cb-resolve', promId, res);
+      })
+      .catch(err => {
+        ipcRenderer.send('relay-cb-reject', promId, err);
+      });
+      return { __promise: promId };
+    });
+    ipcRenderer.send('relay-cb', id, ...newCBArgs);
+  };
+  const newArgs = [].concat(args.slice(0, args.length - 1), cb);
+  eventEmitter.emit(event, ...newArgs);
+});
+
 ipcRenderer.on('register-relay-listener', (sender, event, ...noArgs) => {
   eventEmitter.on(event, (...args) => ipcRenderer.send('relay-event', event, ...args));
 });
@@ -367,13 +390,14 @@ function renderer() {
       return extensions.doOnce();
     })
     .then(() => extensions.renderStyle()
-        .catch(err => {
-          terminate({
-            message: 'failed to parse UI theme',
-            details: err,
-          }, store.getState());
-        }))
+      .catch(err => {
+        terminate({
+          message: 'failed to parse UI theme',
+          details: err,
+        }, store.getState());
+      }))
     .then(() => {
+      extensions.setUIReady();
       log('debug', 'render with language', { language: i18n.language });
       const refresh = initApplicationMenu(extensions);
       extensions.getApi().events.on('gamemode-activated', () => refresh());

@@ -6,7 +6,6 @@ import { ComponentEx } from '../util/ComponentEx';
 import I18next from 'i18next';
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
-import { fireNotificationAction } from '../actions';
 
 interface IActionProps {
   t: I18next.TFunction;
