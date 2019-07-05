@@ -47,7 +47,8 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
 
   private matchesGameMode(announcement: IAnnouncement): boolean {
     const { gameMode } = this.props;
-    if ((gameMode === undefined) && (announcement.gamemode === undefined)) {
+    if ((gameMode === undefined)
+      && ((announcement.gamemode === undefined) || (announcement.gamemode === '*'))) {
       // Display non-game specific announcements even when no gameMode is active.
       return true;
     }
