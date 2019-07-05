@@ -34,5 +34,11 @@
 	"severity": "critical",
 	"gamemode": "*",
 	"version": "0.18.8"
+}, {
+	"date": "2019-07-05T11:50:10",
+	"description": "The NMM Import process will not function correctly with NMM 0.70.x",
+	"severity": "warning",
+	"gamemode": "*",
+	"version": "<=0.18.12"
 }
 ]
