@@ -55,7 +55,7 @@ import {TestSupported} from './types/TestSupported';
 import { loadActivation, saveActivation, fallbackPurge, withActivationLock } from './util/activationStore';
 import allTypesSupported from './util/allTypesSupported';
 import * as basicInstaller from './util/basicInstaller';
-import { purgeMods } from './util/deploy';
+import { purgeMods, purgeModsInPath } from './util/deploy';
 import { getAllActivators, getCurrentActivator, getSelectedActivator,
          getSupportedActivators, registerDeploymentMethod } from './util/deploymentMethods';
 import { NoDeployment } from './util/exceptions';
@@ -821,6 +821,11 @@ function once(api: IExtensionApi) {
   });
 
   api.onAsync('deploy-single-mod', onDeploySingleMod(api));
+
+  api.onAsync('purge-mods-in-path', (modType: string, modPath: string) => {
+    return purgeModsInPath(api, modType, modPath)
+      .catch(err => api.showErrorNotification('Failed to purge mods', err));
+  });
 
   api.events.on('purge-mods', (allowFallback: boolean, callback: (err: Error) => void) => {
     purgeMods(api)

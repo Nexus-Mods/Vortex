@@ -1,9 +1,10 @@
-import { IExtensionApi, IDeploymentMethod, IDeployedFile, IFileChange } from '../../../types/IExtensionContext';
+import { IDeployedFile, IDeploymentMethod,
+         IExtensionApi, IFileChange } from '../../../types/IExtensionContext';
 import { ProcessCanceled } from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
 import { log } from '../../../util/log';
-import { getSafe } from '../../../util/storeHelper';
 import { activeProfile } from '../../../util/selectors';
+import { getSafe } from '../../../util/storeHelper';
 import { setdefault, truthy } from '../../../util/util';
 
 import { showExternalChanges } from '../actions/session';
@@ -133,6 +134,5 @@ export function dealWithExternalChanges(api: IExtensionApi,
       typeId => applyFileActions(stagingPath, modPaths[typeId],
         lastDeployment[typeId],
         fileActions.filter(action => action.modTypeId === typeId))
-        .then(newLastDeployment => lastDeployment[typeId] = newLastDeployment)))
+        .then(newLastDeployment => lastDeployment[typeId] = newLastDeployment)));
 }
-

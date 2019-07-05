@@ -94,7 +94,7 @@ function doFallbackPurge(basePath: string,
         // the timestamp from stat has ms precision but the one from the manifest doesn't
         return ((stats.mtime.getTime() - file.time) < 1000)
           ? fs.unlinkAsync(fullPath)
-          : Promise.resolve()
+          : Promise.resolve();
       })
     .catch(err => {
       if (err.code !== 'ENOENT') {
@@ -214,7 +214,8 @@ function getManifest(api: IExtensionApi, instanceId: string,
 }
 
 function fallbackPurgeType(api: IExtensionApi, activator: IDeploymentMethod,
-                           modType: string, deployPath: string, stagingPath: string): Promise<void> {
+                           modType: string, deployPath: string,
+                           stagingPath: string): Promise<void> {
   const state: IState = api.store.getState();
   const typeTag = (modType !== undefined) && (modType.length > 0) ? modType + '.' : '';
   const tagFileName = `vortex.deployment.${typeTag}json`;
@@ -300,7 +301,8 @@ export function loadActivation(api: IExtensionApi, modType: string,
             }
           }
           result = queryPurge(api, deployPath, tagObject.files, safe)
-              .then(() => saveActivation(modType, state.app.instanceId, deployPath, stagingPath, [], activator.id))
+              .then(() => saveActivation(modType, state.app.instanceId, deployPath,
+                                         stagingPath, [], activator.id))
               .then(() => Promise.resolve([]));
         } else {
           result = Promise.resolve(tagObject.files);

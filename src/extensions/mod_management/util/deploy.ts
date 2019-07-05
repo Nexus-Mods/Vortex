@@ -69,6 +69,9 @@ export function purgeMods(api: IExtensionApi): Promise<void> {
 
     let lastDeployment: { [typeId: string]: IDeployedFile[] };
 
+    // TODO: we really should be using the deployment specified in the manifest,
+    //   not the current one! This only works because we force a purge when switching
+    //   deployment method.
     return activator.prePurge(stagingPath)
       // load previous deployments
       .then(() => Promise.reduce(modTypes, (prev, typeId) =>
@@ -79,14 +82,17 @@ export function purgeMods(api: IExtensionApi): Promise<void> {
           }), {})
         .then(deployments => { lastDeployment = deployments; }))
       // deal with all external changes
-      .then(() => dealWithExternalChanges(api, activator, profile.id, stagingPath, modPaths, lastDeployment))
+      .then(() => dealWithExternalChanges(api, activator, profile.id, stagingPath,
+                                          modPaths, lastDeployment))
       // purge all mod types
       .then(() => Promise.map(modTypes, typeId => activator.purge(stagingPath, modPaths[typeId])))
       // save (empty) activation
-      .then(() => Promise.map(modTypes, typeId => saveActivation(typeId, state.app.instanceId, modPaths[typeId], stagingPath, [], activator.id)))
+      .then(() => Promise.map(modTypes, typeId =>
+          saveActivation(typeId, state.app.instanceId, modPaths[typeId], stagingPath,
+                         [], activator.id)))
       .catch(ProcessCanceled, () => null)
       .then(() => Promise.resolve())
-      .finally(() => activator.postPurge())
+      .finally(() => activator.postPurge());
   }, true)
     .then(() => null)
     .finally(() => {
@@ -94,3 +100,56 @@ export function purgeMods(api: IExtensionApi): Promise<void> {
     });
 }
 
+export function purgeModsInPath(api: IExtensionApi, typeId: string,
+                                modPath: string): Promise<void> {
+  const state = api.store.getState();
+  const stagingPath = installPath(state);
+  const gameId = activeGameId(state);
+  const t = api.translate;
+  const activator = getCurrentActivator(state, gameId, false);
+
+  if (activator === undefined) {
+    return Promise.reject(new NoDeployment());
+  }
+
+  if (Object.keys(getSafe(state, ['session', 'base', 'toolsRunning'], {})).length > 0) {
+    api.sendNotification({
+      type: 'info',
+      id: 'purge-not-possible',
+      message: 'Can\'t purge while the game or a tool is running',
+      displayMS: 5000,
+    });
+    return Promise.resolve();
+  }
+
+  const notification: INotification = {
+    type: 'activity',
+    message: t('Waiting for other operations to complete'),
+    title: t('Purging'),
+  };
+
+  notification.id = api.sendNotification(notification);
+
+  return withActivationLock(() => {
+    log('debug', 'purging mods', { activatorId: activator.id, stagingPath });
+    notification.message = t('Purging mods');
+    api.sendNotification(notification);
+
+    // TODO: we really should be using the deployment specified in the manifest,
+    //   not the current one! This only works because we force a purge when switching
+    //   deployment method.
+    return activator.prePurge(stagingPath)
+      // purge the specified mod type
+      .then(() => activator.purge(stagingPath, modPath))
+      // save (empty) activation
+      .then(() => saveActivation(typeId, state.app.instanceId, modPath, stagingPath,
+                         [], activator.id))
+      .catch(ProcessCanceled, () => null)
+      .then(() => Promise.resolve())
+      .finally(() => activator.postPurge());
+  }, true)
+    .then(() => null)
+    .finally(() => {
+      api.dismissNotification(notification.id);
+    });
+}
