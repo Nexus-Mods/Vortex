@@ -1,10 +1,11 @@
 import { showDialog } from '../../actions/notifications';
 import { IDialogResult } from '../../types/IDialog';
 import { IExtensionApi, ThunkStore } from '../../types/IExtensionContext';
-import {IState, IProfile} from '../../types/IState';
+import {IProfile, IState} from '../../types/IState';
 import { DataInvalid, ProcessCanceled, SetupError, TemporaryError,
          UserCanceled} from '../../util/CustomErrors';
-import { createErrorReport, isOutdated, withContext, didIgnoreError } from '../../util/errorHandling';
+import { createErrorReport, didIgnoreError,
+        isOutdated, withContext } from '../../util/errorHandling';
 import * as fs from '../../util/fs';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
 import { log } from '../../util/log';
@@ -21,7 +22,7 @@ import { getGame } from '../gamemode_management/util/getGame';
 import modName from '../mod_management/util/modName';
 import { setModEnabled } from '../profile_management/actions/profiles';
 
-import {setModAttribute, setModType, addModRule, setFileOverride} from './actions/mods';
+import {addModRule, setFileOverride, setModAttribute, setModType} from './actions/mods';
 import {IDependency} from './types/IDependency';
 import { IInstallContext } from './types/IInstallContext';
 import { IInstallResult, IInstruction } from './types/IInstallResult';
@@ -78,6 +79,11 @@ class InstructionGroups {
 }
 
 export const INI_TWEAKS_PATH = 'Ini Tweaks';
+
+const archiveExtLookup = new Set<string>([
+  '.zip', '.z01', '.7z', '.rar', '.r00', '.001', '.bz2', '.bzip2', '.gz', '.gzip',
+  '.xz', '.z',
+]);
 
 /**
  * central class for the installation process
@@ -292,7 +298,8 @@ class InstallManager {
           if (processDependencies) {
             log('info', 'process dependencies', { modId });
             const state: IState = api.store.getState();
-            const mod: IMod = getSafe(state, ['persistent', 'mods', installGameId, modId], undefined);
+            const mod: IMod = getSafe(state, ['persistent', 'mods', installGameId, modId],
+                                      undefined);
 
             this.installDependencies([].concat(modInfo.rules || [], mod.rules || []),
                                      this.mGetInstallPath(installGameId),
@@ -420,7 +427,8 @@ class InstallManager {
 
   private isCritical(error: string): boolean {
     return (error.indexOf('Unexpected end of archive') !== -1)
-        || (error.indexOf('ERROR: Data Error') !== -1);
+        || (error.indexOf('ERROR: Data Error') !== -1)
+        || (error.indexOf('Can not open the file as archive') !== -1);
   }
 
   /**
@@ -458,6 +466,29 @@ class InstallManager {
           } else {
             return Promise.resolve();
           }
+        })
+        .catch(ArchiveBrokenError, err => {
+          if (archiveExtLookup.has(path.extname(archivePath).toLowerCase())) {
+            return Promise.reject(err);
+          }
+
+          // this is really a completely separate process from the "regular" mod installation
+          return api.showDialog('question', 'Not an archive', {
+            text: 'Vortex is designed to install mods from archives but this doesn\'t look '
+              + 'like one. Do you want to create a mod containing just this file?',
+            message: archivePath,
+          }, [
+              { label: 'Cancel' },
+              { label: 'Create Mod' },
+            ]).then(result => {
+              if (result.action === 'Cancel') {
+                return Promise.reject(new UserCanceled());
+              }
+
+              return fs.ensureDirAsync(tempPath)
+                .then(() => fs.copyAsync(archivePath,
+                  path.join(tempPath, path.basename(archivePath))));
+            });
         })
         .then(() => walk(tempPath,
                          (iterPath, stats) => {
@@ -669,7 +700,7 @@ class InstallManager {
                       gameId: string, modId: string): Promise<void> {
     rules.forEach(rule => {
       api.store.dispatch(addModRule(gameId, modId, rule.rule));
-    })
+    });
     return Promise.resolve();
   }
 
@@ -1015,7 +1046,8 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
       const state = api.store.getState();
       const download: IDownload = state.persistent.downloads.files[downloadId];
       const downloadGame: string = Array.isArray(download.game) ? download.game[0] : download.game;
-      const fullPath: string = path.join(downloadPathForGame(state, downloadGame), download.localPath);
+      const fullPath: string =
+        path.join(downloadPathForGame(state, downloadGame), download.localPath);
       this.install(downloadId, fullPath, getDownloadGames(download),
         api, { download }, false, false, (error, id) => {
           if (error === null) {
