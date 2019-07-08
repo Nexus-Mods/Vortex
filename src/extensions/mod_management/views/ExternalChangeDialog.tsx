@@ -424,7 +424,26 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
   }
 
   private confirm = () => {
-    this.props.onClose(this.props.changes, false);
+    const deletions = this.props.changes.filter(change => change.action === 'delete');
+    if (deletions.length > 1) {
+      this.context.api.showDialog('question', 'Confirm deletion', {
+        bbcode: 'You\'re about to [color="red"]delete[/color] {{count}} files. '
+              + 'Are you sure this is what you want?',
+        parameters: {
+          count: deletions.length,
+        },
+      }, [
+        { label: 'Back' },
+        { label: 'Continue' },
+      ])
+      .then(result => {
+        if (result.action === 'Continue') {
+          this.props.onClose(this.props.changes, false);
+        }
+      });
+    } else {
+      this.props.onClose(this.props.changes, false);
+    }
   }
 }
 
