@@ -1,7 +1,6 @@
-import { addNotification } from '../../../actions/notifications';
-import { setSettingsPage } from '../../../actions/session';
-import { DialogActions, DialogType, IDialogContent,
+import { addNotification, DialogActions, DialogType, IDialogContent,
          IDialogResult, showDialog} from '../../../actions/notifications';
+import { setSettingsPage } from '../../../actions/session';
 import ToolbarIcon from '../../../controls/ToolbarIcon';
 import { INotificationAction } from '../../../types/INotification';
 import { IState } from '../../../types/IState';
@@ -81,7 +80,7 @@ class DeactivationButton extends ComponentEx<IProps, {}> {
           // unresolved windows error code
           onShowError('Failed to purge mods', {
             error: err,
-            ErrorCode: err.errno
+            ErrorCode: err.errno,
           }, true);
         } else {
           onShowError('Failed to purge mods', err, err.code !== 'ENOTFOUND');
@@ -100,7 +99,6 @@ class DeactivationButton extends ComponentEx<IProps, {}> {
       },
     }, 'select-deployment-method-first');
   }
-
 
   private confirmPurge(): Promise<void> {
     const { onSetConfirmPurge, onShowDialog } = this.props;

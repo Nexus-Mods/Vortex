@@ -1,4 +1,4 @@
-import { setDownloadModInfo } from '../../actions';
+import { setDownloadModInfo, setModAttribute } from '../../actions';
 import { IDialogResult, showDialog } from '../../actions/notifications';
 import { IExtensionApi, IExtensionContext, ILookupResult } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
@@ -8,7 +8,7 @@ import Debouncer from '../../util/Debouncer';
 import * as fs from '../../util/fs';
 import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
-import { showError, prettifyNodeErrorMessage } from '../../util/message';
+import { prettifyNodeErrorMessage, showError } from '../../util/message';
 import opn from '../../util/opn';
 import { activeGameId, downloadPathForGame, gameById, knownGames } from '../../util/selectors';
 import { currentGame, getSafe } from '../../util/storeHelper';
@@ -24,13 +24,14 @@ import { DownloadState } from '../download_management/types/IDownload';
 
 import { setUserAPIKey } from './actions/account';
 import { setNewestVersion } from './actions/persistent';
-import { setLoginId, setLoginError } from './actions/session';
+import { setLoginError, setLoginId } from './actions/session';
 import { setAssociatedWithNXMURLs } from './actions/settings';
 import { accountReducer } from './reducers/account';
 import { persistentReducer } from './reducers/persistent';
 import { sessionReducer } from './reducers/session';
 import { settingsReducer } from './reducers/settings';
 import { convertNXMIdReverse, nexusGameId } from './util/convertGameId';
+import { guessFromFileName } from './util/guessModID';
 import retrieveCategoryList from './util/retrieveCategories';
 import { getPageURL } from './util/sso';
 import DashboardBanner from './views/DashboardBanner';
@@ -78,7 +79,7 @@ class Disableable {
     this.mApi = api;
   }
 
-  get(obj, prop) {
+  public get(obj, prop) {
     if (prop === 'disable') {
       return () => this.mDisabled = true;
     } else if ((!this.mDisabled)
@@ -87,19 +88,21 @@ class Disableable {
       if (prop === 'getFileByMD5') {
         return (hash: string, gameId: string) => {
           if (gameId.toLowerCase() === 'skyrimse') {
-            this.mApi.showErrorNotification('Attempt to send invalid API request, please report this (once)',
-              new Error(`getFileByMD5 called with game id ${gameId}`), { id: 'api-invalid-gameid' });
+            this.mApi.showErrorNotification(
+              'Attempt to send invalid API request, please report this (once)',
+              new Error(`getFileByMD5 called with game id ${gameId}`),
+                        { id: 'api-invalid-gameid' });
             gameId = 'skyrimspecialedition';
           }
           return obj[prop](hash, gameId);
-        }
+        };
       }
       return obj[prop];
     } else {
       return () => Promise.reject(new APIDisabled());
     }
   }
-};
+}
 
 function getCaller() {
   // save original values
@@ -131,14 +134,15 @@ const requestLog = {
     // TODO: why does "this" not point to the right object here?
     const reqs = requestLog.requests;
     requestLog.requests = [];
-    return fs.writeFileAsync(requestLog.logPath, reqs.join('\n') + '\n', { flag: 'a' })
+    return fs.writeFileAsync(requestLog.logPath, reqs.join('\n') + '\n', { flag: 'a' });
   }, 500),
   log(prop: string, args: any[], caller: string) {
     this.requests.push(`success - (${Date.now()}) ${prop} (${args.join(', ')}) from ${caller}`);
     this.debouncer.schedule();
   },
   logErr(prop: string, args: any[], caller: string, err: Error) {
-    this.requests.push(`failed - (${Date.now()}) ${prop} (${args.join(', ')}) from ${caller}: ${err.message}`);
+    this.requests.push(
+      `failed - (${Date.now()}) ${prop} (${args.join(', ')}) from ${caller}: ${err.message}`);
     this.debouncer.schedule();
   },
   get(obj, prop) {
@@ -175,14 +179,14 @@ const requestLog = {
                 `  at ${frame.getFunctionName()} (${framePos(frame)})`)
                 .join('\n');
             return Promise.reject(err);
-          })
+          });
         } else {
           return prom;
         }
       };
     }
-  }
-}
+  },
+};
 
 export interface IExtensionContextExt extends IExtensionContext {
   registerDownloadProtocol: (
@@ -524,6 +528,7 @@ function onceMain(api: IExtensionApi) {
       fs.removeSync(requestLog.logPath);
     }
   } catch (err) {
+    // nop
   }
 }
 
@@ -553,7 +558,7 @@ function once(api: IExtensionApi) {
         })
         .catch(err => {
           api.showErrorNotification('Failed to get access key', err, {
-            id: 'failed-get-nexus-key'
+            id: 'failed-get-nexus-key',
           });
         });
     })) {
