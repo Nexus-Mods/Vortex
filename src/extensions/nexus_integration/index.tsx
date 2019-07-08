@@ -702,6 +702,42 @@ function queryInfo(api: IExtensionApi, instanceIds: string[]) {
   });
 }
 
+function guessIds(api: IExtensionApi, instanceIds: string[]) {
+  const { store } = api;
+  const state: IState = store.getState();
+  const gameMode = activeGameId(state);
+  const mods = state.persistent.mods[gameMode];
+  const downloads = state.persistent.downloads.files;
+  instanceIds.forEach(id => {
+    let fileName: string;
+
+    let isDownload = false;
+    if (mods[id] !== undefined) {
+      const mod = mods[id];
+      fileName = getSafe(mod.attributes, ['fileName'],
+        getSafe(mod.attributes, ['name'], undefined));
+    } else if (downloads[id] !== undefined) {
+      isDownload = true;
+      const download = downloads[id];
+      fileName = download.localPath;
+    }
+
+    if (fileName === undefined) {
+      return;
+    }
+
+    const guessed = guessFromFileName(fileName);
+    if (guessed !== undefined) {
+      if (isDownload) {
+        store.dispatch(setDownloadModInfo(id, 'nexus.ids.modId', guessed));
+      } else {
+        store.dispatch(setModAttribute(gameMode, id, 'source', 'nexus'));
+        store.dispatch(setModAttribute(gameMode, id, 'modId', guessed));
+      }
+    }
+  });
+}
+
 function init(context: IExtensionContextExt): boolean {
   context.registerAction('application-icons', 200, LoginIcon, {}, () => ({ nexus }));
   context.registerAction('mods-action-icons', 999, 'open-ext', {}, 'Open on Nexus Mods',
@@ -737,6 +773,11 @@ function init(context: IExtensionContextExt): boolean {
 
     return modSource === 'nexus';
   });
+
+  context.registerAction('mods-action-icons', 300, 'smart', {}, 'Guess ID',
+                         instanceIds => guessIds(context.api, instanceIds));
+  context.registerAction('mods-multirow-actions', 300, 'smart', {}, 'Guess IDs',
+                         instanceIds => guessIds(context.api, instanceIds));
 
   const queryCondition = (instanceIds: string[]) => {
     const state: IState = context.api.store.getState();
