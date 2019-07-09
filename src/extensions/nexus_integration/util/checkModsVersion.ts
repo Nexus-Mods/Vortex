@@ -105,8 +105,11 @@ export function checkModVersion(store: Redux.Store<any>, nexus: NexusT,
 
   return Promise.resolve(nexus.getModFiles(nexusModId, nexusGameId(game)))
       .then(result => updateFileAttributes(store.dispatch, gameMode, mod, result))
-      .tapCatch(() => {
-        setNoUpdateAttributes(store.dispatch, gameId, mod);
+      .tapCatch(err => {
+        log('warn', 'dropping update info', { gameMode, id: mod.id, err: err.message });
+        if ([403, 404].indexOf(err.statusCode) !== -1) {
+          setNoUpdateAttributes(store.dispatch, gameMode, mod);
+        }
       });
 }
 
@@ -168,6 +171,7 @@ function setNoUpdateAttributes(dispatch: Redux.Dispatch<any>,
                                mod: IMod) {
   update(dispatch, gameId, mod, 'newestVersion', undefined);
   update(dispatch, gameId, mod, 'newestFileId', undefined);
+  update(dispatch, gameId, mod, 'lastUpdateTime', undefined);
 }
 
 function updateFileAttributes(dispatch: Redux.Dispatch<any>,

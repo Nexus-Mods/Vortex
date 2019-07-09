@@ -479,20 +479,20 @@ export function checkModVersionsImpl(
                 log('warn', '[update check] Mod update would have been missed with regular check', {
                   modId: mod.id,
                   lastUpdateTime: getSafe(mod, ['attributes', 'lastUpdateTime'], 0),
-                  'before.newestVersion': getSafe(mod, newWerP, undefined),
-                  'before.newestFileId': getSafe(mod, newFileIdP, undefined),
-                  'after.newestVersion': getSafe(modNew, newWerP, undefined),
-                  'after.newestFileId': getSafe(modNew, newFileIdP, undefined),
+                  'before.newestVersion': getSafe(mod, newWerP, ''),
+                  'before.newestFileId': getSafe(mod, newFileIdP, ''),
+                  'after.newestVersion': getSafe(modNew, newWerP, ''),
+                  'after.newestFileId': getSafe(modNew, newFileIdP, ''),
                 });
                 updatesMissed.push(mod);
               } else {
                 log('info', '[update check] Mod update detected', {
                   modId: mod.id,
                   lastUpdateTime: getSafe(mod, ['attributes', 'lastUpdateTime'], 0),
-                  'before.newestVersion': getSafe(mod, newWerP, undefined),
-                  'before.newestFileId': getSafe(mod, newFileIdP, undefined),
-                  'after.newestVersion': getSafe(modNew, newWerP, undefined),
-                  'after.newestFileId': getSafe(modNew, newFileIdP, undefined),
+                  'before.newestVersion': getSafe(mod, newWerP, ''),
+                  'before.newestFileId': getSafe(mod, newFileIdP, ''),
+                  'after.newestVersion': getSafe(modNew, newWerP, ''),
+                  'after.newestFileId': getSafe(modNew, newFileIdP, ''),
                 });
               }
 
