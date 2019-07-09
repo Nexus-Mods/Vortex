@@ -35,7 +35,7 @@ class DeploymentMethod extends LinkingDeployment {
 
   private mElevatedClient: any;
   private mQuitTimer: NodeJS.Timer;
-  private mCounter: number;
+  private mCounter: number = 0;
   private mOpenRequests: { [num: number]: { resolve: () => void, reject: (err: Error) => void } };
   private mIPCServer: net.Server;
   private mDone: () => void;
@@ -156,22 +156,14 @@ class DeploymentMethod extends LinkingDeployment {
   }
 
   protected linkFile(linkPath: string, sourcePath: string): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      const num = this.mCounter++;
-      this.emit('link-file', {
-        source: sourcePath, destination: linkPath, num,
-      });
-      this.mOpenRequests[num] = { resolve, reject };
+    return this.emitOperation('link-file', {
+      source: sourcePath, destination: linkPath,
     });
   }
 
   protected unlinkFile(linkPath: string): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      const num = this.mCounter++;
-      this.emit('remove-link', {
-        destination: linkPath, num,
-      });
-      this.mOpenRequests[num] = { resolve, reject };
+    return this.emitOperation('remove-link', {
+      destination: linkPath,
     });
   }
 
@@ -185,11 +177,9 @@ class DeploymentMethod extends LinkingDeployment {
               return Promise.resolve();
             }
             return fs.readlinkAsync(iterPath)
-              .then((symlinkPath) => {
-                if (!path.relative(installPath, symlinkPath).startsWith('..')) {
-                  this.emit('remove-link', { destination: iterPath });
-                }
-              })
+              .then((symlinkPath) => path.relative(installPath, symlinkPath).startsWith('..')
+                ? Promise.resolve()
+                : this.emitOperation('remove-link', { destination: iterPath }))
               .catch(err => {
                 if (err.code === 'ENOENT') {
                   log('debug', 'link already gone', { iterPath, error: err.message });
@@ -202,7 +192,8 @@ class DeploymentMethod extends LinkingDeployment {
       .then(() => this.stopElevated())
       .then(() => {
         if (hadErrors) {
-          return Promise.reject(new Error('Some files could not be purged, please check the log file'));
+          return Promise.reject(
+            new Error('Some files could not be purged, please check the log file'));
         } else {
           return Promise.resolve();
         }
@@ -229,7 +220,9 @@ class DeploymentMethod extends LinkingDeployment {
       try {
         // ensure the dummy file wasn't left over from a previous test
         fs.removeSync(destFile);
-      } catch (err) {}
+      } catch (err) {
+        // nop
+      }
       fs.symlinkSync(srcFile, destFile);
       fs.removeSync(destFile);
       return true;
@@ -242,6 +235,17 @@ class DeploymentMethod extends LinkingDeployment {
     if (this.mElevatedClient) {
       this.mElevatedClient.sendMessage({message, payload});
     }
+  }
+  private emitOperation(command: string, args: any): Promise<void> {
+    const requestNum = this.mCounter++;
+    return new Promise<void>((resolve, reject) => {
+      this.emit(command, { ...args, num: requestNum });
+      this.mOpenRequests[requestNum] = { resolve, reject };
+    })
+    .timeout(5000)
+    .tapCatch(Promise.TimeoutError, () => {
+      delete this.mOpenRequests[requestNum];
+    });
   }
 
   private startElevated(): Promise<void> {
@@ -285,6 +289,7 @@ class DeploymentMethod extends LinkingDeployment {
                 this.finish();
               }
             } else if (message === 'log') {
+              // tslint:disable-next-line:no-shadowed-variable
               const { level, message, meta } = payload;
               log(level, message, meta);
             } else if (message === 'report') {
@@ -297,7 +302,7 @@ class DeploymentMethod extends LinkingDeployment {
           })
           .on('error', err => {
             log('error', 'elevated code reported error', err);
-          })
+          });
         pongTimer = setInterval(() => {
           if (!ponged || !connected) {
             try {
@@ -308,7 +313,8 @@ class DeploymentMethod extends LinkingDeployment {
             } catch (err) {
               log('warn', 'Failed to close ipc server', err.message);
             }
-            return reject(new TemporaryError('deployment helper didn\'t respond, please check your log'));
+            return reject(
+              new TemporaryError('deployment helper didn\'t respond, please check your log'));
           }
           ponged = false;
           this.emit('ping', {});
@@ -319,11 +325,11 @@ class DeploymentMethod extends LinkingDeployment {
       return runElevated(ipcPath, remoteCode, {})
         .tap(tmpPath => {
           this.mTmpFilePath = tmpPath;
-          console.log('started elevated process')
+          log('debug', 'started elevated process');
         })
         .tapCatch(() => {
           log('error', 'failed to run remote process');
-          try { 
+          try {
             this.mIPCServer.close();
             this.mIPCServer = undefined;
           } catch (err) {
@@ -379,7 +385,9 @@ class DeploymentMethod extends LinkingDeployment {
       try {
         fs.removeSync(this.mTmpFilePath);
         this.mTmpFilePath = undefined;
-      } catch (err) { }
+      } catch (err) {
+        // nop
+      }
     }
 
     this.mDone();
