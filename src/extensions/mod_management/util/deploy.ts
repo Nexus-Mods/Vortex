@@ -1,9 +1,9 @@
-import { IExtensionApi, IDeployedFile } from '../../../types/IExtensionContext';
+import { IDeployedFile, IDeploymentMethod, IExtensionApi } from '../../../types/IExtensionContext';
 import { IGame } from '../../../types/IGame';
 import { INotification } from '../../../types/INotification';
 import { ProcessCanceled } from '../../../util/CustomErrors';
 import { log } from '../../../util/log';
-import { activeGameId, currentGameDiscovery, activeProfile } from '../../../util/selectors';
+import { activeGameId, activeProfile, currentGameDiscovery } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
 import { getGame } from '../../gamemode_management/util/getGame';
@@ -24,6 +24,14 @@ export function genSubDirFunc(game: IGame): (mod: IMod) => string {
   } else {
     return game.mergeMods;
   }
+}
+
+function filterManifest(activator: IDeploymentMethod,
+                        deployPath: string,
+                        stagingPath: string,
+                        deployment: IDeployedFile[]): Promise<IDeployedFile[]> {
+  return Promise.filter(deployment, file =>
+    activator.isDeployed(stagingPath, deployPath, file));
 }
 
 export function purgeMods(api: IExtensionApi): Promise<void> {
@@ -85,11 +93,18 @@ export function purgeMods(api: IExtensionApi): Promise<void> {
       .then(() => dealWithExternalChanges(api, activator, profile.id, stagingPath,
                                           modPaths, lastDeployment))
       // purge all mod types
-      .then(() => Promise.map(modTypes, typeId => activator.purge(stagingPath, modPaths[typeId])))
+      .then(() => Promise.mapSeries(modTypes, typeId =>
+          activator.purge(stagingPath, modPaths[typeId])))
       // save (empty) activation
       .then(() => Promise.map(modTypes, typeId =>
           saveActivation(typeId, state.app.instanceId, modPaths[typeId], stagingPath,
                          [], activator.id)))
+      // the deployment may be changed so on an exception we still need to update it
+      .tapCatch(() => Promise.map(modTypes, typeId =>
+          filterManifest(activator, modPaths[typeId], stagingPath, lastDeployment[typeId])
+          .then(files =>
+            saveActivation(typeId, state.app.instanceId, modPaths[typeId], stagingPath,
+                           files, activator.id))))
       .catch(ProcessCanceled, () => null)
       .then(() => Promise.resolve())
       .finally(() => activator.postPurge());

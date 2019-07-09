@@ -26,10 +26,10 @@ export class FileFound extends Error {
 }
 
 class DeploymentMethod extends LinkingDeployment {
+  public priority: number = 5;
+
   private mDirCache: Set<string>;
   private mInstallationFiles: Set<number>;
-
-  public priority: number = 5;
 
   constructor(api: IExtensionApi) {
     super(
@@ -142,7 +142,9 @@ class DeploymentMethod extends LinkingDeployment {
     try {
       try {
         fs.removeSync(canary + '.link');
-      } catch (err) {}
+      } catch (err) {
+        // nop
+      }
       fs.writeFileSync(canary, 'Should only exist temporarily, feel free to delete');
       fs.linkSync(canary, canary + '.link');
     } catch (err) {
@@ -267,10 +269,10 @@ class DeploymentMethod extends LinkingDeployment {
   }
 
   protected isLink(linkPath: string, sourcePath: string,
-                   linkStats: fs.Stats, sourceStats: fs.Stats): Promise<boolean> {
-    if ((linkStats !== undefined) && (sourceStats !== undefined)) {
-      return Promise.resolve((linkStats.nlink > 1)
-                          && (linkStats.ino === sourceStats.ino));
+                   linkStatsIn: fs.Stats, sourceStatsIn: fs.Stats): Promise<boolean> {
+    if ((linkStatsIn !== undefined) && (sourceStatsIn !== undefined)) {
+      return Promise.resolve((linkStatsIn.nlink > 1)
+                          && (linkStatsIn.ino === sourceStatsIn.ino));
     }
 
     return fs.lstatAsync(linkPath)

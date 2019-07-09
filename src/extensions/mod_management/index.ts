@@ -8,7 +8,7 @@ import {
 } from '../../types/IExtensionContext';
 import {IGame} from '../../types/IGame';
 import { INotification } from '../../types/INotification';
-import {IState, IDiscoveryResult} from '../../types/IState';
+import {IDiscoveryResult, IState} from '../../types/IState';
 import { ITableAttribute } from '../../types/ITableAttribute';
 import {ITestResult} from '../../types/ITestResult';
 import { ProcessCanceled, TemporaryError, UserCanceled } from '../../util/CustomErrors';
@@ -45,14 +45,15 @@ import {modsReducer} from './reducers/mods';
 import {sessionReducer} from './reducers/session';
 import {settingsReducer} from './reducers/settings';
 import {transactionsReducer} from './reducers/transactions';
-import {IDeployedFile, IUnavailableReason, IDeploymentMethod} from './types/IDeploymentMethod';
+import {IDeployedFile, IDeploymentMethod, IUnavailableReason} from './types/IDeploymentMethod';
 import {IFileMerge} from './types/IFileMerge';
 import {IMod} from './types/IMod';
 import {IModSource} from './types/IModSource';
 import {InstallFunc} from './types/InstallFunc';
 import {IResolvedMerger} from './types/IResolvedMerger';
 import {TestSupported} from './types/TestSupported';
-import { loadActivation, saveActivation, fallbackPurge, withActivationLock } from './util/activationStore';
+import { fallbackPurge, loadActivation,
+        saveActivation, withActivationLock } from './util/activationStore';
 import allTypesSupported from './util/allTypesSupported';
 import * as basicInstaller from './util/basicInstaller';
 import { purgeMods, purgeModsInPath } from './util/deploy';
@@ -179,20 +180,20 @@ function deployModType(api: IExtensionApi,
             + 'This could lead to errors later on, ',
           message: err.message,
         }, []))
-        .then(() => newActivation)
+        .then(() => newActivation);
     });
 }
 
 function deployAllModTypes(api: IExtensionApi,
-                       activator: IDeploymentMethod,
-                       profile: IProfile,
-                       sortedModList: IMod[],
-                       stagingPath: string,
-                       mergedFileMap: { [modType: string]: string[] },
-                       modPaths: { [typeId: string]: string },
-                       lastDeployment: { [typeId: string]: IDeployedFile[] },
-                       newDeployment: { [typeId: string]: IDeployedFile[] },
-                       onProgress: (text: string, perc: number) => void) {
+                           activator: IDeploymentMethod,
+                           profile: IProfile,
+                           sortedModList: IMod[],
+                           stagingPath: string,
+                           mergedFileMap: { [modType: string]: string[] },
+                           modPaths: { [typeId: string]: string },
+                           lastDeployment: { [typeId: string]: IDeployedFile[] },
+                           newDeployment: { [typeId: string]: IDeployedFile[] },
+                           onProgress: (text: string, perc: number) => void) {
   const game = getGame(profile.gameId);
   const overwritten: IMod[] = [];
 
@@ -232,7 +233,8 @@ function doSortMods(api: IExtensionApi, profile: IProfile, mods: { [modId: strin
 
   return sortMods(profile.gameId, unsorted, api)
     .catch(CycleError, err => Promise.reject(
-      new ProcessCanceled('Deployment is not possible when you have cyclical mod rules. ' + err.message)));
+      new ProcessCanceled('Deployment is not possible when you have cyclical mod rules. '
+                          + err.message)));
 }
 
 function doMergeMods(api: IExtensionApi,
@@ -309,7 +311,7 @@ function reportRedundant(api: IExtensionApi, profileId: string, overwritten: IMo
                   dismiss();
                 }
               });
-          }
+          },
         },
       ],
     });
@@ -319,7 +321,7 @@ function reportRedundant(api: IExtensionApi, profileId: string, overwritten: IMo
 
 function deployableModTypes(modPaths: { [typeId: string]: string }) {
   return Object.keys(modPaths)
-    .filter(typeId => truthy(modPaths[typeId]))
+    .filter(typeId => truthy(modPaths[typeId]));
 }
 
 function genUpdateModDeployment() {
@@ -340,8 +342,8 @@ function genUpdateModDeployment() {
       }
       api.store.dispatch(updateNotification(notification.id, percent, text));
     };
-    let state = api.store.getState();
-    let profile: IProfile = profileId !== undefined
+    const state = api.store.getState();
+    const profile: IProfile = profileId !== undefined
       ? getSafe(state, ['persistent', 'profiles', profileId], undefined)
       : activeProfile(state);
 
@@ -430,8 +432,9 @@ function genUpdateModDeployment() {
               sortedModList = sortedModListIn;
             }))
           .tap(() => progress(t('Merging mods'), 35))
-          .then(() => doMergeMods(api, game, gameDiscovery, stagingPath, sortedModList, modPaths, lastDeployment)
-            .then(mergedFileMapIn => mergedFileMap = mergedFileMapIn ))
+          .then(() => doMergeMods(api, game, gameDiscovery, stagingPath, sortedModList,
+                                  modPaths, lastDeployment)
+            .then(mergedFileMapIn => mergedFileMap = mergedFileMapIn))
           .tap(() => progress(t('Starting deployment'), 35))
           .then(() => {
             const deployProgress = (name, percent) =>
@@ -444,7 +447,7 @@ function genUpdateModDeployment() {
                                             stagingPath, mergedFileMap,
                                             modPaths, lastDeployment,
                                             newDeployment, deployProgress));
-          })
+          });
       })
         // at this point the deployment lock gets released so another deployment
         // can be started during post-deployment
@@ -478,7 +481,7 @@ function genUpdateModDeployment() {
               {
                 title: 'Show', action: () => {
                   showCycles(api, err.cycles, profile.gameId);
-                }
+                },
               },
             ],
           });
@@ -488,7 +491,7 @@ function genUpdateModDeployment() {
             // unresolved windows error code
             return api.showErrorNotification('Failed to deploy mods', {
               error: err,
-              ErrorCode: err.errno
+              ErrorCode: err.errno,
             });
           }
           return api.showErrorNotification('Failed to deploy mods', err, {
@@ -499,7 +502,7 @@ function genUpdateModDeployment() {
           api.store.dispatch(stopActivity('mods', 'deployment'));
           api.dismissNotification(notification.id);
         }));
-    }
+    };
 }
 
 function doSaveActivation(api: IExtensionApi, typeId: string,
@@ -723,7 +726,7 @@ function onDeploySingleMod(api: IExtensionApi) {
 
     try {
       modPath = path.join(stagingPath, mod.installationPath);
-    } catch (err) { 
+    } catch (err) {
       err.StagingPath = stagingPath || '<undefined>';
       err.InstallPath = mod.installationPath || '<undefined>';
       err.GameId = gameId || '<undefined>';
@@ -758,8 +761,7 @@ function onDeploySingleMod(api: IExtensionApi) {
         api.showErrorNotification('Failed to deploy mod', err, {
           message: modId,
         });
-      })
-    ).then(() => null);
+      })).then(() => null);
   };
 }
 

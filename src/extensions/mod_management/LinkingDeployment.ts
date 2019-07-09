@@ -316,12 +316,16 @@ abstract class LinkingActivator implements IDeploymentMethod {
     return Promise.resolve();
   }
 
-  public isActive(): boolean {
-    return false;
-  }
-
   public getDeployedPath(input: string): string {
     return input;
+  }
+
+  public isDeployed(installPath: string, dataPath: string, file: IDeployedFile): Promise<boolean> {
+    const fullPath = path.join(dataPath, file.target || '', file.relPath);
+
+    return fs.statAsync(fullPath)
+      .then(() => true)
+      .catch(() => false);
   }
 
   public externalChanges(gameId: string,
