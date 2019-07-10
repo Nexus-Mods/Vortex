@@ -29,9 +29,9 @@ interface IComponentState {
 }
 
 // react-select doesn't deal well with undefined/null as values, it converts all values to string
-// internally and Vortex allows practically every string as category ids. That combined means we can't 100%
-// avoid collisions with user-categories - but I think it's rather safe that the user doesn't use this
-// accidentally...
+// internally and Vortex allows practically every string as category ids. That combined means we
+// can't 100% avoid collisions with user-categories - but I think it's rather safe that the user
+// doesn't use this accidentally...
 const UNASSIGNED_ID = 'ea199e24-1b06-11e9-ab14-d663bd873d93';
 
 class CategoryFilterComponent extends React.Component<IProps, IComponentState> {
@@ -91,7 +91,7 @@ class CategoryFilterComponent extends React.Component<IProps, IComponentState> {
         value: id.toString(),
         label: getSafe(categories, [id, 'name'], ''),
       })).sort((lhs, rhs) => lhs.label.localeCompare(rhs.label));
-      options.unshift({ value: UNASSIGNED_ID, label: '<Unassigned>' });
+    options.unshift({ value: UNASSIGNED_ID, label: '<Unassigned>' });
 
     return (
       <Select

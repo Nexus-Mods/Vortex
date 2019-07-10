@@ -7,9 +7,9 @@ import { IMod } from '../types/IMod';
 import testModReference from './testModReference';
 
 import * as Promise from 'bluebird';
-import * as _ from 'lodash';
 import { alg, Graph } from 'graphlib';
-import { ILookupResult, IReference, IRule, RuleType } from 'modmeta-db';
+import * as _ from 'lodash';
+import { ILookupResult, IReference, IRule } from 'modmeta-db';
 
 export class CycleError extends Error {
   private mCycles: string[][];
@@ -27,8 +27,8 @@ function findByRef(mods: IMod[], reference: IReference): IMod {
   return mods.find((mod: IMod) => testModReference(mod, reference));
 }
 
-let sortModsCache: { id: { gameId: string, mods: IMod[] }, sorted: Promise<IMod[]> } =
-  { id: { gameId: undefined, mods: [] }, sorted: Promise.resolve([]) };
+let sortModsCache: { id: { gameId: string, mods: IMod[] }, sorted: Promise<IMod[]> } = {
+  id: { gameId: undefined, mods: [] }, sorted: Promise.resolve([]) };
 
 function sortMods(gameId: string, mods: IMod[], api: IExtensionApi): Promise<IMod[]> {
   if (mods.length === 0) {
@@ -74,7 +74,7 @@ function sortMods(gameId: string, mods: IMod[], api: IExtensionApi): Promise<IMo
 
   mods.forEach(mod => { dependencies.setNode(mod.id); });
 
-  let sorted = Promise.map(mods, modMapper)
+  const sorted = Promise.map(mods, modMapper)
     .catch((err: Error) => {
       log('error', 'failed to sort mods',
           {msg: err.message, stack: err.stack});
@@ -91,7 +91,7 @@ function sortMods(gameId: string, mods: IMod[], api: IExtensionApi): Promise<IMo
       } catch (err) {
         // exception type not included in typings
         if (err instanceof (alg.topsort as any).CycleException) {
-          let res = new CycleError(alg.findCycles(dependencies));
+          const res = new CycleError(alg.findCycles(dependencies));
           res.stack = stackErr.stack;
           return Promise.reject(res);
         } else {

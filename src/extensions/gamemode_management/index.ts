@@ -5,7 +5,7 @@ import {
   IExtensionContext,
 } from '../../types/IExtensionContext';
 import {IGame} from '../../types/IGame';
-import { IProfile, IState, IRunningTool } from '../../types/IState';
+import { IProfile, IRunningTool, IState } from '../../types/IState';
 import { IEditChoice, ITableAttribute } from '../../types/ITableAttribute';
 import {ProcessCanceled, SetupError, UserCanceled} from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
@@ -223,7 +223,7 @@ function removeDisappearedGames(api: IExtensionApi): Promise<void> {
   const state: IState = api.store.getState();
   const discovered = state.settings.gameMode.discovered;
   const known = state.session.gameMode.known;
-  const gameMode = activeGameId(state);
+  let gameMode = activeGameId(state);
 
   return Promise.map(
     Object.keys(discovered).filter(gameId => discovered[gameId].path !== undefined),
@@ -247,8 +247,9 @@ function removeDisappearedGames(api: IExtensionApi): Promise<void> {
             }
             api.store.dispatch(setGamePath(gameId, undefined));
           });
-    }).then(() => {
-      const gameMode = activeGameId(state);
+    })
+    .then(() => {
+      gameMode = activeGameId(state);
       if (known.find(game => game.id === gameMode) === undefined) {
         log('info', 'the active game is no longer known, resetting', gameMode);
         api.store.dispatch(setNextProfile(undefined));
@@ -551,7 +552,7 @@ function init(context: IExtensionContext): boolean {
         title: 'Preparing game for modding',
         message: getGame(newGameId).name,
         type: 'activity',
-      })
+      });
 
       // Important: This happens after the profile has already been activated
       //   and while the ui is usable again so at this point the user can already
@@ -611,10 +612,10 @@ function init(context: IExtensionContext): boolean {
         });
       });
 
-    let processMonitor = new ProcessMonitor(context.api);
-    type RunningMap = { [exePath: string]: IRunningTool };
+    const processMonitor = new ProcessMonitor(context.api);
+    interface IRunningMap { [exePath: string]: IRunningTool; }
     context.api.onStateChange(['session', 'base', 'toolsRunning'],
-      (prev: RunningMap, current: RunningMap) => {
+      (prev: IRunningMap, current: IRunningMap) => {
         const exePaths = Object.keys(current);
         if (exePaths.length > 0) {
           // no effect if it's already running
