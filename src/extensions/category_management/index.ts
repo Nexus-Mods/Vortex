@@ -133,9 +133,17 @@ function init(context: IExtensionContext): boolean {
 
   context.once(() => {
     const store: Redux.Store<any> = context.api.store;
-    context.api.onStateChange(['settings', 'tables', 'mods', 'attributes', 'category'],
+    context.api.onStateChange(['settings', 'tables', 'mods'],
       (oldState, newState) => {
-      sortDirection = getSafe(newState, ['sortDirection'], 'none');
+        const newSortDirection =
+          getSafe(newState, ['attributes', 'category', 'sortDirection'], 'none');
+
+        const oldSortDirection =
+          getSafe(oldState, ['attributes', 'category', 'sortDirection'], 'none');
+
+        if (newSortDirection !== oldSortDirection) {
+          sortDirection = newSortDirection;
+        }
     });
     try {
       context.api.events.on('update-categories', (gameId, categories, isUpdate) => {
