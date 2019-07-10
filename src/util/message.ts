@@ -197,7 +197,7 @@ function bundleAttachment(options?: IErrorOptions): Promise<string> {
   if ((options === undefined)
       || (options.attachments === undefined)
       || (options.attachments.length === 0)) {
-    return undefined;
+    return Promise.resolve(undefined);
   }
 
   return Promise.map(options.attachments, serializeAttachments)
