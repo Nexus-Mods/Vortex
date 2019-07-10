@@ -1,6 +1,5 @@
 import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
-import { log } from '../../util/log';
 
 import * as Promise from 'bluebird';
 import { dialog as dialogIn, remote } from 'electron';
@@ -15,6 +14,24 @@ const dialog = remote !== undefined ? remote.dialog : dialogIn;
  * @class FileAssembler
  */
 class FileAssembler {
+  public static create(fileName: string): Promise<FileAssembler> {
+    let exists = false;
+    let size = 0;
+    return fs.ensureDirAsync(path.dirname(fileName))
+      .then(() => fs.statAsync(fileName))
+      .then(stats => {
+        if (stats.isDirectory()) {
+          return Promise.reject(new Error('Download target is a directory'));
+        }
+        size = stats.size;
+        exists = true;
+        return Promise.resolve();
+      })
+      .catch(() => null)
+      .then(() => fs.openAsync(fileName, exists ? 'r+' : 'w'))
+      .then(fd => new FileAssembler(fileName, size, fd));
+  }
+
   // flush at least every few megabytes
   private static MIN_FLUSH_SIZE = 16 * 1024 * 1024;
   // flush at least once every few seconds
@@ -32,24 +49,6 @@ class FileAssembler {
     this.mFileName = fileName;
     this.mTotalSize = size;
     this.mFD = fd;
-  }
-  
-  public static create(fileName: string): Promise<FileAssembler> {
-    let exists = false;
-    let size = 0;
-    return fs.ensureDirAsync(path.dirname(fileName))
-      .then(() => fs.statAsync(fileName))
-      .then(stats => {
-        if (stats.isDirectory()) {
-          return Promise.reject(new Error('Download target is a directory'));
-        }
-        size = stats.size;
-        exists = true;
-        return Promise.resolve();
-      })
-      .catch(() => null)
-      .then(() => fs.openAsync(fileName, exists ? 'r+' : 'w'))
-      .then(fd => new FileAssembler(fileName, size, fd));
   }
 
   public setTotalSize(size: number) {
@@ -107,17 +106,18 @@ class FileAssembler {
             ? reject(new Error(`incomplete write ${bytesWritten}/${data.length}`))
             : resolve(synced))
         .catch({ code: 'ENOSPC' }, () => {
-          let win = remote !== undefined ? remote.getCurrentWindow() : null;
+          const win = remote !== undefined ? remote.getCurrentWindow() : null;
           (dialog.showMessageBox(win, {
             type: 'warning',
             title: 'Disk is full',
-            message: 'Download can\'t continue because disk is full, please free some some space and retry.',
+            message: 'Download can\'t continue because disk is full, '
+                   + 'please free some some space and retry.',
             buttons: ['Cancel', 'Retry'],
             defaultId: 1,
             noLink: true,
           }) === 1)
             ? resolve(this.addChunk(offset, data))
-            : reject(new UserCanceled())
+            : reject(new UserCanceled());
         })
         .catch(err => reject(err));
       });
@@ -131,6 +131,7 @@ class FileAssembler {
         this.mFD = undefined;
         return fs.fsyncAsync(fd)
           .catch({ code: 'EBADF' }, () => Promise.resolve())
+          .catch({ code: 'ENOENT' }, () => Promise.resolve())
           .then(() => fs.closeAsync(fd));
       } else {
         return Promise.resolve();
