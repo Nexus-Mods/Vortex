@@ -1,5 +1,5 @@
-import { IGame, IModType } from "../../../types/IGame";
-import { IInstruction } from "../../../types/IExtensionContext";
+import { IInstruction } from '../../../types/IExtensionContext';
+import { IGame, IModType } from '../../../types/IGame';
 
 import * as Promise from 'bluebird';
 
