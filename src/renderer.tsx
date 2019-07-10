@@ -117,7 +117,7 @@ if (process.platform === 'win32') {
     }
     return oldPrep !== undefined
       ? oldPrep(error, stack)
-      : stack;
+      : error.stack;
   };
 }
 
