@@ -197,6 +197,8 @@ function deployAllModTypes(api: IExtensionApi,
   const game = getGame(profile.gameId);
   const overwritten: IMod[] = [];
 
+  api.dismissNotification('redundant-mods');
+
   return Promise.each(deployableModTypes(modPaths),
     typeId => deployModType(api, activator, game, sortedModList, typeId,
       stagingPath, modPaths[typeId], overwritten, mergedFileMap,
