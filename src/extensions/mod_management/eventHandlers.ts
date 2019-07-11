@@ -20,7 +20,7 @@ import {setActivator} from './actions/settings';
 import {IDeploymentMethod} from './types/IDeploymentMethod';
 import {IMod} from './types/IMod';
 import {fallbackPurge, loadActivation, saveActivation} from './util/activationStore';
-import { getSupportedActivators, getCurrentActivator } from './util/deploymentMethods';
+import { getCurrentActivator, getSupportedActivators } from './util/deploymentMethods';
 
 import {getGame} from '../gamemode_management/util/getGame';
 import {setModEnabled} from '../profile_management/actions/profiles';
@@ -144,9 +144,9 @@ export function onGameModeActivated(
           });
           return fallbackPurge(api)
             .then(() => fs.ensureDirWritableAsync(instPath, () => Promise.resolve()))
-            .catch((err) => {
-              if (err instanceof ProcessCanceled) {
-                log('warn', 'Mods not purged', err.message);
+            .catch(purgeErr => {
+              if (purgeErr instanceof ProcessCanceled) {
+                log('warn', 'Mods not purged', purgeErr.message);
               } else {
                 api.showDialog('error', 'Mod Staging Folder missing!', {
                   bbcode: 'The staging folder could not be created. '
@@ -250,13 +250,15 @@ export function onGameModeActivated(
           .finally(() => oldActivator.postPurge());
       }
 
-      const oldInit = initProm;
-      initProm = () => oldInit()
-        .then(() => {
-          if (supported.length > 0) {
-            api.store.dispatch(setActivator(gameId, supported[0].id));
-          }
-        });
+      {
+        const oldInit = initProm;
+        initProm = () => oldInit()
+          .then(() => {
+            if (supported.length > 0) {
+              api.store.dispatch(setActivator(gameId, supported[0].id));
+            }
+          });
+      }
     }
   } else if (configuredActivatorId === undefined) {
     // no activator configured but we have found a valid one. Store this.
@@ -354,7 +356,8 @@ function undeploy(api: IExtensionApi,
   const modPaths = game.getModPaths(discovery.path);
   const modTypes = Object.keys(modPaths);
 
-  const activatorId: string = getSafe(state, ['settings', 'mods', 'activator', gameMode], undefined);
+  const activatorId: string =
+    getSafe(state, ['settings', 'mods', 'activator', gameMode], undefined);
   // TODO: can only use one activator that needs to support the whole game
   const activator: IDeploymentMethod = activatorId !== undefined
     ? activators.find(act => act.id === activatorId)
@@ -388,7 +391,8 @@ function undeploy(api: IExtensionApi,
     })
     .then(() => activator.finalize(gameMode, deployPath, stagingPath))
     .then(newActivation =>
-      saveActivation(mod.type, state.app.instanceId, deployPath, stagingPath, newActivation, activator.id));
+      saveActivation(mod.type, state.app.instanceId, deployPath,
+                     stagingPath, newActivation, activator.id));
 }
 
 export function onRemoveMod(api: IExtensionApi,
@@ -483,7 +487,7 @@ export function onRemoveMod(api: IExtensionApi,
       });
     };
 
-  store.dispatch(startActivity('mods', `removing_${modId}`))
+  store.dispatch(startActivity('mods', `removing_${modId}`));
 
   undeployMod()
   .then(() => {
@@ -530,7 +534,7 @@ export function onRemoveMod(api: IExtensionApi,
     }
   })
   .finally(() => {
-    store.dispatch(stopActivity('mods', `removing_${modId}`))
+    store.dispatch(stopActivity('mods', `removing_${modId}`));
   });
 }
 
