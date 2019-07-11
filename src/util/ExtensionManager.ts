@@ -656,21 +656,30 @@ class ExtensionManager {
    */
   public doOnce(): Promise<void> {
     const calls = this.mContextProxyHandler.getCalls(remote !== undefined ? 'once' : 'onceMain');
-    return Promise.each(calls, call => {
-      const prom = call.arguments[0]() || Promise.resolve();
 
-      return prom.catch(err => {
-        log('warn', 'failed to call once',
-            {err: err.message, stack: err.stack});
-        this.mApi.showErrorNotification(
-            'Extension failed to initialize. If this isn\'t an official extension, ' +
-                'please report the error to the respective author.',
-            {
-              extension: call.extension,
-              err: err.message,
-              stack: err.stack,
-            });
-      });
+    const reportError = (err: Error, call: IInitCall) => {
+      log('warn', 'failed to call once',
+        { err: err.message, stack: err.stack });
+      this.mApi.showErrorNotification(
+        'Extension failed to initialize. If this isn\'t an official extension, ' +
+        'please report the error to the respective author.',
+        {
+          extension: call.extension,
+          err: err.message,
+          stack: err.stack,
+        });
+    };
+
+    return Promise.each(calls, call => {
+      try {
+        const prom = call.arguments[0]() || Promise.resolve();
+
+        return prom.catch(err => {
+          reportError(err, call);
+        });
+      } catch (err) {
+        reportError(err, call);
+      }
     })
     .then(() => undefined);
   }
