@@ -3,7 +3,7 @@ import { IDeployedFile, IDeploymentMethod,
 import { ProcessCanceled } from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
 import { log } from '../../../util/log';
-import { activeProfile } from '../../../util/selectors';
+import { activeGameId, activeProfile, profileById } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import { setdefault, truthy } from '../../../util/util';
 
@@ -24,7 +24,9 @@ import * as path from 'path';
  * @returns {Promise<IDeployedFile[]>} an updated deployment manifest to use as a reference
  *                                     for the new one
  */
-function applyFileActions(sourcePath: string,
+function applyFileActions(api: IExtensionApi,
+                          profileId: string,
+                          sourcePath: string,
                           outputPath: string,
                           lastDeployment: IDeployedFile[],
                           fileActions: IFileEntry[]): Promise<IDeployedFile[]> {
@@ -82,6 +84,33 @@ function applyFileActions(sourcePath: string,
       lastDeployment = newDeployment;
       return Promise.resolve();
     })
+    .then(() => {
+      const affectedMods = new Set<string>();
+
+      fileActions.forEach(action => {
+        if (['import', 'newest', 'nop', 'delete', 'drop'].indexOf(action.action) !== -1) {
+          affectedMods.add(action.source);
+        }
+      });
+
+      const state = api.store.getState();
+      let gameId: string;
+
+      if (profileId !== undefined) {
+        const profile = profileById(state, profileId);
+        if (profile !== undefined) {
+          gameId = profile.id;
+        }
+      }
+
+      if (gameId === undefined) {
+        gameId = activeGameId(state);
+      }
+
+      affectedMods.forEach(affected => {
+        api.events.emit('mod-content-changed', gameId, affected);
+      });
+    })
     .then(() => lastDeployment);
 }
 
@@ -131,7 +160,7 @@ export function dealWithExternalChanges(api: IExtensionApi,
       ? Promise.resolve([])
       : api.store.dispatch(showExternalChanges(changes)))
     .then((fileActions: IFileEntry[]) => Promise.mapSeries(Object.keys(lastDeployment),
-      typeId => applyFileActions(stagingPath, modPaths[typeId],
+      typeId => applyFileActions(api, profileId, stagingPath, modPaths[typeId],
         lastDeployment[typeId],
         fileActions.filter(action => action.modTypeId === typeId))
         .then(newLastDeployment => lastDeployment[typeId] = newLastDeployment)));
