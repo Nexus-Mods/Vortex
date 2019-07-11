@@ -1,4 +1,4 @@
-import { setDialogVisible, setOpenMainPage } from '../actions/session';
+import { clearUIBlocker, setDialogVisible, setOpenMainPage } from '../actions/session';
 import { setTabsMinimized } from '../actions/window';
 import Banner from '../controls/Banner';
 import FlexLayout from '../controls/FlexLayout';
@@ -14,7 +14,7 @@ import { II18NProps } from '../types/II18NProps';
 import { IMainPage } from '../types/IMainPage';
 import { IModifiers } from '../types/IModifiers';
 import { INotification } from '../types/INotification';
-import { IProgress, IState } from '../types/IState';
+import { IProgress, IState, IUIBlocker } from '../types/IState';
 import { connect, extend } from '../util/ComponentEx';
 import { log } from '../util/log';
 import { getSafe } from '../util/storeHelper';
@@ -75,12 +75,14 @@ export interface IConnectedProps {
   userInfo: any;
   notifications: INotification[];
   APIKey: string;
+  uiBlockers: { [id: string]: IUIBlocker };
 }
 
 export interface IActionProps {
   onSetTabsMinimized: (minimized: boolean) => void;
   onSetOpenMainPage: (page: string, secondary: boolean) => void;
   onHideDialog: () => void;
+  onUnblockUI: (id: string) => void;
 }
 
 export type IProps = IBaseProps & IConnectedProps & IExtendedProps & IActionProps & II18NProps;
@@ -186,6 +188,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       || this.props.nextProfileId !== nextProps.nextProfileId
       || this.props.progressProfile !== nextProps.progressProfile
       || this.props.userInfo !== nextProps.userInfo
+      || this.props.uiBlockers !== nextProps.uiBlockers
       || this.state.showLayer !== nextState.showLayer
       || this.state.hidpi !== nextState.hidpi
       || this.state.focused !== nextState.focused
@@ -201,7 +204,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
   public render(): JSX.Element {
     const { activeProfileId, customTitlebar, onHideDialog,
-            nextProfileId, visibleDialog } = this.props;
+            nextProfileId, uiBlockers, visibleDialog } = this.props;
     const { focused, hidpi } = this.state;
 
     const switchingProfile = ((activeProfileId !== nextProfileId) && truthy(nextProfileId));
@@ -215,6 +218,9 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       // (even though it's not actually this frame that lets him do it)
       classes.push('window-frame');
     }
+
+    const uiBlocker = Object.keys(uiBlockers).find(() => true);
+
     return (
       <React.Suspense fallback={<Spinner className='suspense-spinner' />}>
           {switchingProfile ? this.renderWait() : null}
@@ -233,6 +239,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
             <DialogContainer visibleDialog={visibleDialog} onHideDialog={onHideDialog} />
             {customTitlebar ? <WindowControls /> : null}
           </div>
+          {(uiBlocker !== undefined) ? this.renderBlocker(uiBlocker, uiBlockers[uiBlocker]) : null}
       </React.Suspense>);
   }
 
@@ -249,6 +256,26 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
         <DialogContainer visibleDialog={visibleDialog} onHideDialog={onHideDialog} />
       </div>
     );
+  }
+
+  private renderBlocker(id: string, blocker: IUIBlocker) {
+    const { t } = this.props;
+    return (
+      <div className='ui-blocker'>
+        <Icon name={blocker.icon}/>
+        <div className='blocker-text'>{blocker.description}</div>
+        {blocker.mayCancel ? (<ReactButton data-id={id} onClick={this.unblock}>
+          {t('Cancel')}
+        </ReactButton>
+        ) : null}
+      </div>
+    );
+  }
+
+  private unblock = (evt: React.MouseEvent<any>) => {
+    const id = evt.currentTarget.getAttribute('data-id');
+    this.props.api.events.emit(`force-unblock-${id}`);
+    this.props.onUnblockUI(id);
   }
 
   private updateModifiers = (event: KeyboardEvent) => {
@@ -515,6 +542,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     userInfo: getSafe(state, ['persistent', 'nexus', 'userInfo'], undefined),
     APIKey: getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], ''),
     notifications: state.session.notifications.notifications,
+    uiBlockers: state.session.base.uiBlockers,
   };
 }
 
@@ -524,6 +552,7 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
     onSetOpenMainPage:
       (page: string, secondary: boolean) => dispatch(setOpenMainPage(page, secondary)),
     onHideDialog: () => dispatch(setDialogVisible(undefined)),
+    onUnblockUI: (id: string) => dispatch(clearUIBlocker(id)),
   };
 }
 

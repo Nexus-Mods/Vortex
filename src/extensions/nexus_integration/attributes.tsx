@@ -19,7 +19,6 @@ function renderNexusModIdDetail(
   store: Redux.Store<any>,
   mod: IModWithState,
   t: I18next.TFunction) {
-  log('debug', 'rnmid');
   const nexusModId: string = getSafe(mod.attributes, ['modId'], undefined);
   const fileName: string =
     getSafe(mod.attributes, ['fileName'],

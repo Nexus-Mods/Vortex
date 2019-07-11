@@ -39,3 +39,10 @@ export const setToolStopped = safeCreateAction('SET_TOOL_STOPPED',
 
 export const setExtensionLoadFailures =
   safeCreateAction('SET_EXT_LOAD_FAILURES', failures => failures);
+
+export const setUIBlocker =
+  safeCreateAction('SET_UI_BLOCKER',
+  (id: string, icon: string, description: string, mayCancel: boolean) =>
+  ({ id, icon, description, mayCancel }));
+
+export const clearUIBlocker = safeCreateAction('CLEAR_UI_BLOCKER', (id: string) => id);

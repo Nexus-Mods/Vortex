@@ -434,6 +434,10 @@ abstract class LinkingActivator implements IDeploymentMethod {
    */
   protected abstract canRestore(): boolean;
 
+  protected get api(): IExtensionApi {
+    return this.mApi;
+  }
+
   protected get normalize(): Normalize {
     return this.mNormalize;
   }

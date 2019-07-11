@@ -1,3 +1,4 @@
+import { clearUIBlocker, setUIBlocker } from '../../actions';
 import {IExtensionApi, IExtensionContext} from '../../types/IExtensionContext';
 import {ProcessCanceled, TemporaryError, UserCanceled} from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
@@ -81,6 +82,17 @@ class DeploymentMethod extends LinkingDeployment {
         api.showErrorNotification('Unknown error', report);
       }
     };
+
+    this.api.events.on('force-unblock-elevating', () => {
+      try {
+        if (this.mIPCServer !== undefined) {
+          this.mIPCServer.close();
+          this.mIPCServer = undefined;
+        }
+      } catch (err) {
+        log('warn', 'Failed to close ipc server', err.message);
+      }
+    });
   }
 
   public detailedDescription(t: I18next.TFunction): string {
@@ -270,7 +282,9 @@ class DeploymentMethod extends LinkingDeployment {
           .on('message', data => {
             const { message, payload } = data;
             if (message === 'initialised') {
+              log('debug', 'ipc connected');
               this.mElevatedClient = conn;
+              this.api.store.dispatch(clearUIBlocker('elevating'));
               connected = true;
               resolve();
             } else if (message === 'completed') {
@@ -322,12 +336,16 @@ class DeploymentMethod extends LinkingDeployment {
       })
       .listen(path.join('\\\\?\\pipe', ipcPath));
 
-      return runElevated(ipcPath, remoteCode, {})
+      this.api.store.dispatch(setUIBlocker(
+        'elevating', 'open-ext', 'Please confirm the "User Access Control" dialog', true));
+
+      return Promise.delay(0).then(() => runElevated(ipcPath, remoteCode, {}))
         .tap(tmpPath => {
           this.mTmpFilePath = tmpPath;
           log('debug', 'started elevated process');
         })
         .tapCatch(() => {
+          this.api.store.dispatch(clearUIBlocker('elevating'));
           log('error', 'failed to run remote process');
           try {
             this.mIPCServer.close();

@@ -316,3 +316,29 @@
   display: flex;
   justify-content: center;
 }
+
+.ui-blocker {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: $text-color-disabled;
+  padding: $gutter-width;
+
+  .icon {
+    width: 92px;
+    height: 92px;
+  }
+
+  .blocker-text {
+    font-family: $font-family-headings;
+    font-size: 2em;
+    text-transform: uppercase;
+  }
+}
