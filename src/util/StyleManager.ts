@@ -1,12 +1,14 @@
+import { IExtensionApi } from '../types/IExtensionContext';
 import Debouncer from './Debouncer';
+import * as fs from './fs';
+import getVortexPath from './getVortexPath';
+import {log} from './log';
 
 import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import * as _ from 'lodash';
 import * as sass from 'node-sass';
 import * as path from 'path';
-import { IExtensionApi } from '../types/IExtensionContext';
-import getVortexPath from './getVortexPath';
 
 const app = appIn || remote.app;
 
@@ -62,13 +64,19 @@ class StyleManager {
    * @param {string} filePath path of the corresponding stylesheet file
    */
   public setSheet(key: string, filePath: string): void {
-    const idx = this.mPartials.findIndex(partial => partial.key === key);
-    if (idx !== -1) {
-      this.mPartials[idx] = { key, file: filePath };
-    } else {
-      this.mPartials.splice(this.mPartials.length - 2, 0, { key, file: filePath });
-    }
-    this.mRenderDebouncer.schedule(undefined);
+    fs.statAsync(filePath)
+      .then(() => {
+        const idx = this.mPartials.findIndex(partial => partial.key === key);
+        if (idx !== -1) {
+          this.mPartials[idx] = { key, file: filePath };
+        } else {
+          this.mPartials.splice(this.mPartials.length - 2, 0, { key, file: filePath });
+        }
+        this.mRenderDebouncer.schedule(undefined);
+      })
+      .catch(err => {
+        log('warn', 'stylesheet can\'t be read', err.message);
+      });
   }
 
   public renderNow(): Promise<void> {
