@@ -229,6 +229,7 @@ export interface ITooltipIconProps {
   flip?: 'horizontal' | 'vertical';
   inverse?: boolean;
   name: string;
+  set?: string;
   pulse?: boolean;
   rotate?: '90' | '180' | '270';
   rotateId?: string;

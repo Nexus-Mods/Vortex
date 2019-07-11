@@ -6,6 +6,7 @@
 export * from './message';
 export * from './storeHelper';
 
+import { installIconSet } from '../controls/Icon';
 import { resolveCategoryName,
          resolveCategoryPath } from '../extensions/category_management/util/retrieveCategoryPath';
 import { getGame, getGames } from '../extensions/gamemode_management/util/getGame';
@@ -62,6 +63,7 @@ export {
   getNormalizeFunc,
   getReduxLog,
   github,
+  installIconSet,
   isChildPath,
   LazyComponent,
   lazyRequire,

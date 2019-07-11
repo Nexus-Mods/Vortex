@@ -29,6 +29,29 @@ export interface IIconProps {
   svgStyle?: string;
 }
 
+export function installIconSet(set: string, setPath: string): Promise<void> {
+  const newset = document.createElement('div');
+  newset.id = 'iconset-' + set;
+  document.getElementById('icon-sets').appendChild(newset);
+  log('info', 'read font', setPath);
+  return new Promise((resolve, reject) => {
+    fs.readFile(setPath, {}, (err, data) => {
+      if (err !== null) {
+        return reject(err);
+      }
+      return resolve(data);
+    });
+  })
+    .then(data => {
+      newset.innerHTML = data.toString();
+      const newSymbols = newset.querySelectorAll('symbol');
+      sets[set] = new Set<string>();
+      newSymbols.forEach(ele => {
+        sets[set].add(ele.id);
+      });
+    });
+}
+
 class Icon extends React.Component<IIconProps, {}> {
   private static sCache: { [id: string]: { width: number, height: number } } = {};
   private mCurrentSize: { width: number, height: number };
@@ -150,29 +173,8 @@ class Icon extends React.Component<IIconProps, {}> {
       }
 
       // make sure that no other icon instance tries to render this icon
-      const newset = document.createElement('div');
-      newset.id = 'iconset-' + set;
-      document.getElementById('icon-sets').appendChild(newset);
-
       const fontPath = path.resolve(remote.app.getAppPath(), 'assets', 'fonts', set + '.svg');
-      log('info', 'read font', fontPath);
-      // TODO: this does not support adding icons from extensions yet
-      return new Promise((resolve, reject) => {
-        fs.readFile(fontPath, {}, (err, data) => {
-          if (err !== null) {
-            return reject(err);
-          }
-          return resolve(data);
-        });
-      })
-        .then(data => {
-          newset.innerHTML = data.toString();
-          const newSymbols = newset.querySelectorAll('symbol');
-          sets[set] = new Set<string>();
-          newSymbols.forEach(ele => {
-            sets[set].add(ele.id);
-          });
-        });
+      return installIconSet(set, fontPath);
     } else {
       return Promise.resolve();
     }
