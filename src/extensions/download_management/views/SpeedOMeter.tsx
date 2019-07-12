@@ -49,12 +49,13 @@ class SpeedOMeter extends PureComponentEx<IProps, {}> {
   }
 
   private renderDownload = (download: IDownload) => {
-    const perc = ((download.received * 100) / download.size);
+    const size = Math.max(download.size, download.received);
+    const perc = ((download.received * 100) / size);
     return (
       <ProgressBar
         key={download.localPath}
         min={0}
-        max={download.size}
+        max={size}
         now={download.received}
         labelLeft={download.localPath}
         labelRight={perc.toFixed(0) + '%'}
