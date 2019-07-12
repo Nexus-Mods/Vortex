@@ -390,7 +390,7 @@ class ExtensionManager {
   private mModDBCache: { [id: string]: ILookupResult[] } = {};
   private mContextProxyHandler: ContextProxyHandler;
   private mExtensionState: { [extId: string]: IExtensionState };
-  private mLoadFailures: { [extId: string]: IExtensionLoadFailure[] };
+  private mLoadFailures: { [extId: string]: IExtensionLoadFailure[] } = {};
   private mInterpreters: { [ext: string]: (input: IRunParameters) => IRunParameters };
   private mStartHooks: Array<{ priority: number, id: string, hook: (input: IRunParameters) => Promise<IRunParameters> }>;
   private mProgrammaticMetaServers: { [id: string]: any } = {};
@@ -843,13 +843,17 @@ class ExtensionManager {
       try {
         ext.initFunc(contextProxy as IExtensionContext);
       } catch (err) {
+        this.mLoadFailures[ext.name] = [ { id: 'exception', args: { message: err.message } } ];
         log('warn', 'couldn\'t initialize extension',
           {name: ext.name, err: err.message, stack: err.stack});
       }
     });
     // need to store them locally for now because the store isn't loaded at this time
-    this.mLoadFailures = this.mContextProxyHandler.unloadIncompatible(
-        ExtensionManager.sUIAPIs, this.mExtensions.map(ext => ext.name));
+    this.mLoadFailures = {
+      ...this.mLoadFailures,
+      ...this.mContextProxyHandler.unloadIncompatible(
+        ExtensionManager.sUIAPIs, this.mExtensions.map(ext => ext.name)),
+    };
 
     if (remote !== undefined) {
       // renderer process
