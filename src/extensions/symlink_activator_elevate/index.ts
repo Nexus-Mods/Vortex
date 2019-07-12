@@ -83,16 +83,18 @@ class DeploymentMethod extends LinkingDeployment {
       }
     };
 
-    this.api.events.on('force-unblock-elevating', () => {
-      try {
-        if (this.mIPCServer !== undefined) {
-          this.mIPCServer.close();
-          this.mIPCServer = undefined;
+    if (api.events !== undefined) {
+      api.events.on('force-unblock-elevating', () => {
+        try {
+          if (this.mIPCServer !== undefined) {
+            this.mIPCServer.close();
+            this.mIPCServer = undefined;
+          }
+        } catch (err) {
+          log('warn', 'Failed to close ipc server', err.message);
         }
-      } catch (err) {
-        log('warn', 'Failed to close ipc server', err.message);
-      }
-    });
+      });
+    }
   }
 
   public detailedDescription(t: I18next.TFunction): string {
