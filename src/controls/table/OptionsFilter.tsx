@@ -1,7 +1,5 @@
-import { IState } from '../../types/IState';
 import { IFilterProps, ITableFilter } from '../../types/ITableAttribute';
 import bindProps from '../../util/bindProps';
-import { connect } from '../../util/ComponentEx';
 import { truthy } from '../../util/util';
 
 import * as React from 'react';
@@ -45,30 +43,58 @@ class OptionsFilterComponent extends React.Component<IProps & IBoundProps, {}> {
 
   private changeFilter = (filter: { value: any, label: string }) => {
     const { attributeId, onSetFilter } = this.props;
-    onSetFilter(attributeId, filter.value);
+    onSetFilter(attributeId, truthy(filter) ? filter.value : undefined);
   }
 }
 
 class OptionsFilter implements ITableFilter {
+  public static EMPTY = '__empty';
   public component: React.ComponentClass<any>;
   public raw = true;
 
   private mMulti: boolean;
 
-  constructor(options: Array<{ value: any, label: string }>, multi: boolean) {
+  constructor(options: Array<{ value: any, label: string }>, multi: boolean, raw?: boolean) {
     this.component = bindProps({ options, multi })(OptionsFilterComponent);
     this.mMulti = multi;
+    this.raw = raw !== false;
   }
 
   public matches(filter: any, value: any): boolean {
     if (this.mMulti && (filter !== undefined) && (filter.length === 0)) {
       return true;
     }
-    const filtUnsane = filter.map(filt => filt === dummy ? undefined : filt);
 
-    return (this.mMulti)
-      ? filtUnsane.indexOf(value) !== -1
-      : filtUnsane === value;
+    const filtUnsane = this.mMulti
+      ? new Set((filter || []).map(filt => filt === dummy ? undefined : filt))
+      : filter;
+
+    if (Array.isArray(value)) {
+      if (this.mMulti) {
+        if (filtUnsane.has(OptionsFilter.EMPTY) && (value.length === 0)) {
+          return true;
+        }
+      } else if (filter === OptionsFilter.EMPTY) {
+        return (value.length === 0);
+      }
+
+      const filt = this.mMulti
+        ? (iter: any) => filtUnsane.has(iter)
+        : (iter: any) => filtUnsane === iter;
+      return (value.find(filt) !== undefined);
+    } else {
+      if (this.mMulti) {
+        if (filtUnsane.has(OptionsFilter.EMPTY) && !truthy(value)) {
+          return true;
+        }
+      } else if (filter === OptionsFilter.EMPTY) {
+        return !truthy(value);
+      }
+
+      return this.mMulti
+        ? filtUnsane.has(value)
+        : filtUnsane === value;
+    }
   }
 
   public isEmpty(filter: any): boolean {

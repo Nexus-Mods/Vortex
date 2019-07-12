@@ -36,7 +36,7 @@ import { getReduxLog } from './reduxLogger';
 import ReduxProp from './ReduxProp';
 import relativeTime from './relativeTime';
 import steam, { GameNotFound, ISteamEntry } from './Steam';
-import { bytesToString, deBOM, isChildPath, objDiff,
+import { bytesToString, deBOM, isChildPath, makeQueue, objDiff,
          pad, sanitizeCSSId, setdefault } from './util';
 import walk from './walk';
 
@@ -67,6 +67,7 @@ export {
   isChildPath,
   LazyComponent,
   lazyRequire,
+  makeQueue,
   makeReactive,
   MissingInterpreter,
   Normalize,

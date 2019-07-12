@@ -22,6 +22,7 @@ import Steps from './Steps';
 import Table, {ChangeDataHandler, ITableRowAction, makeGetSelection} from './Table';
 import TableDateTimeFilter from './table/DateTimeFilter';
 import TableNumericFilter from './table/NumericFilter';
+import OptionsFilter from './table/OptionsFilter';
 import TableTextFilter from './table/TextFilter';
 import Toggle from './Toggle';
 import ToolbarIcon from './ToolbarIcon';
@@ -33,5 +34,5 @@ export {
   ActionContextMenu, ActionDropdown, Advanced, Banner, ChangeDataHandler, ContextMenu, Dashlet,
   DraggableList, Dropdown, Dropzone, EmptyPlaceholder,
   FlexLayout, FormFeedback, FormInput, Icon, IconBar, ITableRowAction, Modal,
-  More, Overlay, OverlayTrigger, Table, TableDateTimeFilter, TableNumericFilter, TableTextFilter,
-  Spinner, Steps, makeGetSelection, Toggle, ToolbarIcon, tooltip, Usage, Webview};
+  More, OptionsFilter, Overlay, OverlayTrigger, Table, TableDateTimeFilter, TableNumericFilter,
+  TableTextFilter, Spinner, Steps, makeGetSelection, Toggle, ToolbarIcon, tooltip, Usage, Webview};
