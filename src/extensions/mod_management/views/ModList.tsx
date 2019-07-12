@@ -763,7 +763,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
             message: err.message,
             replace: {
               modName: modName(modsWithState[modId]),
-            }
+            },
           });
         })
         .catch(err => {
@@ -965,7 +965,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
         const wereInstalled = filteredIds
           .filter(key => (this.state.modsWithState[key] !== undefined)
-                && (this.state.modsWithState[key].state === 'installed'))
+                && (this.state.modsWithState[key].state === 'installed'));
 
         const archiveIds = filteredIds
           .filter(key => (this.state.modsWithState[key] !== undefined)
@@ -1012,7 +1012,8 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     const { gameMode, mods, modState } = this.props;
     if (Array.isArray(modIds)) {
       modIds.filter(modId => mods[modId] !== undefined).forEach(modId =>
-        this.context.api.events.emit('start-install-download', mods[modId].archiveId, false, (err) => {
+        this.context.api.events.emit('start-install-download', mods[modId].archiveId,
+                                     false, (err) => {
           if (err === null) {
             const enabled = modIds.filter(id => getSafe(modState, [id, 'enabled'], false));
             if (enabled.length > 0) {
@@ -1021,7 +1022,8 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           }
         }));
     } else if (mods[modIds] !== undefined) {
-      this.context.api.events.emit('start-install-download', mods[modIds].archiveId, false, (err) => {
+      this.context.api.events.emit('start-install-download', mods[modIds].archiveId,
+                                   false, (err) => {
         if (err === null) {
           if (modState[modIds].enabled) {
             // reinstalling an enabled mod automatically enables the new one so we also need

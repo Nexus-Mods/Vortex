@@ -2,21 +2,21 @@ import {showDialog} from '../../../actions/notifications';
 import {IExtensionApi} from '../../../types/IExtensionContext';
 import { IGame } from '../../../types/IGame';
 import {IState} from '../../../types/IState';
-import {UserCanceled, ProcessCanceled} from '../../../util/CustomErrors';
+import {ProcessCanceled, UserCanceled} from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
 import { writeFileAtomic } from '../../../util/fsAtomic';
 import { activeGameId, currentGameDiscovery, installPathForGame } from '../../../util/selectors';
-import { deBOM, truthy, makeQueue } from '../../../util/util';
+import { deBOM, makeQueue, truthy } from '../../../util/util';
 
 import { getGame } from '../../gamemode_management/util/getGame';
 
 import {IDeploymentManifest, ManifestFormat} from '../types/IDeploymentManifest';
 import {IDeployedFile, IDeploymentMethod} from '../types/IDeploymentMethod';
 
-import format_1 from './manifest_formats/format_1';
 import { getActivator, getCurrentActivator } from './deploymentMethods';
+import format_1 from './manifest_formats/format_1';
 
-import * as msgpack from "@msgpack/msgpack";
+import * as msgpack from '@msgpack/msgpack';
 import * as Promise from 'bluebird';
 import I18next from 'i18next';
 import * as path from 'path';
