@@ -219,7 +219,9 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       classes.push('window-frame');
     }
 
-    const uiBlocker = Object.keys(uiBlockers).find(() => true);
+    const uiBlocker = truthy(uiBlockers)
+      ? Object.keys(uiBlockers).find(() => true)
+      : undefined;
 
     return (
       <React.Suspense fallback={<Spinner className='suspense-spinner' />}>
