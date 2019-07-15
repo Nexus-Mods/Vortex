@@ -1,7 +1,10 @@
-import * as semver from 'semvish';
+import * as semver from 'semver';
 
 function versionClean(input: string): string {
-  const res = semver.clean(input);
+  let res = semver.valid(semver.coerce(input));
+  if (res !== null) {
+    res = semver.clean(res);
+  }
   return res || '0.0.0-' + input;
 }
 

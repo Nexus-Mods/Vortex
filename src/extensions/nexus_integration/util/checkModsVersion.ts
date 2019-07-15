@@ -15,7 +15,7 @@ import I18next from 'i18next';
 import NexusT, { IFileInfo, IFileUpdate, IModFiles, IModInfo,
                  IUpdateEntry, NexusError, RateLimitError } from 'nexus-api';
 import * as Redux from 'redux';
-import * as semvish from 'semvish';
+import * as semver from 'semver';
 
 export const ONE_MINUTE = 60 * 1000;
 export const ONE_DAY = 24 * 60 * ONE_MINUTE;
@@ -217,7 +217,8 @@ function updateFileAttributes(dispatch: Redux.Dispatch<any>,
     : files.files.find(file => file.file_id === fileId);
   if ((updatedFile === undefined) && truthy(mod.attributes.version)) {
     try {
-      updatedFile = files.files.find(file => semvish.eq(file.mod_version, mod.attributes.version));
+      updatedFile = files.files.find(file =>
+        semver.eq(semver.coerce(file.mod_version), semver.coerce(mod.attributes.version)));
     } catch (err) {
       // nop
     }

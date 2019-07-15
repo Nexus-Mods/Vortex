@@ -4,7 +4,7 @@ import { IMod, IModReference } from '../types/IMod';
 
 import * as minimatch from 'minimatch';
 import * as path from 'path';
-import * as semver from 'semvish';
+import * as semver from 'semver';
 
 export interface IModLookupInfo {
   id?: string;
@@ -55,12 +55,9 @@ function testRef(mod: IModLookupInfo, modId: string, ref: IModReference): boolea
   if ((ref.versionMatch !== undefined)
       && (ref.versionMatch !== '*')
       && truthy(mod.version)) {
-    if (semver.valid(mod.version)) {
-      // this is a bit crappy by semvish: it will report a version like 1.2 as valid,
-      // but calling "satisfies('1.2', '1.2', true)" returns false.
-      // hence, try an exact match first
+    if (semver.valid(semver.coerce(mod.version))) {
       if ((mod.version !== ref.versionMatch)
-        && !semver.satisfies(mod.version, ref.versionMatch, true)) {
+        && !semver.satisfies(semver.coerce(mod.version), ref.versionMatch, true)) {
         return false;
       }
     } else {

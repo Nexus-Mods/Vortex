@@ -2172,12 +2172,12 @@ minizlib@^1.2.1:
     minimist "0.0.8"
 
 modmeta-db@Nexus-Mods/modmeta-db:
-  version "0.4.5"
-  resolved "https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/429a8006fb40195b62e5c8e3d32e1c49cc6afd06"
+  version "0.4.6"
+  resolved "https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/5dbd91d0a1b53b7053d28d55813f14a63aa4640f"
   dependencies:
     bluebird "^3.4.6"
     minimatch "^3.0.4"
-    semvish "^1.1.0"
+    semver "^6.2.0"
   optionalDependencies:
     body-parser "^1.15.2"
 
@@ -3362,24 +3362,15 @@ scss-tokenizer@^0.2.3:
   resolved "https://registry.yarnpkg.com/semver/-/semver-5.7.0.tgz#790a7cf6fea5459bac96110b29b60412dc8ff96b"
   integrity sha512-Ya52jSX2u7QKghxeoFGpLwCtGlt7j0oY9DYb5apt9nPlJ42ID+ulTXESnt/qAQcoSERyZ5sl3LDIOw0nAn/5DA==
 
-semver@^4.3.6:
-  version "4.3.6"
-  resolved "https://registry.yarnpkg.com/semver/-/semver-4.3.6.tgz#300bc6e0e86374f7ba61068b5b1ecd57fc6532da"
-  integrity sha1-MAvG4OhjdPe6YQaLWx7NV/xlMto=
+semver@^6.2.0:
+  version "6.2.0"
+  resolved "https://registry.yarnpkg.com/semver/-/semver-6.2.0.tgz#4d813d9590aaf8a9192693d6c85b9344de5901db"
+  integrity sha512-jdFC1VdUGT/2Scgbimf7FSx9iJLXoqfglSF+gJeuNWVpiE37OIbc1jywR/GJyFdz3mnkz2/id0L0J/cr0izR5A==
 
 semver@~5.3.0:
   version "5.3.0"
   resolved "https://registry.yarnpkg.com/semver/-/semver-5.3.0.tgz#9b2ce5d3de02d17c6012ad326aa6b4d0cf54f94f"
   integrity sha1-myzl094C0XxgEq0yaqa00M9U+U8=
-
-semvish@^1.1.0:
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/semvish/-/semvish-1.1.0.tgz#69d7d590f49de18e84f32c726e1a863d8ad60a1d"
-  integrity sha1-adfVkPSd4Y6E8yxybhqGPYrWCh0=
-  dependencies:
-    semver "^4.3.6"
-    underscore "~1.8.3"
-    underscore.string "~3.0.0"
 
 set-blocking@^2.0.0, set-blocking@~2.0.0:
   version "2.0.0"
@@ -3795,16 +3786,6 @@ uncontrollable@^6.0.0:
   integrity sha512-2TzEm0pLKauMBZfAZXsgQvLpZHEp95891frCZdGDrSG7dWYaIQhedwLAzi0X8pR8KHNqlmuYEb2cEgbQzr050A==
   dependencies:
     invariant "^2.2.4"
-
-underscore.string@~3.0.0:
-  version "3.0.3"
-  resolved "https://registry.yarnpkg.com/underscore.string/-/underscore.string-3.0.3.tgz#4617b8c1a250cf6e5064fbbb363d0fa96cf14552"
-  integrity sha1-Rhe4waJQz25QZPu7Nj0PqWzxRVI=
-
-underscore@~1.8.3:
-  version "1.8.3"
-  resolved "https://registry.yarnpkg.com/underscore/-/underscore-1.8.3.tgz#4f3fb53b106e6097fcf9cb4109f2a5e9bdfa5022"
-  integrity sha1-Tz+1OxBuYJf8+ctBCfKl6b36UCI=
 
 unherit@^1.0.4:
   version "1.1.1"
