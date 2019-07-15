@@ -712,11 +712,11 @@ function guessIds(api: IExtensionApi, instanceIds: string[]) {
     let fileName: string;
 
     let isDownload = false;
-    if (mods[id] !== undefined) {
+    if (getSafe(mods, [id], undefined) !== undefined) {
       const mod = mods[id];
       fileName = getSafe(mod.attributes, ['fileName'],
         getSafe(mod.attributes, ['name'], undefined));
-    } else if (downloads[id] !== undefined) {
+    } else if (getSafe(downloads, [id], undefined) !== undefined) {
       isDownload = true;
       const download = downloads[id];
       fileName = download.localPath;
