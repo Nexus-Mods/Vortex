@@ -325,10 +325,14 @@ export function onModsChanged(api: IExtensionApi, previous: IModTable, current: 
   const state: IState = store.getState();
   const gameMode = activeGameId(state);
 
+  const empty = (input) => !input || (Array.isArray(input) && input.length === 0);
+  const different = (lhs, rhs) => (!empty(lhs) || !empty(rhs)) && lhs !== rhs;
+  const changed = (modId: string, attribute: string) =>
+    different(previous[gameMode][modId][attribute], current[gameMode][modId][attribute]);
+
   const rulesOrOverridesChanged = modId =>
     (getSafe(previous, [gameMode, modId], undefined) !== undefined)
-    && ((previous[gameMode][modId].rules !== current[gameMode][modId].rules)
-        || (previous[gameMode][modId].fileOverrides !== current[gameMode][modId].fileOverrides));
+    && (changed(modId, 'rules') || changed(modId, 'fileOverrides'));
 
   if ((previous[gameMode] !== current[gameMode])
       && !state.persistent.deployment.needToDeploy[gameMode]) {

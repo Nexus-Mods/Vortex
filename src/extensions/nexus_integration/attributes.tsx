@@ -12,7 +12,6 @@ import NexusModIdDetail from './views/NexusModIdDetail';
 import I18next from 'i18next';
 import * as React from 'react';
 import * as Redux from 'redux';
-import { log } from '../../util/log';
 
 // TODO: the field names in this object will be shown to the user, hence the capitalization
 function renderNexusModIdDetail(
