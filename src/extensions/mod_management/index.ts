@@ -826,8 +826,8 @@ function once(api: IExtensionApi) {
 
   api.onAsync('deploy-single-mod', onDeploySingleMod(api));
 
-  api.onAsync('purge-mods-in-path', (modType: string, modPath: string) => {
-    return purgeModsInPath(api, modType, modPath)
+  api.onAsync('purge-mods-in-path', (gameId: string, modType: string, modPath: string) => {
+    return purgeModsInPath(api, gameId, modType, modPath)
       .catch(err => api.showErrorNotification('Failed to purge mods', err));
   });
 

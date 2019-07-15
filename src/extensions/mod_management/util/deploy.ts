@@ -115,11 +115,13 @@ export function purgeMods(api: IExtensionApi): Promise<void> {
     });
 }
 
-export function purgeModsInPath(api: IExtensionApi, typeId: string,
+export function purgeModsInPath(api: IExtensionApi, gameId: string, typeId: string,
                                 modPath: string): Promise<void> {
   const state = api.store.getState();
   const stagingPath = installPath(state);
-  const gameId = activeGameId(state);
+  if (gameId === undefined) {
+    gameId = activeGameId(state);
+  }
   const t = api.translate;
   const activator = getCurrentActivator(state, gameId, false);
 
