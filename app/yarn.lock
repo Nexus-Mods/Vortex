@@ -2257,8 +2257,8 @@ needle@^2.2.1:
     sax "^1.2.4"
 
 nexus-api@Nexus-Mods/node-nexus-api:
-  version "1.0.0-rc8"
-  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/26591a3fc85e86b08d017a150245c5e2cf3584db"
+  version "1.0.2"
+  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/d640d7e1924fd3b755e3301dc98c3d3b69d89cfa"
   dependencies:
     request "^2.85.0"
     string-template "^1.0.0"
