@@ -64,7 +64,6 @@ class StyleManager {
    * @param {string} filePath path of the corresponding stylesheet file
    */
   public setSheet(key: string, filePath: string): void {
-    log('debug', 'setting stylesheet', { key, filePath, stack: new Error().stack });
     try {
       const statProm = (filePath === undefined)
         ? Promise.resolve(undefined)
