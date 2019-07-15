@@ -64,19 +64,29 @@ class StyleManager {
    * @param {string} filePath path of the corresponding stylesheet file
    */
   public setSheet(key: string, filePath: string): void {
-    fs.statAsync(filePath)
-      .then(() => {
-        const idx = this.mPartials.findIndex(partial => partial.key === key);
-        if (idx !== -1) {
-          this.mPartials[idx] = { key, file: filePath };
-        } else {
-          this.mPartials.splice(this.mPartials.length - 2, 0, { key, file: filePath });
-        }
-        this.mRenderDebouncer.schedule(undefined);
-      })
-      .catch(err => {
-        log('warn', 'stylesheet can\'t be read', err.message);
-      });
+    log('debug', 'setting stylesheet', { key, filePath, stack: new Error().stack });
+    try {
+      const statProm = (filePath === undefined)
+        ? Promise.resolve(undefined)
+        : (path.extname(filePath) === '')
+        ? Promise.any([fs.statAsync(filePath + '.scss'), fs.statAsync(filePath + '.css')])
+        : fs.statAsync(filePath);
+      statProm
+        .then(() => {
+          const idx = this.mPartials.findIndex(partial => partial.key === key);
+          if (idx !== -1) {
+            this.mPartials[idx] = { key, file: filePath };
+          } else {
+            this.mPartials.splice(this.mPartials.length - 2, 0, { key, file: filePath });
+          }
+          this.mRenderDebouncer.schedule(undefined);
+        })
+        .catch(err => {
+          log('warn', 'stylesheet can\'t be read', err.message);
+        });
+    } catch (err) {
+      log('warn', 'stylesheet can\'t be read', { key, path: filePath, err: err.message });
+    }
   }
 
   public renderNow(): Promise<void> {
