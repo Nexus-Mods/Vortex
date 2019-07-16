@@ -278,6 +278,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
           }
         });
       }, { skipHidden: false }))
+      .catch({ code: 'ENOTFOUND' }, () => null)
       .catch({ code: 'ENOENT' }, () => null);
   }
 
