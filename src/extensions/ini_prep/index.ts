@@ -109,6 +109,11 @@ function discoverSettingsChanges(api: IExtensionApi, gameMode: string,
           fs.openAsync(iniFileName + '.base', 'a')
             .then(fd => fs.closeAsync(fd))
             .then(() => parser.write(iniFileName + '.base', ini))
+            .catch({ errno: 362 }, err => {
+              api.showErrorNotification('Failed to write ini file', err, {
+                allowReport: false,
+              });
+            })
             .catch({ code: 'ENOENT' }, err => {
               api.showErrorNotification('Failed to write ini file', err, {
                 allowReport: true,
