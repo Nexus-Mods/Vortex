@@ -1161,12 +1161,18 @@ class ExtensionManager {
                 // FO3 is dependent on several redistributables being installed to run.
                 //  code 3221225781 suggests that xlive and possibly other redistribs are
                 //  not installed.
-                reject(new MissingDependency());
+                return reject(new MissingDependency());
               } else if (code !== 0) {
                 // TODO: the child process returns an exit code of 53 for SSE and
                 // FO4, and an exit code of 1 for Skyrim. We don't know why but it
                 // doesn't seem to affect anything
                 log('warn', 'child process exited with code: ' + code.toString(16), {});
+                if (options.expectSuccess) {
+                  const err: any =
+                    new Error(`Failed to run "${executable}": "${code.toString(16)}"`);
+                  err.exitCode = code;
+                  return reject(err);
+                }
               }
               resolve();
           });

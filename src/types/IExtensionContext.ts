@@ -293,6 +293,9 @@ export interface IRunOptions {
   suggestDeploy?: boolean;
   shell?: boolean;
   detach?: boolean;
+  // if true, a non-zero exit code will be treated as an error. default is false
+  //   because too many windows applications don't report proper exit codes
+  expectSuccess?: boolean;
   onSpawned?: () => void;
 }
 
