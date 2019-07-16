@@ -200,10 +200,11 @@ function bakeSettings(t: I18next.TFunction,
         .then(() => fs.forcePerm(t, () => parser.write(iniFileName + '.baked', ini)))
         .then(() => {
           if (iniFileName === undefined) {
-            return Promise.reject(new Error(`Path is undefined. Game="${gameMode}"; FileList="${baseFiles.join(', ')}"`));
+            return Promise.reject(new Error(
+              `Path is undefined. Game="${gameMode}"; FileList="${baseFiles.join(', ')}"`));
           }
           return fs.copyAsync(iniFileName + '.baked',
-                              iniFileName, { noSelfCopy: true })
+                              iniFileName, { noSelfCopy: true });
         }));
   }))
   .then(() => undefined);
@@ -228,6 +229,7 @@ function testProtectedFolderAccess(): Promise<ITestResult> {
     // Technically this try/catch block shouldn't be necessary but some users
     //  seem to encounter a crash (Windows only) when attempting to retrieve
     //  the documents path. This may be related to:
+    // tslint:disable-next-line:max-line-length
     // https://forums.asp.net/t/1889407.aspx?GetFolderPath+Environment+GetFolderPath+Environment+SpecialFolder+MyDocuments+returning+blank+when+hosted+on+IIS
     writablePath = app.getPath('documents');
   } catch (err) {
@@ -248,7 +250,8 @@ function testProtectedFolderAccess(): Promise<ITestResult> {
       //  an external application has blocked Vortex from running the file operation.
       //  in this case it's safe to assume that an AV or possibly Windows Defender
       //  have stepped in and blocked Vortex.
-      log('warn', 'reporting AV blocking access to documents', { documentsPath: writablePath, error: err.message });
+      log('warn', 'reporting AV blocking access to documents',
+        { documentsPath: writablePath, error: err.message });
       disableErrorReport();
       return {
         description: {
@@ -258,8 +261,11 @@ function testProtectedFolderAccess(): Promise<ITestResult> {
           + 'Most Anti-Virus applications should inform you of this attempt while others such as '
           + 'Windows 10\'s Windows Defender will block access without prompt.<br /><br />'
           + 'For more information please visit our wiki: '
-          + '[url]https://wiki.nexusmods.com/index.php/Configuring_your_anti-virus_to_work_with_Vortex[/url]<br /><br />'
-          + '[b][color=red]Important: Error reporting from Vortex will be disabled until you remedy this situation.[/color][/b]',
+          + '[url]'
+          + 'https://wiki.nexusmods.com/index.php/Configuring_your_anti-virus_to_work_with_Vortex'
+          + '[/url]<br /><br />'
+          + '[b][color=red]Important: Error reporting from Vortex will be disabled '
+          + 'until you remedy this situation.[/color][/b]',
         },
         severity: 'error',
       };
@@ -287,7 +293,8 @@ function main(context: IExtensionContext) {
       ensureIniBackups(context.api.translate, gameMode,
                        state.settings.gameMode.discovered[gameMode])
       .catch(UserCanceled, () => {
-        log('warn', 'User has canceled creation of ini backups. Well, the user is boss I guess...', {
+        log('warn',
+            'User has canceled creation of ini backups. Well, the user is boss I guess...', {
           allowReport: false,
         });
       })
