@@ -7,7 +7,7 @@ import { activeGameId, activeProfile, currentGameDiscovery } from '../../../util
 import { getSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
 import { getGame } from '../../gamemode_management/util/getGame';
-import { installPath } from '../selectors';
+import { installPath, installPathForGame } from '../selectors';
 import { IMod } from '../types/IMod';
 import { loadActivation, saveActivation, withActivationLock } from './activationStore';
 import { getCurrentActivator } from './deploymentMethods';
@@ -118,10 +118,11 @@ export function purgeMods(api: IExtensionApi): Promise<void> {
 export function purgeModsInPath(api: IExtensionApi, gameId: string, typeId: string,
                                 modPath: string): Promise<void> {
   const state = api.store.getState();
-  const stagingPath = installPath(state);
   if (gameId === undefined) {
     gameId = activeGameId(state);
   }
+  const stagingPath = installPathForGame(state, gameId);
+
   const t = api.translate;
   const activator = getCurrentActivator(state, gameId, false);
 
