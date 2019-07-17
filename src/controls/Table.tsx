@@ -1300,13 +1300,15 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private visibleAttributes(attributes: ITableAttribute[],
                             attributeStates: { [id: string]: IAttributeState }):
                             { table: ITableAttribute[], detail: ITableAttribute[] } {
-    const enabled = attributes.filter(attribute =>
-        ((attribute.condition === undefined) || attribute.condition())
-        && this.getAttributeState(attribute, attributeStates).enabled);
+    const filtered = attributes.filter(attribute =>
+      ((attribute.condition === undefined) || attribute.condition()));
+
+    const enabled = filtered.filter(attribute =>
+      this.getAttributeState(attribute, attributeStates).enabled);
 
     return {
       table: enabled.filter(attribute => attribute.placement !== 'detail'),
-      detail: enabled.filter(attribute => attribute.placement !== 'table'),
+      detail: filtered.filter(attribute => attribute.placement !== 'table'),
     };
   }
 
