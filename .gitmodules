@@ -126,3 +126,7 @@
 	path = extensions/modtype-umm
 	url = https://github.com/nexus-mods/extension-modtype-umm
 	branch = master
+[submodule "extensions/mod-content"]
+	path = extensions/mod-content
+	url = https://github.com/Nexus-Mods/extension-mod-content.git
+	branch = master
