@@ -498,7 +498,8 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
       .catch(UserCanceled, () => null)
       .catch(ProcessCanceled, () => null)
       .catch((err) => {
-        this.context.api.showErrorNotification('Failed to change tool icon', err);
+        this.context.api.showErrorNotification('Failed to change tool icon', err,
+                                               { allowReport: false });
       });
   }
 
