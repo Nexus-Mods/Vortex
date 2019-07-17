@@ -25,11 +25,14 @@ import { checkAssemblies, getNetVersion } from './util/netVersion';
 import InstallerDialog from './views/InstallerDialog';
 
 import * as Promise from 'bluebird';
+import { app as appIn, remote } from 'electron';
 import * as edgeT from 'electron-edge-js';
 const edge = lazyRequire<typeof edgeT>(() => require('electron-edge-js'));
 import * as path from 'path';
 import * as semver from 'semver';
 import * as util from 'util';
+
+const app = appIn !== undefined ? appIn : remote.app;
 
 let testSupportedLib;
 let installLib;
@@ -73,6 +76,13 @@ function transformError(err: any): Error {
   } else if (err.name === 'System.IO.PathTooLongException') {
     result = new SetupError('The installer tried to access a file with a path longer than 260 '
                         + 'characters. This usually means that your mod staging path is too long.');
+  } else if ((err.name === 'System.IO.IOException')
+             && (err.StackTrace.indexOf('System.IO.Path.InternalGetTempFileName'))) {
+    const tempDir = app.getPath('temp');
+    result = new SetupError(`Your temp directory "${tempDir}" contains too many files. `
+                          + 'You need to clean up that directory. Files in that directory '
+                          + 'should be safe to delete (they are temporary after all) but '
+                          + 'some will be inaccessible, just ignore those.');
   } else if ((err.StackTrace.indexOf('XNodeValidator.ValidationCallback') !== -1)
              || (err.StackTrace.indexOf('XmlTextReaderImpl.ParseXmlDeclaration') !== -1)
              || (err.StackTrace.indexOf('XmlTextReaderImpl.ParseAttributes') !== -1)
