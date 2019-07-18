@@ -100,11 +100,18 @@ export function purgeMods(api: IExtensionApi): Promise<void> {
           saveActivation(typeId, state.app.instanceId, modPaths[typeId], stagingPath,
                          [], activator.id)))
       // the deployment may be changed so on an exception we still need to update it
-      .tapCatch(() => Promise.map(modTypes, typeId =>
+      .tapCatch(() => {
+        if (lastDeployment === undefined) {
+          // exception happened before the deployment is even loaded so there is nothing
+          // to clean up
+          return;
+        }
+        return Promise.map(modTypes, typeId =>
           filterManifest(activator, modPaths[typeId], stagingPath, lastDeployment[typeId])
-          .then(files =>
-            saveActivation(typeId, state.app.instanceId, modPaths[typeId], stagingPath,
-                           files, activator.id))))
+            .then(files =>
+              saveActivation(typeId, state.app.instanceId, modPaths[typeId], stagingPath,
+                files, activator.id)));
+      })
       .catch(ProcessCanceled, () => null)
       .then(() => Promise.resolve())
       .finally(() => activator.postPurge());
