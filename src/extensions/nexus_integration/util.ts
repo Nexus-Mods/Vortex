@@ -147,7 +147,9 @@ export function startDownload(api: IExtensionApi, nexus: Nexus, nxmurl: string):
       } else if (err instanceof UserCanceled) {
         // nop
       } else {
-        api.showErrorNotification('Download failed', err);
+        const allowReport = (err['nativeCode'] === undefined)
+                         || ([225].indexOf(err['nativeCode']) === -1);
+        api.showErrorNotification('Download failed', err, { allowReport });
       }
       log('warn', 'failed to get mod info', { err: util.inspect(err) });
       return undefined;

@@ -114,6 +114,7 @@ if (process.platform === 'win32') {
     if (error['code'] === 'UNKNOWN') {
       const native = nativeErr.GetLastError();
       error.message = `${native.message} (${native.code})`;
+      error['nativeCode'] = native.code;
     }
     return oldPrep !== undefined
       ? oldPrep(error, stack)
