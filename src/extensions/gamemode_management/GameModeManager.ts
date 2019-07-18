@@ -108,7 +108,7 @@ class GameModeManager {
         }
       })
       .catch(err => {
-        return (err.code === 'ENOENT')
+        return (['ENOENT', 'ENOTFOUND'].indexOf(err.code) !== -1)
         ? Promise.reject(new ProcessCanceled('Missing: ' + (err.filename || modPath)))
         : Promise.reject(err);
       });
