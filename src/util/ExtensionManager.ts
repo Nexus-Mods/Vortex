@@ -558,7 +558,9 @@ class ExtensionManager {
           try {
             // make an attempt to serialise error objects in such a way that they can be
             // reconstructed.
-            const data: any = Object.assign({}, details);
+            const data: any = (typeof(details) === 'object')
+              ? { details }
+              : details;
             if (details instanceof Error) {
               // details.stack may be a getter, so we have to assign it separately
               data.stack = details.stack;

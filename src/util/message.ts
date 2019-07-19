@@ -4,13 +4,13 @@ import {
   IDialogContent,
   showDialog,
 } from '../actions/notifications';
-import { IErrorOptions, IAttachment } from '../types/IExtensionContext';
+import { IAttachment, IErrorOptions } from '../types/IExtensionContext';
 import { IState } from '../types/IState';
 import { jsonRequest } from '../util/network';
 
 import { HTTPError } from './CustomErrors';
-import { isOutdated, sendReport, toError,
-         getErrorContext, didIgnoreError } from './errorHandling';
+import { didIgnoreError, getErrorContext, isOutdated,
+         sendReport, toError } from './errorHandling';
 import * as fs from './fs';
 import { log } from './log';
 import { truthy } from './util';
@@ -518,6 +518,9 @@ function prettifyHTTPError(err: HTTPError) {
   return func();
 }
 
+const HIDE_ATTRIBUTES = new Set(
+  ['message', 'error', 'context', 'errno', 'syscall', 'isOperational']);
+
 /**
  * render error message for display to the user
  * @param err
@@ -538,7 +541,7 @@ export function renderError(err: string | Error | any):
         .filter(key => key[0].toUpperCase() === key[0]);
     if (attributes.length === 0) {
       attributes = Object.keys(err || {})
-        .filter(key => ['message', 'error', 'context'].indexOf(key) === -1);
+        .filter(key => !HIDE_ATTRIBUTES.has(key));
     }
     if (attributes.length > 0) {
       const old = errMessage.message;

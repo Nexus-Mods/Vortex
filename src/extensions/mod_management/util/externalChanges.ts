@@ -156,9 +156,15 @@ export function dealWithExternalChanges(api: IExtensionApi,
                                         modPaths: { [typeId: string]: string },
                                         lastDeployment: { [typeId: string]: IDeployedFile[] }) {
   return checkForExternalChanges(api, activator, profileId, stagingPath, modPaths, lastDeployment)
-    .then((changes: { [typeId: string]: IFileChange[] }) => (Object.keys(changes).length === 0)
-      ? Promise.resolve([])
-      : api.store.dispatch(showExternalChanges(changes)))
+    .then((changes: { [typeId: string]: IFileChange[] }) => {
+      const count = Object.keys(changes).length;
+      if (count > 0) {
+        log('info', 'found external changes', { count });
+        return api.store.dispatch(showExternalChanges(changes));
+      } else {
+        return Promise.resolve([]);
+      }
+    })
     .then((fileActions: IFileEntry[]) => Promise.mapSeries(Object.keys(lastDeployment),
       typeId => applyFileActions(api, profileId, stagingPath, modPaths[typeId],
         lastDeployment[typeId],
