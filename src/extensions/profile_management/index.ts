@@ -19,14 +19,14 @@
 import { addNotification, IDialogResult, showDialog } from '../../actions/notifications';
 
 import { setProgress } from '../../actions/session';
-import { needToDeployForGame, installPathForGame } from '../../util/selectors';
-import { IExtensionContext, IExtensionApi, ThunkStore } from '../../types/IExtensionContext';
+import { IExtensionApi, IExtensionContext, ThunkStore } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
-import { SetupError, ProcessCanceled } from '../../util/CustomErrors';
+import { ProcessCanceled, SetupError } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import onceCB from '../../util/onceCB';
+import { installPathForGame, needToDeployForGame } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { truthy } from '../../util/util';
 
@@ -44,7 +44,7 @@ import Connector from './views/Connector';
 import ProfileView from './views/ProfileView';
 import TransferDialog from './views/TransferDialog';
 
-import { activeGameId, activeProfile, profileById, lastActiveProfileForGame } from './selectors';
+import { activeGameId, activeProfile, lastActiveProfileForGame, profileById } from './selectors';
 import { syncFromProfile, syncToProfile } from './sync';
 
 import * as Promise from 'bluebird';
@@ -195,7 +195,8 @@ function deploy(api: IExtensionApi, profileId: string): Promise<void> {
   });
 }
 
-function genOnProfileChange(api: IExtensionApi, onFinishProfileSwitch: (callback: () => void) => void) {
+function genOnProfileChange(api: IExtensionApi,
+                            onFinishProfileSwitch: (callback: () => void) => void) {
   let finishProfileSwitchPromise: Promise<void> = Promise.resolve();
   const { store } = api;
 

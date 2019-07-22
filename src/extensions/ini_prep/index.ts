@@ -333,7 +333,7 @@ function main(context: IExtensionContext) {
     context.api.onAsync('bake-settings', (gameId: string, mods: IMod[], profile: IProfile) => {
       log('debug', 'baking settings', { gameId, deactivated });
       if (deactivated) {
-        return;
+        return Promise.resolve();
       }
       const state: IState = context.api.store.getState();
       const discovery: IDiscoveryResult = state.settings.gameMode.discovered[profile.gameId];
