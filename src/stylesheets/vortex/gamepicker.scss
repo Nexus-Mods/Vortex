@@ -95,6 +95,13 @@ $thumbnail-width: 256px;
     overflow: hidden;
     text-overflow: ellipsis;
     font-size: larger;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+
+    .name-part {
+      margin-right: 0.2em;
+    }
   }
 
   .active-mods {

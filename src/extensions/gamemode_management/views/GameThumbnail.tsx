@@ -3,7 +3,7 @@ import IconBar from '../../../controls/IconBar';
 import OverlayTrigger from '../../../controls/OverlayTrigger';
 import { IconButton } from '../../../controls/TooltipControls';
 import { IActionDefinition } from '../../../types/api';
-import { IProfile, IState, IMod } from '../../../types/IState';
+import { IMod, IProfile, IState } from '../../../types/IState';
 import { connect, PureComponentEx } from '../../../util/ComponentEx';
 import { getSafe } from '../../../util/storeHelper';
 import { countIf } from '../../../util/util';
@@ -36,7 +36,9 @@ interface IConnectedProps {
 
 type IProps = IBaseProps & IConnectedProps;
 
-function nop() {}
+function nop() {
+  // nop
+}
 
 /**
  * thumbnail + controls for a single game mode within the game picker
@@ -62,6 +64,8 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
           id => profile.modState[id].enabled && (mods[id] !== undefined))
       : undefined;
 
+    const nameParts = game.name.split('\t');
+
     return (
       <Panel className='game-thumbnail' bsStyle={active ? 'primary' : 'default'}>
         <Panel.Body className='game-thumbnail-body'>
@@ -70,7 +74,9 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
             src={logoPath}
           />
           <div className='bottom'>
-            <div className='name'>{t(game.name)}</div>
+            <div className='name'>
+              {nameParts.map((part, idx) => (<div key={idx} className='name-part'>{t(part)}</div>))}
+            </div>
             {
               modCount !== undefined
                 ? <div className='active-mods'>
@@ -86,13 +92,26 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
           {type !== 'launcher' ? (
           <div className='game-thumbnail-tags'>
             {game.contributed ? (
-              <IconButton className='btn-embed' icon='contributor' tooltip={t('Contributed by {{name}}', { replace: { name: game.contributed } })}/>
+              <IconButton
+                className='btn-embed'
+                icon='contributor'
+                tooltip={t('Contributed by {{name}}', { replace: { name: game.contributed } })}
+              />
              ) : (
-              <IconButton className='btn-embed' icon='official' tooltip={t('Officially Supported')} />
+              <IconButton
+                className='btn-embed'
+                icon='official'
+                tooltip={t('Officially Supported')}
+              />
              )}
             {game.final ? null : (
-              <a className='fake-link' onClick={nop} title={t('Not fully tested, please provide feedback')}>{t('Beta')}</a>
-              
+              <a
+                className='fake-link'
+                onClick={nop}
+                title={t('Not fully tested, please provide feedback')}
+              >
+                {t('Beta')}
+              </a>
             )}
           </div>
           ) : null}
