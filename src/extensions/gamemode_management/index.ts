@@ -601,10 +601,8 @@ function init(context: IExtensionContext): boolean {
 
             context.api.sendNotification({
               type: 'info',
-              message: 'Switched game mode: {{mode}}',
-              replace: {
-                mode: game.name,
-              },
+              title: 'Switched game mode',
+              message: game.name,
               displayMS: 4000,
             });
           }
