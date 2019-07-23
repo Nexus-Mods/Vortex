@@ -570,23 +570,29 @@ export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promis
         api.store.dispatch(setUserInfo(transformUserInfo(userInfo)));
         retrieveNexusGames(nexus);
       }
-      return github.fetchConfig('api');
-    }).then(configObj => {
-      const currentVer = app.getVersion();
-      if ((currentVer !== '0.0.1')
-          && (semver.lt(currentVer, configObj.minversion))) {
-        (nexus as any).disable();
-        api.sendNotification({
-          type: 'warning',
-          title: 'Vortex outdated',
-          message: 'Your version of Vortex is quite outdated. Network features disabled.',
-          actions: [
-            { title: 'Check for update', action: () => {
-              ipcRenderer.send('check-for-updates', 'stable');
-            } },
-          ],
+      return github.fetchConfig('api')
+        .then(configObj => {
+          const currentVer = app.getVersion();
+          if ((currentVer !== '0.0.1')
+            && (semver.lt(currentVer, configObj.minversion))) {
+            (nexus as any).disable();
+            api.sendNotification({
+              type: 'warning',
+              title: 'Vortex outdated',
+              message: 'Your version of Vortex is quite outdated. Network features disabled.',
+              actions: [
+                {
+                  title: 'Check for update', action: () => {
+                    ipcRenderer.send('check-for-updates', 'stable');
+                  },
+                },
+              ],
+            });
+          }
+        })
+        .catch(err => {
+          log('warn', 'Failed to fetch api config', { message: err.message });
         });
-      }
     })
     // don't stop the login just because the github rate limit is exceeded
     .catch(RateLimitExceeded, () => Promise.resolve())

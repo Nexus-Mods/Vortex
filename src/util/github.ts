@@ -114,6 +114,7 @@ class GitHub {
     if ((this.mRatelimitReset !== undefined) && (this.mRatelimitReset > Date.now())) {
       return Promise.reject(new RateLimitExceeded());
     }
+    const stackErr = new Error();
 
     return new Promise((resolve, reject) => {
         const relUrl = url.parse(`${baseUrl}/${request}`);
@@ -141,8 +142,11 @@ class GitHub {
             .on('end', () => {
               try {
                 return resolve(JSON.parse(output));
-              } catch (err) {
-                reject(err);
+              } catch (parseErr) {
+                const message = output.split('\n')[0];
+                const error = new Error(message);
+                error.stack = stackErr.stack;
+                reject(error);
               }
             });
         })
