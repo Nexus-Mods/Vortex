@@ -70,6 +70,8 @@ function stopPatterns(gameMode: string) {
               'Effects', 'Expressions', 'FXs', 'HandPoses', 'Interactables', 'Items', 'LootTables',
               'PhysicMaterials', 'Ragdolls', 'Spells', 'Texts', 'UMAPresets',
               'Waves'].map(toWordExp);
+    case 'shadowrunreturns':
+      return ['data', 'project.cpack.txt', 'project.cpack.bytes'].map(toWordExp);
     default: return [].concat(uniPatterns);
   }
 }
@@ -244,6 +246,9 @@ const gameSupport: { [gameId: string]: IGameSupport } = {
   },
   bladeandsorcery: {
     stopPatterns: stopPatterns('bladeandsorcery'),
+  },
+  shadowrunreturns: {
+    stopPatterns:  stopPatterns('shadowrunreturns'),
   },
 };
 
