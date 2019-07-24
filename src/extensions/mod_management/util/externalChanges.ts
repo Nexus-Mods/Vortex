@@ -79,6 +79,9 @@ function applyFileActions(api: IExtensionApi,
         (actionGroups['drop'] || []).map(entry => entry.filePath),
         // also remove the files that got deleted, except these won't be reinstalled
         (actionGroups['delete'] || []).map(entry => entry.filePath),
+        // also remove the files that got imported because they too only exist in staging
+        // at this point
+        (actionGroups['import'] || []).map(entry => entry.filePath),
       ));
       const newDeployment = lastDeployment.filter(entry => !dropSet.has(entry.relPath));
       lastDeployment = newDeployment;
