@@ -52,6 +52,7 @@ function writeFileAtomicImpl(filePath: string, input: string | Buffer, attempts:
   })
   .then(fd => {
     return fs.writeAsync(fd, buf, 0, buf.byteLength, 0)
+      .then(() => fs.fsyncAsync(fd).catch(() => Promise.resolve()))
       .then(() => fs.closeAsync(fd));
   })
   .then(() => fs.readFileAsync(tmpPath))
