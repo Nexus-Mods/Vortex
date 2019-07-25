@@ -5,6 +5,7 @@ import {IState} from '../../../types/IState';
 import {ProcessCanceled, UserCanceled} from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
 import { writeFileAtomic } from '../../../util/fsAtomic';
+import { log } from '../../../util/log';
 import { activeGameId, currentGameDiscovery, installPathForGame } from '../../../util/selectors';
 import { deBOM, makeQueue, truthy } from '../../../util/util';
 
@@ -20,6 +21,7 @@ import * as msgpack from '@msgpack/msgpack';
 import * as Promise from 'bluebird';
 import I18next from 'i18next';
 import * as path from 'path';
+import { sync as writeAtomicSync } from 'write-file-atomic';
 
 const CURRENT_VERSION = 1;
 
@@ -334,7 +336,11 @@ export function saveActivation(modType: string, instance: string,
 
   if (activation.length > 0) {
     // write backup synchronously
-    fs.writeFileSync(tagBackupPath, Buffer.from(msgpack.encode(dataRaw)));
+    try {
+      writeAtomicSync(tagBackupPath, Buffer.from(msgpack.encode(dataRaw)));
+    } catch (err) {
+      log('error', 'Failed to write manifest backup', err.message);
+    }
   }
 
   return (activation.length === 0)

@@ -122,6 +122,7 @@
     "@types/webpack": "^4.4.25",
     "@types/winreg": "^1.2.30",
     "@types/winston": "^2.4.4",
+    "@types/write-file-atomic": "^2.1.2",
     "@types/ws": "^6.0.1",
     "@yarnpkg/lockfile": "*",
     "babel-core": "^6.26.3",
@@ -249,6 +250,7 @@
     "wholocks": "Nexus-Mods/node-wholocks",
     "winapi-bindings": "Nexus-Mods/node-winapi-bindings",
     "winston": "^2.4.3",
+    "write-file-atomic": "^3.0.0",
     "ws": "^6.2.0"
   }
 }
