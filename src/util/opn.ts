@@ -1,4 +1,4 @@
-import { MissingInterpreter } from './api';
+import { MissingInterpreter } from './CustomErrors';
 
 import * as Promise from 'bluebird';
 import opn = require('opn');
