@@ -61,8 +61,8 @@ const app = remote !== undefined ? remote.app : appIn;
 let nexus: NexusT;
 
 export class APIDisabled extends Error {
-  constructor() {
-    super('Network functionality disabled');
+  constructor(instruction: string) {
+    super(`Network functionality disabled "${instruction}"`);
     this.name = this.constructor.name;
   }
 }
@@ -99,7 +99,7 @@ class Disableable {
       }
       return obj[prop];
     } else {
-      return () => Promise.reject(new APIDisabled());
+      return () => Promise.reject(new APIDisabled(prop));
     }
   }
 }
@@ -112,7 +112,7 @@ function getCaller() {
   // set up error to return the vanilla v8 stack trace
   const dummyObject: { stack?: any } = {};
   Error.stackTraceLimit = Infinity;
-  Error.prepareStackTrace = (dummyObject, v8StackTrace) => v8StackTrace;
+  Error.prepareStackTrace = (dummyObject, trace) => trace;
   Error.captureStackTrace(dummyObject, getCaller);
   const v8StackTrace = dummyObject.stack;
 
