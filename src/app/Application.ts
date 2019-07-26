@@ -18,7 +18,7 @@ import { allHives, createVortexStore, currentStatePath, extendStore,
          importState, insertPersistor, markImported, querySanitize } from '../util/store';
 import {} from '../util/storeHelper';
 import SubPersistor from '../util/SubPersistor';
-import { spawnSelf, timeout, truthy } from '../util/util';
+import { isMajorDowngrade, spawnSelf, timeout, truthy } from '../util/util';
 
 import { addNotification } from '../actions';
 
@@ -337,8 +337,7 @@ class Application {
       // don't check version change in development builds or on first start
       return Promise.resolve();
     }
-    if ((semver.major(currentVersion) < semver.major(lastVersion))
-        || (semver.minor(currentVersion) < semver.minor(lastVersion))) {
+    if (isMajorDowngrade(lastVersion, currentVersion)) {
       if (dialog.showMessageBox(getWindow(), {
         type: 'warning',
         title: 'Downgrade detected',
