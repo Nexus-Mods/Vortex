@@ -834,6 +834,9 @@ function once(api: IExtensionApi) {
 
   api.onAsync('purge-mods-in-path', (gameId: string, modType: string, modPath: string) => {
     return purgeModsInPath(api, gameId, modType, modPath)
+      .catch(UserCanceled, () => Promise.resolve())
+      .catch(ProcessCanceled, err =>
+        api.showErrorNotification('Failed to purge mods', err, { allowReport: false }))
       .catch(err => api.showErrorNotification('Failed to purge mods', err));
   });
 
