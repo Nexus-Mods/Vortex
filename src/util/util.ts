@@ -5,6 +5,7 @@ import * as Promise from 'bluebird';
 import { spawn } from 'child_process';
 import * as _ from 'lodash';
 import * as path from 'path';
+import * as semver from 'semver';
 
 /**
  * count the elements in an array for which the predicate matches
@@ -380,3 +381,16 @@ export {
   INVALID_FILENAME_RE,
   INVALID_FILENAME_CHARACTERS,
 };
+
+// test if the running version is a major downgrade (downgrading by a major or minor version,
+// everything except a patch) compared to what was running last
+export function isMajorDowngrade(previous: string, current: string): boolean {
+  const majorL = semver.major(previous);
+  const majorR = semver.major(current);
+
+  if (majorL !== majorR) {
+    return majorL > majorR;
+  } else {
+    return semver.minor(previous) > semver.minor(current);
+  }
+}
