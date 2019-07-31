@@ -1153,6 +1153,8 @@ class ExtensionManager {
           if (options.onSpawned !== undefined) {
             options.onSpawned();
           }
+
+          let errOut: string;
           child
             .on('error', err => {
               reject(err);
@@ -1169,9 +1171,16 @@ class ExtensionManager {
                 // FO4, and an exit code of 1 for Skyrim. We don't know why but it
                 // doesn't seem to affect anything
                 log('warn', 'child process exited with code: ' + code.toString(16), {});
+                if (errOut !== undefined) {
+                  log('warn', 'child output', errOut.trim());
+                }
                 if (options.expectSuccess) {
+                  const lines = errOut.trim().split('\n');
+                  const lastLine = errOut !== undefined
+                    ? lines[lines.length - 1]
+                    : '<No output>';
                   const err: any =
-                    new Error(`Failed to run "${executable}": "${code.toString(16)}"`);
+                    new Error(`Failed to run "${executable}": "${lastLine} (${code.toString(16)})"`);
                   err.exitCode = code;
                   return reject(err);
                 }
@@ -1179,8 +1188,11 @@ class ExtensionManager {
               resolve();
           });
           if (child.stderr !== undefined) {
-            child.stderr.on('data', chunk => {
-              log('error', executable + ': ', chunk.toString());
+            child.stderr.on('data', (chunk: Buffer) => {
+              if (errOut === undefined) {
+                errOut = '';
+              }
+              errOut += chunk.toString();
             });
           }
         } catch (err) {
