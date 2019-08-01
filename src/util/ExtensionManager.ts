@@ -562,8 +562,10 @@ class ExtensionManager {
               ? { ...details }
               : details;
             if (details instanceof Error) {
-              // details.stack may be a getter, so we have to assign it separately
+              // details.stack, details.name AND details.message seem to be getters.
               data.stack = details.stack;
+              data.name = details.name;
+              data.message = details.message;
               // stack is also optional. If we don't have one, generate one to this function
               // which is better than nothing because otherwise the code reconstructing the error
               // will produce a stack that is completely useless
