@@ -2,7 +2,7 @@ import { Tag } from 'bbcode-to-react';
 import * as React from 'react';
 
 function nop() {
-
+  // nop
 }
 
 class TooltipTag extends Tag {

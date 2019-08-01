@@ -90,6 +90,16 @@ if (ipcMain !== undefined) {
     }
     event.returnValue = res;
   });
+
+  ipcMain.on('fire-dialog-action',
+             (event: Electron.Event, dialogId: string, action: string, input: any) => {
+    const func = DialogCallbacks.instance()[dialogId];
+    if (func !== undefined) {
+      func(action, input);
+      delete DialogCallbacks.instance()[dialogId];
+    }
+    event.returnValue = true;
+  });
 }
 
 /**
@@ -213,8 +223,12 @@ export function closeDialog(id: string, actionKey?: string, input?: any) {
   return (dispatch) => {
     dispatch(dismissDialog(id));
     try {
-      if ((actionKey !== undefined) && (DialogCallbacks.instance()[id] !== undefined)) {
-        DialogCallbacks.instance()[id](actionKey, input);
+      if (actionKey !== undefined) {
+        if (DialogCallbacks.instance()[id] !== undefined) {
+          DialogCallbacks.instance()[id](actionKey, input);
+        } else if (ipcRenderer !== undefined) {
+          ipcRenderer.sendSync('fire-dialog-action', id, actionKey, input);
+        }
       }
     } catch (err) {
       log('error', 'failed to invoke dialog callback', { id, actionKey });

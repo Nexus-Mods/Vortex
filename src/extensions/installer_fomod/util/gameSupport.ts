@@ -56,7 +56,9 @@ function stopPatterns(gameMode: string) {
               'models', 'particles', 'python', 'resource', 'save', 'scripts', 'sound',
               'vdata'].map(toWordExp));
     case 'sekiro':
-      return ['menu', 'sound', 'parts'].map(toWordExp);
+      return ['action', 'Artwork_MiniSoundtrack', 'chr', 'cutscene', 'event', 'facegen', 'font',
+              'map', 'menu', 'movie', 'msg', 'mtd', 'obj', 'other', 'param', 'parts', 'script',
+              'sfx', 'shader', 'sound'].map(toWordExp);
     case 'darkestdungeon':
       return ['audio', 'campaign', 'colours', 'curios', 'cursors', 'dlc', 'dungeons',
               'effects', 'fe_flow', 'fonts', 'fx', 'heroes', 'inventory', 'loading_screen',
@@ -68,6 +70,8 @@ function stopPatterns(gameMode: string) {
               'Effects', 'Expressions', 'FXs', 'HandPoses', 'Interactables', 'Items', 'LootTables',
               'PhysicMaterials', 'Ragdolls', 'Spells', 'Texts', 'UMAPresets',
               'Waves'].map(toWordExp);
+    case 'shadowrunreturns':
+      return ['data', 'project.cpack.txt', 'project.cpack.bytes'].map(toWordExp);
     default: return [].concat(uniPatterns);
   }
 }
@@ -242,6 +246,9 @@ const gameSupport: { [gameId: string]: IGameSupport } = {
   },
   bladeandsorcery: {
     stopPatterns: stopPatterns('bladeandsorcery'),
+  },
+  shadowrunreturns: {
+    stopPatterns:  stopPatterns('shadowrunreturns'),
   },
 };
 

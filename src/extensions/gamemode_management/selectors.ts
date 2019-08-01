@@ -5,8 +5,8 @@ import {getSafe} from '../../util/storeHelper';
 import {IDiscoveryResult} from './types/IDiscoveryResult';
 import {IGameStored} from './types/IGameStored';
 
-import { createSelector, OutputSelector } from 'reselect';
-import createCachedSelector, { ICacheObject, OutputParametricSelector, ParametricSelector } from 're-reselect';
+import createCachedSelector from 're-reselect';
+import { createSelector } from 'reselect';
 
 export function knownGames(state): IGameStored[] {
   return getSafe(state, ['session', 'gameMode', 'known'], []);
@@ -40,7 +40,7 @@ export function currentGameDiscovery(state: any): IDiscoveryResult {
 export const discoveryByGame =
   createCachedSelector(discovered,
     (state: IState, gameId: string) => gameId,
-    (discovered, gameId) => discovered[gameId]
+    (discoveredIn, gameId) => discoveredIn[gameId],
   )((state, gameId) => gameId);
 
 export function gameName(state: any, gameId: string): string {

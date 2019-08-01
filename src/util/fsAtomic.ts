@@ -1,8 +1,9 @@
 import * as fs from './fs';
-import * as Promise from 'bluebird';
-import { file } from 'tmp';
-import { createHash } from 'crypto';
 import { log } from './log';
+
+import * as Promise from 'bluebird';
+import { createHash } from 'crypto';
+import { file } from 'tmp';
 
 export function checksum(input: Buffer): string {
   return createHash('md5')
@@ -51,6 +52,7 @@ function writeFileAtomicImpl(filePath: string, input: string | Buffer, attempts:
   })
   .then(fd => {
     return fs.writeAsync(fd, buf, 0, buf.byteLength, 0)
+      .then(() => fs.fsyncAsync(fd).catch(() => Promise.resolve()))
       .then(() => fs.closeAsync(fd));
   })
   .then(() => fs.readFileAsync(tmpPath))
@@ -141,4 +143,3 @@ export function copyFileAtomic(srcPath: string,
         return Promise.reject(err);
       });
 }
-

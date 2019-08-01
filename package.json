@@ -9,7 +9,7 @@
     "url": "https://github.com/Nexus-Mods/Vortex"
   },
   "vortex": {
-    "electron": "4.2.4"
+    "electron": "4.2.6"
   },
   "scripts": {
     "_assets_out": "node InstallAssets.js out",
@@ -31,6 +31,7 @@
     "clean": "yarn add rm-local-modules && rm-local-modules && yarn install --check-files",
     "preinstall": "git submodule update --init --recursive",
     "test": "jest --no-cache",
+    "lint": "tslint --project . -t verbose || echo 0",
     "build": "yarn run build_rest && tsc -p .",
     "buildwatch": "yarn run build_rest && tsc -p . -w"
   },
@@ -121,6 +122,7 @@
     "@types/webpack": "^4.4.25",
     "@types/winreg": "^1.2.30",
     "@types/winston": "^2.4.4",
+    "@types/write-file-atomic": "^2.1.2",
     "@types/ws": "^6.0.1",
     "@yarnpkg/lockfile": "*",
     "babel-core": "^6.26.3",
@@ -131,7 +133,7 @@
     "copyfiles": "^2.1.0",
     "cross-env": "^5.2.0",
     "devtron": "^1.4.0",
-    "electron": "^4.2.4",
+    "electron": "^4.2.6",
     "electron-builder": "20.15.0",
     "electron-devtools-installer": "^2.2.4",
     "electron-download-tf": "^4.3.4",
@@ -202,6 +204,7 @@
     "lodash": "^4.17.11",
     "minimatch": "^3.0.4",
     "modmeta-db": "Nexus-Mods/modmeta-db",
+    "native-errors": "Nexus-Mods/node-native-errors",
     "nbind": "^0.3.15",
     "nexus-api": "Nexus-Mods/node-nexus-api",
     "node-7z": "Nexus-Mods/node-7z",
@@ -236,7 +239,6 @@
     "resolve": "^1.10.0",
     "rimraf": "TanninOne/rimraf",
     "semver": "^5.6.0",
-    "semvish": "^1.1.0",
     "shortid": "^2.2.14",
     "simple-vdf": "^1.1.1",
     "string-template": "^1.0.0",
@@ -248,6 +250,7 @@
     "wholocks": "Nexus-Mods/node-wholocks",
     "winapi-bindings": "Nexus-Mods/node-winapi-bindings",
     "winston": "^2.4.3",
+    "write-file-atomic": "^3.0.0",
     "ws": "^6.2.0"
   }
 }

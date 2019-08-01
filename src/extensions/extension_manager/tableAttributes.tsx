@@ -17,6 +17,7 @@ function renderLoadFailure(t: I18next.TFunction, fail: IExtensionLoadFailure) {
     'unsupported-version': 'Not compatible with this version of Vortex',
     'unsupported-api': 'Unsupported API',
     dependency: 'Depends on {{dependencyId}}',
+    exception: 'Failed to load: {{message}}',
   }, [ fail.id ], 'Unknown error');
   return t(pattern, { replace: fail.args });
 }

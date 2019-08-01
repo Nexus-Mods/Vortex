@@ -1,11 +1,11 @@
 import { IExtensionApi } from '../types/IExtensionContext';
 import { INotification } from '../types/INotification';
-
-import * as path from 'path';
+import { IState } from '../types/IState';
 
 import { log } from '../util/log';
 import getVortexPath from './getVortexPath';
-import { IState } from '../types/IState';
+
+import * as path from 'path';
 
 declare var Notification: any;
 
@@ -58,7 +58,8 @@ class GlobalNotifications {
       }
     });
 
-    this.mIsEnabled = () => (api.store.getState() as IState).settings.interface.desktopNotifications;
+    const state: IState = api.store.getState();
+    this.mIsEnabled = () => state.settings.interface.desktopNotifications;
   }
 
   private showNotification(notification: INotification): void {

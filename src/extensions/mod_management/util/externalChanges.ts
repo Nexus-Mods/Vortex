@@ -1,9 +1,10 @@
-import { IExtensionApi, IDeploymentMethod, IDeployedFile, IFileChange } from '../../../types/IExtensionContext';
+import { IDeployedFile, IDeploymentMethod,
+         IExtensionApi, IFileChange } from '../../../types/IExtensionContext';
 import { ProcessCanceled } from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
 import { log } from '../../../util/log';
+import { activeGameId, activeProfile, profileById } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
-import { activeProfile } from '../../../util/selectors';
 import { setdefault, truthy } from '../../../util/util';
 
 import { showExternalChanges } from '../actions/session';
@@ -23,7 +24,9 @@ import * as path from 'path';
  * @returns {Promise<IDeployedFile[]>} an updated deployment manifest to use as a reference
  *                                     for the new one
  */
-function applyFileActions(sourcePath: string,
+function applyFileActions(api: IExtensionApi,
+                          profileId: string,
+                          sourcePath: string,
                           outputPath: string,
                           lastDeployment: IDeployedFile[],
                           fileActions: IFileEntry[]): Promise<IDeployedFile[]> {
@@ -76,10 +79,40 @@ function applyFileActions(sourcePath: string,
         (actionGroups['drop'] || []).map(entry => entry.filePath),
         // also remove the files that got deleted, except these won't be reinstalled
         (actionGroups['delete'] || []).map(entry => entry.filePath),
+        // also remove the files that got imported because they too only exist in staging
+        // at this point
+        (actionGroups['import'] || []).map(entry => entry.filePath),
       ));
       const newDeployment = lastDeployment.filter(entry => !dropSet.has(entry.relPath));
       lastDeployment = newDeployment;
       return Promise.resolve();
+    })
+    .then(() => {
+      const affectedMods = new Set<string>();
+
+      fileActions.forEach(action => {
+        if (['import', 'newest', 'nop', 'delete', 'drop'].indexOf(action.action) !== -1) {
+          affectedMods.add(action.source);
+        }
+      });
+
+      const state = api.store.getState();
+      let gameId: string;
+
+      if (profileId !== undefined) {
+        const profile = profileById(state, profileId);
+        if (profile !== undefined) {
+          gameId = profile.id;
+        }
+      }
+
+      if (gameId === undefined) {
+        gameId = activeGameId(state);
+      }
+
+      affectedMods.forEach(affected => {
+        api.events.emit('mod-content-changed', gameId, affected);
+      });
     })
     .then(() => lastDeployment);
 }
@@ -126,13 +159,18 @@ export function dealWithExternalChanges(api: IExtensionApi,
                                         modPaths: { [typeId: string]: string },
                                         lastDeployment: { [typeId: string]: IDeployedFile[] }) {
   return checkForExternalChanges(api, activator, profileId, stagingPath, modPaths, lastDeployment)
-    .then((changes: { [typeId: string]: IFileChange[] }) => (Object.keys(changes).length === 0)
-      ? Promise.resolve([])
-      : api.store.dispatch(showExternalChanges(changes)))
+    .then((changes: { [typeId: string]: IFileChange[] }) => {
+      const count = Object.keys(changes).length;
+      if (count > 0) {
+        log('info', 'found external changes', { count });
+        return api.store.dispatch(showExternalChanges(changes));
+      } else {
+        return Promise.resolve([]);
+      }
+    })
     .then((fileActions: IFileEntry[]) => Promise.mapSeries(Object.keys(lastDeployment),
-      typeId => applyFileActions(stagingPath, modPaths[typeId],
+      typeId => applyFileActions(api, profileId, stagingPath, modPaths[typeId],
         lastDeployment[typeId],
         fileActions.filter(action => action.modTypeId === typeId))
-        .then(newLastDeployment => lastDeployment[typeId] = newLastDeployment)))
+        .then(newLastDeployment => lastDeployment[typeId] = newLastDeployment)));
 }
-

@@ -104,6 +104,7 @@ class FixDeploymentDialog extends ComponentEx<IProps, IFixDeploymentDialogState>
 
   private renderStartPage() {
     return (
+      // tslint:disable:max-line-length
       <Trans i18nKey='fix-deployment-instructions'>
         Vortex supports different Deployment Method to support a wide variety of systems and games, but some may only be available with the right settings.
         <br/>
@@ -111,6 +112,7 @@ class FixDeploymentDialog extends ComponentEx<IProps, IFixDeploymentDialogState>
         <br/>
         On the following screens we will offer possible solutions, simplest one first.
       </Trans>
+      // tslint:enable:max-line-length
     );
   }
 

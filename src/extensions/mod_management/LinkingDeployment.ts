@@ -1,6 +1,6 @@
 import {addNotification} from '../../actions/notifications';
 import {IExtensionApi} from '../../types/IExtensionContext';
-import { UserCanceled, getGame } from '../../util/api';
+import { getGame, UserCanceled } from '../../util/api';
 import * as fs from '../../util/fs';
 import {Normalize} from '../../util/getNormalizeFunc';
 import {log} from '../../util/log';
@@ -102,7 +102,8 @@ abstract class LinkingActivator implements IDeploymentMethod {
           onComplete: queueResolve,
         };
         lastDeployment.forEach(file => {
-          const outputPath = [file.target || null, file.relPath].filter(i => i !== null).join(path.sep);
+          const outputPath = [file.target || null, file.relPath]
+            .filter(i => i !== null).join(path.sep);
           const key = this.mNormalize(outputPath);
           this.mContext.previousDeployment[key] = file;
           if (!clean) {
@@ -277,6 +278,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
           }
         });
       }, { skipHidden: false }))
+      .catch({ code: 'ENOTFOUND' }, () => null)
       .catch({ code: 'ENOENT' }, () => null);
   }
 
@@ -315,12 +317,16 @@ abstract class LinkingActivator implements IDeploymentMethod {
     return Promise.resolve();
   }
 
-  public isActive(): boolean {
-    return false;
-  }
-
   public getDeployedPath(input: string): string {
     return input;
+  }
+
+  public isDeployed(installPath: string, dataPath: string, file: IDeployedFile): Promise<boolean> {
+    const fullPath = path.join(dataPath, file.target || '', file.relPath);
+
+    return fs.statAsync(fullPath)
+      .then(() => true)
+      .catch(() => false);
   }
 
   public externalChanges(gameId: string,
@@ -428,6 +434,10 @@ abstract class LinkingActivator implements IDeploymentMethod {
    * data isn't gone after removing the original) and false for everything else
    */
   protected abstract canRestore(): boolean;
+
+  protected get api(): IExtensionApi {
+    return this.mApi;
+  }
 
   protected get normalize(): Normalize {
     return this.mNormalize;

@@ -11,7 +11,7 @@ function runElevatedCustomTool(ipcClient, req: NodeRequireFunction): Promise<voi
   return new Promise((resolve, reject) => {
     const emit = (message, payload) => {
       ipcClient.sendMessage({ message, payload });
-    }
+    };
 
     const exec = req('child_process').execFile;
     try {

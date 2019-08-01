@@ -1,8 +1,8 @@
 import { IExtensionContext } from '../../types/IExtensionContext';
 import { activeGameId } from '../profile_management/selectors';
 
-import RSSDashlet from './Dashlet';
 import { REPLACEABLE_GAMEID } from './constants';
+import RSSDashlet from './Dashlet';
 
 function init(context: IExtensionContext): boolean {
   const t = context.api.translate;

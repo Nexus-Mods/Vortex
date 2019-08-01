@@ -143,14 +143,14 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
       ? t(translated.title, { replace: translated.replace })
       : translated.title;
 
-      if ((collapsed[notification.group] > 1) && (translated.title !== undefined)) {
-        translated.message = t('<Multiple>');
-      } else {
-        translated.message =
-          ((notification.localize === undefined) || (notification.localize.message !== false))
-            ? t(translated.message, { replace: translated.replace })
-            : translated.message;
-      }
+    if ((collapsed[notification.group] > 1) && (translated.title !== undefined)) {
+      translated.message = t('<Multiple>');
+    } else {
+      translated.message =
+        ((notification.localize === undefined) || (notification.localize.message !== false))
+          ? t(translated.message, { replace: translated.replace })
+          : translated.message;
+    }
 
     return (
       <Notification
@@ -182,14 +182,14 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
       } else {
         fireNotificationAction(id, noti.process, idx, () => onDismiss(id));
       }
-    }
+    };
 
     if ((noti.group === undefined) || (noti.group === this.state.expand)) {
       const actionIdx = noti.actions.findIndex(iter => iter.title === actionTitle);
       callAction(noti.id, noti.actions[actionIdx], actionIdx);
     } else {
       notifications.filter(iter => iter.group === noti.group).forEach(iter => {
-        const actionIdx = iter.actions.findIndex(iter => iter.title === actionTitle);
+        const actionIdx = iter.actions.findIndex(actIter => actIter.title === actionTitle);
         callAction(iter.id, iter.actions[actionIdx], actionIdx);
       });
     }

@@ -487,8 +487,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
           app.getFileIcon(filePath, { size: 'normal' }, (err: Error, icon: Electron.NativeImage) =>
             (err !== null)
               ? reject(err)
-              : resolve(icon)
-          );
+              : resolve(icon));
         })
         .then(icon => fs.writeFileAsync(destPath, icon.toPNG()))
         : fs.copyAsync(filePath, destPath))
@@ -499,7 +498,8 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
       .catch(UserCanceled, () => null)
       .catch(ProcessCanceled, () => null)
       .catch((err) => {
-        this.context.api.showErrorNotification('Failed to change tool icon', err);
+        this.context.api.showErrorNotification('Failed to change tool icon', err,
+                                               { allowReport: false });
       });
   }
 

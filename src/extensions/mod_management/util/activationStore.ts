@@ -2,24 +2,26 @@ import {showDialog} from '../../../actions/notifications';
 import {IExtensionApi} from '../../../types/IExtensionContext';
 import { IGame } from '../../../types/IGame';
 import {IState} from '../../../types/IState';
-import {UserCanceled, ProcessCanceled} from '../../../util/CustomErrors';
+import {ProcessCanceled, UserCanceled} from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
 import { writeFileAtomic } from '../../../util/fsAtomic';
+import { log } from '../../../util/log';
 import { activeGameId, currentGameDiscovery, installPathForGame } from '../../../util/selectors';
-import { deBOM, truthy, makeQueue } from '../../../util/util';
+import { deBOM, makeQueue, truthy } from '../../../util/util';
 
 import { getGame } from '../../gamemode_management/util/getGame';
 
 import {IDeploymentManifest, ManifestFormat} from '../types/IDeploymentManifest';
 import {IDeployedFile, IDeploymentMethod} from '../types/IDeploymentMethod';
 
-import format_1 from './manifest_formats/format_1';
 import { getActivator, getCurrentActivator } from './deploymentMethods';
+import format_1 from './manifest_formats/format_1';
 
-import * as msgpack from "@msgpack/msgpack";
+import * as msgpack from '@msgpack/msgpack';
 import * as Promise from 'bluebird';
 import I18next from 'i18next';
 import * as path from 'path';
+import { sync as writeAtomicSync } from 'write-file-atomic';
 
 const CURRENT_VERSION = 1;
 
@@ -94,7 +96,7 @@ function doFallbackPurge(basePath: string,
         // the timestamp from stat has ms precision but the one from the manifest doesn't
         return ((stats.mtime.getTime() - file.time) < 1000)
           ? fs.unlinkAsync(fullPath)
-          : Promise.resolve()
+          : Promise.resolve();
       })
     .catch(err => {
       if (err.code !== 'ENOENT') {
@@ -214,7 +216,8 @@ function getManifest(api: IExtensionApi, instanceId: string,
 }
 
 function fallbackPurgeType(api: IExtensionApi, activator: IDeploymentMethod,
-                           modType: string, deployPath: string, stagingPath: string): Promise<void> {
+                           modType: string, deployPath: string,
+                           stagingPath: string): Promise<void> {
   const state: IState = api.store.getState();
   const typeTag = (modType !== undefined) && (modType.length > 0) ? modType + '.' : '';
   const tagFileName = `vortex.deployment.${typeTag}json`;
@@ -300,7 +303,8 @@ export function loadActivation(api: IExtensionApi, modType: string,
             }
           }
           result = queryPurge(api, deployPath, tagObject.files, safe)
-              .then(() => saveActivation(modType, state.app.instanceId, deployPath, stagingPath, [], activator.id))
+              .then(() => saveActivation(modType, state.app.instanceId, deployPath,
+                                         stagingPath, [], activator.id))
               .then(() => Promise.resolve([]));
         } else {
           result = Promise.resolve(tagObject.files);
@@ -332,7 +336,11 @@ export function saveActivation(modType: string, instance: string,
 
   if (activation.length > 0) {
     // write backup synchronously
-    fs.writeFileSync(tagBackupPath, Buffer.from(msgpack.encode(dataRaw)));
+    try {
+      writeAtomicSync(tagBackupPath, Buffer.from(msgpack.encode(dataRaw)));
+    } catch (err) {
+      log('error', 'Failed to write manifest backup', err.message);
+    }
   }
 
   return (activation.length === 0)

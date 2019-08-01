@@ -4,13 +4,13 @@ import {
   IDialogContent,
   showDialog,
 } from '../actions/notifications';
-import { IErrorOptions, IAttachment } from '../types/IExtensionContext';
+import { IAttachment, IErrorOptions } from '../types/IExtensionContext';
 import { IState } from '../types/IState';
 import { jsonRequest } from '../util/network';
 
 import { HTTPError } from './CustomErrors';
-import { isOutdated, sendReport, toError,
-         getErrorContext, didIgnoreError } from './errorHandling';
+import { didIgnoreError, getErrorContext, isOutdated,
+         sendReport, toError } from './errorHandling';
 import * as fs from './fs';
 import { log } from './log';
 import { truthy } from './util';
@@ -21,6 +21,8 @@ import ZipT = require('node-7z');
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { file as tmpFile, tmpName } from 'tmp';
+
+import * as _ from 'lodash';
 
 const GITHUB_PROJ = 'Nexus-Mods/Vortex';
 
@@ -197,7 +199,7 @@ function bundleAttachment(options?: IErrorOptions): Promise<string> {
   if ((options === undefined)
       || (options.attachments === undefined)
       || (options.attachments.length === 0)) {
-    return undefined;
+    return Promise.resolve(undefined);
   }
 
   return Promise.map(options.attachments, serializeAttachments)
@@ -251,7 +253,9 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
     },
   };
 
-  if ((options !== undefined) && (options.attachments !== undefined) && (options.attachments.length > 0)) {
+  if ((options !== undefined)
+      && (options.attachments !== undefined)
+      && (options.attachments.length > 0)) {
     content.text = (content.text !== undefined ? (content.text + '\n\n') : '')
       + 'Note: If you report this error, the following data will be added to the report:\n'
       + options.attachments.map(attach => ` - ${attach.description}`).join('\n');
@@ -289,7 +293,7 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
 
   actions.push({ label: 'Close', default: true });
 
-  let haveMessage = (options !== undefined) && (options.message !== undefined);
+  const haveMessage = (options !== undefined) && (options.message !== undefined);
 
   dispatch(addNotification({
     id: (options !== undefined) ? options.id : undefined,
@@ -324,9 +328,9 @@ export function prettifyNodeErrorMessage(err: any): IPrettifiedError {
     };
   } else if (err.code === 'EPERM') {
     const filePath = err.path || err.filename;
-    let firstLine = filePath !== undefined
+    const firstLine = filePath !== undefined
       ? 'Vortex needs to access "{{filePath}}" but it\'s write protected.\n'
-      : 'Vortex needs to access a file that is write protected.\n'
+      : 'Vortex needs to access a file that is write protected.\n';
     return {
       message: firstLine
             + 'When you configure directories and access rights you need to ensure Vortex can '
@@ -416,10 +420,20 @@ export function prettifyNodeErrorMessage(err: any): IPrettifiedError {
       allowReport: false,
     };
   } else if (err.code === 'UNKNOWN') {
-    return {
-      message: 'An unknown error occurred. What this means is that Windows or the framework don\'t '
-             + 'provide any useful information to diagnose this problem. '
-             + 'Please do not report this issue without saying what exactly you were doing.',
+    if ((err['_native'] !== undefined) && (err['_native'].code !== 0)) {
+      return {
+        message: 'An unrecognized error occurred. The error may contain information '
+               + 'useful for handling it better in the future so please do report it (once): \n'
+               + `${err['_native'].message} (${err['_native'].code})`,
+
+        allowReport: true,
+      };
+    } else {
+      return {
+        message: 'An unknown error occurred. What this means is that Windows or the framework '
+          + 'don\'t provide any useful information to diagnose this problem. '
+          + 'Please do not report this issue without saying what exactly you were doing.',
+      };
     }
   }
 
@@ -506,6 +520,9 @@ function prettifyHTTPError(err: HTTPError) {
   return func();
 }
 
+const HIDE_ATTRIBUTES = new Set(
+  ['message', 'error', 'context', 'errno', 'syscall', 'isOperational']);
+
 /**
  * render error message for display to the user
  * @param err
@@ -522,16 +539,24 @@ export function renderError(err: string | Error | any):
   } else if (err instanceof Error) {
     const errMessage = prettifyNodeErrorMessage(err);
 
-    let attributes = Object.keys(err || {})
+    const objectKeys = Object.keys(err || {})
+      .filter(key => (typeof(err[key]) === 'object'));
+
+    const flatErr = objectKeys.reduce((prev, key) => {
+      delete prev[key];
+      return _.merge({}, prev, err[key]);
+    }, err);
+
+    let attributes = Object.keys(flatErr || {})
         .filter(key => key[0].toUpperCase() === key[0]);
     if (attributes.length === 0) {
-      attributes = Object.keys(err || {})
-        .filter(key => ['message', 'error', 'context'].indexOf(key) === -1);
+      attributes = Object.keys(flatErr || {})
+        .filter(key => !HIDE_ATTRIBUTES.has(key));
     }
     if (attributes.length > 0) {
       const old = errMessage.message;
       errMessage.message = attributes
-          .map(key => key + ':\t' + err[key])
+          .map(key => key + ':\t' + flatErr[key])
           .join('\n');
       if (old !== undefined) {
         errMessage.message = old + '\n' + errMessage.message;

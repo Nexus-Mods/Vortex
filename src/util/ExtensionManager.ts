@@ -1,5 +1,5 @@
 import { forgetExtension, setExtensionEnabled, setExtensionVersion } from '../actions/app';
-import { addNotification, dismissNotification, closeDialog } from '../actions/notifications';
+import { addNotification, closeDialog, dismissNotification } from '../actions/notifications';
 import { setExtensionLoadFailures } from '../actions/session';
 
 import { DialogActions, DialogType, IDialogContent, showDialog } from '../actions/notifications';
@@ -23,7 +23,8 @@ import { INotification } from '../types/INotification';
 import { IExtensionLoadFailure, IExtensionState, IState } from '../types/IState';
 
 import { Archive } from './archives';
-import { ProcessCanceled, UserCanceled, MissingDependency, NotSupportedError } from './CustomErrors';
+import { MissingDependency, NotSupportedError,
+        ProcessCanceled, UserCanceled } from './CustomErrors';
 import { isOutdated } from './errorHandling';
 import getVortexPath from './getVortexPath';
 import lazyRequire from './lazyRequire';
@@ -274,6 +275,8 @@ class ContextProxyHandler implements ProxyHandler<any> {
 
 class EventProxy extends EventEmitter {
   private mTarget: Electron.WebContents;
+  private mRemoteCallbacks: { [id: string]: (...args) => void } = {};
+  private mRemotePromises: { [id: string]: { resolve: (res) => void, reject: (err) => void } } = {};
 
   constructor(target: Electron.WebContents) {
     super();
@@ -295,6 +298,36 @@ class EventProxy extends EventEmitter {
         super.emit(eventName, ...args);
       }
     });
+    ipcMain.on('relay-cb', (event, id, ...args) => {
+      const cb = this.mRemoteCallbacks[id];
+      if (cb !== undefined) {
+        const newArgs = args.map(arg => {
+          if (arg.__promise === undefined) {
+            return arg;
+          } else {
+            return new Promise((resolve, reject) => {
+              this.mRemotePromises[arg.__promise] = { resolve, reject };
+            });
+          }
+        });
+        cb(...newArgs);
+        delete this.mRemoteCallbacks[id];
+      }
+    });
+    ipcMain.on('relay-cb-resolve', (event, id, res) => {
+      const prom = this.mRemotePromises[id];
+      if (prom !== undefined) {
+        prom.resolve(res);
+        delete this.mRemotePromises[id];
+      }
+    });
+    ipcMain.on('relay-cb-reject', (event, id, err) => {
+      const prom = this.mRemotePromises[id];
+      if (prom !== undefined) {
+        prom.reject(err);
+        delete this.mRemotePromises[id];
+      }
+    });
   }
 
   public emit(eventName: string, ...args) {
@@ -303,7 +336,14 @@ class EventProxy extends EventEmitter {
         && !this.mTarget.isDestroyed()) {
       // relay all events this process didn't handle itself to the connected
       // process
-      this.mTarget.send('relay-event', eventName, ...args);
+      if (typeof(args[args.length - 1]) === 'function') {
+        const id = shortid();
+        this.mRemoteCallbacks[id] = args[args.length - 1];
+        const newArgs = [].concat(args.slice(0, args.length - 1), id);
+        this.mTarget.send('relay-event-with-cb', eventName, ...newArgs);
+      } else {
+        this.mTarget.send('relay-event', eventName, ...args);
+      }
       return true;
     }
     return false;
@@ -350,17 +390,24 @@ class ExtensionManager {
   private mModDBCache: { [id: string]: ILookupResult[] } = {};
   private mContextProxyHandler: ContextProxyHandler;
   private mExtensionState: { [extId: string]: IExtensionState };
-  private mLoadFailures: { [extId: string]: IExtensionLoadFailure[] };
+  private mLoadFailures: { [extId: string]: IExtensionLoadFailure[] } = {};
   private mInterpreters: { [ext: string]: (input: IRunParameters) => IRunParameters };
   private mStartHooks: Array<{ priority: number, id: string, hook: (input: IRunParameters) => Promise<IRunParameters> }>;
   private mProgrammaticMetaServers: { [id: string]: any } = {};
   private mForceDBReconnect: boolean = false;
+  private mOnUIStarted: () => void;
+  private mUIStartedPromise: Promise<void>;
 
   constructor(initStore?: Redux.Store<any>, eventEmitter?: NodeJS.EventEmitter) {
     this.mEventEmitter = eventEmitter;
     if (this.mEventEmitter !== undefined) {
       this.mEventEmitter.setMaxListeners(100);
     }
+
+    this.mUIStartedPromise = new Promise(resolve => {
+      this.mOnUIStarted = resolve;
+    });
+
     this.mInterpreters = {};
     this.mStartHooks = [];
     this.mApi = {
@@ -389,6 +436,7 @@ class ExtensionManager {
       onAsync: this.onAsync,
       highlightControl: this.highlightControl,
       addMetaServer: this.addMetaServer,
+      awaitUI: () => this.mUIStartedPromise,
     };
     if (initStore !== undefined) {
       // apologies for the sync operation but this needs to happen before extensions are loaded
@@ -419,6 +467,9 @@ class ExtensionManager {
         });
       ipcMain.on('__get_extension_state', event => {
         event.returnValue = this.mExtensionState;
+      });
+      ipcMain.on('__ui_is_ready', () => {
+        this.mOnUIStarted();
       });
     } else {
       this.mExtensionState = ipcRenderer.sendSync('__get_extension_state');
@@ -461,16 +512,13 @@ class ExtensionManager {
       showError(store.dispatch, message, details, options);
     };
 
-    this.mApi.showDialog =
-      (type: DialogType, title: string, content: IDialogContent, actions: DialogActions, id?: string) => {
-        return store.dispatch(showDialog(type, title, content, actions, id));
-      };
-    this.mApi.closeDialog = (id: string, actionKey: string, input: any) => {
-        return store.dispatch(closeDialog(id, actionKey, input))
-      };
-    this.mApi.dismissNotification = (id: string) => {
+    this.mApi.showDialog = (type: DialogType, title: string, content: IDialogContent,
+                            actions: DialogActions, id?: string) =>
+      store.dispatch(showDialog(type, title, content, actions, id));
+    this.mApi.closeDialog = (id: string, actionKey: string, input: any) =>
+      store.dispatch(closeDialog(id, actionKey, input));
+    this.mApi.dismissNotification = (id: string) =>
       store.dispatch(dismissNotification(id));
-    };
     this.mApi.store = store;
     this.mApi.onStateChange = this.stateChangeHandler;
 
@@ -508,25 +556,29 @@ class ExtensionManager {
     this.mApi.showErrorNotification =
         (message: string, details: string | Error, options: IErrorOptions) => {
           try {
-            // make an attempt to serialise error objects in such a way that they can be reconstructed.
-            const data: any = Object.assign({}, details);
+            // make an attempt to serialise error objects in such a way that they can be
+            // reconstructed.
+            const data: any = (typeof(details) === 'object')
+              ? { ...details }
+              : details;
             if (details instanceof Error) {
               // details.stack may be a getter, so we have to assign it separately
               data.stack = details.stack;
-              // stack is also optional. If we don't have one, generate one to this function which is
-              // better than nothing because otherwise the code reconstructing the error will produce a stack
-              // that is completely useless
+              // stack is also optional. If we don't have one, generate one to this function
+              // which is better than nothing because otherwise the code reconstructing the error
+              // will produce a stack that is completely useless
               if (data.stack === undefined) {
                 data.stack = (new Error()).stack;
               }
-            } 
-            ipc.send('show-error-notification', message, JSON.stringify(data), options, details instanceof Error);
+            }
+            ipc.send('show-error-notification',
+                     message, JSON.stringify(data), options, details instanceof Error);
           } catch (err) {
             // this may happen if the ipc has already been destroyed
             this.showErrorBox(message, details);
           }
         };
-    this.mApi.events = new EventProxy(ipc);
+    this.mApi.events = this.mEventEmitter = new EventProxy(ipc);
   }
 
   /**
@@ -555,7 +607,8 @@ class ExtensionManager {
                                        apply: (input: IRunParameters) => IRunParameters) => {
       this.mInterpreters[extension.toLowerCase()] = apply;
     });
-    this.apply('registerStartHook', (priority: number, id: string, hook: (input: IRunParameters) => Promise<IRunParameters>) => {
+    this.apply('registerStartHook', (priority: number, id: string,
+                                     hook: (input: IRunParameters) => Promise<IRunParameters>) => {
       this.mStartHooks.push({ priority, id, hook });
     });
 
@@ -605,21 +658,30 @@ class ExtensionManager {
    */
   public doOnce(): Promise<void> {
     const calls = this.mContextProxyHandler.getCalls(remote !== undefined ? 'once' : 'onceMain');
-    return Promise.each(calls, call => {
-      const prom = call.arguments[0]() || Promise.resolve();
 
-      return prom.catch(err => {
-        log('warn', 'failed to call once',
-            {err: err.message, stack: err.stack});
-        this.mApi.showErrorNotification(
-            'Extension failed to initialize. If this isn\'t an official extension, ' +
-                'please report the error to the respective author.',
-            {
-              extension: call.extension,
-              err: err.message,
-              stack: err.stack,
-            });
-      });
+    const reportError = (err: Error, call: IInitCall) => {
+      log('warn', 'failed to call once',
+        { err: err.message, stack: err.stack });
+      this.mApi.showErrorNotification(
+        'Extension failed to initialize. If this isn\'t an official extension, ' +
+        'please report the error to the respective author.',
+        {
+          extension: call.extension,
+          err: err.message,
+          stack: err.stack,
+        });
+    };
+
+    return Promise.each(calls, call => {
+      try {
+        const prom = call.arguments[0]() || Promise.resolve();
+
+        return prom.catch(err => {
+          reportError(err, call);
+        });
+      } catch (err) {
+        reportError(err, call);
+      }
     })
     .then(() => undefined);
   }
@@ -630,6 +692,11 @@ class ExtensionManager {
 
   public getProtocolHandler(protocol: string) {
     return this.mProtocolHandlers[protocol] || null;
+  }
+
+  public setUIReady() {
+    this.mOnUIStarted();
+    ipcRenderer.send('__ui_is_ready');
   }
 
   private getModDB = (): Promise<modmetaT.ModDB> => {
@@ -671,7 +738,7 @@ class ExtensionManager {
         ? Promise.resolve()
         : this.connectMetaDB(gameMode, currentKey)
           .then(modDB => {
-            this.mModDB = modDB
+            this.mModDB = modDB;
             this.mModDBGame = gameMode;
             this.mModDBAPIKey = currentKey;
             log('debug', 'initialised');
@@ -688,10 +755,10 @@ class ExtensionManager {
   private getMetaServerList() {
     const state = this.mApi.store.getState();
     const servers = getSafe(state, ['settings', 'metaserver', 'servers'], {});
-    
+
     return [].concat(
       Object.keys(this.mProgrammaticMetaServers).map(id => this.mProgrammaticMetaServers[id]),
-      Object.keys(servers).map(id => servers[id])
+      Object.keys(servers).map(id => servers[id]),
     );
   }
 
@@ -778,13 +845,17 @@ class ExtensionManager {
       try {
         ext.initFunc(contextProxy as IExtensionContext);
       } catch (err) {
+        this.mLoadFailures[ext.name] = [ { id: 'exception', args: { message: err.message } } ];
         log('warn', 'couldn\'t initialize extension',
           {name: ext.name, err: err.message, stack: err.stack});
       }
     });
     // need to store them locally for now because the store isn't loaded at this time
-    this.mLoadFailures = this.mContextProxyHandler.unloadIncompatible(
-        ExtensionManager.sUIAPIs, this.mExtensions.map(ext => ext.name));
+    this.mLoadFailures = {
+      ...this.mLoadFailures,
+      ...this.mContextProxyHandler.unloadIncompatible(
+        ExtensionManager.sUIAPIs, this.mExtensions.map(ext => ext.name)),
+    };
 
     if (remote !== undefined) {
       // renderer process
@@ -820,7 +891,7 @@ class ExtensionManager {
                 .catch(err => {
                   this.mApi.showErrorNotification('Extension failed to migrate', err, {
                     allowReport: info.author === 'Black Tree Gaming Ltd.',
-                  })
+                  });
                 });
             }
           }
@@ -906,7 +977,7 @@ class ExtensionManager {
       ? [getVortexPath('package'), '-d']
       : ['-d'];
 
-    let haveToRegister = def && !app.isDefaultProtocolClient(protocol, process.execPath, args)
+    const haveToRegister = def && !app.isDefaultProtocolClient(protocol, process.execPath, args);
     if (def) {
       app.setAsDefaultProtocolClient(protocol, process.execPath, args);
     }
@@ -974,8 +1045,7 @@ class ExtensionManager {
       .then(() => this.getModDB())
       .then(modDB => fileSize !== 0
         ? modDB.lookup(detail.filePath, fileMD5, fileSize, detail.gameId)
-        : []
-      )
+        : [])
       .then((result: ILookupResult[]) => {
         this.mModDBCache[lookupId] = result;
         return Promise.resolve(result);
@@ -1083,6 +1153,8 @@ class ExtensionManager {
           if (options.onSpawned !== undefined) {
             options.onSpawned();
           }
+
+          let errOut: string;
           child
             .on('error', err => {
               reject(err);
@@ -1093,18 +1165,34 @@ class ExtensionManager {
                 // FO3 is dependent on several redistributables being installed to run.
                 //  code 3221225781 suggests that xlive and possibly other redistribs are
                 //  not installed.
-                reject(new MissingDependency());
+                return reject(new MissingDependency());
               } else if (code !== 0) {
                 // TODO: the child process returns an exit code of 53 for SSE and
                 // FO4, and an exit code of 1 for Skyrim. We don't know why but it
                 // doesn't seem to affect anything
                 log('warn', 'child process exited with code: ' + code.toString(16), {});
+                if (errOut !== undefined) {
+                  log('warn', 'child output', errOut.trim());
+                }
+                if (options.expectSuccess) {
+                  const lines = errOut.trim().split('\n');
+                  const lastLine = errOut !== undefined
+                    ? lines[lines.length - 1]
+                    : '<No output>';
+                  const err: any =
+                    new Error(`Failed to run "${executable}": "${lastLine} (${code.toString(16)})"`);
+                  err.exitCode = code;
+                  return reject(err);
+                }
               }
               resolve();
           });
           if (child.stderr !== undefined) {
-            child.stderr.on('data', chunk => {
-              log('error', executable + ': ', chunk.toString());
+            child.stderr.on('data', (chunk: Buffer) => {
+              if (errOut === undefined) {
+                errOut = '';
+              }
+              errOut += chunk.toString();
             });
           }
         } catch (err) {
@@ -1151,7 +1239,9 @@ class ExtensionManager {
       if (tmpFilePath !== undefined) {
         try {
           fs.unlinkSync(tmpFilePath);
-        } catch (err) { }
+        } catch (err) {
+          // nop
+        }
       }
     });
   }
@@ -1171,7 +1261,7 @@ class ExtensionManager {
             this.mApi.showErrorNotification(`Unhandled error in event "${event}"`, err);
           }));
       }
-    }
+    };
 
     this.mEventEmitter.emit(event, ...args, enqueue);
 
@@ -1198,17 +1288,19 @@ class ExtensionManager {
     });
   }
 
+  // tslint:disable-next-line:member-ordering
   private highlightCSS = (() => {
     let highlightCSS: CSSStyleRule;
     let highlightAfterCSS: CSSStyleRule;
 
-    let initCSS = () => {
+    const initCSS = () => {
       if (highlightCSS !== undefined) {
         return;
       }
 
       highlightCSS = highlightAfterCSS = null;
 
+      // tslint:disable-next-line:prefer-for-of
       for (let i = 0; i < document.styleSheets.length; ++i) {
         if ((document.styleSheets[i].ownerNode as any).id === 'theme') {
           const rules = Array.from((document.styleSheets[i] as any).rules);
@@ -1218,10 +1310,10 @@ class ExtensionManager {
             } else if (rule.selectorText === '#highlight-control-dummy::after') {
               highlightAfterCSS = rule;
             }
-          })
+          });
         }
       }
-    }
+    };
 
     return (selector: string, text?: string) => {
       initCSS();
@@ -1241,12 +1333,14 @@ class ExtensionManager {
       } else {
         result += highlightCSS.cssText.replace('#highlight-control-dummy', selector);
         if (text !== undefined) {
-          result += highlightAfterCSS.cssText.replace('#highlight-control-dummy', selector).replace('__contentPlaceholder', text);
+          result += highlightAfterCSS.cssText
+            .replace('#highlight-control-dummy', selector)
+            .replace('__contentPlaceholder', text);
         }
       }
 
       return result;
-    }
+    };
   })();
 
   private highlightControl = (selector: string, duration: number, text?: string) => {
@@ -1270,13 +1364,11 @@ class ExtensionManager {
 
   private startIPC(ipcPath: string, onFinished: (err: Error) => void) {
     let connected: boolean = false;
-    let pongTimer: NodeJS.Timer = undefined;
 
     const finish = (err: Error) => {
       server.close();
-      clearInterval(pongTimer);
       onFinished(err);
-    }
+    };
 
     const server = net.createServer(connRaw => {
       const conn = new JsonSocket(connRaw);
@@ -1288,6 +1380,7 @@ class ExtensionManager {
         .on('message', data => {
           const { message, payload } = data;
           if (message === 'log') {
+            // tslint:disable-next-line:no-shadowed-variable
             const { level, message, meta } = payload;
             log(level, message, meta);
           } else if (message === 'finished') {

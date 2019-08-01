@@ -10,7 +10,9 @@ import * as Promise from 'bluebird';
  * Determine which game to install a download for.
  * If the currently managed game is compatible, just pick that, otherwise ask the user
  */
-function queryGameId(store: ThunkStore<any>, downloadGameIds: string[], fileName: string): Promise<string> {
+function queryGameId(store: ThunkStore<any>,
+                     downloadGameIds: string[],
+                     fileName: string): Promise<string> {
   const state: IState = store.getState();
   const gameMode = activeGameId(state);
 

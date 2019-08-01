@@ -8,7 +8,7 @@ import { IProfile } from '../extensions/profile_management/types/IProfile';
 import { makeExeId } from '../reducers/session';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../types/IDialog';
 import { IDiscoveredTool } from '../types/IDiscoveredTool';
-import { IState, IRunningTool } from '../types/IState';
+import { IRunningTool, IState } from '../types/IState';
 import { ComponentEx, connect, translate } from '../util/ComponentEx';
 import { log } from '../util/log';
 import { showError } from '../util/message';
@@ -21,9 +21,9 @@ import * as Promise from 'bluebird';
 import I18next from 'i18next';
 import * as React from 'react';
 import { DropdownButton, MenuItem } from 'react-bootstrap';
+import { WithTranslation } from 'react-i18next';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
-import { WithTranslation } from 'react-i18next';
 
 export interface IBaseProps {
   t: I18next.TFunction;
@@ -115,8 +115,8 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
             <Spinner />
           ) : (
             <IconButton
-              id = 'btn-quicklaunch-play'
-              onClick = {this.start}
+              id='btn-quicklaunch-play'
+              onClick={this.start}
               tooltip={t('Launch')}
               icon='launch-application'
             />
@@ -146,7 +146,7 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
         <MenuItem key={gameId} eventKey={gameId}>
           {this.renderGameOption(gameId)}
         </MenuItem>
-      ))
+      ));
   }
 
   private renderGameOption = (gameId: string) => {
@@ -168,9 +168,13 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
       return null;
     }
 
-    const displayName =
+    let displayName =
       getSafe(discovered, ['shortName'], getSafe(game, ['shortName'], undefined))
       || getSafe(discovered, ['name'], getSafe(game, ['name'], undefined));
+
+    if (displayName !== undefined) {
+      displayName = displayName.replace(/\t/g, ' ');
+    }
 
     return (
       <div
@@ -179,7 +183,12 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
       >
         <div className='quicklaunch-item'>
           <div className='quicklaunch-name'>{displayName}</div>
-          {profilesVisible ? <div className='quicklaunch-profile'>Profile: {profile.name}</div> : null}
+          {profilesVisible
+            ? (
+              <div className='quicklaunch-profile'>
+                Profile: {profile.name}
+              </div>
+            ) : null}
         </div>
       </div>
     );

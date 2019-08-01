@@ -25,11 +25,14 @@ import { checkAssemblies, getNetVersion } from './util/netVersion';
 import InstallerDialog from './views/InstallerDialog';
 
 import * as Promise from 'bluebird';
+import { app as appIn, remote } from 'electron';
 import * as edgeT from 'electron-edge-js';
 const edge = lazyRequire<typeof edgeT>(() => require('electron-edge-js'));
 import * as path from 'path';
 import * as semver from 'semver';
 import * as util from 'util';
+
+const app = appIn !== undefined ? appIn : remote.app;
 
 let testSupportedLib;
 let installLib;
@@ -53,7 +56,7 @@ function transformError(err: any): Error {
       } else if (err.FileName.indexOf('node_modules\\fomod-installer') !== -1) {
         const fileName = err.FileName.replace(/^file:\/*/, '');
         result = new SetupError(`Your installation is missing "${fileName}" which is part of the `
-          + 'Vortex installer. This would only happen if you use an inofficial installer or the '
+          + 'Vortex installer. This would only happen if you use an unofficial installer or the '
           + 'Vortex installation was modified.');
       }
     }
@@ -73,6 +76,13 @@ function transformError(err: any): Error {
   } else if (err.name === 'System.IO.PathTooLongException') {
     result = new SetupError('The installer tried to access a file with a path longer than 260 '
                         + 'characters. This usually means that your mod staging path is too long.');
+  } else if ((err.name === 'System.IO.IOException')
+             && (err.StackTrace.indexOf('System.IO.Path.InternalGetTempFileName'))) {
+    const tempDir = app.getPath('temp');
+    result = new SetupError(`Your temp directory "${tempDir}" contains too many files. `
+                          + 'You need to clean up that directory. Files in that directory '
+                          + 'should be safe to delete (they are temporary after all) but '
+                          + 'some will be inaccessible, just ignore those.');
   } else if ((err.StackTrace.indexOf('XNodeValidator.ValidationCallback') !== -1)
              || (err.StackTrace.indexOf('XmlTextReaderImpl.ParseXmlDeclaration') !== -1)
              || (err.StackTrace.indexOf('XmlTextReaderImpl.ParseAttributes') !== -1)
@@ -134,7 +144,7 @@ function testSupported(files: string[]): Promise<ISupportedResult> {
       });
     } catch (err) {
       if (err.message.startsWith('error: 126')) {
-        let newErr = new SetupError(
+        const newErr = new SetupError(
           'Failed to load the fomod support library. This is an indication your .Net '
           + 'installation is invalid or outdated.');
         newErr.stack = err.stack;

@@ -544,6 +544,14 @@
     "archive": {
       "path": "{nucleo}/files-folders/32px_box",
       "rmFill": true
+    },
+    "smart": {
+      "path": "{nucleo}/healthcare-medical/{nucleo_simple}_atom",
+      "rmFill": true
+    },
+    "incompatible": {
+      "path": "{nucleo}/ui/{nucleo_simple}_alert",
+      "rmFill": true
     }
   }
 }

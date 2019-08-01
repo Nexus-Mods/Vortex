@@ -9,8 +9,10 @@ import update from 'immutability-helper';
  */
 const automationReducer: IReducerSpec = {
   reducers: {
-    [actions.setAutoDeployment as any]: (state, payload) => update(state, { deploy: { $set: payload } }),
-    [actions.setAutoEnable as any]: (state, payload) => update(state, { enable: { $set: payload } }),
+    [actions.setAutoDeployment as any]: (state, payload) =>
+      update(state, { deploy: { $set: payload } }),
+    [actions.setAutoEnable as any]: (state, payload) =>
+      update(state, { enable: { $set: payload } }),
   },
   defaults: {
     deploy: true,

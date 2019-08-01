@@ -3,8 +3,8 @@ import { ComponentEx, connect } from '../../../util/ComponentEx';
 import opn from '../../../util/opn';
 import { bytesToString } from '../../../util/util';
 
-import { IGameStored } from '../types/IGameStored';
 import { IDiscoveryResult } from '../types/IDiscoveryResult';
+import { IGameStored } from '../types/IGameStored';
 
 import * as Promise from 'bluebird';
 import I18next from 'i18next';

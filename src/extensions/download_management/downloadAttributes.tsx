@@ -12,18 +12,17 @@ import { bytesToString, truthy } from '../../util/util';
 
 import { gameName } from '../gamemode_management/selectors';
 
-import DownloadProgressFilter from './views/DownloadProgressFilter';
-import FileTime from './views/FileTime';
 import { IDownload } from './types/IDownload';
 import getDownloadGames from './util/getDownloadGames';
 import DownloadGameList from './views/DownloadGameList';
+import DownloadProgressFilter from './views/DownloadProgressFilter';
+import FileTime from './views/FileTime';
 
 import I18next from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
 import * as url from 'url';
 import { IDownloadViewProps } from './views/DownloadView';
-
 
 function progress(props) {
   const {t, download} = props;
@@ -77,8 +76,9 @@ function nameFromUrl(input: string) {
   }
 }
 
+function createColumns(api: IExtensionApi, props: () => IDownloadViewProps)
+    : Array<ITableAttribute<IDownload>> {
 
-function createColumns(api: IExtensionApi, props: () => IDownloadViewProps): ITableAttribute<IDownload>[] {
   let lang: string;
   let collator: Intl.Collator;
 
@@ -88,7 +88,7 @@ function createColumns(api: IExtensionApi, props: () => IDownloadViewProps): ITa
       collator = new Intl.Collator(locale, { sensitivity: 'base' });
     }
     return collator;
-  }
+  };
 
   return [
     {
@@ -237,7 +237,7 @@ function createColumns(api: IExtensionApi, props: () => IDownloadViewProps): ITa
       edit: {},
       isSortable: true,
       filter: new DownloadProgressFilter(),
-    }
+    },
   ];
 }
 

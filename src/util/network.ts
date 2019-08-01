@@ -16,32 +16,31 @@ export function jsonRequest<T>(apiURL: string): Promise<T> {
         const { statusCode } = res;
         const contentType = res.headers['content-type'];
 
-        let err: string;
-        if (statusCode !== 200) {
-          err = `Request Failed. Status Code: ${statusCode}`;
-        } else if (!/^application\/json/.test(contentType)) {
-          err = `Invalid content-type ${contentType}`;
-        }
+      let err: string;
+      if (statusCode !== 200) {
+        err = `Request Failed. Status Code: ${statusCode}`;
+      } else if (!/^application\/json/.test(contentType)) {
+        err = `Invalid content-type ${contentType}`;
+      }
 
-        if (err !== undefined) {
-          res.resume();
-          return reject(new Error(err));
-        }
+      if (err !== undefined) {
+        res.resume();
+        return reject(new Error(err));
+      }
 
-        res.setEncoding('utf8');
-        let rawData = '';
-        res.on('data', (chunk) => { rawData += chunk; });
-        res.on('end', () => {
-          try {
-            resolve(JSON.parse(rawData));
-          } catch (e) {
-            reject(e);
-          }
-        });
-      })
+      res.setEncoding('utf8');
+      let rawData = '';
+      res.on('data', (chunk) => { rawData += chunk; });
+      res.on('end', () => {
+        try {
+          resolve(JSON.parse(rawData));
+        } catch (e) {
+          reject(e);
+        }
+      });
+    })
       .on('error', (err: Error) => {
         return reject(err);
       });
-    });
-  }
-
+  });
+}

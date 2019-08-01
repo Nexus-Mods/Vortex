@@ -29,6 +29,11 @@ function getModCategory(mod: IModWithState) {
   return getSafe(mod, ['attributes', 'category'], undefined);
 }
 
+function getModName(mod: IModWithState) {
+  return (getSafe(mod, ['attributes', 'name'], undefined))
+      || (getSafe(mod, ['attributes', 'fileName'], undefined));
+}
+
 function getCategoryChoices(state: IState) {
   const categories: ICategoryDictionary = allCategories(state);
 
@@ -38,7 +43,42 @@ function getCategoryChoices(state: IState) {
       .sort((lhs, rhs) => categories[lhs.key].order - categories[rhs.key].order));
 }
 
+function undefSort(lhs: any, rhs: any) {
+  return (lhs !== undefined)
+    ? 1 : (rhs !== undefined)
+            ? -1 : 0;
+}
+
+function modNameSort(lhs: IModWithState, rhs: IModWithState,
+                     collator: Intl.Collator, sortDir: string): number {
+  const lhsName = getModName(lhs);
+  const rhsName = getModName(rhs);
+  return ((lhsName === undefined) || (rhsName === undefined))
+    ? undefSort(lhsName, rhsName)
+    : collator.compare(lhsName, rhsName) * (sortDir !== 'desc' ? 1 : -1);
+}
+
+function sortCategories(lhs: IModWithState, rhs: IModWithState,
+                        collator: Intl.Collator, state: any, sortDir: string): number {
+  const lhsCat = resolveCategoryName(getModCategory(lhs), state);
+  const rhsCat = resolveCategoryName(getModCategory(rhs), state);
+  return (lhsCat === rhsCat)
+    ? modNameSort(lhs, rhs, collator, sortDir)
+    : collator.compare(lhsCat, rhsCat);
+}
+
 function init(context: IExtensionContext): boolean {
+  let sortDirection: string = 'none';
+  let lang: string;
+  let collator: Intl.Collator;
+  const getCollator = (locale: string) => {
+    if ((collator === undefined) || (locale !== lang)) {
+      lang = locale;
+      collator = new Intl.Collator(locale, { sensitivity: 'base' });
+    }
+    return collator;
+  };
+
   context.registerDialog('categories', CategoryDialog);
   context.registerAction('mod-icons', 80, 'categories', {}, 'Categories', () => {
     context.api.store.dispatch(showCategoriesDialog(true));
@@ -59,6 +99,8 @@ function init(context: IExtensionContext): boolean {
     edit: {},
     isSortable: true,
     filter: new CategoryFilter(),
+    sortFuncRaw: (lhs: IModWithState, rhs: IModWithState, locale: string): number =>
+      sortCategories(lhs, rhs, getCollator(locale), context.api.store.getState(), sortDirection),
   });
 
   context.registerTableAttribute('mods', {
@@ -91,7 +133,18 @@ function init(context: IExtensionContext): boolean {
 
   context.once(() => {
     const store: Redux.Store<any> = context.api.store;
+    context.api.onStateChange(['settings', 'tables', 'mods'],
+      (oldState, newState) => {
+        const newSortDirection =
+          getSafe(newState, ['attributes', 'category', 'sortDirection'], 'none');
 
+        const oldSortDirection =
+          getSafe(oldState, ['attributes', 'category', 'sortDirection'], 'none');
+
+        if (newSortDirection !== oldSortDirection) {
+          sortDirection = newSortDirection;
+        }
+    });
     try {
       context.api.events.on('update-categories', (gameId, categories, isUpdate) => {
         if (isUpdate) {

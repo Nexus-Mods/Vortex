@@ -6,6 +6,8 @@ import { truthy } from '../../../util/util';
 import { setDownloadModInfo } from '../../download_management/actions/state';
 import { setModAttribute } from '../../mod_management/actions/mods';
 
+import { guessFromFileName } from '../util/guessModID';
+
 import I18next from 'i18next';
 import * as React from 'react';
 import { Button, ControlLabel, FormGroup, InputGroup } from 'react-bootstrap';
@@ -67,12 +69,12 @@ class NexusModIdDetail extends ComponentEx<IProps, {}> {
 
   private guessNexusId = () => {
     const { fileName, activeGameId, isDownload, modId, store } = this.props;
-    const match = fileName.match(/-([0-9]+)-/);
-    if (match !== null) {
+    const guessed = guessFromFileName(fileName);
+    if (guessed !== undefined) {
       if (isDownload) {
-        store.dispatch(setDownloadModInfo(modId, 'nexus.ids.modId', match[1]));
+        store.dispatch(setDownloadModInfo(modId, 'nexus.ids.modId', guessed));
       } else {
-        store.dispatch(setModAttribute(activeGameId, modId, 'modId', match[1]));
+        store.dispatch(setModAttribute(activeGameId, modId, 'modId', guessed));
       }
     }
   }

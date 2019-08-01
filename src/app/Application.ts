@@ -5,20 +5,20 @@ import {IState} from '../types/IState';
 import commandLine, {IParameters} from '../util/commandLine';
 import { DocumentsPathMissing, ProcessCanceled, UserCanceled } from '../util/CustomErrors';
 import * as develT from '../util/devel';
-import { setOutdated, terminate, toError, setWindow, getWindow } from '../util/errorHandling';
+import { getWindow, setOutdated, setWindow, terminate, toError } from '../util/errorHandling';
 import ExtensionManagerT from '../util/ExtensionManager';
 import * as fs from '../util/fs';
 import lazyRequire from '../util/lazyRequire';
 import LevelPersist, { DatabaseLocked } from '../util/LevelPersist';
 import {log, setLogPath, setupLogging} from '../util/log';
-import { showError, prettifyNodeErrorMessage } from '../util/message';
+import { prettifyNodeErrorMessage, showError } from '../util/message';
 import migrate from '../util/migrate';
 import { StateError } from '../util/reduxSanity';
 import { allHives, createVortexStore, currentStatePath, extendStore,
          importState, insertPersistor, markImported, querySanitize } from '../util/store';
 import {} from '../util/storeHelper';
 import SubPersistor from '../util/SubPersistor';
-import { spawnSelf, truthy, timeout } from '../util/util';
+import { isMajorDowngrade, spawnSelf, timeout, truthy } from '../util/util';
 
 import { addNotification } from '../actions';
 
@@ -239,7 +239,8 @@ class Application {
               + 'configured and accessible, then try again.',
           }, response => {
             if (response === 1) {
-              shell.openExternal('https://wiki.nexusmods.com/index.php/Misconfigured_Documents_Folder');
+              shell.openExternal(
+                'https://wiki.nexusmods.com/index.php/Misconfigured_Documents_Folder');
             }
             app.quit();
           });
@@ -336,12 +337,12 @@ class Application {
       // don't check version change in development builds or on first start
       return Promise.resolve();
     }
-    if ((semver.major(currentVersion) < semver.major(lastVersion))
-        || (semver.minor(currentVersion) < semver.minor(lastVersion))) {
+    if (isMajorDowngrade(lastVersion, currentVersion)) {
       if (dialog.showMessageBox(getWindow(), {
         type: 'warning',
         title: 'Downgrade detected',
-        message: 'The version of Vortex you\'re running is older than the one you previously ran. '
+        message: `The version of Vortex you\'re running (${currentVersion}) `
+               + `is older than the one you previously ran (${lastVersion}). `
                + 'While Vortex versions are backward compatible they are not forward compatible, '
                + 'it\'s possible this version of Vortex may not run and may even '
                + 'do irrevsible damage to your application state.\n'
@@ -628,7 +629,9 @@ class Application {
               }
               terminate({
                 message: 'Failed to restore backup',
-                details: err.code !== 'ENOENT' ? err.message : 'Specified backup file doesn\'t exist',
+                details: (err.code !== 'ENOENT')
+                  ? err.message
+                  : 'Specified backup file doesn\'t exist',
                 stack: err.stack,
                 path: restoreBackup,
               }, {}, err.code !== 'ENOENT');

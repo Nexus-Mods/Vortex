@@ -5,6 +5,7 @@ import * as Promise from 'bluebird';
 import { spawn } from 'child_process';
 import * as _ from 'lodash';
 import * as path from 'path';
+import * as semver from 'semver';
 
 /**
  * count the elements in an array for which the predicate matches
@@ -139,7 +140,7 @@ export function makeQueue() {
       queue = queue
         .then(() => {
           atEnd = false;
-          return func().then(resolve).catch(reject)
+          return func().then(resolve).catch(reject);
         })
         .finally(() => {
           atEnd = true;
@@ -288,7 +289,7 @@ export function deBOM(input: string) {
 
 /**
  * escape a string for use in a regular expression
- * @param string 
+ * @param string
  */
 export function escapeRE(input: string): string {
   return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -298,13 +299,13 @@ export function escapeRE(input: string): string {
  * set a timeout for a promise. When the timeout expires the promise returned by this
  * resolves with a value of undefined.
  * @param prom the promise that should be wrapped
- * @param timeout the time in milliseconds after which this should return
+ * @param delay the time in milliseconds after which this should return
  * @param cancel if true, the input promise is canceled when the timeout expires. Otherwise
  *               it's allowed to continue and may finish after all.
  */
-export function timeout<T>(prom: Promise<T>, timeout: number, cancel: boolean = false): Promise<T> {
+export function timeout<T>(prom: Promise<T>, delay: number, cancel: boolean = false): Promise<T> {
   let timedOut: boolean = false;
-  return Promise.any<T>([prom, Promise.delay(timeout).then(() => {
+  return Promise.any<T>([prom, Promise.delay(delay).then(() => {
     timedOut = true;
     return undefined;
   })])
@@ -334,7 +335,7 @@ const RESERVED_NAMES = new Set(process.platform === 'win32'
     'CON', 'PRN', 'AUX', 'NUL',
     'COM1', 'COM2', 'COM3', 'COM4', 'COM5', 'COM6', 'COM7', 'COM8', 'COM9',
     'LPT1', 'LPT2', 'LPT3', 'LPT4', 'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9',
-    '..', '.'
+    '..', '.',
   ]
   : [ '..', '.' ]);
 
@@ -365,13 +366,13 @@ export function isPathValid(input: string, allowRelative: boolean = false): bool
   if (allowRelative) {
     split = split.filter(segment => (segment !== '.') && (segment !== '..'));
   }
-  let found = split.find((segment: string, idx: number) => {
+  const found = split.find((segment: string, idx: number) => {
     if (idx === 0 && isDriveLetter(segment)) {
       return false;
     }
     return !isFilenameValid(segment);
-  })
-  
+  });
+
   return found === undefined;
 }
 
@@ -379,4 +380,17 @@ export {
   INVALID_FILEPATH_CHARACTERS,
   INVALID_FILENAME_RE,
   INVALID_FILENAME_CHARACTERS,
+};
+
+// test if the running version is a major downgrade (downgrading by a major or minor version,
+// everything except a patch) compared to what was running last
+export function isMajorDowngrade(previous: string, current: string): boolean {
+  const majorL = semver.major(previous);
+  const majorR = semver.major(current);
+
+  if (majorL !== majorR) {
+    return majorL > majorR;
+  } else {
+    return semver.minor(previous) > semver.minor(current);
+  }
 }

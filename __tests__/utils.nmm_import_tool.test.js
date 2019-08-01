@@ -1,11 +1,23 @@
 import { parseModEntries } from '../extensions/nmm-import-tool/src/util/nmmVirtualConfigParser';
 import { ParseError } from '../extensions/nmm-import-tool/src/types/nmmEntries';
 
+import { Readable } from 'stream';
+
 jest.mock('fs-extra-promise', () => ({
     statAsync: () => {
       return Promise.resolve({});
-    }
-}));
+    },
+    createReadStream: () => {
+      return {
+        on: (type, cb) => {
+          if (type === 'end') {
+            cb();
+          }
+          return this;
+        }
+      };
+    },
+  }));
 
 describe('parseModEntries', () => {
   it('parse the NMM virtual config file', () => {
@@ -19,12 +31,7 @@ describe('parseModEntries', () => {
                       </modInfo>
                       </modList>
                       </virtualModActivator>`;
-    const fileEntry = new Array({
-          fileSource: 'TestMod',
-          fileDestination: 'TestPath',
-          isActive: true,
-          filePriority: 0,
-      });
+
     const modEntry = new Array({
       nexusId: '1',
       vortexId: 'TestMod',
@@ -33,17 +40,12 @@ describe('parseModEntries', () => {
       modFilename: 'TestMod',
       archivePath: '',
       modVersion: '1.0.0',
-      archiveMD5: null,
+      archiveMD5: 'd41d8cd98f00b204e9800998ecf8427e',
       importFlag: true,
       isAlreadyManaged: false,
-      fileEntries: fileEntry,
     });
-    let result;
     return parseModEntries(inputXML, undefined, 'c:\\temp')
-    .then((ModEntries) => {
-      result = ModEntries;
-    })
-    .then(() => {
+    .then(result => {
       expect(result).toEqual(modEntry);
     });
   });

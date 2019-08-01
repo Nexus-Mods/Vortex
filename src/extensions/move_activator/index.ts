@@ -5,11 +5,12 @@ import { UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 
-import { getGame } from '../gamemode_management/util/getGame';
 import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
+import { getGame } from '../gamemode_management/util/getGame';
 import LinkingDeployment, { IDeployment } from '../mod_management/LinkingDeployment';
 import { installPathForGame } from '../mod_management/selectors';
-import { IDeployedFile, IDeploymentMethod, IUnavailableReason } from '../mod_management/types/IDeploymentMethod';
+import { IDeployedFile, IDeploymentMethod,
+         IUnavailableReason } from '../mod_management/types/IDeploymentMethod';
 
 import * as Promise from 'bluebird';
 import I18next from 'i18next';
@@ -32,10 +33,10 @@ export class FileFound extends Error {
 }
 
 class DeploymentMethod extends LinkingDeployment {
+  public priority: number = 50;
+
   private mDirCache: Set<string>;
   private mLnkExpression = new RegExp(LNK_EXT + '$');
-
-  public priority: number = 50;
 
   constructor(api: IExtensionApi) {
     super(
@@ -79,10 +80,11 @@ class DeploymentMethod extends LinkingDeployment {
       return {
         description: t => t('Can\'t write to output directory'),
         order: 3,
-        solution: t => t('To resolve this problem, the current user account needs to be given write permission to "{{modPath}}".', {
+        solution: t => t('To resolve this problem, the current user account needs to '
+                       + 'be given write permission to "{{modPath}}".', {
           replace: {
             modPath: modPaths[typeId],
-          }
+          },
         }),
       };
     }
@@ -111,7 +113,8 @@ class DeploymentMethod extends LinkingDeployment {
           fixCallback: (api: IExtensionApi) => new Promise((resolve, reject) => {
             api.events.emit('show-main-page', 'application_settings');
             api.store.dispatch(setSettingsPage('Mods'));
-            api.highlightControl('#install-path-form', 5000, 'Change this to be on the same drive as the game.');
+            api.highlightControl('#install-path-form', 5000,
+                                 'Change this to be on the same drive as the game.');
           }),
         };
       }
@@ -189,8 +192,7 @@ class DeploymentMethod extends LinkingDeployment {
 
   public getDeployedPath(input: string): string {
     if (path.extname(input) === LNK_EXT) {
-      let res = input.substring(0, input.length - LNK_EXT.length);
-      return res;
+      return input.substring(0, input.length - LNK_EXT.length);
     }
     return input;
   }

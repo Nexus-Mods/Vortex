@@ -1,7 +1,7 @@
 import * as actions from '../actions/session';
 import { IReducerSpec } from '../types/IExtensionContext';
 
-import { pushSafe, removeValue, setSafe, deleteOrNop } from '../util/storeHelper';
+import { deleteOrNop, pushSafe, removeValue, setSafe } from '../util/storeHelper';
 
 import * as path from 'path';
 
@@ -59,6 +59,14 @@ export const sessionReducer: IReducerSpec = {
       }),
     [actions.setToolStopped as any]: (state, payload) =>
       deleteOrNop(state, ['toolsRunning', makeExeId(payload.exePath)]),
+    [actions.setUIBlocker as any]: (state, payload) =>
+      setSafe(state, ['uiBlockers', payload.id], {
+        icon: payload.icon,
+        description: payload.description,
+        mayCancel: payload.mayCancel,
+      }),
+    [actions.clearUIBlocker as any]: (state, payload) =>
+      deleteOrNop(state, ['uiBlockers', payload]),
   },
   defaults: {
     displayGroups: {},
@@ -71,5 +79,6 @@ export const sessionReducer: IReducerSpec = {
     settingsPage: undefined,
     extLoadFailures: {},
     toolsRunning: {},
+    uiBlockers: {},
   },
 };

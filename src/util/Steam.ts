@@ -115,10 +115,13 @@ class Steam implements ISteam {
    * @param appId - the application id, may be left undefined if the caller doesn't know
    * @param args - Can be used to add additional launch arguments.
    */
-  public getGameExecutionInfo(gamePath: string, appId?: number, args?: string[]): Promise<ISteamExec> {
+  public getGameExecutionInfo(gamePath: string,
+                              appId?: number,
+                              args?: string[]): Promise<ISteamExec> {
     return this.allGames()
       .then(entries => {
-        // TODO: This is not a reliable way of finding a game in this list, it will fail on junction points
+        // TODO: This is not a reliable way of finding a game in this list,
+        //   it will fail on junction points
         //   or multiple mount points for the same disk, it will also get confused by something like
         //   steamapps/common/../common/gamename
         const found = entries.find(entry => {
@@ -127,7 +130,7 @@ class Steam implements ISteam {
           return discoveryPath.indexOf(steamPath) !== -1;
         });
         if (found !== undefined) {
-          appId = parseInt(found.appid);
+          appId = parseInt(found.appid, 10);
         } else {
           log('warn', 'game not listed in steam manifest', {
             gamePath,

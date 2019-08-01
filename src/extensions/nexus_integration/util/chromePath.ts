@@ -1,5 +1,5 @@
 import * as fs from '../../../util/fs';
-import { truthy, deBOM } from '../../../util/util';
+import { deBOM, truthy } from '../../../util/util';
 
 import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';

@@ -1,16 +1,17 @@
-import { IExtensionApi, ITableAttribute, IMod } from '../../types/api';
-import { getSafe } from '../../util/storeHelper';
-import EndorsementFilter from './views/EndorsementFilter';
-import { IModWithState } from '../mod_management/types/IModProps';
-import { nexusGameId, convertGameIdReverse } from './util/convertGameId';
-import { activeGameId, gameById, currentGame, knownGames } from '../../util/selectors';
 import { setModAttribute } from '../../actions';
+import { IExtensionApi, IMod, ITableAttribute } from '../../types/api';
+import { activeGameId, currentGame, gameById, knownGames } from '../../util/selectors';
+import { getSafe } from '../../util/storeHelper';
+import { IModWithState } from '../mod_management/types/IModProps';
+import { nexusGames } from './util';
+import { convertGameIdReverse, nexusGameId } from './util/convertGameId';
+import EndorsementFilter from './views/EndorsementFilter';
 import EndorseModButton from './views/EndorseModButton';
 import NexusModIdDetail from './views/NexusModIdDetail';
+
 import I18next from 'i18next';
 import * as React from 'react';
 import * as Redux from 'redux';
-import { nexusGames } from './util';
 
 // TODO: the field names in this object will be shown to the user, hence the capitalization
 function renderNexusModIdDetail(
@@ -40,7 +41,10 @@ function renderNexusModIdDetail(
 
 export type EndorseMod = (gameId: string, modId: string, endorsedStatus: string) => void;
 
-function createEndorsedIcon(store: Redux.Store<any>, mod: IMod, onEndorse: EndorseMod, t: I18next.TFunction) {
+function createEndorsedIcon(store: Redux.Store<any>,
+                            mod: IMod,
+                            onEndorse: EndorseMod,
+                            t: I18next.TFunction) {
   const nexusModId: string = getSafe(mod.attributes, ['modId'], undefined);
   const version: string = getSafe(mod.attributes, ['version'], undefined);
   const state: string = getSafe(mod, ['state'], undefined);
@@ -84,7 +88,8 @@ function createEndorsedIcon(store: Redux.Store<any>, mod: IMod, onEndorse: Endor
   return null;
 }
 
-export function genEndorsedAttribute(api: IExtensionApi, onEndorseMod: EndorseMod): ITableAttribute {
+export function genEndorsedAttribute(api: IExtensionApi,
+                                     onEndorseMod: EndorseMod): ITableAttribute {
   return {
     id: 'endorsed',
     name: 'Endorsed',
@@ -148,7 +153,7 @@ export function genGameAttribute(api: IExtensionApi): ITableAttribute<IMod> {
         ? gameById(api.store.getState(), downloadGame)
         : currentGame(api.store.getState());
       const nexusId = nexusGameId(game) || downloadGame;
-      const gameEntry = nexusGames().find(game => game.domain_name === nexusId);
+      const gameEntry = nexusGames().find(iter => iter.domain_name === nexusId);
       return (gameEntry !== undefined)
         ? gameEntry.name
         : nexusId;
@@ -171,7 +176,8 @@ export function genGameAttribute(api: IExtensionApi): ITableAttribute<IMod> {
         }
         mods.forEach(mod => {
           api.store.dispatch(setModAttribute(
-            gameMode, mod.id, 'downloadGame', convertGameIdReverse(knownGames(api.store.getState()), value)));
+            gameMode, mod.id, 'downloadGame',
+            convertGameIdReverse(knownGames(api.store.getState()), value)));
         });
       },
     },

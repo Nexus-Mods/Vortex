@@ -76,6 +76,7 @@ export interface ILookupCalculated {
 
 interface IComponentState {
   lastSelected?: string;
+  selectionStart?: string;
   calculatedValues?: ILookupCalculated;
   rowState: { [id: string]: IRowState };
   sortedRows: string[];
@@ -413,7 +414,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
           this.scrollTo(id, false);
         }, 2000);
       } else {
-        console.log('node not found', this.mRowRefs);
+        log('warn', 'node not found', this.mRowRefs);
       }
     } catch (err) {
       if (mayRetry !== false) {
@@ -635,15 +636,27 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private handleKeyDown = (evt: React.KeyboardEvent<any>) => {
-    const { lastSelected, sortedRows }  = this.state;
+    const { lastSelected, selectionStart, sortedRows }  = this.state;
 
     if (evt.target !== this.mScrollRef) {
       return;
     }
 
-    if (this.useMultiSelect() && (evt.keyCode === 65) && evt.ctrlKey) {
-      this.selectAll();
-      return;
+    if (this.useMultiSelect()) {
+      if ((evt.keyCode === 65) && evt.ctrlKey) {
+        this.selectAll();
+        return;
+      }
+
+      if (evt.shiftKey && (selectionStart === undefined)) {
+        this.updateState(update(this.mNextState, {
+          selectionStart: { $set: lastSelected },
+        }));
+      } else if (!evt.shiftKey && (selectionStart !== undefined)) {
+        this.updateState(update(this.mNextState, {
+          selectionStart: { $set: undefined },
+        }));
+      }
     }
 
     // TODO: this calculation of the number of lines visible in the table is only
@@ -675,7 +688,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     }
     if (offset !== 0) {
       evt.preventDefault();
-      const newItem = this.selectRelative(offset);
+      const newItem = this.selectRelative(offset, evt.shiftKey);
       if ((this.mRowRefs[newItem] !== undefined) && this.mMounted) {
         this.scrollToItem(
           ReactDOM.findDOMNode(this.mRowRefs[newItem]) as HTMLElement, Math.abs(offset) > 1);
@@ -738,17 +751,26 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       (action) => (action.multiRowAction === undefined) || action.multiRowAction);
   }
 
-  private selectRelative = (delta: number): string => {
-    const { lastSelected, sortedRows } = this.state;
+  private selectRelative = (delta: number, shiftHeld: boolean): string => {
+    const { lastSelected, selectionStart, sortedRows } = this.state;
     if ((lastSelected === undefined) || (sortedRows === undefined)) {
       return;
     }
 
     let idx = sortedRows.indexOf(lastSelected);
+    const oldIdx = idx;
     idx = Math.min(Math.max(idx + delta, 0), sortedRows.length - 1);
 
     const newSelection = sortedRows[idx];
+
+    if (oldIdx === idx) {
+      return newSelection;
+    }
+
     this.selectOnly(newSelection, false);
+    if (shiftHeld) {
+      this.selectTo(selectionStart);
+    }
     return newSelection;
   }
 
@@ -789,6 +811,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
   private setRowVisible = (rowId: string, visible: boolean) => {
     // turn rows visible asap, turning them invisible can be done when scrolling ends
+    // Important: This was intended as a performance optimisation but it also fixed
+    //   a problem where drag&drop connectors between rows far apart didn't work because
+    //   the source was hidden before while dragging.
     if (visible || (this.mDelayedVisibilityTimer === undefined)) {
       this.mNextVisibility[rowId] = visible;
       this.mDelayedVisibility[rowId] = visible;
@@ -1125,6 +1150,15 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     if (evt.isDefaultPrevented()) {
       return;
     }
+
+    const { selectionStart } = this.state;
+
+    if (!evt.shiftKey && (selectionStart !== undefined)) {
+      this.updateState(update(this.mNextState, {
+        selectionStart: { $set: undefined },
+      }));
+    }
+
     let iter = evt.target as any;
     while (((iter !== null) && (iter !== undefined))
           && (iter.tagName !== 'BUTTON')
@@ -1235,16 +1269,16 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private selectTo(rowId: string) {
-    const { sortedRows } = this.state;
+    const { lastSelected, sortedRows } = this.mNextState;
 
-    const selection: Set<string> = new Set([rowId, this.state.lastSelected]);
+    const selection: Set<string> = new Set([rowId, lastSelected]);
     let selecting = false;
 
     sortedRows.forEach(iterId => {
-      let isBracket = (iterId === rowId) || (iterId === this.state.lastSelected);
+      let isBracket = (iterId === rowId) || (iterId === lastSelected);
       if (!selecting && isBracket) {
         selecting = true;
-        isBracket = rowId === this.state.lastSelected;
+        isBracket = rowId === lastSelected;
       }
       if (selecting) {
         selection.add(iterId);
@@ -1266,13 +1300,15 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private visibleAttributes(attributes: ITableAttribute[],
                             attributeStates: { [id: string]: IAttributeState }):
                             { table: ITableAttribute[], detail: ITableAttribute[] } {
-    const enabled = attributes.filter(attribute =>
-        ((attribute.condition === undefined) || attribute.condition())
-        && this.getAttributeState(attribute, attributeStates).enabled);
+    const filtered = attributes.filter(attribute =>
+      ((attribute.condition === undefined) || attribute.condition()));
+
+    const enabled = filtered.filter(attribute =>
+      this.getAttributeState(attribute, attributeStates).enabled);
 
     return {
       table: enabled.filter(attribute => attribute.placement !== 'detail'),
-      detail: enabled.filter(attribute => attribute.placement !== 'table'),
+      detail: filtered.filter(attribute => attribute.placement !== 'table'),
     };
   }
 

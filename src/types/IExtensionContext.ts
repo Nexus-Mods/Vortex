@@ -114,7 +114,8 @@ export interface IDashletOptions {
 
 export type RegisterDashlet =
   (title: string, width: 1 | 2 | 3, height: 1 | 2 | 3 | 4 | 5, position: number,
-   component: React.ComponentClass<any> | React.FunctionComponent<any>, isVisible: (state) => boolean,
+   component: React.ComponentClass<any> | React.FunctionComponent<any>,
+   isVisible: (state) => boolean,
    props: PropsCallback, options: IDashletOptions) => void;
 
 export type RegisterDialog =
@@ -292,6 +293,9 @@ export interface IRunOptions {
   suggestDeploy?: boolean;
   shell?: boolean;
   detach?: boolean;
+  // if true, a non-zero exit code will be treated as an error. default is false
+  //   because too many windows applications don't report proper exit codes
+  expectSuccess?: boolean;
   onSpawned?: () => void;
 }
 
@@ -554,6 +558,14 @@ export interface IExtensionApi {
    * A text can be added, but no promise that it actually looks good in practice
    */
   highlightControl: (selector: string, durationMS: number, text?: string) => void;
+
+  /**
+   * returns a promise that resolves once the ui has been displayed.
+   * This is useful if you have a callback that may be triggered before the ui is
+   * displayed but may require the UI to be processed.
+   * Specifically events can only be sent once this event has been triggered
+   */
+  awaitUI: () => Promise<void>;
 }
 
 export interface IStateVerifier {
@@ -955,9 +967,10 @@ export interface IExtensionContext {
    *       cause "damage"
    *     - the extension disables/blocks itself until the migration is done
    *     - the migration is synchronous so that the migrate function doesn't return until it's done.
+   * Important: Migration happens in the *main process*, not in the renderer process.
    * @param {function} migrate called if the running extension version differs from the old one.
-   *                           As soon as the promise returned from this is resolved, the stored version
-   *                           number is updated.
+   *                           As soon as the promise returned from this is resolved, the stored
+   *                           version number is updated.
    */
   registerMigration: (migrate: (oldVersion: string) => Promise<void>) => void;
 

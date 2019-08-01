@@ -357,14 +357,16 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
         id: 'staged_changed',
         name: 'Staged file modified',
         description: 'Last time the stage file (the one in the mod staging folder) was modified',
-        calc: (file: IFileEntry, t) => (file.sourceModified !== undefined) ? file.sourceModified.toLocaleString() : '',
+        calc: (file: IFileEntry, t) => (file.sourceModified !== undefined)
+                                       ? file.sourceModified.toLocaleString() : '',
         placement: 'table',
         edit: {},
       }, {
         id: 'deployment_changed',
         name: 'Deployed file modified',
         description: 'Last time the deployed file (the one in the game folder) was modified',
-        calc: (file: IFileEntry) => (file.destModified !== undefined) ? file.destModified.toLocaleString() : '',
+        calc: (file: IFileEntry) => (file.destModified !== undefined)
+                                    ? file.destModified.toLocaleString() : '',
         placement: 'table',
         edit: {},
       }, {
@@ -422,7 +424,26 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
   }
 
   private confirm = () => {
-    this.props.onClose(this.props.changes, false);
+    const deletions = this.props.changes.filter(change => change.action === 'delete');
+    if (deletions.length > 1) {
+      this.context.api.showDialog('question', 'Confirm deletion', {
+        bbcode: 'You\'re about to [color="red"]delete[/color] {{count}} files. '
+              + 'Are you sure this is what you want?',
+        parameters: {
+          count: deletions.length,
+        },
+      }, [
+        { label: 'Back' },
+        { label: 'Continue' },
+      ])
+      .then(result => {
+        if (result.action === 'Continue') {
+          this.props.onClose(this.props.changes, false);
+        }
+      });
+    } else {
+      this.props.onClose(this.props.changes, false);
+    }
   }
 }
 

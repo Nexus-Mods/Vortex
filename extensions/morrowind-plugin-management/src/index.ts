@@ -110,7 +110,8 @@ function init(context: types.IExtensionContext) {
         updatePluginOrder(iniFilePath, plugins)
           .then(() => updatePluginTimestamps(path.join(discovery.path, 'Data Files'), plugins))
           .catch(err => {
-            context.api.showErrorNotification('Failed to update morrowind.ini', err, { allowReport: false });
+            context.api.showErrorNotification('Failed to update morrowind.ini',
+                                              err, { allowReport: false });
           });
       },
     }),

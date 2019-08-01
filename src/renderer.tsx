@@ -4,6 +4,7 @@
 
 const earlyErrHandler = (evt) => {
   const {error} = evt;
+  // tslint:disable-next-line:no-shadowed-variable
   const { remote } = require('electron');
   remote.dialog.showErrorBox('Unhandled error', error.stack);
   remote.app.exit(1);
@@ -12,10 +13,12 @@ const earlyErrHandler = (evt) => {
 // turn all error logs into a single parameter. The reason is that (at least in production)
 // these only get reported by the main process and due to a "bug" only one parameter gets
 // relayed.
+// tslint:disable-next-line:no-console
 const oldErr = console.error;
+// tslint:disable-next-line:no-console
 console.error = (...args) => {
   oldErr(args.concat(' ') + '\n' + (new Error()).stack);
-}
+};
 
 window.addEventListener('error', earlyErrHandler);
 window.addEventListener('unhandledrejection', earlyErrHandler);
@@ -28,6 +31,7 @@ if (process.env.NODE_ENV === 'development') {
   const rebuildRequire = require('./util/requireRebuild').default;
   rebuildRequire();
   process.traceProcessWarnings = true;
+  // tslint:disable-next-line:no-var-requires
   const sourceMapSupport = require('source-map-support');
   sourceMapSupport.install();
 } else {
@@ -73,32 +77,50 @@ import { ipcRenderer, remote, webFrame } from 'electron';
 import { forwardToMain, getInitialStateRenderer, replayActionRenderer } from 'electron-redux';
 import { EventEmitter } from 'events';
 import I18next from 'i18next';
+import * as nativeErr from 'native-errors';
 import * as React from 'react';
+import { DragDropContextProvider } from 'react-dnd';
+import HTML5Backend from 'react-dnd-html5-backend';
 import * as ReactDOM from 'react-dom';
 import { I18nextProvider } from 'react-i18next';
 import { Provider } from 'react-redux';
 import { applyMiddleware, compose, createStore } from 'redux';
 import thunkMiddleware from 'redux-thunk';
+import { generate as shortid } from 'shortid';
 
 import crashDump from 'crash-dump';
 
-// ensures tsc includes this dependency
+import { setLanguage } from './actions';
 import { ThunkStore } from './types/IExtensionContext';
 import { UserCanceled } from './util/CustomErrors';
 import {} from './util/extensionRequire';
 import { reduxLogger } from './util/reduxLogger';
 import { getSafe } from './util/storeHelper';
 import { getAllPropertyNames } from './util/util';
-import { setLanguage } from './actions';
-import { DragDropContextProvider } from 'react-dnd';
-import HTML5Backend from 'react-dnd-html5-backend';
 
 log('debug', 'renderer process started', { pid: process.pid });
 
 const tempPath = path.join(remote.app.getPath('userData'), 'temp');
 remote.app.setPath('temp', tempPath);
 
-const deinitCrashDump = crashDump(path.join(remote.app.getPath('temp'), 'dumps', `crash-renderer-${Date.now()}.dmp`));
+const deinitCrashDump =
+  crashDump(path.join(remote.app.getPath('temp'), 'dumps', `crash-renderer-${Date.now()}.dmp`));
+
+// on windows, inject the native error code into "unknown" errors to help track those down
+if (process.platform === 'win32') {
+  nativeErr.InitHook();
+  const oldPrep = Error.prepareStackTrace;
+  Error.prepareStackTrace = (error, stack) => {
+    if (error['code'] === 'UNKNOWN') {
+      const native = nativeErr.GetLastError();
+      error.message = `${native.message} (${native.code})`;
+      error['nativeCode'] = native.code;
+    }
+    return oldPrep !== undefined
+      ? oldPrep(error, stack)
+      : error.stack;
+  };
+}
 
 // allow promises to be cancelled.
 Promise.config({
@@ -180,6 +202,7 @@ function errorHandler(evt: any) {
     // By logging this error here we ensure that even a suppressed error will be reported to
     // user _if_ it managed to prevent the application start. Of course it would be nicer
     // if there was a proper api for that but it's quite the fringe case I think
+    // tslint:disable-next-line:no-console
     console.error(error.stack);
     return true;
   } else {
@@ -193,7 +216,7 @@ window.removeEventListener('error', earlyErrHandler);
 window.removeEventListener('unhandledrejection', earlyErrHandler);
 window.addEventListener('close', () => {
   deinitCrashDump();
-})
+});
 
 const eventEmitter: NodeJS.EventEmitter = new EventEmitter();
 
@@ -202,7 +225,8 @@ let enhancer = null;
 if (process.env.NODE_ENV === 'development') {
   // tslint:disable-next-line:no-var-requires
   const freeze = require('redux-freeze');
-  const devtool = (window as any).__REDUX_DEVTOOLS_EXTENSION__ && (window as any).__REDUX_DEVTOOLS_EXTENSION__();
+  const devtool = (window as any).__REDUX_DEVTOOLS_EXTENSION__
+                && (window as any).__REDUX_DEVTOOLS_EXTENSION__();
   enhancer = compose(
     applyMiddleware(
       forwardToMain,
@@ -214,7 +238,7 @@ if (process.env.NODE_ENV === 'development') {
   enhancer = compose(
     applyMiddleware(
       forwardToMain,
-      ...middleware
+      ...middleware,
     ),
   );
 }
@@ -296,6 +320,28 @@ ipcRenderer.on('relay-event', (sender, event, ...args) => {
   eventEmitter.emit(event, ...args);
 });
 
+ipcRenderer.on('relay-event-with-cb', (sender, event, ...args) => {
+  const id = args[args.length - 1];
+  const cb = (...cbArgs) => {
+    const newCBArgs = cbArgs.map(arg => {
+      if (!(arg instanceof Promise)) {
+        return arg;
+      }
+      const promId = shortid();
+      arg.then(res => {
+        ipcRenderer.send('relay-cb-resolve', promId, res);
+      })
+      .catch(err => {
+        ipcRenderer.send('relay-cb-reject', promId, err);
+      });
+      return { __promise: promId };
+    });
+    ipcRenderer.send('relay-cb', id, ...newCBArgs);
+  };
+  const newArgs = [].concat(args.slice(0, args.length - 1), cb);
+  eventEmitter.emit(event, ...newArgs);
+});
+
 ipcRenderer.on('register-relay-listener', (sender, event, ...noArgs) => {
   eventEmitter.on(event, (...args) => ipcRenderer.send('relay-event', event, ...args));
 });
@@ -345,13 +391,14 @@ function renderer() {
       return extensions.doOnce();
     })
     .then(() => extensions.renderStyle()
-        .catch(err => {
-          terminate({
-            message: 'failed to parse UI theme',
-            details: err,
-          }, store.getState());
-        }))
+      .catch(err => {
+        terminate({
+          message: 'failed to parse UI theme',
+          details: err,
+        }, store.getState());
+      }))
     .then(() => {
+      extensions.setUIReady();
       log('debug', 'render with language', { language: i18n.language });
       const refresh = initApplicationMenu(extensions);
       extensions.getApi().events.on('gamemode-activated', () => refresh());

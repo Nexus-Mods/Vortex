@@ -1,7 +1,7 @@
-import { HTTPError, ProcessCanceled, DataInvalid, UserCanceled } from '../../util/CustomErrors';
+import { DataInvalid, HTTPError, ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
-import { countIf, truthy, INVALID_FILENAME_RE } from '../../util/util';
+import { countIf, INVALID_FILENAME_RE, truthy } from '../../util/util';
 import { IChunk } from './types/IChunk';
 import { IDownloadJob } from './types/IDownloadJob';
 import { IDownloadResult } from './types/IDownloadResult';
@@ -827,6 +827,9 @@ class DownloadManager {
         .then((synced: boolean) => {
           const urls: string[] = Array.isArray(download.urls) ? download.urls : undefined;
           download.received += data.byteLength;
+          if (download.received > download.size) {
+            download.size = download.received;
+          }
           download.progressCB(
               receivedNow, download.size,
               synced
@@ -850,7 +853,15 @@ class DownloadManager {
     };
   }
 
-  private updateDownload(download: IRunningDownload, size: number, fileName: string, chunkable: boolean) {
+  private updateDownloadSize(download: IRunningDownload, size: number) {
+    if (download.size !== size) {
+      download.size = size;
+      download.assembler.setTotalSize(size);
+    }
+  }
+
+  private updateDownload(download: IRunningDownload, size: number,
+                         fileName: string, chunkable: boolean) {
     if ((fileName !== undefined) && (fileName !== download.origName)) {
       const newName = this.unusedName(path.dirname(download.tempName), fileName);
       download.finalName = newName;
@@ -928,8 +939,10 @@ class DownloadManager {
       state: 'init',
       size: chunk.size,
       received: chunk.received,
-      responseCB: !first ? undefined : (size: number, fileName: string, chunkable: boolean) =>
-        this.updateDownload(download, size, fileName || fileNameFromURL, chunkable),
+      responseCB: first
+        ? (size: number, fileName: string, chunkable: boolean) =>
+            this.updateDownload(download, size, fileName || fileNameFromURL, chunkable)
+        : (size: number) => this.updateDownloadSize(download, size),
     };
     if (download.size === undefined) {
       // if the size isn't known yet, use the first job response to update it

@@ -1,4 +1,5 @@
-import { addNotification, dismissNotification, updateNotification } from '../../actions/notifications';
+import { addNotification, dismissNotification,
+         updateNotification } from '../../actions/notifications';
 import { startActivity, stopActivity } from '../../actions/session';
 import { IExtensionApi } from '../../types/IExtensionContext';
 import { INotification } from '../../types/INotification';
@@ -13,14 +14,14 @@ import { setModEnabled } from '../profile_management/actions/profiles';
 import {
   addMod,
   removeMod,
+  setModAttributes,
   setModInstallationPath,
   setModState,
   setModType,
-  setModAttributes,
 } from './actions/mods';
 import { IInstallContext, InstallOutcome } from './types/IInstallContext';
 import { IMod, ModState } from './types/IMod';
-import modName from './util/modName';
+import getModName from './util/modName';
 
 import * as Promise from 'bluebird';
 import * as path from 'path';
@@ -69,16 +70,16 @@ class InstallContext implements IInstallContext {
       showError(dispatch, message, details, { allowReport, replace });
     this.mSetModState = (id, state) =>
       dispatch(setModState(gameMode, id, state));
-    this.mSetModAttributes = (id, attributes) => {
-      Object.keys(attributes).forEach(id => {
-        if (attributes[id] === undefined) {
-          delete attributes[id];
+    this.mSetModAttributes = (modId, attributes) => {
+      Object.keys(attributes).forEach(attributeId => {
+        if (attributes[attributeId] === undefined) {
+          delete attributes[attributeId];
         }
       });
       if (Object.keys(attributes).length > 0) {
-        dispatch(setModAttributes(gameMode, id, attributes));
+        dispatch(setModAttributes(gameMode, modId, attributes));
       }
-    }
+    };
     this.mSetModInstallationPath = (id, installPath) =>
       dispatch(setModInstallationPath(gameMode, id, installPath));
     this.mSetModType = (id, modType) =>
@@ -101,8 +102,10 @@ class InstallContext implements IInstallContext {
     };
     this.mIsDownload = (archiveId) => {
       const state: IState = store.getState();
-      return (archiveId !== null) && getSafe(state, ['persistent', 'downloads', 'files', archiveId], undefined) !== undefined;
-    }
+      return (archiveId !== null)
+          && (getSafe(state, ['persistent', 'downloads', 'files', archiveId],
+                      undefined) !== undefined);
+    };
   }
 
   public startIndicator(id: string): void {
@@ -133,7 +136,7 @@ class InstallContext implements IInstallContext {
       this.mAddNotification(
         this.outcomeNotification(
           this.mInstallOutcome, this.mIndicatorId, this.mIsEnabled(this.mAddedId),
-          mod !== undefined ? modName(mod) : this.mIndicatorId));
+          mod !== undefined ? getModName(mod) : this.mIndicatorId));
     });
   }
 

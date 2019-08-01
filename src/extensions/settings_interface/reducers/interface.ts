@@ -18,7 +18,7 @@ const settingsReducer: IReducerSpec = {
     [actions.setDesktopNotifications as any]: (state, payload) =>
       update(state, { desktopNotifications: { $set: payload } }),
     [actions.setHideTopLevelCategory as any]: (state, payload) =>
-      update(state, { hideTopLevelCategory: { $set: payload.hide } } ),
+      update(state, { hideTopLevelCategory: { $set: payload.hide } }),
     [actions.showUsageInstruction as any]: (state, payload) =>
       update(state, { usage: { [payload.usageId]: { $set: payload.show } } }),
   },

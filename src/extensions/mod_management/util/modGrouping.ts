@@ -3,7 +3,7 @@ import { getSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
 import { IModWithState } from '../types/IModProps';
 
-import { compare, valid } from 'semvish';
+import { coerce, compare, valid } from 'semver';
 
 function byModId(input: IModWithState[]): IModWithState[][] {
   const grouped = input.reduce((prev: { [modId: string]: IModWithState[] }, value) => {
@@ -66,8 +66,8 @@ function newestFirst(lhs: IModWithState, rhs: IModWithState) {
   }
   const lVersion = getSafe(lhs, ['attributes', 'version'], '0.0.0') || '0.0.0';
   const rVersion = getSafe(rhs, ['attributes', 'version'], '0.0.0') || '0.0.0';
-  if (valid(lVersion) && valid(rVersion)) {
-    return compare(rVersion, lVersion);
+  if (valid(coerce(lVersion)) && valid(coerce(rVersion))) {
+    return compare(coerce(rVersion), coerce(lVersion));
   } else {
     return rVersion.localeCompare(lVersion);
   }
@@ -115,7 +115,7 @@ function groupMods(mods: IModWithState[], options: IGroupingOptions): IModWithSt
     temp = group(temp, byEnabled);
   }
 
-  return temp.map(group => group.sort(newestFirst));
+  return temp.map(iter => iter.sort(newestFirst));
 }
 
 export default groupMods;

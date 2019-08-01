@@ -1,7 +1,8 @@
 import { remote } from 'electron';
-import * as minimatch from 'minimatch';
 import I18next from 'i18next';
+import * as minimatch from 'minimatch';
 import * as React from 'react';
+import { WithTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
 import * as semver from 'semver';
 
@@ -13,7 +14,6 @@ import * as selectors from '../../util/selectors';
 
 import { EmptyPlaceholder, FlexLayout } from '../../controls/api';
 import { AnnouncementSeverity, IAnnouncement } from './types';
-import { WithTranslation } from 'react-i18next';
 
 interface IConnectedProps {
   gameMode: string;
@@ -47,7 +47,8 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
 
   private matchesGameMode(announcement: IAnnouncement): boolean {
     const { gameMode } = this.props;
-    if ((gameMode === undefined) && (announcement.gamemode === undefined)) {
+    if ((gameMode === undefined)
+      && ((announcement.gamemode === undefined) || (announcement.gamemode === '*'))) {
       // Display non-game specific announcements even when no gameMode is active.
       return true;
     }

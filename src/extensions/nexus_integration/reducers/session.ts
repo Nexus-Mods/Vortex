@@ -10,7 +10,7 @@ export const sessionReducer: IReducerSpec = {
   reducers: {
     [setLoginId as any]: (state, payload) => {
       // also reset login errors when login gets closed
-      const temp = (payload === undefined) 
+      const temp = (payload === undefined)
         ? setSafe(state, ['loginError'], undefined)
         : state;
       return setSafe(temp, [ 'loginId' ], payload);

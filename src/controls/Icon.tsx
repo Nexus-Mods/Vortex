@@ -3,8 +3,8 @@ import { log } from '../util/log';
 import * as Promise from 'bluebird';
 // using fs directly because the svg may be bundled inside the asar so
 // we need the electron-fs hook here
-import * as fs from 'fs';
 import { remote } from 'electron';
+import * as fs from 'fs';
 import * as path from 'path';
 import * as React from 'react';
 
@@ -27,6 +27,29 @@ export interface IIconProps {
   rotate?: number;
   rotateId?: string;
   svgStyle?: string;
+}
+
+export function installIconSet(set: string, setPath: string): Promise<void> {
+  const newset = document.createElement('div');
+  newset.id = 'iconset-' + set;
+  document.getElementById('icon-sets').appendChild(newset);
+  log('info', 'read font', setPath);
+  return new Promise((resolve, reject) => {
+    fs.readFile(setPath, {}, (err, data) => {
+      if (err !== null) {
+        return reject(err);
+      }
+      return resolve(data);
+    });
+  })
+    .then(data => {
+      newset.innerHTML = data.toString();
+      const newSymbols = newset.querySelectorAll('symbol');
+      sets[set] = new Set<string>();
+      newSymbols.forEach(ele => {
+        sets[set].add(ele.id);
+      });
+    });
 }
 
 class Icon extends React.Component<IIconProps, {}> {
@@ -150,29 +173,8 @@ class Icon extends React.Component<IIconProps, {}> {
       }
 
       // make sure that no other icon instance tries to render this icon
-      const newset = document.createElement('div');
-      newset.id = 'iconset-' + set;
-      document.getElementById('icon-sets').appendChild(newset);
-
       const fontPath = path.resolve(remote.app.getAppPath(), 'assets', 'fonts', set + '.svg');
-      log('info', 'read font', fontPath);
-      // TODO: this does not support adding icons from extensions yet
-      return new Promise((resolve, reject) => {
-        fs.readFile(fontPath, {}, (err, data) => {
-          if (err !== null) {
-            return reject(err);
-          }
-          return resolve(data);
-        });
-      })
-        .then(data => {
-          newset.innerHTML = data.toString();
-          const newSymbols = newset.querySelectorAll('symbol');
-          sets[set] = new Set<string>();
-          newSymbols.forEach(ele => {
-            sets[set].add(ele.id);
-          });
-        });
+      return installIconSet(set, fontPath);
     } else {
       return Promise.resolve();
     }

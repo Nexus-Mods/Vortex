@@ -90,7 +90,7 @@ class GameRow extends ComponentEx<IProps, {}> {
             </div>
           </Media.Left>
           <Media.Body>
-            <Media.Heading>{t(game.name)}</Media.Heading>
+            <Media.Heading>{t(game.name.replace(/\t/g, ' '))}</Media.Heading>
             <p>Location: {location}</p>
           </Media.Body>
           <Media.Right>

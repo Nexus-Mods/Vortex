@@ -24,7 +24,8 @@ function parseCommandline(argv: string[]): IParameters {
   return program
     .command('Vortex')
     .version(app.getVersion())
-    .option('-d, --download [url]', 'Start downloadling the specified url (any supported protocol like nxm:, https:, ...).')
+    .option('-d, --download [url]', 'Start downloadling the specified url '
+                                  + '(any supported protocol like nxm:, https:, ...).')
     .option('-g, --get [path]', 'Print the state variable at the specified path and quit. '
                               + 'For debugging')
     .option('-s, --set [path]=[value]', 'Change a value in the state. Please be very careful '
@@ -36,7 +37,8 @@ function parseCommandline(argv: string[]): IParameters {
     .option('--restore [path]', 'Restore a state backup')
     .option('--shared', 'Used in conjunction with set, get or del, this will access the database'
                                        + 'in the shared location instead of the per-user one')
-    .option('--max-memory [size in MB]', 'Maximum amount of memory Vortex may use in MB (defaults to 4096)')
+    .option('--max-memory [size in MB]', 'Maximum amount of memory Vortex may use in MB '
+                                       + '(defaults to 4096)')
     // allow unknown options since they may be interpreted by electron/node
     .allowUnknownOption()
     .parse(argv || []) as IParameters;

@@ -68,7 +68,7 @@ class HeaderCell extends React.Component<IHeaderProps, {}> {
       </TH>
     );
   }
-  
+
   public updateWidth() {
     if (this.mRef !== null) {
       if (this.mRef.clientWidth > this.mMinWidth) {

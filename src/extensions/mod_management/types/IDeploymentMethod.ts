@@ -96,7 +96,7 @@ export interface IDeploymentMethod {
    * id of the activator for lookup in code
    *
    * @type {string}
-   * @memberOf IModActivator
+   * @memberOf IDeploymentMethod
    */
   readonly id: string;
 
@@ -104,7 +104,7 @@ export interface IDeploymentMethod {
    * name of this activator as presented to the user
    *
    * @type {string}
-   * @memberOf IModActivator
+   * @memberOf IDeploymentMethod
    */
   readonly name: string;
 
@@ -112,7 +112,7 @@ export interface IDeploymentMethod {
    * Short description of the activator and it's pros/cons
    *
    * @type {string}
-   * @memberOf IModActivator
+   * @memberOf IDeploymentMethod
    */
   readonly description: string;
 
@@ -121,7 +121,7 @@ export interface IDeploymentMethod {
    * that is: without knowing where the "original" files are.
    *
    * @type {boolean}
-   * @memberOf IModActivator
+   * @memberOf IDeploymentMethod
    */
   readonly isFallbackPurgeSafe: boolean;
 
@@ -134,7 +134,7 @@ export interface IDeploymentMethod {
    * returns more extensive description/explanation of the activator.
    *
    * @type {string}
-   * @memberOf IModActivator
+   * @memberOf IDeploymentMethod
    */
   detailedDescription: (t: I18next.TFunction) => string;
 
@@ -145,7 +145,7 @@ export interface IDeploymentMethod {
    *
    * synchronous 'cause lazy.
    *
-   * @memberOf IModActivator
+   * @memberOf IDeploymentMethod
    */
   isSupported: (state: any, gameId: string, modTypeId: string) => IUnavailableReason;
 
@@ -153,7 +153,7 @@ export interface IDeploymentMethod {
    * if mod deployment in some way requires user interaction we should give the user control
    * over the process, even if he has auto-deploy active
    *
-   * @memberof IModActivator
+   * @memberof IDeploymentMethod
    */
   userGate: () => Promise<void>;
 
@@ -176,7 +176,7 @@ export interface IDeploymentMethod {
    *                              when comparing strings against the blacklist or when storing
    *                              relative path into the deployment manifest
    *
-   * @memberOf IModActivator
+   * @memberOf IDeploymentMethod
    */
   prepare: (dataPath: string, clean: boolean, lastActivation: IDeployedFile[],
             normalize: Normalize) => Promise<void>;
@@ -194,7 +194,7 @@ export interface IDeploymentMethod {
    *            should provide another way for the user to clean up the game directory even when
    *            your activator is not available for some reason.
    *
-   * @memberOf IModActivator
+   * @memberOf IDeploymentMethod
    */
   finalize: (gameId: string,
              dataPath: string,
@@ -220,7 +220,7 @@ export interface IDeploymentMethod {
    * @param {string} dataPath relative path within the data path where mods are installed to
    * @param {Set<string>} blacklist list of files to skip
    *
-   * @memberOf IModActivator
+   * @memberOf IDeploymentMethod
    */
   activate: (sourcePath: string, sourceName: string, dataPath: string,
              blackList: Set<string>) => Promise<void>;
@@ -249,7 +249,7 @@ export interface IDeploymentMethod {
    * it has to do its own bookkeeping.
    * The LinkingActivator base-class does implement such bookkeeping however.
    *
-   * @memberOf IModActivator
+   * @memberOf IDeploymentMethod
    */
   purge: (installPath: string, dataPath: string) => Promise<void>;
 
@@ -266,18 +266,10 @@ export interface IDeploymentMethod {
    * @param {string} installPath Vortex path where mods are installed from (source)
    * @param {string} dataPath game path where mods are installed to (destination)
    *
-   * @memberOf IModActivator
+   * @memberOf IDeploymentMethod
    */
   externalChanges: (gameId: string, installPath: string, dataPath: string,
                     activation: IDeployedFile[]) => Promise<IFileChange[]>;
-
-  /**
-   * returns whether this mod activator currently has mods activated in the
-   * game directory
-   *
-   * @memberOf IModActivator
-   */
-  isActive: () => boolean;
 
   /**
    * given a file path (relative to a staging path), return the name under which the
@@ -288,4 +280,11 @@ export interface IDeploymentMethod {
    * folder is just a (differently named) placeholder.
    */
   getDeployedPath: (input: string) => string;
+
+  /**
+   * test if the specified file is deployed through this methed
+   * @param {string} installPath Vortex path where mods are installed from (source)
+   * @param {string} dataPath game path where mods are installed to (destination)
+   */
+  isDeployed: (installPath: string, dataPath: string, file: IDeployedFile) => Promise<boolean>;
 }

@@ -32,6 +32,7 @@ const gameSupport = {
   skyrimvr: {
     iniFiles: [
       path.join('{mygames}', 'Skyrim VR', 'Skyrim.ini'),
+      path.join('{mygames}', 'Skyrim VR', 'SkyrimVR.ini'),
       path.join('{mygames}', 'Skyrim VR', 'SkyrimPrefs.ini'),
     ],
     iniFormat: 'winapi',

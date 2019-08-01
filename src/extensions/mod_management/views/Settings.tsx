@@ -31,6 +31,7 @@ import { IDeploymentMethod } from '../types/IDeploymentMethod';
 import { getSupportedActivators } from '../util/deploymentMethods';
 import { NoDeployment } from '../util/exceptions';
 import getInstallPath, { getInstallPathPattern } from '../util/getInstallPath';
+import getModPaths from '../util/getModPaths';
 
 import getText from '../texts';
 
@@ -58,6 +59,7 @@ interface IConnectedProps {
   currentActivator: string;
   state: any;
   modActivity: string[];
+  modPaths: { [modType: string]: string };
 }
 
 interface IActionProps {
@@ -593,6 +595,10 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
     const hasModActivity = (modActivity.length > 0);
 
+    const applyDisabled = !this.pathsChanged()
+                        || (validationState.state === 'error')
+                        || hasModActivity;
+
     return (
       <FormGroup id='install-path-form' validationState={validationState.state}>
         <ControlLabel>
@@ -634,7 +640,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                 </Button>
               ) : null}
               <BSButton
-                disabled={!this.pathsChanged() || (validationState.state === 'error') || hasModActivity}
+                disabled={applyDisabled}
                 onClick={this.applyPaths}
               >
                 {hasModActivity ? <Spinner /> : t('Apply')}
@@ -656,14 +662,14 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private suggestPath = () => {
-    const { discovery, onShowError } = this.props;
-    Promise.join(fs.statAsync(discovery.path), fs.statAsync(remote.app.getPath('userData')))
+    const { modPaths, onShowError } = this.props;
+    Promise.join(fs.statAsync(modPaths['']), fs.statAsync(remote.app.getPath('userData')))
       .then(stats => {
         let suggestion: string;
         if (stats[0].dev === stats[1].dev) {
           suggestion = path.join('{USERDATA}', '{game}', 'mods');
         } else {
-          const volume = winapi.GetVolumePathName(discovery.path);
+          const volume = winapi.GetVolumePathName(modPaths['']);
           suggestion = path.join(volume, 'Vortex Mods', '{game}');
         }
         this.changePath(suggestion);
@@ -782,6 +788,7 @@ function mapStateToProps(state: any): IConnectedProps {
     installPath: state.settings.mods.installPath[gameMode],
     currentActivator: getSafe(state, ['settings', 'mods', 'activator', gameMode], undefined),
     modActivity: getSafe(state, ['session', 'base', 'activity', 'mods'], []),
+    modPaths: getModPaths(state, gameMode),
     state,
   };
 }
@@ -801,7 +808,8 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
     },
     onShowDialog: (type, title, content, actions) =>
       dispatch(showDialog(type, title, content, actions)),
-    onShowError: (message: string, details: string | Error, allowReport?: boolean, isBBCode?: boolean): void => {
+    onShowError: (message: string, details: string | Error,
+                  allowReport?: boolean, isBBCode?: boolean): void => {
       showError(dispatch, message, details, { allowReport, isBBCode });
     },
   };

@@ -3,6 +3,7 @@ import { IGame } from '../../../types/IGame';
 import { ITool } from '../../../types/ITool';
 import * as fs from '../../../util/fs';
 import { log } from '../../../util/log';
+import StarterInfo from '../../../util/StarterInfo';
 import { getSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
 
@@ -14,8 +15,11 @@ import getNormalizeFunc, { Normalize } from '../../../util/getNormalizeFunc';
 import Progress from './Progress';
 
 import * as Promise from 'bluebird';
+import { app as appIn, remote } from 'electron';
 import * as path from 'path';
 import turbowalk from 'turbowalk';
+
+const app = appIn || remote.app;
 
 export type DiscoveredCB = (gameId: string, result: IDiscoveryResult) => void;
 export type DiscoveredToolCB = (toolId: string, result: IDiscoveredTool) => void;
@@ -26,7 +30,7 @@ interface IFileEntry {
   application: ITool;
 }
 
-function quickDiscoveryTools(tools: ITool[], onDiscoveredTool: DiscoveredToolCB) {
+function quickDiscoveryTools(gameId: string, tools: ITool[], onDiscoveredTool: DiscoveredToolCB) {
   if (tools === undefined) {
     return;
   }
@@ -39,14 +43,17 @@ function quickDiscoveryTools(tools: ITool[], onDiscoveredTool: DiscoveredToolCB)
     const toolPath = tool.queryPath();
     if (typeof(toolPath) === 'string') {
       if (toolPath) {
-        onDiscoveredTool(tool.id, {
-          ...tool,
-          path: toolPath,
-          hidden: false,
-          parameters: [],
-          custom: false,
-          workingDirectory: toolPath,
-        });
+        autoGenIcon(tool, toolPath, gameId)
+          .then(() => {
+            onDiscoveredTool(tool.id, {
+              ...tool,
+              path: toolPath,
+              hidden: false,
+              parameters: [],
+              custom: false,
+              workingDirectory: toolPath,
+            });
+          });
       } else {
         log('debug', 'tool not found', tool.id);
       }
@@ -54,14 +61,17 @@ function quickDiscoveryTools(tools: ITool[], onDiscoveredTool: DiscoveredToolCB)
       (toolPath as Promise<string>)
           .then((resolvedPath) => {
             if (resolvedPath) {
-              onDiscoveredTool(tool.id, {
-                ...tool,
-                path: resolvedPath,
-                hidden: false,
-                parameters: [],
-                custom: false,
-                workingDirectory: resolvedPath,
-              });
+              autoGenIcon(tool, resolvedPath, gameId)
+                .then(() => {
+                  onDiscoveredTool(tool.id, {
+                    ...tool,
+                    path: resolvedPath,
+                    hidden: false,
+                    parameters: [],
+                    custom: false,
+                    workingDirectory: resolvedPath,
+                  });
+                });
             }
             return null;
           })
@@ -84,7 +94,7 @@ export function quickDiscovery(knownGames: IGame[],
                                onDiscoveredGame: DiscoveredCB,
                                onDiscoveredTool: DiscoveredToolCB): Promise<string[]> {
   return Promise.map(knownGames, game => new Promise<string>((resolve, reject) => {
-    quickDiscoveryTools(game.supportedTools, onDiscoveredTool);
+    quickDiscoveryTools(game.id, game.supportedTools, onDiscoveredTool);
     if (game.queryPath === undefined) {
       return resolve();
     }
@@ -113,7 +123,8 @@ export function quickDiscovery(knownGames: IGame[],
           onDiscoveredGame(game.id, disco);
           return getNormalizeFunc(resolvedPath)
             .then(normalize =>
-              discoverRelativeTools(game, resolvedPath, discoveredGames, onDiscoveredTool, normalize))
+              discoverRelativeTools(game, resolvedPath, discoveredGames,
+                                    onDiscoveredTool, normalize))
             .then(() => resolve(game.id));
         })
         .catch((err) => {
@@ -206,10 +217,9 @@ function verifyToolDir(tool: ITool, testPath: string): Promise<void> {
   return Promise.mapSeries(tool.requiredFiles,
     (fileName: string) => fs.statAsync(path.join(testPath, fileName))
       .catch(err => {
-        log('warn', 'file not found', path.join(testPath, fileName));;
+        log('warn', 'file not found', path.join(testPath, fileName));
         return Promise.reject(err);
-      })
-    )
+      }))
     .then(() => undefined);
 }
 
@@ -266,6 +276,23 @@ export function discoverRelativeTools(game: IGame, gamePath: string,
   return walk(gamePath, matchList, onFileCB, undefined, normalize);
 }
 
+function autoGenIcon(application: ITool, exePath: string, gameId: string): Promise<void> {
+  const iconPath = StarterInfo.toolIconRW(gameId, application.id);
+  return (application.logo === 'auto')
+    ? new Promise<Electron.NativeImage>((resolve, reject) => {
+      fs.ensureDirWritableAsync(path.dirname(iconPath), () => Promise.resolve())
+        .then(() => fs.statAsync(iconPath))
+        .catch(() => app.getFileIcon(exePath, { size: 'normal' },
+          (err: Error, icon: Electron.NativeImage) =>
+            (err !== null)
+              ? reject(err)
+              : resolve(icon)));
+    })
+      .then(icon => fs.writeFileAsync(iconPath, icon.toPNG()))
+      .catch(err => log('warn', 'failed to fetch exe icon', err.message))
+    : Promise.resolve();
+}
+
 function testApplicationDirValid(application: ITool, testPath: string, gameId: string,
                                  discoveredGames: {[id: string]: IDiscoveryResult},
                                  onDiscoveredGame: DiscoveredCB,
@@ -285,14 +312,16 @@ function testApplicationDirValid(application: ITool, testPath: string, gameId: s
         return discoverRelativeTools(game, testPath, discoveredGames,
                                      onDiscoveredTool, normalize);
       } else {
-        onDiscoveredTool(gameId, {
-          ...application,
-          path: path.join(testPath, application.executable(testPath)),
-          hidden: false,
-          custom: false,
-          workingDirectory: testPath,
+        const exePath = path.join(testPath, application.executable(testPath));
+        return autoGenIcon(application, exePath, gameId).then(() => {
+          onDiscoveredTool(gameId, {
+            ...application,
+            path: exePath,
+            hidden: false,
+            custom: false,
+            workingDirectory: testPath,
+          });
         });
-        return Promise.resolve();
       }
     })
     .catch(() => {

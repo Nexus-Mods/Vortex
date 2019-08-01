@@ -2,6 +2,7 @@
 // on the extensions and re-compiles them properly. They are completely
 // removed during compilation
 import {} from './about_dialog';
+import {} from './announcement_dashlet';
 import {} from './browser';
 import {} from './category_management';
 import {} from './dashboard';
@@ -10,7 +11,6 @@ import {} from './download_management';
 import {} from './extension_manager';
 import {} from './firststeps_dashlet';
 import {} from './gamemode_management';
-import {} from './announcement_dashlet';
 import {} from './hardlink_activator';
 import {} from './ini_prep';
 import {} from './installer_fomod';

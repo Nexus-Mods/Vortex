@@ -60,6 +60,10 @@ class StarterInfo implements IStarterInfo {
     return StarterInfo.gameIcon(game.id, extensionPath, logoName);
   }
 
+  public static toolIconRW(gameId: string, toolId: string) {
+    return path.join(userDataPath(), gameId, 'icons', toolId + '.png');
+  }
+
   public static run(info: StarterInfo, api: IExtensionApi, onShowError: OnShowErrorFunc) {
     const game: IGame = getGame(info.gameId);
     const launcherPromise: Promise<{ launcher: string, addInfo?: any }> =
@@ -74,7 +78,6 @@ class StarterInfo implements IStarterInfo {
     const onSpawned = () => {
       api.store.dispatch(setToolRunning(info.exePath, Date.now(), info.exclusive));
     };
-
 
     return launcherPromise.then(res => {
       if (res !== undefined) {
@@ -140,7 +143,7 @@ class StarterInfo implements IStarterInfo {
       env: info.environment,
       suggestDeploy: true,
       shell: info.shell,
-      onSpawned: onSpawned,
+      onSpawned,
     })
     .catch(ProcessCanceled, () => undefined)
     .catch(UserCanceled, () => undefined)
@@ -238,10 +241,6 @@ class StarterInfo implements IStarterInfo {
       }
     }
   }
-  private static toolIconRW(gameId: string, toolId: string) {
-    return path.join(userDataPath(), gameId, 'icons', toolId + '.png');
-  }
-
   public id: string;
   public gameId: string;
   public isGame: boolean;

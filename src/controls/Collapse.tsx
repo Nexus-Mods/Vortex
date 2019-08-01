@@ -1,13 +1,13 @@
 import * as React from 'react';
-import { PureComponentEx, translate } from '../util/ComponentEx';
 import { WithTranslation } from 'react-i18next';
+import { PureComponentEx, translate } from '../util/ComponentEx';
 
 export interface ICollapseProps extends WithTranslation {
   showText?: string;
   hideText?: string;
 }
 
-class ICollapseState {
+interface ICollapseState {
   show: boolean;
 }
 

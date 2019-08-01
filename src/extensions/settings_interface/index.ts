@@ -16,7 +16,7 @@ function init(context: IExtensionContext): boolean {
     context.api.onStateChange(['settings', 'interface', 'profilesVisible'], () => {
       context.api.events.emit('refresh-main-page');
     });
-  })
+  });
 
   return true;
 }

@@ -6,6 +6,7 @@
 export * from './message';
 export * from './storeHelper';
 
+import { installIconSet } from '../controls/Icon';
 import { resolveCategoryName,
          resolveCategoryPath } from '../extensions/category_management/util/retrieveCategoryPath';
 import { getGame, getGames } from '../extensions/gamemode_management/util/getGame';
@@ -35,7 +36,7 @@ import { getReduxLog } from './reduxLogger';
 import ReduxProp from './ReduxProp';
 import relativeTime from './relativeTime';
 import steam, { GameNotFound, ISteamEntry } from './Steam';
-import { bytesToString, deBOM, isChildPath, objDiff,
+import { bytesToString, deBOM, isChildPath, makeQueue, objDiff,
          pad, sanitizeCSSId, setdefault } from './util';
 import walk from './walk';
 
@@ -62,9 +63,11 @@ export {
   getNormalizeFunc,
   getReduxLog,
   github,
+  installIconSet,
   isChildPath,
   LazyComponent,
   lazyRequire,
+  makeQueue,
   makeReactive,
   MissingInterpreter,
   Normalize,

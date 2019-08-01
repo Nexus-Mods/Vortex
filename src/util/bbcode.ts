@@ -5,10 +5,10 @@ import IdentityTag from './bbcode/IdentityTag';
 import LineTag from './bbcode/LineTag';
 import LinkTag from './bbcode/LinkTag';
 import MoreTag from './bbcode/MoreTag';
-import TooltipTag from './bbcode/TooltipTag';
 import SizeTag from './bbcode/SizeTag';
 import SpoilerTag from './bbcode/SpoilerTag';
 import SvgTag from './bbcode/SvgTag';
+import TooltipTag from './bbcode/TooltipTag';
 import YoutubeTag from './bbcode/YoutubeTag';
 
 import * as bbcode from 'bbcode-to-react';
@@ -55,7 +55,7 @@ function renderBBCode(input: string): React.ReactChild[] {
       .replace(/(&[^;]+;)/g, transformSymbol));
 }
 
-export function stripBBCode(input: string): string { 
+export function stripBBCode(input: string): string {
   if (input === undefined) {
     return '';
   }

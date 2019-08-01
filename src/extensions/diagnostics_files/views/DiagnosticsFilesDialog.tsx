@@ -2,7 +2,7 @@ import FlexLayout from '../../../controls/FlexLayout';
 import Spinner from '../../../controls/Spinner';
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { isOutdated, didIgnoreError } from '../../../util/errorHandling';
+import { didIgnoreError, isOutdated } from '../../../util/errorHandling';
 import * as fs from '../../../util/fs';
 import { showError } from '../../../util/message';
 
