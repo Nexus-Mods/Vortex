@@ -225,17 +225,15 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
     return (
       <React.Suspense fallback={<Spinner className='suspense-spinner' />}>
-          {switchingProfile ? this.renderWait() : null}
           <div
             key='main'
             className={classes.join(' ')}
-            style={{ display: switchingProfile ? 'none' : undefined }}
           >
             <div className='menu-layer' ref={this.setMenuLayer} />
             <FlexLayout id='main-window-content' type='column'>
               {this.renderToolbar(switchingProfile)}
               {customTitlebar ? <div className='dragbar' /> : null}
-              {this.renderBody()}
+              {switchingProfile ? this.renderWait() : this.renderBody()}
             </FlexLayout>
             <Dialog />
             <DialogContainer visibleDialog={visibleDialog} onHideDialog={onHideDialog} />
@@ -299,6 +297,9 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   private renderToolbar(switchingProfile: boolean) {
     const { t, customTitlebar } = this.props;
     const className = customTitlebar ? 'toolbar-app-region' : 'toolbar-default';
+    if (switchingProfile) {
+      return (<div className={className}></div>);
+    }
     return (
       <FlexLayout.Fixed id='main-toolbar' className={className}>
         <QuickLauncher t={t} />
