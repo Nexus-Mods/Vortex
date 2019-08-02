@@ -41,7 +41,7 @@ import * as Promise from 'bluebird';
 import { spawn, SpawnOptions } from 'child_process';
 import { app as appIn, dialog as dialogIn, ipcMain, ipcRenderer, remote } from 'electron';
 import { EventEmitter } from 'events';
-import * as fs from 'fs';
+import * as fs from 'fs-extra';
 import I18next from 'i18next';
 import * as JsonSocket from 'json-socket';
 import * as _ from 'lodash';
@@ -52,7 +52,6 @@ import * as net from 'net';
 import * as path from 'path';
 import * as Redux from 'redux';
 import {} from 'redux-watcher';
-import * as rimraf from 'rimraf';
 import * as semver from 'semver';
 import { generate as shortid } from 'shortid';
 import { dynreq, runElevated } from 'vortex-run';
@@ -458,11 +457,13 @@ class ExtensionManager {
       }
 
       this.mExtensionState = initStore.getState().app.extensions;
+      log('debug', 'extension state', JSON.stringify(this.mExtensionState));
       const extensionsPath = path.join(app.getPath('userData'), 'plugins');
       Object.keys(this.mExtensionState)
         .filter(extId => this.mExtensionState[extId].remove)
         .forEach(extId => {
-          rimraf.sync(path.join(extensionsPath, extId));
+          log('debug', 'removing', path.join(extensionsPath, extId));
+          fs.removeSync(path.join(extensionsPath, extId));
           initStore.dispatch(forgetExtension(extId));
         });
       ipcMain.on('__get_extension_state', event => {

@@ -1,17 +1,11 @@
 import bbcode from '../../util/bbcode';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
-import { ProcessCanceled } from '../../util/api';
 
-import installExtension from './installExtension';
-
-import * as path from 'path';
 import * as React from 'react';
 import { ListGroup, Modal, ModalHeader, ListGroupItem, Button } from 'react-bootstrap';
-import { downloadPathForGame } from '../../util/selectors';
 import { IState } from '../../types/IState';
-import { getSafe } from '../../util/storeHelper';
-import { fetchAvailableExtensions, IAvailableExtension, sanitize } from './util';
-import { IExtension } from './types';
+import { sanitize, downloadExtension } from './util';
+import { IAvailableExtension, IExtension } from './types';
 import FlexLayout from '../../controls/FlexLayout';
 import Spinner from '../../controls/Spinner';
 
@@ -26,14 +20,13 @@ export interface IBrowseExtensionsProps {
 }
 
 interface IBrowseExtensionsState {
-  availableExtensions: IAvailableExtension[];
   error: Error;
   selected: number;
   installing: string[];
 }
 
 interface IConnectedProps {
-  downloadPath: string;
+  availableExtensions: IAvailableExtension[];
 }
 
 type IProps = IBrowseExtensionsProps & IConnectedProps;
@@ -45,26 +38,15 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
     super(props);
 
     this.initState({
-      availableExtensions: [],
       error: undefined,
       selected: -1,
       installing: [],
     });
   }
 
-  public componentWillMount() {
-    this.updateList(this.props);
-  }
-
-  public componentWillReceiveProps(newProps: IProps) {
-    if (newProps.localState.extensions !== this.props.localState.extensions) {
-      this.updateList(newProps);
-    }
-  }
-
   public render() {
-    const { t, onHide, visible } = this.props;
-    const { availableExtensions, selected } = this.state;
+    const { t, availableExtensions, onHide, visible } = this.props;
+    const { selected } = this.state;
 
     const ext = selected === -1 ? null : availableExtensions[selected];
 
@@ -187,50 +169,18 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
     );
   }
 
-  private updateList(props: IProps) {
-    fetchAvailableExtensions()
-      .then(extensions => {
-        this.nextState.availableExtensions = extensions;
-      })
-      .catch(err => {
-        this.nextState.error = err;
-      });
-  }
-
   private install = (evt: React.MouseEvent<any>) => {
-    const { downloadPath } = this.props;
+    const { availableExtensions } = this.props;
     const idx = parseInt(evt.currentTarget.getAttribute('data-idx'), 10);
-    const ext = this.nextState.availableExtensions[idx];
+    const ext = availableExtensions[idx];
 
     this.nextState.installing.push(ext.name);
 
-    this.context.api.emitAndAwait('nexus-download', 'site', ext.modId, ext.fileId)
-     .then((dlIds: string[]) => {
-       const state: IState = this.context.api.store.getState();
-       if ((dlIds === undefined) || (dlIds.length !== 1)) {
-         return Promise.reject(new ProcessCanceled('No download found'));
-       }
-       const download = getSafe(state, ['persistent', 'downloads', 'files', dlIds[0]], undefined)
-       if (download === undefined) {
-         return Promise.reject(new Error('Download not found'));
-       }
-       return installExtension(path.join(downloadPath, download.localPath));
-     })
-      .then(() => this.props.updateExtensions())
-      .catch(ProcessCanceled, () => {
-        this.context.api.showDialog('error', 'Installation failed', {
-          text: 'Failed to install the extension, please check the notifications.',
-        }, [
-          { label: 'Close' },
-        ])
-      })
-      .catch(err => {
-        this.context.api.showDialog('error', 'Installation failed', {
-          text: 'Failed to install the extension',
-          message: err.message,
-        }, [
-          { label: 'Close' },
-        ]);
+    downloadExtension(this.context.api, ext)
+      .then((success: boolean) => {
+        if (success) {
+          this.props.updateExtensions();
+        }
       })
       .finally(() => {
         this.nextState.installing = this.state.installing.filter(name => name !== ext.name);
@@ -243,9 +193,9 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
   }
 }
 
-function mapStateToProps(state: any): IConnectedProps {
+function mapStateToProps(state: IState): IConnectedProps {
   return {
-    downloadPath: downloadPathForGame(state, 'site'),
+    availableExtensions: state.session.extensions.available,
   };
 }
 

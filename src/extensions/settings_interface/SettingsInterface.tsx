@@ -9,7 +9,6 @@ import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import { readdirAsync } from '../../util/fs';
 import getVortexPath from '../../util/getVortexPath';
 import { log } from '../../util/log';
-import { spawnSelf } from '../../util/util';
 
 import getTextModManagement from '../mod_management/texts';
 import getTextProfiles from '../profile_management/texts';
@@ -29,11 +28,13 @@ import { Alert, Button, ControlLabel,
          FormControl, FormGroup, HelpBlock } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
+import { IAvailableExtension, IExtensionDownloadInfo } from '../extension_manager/types';
 
 interface ILanguage {
   key: string;
   language: string;
   country?: string;
+  ext: IExtensionDownloadInfo | {};
 }
 
 interface IConnectedProps {
@@ -46,6 +47,7 @@ interface IConnectedProps {
   minimizeToTray: boolean;
   desktopNotifications: boolean;
   hideTopLevelCategory: boolean;
+  extensions: IAvailableExtension[];
 }
 
 interface IActionProps {
@@ -80,32 +82,7 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
   }
 
   public componentDidMount() {
-    const bundledLanguages = getVortexPath('locales');
-    const userLanguages = path.normalize(path.join(remote.app.getPath('userData'), 'locales'));
-
-    Promise.join(readdirAsync(bundledLanguages), readdirAsync(userLanguages).catch(() => []))
-      .then(fileLists => Array.from(new Set([].concat(...fileLists))))
-      .filter(langId => this.isValidLanguageCode(langId))
-      .then(files => {
-        const locales = files.map(key => {
-          let language;
-          let country;
-
-          const [languageKey, countryKey] = key.split('-');
-          language = nativeLanguageName(languageKey);
-          if (countryKey !== undefined) {
-            country = nativeCountryName(countryKey);
-          }
-          return { key, language, country };
-        });
-
-        this.setState(update(this.state, {
-          languages: { $set: locales },
-        }));
-      })
-    .catch(err => {
-      log('warn', 'failed to read locales', err);
-    });
+    this.readLocales();
   }
 
   public componentWillReceiveProps(newProps: IProps) {
@@ -114,6 +91,7 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
         languages: { $push: [{
           key: newProps.currentLanguage,
           language: nativeLanguageName(newProps.currentLanguage),
+          ext: {},
         }] },
       }));
     }
@@ -144,7 +122,7 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
             onChange={this.selectLanguage}
             value={currentLanguage}
           >
-            {this.state.languages.map((language) => this.renderLanguage(language))}
+            {this.state.languages.map(language => this.renderLanguage(language))}
           </FormControl>
         </FormGroup>
         <FormGroup controlId='customization'>
@@ -243,7 +221,17 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
 
   private selectLanguage = (evt) => {
     const target: HTMLSelectElement = evt.target as HTMLSelectElement;
-    this.props.onSetLanguage(target.value);
+    const ext: IExtensionDownloadInfo = JSON.parse(target.selectedOptions[0].getAttribute('data-ext'));
+    const { value } = target;
+    const dlProm: Promise<boolean[]> = ext.modId !== undefined
+      ? this.context.api.emitAndAwait('download-extension', ext)
+        .tap(success => success ? this.readLocales() : Promise.resolve())
+      : Promise.resolve([true]);
+    dlProm.then((success: boolean[]) => {
+      if (success.indexOf(false) === -1) {
+        this.props.onSetLanguage(value);
+      }
+    });
   }
 
   private languageName(language: ILanguage): string {
@@ -253,9 +241,11 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderLanguage(language: ILanguage): JSX.Element {
+    const { t } = this.props;
     return (
-      <option key={language.key} value={language.key}>
+      <option key={language.key} value={language.key} data-ext={JSON.stringify(language.ext)}>
       {this.languageName(language)}
+      {(language.ext['modId'] !== undefined) ? ` (${t('Extension')})` : null}
       </option>
     );
   }
@@ -308,6 +298,46 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
     onSetAdvancedMode(!advanced);
   }
 
+  private readLocales() {
+    const { extensions } = this.props;
+    const bundledLanguages = getVortexPath('locales');
+    const userLanguages = path.normalize(path.join(remote.app.getPath('userData'), 'locales'));
+
+    const translationExts = extensions.filter(ext => ext.type === 'translation');
+
+    let local: string[] = [];
+
+    return Promise.join(readdirAsync(bundledLanguages).tap(files => local = [].concat(files)),
+                 translationExts.map(ext => ext.language),
+                 readdirAsync(userLanguages).catch(() => []).tap(files => local = local.concat(files)))
+      .then(fileLists => Array.from(new Set([].concat(...fileLists))))
+      .filter(langId => this.isValidLanguageCode(langId))
+      .then(files => {
+        const loc = new Set(local);
+        const locales = files.map(key => {
+          let language;
+          let country;
+
+          const [languageKey, countryKey] = key.split('-');
+          language = nativeLanguageName(languageKey);
+          if (countryKey !== undefined) {
+            country = nativeCountryName(countryKey);
+          }
+          const ext = loc.has(key)
+            ? {}
+            : translationExts.find(ext => ext.language === key);
+          return { key, language, country, ext };
+        });
+
+        this.setState(update(this.state, {
+          languages: { $set: locales },
+        }));
+      })
+    .catch(err => {
+      log('warn', 'failed to read locales', err);
+    });
+  }
+
   private restart = () => {
     remote.app.relaunch();
     remote.app.exit(0);
@@ -325,6 +355,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     autoEnable: state.settings.automation.enable,
     customTitlebar: state.settings.window.customTitlebar,
     minimizeToTray: state.settings.window.minimizeToTray,
+    extensions: state.session.extensions.available,
   };
 }
 
