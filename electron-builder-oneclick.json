@@ -47,6 +47,11 @@
     "!**/node_modules/.bin${/*}",
     "!**/*.{o,hprof,orig,pyc,pyo,rbc}",
     "!**/*.js.map",
+    "!**/*.iobj",
+    "!**/*.ipdb",
+    "!**/*.vcxproj",
+    "!**/*.vcxproj.filters",
+    "!**/Makefile",
     "!**/._*",
     "!**/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,__pycache__,thumbs.db,.gitignore,.gitattributes,.editorconfig,.flowconfig,.yarn-metadata.json,.idea,appveyor.yml,.travis.yml,circle.yml,npm-debug.log,.nyc_output,yarn.lock,.yarn-integrity}",
     "!**/*.{pdb,lib,VC.db,exp,gypi,d.ts}",
@@ -67,7 +72,15 @@
     "!**/node_modules/bootstrap-sass/assets/fonts",
     "!**/node_modules/recharts/node_modules/d3-scale/img",
     "!**/node_modules/recharts/node_modules/d3-shape/img",
-    "!**/node_modules/d3-geo/img"
+    "!**/node_modules/d3-geo/img",
+    "!**/node_modules/electron-edge-js/lib/native/win32/ia32",
+    "!**/node_modules/electron-edge-js/lib/native/win32/x64/{6.5.0, 7.4.0, 7.9.0, 8.2.1, 8.9.3, 10.2.0}",
+    "!**/node_modules/electron-edge-js/lib/native/win32/x64/*/*.dll",
+    "!**/node_modules/fomod-installer/Build",
+    "!**/node_modules/fomod-installer/lib",
+    "!**/node_modules/fomod-installer/InstallScripting",
+    "!**/node_modules/libxmljs/vendor/libxml",
+    "!**/node_modules/native-errors/Detours"
   ],
   "buildDependenciesFromSource": false,
   "npmRebuild": false
