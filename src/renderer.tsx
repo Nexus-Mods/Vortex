@@ -97,6 +97,7 @@ import {} from './util/extensionRequire';
 import { reduxLogger } from './util/reduxLogger';
 import { getSafe } from './util/storeHelper';
 import { getAllPropertyNames } from './util/util';
+import { IState } from './types/IState';
 
 log('debug', 'renderer process started', { pid: process.pid });
 
@@ -380,7 +381,12 @@ function renderer() {
 
   webFrame.setZoomFactor(getSafe(store.getState(), ['settings', 'window', 'zoomFactor'], 1));
 
-  getI18n(store.getState().settings.interface.language)
+  const state: IState = store.getState();
+
+  const translationExts = Object.values(state.session.extensions.installed)
+    .filter(ext => ext.type === 'translation');
+
+  getI18n(state.settings.interface.language, translationExts)
     .then(res => {
       ({ i18n, tFunc, error } = res);
       extensions.setTranslation(i18n);

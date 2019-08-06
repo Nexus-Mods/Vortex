@@ -3,21 +3,20 @@ import makeReactive from '../../util/makeReactive';
 
 import BrowseExtensions from './BrowseExtensions';
 import ExtensionManager from './ExtensionManager';
-import { IExtension, IExtensionDownloadInfo } from './types';
+import { IExtensionDownloadInfo } from './types';
 import { readExtensions, fetchAvailableExtensions, downloadExtension } from './util';
 import sessionReducer from './reducers';
 
 import * as _ from 'lodash';
-import { setAvailableExtensions } from './actions';
+import { setAvailableExtensions, setInstalledExtensions } from './actions';
+import { IState } from '../../types/IState';
 
 interface ILocalState {
-  extensions: { [extId: string]: IExtension };
   reloadNecessary: boolean;
 }
 
 const localState: ILocalState = makeReactive({
   reloadNecessary: false,
-  extensions: {},
 });
 
 function updateAvailableExtensions(api: IExtensionApi) {
@@ -35,10 +34,12 @@ function init(context: IExtensionContext) {
   const updateInstalledExtensions = (initial: boolean) => {
     readExtensions(true)
       .then(ext => {
-        if (!initial && !_.isEqual(localState.extensions, ext)) {
+        const api = context.api;
+        const state: IState = api.store.getState();
+        if (!initial && !_.isEqual(state.session.extensions.installed, ext)) {
           localState.reloadNecessary = true;
         }
-        localState.extensions = ext;
+        api.store.dispatch(setInstalledExtensions(ext));
       })
       .catch(err => {
         // this probably only occurs if the user deletes the plugins directory after start

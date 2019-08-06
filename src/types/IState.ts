@@ -8,7 +8,7 @@ import { IDiscoveryResult } from '../extensions/gamemode_management/types/IDisco
 import { IGameStored } from '../extensions/gamemode_management/types/IGameStored';
 import { IMod } from '../extensions/mod_management/types/IMod';
 import { IProfile } from '../extensions/profile_management/types/IProfile';
-import { IAvailableExtension } from '../extensions/extension_manager/types';
+import { IAvailableExtension, IExtension } from '../extensions/extension_manager/types';
 
 // re-export these to keep the imports from extensions local
 export { IDownload, IDiscoveryResult, IGameStored, IMod, IProfile };
@@ -280,6 +280,7 @@ export interface IState {
     browser: IBrowserState;
     extensions: {
       available: IAvailableExtension[],
+      installed: { [extId: string]: IExtension },
     };
   };
   settings: ISettings;

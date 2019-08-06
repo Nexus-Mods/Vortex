@@ -29,6 +29,7 @@ import { Alert, Button, ControlLabel,
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { IAvailableExtension, IExtensionDownloadInfo } from '../extension_manager/types';
+import { readExtensibleDir } from '../extension_manager/util';
 
 interface ILanguage {
   key: string;
@@ -307,9 +308,10 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
 
     let local: string[] = [];
 
-    return Promise.join(readdirAsync(bundledLanguages).tap(files => local = [].concat(files)),
-                 translationExts.map(ext => ext.language),
-                 readdirAsync(userLanguages).catch(() => []).tap(files => local = local.concat(files)))
+    return Promise.join(readExtensibleDir('translation', bundledLanguages, userLanguages)
+                          .map(file => path.basename(file))
+                          .tap(files => local = files),
+                        translationExts.map(ext => ext.language))
       .then(fileLists => Array.from(new Set([].concat(...fileLists))))
       .filter(langId => this.isValidLanguageCode(langId))
       .then(files => {
@@ -323,7 +325,8 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
           if (countryKey !== undefined) {
             country = nativeCountryName(countryKey);
           }
-          const ext = loc.has(key)
+
+          const ext: Partial<IAvailableExtension> = loc.has(key)
             ? {}
             : translationExts.find(ext => ext.language === key);
           return { key, language, country, ext };

@@ -8,6 +8,7 @@ import * as FSBackend from 'i18next-node-fs-backend';
 
 import * as path from 'path';
 import getVortexPath from './getVortexPath';
+import { IExtension } from '../extensions/extension_manager/types';
 
 const app = remote !== undefined ? remote.app : appIn;
 
@@ -26,49 +27,79 @@ export interface IInitResult {
   error?: Error;
 }
 
+type BackendType = 'bundled' | 'custom' | 'extension';
+
 class MultiBackend {
   private static type = 'backend';
   private mOptions: any;
-  private mBundled: FSBackend;
-  private mUser: FSBackend;
-  private mLangUser: { [language: string]: boolean } = {};
+  private mServices: any;
+  private mCurrentBackend: FSBackend;
+  private mBackendType: BackendType;
 
   constructor(services, options) {
-    this.mBundled = new FSBackend(services);
-    this.mUser = new FSBackend(services);
     this.init(services, options);
   }
 
   public init(services, options) {
     this.mOptions = options;
-    if (options !== undefined) {
-      this.mBundled.init(services, {
-        loadPath: path.join(options.bundled, '{{lng}}', '{{ns}}.json'),
-        jsonIndent: 2,
-      });
-      this.mUser.init(services, {
-        loadPath: path.join(options.user, '{{lng}}', '{{ns}}.json'),
-        jsonIndent: 2,
-      });
-    }
+    this.mServices = services;
   }
 
   public read(language: string, namespace: string, callback) {
-    const backend = this.langUser(language) ? this.mUser : this.mBundled;
-    backend.read(language, namespace, callback);
+    const {backendType, extPath} = this.backendType(language);
+    if (backendType !== this.mBackendType) {
+      this.mCurrentBackend = this.initBackend(backendType, extPath);
+    }
+    this.mCurrentBackend.read(language, namespace, callback);
   }
 
-  private langUser(language: string) {
-    if (this.mLangUser[language] === undefined) {
+  private initBackend(type: BackendType, extPath: string) {
+    const res = new FSBackend();
+
+    let basePath: string;
+    if (type === 'bundled') {
+      basePath = this.mOptions.bundled;
+    } else if (type === 'custom') {
+      basePath = this.mOptions.user;
+    } else {
+      basePath = extPath;
+    }
+
+    res.init(this.mServices, {
+      loadPath: path.join(basePath, '{{lng}}', '{{ns}}.json'),
+      jsonIndent: 2,
+    });
+
+    return res;
+  }
+
+  private backendType(language: string): { backendType: BackendType, extPath?: string } {
+    try {
+      fs.statSync(path.join(this.mOptions.user, language));
+      return { backendType: 'custom' };
+    } catch (err) {
       try {
-        fs.statSync(path.join(this.mOptions.user, language));
-        this.mLangUser[language] = true;
+        fs.statSync(path.join(this.mOptions.bundled, language));
+        return { backendType: 'bundled' };
       } catch (err) {
-        this.mLangUser[language] = false;
+        const ext = this.mOptions.translationExts.find(ext => {
+          try {
+            fs.statSync(path.join(ext.path, language));
+            return true;
+          } catch (err) {
+            return false;
+          }
+        })
+        if (ext === undefined) {
+          log('warn', 'language not found', language);
+          return { backendType: 'custom' };
+        }
+        return { backendType: 'extension', extPath: ext.path };
       }
     }
-    return this.mLangUser[language];
+   
   }
+
 }
 
 /**
@@ -78,7 +109,7 @@ class MultiBackend {
  * @param {string} language
  * @returns {I18next.I18n}
  */
-function init(language: string): Promise<IInitResult> {
+function init(language: string, translationExts: IExtension[]): Promise<IInitResult> {
   // reset to english if the language isn't valid
   try {
     new Date().toLocaleString(language);
@@ -129,6 +160,7 @@ function init(language: string): Promise<IInitResult> {
       backend: {
         bundled: getVortexPath('locales'),
         user: path.normalize(path.join(app.getPath('userData'), 'locales')),
+        translationExts,
       },
     }))
     .then(tFunc => Promise.resolve({
@@ -155,7 +187,7 @@ export function debugTranslations(enable?: boolean) {
     ? enable
     : !debugging;
   missingKeys = { common: {} };
-  init(I18next.language);
+  init(I18next.language, []);
 }
 
 export function getMissingTranslations() {

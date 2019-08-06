@@ -14,7 +14,6 @@ export interface IBrowseExtensionsProps {
   onHide: () => void;
   localState: {
     reloadNecessary: boolean,
-    extensions: { [extId: string]: IExtension }
   };
   updateExtensions: () => void;
 }
@@ -27,6 +26,7 @@ interface IBrowseExtensionsState {
 
 interface IConnectedProps {
   availableExtensions: IAvailableExtension[];
+  extensions: { [extId: string]: IExtension };
 }
 
 type IProps = IBrowseExtensionsProps & IConnectedProps;
@@ -74,7 +74,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
   }
 
   private renderListEntry = (ext: IAvailableExtension, idx: number) => {
-    const { t, localState } = this.props;
+    const { t, extensions } = this.props;
     const { installing, selected } = this.state;
 
     const classes = ['extension-item'];
@@ -83,7 +83,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
       classes.push('selected');
     }
 
-    const installed = (localState.extensions[sanitize(ext.name)] !== undefined);
+    const installed = (extensions[sanitize(ext.name)] !== undefined);
 
     const action = (installing.indexOf(ext.name) !== -1)
       ? <Spinner />
@@ -119,13 +119,13 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
   }
 
   private renderDescription = (ext: IAvailableExtension, idx: number) => {
-    const { t, localState } = this.props;
+    const { t, extensions } = this.props;
     const { installing } = this.state;
     if (ext === undefined) {
       return null;
     }
 
-    const installed = (localState.extensions[sanitize(ext.name)] !== undefined);
+    const installed = (extensions[sanitize(ext.name)] !== undefined);
 
     const action = (installing.indexOf(ext.name) !== -1)
       ? <Spinner />
@@ -196,6 +196,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
 function mapStateToProps(state: IState): IConnectedProps {
   return {
     availableExtensions: state.session.extensions.available,
+    extensions: state.session.extensions.installed,
   };
 }
 

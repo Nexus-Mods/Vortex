@@ -28,7 +28,6 @@ import { ThunkDispatch } from 'redux-thunk';
 export interface IExtensionManagerProps {
   localState: {
     reloadNecessary: boolean,
-    extensions: { [extId: string]: IExtension },
   };
   updateExtensions: () => void;
 }
@@ -38,6 +37,7 @@ interface IConnectedProps {
   downloads: { [dlId: string]: IDownload };
   downloadPath: string;
   loadFailures: { [extId: string]: IExtensionLoadFailure[] };
+  extensions: { [extId: string]: IExtension };
 }
 
 interface IActionProps {
@@ -59,8 +59,7 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
   constructor(props: IProps) {
     super(props);
 
-    const { localState, extensionConfig, onSetExtensionEnabled } = props;
-    const { extensions } = localState;
+    const { extensions, localState, extensionConfig, onSetExtensionEnabled } = props;
   
     this.initState({
       oldExtensionConfig: props.extensionConfig,
@@ -93,9 +92,8 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const {t, localState, extensionConfig} = this.props;
+    const {t, extensions, localState, extensionConfig} = this.props;
     const {oldExtensionConfig} = this.state;
-    const { extensions } = localState;
 
     const extensionsWithState = this.mergeExt(extensions, extensionConfig);
 
@@ -242,6 +240,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     loadFailures: state.session.base.extLoadFailures,
     downloads: state.persistent.downloads.files,
     downloadPath: selectors.downloadPath(state),
+    extensions: state.session.extensions.installed,
   };
 }
 

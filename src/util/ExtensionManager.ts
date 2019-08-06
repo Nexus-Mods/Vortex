@@ -457,7 +457,6 @@ class ExtensionManager {
       }
 
       this.mExtensionState = initStore.getState().app.extensions;
-      log('debug', 'extension state', JSON.stringify(this.mExtensionState));
       const extensionsPath = path.join(app.getPath('userData'), 'plugins');
       Object.keys(this.mExtensionState)
         .filter(extId => this.mExtensionState[extId].remove)

@@ -41,13 +41,9 @@ function installExtension(archivePath: string, info?: IExtension): Promise<void>
       .then(() => fs.renameAsync(tempPath, destPath))
       .then(() => {
         if (type === 'translation') {
-          const userLanguages = path.normalize(path.join(remote.app.getPath('userData'), 'locales'));
           return fs.readdirAsync(destPath)
             .map(entry => fs.statAsync(path.join(destPath, entry))
               .then(stat => ({ name: entry, stat })))
-            .map(entry => entry.stat.isDirectory()
-              ? fs.symlinkAsync(path.join(destPath, entry.name), path.join(userLanguages, entry.name), 'junction')
-              : Promise.resolve())
             .then(() => null);
         } else {
           return Promise.resolve();
