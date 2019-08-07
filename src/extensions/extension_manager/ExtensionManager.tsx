@@ -59,8 +59,8 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
   constructor(props: IProps) {
     super(props);
 
-    const { extensions, localState, extensionConfig, onSetExtensionEnabled } = props;
-  
+    const { extensions, extensionConfig, onSetExtensionEnabled } = props;
+
     this.initState({
       oldExtensionConfig: props.extensionConfig,
     });
@@ -97,13 +97,11 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
 
     const extensionsWithState = this.mergeExt(extensions, extensionConfig);
 
-    const PanelX: any = Panel;
-
     return (
       <MainPage>
         <MainPage.Body>
           <Panel>
-            <PanelX.Body>
+            <Panel.Body>
               <FlexLayout type='column'>
                 <FlexLayout.Fixed>
                   {
@@ -145,7 +143,7 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
                   </FlexLayout>
                 </FlexLayout.Fixed>
               </FlexLayout>
-            </PanelX.Body>
+            </Panel.Body>
           </Panel>
         </MainPage.Body>
       </MainPage>

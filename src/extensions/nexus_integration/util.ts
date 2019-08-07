@@ -515,7 +515,7 @@ export function checkModVersionsImpl(
             }
 
             if (detail.message === undefined) {
-              return undefined;
+              return Promise.resolve(undefined);
             }
 
             const name = modName(mod, { version: true });

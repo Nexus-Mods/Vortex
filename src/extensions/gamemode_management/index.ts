@@ -488,6 +488,7 @@ function init(context: IExtensionContext): boolean {
     const events = context.api.events;
 
     const GameModeManagerImpl: typeof GameModeManager = require('./GameModeManager').default;
+
     $.gameModeManager = new GameModeManagerImpl(
       extensionGames,
       (gameMode: string) => {

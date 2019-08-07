@@ -11,6 +11,7 @@ import { activeGameId } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import MainPage from '../../../views/MainPage';
 
+import { IAvailableExtension } from '../../extension_manager/types';
 import { IProfile } from '../../profile_management/types/IProfile';
 
 import { setPickerLayout } from '../actions/settings';
@@ -24,7 +25,7 @@ import ShowHiddenButton from './ShowHiddenButton';
 import * as Promise from 'bluebird';
 import update from 'immutability-helper';
 import * as React from 'react';
-import { ListGroup, ProgressBar, Tab, Tabs, FormControl, InputGroup } from 'react-bootstrap';
+import { FormControl, InputGroup, ListGroup, ProgressBar, Tab, Tabs } from 'react-bootstrap';
 
 function gameFromDiscovery(id: string, discovered: IDiscoveryResult): IGameStored {
   return {
@@ -104,8 +105,9 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
     // TODO: lots of computation and it doesn't actually change except through discovery
     //   or when adding a profile
     const displayedGames: IGameStored[] = ((showHidden) || (!!currentFilterValue))
-      ? knownGames 
-      : knownGames.filter((game: IGameStored) => !getAttr(discoveredGames, game.id, { hidden: false }).hidden);
+      ? knownGames
+      : knownGames.filter((game: IGameStored) =>
+          !getAttr(discoveredGames, game.id, { hidden: false }).hidden);
 
     const profileGames = new Set<string>(
       Object.keys(profiles).map((profileId: string) => profiles[profileId].gameId));
@@ -148,9 +150,12 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
       );
     };
 
-    const filteredManaged = managedGameList.filter(game => this.applyGameFilter(game)).sort(byGameName);
-    const filteredDiscovered = discoveredGameList.filter(game => this.applyGameFilter(game)).sort(byGameName);
-    const filteredSupported = supportedGameList.filter(game => this.applyGameFilter(game)).sort(byGameName);
+    const filteredManaged =
+      managedGameList.filter(game => this.applyGameFilter(game)).sort(byGameName);
+    const filteredDiscovered =
+      discoveredGameList.filter(game => this.applyGameFilter(game)).sort(byGameName);
+    const filteredSupported =
+      supportedGameList.filter(game => this.applyGameFilter(game)).sort(byGameName);
 
     return (
       <MainPage domRef={this.setRef}>
@@ -210,19 +215,22 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
                 <Tabs defaultActiveKey='managed' id='games-picker-tabs'>
                   <Tab
                     eventKey='managed'
-                    title={title(t('Managed'), this.getTabGameNumber(managedGameList, filteredManaged))}
+                    title={title(t('Managed'),
+                                 this.getTabGameNumber(managedGameList, filteredManaged))}
                   >
                     {this.renderGames(filteredManaged, 'managed')}
                   </Tab>
                   <Tab
                     eventKey='discovered'
-                    title={title(t('Discovered'), this.getTabGameNumber(discoveredGameList, filteredDiscovered))}
+                    title={title(t('Discovered'),
+                                 this.getTabGameNumber(discoveredGameList, filteredDiscovered))}
                   >
                     {this.renderGames(filteredDiscovered, 'discovered')}
                   </Tab>
                   <Tab
                     eventKey='supported'
-                    title={title(t('Supported'), this.getTabGameNumber(supportedGameList, filteredSupported))}
+                    title={title(t('Supported'),
+                                 this.getTabGameNumber(supportedGameList, filteredSupported))}
                   >
                     {this.renderGames(filteredSupported, 'undiscovered')}
                   </Tab>
@@ -266,7 +274,8 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
 
   private applyGameFilter = (game: IGameStored): boolean => {
     const { currentFilterValue } = this.state;
-    return game.name.toLowerCase().includes(currentFilterValue.toLowerCase()) || !currentFilterValue;
+    return game.name.toLowerCase().includes(currentFilterValue.toLowerCase())
+        || !currentFilterValue;
   }
 
   private renderProgress = (phase: IDiscoveryPhase, idx: number): JSX.Element => {
@@ -326,8 +335,10 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
     const failedFilter = (): JSX.Element => (
       <EmptyPlaceholder
         icon='game'
-        text={t('Vortex cannot find "{{gameName}}" in selected tab', {replace: { gameName: currentFilterValue } })}
-        subtext={t('Please switch tab, try alternative spellings, or submit a game request via the feedback system.')}
+        text={t('Vortex cannot find "{{gameName}}" in selected tab',
+                {replace: { gameName: currentFilterValue } })}
+        subtext={t('Please switch tab, try alternative spellings, '
+                 + 'or submit a game request via the feedback system.')}
       />
     );
 
