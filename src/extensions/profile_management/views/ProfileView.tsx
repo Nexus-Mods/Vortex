@@ -309,7 +309,8 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
                 .then(() => onRemoveProfile(profileId))
                 .catch(err => (err.code === 'ENOENT')
                   ? onRemoveProfile(profileId) // Profile path is already missing, that's fine.
-                  : Promise.reject(err));
+                  : this.context.api.showErrorNotification('Failed to remove profile',
+                      err, { allowReport: err.code !== 'EPERM' }));
             },
         },
     ]);
