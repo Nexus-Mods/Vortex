@@ -19,7 +19,7 @@ import { IDownload } from '../download_management/types/IDownload';
 import getDownloadGames from '../download_management/util/getDownloadGames';
 import { IModType } from '../gamemode_management/types/IModType';
 import { getGame } from '../gamemode_management/util/getGame';
-import modName from '../mod_management/util/modName';
+import modName, { renderModReference } from '../mod_management/util/modName';
 import { setModEnabled } from '../profile_management/actions/profiles';
 
 import {addModRule, setFileOverride, setModAttribute, setModType} from './actions/mods';
@@ -301,9 +301,11 @@ class InstallManager {
             const mod: IMod = getSafe(state, ['persistent', 'mods', installGameId, modId],
                                       undefined);
 
-            this.installDependencies([].concat(modInfo.rules || [], mod.rules || []),
-                                     this.mGetInstallPath(installGameId),
-                                     currentProfile, installContext, api);
+            this.installDependenciesImpl(
+              modName(mod),
+              [].concat(modInfo.rules || [], mod.rules || []),
+              this.mGetInstallPath(installGameId),
+              currentProfile, api);
           }
         }
         if (callback !== undefined) {
@@ -423,6 +425,18 @@ class InstallManager {
           installContext.stopIndicator(mod);
         }
       })));
+  }
+
+  public installDependencies(api: IExtensionApi, profile: IProfile, modId: string): Promise<void> {
+    const state: IState = api.store.getState();
+    const mod: IMod = getSafe(state, ['persistent', 'mods', profile.gameId, modId], undefined);
+
+    if (mod === undefined) {
+      return Promise.reject(new ProcessCanceled(`Invalid mod specified "${mod}"`));
+    }
+
+    const installPath = this.mGetInstallPath(profile.gameId);
+    return this.installDependenciesImpl(modName(mod), mod.rules, installPath, profile, api);
   }
 
   private isCritical(error: string): boolean {
@@ -972,12 +986,16 @@ class InstallManager {
         .then((modId: string) => api.store.dispatch(setModEnabled(profile.id, modId, true)))
         // don't cancel the whole process if one dependency fails to install
         .catch(ProcessCanceled, err => {
-          api.showErrorNotification('Failed to install dependency', err.message,
-                                    { allowReport: false });
+          api.showErrorNotification('Failed to install dependency', err.message, {
+            allowReport: false,
+            message: renderModReference(dep.reference, undefined),
+          });
         })
         .catch(UserCanceled, () => undefined)
         .catch(err => {
-          api.showErrorNotification('Failed to install dependency', err);
+          api.showErrorNotification('Failed to install dependency', err, {
+            message: renderModReference(dep.reference, undefined),
+          });
         });
     }))
       .catch(ProcessCanceled, err => {
@@ -993,11 +1011,11 @@ class InstallManager {
       .then(() => undefined);
   }
 
-  private installDependencies(
+  private installDependenciesImpl(
+    name: string,
     rules: IRule[],
     installPath: string,
     profile: IProfile,
-    installContext: InstallContext,
     api: IExtensionApi): Promise<void> {
     const notificationId = `${installPath}_activity`;
     api.sendNotification({
@@ -1018,20 +1036,21 @@ class InstallManager {
             return prev + (current.download ? 0 : 1);
           }, 0);
 
-        return new Promise<void>((resolve, reject) => {
-          const message =
-            `This mod has unresolved dependencies. ${dependencies.length} mods have to be
-installed, ${requiredDownloads} of them have to be downloaded first.`;
+        const text = '{{modName}} has unresolved dependencies. {{count}} mods have to be '
+                   + 'installed, {{dlCount}} of them have to be downloaded first.';
 
-          api.store.dispatch(
-              showDialog('question', 'Install Dependencies', {message}, [
-                {label: 'Don\'t install'},
-                {
-                  label: 'Install',
-                  action: () => this.doInstallDependencies(dependencies, profile, api),
-                },
-              ]));
-        });
+        return api.store.dispatch(
+          showDialog('question', 'Install Dependencies', { text, parameters: {
+            modName: name,
+            count: dependencies.length,
+            dlCount: requiredDownloads,
+          } }, [
+            { label: 'Don\'t install' },
+            {
+              label: 'Install',
+              action: () => this.doInstallDependencies(dependencies, profile, api),
+            },
+          ])).then(() => Promise.resolve());
       })
       .catch((err) => {
         api.dismissNotification(notificationId);
