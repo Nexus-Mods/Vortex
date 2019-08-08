@@ -130,3 +130,7 @@
 	path = extensions/mod-content
 	url = https://github.com/Nexus-Mods/extension-mod-content.git
 	branch = master
+[submodule "extensions/modpack"]
+	path = extensions/modpack
+	url = https://github.com/Nexus-Mods/extension-modpack.git
+	branch = master
