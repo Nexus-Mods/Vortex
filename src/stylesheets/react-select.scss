@@ -68,3 +68,24 @@
     margin-top: 0px;
   }
 }
+
+.select-up-down {
+  &.select-up-down-up {
+    .Select-menu-outer {
+      position: absolute !important;
+      top: auto !important;
+      bottom: calc(100% - 1px) !important;
+      border-bottom-left-radius: 0px !important;
+      border-bottom-right-radius: 0px !important;
+      border-top-left-radius: 5px !important;
+      border-top-right-radius: 5px !important;
+    }
+
+    .is-open .Select-control {
+      border-top-right-radius: 0 !important;
+      border-top-left-radius: 0 !important;
+      border-bottom-right-radius: 5px !important;
+      border-bottom-left-radius: 5px !important;
+    }
+  }
+}

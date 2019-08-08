@@ -5,6 +5,7 @@ import ActionDropdown from '../ActionDropdown';
 import Dropdown, { DummyMenu } from '../Dropdown';
 import ExtensionGate from '../ExtensionGate';
 import Icon from '../Icon';
+import SelectUpDown from '../SelectUpDown';
 import {ITableRowAction} from '../Table';
 import {Button, IconButton} from '../TooltipControls';
 import VisibilityProxy from '../VisibilityProxy';
@@ -15,7 +16,6 @@ import I18next from 'i18next';
 import * as _ from 'lodash';
 import * as React from 'react';
 import { MenuItem } from 'react-bootstrap';
-import Select from 'react-select';
 
 const ValueComponent = (props) => (
   <div className='Select-value' title={props.value.text}>
@@ -161,7 +161,7 @@ class TableCell extends React.Component<ICellProps, { isOpen: boolean }> {
 
     const choiceKey = currentChoice !== undefined ? currentChoice.key : undefined;
     return (
-      <Select
+      <SelectUpDown
         options={choices}
         value={choiceKey}
         onChange={this.changeCellSelect}
