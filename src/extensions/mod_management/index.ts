@@ -858,6 +858,17 @@ function once(api: IExtensionApi) {
   api.events.on('gamemode-activated',
       (newMode: string) => onGameModeActivated(api, getAllActivators(), newMode));
 
+  api.events.on('install-dependencies', (profileId: string, modIds: string[]) => {
+    const state: IState = api.store.getState();
+    const profile: IProfile = getSafe(state, ['persistent', 'profiles', profileId], undefined);
+    if (profile === undefined) {
+      api.showErrorNotification('Failed to install dependencies', 'Invalid profile');
+    }
+
+    Promise.map(modIds, modId => installManager.installDependencies(api, profile, modId))
+      .catch(err => api.showErrorNotification('Failed to install dependencies', err));
+  });
+
   api.onStateChange(
       ['settings', 'mods', 'installPath'],
       (previous, current) => onPathsChanged(api, previous, current));

@@ -12,7 +12,8 @@ import { resolveCategoryName,
 import { getGame, getGames } from '../extensions/gamemode_management/util/getGame';
 import deriveModInstallName from '../extensions/mod_management/modIdManager';
 import { getCurrentActivator } from '../extensions/mod_management/util/deploymentMethods';
-import renderModName from '../extensions/mod_management/util/modName';
+import renderModName, { renderModReference } from '../extensions/mod_management/util/modName';
+import { makeModReference } from '../extensions/mod_management/util/modReference';
 import sortMods, { CycleError } from '../extensions/mod_management/util/sort';
 import testModReference from '../extensions/mod_management/util/testModReference';
 import { Archive } from './archives';
@@ -36,7 +37,7 @@ import { getReduxLog } from './reduxLogger';
 import ReduxProp from './ReduxProp';
 import relativeTime from './relativeTime';
 import steam, { GameNotFound, ISteamEntry } from './Steam';
-import { bytesToString, deBOM, isChildPath, makeQueue, objDiff,
+import { bytesToString, deBOM, isChildPath, isFilenameValid, isPathValid, makeQueue, objDiff,
          pad, sanitizeCSSId, setdefault } from './util';
 import walk from './walk';
 
@@ -65,8 +66,11 @@ export {
   github,
   installIconSet,
   isChildPath,
+  isFilenameValid,
+  isPathValid,
   LazyComponent,
   lazyRequire,
+  makeModReference,
   makeQueue,
   makeReactive,
   MissingInterpreter,
@@ -81,6 +85,7 @@ export {
   ReduxProp,
   relativeTime,
   renderModName,
+  renderModReference,
   resolveCategoryName,
   resolveCategoryPath,
   runElevated,

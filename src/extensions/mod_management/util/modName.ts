@@ -1,6 +1,6 @@
 import {getSafe} from '../../../util/storeHelper';
 
-import {IMod} from '../types/IMod';
+import {IMod, IModReference} from '../types/IMod';
 
 export interface INameOptions {
   version: boolean;
@@ -31,7 +31,30 @@ export function modNameFromAttributes(mod: { [key: string]: any }, options?: INa
  * @returns {string}
  */
 function modName(mod: IMod, options?: INameOptions): string {
+  if ((mod === undefined) || (mod.attributes === undefined)) {
+    return undefined;
+  }
   return modNameFromAttributes(mod.attributes, options) || mod.installationPath;
+}
+
+export function renderModReference(ref: IModReference, mod: IMod) {
+  if (ref.description !== undefined) {
+    return ref.description;
+  }
+
+  if ((ref.id !== undefined) && (mod !== undefined)) {
+    return modName(mod, { version: true });
+  }
+
+  if ((ref.logicalFileName === undefined) && (ref.fileExpression === undefined)) {
+    return ref.fileMD5 || ref.id;
+  }
+
+  let name = ref.logicalFileName || ref.fileExpression;
+  if (ref.versionMatch !== undefined) {
+    name += ' v' + ref.versionMatch;
+  }
+  return name;
 }
 
 export default modName;

@@ -35,6 +35,8 @@ export interface IMod {
 
 export interface IModReference extends IReference {
   id?: string;
+  // optional parameter used to display the reference in a user-friendly way if available
+  description?: string;
 }
 
 export interface IModRule extends IRule {
