@@ -320,6 +320,11 @@ div:hover > .hover-expand {
   }
 }
 
+.popover-content {
+  max-height: 40vh;
+  overflow-y: auto;
+}
+
 .Select-placeholder, .Select--single>.Select-control .Select-value {
   color: $gray;
 }
