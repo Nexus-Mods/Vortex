@@ -38,10 +38,17 @@ function writeProgram(func, moduleBase, args) {
         const res = main(${args !== undefined
         ? args.filter(arg => !(arg instanceof Function))
             .map(arg => JSON.stringify(arg))
-            .join(', ')
-        : ''});\n
-        postMessage(res, undefined);\n
-        close();\n
+            .join(', ') + ', require'
+        : 'require'});\n
+        if ((res !== undefined) && (res.then !== undefined)) {
+          res.then(result => {
+            postMessage(result, undefined);
+            close();
+          });
+        } else {
+          postMessage(res, undefined);\n
+          close();
+        }\n
       `;
     return prog;
 }
@@ -58,6 +65,7 @@ function runThreaded(func, moduleBase, ...args) {
                         cleanup();
                     }
                     catch (cleanupErr) {
+                        // tslint:disable-next-line:no-console
                         console.error('failed to clean up temporary script', cleanupErr.message);
                     }
                     return reject(writeErr);

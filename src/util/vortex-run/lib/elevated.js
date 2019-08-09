@@ -17,6 +17,7 @@ function elevatedMain(moduleRoot, ipcPath, main) {
     // tslint:disable-next-line:no-shadowed-variable
     const net = require('net');
     const JsonSocket = require('json-socket');
+    // tslint:disable-next-line:no-shadowed-variable
     const path = require('path');
     const client = new JsonSocket(new net.Socket());
     client.connect(path.join('\\\\?\\pipe', ipcPath));
@@ -36,6 +37,7 @@ function elevatedMain(moduleRoot, ipcPath, main) {
         .on('error', err => {
         if (err.code !== 'EPIPE') {
             // will anyone ever see this?
+            // tslint:disable-next-line:no-console
             console.error('Connection failed', err.message);
         }
     });
@@ -93,11 +95,21 @@ function runElevated(ipcPath, func, args) {
                         cleanup();
                     }
                     catch (cleanupErr) {
+                        // tslint:disable-next-line:no-console
                         console.error('failed to clean up temporary script', cleanupErr.message);
                     }
                     return reject(writeErr);
                 }
-                fs.closeSync(fd);
+                try {
+                    fs.closeSync(fd);
+                }
+                catch (err) {
+                    if (err.code !== 'EBADF') {
+                        return reject(err);
+                    }
+                    // not sure what causes EBADF, don't want to return now if there is a chance this
+                    // will actually work
+                }
                 try {
                     winapi.ShellExecuteEx({
                         verb: 'runas',
