@@ -22,6 +22,8 @@ import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { file as tmpFile, tmpName } from 'tmp';
 
+import * as _ from 'lodash';
+
 const GITHUB_PROJ = 'Nexus-Mods/Vortex';
 
 function clamp(min: number, value: number, max: number): number {
@@ -537,16 +539,24 @@ export function renderError(err: string | Error | any):
   } else if (err instanceof Error) {
     const errMessage = prettifyNodeErrorMessage(err);
 
-    let attributes = Object.keys(err || {})
+    const objectKeys = Object.keys(err || {})
+      .filter(key => (typeof(err[key]) === 'object'));
+
+    const flatErr = objectKeys.reduce((prev, key) => {
+      delete prev[key];
+      return _.merge({}, prev, err[key]);
+    }, err);
+
+    let attributes = Object.keys(flatErr || {})
         .filter(key => key[0].toUpperCase() === key[0]);
     if (attributes.length === 0) {
-      attributes = Object.keys(err || {})
+      attributes = Object.keys(flatErr || {})
         .filter(key => !HIDE_ATTRIBUTES.has(key));
     }
     if (attributes.length > 0) {
       const old = errMessage.message;
       errMessage.message = attributes
-          .map(key => key + ':\t' + err[key])
+          .map(key => key + ':\t' + flatErr[key])
           .join('\n');
       if (old !== undefined) {
         errMessage.message = old + '\n' + errMessage.message;

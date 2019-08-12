@@ -39,6 +39,10 @@ function gameFromDiscovery(id: string, discovered: IDiscoveryResult): IGameStore
   };
 }
 
+function byGameName(lhs: IGameStored, rhs: IGameStored): number {
+  return lhs.name.localeCompare(rhs.name);
+}
+
 interface IBaseProps {
   onRefreshGameInfo: (gameId: string) => Promise<void>;
   onBrowseGameLocation: (gameId: string) => Promise<void>;
@@ -144,9 +148,9 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
       );
     };
 
-    const filteredManaged = managedGameList.filter(game => this.applyGameFilter(game));
-    const filteredDiscovered = discoveredGameList.filter(game => this.applyGameFilter(game));
-    const filteredSupported = supportedGameList.filter(game => this.applyGameFilter(game))
+    const filteredManaged = managedGameList.filter(game => this.applyGameFilter(game)).sort(byGameName);
+    const filteredDiscovered = discoveredGameList.filter(game => this.applyGameFilter(game)).sort(byGameName);
+    const filteredSupported = supportedGameList.filter(game => this.applyGameFilter(game)).sort(byGameName);
 
     return (
       <MainPage domRef={this.setRef}>

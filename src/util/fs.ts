@@ -258,7 +258,8 @@ function errorRepeat(error: NodeJS.ErrnoException, filePath: string, retries: nu
           }, { filePath, userId })
             .then(() => true)
             .catch(elevatedErr => {
-              if (elevatedErr.message.indexOf('The operation was canceled by the user') !== -1) {
+              if ((elevatedErr instanceof UserCanceled)
+              || (elevatedErr.message.indexOf('The operation was canceled by the user') !== -1)) {
                 return Promise.reject(new UserCanceled());
               }
               // if elevation failed, return the original error because the one from
@@ -770,7 +771,8 @@ function raiseUACDialog<T>(t: I18next.TFunction,
         return allow(fileToAccess, userId, 'rwx');
       }, { fileToAccess, userId })
         .catch(elevatedErr => {
-          if (elevatedErr.message.indexOf('The operation was canceled by the user') !== -1) {
+          if ((elevatedErr instanceof UserCanceled)
+          || (elevatedErr.message.indexOf('The operation was canceled by the user') !== -1)) {
             return Promise.reject(new UserCanceled());
           }
           // if elevation failed, return the original error because the one from

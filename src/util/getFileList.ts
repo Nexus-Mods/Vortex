@@ -22,7 +22,7 @@ function getFileList(basePath: string): Promise<IFileEntry[]> {
   .catch(err => {
     if (err.code === 'ENOENT') {
       // if the directory doesn't exist it obviously doesn't contain files, right?
-      return [];
+      return Promise.resolve([]);
     } else {
       return Promise.reject(err);
     }

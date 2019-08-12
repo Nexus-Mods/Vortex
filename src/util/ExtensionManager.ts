@@ -559,11 +559,13 @@ class ExtensionManager {
             // make an attempt to serialise error objects in such a way that they can be
             // reconstructed.
             const data: any = (typeof(details) === 'object')
-              ? { details }
+              ? { ...details }
               : details;
             if (details instanceof Error) {
-              // details.stack may be a getter, so we have to assign it separately
+              // details.stack, details.name AND details.message seem to be getters.
               data.stack = details.stack;
+              data.name = details.name;
+              data.message = details.message;
               // stack is also optional. If we don't have one, generate one to this function
               // which is better than nothing because otherwise the code reconstructing the error
               // will produce a stack that is completely useless
@@ -1153,6 +1155,8 @@ class ExtensionManager {
           if (options.onSpawned !== undefined) {
             options.onSpawned();
           }
+
+          let errOut: string;
           child
             .on('error', err => {
               reject(err);
@@ -1169,9 +1173,16 @@ class ExtensionManager {
                 // FO4, and an exit code of 1 for Skyrim. We don't know why but it
                 // doesn't seem to affect anything
                 log('warn', 'child process exited with code: ' + code.toString(16), {});
+                if (errOut !== undefined) {
+                  log('warn', 'child output', errOut.trim());
+                }
                 if (options.expectSuccess) {
+                  const lines = errOut.trim().split('\n');
+                  const lastLine = errOut !== undefined
+                    ? lines[lines.length - 1]
+                    : '<No output>';
                   const err: any =
-                    new Error(`Failed to run "${executable}": "${code.toString(16)}"`);
+                    new Error(`Failed to run "${executable}": "${lastLine} (${code.toString(16)})"`);
                   err.exitCode = code;
                   return reject(err);
                 }
@@ -1179,8 +1190,11 @@ class ExtensionManager {
               resolve();
           });
           if (child.stderr !== undefined) {
-            child.stderr.on('data', chunk => {
-              log('error', executable + ': ', chunk.toString());
+            child.stderr.on('data', (chunk: Buffer) => {
+              if (errOut === undefined) {
+                errOut = '';
+              }
+              errOut += chunk.toString();
             });
           }
         } catch (err) {

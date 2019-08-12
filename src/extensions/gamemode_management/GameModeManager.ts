@@ -207,7 +207,7 @@ class GameModeManager {
    * @memberOf GameModeManager
    */
   public stopSearchDiscovery(): void {
-    log('info', 'stop search', { prom: this.mActiveSearch });
+    log('info', 'stop search');
     if (this.mActiveSearch !== null) {
       this.mActiveSearch.cancel();
       this.mActiveSearch = null;
