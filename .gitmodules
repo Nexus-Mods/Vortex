@@ -130,3 +130,7 @@
 	path = extensions/mod-content
 	url = https://github.com/Nexus-Mods/extension-mod-content.git
 	branch = master
+[submodule "extensions/quickbms-support"]
+	path = extensions/quickbms-support
+	url = https://github.com/nexus-mods/extension-quickbms-support.git
+	branch = master

@@ -138,6 +138,14 @@
     },
     {
       "type": "build-copy",
+      "name": "quickbms-support",
+      "path": "extensions/quickbms-support",
+      "removeModules": ["vortex-api"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
+      "copyTo": "{BUILD_DIR}/bundledPlugins/quickbms-support"
+    },
+    {
+      "type": "build-copy",
       "name": "mo-import",
       "path": "extensions/mo-import",
       "removeModules": ["vortex-api"],
