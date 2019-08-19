@@ -5,7 +5,8 @@ import {IState} from '../types/IState';
 import commandLine, {IParameters} from '../util/commandLine';
 import { DocumentsPathMissing, ProcessCanceled, UserCanceled } from '../util/CustomErrors';
 import * as develT from '../util/devel';
-import { getWindow, setOutdated, setWindow, terminate, toError } from '../util/errorHandling';
+import { getVisibleWindow, setOutdated, setWindow,
+         terminate, toError } from '../util/errorHandling';
 import ExtensionManagerT from '../util/ExtensionManager';
 import * as fs from '../util/fs';
 import lazyRequire from '../util/lazyRequire';
@@ -228,7 +229,7 @@ class Application {
           app.quit();
         })
         .catch(DocumentsPathMissing, () => {
-          dialog.showMessageBox(getWindow(), {
+          dialog.showMessageBox(getVisibleWindow(), {
             type: 'error',
             buttons: ['Close', 'More info'],
             defaultId: 1,
@@ -292,7 +293,7 @@ class Application {
           return Promise.resolve();
         }
         return new Promise((resolve, reject) => {
-          dialog.showMessageBox(getWindow(), {
+          dialog.showMessageBox(getVisibleWindow(), {
             title: 'Admin rights detected',
             message:
               'Vortex is not intended to be run as administrator!\n'
@@ -338,7 +339,7 @@ class Application {
       return Promise.resolve();
     }
     if (isMajorDowngrade(lastVersion, currentVersion)) {
-      if (dialog.showMessageBox(getWindow(), {
+      if (dialog.showMessageBox(getVisibleWindow(), {
         type: 'warning',
         title: 'Downgrade detected',
         message: `The version of Vortex you\'re running (${currentVersion}) `
@@ -358,7 +359,7 @@ class Application {
       }
     } else if (semver.gt(currentVersion, lastVersion)) {
       log('info', 'Vortex was updated, checking for necessary migrations');
-      return migrate(this.mStore, getWindow())
+      return migrate(this.mStore, getVisibleWindow())
         .then(() => {
           return Promise.resolve();
         })

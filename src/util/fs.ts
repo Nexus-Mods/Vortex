@@ -12,7 +12,7 @@
  */
 
 import { ProcessCanceled, UserCanceled } from './CustomErrors';
-import { createErrorReport } from './errorHandling';
+import { createErrorReport, getVisibleWindow } from './errorHandling';
 import { log } from './log';
 import { truthy } from './util';
 
@@ -95,9 +95,7 @@ function nospcQuery(): PromiseBB<boolean> {
     noLink: true,
   };
 
-  const choice = dialog.showMessageBox(
-    remote !== undefined ? remote.getCurrentWindow() : null,
-    options);
+  const choice = dialog.showMessageBox(getVisibleWindow(), options);
   return (choice === 0)
     ? PromiseBB.reject(new UserCanceled())
     : PromiseBB.resolve(true);
@@ -143,9 +141,7 @@ function unlockConfirm(filePath: string): PromiseBB<boolean> {
     noLink: true,
   };
 
-  const choice = dialog.showMessageBox(
-    remote !== undefined ? remote.getCurrentWindow() : null,
-    options);
+  const choice = dialog.showMessageBox(getVisibleWindow(), options);
   return (choice === 0)
     ? PromiseBB.reject(new UserCanceled())
     : PromiseBB.resolve(choice === 2);
@@ -226,9 +222,7 @@ function busyRetry(filePath: string): PromiseBB<boolean> {
     noLink: true,
   };
 
-  const choice = dialog.showMessageBox(
-    remote !== undefined ? remote.getCurrentWindow() : null,
-    options);
+  const choice = dialog.showMessageBox(getVisibleWindow(), options);
   return (choice === 0)
     ? PromiseBB.reject(new UserCanceled())
     : PromiseBB.resolve(true);

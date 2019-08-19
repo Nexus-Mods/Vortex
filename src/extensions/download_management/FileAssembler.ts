@@ -1,4 +1,5 @@
 import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
+import { getVisibleWindow } from '../../util/errorHandling';
 import * as fs from '../../util/fs';
 
 import * as Promise from 'bluebird';
@@ -106,8 +107,7 @@ class FileAssembler {
             ? reject(new Error(`incomplete write ${bytesWritten}/${data.length}`))
             : resolve(synced))
         .catch({ code: 'ENOSPC' }, () => {
-          const win = remote !== undefined ? remote.getCurrentWindow() : null;
-          (dialog.showMessageBox(win, {
+          (dialog.showMessageBox(getVisibleWindow(), {
             type: 'warning',
             title: 'Disk is full',
             message: 'Download can\'t continue because disk is full, '

@@ -21,7 +21,7 @@ import { DataInvalid, MissingInterpreter, NotFound, NotSupportedError, ProcessCa
          SetupError, UserCanceled } from './CustomErrors';
 import Debouncer from './Debouncer';
 import epicGamesLauncher from './EpicGamesLauncher';
-import { terminate } from './errorHandling';
+import { getVisibleWindow, terminate } from './errorHandling';
 import { extend } from './ExtensionProvider';
 import { copyFileAtomic, fileMD5 } from './fsAtomic';
 import getNormalizeFunc, { Normalize } from './getNormalizeFunc';
@@ -62,6 +62,7 @@ export {
   getGames,
   getNormalizeFunc,
   getReduxLog,
+  getVisibleWindow,
   github,
   installIconSet,
   isChildPath,
