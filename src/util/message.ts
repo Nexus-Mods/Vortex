@@ -13,7 +13,7 @@ import { didIgnoreError, getErrorContext, isOutdated,
          sendReport, toError } from './errorHandling';
 import * as fs from './fs';
 import { log } from './log';
-import { truthy } from './util';
+import { flatten, truthy } from './util';
 
 import * as Promise from 'bluebird';
 import { IFeedbackResponse } from 'nexus-api';
@@ -324,6 +324,15 @@ export function prettifyNodeErrorMessage(err: any): IPrettifiedError {
       replace: { path: err.path },
       allowReport: false,
     };
+  } else if ([362, 383, 404].indexOf(err.errno) !== -1) {
+    return {
+      message: `The file "{{path}}" is stored on a cloud storage drive `
+        + '(Microsoft OneDrive) which is currently unavailable.',
+      replace: {
+        path: err.path || err.filename,
+      },
+      allowReport: false,
+    };
   } else if (err.code === undefined) {
     return { message: err.message, replace: {} };
   } else if (err.syscall === 'getaddrinfo') {
@@ -546,13 +555,7 @@ export function renderError(err: string | Error | any):
   } else if (err instanceof Error) {
     const errMessage = prettifyNodeErrorMessage(err);
 
-    const objectKeys = Object.keys(err || {})
-      .filter(key => (typeof(err[key]) === 'object'));
-
-    const flatErr = objectKeys.reduce((prev, key) => {
-      delete prev[key];
-      return _.merge({}, prev, err[key]);
-    }, err);
+    const flatErr = flatten(err || {});
 
     let attributes = Object.keys(flatErr || {})
         .filter(key => key[0].toUpperCase() === key[0]);
