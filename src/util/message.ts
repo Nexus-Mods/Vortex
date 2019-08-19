@@ -317,7 +317,14 @@ export interface IPrettifiedError {
 }
 
 export function prettifyNodeErrorMessage(err: any): IPrettifiedError {
-  if (err.code === undefined) {
+  if ((err.errno === 225) || (err['nativeCode'] === 225)) {
+    // doesn't contain a code attribute
+    return {
+      message: 'Your Antivirus software has blocked access to "{{path}}".',
+      replace: { path: err.path },
+      allowReport: false,
+    };
+  } else if (err.code === undefined) {
     return { message: err.message, replace: {} };
   } else if (err.syscall === 'getaddrinfo') {
     return {
@@ -420,11 +427,11 @@ export function prettifyNodeErrorMessage(err: any): IPrettifiedError {
       allowReport: false,
     };
   } else if (err.code === 'UNKNOWN') {
-    if ((err['_native'] !== undefined) && (err['_native'].code !== 0)) {
+    if (truthy(err['nativeCode'])) {
       return {
         message: 'An unrecognized error occurred. The error may contain information '
                + 'useful for handling it better in the future so please do report it (once): \n'
-               + `${err['_native'].message} (${err['_native'].code})`,
+               + `${err['nativeCode'].message} (${err['nativeCode'].code})`,
 
         allowReport: true,
       };

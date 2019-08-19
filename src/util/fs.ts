@@ -152,15 +152,6 @@ function unknownErrorRetry(filePath: string, err: Error): PromiseBB<boolean> {
     return PromiseBB.resolve(false);
   }
 
-  const buttons = [
-    'Cancel',
-    'Retry',
-  ];
-
-  if ((err['_native'] !== undefined) && (err['_native'].code !== 0)) {
-    buttons.unshift('Cancel and Report');
-  }
-
   const options: Electron.MessageBoxOptions = {
     title: 'Unknown error',
     message:
@@ -171,17 +162,36 @@ function unknownErrorRetry(filePath: string, err: Error): PromiseBB<boolean> {
       + `1. "${filePath}" is a removable, possibly network drive which has been disconnected.\n`
       + '2. An External application has interferred with file operations'
       + '(Anti-virus, Disk Management Utility, Virus)\n',
-    buttons,
+    buttons: [
+      'Cancel',
+      'Retry',
+    ],
     type: 'warning',
     noLink: true,
   };
 
-  const choice = dialog.showMessageBox(
-    remote !== undefined ? remote.getCurrentWindow() : null,
-    options);
+  if (truthy(err['nativeCode'])) {
+    if (err['nativeCode'] === 225) {
+      options.title = 'Anti Virus denied access';
+      options.message = `Your Anti-Virus Software has blocked access to "${filePath}".`;
+      options.detail = undefined;
+    } else if ([362, 383, 404].indexOf(err['nativeCode']) !== -1) {
+      options.title = 'OneDrive error';
+      options.message = `The file ${filePath} is stored on a cloud storage drive `
+                      + '(Microsoft OneDrive) which is currently unavailable. Please '
+                      + 'check your internet connection and verify the service is running, '
+                      + 'then retry.';
+      options.detail = undefined;
+    } else {
+      options.title += ` (${err['nativeCode']})`;
+      options.buttons.unshift('Cancel and Report');
+    }
+  }
 
-  if (buttons[choice] === 'Cancel and Report') {
-    const nat = err['_native'];
+  const choice = dialog.showMessageBox(getVisibleWindow(), options);
+
+  if (options.buttons[choice] === 'Cancel and Report') {
+    const nat = err['nativeCode'];
     createErrorReport('Unknown error', {
       message: `${nat.message} (${nat.code})`,
       stack: err.stack,
@@ -190,7 +200,7 @@ function unknownErrorRetry(filePath: string, err: Error): PromiseBB<boolean> {
     return PromiseBB.reject(new UserCanceled());
   }
 
-  return (buttons[choice] === 'Retry')
+  return (options.buttons[choice] === 'Retry')
     ? PromiseBB.resolve(true)
     : PromiseBB.reject(new UserCanceled());
 }
@@ -733,8 +743,7 @@ function raiseUACDialog<T>(t: I18next.TFunction,
                            op: () => PromiseBB<T>,
                            filePath: string): PromiseBB<T> {
   let fileToAccess = filePath !== undefined ? filePath : err.path;
-  const choice = dialog.showMessageBox(
-    remote !== undefined ? remote.getCurrentWindow() : null, {
+  const choice = dialog.showMessageBox(getVisibleWindow(), {
       title: 'Access denied (2)',
       message: t('Vortex needs to access "{{ fileName }}" but doesn\'t have permission to.\n'
         + 'If your account has admin rights Vortex can unlock the file for you. '
