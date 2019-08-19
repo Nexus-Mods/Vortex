@@ -476,7 +476,7 @@ export function onRemoveMod(api: IExtensionApi,
         ])
           .then(result => {
             if (result.action === 'Deploy') {
-              return new Promise((resolve, reject) => {
+              return new Promise<void>((resolve, reject) => {
                 api.events.emit('deploy-mods', (deployErr) => {
                   if (deployErr !== null) {
                     return reject(deployErr);
