@@ -638,11 +638,11 @@ function elevated(func: (ipc, req: NodeRequireFunction) => Promise<void>,
 export function ensureDirWritableAsync(dirPath: string,
                                        confirm: () => PromiseBB<void>): PromiseBB<void> {
   const stackErr = new Error();
-  return fs.ensureDirAsync(dirPath)
+  return ensureDirAsync(dirPath)
     .then(() => {
       const canary = path.join(dirPath, '__vortex_canary');
-      return (fs as any).ensureFileAsync(canary)
-                    .then(() => fs.removeAsync(canary));
+      return ensureFileAsync(canary)
+        .then(() => removeAsync(canary));
     })
     .catch(err => {
       // weirdly we get EBADF from ensureFile sometimes when the
