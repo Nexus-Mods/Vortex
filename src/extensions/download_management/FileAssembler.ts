@@ -89,7 +89,7 @@ class FileAssembler {
             // writing at an offset beyond the file limit
             // works on windows and linux.
             // I'll assume it means it will work on MacOS too...
-            : fsFast.writeAsync(this.mFD, data, 0, data.length, offset))
+            : this.writeAsync(data, offset))
         .then((bytesWritten: any) => {
           this.mWritten += bytesWritten;
           const now = Date.now();
@@ -138,6 +138,13 @@ class FileAssembler {
       }
     });
     return this.mWork;
+  }
+
+  private writeAsync(data: Buffer, offset: number) {
+    // try to write with the lower-overhead function first. If it fails, retry with
+    // our own wrapper that will retry on some errors and provide better backtraces
+    return fsFast.writeAsync(this.mFD, data, 0, data.length, offset)
+      .catch(() => fs.writeAsync(this.mFD, data, 0, data.length, offset));
   }
 }
 
