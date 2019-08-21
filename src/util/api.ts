@@ -17,8 +17,8 @@ import sortMods, { CycleError } from '../extensions/mod_management/util/sort';
 import testModReference from '../extensions/mod_management/util/testModReference';
 import { Archive } from './archives';
 import copyRecursive from './copyRecursive';
-import { DataInvalid, MissingInterpreter, NotFound, NotSupportedError, ProcessCanceled,
-         SetupError, UserCanceled } from './CustomErrors';
+import { ArgumentInvalid, DataInvalid, MissingInterpreter, NotFound, NotSupportedError,
+         ProcessCanceled, SetupError, UserCanceled } from './CustomErrors';
 import Debouncer from './Debouncer';
 import epicGamesLauncher from './EpicGamesLauncher';
 import { getVisibleWindow, terminate } from './errorHandling';
@@ -44,6 +44,7 @@ import { runElevated, runThreaded } from 'vortex-run';
 
 export {
   Archive,
+  ArgumentInvalid,
   bytesToString,
   copyFileAtomic,
   copyRecursive,
