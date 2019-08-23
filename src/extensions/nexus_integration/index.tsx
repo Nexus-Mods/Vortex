@@ -840,7 +840,13 @@ function init(context: IExtensionContextExt): boolean {
   context.registerDialog('login-dialog', LoginDialog, () => ({
     onCancelLogin: () => {
       if (cancelLogin !== undefined) {
-        cancelLogin();
+        try {
+          cancelLogin();
+        } catch (err) {
+          // the only time we ever see this happen is a case where the websocket connection
+          // wasn't established yet so the cancelation failed because it wasn't necessary.
+          log('info', 'login not canceled', err.message);
+        }
       }
       context.api.store.dispatch(setLoginId(undefined));
     },
