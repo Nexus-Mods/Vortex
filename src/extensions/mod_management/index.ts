@@ -869,6 +869,17 @@ function once(api: IExtensionApi) {
       .catch(err => api.showErrorNotification('Failed to install dependencies', err));
   });
 
+  api.events.on('install-recommendations', (profileId: string, modIds: string[]) => {
+    const state: IState = api.store.getState();
+    const profile: IProfile = getSafe(state, ['persistent', 'profiles', profileId], undefined);
+    if (profile === undefined) {
+      api.showErrorNotification('Failed to install recommendations', 'Invalid profile');
+    }
+
+    Promise.map(modIds, modId => installManager.installRecommendations(api, profile, modId))
+      .catch(err => api.showErrorNotification('Failed to install recommendations', err));
+  });
+
   api.onStateChange(
       ['settings', 'mods', 'installPath'],
       (previous, current) => onPathsChanged(api, previous, current));

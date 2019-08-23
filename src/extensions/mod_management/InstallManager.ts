@@ -301,11 +301,14 @@ class InstallManager {
             const mod: IMod = getSafe(state, ['persistent', 'mods', installGameId, modId],
                                       undefined);
 
-            this.installDependenciesImpl(
-              modName(mod),
-              [].concat(modInfo.rules || [], mod.rules || []),
-              this.mGetInstallPath(installGameId),
-              currentProfile, api);
+            this.installDependenciesImpl(modName(mod),
+                                         [].concat(modInfo.rules || [], mod.rules || []),
+                                         this.mGetInstallPath(installGameId),
+                                         currentProfile, api)
+              .then(() => this.installRecommendationsImpl(modName(mod),
+                                         [].concat(modInfo.rules || [], mod.rules || []),
+                                         this.mGetInstallPath(installGameId),
+                                         currentProfile, api));
           }
         }
         if (callback !== undefined) {
@@ -437,6 +440,21 @@ class InstallManager {
 
     const installPath = this.mGetInstallPath(profile.gameId);
     return this.installDependenciesImpl(modName(mod), mod.rules, installPath, profile, api);
+  }
+
+  public installRecommendations(api: IExtensionApi,
+                                profile: IProfile,
+                                modId: string)
+                                : Promise<void> {
+    const state: IState = api.store.getState();
+    const mod: IMod = getSafe(state, ['persistent', 'mods', profile.gameId, modId], undefined);
+
+    if (mod === undefined) {
+      return Promise.reject(new ProcessCanceled(`Invalid mod specified "${mod}"`));
+    }
+
+    const installPath = this.mGetInstallPath(profile.gameId);
+    return this.installRecommendationsImpl(modName(mod), mod.rules, installPath, profile, api);
   }
 
   private isCritical(error: string): boolean {
@@ -977,7 +995,7 @@ class InstallManager {
   private doInstallDependencies(dependencies: IDependency[],
                                 profile: IProfile,
                                 api: IExtensionApi): Promise<void> {
-    return Promise.all(dependencies.map((dep: IDependency) => {
+    return Promise.mapSeries(dependencies, (dep: IDependency) => {
       let dlPromise = Promise.resolve(dep.download);
       if (dep.download === undefined) {
         if (getSafe(dep, ['lookupResults', 0, 'value', 'sourceURI'], '') === '') {
@@ -990,7 +1008,8 @@ class InstallManager {
         }
       }
       return dlPromise
-        .then((downloadId: string) => this.installModAsync(dep.reference, api, downloadId))
+        .then((downloadId: string) =>
+          this.installModAsync(dep.reference, api, downloadId, dep.fileList))
         .then((modId: string) => api.store.dispatch(setModEnabled(profile.id, modId, true)))
         // don't cancel the whole process if one dependency fails to install
         .catch(ProcessCanceled, err => {
@@ -999,19 +1018,22 @@ class InstallManager {
             message: renderModReference(dep.reference, undefined),
           });
         })
-        .catch(UserCanceled, () => undefined)
         .catch(err => {
+          if (err instanceof UserCanceled) {
+            return Promise.reject(err);
+          }
           api.showErrorNotification('Failed to install dependency', err, {
             message: renderModReference(dep.reference, undefined),
           });
         });
-    }))
+    })
       .catch(ProcessCanceled, err => {
         // This indicates an error in the dependency rules so it's
         // adequate to show an error but not as a bug in Vortex
         api.showErrorNotification('Failed to install dependencies',
           err.message, { allowReport: false });
       })
+      .catch(UserCanceled, () => undefined)
       .catch(err => {
         api.showErrorNotification('Failed to install dependencies',
           err.message);
@@ -1019,19 +1041,19 @@ class InstallManager {
       .then(() => undefined);
   }
 
-  private installDependenciesImpl(
-    name: string,
-    rules: IRule[],
-    installPath: string,
-    profile: IProfile,
-    api: IExtensionApi): Promise<void> {
+  private installDependenciesImpl(name: string,
+                                  rules: IRule[],
+                                  installPath: string,
+                                  profile: IProfile,
+                                  api: IExtensionApi)
+                                  : Promise<void> {
     const notificationId = `${installPath}_activity`;
     api.sendNotification({
       id: notificationId,
       type: 'activity',
       message: 'Checking dependencies',
     });
-    return gatherDependencies(rules, api)
+    return gatherDependencies(rules, api, false)
       .then((dependencies: IDependency[]) => {
         api.dismissNotification(notificationId);
 
@@ -1059,6 +1081,82 @@ class InstallManager {
               action: () => this.doInstallDependencies(dependencies, profile, api),
             },
           ])).then(() => Promise.resolve());
+      })
+      .catch((err) => {
+        api.dismissNotification(notificationId);
+        api.showErrorNotification('Failed to check dependencies', err);
+      });
+  }
+
+  private installRecommendationsImpl(
+    name: string,
+    rules: IRule[],
+    installPath: string,
+    profile: IProfile,
+    api: IExtensionApi): Promise<void> {
+    const notificationId = `${installPath}_activity`;
+    api.sendNotification({
+      id: notificationId,
+      type: 'activity',
+      message: 'Checking dependencies',
+    });
+    return gatherDependencies(rules, api, true)
+      .then((dependencies: IDependency[]) => {
+        api.dismissNotification(notificationId);
+
+        if (dependencies.length === 0) {
+          return Promise.resolve();
+        }
+
+        const requiredDownloads =
+          dependencies.reduce((prev: number, current: IDependency) => {
+            return prev + (current.download ? 0 : 1);
+          }, 0);
+
+        const text = '{{modName}} recommends the installation of additional mods. '
+                   + 'Please use the checkboxes below to select which to install.';
+
+        const checkboxes: ICheckbox[] = dependencies.map((dep, idx) => {
+          let depName: string;
+          if (dep.lookupResults.length > 0) {
+            depName = dep.lookupResults[0].value.fileName;
+          }
+          if (depName === undefined) {
+            depName = renderModReference(dep.reference, undefined);
+          }
+
+          let desc = depName;
+          if (dep.download === undefined) {
+            desc += ' (' + api.translate('Not downloaded yet') + ')';
+          }
+          return {
+            id: idx.toString(),
+            text: desc,
+            value: true,
+          };
+        });
+
+        return api.store.dispatch(
+          showDialog('question', 'Install Recommendations', {
+            text,
+            checkboxes,
+            parameters: {
+              modName: name,
+              count: dependencies.length,
+              dlCount: requiredDownloads,
+            },
+          }, [
+            { label: 'Don\'t install' },
+            { label: 'Install' },
+          ])).then(result => {
+            if (result.action === 'Install') {
+              const selected = new Set(Object.keys(result.input)
+                .filter(key => result.input[key]));
+
+              this.doInstallDependencies(
+                dependencies.filter((dep, idx) => selected.has(idx.toString())), profile, api);
+            }
+          });
       })
       .catch((err) => {
         api.dismissNotification(notificationId);

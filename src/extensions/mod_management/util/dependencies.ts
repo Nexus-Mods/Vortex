@@ -27,13 +27,16 @@ function findDownloadByRef(reference: IReference, state: any): string {
   return existing;
 }
 
-function gatherDependencies(
-    rules: IRule[], api: IExtensionApi): Promise<IDependency[]> {
+function gatherDependencies(rules: IRule[],
+                            api: IExtensionApi,
+                            recommendations: boolean)
+                            : Promise<IDependency[]> {
   const state = api.store.getState();
   const requirements: IRule[] =
       rules === undefined ?
           [] :
-          rules.filter((rule: IRule) => rule.type === 'requires');
+          rules.filter((rule: IRule) =>
+            rule.type === (recommendations ? 'recommends' : 'requires'));
 
   // for each requirement, look up the reference and recursively their dependencies
   return Promise.reduce(requirements, (total: IDependency[], rule: IRule) => {
@@ -51,7 +54,7 @@ function gatherDependencies(
             throw new Error('reference not found: ' + rule.reference);
           }
 
-          return gatherDependencies(details[0].value.rules, api);
+          return gatherDependencies(details[0].value.rules, api, recommendations);
         })
         .then((dependencies: IDependency[]) => {
           return total.concat(dependencies)
@@ -60,6 +63,7 @@ function gatherDependencies(
                   download: findDownloadByRef(rule.reference, state),
                   reference: rule.reference,
                   lookupResults: lookupDetails,
+                  fileList: rule['fileList'],
                 },
               ]);
         })
