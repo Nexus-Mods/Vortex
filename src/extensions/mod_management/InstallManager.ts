@@ -1,5 +1,5 @@
 import { showDialog } from '../../actions/notifications';
-import { IDialogResult } from '../../types/IDialog';
+import { ICheckbox, IDialogResult } from '../../types/IDialog';
 import { IExtensionApi, ThunkStore } from '../../types/IExtensionContext';
 import {IProfile, IState} from '../../types/IState';
 import { DataInvalid, ProcessCanceled, SetupError, TemporaryError,
@@ -8,10 +8,11 @@ import { createErrorReport, didIgnoreError,
         isOutdated, withContext } from '../../util/errorHandling';
 import * as fs from '../../util/fs';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
+import lazyRequire from '../../util/lazyRequire';
 import { log } from '../../util/log';
 import { prettifyNodeErrorMessage } from '../../util/message';
 import { activeProfile, downloadPathForGame } from '../../util/selectors';
-import { getSafe } from '../../util/storeHelper';
+import { getSafe, setSafe } from '../../util/storeHelper';
 import { setdefault, truthy } from '../../util/util';
 import walk from '../../util/walk';
 
@@ -26,8 +27,8 @@ import {addModRule, setFileOverride, setModAttribute, setModType} from './action
 import {IDependency} from './types/IDependency';
 import { IInstallContext } from './types/IInstallContext';
 import { IInstallResult, IInstruction } from './types/IInstallResult';
-import {IMod} from './types/IMod';
-import { IModInstaller } from './types/IModInstaller';
+import { IFileListItem, IMod } from './types/IMod';
+import { IModInstaller, ISupportedInstaller } from './types/IModInstaller';
 import { InstallFunc } from './types/InstallFunc';
 import { ISupportedResult, TestSupported } from './types/TestSupported';
 import gatherDependencies from './util/dependencies';
@@ -35,15 +36,19 @@ import filterModInfo from './util/filterModInfo';
 import queryGameId from './util/queryGameId';
 
 import InstallContext from './InstallContext';
+import makeListInstaller from './listInstaller';
 import deriveModInstallName from './modIdManager';
 
 import * as Promise from 'bluebird';
 import * as _ from 'lodash';
-import { IHashResult, ILookupResult, IReference, IRule } from 'modmeta-db';
+import { IHashResult, ILookupResult, IModInfo, IReference, IRule } from 'modmeta-db';
 import Zip = require('node-7z');
 import * as os from 'os';
 import * as path from 'path';
 import * as Redux from 'redux';
+
+import * as modMetaT from 'modmeta-db';
+const {genHash} = lazyRequire<typeof modMetaT>(() => require('modmeta-db'));
 
 export class ArchiveBrokenError extends Error {
   constructor(message: string) {
@@ -58,11 +63,6 @@ interface IReplaceChoice {
   variant: string;
   enable: boolean;
   attributes: { [key: string]: any };
-}
-
-interface ISupportedInstaller {
-  installer: IModInstaller;
-  requiredFiles: string[];
 }
 
 class InstructionGroups {
@@ -148,7 +148,8 @@ class InstallManager {
     processDependencies: boolean,
     enable: boolean,
     callback: (error: Error, id: string) => void,
-    forceGameId?: string): void {
+    forceGameId?: string,
+    fileList?: IFileListItem[]): void {
 
     if (this.mTask === undefined) {
       this.mTask = new Zip();
@@ -279,7 +280,7 @@ class InstallManager {
         installContext.setInstallPathCB(modId, destinationPath);
         tempPath = destinationPath + '.installing';
         return this.installInner(api, archivePath,
-          tempPath, destinationPath, installGameId, installContext);
+          tempPath, destinationPath, installGameId, installContext, fileList);
       })
       .then(result => {
         const state: IState = api.store.getState();
@@ -477,7 +478,8 @@ class InstallManager {
    */
   private installInner(api: IExtensionApi, archivePath: string,
                        tempPath: string, destinationPath: string,
-                       gameId: string, installContext: IInstallContext): Promise<IInstallResult> {
+                       gameId: string, installContext: IInstallContext,
+                       extractList?: IFileListItem[]): Promise<IInstallResult> {
     const fileList: string[] = [];
     const progress = (files: string[], percent: number) => {
       if ((percent !== undefined) && (installContext !== undefined)) {
@@ -546,7 +548,9 @@ class InstallManager {
         .finally(() => {
           // process.noAsar = false;
         })
-        .then(() => this.getInstaller(fileList, gameId))
+        .then(() => (extractList !== undefined)
+          ? makeListInstaller(extractList, tempPath)
+          : this.getInstaller(fileList, gameId))
         .then(supportedInstaller => {
           if (supportedInstaller === undefined) {
             throw new Error('no installer supporting this file');
@@ -1174,7 +1178,8 @@ class InstallManager {
 
   private installModAsync(requirement: IReference,
                           api: IExtensionApi,
-                          downloadId: string): Promise<string> {
+                          downloadId: string,
+                          fileList?: IFileListItem[]): Promise<string> {
     return new Promise<string>((resolve, reject) => {
       const state = api.store.getState();
       const download: IDownload = state.persistent.downloads.files[downloadId];
@@ -1188,7 +1193,7 @@ class InstallManager {
           } else {
             reject(error);
           }
-        });
+        }, undefined, fileList);
     });
   }
 
