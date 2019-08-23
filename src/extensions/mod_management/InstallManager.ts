@@ -950,10 +950,18 @@ class InstallManager {
 
   private downloadModAsync(
     requirement: IReference,
-    sourceURI: string,
+    lookupResult: IModInfo,
     api: IExtensionApi): Promise<string> {
     return new Promise<string>((resolve, reject) => {
-      if (!api.events.emit('start-download', [sourceURI], {}, undefined,
+      if (!api.events.emit('start-download', [lookupResult.sourceURI], {
+        game: lookupResult.gameId,
+        source: lookupResult.source,
+        name: lookupResult.fileName,
+        ids: {
+          modId: getSafe(lookupResult, ['details', 'modId'], undefined),
+          fileId: getSafe(lookupResult, ['details', 'fileId'], undefined),
+        },
+      }, undefined,
         (error, id) => {
           if (error === null) {
             resolve(id);
@@ -977,7 +985,7 @@ class InstallManager {
         } else {
           dlPromise = this.downloadModAsync(
             dep.reference,
-            dep.lookupResults[0].value.sourceURI,
+            dep.lookupResults[0].value,
             api);
         }
       }

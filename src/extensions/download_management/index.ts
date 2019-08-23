@@ -149,6 +149,8 @@ function attributeExtractor(input: any) {
     source: getSafe(input, ['download', 'modInfo', 'source'], undefined),
     version: getSafe(input, ['download', 'modInfo', 'version'], undefined),
     logicalFileName: getSafe(input, ['download', 'modInfo', 'name'], undefined),
+    modId: getSafe(input, ['download', 'modInfo', 'ids', 'modId'], undefined),
+    fileId: getSafe(input, ['download', 'modInfo', 'ids', 'fileId'], undefined),
     downloadGame,
   });
 }

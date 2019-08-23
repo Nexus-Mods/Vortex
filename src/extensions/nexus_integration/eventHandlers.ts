@@ -20,7 +20,8 @@ import submitFeedback from './util/submitFeedback';
 import { checkModVersionsImpl, endorseModImpl, startDownload, updateKey } from './util';
 
 import * as Promise from 'bluebird';
-import Nexus, { IFeedbackResponse, IIssue, NexusError, TimeoutError, RateLimitError } from 'nexus-api';
+import Nexus, { IFeedbackResponse, IIssue, NexusError,
+                RateLimitError, TimeoutError } from 'nexus-api';
 
 export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
   const state: IState = api.store.getState();
@@ -39,11 +40,9 @@ export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
           const fileId = getSafe(download, [...idsPath, 'fileId'], undefined);
           let gameId = getSafe(download, [...idsPath, 'gameId'], undefined);
           if (gameId === undefined) {
-            if (Array.isArray(download.game)) {
-              gameId = download.game[0];
-            } else {
-              gameId = activeGameId(api.store.getState());
-            }
+            gameId = Array.isArray(download.game)
+              ? download.game[0]
+              : activeGameId(api.store.getState());
           }
           const gameDomain = nexusGameId(gameById(state, gameId), gameId);
           if ((modId !== undefined)
@@ -169,6 +168,17 @@ export function onRequestOwnIssues(nexus: Nexus) {
   };
 }
 
+function getFileId(download: IDownload): string {
+  const res = getSafe(download, ['modInfo', 'nexus', 'ids', 'fileId'], undefined);
+
+  if ((res === undefined)
+      && (getSafe(download, ['modInfo', 'source'], undefined) === 'nexus')) {
+    return getSafe(download, ['modInfo', 'ids', 'fileId'], undefined);
+  } else {
+    return res;
+  }
+}
+
 export function onModUpdate(api: IExtensionApi, nexus: Nexus): (...args: any[]) => void {
   return (gameId, modId, fileId) => {
     const state: IState = api.store.getState();
@@ -185,7 +195,7 @@ export function onModUpdate(api: IExtensionApi, nexus: Nexus): (...args: any[]) 
     const downloads = state.persistent.downloads.files;
     // check if the file is already downloaded. If not, download before starting the install
     const existingId = Object.keys(downloads).find(downloadId =>
-      getSafe(downloads, [downloadId, 'modInfo', 'nexus', 'ids', 'fileId'], undefined) === fileId);
+      getFileId(downloads[downloadId]) === fileId);
     if (existingId !== undefined) {
       api.events.emit('start-install-download', existingId);
     } else {
