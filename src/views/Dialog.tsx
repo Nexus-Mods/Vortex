@@ -233,7 +233,17 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
           dangerouslySetInnerHTML={{ __html: content.htmlText }}
         />
       ));
-    } else if (content.checkboxes !== undefined) {
+    }
+
+    if (content.input !== undefined) {
+      controls.push((
+      <div key='dialog-form-content'>
+        {content.input.map(this.renderInput)}
+      </div>
+      ));
+    }
+
+    if (content.checkboxes !== undefined) {
       controls.push((
         <div key='dialog-content-choices' className='dialog-content-choices'>
           <div>
@@ -247,13 +257,9 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
           {content.choices.map(this.renderRadiobutton)}
         </div>
       ));
-    } else if (content.input !== undefined) {
-      controls.push((
-      <div key='dialog-form-content'>
-        {content.input.map(this.renderInput)}
-      </div>
-      ));
-    } else if (content.links !== undefined) {
+    }
+
+    if (content.links !== undefined) {
       controls.push((
         <div key='dialog-form-links'>
           {content.links.map(this.renderLink)}
