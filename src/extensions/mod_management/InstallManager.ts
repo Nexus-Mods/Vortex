@@ -167,11 +167,21 @@ class InstallManager {
     let modId = baseName;
     let installGameId: string;
     let installContext: InstallContext;
+    let archiveMD5: string;
+    let archiveSize: number;
 
     this.mQueue = this.mQueue
       .then(() => withContext('Installing', baseName, () => ((forceGameId !== undefined)
         ? Promise.resolve(forceGameId)
         : queryGameId(api.store, downloadGameIds, modId))
+      // calculate the md5 hash here so we can store it with the mod meta information later,
+      // otherwise we'd not remember the hash when installing from external file
+      .tap(() => genHash(archivePath).then(hash => {
+        archiveMD5 = hash.md5sum;
+        archiveSize = hash.numBytes;
+        setSafe(fullInfo, ['download', 'fileMD5'], archiveMD5);
+        setSafe(fullInfo, ['download', 'size'], archiveSize);
+      }).catch(() => null))
       .then(gameId => {
         installGameId = gameId;
         if (installGameId === undefined) {
@@ -180,7 +190,12 @@ class InstallManager {
         }
         installContext = new InstallContext(gameId, api);
         installContext.startIndicator(baseName);
-        return api.lookupModMeta({ filePath: archivePath, gameId });
+        return api.lookupModMeta({
+          filePath: archivePath,
+          fileMD5: archiveMD5,
+          fileSize: archiveSize,
+          gameId,
+        });
       })
       .then((modInfo: ILookupResult[]) => {
         log('debug', 'got mod meta information', { archivePath, resultCount: modInfo.length });
@@ -397,28 +412,22 @@ class InstallManager {
               }
             });
         } else {
-          const { genHash } = require('modmeta-db');
-
-          return prom
-            .then(() => genHash(archivePath).catch(() => ({})))
-            .then((hashResult: IHashResult) => {
-              const id = `${path.basename(archivePath)} (md5: ${hashResult.md5sum})`;
-              let message = err;
-              let replace = {};
-              if (typeof err === 'string') {
-                message = 'The installer "{{ id }}" failed: {{ message }}';
-                replace = {
-                      id,
-                      message: err,
-                    };
-              }
-              if (installContext !== undefined) {
-                installContext.reportError('Installation failed', message, undefined, replace);
-              }
-              if (callback !== undefined) {
-                callback(err, modId);
-              }
-            });
+          const id = `${path.basename(archivePath)} (md5: ${archiveMD5})`;
+          let message = err;
+          let replace = {};
+          if (typeof err === 'string') {
+            message = 'The installer "{{ id }}" failed: {{ message }}';
+            replace = {
+              id,
+              message: err,
+            };
+          }
+          if (installContext !== undefined) {
+            installContext.reportError('Installation failed', message, undefined, replace);
+          }
+          if (callback !== undefined) {
+            callback(err, modId);
+          }
         }
       })
       .finally(() => {
@@ -635,7 +644,6 @@ class InstallManager {
       return;
     }
     const missing = unsupported.map(instruction => instruction.source);
-    const {genHash} = require('modmeta-db');
     const makeReport = () =>
         genHash(archivePath)
             .catch(err => ({}))

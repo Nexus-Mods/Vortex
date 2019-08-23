@@ -50,7 +50,7 @@ function sortMods(gameId: string, mods: IMod[], api: IExtensionApi): Promise<IMo
   const modMapper = (mod: IMod) => {
     return api.lookupModMeta({
                 fileMD5: getSafe(mod.attributes, ['fileMD5'], undefined),
-                fileSize: getSafe(mod.attributes, ['size'], undefined),
+                fileSize: getSafe(mod.attributes, ['fileSize'], undefined),
                 gameId,
               })
         .catch(() => [])
