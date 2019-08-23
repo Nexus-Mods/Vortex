@@ -1,30 +1,9 @@
+import { checksum } from './checksum';
 import * as fs from './fs';
 import { log } from './log';
 
 import * as Promise from 'bluebird';
-import { createHash } from 'crypto';
 import { file } from 'tmp';
-
-export function checksum(input: Buffer): string {
-  return createHash('md5')
-    .update(input)
-    .digest('hex');
-}
-
-export function fileMD5(filePath: string): Promise<string> {
-  return new Promise<string>((resolve, reject) => {
-    const hash = createHash('md5');
-    const stream = fs.createReadStream(filePath);
-    stream.on('readable', () => {
-      const data = stream.read();
-      if (data) {
-        hash.update(data);
-      }
-    });
-    stream.on('end', () => resolve(hash.digest('hex')));
-    stream.on('error', reject);
-  });
-}
 
 export function writeFileAtomic(filePath: string, input: string | Buffer) {
   return writeFileAtomicImpl(filePath, input, 3);

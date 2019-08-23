@@ -17,6 +17,7 @@ import { makeModReference } from '../extensions/mod_management/util/modReference
 import sortMods, { CycleError } from '../extensions/mod_management/util/sort';
 import testModReference from '../extensions/mod_management/util/testModReference';
 import { Archive } from './archives';
+import { checksum, fileMD5 } from './checksum';
 import copyRecursive from './copyRecursive';
 import { DataInvalid, MissingInterpreter, NotFound, NotSupportedError, ProcessCanceled,
          SetupError, UserCanceled } from './CustomErrors';
@@ -24,7 +25,7 @@ import Debouncer from './Debouncer';
 import epicGamesLauncher from './EpicGamesLauncher';
 import { terminate } from './errorHandling';
 import { extend } from './ExtensionProvider';
-import { copyFileAtomic, fileMD5 } from './fsAtomic';
+import { copyFileAtomic } from './fsAtomic';
 import getNormalizeFunc, { Normalize } from './getNormalizeFunc';
 import github from './github';
 import { getCurrentLanguage } from './i18n';
@@ -46,6 +47,7 @@ import { runElevated, runThreaded } from 'vortex-run';
 export {
   Archive,
   bytesToString,
+  checksum,
   copyFileAtomic,
   copyRecursive,
   CycleError,
