@@ -6,3 +6,8 @@ export interface IModInstaller {
   testSupported: TestSupported;
   install: InstallFunc;
 }
+
+export interface ISupportedInstaller {
+  installer: IModInstaller;
+  requiredFiles: string[];
+}

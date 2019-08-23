@@ -1016,6 +1016,9 @@ class ExtensionManager {
   }
 
   private lookupModMeta = (detail: ILookupDetails): Promise<ILookupResult[]> => {
+    if ((detail.fileMD5 === undefined) && (detail.filePath === undefined)) {
+      return Promise.resolve([]);
+    }
     let lookupId = this.modLookupId(detail);
     if (this.mModDBCache[lookupId] !== undefined) {
       return Promise.resolve(this.mModDBCache[lookupId]);
@@ -1181,8 +1184,8 @@ class ExtensionManager {
                   const lastLine = errOut !== undefined
                     ? lines[lines.length - 1]
                     : '<No output>';
-                  const err: any =
-                    new Error(`Failed to run "${executable}": "${lastLine} (${code.toString(16)})"`);
+                  const err: any = new Error(
+                    `Failed to run "${executable}": "${lastLine} (${code.toString(16)})"`);
                   err.exitCode = code;
                   return reject(err);
                 }

@@ -6,6 +6,7 @@ import {
 import {
   IInstallResult,
   IInstruction,
+  InstructionType,
 } from '../extensions/mod_management/types/IInstallResult';
 import {
   InstallFunc,
@@ -37,8 +38,8 @@ import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 
 export { TestSupported, IInstallResult, IInstruction, IDeployedFile, IDeploymentMethod,
-         IFileChange, ILookupResult, IModInfo, IReference, InstallFunc, ISupportedResult,
-         ProgressDelegate };
+         IFileChange, ILookupResult, IModInfo, InstructionType, IReference, InstallFunc,
+         ISupportedResult, ProgressDelegate };
 
 // tslint:disable-next-line:interface-name
 export interface ThunkStore<S> extends Redux.Store<S> {

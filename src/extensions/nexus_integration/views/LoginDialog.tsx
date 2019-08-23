@@ -15,10 +15,10 @@ import { getPageURL } from '../util/sso';
 import { clipboard } from 'electron';
 import I18next from 'i18next';
 import * as React from 'react';
-import { ControlLabel, FormControl, FormGroup, InputGroup, Modal, Alert } from 'react-bootstrap';
+import { Alert, ControlLabel, FormControl, FormGroup, InputGroup, Modal } from 'react-bootstrap';
+import { WithTranslation } from 'react-i18next';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
-import { WithTranslation } from 'react-i18next';
 
 const API_ACCESS_URL = 'https://www.nexusmods.com/users/myaccount?tab=api+access';
 
@@ -77,11 +77,18 @@ function LoginInProgress(props: ILoginInProgressProps) {
 }
 
 function nop() {
+  // nop
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
 
-class LoginDialog extends ComponentEx<IProps, { troubleshoot: boolean, apiKeyInput: string, requested: boolean }> {
+interface ILoginDialogState {
+  troubleshoot: boolean;
+  apiKeyInput: string;
+  requested: boolean;
+}
+
+class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
   constructor(props: IProps) {
     super(props);
 
@@ -112,7 +119,12 @@ class LoginDialog extends ComponentEx<IProps, { troubleshoot: boolean, apiKeyInp
     const { t, loginId, visible } = this.props;
 
     return (
-      <Modal backdrop='static' id='login-dialog' show={visible || (loginId !== undefined)} onHide={this.hide}>
+      <Modal
+        backdrop='static'
+        id='login-dialog'
+        show={visible || (loginId !== undefined)}
+        onHide={this.hide}
+      >
         <Modal.Body>
           <IconButton
             className='close-button'
@@ -284,7 +296,7 @@ class LoginDialog extends ComponentEx<IProps, { troubleshoot: boolean, apiKeyInp
       return;
     }
     this.renderConfirmDialog().catch(err => {
-      log('error', 'failed to show dialog', err.message)
+      log('error', 'failed to show dialog', err.message);
     });
   }
 
@@ -297,7 +309,8 @@ class LoginDialog extends ComponentEx<IProps, { troubleshoot: boolean, apiKeyInp
       clipboard.writeText(getPageURL(this.props.loginId));
     } catch (err) {
       // apparently clipboard gets lazy-loaded and that load may fail for some reason
-      this.context.api.showErrorNotification('Failed to access clipboard', err, { allowReport: false });
+      this.context.api.showErrorNotification('Failed to access clipboard',
+                                             err, { allowReport: false });
     }
   }
 

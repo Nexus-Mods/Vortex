@@ -45,7 +45,7 @@ interface ITweakProps {
 
 class Tweak extends PureComponentEx<ITweakProps, {}> {
   public render(): JSX.Element {
-    const { enabled, fileName, onToggle } = this.props;
+    const { enabled, fileName } = this.props;
     const match = fileName.match(/(.*)\[(.*)\]\.ini/);
 
     if (!truthy(match) || (match.length < 2)) {
