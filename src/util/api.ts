@@ -19,11 +19,11 @@ import testModReference from '../extensions/mod_management/util/testModReference
 import { Archive } from './archives';
 import { checksum, fileMD5 } from './checksum';
 import copyRecursive from './copyRecursive';
-import { DataInvalid, MissingInterpreter, NotFound, NotSupportedError, ProcessCanceled,
-         SetupError, UserCanceled } from './CustomErrors';
+import { ArgumentInvalid, DataInvalid, MissingInterpreter, NotFound, NotSupportedError,
+         ProcessCanceled, SetupError, UserCanceled } from './CustomErrors';
 import Debouncer from './Debouncer';
 import epicGamesLauncher from './EpicGamesLauncher';
-import { terminate } from './errorHandling';
+import { getVisibleWindow, terminate } from './errorHandling';
 import { extend } from './ExtensionProvider';
 import { copyFileAtomic } from './fsAtomic';
 import getNormalizeFunc, { Normalize } from './getNormalizeFunc';
@@ -46,6 +46,7 @@ import { runElevated, runThreaded } from 'vortex-run';
 
 export {
   Archive,
+  ArgumentInvalid,
   bytesToString,
   checksum,
   copyFileAtomic,
@@ -65,6 +66,7 @@ export {
   getGames,
   getNormalizeFunc,
   getReduxLog,
+  getVisibleWindow,
   github,
   installIconSet,
   isChildPath,

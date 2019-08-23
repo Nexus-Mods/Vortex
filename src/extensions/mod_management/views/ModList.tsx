@@ -319,7 +319,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     } else {
       content = (
         <Panel>
-          <PanelX.Body>
+          <Panel.Body>
             <SuperTable
               tableId='mods'
               detailsTitle={t('Mod Attributes')}
@@ -330,7 +330,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
             >
               {this.renderMoreMods(modSources)}
             </SuperTable>
-          </PanelX.Body>
+          </Panel.Body>
         </Panel>
       );
     }
@@ -351,27 +351,27 @@ class ModList extends ComponentEx<IProps, IComponentState> {
               {content}
             </FlexLayout.Flex>
             <FlexLayout.Fixed>
-              <PanelX
+              <Panel
                 className='mod-drop-panel'
                 expanded={showDropzone}
                 onToggle={nop}
               >
-                <PanelX.Collapse>
-                  <PanelX.Body>
+                <Panel.Collapse>
+                  <Panel.Body>
                     <Dropzone
                       accept={['files']}
                       drop={this.dropMod}
                       icon='folder-download'
                       clickable={false}
                     />
-                  </PanelX.Body>
-                </PanelX.Collapse>
+                  </Panel.Body>
+                </Panel.Collapse>
                 <CollapseIcon
                   position='topright'
                   onClick={this.toggleDropzone}
                   visible={showDropzone}
                 />
-              </PanelX>
+              </Panel>
             </FlexLayout.Fixed>
           </FlexLayout>
         </MainPage.Body>

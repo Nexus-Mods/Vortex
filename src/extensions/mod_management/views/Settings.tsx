@@ -674,6 +674,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         }
         this.changePath(suggestion);
       })
+      .catch(UserCanceled, () => null)
       .catch(err => {
         onShowError('Failed to suggest path', err);
       });

@@ -394,3 +394,25 @@ export function isMajorDowngrade(previous: string, current: string): boolean {
     return semver.minor(previous) > semver.minor(current);
   }
 }
+
+/**
+ * turn an object into a flat one meaning all values are PODs, no nested objects/arrays
+ * @param obj the input object
+ * @param key the base key that will be included in all attribute names. You will usually
+ *            want to leave this as an empty array unless the result gets merged with
+ *            something else
+ * @param separator the separator character. Defaults to a dot but if you intend to unflatten
+ *                  the object at some point it may make sense to use something less likely to
+ *                  be part of a key
+ */
+export function flatten(obj: any, key: string[] = [], separator: string = '.'): any {
+  return Object.keys(obj).reduce((prev, attr: string) => {
+    if (typeof(obj[attr]) === 'object') {
+      prev = { ...prev, ...flatten(obj[attr], [...key, attr]) };
+    } else {
+      // POD
+      prev[[...key, attr].join(separator)] = obj[attr];
+    }
+    return prev;
+  }, {});
+}

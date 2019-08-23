@@ -78,13 +78,17 @@ class DropdownMenu extends React.PureComponent<IProps, {}> {
       classes.push(className);
     }
 
+    const defaultIdx = actions.findIndex(act => act.show === true);
+    const rest = actions.slice(0);
+    rest.splice(defaultIdx, 1);
+
     const title: any = (
       <div
-        title={genTooltip(actions[0].show)}
+        title={genTooltip(actions[defaultIdx].show)}
         style={{ width: '100%', height: '100%' }}
       >
-        <Icon name={actions[0].icon} />
-        {actions[0].title}
+        <Icon name={actions[defaultIdx].icon} />
+        {actions[defaultIdx].title}
       </div>
     );
     return (
@@ -92,10 +96,10 @@ class DropdownMenu extends React.PureComponent<IProps, {}> {
         id={`${id}-menu`}
         split
         title={title}
-        data-value={actions[0].title}
-        onClick={actions[0].show ? this.triggerDefault : undefined}
+        data-value={actions[defaultIdx].title}
+        onClick={actions[defaultIdx].show ? this.triggerDefault : undefined}
       >
-        {actions.slice(1).map((iter, idx) => this.renderMenuItem(iter, idx))}
+        {rest.map((iter, idx) => this.renderMenuItem(iter, idx))}
       </DropdownButton>
     );
   }

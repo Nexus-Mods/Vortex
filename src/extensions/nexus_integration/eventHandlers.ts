@@ -191,7 +191,7 @@ export function onModUpdate(api: IExtensionApi, nexus: Nexus): (...args: any[]) 
       return;
     }
     // TODO: Need some way to identify if this request is actually for a nexus mod
-    const url = `nxm://${toNXMId(game)}/mods/${modId}/files/${fileId}`;
+    const url = `nxm://${toNXMId(game, gameId)}/mods/${modId}/files/${fileId}`;
     const downloads = state.persistent.downloads.files;
     // check if the file is already downloaded. If not, download before starting the install
     const existingId = Object.keys(downloads).find(downloadId =>

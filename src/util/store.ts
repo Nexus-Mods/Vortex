@@ -2,6 +2,7 @@ import reducer, { Decision } from '../reducers/index';
 import { IPersistor, PersistingType } from '../types/IExtensionContext';
 import { IState } from '../types/IState';
 
+import { getVisibleWindow } from './errorHandling';
 import ExtensionManager from './ExtensionManager';
 import * as fs from './fs';
 import { log } from './log';
@@ -26,7 +27,7 @@ const IMPORTED_TAG = 'imported__do_not_delete.txt';
 export const currentStatePath = 'state.v2';
 
 export function querySanitize(errors: string[]): Decision {
-  const response = dialog.showMessageBox(null, {
+  const response = dialog.showMessageBox(getVisibleWindow(), {
     message:
         'Application state is invalid. I can try to repair it but you may lose data.',
     detail: errors.join('\n'),
