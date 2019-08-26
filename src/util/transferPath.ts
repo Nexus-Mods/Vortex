@@ -178,9 +178,11 @@ export function transferPath(source: string,
             })
             .catch(err => {
               // EXDEV implies we tried to rename when source and destination are
-              // not in fact on the same volume. This is what comparing the stat.dev
-              // was supposed to prevent.
-              if (err.code === 'EXDEV') {
+              //  not in fact on the same volume. This is what comparing the stat.dev
+              //  was supposed to prevent.
+              // ENOTSUP implies that we attempted to hardlink a file on a file system
+              //  which does not support it - copy instead.
+              if (['EXDEV', 'ENOTSUP'].indexOf(err.code) !== -1) {
                 func = fs.copyAsync;
                 return func(sourcePath, destPath, { showDialogCallback });
               } else if (err.code === 'ENOENT') {
