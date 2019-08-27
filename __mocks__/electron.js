@@ -1,7 +1,9 @@
 'use strict';
 
 const dialog = {
-  showMessageBox: jest.fn()
+  showMessageBox: jest.fn(),
+  showErrorBox: jest.fn(),
+  getWindow: jest.fn(() => null),
 }
 
 const app = {
@@ -9,7 +11,7 @@ const app = {
 }
 
 const remote = {
-  getCurrentWindow: jest.fn()
+  getCurrentWindow: jest.fn(() => null),
 }
 
 module.exports = {
