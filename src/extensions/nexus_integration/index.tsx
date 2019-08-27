@@ -44,13 +44,15 @@ import { genEndorsedAttribute, genGameAttribute, genModIdAttribute } from './att
 import * as eh from './eventHandlers';
 import NXMUrl from './NXMUrl';
 import * as sel from './selectors';
-import { endorseModImpl, nexusGames, processErrorMessage, startDownload, updateKey } from './util';
+import { endorseModImpl, getInfo, nexusGames, processErrorMessage,
+         startDownload, updateKey } from './util';
 
 import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import * as fuzz from 'fuzzball';
 import I18next from 'i18next';
-import NexusT, { IDownloadURL, NexusError, RateLimitError, TimeoutError } from 'nexus-api';
+import NexusT, { IDownloadURL, IFileInfo, IModInfo, NexusError,
+                 RateLimitError, TimeoutError } from 'nexus-api';
 import * as path from 'path';
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
@@ -292,7 +294,29 @@ function openNexusPage(state: IState, gameIds: string[]) {
   opn(`https://www.nexusmods.com/${nexusGameId(game)}`).catch(err => undefined);
 }
 
-function processAttributes(input: any) {
+function remapCategory(state: IState, category: number, fromGame: string, toGame: string) {
+  if ((fromGame === toGame) || (fromGame === undefined)) {
+    // should be the default case: we're installing the mod for the game it's intended for
+    return category;
+  }
+
+  const fromCategory =
+    getSafe(state, ['persistent', 'categories', fromGame, category, 'name'], undefined);
+  const toGameCategories: Array<{ name: string }> =
+    getSafe(state, ['persistent', 'categories', toGame], undefined);
+
+  if ((fromCategory === undefined) || (toGameCategories === undefined)) {
+    return category;
+  }
+
+  const sorted = Object.keys(toGameCategories).sort((lhs, rhs) =>
+    fuzz.ratio(toGameCategories[rhs].name, fromCategory)
+    - fuzz.ratio(toGameCategories[lhs].name, fromCategory));
+
+  return sorted[0];
+}
+
+function processAttributes(state: IState, input: any, quick: boolean): Promise<any> {
   const nexusChangelog = getSafe(input.nexus, ['fileInfo', 'changelog_html'], undefined);
 
   const modName = decodeHTML(getSafe(input, ['download', 'modInfo', 'nexus',
@@ -303,29 +327,57 @@ function processAttributes(input: any) {
     ? fuzz.ratio(modName, fileName)
     : 100;
 
-  return ({
-    modId: getSafe(input, ['download', 'modInfo', 'nexus', 'ids', 'modId'], undefined),
-    fileId: getSafe(input, ['download', 'modInfo', 'nexus', 'ids', 'fileId'], undefined),
-    author: getSafe(input, ['download', 'modInfo', 'nexus', 'modInfo', 'author'], undefined),
-    category: getSafe(input, ['download', 'modInfo', 'nexus', 'modInfo', 'category_id'], undefined),
-    pictureUrl: getSafe(input, ['download', 'modInfo', 'nexus',
-                                'modInfo', 'picture_url'], undefined),
-    description: getSafe(input, ['download', 'modInfo', 'nexus',
-                                 'modInfo', 'description'], undefined),
-    shortDescription: getSafe(input, ['download', 'modInfo', 'nexus',
-                                      'modInfo', 'summary'], undefined),
-    fileType: getSafe(input, ['download', 'modInfo', 'nexus',
-                              'fileInfo', 'category_name'], undefined),
-    isPrimary: getSafe(input, ['download', 'modInfo', 'nexus',
-                               'fileInfo', 'is_primary'], undefined),
-    modName,
-    logicalFileName: fileName,
-    changelog: truthy(nexusChangelog) ? { format: 'html', content: nexusChangelog } : undefined,
-    uploadedTimestamp: getSafe(input, ['download', 'modInfo', 'nexus',
-                                       'fileInfo', 'uploaded_timestamp'], undefined),
-    version: getSafe(input, ['download', 'modInfo', 'nexus', 'fileInfo', 'version'], undefined),
-    modVersion: getSafe(input, ['download', 'modInfo', 'nexus', 'modInfo', 'version'], undefined),
-    customFileName: fuzzRatio < 50 ? `${modName} - ${fileName}` : undefined,
+  let fetchPromise: Promise<{ modInfo: IModInfo, fileInfo: IFileInfo }> =
+    Promise.resolve(undefined);
+
+  const gameId = getSafe(input, ['download', 'modInfo', 'game'], undefined);
+  if ((getSafe(input, ['download', 'modInfo', 'nexus'], undefined) === undefined)
+      && (getSafe(input, ['download', 'modInfo', 'source'], undefined) === 'nexus')) {
+    const modId = getSafe(input, ['download', 'modInfo', 'ids', 'modId'], undefined);
+    const fileId = getSafe(input, ['download', 'modInfo', 'ids', 'fileId'], undefined);
+
+    if (!quick && truthy(gameId) && truthy(modId) && truthy(fileId)) {
+      const domain = nexusGameId(gameById(state, gameId), gameId);
+      fetchPromise = getInfo(nexus, domain, parseInt(modId, 10), parseInt(fileId, 10))
+        .catch(err => {
+          log('error', 'failed to fetch nexus info during mod install',
+            { gameId, modId, fileId, error: err.message });
+          return undefined;
+        });
+    }
+  }
+
+  return fetchPromise.then((info: { modInfo: IModInfo, fileInfo: IFileInfo }) => {
+    const nexusModInfo = info !== undefined
+      ? info.modInfo
+      : getSafe(input, ['download', 'modInfo', 'nexus', 'modInfo'], undefined);
+    const nexusFileInfo = info !== undefined
+      ? info.fileInfo
+      : getSafe(input, ['download', 'modInfo', 'nexus', 'fileInfo'], undefined);
+
+    const gameMode = activeGameId(state);
+    const category = remapCategory(state,
+                                   getSafe(nexusModInfo, ['category_id'], undefined),
+                                   gameId, gameMode);
+
+    return {
+      modId: getSafe(input, ['download', 'modInfo', 'nexus', 'ids', 'modId'], undefined),
+      fileId: getSafe(input, ['download', 'modInfo', 'nexus', 'ids', 'fileId'], undefined),
+      author: getSafe(nexusModInfo, ['author'], undefined),
+      category,
+      pictureUrl: getSafe(nexusModInfo, ['picture_url'], undefined),
+      description: getSafe(nexusModInfo, ['description'], undefined),
+      shortDescription: getSafe(nexusModInfo, ['summary'], undefined),
+      fileType: getSafe(nexusFileInfo, ['category_name'], undefined),
+      isPrimary: getSafe(nexusFileInfo, ['is_primary'], undefined),
+      modName,
+      logicalFileName: fileName,
+      changelog: truthy(nexusChangelog) ? { format: 'html', content: nexusChangelog } : undefined,
+      uploadedTimestamp: getSafe(nexusFileInfo, ['uploaded_timestamp'], undefined),
+      version: getSafe(nexusFileInfo, ['version'], undefined),
+      modVersion: getSafe(nexusModInfo, ['version'], undefined),
+      customFileName: fuzzRatio < 50 ? `${modName} - ${fileName}` : undefined,
+    };
   });
 }
 
@@ -905,8 +957,8 @@ function init(context: IExtensionContextExt): boolean {
     closable: false,
   });
 
-  context.registerAttributeExtractor(50, (input: any) => {
-    return Promise.resolve(processAttributes(input));
+  context.registerAttributeExtractor(50, (input: any, modPath: string) => {
+    return processAttributes(context.api.store.getState(), input, modPath === undefined);
   });
 
   context.registerAction('game-discovered-buttons', 120, 'nexus', {},

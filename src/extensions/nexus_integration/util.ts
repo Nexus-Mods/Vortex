@@ -29,6 +29,12 @@ const UPDATE_CHECK_DELAY = 60 * 60 * 1000;
 
 const app = remote !== undefined ? remote.app : appIn;
 
+export function getInfo(nexus: Nexus, domain: string, modId: number, fileId: number)
+                        : Promise<{ modInfo: IModInfo, fileInfo: IFileInfo }> {
+  return Promise.all([ nexus.getModInfo(modId, domain), nexus.getFileInfo(modId, fileId, domain) ])
+    .then(([ modInfo, fileInfo ]) => ({modInfo, fileInfo}));
+}
+
 export function startDownload(api: IExtensionApi, nexus: Nexus, nxmurl: string): Promise<string> {
   let url: NXMUrl;
 
@@ -38,7 +44,6 @@ export function startDownload(api: IExtensionApi, nexus: Nexus, nxmurl: string):
     return Promise.reject(err);
   }
 
-  let nexusModInfo: IModInfo;
   let nexusFileInfo: IFileInfo;
 
   const state = api.store.getState();
@@ -46,12 +51,8 @@ export function startDownload(api: IExtensionApi, nexus: Nexus, nxmurl: string):
   const gameId = convertNXMIdReverse(games, url.gameId);
   const pageId = nexusGameId(gameById(state, gameId), url.gameId);
 
-  return Promise.resolve(nexus.getModInfo(url.modId, pageId))
-    .then((modInfo: IModInfo) => {
-      nexusModInfo = modInfo;
-      return nexus.getFileInfo(url.modId, url.fileId, pageId);
-    })
-    .then((fileInfo: IFileInfo) => {
+  return getInfo(nexus, pageId, url.modId, url.fileId)
+    .then(({ modInfo, fileInfo }) => {
       nexusFileInfo = fileInfo;
       api.sendNotification({
         id: url.fileId.toString(),
@@ -64,14 +65,14 @@ export function startDownload(api: IExtensionApi, nexus: Nexus, nxmurl: string):
         api.events.emit('start-download', [nxmurl], {
           game: gameId,
           source: 'nexus',
-          name: nexusFileInfo.name,
+          name: fileInfo.name,
           nexus: {
             ids: { gameId: pageId, modId: url.modId, fileId: url.fileId },
-            modInfo: nexusModInfo,
-            fileInfo: nexusFileInfo,
+            modInfo,
+            fileInfo,
           },
         },
-        nexusFileInfo.file_name,
+        fileInfo.file_name,
         (err, downloadId) => (truthy(err)
           ? reject(contextify(err))
           : resolve(downloadId)));
