@@ -51,7 +51,7 @@ function gatherDependencies(rules: IRule[],
           lookupDetails = details;
 
           if ((details.length === 0) || (details[0].value === undefined)) {
-            throw new Error('reference not found: ' + rule.reference);
+            throw new Error('reference not found: ' + JSON.stringify(rule.reference));
           }
 
           return gatherDependencies(details[0].value.rules, api, recommendations);

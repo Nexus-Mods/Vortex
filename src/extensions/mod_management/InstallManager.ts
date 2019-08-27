@@ -323,14 +323,15 @@ class InstallManager {
             const mod: IMod = getSafe(state, ['persistent', 'mods', installGameId, modId],
                                       undefined);
 
-            this.installDependenciesImpl(modName(mod),
+            this.installDependenciesImpl(api, currentProfile,
+                                         mod.id, modName(mod),
                                          [].concat(modInfo.rules || [], mod.rules || []),
-                                         this.mGetInstallPath(installGameId),
-                                         currentProfile, api)
-              .then(() => this.installRecommendationsImpl(modName(mod),
+                                         this.mGetInstallPath(installGameId))
+              .then(() => this.installRecommendationsImpl(
+                                         api, currentProfile,
+                                         mod.id, modName(mod),
                                          [].concat(modInfo.rules || [], mod.rules || []),
-                                         this.mGetInstallPath(installGameId),
-                                         currentProfile, api));
+                                         this.mGetInstallPath(installGameId)));
           }
         }
         if (callback !== undefined) {
@@ -455,7 +456,7 @@ class InstallManager {
     }
 
     const installPath = this.mGetInstallPath(profile.gameId);
-    return this.installDependenciesImpl(modName(mod), mod.rules, installPath, profile, api);
+    return this.installDependenciesImpl(api, profile, mod.id, modName(mod), mod.rules, installPath);
   }
 
   public installRecommendations(api: IExtensionApi,
@@ -470,7 +471,8 @@ class InstallManager {
     }
 
     const installPath = this.mGetInstallPath(profile.gameId);
-    return this.installRecommendationsImpl(modName(mod), mod.rules, installPath, profile, api);
+    return this.installRecommendationsImpl(api, profile, mod.id, modName(mod),
+                                           mod.rules, installPath);
   }
 
   private isCritical(error: string): boolean {
@@ -1010,11 +1012,12 @@ class InstallManager {
     });
   }
 
-  private doInstallDependencies(dependencies: IDependency[],
+  private doInstallDependencies(api: IExtensionApi,
                                 profile: IProfile,
-                                api: IExtensionApi,
+                                sourceModId: string,
+                                dependencies: IDependency[],
                                 recommended: boolean): Promise<void> {
-    return Promise.mapSeries(dependencies, (dep: IDependency) => {
+    return Promise.map(dependencies, (dep: IDependency) => {
       let dlPromise = Promise.resolve(dep.download);
       if (dep.download === undefined) {
         if (getSafe(dep, ['lookupResults', 0, 'value', 'sourceURI'], '') === '') {
@@ -1032,7 +1035,7 @@ class InstallManager {
         .then((modId: string) => {
           const updatedRef: IModReference = { ...dep.reference };
           updatedRef.id = modId;
-          api.store.dispatch(addModRule(profile.gameId, modId, {
+          api.store.dispatch(addModRule(profile.gameId, sourceModId, {
             type: recommended ? 'recommends' : 'requires',
             reference: updatedRef,
           }));
@@ -1053,7 +1056,11 @@ class InstallManager {
             message: renderModReference(dep.reference, undefined),
           });
         });
-    })
+    // install/download up to 4 mods at once to allow Vortex to download one mod while another is
+    // being installed. Obviously Vortex isn't going to do the install for multiple mods at once
+    // and the downloads are going to be limited by the number of download threads but still the
+    // queue is going to stay utilized
+    }, { concurrency: 4 })
       .catch(ProcessCanceled, err => {
         // This indicates an error in the dependency rules so it's
         // adequate to show an error but not as a bug in Vortex
@@ -1068,11 +1075,12 @@ class InstallManager {
       .then(() => undefined);
   }
 
-  private installDependenciesImpl(name: string,
-                                  rules: IRule[],
-                                  installPath: string,
+  private installDependenciesImpl(api: IExtensionApi,
                                   profile: IProfile,
-                                  api: IExtensionApi)
+                                  modId: string,
+                                  name: string,
+                                  rules: IRule[],
+                                  installPath: string)
                                   : Promise<void> {
     const notificationId = `${installPath}_activity`;
     api.sendNotification({
@@ -1105,7 +1113,7 @@ class InstallManager {
             { label: 'Don\'t install' },
             {
               label: 'Install',
-              action: () => this.doInstallDependencies(dependencies, profile, api, false),
+              action: () => this.doInstallDependencies(api, profile, modId, dependencies, false),
             },
           ])).then(() => Promise.resolve());
       })
@@ -1115,12 +1123,13 @@ class InstallManager {
       });
   }
 
-  private installRecommendationsImpl(
-    name: string,
-    rules: IRule[],
-    installPath: string,
-    profile: IProfile,
-    api: IExtensionApi): Promise<void> {
+  private installRecommendationsImpl(api: IExtensionApi,
+                                     profile: IProfile,
+                                     modId: string,
+                                     name: string,
+                                     rules: IRule[],
+                                     installPath: string)
+                                     : Promise<void> {
     const notificationId = `${installPath}_activity`;
     api.sendNotification({
       id: notificationId,
@@ -1181,9 +1190,10 @@ class InstallManager {
                 .filter(key => result.input[key]));
 
               this.doInstallDependencies(
-                dependencies.filter((dep, idx) => selected.has(idx.toString())),
-                profile,
                 api,
+                profile,
+                modId,
+                dependencies.filter((dep, idx) => selected.has(idx.toString())),
                 false);
             }
           });
