@@ -230,7 +230,14 @@ export interface IArchiveHandler {
 export type ArchiveHandlerCreator =
   (fileName: string, options: IArchiveOptions) => Promise<IArchiveHandler>;
 
-export type AttributeExtractor = (modInfo: any, modPath: string) => Promise<{ [key: string]: any }>;
+/**
+ * callback used to extract download information into mod info.
+ * This also gets called a lot when displaying uninstalled mods in the mod list
+ * (the modPath is going to be undefined) so when that flag is set, the extractor should
+ * not be accessing the disk or network or do any complex coomputation
+ */
+export type AttributeExtractor = (modInfo: any, modPath: string) =>
+  Promise<{ [key: string]: any }>;
 
 export interface IGameDetail {
   title: string;

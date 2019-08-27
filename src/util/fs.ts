@@ -649,7 +649,7 @@ export function ensureDirWritableAsync(dirPath: string,
       // directory isn't writeable instead of EPERM. More weirdly, this seems to happen
       // only on startup.
       if (['EPERM', 'EBADF', 'UNKNOWN'].indexOf(err.code) !== -1) {
-        return confirm()
+        return PromiseBB.resolve(confirm())
           .then(() => {
             const userId = getUserId();
             return elevated((ipcPath, req: NodeRequireFunction) => {
