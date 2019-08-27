@@ -38,12 +38,12 @@ function modName(mod: IMod, options?: INameOptions): string {
 }
 
 export function renderModReference(ref: IModReference, mod: IMod) {
-  if (ref.description !== undefined) {
-    return ref.description;
-  }
-
   if ((ref.id !== undefined) && (mod !== undefined)) {
     return modName(mod, { version: true });
+  }
+
+  if (ref.description !== undefined) {
+    return ref.description;
   }
 
   if ((ref.logicalFileName === undefined) && (ref.fileExpression === undefined)) {

@@ -35,7 +35,9 @@ export interface IMod {
 
 export interface IModReference extends IReference {
   id?: string;
-  // optional parameter used to display the reference in a user-friendly way if available
+  // optional parameter used to display the reference in a user-friendly way if available.
+  // This is only used when the mod isn't installed, otherwise we always try to use the name
+  // the user chose for the mod.
   description?: string;
 }
 

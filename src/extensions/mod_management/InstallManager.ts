@@ -27,7 +27,7 @@ import {addModRule, setFileOverride, setModAttribute, setModType} from './action
 import {IDependency} from './types/IDependency';
 import { IInstallContext } from './types/IInstallContext';
 import { IInstallResult, IInstruction } from './types/IInstallResult';
-import { IFileListItem, IMod } from './types/IMod';
+import { IFileListItem, IMod, IModReference } from './types/IMod';
 import { IModInstaller, ISupportedInstaller } from './types/IModInstaller';
 import { InstallFunc } from './types/InstallFunc';
 import { ISupportedResult, TestSupported } from './types/TestSupported';
@@ -138,6 +138,8 @@ class InstallManager {
    * @param {Function} callback callback once this is finished
    * @param {boolean} forceGameId set if the user has already been queried which game
    *                              to install the mod for
+   * @param {IFileListItem[]} fileList if set, the listed files (and only those) get extracted
+   *                                   directly, ignoring any installer scripts
    */
   public install(
     archiveId: string,
@@ -191,11 +193,15 @@ class InstallManager {
         }
         installContext = new InstallContext(gameId, api);
         installContext.startIndicator(baseName);
+        let dlGame: string | string[] = getSafe(fullInfo, ['download', 'game'], gameId);
+        if (Array.isArray(dlGame)) {
+          dlGame = dlGame[0];
+        }
         return api.lookupModMeta({
           filePath: archivePath,
           fileMD5: archiveMD5,
           fileSize: archiveSize,
-          gameId,
+          gameId: dlGame as string,
         });
       })
       .then((modInfo: ILookupResult[]) => {
@@ -1006,7 +1012,8 @@ class InstallManager {
 
   private doInstallDependencies(dependencies: IDependency[],
                                 profile: IProfile,
-                                api: IExtensionApi): Promise<void> {
+                                api: IExtensionApi,
+                                recommended: boolean): Promise<void> {
     return Promise.mapSeries(dependencies, (dep: IDependency) => {
       let dlPromise = Promise.resolve(dep.download);
       if (dep.download === undefined) {
@@ -1022,7 +1029,15 @@ class InstallManager {
       return dlPromise
         .then((downloadId: string) =>
           this.installModAsync(dep.reference, api, downloadId, dep.fileList))
-        .then((modId: string) => api.store.dispatch(setModEnabled(profile.id, modId, true)))
+        .then((modId: string) => {
+          const updatedRef: IModReference = { ...dep.reference };
+          updatedRef.id = modId;
+          api.store.dispatch(addModRule(profile.gameId, modId, {
+            type: recommended ? 'recommends' : 'requires',
+            reference: updatedRef,
+          }));
+          api.store.dispatch(setModEnabled(profile.id, modId, true));
+        })
         // don't cancel the whole process if one dependency fails to install
         .catch(ProcessCanceled, err => {
           api.showErrorNotification('Failed to install dependency', err.message, {
@@ -1090,7 +1105,7 @@ class InstallManager {
             { label: 'Don\'t install' },
             {
               label: 'Install',
-              action: () => this.doInstallDependencies(dependencies, profile, api),
+              action: () => this.doInstallDependencies(dependencies, profile, api, false),
             },
           ])).then(() => Promise.resolve());
       })
@@ -1166,7 +1181,10 @@ class InstallManager {
                 .filter(key => result.input[key]));
 
               this.doInstallDependencies(
-                dependencies.filter((dep, idx) => selected.has(idx.toString())), profile, api);
+                dependencies.filter((dep, idx) => selected.has(idx.toString())),
+                profile,
+                api,
+                false);
             }
           });
       })

@@ -13,7 +13,7 @@ export interface IInstruction {
   destination?: string;
   section?: string;
   key?: string;
-  value?: string;
+  value?: any;
   submoduleType?: string;
   data?: Buffer;
   rule?: IRule;
