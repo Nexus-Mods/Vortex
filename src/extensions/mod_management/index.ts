@@ -865,7 +865,11 @@ function once(api: IExtensionApi) {
       api.showErrorNotification('Failed to install dependencies', 'Invalid profile');
     }
 
-    Promise.map(modIds, modId => installManager.installDependencies(api, profile, modId))
+    Promise.map(modIds, modId => {
+      api.events.emit('will-install-dependencies', profileId, modId, false);
+      return installManager.installDependencies(api, profile, modId)
+        .then(() => api.events.emit('did-install-dependencies', profileId, modId, false));
+    })
       .catch(err => api.showErrorNotification('Failed to install dependencies', err));
   });
 
@@ -876,7 +880,11 @@ function once(api: IExtensionApi) {
       api.showErrorNotification('Failed to install recommendations', 'Invalid profile');
     }
 
-    Promise.map(modIds, modId => installManager.installRecommendations(api, profile, modId))
+    Promise.map(modIds, modId => {
+      api.events.emit('will-install-dependencies', profileId, modId, true);
+      return installManager.installRecommendations(api, profile, modId)
+        .then(() => api.events.emit('did-install-dependencies', profileId, modId, true));
+    })
       .catch(err => api.showErrorNotification('Failed to install recommendations', err));
   });
 
