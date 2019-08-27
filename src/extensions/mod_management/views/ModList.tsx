@@ -954,9 +954,11 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       ];
 
     onShowDialog('question', 'Confirm removal', {
-      message: t('Do you really want to remove this mod?',
-        { count: filteredIds.length, replace: { count: filteredIds.length } })
-        + '\n' + modNames.join('\n'),
+      text: t('Do you really want to remove this mod?', {
+        count: filteredIds.length,
+        replace: { count: filteredIds.length },
+      }),
+      message: modNames.join('\n'),
       checkboxes,
     }, [ { label: 'Cancel' }, { label: 'Remove' } ])
       .then((result: IDialogResult) => {

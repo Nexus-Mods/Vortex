@@ -24,7 +24,7 @@ import modName, { renderModReference } from '../mod_management/util/modName';
 import { setModEnabled } from '../profile_management/actions/profiles';
 
 import {addModRule, setFileOverride, setModAttribute, setModType} from './actions/mods';
-import {IDependency} from './types/IDependency';
+import {Dependency, IDependency, IDependencyError} from './types/IDependency';
 import { IInstallContext } from './types/IInstallContext';
 import { IInstallResult, IInstruction } from './types/IInstallResult';
 import { IFileListItem, IMod, IModReference } from './types/IMod';
@@ -1089,33 +1089,58 @@ class InstallManager {
       message: 'Checking dependencies',
     });
     return gatherDependencies(rules, api, false)
-      .then((dependencies: IDependency[]) => {
+      .then((dependencies: Dependency[]) => {
         api.dismissNotification(notificationId);
 
         if (dependencies.length === 0) {
           return Promise.resolve();
         }
 
+        interface IDependencySplit { success: IDependency[]; error: IDependencyError[]; }
+        const { success, error } = dependencies.reduce(
+          (prev: IDependencySplit, dep: Dependency) => {
+            if (dep['error'] !== undefined) {
+              prev.error.push(dep as IDependencyError);
+            } else {
+              prev.success.push(dep as IDependency);
+            }
+            return prev;
+          }, { success: [], error: [] });
+
         const requiredDownloads =
-          dependencies.reduce((prev: number, current: IDependency) => {
+          success.reduce((prev: number, current: IDependency) => {
             return prev + (current.download ? 0 : 1);
           }, 0);
 
-        const text = '{{modName}} has unresolved dependencies. {{count}} mods have to be '
-                   + 'installed, {{dlCount}} of them have to be downloaded first.';
+        let bbcode = '';
+
+        if (success.length > 0) {
+          bbcode += '{{modName}} has unresolved dependencies. {{count}} mods have to be '
+                  + 'installed, {{dlCount}} of them have to be downloaded first.<br/><br/>';
+        }
+
+        if (error.length > 0) {
+          bbcode += '[color=red]'
+            + '{{modName}} has unsolved dependencies that could not be found automatically. '
+            + 'Please install them manually.'
+            + '[/color]';
+        }
+
+        const actions = success.length > 0
+          ? [
+            { label: 'Don\'t install' },
+            { label: 'Install',
+              action: () => this.doInstallDependencies(api, profile, modId, success, false),
+            },
+          ]
+          : [ { label: 'Close' } ];
 
         return api.store.dispatch(
-          showDialog('question', 'Install Dependencies', { text, parameters: {
+          showDialog('question', 'Install Dependencies', { bbcode, parameters: {
             modName: name,
-            count: dependencies.length,
+            count: success.length,
             dlCount: requiredDownloads,
-          } }, [
-            { label: 'Don\'t install' },
-            {
-              label: 'Install',
-              action: () => this.doInstallDependencies(api, profile, modId, dependencies, false),
-            },
-          ])).then(() => Promise.resolve());
+          } }, actions)).then(() => Promise.resolve());
       })
       .catch((err) => {
         api.dismissNotification(notificationId);
@@ -1137,22 +1162,44 @@ class InstallManager {
       message: 'Checking dependencies',
     });
     return gatherDependencies(rules, api, true)
-      .then((dependencies: IDependency[]) => {
+      .then((dependencies: Dependency[]) => {
         api.dismissNotification(notificationId);
 
         if (dependencies.length === 0) {
           return Promise.resolve();
         }
 
+        interface IDependencySplit { success: IDependency[]; error: IDependencyError[]; }
+        const { success, error } = dependencies.reduce(
+          (prev: IDependencySplit, dep: Dependency) => {
+            if (dep['error'] !== undefined) {
+              prev.error.push(dep as IDependencyError);
+            } else {
+              prev.success.push(dep as IDependency);
+            }
+            return prev;
+          }, { success: [], error: [] });
+
         const requiredDownloads =
-          dependencies.reduce((prev: number, current: IDependency) => {
+          success.reduce((prev: number, current: IDependency) => {
             return prev + (current.download ? 0 : 1);
           }, 0);
 
-        const text = '{{modName}} recommends the installation of additional mods. '
-                   + 'Please use the checkboxes below to select which to install.';
+        let bbcode = '';
 
-        const checkboxes: ICheckbox[] = dependencies.map((dep, idx) => {
+        if (success.length > 0) {
+          bbcode += '{{modName}} recommends the installation of additional mods. '
+                   + 'Please use the checkboxes below to select which to install.<br/><br/>';
+        }
+
+        if (error.length > 0) {
+          bbcode += '[color=red]'
+            + '{{modName}} has unsolved dependencies that could not be found automatically. '
+            + 'Please install them manually.'
+            + '[/color]';
+        }
+
+        const checkboxes: ICheckbox[] = success.map((dep, idx) => {
           let depName: string;
           if (dep.lookupResults.length > 0) {
             depName = dep.lookupResults[0].value.fileName;
@@ -1172,19 +1219,23 @@ class InstallManager {
           };
         });
 
+        const actions = success.length > 0
+          ? [
+            { label: 'Don\'t install' },
+            { label: 'Install' },
+          ]
+          : [ { label: 'Close' } ];
+
         return api.store.dispatch(
           showDialog('question', 'Install Recommendations', {
-            text,
+            bbcode,
             checkboxes,
             parameters: {
               modName: name,
               count: dependencies.length,
               dlCount: requiredDownloads,
             },
-          }, [
-            { label: 'Don\'t install' },
-            { label: 'Install' },
-          ])).then(result => {
+          }, actions)).then(result => {
             if (result.action === 'Install') {
               const selected = new Set(Object.keys(result.input)
                 .filter(key => result.input[key]));
@@ -1193,7 +1244,7 @@ class InstallManager {
                 api,
                 profile,
                 modId,
-                dependencies.filter((dep, idx) => selected.has(idx.toString())),
+                success.filter((dep, idx) => selected.has(idx.toString())),
                 false);
             }
           });

@@ -7,3 +7,9 @@ export interface IDependency {
   lookupResults: ILookupResult[];
   fileList?: IFileListItem[];
 }
+
+export interface IDependencyError {
+  error: string;
+}
+
+export type Dependency = IDependency | IDependencyError;
