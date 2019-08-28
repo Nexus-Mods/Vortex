@@ -5,6 +5,7 @@ import { deleteOrNop, getSafe,
 
 import * as actions from '../actions/mods';
 import {IMod} from '../types/IMod';
+import { referenceEqual } from '../util/testModReference';
 
 import * as _ from 'lodash';
 import { IRule } from 'modmeta-db';
@@ -79,21 +80,25 @@ export const modsReducer: IReducerSpec = {
       }
       const filteredRef = _.omitBy(rule.reference, _.isUndefined);
       let idx = -1;
-      if (['after', 'before'].indexOf(rule.type) !== -1) {
-        idx = getSafe(state, [gameId, modId, 'rules'], [])
-          .findIndex((iterRule: IRule) => {
-            const typeMatch = ['after', 'before'].indexOf(rule.type) !== -1;
-            const filteredIter = _.omitBy(iterRule.reference, _.isUndefined);
-            return typeMatch && _.isEqual(filteredRef, filteredIter);
-          });
-      } else {
-        idx = getSafe(state, [gameId, modId, 'rules'], [])
-          .findIndex((iterRule: IRule) => {
-            const typeMatch = rule.type === iterRule.type;
-            const filteredIter = _.omitBy(iterRule.reference, _.isUndefined);
-            return typeMatch && _.isEqual(filteredRef, filteredIter);
-          });
+
+      // mutually exclusive types replace each other, so if we add a "before"
+      // rule we first remove any existing "after" rule with the same reference
+      const typeGroups = [
+        ['after', 'before'],
+        ['requires', 'recommends'],
+      ];
+      let group = typeGroups.find(grp => grp.indexOf(rule.type) !== -1);
+      if (group === undefined) {
+        group = [rule.type];
       }
+
+      idx = getSafe(state, [gameId, modId, 'rules'], [])
+        .findIndex((iterRule: IRule) => {
+          const typeMatch = group.indexOf(rule.type) !== -1;
+          const filteredIter = _.omitBy(iterRule.reference, _.isUndefined);
+          return typeMatch && referenceEqual(filteredRef, filteredIter);
+        });
+
       if (idx !== -1) {
         return setSafe(state, [gameId, modId, 'rules', idx], rule);
       } else {

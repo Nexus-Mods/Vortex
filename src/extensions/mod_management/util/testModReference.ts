@@ -2,6 +2,7 @@ import { truthy } from '../../../util/util';
 
 import { IMod, IModReference } from '../types/IMod';
 
+import * as _ from 'lodash';
 import * as minimatch from 'minimatch';
 import * as path from 'path';
 import * as semver from 'semver';
@@ -15,6 +16,22 @@ export interface IModLookupInfo {
   logicalFileName?: string;
   customFileName?: string;
   version: string;
+}
+
+// test if the reference is by id only, meaning it is only useful in the current setup
+function idOnly(ref: IModReference) {
+  return (ref.id !== undefined) && (Object.keys(ref).length === 1);
+}
+
+// these are only the "important" fields of the reference, not the "helper" fields
+const REFERENCE_FIELDS = ['fileMD5', 'logicalFileName', 'fileExpression', 'versionMatch'];
+export function referenceEqual(lhs: IModReference, rhs: IModReference): boolean {
+  if (idOnly(lhs) || idOnly(rhs)) {
+    return lhs.id === rhs.id;
+  }
+  const lRef = _.pick(lhs, REFERENCE_FIELDS);
+  const rRef = _.pick(rhs, REFERENCE_FIELDS);
+  return _.isEqual(_.pick(lhs, REFERENCE_FIELDS), _.pick(rhs, REFERENCE_FIELDS));
 }
 
 function testRef(mod: IModLookupInfo, modId: string, ref: IModReference): boolean {
