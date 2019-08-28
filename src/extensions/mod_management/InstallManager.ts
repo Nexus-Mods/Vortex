@@ -994,7 +994,7 @@ class InstallManager {
       if (!api.events.emit('start-download', [lookupResult.sourceURI], {
         game: lookupResult.gameId,
         source: lookupResult.source,
-        name: lookupResult.fileName,
+        name: lookupResult.logicalFileName,
         ids: {
           modId: getSafe(lookupResult, ['details', 'modId'], undefined),
           fileId: getSafe(lookupResult, ['details', 'fileId'], undefined),
