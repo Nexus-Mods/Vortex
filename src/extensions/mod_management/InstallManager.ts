@@ -1129,9 +1129,7 @@ class InstallManager {
         const actions = success.length > 0
           ? [
             { label: 'Don\'t install' },
-            { label: 'Install',
-              action: () => this.doInstallDependencies(api, profile, modId, success, false),
-            },
+            { label: 'Install' },
           ]
           : [ { label: 'Close' } ];
 
@@ -1140,7 +1138,13 @@ class InstallManager {
             modName: name,
             count: success.length,
             dlCount: requiredDownloads,
-          } }, actions)).then(() => Promise.resolve());
+          } }, actions)).then(result => {
+            if (result.action === 'Install') {
+              return this.doInstallDependencies(api, profile, modId, success, false);
+            } else {
+              return Promise.resolve();
+            }
+          });
       })
       .catch((err) => {
         api.dismissNotification(notificationId);
@@ -1240,12 +1244,14 @@ class InstallManager {
               const selected = new Set(Object.keys(result.input)
                 .filter(key => result.input[key]));
 
-              this.doInstallDependencies(
+              return this.doInstallDependencies(
                 api,
                 profile,
                 modId,
                 success.filter((dep, idx) => selected.has(idx.toString())),
                 false);
+            } else {
+              return Promise.resolve();
             }
           });
       })
