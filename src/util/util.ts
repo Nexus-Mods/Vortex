@@ -346,6 +346,12 @@ export function isFilenameValid(input: string): boolean {
   if (RESERVED_NAMES.has(path.basename(input, path.extname(input)).toUpperCase())) {
     return false;
   }
+  if ((process.platform === 'win32')
+    && (input.endsWith(' ') || input.endsWith('.'))) {
+    // Although Windows' underlying file system may support
+    //  filenames/dirnames ending with '.' and ' ', the win shell and UI does not.
+    return false;
+  }
   return input.search(INVALID_FILENAME_RE) < 0;
 }
 

@@ -12,7 +12,7 @@ import { log } from '../../util/log';
 import { prettifyNodeErrorMessage } from '../../util/message';
 import { activeProfile, downloadPathForGame } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
-import { setdefault, truthy } from '../../util/util';
+import { isPathValid, setdefault, truthy } from '../../util/util';
 import walk from '../../util/walk';
 
 import { IDownload } from '../download_management/types/IDownload';
@@ -25,7 +25,7 @@ import { setModEnabled } from '../profile_management/actions/profiles';
 import {addModRule, setFileOverride, setModAttribute, setModType} from './actions/mods';
 import {IDependency} from './types/IDependency';
 import { IInstallContext } from './types/IInstallContext';
-import { IInstallResult, IInstruction } from './types/IInstallResult';
+import { IInstallResult, IInstruction, InstructionType } from './types/IInstallResult';
 import {IMod} from './types/IMod';
 import { IModInstaller } from './types/IModInstaller';
 import { InstallFunc } from './types/InstallFunc';
@@ -63,6 +63,11 @@ interface IReplaceChoice {
 interface ISupportedInstaller {
   installer: IModInstaller;
   requiredFiles: string[];
+}
+
+interface IInvalidInstruction {
+  type: InstructionType;
+  error: string;
 }
 
 class InstructionGroups {
@@ -589,6 +594,20 @@ class InstallManager {
     });
   }
 
+  private validateInstructions(instructions: IInstruction[]): IInvalidInstruction[] {
+    // Validate the ungrouped instructions and return errors (if any)
+    const invalidDestinationErrors: IInvalidInstruction[] = instructions.filter(instr =>
+      (!!instr.destination && !isPathValid(instr.destination)))
+      .map(instr => {
+        return {
+          type: instr.type,
+          error: `invalid destination path: "${instr.destination}"`,
+        };
+      });
+
+    return [].concat(invalidDestinationErrors);
+  }
+
   private transformInstructions(input: IInstruction[]): InstructionGroups {
     return input.reduce((prev, value) => {
       if (truthy(value) && (prev[value.type] !== undefined)) {
@@ -750,6 +769,28 @@ class InstallManager {
     if ((result.instructions === undefined) ||
         (result.instructions.length === 0)) {
       return Promise.reject(new ProcessCanceled('Empty archive or no options selected'));
+    }
+
+    const invalidInstructions = this.validateInstructions(result.instructions);
+    if (invalidInstructions.length > 0) {
+      const game = getGame(gameId);
+      const allowReport = (game.contributed === undefined);
+      const error = (allowReport)
+        ? 'Invalid installer instructions found for "{{ modId }}".'
+        : 'Invalid installer instructions found for "{{ modId }}". Please inform '
+          + 'the game extension\'s developer - "{{ contributor }}", or the mod author.';
+      api.showErrorNotification('Invalid mod installer instructions', {
+        invalid: '\n' + invalidInstructions.map(inval =>
+          `(${inval.type}) - ${inval.error}`).join('\n'),
+        message: error,
+      }, {
+        replace: {
+          modId,
+          contributor: game.contributed,
+        },
+        allowReport,
+      });
+      return Promise.reject(new ProcessCanceled('Invalid installer instructions'));
     }
 
     const instructionGroups = this.transformInstructions(result.instructions);
