@@ -1,0 +1,5 @@
+﻿{
+  "Translate": "翻译",
+  "Create": "创建",
+  "When you create a language here it will be created in {{ langPath }}. As long as the language is active, missing translations will be added to the translation files automatically as you come across them inside Vortex. When you edit those files, changes will become visible immediately.": "当您在这里创建语言时，翻译文件将在 {{ langPath }} 中创建。当这个语言被使用时，只要您在Vortex内遇到缺少的翻译，本插件会自动将缺少的翻译添加到翻译文件中。当您编辑翻译文件时，大部分的更改将会在Vortex中立即可见。"
+}

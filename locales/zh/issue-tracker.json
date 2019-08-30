@@ -1,0 +1,13 @@
+﻿{
+  "Refresh Issues": "刷新",
+  "Your issues": "您的问题",
+  "No reported issues": "没有回复的问题",
+  "Lucky you...": "祝您好运...",
+  "Feedback required": "需要回复",
+  "Closed": "已关闭",
+  "{{completion}}%, planned for {{date}}": "{{completion}}%, 计划于 {{date}}",
+  "Milestone: {{title}} ({{state}})": "里程碑： {{title}} ({{state}})",
+  "Open": "开放的",
+  "{{ count }} comments": "{{ count }} 评论",
+  "Bug": "漏洞"
+}
