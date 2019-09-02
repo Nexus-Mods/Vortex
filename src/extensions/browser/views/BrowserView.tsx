@@ -1,6 +1,8 @@
+import { addNotification } from '../../../actions';
 import Spinner from '../../../controls/Spinner';
 import { IconButton } from '../../../controls/TooltipControls';
 import Webview from '../../../controls/Webview';
+import { INotification } from '../../../types/INotification';
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import Debouncer from '../../../util/Debouncer';
@@ -8,6 +10,7 @@ import Debouncer from '../../../util/Debouncer';
 import { closeBrowser } from '../actions';
 
 import * as Promise from 'bluebird';
+import {  WebviewTag } from 'electron';
 import * as React from 'react';
 import { Breadcrumb, Button, Modal } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
@@ -15,16 +18,22 @@ import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import * as nodeUrl from 'url';
 
+export type SubscriptionResult = 'close' | 'continue' | 'ignore';
+
 export interface IBaseProps {
   onHide: () => void;
+  onEvent: (subscriber: string, eventId: string, value: any) => SubscriptionResult;
 }
 
 interface IConnectedProps {
   url: string;
+  subscriber: string;
+  instructions: string;
 }
 
 interface IActionProps {
   onClose: () => void;
+  onNotification: (notification: INotification) => void;
 }
 
 interface IComponentState {
@@ -39,8 +48,9 @@ type IProps = IBaseProps & IConnectedProps & IActionProps;
 
 class BrowserView extends ComponentEx<IProps, IComponentState> {
   private mRef: Webview = null;
-  private mWebView: Element;
-  private mCallbacks: { [event: string]: () => void };
+  private mWebView: WebviewTag;
+  private mCallbacks: { [event: string]: (...args: any[]) => void };
+  private mSessionCallbacks: { [event: string]: (...args: any[]) => void };
   private mLoadingDebouncer: Debouncer;
 
   constructor(props: IProps) {
@@ -58,11 +68,9 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
         this.nextState.loading = loading;
       }
       return Promise.resolve();
-    }, 500, false);
+    }, 100, false);
 
     this.mCallbacks = {
-      'did-start-loading': () => this.mLoadingDebouncer.schedule(undefined, true),
-      'did-stop-loading': () => this.mLoadingDebouncer.runNow(undefined, false),
       'did-finish-load': () => {
         const newUrl: string = (this.mWebView as any).getURL();
         this.nextState.url = newUrl;
@@ -89,17 +97,26 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
+    const { instructions } = this.props;
     const { confirmed, loading, url } = this.state;
     return (
       <Modal id='browser-dialog' show={url !== undefined} onHide={this.close}>
         <Modal.Header>
           {this.renderNav()}{this.renderUrl(url)}
+          {loading ? <Spinner /> : null}
         </Modal.Header>
         <Modal.Body>
+          {(instructions !== undefined) ? <p>{instructions}</p> : null}
           {confirmed
-            ? (<Webview style={{ height: '100%' }} src={url} ref={this.setRef} />)
+            ? (
+              <Webview
+                id='browser-webview'
+                src={url}
+                ref={this.setRef}
+                onLoading={this.loading}
+              />
+            )
             : this.renderConfirm()}
-          {loading ? this.renderLoadingOverlay() : null}
         </Modal.Body>
       </Modal>
     );
@@ -165,7 +182,15 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private setRef = (ref: Webview) => {
+  private loading = (loading: boolean) => {
+    if (loading) {
+      this.mLoadingDebouncer.schedule(undefined, true);
+    } else {
+      this.mLoadingDebouncer.runNow(undefined, false);
+    }
+  }
+
+  private setRef = (ref: any) => {
     this.mRef = ref;
     if (ref !== null) {
       this.mWebView = ReactDOM.findDOMNode(this.mRef) as any;
@@ -207,12 +232,17 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
   }
 
   private close = () => {
-    this.props.onClose();
+    const { onClose, onEvent, subscriber } = this.props;
+    if (onEvent(subscriber, 'close', null) !== 'ignore') {
+      onClose();
+    }
   }
 }
 
 function mapStateToProps(state: IState): IConnectedProps {
   return {
+    subscriber: state.session.browser.subscriber,
+    instructions: state.session.browser.instructions,
     url: state.session.browser.url,
   };
 }
@@ -220,6 +250,7 @@ function mapStateToProps(state: IState): IConnectedProps {
 function mapDispatchToProps(dispatch: ThunkDispatch<IState, null, Redux.Action>): IActionProps {
   return {
     onClose: () => dispatch(closeBrowser()),
+    onNotification: (notification: INotification) => dispatch(addNotification(notification)),
   };
 }
 

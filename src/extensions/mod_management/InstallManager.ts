@@ -26,7 +26,7 @@ import {addModRule, setFileOverride, setModAttribute, setModType} from './action
 import {IDependency} from './types/IDependency';
 import { IInstallContext } from './types/IInstallContext';
 import { IInstallResult, IInstruction, InstructionType } from './types/IInstallResult';
-import {IMod} from './types/IMod';
+import { IMod } from './types/IMod';
 import { IModInstaller } from './types/IModInstaller';
 import { InstallFunc } from './types/InstallFunc';
 import { ISupportedResult, TestSupported } from './types/TestSupported';
@@ -1051,12 +1051,88 @@ class InstallManager {
       .then(() => undefined);
   }
 
-  private installDependencies(
-    rules: IRule[],
-    installPath: string,
-    profile: IProfile,
-    installContext: InstallContext,
-    api: IExtensionApi): Promise<void> {
+  private installDependencies(rules: IRule[],
+                              installPath: string,
+                              profile: IProfile,
+                              installContext: InstallContext,
+                              api: IExtensionApi): Promise<void> {
+    const notificationId = `${installPath}_activity`;
+    api.sendNotification({
+      id: notificationId,
+      type: 'activity',
+      message: 'Checking dependencies',
+    });
+    return gatherDependencies(rules, api)
+      .then((dependencies: IDependency[]) => {
+        api.dismissNotification(notificationId);
+
+        if (dependencies.length === 0) {
+          return Promise.resolve();
+        }
+
+        interface IDependencySplit { success: IDependency[]; error: IDependencyError[]; }
+        const { success, error } = dependencies.reduce(
+          (prev: IDependencySplit, dep: Dependency) => {
+            if (dep['error'] !== undefined) {
+              prev.error.push(dep as IDependencyError);
+            } else {
+              prev.success.push(dep as IDependency);
+            }
+            return prev;
+          }, { success: [], error: [] });
+
+        const requiredDownloads =
+          success.reduce((prev: number, current: IDependency) => {
+            return prev + (current.download ? 0 : 1);
+          }, 0);
+
+        let bbcode = '';
+
+        if (success.length > 0) {
+          bbcode += '{{modName}} has unresolved dependencies. {{count}} mods have to be '
+                  + 'installed, {{dlCount}} of them have to be downloaded first.<br/><br/>';
+        }
+
+        if (error.length > 0) {
+          bbcode += '[color=red]'
+            + '{{modName}} has unsolved dependencies that could not be found automatically. '
+            + 'Please install them manually.'
+            + '[/color]';
+        }
+
+        const actions = success.length > 0
+          ? [
+            { label: 'Don\'t install' },
+            { label: 'Install' },
+          ]
+          : [ { label: 'Close' } ];
+
+        return api.store.dispatch(
+          showDialog('question', 'Install Dependencies', { bbcode, parameters: {
+            modName: name,
+            count: success.length,
+            dlCount: requiredDownloads,
+          } }, actions)).then(result => {
+            if (result.action === 'Install') {
+              return this.doInstallDependencies(api, profile, modId, success, false);
+            } else {
+              return Promise.resolve();
+            }
+          });
+      })
+      .catch((err) => {
+        api.dismissNotification(notificationId);
+        api.showErrorNotification('Failed to check dependencies', err);
+      });
+  }
+
+  private installRecommendationsImpl(api: IExtensionApi,
+                                     profile: IProfile,
+                                     modId: string,
+                                     name: string,
+                                     rules: IRule[],
+                                     installPath: string)
+                                     : Promise<void> {
     const notificationId = `${installPath}_activity`;
     api.sendNotification({
       id: notificationId,
