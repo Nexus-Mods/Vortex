@@ -247,6 +247,7 @@
     "uuid": "^3.3.2",
     "vortex-parse-ini": "Nexus-Mods/vortex-parse-ini",
     "vortex-run": "file:src/util/vortex-run",
+    "vortexmt": "Nexus-Mods/node-vortexmt",
     "wholocks": "Nexus-Mods/node-wholocks",
     "winapi-bindings": "Nexus-Mods/node-winapi-bindings",
     "winston": "^2.4.3",
