@@ -10938,6 +10938,14 @@ vortex-parse-ini@Nexus-Mods/vortex-parse-ini:
 "vortex-run@file:src/util/vortex-run":
   version "0.0.11"
 
+vortexmt@Nexus-Mods/node-vortexmt:
+  version "0.1.1"
+  resolved "https://codeload.github.com/Nexus-Mods/node-vortexmt/tar.gz/d1206a175d54698bbc08d699ffbc0010e0914619"
+  dependencies:
+    autogypi "^0.2.2"
+    nan "^2.14.0"
+    node-gyp "^5.0.0"
+
 w3c-hr-time@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/w3c-hr-time/-/w3c-hr-time-1.0.1.tgz#82ac2bff63d950ea9e3189a58a65625fedf19045"

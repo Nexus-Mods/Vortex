@@ -21,7 +21,7 @@ import {
   setDownloadHash,
 } from './actions/state';
 import {IChunk} from './types/IChunk';
-import {IDownload} from './types/IDownload';
+import {IDownload, IDownloadOptions} from './types/IDownload';
 import { IDownloadResult } from './types/IDownloadResult';
 import { ProgressCallback } from './types/ProgressCallback';
 import getDownloadGames from './util/getDownloadGames';
@@ -124,8 +124,10 @@ export class DownloadObserver {
 
     const processCB = this.genProgressCB(id);
 
+    const extraInfo = this.getExtraDlOptions(modInfo);
+
     return withContext(`Downloading "${fileName || urls[0]}"`, urls[0],
-                       () => this.mManager.enqueue(id, urls, fileName, processCB, downloadPath)
+      () => this.mManager.enqueue(id, urls, fileName, processCB, downloadPath, extraInfo)
         .then((res: IDownloadResult) => {
           log('debug', 'download finished', { file: res.filePath });
           this.handleDownloadFinished(id, callback, res);
@@ -297,10 +299,12 @@ export class DownloadObserver {
         const fullPath = path.join(downloadPath, download.localPath);
         this.mApi.store.dispatch(pauseDownload(downloadId, false, undefined));
 
+        const extraInfo = this.getExtraDlOptions(download.modInfo);
+
         withContext(`Resuming "${download.localPath}"`, download.urls[0], () =>
           this.mManager.resume(downloadId, fullPath, download.urls,
             download.received, download.size, download.startTime, download.chunks,
-            this.genProgressCB(downloadId))
+            this.genProgressCB(downloadId), extraInfo)
             .then(res => {
               log('debug', 'download finished (resumed)', { file: res.filePath });
               this.handleDownloadFinished(downloadId, callback, res);
@@ -344,6 +348,12 @@ export class DownloadObserver {
         });
       }
     }
+  }
+
+  private getExtraDlOptions(modInfo: any): IDownloadOptions {
+    return {
+      referer: modInfo.referer,
+    };
   }
 }
 

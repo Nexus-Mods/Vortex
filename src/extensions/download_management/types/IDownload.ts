@@ -7,6 +7,10 @@ export interface IDownloadFailCause {
   message?: string;
 }
 
+export interface IDownloadOptions {
+  referer?: string;
+}
+
 /**
  * download information
  *

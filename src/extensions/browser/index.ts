@@ -7,6 +7,7 @@ import BrowserView, { SubscriptionResult } from './views/BrowserView';
 
 import { closeBrowser, showURL } from './actions';
 import { sessionReducer } from './reducers';
+import { IBrowserResult } from './types';
 
 import * as Promise from 'bluebird';
 import { ipcRenderer } from 'electron';
@@ -55,13 +56,21 @@ function init(context: IExtensionContext): boolean {
     context.api.onAsync('browse-for-download', (url: string, instructions: string) => {
       const subscriptionId = shortid();
 
-      return new Promise<string>((resolve, reject) => {
+      return new Promise<IBrowserResult>((resolve, reject) => {
+        let lastURL = url;
         subscribe(subscriptionId, 'close', () => {
           reject(new UserCanceled());
           return 'continue';
         });
+        subscribe(subscriptionId, 'navigate', (newUrl: string) => {
+          lastURL = newUrl;
+          return 'continue';
+        });
         subscribe(subscriptionId, 'download-url', (download: string) => {
-          resolve(download);
+          resolve({
+            url: download,
+            referer: lastURL,
+          });
           return 'close';
         });
 

@@ -3,6 +3,7 @@ import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 import { countIf, INVALID_FILENAME_RE, truthy } from '../../util/util';
 import { IChunk } from './types/IChunk';
+import { IDownloadOptions } from './types/IDownload';
 import { IDownloadJob } from './types/IDownloadJob';
 import { IDownloadResult } from './types/IDownloadResult';
 import { ProgressCallback } from './types/ProgressCallback';
@@ -61,6 +62,7 @@ interface IRunningDownload {
   lastProgressSent: number;
   received: number;
   started: Date;
+  options: IDownloadOptions;
   size?: number;
   headers?: any;
   assembler?: FileAssembler;
@@ -130,11 +132,12 @@ class DownloadWorker {
     }
 
     try {
-      remote.getCurrentWebContents().session.cookies.get({ url: jobUrl }, (cookieErr, cookies) => {
+      const { cookies } = remote.getCurrentWebContents().session;
+      cookies.get({ url: jobUrl }, (cookieErr, pageCookies) => {
         if (truthy(cookieErr)) {
           log('error', 'failed to retrieve cookies', cookieErr.message);
         }
-        this.startDownload(job, jobUrl, cookies);
+        this.startDownload(job, jobUrl, pageCookies);
       });
     } catch (err) {
       log('error', 'failed to retrieve cookies', err.message);
@@ -180,8 +183,9 @@ class DownloadWorker {
         headers: {
           Range: `bytes=${job.offset}-${job.offset + job.size}`,
           'User-Agent': this.mUserAgent,
-          'Accept-Encoding': 'gzip',
+          'Accept-Encoding': 'gzip, deflate',
           Cookie: (cookies || []).map(cookie => `${cookie.name}=${cookie.value}`),
+          Referer: job.options.referer,
         },
         agent: false,
       }, (res) => {
@@ -495,7 +499,8 @@ class DownloadManager {
   public enqueue(id: string, urls: string[],
                  fileName: string,
                  progressCB: ProgressCallback,
-                 destinationPath?: string): Promise<IDownloadResult> {
+                 destinationPath?: string,
+                 options?: IDownloadOptions): Promise<IDownloadResult> {
     if (urls.length === 0) {
       return Promise.reject(new Error('No download urls'));
     }
@@ -519,6 +524,7 @@ class DownloadManager {
             error: false,
             urls,
             resolvedUrls: this.resolveUrls(urls),
+            options,
             started: new Date(),
             lastProgressSent: 0,
             received: 0,
@@ -548,7 +554,8 @@ class DownloadManager {
                 size: number,
                 started: number,
                 chunks: IChunk[],
-                progressCB: ProgressCallback): Promise<IDownloadResult> {
+                progressCB: ProgressCallback,
+                options?: IDownloadOptions): Promise<IDownloadResult> {
     return new Promise<IDownloadResult>((resolve, reject) => {
       const download: IRunningDownload = {
         id,
@@ -557,6 +564,7 @@ class DownloadManager {
         error: false,
         urls,
         resolvedUrls: this.resolveUrls(urls),
+        options,
         lastProgressSent: 0,
         received,
         size,
@@ -716,6 +724,7 @@ class DownloadManager {
       state: 'init',
       received: 0,
       size: this.mMinChunkSize,
+      options: download.options,
       errorCB: (err) => { this.cancelDownload(download, err); },
       responseCB: (size: number, fileName: string, chunkable) =>
         this.updateDownload(download, size, fileName || fileNameFromURL, chunkable),
@@ -903,6 +912,7 @@ class DownloadManager {
           offset,
           size: Math.min(chunkSize, size - offset),
           state: 'init',
+          options: download.options,
           url: () => download.resolvedUrls().then(urls => urls[0]),
         });
         offset += chunkSize;
@@ -939,6 +949,7 @@ class DownloadManager {
       state: 'init',
       size: chunk.size,
       received: chunk.received,
+      options: download.options,
       responseCB: first
         ? (size: number, fileName: string, chunkable: boolean) =>
             this.updateDownload(download, size, fileName || fileNameFromURL, chunkable)

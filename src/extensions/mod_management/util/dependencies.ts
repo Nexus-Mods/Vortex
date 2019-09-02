@@ -4,6 +4,7 @@ import {log} from '../../../util/log';
 import {activeGameId} from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 
+import { IBrowserResult } from '../../browser/types';
 import { DownloadIsHTML } from '../../download_management/DownloadManager';
 
 import {Dependency} from '../types/IDependency';
@@ -39,7 +40,10 @@ function findDownloadByRef(reference: IReference, state: IState): string {
   return existing;
 }
 
-function browseForDownload(api: IExtensionApi, url: string, instruction: string): Promise<string> {
+function browseForDownload(api: IExtensionApi,
+                           url: string,
+                           instruction: string)
+                           : Promise<IBrowserResult> {
   return api.emitAndAwait('browse-for-download', url, instruction);
 }
 
@@ -83,8 +87,13 @@ function gatherDependencies(rules: IModRule[],
         });
         return total;
       } else if (rule.downloadHint.mode === 'browse') {
-        return browseForDownload(api, rule.downloadHint.url, rule.downloadHint.instructions)
-          .then(downloadUrl => {
+        const dlProm: Promise<IBrowserResult> = (download === undefined)
+          ? browseForDownload(api, rule.downloadHint.url, rule.downloadHint.instructions)
+          : Promise.resolve(undefined);
+        return dlProm
+          .then(browseRes => {
+            const downloadUrl = browseRes !== undefined ? browseRes.url : undefined;
+            const referer = browseRes !== undefined ? browseRes.referer : undefined;
             total.push({
               download,
               reference: rule.reference,
@@ -98,6 +107,7 @@ function gatherDependencies(rules: IModRule[],
                     fileVersion: undefined,
                     fileMD5: rule.reference.fileMD5,
                     sourceURI: downloadUrl,
+                    referer,
                   },
                 },
               ],

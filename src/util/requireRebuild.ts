@@ -17,7 +17,9 @@ const Module = require('module');
 const loggingHandler = {
   get: (obj, prop) => {
     if (typeof(obj[prop]) === 'function') {
+      // tslint:disable-next-line:only-arrow-functions
       return function(...args) {
+        // tslint:disable-next-line:no-console
         console.log(prop, args);
         return obj[prop](...args);
       };
@@ -49,7 +51,7 @@ const initBuild = [
   'turbowalk',
   'winapi',
   'wholocks',
-  'ExeVersion'
+  'ExeVersion',
 ];
 
 const headerURL = 'https://atom.io/download/electron';
@@ -72,7 +74,8 @@ function patchedLoad(orig) {
           && !noBindingsExp.test(err.message)
           && !fckingNodeSassExp.test(err.message)
           && !edgeExp.test(err.message)
-          && (!noModuleExp.test(err.message) || (initBuild.find(name => request.indexOf(name) !== -1) === undefined))) {
+          && (!noModuleExp.test(err.message)
+              || (initBuild.find(name => request.indexOf(name) !== -1) === undefined))) {
         throw err;
       }
 
@@ -150,9 +153,9 @@ function patchedLoad(orig) {
       }
 
       const proc = spawnSync(nodeGyp, gypArgs, spawnOptions);
-      if (proc.error) {
-        log('info', 'stdout', proc.stdout);
-        log('error', 'stderr', proc.stderr);
+      if (!!proc.error || (proc.stderr.toString().indexOf('gyp ERR') !== -1)) {
+        log('info', 'stdout', proc.stdout.toString());
+        log('error', 'stderr', proc.stderr.toString());
         throw proc.error;
       }
 

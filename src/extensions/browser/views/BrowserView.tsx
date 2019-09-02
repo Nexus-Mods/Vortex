@@ -74,6 +74,7 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
       'did-finish-load': () => {
         const newUrl: string = (this.mWebView as any).getURL();
         this.nextState.url = newUrl;
+        this.props.onEvent(this.props.subscriber, 'navigate', newUrl);
         if (newUrl !== this.nextState.history[this.nextState.historyIdx]) {
           this.nextState.history.splice(this.nextState.historyIdx + 1, 9999, newUrl);
           ++this.nextState.historyIdx;

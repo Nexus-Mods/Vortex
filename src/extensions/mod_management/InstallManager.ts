@@ -24,7 +24,7 @@ import modName, { renderModReference } from '../mod_management/util/modName';
 import { setModEnabled } from '../profile_management/actions/profiles';
 
 import {addModRule, setFileOverride, setModAttribute, setModType} from './actions/mods';
-import {Dependency, IDependency, IDependencyError} from './types/IDependency';
+import {Dependency, IDependency, IDependencyError, IModInfoEx} from './types/IDependency';
 import { IInstallContext } from './types/IInstallContext';
 import { IInstallResult, IInstruction } from './types/IInstallResult';
 import { IFileListItem, IMod, IModReference, IModRule } from './types/IMod';
@@ -988,13 +988,14 @@ class InstallManager {
 
   private downloadModAsync(
     requirement: IReference,
-    lookupResult: IModInfo,
+    lookupResult: IModInfoEx,
     api: IExtensionApi): Promise<string> {
     return new Promise<string>((resolve, reject) => {
       if (!api.events.emit('start-download', [lookupResult.sourceURI], {
         game: lookupResult.gameId,
         source: lookupResult.source,
         name: lookupResult.logicalFileName,
+        referer: lookupResult.referer,
         ids: {
           modId: getSafe(lookupResult, ['details', 'modId'], undefined),
           fileId: getSafe(lookupResult, ['details', 'fileId'], undefined),
