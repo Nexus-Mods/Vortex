@@ -135,21 +135,17 @@ class MainWindow {
     });
 
     this.mWindow.webContents.session.on('will-download', (event, item) => {
-          event.preventDefault();
-          if (truthy(this.mWindow) && !this.mWindow.isDestroyed()) {
-            try {
-              this.mWindow.webContents.send('external-url', item.getURL());
-              store.dispatch(addNotification({
-                type: 'info',
-                title: 'Download started',
-                message: item.getFilename(),
-                displayMS: 4000,
-              }));
-            } catch (err) {
-              log('warn', 'starting download failed', err.message);
-            }
-          }
-        });
+      event.preventDefault();
+      // unfortunately we have to deal with these events in the main process even though
+      // we'll do the work in the renderer
+      if (truthy(this.mWindow) && !this.mWindow.isDestroyed()) {
+        try {
+          this.mWindow.webContents.send('received-url', item.getURL(), item.getFilename());
+        } catch (err) {
+          log('warn', 'starting download failed', err.message);
+        }
+      }
+    });
 
     this.mWindow.webContents.on('new-window', (event, url, frameName, disposition) => {
       if (disposition === 'background-tab') {

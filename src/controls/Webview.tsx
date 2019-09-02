@@ -5,7 +5,8 @@ import { omit } from 'lodash';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 
-export interface IWebView {
+export interface IWebView extends
+      React.DetailedHTMLProps<React.WebViewHTMLAttributes<HTMLWebViewElement>, HTMLWebViewElement> {
   src?: string;
   style?: any;
   autosize?: boolean;
@@ -31,7 +32,6 @@ class Webview extends React.Component<IWebviewProps & IWebView, {}> {
 
   public componentDidMount() {
     this.mNode = ReactDOM.findDOMNode(this) as WebviewTag;
-
     this.mNode.addEventListener('did-start-loading', this.startLoad);
     this.mNode.addEventListener('did-stop-loading', this.stopLoad);
     this.mNode.addEventListener('dom-ready', () => {

@@ -359,6 +359,16 @@ div:hover > .hover-expand {
   top: 5px;
 }
 
+#browser-dialog {
+  .icon-spinner {
+    margin: 0 1em;
+  }
+  #browser-webview {
+    height: 100%;
+    background: white;
+  }
+}
+
 // /generic control rules
 /////////////////////////
 

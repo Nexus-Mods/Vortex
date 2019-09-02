@@ -27,7 +27,7 @@ import {addModRule, setFileOverride, setModAttribute, setModType} from './action
 import {Dependency, IDependency, IDependencyError} from './types/IDependency';
 import { IInstallContext } from './types/IInstallContext';
 import { IInstallResult, IInstruction } from './types/IInstallResult';
-import { IFileListItem, IMod, IModReference } from './types/IMod';
+import { IFileListItem, IMod, IModReference, IModRule } from './types/IMod';
 import { IModInstaller, ISupportedInstaller } from './types/IModInstaller';
 import { InstallFunc } from './types/InstallFunc';
 import { ISupportedResult, TestSupported } from './types/TestSupported';
@@ -1079,7 +1079,7 @@ class InstallManager {
                                   profile: IProfile,
                                   modId: string,
                                   name: string,
-                                  rules: IRule[],
+                                  rules: IModRule[],
                                   installPath: string)
                                   : Promise<void> {
     const notificationId = `${installPath}_activity`;
