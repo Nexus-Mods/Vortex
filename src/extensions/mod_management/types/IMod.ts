@@ -26,7 +26,7 @@ export interface IMod {
   // dictionary of extended information fields
   attributes?: { [id: string]: any };
   // list of custom rules for this mod instance
-  rules?: IRule[];
+  rules?: IModRule[];
   // list of enabled ini tweaks
   enabledINITweaks?: string[];
   // list of files that shall always be provided by this mod, no matter the deployment order
@@ -55,4 +55,9 @@ export interface IFileListItem {
 export interface IModRule extends IRule {
   reference: IModReference;
   fileList?: IFileListItem[];
+  downloadHint?: {
+    mode: 'direct' | 'browse' | 'manual';
+    url?: string;
+    instructions?: string;
+  };
 }
