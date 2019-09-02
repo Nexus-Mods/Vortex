@@ -1052,7 +1052,7 @@ class DownloadManager {
             resolve(fullPath);
           }).catch((err) => {
             ++counter;
-            fullPath = path.join(destination, `${base}.${counter}${ext}`);
+            fullPath = path.join(destination, `${base} (${counter})${ext}`);
             if (err.code === 'EEXIST') {
               loop();
             } else {

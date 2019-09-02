@@ -32,6 +32,7 @@ import crashDump from 'crash-dump';
 import {app, dialog, ipcMain, shell} from 'electron';
 import * as isAdmin from 'is-admin';
 import * as _ from 'lodash';
+import * as os from 'os';
 import * as path from 'path';
 import { allow } from 'permissions';
 import * as semver from 'semver';
@@ -62,6 +63,7 @@ class Application {
 
     ipcMain.on('show-window', () => this.showMainWindow());
 
+    process.env['UV_THREADPOOL_SIZE'] = (os.cpus().length * 1.5).toString();
     app.commandLine.appendSwitch('js-flags', `--max-old-space-size=${args.maxMemory || 4096}`);
 
     this.mBasePath = app.getPath('userData');
