@@ -132,7 +132,7 @@
 	branch = master
 [submodule "extensions/modpack"]
 	path = extensions/modpack
-	url = https://github.com/Nexus-Mods/extension-modpack.git
+	url = git@gitlab.nexdev.uk:vortex/extension-modpack.git
 	branch = master
 [submodule "extensions/quickbms-support"]
 	path = extensions/quickbms-support
