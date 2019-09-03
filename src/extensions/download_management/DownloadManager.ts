@@ -348,11 +348,19 @@ class DownloadWorker {
         if (cd[cd.length - 1] === ';') {
           cd = cd.substring(0, cd.length - 1);
         }
-        const disposition = contentDisposition.parse(cd);
-        if (truthy(disposition.parameters['filename'])) {
-          fileName = disposition.parameters['filename'];
+        if (cd.startsWith('filename')) {
+          cd = 'attachment;' + cd;
         }
-        log('debug', 'got file name', fileName);
+        try {
+          const disposition = contentDisposition.parse(cd);
+          if (truthy(disposition.parameters['filename'])) {
+            fileName = disposition.parameters['filename'];
+          }
+          log('debug', 'got file name', fileName);
+        } catch (err) {
+          log('warn', 'failed to parse content disposition', {
+            'content-disposition': cd, message: err.message });
+        }
       }
       this.mJob.responseCB(size, fileName, chunkable);
     }
