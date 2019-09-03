@@ -513,7 +513,9 @@ function prettifyHTTPError(err: HTTPError) {
         ? 'This code is usually caused by an invalid request, maybe you followed a link '
           + 'that has expired or you lack permission to access it.'
         : (err.statusCode >= 300)
-          ? 'This code indicates the url is no longer valid.'
+          ? 'This code indicates the url is no longer valid. Please only report this '
+            + 'if you\'re able to prove that the url is working as intended when used '
+            + 'in a browser.'
           : 'This code isn\'t an error and shouldn\'t have been reported';
 
     return {
