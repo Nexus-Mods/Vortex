@@ -74,6 +74,11 @@ function init(context: IExtensionContext): boolean {
           return 'close';
         });
 
+        if (instructions.length > 0) {
+          instructions += '\n\n';
+        }
+        const t = context.api.translate;
+        instructions += t('This window will close as soon as you click a valid download link');
         context.api.store.dispatch(showURL(url, instructions, subscriptionId));
       })
       .catch(UserCanceled, () => null)
