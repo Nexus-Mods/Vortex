@@ -379,7 +379,7 @@ function ensureDirInt(dirPath: string, stackErr: Error, tries: number) {
       // it but on windows, when targeting a OneDrive path (and similar?)
       // it apparently still does
       if (err.code === 'EEXIST') {
-        return PromiseBB.resolve();
+        return PromiseBB.resolve(null);
       }
       return simfail(() => errorHandler(err, stackErr, tries, undefined))
         .then(() => ensureDirInt(dirPath, stackErr, tries - 1));
@@ -649,7 +649,7 @@ export function ensureDirWritableAsync(dirPath: string,
       // directory isn't writeable instead of EPERM. More weirdly, this seems to happen
       // only on startup.
       if (['EPERM', 'EBADF', 'UNKNOWN'].indexOf(err.code) !== -1) {
-        return confirm()
+        return PromiseBB.resolve(confirm())
           .then(() => {
             const userId = getUserId();
             return elevated((ipcPath, req: NodeRequireFunction) => {
