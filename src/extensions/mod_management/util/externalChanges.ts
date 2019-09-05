@@ -64,10 +64,10 @@ function applyFileActions(api: IExtensionApi,
         // Very rarely we have a case where the files are links of each other
         // (or at least node reports that) so the copy would fail.
         // Instead of handling the errors (when we can't be sure if it's due to a bug in node.js
-        // or the files are actually identical), delete the target first, that way the copy
+        // or the files are actually identical), delete the target first, that way the move
         // can't fail
         return fs.removeAsync(source)
-          .then(() => fs.moveAsync(deployed, source))
+          .then(() => fs.moveAsync(deployed, source, { overwrite: true }))
           .catch({ code: 'ENOENT' }, (err: any) => log('warn', 'file disappeared', err.path));
       }))
     .then(() => {
