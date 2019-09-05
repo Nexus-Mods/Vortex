@@ -173,6 +173,16 @@ class DownloadWorker {
 
     const lib: IHTTP = parsed.protocol === 'https:' ? https : http;
 
+    const headers = {
+      Range: `bytes=${job.offset}-${job.offset + job.size}`,
+      'User-Agent': this.mUserAgent,
+      'Accept-Encoding': 'gzip, deflate',
+      Cookie: (cookies || []).map(cookie => `${cookie.name}=${cookie.value}`),
+    };
+    if (job.options.referer !== undefined) {
+      headers['Referer'] = job.options.referer;
+    }
+
     try {
       this.mRequest = lib.request({
         method: 'GET',
@@ -180,13 +190,7 @@ class DownloadWorker {
         port: parsed.port,
         hostname: parsed.hostname,
         path: parsed.path,
-        headers: {
-          Range: `bytes=${job.offset}-${job.offset + job.size}`,
-          'User-Agent': this.mUserAgent,
-          'Accept-Encoding': 'gzip, deflate',
-          Cookie: (cookies || []).map(cookie => `${cookie.name}=${cookie.value}`),
-          Referer: job.options.referer,
-        },
+        headers,
         agent: false,
       }, (res) => {
         log('debug', 'downloading from',
