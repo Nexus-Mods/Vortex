@@ -1085,6 +1085,7 @@ class InstallManager {
                                   installPath: string)
                                   : Promise<void> {
     const notificationId = `${installPath}_activity`;
+    api.events.emit('will-install-dependencies', profile.id, modId, false);
     api.sendNotification({
       id: notificationId,
       type: 'activity',
@@ -1151,6 +1152,9 @@ class InstallManager {
       .catch((err) => {
         api.dismissNotification(notificationId);
         api.showErrorNotification('Failed to check dependencies', err);
+      })
+      .finally(() => {
+        api.events.emit('did-install-dependencies', profile.id, modId, false);
       });
   }
 
@@ -1162,6 +1166,7 @@ class InstallManager {
                                      installPath: string)
                                      : Promise<void> {
     const notificationId = `${installPath}_activity`;
+    api.events.emit('will-install-dependencies', profile.id, modId, true);
     api.sendNotification({
       id: notificationId,
       type: 'activity',
@@ -1260,6 +1265,9 @@ class InstallManager {
       .catch((err) => {
         api.dismissNotification(notificationId);
         api.showErrorNotification('Failed to check dependencies', err);
+      })
+      .finally(() => {
+        api.events.emit('did-install-dependencies', profile.id, modId, true);
       });
   }
 
