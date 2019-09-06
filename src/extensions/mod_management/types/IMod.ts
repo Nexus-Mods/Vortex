@@ -52,12 +52,14 @@ export interface IFileListItem {
   md5: string;
 }
 
+export interface IDownloadHint {
+  mode: 'direct' | 'browse' | 'manual';
+  url?: string;
+  instructions?: string;
+}
+
 export interface IModRule extends IRule {
   reference: IModReference;
   fileList?: IFileListItem[];
-  downloadHint?: {
-    mode: 'direct' | 'browse' | 'manual';
-    url?: string;
-    instructions?: string;
-  };
+  downloadHint?: IDownloadHint;
 }

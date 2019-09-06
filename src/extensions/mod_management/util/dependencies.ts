@@ -1,18 +1,19 @@
 import {IExtensionApi} from '../../../types/IExtensionContext';
 import { IDownload, IState } from '../../../types/IState';
+import { ProcessCanceled } from '../../../util/CustomErrors';
 import {log} from '../../../util/log';
 import {activeGameId} from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 
 import { IBrowserResult } from '../../browser/types';
-import { DownloadIsHTML } from '../../download_management/DownloadManager';
 
-import {Dependency} from '../types/IDependency';
-import { IMod, IModRule } from '../types/IMod';
+import {Dependency, IDependency, ILookupResultEx} from '../types/IDependency';
+import { IDownloadHint, IMod, IModRule } from '../types/IMod';
 
 import testModReference, { IModLookupInfo } from './testModReference';
 
 import * as Promise from 'bluebird';
+import * as _ from 'lodash';
 import {ILookupResult, IReference, IRule} from 'modmeta-db';
 
 function findModByRef(reference: IReference, state: IState): IMod {
@@ -47,6 +48,33 @@ function browseForDownload(api: IExtensionApi,
   return api.emitAndAwait('browse-for-download', url, instruction);
 }
 
+function lookupDownloadHint(api: IExtensionApi,
+                            input: IDownloadHint)
+                            : Promise<IBrowserResult> {
+  if (input === undefined) {
+    return Promise.resolve(undefined);
+  }
+
+  if (input.mode === 'direct') {
+    return Promise.resolve({ url: input.url });
+  } else if (input.mode === 'browse') {
+    return browseForDownload(api, input.url, input.instructions);
+  } else {
+    throw Promise.reject(new ProcessCanceled(input.instructions));
+  }
+}
+
+function makeLookupResult(lookup: ILookupResult, fromHint: IBrowserResult): ILookupResultEx {
+  if (fromHint !== undefined) {
+    return _.merge(lookup, {
+      value: {
+        sourceURI: fromHint.url,
+        referer: fromHint.referer,
+      },
+    });
+  }
+}
+
 function gatherDependencies(rules: IModRule[],
                             api: IExtensionApi,
                             recommendations: boolean)
@@ -60,93 +88,44 @@ function gatherDependencies(rules: IModRule[],
 
   // for each requirement, look up the reference and recursively their dependencies
   return Promise.reduce(requirements, (total: Dependency[], rule: IModRule) => {
-    if (findModByRef(rule.reference, state)) {
-      return total;
-    }
+    const mod: IMod = findModByRef(rule.reference, state);
+    const download = findDownloadByRef(rule.reference, state);
+
+    let urlFromHint: IBrowserResult;
 
     // if the rule specifies how to download the file, follow those instructions
-    if (rule.downloadHint !== undefined) {
-      const download = findDownloadByRef(rule.reference, state);
-      if (rule.downloadHint.mode === 'direct') {
-        total.push({
-          download,
-          reference: rule.reference,
-          fileList: rule.fileList,
-          lookupResults: [
-            {
-              key: 'from-download-hint', value: {
-                fileName: rule.reference.logicalFileName,
-                fileSizeBytes: rule.reference.fileSize,
-                gameId: rule.reference.gameId,
-                fileVersion: undefined,
-                fileMD5: rule.reference.fileMD5,
-                sourceURI: rule.downloadHint.url,
-              },
-            },
-          ],
-        });
-        return total;
-      } else if (rule.downloadHint.mode === 'browse') {
-        const dlProm: Promise<IBrowserResult> = (download === undefined)
-          ? browseForDownload(api, rule.downloadHint.url, rule.downloadHint.instructions)
-          : Promise.resolve(undefined);
-        return dlProm
-          .then(browseRes => {
-            const downloadUrl = browseRes !== undefined ? browseRes.url : undefined;
-            const referer = browseRes !== undefined ? browseRes.referer : undefined;
-            total.push({
-              download,
-              reference: rule.reference,
-              fileList: rule.fileList,
-              lookupResults: [
-                {
-                  key: 'from-download-hint', value: {
-                    fileName: rule.reference.logicalFileName,
-                    fileSizeBytes: rule.reference.fileSize,
-                    gameId: rule.reference.gameId,
-                    fileVersion: undefined,
-                    fileMD5: rule.reference.fileMD5,
-                    sourceURI: downloadUrl,
-                    referer,
-                  },
-                },
-              ],
-            });
-            return total;
-          })
-          .catch(DownloadIsHTML, err => {
-            api.showErrorNotification('Invalid download selected', err, { allowReport: false });
-            return total;
-          });
-      } else {
-        total.push({ error: rule.downloadHint.instructions });
-        return total;
-      }
-    }
 
     let lookupDetails: ILookupResult[];
 
     // otherwise consult the meta database
-    return api.lookupModReference(rule.reference)
+    return ((download !== undefined)
+              ? Promise.resolve(undefined)
+              : lookupDownloadHint(api, rule.downloadHint))
+        .then(res => {
+          urlFromHint = res;
+          return api.lookupModReference(rule.reference);
+        })
         .then((details: ILookupResult[]) => {
           lookupDetails = details;
 
-          if ((details.length === 0) || (details[0].value === undefined)) {
-            throw new Error('reference not found: ' + JSON.stringify(rule.reference));
-          }
-
-          return gatherDependencies(details[0].value.rules, api, recommendations);
+          return ((details.length === 0) || (details[0].value === undefined))
+            ? Promise.resolve([])
+            : gatherDependencies(details[0].value.rules, api, recommendations);
         })
         .then((dependencies: Dependency[]) => {
-          return [].concat(total, dependencies, [{
-            download: findDownloadByRef(rule.reference, state),
+          const res: IDependency = {
+            download,
             reference: rule.reference,
-            lookupResults: lookupDetails,
+            lookupResults: lookupDetails.map(iter => makeLookupResult(iter, urlFromHint)),
             fileList: rule.fileList,
-          }]);
+            mod,
+          };
+          return [].concat(total, dependencies, [res]);
         })
         .catch((err: Error) => {
-          log('warn', 'failed to look up', err.message);
+          if (!(err instanceof ProcessCanceled)) {
+            log('warn', 'failed to look up', err.message);
+          }
           return [].concat(total, { error: err.message });
         });
   }, []);

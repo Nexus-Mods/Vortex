@@ -74,6 +74,10 @@ function init(context: IExtensionContext): boolean {
           return 'close';
         });
 
+        if (instructions === undefined) {
+          instructions = '';
+        }
+
         if (instructions.length > 0) {
           instructions += '\n\n';
         }

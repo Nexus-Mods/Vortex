@@ -1031,8 +1031,9 @@ class InstallManager {
         }
       }
       return dlPromise
-        .then((downloadId: string) =>
-          this.installModAsync(dep.reference, api, downloadId, dep.fileList))
+        .then((downloadId: string) => (dep.mod === undefined)
+           ? this.installModAsync(dep.reference, api, downloadId, dep.fileList)
+           : Promise.resolve(dep.mod.id))
         .then((modId: string) => {
           const updatedRef: IModReference = { ...dep.reference };
           updatedRef.id = modId;
@@ -1108,16 +1109,15 @@ class InstallManager {
             return prev;
           }, { success: [], error: [] });
 
-        const requiredDownloads =
-          success.reduce((prev: number, current: IDependency) => {
-            return prev + (current.download ? 0 : 1);
-          }, 0);
+        const requiredInstalls = success.filter(dep => dep.mod === undefined);
+        const requiredDownloads = requiredInstalls.filter(dep => dep.download === undefined);
 
         let bbcode = '';
 
         if (success.length > 0) {
-          bbcode += '{{modName}} has unresolved dependencies. {{count}} mods have to be '
-                  + 'installed, {{dlCount}} of them have to be downloaded first.<br/><br/>';
+          bbcode += '{{modName}} has {{count}} unresolved dependencies. '
+                  + '{{instCount}} mods have to be installed, '
+                  + '{{dlCount}} of them have to be downloaded first.<br/><br/>';
         }
 
         if (error.length > 0) {
@@ -1129,8 +1129,8 @@ class InstallManager {
 
         const actions = success.length > 0
           ? [
-            { label: 'Don\'t install' },
-            { label: 'Install' },
+            { label: 'Cancel' },
+            { label: 'Enable' },
           ]
           : [ { label: 'Close' } ];
 
@@ -1138,9 +1138,10 @@ class InstallManager {
           showDialog('question', 'Install Dependencies', { bbcode, parameters: {
             modName: name,
             count: success.length,
-            dlCount: requiredDownloads,
+            instCount: requiredInstalls.length,
+            dlCount: requiredDownloads.length,
           } }, actions)).then(result => {
-            if (result.action === 'Install') {
+            if (result.action === 'Enable') {
               return this.doInstallDependencies(api, profile, modId, success, false);
             } else {
               return Promise.resolve();
