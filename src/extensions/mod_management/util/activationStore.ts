@@ -178,7 +178,8 @@ function getManifest(api: IExtensionApi, instanceId: string,
         return emptyManifest(instanceId);
       }
 
-      if (err.message.startsWith('Unexpected token')) {
+      if (err.message.startsWith('Unexpected token')
+          || err.message.startsWith('Unexpected end of JSON input')) {
         err.message = `The manifest file "${filePath}" is corrupted.\n`
                     + 'You should delete it, then immediately click the "Purge" button '
                     + 'on the "Mods" page, then deploy again.';
