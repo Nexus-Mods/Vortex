@@ -29,14 +29,13 @@ export function referenceEqual(lhs: IModReference, rhs: IModReference): boolean 
   if (idOnly(lhs) || idOnly(rhs)) {
     return lhs.id === rhs.id;
   }
-  const lRef = _.pick(lhs, REFERENCE_FIELDS);
-  const rRef = _.pick(rhs, REFERENCE_FIELDS);
   return _.isEqual(_.pick(lhs, REFERENCE_FIELDS), _.pick(rhs, REFERENCE_FIELDS));
 }
 
 function testRef(mod: IModLookupInfo, modId: string, ref: IModReference): boolean {
   if ((ref.id !== undefined)
-    && (ref.id !== modId)) {
+      && (modId !== undefined)
+      && (ref.id !== modId)) {
     return false;
   }
 
