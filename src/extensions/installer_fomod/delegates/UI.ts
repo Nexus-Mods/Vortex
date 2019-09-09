@@ -50,11 +50,9 @@ class UI extends DelegateBase {
 
   public endDialog = (dummy, callback: (err) => void) => {
     try {
-      this.api.store.dispatch(endDialog());
       callback(null);
     } catch (err) {
-      showError(this.api.store.dispatch, 'end installer dialog failed',
-        err);
+      showError(this.api.store.dispatch, 'end installer dialog failed', err);
       callback(err);
     }
     // unset the callbacks because they belong to c# so having links here

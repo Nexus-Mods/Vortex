@@ -1,4 +1,5 @@
 import {
+  IExtensionApi,
   IExtensionContext,
   IInstallResult,
   ISupportedResult,
@@ -10,13 +11,16 @@ import * as fs from '../../util/fs';
 import getVortexPath from '../../util/getVortexPath';
 import lazyRequire from '../../util/lazyRequire';
 import { log } from '../../util/log';
+import { getSafe } from '../../util/storeHelper';
 import {truthy} from '../../util/util';
 
 import { ArchiveBrokenError } from '../mod_management/InstallManager';
+import { IMod } from '../mod_management/types/IMod';
 
 import { endDialog, setInstallerDataPath } from './actions/installerUI';
 import Core from './delegates/Core';
 import { installerUIReducer } from './reducers/installerUI';
+import { IGroupList, IInstallerState } from './types/interface';
 import {
   getPluginPath,
   getStopPatterns,
@@ -167,7 +171,8 @@ function testSupported(files: string[]): Promise<ISupportedResult> {
 
 let currentInstallPromise: Promise<any> = Promise.resolve();
 
-function install(files: string[],
+function install(api: IExtensionApi,
+                 files: string[],
                  stopPatterns: string[],
                  pluginPath: string,
                  scriptPath: string,
@@ -193,9 +198,30 @@ function install(files: string[],
         if ((err !== null) && (err !== undefined)) {
           reject(transformError(err));
         } else {
-          resolve(result);
-        }
-      });
+          const state = api.store.getState();
+          const dialogState: IInstallerState = state.session.fomod.installer.dialog.state;
+          const choices = dialogState.installSteps.map(step => {
+            const ofg: IGroupList = step.optionalFileGroups || { group: [], order: 'Explicit' };
+            return {
+              name: step.name,
+              groups: ofg.group.map(group => ({
+                name: group.name,
+                choices: group.options
+                  .filter(opt => opt.selected)
+                  .map(opt => ({ name: opt.name, idx: opt.id })),
+              })),
+            };
+          });
+          resolve({
+            message: result.message,
+            instructions: [].concat(result.instructions, [{
+            type: 'attribute',
+            key: 'fomod-choices',
+            value: choices,
+          }]),
+        });
+      }
+    });
   }).finally(() => {
     currentInstallPromise = Promise.resolve();
   });
@@ -270,19 +296,39 @@ function init(context: IExtensionContext): boolean {
       return currentInstallPromise
         .then(() => {
           context.api.store.dispatch(setInstallerDataPath(scriptPath));
-          return install(files, stopPatterns, pluginPath,
+          return install(context.api, files, stopPatterns, pluginPath,
                          scriptPath, progressDelegate, coreDelegates);
         })
-        .catch((err) => {
+        .finally(() => {
           context.api.store.dispatch(endDialog());
-          return Promise.reject(err);
-        })
-        .finally(() => coreDelegates.detach());
+          coreDelegates.detach();
+        });
       });
 
   context.registerTest('net-current', 'startup', checkNetInstall);
   context.registerDialog('fomod-installer', InstallerDialog);
   context.registerReducer(['session', 'fomod', 'installer', 'dialog'], installerUIReducer);
+
+  context.registerTableAttribute('mods', {
+    id: 'installer',
+    name: 'Installer',
+    description: 'Choices made in the installer',
+    icon: 'inspect',
+    placement: 'detail',
+    calc: (mod: IMod) => {
+      const choices = getSafe(mod.attributes, ['fomod-choices'], undefined);
+      if (choices === undefined) {
+        return undefined;
+      }
+      return choices.reduce((prev, step) => {
+        prev.push(...step.groups.map(group =>
+          `${group.name} = ${group.choices.map(choice => choice.name).join(', ')}`));
+        return prev;
+      }, []);
+    },
+    edit: {},
+    isDefaultVisible: false,
+  });
 
   context.registerAttributeExtractor(75, processAttributes);
 
