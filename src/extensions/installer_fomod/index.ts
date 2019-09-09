@@ -200,18 +200,22 @@ function install(api: IExtensionApi,
         } else {
           const state = api.store.getState();
           const dialogState: IInstallerState = state.session.fomod.installer.dialog.state;
-          const choices = dialogState.installSteps.map(step => {
-            const ofg: IGroupList = step.optionalFileGroups || { group: [], order: 'Explicit' };
-            return {
-              name: step.name,
-              groups: ofg.group.map(group => ({
-                name: group.name,
-                choices: group.options
-                  .filter(opt => opt.selected)
-                  .map(opt => ({ name: opt.name, idx: opt.id })),
-              })),
-            };
-          });
+
+          const choices = (dialogState === undefined)
+            ? undefined
+            : dialogState.installSteps.map(step => {
+              const ofg: IGroupList = step.optionalFileGroups || { group: [], order: 'Explicit' };
+              return {
+                name: step.name,
+                groups: ofg.group.map(group => ({
+                  name: group.name,
+                  choices: group.options
+                    .filter(opt => opt.selected)
+                    .map(opt => ({ name: opt.name, idx: opt.id })),
+                })),
+              };
+            });
+
           resolve({
             message: result.message,
             instructions: [].concat(result.instructions, [{

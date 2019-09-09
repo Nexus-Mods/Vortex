@@ -65,14 +65,16 @@ function lookupDownloadHint(api: IExtensionApi,
 }
 
 function makeLookupResult(lookup: ILookupResult, fromHint: IBrowserResult): ILookupResultEx {
-  if (fromHint !== undefined) {
-    return _.merge(lookup, {
-      value: {
-        sourceURI: fromHint.url,
-        referer: fromHint.referer,
-      },
-    });
+  if (fromHint === undefined) {
+    return lookup;
   }
+
+  return _.merge(lookup, {
+    value: {
+      sourceURI: fromHint.url,
+      referer: fromHint.referer,
+    },
+  });
 }
 
 function gatherDependencies(rules: IModRule[],

@@ -1045,7 +1045,12 @@ class InstallManager {
         .then((modId: string) => {
           const updatedRef: IModReference = { ...dep.reference };
           updatedRef.id = modId;
+          const state: IState = api.store.getState();
+          const rules: IModRule[] =
+            getSafe(state.persistent.mods, [profile.gameId, sourceModId, 'rules'], []);
+          const oldRule = rules.find(iter => referenceEqual(iter.reference, dep.reference));
           api.store.dispatch(addModRule(profile.gameId, sourceModId, {
+            ...(oldRule || {}),
             type: recommended ? 'recommends' : 'requires',
             reference: updatedRef,
           }));
@@ -1113,7 +1118,10 @@ class InstallManager {
             if (dep['error'] !== undefined) {
               prev.error.push(dep as IDependencyError);
             } else {
-              prev.success.push(dep as IDependency);
+              const { mod } = dep as IDependency;
+              if ((mod === undefined) || (!getSafe(profile.modState, [mod.id, 'enabled'], false))) {
+                prev.success.push(dep as IDependency);
+              }
             }
             return prev;
           }, { success: [], error: [] });
