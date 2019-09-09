@@ -34,6 +34,7 @@ import { ISupportedResult, TestSupported } from './types/TestSupported';
 import gatherDependencies from './util/dependencies';
 import filterModInfo from './util/filterModInfo';
 import queryGameId from './util/queryGameId';
+import { referenceEqual } from './util/testModReference';
 
 import InstallContext from './InstallContext';
 import makeListInstaller from './listInstaller';
@@ -48,6 +49,7 @@ import * as path from 'path';
 import * as Redux from 'redux';
 
 import * as modMetaT from 'modmeta-db';
+
 const {genHash} = lazyRequire<typeof modMetaT>(() => require('modmeta-db'));
 
 export class ArchiveBrokenError extends Error {
@@ -236,6 +238,9 @@ class InstallManager {
         log('debug', 'mod id for newly installed mod', { archivePath, modId });
         return filterModInfo(fullInfo, undefined);
       })
+      .then(modInfo =>
+        api.emitAndAwait('will-install-mod', currentProfile.gameId, archiveId, modId, modInfo)
+          .then(() => modInfo))
       .then(modInfo => {
         const oldMod = (modInfo.fileId !== undefined)
           ? this.findPreviousVersionMod(modInfo.fileId, api.store, installGameId)
@@ -317,6 +322,7 @@ class InstallManager {
             api.store.dispatch(setModEnabled(currentProfile.id, modId, true));
             api.events.emit('mods-enabled', [modId], true, currentProfile.gameId);
           }
+          /*
           if (processDependencies) {
             log('info', 'process dependencies', { modId });
             const state: IState = api.store.getState();
@@ -333,10 +339,12 @@ class InstallManager {
                                          [].concat(modInfo.rules || [], mod.rules || []),
                                          this.mGetInstallPath(installGameId)));
           }
+          */
         }
         if (callback !== undefined) {
           callback(null, modId);
         }
+        api.events.emit('did-install-mod', currentProfile.gameId, archiveId, modId, modInfo);
         return null;
       })
       .catch(err => {

@@ -27,6 +27,7 @@ import {
   currentGameDiscovery,
   installPath,
   installPathForGame,
+  profileById,
 } from '../../util/selectors';
 import {getSafe} from '../../util/storeHelper';
 import { isChildPath, truthy } from '../../util/util';
@@ -878,6 +879,13 @@ function once(api: IExtensionApi) {
 
     Promise.map(modIds, modId => installManager.installRecommendations(api, profile, modId))
       .catch(err => api.showErrorNotification('Failed to install recommendations', err));
+  });
+
+  api.events.on('mod-enabled', (profileId: string, modId: string) => {
+    const profile = profileById(api.store.getState(), profileId);
+    installManager.installDependencies(api, profile, modId)
+      .then(() => installManager.installRecommendations(api, profile, modId))
+      .catch(err => api.showErrorNotification('Failed to install dependencies', err));
   });
 
   api.onStateChange(
