@@ -1,11 +1,12 @@
 import * as React from 'react';
+import { WithTranslation } from 'react-i18next';
 import * as Redux from 'redux';
+import { ThunkDispatch } from 'redux-thunk';
+
+import { showUsageInstruction } from '../actions';
 import { IState } from '../types/IState';
 import { connect, PureComponentEx, translate } from '../util/ComponentEx';
-import { ThunkDispatch } from 'redux-thunk';
-import { showUsageInstruction } from '../actions';
 import { IconButton } from './TooltipControls';
-import { WithTranslation } from 'react-i18next';
 
 export interface IUsageProps {
   infoId: string;
@@ -67,11 +68,12 @@ function mapStateToProps(state: IState, ownProps: IUsageProps): IConnectedProps 
   };
 }
 
-function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>, ownProps: IUsageProps): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>,
+                            ownProps: IUsageProps): IActionProps {
   const { infoId } = ownProps;
   return {
-    onShow: () => { dispatch(showUsageInstruction(infoId, true)) },
-    onHide: () => { dispatch(showUsageInstruction(infoId, false)) }
+    onShow: () => { dispatch(showUsageInstruction(infoId, true)); },
+    onHide: () => { dispatch(showUsageInstruction(infoId, false)); },
   };
 }
 
