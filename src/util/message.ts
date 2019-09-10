@@ -513,9 +513,7 @@ function prettifyHTTPError(err: HTTPError) {
         ? 'This code is usually caused by an invalid request, maybe you followed a link '
           + 'that has expired or you lack permission to access it.'
         : (err.statusCode >= 300)
-          ? 'This code indicates the url is no longer valid. Please only report this '
-            + 'if you\'re able to prove that the url is working as intended when used '
-            + 'in a browser.'
+          ? 'This code indicates the url is no longer valid.'
           : 'This code isn\'t an error and shouldn\'t have been reported';
 
     return {
@@ -526,9 +524,10 @@ function prettifyHTTPError(err: HTTPError) {
         url: err.url,
         statusCode: err.statusCode,
       },
-      // 3xx errors are redirections and should have been followed,
+      // 3xx errors are redirections and should have been followed but sometimes pages
+      //  just redirect to themselves
       // 2xx aren't errors and shouldn't have been reported.
-      allowReport: err.statusCode < 400,
+      allowReport: err.statusCode < 300,
     };
   };
 
