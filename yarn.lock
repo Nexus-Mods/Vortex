@@ -4354,10 +4354,10 @@ electron-updater@^4.0.6:
     semver "^5.6.0"
     source-map-support "^0.5.9"
 
-electron@^4.2.6:
-  version "4.2.6"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-4.2.6.tgz#533763a7970136011fd36e4a5f2b3715b2015994"
-  integrity sha512-qnaQXQcRKugXoQ7/4J4lYKzyU/RJMK/qrIGyC8KsgGG/IVVagolNPYy7QrsGpJ7YwpQHzNjwtDNaJ/UI7VTCyA==
+electron@^4.2.10:
+  version "4.2.10"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-4.2.10.tgz#7096450bb14875ec2e6797316c0c1034e7fe2b76"
+  integrity sha512-dFhsJOW7OZX8JxjoBdugUZh6VWbs5PjlQIH6/w1KsZO7otgBy44j9vPI31KnIid3bdMtNbmTEF+6PA32z88kRw==
   dependencies:
     "@types/node" "^10.12.18"
     electron-download "^4.1.0"
@@ -7405,7 +7405,7 @@ next-tick@1:
 
 nexus-api@Nexus-Mods/node-nexus-api:
   version "1.0.2"
-  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/d640d7e1924fd3b755e3301dc98c3d3b69d89cfa"
+  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/3d41c29f7914514cc6520da19b4b2982bd7d5502"
   dependencies:
     request "^2.85.0"
     string-template "^1.0.0"
@@ -8391,9 +8391,9 @@ pseudomap@^1.0.2:
   integrity sha1-8FKijacOYYkX7wqKw0wa5aaChrM=
 
 psl@^1.1.24:
-  version "1.3.1"
-  resolved "https://registry.yarnpkg.com/psl/-/psl-1.3.1.tgz#d5aa3873a35ec450bc7db9012ad5a7246f6fc8bd"
-  integrity sha512-2KLd5fKOdAfShtY2d/8XDWVRnmp3zp40Qt6ge2zBPFARLXOGUf2fHD5eg+TV/5oxBtQKVhjUaKFsAaE4HnwfSA==
+  version "1.4.0"
+  resolved "https://registry.yarnpkg.com/psl/-/psl-1.4.0.tgz#5dd26156cdb69fa1fdb8ab1991667d3f80ced7c2"
+  integrity sha512-HZzqCGPecFLyoRj5HLfuDSKYTJkAfB5thKBIkRHtGjWwY7p1dAyveIbXIq4tO0KYfDF2tHqPUgY9SDnGm00uFw==
 
 public-encrypt@^4.0.0:
   version "4.0.2"
