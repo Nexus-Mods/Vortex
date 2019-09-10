@@ -32,6 +32,15 @@ export function referenceEqual(lhs: IModReference, rhs: IModReference): boolean 
   return _.isEqual(_.pick(lhs, REFERENCE_FIELDS), _.pick(rhs, REFERENCE_FIELDS));
 }
 
+function sanitizeExpression(fileName: string): string {
+  // drop extension and anything like ".1" or " (1)" at the end which probaby
+  // indicates duplicate downloads (either in our own format or common browser
+  // style)
+  return path.basename(fileName, path.extname(fileName))
+    .replace(/\.\d+$/, '')
+    .replace(/ \(\d+\)$/, '');
+}
+
 function testRef(mod: IModLookupInfo, modId: string, ref: IModReference): boolean {
   if ((ref.id !== undefined)
       && (modId !== undefined)
@@ -59,7 +68,7 @@ function testRef(mod: IModLookupInfo, modId: string, ref: IModReference): boolea
         return false;
       }
     } else {
-      const baseName = path.basename(mod.fileName, path.extname(mod.fileName));
+      const baseName = sanitizeExpression(mod.fileName);
       if ((baseName !== ref.fileExpression) &&
           !minimatch(baseName, ref.fileExpression)) {
         return false;
