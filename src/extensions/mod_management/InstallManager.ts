@@ -597,7 +597,7 @@ class InstallManager {
   private validateInstructions(instructions: IInstruction[]): IInvalidInstruction[] {
     // Validate the ungrouped instructions and return errors (if any)
     const invalidDestinationErrors: IInvalidInstruction[] = instructions.filter(instr =>
-      (!!instr.destination && !isPathValid(instr.destination)))
+      (!!instr.destination && !isPathValid(instr.destination, true)))
       .map(instr => {
         return {
           type: instr.type,
