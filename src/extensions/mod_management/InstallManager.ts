@@ -596,9 +596,19 @@ class InstallManager {
 
   private validateInstructions(instructions: IInstruction[]): IInvalidInstruction[] {
     // Validate the ungrouped instructions and return errors (if any)
-    const invalidDestinationErrors: IInvalidInstruction[] = instructions.filter(instr =>
-      (!!instr.destination && !isPathValid(instr.destination, true)))
-      .map(instr => {
+    const invalidDestinationErrors: IInvalidInstruction[] = instructions.filter(instr => {
+      if (!!instr.destination) {
+        // This is a temporary hack to avoid invalidating fomod instructions
+        //  which will include a path separator at the beginning of a relative path
+        //  when matching nested stop patterns.
+        const destination = (instr.destination.charAt(0) === path.sep)
+          ? instr.destination.substr(1)
+          : instr.destination;
+        return (!isPathValid(destination, true));
+      }
+
+      return false;
+    }).map(instr => {
         return {
           type: instr.type,
           error: `invalid destination path: "${instr.destination}"`,
