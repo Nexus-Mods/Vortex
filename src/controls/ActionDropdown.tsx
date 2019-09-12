@@ -2,12 +2,13 @@ import { IActionDefinition } from '../types/IActionDefinition';
 import { IExtensibleProps } from '../util/ExtensionProvider';
 
 import ActionControl, { IActionControlProps, IActionDefinitionEx } from './ActionControl';
-import DropdownButton from './DropdownButton';
 import Icon from './Icon';
+import PortalMenu from './PortalMenu';
 
 import * as _ from 'lodash';
 import * as React from 'react';
-import { MenuItem } from 'react-bootstrap';
+import { Button, Dropdown, MenuItem } from 'react-bootstrap';
+import * as ReactDOM from 'react-dom';
 
 export type ButtonType = 'text' | 'icon' | 'both' | 'menu';
 
@@ -69,7 +70,15 @@ class MenuAction extends React.PureComponent<IMenuActionProps, {}> {
  * @class IconBar
  * @extends {ComponentEx<IProps, {}>}
  */
-class DropdownMenu extends React.PureComponent<IProps, {}> {
+class DropdownMenu extends React.PureComponent<IProps, { open: boolean }> {
+  private mRef: JSX.Element;
+
+  constructor(props: IProps) {
+    super(props);
+
+    this.state = { open: false };
+  }
+
   public render(): JSX.Element {
     const { actions, id, className } = this.props;
 
@@ -91,17 +100,43 @@ class DropdownMenu extends React.PureComponent<IProps, {}> {
         {actions[defaultIdx].title}
       </div>
     );
+
     return (
-      <DropdownButton
+      <Dropdown
         id={`${id}-menu`}
-        split
-        title={title}
         data-value={actions[defaultIdx].title}
-        onClick={actions[defaultIdx].show ? this.triggerDefault : undefined}
+        ref={this.setRef}
       >
-        {rest.map((iter, idx) => this.renderMenuItem(iter, idx))}
-      </DropdownButton>
+        <Button
+          onClick={actions[defaultIdx].show ? this.triggerDefault : undefined}
+        >
+          {title}
+        </Button>
+        <Dropdown.Toggle open={this.state.open} onClick={this.toggleOpen} />
+        <PortalMenu
+          open={this.state.open}
+          target={this.mRef}
+          onClose={this.close}
+          onClick={this.close}
+          bsRole='menu'
+        >
+          {rest.map((iter, idx) => this.renderMenuItem(iter, idx))}
+        </PortalMenu>
+      </Dropdown>
     );
+  }
+
+  private setRef = (ref: any) => {
+    this.mRef = ReactDOM.findDOMNode(ref) as any;
+  }
+
+  private close = () => {
+    this.setState({ open: false });
+  }
+
+  private toggleOpen = (evt: React.MouseEvent<any>) => {
+    evt.preventDefault();
+    this.setState({ open: !this.state.open });
   }
 
   private renderMenuItem =

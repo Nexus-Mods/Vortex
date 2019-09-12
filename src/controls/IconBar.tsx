@@ -3,8 +3,8 @@ import { IExtensibleProps } from '../util/ExtensionProvider';
 import { setdefault } from '../util/util';
 
 import ActionControl, { IActionControlProps, IActionDefinitionEx } from './ActionControl';
-import Dropdown from './Dropdown';
 import Icon from './Icon';
+import PortalMenu from './PortalMenu';
 import ToolbarDropdown from './ToolbarDropdown';
 import ToolbarIcon from './ToolbarIcon';
 import { IconButton } from './TooltipControls';
@@ -15,7 +15,6 @@ import * as _ from 'lodash';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
 import { ButtonGroup, MenuItem } from 'react-bootstrap';
-import { Overlay } from 'react-overlays';
 
 export type ButtonType = 'text' | 'icon' | 'both' | 'menu';
 
@@ -36,49 +35,6 @@ export interface IBaseProps {
 }
 
 type IProps = IBaseProps & { actions?: IActionDefinitionEx[] } & React.HTMLAttributes<any>;
-
-interface IPortalMenuProps {
-  open: boolean;
-  target: JSX.Element;
-  onClick: (evt) => void;
-  onClose: () => void;
-}
-
-class PortalMenu extends React.Component<IPortalMenuProps, {}> {
-  public static contextTypes: React.ValidationMap<any> = {
-    menuLayer: PropTypes.object,
-  };
-
-  public context: { menuLayer: JSX.Element };
-
-  public render() {
-    const { onClick, onClose, open, target } = this.props;
-
-    return (
-      <Overlay
-        show={open}
-        container={this.context.menuLayer}
-        placement='bottom'
-        target={target}
-      >
-        {({ props, arrowProps, placement }) => (
-            <div {...props} className='icon-menu-positioner'>
-              <div className='menu-content'>
-                <Dropdown.Menu
-                  style={{ display: 'block', position: 'initial' }}
-                  onClose={onClose}
-                  open={open}
-                  onClick={onClick}
-                >
-                  {this.props.children}
-                </Dropdown.Menu>
-              </div>
-            </div>
-          )}
-      </Overlay>
-    );
-  }
-}
 
 function genTooltip(t: I18next.TFunction, show: boolean | string): string {
   return typeof (show) === 'string'
