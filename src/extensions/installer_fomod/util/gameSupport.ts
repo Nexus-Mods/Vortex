@@ -72,6 +72,11 @@ function stopPatterns(gameMode: string) {
               'Waves'].map(toWordExp);
     case 'shadowrunreturns':
       return ['data', 'project.cpack.txt', 'project.cpack.bytes'].map(toWordExp);
+    case 'neverwinter2':
+      return ['ambient', 'ambient_X1', 'ambient_X2', 'Campaigns', 'data', 'database', 'dmvault',
+              'hak', 'localvault', 'modules', 'movies', 'music', 'music_X1', 'music_X2', 'nwm',
+              'override', 'patch', 'portraits', 'pwc', 'saves', 'servervault', 'texturepacks',
+              'tlk', 'ui'].map(toWordExp);
     default: return [].concat(uniPatterns);
   }
 }
@@ -249,6 +254,9 @@ const gameSupport: { [gameId: string]: IGameSupport } = {
   },
   shadowrunreturns: {
     stopPatterns:  stopPatterns('shadowrunreturns'),
+  },
+  neverwinter2: {
+    stopPatterns: stopPatterns('neverwinter2'),
   },
 };
 
