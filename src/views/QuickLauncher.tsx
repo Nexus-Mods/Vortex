@@ -10,6 +10,7 @@ import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../typ
 import { IDiscoveredTool } from '../types/IDiscoveredTool';
 import { IRunningTool, IState } from '../types/IState';
 import { ComponentEx, connect, translate } from '../util/ComponentEx';
+import Debouncer from '../util/Debouncer';
 import { log } from '../util/log';
 import { showError } from '../util/message';
 import { activeGameId, currentGame, currentGameDiscovery } from '../util/selectors';
@@ -58,6 +59,11 @@ interface IComponentState {
 }
 
 class QuickLauncher extends ComponentEx<IProps, IComponentState> {
+  private mCacheDebouncer: Debouncer = new Debouncer(() => {
+    this.nextState.gameIconCache = this.genGameIconCache();
+    return Promise.resolve();
+  }, 100);
+
   constructor(props: IProps) {
     super(props);
     this.initState({ starter: this.makeStarter(props), gameIconCache: this.genGameIconCache() });
@@ -80,7 +86,7 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
 
     if ((nextProps.profiles !== this.props.profiles)
         || (nextProps.discoveredGames !== this.props.discoveredGames)) {
-      this.nextState.gameIconCache = this.genGameIconCache();
+      this.mCacheDebouncer.schedule();
     }
   }
 
@@ -160,7 +166,9 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
 
     const discovered = discoveredGames[gameId];
 
-    const iconPath = gameIconCache[gameId].icon.replace(/\\/g, '/');
+    const iconPath = (gameIconCache[gameId].icon !== undefined)
+      ? gameIconCache[gameId].icon.replace(/\\/g, '/')
+      : undefined;
     const game = gameIconCache[gameId].game;
 
     const profile = profiles[lastActiveProfile[gameId]];

@@ -64,7 +64,7 @@ export interface IRemoveFileOptions {
 
 const NUM_RETRIES = 5;
 const RETRY_DELAY_MS = 100;
-const RETRY_ERRORS = new Set(['EPERM', 'EBUSY', 'EIO', 'EBADF', 'UNKNOWN']);
+const RETRY_ERRORS = new Set(['EPERM', 'EBUSY', 'EIO', 'EBADF', 'ENOTEMPTY', 'UNKNOWN']);
 
 const simfail = (process.env.SIMULATE_FS_ERRORS === 'true')
   ? (func: () => PromiseBB<any>): PromiseBB<any> => {
@@ -379,7 +379,7 @@ function ensureDirInt(dirPath: string, stackErr: Error, tries: number) {
       // it but on windows, when targeting a OneDrive path (and similar?)
       // it apparently still does
       if (err.code === 'EEXIST') {
-        return PromiseBB.resolve();
+        return PromiseBB.resolve(null);
       }
       return simfail(() => errorHandler(err, stackErr, tries, undefined))
         .then(() => ensureDirInt(dirPath, stackErr, tries - 1));

@@ -160,17 +160,13 @@ class ContextMenu extends ComponentEx<IProps, IComponentState> {
     const rect: ClientRect = this.mMenuRef.getBoundingClientRect();
     const outer: ClientRect = (this.context.menuLayer as any).getBoundingClientRect();
 
-    if ((position.y + rect.height) > outer.bottom) {
-      this.nextState.bottom = outer.bottom - position.y;
-    } else {
-      this.nextState.bottom = undefined;
-    }
+    this.nextState.bottom = ((position.y + rect.height) > outer.bottom)
+      ? outer.bottom - position.y
+      : undefined;
 
-    if ((position.x + rect.width) > outer.right) {
-      this.nextState.right = outer.right - position.x;
-    } else {
-      this.nextState.right = undefined;
-    }
+    this.nextState.right = ((position.x + rect.width) > outer.right)
+      ? outer.right - position.x
+      : undefined;
   }
 }
 

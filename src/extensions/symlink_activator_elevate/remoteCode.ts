@@ -67,14 +67,20 @@ export function remoteCode(ipcClient, req) {
           .catch((err) => {
             if (err.code === 'EISDIR') {
               emit('report', 'not-supported');
-            } else {
-              emit('log', {
-                level: 'error',
-                message: 'failed to install symlink',
-                meta: { err: err.message },
-              });
             }
-            emit('completed', { err, num });
+            emit('log', {
+              level: 'error',
+              message: 'failed to install symlink',
+              meta: { err: err.message },
+            });
+            emit('completed', {
+              err: {
+                // in case message is a getter
+                message: err.message,
+                ...err,
+              },
+              num,
+            });
           });
       },
       'remove-link': (payload) => {

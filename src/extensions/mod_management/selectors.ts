@@ -10,6 +10,7 @@ import { createSelector, OutputSelector } from 'reselect';
 const installPathPattern = (state: IState) => state.settings.mods.installPath;
 const gameInstallPathPattern = (state: IState, gameId: string) =>
   state.settings.mods.installPath[gameId];
+const activators = (state: IState) => state.settings.mods.activator;
 const allNeedToDeploy = (state: IState) => state.persistent.deployment.needToDeploy;
 
 export const installPath = createSelector(installPathPattern, activeGameId,
@@ -31,8 +32,20 @@ export const installPathForGame = createCachedSelector(
     return gameId;
   });
 
-export const currentActivator =
-  (state: IState): string => state.settings.mods.activator[activeGameId(state)];
+export const currentActivator = createSelector(activators, activeGameId,
+    (inActivators: { [gameId: string]: string }, inGameMode: string) => {
+      return inActivators[inGameMode];
+    });
+
+export const activatorForGame = createCachedSelector(
+    activators, (state: IState, gameId: string) => gameId,
+    (inActivators: { [gameId: string]: string }, gameId: string) => inActivators[gameId],
+  )((state, gameId) => {
+      if (gameId === undefined) {
+        throw new Error('gameId can\'t be undefined');
+      }
+      return gameId;
+  });
 
 interface INeedToDeployMap {
   [gameId: string]: boolean;

@@ -11,7 +11,8 @@ import { resolveCategoryName,
          resolveCategoryPath } from '../extensions/category_management/util/retrieveCategoryPath';
 import { getGame, getGames } from '../extensions/gamemode_management/util/getGame';
 import deriveModInstallName from '../extensions/mod_management/modIdManager';
-import { getCurrentActivator } from '../extensions/mod_management/util/deploymentMethods';
+import { getActivator,
+         getCurrentActivator } from '../extensions/mod_management/util/deploymentMethods';
 import renderModName, { renderModReference } from '../extensions/mod_management/util/modName';
 import { makeModReference } from '../extensions/mod_management/util/modReference';
 import sortMods, { CycleError } from '../extensions/mod_management/util/sort';
@@ -60,6 +61,7 @@ export {
   extend,
   fileMD5,
   GameNotFound,
+  getActivator,
   getCurrentActivator,
   getCurrentLanguage,
   getGame,

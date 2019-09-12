@@ -138,3 +138,6 @@
 	path = extensions/quickbms-support
 	url = https://github.com/nexus-mods/extension-quickbms-support.git
 	branch = master
+[submodule "extensions\\morrowind-plugin-management"]
+	path = extensions/morrowind-plugin-management
+	url = https://github.com/Nexus-Mods/extension-morrowind-plugin-management.git

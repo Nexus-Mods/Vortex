@@ -346,6 +346,12 @@ export function isFilenameValid(input: string): boolean {
   if (RESERVED_NAMES.has(path.basename(input, path.extname(input)).toUpperCase())) {
     return false;
   }
+  if ((process.platform === 'win32')
+    && (input.endsWith(' ') || input.endsWith('.'))) {
+    // Although Windows' underlying file system may support
+    //  filenames/dirnames ending with '.' and ' ', the win shell and UI does not.
+    return false;
+  }
   return input.search(INVALID_FILENAME_RE) < 0;
 }
 
@@ -365,6 +371,17 @@ export function isPathValid(input: string, allowRelative: boolean = false): bool
   let split = input.replace(trimTrailingSep, '').split(path.sep);
   if (allowRelative) {
     split = split.filter(segment => (segment !== '.') && (segment !== '..'));
+  } else {
+    if ((process.platform === 'win32')
+      && (split.length === 1)
+      && (isDriveLetter(split[0]))) {
+      // This is the partition's root path; this is arguably
+      //  a valid path, but given how we use this function in Vortex,
+      //  the partition root path should be considered invalid as this
+      //  will block users from attempting to copy and move stuff
+      //  inside the partition's root!
+      return false;
+    }
   }
   const found = split.find((segment: string, idx: number) => {
     if (idx === 0 && isDriveLetter(segment)) {

@@ -524,9 +524,10 @@ function prettifyHTTPError(err: HTTPError) {
         url: err.url,
         statusCode: err.statusCode,
       },
-      // 3xx errors are redirections and should have been followed,
+      // 3xx errors are redirections and should have been followed but sometimes pages
+      //  just redirect to themselves
       // 2xx aren't errors and shouldn't have been reported.
-      allowReport: err.statusCode < 400,
+      allowReport: err.statusCode < 300,
     };
   };
 

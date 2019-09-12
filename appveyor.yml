@@ -19,6 +19,7 @@ install:
 branches:
   except:
     - announcements
+    - mod-packs
 build_script:
 - cmd: >-
     yarn run ci
