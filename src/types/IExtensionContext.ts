@@ -171,6 +171,8 @@ export type StateChangeCallback =
  */
 export interface ILookupDetails {
   filePath?: string;
+  // name of the file. Used only for caching purposes if filePath is undefined
+  fileName?: string;
   fileMD5?: string;
   fileSize?: number;
   gameId?: string;

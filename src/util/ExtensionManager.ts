@@ -1008,8 +1008,11 @@ class ExtensionManager {
   }
 
   private modLookupId(detail: ILookupDetails): string {
-    const fileName = detail.filePath !== undefined
-      ? path.basename(detail.filePath, path.extname(detail.filePath))
+    const san = (input: string) => path.basename(input, path.extname(input));
+    const fileName = (detail.filePath !== undefined)
+      ? san(detail.filePath)
+      : (detail.fileName !== undefined)
+      ? san(detail.fileName)
       : undefined;
     return `${detail.fileMD5}_${fileName}`
          + `_${detail.fileSize}_${detail.gameId}`;
@@ -1042,13 +1045,17 @@ class ExtensionManager {
           fileSize,
         });
         this.getApi().events.emit('filehash-calculated', detail.filePath, fileMD5, fileSize);
+      })
+      .catch(err => {
+        log('info', 'failed to calculate hash', { path: detail.filePath, error: err.message });
+        return Promise.resolve();
       });
     } else {
       promise = Promise.resolve();
     }
     return promise
       .then(() => this.getModDB())
-      .then(modDB => fileSize !== 0
+      .then(modDB => (fileSize !== 0) && (fileMD5 !== undefined)
         ? modDB.lookup(detail.filePath, fileMD5, fileSize, detail.gameId)
         : [])
       .then((result: ILookupResult[]) => {

@@ -2,6 +2,8 @@ import { IExtensionApi } from '../../../types/IExtensionContext';
 import { log } from '../../../util/log';
 import { getSafe } from '../../../util/storeHelper';
 
+import { downloadPathForGame } from '../../download_management/selectors';
+
 import { IMod } from '../types/IMod';
 
 import testModReference from './testModReference';
@@ -10,6 +12,7 @@ import * as Promise from 'bluebird';
 import { alg, Graph } from 'graphlib';
 import * as _ from 'lodash';
 import { ILookupResult, IReference, IRule } from 'modmeta-db';
+import * as path from 'path';
 
 export class CycleError extends Error {
   private mCycles: string[][];
@@ -48,10 +51,21 @@ function sortMods(gameId: string, mods: IMod[], api: IExtensionApi): Promise<IMo
   const dependencies = new Graph();
 
   const modMapper = (mod: IMod) => {
+    let downloadGame = getSafe(mod.attributes, ['downloadGame'], gameId);
+    if (Array.isArray(downloadGame)) {
+      downloadGame = downloadGame[0];
+    }
+
+    const state = api.store.getState();
+    const downloadPath = downloadPathForGame(state, downloadGame);
+    const fileName = getSafe(mod.attributes, ['fileName'], undefined);
+    const filePath = fileName !== undefined ? path.join(downloadPath, fileName) : undefined;
+
     return api.lookupModMeta({
                 fileMD5: getSafe(mod.attributes, ['fileMD5'], undefined),
                 fileSize: getSafe(mod.attributes, ['fileSize'], undefined),
-                gameId,
+                filePath,
+                gameId: downloadGame,
               })
         .catch(() => [])
         .then((metaInfo: ILookupResult[]) => {
