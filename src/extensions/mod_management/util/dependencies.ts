@@ -118,7 +118,19 @@ function gatherDependencies(rules: IModRule[],
           const res: IDependency = {
             download,
             reference: rule.reference,
-            lookupResults: lookupDetails.map(iter => makeLookupResult(iter, urlFromHint)),
+            lookupResults: (lookupDetails.length > 0)
+              ? lookupDetails.map(iter => makeLookupResult(iter, urlFromHint))
+              : [{
+                key: 'from-download-hint', value: {
+                  fileName: rule.reference.logicalFileName,
+                  fileSizeBytes: rule.reference.fileSize,
+                  gameId: rule.reference.gameId,
+                  fileVersion: undefined,
+                  fileMD5: rule.reference.fileMD5,
+                  sourceURI: urlFromHint.url,
+                  referer: urlFromHint.referer,
+                },
+              }],
             fileList: rule.fileList,
             mod,
           };
