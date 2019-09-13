@@ -12,6 +12,7 @@ import TextFilter from '../../../controls/table/TextFilter';
 import { IconButton } from '../../../controls/TooltipControls';
 import { IActionDefinition } from '../../../types/IActionDefinition';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
+import { INotification } from '../../../types/INotification';
 import { IState } from '../../../types/IState';
 import { ITableAttribute } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
@@ -54,8 +55,6 @@ import * as ReactDOM from 'react-dom';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import * as semver from 'semver';
-
-const PanelX: any = Panel;
 
 type IModWithState = IMod & IProfileMod;
 
@@ -899,8 +898,29 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   private removeMods(modIds: string[]): Promise<void> {
     const { gameMode } = this.props;
     const { modsWithState } = this.state;
+
+    if (modIds.length === 0) {
+      return Promise.resolve();
+    }
+
+    const notiParams: INotification = {
+      type: 'activity',
+      title: 'Removing mods',
+      message: '...',
+    };
+
+    notiParams.id = this.context.api.sendNotification({
+      ...notiParams,
+      progress: 0,
+    });
+
     return Promise
-      .mapSeries(modIds, modId => {
+      .mapSeries(modIds, (modId: string, idx: number, length: number) => {
+        this.context.api.sendNotification({
+          ...notiParams,
+          message: modId,
+          progress: (idx * 100) / length,
+        });
         if ((modsWithState[modId] !== undefined)
             && (modsWithState[modId].state === 'installed')) {
           return this.removeMod(modId);
@@ -910,6 +930,9 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       })
       .then(() => {
         this.context.api.events.emit('mods-enabled', modIds, false, gameMode);
+      })
+      .finally(() => {
+        this.context.api.dismissNotification(notiParams.id);
       });
   }
 
