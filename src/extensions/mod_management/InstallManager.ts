@@ -1195,12 +1195,14 @@ class InstallManager {
             + '[/color]';
         }
 
-        const actions = success.length > 0
-          ? [
+        if (success.length === 0) {
+          return Promise.resolve();
+        }
+
+        const actions = [
             { label: 'Cancel' },
             { label: 'Enable' },
-          ]
-          : [ { label: 'Close' } ];
+          ];
 
         return api.store.dispatch(
           showDialog('question', 'Install Dependencies', { bbcode, parameters: {
