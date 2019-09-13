@@ -1075,7 +1075,7 @@ class ExtensionManager {
     return this.getModDB()
       .then(modDB => {
         return new Promise<void>((resolve, reject) => {
-          modDB.insert(modInfo);
+          modDB.insert([modInfo]);
           resolve();
         });
       });
