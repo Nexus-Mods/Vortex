@@ -298,7 +298,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     const { t, customTitlebar } = this.props;
     const className = customTitlebar ? 'toolbar-app-region' : 'toolbar-default';
     if (switchingProfile) {
-      return (<div className={className}></div>);
+      return (<div className={className}/>);
     }
     return (
       <FlexLayout.Fixed id='main-toolbar' className={className}>

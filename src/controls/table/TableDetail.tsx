@@ -156,7 +156,8 @@ class DetailCell extends React.Component<ICellProps, {}> {
           valueKey='key'
           labelKey='text'
           valueComponent={ValueComponent}
-          placeholder={attribute.edit.placeholder !== undefined ? attribute.edit.placeholder() : undefined}
+          placeholder={(attribute.edit.placeholder !== undefined)
+            ? attribute.edit.placeholder() : undefined}
         />
       );
     }
@@ -351,11 +352,11 @@ class DetailBox extends ComponentEx<IDetailProps, { hovered: boolean }> {
     const oldRef = this.mFormRef;
     this.mFormRef = ref;
     if (ref !== null) {
-      ref.addEventListener('mouseenter', this.startHover)
-      ref.addEventListener('mouseleave', this.stopHover)
+      ref.addEventListener('mouseenter', this.startHover);
+      ref.addEventListener('mouseleave', this.stopHover);
     } else if (oldRef !== null) {
-      oldRef.removeEventListener('mouseenter', this.startHover)
-      oldRef.removeEventListener('mouseleave', this.stopHover)
+      oldRef.removeEventListener('mouseenter', this.startHover);
+      oldRef.removeEventListener('mouseleave', this.stopHover);
     }
   }
 
@@ -375,9 +376,9 @@ class DetailBox extends ComponentEx<IDetailProps, { hovered: boolean }> {
       .find((attr: ITableAttribute) => attr.id === attributeId);
     if (attribute.supportsMultiple === true) {
       attribute.edit.onChangeValue(
-        rowIds.map(rowId => rawData[rowId]).filter(value => value !== undefined), value);
+        rowIds.map(rowId => rawData[rowId]).filter(iter => iter !== undefined), value);
     } else if (rowIds.length === 1) {
-      let data = rawData[rowIds[0]];
+      const data = rawData[rowIds[0]];
       if (data !== undefined) {
         attribute.edit.onChangeValue(data, value);
       }
