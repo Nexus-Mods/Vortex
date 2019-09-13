@@ -1,5 +1,6 @@
 import * as path from 'path';
 import { IMod, IReference } from '../types/IMod';
+import { sanitizeExpression } from './testModReference';
 
 export function makeModReference(mod: IMod): IReference {
   if ((mod.attributes['fileMD5'] === undefined)
@@ -14,8 +15,8 @@ export function makeModReference(mod: IMod): IReference {
   const fileName = mod.attributes['fileName'];
 
   return {
-    fileExpression: fileName !== undefined
-      ? path.basename(fileName, path.extname(fileName))
+    fileExpression: (fileName !== undefined)
+      ? sanitizeExpression(fileName)
       : undefined,
     fileMD5: mod.attributes['fileMD5'],
     versionMatch: mod.attributes['version'],

@@ -32,7 +32,7 @@ export function referenceEqual(lhs: IModReference, rhs: IModReference): boolean 
   return _.isEqual(_.pick(lhs, REFERENCE_FIELDS), _.pick(rhs, REFERENCE_FIELDS));
 }
 
-function sanitizeExpression(fileName: string): string {
+export function sanitizeExpression(fileName: string): string {
   // drop extension and anything like ".1" or " (1)" at the end which probaby
   // indicates duplicate downloads (either in our own format or common browser
   // style)
