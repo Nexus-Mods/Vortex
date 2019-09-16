@@ -362,20 +362,12 @@ function isDriveLetter(input: string): boolean {
 }
 
 const trimTrailingSep = new RegExp(`\\${path.sep}*$`, 'g');
-const sanitizeSep = new RegExp('/', 'g');
 
 export function isPathValid(input: string, allowRelative: boolean = false): boolean {
-  if (process.platform === 'win32') {
-    if (input.startsWith('\\\\')) {
-      // UNC path, skip the leading \\ for validation
-      input = input.slice(2);
-    }
-
-    // Ensure we use windows path separators as scripted installers
-    //  will sometime return *nix separators.
-    input = input.replace(sanitizeSep, path.sep);
+  if ((process.platform === 'win32') && input.startsWith('\\\\')) {
+    // UNC path, skip the leading \\ for validation
+    input = input.slice(2);
   }
-
   let split = input.replace(trimTrailingSep, '').split(path.sep);
   if (allowRelative) {
     split = split.filter(segment => (segment !== '.') && (segment !== '..'));
