@@ -131,7 +131,7 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
   }
 
   private renderPlugin = (plugin: IPlugin): JSX.Element => {
-    const {group, stepId} = this.props;
+    const {t, group, stepId} = this.props;
     const {selectedPlugins} = this.state;
 
     const isSelected = selectedPlugins.indexOf(plugin.id) !== -1;
@@ -145,6 +145,7 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
         onMouseOver={this.showDescription}
       >
         {plugin.name}
+        {plugin.preset ? ` (${t('Preset')})` : ''}
       </a>
     );
     switch (group.type) {
@@ -451,6 +452,7 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
   private next = () => this.context.api.events.emit('fomod-installer-continue', 'forward');
   private cancel = () => this.context.api.events.emit('fomod-installer-cancel');
 }
+
 function mapStateToProps(state: any): IConnectedProps {
   return {
     dataPath: state.session.fomod.installer.dialog.dataPath,
@@ -458,5 +460,6 @@ function mapStateToProps(state: any): IConnectedProps {
     installerState: state.session.fomod.installer.dialog.state,
   };
 }
+
 export default translate(['common'])(connect(mapStateToProps)(
   InstallerDialog)) as React.ComponentClass<IBaseProps>;

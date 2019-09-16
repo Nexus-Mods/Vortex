@@ -26,6 +26,7 @@ import {getGame} from '../gamemode_management/util/getGame';
 import {setModEnabled} from '../profile_management/actions/profiles';
 
 import { setInstallPath } from './actions/settings';
+import { IInstallOptions } from './types/IInstallOptions';
 import allTypesSupported from './util/allTypesSupported';
 import { genSubDirFunc } from './util/deploy';
 import queryGameId from './util/queryGameId';
@@ -562,7 +563,7 @@ export function onAddMod(api: IExtensionApi, gameId: string,
 export function onStartInstallDownload(api: IExtensionApi,
                                        installManager: InstallManager,
                                        downloadId: string,
-                                       allowAutoEnable?: boolean,
+                                       options: IInstallOptions,
                                        callback?: (error, id: string) => void): Promise<void> {
   const store = api.store;
   const state: IState = store.getState();
@@ -600,7 +601,8 @@ export function onStartInstallDownload(api: IExtensionApi,
       const fullPath: string = path.join(downloadPath, download.localPath);
       const { enable } = state.settings.automation;
       installManager.install(downloadId, fullPath, download.game, api,
-        { download }, true, enable && (allowAutoEnable !== false), callback, gameId);
+        { download, choices: options.choices }, true, enable && (options.allowAutoEnable !== false),
+        callback, gameId);
     })
     .catch(err => {
       if (callback !== undefined) {

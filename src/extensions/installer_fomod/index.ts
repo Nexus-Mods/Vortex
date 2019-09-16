@@ -176,6 +176,7 @@ function install(api: IExtensionApi,
                  stopPatterns: string[],
                  pluginPath: string,
                  scriptPath: string,
+                 choicesIn: any,
                  progressDelegate: ProgressDelegate,
                  coreDelegates: Core): Promise<IInstallResult> {
   if (installLib === undefined) {
@@ -192,38 +193,45 @@ function install(api: IExtensionApi,
   }
 
   currentInstallPromise = new Promise((resolve, reject) => {
-    installLib({ files, stopPatterns, pluginPath,
-                 scriptPath, progressDelegate, coreDelegates },
+    installLib({ files, stopPatterns, pluginPath, scriptPath,
+                 choices: choicesIn, progressDelegate, coreDelegates },
       (err: Error, result: any) => {
         if ((err !== null) && (err !== undefined)) {
           reject(transformError(err));
         } else {
-          const state = api.store.getState();
-          const dialogState: IInstallerState = state.session.fomod.installer.dialog.state;
+          try {
+            const state = api.store.getState();
+            const dialogState: IInstallerState = state.session.fomod.installer.dialog.state;
 
-          const choices = (dialogState === undefined)
-            ? undefined
-            : dialogState.installSteps.map(step => {
-              const ofg: IGroupList = step.optionalFileGroups || { group: [], order: 'Explicit' };
-              return {
-                name: step.name,
-                groups: ofg.group.map(group => ({
-                  name: group.name,
-                  choices: group.options
-                    .filter(opt => opt.selected)
-                    .map(opt => ({ name: opt.name, idx: opt.id })),
-                })),
-              };
+            const choices = (dialogState === undefined)
+              ? undefined
+              : dialogState.installSteps.map(step => {
+                const ofg: IGroupList = step.optionalFileGroups || { group: [], order: 'Explicit' };
+                return {
+                  name: step.name,
+                  groups: (ofg.group || []).map(group => ({
+                    name: group.name,
+                    choices: group.options
+                      .filter(opt => opt.selected)
+                      .map(opt => ({ name: opt.name, idx: opt.id })),
+                  })),
+                };
+              });
+
+            resolve({
+              message: result.message,
+              instructions: [].concat(result.instructions, [{
+                type: 'attribute',
+                key: 'installerChoices',
+                value: {
+                  type: 'fomod',
+                  options: choices,
+                },
+              }]),
             });
-
-          resolve({
-            message: result.message,
-            instructions: [].concat(result.instructions, [{
-            type: 'attribute',
-            key: 'fomod-choices',
-            value: choices,
-          }]),
-        });
+          } catch (err) {
+            reject(err);
+          }
       }
     });
   }).finally(() => {
@@ -293,15 +301,19 @@ function checkNetInstall() {
 
 function init(context: IExtensionContext): boolean {
   context.registerInstaller(
-    'fomod', 100, testSupported, (files, scriptPath, gameId, progressDelegate) => {
+    'fomod', 100, testSupported, (files, scriptPath, gameId, progressDelegate, choices) => {
       const coreDelegates = new Core(context.api, gameId);
       const stopPatterns = getStopPatterns(gameId);
       const pluginPath = getPluginPath(gameId);
+      console.log('choices', choices);
       return currentInstallPromise
         .then(() => {
           context.api.store.dispatch(setInstallerDataPath(scriptPath));
+          const fomodChoices = (choices !== undefined) && (choices.type === 'fomod')
+            ? choices.options
+            : undefined;
           return install(context.api, files, stopPatterns, pluginPath,
-                         scriptPath, progressDelegate, coreDelegates);
+                         scriptPath, fomodChoices, progressDelegate, coreDelegates);
         })
         .finally(() => {
           context.api.store.dispatch(endDialog());
@@ -320,13 +332,15 @@ function init(context: IExtensionContext): boolean {
     icon: 'inspect',
     placement: 'detail',
     calc: (mod: IMod) => {
-      const choices = getSafe(mod.attributes, ['fomod-choices'], undefined);
-      if (choices === undefined) {
+      const choices = getSafe(mod.attributes, ['installerChoices'], undefined);
+      if ((choices === undefined) || (choices.type !== 'fomod')) {
         return undefined;
       }
-      return choices.reduce((prev, step) => {
-        prev.push(...step.groups.map(group =>
-          `${group.name} = ${group.choices.map(choice => choice.name).join(', ')}`));
+      return choices.options.reduce((prev, step) => {
+        prev.push(...step.groups
+          .filter(group => group.choices.length > 0)
+          .map(group =>
+            `${group.name} = ${group.choices.map(choice => choice.name).join(', ')}`));
         return prev;
       }, []);
     },

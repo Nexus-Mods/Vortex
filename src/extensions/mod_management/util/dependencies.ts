@@ -120,7 +120,8 @@ function gatherDependencies(rules: IModRule[],
             reference: rule.reference,
             lookupResults: (lookupDetails.length > 0)
               ? lookupDetails.map(iter => makeLookupResult(iter, urlFromHint))
-              : [{
+              : (urlFromHint !== undefined)
+              ? [{
                 key: 'from-download-hint', value: {
                   fileName: rule.reference.logicalFileName,
                   fileSizeBytes: rule.reference.fileSize,
@@ -130,7 +131,8 @@ function gatherDependencies(rules: IModRule[],
                   sourceURI: urlFromHint.url,
                   referer: urlFromHint.referer,
                 },
-              }],
+              }]
+              : [],
             fileList: rule.fileList,
             mod,
           };

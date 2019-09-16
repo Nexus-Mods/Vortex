@@ -1013,19 +1013,22 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   private reinstall = (modIds: string | string[]) => {
     const { gameMode, mods, modState } = this.props;
     if (Array.isArray(modIds)) {
-      modIds.filter(modId => mods[modId] !== undefined).forEach(modId =>
+      modIds.filter(modId => mods[modId] !== undefined).forEach(modId => {
+        const choices = getSafe(mods[modId], ['attributes', 'installerChoices'], undefined);
         this.context.api.events.emit('start-install-download', mods[modId].archiveId,
-                                     false, (err) => {
+                                     { choices, allowAutoEnable: false }, (err) => {
           if (err === null) {
             const enabled = modIds.filter(id => getSafe(modState, [id, 'enabled'], false));
             if (enabled.length > 0) {
               this.context.api.events.emit('mods-enabled', enabled, true, gameMode);
             }
           }
-        }));
+        });
+      });
     } else if (mods[modIds] !== undefined) {
+      const choices = getSafe(mods[modIds], ['attributes', 'installerChoices'], undefined);
       this.context.api.events.emit('start-install-download', mods[modIds].archiveId,
-                                   false, (err) => {
+                                   { choices, allowAutoEnable: false }, (err) => {
         if (err === null) {
           if (modState[modIds].enabled) {
             // reinstalling an enabled mod automatically enables the new one so we also need

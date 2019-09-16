@@ -251,6 +251,10 @@ class InstallManager {
           ? this.findPreviousVersionMod(modInfo.fileId, api.store, installGameId)
           : undefined;
 
+        if ((oldMod !== undefined) && (fullInfo.choices === undefined)) {
+          fullInfo.choices = getSafe(oldMod, ['attributes', 'installerChoices'], undefined);
+        }
+
         if ((oldMod !== undefined) && (currentProfile !== undefined)) {
           const wasEnabled = getSafe(currentProfile.modState, [oldMod.id, 'enabled'], false);
           return this.userVersionChoice(oldMod, api.store)
@@ -296,7 +300,7 @@ class InstallManager {
         installContext.setInstallPathCB(modId, destinationPath);
         tempPath = destinationPath + '.installing';
         return this.installInner(api, archivePath,
-          tempPath, destinationPath, installGameId, installContext, fileList);
+          tempPath, destinationPath, installGameId, installContext, fullInfo.choices, fileList);
       })
       .then(result => {
         const state: IState = api.store.getState();
@@ -500,6 +504,7 @@ class InstallManager {
   private installInner(api: IExtensionApi, archivePath: string,
                        tempPath: string, destinationPath: string,
                        gameId: string, installContext: IInstallContext,
+                       installChoices?: any,
                        extractList?: IFileListItem[]): Promise<IInstallResult> {
     const fileList: string[] = [];
     const progress = (files: string[], percent: number) => {
@@ -582,7 +587,8 @@ class InstallManager {
           log('debug', 'invoking installer', supportedInstaller.installer.priority);
           return installer.install(
               fileList, tempPath, gameId,
-              (perc: number) => log('info', 'progress', perc));
+              (perc: number) => log('info', 'progress', perc),
+              installChoices);
         });
   }
 
@@ -1191,7 +1197,8 @@ class InstallManager {
         if (error.length > 0) {
           bbcode += '[color=red]'
             + '{{modName}} has unsolved dependencies that could not be found automatically. '
-            + 'Please install them manually.'
+            + 'Please install them manually:<br/>'
+            + '{{errors}}'
             + '[/color]';
         }
 
@@ -1210,6 +1217,7 @@ class InstallManager {
             count: success.length,
             instCount: requiredInstalls.length,
             dlCount: requiredDownloads.length,
+            errors: error.map(err => err.error).join('<br/>'),
           } }, actions)).then(result => {
             if (result.action === 'Enable') {
               return this.doInstallDependencies(api, profile, modId, success, false);

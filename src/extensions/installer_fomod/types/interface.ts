@@ -16,6 +16,7 @@ export type PluginType =
 export interface IPlugin {
   id: number;
   selected: boolean;
+  preset: boolean;
   name: string;
   description: string;
   image: string;

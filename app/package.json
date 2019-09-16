@@ -36,7 +36,7 @@
     "encoding-down": "^6.0.1",
     "exe-version": "Nexus-Mods/node-exe-version",
     "feedparser": "^2.2.9",
-    "fomod-installer": "Nexus-Mods/fomod-installer",
+    "fomod-installer": "Nexus-Mods/fomod-installer#mod-packs",
     "fs-extra-promise": "^1.0.1",
     "fuzzball": "^1.2.0",
     "graphlib": "^2.1.7",

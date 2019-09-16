@@ -6,4 +6,4 @@ export type ProgressDelegate = (perc: number) => void;
 
 export type InstallFunc =
     (files: string[], destinationPath: string, gameId: string,
-     progressDelegate: ProgressDelegate) => Promise<IInstallResult>;
+     progressDelegate: ProgressDelegate, choices?: any) => Promise<IInstallResult>;

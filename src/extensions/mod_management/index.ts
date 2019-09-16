@@ -48,6 +48,7 @@ import {settingsReducer} from './reducers/settings';
 import {transactionsReducer} from './reducers/transactions';
 import {IDeployedFile, IDeploymentMethod, IUnavailableReason} from './types/IDeploymentMethod';
 import {IFileMerge} from './types/IFileMerge';
+import { IInstallOptions } from './types/IInstallOptions';
 import {IMod} from './types/IMod';
 import {IModSource} from './types/IModSource';
 import {InstallFunc} from './types/InstallFunc';
@@ -919,9 +920,16 @@ function once(api: IExtensionApi) {
   });
 
   api.events.on(
-      'start-install-download',
-      (downloadId: string, allowAutoEnable?: boolean, callback?: (error, id: string) => void) =>
-          onStartInstallDownload(api, installManager, downloadId, allowAutoEnable, callback));
+    'start-install-download',
+    (downloadId: string, optionsIn?: IInstallOptions | boolean,
+     callback?: (error, id: string) => void) => {
+      const options = optionsIn === undefined
+        ? {}
+        : (typeof(optionsIn) === 'boolean')
+        ? { allowAutoEnable: optionsIn }
+        : optionsIn;
+      onStartInstallDownload(api, installManager, downloadId, options, callback);
+    });
 
   api.events.on(
       'remove-mod',
