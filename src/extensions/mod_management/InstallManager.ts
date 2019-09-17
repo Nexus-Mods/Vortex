@@ -595,6 +595,7 @@ class InstallManager {
   }
 
   private validateInstructions(instructions: IInstruction[]): IInvalidInstruction[] {
+    const sanitizeSep = new RegExp('/', 'g');
     // Validate the ungrouped instructions and return errors (if any)
     const invalidDestinationErrors: IInvalidInstruction[] = instructions.filter(instr => {
       if (!!instr.destination) {
@@ -604,7 +605,13 @@ class InstallManager {
         const destination = (instr.destination.charAt(0) === path.sep)
           ? instr.destination.substr(1)
           : instr.destination;
-        return (!isPathValid(destination, true));
+
+        // Ensure we use windows path separators as scripted installers
+        //  will sometime return *nix separators.
+        const sanitized = (process.platform === 'win32')
+          ? destination.replace(sanitizeSep, path.sep)
+          : destination;
+        return (!isPathValid(sanitized, true));
       }
 
       return false;
