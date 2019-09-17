@@ -61,5 +61,7 @@ export interface IDownloadHint {
 export interface IModRule extends IRule {
   reference: IModReference;
   fileList?: IFileListItem[];
+  // the format of these choices is installer-specific
+  installerChoices?: any;
   downloadHint?: IDownloadHint;
 }

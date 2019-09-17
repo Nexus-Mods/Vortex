@@ -1104,7 +1104,8 @@ class InstallManager {
       }
       return dlPromise
         .then((downloadId: string) => (dep.mod === undefined)
-           ? this.installModAsync(dep.reference, api, downloadId, dep.fileList)
+           ? this.installModAsync(dep.reference, api, downloadId,
+                                  { choices: dep.installerChoices }, dep.fileList)
            : Promise.resolve(dep.mod.id))
         .then((modId: string) => {
           const updatedRef: IModReference = { ...dep.reference };
@@ -1358,6 +1359,7 @@ class InstallManager {
   private installModAsync(requirement: IReference,
                           api: IExtensionApi,
                           downloadId: string,
+                          modInfo?: any,
                           fileList?: IFileListItem[]): Promise<string> {
     return new Promise<string>((resolve, reject) => {
       const state = api.store.getState();
@@ -1366,7 +1368,7 @@ class InstallManager {
       const fullPath: string =
         path.join(downloadPathForGame(state, downloadGame), download.localPath);
       this.install(downloadId, fullPath, getDownloadGames(download),
-        api, { download }, false, false, (error, id) => {
+        api, { ...modInfo, download }, false, false, (error, id) => {
           if (error === null) {
             resolve(id);
           } else {

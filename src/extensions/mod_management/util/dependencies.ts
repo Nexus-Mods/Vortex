@@ -134,6 +134,7 @@ function gatherDependencies(rules: IModRule[],
               }]
               : [],
             fileList: rule.fileList,
+            installerChoices: rule.installerChoices,
             mod,
           };
           return [].concat(total, dependencies, [res]);

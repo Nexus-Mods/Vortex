@@ -14,6 +14,7 @@ export interface IDependency {
   reference: IReference;
   lookupResults: ILookupResultEx[];
   fileList?: IFileListItem[];
+  installerChoices?: any;
   mod: IMod;
 }
 

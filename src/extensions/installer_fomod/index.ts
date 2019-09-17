@@ -300,7 +300,7 @@ function checkNetInstall() {
 }
 
 function init(context: IExtensionContext): boolean {
-  context.registerInstaller(
+  (context.registerInstaller as any)(
     'fomod', 100, testSupported, (files, scriptPath, gameId, progressDelegate, choices) => {
       const coreDelegates = new Core(context.api, gameId);
       const stopPatterns = getStopPatterns(gameId);
@@ -336,7 +336,7 @@ function init(context: IExtensionContext): boolean {
       if ((choices === undefined) || (choices.type !== 'fomod')) {
         return undefined;
       }
-      return choices.options.reduce((prev, step) => {
+      return (choices.options || []).reduce((prev, step) => {
         prev.push(...step.groups
           .filter(group => group.choices.length > 0)
           .map(group =>
