@@ -1,13 +1,13 @@
-import { setToolStopped, setToolPid } from '../../../actions';
+import { setToolPid, setToolStopped } from '../../../actions';
 import { makeExeId } from '../../../reducers/session';
 import { IDiscoveredTool } from '../../../types/IDiscoveredTool';
 import { IExtensionApi } from '../../../types/IExtensionContext';
 import { IState } from '../../../types/IState';
 import { log } from '../../../util/log';
-import { currentGameDiscovery, currentGame } from '../../../util/selectors';
+import { currentGame, currentGameDiscovery } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 
-import { remote, BrowserWindow } from 'electron';
+import { BrowserWindow, remote } from 'electron';
 import * as path from 'path';
 import * as Redux from 'redux';
 import * as winapi from 'winapi-bindings';
