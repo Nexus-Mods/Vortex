@@ -1,6 +1,7 @@
 import { IActionDefinition } from '../types/IActionDefinition';
 import { IExtensibleProps } from '../util/ExtensionProvider';
 import { log } from '../util/log';
+import { truthy } from '../util/util';
 
 import ActionControl, { IActionControlProps, IActionDefinitionEx } from './ActionControl';
 import Icon from './Icon';
@@ -58,7 +59,9 @@ class MenuAction extends React.PureComponent<IMenuActionProps, {}> {
     const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
 
     action.action(instanceIds);
-    onSelect();
+    if (truthy(onSelect)) {
+      onSelect();
+    }
   }
 }
 
