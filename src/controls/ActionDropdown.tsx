@@ -1,5 +1,6 @@
 import { IActionDefinition } from '../types/IActionDefinition';
 import { IExtensibleProps } from '../util/ExtensionProvider';
+import { log } from '../util/log';
 
 import ActionControl, { IActionControlProps, IActionDefinitionEx } from './ActionControl';
 import Icon from './Icon';
@@ -104,11 +105,11 @@ class DropdownMenu extends React.PureComponent<IProps, { open: boolean }> {
     return (
       <Dropdown
         id={`${id}-menu`}
-        data-value={actions[defaultIdx].title}
         ref={this.setRef}
       >
         <Button
           onClick={actions[defaultIdx].show ? this.triggerDefault : undefined}
+          data-value={actions[defaultIdx].title}
         >
           {title}
         </Button>
@@ -201,7 +202,12 @@ class DropdownMenu extends React.PureComponent<IProps, { open: boolean }> {
 
   private triggerDefault = (evt: React.MouseEvent<any>) => {
     const { instanceId, actions } = this.props;
-    const title = evt.currentTarget.attributes.getNamedItem('data-value').value;
+    const data = evt.currentTarget.attributes.getNamedItem('data-value');
+    if (data === undefined) {
+      log('error', 'no default action', JSON.stringify(actions));
+      return;
+    }
+    const title = data.value;
     const action = actions.find(iter => iter.title === title);
     if (action !== undefined) {
       const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
