@@ -38,6 +38,8 @@ import { allow } from 'permissions';
 import * as semver from 'semver';
 import * as uuidT from 'uuid';
 
+import { RegGetValue } from 'winapi-bindings';
+
 const uuid = lazyRequire<typeof uuidT>(() => require('uuid'));
 
 function last(array: any[]): any {
@@ -283,6 +285,30 @@ class Application {
         });
   }
 
+  private isUACEnabled(): Promise<boolean> {
+    if (process.platform !== 'win32') {
+      return Promise.resolve(true);
+    }
+
+    return new Promise((resolve) => {
+      try {
+        const res = RegGetValue('HKEY_LOCAL_MACHINE',
+          'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System',
+          'ConsentPromptBehaviorAdmin');
+        log('debug', 'UAC settings found', JSON.stringify(res, undefined, 2));
+        return ((res.type === 'REG_DWORD') && (res.value === 0))
+          ? resolve(false)
+          : resolve(true);
+      } catch (err) {
+        // We couldn't retrieve the value, log this and resolve positively
+        //  as the user might have a version of Windows that does not use
+        //  the key we're looking for.
+        log('warn', 'failed to check UAC settings', err);
+        return resolve(true);
+      }
+    });
+  }
+
   private warnAdmin(): Promise<void> {
     const state: IState = this.mStore.getState();
     return timeout(isAdmin(), 1000)
@@ -294,7 +320,7 @@ class Application {
         if (state.app.warnedAdmin > 0) {
           return Promise.resolve();
         }
-        return new Promise((resolve, reject) => {
+        return this.isUACEnabled().then(uacEnabled => new Promise((resolve, reject) => {
           dialog.showMessageBox(getVisibleWindow(), {
             title: 'Admin rights detected',
             message:
@@ -306,7 +332,12 @@ class Application {
               + 'Vortex will try its best to help you with that.\n'
               + 'If you choose to continue I won\'t bother you again but please '
               + 'don\'t report any permission problems to us because they are '
-              + 'of your own making.',
+              + 'of your own making.'
+              + (!uacEnabled
+                  ? '\n\nPlease note: User Account Control(UAC) notifications are disabled '
+                    + 'on your device; we strongly recommend you re-enable these to avoid '
+                    + 'file permissions issues.'
+                  : ''),
             buttons: [
               'Quit',
               'Ignore',
@@ -320,7 +351,7 @@ class Application {
               resolve();
             }
           });
-        });
+        }));
       });
   }
 

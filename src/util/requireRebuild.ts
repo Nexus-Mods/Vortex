@@ -52,6 +52,8 @@ const initBuild = [
   'winapi',
   'wholocks',
   'ExeVersion',
+  'windump',
+  'crash-dump',
 ];
 
 const headerURL = 'https://atom.io/download/electron';
@@ -68,6 +70,7 @@ function patchedLoad(orig) {
         return res;
       }
     } catch (err) {
+      const reqName = path.basename(request);
       if (!mismatchExp.test(err.message)
           && !differentVersionExp.test(err.message)
           && !winExp.test(err.message)
@@ -75,7 +78,7 @@ function patchedLoad(orig) {
           && !fckingNodeSassExp.test(err.message)
           && !edgeExp.test(err.message)
           && (!noModuleExp.test(err.message)
-              || (initBuild.find(name => request.indexOf(name) !== -1) === undefined))) {
+              || (initBuild.find(name => name === reqName) === undefined))) {
         throw err;
       }
 

@@ -1,7 +1,7 @@
 import { IRule } from './IMod';
 
 export type InstructionType =
-  'copy' | 'submodule' | 'generatefile' | 'iniedit'
+  'copy' | 'mkdir' | 'submodule' | 'generatefile' | 'iniedit'
   | 'unsupported' | 'attribute' | 'setmodtype' | 'error'
   | 'rule';
 
