@@ -8,6 +8,7 @@ h1, h2, h3 {
 }
 
 .dropdown-menu {
+  -webkit-app-region: no-drag;
   border: $border-width solid $border-color;
   > li > a {
     display: flex;
