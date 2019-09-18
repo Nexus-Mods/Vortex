@@ -237,8 +237,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     if (!isPathValid(input)) {
       return {
         state: 'error',
-        reason: 'Path cannot be set to a partition\'s root, '
-              + 'contain illegal characters or reserved names',
+        reason: 'Path cannot contain illegal characters or reserved names',
       };
     }
 

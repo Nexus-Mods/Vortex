@@ -371,17 +371,6 @@ export function isPathValid(input: string, allowRelative: boolean = false): bool
   let split = input.replace(trimTrailingSep, '').split(path.sep);
   if (allowRelative) {
     split = split.filter(segment => (segment !== '.') && (segment !== '..'));
-  } else {
-    if ((process.platform === 'win32')
-      && (split.length === 1)
-      && (isDriveLetter(split[0]))) {
-      // This is the partition's root path; this is arguably
-      //  a valid path, but given how we use this function in Vortex,
-      //  the partition root path should be considered invalid as this
-      //  will block users from attempting to copy and move stuff
-      //  inside the partition's root!
-      return false;
-    }
   }
   const found = split.find((segment: string, idx: number) => {
     if (idx === 0 && isDriveLetter(segment)) {
