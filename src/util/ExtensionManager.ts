@@ -1177,12 +1177,14 @@ class ExtensionManager {
                   log('warn', 'child output', errOut.trim());
                 }
                 if (options.expectSuccess) {
-                  const lines = errOut.trim().split('\n');
-                  const lastLine = errOut !== undefined
-                    ? lines[lines.length - 1]
-                    : '<No output>';
-                  const err: any =
-                    new Error(`Failed to run "${executable}": "${lastLine} (${code.toString(16)})"`);
+                  let lastLine = '<No output>';
+
+                  if (errOut !== undefined) {
+                    const lines = errOut.trim().split('\n');
+                    lastLine = lines[lines.length - 1];
+                  }
+                  const err: any = new Error(
+                    `Failed to run "${executable}": "${lastLine} (${code.toString(16)})"`);
                   err.exitCode = code;
                   return reject(err);
                 }
