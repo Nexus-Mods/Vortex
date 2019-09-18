@@ -46,6 +46,9 @@
     padding: 15px;
     margin: 15px;
     overflow-y: auto;
+    > .control-label {
+      white-space: pre-wrap;
+    }
   }
 
   .fomod-nav-buttons {
