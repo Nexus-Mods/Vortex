@@ -34,6 +34,9 @@
     margin-right: 8px;
   }
 
+  &.toolbar-app-region .main-toolbar-right {
+    margin-bottom: 8px;
+  }
 }
 
 // when the window titlebar is disabled, make the main toolbar region
@@ -41,10 +44,6 @@
 .toolbar-app-region {
   height: 105px;
   -webkit-app-region: drag;
-
-  .main-toolbar-right {
-    margin-bottom: 8px;
-  }
 }
 
 // need to disable while modal is open because the modal might have controls inside
