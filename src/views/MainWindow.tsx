@@ -61,6 +61,7 @@ export interface IMainWindowState {
   loadedPages: string[];
   hidpi: boolean;
   focused: boolean;
+  menuOpen: boolean;
 }
 
 export interface IConnectedProps {
@@ -102,7 +103,8 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   private globalButtons: IActionDefinition[] = [];
   private modifiers: IModifiers = { alt: false, ctrl: false, shift: false };
 
-  private menuLayer: JSX.Element = null;
+  private menuLayer: HTMLDivElement = null;
+  private menuObserver: MutationObserver;
 
   private headerRef: HTMLElement = null;
   private sidebarRef: HTMLElement = null;
@@ -116,6 +118,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       loadedPages: [],
       hidpi: false,
       focused: true,
+      menuOpen: false,
     };
 
     this.settingsPage = {
@@ -192,6 +195,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       || this.state.showLayer !== nextState.showLayer
       || this.state.hidpi !== nextState.hidpi
       || this.state.focused !== nextState.focused
+      || this.state.menuOpen !== nextState.menuOpen
       ;
   }
 
@@ -205,7 +209,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   public render(): JSX.Element {
     const { activeProfileId, customTitlebar, onHideDialog,
             nextProfileId, uiBlockers, visibleDialog } = this.props;
-    const { focused, hidpi } = this.state;
+    const { focused, hidpi, menuOpen } = this.state;
 
     const switchingProfile = ((activeProfileId !== nextProfileId) && truthy(nextProfileId));
 
@@ -217,6 +221,9 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       // this is important to indicate to the user he can resize the window
       // (even though it's not actually this frame that lets him do it)
       classes.push('window-frame');
+    }
+    if (menuOpen) {
+      classes.push('menu-open');
     }
 
     const uiBlocker = truthy(uiBlockers)
@@ -479,6 +486,28 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
   private setMenuLayer = (ref) => {
     this.menuLayer = ref;
+
+    if (this.menuObserver !== undefined) {
+      this.menuObserver.disconnect();
+      this.menuObserver = undefined;
+    }
+
+    if (ref !== null) {
+      let hasChildren = this.menuLayer.children.length > 0;
+      this.menuObserver = new MutationObserver(() => {
+        if (this.menuLayer === null) {
+          // shouldn't get here but better make sure
+          return;
+        }
+        const newHasChildren = this.menuLayer.children.length > 0;
+        if (newHasChildren !== hasChildren) {
+          hasChildren = newHasChildren;
+          this.updateState({ menuOpen: { $set: hasChildren } });
+        }
+      });
+
+      this.menuObserver.observe(ref, { childList: true });
+    }
   }
 
   private handleClickPage = (evt: React.MouseEvent<any>) => {
