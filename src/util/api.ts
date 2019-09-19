@@ -11,6 +11,7 @@ import { resolveCategoryName,
          resolveCategoryPath } from '../extensions/category_management/util/retrieveCategoryPath';
 import { getGame, getGames } from '../extensions/gamemode_management/util/getGame';
 import deriveModInstallName from '../extensions/mod_management/modIdManager';
+import { getManifest } from '../extensions/mod_management/util/activationStore';
 import { getActivator,
          getCurrentActivator } from '../extensions/mod_management/util/deploymentMethods';
 import renderModName from '../extensions/mod_management/util/modName';
@@ -63,6 +64,7 @@ export {
   getCurrentLanguage,
   getGame,
   getGames,
+  getManifest,
   getNormalizeFunc,
   getReduxLog,
   getVisibleWindow,

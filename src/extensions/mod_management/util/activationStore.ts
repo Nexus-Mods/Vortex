@@ -7,6 +7,7 @@ import * as fs from '../../../util/fs';
 import { writeFileAtomic } from '../../../util/fsAtomic';
 import { log } from '../../../util/log';
 import { activeGameId, currentGameDiscovery, installPathForGame } from '../../../util/selectors';
+import { getSafe } from '../../../util/storeHelper';
 import { deBOM, makeQueue, truthy } from '../../../util/util';
 
 import { getGame } from '../../gamemode_management/util/getGame';
@@ -167,8 +168,12 @@ function readManifestFileBinary(filePath: string): Promise<any> {
     .then(data => readManifest(data));
 }
 
-function getManifest(api: IExtensionApi, instanceId: string,
-                     filePath: string, backupPath: string, backup2Path: string): Promise<any> {
+function getManifestImpl(api: IExtensionApi,
+                         instanceId: string,
+                         filePath: string,
+                         backupPath: string,
+                         backup2Path: string)
+                         : Promise<IDeploymentManifest> {
   return readManifestFile(filePath)
     .catch(err => {
       if (err instanceof UserCanceled) {
@@ -227,7 +232,7 @@ function fallbackPurgeType(api: IExtensionApi, activator: IDeploymentMethod,
   const tagBackup2Path = path.join(stagingPath, `vortex.deployment.backup.${typeTag}msgpack`);
   const instanceId = state.app.instanceId;
 
-  return getManifest(api, instanceId, tagFilePath, tagBackupPath, tagBackup2Path)
+  return getManifestImpl(api, instanceId, tagFilePath, tagBackupPath, tagBackup2Path)
       .then(tagObject => {
         let result: Promise<void>;
         if (tagObject.files.length > 0) {
@@ -279,6 +284,52 @@ export function withActivationLock(func: () => Promise<any>, tryOnly: boolean = 
   return activationQueue(func, tryOnly);
 }
 
+/**
+ * return a manifest (detailing which files are currently deployed by Vortex)
+ * Please note that the manifest is intended only as kind of a fallback, core functionality
+ * of Vortex is designed to work cleanly even if the manifest is deleted by the user and
+ * the same should be true for any extension using this function: Work on the assumption
+ * that the manifest may be missing or outdated.
+ * @param api api
+ * @param modType the mod type for which to retrieve the manifest, default mod type if undefined
+ * @param gameId the game for which to retrieve the manifest, defaults to the current game.
+ */
+export function getManifest(api: IExtensionApi,
+                            modType?: string,
+                            gameId?: string)
+                            : Promise<IDeploymentManifest> {
+  const state: IState = api.store.getState();
+  const instanceId = state.app.instanceId;
+
+  if (gameId === undefined) {
+    gameId = activeGameId(state);
+  }
+
+  if (modType === undefined) {
+    modType = '';
+  }
+
+  const game = getGame(gameId);
+  const discovery = getSafe(state, ['settings', 'gameMode', 'discovered', gameId], undefined);
+  if (discovery === undefined) {
+    return Promise.resolve(undefined);
+  }
+
+  const stagingPath: string = installPathForGame(state, gameId);
+  const deployPath: string = game.getModPaths(discovery.path)[modType];
+  if ((stagingPath === undefined) || (deployPath === undefined)) {
+    return Promise.resolve(undefined);
+  }
+
+  const typeTag = (modType !== undefined) && (modType.length > 0) ? modType + '.' : '';
+  const tagFileName = `vortex.deployment.${typeTag}json`;
+  const tagFilePath = path.join(deployPath, tagFileName);
+  const tagBackupPath = path.join(stagingPath, tagFileName);
+  const tagBackup2Path = path.join(stagingPath, `vortex.deployment.${typeTag}msgpack`);
+
+  return getManifestImpl(api, instanceId, tagFilePath, tagBackupPath, tagBackup2Path);
+}
+
 export function loadActivation(api: IExtensionApi, modType: string,
                                deployPath: string, stagingPath: string,
                                activator: IDeploymentMethod): Promise<IDeployedFile[]> {
@@ -292,7 +343,7 @@ export function loadActivation(api: IExtensionApi, modType: string,
   const tagBackup2Path = path.join(stagingPath, `vortex.deployment.${typeTag}msgpack`);
   const state: IState = api.store.getState();
   const instanceId = state.app.instanceId;
-  return getManifest(api, instanceId, tagFilePath, tagBackupPath, tagBackup2Path)
+  return getManifestImpl(api, instanceId, tagFilePath, tagBackupPath, tagBackup2Path)
       .then(tagObject => {
         let result: Promise<IDeployedFile[]>;
         if ((tagObject.instance !== instanceId) && (tagObject.files.length > 0)) {
