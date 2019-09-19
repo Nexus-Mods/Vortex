@@ -413,7 +413,7 @@ export function isMajorDowngrade(previous: string, current: string): boolean {
  */
 export function flatten(obj: any, key: string[] = [], separator: string = '.'): any {
   return Object.keys(obj).reduce((prev, attr: string) => {
-    if (typeof(obj[attr]) === 'object') {
+    if ((typeof(obj[attr]) === 'object') && (obj[attr] !== null)) {
       prev = { ...prev, ...flatten(obj[attr], [...key, attr]) };
     } else {
       // POD
