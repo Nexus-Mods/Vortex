@@ -95,7 +95,7 @@ function nospcQuery(): PromiseBB<boolean> {
     noLink: true,
   };
 
-  const choice = dialog.showMessageBox(getVisibleWindow(), options);
+  const choice = dialog.showMessageBoxSync(getVisibleWindow(), options);
   return (choice === 0)
     ? PromiseBB.reject(new UserCanceled())
     : PromiseBB.resolve(true);
@@ -141,7 +141,7 @@ function unlockConfirm(filePath: string): PromiseBB<boolean> {
     noLink: true,
   };
 
-  const choice = dialog.showMessageBox(getVisibleWindow(), options);
+  const choice = dialog.showMessageBoxSync(getVisibleWindow(), options);
   return (choice === 0)
     ? PromiseBB.reject(new UserCanceled())
     : PromiseBB.resolve(choice === 2);
@@ -188,7 +188,7 @@ function unknownErrorRetry(filePath: string, err: Error): PromiseBB<boolean> {
     }
   }
 
-  const choice = dialog.showMessageBox(getVisibleWindow(), options);
+  const choice = dialog.showMessageBoxSync(getVisibleWindow(), options);
 
   if (options.buttons[choice] === 'Cancel and Report') {
     const nat = err['nativeCode'];
@@ -232,7 +232,7 @@ function busyRetry(filePath: string): PromiseBB<boolean> {
     noLink: true,
   };
 
-  const choice = dialog.showMessageBox(getVisibleWindow(), options);
+  const choice = dialog.showMessageBoxSync(getVisibleWindow(), options);
   return (choice === 0)
     ? PromiseBB.reject(new UserCanceled())
     : PromiseBB.resolve(true);
@@ -743,7 +743,7 @@ function raiseUACDialog<T>(t: I18next.TFunction,
                            op: () => PromiseBB<T>,
                            filePath: string): PromiseBB<T> {
   let fileToAccess = filePath !== undefined ? filePath : err.path;
-  const choice = dialog.showMessageBox(getVisibleWindow(), {
+  const choice = dialog.showMessageBoxSync(getVisibleWindow(), {
       title: 'Access denied (2)',
       message: t('Vortex needs to access "{{ fileName }}" but doesn\'t have permission to.\n'
         + 'If your account has admin rights Vortex can unlock the file for you. '

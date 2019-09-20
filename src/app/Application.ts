@@ -230,7 +230,7 @@ class Application {
         .catch(ProcessCanceled, () => {
           app.quit();
         })
-        .catch(DocumentsPathMissing, () => {
+        .catch(DocumentsPathMissing, () =>
           dialog.showMessageBox(getVisibleWindow(), {
             type: 'error',
             buttons: ['Close', 'More info'],
@@ -240,14 +240,13 @@ class Application {
             detail: 'Your "My Documents" folder is missing or is '
               + 'misconfigured. Please ensure that the folder is properly '
               + 'configured and accessible, then try again.',
-          }, response => {
-            if (response === 1) {
+          }).then(response => {
+            if (response.response === 1) {
               shell.openExternal(
                 'https://wiki.nexusmods.com/index.php/Misconfigured_Documents_Folder');
             }
             app.quit();
-          });
-        })
+          }))
         .catch(DatabaseLocked, () => {
           dialog.showErrorBox('Startup failed', 'Vortex seems to be running already. '
             + 'If you can\'t see it, please check the task manager.');
@@ -309,7 +308,7 @@ class Application {
 
   private warnAdmin(): Promise<void> {
     const state: IState = this.mStore.getState();
-    return timeout(isAdmin(), 1000)
+    return timeout(Promise.resolve(isAdmin()), 1000)
       .then(admin => {
         if ((admin === undefined) || !admin) {
           return Promise.resolve();
@@ -318,8 +317,7 @@ class Application {
         if (state.app.warnedAdmin > 0) {
           return Promise.resolve();
         }
-        return this.isUACEnabled().then(uacEnabled => new Promise((resolve, reject) => {
-          dialog.showMessageBox(getVisibleWindow(), {
+        return this.isUACEnabled().then(uacEnabled => dialog.showMessageBox(getVisibleWindow(), {
             title: 'Admin rights detected',
             message:
               'Vortex is not intended to be run as administrator!\n'
@@ -341,15 +339,14 @@ class Application {
               'Ignore',
             ],
             noLink: true,
-          }, (response: number) => {
-            if (response === 0) {
+          }).then(result => {
+            if (result.response === 0) {
               app.quit();
             } else {
               this.mStore.dispatch(setWarnedAdmin(1));
-              resolve();
+              return Promise.resolve();
             }
-          });
-        }));
+          }));
       });
   }
 
@@ -370,7 +367,7 @@ class Application {
       return Promise.resolve();
     }
     if (isMajorDowngrade(lastVersion, currentVersion)) {
-      if (dialog.showMessageBox(getVisibleWindow(), {
+      if (dialog.showMessageBoxSync(getVisibleWindow(), {
         type: 'warning',
         title: 'Downgrade detected',
         message: `The version of Vortex you\'re running (${currentVersion}) `

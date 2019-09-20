@@ -107,7 +107,7 @@ class FileAssembler {
             ? reject(new Error(`incomplete write ${bytesWritten}/${data.length}`))
             : resolve(synced))
         .catch({ code: 'ENOSPC' }, () => {
-          (dialog.showMessageBox(getVisibleWindow(), {
+          (dialog.showMessageBoxSync(getVisibleWindow(), {
             type: 'warning',
             title: 'Disk is full',
             message: 'Download can\'t continue because disk is full, '

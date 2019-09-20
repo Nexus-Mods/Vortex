@@ -79,18 +79,13 @@ function transferPath(from: string, to: string): Promise<void> {
 
 function dialogProm(window: BrowserWindow, type: string, title: string,
                     message: string, options: string[]): Promise<string> {
-  return new Promise((resolve, reject) => {
-    dialog.showMessageBox(window, {
+  return Promise.resolve(dialog.showMessageBox(window, {
       type,
       buttons: options,
       title,
       message,
       noLink: true,
-    }, (response: number) => {
-      return resolve(options[response]);
-    });
-  });
-
+    })).then(result => options[result.response]);
 }
 
 function moveDownloads_0_16(window: BrowserWindow, store: Redux.Store<IState>): Promise<void> {
@@ -168,11 +163,11 @@ function queryMigration(window: BrowserWindow, migration: IMigration): Promise<b
       title: 'Migration neccessary',
       message: migration.description,
       noLink: true,
-    }, (response: number) => {
-      if (buttons[response] === 'Cancel') {
+    }).then(result => {
+      if (buttons[result.response] === 'Cancel') {
         return reject(new UserCanceled());
       }
-      return resolve(buttons[response] === 'Continue');
+      return resolve(buttons[result.response] === 'Continue');
     });
   });
 }

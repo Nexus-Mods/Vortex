@@ -263,7 +263,7 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
     if ((allowReport !== false) && !outdated && !errorIgnored) {
       buttons.push('Report and Quit');
     }
-    let action = dialog.showMessageBox(getVisibleWindow(), {
+    let action = dialog.showMessageBoxSync(getVisibleWindow(), {
       type: 'error',
       buttons,
       defaultId: buttons.length - 1,
@@ -278,7 +278,7 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
       createErrorReport('Crash', error, contextNow, ['bug', 'crash'], state, source);
     } else if (action === 0) {
       // Ignore
-      action = dialog.showMessageBox(getVisibleWindow(), {
+      action = dialog.showMessageBoxSync(getVisibleWindow(), {
         type: 'error',
         buttons: ['Quit', 'I won\'t whine'],
         title: 'Are you sure?',
@@ -295,7 +295,7 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
       }
     }
     if (error.extension !== undefined) {
-      action = dialog.showMessageBox(getVisibleWindow(), {
+      action = dialog.showMessageBoxSync(getVisibleWindow(), {
         type: 'error',
         buttons: ['Disable', 'Keep'],
         title: 'Extension crashed',
