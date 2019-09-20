@@ -138,5 +138,5 @@
 	path = extensions/morrowind-plugin-management
 	url = https://github.com/Nexus-Mods/extension-morrowind-plugin-management.git
 [submodule "extensions\\script-extender-error-check"]
-	path = extensions\\script-extender-error-check
+	path = extensions/script-extender-error-check
 	url = https://github.com/Nexus-Mods/extension-script-extender-error-check.git
