@@ -223,11 +223,9 @@ export function getVisibleWindow(win?: Electron.BrowserWindow): Electron.Browser
     win = remote !== undefined ? remote.getCurrentWindow() : getWindow();
   }
 
-  if (win !== null) {
-    return win.isVisible() ? win : null;
-  } else {
-    return win;
-  }
+  return ((win !== null) && !win.isDestroyed() && win.isVisible())
+    ? win
+    : null;
 }
 
 /**
