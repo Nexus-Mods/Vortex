@@ -146,6 +146,7 @@ class Icon extends React.Component<IIconProps, {}> {
           && (sets[set] !== null)
           && !sets[set].has('icon-' + props.name)
           && !debugReported.has(props.name)) {
+        // this may not be a problem, loading the icon may simply be delayed
         // tslint:disable-next-line:no-console
         console.trace('icon missing', props.name);
         debugReported.add(props.name);

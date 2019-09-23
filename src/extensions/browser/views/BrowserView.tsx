@@ -107,7 +107,7 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
           {loading ? <Spinner /> : null}
         </Modal.Header>
         <Modal.Body>
-          {(instructions !== undefined) ? <p>{instructions}</p> : null}
+          {(instructions !== undefined) ? <p id='browser-instructions'>{instructions}</p> : null}
           {confirmed
             ? (
               <Webview

@@ -363,6 +363,9 @@ div:hover > .hover-expand {
   .icon-spinner {
     margin: 0 1em;
   }
+  #browser-instructions {
+    white-space: pre;
+  }
   #browser-webview {
     height: 100%;
     background: white;
