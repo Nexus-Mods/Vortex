@@ -5,7 +5,7 @@ class IdentityTag extends Tag {
     return [this.getContent()];
   }
 
-  public toReact() {
+  public toReact(): React.ReactChild[] {
     return this.getComponents();
   }
 }

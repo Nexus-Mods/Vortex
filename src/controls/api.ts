@@ -8,6 +8,7 @@ import DraggableList from './DraggableList';
 import Dropdown from './Dropdown';
 import Dropzone from './Dropzone';
 import EmptyPlaceholder from './EmptyPlaceholder';
+import ErrorBoundary from './ErrorBoundary';
 import FlexLayout from './FlexLayout';
 import FormFeedback from './FormFeedback';
 import FormInput from './FormInput';
@@ -17,6 +18,7 @@ import Modal from './Modal';
 import More from './More';
 import Overlay from './Overlay';
 import OverlayTrigger from './OverlayTrigger';
+import ProgressBar from './ProgressBar';
 import Spinner from './Spinner';
 import Steps from './Steps';
 import Table, {ChangeDataHandler, ITableRowAction, makeGetSelection} from './Table';
@@ -32,7 +34,8 @@ import Webview from './Webview';
 
 export {
   ActionContextMenu, ActionDropdown, Advanced, Banner, ChangeDataHandler, ContextMenu, Dashlet,
-  DraggableList, Dropdown, Dropzone, EmptyPlaceholder,
+  DraggableList, Dropdown, Dropzone, EmptyPlaceholder, ErrorBoundary,
   FlexLayout, FormFeedback, FormInput, Icon, IconBar, ITableRowAction, Modal,
-  More, OptionsFilter, Overlay, OverlayTrigger, Table, TableDateTimeFilter, TableNumericFilter,
-  TableTextFilter, Spinner, Steps, makeGetSelection, Toggle, ToolbarIcon, tooltip, Usage, Webview};
+  More, OptionsFilter, Overlay, OverlayTrigger, ProgressBar,
+  Table, TableDateTimeFilter, TableNumericFilter, TableTextFilter,
+  Spinner, Steps, makeGetSelection, Toggle, ToolbarIcon, tooltip, Usage, Webview};

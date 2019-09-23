@@ -18,6 +18,7 @@ import { makeModReference } from '../extensions/mod_management/util/modReference
 import sortMods, { CycleError } from '../extensions/mod_management/util/sort';
 import testModReference from '../extensions/mod_management/util/testModReference';
 import { Archive } from './archives';
+import renderBBCode from './bbcode';
 import { checksum, fileMD5 } from './checksum';
 import copyRecursive from './copyRecursive';
 import { ArgumentInvalid, DataInvalid, MissingInterpreter, NotFound, NotSupportedError,
@@ -90,6 +91,7 @@ export {
   ProcessCanceled,
   ReduxProp,
   relativeTime,
+  renderBBCode,
   renderModName,
   renderModReference,
   resolveCategoryName,

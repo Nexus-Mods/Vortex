@@ -20,7 +20,7 @@ class LinkTag extends Tag {
     );
   }
 
-  public toReact() {
+  public toReact(): React.ReactChild[] {
     let url = this.renderer.strip(this.params[this.name] || this.getContent(true));
     if (/javascript:/i.test(url)) {
       url = '';
@@ -34,11 +34,11 @@ class LinkTag extends Tag {
       url = `mailto:${url}`;
     }
 
-    return (
+    return [(
       <a href={url} onClick={this.clicked} title={url}>
         {this.getComponents()}
       </a>
-    );
+    )];
   }
 
   private clicked = (evt: React.MouseEvent<any>) => {

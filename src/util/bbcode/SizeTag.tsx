@@ -12,16 +12,16 @@ class SizeTag extends Tag {
     return [`<span style="font-size:${this.calc(size)}">`, this.getContent(), '</span>'];
   }
 
-  public toReact() {
+  public toReact(): React.ReactChild[] {
     const size = this.params.size;
 
     if (isNaN(size)) {
       return this.getComponents();
     }
 
-    return (
+    return [(
       <span style={{ fontSize: this.calc(size) }}>{this.getComponents()}</span>
-    );
+    )];
   }
 
   private calc(sizeFactor: number): string {
