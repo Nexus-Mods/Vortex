@@ -464,7 +464,8 @@ class InstallManager {
       })));
   }
 
-  public installDependencies(api: IExtensionApi, profile: IProfile, modId: string): Promise<void> {
+  public installDependencies(api: IExtensionApi, profile: IProfile, modId: string,
+                             silent: boolean): Promise<void> {
     const state: IState = api.store.getState();
     const mod: IMod = getSafe(state, ['persistent', 'mods', profile.gameId, modId], undefined);
 
@@ -473,7 +474,8 @@ class InstallManager {
     }
 
     const installPath = this.mGetInstallPath(profile.gameId);
-    return this.installDependenciesImpl(api, profile, mod.id, modName(mod), mod.rules, installPath);
+    return this.installDependenciesImpl(api, profile, mod.id, modName(mod), mod.rules,
+                                        installPath, silent);
   }
 
   public installRecommendations(api: IExtensionApi,
@@ -1160,7 +1162,8 @@ class InstallManager {
                                   modId: string,
                                   name: string,
                                   rules: IModRule[],
-                                  installPath: string)
+                                  installPath: string,
+                                  silent: boolean)
                                   : Promise<void> {
     const notificationId = `${installPath}_activity`;
     api.events.emit('will-install-dependencies', profile.id, modId, false);
@@ -1190,6 +1193,10 @@ class InstallManager {
             }
             return prev;
           }, { success: [], error: [] });
+
+        if (silent && (error.length === 0)) {
+          return this.doInstallDependencies(api, profile, modId, success, false);
+        }
 
         const requiredInstalls = success.filter(dep => dep.mod === undefined);
         const requiredDownloads = requiredInstalls.filter(dep => dep.download === undefined);
