@@ -7,7 +7,7 @@ import { file } from 'tmp';
 
 export function checksum(input: Buffer): string {
   return createHash('md5')
-    .update(input)
+    .update(input || '')
     .digest('hex');
 }
 
