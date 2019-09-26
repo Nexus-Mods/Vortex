@@ -666,6 +666,8 @@ function once(api: IExtensionApi) {
   api.events.on('gamemode-activated', (gameId: string) => { nexus.setGame(gameId); });
   api.events.on('did-import-downloads', (dlIds: string[]) => { queryInfo(api, dlIds); });
 
+  api.onAsync('start-download-update', eh.onDownloadUpdate(api, nexus));
+
   api.onStateChange(['settings', 'nexus', 'associateNXM'],
     eh.onChangeNXMAssociation(registerFunc, api));
   api.onStateChange(['confidential', 'account', 'nexus', 'APIKey'],

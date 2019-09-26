@@ -1060,10 +1060,7 @@ class InstallManager {
     return deriveModInstallName(archiveName, info);
   }
 
-  private downloadModAsync(
-    requirement: IReference,
-    lookupResult: IModInfoEx,
-    api: IExtensionApi): Promise<string> {
+  private downloadURL(api: IExtensionApi, lookupResult: IModInfoEx): Promise<string> {
     return new Promise<string>((resolve, reject) => {
       if (!api.events.emit('start-download', [lookupResult.sourceURI], {
         game: lookupResult.gameId,
@@ -1085,6 +1082,38 @@ class InstallManager {
         reject(new Error('download manager not installed?'));
       }
     });
+  }
+
+  private downloadMatching(api: IExtensionApi, lookupResult: IModInfoEx,
+                           pattern: string): Promise<string> {
+    const modId: string = getSafe(lookupResult, ['details', 'modId'], undefined);
+    const fileId: string = getSafe(lookupResult, ['details', 'fileId'], undefined);
+    if ((modId === undefined) && (fileId === undefined)) {
+      return Promise.reject(new NotFound('no id identifying the mod'));
+    }
+    return api.emitAndAwait('start-download-update',
+      lookupResult.source, lookupResult.gameId, modId, fileId, pattern)
+      .then(dlId => (dlId === undefined)
+          ? Promise.reject(new NotFound(`source not supported "${lookupResult.source}"`))
+          : Promise.resolve(dlId));
+  }
+
+  private downloadModAsync(
+    requirement: IReference,
+    lookupResult: IModInfoEx,
+    api: IExtensionApi): Promise<string> {
+    if ((requirement.versionMatch !== undefined)
+      && (isNaN(parseInt(requirement.versionMatch[0], 16))
+        || (semver.validRange(requirement.versionMatch)
+          !== requirement.versionMatch))) {
+      // seems to be a fuzzy matcher so we may have to look for an update
+      return this.downloadMatching(api, lookupResult, requirement.versionMatch)
+        .then(res => (res === undefined)
+          ? this.downloadURL(api, lookupResult)
+          : res);
+    } else {
+      return this.downloadURL(api, lookupResult);
+    }
   }
 
   private doInstallDependencies(api: IExtensionApi,
@@ -1125,9 +1154,15 @@ class InstallManager {
         })
         // don't cancel the whole process if one dependency fails to install
         .catch(ProcessCanceled, err => {
-          api.showErrorNotification('Failed to install dependency', err.message, {
+          api.showErrorNotification('Failed to install dependency',
+            '{{errorMessage}}\nA common cause for issues here is that the file may no longer '
+            + 'be available. You may want to install a current version of the specified mod '
+            + 'and update or remove the dependency for the old one.', {
             allowReport: false,
             message: renderModReference(dep.reference, undefined),
+            replace: {
+              errorMessage: err.message,
+            },
           });
         })
         .catch(err => {

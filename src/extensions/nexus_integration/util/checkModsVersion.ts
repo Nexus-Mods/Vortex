@@ -118,7 +118,9 @@ export function checkModVersion(store: Redux.Store<any>, nexus: NexusT,
  * @param fileUpdates
  * @param fileId
  */
-function findLatestUpdate(fileUpdates: IFileUpdate[], updateChain: IFileUpdate[], fileId: number) {
+export function findLatestUpdate(fileUpdates: IFileUpdate[],
+                                 updateChain: IFileUpdate[],
+                                 fileId: number): IFileUpdate[] {
   const updatedFile = fileUpdates.find(file => file.old_file_id === fileId);
   return (updatedFile !== undefined)
     ? findLatestUpdate(fileUpdates, updateChain.concat([ updatedFile ]), updatedFile.new_file_id)

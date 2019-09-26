@@ -1,7 +1,7 @@
 import { setDownloadModInfo } from '../../actions';
 import { IDownload, IModTable, IState, StateChangeCallback } from '../../types/api';
 import { IExtensionApi } from '../../types/IExtensionContext';
-import { DataInvalid } from '../../util/api';
+import { DataInvalid } from '../../util/CustomErrors';
 import Debouncer from '../../util/Debouncer';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
@@ -13,7 +13,7 @@ import { DownloadIsHTML } from '../download_management/DownloadManager';
 import { setUpdatingMods } from '../mod_management/actions/session';
 
 import { setUserInfo } from './actions/persistent';
-import { retrieveModInfo } from './util/checkModsVersion';
+import { findLatestUpdate, retrieveModInfo } from './util/checkModsVersion';
 import { nexusGameId, toNXMId } from './util/convertGameId';
 import submitFeedback from './util/submitFeedback';
 
@@ -22,6 +22,7 @@ import { checkModVersionsImpl, endorseModImpl, startDownload, updateKey } from '
 import * as Promise from 'bluebird';
 import Nexus, { IFeedbackResponse, IIssue, NexusError,
                 RateLimitError, TimeoutError } from 'nexus-api';
+import * as semver from 'semver';
 
 export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
   const state: IState = api.store.getState();
@@ -184,7 +185,7 @@ export function onModUpdate(api: IExtensionApi, nexus: Nexus): (...args: any[]) 
     const state: IState = api.store.getState();
     const game = gameById(api.store.getState(), gameId);
     if (!getSafe(state, ['persistent', 'nexus', 'userInfo', 'isPremium'], false)) {
-      // nexusmods can't let users download files directly from client, without
+      // nexusmods can't let free users download files directly from client, without
       // showing ads
       opn(['https://www.nexusmods.com', nexusGameId(game), 'mods', modId].join('/'))
         .catch(() => undefined);
@@ -217,6 +218,66 @@ export function onModUpdate(api: IExtensionApi, nexus: Nexus): (...args: any[]) 
           api.showErrorNotification('failed to start download', err);
         });
     }
+  };
+}
+
+export function onDownloadUpdate(api: IExtensionApi,
+                                 nexus: Nexus)
+                                 : (...args: any[]) => Promise<string> {
+  return (source: string, gameId: string, modId: string,
+          fileId: string, versionPattern: string): Promise<string> => {
+    if (source !== 'nexus') {
+      return Promise.resolve(undefined);
+    }
+
+    const game = gameById(api.store.getState(), gameId);
+
+    return Promise.resolve(nexus.getModFiles(parseInt(modId, 10), nexusGameId(game) || gameId))
+      .then(files => {
+        let updateFileId: number;
+
+        const updateChain = findLatestUpdate(files.file_updates, [], parseInt(fileId, 10));
+        const newestMatching = updateChain
+          // sort newest to oldest
+          .sort((lhs, rhs) => rhs.uploaded_timestamp - lhs.uploaded_timestamp)
+          // find the first update entry that has a version matching the pattern
+          .find(update => {
+            const file = files.files.find(iter => iter.file_id === update.new_file_id);
+            return (versionPattern === '*')
+                || semver.satisfies(semver.coerce(file.version), versionPattern);
+          });
+
+        if (newestMatching !== undefined) {
+          updateFileId = newestMatching.new_file_id;
+        } else {
+          // no update chain, maybe we're lucky and there is only a single file not marked
+          // as old
+          const notOld = files.files
+            .filter(file => (file.category_id !== 4) && (file.category_id !== 6));
+          if ((notOld.length === 1)
+              && (semver.satisfies(semver.coerce(notOld[0].version), versionPattern))) {
+            updateFileId = notOld[0].file_id;
+          }
+        }
+
+        if (updateFileId === undefined) {
+          // would like to return an error here but the onAsync api doesn't allow that
+          return Promise.resolve(undefined);
+        }
+
+        const url = `nxm://${toNXMId(game, gameId)}/mods/${modId}/files/${updateFileId}`;
+        const state = api.store.getState();
+        const downloads = state.persistent.downloads.files;
+        // check if the file is already downloaded. If not, download before starting the install
+        const existingId = Object.keys(downloads).find(downloadId =>
+          getFileId(downloads[downloadId]) === fileId);
+
+        if (existingId !== undefined) {
+          return Promise.resolve(existingId);
+        }
+
+        return startDownload(api, nexus, url);
+      });
   };
 }
 
