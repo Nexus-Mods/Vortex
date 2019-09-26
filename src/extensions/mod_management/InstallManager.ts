@@ -2,8 +2,8 @@ import { showDialog } from '../../actions/notifications';
 import { ICheckbox, IDialogResult } from '../../types/IDialog';
 import { IExtensionApi, ThunkStore } from '../../types/IExtensionContext';
 import {IProfile, IState} from '../../types/IState';
-import { DataInvalid, ProcessCanceled, SetupError, TemporaryError,
-         UserCanceled} from '../../util/CustomErrors';
+import { DataInvalid, NotFound, ProcessCanceled, SetupError, TemporaryError,
+         UserCanceled } from '../../util/CustomErrors';
 import { createErrorReport, didIgnoreError,
         isOutdated, withContext } from '../../util/errorHandling';
 import * as fs from '../../util/fs';
@@ -47,6 +47,7 @@ import Zip = require('node-7z');
 import * as os from 'os';
 import * as path from 'path';
 import * as Redux from 'redux';
+import * as semver from 'semver';
 
 import * as modMetaT from 'modmeta-db';
 
@@ -158,7 +159,8 @@ class InstallManager {
     enable: boolean,
     callback: (error: Error, id: string) => void,
     forceGameId?: string,
-    fileList?: IFileListItem[]): void {
+    fileList?: IFileListItem[],
+    unattended?: boolean): void {
 
     if (this.mTask === undefined) {
       this.mTask = new Zip();
@@ -300,7 +302,8 @@ class InstallManager {
         installContext.setInstallPathCB(modId, destinationPath);
         tempPath = destinationPath + '.installing';
         return this.installInner(api, archivePath,
-          tempPath, destinationPath, installGameId, installContext, fullInfo.choices, fileList);
+                                 tempPath, destinationPath, installGameId, installContext,
+                                 fullInfo.choices, fileList, unattended);
       })
       .then(result => {
         const state: IState = api.store.getState();
@@ -507,7 +510,8 @@ class InstallManager {
                        tempPath: string, destinationPath: string,
                        gameId: string, installContext: IInstallContext,
                        installChoices?: any,
-                       extractList?: IFileListItem[]): Promise<IInstallResult> {
+                       extractList?: IFileListItem[],
+                       unattended?: boolean): Promise<IInstallResult> {
     const fileList: string[] = [];
     const progress = (files: string[], percent: number) => {
       if ((percent !== undefined) && (installContext !== undefined)) {
@@ -590,7 +594,8 @@ class InstallManager {
           return installer.install(
               fileList, tempPath, gameId,
               (perc: number) => log('info', 'progress', perc),
-              installChoices);
+              installChoices,
+              unattended);
         });
   }
 
@@ -1416,7 +1421,7 @@ class InstallManager {
           } else {
             reject(error);
           }
-        }, undefined, fileList);
+        }, undefined, fileList, true);
     });
   }
 

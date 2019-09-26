@@ -12,11 +12,14 @@ import { inspect } from 'util';
 
 class UI extends DelegateBase {
   private mStateCB: StateCallback;
+  private mUnattended: boolean;
   private mContinueCB: (direction) => void;
   private mCancelCB: () => void;
 
-  constructor(api: IExtensionApi, gameId: string) {
+  constructor(api: IExtensionApi, gameId: string, unattended: boolean) {
     super(api);
+
+    this.mUnattended = unattended;
 
     api.events
       .on('fomod-installer-select', this.onDialogSelect)
@@ -36,10 +39,12 @@ class UI extends DelegateBase {
     this.mStateCB = info.select;
     this.mCancelCB = info.cancel;
     try {
-      this.api.store.dispatch(startDialog({
-        moduleName: info.moduleName,
-        image: info.image,
-      }));
+      // if (!this.mUnattended) {
+        this.api.store.dispatch(startDialog({
+          moduleName: info.moduleName,
+          image: info.image,
+        }));
+      // }
       callback(null);
     } catch (err) {
       showError(this.api.store.dispatch, 'start installer dialog failed',
@@ -64,6 +69,13 @@ class UI extends DelegateBase {
     try {
       this.api.store.dispatch(setDialogState(state));
       callback(null);
+      if (this.mUnattended) {
+        setTimeout(() => {
+          if (this.mContinueCB !== undefined) {
+            this.mContinueCB('forward');
+          }
+        }, 1000);
+      }
     } catch (err) {
       showError(this.api.store.dispatch, 'update installer dialog failed',
         err);

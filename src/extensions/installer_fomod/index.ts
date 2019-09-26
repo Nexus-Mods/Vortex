@@ -205,18 +205,23 @@ function install(api: IExtensionApi,
 
             const choices = (dialogState === undefined)
               ? undefined
-              : dialogState.installSteps.map(step => {
-                const ofg: IGroupList = step.optionalFileGroups || { group: [], order: 'Explicit' };
-                return {
-                  name: step.name,
-                  groups: (ofg.group || []).map(group => ({
-                    name: group.name,
-                    choices: group.options
-                      .filter(opt => opt.selected)
-                      .map(opt => ({ name: opt.name, idx: opt.id })),
-                  })),
-                };
-              });
+              : dialogState.installSteps
+                // some fomods may have multiple steps with the same name of which only one will be
+                // visible at a time.
+                .filter(step => step.visible)
+                .map(step => {
+                  const ofg: IGroupList =
+                    step.optionalFileGroups || { group: [], order: 'Explicit' };
+                  return {
+                    name: step.name,
+                    groups: (ofg.group || []).map(group => ({
+                      name: group.name,
+                      choices: group.options
+                        .filter(opt => opt.selected)
+                        .map(opt => ({ name: opt.name, idx: opt.id })),
+                    })),
+                  };
+                });
 
             resolve({
               message: result.message,
@@ -301,11 +306,13 @@ function checkNetInstall() {
 
 function init(context: IExtensionContext): boolean {
   (context.registerInstaller as any)(
-    'fomod', 100, testSupported, (files, scriptPath, gameId, progressDelegate, choices) => {
-      const coreDelegates = new Core(context.api, gameId);
+    'fomod', 100, testSupported,
+    (files, scriptPath, gameId, progressDelegate, choices, unattended) => {
+      const canBeUnattended = (choices !== undefined) && (choices.type === 'fomod');
+      const coreDelegates =
+        new Core(context.api, gameId, canBeUnattended && (unattended === true));
       const stopPatterns = getStopPatterns(gameId);
       const pluginPath = getPluginPath(gameId);
-      console.log('choices', choices);
       return currentInstallPromise
         .then(() => {
           context.api.store.dispatch(setInstallerDataPath(scriptPath));
@@ -313,7 +320,8 @@ function init(context: IExtensionContext): boolean {
             ? choices.options
             : undefined;
           return install(context.api, files, stopPatterns, pluginPath,
-                         scriptPath, fomodChoices, progressDelegate, coreDelegates);
+                         scriptPath, fomodChoices,
+                         progressDelegate, coreDelegates);
         })
         .finally(() => {
           context.api.store.dispatch(endDialog());
