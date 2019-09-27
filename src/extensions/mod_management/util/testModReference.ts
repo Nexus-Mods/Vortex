@@ -16,6 +16,7 @@ export interface IModLookupInfo {
   logicalFileName?: string;
   customFileName?: string;
   version: string;
+  game?: string[];
 }
 
 // test if the reference is by id only, meaning it is only useful in the current setup
@@ -92,6 +93,14 @@ function testRef(mod: IModLookupInfo, modId: string, ref: IModReference): boolea
       }
     }
   }
+
+  // right game?
+  if ((ref.gameId !== undefined)
+      && (mod.game !== undefined)
+      && (mod.game.indexOf(ref.gameId) === -1)) {
+    return false;
+  }
+
   return true;
 }
 

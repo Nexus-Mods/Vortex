@@ -15,6 +15,7 @@ import testModReference, { IModLookupInfo } from './testModReference';
 import * as Promise from 'bluebird';
 import * as _ from 'lodash';
 import {ILookupResult, IReference, IRule} from 'modmeta-db';
+import * as semver from 'semver';
 
 function findModByRef(reference: IReference, state: IState): IMod {
   const gameMode = activeGameId(state);
@@ -24,9 +25,20 @@ function findModByRef(reference: IReference, state: IState): IMod {
     testModReference(mod, reference));
 }
 
+function newerSort(lhs: IDownload, rhs: IDownload): number {
+  const lVersion = semver.coerce(getSafe(lhs, ['modInfo', 'version'], undefined));
+  const rVersion = semver.coerce(getSafe(rhs, ['modInfo', 'version'], undefined));
+
+  if ((lVersion !== null) && (rVersion !== null)) {
+    return semver.compare(rVersion, lVersion);
+  }
+
+  return rhs.fileTime - lhs.fileTime;
+}
+
 function findDownloadByRef(reference: IReference, state: IState): string {
   const downloads = state.persistent.downloads.files;
-  const existing: string = Object.keys(downloads).find((dlId: string): boolean => {
+  const existing: string[] = Object.keys(downloads).filter((dlId: string): boolean => {
     const download: IDownload = downloads[dlId];
     const lookup: IModLookupInfo = {
       fileMD5: download.fileMD5,
@@ -34,11 +46,13 @@ function findDownloadByRef(reference: IReference, state: IState): string {
       fileSizeBytes: download.size,
       version: getSafe(download, ['modInfo', 'version'], undefined),
       logicalFileName: getSafe(download, ['modInfo', 'name'], undefined),
+      game: download.game,
     };
 
     return testModReference(lookup, reference);
-  });
-  return existing;
+  })
+  .sort((lhs, rhs) => newerSort(downloads[lhs], downloads[rhs]));
+  return existing[0];
 }
 
 function browseForDownload(api: IExtensionApi,
