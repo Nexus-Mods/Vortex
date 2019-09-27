@@ -77,6 +77,9 @@ function stopPatterns(gameMode: string) {
               'hak', 'localvault', 'modules', 'movies', 'music', 'music_X1', 'music_X2', 'nwm',
               'override', 'patch', 'portraits', 'pwc', 'saves', 'servervault', 'texturepacks',
               'tlk', 'ui'].map(toWordExp);
+    case 'daggerfallunity':
+      return ['factions', 'fonts', 'mods', 'questpacks', 'quests', 'soundfonts', 'spellicons',
+              'tables', 'text', 'textures'].map(toWordExp);
     default: return [].concat(uniPatterns);
   }
 }
@@ -257,6 +260,9 @@ const gameSupport: { [gameId: string]: IGameSupport } = {
   },
   neverwinter2: {
     stopPatterns: stopPatterns('neverwinter2'),
+  },
+  daggerfallunity: {
+    stopPatterns: stopPatterns('daggerfallunity'),
   },
 };
 
