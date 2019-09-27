@@ -27,6 +27,7 @@ import { getVisibleWindow, terminate } from './errorHandling';
 import { extend } from './ExtensionProvider';
 import { copyFileAtomic, fileMD5 } from './fsAtomic';
 import getNormalizeFunc, { Normalize } from './getNormalizeFunc';
+import getVortexPath from './getVortexPath';
 import github from './github';
 import { getCurrentLanguage } from './i18n';
 import LazyComponent from './LazyComponent';
@@ -68,6 +69,7 @@ export {
   getNormalizeFunc,
   getReduxLog,
   getVisibleWindow,
+  getVortexPath,
   github,
   installIconSet,
   isChildPath,
