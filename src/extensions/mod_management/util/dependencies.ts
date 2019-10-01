@@ -4,6 +4,7 @@ import { ProcessCanceled } from '../../../util/CustomErrors';
 import {log} from '../../../util/log';
 import {activeGameId} from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
+import { truthy } from '../../../util/util';
 
 import { IBrowserResult } from '../../browser/types';
 
@@ -118,7 +119,7 @@ function gatherDependencies(rules: IModRule[],
               ? Promise.resolve(undefined)
               : lookupDownloadHint(api, rule.downloadHint))
         .then(res => {
-          urlFromHint = res;
+          urlFromHint = truthy(res) ? res : undefined;
           return api.lookupModReference(rule.reference);
         })
         .then((details: ILookupResult[]) => {

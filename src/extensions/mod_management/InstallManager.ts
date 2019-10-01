@@ -1094,7 +1094,7 @@ class InstallManager {
     const modId: string = getSafe(lookupResult, ['details', 'modId'], undefined);
     const fileId: string = getSafe(lookupResult, ['details', 'fileId'], undefined);
     if ((modId === undefined) && (fileId === undefined)) {
-      return Promise.reject(new NotFound('no id identifying the mod'));
+      return this.downloadURL(api, lookupResult);
     }
     return api.emitAndAwait('start-download-update',
       lookupResult.source, lookupResult.gameId, modId, fileId, pattern)
@@ -1128,6 +1128,10 @@ class InstallManager {
                                 recommended: boolean): Promise<void> {
     return Promise.map(dependencies, (dep: IDependency) => {
       let dlPromise = Promise.resolve(dep.download);
+      log('debug', 'installing as dependency', {
+        ref: JSON.stringify(dep.reference),
+        downloadRequired: dep.download === undefined,
+      });
       if (dep.download === undefined) {
         if (getSafe(dep, ['lookupResults', 0, 'value', 'sourceURI'], '') === '') {
           dlPromise = Promise.reject(new ProcessCanceled('Failed to determine download url'));
@@ -1170,12 +1174,22 @@ class InstallManager {
             },
           });
         })
+        .catch(NotFound, err => {
+          api.showErrorNotification('Failed to install dependency', err, {
+            allowReport: false,
+          });
+        })
         .catch(err => {
           if (err instanceof UserCanceled) {
             return Promise.reject(err);
           }
           api.showErrorNotification('Failed to install dependency', err, {
             message: renderModReference(dep.reference, undefined),
+          });
+        })
+        .then(() => {
+          log('debug', 'done installing dependency', {
+            ref: JSON.stringify(dep.reference),
           });
         });
     // install/download up to 4 mods at once to allow Vortex to download one mod while another is
@@ -1193,8 +1207,7 @@ class InstallManager {
       .catch(err => {
         api.showErrorNotification('Failed to install dependencies',
           err.message);
-      })
-      .then(() => undefined);
+      });
   }
 
   private installDependenciesImpl(api: IExtensionApi,
@@ -1212,6 +1225,7 @@ class InstallManager {
       type: 'activity',
       message: 'Checking dependencies',
     });
+    log('debug', 'installing dependencies', { modId, name, count: rules.length });
     return gatherDependencies(rules, api, false)
       .then((dependencies: Dependency[]) => {
         api.dismissNotification(notificationId);
@@ -1233,6 +1247,8 @@ class InstallManager {
             }
             return prev;
           }, { success: [], error: [] });
+
+        log('debug', 'determined unfulfilled dependencies', { count: success.length, errors: error.length });
 
         if (silent && (error.length === 0)) {
           return this.doInstallDependencies(api, profile, modId, success, false);
@@ -1286,6 +1302,7 @@ class InstallManager {
         api.showErrorNotification('Failed to check dependencies', err);
       })
       .finally(() => {
+        log('debug', 'done installing dependencies', { profile: profile.id, modId });
         api.events.emit('did-install-dependencies', profile.id, modId, false);
       });
   }

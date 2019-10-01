@@ -232,11 +232,13 @@ export function onDownloadUpdate(api: IExtensionApi,
 
     const game = gameById(api.store.getState(), gameId);
 
+    const fileIdNum = parseInt(fileId, 10);
+
     return Promise.resolve(nexus.getModFiles(parseInt(modId, 10), nexusGameId(game) || gameId))
       .then(files => {
         let updateFileId: number;
 
-        const updateChain = findLatestUpdate(files.file_updates, [], parseInt(fileId, 10));
+        const updateChain = findLatestUpdate(files.file_updates, [], fileIdNum);
         const newestMatching = updateChain
           // sort newest to oldest
           .sort((lhs, rhs) => rhs.uploaded_timestamp - lhs.uploaded_timestamp)
@@ -261,8 +263,7 @@ export function onDownloadUpdate(api: IExtensionApi,
         }
 
         if (updateFileId === undefined) {
-          // would like to return an error here but the onAsync api doesn't allow that
-          return Promise.resolve(undefined);
+          updateFileId = fileIdNum;
         }
 
         const url = `nxm://${toNXMId(game, gameId)}/mods/${modId}/files/${updateFileId}`;
@@ -276,6 +277,18 @@ export function onDownloadUpdate(api: IExtensionApi,
           return Promise.resolve(existingId);
         }
 
+        return startDownload(api, nexus, url)
+          .catch(err => {
+            api.showErrorNotification('Failed to download mod', err, {
+              allowReport: false,
+            });
+            return Promise.resolve(undefined);
+          });
+      })
+      .catch(err => {
+        // there is a really good chance that the download will fail
+        log('warn', 'failed to fetch mod file list', err.message);
+        const url = `nxm://${toNXMId(game, gameId)}/mods/${modId}/files/${fileId}`;
         return startDownload(api, nexus, url);
       });
   };
