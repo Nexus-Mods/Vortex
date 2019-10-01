@@ -82,6 +82,11 @@
   min-width: 200px;
   max-width: 50%;
   z-index: $zindex-notifications;
+
+  .popover-content {
+    max-height: 40vh;
+    overflow: auto;
+  }
 }
 
 #notifications-button {
