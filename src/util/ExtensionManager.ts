@@ -1191,6 +1191,7 @@ class ExtensionManager {
                   const lastLine = errOut !== undefined
                     ? lines[lines.length - 1]
                     : '<No output>';
+
                   const err: any = new Error(
                     `Failed to run "${executable}": "${lastLine} (${code.toString(16)})"`);
                   err.exitCode = code;

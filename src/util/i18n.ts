@@ -1,13 +1,14 @@
 import * as fs from './fs';
+import getVortexPath from './getVortexPath';
 import { log } from './log';
 
 import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import I18next from 'i18next';
 import * as FSBackend from 'i18next-node-fs-backend';
+import { initReactI18next } from 'react-i18next';
 
 import * as path from 'path';
-import getVortexPath from './getVortexPath';
 
 const app = remote !== undefined ? remote.app : appIn;
 
@@ -88,7 +89,9 @@ function init(language: string): Promise<IInitResult> {
 
   currentLanguage = language;
 
-  const i18n = I18next.use(MultiBackend);
+  const i18n = I18next
+    .use(MultiBackend)
+    .use(initReactI18next);
 
   return Promise.resolve(i18n.init(
     {

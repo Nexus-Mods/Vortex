@@ -21,6 +21,7 @@ export {
 } from '../extensions/mod_management/types/IDeploymentMethod';
 export { IDiscoveryResult } from '../extensions/gamemode_management/types/IDiscoveryResult';
 export { IGameStored } from '../extensions/gamemode_management/types/IGameStored';
+export { IDeploymentManifest } from '../extensions/mod_management/types/IDeploymentManifest';
 export { IMod, IModReference, IModRule} from '../extensions/mod_management/types/IMod';
 export { IInstallResult } from '../extensions/mod_management/types/IInstallResult';
 export { IToolStored } from '../extensions/gamemode_management/types/IToolStored';

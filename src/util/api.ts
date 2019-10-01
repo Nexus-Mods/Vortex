@@ -11,6 +11,7 @@ import { resolveCategoryName,
          resolveCategoryPath } from '../extensions/category_management/util/retrieveCategoryPath';
 import { getGame, getGames } from '../extensions/gamemode_management/util/getGame';
 import deriveModInstallName from '../extensions/mod_management/modIdManager';
+import { getManifest } from '../extensions/mod_management/util/activationStore';
 import { getActivator,
          getCurrentActivator } from '../extensions/mod_management/util/deploymentMethods';
 import renderModName, { renderModReference } from '../extensions/mod_management/util/modName';
@@ -29,6 +30,7 @@ import { getVisibleWindow, terminate } from './errorHandling';
 import { extend } from './ExtensionProvider';
 import { copyFileAtomic } from './fsAtomic';
 import getNormalizeFunc, { Normalize } from './getNormalizeFunc';
+import getVortexPath from './getVortexPath';
 import github from './github';
 import { getCurrentLanguage } from './i18n';
 import LazyComponent from './LazyComponent';
@@ -67,9 +69,11 @@ export {
   getCurrentLanguage,
   getGame,
   getGames,
+  getManifest,
   getNormalizeFunc,
   getReduxLog,
   getVisibleWindow,
+  getVortexPath,
   github,
   installIconSet,
   isChildPath,

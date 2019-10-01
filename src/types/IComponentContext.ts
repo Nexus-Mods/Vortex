@@ -9,6 +9,6 @@ import { IModifiers } from './IModifiers';
  */
 export interface IComponentContext {
   api: IExtensionApi;
-  menuLayer: JSX.Element;
+  menuLayer: HTMLDivElement;
   getModifiers: () => IModifiers;
 }
