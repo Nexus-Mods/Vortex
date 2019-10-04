@@ -573,6 +573,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       },
       noShrink: true,
       isSortable: false,
+      isGroupable: true,
       filter: new OptionsFilter([
         { value: true, label: 'Enabled' },
         { value: false, label: 'Disabled' },

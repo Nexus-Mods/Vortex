@@ -16,7 +16,7 @@ import {sanitizeCSSId, truthy} from '../util/util';
 
 import IconBar from './IconBar';
 import HeaderCell from './table/HeaderCell';
-import { Table, TBody, TH, THead, TR } from './table/MyTable';
+import { Table, TBody, TH, THead, TR, TD } from './table/MyTable';
 import TableDetail from './table/TableDetail';
 import TableRow from './table/TableRow';
 import ToolbarIcon from './ToolbarIcon';
@@ -30,6 +30,7 @@ import { Button } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
 import * as Redux from 'redux';
 import { createSelector, OutputSelector } from 'reselect';
+import { CSSTransition } from 'react-transition-group';
 
 export type ChangeDataHandler = (rowId: string, attributeId: string, newValue: any) => void;
 
@@ -42,7 +43,7 @@ export interface ITableRowAction extends IActionDefinition {
 export interface IBaseProps {
   tableId: string;
   data: { [rowId: string]: any };
-  // cheapass way to force the table to refresh its data cache. This will only affect
+  // cheap-ass way to force the table to refresh its data cache. This will only affect
   // 'volatile' fields as normal data fields would prompt a table refresh anyway
   dataId?: number;
   actions: ITableRowAction[];
@@ -86,6 +87,8 @@ interface IComponentState {
   singleRowActions: ITableRowAction[];
   multiRowActions: ITableRowAction[];
   columnToggles: ITableRowAction[];
+  groupBy: string;
+  collapsedGroups: string[];
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps & IExtensionProps & II18NProps;
@@ -142,6 +145,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       singleRowActions: this.singleRowActions(props),
       multiRowActions: this.multiRowActions(props),
       columnToggles: this.columnToggles(props),
+      collapsedGroups: [],
+      groupBy: undefined,
     };
     const { table, detail } = this.visibleAttributes(props.objects, props.attributeState);
     this.mVisibleAttributes = table;
@@ -314,13 +319,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     const filterActive = (filteredLength !== undefined) && (filteredLength < totalLength);
 
     return (
-      <THead
-        className='table-header'
-      >
-        <TR
-          domRef={proxy ? this.setProxyHeaderRef : this.setVisibleHeaderRef}
-        >
-
+      <THead className='table-header' >
+        <TR domRef={proxy ? this.setProxyHeaderRef : this.setVisibleHeaderRef}>
           {this.mVisibleAttributes.map(attribute => this.renderHeaderField(attribute, proxy))}
           {actionHeader}
         </TR>
@@ -386,8 +386,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderBody = () => {
-    const { attributeState, data } = this.props;
-    const { calculatedValues, sortedRows } = this.state;
+    const { t, attributeState, data } = this.props;
+    const { calculatedValues, collapsedGroups, groupBy, sortedRows } = this.state;
 
     if ((data === undefined) || (calculatedValues === undefined) || (sortedRows === undefined)) {
       return <TBody />;
@@ -396,12 +396,43 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     const sortAttribute: ITableAttribute = this.mVisibleAttributes.find(attribute =>
       this.isSortColumn(attributeState[attribute.id]));
 
-    return (
-      <TBody>
-        {sortedRows.map((row, idx) =>
-          this.renderRow(row, sortAttribute))}
-      </TBody>
-    );
+    const groupAttribute = this.mVisibleAttributes.find(attribute => attribute.id === groupBy);
+
+    if (groupAttribute !== undefined) {
+      const groupOptions = Array.from(new Set(
+        sortedRows.map(rowId => calculatedValues[rowId][groupAttribute.id]))).sort();
+      return (
+        <TBody>
+          {groupOptions.reduce((prev, group) => {
+            const groupItems = sortedRows
+              .filter(row => calculatedValues[row][groupAttribute.id] === group);
+            prev.push((
+              <TR key={`group-${group}`}>
+                <TD
+                  className='table-group-header'
+                  data-group={group}
+                  onClick={this.toggleGroup}
+                  colSpan={this.mVisibleAttributes.length + 1}
+                >
+                  {group || t('<Empty>')} ({groupItems.length})
+                </TD>
+              </TR>
+            ));
+            prev.push(...groupItems
+                    .map((row, idx) => this.renderRow(row, sortAttribute, collapsedGroups.indexOf(group || '') === -1)));
+
+            return prev;
+          }, [])}
+        </TBody>
+      );
+    } else {
+      return (
+        <TBody>
+          {sortedRows.map((row, idx) =>
+            this.renderRow(row, sortAttribute))}
+        </TBody>
+      );
+    }
   }
 
   private scrollTo = (id: string, mayRetry?: boolean) => {
@@ -430,6 +461,16 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
   private invalidate(columnId: string)  {
     this.updateCalculatedValues(this.props, columnId);
+  }
+
+  private toggleGroup = (evt) => {
+    const group = evt.currentTarget.getAttribute('data-group') || '';
+    const index = this.state.collapsedGroups.indexOf(group);
+    if (index !== -1) {
+      this.updateState(update(this.mNextState, { collapsedGroups: { $splice: [[index, 1]] } }));
+    } else {
+      this.updateState(update(this.mNextState, { collapsedGroups: { $push: [group] } }));
+    }
   }
 
   private toggleDetails = () => {
@@ -544,7 +585,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       && (attributeState.sortDirection !== 'none');
   }
 
-  private renderRow(rowId: string, sortAttribute: ITableAttribute): JSX.Element {
+  private renderRow(rowId: string, sortAttribute: ITableAttribute,
+                    visible?: boolean): JSX.Element {
     const { t, data, language, tableId } = this.props;
     const { calculatedValues, rowState, singleRowActions } = this.state;
 
@@ -557,31 +599,39 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     const tableRowId = sanitizeCSSId(rowId);
 
     return (
-      <TableRow
-        t={t}
-        tableId={tableId}
-        id={tableRowId}
-        key={tableRowId}
-        data={calculatedValues[rowId]}
-        rawData={data[rowId]}
-        attributes={attributes}
-        sortAttribute={sortAttribute !== undefined ? sortAttribute.id : undefined}
-        actions={singleRowActions}
-        language={language}
-        onClick={this.selectRow}
-        selected={getSafe(rowState, [rowId, 'selected'], false)}
-        highlighted={getSafe(rowState, [rowId, 'highlighted'], false)}
-        domRef={this.setRowRef}
-        container={this.mScrollRef}
-        visible={this.state.rowVisibility[rowId] === true}
-        onSetVisible={this.setRowVisible}
-        onHighlight={this.setRowHighlight}
-      />
+      <CSSTransition
+        key={`fade-${tableRowId}`}
+        timeout={300}
+        classNames='table-row-fade'
+        in={visible !== false}
+      >
+        <TableRow
+          t={t}
+          tableId={tableId}
+          id={tableRowId}
+          key={tableRowId}
+          data={calculatedValues[rowId]}
+          rawData={data[rowId]}
+          attributes={attributes}
+          sortAttribute={sortAttribute !== undefined ? sortAttribute.id : undefined}
+          actions={singleRowActions}
+          language={language}
+          onClick={this.selectRow}
+          selected={getSafe(rowState, [rowId, 'selected'], false)}
+          highlighted={getSafe(rowState, [rowId, 'highlighted'], false)}
+          domRef={this.setRowRef}
+          container={this.mScrollRef}
+          visible={this.state.rowVisibility[rowId] === true}
+          onSetVisible={this.setRowVisible}
+          onHighlight={this.setRowHighlight}
+        />
+      </CSSTransition>
     );
   }
 
   private renderHeaderField = (attribute: ITableAttribute, proxy: boolean): JSX.Element => {
     const { t, filter } = this.props;
+    const { groupBy } = this.state;
 
     const attributeState = this.getAttributeState(attribute);
 
@@ -607,7 +657,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
           attribute={attribute}
           state={attributeState}
           doFilter={true}
+          doGroup={attribute.id === groupBy}
           onSetSortDirection={this.setSortDirection}
+          onSetGroup={this.setGroup}
           onSetFilter={this.setFilter}
           ref={proxy ? this.setHeaderCellRef : undefined}
           t={t}
@@ -1340,6 +1392,14 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     }
 
     onSetAttributeSort(tableId, id, direction);
+  }
+
+  private setGroup = (id: string) => {
+    if (this.state.groupBy === id) {
+      this.updateState(update(this.mNextState, { groupBy: { $set: undefined } }));
+    } else {
+      this.updateState(update(this.mNextState, { groupBy: { $set: id } }));
+    }
   }
 
   private setFilter = (attributeId?: string, filter?: any) => {

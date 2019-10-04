@@ -108,6 +108,17 @@
   }
 }
 
+.table-container .xthead .table-header-cell .cell-controls {
+  white-space: nowrap;
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.table-group-header {
+  background-color: $table-bg-active;
+}
+
 .table-details-pane {
   // overflow-y: auto;
   padding: 0px;
@@ -276,6 +287,7 @@
 
 .xtable .cell-actions {
   display: inline-flex;
+  width: 100%;
   .dropdown .btn:first-child,
   .dropup .btn:first-child {
     text-align: left;
@@ -286,4 +298,31 @@
   .dropdown-toggle {
     min-width: initial;
   }
+}
+
+.table-group-enabled {
+  color: $brand-secondary;
+}
+
+.table-row-fade-enter {
+  opacity: 1;
+}
+
+.table-row-fade-enter-done {
+  opacity: 1;
+}
+
+.table-row-fade-enter-active {
+  opacity: 1;
+  transition: opacity 300ms ease;
+}
+
+.table-row-fade-exit-active {
+  opacity: 0;
+  transition: opacity 300ms ease;
+}
+
+.table-row-fade-exit-done {
+  display: none;
+  opacity: 0;
 }
