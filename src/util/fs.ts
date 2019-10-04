@@ -178,7 +178,7 @@ function unknownErrorRetry(filePath: string, err: Error, stackErr: Error): Promi
       options.title = 'Anti Virus denied access';
       options.message = `Your Anti-Virus Software has blocked access to "${filePath}".`;
       options.detail = undefined;
-    } else if ([21, 1005, 1392].indexOf(err['nativeCode']) !== -1) {
+    } else if ([21, 793, 1005, 1392].indexOf(err['nativeCode']) !== -1) {
       options.title = 'I/O Error';
       options.message = `Accessing "${filePath}" failed with an error that indicates `
                       + 'a hardware problem. This may indicate the disk is defective, '
@@ -200,6 +200,12 @@ function unknownErrorRetry(filePath: string, err: Error, stackErr: Error): Promi
                       + 'it\'s being used. '
                       + 'A common example of this is if you try to put the staging folder on a '
                       + 'OneDrive folder because OneDrive can\'t deal with hardlinks.';
+    } else if ([433].indexOf(err['nativeCode']) !== -1) {
+      options.title = 'Drive unavailable';
+      options.message = `The file "${filePath}" is currently not accessible. If this is a `
+                      + 'network drive, please make sure it\'s connected. Otherwise make sure '
+                      + 'the drive letter hasn\'t changed and if necessary, update the path '
+                      + 'within Vortex.';
     } else if ([4350].indexOf(err['nativeCode']) !== -1) {
       options.title = 'Network drive unavailable';
       options.message = `The file "${filePath}" is currently not accessible, very possibly the `
