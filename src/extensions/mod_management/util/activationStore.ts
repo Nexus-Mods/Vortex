@@ -18,7 +18,7 @@ import {IDeployedFile, IDeploymentMethod} from '../types/IDeploymentMethod';
 import { getActivator, getCurrentActivator } from './deploymentMethods';
 import format_1 from './manifest_formats/format_1';
 
-import * as msgpack from '@msgpack/msgpack';
+import * as msgpackT from '@msgpack/msgpack';
 import * as Promise from 'bluebird';
 import I18next from 'i18next';
 import * as path from 'path';
@@ -69,7 +69,9 @@ function readManifest(data: string | Buffer): IDeploymentManifest {
     return undefined;
   }
 
-  let parsed = typeof data === 'string'
+  const msgpack: typeof msgpackT = require('@msgpack/msgpack');
+
+  let parsed = (typeof data === 'string')
     ? JSON.parse(deBOM(data))
     : msgpack.decode(data);
 
@@ -389,6 +391,7 @@ export function saveActivation(modType: string, instance: string,
   if (activation.length > 0) {
     // write backup synchronously
     try {
+      const msgpack: typeof msgpackT = require('@msgpack/msgpack');
       writeAtomicSync(tagBackupPath, Buffer.from(msgpack.encode(dataRaw)));
     } catch (err) {
       log('error', 'Failed to write manifest backup', err.message);
