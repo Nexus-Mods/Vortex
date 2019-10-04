@@ -23,7 +23,7 @@ import { getGame } from '../gamemode_management/util/getGame';
 import modName, { renderModReference } from '../mod_management/util/modName';
 import { setModEnabled } from '../profile_management/actions/profiles';
 
-import {addModRule, setFileOverride, setModAttribute, setModType} from './actions/mods';
+import {addModRule, setFileOverride, setModAttribute, setModType, removeModRule} from './actions/mods';
 import {Dependency, IDependency, IDependencyError, IModInfoEx} from './types/IDependency';
 import { IInstallContext } from './types/IInstallContext';
 import { IInstallResult, IInstruction, InstructionType } from './types/IInstallResult';
@@ -31,7 +31,7 @@ import { IFileListItem, IMod, IModReference, IModRule } from './types/IMod';
 import { IModInstaller, ISupportedInstaller } from './types/IModInstaller';
 import { InstallFunc } from './types/InstallFunc';
 import { ISupportedResult, TestSupported } from './types/TestSupported';
-import gatherDependencies from './util/dependencies';
+import gatherDependencies, { isFuzzyVersion } from './util/dependencies';
 import filterModInfo from './util/filterModInfo';
 import queryGameId from './util/queryGameId';
 import { referenceEqual } from './util/testModReference';
@@ -148,6 +148,8 @@ class InstallManager {
    *                              to install the mod for
    * @param {IFileListItem[]} fileList if set, the listed files (and only those) get extracted
    *                                   directly, ignoring any installer scripts
+   * @param {boolean} unattended if set and there is an option preset, the installation
+   *                             will happen automatically without user interaction
    */
   public install(
     archiveId: string,
@@ -186,6 +188,8 @@ class InstallManager {
       .then(() => withContext('Installing', baseName, () => ((forceGameId !== undefined)
         ? Promise.resolve(forceGameId)
         : queryGameId(api.store, downloadGameIds, modId))
+      .tap(() =>
+        api.emitAndAwait('will-install-mod', currentProfile.gameId, archiveId, modId, fullInfo))
       // calculate the md5 hash here so we can store it with the mod meta information later,
       // otherwise we'd not remember the hash when installing from external file
       .tap(() => genHash(archivePath).then(hash => {
@@ -245,9 +249,6 @@ class InstallManager {
         log('debug', 'mod id for newly installed mod', { archivePath, modId });
         return filterModInfo(fullInfo, undefined);
       })
-      .then(modInfo =>
-        api.emitAndAwait('will-install-mod', currentProfile.gameId, archiveId, modId, modInfo)
-          .then(() => modInfo))
       .then(modInfo => {
         const oldMod = (modInfo.fileId !== undefined)
           ? this.findPreviousVersionMod(modInfo.fileId, api.store, installGameId)
@@ -1125,7 +1126,7 @@ class InstallManager {
                                 profile: IProfile,
                                 sourceModId: string,
                                 dependencies: IDependency[],
-                                recommended: boolean): Promise<void> {
+                                recommended: boolean): Promise<IDependency[]> {
     return Promise.map(dependencies, (dep: IDependency) => {
       let dlPromise = Promise.resolve(dep.download);
       log('debug', 'installing as dependency', {
@@ -1148,18 +1149,10 @@ class InstallManager {
                                   { choices: dep.installerChoices }, dep.fileList)
            : Promise.resolve(dep.mod.id))
         .then((modId: string) => {
-          const updatedRef: IModReference = { ...dep.reference };
-          updatedRef.id = modId;
-          const state: IState = api.store.getState();
-          const rules: IModRule[] =
-            getSafe(state.persistent.mods, [profile.gameId, sourceModId, 'rules'], []);
-          const oldRule = rules.find(iter => referenceEqual(iter.reference, dep.reference));
-          api.store.dispatch(addModRule(profile.gameId, sourceModId, {
-            ...(oldRule || {}),
-            type: recommended ? 'recommends' : 'requires',
-            reference: updatedRef,
-          }));
           api.store.dispatch(setModEnabled(profile.id, modId, true));
+          const state: IState = api.store.getState();
+          const mods = state.persistent.mods[profile.gameId];
+          return { ...dep, mod: mods[modId] };
         })
         // don't cancel the whole process if one dependency fails to install
         .catch(ProcessCanceled, err => {
@@ -1187,10 +1180,11 @@ class InstallManager {
             message: renderModReference(dep.reference, undefined),
           });
         })
-        .then(() => {
+        .then((updatedDependency: IDependency) => {
           log('debug', 'done installing dependency', {
             ref: JSON.stringify(dep.reference),
           });
+          return updatedDependency;
         });
     // install/download up to 4 mods at once to allow Vortex to download one mod while another is
     // being installed. Obviously Vortex isn't going to do the install for multiple mods at once
@@ -1210,6 +1204,32 @@ class InstallManager {
       });
   }
 
+  private updateRules(api: IExtensionApi, profile: IProfile, sourceModId: string,
+                      dependencies: IDependency[], recommended: boolean): Promise<void> {
+    dependencies.map(dep => {
+      const updatedRef: IModReference = { ...dep.reference };
+      updatedRef.id = dep.mod.id;
+      if (isFuzzyVersion(dep.reference.versionMatch)
+        && (dep.reference.fileMD5 !== undefined)
+        && ((dep.reference.logicalFileName !== undefined)
+          || (dep.reference.fileExpression !== undefined))) {
+        updatedRef.fileMD5 = undefined;
+      }
+
+      const state: IState = api.store.getState();
+      const rules: IModRule[] =
+        getSafe(state.persistent.mods, [profile.gameId, sourceModId, 'rules'], []);
+      const oldRule = rules.find(iter => referenceEqual(iter.reference, dep.reference));
+      api.store.dispatch(removeModRule(profile.gameId, sourceModId, oldRule));
+      api.store.dispatch(addModRule(profile.gameId, sourceModId, {
+        ...(oldRule || {}),
+        type: recommended ? 'recommends' : 'requires',
+        reference: updatedRef,
+      }));
+    });
+    return Promise.resolve();
+  }
+
   private installDependenciesImpl(api: IExtensionApi,
                                   profile: IProfile,
                                   modId: string,
@@ -1225,7 +1245,7 @@ class InstallManager {
       type: 'activity',
       message: 'Checking dependencies',
     });
-    log('debug', 'installing dependencies', { modId, name, count: rules.length });
+    log('debug', 'installing dependencies', { modId, name });
     return gatherDependencies(rules, api, false)
       .then((dependencies: Dependency[]) => {
         api.dismissNotification(notificationId);
@@ -1234,8 +1254,12 @@ class InstallManager {
           return Promise.resolve();
         }
 
-        interface IDependencySplit { success: IDependency[]; error: IDependencyError[]; }
-        const { success, error } = dependencies.reduce(
+        interface IDependencySplit {
+          success: IDependency[];
+          existing: IDependency[];
+          error: IDependencyError[];
+        }
+        const { success, existing, error } = dependencies.reduce(
           (prev: IDependencySplit, dep: Dependency) => {
             if (dep['error'] !== undefined) {
               prev.error.push(dep as IDependencyError);
@@ -1243,15 +1267,19 @@ class InstallManager {
               const { mod } = dep as IDependency;
               if ((mod === undefined) || (!getSafe(profile.modState, [mod.id, 'enabled'], false))) {
                 prev.success.push(dep as IDependency);
+              } else {
+                prev.existing.push(dep as IDependency);
               }
             }
             return prev;
-          }, { success: [], error: [] });
+          }, { success: [], existing: [], error: [] });
 
         log('debug', 'determined unfulfilled dependencies', { count: success.length, errors: error.length });
 
         if (silent && (error.length === 0)) {
-          return this.doInstallDependencies(api, profile, modId, success, false);
+          return this.doInstallDependencies(api, profile, modId, success, false)
+            .then(updated => this.updateRules(api, profile, modId,
+              [].concat(existing, updated), false));
         }
 
         const requiredInstalls = success.filter(dep => dep.mod === undefined);
@@ -1291,7 +1319,9 @@ class InstallManager {
             errors: error.map(err => err.error).join('<br/>'),
           } }, actions)).then(result => {
             if (result.action === 'Enable') {
-              return this.doInstallDependencies(api, profile, modId, success, false);
+              return this.doInstallDependencies(api, profile, modId, success, false)
+                .then(updated => this.updateRules(api, profile, modId,
+                                                  [].concat(existing, updated), false));
             } else {
               return Promise.resolve();
             }
@@ -1329,16 +1359,25 @@ class InstallManager {
           return Promise.resolve();
         }
 
-        interface IDependencySplit { success: IDependency[]; error: IDependencyError[]; }
-        const { success, error } = dependencies.reduce(
+        interface IDependencySplit {
+          success: IDependency[];
+          existing: IDependency[];
+          error: IDependencyError[];
+        }
+        const { success, existing, error } = dependencies.reduce(
           (prev: IDependencySplit, dep: Dependency) => {
             if (dep['error'] !== undefined) {
               prev.error.push(dep as IDependencyError);
             } else {
-              prev.success.push(dep as IDependency);
+              const { mod } = dep as IDependency;
+              if ((mod === undefined) || (!getSafe(profile.modState, [mod.id, 'enabled'], false))) {
+                prev.success.push(dep as IDependency);
+              } else {
+                prev.existing.push(dep as IDependency);
+              }
             }
             return prev;
-          }, { success: [], error: [] });
+          }, { success: [], existing: [], error: [] });
 
         const requiredDownloads =
           success.reduce((prev: number, current: IDependency) => {
@@ -1405,7 +1444,9 @@ class InstallManager {
                 profile,
                 modId,
                 success.filter((dep, idx) => selected.has(idx.toString())),
-                false);
+                true)
+                .then(updated => this.updateRules(api, profile, modId,
+                  [].concat(existing, updated), true));
             } else {
               return Promise.resolve();
             }

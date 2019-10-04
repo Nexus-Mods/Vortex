@@ -18,9 +18,22 @@ import * as _ from 'lodash';
 import {ILookupResult, IReference, IRule} from 'modmeta-db';
 import * as semver from 'semver';
 
+export function isFuzzyVersion(versionMatch: string) {
+  return isNaN(parseInt(versionMatch[0], 16))
+    || (semver.validRange(versionMatch)
+      !== versionMatch);
+}
+
 function findModByRef(reference: IReference, state: IState): IMod {
   const gameMode = activeGameId(state);
   const mods = state.persistent.mods[gameMode];
+
+  if (isFuzzyVersion(reference.versionMatch)
+      && (reference.fileMD5 !== undefined)
+      && ((reference.logicalFileName !== undefined)
+          || (reference.fileExpression !== undefined))) {
+    reference = _.omit(reference, ['fileMD5']);
+  }
 
   return Object.values(mods).find((mod: IMod): boolean =>
     testModReference(mod, reference));
@@ -39,6 +52,14 @@ function newerSort(lhs: IDownload, rhs: IDownload): number {
 
 function findDownloadByRef(reference: IReference, state: IState): string {
   const downloads = state.persistent.downloads.files;
+
+  if (isFuzzyVersion(reference.versionMatch)
+    && (reference.fileMD5 !== undefined)
+    && ((reference.logicalFileName !== undefined)
+      || (reference.fileExpression !== undefined))) {
+    reference = _.omit(reference, ['fileMD5']);
+  }
+
   const existing: string[] = Object.keys(downloads).filter((dlId: string): boolean => {
     const download: IDownload = downloads[dlId];
     const lookup: IModLookupInfo = {
@@ -92,6 +113,13 @@ function makeLookupResult(lookup: ILookupResult, fromHint: IBrowserResult): ILoo
   });
 }
 
+/**
+ * from a set of requires/recommends rules, deduce which of them need to be downloaded
+ * and/or installed
+ * @param rules 
+ * @param api 
+ * @param recommendations 
+ */
 function gatherDependencies(rules: IModRule[],
                             api: IExtensionApi,
                             recommendations: boolean)
