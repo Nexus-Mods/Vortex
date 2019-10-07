@@ -80,6 +80,8 @@ function stopPatterns(gameMode: string) {
     case 'daggerfallunity':
       return ['factions', 'fonts', 'mods', 'questpacks', 'quests', 'soundfonts', 'spellicons',
               'tables', 'text', 'textures'].map(toWordExp);
+    case 'thesims4':
+      return ['[^/]*\\.package$', '[^/]*\\.ts4script$', '[^/]*\\.py[co]?$'];
     default: return [].concat(uniPatterns);
   }
 }
@@ -263,6 +265,9 @@ const gameSupport: { [gameId: string]: IGameSupport } = {
   },
   daggerfallunity: {
     stopPatterns: stopPatterns('daggerfallunity'),
+  },
+  thesims4: {
+    stopPatterns: stopPatterns('thesims4'),
   },
 };
 
