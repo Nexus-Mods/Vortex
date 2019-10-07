@@ -186,7 +186,7 @@ function unknownErrorRetry(filePath: string, err: Error, stackErr: Error): Promi
                       + 'temporary network or server problems. '
                       + 'Please do not report this to us, this is not a bug in Vortex '
                       + 'and we can not provide remote assistance with hardware problems.';
-    } else if ([362, 383, 396, 404].indexOf(err['nativeCode']) !== -1) {
+    } else if ([362, 383, 395, 396, 404].indexOf(err['nativeCode']) !== -1) {
       options.title = 'OneDrive error';
       options.message = `The file "${filePath}" is stored on a cloud storage drive `
                       + '(Microsoft OneDrive) which is currently unavailable. Please '
@@ -206,7 +206,7 @@ function unknownErrorRetry(filePath: string, err: Error, stackErr: Error): Promi
                       + 'network drive, please make sure it\'s connected. Otherwise make sure '
                       + 'the drive letter hasn\'t changed and if necessary, update the path '
                       + 'within Vortex.';
-    } else if ([4350].indexOf(err['nativeCode']) !== -1) {
+    } else if ([53, 4350].indexOf(err['nativeCode']) !== -1) {
       options.title = 'Network drive unavailable';
       options.message = `The file "${filePath}" is currently not accessible, very possibly the `
                       + 'network share as a whole is inaccesible due to a network problem '
