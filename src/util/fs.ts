@@ -211,6 +211,9 @@ function unknownErrorRetry(filePath: string, err: Error, stackErr: Error): Promi
       options.message = `The file "${filePath}" is currently not accessible, very possibly the `
                       + 'network share as a whole is inaccesible due to a network problem '
                       + 'or the server being offline.';
+    } else if (err['nativeCode'] === 1816) {
+      options.title = 'Not enough quota';
+      options.message = `Windows reported insufficient quota writing to "${filePath}".`;
     } else {
       options.title += ` (${err['nativeCode']})`;
       options.buttons.unshift('Cancel and Report');
