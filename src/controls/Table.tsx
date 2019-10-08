@@ -1,5 +1,5 @@
-import {setAttributeFilter, setAttributeSort,
-        setAttributeVisible, setSplitPos} from '../actions/tables';
+import {collapseGroup, setAttributeFilter, setAttributeSort,
+        setAttributeVisible, setGroupingAttribute} from '../actions/tables';
 import {IActionDefinition} from '../types/IActionDefinition';
 import {IAttributeState} from '../types/IAttributeState';
 import { II18NProps } from '../types/II18NProps';
@@ -15,6 +15,7 @@ import { getSafe, setSafe } from '../util/storeHelper';
 import {sanitizeCSSId, truthy} from '../util/util';
 
 import IconBar from './IconBar';
+import GroupingRow from './table/GroupingRow';
 import HeaderCell from './table/HeaderCell';
 import { Table, TBody, TH, THead, TR } from './table/MyTable';
 import TableDetail from './table/TableDetail';
@@ -28,6 +29,7 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
+import { CSSTransition } from 'react-transition-group';
 import * as Redux from 'redux';
 import { createSelector, OutputSelector } from 'reselect';
 
@@ -42,7 +44,7 @@ export interface ITableRowAction extends IActionDefinition {
 export interface IBaseProps {
   tableId: string;
   data: { [rowId: string]: any };
-  // cheapass way to force the table to refresh its data cache. This will only affect
+  // cheap-ass way to force the table to refresh its data cache. This will only affect
   // 'volatile' fields as normal data fields would prompt a table refresh anyway
   dataId?: number;
   actions: ITableRowAction[];
@@ -57,13 +59,16 @@ interface IConnectedProps {
   attributeState?: { [id: string]: IAttributeState };
   language: string;
   filter: { [id: string]: any };
+  groupBy: string;
+  collapsedGroups: string[];
 }
 
 interface IActionProps {
   onSetAttributeVisible: (tableId: string, attributeId: string, visible: boolean) => void;
   onSetAttributeSort: (tableId: string, attributeId: string, direction: SortDirection) => void;
   onSetAttributeFilter: (tableId: string, attributeId: string, filter: any) => void;
-  onSetSplitPos: (tableId: string, pos: number) => void;
+  onSetGroupingAttribute: (tableId: string, attributeId: string) => void;
+  onCollapseGroup: (tableId: string, groupId: string, collapse: boolean) => void;
 }
 
 interface IExtensionProps {
@@ -255,6 +260,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       || (newProps.showHeader !== this.props.showHeader)
       || (newProps.detailsTitle !== this.props.detailsTitle)
       || (newProps.showDetails !== this.props.showDetails)
+      || (newProps.groupBy !== this.props.groupBy)
+      || (newProps.collapsedGroups !== this.props.collapsedGroups)
     );
   }
 
@@ -314,13 +321,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     const filterActive = (filteredLength !== undefined) && (filteredLength < totalLength);
 
     return (
-      <THead
-        className='table-header'
-      >
-        <TR
-          domRef={proxy ? this.setProxyHeaderRef : this.setVisibleHeaderRef}
-        >
-
+      <THead className='table-header' >
+        <TR domRef={proxy ? this.setProxyHeaderRef : this.setVisibleHeaderRef}>
           {this.mVisibleAttributes.map(attribute => this.renderHeaderField(attribute, proxy))}
           {actionHeader}
         </TR>
@@ -386,7 +388,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderBody = () => {
-    const { attributeState, data } = this.props;
+    const { t, attributeState, collapsedGroups, data, groupBy } = this.props;
     const { calculatedValues, sortedRows } = this.state;
 
     if ((data === undefined) || (calculatedValues === undefined) || (sortedRows === undefined)) {
@@ -396,12 +398,51 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     const sortAttribute: ITableAttribute = this.mVisibleAttributes.find(attribute =>
       this.isSortColumn(attributeState[attribute.id]));
 
-    return (
-      <TBody>
-        {sortedRows.map((row, idx) =>
-          this.renderRow(row, sortAttribute))}
-      </TBody>
-    );
+    const groupAttribute = this.mVisibleAttributes.find(attribute => attribute.id === groupBy);
+
+    if (groupAttribute !== undefined) {
+      const groupOptions = Array.from(new Set(
+        sortedRows.map(rowId => calculatedValues[rowId][groupAttribute.id]))).sort();
+      return (
+        <TBody>
+          {groupOptions.reduce((prev, group) => {
+            const groupItems = sortedRows
+              .filter(row => calculatedValues[row][groupAttribute.id] === group);
+            const expanded = collapsedGroups.indexOf(group || '') === -1;
+            prev.push((
+              <GroupingRow
+                t={t}
+                groupName={group}
+                expanded={expanded}
+                count={groupItems.length}
+                width={this.mVisibleAttributes.length + 1}
+                onToggle={this.toggleGroup}
+              />
+            ));
+            if (expanded) {
+              prev.push(...groupItems
+                .map((row, idx) =>
+                  this.renderRow(row, sortAttribute, expanded)));
+            }
+
+            return prev;
+          }, [])}
+        </TBody>
+      );
+    } else {
+      return (
+        <TBody>
+          {sortedRows.map((row, idx) =>
+            this.renderRow(row, sortAttribute))}
+        </TBody>
+      );
+    }
+  }
+
+  private toggleGroup = (groupName: string, expand: boolean) => {
+    const { onCollapseGroup, tableId } = this.props;
+
+    onCollapseGroup(tableId, groupName, !expand);
   }
 
   private scrollTo = (id: string, mayRetry?: boolean) => {
@@ -544,7 +585,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       && (attributeState.sortDirection !== 'none');
   }
 
-  private renderRow(rowId: string, sortAttribute: ITableAttribute): JSX.Element {
+  private renderRow(rowId: string, sortAttribute: ITableAttribute,
+                    visible?: boolean): JSX.Element {
     const { t, data, language, tableId } = this.props;
     const { calculatedValues, rowState, singleRowActions } = this.state;
 
@@ -581,7 +623,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderHeaderField = (attribute: ITableAttribute, proxy: boolean): JSX.Element => {
-    const { t, filter } = this.props;
+    const { t, filter, groupBy } = this.props;
 
     const attributeState = this.getAttributeState(attribute);
 
@@ -607,7 +649,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
           attribute={attribute}
           state={attributeState}
           doFilter={true}
+          doGroup={attribute.id === groupBy}
           onSetSortDirection={this.setSortDirection}
+          onSetGroup={this.setGroup}
           onSetFilter={this.setFilter}
           ref={proxy ? this.setHeaderCellRef : undefined}
           t={t}
@@ -1342,6 +1386,15 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     onSetAttributeSort(tableId, id, direction);
   }
 
+  private setGroup = (id: string) => {
+    const { groupBy, onSetGroupingAttribute, tableId } = this.props;
+    if (groupBy === id) {
+      onSetGroupingAttribute(tableId, undefined);
+    } else {
+      onSetGroupingAttribute(tableId, id);
+    }
+  }
+
   private setFilter = (attributeId?: string, filter?: any) => {
     const { onSetAttributeFilter, tableId } = this.props;
     onSetAttributeFilter(tableId, attributeId, filter);
@@ -1371,6 +1424,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 }
 
 const emptyObj = {};
+const emptyList = [];
 
 function mapStateToProps(state: any, ownProps: any): IConnectedProps {
   return {
@@ -1378,6 +1432,10 @@ function mapStateToProps(state: any, ownProps: any): IConnectedProps {
     attributeState:
       getSafe(state, ['settings', 'tables', ownProps.tableId, 'attributes'], emptyObj),
     filter: getSafe(state, ['settings', 'tables', ownProps.tableId, 'filter'], undefined),
+    groupBy: getSafe(state, ['settings', 'tables', ownProps.tableId, 'groupBy'], undefined),
+    collapsedGroups: getSafe(state,
+                             ['settings', 'tables', ownProps.tableId, 'collapsedGroups'],
+                             emptyList),
   };
 }
 
@@ -1387,9 +1445,12 @@ function mapDispatchToProps(dispatch: Redux.Dispatch): IActionProps {
       dispatch(setAttributeVisible(tableId, attributeId, visible)),
     onSetAttributeSort: (tableId: string, attributeId: string, dir: SortDirection) =>
       dispatch(setAttributeSort(tableId, attributeId, dir)),
-    onSetSplitPos: (tableId: string, pos: number) => dispatch(setSplitPos(tableId, pos)),
     onSetAttributeFilter: (tableId: string, attributeId: string, filter: any) =>
       dispatch(setAttributeFilter(tableId, attributeId, filter)),
+    onSetGroupingAttribute: (tableId: string, attributeId: string) =>
+      dispatch(setGroupingAttribute(tableId, attributeId)),
+    onCollapseGroup: (tableId: string, groupId: string, collapse: boolean) =>
+      dispatch(collapseGroup(tableId, groupId, collapse)),
   };
 }
 

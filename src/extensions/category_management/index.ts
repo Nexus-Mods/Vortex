@@ -98,6 +98,7 @@ function init(context: IExtensionContext): boolean {
     isToggleable: true,
     edit: {},
     isSortable: true,
+    isGroupable: true,
     filter: new CategoryFilter(),
     sortFuncRaw: (lhs: IModWithState, rhs: IModWithState, locale: string): number =>
       sortCategories(lhs, rhs, getCollator(locale), context.api.store.getState(), sortDirection),

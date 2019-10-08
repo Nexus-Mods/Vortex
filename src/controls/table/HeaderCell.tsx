@@ -3,6 +3,8 @@ import { ITableAttribute } from '../../types/ITableAttribute';
 import { SortDirection } from '../../types/SortDirection';
 import getAttr from '../../util/getAttr';
 
+import { IconButton } from '../TooltipControls';
+
 import { TH } from './MyTable';
 import SortIndicator from './SortIndicator';
 
@@ -15,7 +17,9 @@ export interface IHeaderProps {
   attribute: ITableAttribute;
   state: IAttributeState;
   doFilter: boolean;
+  doGroup: boolean;
   onSetSortDirection: (id: string, dir: SortDirection) => void;
+  onSetGroup: (id: string) => void;
   onSetFilter: (id?: string, filter?: any) => void;
   t: I18next.TFunction;
 }
@@ -59,8 +63,9 @@ class HeaderCell extends React.Component<IHeaderProps, {}> {
             onClick={this.cycleDirection}
           >
             <p style={{ margin: 0 }}>{t(attribute.name)}</p>
-            <div style={{ whiteSpace: 'nowrap' }}>
-            {attribute.isSortable ? this.renderSortIndicator() : null}
+            <div className='cell-controls'>
+              {attribute.isSortable ? this.renderSortIndicator() : <div/>}
+              {attribute.isGroupable ? this.renderGroupIndicator() : null}
             </div>
           </div>
           {doFilter ? this.props.children : null}
@@ -77,6 +82,21 @@ class HeaderCell extends React.Component<IHeaderProps, {}> {
     }
   }
 
+  private renderGroupIndicator(): JSX.Element {
+    const { t, doGroup } = this.props;
+    const classes = [
+      'btn-embed',
+    ];
+    classes.push(doGroup ? 'table-group-enabled' : 'table-group-disabled');
+    return (
+      <IconButton
+        icon='layout-list'
+        onClick={this.setGroup}
+        tooltip={t('Group the table by this attribute')}
+        className={classes.join(' ')}
+      />);
+  }
+
   private renderSortIndicator(): JSX.Element {
     const { state } = this.props;
 
@@ -91,12 +111,21 @@ class HeaderCell extends React.Component<IHeaderProps, {}> {
     this.mRef = ref;
   }
 
-  private cycleDirection = () => {
+  private cycleDirection = (evt: React.MouseEvent<any>) => {
     const { attribute, onSetSortDirection, state } = this.props;
+    if (evt.defaultPrevented) {
+      return;
+    }
     if (attribute.isSortable) {
       const direction: SortDirection = getAttr(state, 'sortDirection', 'none') as SortDirection;
       onSetSortDirection(attribute.id, nextDirection(direction));
     }
+  }
+
+  private setGroup = (evt) => {
+    const { onSetGroup, attribute } = this.props;
+    onSetGroup(attribute.id);
+    evt.preventDefault();
   }
 
   private setDirection = (dir: SortDirection) => {

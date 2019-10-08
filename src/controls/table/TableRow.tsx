@@ -9,7 +9,7 @@ import {ITableRowAction} from '../Table';
 import {Button, IconButton} from '../TooltipControls';
 import VisibilityProxy from '../VisibilityProxy';
 
-import { TD } from './MyTable';
+import { TD, TR } from './MyTable';
 
 import I18next from 'i18next';
 import * as _ from 'lodash';
@@ -267,7 +267,7 @@ class TableRow extends React.Component<IRowProps, IRowState> {
     const { data, domRef, highlighted, id, onClick,
             selected } = this.props;
 
-    const classes = ['xtr'];
+    const classes = [];
 
     if (selected) {
       classes.push('table-selected');
@@ -279,13 +279,14 @@ class TableRow extends React.Component<IRowProps, IRowState> {
     return (
       <VisibilityProxy
         id={id}
+        componentClass={TR}
         data-rowid={data.__id}
         key={data.__id}
         className={classes.join(' ')}
         onClick={onClick}
         onContextMenu={this.onContext}
         ref={domRef}
-        style={{ display: 'table-row', position: 'relative' }}
+        style={{ position: 'relative' }}
 
         visible={this.props.visible}
         setVisible={this.setVisible}

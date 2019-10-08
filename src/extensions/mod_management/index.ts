@@ -551,6 +551,7 @@ function genModsSourceAttribute(api: IExtensionApi): ITableAttribute<IMod> {
     placement: 'both',
     isSortable: true,
     isToggleable: true,
+    isGroupable: true,
     isDefaultVisible: false,
     supportsMultiple: true,
     calc: mod => {
