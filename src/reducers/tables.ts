@@ -32,6 +32,8 @@ export const tableReducer: IReducerSpec = {
         ? pushSafe(state, [tableId, 'collapsedGroups'], groupId)
         : removeValue(state, [tableId, 'collapsedGroups'], groupId);
     },
+    [actions.setCollapsedGroups as any]: (state, payload) =>
+      setSafe(state, [payload.tableId, 'collapsedGroups'], payload.groups),
   },
   defaults: {
   },

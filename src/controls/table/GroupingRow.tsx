@@ -1,9 +1,13 @@
+import { ComponentEx } from '../../util/ComponentEx';
+import { IActionDefinitionEx } from '../ActionControl';
+import ContextMenu from '../ContextMenu';
 import Icon from '../Icon';
 
 import { TD, TR } from './MyTable';
 
 import i18next from 'i18next';
 import * as React from 'react';
+import * as Redux from 'redux';
 
 export interface IGroupingRowProps {
   t: i18next.TFunction;
@@ -11,30 +15,76 @@ export interface IGroupingRowProps {
   count: number;
   expanded: boolean;
   width: number;
-  onToggle: (group: string, expanded: boolean) => void;
+  onToggle: (group: string, expand: boolean) => void;
+  onExpandAll: () => void;
+  onCollapseAll: () => void;
 }
 
-class GroupingRow extends React.PureComponent<IGroupingRowProps, {}> {
+interface IGroupingRowState {
+  context?: { x: number, y: number };
+}
+
+class GroupingRow extends ComponentEx<IGroupingRowProps, IGroupingRowState> {
+  private mContextActions: IActionDefinitionEx[];
+
+  constructor(props: IGroupingRowProps) {
+    super(props);
+
+    this.initState({
+      context: undefined,
+    });
+
+    this.mContextActions = [
+      {
+        title: this.props.t('Expand all'),
+        action: this.props.onExpandAll,
+        show: true,
+      },
+      {
+        title: this.props.t('Collapse all'),
+        action: this.props.onCollapseAll,
+        show: true,
+      },
+    ];
+  }
+
   public render(): JSX.Element {
-    const { t, count, expanded, groupName: group, width } = this.props;
+    const { t, count, expanded, groupName, width } = this.props;
+    const { context } = this.state;
     return (
-      <TR key={`group-${group}`}>
+      <TR key={`group-${groupName}`} onContextMenu={this.onContext}>
         <TD
           className='table-group-header'
-          data-group={group}
+          data-group={groupName}
           onClick={this.toggleGroup}
           colSpan={width}
         >
+          <ContextMenu
+            instanceId={groupName}
+            actions={this.mContextActions}
+            visible={context !== undefined}
+            position={this.state.context}
+            onHide={this.onHideContext}
+          />
+
           <Icon name={expanded ? 'showhide-down' : 'showhide-right'} />
-          {group || t('<Empty>')} ({count})
+          {groupName || t('<Empty>')} ({count})
         </TD>
       </TR>
     );
   }
 
-  private toggleGroup = (evt: React.MouseEvent<any>) => {
-    const { expanded, groupName: group, onToggle } = this.props;
-    onToggle(group, !expanded);
+  private toggleGroup = () => {
+    const { expanded, groupName, onToggle } = this.props;
+    onToggle(groupName, !expanded);
+  }
+
+  private onContext = (event: React.MouseEvent<any>) => {
+    this.setState({ context: { x: event.clientX, y: event.clientY } });
+  }
+
+  private onHideContext = () => {
+    this.setState({ context: undefined });
   }
 }
 

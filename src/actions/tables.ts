@@ -20,3 +20,6 @@ export const setGroupingAttribute = safeCreateAction('SET_GROUPING_ATTRIBUTE',
 
 export const collapseGroup = safeCreateAction('COLLAPSE_GROUP',
   (tableId: string, groupId: string, collapse: boolean) => ({ tableId, groupId, collapse }));
+
+export const setCollapsedGroups = safeCreateAction('SET_COLLAPSED_GROUPS',
+  (tableId: string, groups: string[]) => ({ tableId, groups }));
