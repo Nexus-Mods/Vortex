@@ -1,7 +1,7 @@
 import * as actions from '../actions/tables';
 import { IReducerSpec } from '../types/IExtensionContext';
 
-import { deleteOrNop, setSafe } from '../util/storeHelper';
+import { pushSafe, removeValue, setSafe } from '../util/storeHelper';
 
 /**
  * reducer for changes to the window state
@@ -24,8 +24,14 @@ export const tableReducer: IReducerSpec = {
           ? setSafe(state, [tableId, 'filter', attributeId], undefined)
           : setSafe(state, [tableId, 'filter', attributeId], filter);
     },
-    [actions.setSplitPos as any]: (state, payload) =>
-      setSafe(state, [payload.tableId, 'splitPos'], payload.pos),
+    [actions.setGroupingAttribute as any]: (state, payload) =>
+      setSafe(state, [payload.tableId, 'groupBy'], payload.attributeId),
+    [actions.collapseGroup as any]: (state, payload) => {
+      const { tableId, groupId, collapse } = payload;
+      return collapse
+        ? pushSafe(state, [tableId, 'collapsedGroups'], groupId)
+        : removeValue(state, [tableId, 'collapsedGroups'], groupId);
+    },
   },
   defaults: {
   },

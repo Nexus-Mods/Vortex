@@ -481,6 +481,14 @@
       "path": "{nucleo}/arrows/{nucleo_simple}_stre-up",
       "rmFill": true
     },
+    "showhide-left": {
+      "path": "{nucleo}/arrows/{nucleo_simple}_stre-left",
+      "rmFill": true
+    },
+    "showhide-right": {
+      "path": "{nucleo}/arrows/{nucleo_simple}_stre-right",
+      "rmFill": true
+    },
     "attention-required": {
       "path": "{nucleo}/ui/{nucleo_simple}_alert",
       "rmFill": true

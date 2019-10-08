@@ -303,26 +303,3 @@
 .table-group-enabled {
   color: $brand-secondary;
 }
-
-.table-row-fade-enter {
-  opacity: 1;
-}
-
-.table-row-fade-enter-done {
-  opacity: 1;
-}
-
-.table-row-fade-enter-active {
-  opacity: 1;
-  transition: opacity 300ms ease;
-}
-
-.table-row-fade-exit-active {
-  opacity: 0;
-  transition: opacity 300ms ease;
-}
-
-.table-row-fade-exit-done {
-  display: none;
-  opacity: 0;
-}
