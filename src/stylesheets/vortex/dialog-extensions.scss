@@ -1,0 +1,104 @@
+#browse-extensions-dialog {
+  .modal-dialog {
+    width: 80%;
+  }
+  .modal-body {
+    height: 80vh;
+  }
+}
+
+.extension-list {
+  width: 30%;
+  margin-right: 4px;
+  border-right: $border-width solid $border-color;
+}
+
+.extension-text {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.extension-item {
+
+  &.selected {
+    background-color: $table-bg-active;
+  }
+
+  .extension-header {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: nowrap;
+    overflow: hidden;
+    flex: 1 1 0;
+
+    .extension-name {
+      @extend .extension-text;
+      font-weight: bolder;
+    }
+
+    .extension-version {
+      opacity: 0.9;
+      font-size: small;
+      padding-left: 6px;
+    }
+  }
+
+  .extension-description {
+    @extend .extension-text;
+  }
+
+  .extension-footer {
+    display: flex;
+    justify-content: space-between;
+
+    .extension-author {
+      @extend .extension-text;
+      font-weight: bold;
+    }
+
+    .extension-subscribe {
+      padding: 0 4px;
+    }
+  }
+}
+
+.description-header {
+  border-bottom: $border-width solid $border-color;
+  display: flex;
+  justify-content: center;
+
+  .description-header-content {
+    margin-left: $gutter-width;
+    justify-content: space-evenly;
+  }
+
+  .description-image-container {
+    width: 256px;
+    height: 192px;
+
+    display: flex;
+    align-items: center;
+
+    >img {
+      max-width: 256px;
+      max-height: 192px;
+    }
+  }
+  .description-name {
+    font-weight: bolder;
+    font-size: x-large;
+  }
+
+  .description-author {
+    font-weight: bold;
+    font-style: italic;
+    margin-left: 1em;
+  }
+}
+
+.extensions-find-button-container-outer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}

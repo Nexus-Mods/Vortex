@@ -72,13 +72,16 @@ export function convertNXMIdReverse(knownGames: IGameStored[], input: string): s
  * get the nxm link id for a game
  */
 export function toNXMId(game: IGameStored, gameId: string): string {
-  if (game !== undefined) {
-    if (game.details !== undefined) {
-      if (game.details.nxmLinkId !== undefined) {
-        return game.details.nxmLinkId;
-      } else if (game.details.nexusPageId !== undefined) {
-        return game.details.nexusPageId;
-      }
+  // this is a bit of a workaround since "site" isn't and shouldn't be an
+  // entry in the list of games (here or on the site)
+  if (game === null) {
+    return 'site';
+  }
+  if (game.details !== undefined) {
+    if (game.details.nxmLinkId !== undefined) {
+      return game.details.nxmLinkId;
+    } else if (game.details.nexusPageId !== undefined) {
+      return game.details.nexusPageId;
     }
     gameId = game.id;
   }

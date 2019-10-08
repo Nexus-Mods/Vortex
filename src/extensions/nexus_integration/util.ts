@@ -78,6 +78,9 @@ export function startDownload(api: IExtensionApi, nexus: Nexus, nxmurl: string):
       });
     })
     .then(downloadId => {
+      if (gameId === 'site') {
+        return downloadId;
+      }
       api.sendNotification({
         id: `ready-to-install-${downloadId}`,
         type: 'success',

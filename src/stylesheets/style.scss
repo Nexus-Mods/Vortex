@@ -103,6 +103,12 @@
   flex: 1 1 0%;
 }
 
+.flex-center-both {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 .vcenter {
   margin: auto 0 auto 0;
 }
@@ -410,6 +416,7 @@ div:hover > .hover-expand {
 @import "vortex/dialog-about";
 @import "vortex/dialog-categories";
 @import "vortex/dialog-diagnostic-files";
+@import "vortex/dialog-extensions";
 @import "vortex/dialog-external-change";
 @import "vortex/dialog-fix-deployment";
 @import "vortex/dialog-fomod";

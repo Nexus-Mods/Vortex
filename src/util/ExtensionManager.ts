@@ -41,7 +41,7 @@ import * as Promise from 'bluebird';
 import { spawn, SpawnOptions } from 'child_process';
 import { app as appIn, dialog as dialogIn, ipcMain, ipcRenderer, remote } from 'electron';
 import { EventEmitter } from 'events';
-import * as fs from 'fs';
+import * as fs from 'fs-extra';
 import I18next from 'i18next';
 import * as JsonSocket from 'json-socket';
 import * as _ from 'lodash';
@@ -52,7 +52,6 @@ import * as net from 'net';
 import * as path from 'path';
 import * as Redux from 'redux';
 import {} from 'redux-watcher';
-import * as rimraf from 'rimraf';
 import * as semver from 'semver';
 import { generate as shortid } from 'shortid';
 import { dynreq, runElevated } from 'vortex-run';
@@ -462,7 +461,8 @@ class ExtensionManager {
       Object.keys(this.mExtensionState)
         .filter(extId => this.mExtensionState[extId].remove)
         .forEach(extId => {
-          rimraf.sync(path.join(extensionsPath, extId));
+          log('debug', 'removing', path.join(extensionsPath, extId));
+          fs.removeSync(path.join(extensionsPath, extId));
           initStore.dispatch(forgetExtension(extId));
         });
       ipcMain.on('__get_extension_state', event => {
@@ -1250,22 +1250,29 @@ class ExtensionManager {
     });
   }
 
-  private emitAndAwait = (event: string, ...args: any[]): Promise<void> => {
+  private emitAndAwait = (event: string, ...args: any[]): Promise<any> => {
     let queue = Promise.resolve();
-    const enqueue = (prom: Promise<void>) => {
+    let results: any[] = [];
+    const enqueue = (prom: Promise<any>) => {
       if (prom !== undefined) {
-        queue = queue.then(() => prom.catch(err => {
-          this.mApi.showErrorNotification(`Unhandled error in event "${event}"`, err);
-        }));
+        queue = queue.then(() => prom
+          .then(res => {
+            if ((res !== undefined) && (res !== null)) {
+              results.push(res);
+            }
+          })
+          .catch(err => {
+            this.mApi.showErrorNotification(`Unhandled error in event "${event}"`, err);
+          }));
       }
     };
 
     this.mEventEmitter.emit(event, ...args, enqueue);
 
-    return queue;
+    return queue.then(() => results);
   }
 
-  private onAsync = (event: string, listener: (...args) => Promise<void>) => {
+  private onAsync = (event: string, listener: (...args) => Promise<any>) => {
     this.mEventEmitter.on(event, (...args: any[]) => {
       const enqueue = args.pop();
       if ((enqueue === undefined) || (typeof(enqueue) !== 'function')) {
@@ -1276,7 +1283,6 @@ class ExtensionManager {
         }
         // call the listener anyway
         listener(...args)
-          .then(() => null)
           .catch(err => {
             this.mApi.showErrorNotification(`Failed to call event ${event}`, err);
           });
