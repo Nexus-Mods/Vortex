@@ -638,6 +638,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       calc: mod => getSafe(mod.attributes, ['author'], ''),
       placement: 'both',
       isToggleable: true,
+      isGroupable: true,
       isDefaultVisible: false,
       isSortable: true,
       sortFunc: (lhs: string, rhs: string) =>
