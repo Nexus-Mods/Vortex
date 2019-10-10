@@ -6,9 +6,9 @@ import Toggle from '../../controls/Toggle';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../types/IDialog';
 import { IState } from '../../types/IState';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
-import { readdirAsync } from '../../util/fs';
 import getVortexPath from '../../util/getVortexPath';
 import { log } from '../../util/log';
+import { truthy } from '../../util/util';
 
 import getTextModManagement from '../mod_management/texts';
 import getTextProfiles from '../profile_management/texts';
@@ -211,6 +211,9 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
   }
 
   private isValidLanguageCode(langId: string) {
+    if (!truthy(langId)) {
+      return false;
+    }
     try {
       new Date().toLocaleString(langId);
       return true;
@@ -221,8 +224,10 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
   }
 
   private selectLanguage = (evt) => {
+    const { extensions } = this.props;
     const target: HTMLSelectElement = evt.target as HTMLSelectElement;
-    const ext: IExtensionDownloadInfo = JSON.parse(target.selectedOptions[0].getAttribute('data-ext'));
+    const extName: string = target.selectedOptions[0].getAttribute('data-ext');
+    const ext: { modId?: number } = extensions.find(iter => iter.name === extName) || {};
     const { value } = target;
     const dlProm: Promise<boolean[]> = ext.modId !== undefined
       ? this.context.api.emitAndAwait('download-extension', ext)
@@ -244,7 +249,11 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
   private renderLanguage(language: ILanguage): JSX.Element {
     const { t } = this.props;
     return (
-      <option key={language.key} value={language.key} data-ext={JSON.stringify(language.ext)}>
+      <option
+        key={language.key}
+        value={language.key}
+        data-ext={(language.ext as IExtensionDownloadInfo).name}
+      >
       {this.languageName(language)}
       {(language.ext['modId'] !== undefined) ? ` (${t('Extension')})` : null}
       </option>
@@ -328,7 +337,7 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
 
           const ext: Partial<IAvailableExtension> = loc.has(key)
             ? {}
-            : translationExts.find(ext => ext.language === key);
+            : translationExts.find(iter => iter.language === key);
           return { key, language, country, ext };
         });
 

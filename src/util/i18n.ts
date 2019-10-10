@@ -84,14 +84,14 @@ class MultiBackend {
         fs.statSync(path.join(this.mOptions.bundled, language));
         return { backendType: 'bundled' };
       } catch (err) {
-        const ext = this.mOptions.translationExts.find(ext => {
+        const ext = this.mOptions.translationExts().find((iter: IExtension) => {
           try {
-            fs.statSync(path.join(ext.path, language));
+            fs.statSync(path.join(iter.path, language));
             return true;
           } catch (err) {
             return false;
           }
-        })
+        });
         if (ext === undefined) {
           log('warn', 'language not found', language);
           return { backendType: 'custom' };
@@ -110,7 +110,7 @@ class MultiBackend {
  * @param {string} language
  * @returns {I18next.I18n}
  */
-function init(language: string, translationExts: IExtension[]): Promise<IInitResult> {
+function init(language: string, translationExts: () => IExtension[]): Promise<IInitResult> {
   // reset to english if the language isn't valid
   try {
     new Date().toLocaleString(language);
@@ -190,7 +190,7 @@ export function debugTranslations(enable?: boolean) {
     ? enable
     : !debugging;
   missingKeys = { common: {} };
-  init(I18next.language, []);
+  init(I18next.language, () => []);
 }
 
 export function getMissingTranslations() {

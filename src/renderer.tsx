@@ -381,12 +381,11 @@ function renderer() {
 
   webFrame.setZoomFactor(getSafe(store.getState(), ['settings', 'window', 'zoomFactor'], 1));
 
-  const state: IState = store.getState();
-
-  const translationExts = Object.values(state.session.extensions.installed)
-    .filter(ext => ext.type === 'translation');
-
-  getI18n(state.settings.interface.language, translationExts)
+  getI18n('en', () => {
+    const state: IState = store.getState();
+    return Object.values(state.session.extensions.installed)
+      .filter(ext => ext.type === 'translation');
+  })
     .then(res => {
       ({ i18n, tFunc, error } = res);
       extensions.setTranslation(i18n);
@@ -396,6 +395,7 @@ function renderer() {
       }
       return extensions.doOnce();
     })
+    .then(() => i18n.changeLanguage(store.getState().settings.interface.language))
     .then(() => extensions.renderStyle()
       .catch(err => {
         terminate({

@@ -1,24 +1,30 @@
+import { IExtensionApi } from '../../types/IExtensionContext';
+import { IDownload, IState } from '../../types/IState';
+import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import getVortexPath from '../../util/getVortexPath';
+import { jsonRequest } from '../../util/network';
+import { getSafe } from '../../util/storeHelper';
+import { INVALID_FILENAME_RE } from '../../util/util';
+
+import { downloadPathForGame } from '../download_management/selectors';
+
+import installExtension from './installExtension';
 
 import * as Promise from 'bluebird';
 import { remote } from 'electron';
 import * as _ from 'lodash';
 import * as path from 'path';
-import { IExtension, IExtensionDownloadInfo, IAvailableExtension, ExtensionType } from './types';
-import { INVALID_FILENAME_RE } from '../../util/util';
-import { jsonRequest } from '../../util/network';
-import { IState, IDownload } from '../../types/IState';
-import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
-import { getSafe } from '../../util/storeHelper';
-import installExtension from './installExtension';
-import { IExtensionApi } from '../../types/IExtensionContext';
-import { downloadPathForGame } from '../download_management/selectors';
+import { ExtensionType, IAvailableExtension, IExtension,
+         IExtensionDownloadInfo, IExtensionManifest } from './types';
 
 const caches: {
   __availableExtensions?: Promise<IAvailableExtension[]>,
   __installedExtensions?: Promise<{ [extId: string]: IExtension }>,
 } = {};
+
+const EXTENSIONS_URL =
+  'https://raw.githubusercontent.com/Nexus-Mods/Vortex/announcements/extensions.json';
 
 function getAllDirectories(searchPath: string): Promise<string[]> {
   return fs.readdirAsync(searchPath)
@@ -28,15 +34,26 @@ function getAllDirectories(searchPath: string): Promise<string[]> {
 }
 
 function applyExtensionInfo(id: string, bundled: boolean, values: any): IExtension {
-  return {
+  const res = {
     name: values.name || id,
     author: values.author || 'Unknown',
     version: values.version || '0.0.0',
     description: values.description || 'Missing',
-    type: values.type,
-    path: values.path,
-    bundled,
   };
+
+  // add optional settings if we have them
+  const add = (key: string, value: any) => {
+    if (value !== undefined) {
+      res[key] = value;
+    }
+  };
+
+  add('type', values.type);
+  add('path', values.path);
+  add('bundled', bundled);
+  add('modId', values.modId);
+
+  return res;
 }
 
 export function sanitize(input: string): string {
@@ -60,11 +77,13 @@ export function readExtensionInfo(extensionPath: string,
       return {
         id,
         info: applyExtensionInfo(id, bundled, {}),
-      }
+      };
     });
 }
 
-function readExtensionDir(pluginPath: string, bundled: boolean): Promise<Array<{ id: string, info: IExtension }>> {
+function readExtensionDir(pluginPath: string,
+                          bundled: boolean)
+                          : Promise<Array<{ id: string, info: IExtension }>> {
   return getAllDirectories(pluginPath)
     .map((extPath: string) => path.join(pluginPath, extPath))
     .map((fullPath: string) => readExtensionInfo(fullPath, bundled));
@@ -98,12 +117,15 @@ export function fetchAvailableExtensions(force: boolean): Promise<IAvailableExte
 }
 
 function doFetchAvailableExtensions(): Promise<IAvailableExtension[]> {
-  // return Promise.resolve(jsonRequest<IAvailableExtension[]>('http://tannin.eu/extensions.json'));
-  return fs.readFileAsync(path.join(__dirname, 'extensions.json'), { encoding: 'utf8' })
-    .then(data => JSON.parse(data));
+  return Promise.resolve(jsonRequest<IExtensionManifest>(EXTENSIONS_URL))
+    .then(manifest => manifest.extensions.filter(ext => ext.name !== undefined));
+  /*return fs.readFileAsync(path.join(__dirname, 'extensions.json'), { encoding: 'utf8' })
+    .then(data => JSON.parse(data).extensions.filter(ext => ext.name !== undefined));*/
 }
 
-export function downloadExtension(api: IExtensionApi, ext: IExtensionDownloadInfo): Promise<boolean> {
+export function downloadAndInstallExtension(api: IExtensionApi,
+                                            ext: IExtensionDownloadInfo)
+                                            : Promise<boolean> {
   let download: IDownload;
 
   return api.emitAndAwait('nexus-download', 'site', ext.modId, ext.fileId)
@@ -113,7 +135,7 @@ export function downloadExtension(api: IExtensionApi, ext: IExtensionDownloadInf
       if ((dlIds === undefined) || (dlIds.length !== 1)) {
         return Promise.reject(new ProcessCanceled('No download found'));
       }
-      download = getSafe(state, ['persistent', 'downloads', 'files', dlIds[0]], undefined)
+      download = getSafe(state, ['persistent', 'downloads', 'files', dlIds[0]], undefined);
       if (download === undefined) {
         return Promise.reject(new Error('Download not found'));
       }
@@ -125,8 +147,12 @@ export function downloadExtension(api: IExtensionApi, ext: IExtensionDownloadInf
         .find(iter => (iter.modId === ext.modId) && (iter.fileId === ext.fileId));
 
       const info: IExtension = (extDetail !== undefined)
-        ? { ..._.pick(extDetail, ['name', 'author', 'version', 'type']),
-                      bundled: false, description: extDetail.description.short }
+        ? {
+          ..._.pick(extDetail, ['name', 'author', 'version', 'type']),
+          bundled: false,
+          description: extDetail.description.short,
+          modId: ext.modId,
+        }
         : undefined;
 
       const state: IState = api.store.getState();
@@ -151,7 +177,7 @@ export function downloadExtension(api: IExtensionApi, ext: IExtensionDownloadInf
           { label: 'Close' },
         ]);
       return Promise.resolve(false);
-    })
+    });
 }
 
 export function readExtensibleDir(extType: ExtensionType, bundledPath: string, customPath: string) {
@@ -159,7 +185,7 @@ export function readExtensibleDir(extType: ExtensionType, bundledPath: string, c
     return fs.readdirAsync(baseName)
       .filter(name => fs.statAsync(path.join(baseName, name)).then(stats => stats.isDirectory()))
       .map(name => path.join(baseName, name));
-  }
+  };
 
   return readExtensions(false)
     .then(extensions => {

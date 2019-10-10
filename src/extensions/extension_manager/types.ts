@@ -10,6 +10,7 @@ export interface IExtension {
   type?: ExtensionType;
   bundled?: boolean;
   path?: string;
+  modId?: number;
 }
 
 export type IExtensionWithState = IExtension & IExtensionState & {
@@ -37,3 +38,7 @@ export interface IAvailableExtension extends IExtensionDownloadInfo {
   tags: string[];
 }
 
+export interface IExtensionManifest {
+  last_updated: number;
+  extensions: IAvailableExtension[];
+}

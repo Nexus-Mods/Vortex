@@ -7,7 +7,7 @@ import bbcode from '../../util/bbcode';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 
 import { IAvailableExtension, IExtension } from './types';
-import { downloadExtension } from './util';
+import { downloadAndInstallExtension } from './util';
 
 import * as React from 'react';
 import { Button, ListGroup, ListGroupItem, ModalHeader } from 'react-bootstrap';
@@ -81,8 +81,16 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
       </Modal>);
   }
 
+  private isInstalled(ext: IAvailableExtension): boolean {
+    const { extensions } = this.props;
+
+    return Object.values(extensions)
+      .find(iter => iter.modId === ext.modId
+                 || iter.name === ext.name) !== undefined;
+  }
+
   private renderListEntry = (ext: IAvailableExtension, idx: number) => {
-    const { t, extensions } = this.props;
+    const { t } = this.props;
     const { installing, selected } = this.state;
 
     const classes = ['extension-item'];
@@ -91,7 +99,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
       classes.push('selected');
     }
 
-    const installed = Object.values(extensions).find(iter => iter.name === ext.name) !== undefined;
+    const installed = this.isInstalled(ext);
 
     const action = (installing.indexOf(ext.name) !== -1)
       ? <Spinner />
@@ -135,7 +143,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
       return null;
     }
 
-    const installed = Object.values(extensions).find(iter => iter.name === ext.name) !== undefined;
+    const installed = this.isInstalled(ext);
 
     const action = (installing.indexOf(ext.name) !== -1)
       ? <Spinner />
@@ -195,7 +203,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
 
     this.nextState.installing.push(ext.name);
 
-    downloadExtension(this.context.api, ext)
+    downloadAndInstallExtension(this.context.api, ext)
       .then((success: boolean) => {
         if (success) {
           this.props.updateExtensions();

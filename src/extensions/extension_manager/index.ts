@@ -1,15 +1,15 @@
-import {IExtensionContext, IExtensionApi} from '../../types/IExtensionContext';
+import {IExtensionApi, IExtensionContext} from '../../types/IExtensionContext';
+import { IState } from '../../types/IState';
 import makeReactive from '../../util/makeReactive';
 
 import BrowseExtensions from './BrowseExtensions';
 import ExtensionManager from './ExtensionManager';
-import { IExtensionDownloadInfo } from './types';
-import { readExtensions, fetchAvailableExtensions, downloadExtension } from './util';
 import sessionReducer from './reducers';
+import { IExtensionDownloadInfo } from './types';
+import { downloadAndInstallExtension, fetchAvailableExtensions, readExtensions } from './util';
 
 import * as _ from 'lodash';
 import { setAvailableExtensions, setInstalledExtensions } from './actions';
-import { IState } from '../../types/IState';
 
 interface ILocalState {
   reloadNecessary: boolean;
@@ -47,7 +47,7 @@ function init(context: IExtensionContext) {
           allowReport: false,
         });
       });
-  }
+  };
 
   context.registerMainPage('extensions', 'Extensions', ExtensionManager, {
     hotkey: 'X',
@@ -70,7 +70,8 @@ function init(context: IExtensionContext) {
     updateInstalledExtensions(true);
     updateAvailableExtensions(context.api);
     context.api.onAsync('download-extension', (ext: IExtensionDownloadInfo) =>
-      downloadExtension(context.api, ext));
+      downloadAndInstallExtension(context.api, ext)
+        .then(() => updateInstalledExtensions(false)));
   });
 
   return true;
