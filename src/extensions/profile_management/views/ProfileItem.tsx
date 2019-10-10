@@ -1,5 +1,5 @@
 import { ActionDropdown } from '../../../controls/api';
-import { Table, TD, TR } from '../../../controls/table/MyTable';
+import { Table, TBody, TD, TR } from '../../../controls/table/MyTable';
 import { IActionDefinition } from '../../../types/api';
 import { ComponentEx } from '../../../util/ComponentEx';
 import * as fs from '../../../util/fs';
@@ -142,24 +142,26 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
           />
           <h3 className='profile-name'>{`${gameName} - ${profile.name}`}</h3>
           <Table className='profile-details'>
-            {this.renderFeatureWithValue({
-              id: profile.id + 'mods',
-              label: t('Mods Enabled'),
-              icon: 'mods',
-              type: 'number',
-              supported: () => true,
-              description: t('Number of Mods enabled'),
-            }, enabledMods)}
-            {this.renderFeatureWithValue({
-              id: profile.id + 'id',
-              label: t('ID'),
-              icon: '',
-              type: 'string',
-              supported: () => true,
-              description: t('Internal ID of this profile'),
-            }, profile.id)}
+            <TBody>
+              {this.renderFeatureWithValue({
+                id: profile.id + 'mods',
+                label: t('Mods Enabled'),
+                icon: 'mods',
+                type: 'number',
+                supported: () => true,
+                description: t('Number of Mods enabled'),
+              }, enabledMods)}
+              {this.renderFeatureWithValue({
+                id: profile.id + 'id',
+                label: t('ID'),
+                icon: '',
+                type: 'string',
+                supported: () => true,
+                description: t('Internal ID of this profile'),
+              }, profile.id)}
 
-            {features.map(this.renderFeature)}
+              {features.map(this.renderFeature)}
+            </TBody>
           </Table>
         </div>
         <div className='profile-actions'>

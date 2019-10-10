@@ -172,13 +172,15 @@ export function onRequestOwnIssues(nexus: Nexus) {
 function download(api: IExtensionApi, nexus: Nexus,
                   game: IGameStored, modId: number, fileId: number): Promise<string> {
     const state: IState = api.store.getState();
-    if (!getSafe(state, ['persistent', 'nexus', 'userInfo', 'isPremium'], false)) {
+    const gameId = game !== null ? game.id : 'site';
+    if ((game !== null)
+        && !getSafe(state, ['persistent', 'nexus', 'userInfo', 'isPremium'], false)) {
       // nexusmods can't let users download files directly from client, without
       // showing ads
       return Promise.reject(new ProcessCanceled('Only available to premium users'));
     }
     // TODO: Need some way to identify if this request is actually for a nexus mod
-    const url = `nxm://${toNXMId(game, game.id)}/mods/${modId}/files/${fileId}`;
+    const url = `nxm://${toNXMId(game, gameId)}/mods/${modId}/files/${fileId}`;
 
     const downloads = state.persistent.downloads.files;
     // check if the file is already downloaded. If not, download before starting the install
@@ -196,7 +198,7 @@ export function onModUpdate(api: IExtensionApi, nexus: Nexus): (...args: any[]) 
   return (gameId, modId, fileId) => {
     const game = gameId === 'site' ? null : gameById(api.store.getState(), gameId);
 
-    download(api,nexus, game, modId, fileId)
+    download(api, nexus, game, modId, fileId)
       .then(downloadId => {
         api.events.emit('start-install-download', downloadId);
       })
@@ -214,22 +216,24 @@ export function onModUpdate(api: IExtensionApi, nexus: Nexus): (...args: any[]) 
   };
 }
 
-export function onNexusDownload(api: IExtensionApi, nexus: Nexus): (...args: any[]) => Promise<any> {
+export function onNexusDownload(api: IExtensionApi,
+                                nexus: Nexus)
+                                : (...args: any[]) => Promise<any> {
   return (gameId, modId, fileId): Promise<string> => {
     const game = gameId === 'site' ? null : gameById(api.store.getState(), gameId);
 
-    return download(api,nexus, game, modId, fileId)
+    return download(api, nexus, game, modId, fileId)
       .catch(ProcessCanceled, err => {
         api.sendNotification({
           type: 'error',
           message: err.message,
-        })
+        });
       })
       .catch(err => {
         api.showErrorNotification('Nexus download failed', err);
         return Promise.resolve(undefined);
       });
-  }
+  };
 }
 
 export function onSubmitFeedback(nexus: Nexus): (...args: any[]) => void {
