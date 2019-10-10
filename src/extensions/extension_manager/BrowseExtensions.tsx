@@ -1,14 +1,16 @@
 import FlexLayout from '../../controls/FlexLayout';
+import Modal from '../../controls/Modal';
 import Spinner from '../../controls/Spinner';
+import ZoomableImage from '../../controls/ZoomableImage';
 import { IState } from '../../types/IState';
 import bbcode from '../../util/bbcode';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 
 import { IAvailableExtension, IExtension } from './types';
-import { downloadExtension, sanitize } from './util';
+import { downloadExtension } from './util';
 
 import * as React from 'react';
-import { Button, ListGroup, ListGroupItem, Modal, ModalHeader } from 'react-bootstrap';
+import { Button, ListGroup, ListGroupItem, ModalHeader } from 'react-bootstrap';
 
 export interface IBrowseExtensionsProps {
   visible: boolean;
@@ -37,6 +39,7 @@ function nop() {
 }
 
 class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
+  private mModalRef: React.RefObject<any>;
   constructor(props: IProps) {
     super(props);
 
@@ -45,6 +48,8 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
       selected: -1,
       installing: [],
     });
+
+    this.mModalRef = React.createRef();
   }
 
   public render() {
@@ -54,7 +59,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
     const ext = selected === -1 ? null : availableExtensions[selected];
 
     return (
-      <Modal id='browse-extensions-dialog' show={visible} onHide={nop}>
+      <Modal id='browse-extensions-dialog' show={visible} onHide={nop} ref={this.mModalRef}>
         <ModalHeader>
           <h3>{t('Browse Extensions')}</h3>
         </ModalHeader>
@@ -65,7 +70,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
                 {availableExtensions.map(this.renderListEntry)}
               </ListGroup>
             </FlexLayout.Fixed>
-            <FlexLayout.Flex>
+            <FlexLayout.Flex fill={true}>
               {(selected === -1) ? null : this.renderDescription(ext, selected)}
             </FlexLayout.Flex>
           </FlexLayout>
@@ -147,32 +152,39 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
         );
 
     return (
-      <>
-        <FlexLayout type='row' className='description-header' fill={false}>
-          <FlexLayout.Fixed>
-            <div className='description-image-container'>
-              <img src={ext.image} />
-            </div>
-          </FlexLayout.Fixed>
-          <FlexLayout.Flex>
-            <FlexLayout type='column' className='description-header-content'>
-              <div className='description-title'>
-                <span className='description-name'>{ext.name}</span>
-                <span className='description-author'>{t('by')}{' '}{ext.author}</span>
+      <FlexLayout type='column'>
+        <FlexLayout.Fixed>
+          <FlexLayout type='row' className='description-header' fill={false}>
+            <FlexLayout.Fixed>
+              <div className='description-image-container'>
+                <ZoomableImage
+                  className='extension-picture'
+                  url={ext.image}
+                />
               </div>
-              <div className='description-short'>
-                {ext.description.short}
-              </div>
-              <div className='description-actions'>
-                {action}
-              </div>
-            </FlexLayout>
-          </FlexLayout.Flex>
-        </FlexLayout>
-        <div className='description-text'>
-          {bbcode(ext.description.long)}
-        </div>
-      </>
+            </FlexLayout.Fixed>
+            <FlexLayout.Flex>
+              <FlexLayout type='column' className='description-header-content'>
+                <div className='description-title'>
+                  <span className='description-name'>{ext.name}</span>
+                  <span className='description-author'>{t('by')}{' '}{ext.author}</span>
+                </div>
+                <div className='description-short'>
+                  {ext.description.short}
+                </div>
+                <div className='description-actions'>
+                  {action}
+                </div>
+              </FlexLayout>
+            </FlexLayout.Flex>
+          </FlexLayout>
+        </FlexLayout.Fixed>
+        <FlexLayout.Flex>
+          <div className='description-text'>
+            {bbcode(ext.description.long)}
+          </div>
+        </FlexLayout.Flex>
+      </FlexLayout>
     );
   }
 
@@ -188,6 +200,9 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
         if (success) {
           this.props.updateExtensions();
         }
+      })
+      .catch(err => {
+        this.context.api.showErrorNotification('Failed to install extension', err);
       })
       .finally(() => {
         this.nextState.installing = this.state.installing.filter(name => name !== ext.name);
