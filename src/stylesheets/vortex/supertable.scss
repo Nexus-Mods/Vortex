@@ -122,6 +122,10 @@
   > .icon {
     margin-right: 1em;
   }
+
+  &:hover {
+    background-color: $table-bg-active;
+  }
 }
 
 .table-row-grouped {

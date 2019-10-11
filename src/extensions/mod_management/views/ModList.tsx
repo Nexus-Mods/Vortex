@@ -611,7 +611,17 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       isVolatile: true,
       edit: {},
       isSortable: false,
-      isGroupable: true,
+      isGroupable: (mod: IModWithState, t: I18next.TFunction) => {
+        if (mod === undefined) {
+          return '';
+        }
+        const state = modUpdateState(mod.attributes);
+        if (state === 'current') {
+          return t('Up-to-date');
+        } else {
+          return t('Update available');
+        }
+      },
       filter: new VersionFilter(),
     };
 
