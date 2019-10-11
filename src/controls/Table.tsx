@@ -437,7 +437,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
                 }
               });
             if (groupItems.length === 0) {
-              return;
+              return prev;
             }
             const expanded = collapsedGroups.indexOf(group || '') === -1;
             prev.push((
