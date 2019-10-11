@@ -21,7 +21,7 @@ function compare(lhs: IGameStored, rhs: IGameStored,
   const rPath = getSafe(discovered, [rhs.id, 'path'], undefined);
 
   if ((lPath === undefined) === (rPath === undefined)) {
-    return lhs.name.localeCompare(rhs.name);
+    return (lhs.shortName || lhs.name).localeCompare(rhs.shortName || rhs.name);
   } else {
     return lPath !== undefined ? -1 : 1;
   }
@@ -35,6 +35,8 @@ export class GameFilterComponent extends React.Component<IProps, {}> {
       label: '<Current Game>',
       value: '$',
     }].concat(games.slice()
+      .concat({ id: 'site', shortName: 'Tools & Extensions', name: 'Tools & Extensions',
+                extensionPath: null, requiredFiles: null, executable: null })
       .sort((lhs, rhs) => compare(lhs, rhs, discovered))
       .map(game => ({
         label: game.shortName || game.name,
