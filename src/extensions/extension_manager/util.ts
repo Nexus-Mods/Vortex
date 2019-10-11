@@ -184,7 +184,8 @@ export function readExtensibleDir(extType: ExtensionType, bundledPath: string, c
   const readBaseDir = (baseName: string): Promise<string[]> => {
     return fs.readdirAsync(baseName)
       .filter(name => fs.statAsync(path.join(baseName, name)).then(stats => stats.isDirectory()))
-      .map(name => path.join(baseName, name));
+      .map(name => path.join(baseName, name))
+      .catch({ code: 'ENOENT' }, () => []);
   };
 
   return readExtensions(false)
