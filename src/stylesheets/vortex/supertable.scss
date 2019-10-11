@@ -116,7 +116,18 @@
 }
 
 .table-group-header {
-  background-color: $table-bg-active;
+  background-color: darken($table-bg, 5%);
+  border-bottom: 1px solid $gray-dark !important;
+  border-top: 1em solid $table-bg !important;
+  > .icon {
+    margin-right: 1em;
+  }
+}
+
+.table-row-grouped {
+  > td:first-child {
+    padding-left: 2em !important;
+  }
 }
 
 .table-details-pane {

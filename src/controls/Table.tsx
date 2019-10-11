@@ -15,7 +15,7 @@ import { getSafe, setSafe } from '../util/storeHelper';
 import {sanitizeCSSId, truthy} from '../util/util';
 
 import IconBar from './IconBar';
-import GroupingRow from './table/GroupingRow';
+import GroupingRow, { EMPTY_ID } from './table/GroupingRow';
 import HeaderCell from './table/HeaderCell';
 import { Table, TBody, TH, THead, TR } from './table/MyTable';
 import TableDetail from './table/TableDetail';
@@ -401,26 +401,44 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
     const groupAttribute = this.mVisibleAttributes.find(attribute => attribute.id === groupBy);
 
+    const valFunc = rowId => typeof(groupAttribute.isGroupable) === 'function'
+            ? groupAttribute.isGroupable(data[rowId], t)
+            : calculatedValues[rowId][groupAttribute.id];
+
     if (groupAttribute !== undefined) {
+      let arrays: boolean = false;
       const groupOptions = Array.from(new Set(
         sortedRows.reduce((prev, rowId) => {
-          if (Array.isArray(calculatedValues[rowId][groupAttribute.id])) {
-            prev.push(...calculatedValues[rowId][groupAttribute.id]);
+          const value = valFunc(rowId);
+          if (Array.isArray(value)) {
+            arrays = true;
+            prev.push(...value);
           } else {
-            prev.push(calculatedValues[rowId][groupAttribute.id]);
+            prev.push(value);
           }
           return prev;
         }, []))).sort();
+      if (arrays) {
+        groupOptions.push(EMPTY_ID);
+      }
       return (
         <TBody>
           {groupOptions.reduce((prev, group) => {
             const groupItems = sortedRows
               .filter(row => {
-                const rowVal = calculatedValues[row][groupAttribute.id];
-                return Array.isArray(rowVal)
-                  ? (rowVal.indexOf(group) !== -1)
-                  : (rowVal === group);
+                const rowVal = valFunc(row);
+                if (Array.isArray(rowVal)) {
+                  if (rowVal.length === 0) {
+                    return group === EMPTY_ID;
+                  }
+                  return (rowVal.indexOf(group) !== -1);
+                } else {
+                  return (rowVal === group);
+                }
               });
+            if (groupItems.length === 0) {
+              return;
+            }
             const expanded = collapsedGroups.indexOf(group || '') === -1;
             prev.push((
               <GroupingRow
@@ -645,6 +663,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         domRef={this.setRowRef}
         container={this.mScrollRef}
         visible={this.state.rowVisibility[rowId] === true}
+        grouped={groupId !== undefined}
         onSetVisible={this.setRowVisible}
         onHighlight={this.setRowHighlight}
       />

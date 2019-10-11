@@ -83,9 +83,12 @@ export interface ITableAttribute<T = any> {
    */
   isSortable?: boolean;
   /**
-   * if true, the table can be grouped by this attribute
+   * if true (or a function), the table can be grouped by this attribute.
+   * if this is a function it will be called with the object to determine the value to use for
+   * grouping, otherwise the output of calc is used. This function must be fast, unlike calc
+   * the result from this is not cached (at this time)
    */
-  isGroupable?: boolean;
+  isGroupable?: boolean | ((object: T, t: I18next.TFunction) => string);
   /**
    * if set, the table can be filtered by this attribute using the specified control
    */

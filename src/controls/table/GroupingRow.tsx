@@ -9,6 +9,8 @@ import i18next from 'i18next';
 import * as React from 'react';
 import * as Redux from 'redux';
 
+export const EMPTY_ID = '<Unspecified>';
+
 export interface IGroupingRowProps {
   t: i18next.TFunction;
   groupName: string;
@@ -68,7 +70,7 @@ class GroupingRow extends ComponentEx<IGroupingRowProps, IGroupingRowState> {
           />
 
           <Icon name={expanded ? 'showhide-down' : 'showhide-right'} />
-          {groupName || t('<Empty>')} ({count})
+          {groupName || t(EMPTY_ID)} ({count})
         </TD>
       </TR>
     );

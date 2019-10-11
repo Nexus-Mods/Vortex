@@ -233,6 +233,7 @@ export interface IRowProps {
   domRef?: (ref) => void;
   container: HTMLElement;
   visible: boolean;
+  grouped: boolean;
   onSetVisible: (rowId: string, visible: boolean) => void;
   onHighlight: (rowId: string, highlight: boolean) => void;
 }
@@ -264,7 +265,7 @@ class TableRow extends React.Component<IRowProps, IRowState> {
   }
 
   public render(): JSX.Element {
-    const { data, domRef, highlighted, id, onClick,
+    const { data, domRef, grouped, highlighted, id, onClick,
             selected } = this.props;
 
     const classes = [];
@@ -274,6 +275,9 @@ class TableRow extends React.Component<IRowProps, IRowState> {
     }
     if (highlighted) {
       classes.push('table-highlighted');
+    }
+    if (grouped) {
+      classes.push('table-row-grouped');
     }
 
     return (

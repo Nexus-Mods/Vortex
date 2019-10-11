@@ -611,6 +611,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       isVolatile: true,
       edit: {},
       isSortable: false,
+      isGroupable: true,
       filter: new VersionFilter(),
     };
 

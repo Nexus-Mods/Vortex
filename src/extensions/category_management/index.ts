@@ -20,6 +20,7 @@ import CategoryFilter from './util/CategoryFilter';
 import { resolveCategoryName, resolveCategoryPath } from './util/retrieveCategoryPath';
 import CategoryDialog from './views/CategoryDialog';
 
+import i18next from 'i18next';
 import * as Redux from 'redux';
 
 // export for api
@@ -98,7 +99,8 @@ function init(context: IExtensionContext): boolean {
     isToggleable: true,
     edit: {},
     isSortable: true,
-    isGroupable: true,
+    isGroupable: (mod: IModWithState, t: i18next.TFunction) =>
+      resolveCategoryName(getModCategory(mod), context.api.store.getState()) || t('<No category>'),
     filter: new CategoryFilter(),
     sortFuncRaw: (lhs: IModWithState, rhs: IModWithState, locale: string): number =>
       sortCategories(lhs, rhs, getCollator(locale), context.api.store.getState(), sortDirection),
