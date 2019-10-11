@@ -134,7 +134,7 @@ function assertEdgeValid() {
   }
 }
 
-function testSupported(files: string[]): Promise<ISupportedResult> {
+function tsLib() {
   if (testSupportedLib === undefined) {
     try {
       assertEdgeValid();
@@ -149,14 +149,33 @@ function testSupported(files: string[]): Promise<ISupportedResult> {
           'Failed to load the fomod support library. This is an indication your .Net '
           + 'installation is invalid or outdated.');
         newErr.stack = err.stack;
-        return Promise.reject(newErr);
+        throw newErr;
       }
-      return Promise.reject(err.Data === undefined ? err : transformError(err));
+      throw err.Data === undefined ? err : transformError(err);
     }
   }
+  return testSupportedLib;
+}
 
+function testSupportedScripted(files: string[]): Promise<ISupportedResult> {
+  const testSupported = tsLib();
   return new Promise<ISupportedResult>((resolve, reject) => {
-    testSupportedLib({files}, (err: Error, result: ISupportedResult) => {
+    testSupported({files, allowedTypes: ['XmlScript', 'CSharpScript']},
+                  (err: Error, result: ISupportedResult) => {
+      if ((err !== null) && (err !== undefined)) {
+        reject(transformError(err));
+      } else {
+        resolve(result);
+      }
+    });
+  });
+}
+
+function testSupportedFallback(files: string[]): Promise<ISupportedResult> {
+  const testSupported = tsLib();
+  return new Promise<ISupportedResult>((resolve, reject) => {
+    testSupported({files, allowedTypes: ['Basic']},
+                  (err: Error, result: ISupportedResult) => {
       if ((err !== null) && (err !== undefined)) {
         reject(transformError(err));
       } else {
@@ -263,23 +282,25 @@ function checkNetInstall() {
 }
 
 function init(context: IExtensionContext): boolean {
-  context.registerInstaller(
-    'fomod', 100, testSupported, (files, scriptPath, gameId, progressDelegate) => {
-      const coreDelegates = new Core(context.api, gameId);
-      const stopPatterns = getStopPatterns(gameId, getGame(gameId));
-      const pluginPath = getPluginPath(gameId);
-      return currentInstallPromise
-        .then(() => {
-          context.api.store.dispatch(setInstallerDataPath(scriptPath));
-          return install(files, stopPatterns, pluginPath,
-                         scriptPath, progressDelegate, coreDelegates);
-        })
-        .catch((err) => {
-          context.api.store.dispatch(endDialog());
-          return Promise.reject(err);
-        })
-        .finally(() => coreDelegates.detach());
-      });
+  const installWrap = (files, scriptPath, gameId, progressDelegate) => {
+    const coreDelegates = new Core(context.api, gameId);
+    const stopPatterns = getStopPatterns(gameId, getGame(gameId));
+    const pluginPath = getPluginPath(gameId);
+    return currentInstallPromise
+      .then(() => {
+        context.api.store.dispatch(setInstallerDataPath(scriptPath));
+        return install(files, stopPatterns, pluginPath,
+          scriptPath, progressDelegate, coreDelegates);
+      })
+      .catch((err) => {
+        context.api.store.dispatch(endDialog());
+        return Promise.reject(err);
+      })
+      .finally(() => coreDelegates.detach());
+  };
+
+  context.registerInstaller('fomod', 20, testSupportedScripted, installWrap);
+  context.registerInstaller('fomod', 100, testSupportedFallback, installWrap);
 
   context.registerTest('net-current', 'startup', checkNetInstall);
   context.registerDialog('fomod-installer', InstallerDialog);

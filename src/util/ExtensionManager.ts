@@ -1065,7 +1065,7 @@ class ExtensionManager {
     return this.getModDB()
       .then(modDB => {
         return new Promise<void>((resolve, reject) => {
-          modDB.insert(modInfo);
+          modDB.insert([modInfo]);
           resolve();
         });
       });
@@ -1252,7 +1252,7 @@ class ExtensionManager {
 
   private emitAndAwait = (event: string, ...args: any[]): Promise<any> => {
     let queue = Promise.resolve();
-    let results: any[] = [];
+    const results: any[] = [];
     const enqueue = (prom: Promise<any>) => {
       if (prom !== undefined) {
         queue = queue.then(() => prom
