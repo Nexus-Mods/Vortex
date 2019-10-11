@@ -1,3 +1,5 @@
+import { IGame } from '../../../types/IGame';
+
 import { app as appIn, remote } from 'electron';
 import * as path from 'path';
 
@@ -280,7 +282,10 @@ export function getIniFilePath(gameMode: string): string {
   return gameSupport[gameMode].iniPath();
 }
 
-export function getStopPatterns(gameMode: string): string[] {
+export function getStopPatterns(gameMode: string, game: IGame): string[] {
+  if ((game.details !== undefined) && (game.details.stopPatterns !== undefined)) {
+    return game.details.stopPatterns;
+  }
   if ((gameSupport[gameMode] === undefined)
       || (gameSupport[gameMode].stopPatterns === undefined)) {
     return [];

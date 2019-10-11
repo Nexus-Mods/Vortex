@@ -12,6 +12,7 @@ import lazyRequire from '../../util/lazyRequire';
 import { log } from '../../util/log';
 import {truthy} from '../../util/util';
 
+import { getGame } from '../gamemode_management/util/getGame';
 import { ArchiveBrokenError } from '../mod_management/InstallManager';
 
 import { endDialog, setInstallerDataPath } from './actions/installerUI';
@@ -265,7 +266,7 @@ function init(context: IExtensionContext): boolean {
   context.registerInstaller(
     'fomod', 100, testSupported, (files, scriptPath, gameId, progressDelegate) => {
       const coreDelegates = new Core(context.api, gameId);
-      const stopPatterns = getStopPatterns(gameId);
+      const stopPatterns = getStopPatterns(gameId, getGame(gameId));
       const pluginPath = getPluginPath(gameId);
       return currentInstallPromise
         .then(() => {
