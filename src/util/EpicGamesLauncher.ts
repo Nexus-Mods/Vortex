@@ -3,9 +3,35 @@ import { log } from './log';
 import * as Promise from 'bluebird';
 import * as path from 'path';
 import IniParser, { WinapiFormat } from 'vortex-parse-ini';
+import * as winapi from 'winapi-bindings';
+import * as fs from './fs';
+import { getSafe } from './storeHelper';
+
+const ITEM_EXT = '.item';
+
+export interface IEpicEntry {
+  name: string;
+  gamePath: string;
+}
 
 export interface IEpicGamesLauncher {
   isGameInstalled(name: string): Promise<boolean>;
+  findByName(name: string): Promise<IEpicEntry>;
+  allGames(): Promise<IEpicEntry[]>;
+}
+
+export class EpicGameNotFound extends Error {
+  private mName;
+  constructor(name: string) {
+    super('Not in Epic library');
+    Error.captureStackTrace(this, this.constructor);
+
+    this.name = this.constructor.name;
+    this.mName = name;
+  }
+  public get epicName() {
+    return this.mName;
+  }
 }
 
 /**
@@ -14,13 +40,30 @@ export interface IEpicGamesLauncher {
  */
 class EpicGamesLauncher implements IEpicGamesLauncher {
   private mConfig: Promise<{ data: any }>;
+  private mDataPath: Promise<string>;
+  private mCache: Promise<IEpicEntry[]>;
+
   constructor() {
+    if (process.platform === 'win32') {
+      try {
+        const epicDataPath = winapi.RegGetValue('HKEY_LOCAL_MACHINE',
+          'SOFTWARE\\WOW6432Node\\Epic Games\\EpicGamesLauncher',
+          'AppDataPath');
+        this.mDataPath = Promise.resolve(epicDataPath.value as string);
+      } catch (err) {
+        log('info', 'Epic games launcher not found', { error: err.message });
+        this.mDataPath = Promise.resolve(undefined);
+      }
+    } else {
+      // TODO: Is epic launcher even available on non-windows platforms?
+      this.mDataPath = Promise.resolve(undefined);
+    }
   }
 
   /**
    * test if a game is installed through the launcher.
    * Please keep in mind that epic seems to internally give third-party games animal names. Kinky.
-   * @param name 
+   * @param name
    */
   public isGameInstalled(name: string): Promise<boolean> {
     return this.config.then(ini => {
@@ -33,6 +76,59 @@ class EpicGamesLauncher implements IEpicGamesLauncher {
       }
       return Object.keys(ini.data[settingsKey]).indexOf(`${name}_AutoUpdate`) !== -1;
     });
+  }
+
+  /**
+   * Try to find the epic entry object using Epic's internal naming convention.
+   *  e.g. "Flour" === "Untitled Goose Game" lol
+   * @param name
+   */
+  public findByName(name: string): Promise<IEpicEntry> {
+    return this.allGames()
+      .then(entries => entries.find(entry => entry.name === name))
+      .then(entry => entry === undefined
+        ? Promise.reject(new EpicGameNotFound(name))
+        : Promise.resolve(entry));
+  }
+
+  public allGames(): Promise<IEpicEntry[]> {
+    if (this.mCache === undefined) {
+      this.mCache = this.parseManifests();
+    }
+    return this.mCache;
+  }
+
+  private parseManifests(): Promise<IEpicEntry[]> {
+    return this.mDataPath
+      .then(dataPath => fs.readdirAsync(path.join(dataPath, 'Manifests')))
+      .catch({ code: 'ENOENT' }, err => {
+        log('info', 'Epic launcher manifests could not be found', err.code);
+        return Promise.resolve([]);
+      })
+      .then(entries => {
+        const manifests = entries.filter(entry => entry.endsWith(ITEM_EXT));
+        return Promise.map(manifests, manifest =>
+          fs.readFileAsync(manifest, { encoding: 'utf8' })
+            .then(data => {
+              try {
+                const parsed = JSON.parse(data);
+                const gamePath = getSafe(parsed, ['InstallLocation'], undefined);
+                const name = getSafe(parsed, ['AppName'], undefined);
+
+                return (!!gamePath && !!name)
+                  ? Promise.resolve({ gamePath, name })
+                  : Promise.resolve(undefined);
+              } catch (err) {
+                log('error', 'Cannot parse Epic Games manifest', err);
+                return Promise.resolve(undefined);
+              }
+        })
+        .catch(err => {
+          log('error', 'Cannot read Epic Games manifest', err);
+          return Promise.resolve(undefined);
+        }));
+      })
+      .then((games: IEpicEntry[]) => games.filter(game => game !== undefined));
   }
 
   private get config(): Promise<{ data: any }> {
