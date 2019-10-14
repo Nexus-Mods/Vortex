@@ -325,6 +325,8 @@ function processAttributes(input: any) {
                                        'fileInfo', 'uploaded_timestamp'], undefined),
     version: getSafe(input, ['download', 'modInfo', 'nexus', 'fileInfo', 'version'], undefined),
     modVersion: getSafe(input, ['download', 'modInfo', 'nexus', 'modInfo', 'version'], undefined),
+    allowRating: getSafe(input, ['download', 'modInfo', 'nexus', 'modInfo', 'allow_rating'],
+                         undefined),
     customFileName: fuzzRatio < 50 ? `${modName} - ${fileName}` : undefined,
   });
 }
@@ -856,7 +858,7 @@ function init(context: IExtensionContextExt): boolean {
     const t = context.api.translate;
     return (
       <div className='nexus-download-banner'>
-        {t('Nexus downloads are capped at 1MB/s - '
+        {t('Nexus downloads are capped at 1-2MB/s - '
           + 'Go Premium for uncapped download speeds')}
         <Button bsStyle='ad' onClick={goBuyPremium}>{t('Go Premium')}</Button>
       </div>);

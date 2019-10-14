@@ -51,6 +51,10 @@
     "endorse-yes": "{fa}/thumbs-up",
     "endorse-no": "{fa}/thumbs-down",
     "endorse-maybe": "{fa}/thumbs-o-up",
+    "endorse-disabled": {
+      "path": "{nucleo}/ui/{nucleo_simple}_bold-remove",
+      "rmFill": true
+    },
     "comments": {
       "path": "{fa}/commenting",
       "rmFill": true
