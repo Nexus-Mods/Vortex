@@ -417,7 +417,14 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
             prev.push(value);
           }
           return prev;
-        }, []))).sort();
+        }, []))).sort((lhs: string, rhs: string) => {
+          if ((sortAttribute.id === groupAttribute.id)
+            && (attributeState[sortAttribute.id].sortDirection === 'desc')) {
+            return rhs.toLowerCase().localeCompare(lhs.toLowerCase());
+          } else {
+            return lhs.toLowerCase().localeCompare(rhs.toLowerCase());
+          }
+        });
       if (arrays) {
         groupOptions.push(EMPTY_ID);
       }
