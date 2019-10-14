@@ -1,4 +1,5 @@
 import FlexLayout from '../../controls/FlexLayout';
+import Icon from '../../controls/Icon';
 import Modal from '../../controls/Modal';
 import Spinner from '../../controls/Spinner';
 import ZoomableImage from '../../controls/ZoomableImage';
@@ -124,8 +125,20 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
         disabled={installed}
       >
         <div className='extension-header'>
-          <span className='extension-name'>{ext.name}</span>
-          <span className='extension-version'>{ext.version}</span>
+          <div>
+            <span className='extension-name'>{ext.name}</span>
+            <span className='extension-version'>{ext.version}</span>
+          </div>
+          <div className='extension-stats'>
+            <div className='extension-downloads'>
+              <Icon name='download' />
+              {' '}{ext.downloads}
+            </div>
+            <div className='extension-endorsements'>
+              <Icon name='endorse-yes' />
+              {' '}{ext.endorsements}
+            </div>
+          </div>
         </div>
         <div className='extension-description'>{ext.description.short}</div>
         <div className='extension-footer'>
