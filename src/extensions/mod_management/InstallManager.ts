@@ -1070,37 +1070,26 @@ class InstallManager {
           return Promise.resolve();
         }
 
-        interface IDependencySplit { success: IDependency[]; error: IDependencyError[]; }
-        const { success, error } = dependencies.reduce(
-          (prev: IDependencySplit, dep: Dependency) => {
-            if (dep['error'] !== undefined) {
-              prev.error.push(dep as IDependencyError);
-            } else {
-              prev.success.push(dep as IDependency);
-            }
-            return prev;
-          }, { success: [], error: [] });
-
         const requiredDownloads =
-          success.reduce((prev: number, current: IDependency) => {
+          dependencies.reduce((prev: number, current: IDependency) => {
             return prev + (current.download ? 0 : 1);
           }, 0);
 
         let bbcode = '';
 
-        if (success.length > 0) {
+        if (dependencies.length > 0) {
           bbcode += '{{modName}} has unresolved dependencies. {{count}} mods have to be '
                   + 'installed, {{dlCount}} of them have to be downloaded first.<br/><br/>';
         }
 
-        if (error.length > 0) {
+        if (dependencies.length > 0) {
           bbcode += '[color=red]'
             + '{{modName}} has unsolved dependencies that could not be found automatically. '
             + 'Please install them manually.'
             + '[/color]';
         }
 
-        const actions = success.length > 0
+        const actions = dependencies.length > 0
           ? [
             { label: 'Don\'t install' },
             { label: 'Install' },
@@ -1110,11 +1099,11 @@ class InstallManager {
         return api.store.dispatch(
           showDialog('question', 'Install Dependencies', { bbcode, parameters: {
             modName: name,
-            count: success.length,
+            count: dependencies.length,
             dlCount: requiredDownloads,
           } }, actions)).then(result => {
             if (result.action === 'Install') {
-              return this.doInstallDependencies(api, profile, modId, success, false);
+              return this.doInstallDependencies(dependencies, profile, api);
             } else {
               return Promise.resolve();
             }
