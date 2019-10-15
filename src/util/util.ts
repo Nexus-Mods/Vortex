@@ -1,7 +1,7 @@
 import { Normalize } from './getNormalizeFunc';
 import getVortexPath from './getVortexPath';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { spawn } from 'child_process';
 import * as _ from 'lodash';
 import * as path from 'path';

@@ -16,7 +16,7 @@ import { createErrorReport, getVisibleWindow } from './errorHandling';
 import { log } from './log';
 import { truthy } from './util';
 
-import * as PromiseBB from 'bluebird';
+import PromiseBB from 'bluebird';
 import { dialog as dialogIn, remote } from 'electron';
 import * as fs from 'fs-extra-promise';
 import I18next from 'i18next';
@@ -24,7 +24,7 @@ import * as JsonSocket from 'json-socket';
 import * as net from 'net';
 import * as path from 'path';
 import { allow as allowT, getUserId } from 'permissions';
-import * as rimraf from 'rimraf';
+import rimraf from 'rimraf';
 import { generate as shortid } from 'shortid';
 import { runElevated } from 'vortex-run';
 import wholocks from 'wholocks';

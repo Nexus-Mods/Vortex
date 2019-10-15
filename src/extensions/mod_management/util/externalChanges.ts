@@ -10,7 +10,7 @@ import { setdefault, truthy } from '../../../util/util';
 import { showExternalChanges } from '../actions/session';
 import { IFileEntry } from '../types/IFileEntry';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as path from 'path';
 
 /**

@@ -11,7 +11,7 @@ import { IProtocolHandlers } from './types/ProtocolHandlers';
 import FileAssembler from './FileAssembler';
 import SpeedCalculator from './SpeedCalculator';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as contentDisposition from 'content-disposition';
 import * as contentType from 'content-type';
 import { remote } from 'electron';
@@ -130,12 +130,14 @@ class DownloadWorker {
     }
 
     try {
-      remote.getCurrentWebContents().session.cookies.get({ url: jobUrl }, (cookieErr, cookies) => {
-        if (truthy(cookieErr)) {
-          log('error', 'failed to retrieve cookies', cookieErr.message);
-        }
-        this.startDownload(job, jobUrl, cookies);
-      });
+      remote.getCurrentWebContents().session.cookies.get({ url: jobUrl })
+        .then(cookies => {
+          this.startDownload(job, jobUrl, cookies);
+
+        })
+        .catch(err => {
+          log('error', 'failed to retrieve cookies', err.message);
+        });
     } catch (err) {
       log('error', 'failed to retrieve cookies', err.message);
       this.startDownload(job, jobUrl, []);

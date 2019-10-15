@@ -17,7 +17,7 @@ import installExtension from './installExtension';
 import getTableAttributes from './tableAttributes';
 import { IExtension, IExtensionWithState } from './types';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { remote } from 'electron';
 import * as _ from 'lodash';
 import * as path from 'path';
@@ -47,7 +47,7 @@ interface IComponentState {
 }
 
 function getAllDirectories(searchPath: string): Promise<string[]> {
-  return fs.readdirAsync(searchPath)
+  return Promise.resolve(fs.readdirAsync(searchPath))
     .filter(fileName =>
       fs.statAsync(path.join(searchPath, fileName))
         .then(stat => stat.isDirectory()));
@@ -298,4 +298,4 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
 export default
   translate(['common'])(
     connect(mapStateToProps, mapDispatchToProps)(
-      ExtensionManager)) as React.ComponentClass<{}>;
+      ExtensionManager));

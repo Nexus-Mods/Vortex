@@ -7,7 +7,7 @@ import { truthy } from '../util/util';
 
 import Icon from './Icon';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 
 import * as React from 'react';
 import * as Redux from 'redux';

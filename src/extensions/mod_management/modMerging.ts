@@ -10,7 +10,7 @@ import {IResolvedMerger} from './types/IResolvedMerger';
 
 import {BACKUP_TAG} from './LinkingDeployment';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as crypto from 'crypto';
 import * as path from 'path';
 

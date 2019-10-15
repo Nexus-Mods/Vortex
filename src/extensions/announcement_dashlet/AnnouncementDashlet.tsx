@@ -1,6 +1,6 @@
 import { remote } from 'electron';
 import I18next from 'i18next';
-import * as minimatch from 'minimatch';
+import minimatch from 'minimatch';
 import * as React from 'react';
 import { WithTranslation } from 'react-i18next';
 import { connect } from 'react-redux';

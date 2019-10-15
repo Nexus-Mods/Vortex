@@ -14,7 +14,7 @@ import { getCurrentActivator } from './deploymentMethods';
 import { NoDeployment } from './exceptions';
 import { dealWithExternalChanges } from './externalChanges';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 
 export function genSubDirFunc(game: IGame): (mod: IMod) => string {
   if (typeof(game.mergeMods) === 'boolean') {

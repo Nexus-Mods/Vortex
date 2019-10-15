@@ -11,7 +11,6 @@ import ResizeDetector from 'react-resize-detector';
 import * as recharts from 'recharts';
 
 interface IBaseProps {
-  t: I18next.TFunction;
 }
 
 interface IConnectedProps {
@@ -118,5 +117,4 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-export default connect(mapStateToProps)(
-  DownloadGraph) as React.ComponentClass<{}>;
+export default connect(mapStateToProps)(DownloadGraph);

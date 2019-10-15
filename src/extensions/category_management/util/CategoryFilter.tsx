@@ -10,7 +10,7 @@ import { IMod } from '../../mod_management/types/IMod';
 import filterModInfo from '../../mod_management/util/filterModInfo';
 import { activeGameId } from '../../profile_management/selectors';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as _ from 'lodash';
 import * as React from 'react';
 import Select from 'react-select';
@@ -147,7 +147,7 @@ function mapStateToProps(state: IState): IConnectedProps {
 }
 
 const CategoryFilterComponentConn = connect(mapStateToProps)(
-  CategoryFilterComponent) as React.ComponentClass<IFilterProps>;
+  CategoryFilterComponent) as unknown as React.ComponentClass<IFilterProps>;
 
 class CategoryFilter implements ITableFilter {
   public component = CategoryFilterComponentConn;

@@ -4,7 +4,7 @@ import onceCB from '../../util/onceCB';
 
 import { needToDeploy } from './selectors';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import getText from './texts';
 import { UserCanceled } from '../../util/CustomErrors';
 

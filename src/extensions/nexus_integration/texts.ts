@@ -1,6 +1,6 @@
 import chromePath from './util/chromePath';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import I18next from 'i18next';
 
 function getText(id: string, t: I18next.TFunction): Promise<string> {

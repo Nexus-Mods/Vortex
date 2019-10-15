@@ -12,7 +12,7 @@ import {
 } from '../../types/IExtensionContext';
 import {log} from '../../util/log';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as path from 'path';
 
 function testSupported(files: string[]): Promise<ISupportedResult> {

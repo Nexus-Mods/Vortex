@@ -11,7 +11,7 @@ import { IGameStored } from '../types/IGameStored';
 
 import GameThumbnail from './GameThumbnail';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as React from 'react';
 
 export interface IBaseProps {

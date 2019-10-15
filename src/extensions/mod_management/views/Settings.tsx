@@ -35,7 +35,7 @@ import getModPaths from '../util/getModPaths';
 
 import getText from '../texts';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { remote } from 'electron';
 import * as path from 'path';
 import * as React from 'react';

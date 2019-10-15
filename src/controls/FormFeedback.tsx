@@ -1,7 +1,7 @@
 import Icon from './Icon';
 import Spinner from './Spinner';
 
-import * as classNames from 'classnames';
+import classNames from 'classnames';
 import * as _ from 'lodash';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';

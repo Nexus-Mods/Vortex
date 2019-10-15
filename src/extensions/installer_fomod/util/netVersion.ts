@@ -1,6 +1,6 @@
 import * as fs from '../../../util/fs';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as path from 'path';
 import * as winapi from 'winapi-bindings';
 
@@ -57,7 +57,7 @@ export function checkAssemblies(): Promise<boolean> {
   if (instPath === undefined) {
     return Promise.resolve(false);
   }
-  return fs.readdirAsync(instPath)
+  return Promise.resolve(fs.readdirAsync(instPath))
     .map(iter => iter.toLowerCase())
     .filter(iter => path.extname(iter) === '.dll')
     .then(files => {

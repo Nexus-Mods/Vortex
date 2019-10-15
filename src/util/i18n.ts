@@ -1,10 +1,10 @@
 import * as fs from './fs';
 import { log } from './log';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import I18next from 'i18next';
-import * as FSBackend from 'i18next-node-fs-backend';
+import FSBackend from 'i18next-node-fs-backend';
 
 import * as path from 'path';
 import getVortexPath from './getVortexPath';
@@ -88,7 +88,7 @@ function init(language: string): Promise<IInitResult> {
 
   currentLanguage = language;
 
-  const i18n = I18next.use(MultiBackend);
+  const i18n = I18next.use(MultiBackend as any);
 
   return Promise.resolve(i18n.init(
     {

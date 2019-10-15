@@ -18,7 +18,7 @@ import StarterInfo from '../util/StarterInfo';
 import { getSafe } from '../util/storeHelper';
 import { truthy } from '../util/util';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import I18next from 'i18next';
 import * as React from 'react';
 import { DropdownButton, MenuItem } from 'react-bootstrap';

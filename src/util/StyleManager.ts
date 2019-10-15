@@ -4,7 +4,7 @@ import * as fs from './fs';
 import getVortexPath from './getVortexPath';
 import {log} from './log';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import * as _ from 'lodash';
 import * as sass from 'node-sass';
@@ -67,10 +67,11 @@ class StyleManager {
     log('debug', 'setting stylesheet', { key, filePath });
     try {
       const statProm = (filePath === undefined)
-        ? Promise.resolve(undefined)
+        ? Promise.resolve<void>(undefined)
         : (path.extname(filePath) === '')
         ? Promise.any([fs.statAsync(filePath + '.scss'), fs.statAsync(filePath + '.css')])
-        : fs.statAsync(filePath);
+            .then(() => null)
+        : fs.statAsync(filePath).then(() => null);
       statProm
         .then(() => {
           const idx = this.mPartials.findIndex(partial => partial.key === key);

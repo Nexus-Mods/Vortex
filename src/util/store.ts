@@ -9,7 +9,7 @@ import { log } from './log';
 import ReduxPersistor from './ReduxPersistor';
 import {reduxSanity, StateError} from './reduxSanity';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { dialog } from 'electron';
 import { forwardToRenderer, replayActionMain } from 'electron-redux';
 import * as encode from 'encoding-down';
@@ -129,7 +129,8 @@ function exists(filePath: string): boolean {
 
 export function markImported(basePath: string): Promise<void> {
   return fs.writeFileAsync(
-    path.join(basePath, currentStatePath, IMPORTED_TAG), '');
+      path.join(basePath, currentStatePath, IMPORTED_TAG), '')
+    .then(() => null);
 }
 
 export function importState(basePath: string): Promise<any> {

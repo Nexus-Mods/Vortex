@@ -12,7 +12,7 @@ import { installPathForGame } from '../mod_management/selectors';
 import { IDeployedFile, IDeploymentMethod,
          IUnavailableReason } from '../mod_management/types/IDeploymentMethod';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import I18next from 'i18next';
 import * as path from 'path';
 import turbowalk, { IEntry } from 'turbowalk';
@@ -264,7 +264,7 @@ class DeploymentMethod extends LinkingDeployment {
   }
 
   protected statLink(filePath: string): Promise<fs.Stats> {
-    return fs.lstatAsync(filePath);
+    return Promise.resolve(fs.lstatAsync(filePath));
   }
 
   private readLink(filePath: string): Promise<ILinkData> {

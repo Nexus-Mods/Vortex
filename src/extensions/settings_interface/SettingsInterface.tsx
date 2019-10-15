@@ -20,7 +20,7 @@ import { setAdvancedMode, setDesktopNotifications, setHideTopLevelCategory,
 import { nativeCountryName, nativeLanguageName } from './languagemap';
 import getText from './texts';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { remote } from 'electron';
 import update from 'immutability-helper';
 import * as path from 'path';

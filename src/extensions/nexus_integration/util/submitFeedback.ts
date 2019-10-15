@@ -1,6 +1,6 @@
 import * as fs from '../../../util/fs';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import NexusT, { IFeedbackResponse } from 'nexus-api';
 import ZipT = require('node-7z');
 import { tmpName } from 'tmp';

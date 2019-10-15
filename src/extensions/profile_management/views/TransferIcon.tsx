@@ -203,33 +203,35 @@ class TransferIcon extends ComponentEx<IProps, IComponentState> {
     </Popover>
     );
 
-    const connectorIcon = connectDragSource(
-        <div style={{ display: 'inline-block' }}>
-          <tooltip.IconButton
-            id={`btn-meta-data-${profile.id}`}
-            disabled={disabled}
-            className={classes.join(' ')}
-            key={`rules-${profile.id}`}
-            tooltip={t('Drag to another profile to transfer settings')}
-            icon='connection'
-            ref={this.setRef}
-            onClick={this.toggleOverlay}
-          />
-          <Overlay
-            show={this.state.showOverlay}
-            onHide={this.hideOverlay}
-            placement='left'
-            rootClose={true}
-            target={this.mRef as any}
-          >
-            {popover}
-          </Overlay>
-        </div>);
+    const connectorIcon = connectDragSource((
+      <div style={{ display: 'inline-block' }}>
+        <tooltip.IconButton
+          id={`btn-meta-data-${profile.id}`}
+          disabled={disabled}
+          className={classes.join(' ')}
+          key={`rules-${profile.id}`}
+          tooltip={t('Drag to another profile to transfer settings')}
+          icon='connection'
+          ref={this.setRef}
+          onClick={this.toggleOverlay}
+        />
+        <Overlay
+          show={this.state.showOverlay}
+          onHide={this.hideOverlay}
+          placement='left'
+          rootClose={true}
+          target={this.mRef as any}
+        >
+          {popover}
+        </Overlay>
+      </div>
+    ));
 
-    return connectDropTarget(
+    return connectDropTarget((
       <div style={{ textAlign: 'center', display: 'inline-block' }}>
         {connectorIcon}
-      </div>);
+      </div>
+    ));
   }
 
   private setRef = (ref) => {
@@ -270,4 +272,4 @@ function mapDispatchToProps(dispatch): IActionProps {
 
 export default
   connect<IConnectedProps, IActionProps, IBaseProps>(mapStateToProps, mapDispatchToProps)(
-      TransferIconDrag) as React.ComponentClass<IBaseProps>;
+      TransferIconDrag);

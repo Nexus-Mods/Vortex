@@ -19,7 +19,7 @@ import {activeGameId} from '../profile_management/selectors';
 import {iniFiles, iniFormat} from './gameSupport';
 import renderINITweaks from './TweakList';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import I18next from 'i18next';
 import * as path from 'path';
 import IniParser, { IniFile, WinapiFormat } from 'vortex-parse-ini';
@@ -202,7 +202,7 @@ function bakeSettings(t: I18next.TFunction,
           ini.data = deepMerge(ini.data, patchIni.data);
         }))
         .then(() => onApplySettings(iniFileName, ini))
-        .then(() => fs.forcePerm(t, () => parser.write(iniFileName + '.baked', ini)))
+        .then(() => fs.forcePerm(t, () => parser.write(iniFileName + '.baked', ini) as any))
         .then(() => {
           if (iniFileName === undefined) {
             return Promise.reject(new Error(

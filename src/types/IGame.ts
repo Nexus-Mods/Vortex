@@ -4,7 +4,7 @@ import { IStarterInfo } from '../util/StarterInfo';
 import { IDiscoveryResult, IMod } from './IState';
 import { ITool } from './ITool';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 
 export { IModType };
 

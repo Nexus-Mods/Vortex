@@ -1,4 +1,4 @@
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as https from 'https';
 import * as _ from 'lodash';
 import * as Redux from 'redux';

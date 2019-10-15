@@ -12,6 +12,7 @@
         "inlineSourceMap": true,
         "inlineSources": true,
         "skipLibCheck": true,
+        "esModuleInterop": true,
         "jsx":"react"
     },
     "files": [

@@ -6,7 +6,7 @@ import { IGameStored } from '../extensions/gamemode_management/types/IGameStored
 
 import { activeGameId } from './selectors';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as Redux from 'redux';
 
 function clone<T>(input: T): T {

@@ -28,7 +28,7 @@ import { DownloadIsHTML } from '../DownloadManager';
 
 import DownloadGraph from './DownloadGraph';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import I18next from 'i18next';
 import * as path from 'path';
 import * as React from 'react';

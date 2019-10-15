@@ -27,7 +27,7 @@ import writeDownloadsTag from '../util/writeDownloadsTag';
 import getTextMod from '../../mod_management/texts';
 import getText from '../texts';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { remote } from 'electron';
 import * as path from 'path';
 import * as process from 'process';

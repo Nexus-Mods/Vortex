@@ -2,7 +2,7 @@ import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import { getVisibleWindow } from '../../util/errorHandling';
 import * as fs from '../../util/fs';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { dialog as dialogIn, remote } from 'electron';
 import * as fsFast from 'fs-extra-promise';
 import * as path from 'path';

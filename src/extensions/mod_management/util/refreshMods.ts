@@ -3,7 +3,7 @@ import * as fs from '../../../util/fs';
 
 import {IMod} from '../types/IMod';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import * as path from 'path';
 

@@ -37,7 +37,7 @@ import queryGameId from './util/queryGameId';
 import InstallContext from './InstallContext';
 import deriveModInstallName from './modIdManager';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as _ from 'lodash';
 import { IHashResult, ILookupResult, IReference, IRule } from 'modmeta-db';
 import Zip = require('node-7z');
@@ -452,7 +452,7 @@ class InstallManager {
     log('debug', 'extracting mod archive', { archivePath, tempPath });
     return this.mTask.extractFull(archivePath, tempPath, {ssc: false},
                                   progress,
-                                  () => this.queryPassword(api.store))
+                                  () => this.queryPassword(api.store) as any)
         .catch((err: Error) => this.isCritical(err.message)
           ? Promise.reject(new ArchiveBrokenError(err.message))
           : Promise.reject(err))

@@ -8,7 +8,7 @@ import * as selectors from '../../../util/selectors';
 
 import { setCompatibleGames } from '../actions/state';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as fuzz from 'fuzzball';
 import I18next from 'i18next';
 import * as path from 'path';

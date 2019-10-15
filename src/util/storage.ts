@@ -1,6 +1,6 @@
 import * as fs from './fs';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import * as path from 'path';
 

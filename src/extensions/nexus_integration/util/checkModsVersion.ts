@@ -10,7 +10,7 @@ import { IMod } from '../../mod_management/types/IMod';
 
 import { setLastUpdateCheck } from '../actions/session';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import I18next from 'i18next';
 import NexusT, { IFileInfo, IFileUpdate, IModFiles, IModInfo,
                  IUpdateEntry, NexusError, RateLimitError } from 'nexus-api';

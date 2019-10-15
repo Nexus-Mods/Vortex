@@ -2,7 +2,7 @@
 
 import * as fs from 'fs-extra-promise';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as path from 'path';
 
 function walk(target: string,

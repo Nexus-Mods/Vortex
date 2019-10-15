@@ -1,6 +1,6 @@
 import { MissingInterpreter } from './CustomErrors';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import opn = require('opn');
 import * as winapi from 'winapi-bindings';
 

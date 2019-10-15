@@ -1,6 +1,6 @@
 import {IInstallResult} from './IInstallResult';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 
 export type ProgressDelegate = (perc: number) => void;
 

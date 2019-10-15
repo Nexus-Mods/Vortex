@@ -6,7 +6,7 @@ import { bytesToString } from '../../../util/util';
 import { IDiscoveryResult } from '../types/IDiscoveryResult';
 import { IGameStored } from '../types/IGameStored';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import I18next from 'i18next';
 import * as React from 'react';
 
@@ -119,4 +119,4 @@ function mapStateToProps(state: IState, ownProps: IBaseProps): IConnectedProps {
   };
 }
 
-export default connect(mapStateToProps)(GameInfoPopover) as React.ComponentClass<IBaseProps>;
+export default connect(mapStateToProps)(GameInfoPopover);

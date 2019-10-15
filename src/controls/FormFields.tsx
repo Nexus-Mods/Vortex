@@ -155,12 +155,11 @@ export class FormPathItem extends React.Component<IFormPathProps, {}> {
       filters: extensions !== undefined ? [
         { name: 'Files', extensions },
       ] : [],
-    }, (fileNames: string[]) => {
-      if (fileNames === undefined) {
-        return;
+    }).then(result => {
+      const { filePaths } = result;
+      if ((filePaths !== undefined) && (filePaths.length > 0)) {
+        onChangeValue(stateKey, filePaths[0]);
       }
-
-      onChangeValue(stateKey, fileNames[0]);
     });
   }
 }

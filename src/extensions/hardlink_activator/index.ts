@@ -10,7 +10,7 @@ import LinkingDeployment from '../mod_management/LinkingDeployment';
 import { IDeployedFile, IDeploymentMethod,
          IUnavailableReason } from '../mod_management/types/IDeploymentMethod';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import I18next from 'i18next';
 import * as path from 'path';
 import turbowalk from 'turbowalk';
@@ -252,7 +252,7 @@ class DeploymentMethod extends LinkingDeployment {
           const tagPath = path.join(created, LinkingDeployment.NEW_TAG_NAME);
           tagDir = fs.writeFileAsync(tagPath,
               'This directory was created by Vortex deployment and will be removed '
-              + 'during purging if it\'s empty');
+              + 'during purging if it\'s empty') as any;
         } else {
           tagDir = Promise.resolve();
         }

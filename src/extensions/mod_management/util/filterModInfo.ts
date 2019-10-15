@@ -1,6 +1,6 @@
 import { AttributeExtractor } from '../../../types/IExtensionContext';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as _ from 'lodash';
 
 const attributeExtractors: Array<{ priority: number, extractor: AttributeExtractor}> = [];

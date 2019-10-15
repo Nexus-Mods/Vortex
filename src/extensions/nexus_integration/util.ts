@@ -1,4 +1,4 @@
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { app as appIn, ipcRenderer, remote } from 'electron';
 import I18next from 'i18next';
 import Nexus, { EndorsedStatus, IEndorsement, IFileInfo, IGameListEntry, IModInfo,

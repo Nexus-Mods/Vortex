@@ -1,4 +1,4 @@
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 
 import { IExtensionApi, IExtensionContext, ITestResult } from '../../types/api';
 import { activeGameId } from '../../util/selectors';

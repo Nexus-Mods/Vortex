@@ -46,7 +46,7 @@ import getText from '../texts';
 import CheckModVersionsButton from './CheckModVersionsButton';
 import InstallArchiveButton from './InstallArchiveButton';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import I18next from 'i18next';
 import * as _ from 'lodash';
 import * as React from 'react';

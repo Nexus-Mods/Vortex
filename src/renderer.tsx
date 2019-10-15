@@ -72,7 +72,7 @@ import './util/monkeyPatching';
 import { reduxSanity, StateError } from './util/reduxSanity';
 import MainWindow from './views/MainWindow';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { ipcRenderer, remote, webFrame } from 'electron';
 import { forwardToMain, getInitialStateRenderer, replayActionRenderer } from 'electron-redux';
 import { EventEmitter } from 'events';
@@ -405,7 +405,7 @@ function renderer() {
       startupFinished();
       eventEmitter.emit('startup');
       // render the page content
-      ReactDOM.render(
+      ReactDOM.render((
         <Provider store={store}>
           <DragDropContextProvider backend={HTML5Backend}>
             <I18nextProvider i18n={i18n}>
@@ -414,7 +414,8 @@ function renderer() {
               </ExtensionProvider>
             </I18nextProvider>
           </DragDropContextProvider>
-        </Provider>,
+        </Provider>
+      ),
         document.getElementById('content'),
       );
       ipcRenderer.send('show-window');

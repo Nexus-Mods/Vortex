@@ -16,7 +16,7 @@ import {
 import { remoteCode } from './remoteCode';
 import walk from './walk';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import I18next from 'i18next';
 import * as JsonSocket from 'json-socket';

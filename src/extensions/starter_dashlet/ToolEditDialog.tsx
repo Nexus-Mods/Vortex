@@ -16,7 +16,7 @@ import { addDiscoveredTool, setGameParameters } from '../gamemode_management/act
 
 import ToolIcon from './ToolIcon';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { remote } from 'electron';
 import I18next from 'i18next';
 import * as _ from 'lodash';
@@ -364,7 +364,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
     const editEnv = (itemId: string) => onEditEnv(itemId);
 
     return (
-    <ListGroup>
+      <ListGroup>
         {envList.map(env => (
           <ListGroupItem key={env.key}>
             <EnvButton
@@ -377,17 +377,18 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
             />
           </ListGroupItem>
         ))
-      }
-      <ListGroupItem key='__add'>
-        <EnvButton
-          t={t}
-          open={group === '__add'}
-          onAdd={this.addEnv}
-          onRemove={this.removeEnv}
-          onOpen={editEnv}
-        />
-      </ListGroupItem>
-    </ListGroup>);
+        }
+        <ListGroupItem key='__add'>
+          <EnvButton
+            t={t}
+            open={group === '__add'}
+            onAdd={this.addEnv}
+            onRemove={this.removeEnv}
+            onOpen={editEnv}
+          />
+        </ListGroupItem>
+      </ListGroup>
+    );
   }
 
   private addEnv = (key: string, value: string) => {
@@ -483,13 +484,8 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
           : Promise.resolve())
       .then(() => fs.ensureDirAsync(path.dirname(destPath)))
       .then(() => (path.extname(filePath) === '.exe')
-        ? new Promise<Electron.NativeImage>((resolve, reject) => {
-          app.getFileIcon(filePath, { size: 'normal' }, (err: Error, icon: Electron.NativeImage) =>
-            (err !== null)
-              ? reject(err)
-              : resolve(icon));
-        })
-        .then(icon => fs.writeFileAsync(destPath, icon.toPNG()))
+        ? app.getFileIcon(filePath, { size: 'normal' })
+          .then(icon => fs.writeFileAsync(destPath, icon.toPNG()))
         : fs.copyAsync(filePath, destPath))
       .then(() => {
         this.clearCache();

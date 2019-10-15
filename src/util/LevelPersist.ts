@@ -1,9 +1,9 @@
 import {IPersistor} from '../types/IExtensionContext';
 import { log } from './log';
 
-import * as Promise from 'bluebird';
-import * as encode from 'encoding-down';
-import * as leveldown from 'leveldown';
+import Promise from 'bluebird';
+import encode from 'encoding-down';
+import leveldown from 'leveldown';
 import * as levelup from 'levelup';
 
 const SEPARATOR: string = '###';
@@ -17,8 +17,8 @@ export class DatabaseLocked extends Error {
 
 function openDB(dbPath: string): Promise<levelup.LevelUp> {
   return new Promise<levelup.LevelUp>((resolve, reject) => {
-    (levelup as any)(encode(leveldown(dbPath)),
-                     { keyEncoding: 'utf8', valueEncoding: 'utf8' }, (err, db) => {
+    const db = levelup.default(encode(leveldown(dbPath)),
+                     { keyEncoding: 'utf8', valueEncoding: 'utf8' }, (err) => {
       if (err !== null) {
         return reject(err);
       }

@@ -27,10 +27,10 @@ import MainWindowT from './MainWindow';
 import SplashScreenT from './SplashScreen';
 import TrayIconT from './TrayIcon';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import crashDump from 'crash-dump';
 import {app, dialog, ipcMain, shell} from 'electron';
-import * as isAdmin from 'is-admin';
+import isAdmin from 'is-admin';
 import * as _ from 'lodash';
 import * as path from 'path';
 import { allow } from 'permissions';

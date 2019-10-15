@@ -5,7 +5,7 @@ import {getSafe} from '../../../util/storeHelper';
 
 import {IDependency} from '../types/IDependency';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import {ILookupResult, IReference, IRule} from 'modmeta-db';
 
 function findModByRef(reference: IReference, state: any): string {

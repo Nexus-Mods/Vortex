@@ -13,7 +13,7 @@ import {
   IUnavailableReason,
 } from './types/IDeploymentMethod';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import I18next from 'i18next';
 import * as _ from 'lodash';
 import * as path from 'path';
@@ -448,11 +448,11 @@ abstract class LinkingActivator implements IDeploymentMethod {
   }
 
   protected stat(filePath: string): Promise<fs.Stats> {
-    return fs.statAsync(filePath);
+    return fs.statAsync(filePath) as any;
   }
 
   protected statLink(filePath: string): Promise<fs.Stats> {
-    return fs.lstatAsync(filePath);
+    return fs.lstatAsync(filePath) as any;
   }
 
   private removeDeployedFile(installationPath: string,

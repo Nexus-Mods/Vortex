@@ -16,7 +16,7 @@ import { IExtensionApi } from '../types/IExtensionContext';
 import { MissingDependency, MissingInterpreter,
          ProcessCanceled, UserCanceled } from './CustomErrors';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { remote } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';

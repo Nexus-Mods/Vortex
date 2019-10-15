@@ -9,7 +9,7 @@
     "url": "https://github.com/Nexus-Mods/Vortex"
   },
   "vortex": {
-    "electron": "6.0.10"
+    "electron": "7.0.0"
   },
   "scripts": {
     "_assets_out": "node InstallAssets.js out",
@@ -90,7 +90,7 @@
     "@types/levelup": "^3.1.1",
     "@types/lodash": "^4.14.138",
     "@types/minimatch": "^3.0.3",
-    "@types/node": "^12.7.5",
+    "@types/node": "^12.7.12",
     "@types/node-uuid": "^0.0.28",
     "@types/opn": "^5.5.0",
     "@types/react": "^16.9.2",
@@ -132,7 +132,7 @@
     "copyfiles": "^2.1.1",
     "cross-env": "^6.0.0",
     "devtron": "^1.4.0",
-    "electron": "^6.0.10",
+    "electron": "^7.0.0-beta.6",
     "electron-builder": "21.2.0",
     "electron-devtools-installer": "^2.2.4",
     "electron-download-tf": "^4.3.4",
@@ -158,7 +158,7 @@
     "tslint": "^5.20.0",
     "tslint-eslint-rules": "^5.4.0",
     "tslint-react": "^4.1.0",
-    "typescript": "^3.6.3",
+    "typescript": "^3.6.4",
     "webpack": "^4.40.2",
     "webpack-cli": "^3.3.9",
     "webpack-node-externals": "^1.7.2",
@@ -214,8 +214,8 @@
     "react": "^16.9.0",
     "react-bootstrap": "^0.32.4",
     "react-datepicker": "^2.9.6",
-    "react-dnd": "^9.3.4",
-    "react-dnd-html5-backend": "^9.3.4",
+    "react-dnd": "^7.3.1",
+    "react-dnd-html5-backend": "^7.2.0",
     "react-dom": "^16.9.0",
     "react-i18next": "^10.12.5",
     "react-markdown": "^4.2.2",
@@ -223,7 +223,7 @@
     "react-redux": "^7.1.1",
     "react-resize-detector": "^4.2.1",
     "react-safe-html": "^0.6.1",
-    "react-select": "^3.0.4",
+    "react-select": "^1.2.1",
     "react-sortable-tree": "^2.6.2",
     "recharts": "^1.7.1",
     "redux": "^4.0.4",
@@ -246,7 +246,7 @@
     "vortex-run": "file:src/util/vortex-run",
     "wholocks": "Nexus-Mods/node-wholocks",
     "winapi-bindings": "Nexus-Mods/node-winapi-bindings",
-    "winston": "^3.2.1",
+    "winston": "^2.4.3",
     "write-file-atomic": "^3.0.0",
     "ws": "^7.1.2"
   }

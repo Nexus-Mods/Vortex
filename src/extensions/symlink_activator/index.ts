@@ -11,7 +11,7 @@ import { getGame } from '../gamemode_management/util/getGame';
 import LinkingDeployment from '../mod_management/LinkingDeployment';
 import { IDeploymentMethod, IUnavailableReason } from '../mod_management/types/IDeploymentMethod';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import I18next from 'i18next';
 import * as path from 'path';
@@ -91,7 +91,9 @@ class DeploymendMethod extends LinkingDeployment {
     try {
       try {
         fs.removeSync(canary + '.link');
-      } catch (err) {}
+      } catch (err) {
+        // nop
+      }
       fs.writeFileSync(canary, 'Should only exist temporarily, feel free to delete');
       fs.symlinkSync(canary, canary + '.link');
     } catch (err) {
@@ -138,9 +140,9 @@ class DeploymendMethod extends LinkingDeployment {
           let tagDir: Promise<void>;
           if (created !== null) {
             const tagPath = path.join(created, LinkingDeployment.NEW_TAG_NAME);
-            tagDir = fs.writeFileAsync(tagPath,
+            tagDir = Promise.resolve(fs.writeFileAsync(tagPath,
                 'This directory was created by Vortex deployment and will be removed '
-                + 'during purging if it\'s empty');
+                + 'during purging if it\'s empty'));
           } else {
             tagDir = Promise.resolve();
           }
@@ -168,7 +170,7 @@ class DeploymendMethod extends LinkingDeployment {
     let hadErrors = false;
     let canceled = false;
 
-    let showDialogCallback = () => !canceled;
+    const showDialogCallback = () => !canceled;
 
     // purge by removing all symbolic links that point to a file inside the install directory
     return walk(dataPath, (iterPath: string, stats: fs.Stats) => {
@@ -223,7 +225,9 @@ class DeploymendMethod extends LinkingDeployment {
       try {
         // ensure the dummy file wasn't left over from a previous test
         fs.removeSync(destFile);
-      } catch (err) {}
+      } catch (err) {
+        // nop
+      }
       fs.symlinkSync(srcFile, destFile);
       fs.removeSync(destFile);
       return true;

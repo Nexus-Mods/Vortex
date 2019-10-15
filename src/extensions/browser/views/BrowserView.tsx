@@ -7,7 +7,7 @@ import Debouncer from '../../../util/Debouncer';
 
 import { closeBrowser } from '../actions';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as React from 'react';
 import { Breadcrumb, Button, Modal } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';

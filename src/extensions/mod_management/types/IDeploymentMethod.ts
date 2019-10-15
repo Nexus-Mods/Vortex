@@ -2,7 +2,7 @@ import { IExtensionApi } from '../../../types/IExtensionContext';
 import { Normalize } from '../../../util/getNormalizeFunc';
 import { IMod } from './IMod';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import I18next from 'i18next';
 
 /**

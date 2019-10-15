@@ -12,7 +12,7 @@ import { IGameStored } from '../types/IGameStored';
 
 import GameInfoPopover from './GameInfoPopover';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import I18next from 'i18next';
 import * as path from 'path';
 import * as React from 'react';

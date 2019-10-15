@@ -1,7 +1,7 @@
 import * as fs from './fs';
 import { log } from './log';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { createHash } from 'crypto';
 import { file } from 'tmp';
 

@@ -5,7 +5,7 @@ import { deBOM } from '../../../util/util';
 
 import chromePath from './chromePath';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as path from 'path';
 
 /**

@@ -29,7 +29,7 @@ import { IDiscoveryResult } from './IState';
 import { ITableAttribute } from './ITableAttribute';
 import { ITestResult } from './ITestResult';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import I18next from 'i18next';
 import { ILookupResult, IModInfo, IReference } from 'modmeta-db';
 import * as React from 'react';

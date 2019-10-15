@@ -9,7 +9,7 @@ import opn from './opn';
 import { getSafe } from './storeHelper';
 import { getAllPropertyNames, spawnSelf, truthy } from './util';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import {
   app as appIn,
   dialog as dialogIn,

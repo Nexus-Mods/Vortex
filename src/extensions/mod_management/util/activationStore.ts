@@ -19,7 +19,7 @@ import { getActivator, getCurrentActivator } from './deploymentMethods';
 import format_1 from './manifest_formats/format_1';
 
 import * as msgpack from '@msgpack/msgpack';
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import I18next from 'i18next';
 import * as path from 'path';
 import { sync as writeAtomicSync } from 'write-file-atomic';

@@ -47,7 +47,7 @@ import {} from './views/Settings';
 import GameModeManager from './GameModeManager';
 import { currentGame, currentGameDiscovery } from './selectors';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { remote } from 'electron';
 import * as path from 'path';
 import * as Redux from 'redux';
@@ -160,11 +160,13 @@ function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
       remote.dialog.showOpenDialog(remote.getCurrentWindow(), {
         properties: ['openDirectory'],
         defaultPath: discovery.path,
-      }, (fileNames: string[]) => {
-        if ((fileNames !== undefined) && truthy(fileNames[0])) {
-          verifyGamePath(game, fileNames[0])
+      })
+      .then(result => {
+        const { filePaths } = result;
+        if ((filePaths !== undefined) && truthy(filePaths[0])) {
+          verifyGamePath(game, filePaths[0])
             .then(() => {
-              api.store.dispatch(setGamePath(game.id, fileNames[0]));
+              api.store.dispatch(setGamePath(game.id, filePaths[0]));
               resolve();
             })
             .catch(err => {
@@ -186,13 +188,15 @@ function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
     } else {
       remote.dialog.showOpenDialog(remote.getCurrentWindow(), {
         properties: ['openDirectory'],
-      }, (fileNames: string[]) => {
-        if (fileNames !== undefined) {
-          verifyGamePath(game, fileNames[0])
+      })
+      .then(result => {
+        const { filePaths } = result;
+        if ((filePaths !== undefined) && (filePaths.length > 0)) {
+          verifyGamePath(game, filePaths[0])
             .then(() => {
-              const exe = game.executable(fileNames[0]);
+              const exe = game.executable(filePaths[0]);
               api.store.dispatch(addDiscoveredGame(game.id, {
-                path: fileNames[0],
+                path: filePaths[0],
                 tools: {},
                 hidden: false,
                 environment: game.environment,

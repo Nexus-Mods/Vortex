@@ -1,17 +1,17 @@
 import More from '../../../controls/More';
 import { ComponentEx, translate } from '../../../util/ComponentEx';
-import * as fs from 'fs';
 import {log} from '../../../util/log';
 import MainPage from '../../../views/MainPage';
 
 import { ILicense } from '../types/ILicense';
 
 import { remote } from 'electron';
+import * as fs from 'fs';
 import I18next from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
 import { Image, Media, Panel } from 'react-bootstrap';
-import * as ReactMarkdown from 'react-markdown';
+import ReactMarkdown from 'react-markdown';
 import * as RequestT from 'request';
 
 let modules = {};
