@@ -183,6 +183,7 @@ class Steam implements ISteam {
   }
 
   private parseManifests(): Promise<ISteamEntry[]> {
+    log('debug', 'parsing steam manifest');
     const steamPaths: string[] = [];
     return this.mBaseFolder
       .then((basePath: string) => {
@@ -204,6 +205,8 @@ class Steam implements ISteam {
           return Promise.resolve([]);
         }
 
+        log('debug', 'steam config parsed');
+
         let counter = 1;
         const steamObj: any =
           getSafeCI(configObj, ['InstallConfigStore', 'Software', 'Valve', 'Steam'], {});
@@ -211,39 +214,71 @@ class Steam implements ISteam {
           steamPaths.push(steamObj[`BaseInstallFolder_${counter}`]);
           ++counter;
         }
+        log('debug', 'found steam install folders', { steamPaths });
 
-        return Promise.all(Promise.map(steamPaths, steamPath => {
+        return Promise.mapSeries(steamPaths, steamPath => {
+          log('debug', 'reading steam install folder', { steamPath });
           const steamAppsPath = path.join(steamPath, 'steamapps');
           return fs.readdirAsync(steamAppsPath)
             .then(names => {
               const filtered = names.filter(name =>
                 name.startsWith('appmanifest_') && (path.extname(name) === '.acf'));
+              log('debug', 'got steam manifests', { manifests: filtered });
               return Promise.map(filtered, (name: string) =>
-                fs.readFileAsync(path.join(steamAppsPath, name)));
+                fs.readFileAsync(path.join(steamAppsPath, name)).then(manifestData => ({
+                  manifestData, name,
+                })));
             })
-            .then((appsData: Buffer[]) => {
-              return appsData.map(appData => parse(appData.toString())).map(obj =>
-                ({
-                  appid: obj['AppState']['appid'],
-                  name: obj['AppState']['name'],
-                  gamePath: path.join(steamAppsPath, 'common', obj['AppState']['installdir']),
-                  lastUser: obj['AppState']['LastOwner'],
-                  lastUpdated: new Date(obj['AppState']['LastUpdated'] * 1000),
-                }));
+            .then(appsData => {
+              return appsData
+                .map(appData => {
+                  const { name, manifestData } = appData;
+                  try {
+                    log('debug', 'parsing steam manifest', { name });
+                    return { obj: parse(manifestData.toString()), name };
+                  } catch (err) {
+                    log('warn', 'failed to parse steam manifest',
+                        { name, error: err.message });
+                    return undefined;
+                  }
+                })
+                .map(res => {
+                  const { obj, name } = res;
+                  if (obj === undefined) {
+                    return undefined;
+                  }
+                  try {
+                    return {
+                      appid: obj['AppState']['appid'],
+                      name: obj['AppState']['name'],
+                      gamePath: path.join(steamAppsPath, 'common', obj['AppState']['installdir']),
+                      lastUser: obj['AppState']['LastOwner'],
+                      lastUpdated: new Date(obj['AppState']['LastUpdated'] * 1000),
+                    };
+                  } catch (err) {
+                    log('warn', 'failed to parse steam manifest',
+                        { name, error: err.message });
+                    return undefined;
+                  }
+                })
+                .filter(obj => obj !== undefined);
             })
             .catch({ code: 'ENOENT' }, (err: any) => {
               // no biggy, this can happen for example if the steam library is on a removable medium
               // which is currently removed
-              log('info', 'Steam library not found', err.code);
+              log('info', 'Steam library not found', { error: err.message });
             })
             .catch(err => {
               log('warn', 'Failed to read steam library', err.message);
             });
-        }));
+        });
       })
       .then((games: ISteamEntry[][]) =>
         games.reduce((prev: ISteamEntry[], current: ISteamEntry[]): ISteamEntry[] =>
-          current !== undefined ? prev.concat(current) : prev, []));
+          current !== undefined ? prev.concat(current) : prev, []))
+      .tap(() => {
+        log('info', 'done reading steam libraries');
+      });
   }
 }
 
