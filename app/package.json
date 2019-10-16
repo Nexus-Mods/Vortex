@@ -39,6 +39,7 @@
     "fs-extra-promise": "^1.0.1",
     "fuzzball": "^1.2.0",
     "graphlib": "^2.1.7",
+    "harmony-patcher": "Nexus-Mods/harmony-patcher",
     "i18next": "^15.0.6",
     "i18next-node-fs-backend": "^2.1.1",
     "iconv-lite": "^0.4.24",

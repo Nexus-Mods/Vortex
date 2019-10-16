@@ -5374,6 +5374,14 @@ har-validator@~5.1.0:
     ajv "^6.5.5"
     har-schema "^2.0.0"
 
+harmony-patcher@Nexus-Mods/harmony-patcher:
+  version "0.0.1"
+  resolved "https://codeload.github.com/Nexus-Mods/harmony-patcher/tar.gz/1b0190d6f3221955e4ced73de17e1eda63d872e5"
+  dependencies:
+    async "^2.6.2"
+    copyfiles "^1.0.0"
+    msbuild "^1.0.3"
+
 has-ansi@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/has-ansi/-/has-ansi-2.0.0.tgz#34f5049ce1ecdf2b0649af3ef24e45ed35416d91"
