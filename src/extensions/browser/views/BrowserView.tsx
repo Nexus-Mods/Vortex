@@ -114,6 +114,7 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
                 src={url}
                 ref={this.setRef}
                 onLoading={this.loading}
+                onNewWindow={this.newWindow}
               />
             )
             : this.renderConfirm()}
@@ -188,6 +189,13 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
     } else {
       this.mLoadingDebouncer.runNow(undefined, false);
     }
+  }
+
+  private newWindow = (url: string, disposition: string) => {
+    const { onEvent, subscriber } = this.props;
+
+    // currently we try to download any url that isn't opened in the same window
+    onEvent(subscriber, 'download-url', url);
   }
 
   private setRef = (ref: any) => {

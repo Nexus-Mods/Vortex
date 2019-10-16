@@ -76,7 +76,7 @@ function init(context: IExtensionContext): boolean {
       });
     });
 
-    ipcRenderer.on('received-url', (evt: string, dlUrl: string, fileName: string) => {
+    ipcRenderer.on('received-url', (evt: string, dlUrl: string, fileName?: string) => {
       const state: IState = context.api.store.getState();
       const { subscriber } = state.session.browser;
       if (subscriber !== undefined) {
