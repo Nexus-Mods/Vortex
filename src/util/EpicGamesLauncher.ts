@@ -99,8 +99,12 @@ class EpicGamesLauncher implements IEpicGamesLauncher {
   }
 
   private parseManifests(): Promise<IEpicEntry[]> {
+    let manifestsLocation;
     return this.mDataPath
-      .then(dataPath => fs.readdirAsync(path.join(dataPath, 'Manifests')))
+      .then(dataPath => {
+        manifestsLocation = path.join(dataPath, 'Manifests');
+        return fs.readdirAsync(manifestsLocation);
+      })
       .catch({ code: 'ENOENT' }, err => {
         log('info', 'Epic launcher manifests could not be found', err.code);
         return Promise.resolve([]);
@@ -108,7 +112,7 @@ class EpicGamesLauncher implements IEpicGamesLauncher {
       .then(entries => {
         const manifests = entries.filter(entry => entry.endsWith(ITEM_EXT));
         return Promise.map(manifests, manifest =>
-          fs.readFileAsync(manifest, { encoding: 'utf8' })
+          fs.readFileAsync(path.join(manifestsLocation, manifest), { encoding: 'utf8' })
             .then(data => {
               try {
                 const parsed = JSON.parse(data);
