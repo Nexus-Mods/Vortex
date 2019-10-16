@@ -70,6 +70,7 @@ import { initApplicationMenu } from './util/menu';
 import { showError } from './util/message';
 import './util/monkeyPatching';
 import { reduxSanity, StateError } from './util/reduxSanity';
+import LoadingScreen from './views/LoadingScreen';
 import MainWindow from './views/MainWindow';
 
 import * as Promise from 'bluebird';
@@ -395,6 +396,12 @@ function renderer() {
 
   webFrame.setZoomFactor(getSafe(store.getState(), ['settings', 'window', 'zoomFactor'], 1));
 
+  ReactDOM.render(
+    <LoadingScreen extensions={extensions} />,
+    document.getElementById('content'),
+  );
+  ipcRenderer.send('show-window');
+
   getI18n(store.getState().settings.interface.language)
     .then(res => {
       ({ i18n, tFunc, error } = res);
@@ -432,7 +439,7 @@ function renderer() {
         </Provider>,
         document.getElementById('content'),
       );
-      ipcRenderer.send('show-window');
+      // ipcRenderer.send('show-window');
     });
 
   // prevent the page from being changed through drag&drop
