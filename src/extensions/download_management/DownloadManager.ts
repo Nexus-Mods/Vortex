@@ -161,8 +161,12 @@ class DownloadWorker {
 
   private startDownload(job: IDownloadJob, jobUrl: string, cookies: Electron.Cookie[]) {
     let parsed: url.UrlWithStringQuery;
+    let referer: string;
     try {
-      parsed = url.parse(encodeURI(jobUrl));
+      const [urlIn, refererIn] = jobUrl.split('<');
+      parsed = url.parse(encodeURI(decodeURI(urlIn)));
+      referer = refererIn;
+      jobUrl = urlIn;
     } catch (err) {
       this.handleError(new Error('No valid URL for this download'));
       return;
@@ -171,24 +175,28 @@ class DownloadWorker {
     const lib: IHTTP = parsed.protocol === 'https:' ? https : http;
 
     try {
+      const headers = {
+          Range: `bytes=${job.offset}-${job.offset + job.size}`,
+          'User-Agent': this.mUserAgent,
+          'Accept-Encoding': 'gzip',
+          Cookie: (cookies || []).map(cookie => `${cookie.name}=${cookie.value}`),
+        };
+      if (referer !== undefined) {
+        headers['Referer'] = referer;
+      }
       this.mRequest = lib.request({
         method: 'GET',
         protocol: parsed.protocol,
         port: parsed.port,
         hostname: parsed.hostname,
         path: parsed.path,
-        headers: {
-          Range: `bytes=${job.offset}-${job.offset + job.size}`,
-          'User-Agent': this.mUserAgent,
-          'Accept-Encoding': 'gzip',
-          Cookie: (cookies || []).map(cookie => `${cookie.name}=${cookie.value}`),
-        },
+        headers,
         agent: false,
       }, (res) => {
         log('debug', 'downloading from',
           { address: `${res.connection.remoteAddress}:${res.connection.remotePort}` });
         this.mResponse = res;
-        this.handleResponse(res, encodeURI(jobUrl));
+        this.handleResponse(res, encodeURI(decodeURI(jobUrl)));
         res
           .on('data', (data: Buffer) => {
             this.handleData(data);
@@ -509,10 +517,12 @@ class DownloadManager {
     }
     log('info', 'queueing download', id);
     let nameTemplate: string;
+    let baseUrl: string;
     try {
-      nameTemplate = fileName || decodeURI(path.basename(url.parse(urls[0]).pathname));
+      baseUrl = urls[0].split('<')[0];
+      nameTemplate = fileName || decodeURI(path.basename(url.parse(baseUrl).pathname));
     } catch (err) {
-      return Promise.reject(new DataInvalid(`failed to parse url "${urls[0]}"`));
+      return Promise.reject(new DataInvalid(`failed to parse url "${baseUrl}"`));
     }
     const destPath = destinationPath || this.mDownloadPath;
     let download: IRunningDownload;
@@ -716,7 +726,8 @@ class DownloadManager {
       url: () => download.resolvedUrls()
         .then(urls => {
           if ((fileNameFromURL === undefined) && (urls.length > 0)) {
-            fileNameFromURL = decodeURI(path.basename(url.parse(urls[0]).pathname));
+            const urlIn = urls[0].split('<')[0];
+            fileNameFromURL = decodeURI(path.basename(url.parse(urlIn).pathname));
           }
           return urls[0];
         }),

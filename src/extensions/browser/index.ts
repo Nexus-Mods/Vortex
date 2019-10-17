@@ -43,8 +43,10 @@ function triggerEvent(subscriber: string, eventId: string, value: any): Subscrip
 }
 
 function init(context: IExtensionContext): boolean {
+  let lastURL: string;
   context.registerDialog('browser', BrowserView, () => ({
     onEvent: triggerEvent,
+    onNavigate: (url: string) => { lastURL = url; },
   }));
   context.registerReducer(['session', 'browser'], sessionReducer);
 
@@ -61,7 +63,11 @@ function init(context: IExtensionContext): boolean {
           return 'continue';
         });
         subscribe(subscriptionId, 'download-url', (download: string) => {
-          resolve(download);
+          if (lastURL !== undefined) {
+            resolve(download + '<' + lastURL);
+          } else {
+            resolve(download);
+          }
           return 'close';
         });
 
@@ -77,6 +83,9 @@ function init(context: IExtensionContext): boolean {
     });
 
     ipcRenderer.on('received-url', (evt: string, dlUrl: string, fileName?: string) => {
+      if (lastURL !== undefined) {
+        dlUrl += '<' + lastURL;
+      }
       const state: IState = context.api.store.getState();
       const { subscriber } = state.session.browser;
       if (subscriber !== undefined) {
@@ -85,7 +94,7 @@ function init(context: IExtensionContext): boolean {
           context.api.store.dispatch(closeBrowser());
         }
       } else {
-        context.api.events.emit('start-download-url', dlUrl);
+        context.api.events.emit('start-download-url', dlUrl, fileName);
       }
     });
   });
