@@ -622,6 +622,11 @@ export interface IReducerSpec {
   verifiers?: { [key: string]: IStateVerifier };
 }
 
+export interface IModTypeOptions {
+  // if set, the merge behavior specified here overrides the one specified for the game
+  mergeMods?: boolean;
+}
+
 /**
  * The extension context is an object passed into all extensions during initialisation.
  *
@@ -891,12 +896,14 @@ export interface IExtensionContext {
    *                                          where games of this type should be installed.
    * @param {(instructions) => Promise<boolean>} test given the list of install instructions,
    *                                                  determine if the installed mod is of this type
+   * @param {IModTypeOptions} options options controlling the mod type
    */
   registerModType: (id: string,
                     priority: number,
                     isSupported: (gameId: string) => boolean,
                     getPath: (game: IGame) => string,
-                    test: (installInstructions: IInstruction[]) => Promise<boolean>) => void;
+                    test: (installInstructions: IInstruction[]) => Promise<boolean>,
+                    options?: IModTypeOptions) => void;
 
   /**
    * register an action sanity check
