@@ -392,6 +392,7 @@ class ExtensionManager {
   private mLoadFailures: { [extId: string]: IExtensionLoadFailure[] } = {};
   private mInterpreters: { [ext: string]: (input: IRunParameters) => IRunParameters };
   private mStartHooks: Array<{ priority: number, id: string, hook: (input: IRunParameters) => Promise<IRunParameters> }>;
+  private mLoadingCallbacks: Array<(name: string, idx: number) => void> = [];
   private mProgrammaticMetaServers: { [id: string]: any } = {};
   private mForceDBReconnect: boolean = false;
   private mOnUIStarted: () => void;
@@ -674,8 +675,11 @@ class ExtensionManager {
         });
     };
 
-    return Promise.each(calls, call => {
+    return Promise.each(calls, (call, idx) => {
       try {
+        this.mLoadingCallbacks.forEach(cb => {
+          cb(call.extension, idx);
+        });
         const prom = call.arguments[0]() || Promise.resolve();
 
         return prom.catch(err => {
@@ -694,6 +698,15 @@ class ExtensionManager {
 
   public getProtocolHandler(protocol: string) {
     return this.mProtocolHandlers[protocol] || null;
+  }
+
+  public get numOnce() {
+    const calls = this.mContextProxyHandler.getCalls(remote !== undefined ? 'once' : 'onceMain');
+    return calls.length;
+  }
+
+  public onLoadingExtension(cb: (name: string, idx: number) => void) {
+    this.mLoadingCallbacks.push(cb);
   }
 
   public setUIReady() {

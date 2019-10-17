@@ -70,6 +70,7 @@ import { initApplicationMenu } from './util/menu';
 import { showError } from './util/message';
 import './util/monkeyPatching';
 import { reduxSanity, StateError } from './util/reduxSanity';
+import LoadingScreen from './views/LoadingScreen';
 import MainWindow from './views/MainWindow';
 
 import * as Promise from 'bluebird';
@@ -294,10 +295,17 @@ const startupPromise = new Promise((resolve) => startupFinished = resolve);
 // tslint:disable-next-line:no-unused-variable
 const globalNotifications = new GlobalNotifications(extensions.getApi());
 
-ipcRenderer.on('external-url', (event, url) => {
+function startDownloadFromURL(url: string, fileName?: string) {
+  store.dispatch(addNotification({
+    type: 'info',
+    title: 'Download started',
+    message: fileName,
+    displayMS: 4000,
+  }));
+
   startupPromise
     .then(() => {
-      if (typeof(url) !== 'string') {
+      if (typeof (url) !== 'string') {
         return;
       }
       const protocol = url.split(':')[0];
@@ -315,6 +323,14 @@ ipcRenderer.on('external-url', (event, url) => {
         }));
       }
     });
+}
+
+eventEmitter.on('start-download-url', (url: string, fileName: string) => {
+  startDownloadFromURL(url, fileName);
+});
+
+ipcRenderer.on('external-url', (event, url: string, fileName?: string) => {
+  startDownloadFromURL(url, fileName);
 });
 
 ipcRenderer.on('relay-event', (sender, event, ...args) => {
@@ -381,6 +397,11 @@ function renderer() {
 
   webFrame.setZoomFactor(getSafe(store.getState(), ['settings', 'window', 'zoomFactor'], 1));
 
+  ReactDOM.render(
+    <LoadingScreen extensions={extensions} />,
+    document.getElementById('content'),
+  );
+  ipcRenderer.send('show-window');
   getI18n('en', () => {
     const state: IState = store.getState();
     return Object.values(state.session.extensions.installed)
@@ -423,7 +444,7 @@ function renderer() {
         </Provider>,
         document.getElementById('content'),
       );
-      ipcRenderer.send('show-window');
+      // ipcRenderer.send('show-window');
     });
 
   // prevent the page from being changed through drag&drop

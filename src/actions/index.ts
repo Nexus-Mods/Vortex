@@ -5,6 +5,8 @@ export * from './tables';
 export * from './window';
 export * from './loadOrder';
 
+export * from '../extensions/browser/actions';
+
 export * from '../extensions/category_management/actions/category';
 
 export * from '../extensions/download_management/actions/settings';

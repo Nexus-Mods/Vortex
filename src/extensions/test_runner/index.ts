@@ -47,7 +47,11 @@ const checks: { [type: string]: ICheckEntry[] } = {};
 const triggerDelays: { [type: string]: NodeJS.Timer } = {};
 
 function runCheck(api: IExtensionApi, check: ICheckEntry): Promise<void> {
-  return check.check()
+  let res = check.check();
+  if ((res === undefined) || (res.then === undefined)) {
+    res = Promise.resolve(undefined);
+  }
+  return res
     .then(result => {
       const id: string = `test-${check.id}`;
       if (result === undefined) {

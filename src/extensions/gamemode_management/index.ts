@@ -45,7 +45,7 @@ import RecentlyManagedDashlet from './views/RecentlyManagedDashlet';
 import {} from './views/Settings';
 
 import GameModeManager from './GameModeManager';
-import { currentGame, currentGameDiscovery } from './selectors';
+import { currentGame, currentGameDiscovery, discoveryByGame } from './selectors';
 
 import * as Promise from 'bluebird';
 import { remote } from 'electron';
@@ -559,6 +559,12 @@ function init(context: IExtensionContext): boolean {
       //   and while the ui is usable again so at this point the user can already
       //   switch the game/profile again. The code below has to be able to deal with that
       return $.gameModeManager.setupGameMode(newGameId)
+        .then(() => {
+          // only calling to check if it works, some game extensions might discover
+          // a setup-error when trying to resolve the mod path
+          const discovery = discoveryByGame(store.getState(), newGameId);
+          getGame(newGameId).getModPaths(discovery.path);
+        })
         .then(() => $.gameModeManager.setGameMode(oldGameId, newGameId, currentProfileId))
         .catch((err) => {
           if (err instanceof UserCanceled) {

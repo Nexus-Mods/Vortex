@@ -243,9 +243,6 @@ function genOnProfileChange(api: IExtensionApi,
             profile.gameId, { allowReport: false });
           return Promise.reject(new ProcessCanceled('Game no longer discovered'));
         }
-        // only calling to check if it works, some game extensions might discover
-        // a setup-error when trying to resolve the mod path
-        game.getModPaths(discovery.path);
       }
 
       let queue: Promise<void> = Promise.resolve();

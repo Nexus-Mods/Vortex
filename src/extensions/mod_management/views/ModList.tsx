@@ -327,7 +327,9 @@ class ModList extends ComponentEx<IProps, IComponentState> {
               staticElements={this.mAttributes}
               actions={this.modActions}
             >
-              {this.renderMoreMods(modSources)}
+              <div id='more-mods-container'>
+                {this.renderMoreMods(modSources)}
+              </div>
             </SuperTable>
           </Panel.Body>
         </Panel>
@@ -392,18 +394,12 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       );
     }
 
-    const title = (
-      <div style={{ display: 'inline' }}>
-        <Icon name='add' />
-        {t('Get more mods')}
-      </div>
-    );
-
     return (
       <DropdownButton
         id='btn-more-mods'
-        title={title as any}
+        title={t('Get more mods')}
         container={this.mRef}
+        bsStyle='ghost'
       >
         {sources.map(this.renderModSource)}
       </DropdownButton>

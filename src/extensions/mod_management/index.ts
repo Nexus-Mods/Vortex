@@ -6,7 +6,7 @@ import {
   MergeFunc,
   MergeTest,
 } from '../../types/IExtensionContext';
-import {IGame} from '../../types/IGame';
+import {IGame, IModType} from '../../types/IGame';
 import { INotification } from '../../types/INotification';
 import {IDiscoveryResult, IState} from '../../types/IState';
 import { ITableAttribute } from '../../types/ITableAttribute';
@@ -33,6 +33,7 @@ import { isChildPath, truthy } from '../../util/util';
 
 import {setDownloadModInfo} from '../download_management/actions/state';
 import {getGame} from '../gamemode_management/util/getGame';
+import { getModType } from '../gamemode_management/util/modTypeExtensions';
 import { setModEnabled } from '../profile_management/actions/profiles';
 import { IProfile, IProfileMod } from '../profile_management/types/IProfile';
 
@@ -117,13 +118,17 @@ function bakeSettings(api: IExtensionApi, profile: IProfile, sortedModList: IMod
   return api.emitAndAwait('bake-settings', profile.gameId, sortedModList, profile);
 }
 
-function genSubDirFunc(game: IGame): (mod: IMod) => string {
-  if (typeof(game.mergeMods) === 'boolean') {
-    return game.mergeMods
+function genSubDirFunc(game: IGame, modType: IModType): (mod: IMod) => string {
+  const mergeModsOpt = (modType !== undefined) && (modType.options.mergeMods !== undefined)
+    ? modType.options.mergeMods
+    : game.mergeMods;
+
+  if (typeof(mergeModsOpt) === 'boolean') {
+    return mergeModsOpt
       ? () => ''
       : (mod: IMod) => mod.id;
   } else {
-    return game.mergeMods;
+    return mergeModsOpt;
   }
 }
 
@@ -165,7 +170,7 @@ function deployModType(api: IExtensionApi,
                     filteredModList,
                     activator, lastDeployment,
                     typeId, new Set(mergedFileMap[typeId]),
-                    genSubDirFunc(game),
+                    genSubDirFunc(game, getModType(typeId)),
                     onProgress)
     .then(newActivation => {
       overwritten.push(...filteredModList.filter(mod =>
@@ -745,7 +750,7 @@ function onDeploySingleMod(api: IExtensionApi) {
       return Promise.resolve();
     }
 
-    const subdir = genSubDirFunc(game);
+    const subdir = genSubDirFunc(game, getModType(mod.type));
     let normalize: Normalize;
     return withActivationLock(() => getNormalizeFunc(dataPath)
       .then(norm => {

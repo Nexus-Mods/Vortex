@@ -251,6 +251,8 @@ export interface IStateGameMode {
 
 export interface IBrowserState {
   url: string;
+  instructions: string;
+  subscriber: string;
 }
 
 export interface IModTable {

@@ -124,7 +124,9 @@ export class DownloadObserver {
 
     const processCB = this.genProgressCB(id);
 
-    return withContext(`Downloading "${fileName || urls[0]}"`, urls[0],
+    const urlIn = urls[0].split('<')[0];
+
+    return withContext(`Downloading "${fileName || urlIn}"`, urlIn,
                        () => this.mManager.enqueue(id, urls, fileName, processCB, downloadPath)
         .then((res: IDownloadResult) => {
           log('debug', 'download finished', { file: res.filePath });

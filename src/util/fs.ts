@@ -671,7 +671,10 @@ function elevated(func: (ipc, req: NodeRequireFunction) => Promise<void>,
 }
 
 export function ensureDirWritableAsync(dirPath: string,
-                                       confirm: () => PromiseBB<void>): PromiseBB<void> {
+                                       confirm?: () => PromiseBB<void>): PromiseBB<void> {
+  if (confirm === undefined) {
+    confirm = () => PromiseBB.resolve();
+  }
   const stackErr = new Error();
   return ensureDirAsync(dirPath)
     .then(() => {
