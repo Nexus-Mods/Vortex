@@ -226,6 +226,7 @@ export interface IRowProps {
   attributes: ITableAttribute[];
   sortAttribute: string;
   actions: ITableRowAction[];
+  hasActions: boolean;
   language: string;
   onClick: React.MouseEventHandler<any>;
   selected: boolean;
@@ -308,7 +309,7 @@ class TableRow extends React.Component<IRowProps, IRowState> {
   }
 
   private renderRow = (): React.ReactNode => {
-    const { actions, attributes, data, tableId } = this.props;
+    const { actions, attributes, data, hasActions, tableId } = this.props;
 
     const res = attributes.map(this.renderAttribute);
     const sorted = actions
@@ -321,7 +322,8 @@ class TableRow extends React.Component<IRowProps, IRowState> {
         }
       })
       .sort((lhs, rhs) => lhs.position - rhs.position);
-    if (sorted.length > 0) {
+
+    if (hasActions) {
       res.push(
         <TD
           style={{ textAlign: 'center' }}
@@ -333,7 +335,7 @@ class TableRow extends React.Component<IRowProps, IRowState> {
             group={`${tableId}-action-icons`}
             instanceId={data.__id}
             className='table-actions'
-            staticElements={actions}
+            staticElements={sorted}
             visible={this.state.contextVisible}
             position={this.state.context}
             onHide={this.onHideContext}

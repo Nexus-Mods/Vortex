@@ -86,6 +86,10 @@ class DropdownMenu extends React.PureComponent<IProps, { open: boolean }> {
   public render(): JSX.Element {
     const { actions, id, className } = this.props;
 
+    if (actions.length === 0) {
+      return null;
+    }
+
     const classes: string[] = [];
     if (className) {
       classes.push(className);

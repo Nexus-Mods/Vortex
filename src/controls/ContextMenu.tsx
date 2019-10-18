@@ -88,7 +88,7 @@ class ContextMenu extends ComponentEx<IProps, IComponentState> {
   public render(): JSX.Element {
     const { actions, children, onHide, position, visible } = this.props;
     const { right, bottom } = this.state;
-    if (!visible) {
+    if (!visible || (actions.length === 0)) {
       return null;
     }
 

@@ -53,6 +53,7 @@ export interface IBaseProps {
   defaultSort?: string;
   showHeader?: boolean;
   showDetails?: boolean;
+  hasActions?: boolean;
 }
 
 interface IConnectedProps {
@@ -307,18 +308,13 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderHeader(proxy: boolean): JSX.Element {
-    const { t, actions, data } = this.props;
-    const { singleRowActions, sortedRows } = this.state;
-
-    let hasActions = false;
-    if (actions !== undefined) {
-      hasActions = singleRowActions.length > 0;
-    }
+    const { t, data, hasActions } = this.props;
+    const { sortedRows } = this.state;
 
     const filteredLength = sortedRows !== undefined ? sortedRows.length : undefined;
     const totalLength = Object.keys(data).length;
 
-    const actionHeader = this.renderTableActions(hasActions);
+    const actionHeader = this.renderTableActions(hasActions !== false);
     const filterActive = (filteredLength !== undefined) && (filteredLength < totalLength);
 
     return (
@@ -641,7 +637,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderRow(rowId: string, sortAttribute: ITableAttribute, groupId?: string): JSX.Element {
-    const { t, data, language, tableId } = this.props;
+    const { t, data, language, hasActions, tableId } = this.props;
     const { calculatedValues, rowState, singleRowActions } = this.state;
 
     if ((calculatedValues[rowId] === undefined) || (data[rowId] === undefined)) {
@@ -663,6 +659,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         attributes={attributes}
         sortAttribute={sortAttribute !== undefined ? sortAttribute.id : undefined}
         actions={singleRowActions}
+        hasActions={hasActions !== undefined ? hasActions : true}
         language={language}
         onClick={this.selectRow}
         selected={getSafe(rowState, [rowId, 'selected'], false)}
