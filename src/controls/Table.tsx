@@ -342,7 +342,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
     const selected = Object.keys(rowState).filter(key => rowState[key].selected);
 
-    if ((multiRowActions.length === 0) || !this.useMultiSelect()) {
+    if (!this.useMultiSelect()) {
       return null;
     }
 
