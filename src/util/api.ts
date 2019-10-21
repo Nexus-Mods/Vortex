@@ -44,6 +44,7 @@ import { bytesToString, deBOM, isChildPath, makeQueue, objDiff,
          pad, sanitizeCSSId, setdefault } from './util';
 import walk from './walk';
 
+import SevenZip = require('node-7z');
 import { runElevated, runThreaded } from 'vortex-run';
 
 export {
@@ -98,6 +99,7 @@ export {
   sanitizeCSSId,
   setdefault,
   SetupError,
+  SevenZip,
   sortMods,
   steam,
   ISteamEntry,
