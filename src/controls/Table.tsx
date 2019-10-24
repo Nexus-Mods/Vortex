@@ -405,6 +405,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       let arrays: boolean = false;
       const groupOptions = Array.from(new Set(
         sortedRows.reduce((prev, rowId) => {
+          if (data[rowId] === undefined) {
+            return prev;
+          }
           const value = valFunc(rowId);
           if (Array.isArray(value)) {
             arrays = true;
@@ -429,6 +432,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
           {groupOptions.reduce((prev, group) => {
             const groupItems = sortedRows
               .filter(row => {
+                if (data[row] === undefined) {
+                  return prev;
+                }
                 const rowVal = valFunc(row);
                 if (Array.isArray(rowVal)) {
                   if (rowVal.length === 0) {
