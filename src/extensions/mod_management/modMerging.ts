@@ -146,7 +146,9 @@ function mergeMods(api: IExtensionApi,
   // archives to be merged for later
   return Promise.mapSeries(mods, mod => {
     const modPath = path.join(modBasePath, mod.installationPath);
-    return getFileList(modPath).then(fileList =>
+    return getFileList(modPath)
+      .filter(entry => entry.stats.isFile())
+      .then(fileList =>
       Promise.mapSeries(fileList, fileEntry => {
         if ((game.mergeArchive !== undefined) && game.mergeArchive(fileEntry.filePath)) {
           const relPath = path.relative(modPath, fileEntry.filePath);
@@ -168,6 +170,11 @@ function mergeMods(api: IExtensionApi,
                   return Promise.resolve();
                 }
 
+                // the "in" path may also be the path to where the file gets deployed to eventually,
+                // in which case it will point to the already-modified file after the first
+                // deployment.
+                // In this case we need to use the backup as the input instead of the actual "in"
+                // path
                 return Promise.all([fileExists(file.in),
                                     fileExists(file.in + BACKUP_TAG)]).then(res => {
                   // res[0] indicates whether we were able to find the input file inside
@@ -185,17 +192,20 @@ function mergeMods(api: IExtensionApi,
                   if (res[1]) {
                     // We found a backup file, use this file as the base for the merge.
                     return fs.copyAsync(file.in + BACKUP_TAG, path.join(realDest, file.out));
+                  } else if (res[0]) {
+                    if (isDeployed(file.in)) {
+                      // The input file has been previously deployed by Vortex but there is no
+                      // backup.
+                      // This indicates that the merge previously happened on an empty source file
+                      // and we need to ensure that the same happens for this merge
+                      return fs.removeAsync(file.in);
+                    } else {
+                      // The input file exists and is not part of the deployment so it's an actual
+                      // source file to build upon. This should be the default case for a first
+                      // deployment.
+                      return fs.copyAsync(file.in, path.join(realDest, file.out));
+                    }
                   }
-
-                  if (res[0] && isDeployed(file.in)) {
-                    // The input file has been previously deployed by Vortex; in its current state
-                    //  the file is a symbolic link and should be removed before the merge to ensure
-                    //  that Vortex does not create a backup of it during deployment.
-                    //  The file will be re-created during the merge.
-                    return fs.removeAsync(file.in);
-                  }
-
-                  return Promise.resolve();
                 });
             }))
             .then(() => merger.merge(fileEntry.filePath, realDest));
