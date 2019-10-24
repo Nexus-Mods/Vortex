@@ -51,7 +51,7 @@ class Webview extends React.Component<IWebviewProps & IWebView, {}> {
   }
 
   public render(): JSX.Element {
-    return React.createElement('webview', omit(this.props, ['onLoading']));
+    return React.createElement('webview', omit(this.props, ['onLoading', 'onNewWindow']));
   }
 
   private startLoad = () => {

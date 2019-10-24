@@ -164,7 +164,7 @@ class DownloadWorker {
     let referer: string;
     try {
       const [urlIn, refererIn] = jobUrl.split('<');
-      parsed = url.parse(encodeURI(decodeURI(urlIn)));
+      parsed = url.parse(decodeURI(urlIn));
       referer = refererIn;
       jobUrl = urlIn;
     } catch (err) {
@@ -178,7 +178,7 @@ class DownloadWorker {
       const headers = {
           Range: `bytes=${job.offset}-${job.offset + job.size}`,
           'User-Agent': this.mUserAgent,
-          'Accept-Encoding': 'gzip',
+          'Accept-Encoding': 'gzip, deflate',
           Cookie: (cookies || []).map(cookie => `${cookie.name}=${cookie.value}`),
         };
       if (referer !== undefined) {

@@ -208,8 +208,12 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
     const { onEvent, subscriber } = this.props;
 
     // currently we try to download any url that isn't opened in the same window
-    if (onEvent(subscriber, 'download-url', url) === 'close') {
+    const res = onEvent(subscriber, 'download-url', url);
+    if (res === 'close') {
       this.props.onClose();
+    } else if (res === 'continue') {
+      // no handler for download-url? Then lets try to open the link
+      this.nextState.url = url;
     }
   }
 
