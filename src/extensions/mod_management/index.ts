@@ -411,8 +411,16 @@ function genUpdateModDeployment() {
     // files to begin with)
     let sortedModList: IMod[];
 
+    const userGate = () => {
+      if (game.deploymentGate !== undefined) {
+        return game.deploymentGate();
+      } else {
+        return activator.userGate();
+      }
+    };
+
     // test if anything was changed by an external application
-    return (manual ? Promise.resolve() : activator.userGate())
+    return (manual ? Promise.resolve() : userGate())
       .tap(() => {
         notification.id = api.sendNotification(notification);
       })
