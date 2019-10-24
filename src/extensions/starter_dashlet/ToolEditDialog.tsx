@@ -24,7 +24,7 @@ import * as path from 'path';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
 import { Col, ControlLabel, Form, FormControl, FormGroup, InputGroup, ListGroup,
-         ListGroupItem, Modal } from 'react-bootstrap';
+         ListGroupItem, Modal, ToggleButton, ToggleButtonGroup } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 
@@ -180,6 +180,8 @@ interface IEditStarterInfo {
   workingDirectory: string;
   environment: { [key: string]: string };
   shell: boolean;
+  detach: boolean;
+  onStart?: 'hide' | 'close';
 }
 
 interface IToolEditState {
@@ -319,6 +321,35 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
               </Col>
             </FormGroup>
             <FormGroup>
+              <Col sm={3}>
+                <ControlLabel>{t('On Start')}</ControlLabel>
+              </Col>
+              <Col sm={9}>
+                <ToggleButtonGroup
+                  name='onstart'
+                  type='radio'
+                  value={tool.onStart}
+                  onChange={this.setStartEvent}
+                >
+                  <ToggleButton
+                    value={undefined}
+                  >
+                    {t('Nothing')}
+                  </ToggleButton>
+                  <ToggleButton
+                    value='hide'
+                  >
+                    {t('Hide Vortex')}
+                  </ToggleButton>
+                  <ToggleButton
+                    value='close'
+                  >
+                    {t('Close Vortex')}
+                  </ToggleButton>
+                </ToggleButtonGroup>
+              </Col>
+            </FormGroup>
+            <FormGroup>
               <Col sm={12}>
                 <Toggle checked={tool.shell} onToggle={this.toggleShell}>
                   {t('Run in shell')}
@@ -326,6 +357,22 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
                     {t('If (and only if!) a tool is written as a console '
                          + 'application, you have to enable this to allow it to run '
                          + 'correctly.')}
+                  </More>
+                </Toggle>
+              </Col>
+            </FormGroup>
+            <FormGroup>
+              <Col sm={12}>
+                <Toggle
+                  disabled={tool.onStart === 'close'}
+                  checked={tool.detach}
+                  onToggle={this.toggleDetached}
+                >
+                  {t('Run detached')}
+                  <More id='run-detached' name={t('Run detached')}>
+                    {t('Run the tool as a detached process (default). When you disable this '
+                     + 'the game/tool will run as a child process and thus if Vortex '
+                     + 'quits, the tool will also be terminated.')}
                   </More>
                 </Toggle>
               </Col>
@@ -468,6 +515,17 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
     this.nextState.tool.shell = !this.state.tool.shell;
   }
 
+  private toggleDetached = () => {
+    this.nextState.tool.detach = !this.state.tool.detach;
+  }
+
+  private setStartEvent = (mode?: 'hide' | 'close') => {
+    this.nextState.tool.onStart = mode;
+    if ((mode === 'close') && !this.state.tool.detach) {
+      this.nextState.tool.detach = true;
+    }
+  }
+
   private useImage(filePath: string): Promise<void> {
     const { tool } = this.props;
     const destPath = tool.iconOutPath;
@@ -527,6 +585,8 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
       logo: `${tool.id}.png`,
       parameters: this.splitCommandLine(tool.commandLine),
       shell: tool.shell,
+      detach: tool.detach,
+      onStart: tool.onStart,
     };
   }
 
@@ -542,6 +602,8 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
         envCustomized,
         parameters: this.splitCommandLine(tool.commandLine),
         shell: tool.shell,
+        detach: tool.detach,
+        onStart: tool.onStart,
       });
     } else {
       onAddTool(tool.gameId, tool.id, this.toToolDiscovery(tool));

@@ -32,6 +32,7 @@ export interface IStarterInfo {
   commandLine: string[];
   workingDirectory: string;
   exclusive: boolean;
+  detach: boolean;
   environment: { [key: string]: string };
 }
 
@@ -86,6 +87,11 @@ class StarterInfo implements IStarterInfo {
             // assuming that runThroughLauncher returns immediately on handing things off
             // to the launcher
             api.store.dispatch(setToolRunning(info.exePath, Date.now(), info.exclusive));
+            if (info.onStart === 'hide') {
+              remote.getCurrentWindow().hide();
+            } else if (info.onStart === 'close') {
+              remote.app.quit();
+            }
           })
           .catch(UserCanceled, () => null)
           .catch(GamePathNotMatched, err => {
@@ -138,12 +144,23 @@ class StarterInfo implements IStarterInfo {
                                    onShowError: OnShowErrorFunc,
                                    onSpawned: () => void,
                                    ): Promise<void> {
+
+    const spawned = () => {
+      onSpawned();
+      if (info.onStart === 'hide') {
+        remote.getCurrentWindow().hide();
+      } else if (info.onStart === 'close') {
+        remote.app.quit();
+      }
+    };
+
     return api.runExecutable(info.exePath, info.commandLine, {
       cwd: info.workingDirectory,
       env: info.environment,
       suggestDeploy: true,
       shell: info.shell,
-      onSpawned,
+      detach: info.detach || (info.onStart === 'close'),
+      onSpawned: spawned,
     })
     .catch(ProcessCanceled, () => undefined)
     .catch(UserCanceled, () => undefined)
@@ -195,6 +212,12 @@ class StarterInfo implements IStarterInfo {
           executable: info.exePath,
           error: err,
         });
+      }
+    })
+    .then(() => {
+      if ((info.onStart === 'hide')
+          && !remote.getCurrentWindow().isVisible()) {
+        remote.getCurrentWindow().show();
       }
     });
   }
@@ -264,6 +287,8 @@ class StarterInfo implements IStarterInfo {
   public shell: boolean;
   public details: { [key: string]: any } = {};
   public exclusive: boolean;
+  public detach: boolean;
+  public onStart?: 'hide' | 'close';
   private mExtensionPath: string;
   private mLogoName: string;
   private mIconPathCache: string;
@@ -272,6 +297,8 @@ class StarterInfo implements IStarterInfo {
               tool?: IToolStored, toolDiscovery?: IDiscoveredTool) {
     this.gameId = gameDiscovery.id || game.id;
     this.mExtensionPath = gameDiscovery.extensionPath || game.extensionPath;
+    this.detach = getSafe(toolDiscovery, ['detach'], getSafe(tool, ['detach'], true));
+    this.onStart = getSafe(toolDiscovery, ['onStart'], getSafe(tool, ['onStart'], undefined));
 
     if ((tool === undefined) && (toolDiscovery === undefined)) {
       this.id = this.gameId;

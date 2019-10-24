@@ -7,5 +7,7 @@ export interface IToolStored {
   parameters: string[];
   environment: { [key: string]: string };
   shell?: boolean;
+  detach?: boolean;
+  onStart?: 'hide' | 'close';
   exclusive?: boolean;
 }

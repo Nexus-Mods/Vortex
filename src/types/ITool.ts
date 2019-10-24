@@ -133,4 +133,16 @@ export interface ITool {
    * done. Defaults to false
    */
   exclusive?: boolean;
+
+  /**
+   * if set to true the process tool will be launched detached, that is: not part of Vortex's
+   * process hierarchy
+   */
+  detach?: boolean;
+
+  /**
+   * what to do with Vortex when starting the tool. Default is to do nothing. 'hide' will minimize
+   * Vortex and 'close' will make Vortex quit as soon as the tool is started.
+   */
+  onStart?: 'hide' | 'close';
 }
