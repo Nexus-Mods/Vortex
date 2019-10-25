@@ -178,7 +178,7 @@ function unknownErrorRetry(filePath: string, err: Error, stackErr: Error): Promi
       options.title = 'Anti Virus denied access';
       options.message = `Your Anti-Virus Software has blocked access to "${filePath}".`;
       options.detail = undefined;
-    } else if ([21, 793, 1005, 1392].indexOf(err['nativeCode']) !== -1) {
+    } else if ([21, 59, 483, 793, 1005, 1392].indexOf(err['nativeCode']) !== -1) {
       options.title = 'I/O Error';
       options.message = `Accessing "${filePath}" failed with an error that indicates `
                       + 'a hardware problem. This may indicate the disk is defective, '
