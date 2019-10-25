@@ -51,7 +51,6 @@ function quickDiscoveryTools(gameId: string, tools: ITool[], onDiscoveredTool: D
               hidden: false,
               parameters: tool.parameters || [],
               custom: false,
-              workingDirectory: toolPath,
             });
           });
       } else {
@@ -69,7 +68,6 @@ function quickDiscoveryTools(gameId: string, tools: ITool[], onDiscoveredTool: D
                     hidden: false,
                     parameters: tool.parameters || [],
                     custom: false,
-                    workingDirectory: resolvedPath,
                   });
                 });
             }

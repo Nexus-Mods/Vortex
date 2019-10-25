@@ -276,7 +276,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
                 t={t}
                 controlId='workingdir'
                 label={t('Start In')}
-                placeholder={t('Working Directory')}
+                placeholder={path.dirname(tool.exePath)}
                 stateKey='workingDirectory'
                 value={tool.workingDirectory}
                 onChangeValue={this.handleChange}
@@ -332,7 +332,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
                   onChange={this.setStartEvent}
                 >
                   <ToggleButton
-                    value={undefined}
+                    value='nothing'
                   >
                     {t('Nothing')}
                   </ToggleButton>
@@ -486,9 +486,6 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
     if (!this.state.tool.name) {
       this.handleChange('name', path.basename(filePath, path.extname(filePath)));
     }
-    if (!this.state.tool.workingDirectory) {
-      this.handleChange('workingDirectory', path.dirname(filePath));
-    }
     this.mUpdateImageDebouncer.schedule(undefined, filePath);
   }
 
@@ -519,8 +516,8 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
     this.nextState.tool.detach = !this.state.tool.detach;
   }
 
-  private setStartEvent = (mode?: 'hide' | 'close') => {
-    this.nextState.tool.onStart = mode;
+  private setStartEvent = (mode: 'nothing' | 'hide' | 'close') => {
+    this.nextState.tool.onStart = mode === 'nothing' ? undefined : mode;
     if ((mode === 'close') && !this.state.tool.detach) {
       this.nextState.tool.detach = true;
     }

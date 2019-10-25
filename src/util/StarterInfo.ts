@@ -155,7 +155,7 @@ class StarterInfo implements IStarterInfo {
     };
 
     return api.runExecutable(info.exePath, info.commandLine, {
-      cwd: info.workingDirectory,
+      cwd: info.workingDirectory || path.dirname(info.exePath),
       env: info.environment,
       suggestDeploy: true,
       shell: info.shell,
@@ -354,9 +354,8 @@ class StarterInfo implements IStarterInfo {
       this.environment =
         getSafe(toolDiscovery, ['environment'], getSafe(tool, ['environment'], {})) || {};
       this.mLogoName = getSafe(toolDiscovery, ['logo'], getSafe(tool, ['logo'], undefined));
-      this.workingDirectory = toolDiscovery.workingDirectory !== undefined
-        ? toolDiscovery.workingDirectory
-        : path.dirname(toolDiscovery.path || '');
+      this.workingDirectory = getSafe(toolDiscovery, ['workingDirectory'],
+        getSafe(tool, ['workingDirectory'], ''));
       this.shell = getSafe(toolDiscovery, ['shell'], getSafe(tool, ['shell'], undefined));
       this.exclusive = getSafe(tool, ['exclusive'], false) || false;
     } else {

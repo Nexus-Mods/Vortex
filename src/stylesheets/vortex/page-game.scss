@@ -6,6 +6,8 @@
   padding: 10px 10px;
   margin-bottom: 5px !important;
   border-color: $border-color;
+  // prevent this from overlaying popovers from the iconbar above
+  z-index: 0;
 }
 
 #games-picker-tabs {
