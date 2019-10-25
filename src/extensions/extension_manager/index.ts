@@ -2,14 +2,16 @@ import {IExtensionApi, IExtensionContext} from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
 import makeReactive from '../../util/makeReactive';
 
+import { setAvailableExtensions, setInstalledExtensions } from './actions';
 import BrowseExtensions from './BrowseExtensions';
 import ExtensionManager from './ExtensionManager';
 import sessionReducer from './reducers';
-import { IExtensionDownloadInfo } from './types';
+import { IAvailableExtension, IExtensionDownloadInfo } from './types';
 import { downloadAndInstallExtension, fetchAvailableExtensions, readExtensions } from './util';
 
+import * as Promise from 'bluebird';
+import { remote } from 'electron';
 import * as _ from 'lodash';
-import { setAvailableExtensions, setInstalledExtensions } from './actions';
 
 interface ILocalState {
   reloadNecessary: boolean;
@@ -19,6 +21,59 @@ const localState: ILocalState = makeReactive({
   reloadNecessary: false,
 });
 
+function checkForUpdates(api: IExtensionApi) {
+  const state: IState = api.store.getState();
+  const { available, installed }  = state.session.extensions;
+
+  const updateable: IAvailableExtension[] = Object.values(installed).reduce((prev, ext) => {
+    if (ext.modId === undefined) {
+      return prev;
+    }
+
+    const current = available.find(iter => iter.modId === ext.modId);
+    if (current === undefined) {
+      return prev;
+    }
+
+    if (current.version === ext.version) {
+      return prev;
+    }
+
+    prev.push(current);
+
+    return prev;
+  }, []);
+
+  if (updateable.length === 0) {
+    return Promise.resolve();
+  }
+
+  api.sendNotification({
+    id: 'extension-updates',
+    type: 'info',
+    message: '{{ count }} extensions will be updated',
+    replace: { count: updateable.length },
+  });
+
+  return Promise.map(updateable, ext => downloadAndInstallExtension(api, ext))
+    .then(() => {
+      localState.reloadNecessary = true;
+      api.sendNotification({
+        id: 'extension-updates',
+        type: 'success',
+        message: 'Extensions update, please restart to apply them',
+        actions: [
+          {
+            title: 'Restart now', action: () => {
+              remote.app.relaunch();
+              remote.app.exit(0);
+            },
+          },
+        ],
+      });
+    });
+}
+
 function updateAvailableExtensions(api: IExtensionApi) {
   return fetchAvailableExtensions(true)
     .catch(err => {
@@ -27,6 +82,7 @@ function updateAvailableExtensions(api: IExtensionApi) {
     })
     .then(extensions => {
       api.store.dispatch(setAvailableExtensions(extensions));
+      return checkForUpdates(api);
     });
 }
 

@@ -33,25 +33,27 @@ function getAllDirectories(searchPath: string): Promise<string[]> {
         .then(stat => stat.isDirectory()));
 }
 
-function applyExtensionInfo(id: string, bundled: boolean, values: any): IExtension {
+function applyExtensionInfo(id: string, bundled: boolean, values: any, fallback: any): IExtension {
   const res = {
-    name: values.name || id,
-    author: values.author || 'Unknown',
-    version: values.version || '0.0.0',
-    description: values.description || 'Missing',
+    name: values.name || fallback.name || id,
+    author: values.author || fallback.author || 'Unknown',
+    version: values.version || fallback.version || '0.0.0',
+    description: values.description || fallback.description || 'Missing',
   };
 
   // add optional settings if we have them
-  const add = (key: string, value: any) => {
+  const add = (key: string, value: any, fallbackValue: any) => {
     if (value !== undefined) {
       res[key] = value;
+    } else if (fallbackValue !== undefined) {
+      res[key] = fallbackValue;
     }
   };
 
-  add('type', values.type);
-  add('path', values.path);
-  add('bundled', bundled);
-  add('modId', values.modId);
+  add('type', values.type, fallback.type);
+  add('path', values.path, fallback.path);
+  add('bundled', bundled, undefined);
+  add('modId', values.modId, fallback.modId);
 
   return res;
 }
@@ -61,7 +63,8 @@ export function sanitize(input: string): string {
 }
 
 export function readExtensionInfo(extensionPath: string,
-                                  bundled: boolean): Promise<{ id: string, info: IExtension }> {
+                                  bundled: boolean,
+                                  fallback: any = {}): Promise<{ id: string, info: IExtension }> {
   return fs.readFileAsync(path.join(extensionPath, 'info.json'), { encoding: 'utf-8' })
     .then(info => {
       const data: IExtension = JSON.parse(info);
@@ -69,14 +72,14 @@ export function readExtensionInfo(extensionPath: string,
       const id = path.basename(extensionPath, '.installing');
       return {
         id,
-        info: applyExtensionInfo(id, bundled, data),
+        info: applyExtensionInfo(id, bundled, data, fallback),
       };
     })
     .catch(() => {
       const id = path.basename(extensionPath, '.installing');
       return {
         id,
-        info: applyExtensionInfo(id, bundled, {}),
+        info: applyExtensionInfo(id, bundled, {}, fallback),
       };
     });
 }

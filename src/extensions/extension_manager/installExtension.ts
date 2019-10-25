@@ -35,7 +35,7 @@ function installExtension(archivePath: string, info?: IExtension): Promise<void>
                               { encoding: 'utf-8' })
           : Promise.reject(err)))
       */
-      .then(() => readExtensionInfo(tempPath, false))
+      .then(() => readExtensionInfo(tempPath, false, info))
       // merge the caller-provided info with the stuff parsed from the info.json file because there
       // is data we may only know at runtime (e.g. the modId)
       .then(manifestInfo => ({
