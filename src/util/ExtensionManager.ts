@@ -98,6 +98,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
   private mCurrentExtension: string;
   private mCurrentPath: string;
   private mOptional: {};
+  private mMayRegister: boolean = true;
 
   constructor(context: any) {
     this.mContext = context;
@@ -110,6 +111,14 @@ class ContextProxyHandler implements ProxyHandler<any> {
     this.mOptional = new Proxy({}, {
       get(target, key: PropertyKey): any {
         return (...args) => {
+          if (!this.mMayRegister) {
+            log('warn', 'extension tries to use register call outside init function', {
+              extension: this.mCurrentExtension,
+              call: key,
+            });
+            return;
+          }
+
           that.mInitCalls.push({
             extension: that.mCurrentExtension,
             extensionPath: that.mCurrentPath,
@@ -120,6 +129,10 @@ class ContextProxyHandler implements ProxyHandler<any> {
         };
       },
     });
+  }
+
+  public endRegistration() {
+    this.mMayRegister = false;
   }
 
   /**
@@ -212,6 +225,14 @@ class ContextProxyHandler implements ProxyHandler<any> {
     return (key in this.mContext)
       ? this.mContext[key]
       : (...args) => {
+        if (!this.mMayRegister) {
+          log('warn', 'extension tries to use register call outside init function', {
+            extension: this.mCurrentExtension,
+            call: key,
+          });
+          return;
+        }
+
         this.mInitCalls.push({
           extension: this.mCurrentExtension,
           extensionPath: this.mCurrentPath,
@@ -865,6 +886,7 @@ class ExtensionManager {
           {name: ext.name, err: err.message, stack: err.stack});
       }
     });
+    this.mContextProxyHandler.endRegistration();
     // need to store them locally for now because the store isn't loaded at this time
     this.mLoadFailures = {
       ...this.mLoadFailures,
