@@ -382,11 +382,19 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
   private renderMoreMods(sources: IModSource[]): JSX.Element {
     const { t } = this.props;
-    if (sources.length === 1) {
+
+    const filtered = sources.filter(source => {
+      if ((source.options === undefined) || (source.options.condition === undefined)) {
+        return true;
+      }
+      return source.options.condition();
+    });
+
+    if (filtered.length === 1) {
       return (
         <Button
           id='btn-more-mods'
-          onClick={sources[0].onBrowse}
+          onClick={filtered[0].onBrowse}
           bsStyle='ghost'
         >
           {t('Get more mods')}
@@ -401,7 +409,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         container={this.mRef}
         bsStyle='ghost'
       >
-        {sources.map(this.renderModSource)}
+        {filtered.map(this.renderModSource)}
       </DropdownButton>
     );
   }

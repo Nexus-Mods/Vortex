@@ -80,6 +80,14 @@ export type RegisterBanner =
   (group: string, component: React.ComponentClass<any> | React.StatelessComponent<any>,
    options: IBannerOptions) => void;
 
+export interface IModSourceOptions {
+  /**
+   * condition for this source to show up. Please make sure this returns quickly, cache if
+   * necessary.
+   */
+  condition?: () => boolean;
+}
+
 export interface IMainPageOptions {
   /**
    * id for this page. If none is specified the page title is used. Use the id to avoid
@@ -754,7 +762,10 @@ export interface IExtensionContext {
    * actual features
    * The source can also be used to browse for further mods
    */
-  registerModSource: (id: string, name: string, onBrowse: () => void) => void;
+  registerModSource: (id: string,
+                      name: string,
+                      onBrowse: () => void,
+                      options?: IModSourceOptions) => void;
 
   /**
    * register a reducer to introduce new set-operations on the application

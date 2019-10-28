@@ -3,6 +3,7 @@ import { setSettingsPage, startActivity, stopActivity } from '../../actions/sess
 import {
   IExtensionApi,
   IExtensionContext,
+  IModSourceOptions,
   MergeFunc,
   MergeTest,
 } from '../../types/IExtensionContext';
@@ -106,8 +107,11 @@ function registerInstaller(id: string, priority: number,
   installers.push({ id, priority, testSupported, install });
 }
 
-function registerModSource(id: string, name: string, onBrowse: () => void) {
-  modSources.push({ id, name, onBrowse });
+function registerModSource(id: string,
+                           name: string,
+                           onBrowse: () => void,
+                           options?: IModSourceOptions) {
+  modSources.push({ id, name, onBrowse, options });
 }
 
 function registerMerge(test: MergeTest, merge: MergeFunc, modType: string) {
@@ -575,7 +579,14 @@ function genModsSourceAttribute(api: IExtensionApi): ITableAttribute<IMod> {
       return source !== undefined ? source.name : 'None';
     },
     edit: {
-      choices: () => modSources.map(source => ({ key: source.id, text: source.name })),
+      choices: () => modSources
+        .filter(source => {
+          if ((source.options === undefined) || (source.options.condition === undefined)) {
+            return true;
+          }
+          return source.options.condition();
+        })
+        .map(source => ({ key: source.id, text: source.name })),
       onChangeValue: (mods: IMod[], newValue: string) => {
         const store = api.store;
         const state = store.getState();
