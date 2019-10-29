@@ -20,7 +20,7 @@ import format_1 from './manifest_formats/format_1';
 
 import * as Promise from 'bluebird';
 import I18next from 'i18next';
-import * as msgpack from 'msgpack';
+import * as msgpackT from 'msgpack';
 import * as path from 'path';
 import { sync as writeAtomicSync } from 'write-file-atomic';
 
@@ -68,6 +68,8 @@ function readManifest(data: string | Buffer): IDeploymentManifest {
   if (data === '') {
     return undefined;
   }
+
+  const msgpack: typeof msgpackT = require('msgpack');
 
   let parsed = (typeof data === 'string')
     ? JSON.parse(deBOM(data))
@@ -389,6 +391,7 @@ export function saveActivation(modType: string, instance: string,
   if (activation.length > 0) {
     // write backup synchronously
     try {
+      const msgpack: typeof msgpackT = require('msgpack');
       writeAtomicSync(tagBackupPath, Buffer.from(msgpack.pack(dataRaw)));
     } catch (err) {
       log('error', 'Failed to write manifest backup', err.message);
