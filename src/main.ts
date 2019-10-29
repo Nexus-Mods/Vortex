@@ -102,6 +102,12 @@ function main() {
     return;
   }
 
+  if (mainArgs.disableGPU) {
+    app.disableHardwareAcceleration();
+    app.commandLine.appendSwitch('--disable-software-rasterizer');
+    app.commandLine.appendSwitch('--disable-gpu');
+  }
+
   process.on('uncaughtException', handleError);
   process.on('unhandledRejection', handleError);
 

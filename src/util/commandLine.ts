@@ -1,5 +1,8 @@
 import * as program from 'commander';
 import { app } from 'electron';
+import * as fs from 'fs-extra';
+import * as path from 'path';
+import { log } from './log';
 
 export interface IParameters {
   download?: string;
@@ -11,6 +14,7 @@ export interface IParameters {
   run?: string;
   shared?: boolean;
   maxMemory?: string;
+  disableGPU?: boolean;
 }
 
 function assign(input: string): string[] {
@@ -21,7 +25,19 @@ function parseCommandline(argv: string[]): IParameters {
   if (!argv[0].includes('electron.exe')) {
     argv = ['dummy'].concat(argv);
   }
-  return program
+
+  let cfgFile: IParameters = {};
+
+  try {
+    cfgFile = JSON.parse(fs.readFileSync(path.join(app.getPath('userData'), 'startup.json'),
+                                         { encoding: 'utf-8' }));
+  } catch (err) {
+    if (err.code !== 'ENOENT') {
+      log('warn', 'failed to parse startup.json', { error: err.message });
+    }
+  }
+
+  const commandLine = program
     .command('Vortex')
     .version(app.getVersion())
     .option('-d, --download [url]', 'Start downloadling the specified url '
@@ -42,6 +58,11 @@ function parseCommandline(argv: string[]): IParameters {
     // allow unknown options since they may be interpreted by electron/node
     .allowUnknownOption()
     .parse(argv || []) as IParameters;
+
+  return {
+    ...cfgFile,
+    ...commandLine,
+  };
 }
 
 export default parseCommandline;

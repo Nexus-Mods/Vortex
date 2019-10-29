@@ -26,11 +26,13 @@ export function fileMD5(filePath: string): Promise<string> {
   });
 }
 
-export function writeFileAtomic(filePath: string, input: string | Buffer) {
+export function writeFileAtomic(filePath: string, input: string | Buffer): Promise<void> {
   return writeFileAtomicImpl(filePath, input, 3);
 }
 
-function writeFileAtomicImpl(filePath: string, input: string | Buffer, attempts: number) {
+function writeFileAtomicImpl(filePath: string,
+                             input: string | Buffer,
+                             attempts: number): Promise<void> {
   const stackErr = new Error();
   let cleanup: () => void;
   let tmpPath: string;

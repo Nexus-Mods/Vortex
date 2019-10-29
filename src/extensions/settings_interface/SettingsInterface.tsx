@@ -5,11 +5,14 @@ import More from '../../controls/More';
 import Toggle from '../../controls/Toggle';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../types/IDialog';
 import { IState } from '../../types/IState';
+import { IParameters } from '../../util/commandLine';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import getVortexPath from '../../util/getVortexPath';
 import { log } from '../../util/log';
 import { truthy } from '../../util/util';
 
+import { IAvailableExtension, IExtensionDownloadInfo } from '../extension_manager/types';
+import { readExtensibleDir } from '../extension_manager/util';
 import getTextModManagement from '../mod_management/texts';
 import getTextProfiles from '../profile_management/texts';
 
@@ -28,14 +31,17 @@ import { Alert, Button, ControlLabel,
          FormControl, FormGroup, HelpBlock } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
-import { IAvailableExtension, IExtensionDownloadInfo } from '../extension_manager/types';
-import { readExtensibleDir } from '../extension_manager/util';
 
 interface ILanguage {
   key: string;
   language: string;
   country?: string;
   ext: IExtensionDownloadInfo | {};
+}
+
+interface IBaseProps {
+  startup: IParameters;
+  changeStartup: (key: string, value: any) => void;
 }
 
 interface IConnectedProps {
@@ -68,7 +74,7 @@ interface IComponentState {
   languages: ILanguage[];
 }
 
-type IProps = IActionProps & IConnectedProps;
+type IProps = IBaseProps & IActionProps & IConnectedProps;
 
 class SettingsInterface extends ComponentEx<IProps, IComponentState> {
   private mInitialTitlebar: boolean;
@@ -83,6 +89,7 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
   }
 
   public componentDidMount() {
+    (this.props.startup as any).attach(this);
     this.readLocales();
   }
 
@@ -101,7 +108,7 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
   public render(): JSX.Element {
     const { t, advanced, autoDeployment, autoEnable, currentLanguage,
             customTitlebar, desktopNotifications, profilesVisible,
-            hideTopLevelCategory } = this.props;
+            hideTopLevelCategory, startup } = this.props;
 
     const needRestart = (customTitlebar !== this.mInitialTitlebar);
 
@@ -183,6 +190,14 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
                 </More>
               </Toggle>
             </div>
+            <div>
+              <Toggle
+                checked={startup.disableGPU !== true}
+                onToggle={this.toggleAcceleration}
+              >
+                {t('Enable GPU Acceleration')}
+              </Toggle>
+            </div>
           </div>
         </FormGroup>
         <FormGroup controlId='automation'>
@@ -221,6 +236,10 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
       log('warn', 'Not a valid language code', langId);
       return false;
     }
+  }
+
+  private toggleAcceleration = () => {
+    this.props.changeStartup('disableGPU', this.props.startup.disableGPU !== true);
   }
 
   private selectLanguage = (evt) => {
