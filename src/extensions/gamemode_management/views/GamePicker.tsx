@@ -9,9 +9,9 @@ import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import getAttr from '../../../util/getAttr';
 import { activeGameId } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
+import { truthy } from '../../../util/util';
 import MainPage from '../../../views/MainPage';
 
-import { IAvailableExtension } from '../../extension_manager/types';
 import { IProfile } from '../../profile_management/types/IProfile';
 
 import { setPickerLayout } from '../actions/settings';
@@ -25,7 +25,8 @@ import ShowHiddenButton from './ShowHiddenButton';
 import * as Promise from 'bluebird';
 import update from 'immutability-helper';
 import * as React from 'react';
-import { FormControl, InputGroup, ListGroup, ProgressBar, Tab, Tabs } from 'react-bootstrap';
+import { FormControl, InputGroup, ListGroup,
+         Panel, PanelGroup, ProgressBar } from 'react-bootstrap';
 
 function gameFromDiscovery(id: string, discovered: IDiscoveryResult): IGameStored {
   return {
@@ -141,21 +142,11 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
       }
     });
 
-    const title = (text: string, count: string) => {
-      return (
-        <div className='nav-title'>
-        <div className='nav-title-title'>{text}</div>
-        <div className='nav-title-count'>({count})</div>
-      </div>
-      );
-    };
-
     const filteredManaged =
       managedGameList.filter(game => this.applyGameFilter(game)).sort(byGameName);
-    const filteredDiscovered =
-      discoveredGameList.filter(game => this.applyGameFilter(game)).sort(byGameName);
-    const filteredSupported =
-      supportedGameList.filter(game => this.applyGameFilter(game)).sort(byGameName);
+    const filteredUnmanaged =
+      [].concat(discoveredGameList, supportedGameList)
+        .filter(game => this.applyGameFilter(game)).sort(byGameName);
 
     return (
       <MainPage domRef={this.setRef}>
@@ -212,29 +203,24 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
             </FlexLayout.Fixed>
             <FlexLayout.Flex>
               <div ref={this.setScrollRef} className='gamepicker-body'>
-                <Tabs defaultActiveKey='managed' id='games-picker-tabs'>
-                  <Tab
-                    eventKey='managed'
-                    title={title(t('Managed'),
-                                 this.getTabGameNumber(managedGameList, filteredManaged))}
-                  >
-                    {this.renderGames(filteredManaged, 'managed')}
-                  </Tab>
-                  <Tab
-                    eventKey='discovered'
-                    title={title(t('Discovered'),
-                                 this.getTabGameNumber(discoveredGameList, filteredDiscovered))}
-                  >
-                    {this.renderGames(filteredDiscovered, 'discovered')}
-                  </Tab>
-                  <Tab
-                    eventKey='supported'
-                    title={title(t('Supported'),
-                                 this.getTabGameNumber(supportedGameList, filteredSupported))}
-                  >
-                    {this.renderGames(filteredSupported, 'undiscovered')}
-                  </Tab>
-                </Tabs>
+                <PanelGroup id='game-panel-group'>
+                  <Panel defaultExpanded eventKey='managed'>
+                    <Panel.Heading>
+                      <Panel.Title toggle>{t('Modded')}</Panel.Title>
+                    </Panel.Heading>
+                    <Panel.Body collapsible>
+                      {this.renderGames(filteredManaged, 'managed')}
+                    </Panel.Body>
+                  </Panel>
+                  <Panel defaultExpanded eventKey='unmanaged'>
+                    <Panel.Heading>
+                      <Panel.Title toggle>{t('Not modded')}</Panel.Title>
+                    </Panel.Heading>
+                    <Panel.Body collapsible>
+                      {this.renderGames(filteredUnmanaged, 'unmanaged')}
+                    </Panel.Body>
+                  </Panel>
+                </PanelGroup>
               </div>
             </FlexLayout.Flex>
             <FlexLayout.Fixed>
@@ -265,11 +251,6 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
 
   private onFilterInputChange = (evt) => {
     this.nextState.currentFilterValue = evt.target.value;
-  }
-
-  private getTabGameNumber(unfiltered: IGameStored[], filtered: IGameStored[]): string {
-    const { currentFilterValue } = this.state;
-    return currentFilterValue ? `${filtered.length}/${unfiltered.length}` : `${unfiltered.length}`;
   }
 
   private applyGameFilter = (game: IGameStored): boolean => {
@@ -343,28 +324,16 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
     );
 
     if (games.length === 0) {
-      if (type === 'managed') {
-        return (!!currentFilterValue)
-        ? failedFilter()
-        : (
+      if (truthy(currentFilterValue)) {
+        return failedFilter();
+      } else if (type === 'managed') {
+        return (
           <EmptyPlaceholder
             icon='game'
             text={t('You haven\'t managed any games yet')}
             subtext={t('To start managing a game, go to "Discovered" and activate a game there.')}
           />
         );
-      } else if (type === 'discovered') {
-        return (!!currentFilterValue)
-        ? failedFilter()
-        : (
-          <EmptyPlaceholder
-            icon='game'
-            text={t('No games were discovered')}
-            subtext={t('You can manually add a game from "Supported" or start a full disk scan.')}
-          />
-        );
-      } else if ((type === 'undiscovered') && (!!currentFilterValue)) {
-        return failedFilter();
       }
     }
 
@@ -399,23 +368,28 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderGamesSmall(games: IGameStored[], type: string, gameMode: string) {
-    const { t, onRefreshGameInfo } = this.props;
+    const { t, discoveredGames, onRefreshGameInfo } = this.props;
+
+    const isDiscovered = (gameId: string) =>
+      getSafe(discoveredGames, [gameId, 'path'], undefined) !== undefined;
+
     return (
       <div>
-      <div className='game-group'>
-        {games.map(game => (
-          <GameThumbnail
-            t={t}
-            key={game.id}
-            game={game}
-            type={type}
-            active={game.id === gameMode}
-            onRefreshGameInfo={onRefreshGameInfo}
-            getBounds={this.getBounds}
-            container={this.mScrollRef}
-          />))
-        }
-      </div>
+        <div className='game-group'>
+          {games.map(game => (
+            <GameThumbnail
+              t={t}
+              key={game.id}
+              game={game}
+              type={type}
+              active={game.id === gameMode}
+              onRefreshGameInfo={onRefreshGameInfo}
+              getBounds={this.getBounds}
+              container={this.mScrollRef}
+              discovered={isDiscovered(game.id)}
+            />))
+          }
+        </div>
       </div>
     );
   }

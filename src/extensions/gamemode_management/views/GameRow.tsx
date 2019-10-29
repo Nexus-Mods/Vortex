@@ -57,13 +57,22 @@ class GameRow extends ComponentEx<IProps, {}> {
     if (active) {
       classes.push('game-list-selected');
     }
+    if (discovery === undefined) {
+      classes.push('game-list-undiscovered');
+    }
+
+    const groupType = (type !== 'unmanaged')
+      ? type
+      : discovery !== undefined
+      ? 'discovered'
+      : 'undiscovered';
 
     const gameInfoPopover = (
       <Popover id={`popover-info-${game.id}`} className='popover-game-info' >
         <IconBar
           id={`game-thumbnail-${game.id}`}
           className='buttons'
-          group={`game-${type}-buttons`}
+          group={`game-${groupType}-buttons`}
           instanceId={game.id}
           staticElements={[]}
           collapse={false}
@@ -91,7 +100,7 @@ class GameRow extends ComponentEx<IProps, {}> {
           </Media.Left>
           <Media.Body>
             <Media.Heading>{t(game.name.replace(/\t/g, ' '))}</Media.Heading>
-            <p>Location: {location}</p>
+            <p>{t('Location')}: {location}</p>
           </Media.Body>
           <Media.Right>
             <OverlayTrigger
@@ -113,7 +122,7 @@ class GameRow extends ComponentEx<IProps, {}> {
             </OverlayTrigger>
             <IconBar
               className='btngroup-game-list'
-              group={`game-${type}-buttons`}
+              group={`game-${groupType}-buttons`}
               instanceId={game.id}
               staticElements={[]}
               collapse={false}

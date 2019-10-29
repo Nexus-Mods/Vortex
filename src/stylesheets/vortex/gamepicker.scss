@@ -39,6 +39,10 @@ $thumbnail-width: 256px;
     @extend .panel-default;
     border-color: transparent;
   }
+
+  &.game-thumbnail-undiscovered img {
+    filter: grayscale(100%);
+  }
 }
 
 .game-thumbnail-body {
@@ -170,6 +174,10 @@ $thumbnail-width: 256px;
 
   .list-group-item:hover {
     background-color: $gray-lighter;
+  }
+
+  &.game-list-undiscovered img {
+    filter: grayscale(100%);
   }
 }
 

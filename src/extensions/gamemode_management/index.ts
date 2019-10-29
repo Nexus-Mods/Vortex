@@ -476,7 +476,7 @@ function init(context: IExtensionContext): boolean {
     context.api.translate('Manually Set Location'),
     (instanceIds: string[]) => { browseGameLocation(context.api, instanceIds[0]); });
 
-  context.registerAction('game-undiscovered-buttons', 50, 'browse', {},
+  context.registerAction('game-undiscovered-buttons', 120, 'browse', {},
     context.api.translate('Manually Set Location'),
     (instanceIds: string[]) => { browseGameLocation(context.api, instanceIds[0]); });
 
@@ -525,6 +525,12 @@ function init(context: IExtensionContext): boolean {
       refreshGameInfo(store, gameId)
       .then(() => callback(null))
       .catch(err => callback(err));
+    });
+
+    events.on('manually-set-game-location', (gameId: string, callback: (err: Error) => void) => {
+      browseGameLocation(context.api, gameId)
+        .then(() => callback(null))
+        .catch(err => callback(err));
     });
 
     let { searchPaths } = store.getState().settings.gameMode;

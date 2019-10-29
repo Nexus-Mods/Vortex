@@ -21,7 +21,7 @@ import { addNotification, IDialogResult, showDialog } from '../../actions/notifi
 import { setProgress } from '../../actions/session';
 import { IExtensionApi, IExtensionContext, ThunkStore } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
-import { ProcessCanceled, SetupError } from '../../util/CustomErrors';
+import { ProcessCanceled, SetupError, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
@@ -348,6 +348,64 @@ function init(context: IExtensionContextExt): boolean {
               message: instPath,
             });
         });
+  });
+
+  context.registerAction('game-undiscovered-buttons', 50, 'activate', {
+    noCollapse: true,
+  }, 'Manage', (instanceIds: string[]) => {
+    const gameId = instanceIds[0];
+    context.api.showDialog('question', 'Game not discovered', {
+      text: 'This game hasn\'t been automatically discovered, you will have to set the game '
+        + 'folder manually.',
+    }, [
+      { label: 'Continue' },
+    ])
+      .then(() => new Promise((resolve, reject) => {
+        context.api.events.emit('manually-set-game-location', gameId, (err: Error) => {
+          if (err !== null) {
+            return reject(err);
+          }
+          return resolve();
+        });
+      }))
+      .then(() => {
+        const state: IState = context.api.store.getState();
+
+        const discovered = state.settings.gameMode.discovered[gameId];
+        if ((discovered === undefined) || (discovered.path === undefined)) {
+          // this probably means the "manually set location" was canceledd
+          return Promise.resolve();
+        }
+
+        const profileId = shortid();
+        const instPath = installPathForGame(state, gameId);
+        return fs.ensureDirWritableAsync(instPath, () => Promise.resolve())
+          .then(() => {
+            log('info', 'user managing game for the first time', { gameId });
+            context.api.store.dispatch(setProfile({
+              id: profileId,
+              gameId,
+              name: 'Default',
+              modState: {},
+            }));
+            context.api.store.dispatch(setNextProfile(profileId));
+          })
+          .catch(innerErr => {
+            context.api.showErrorNotification(
+              'The game location doesn\'t exist or isn\'t writeable',
+              innerErr, {
+              allowReport: false,
+              message: instPath,
+            });
+          });
+      })
+      .catch(err => {
+        if (!(err instanceof UserCanceled)
+          && !(err instanceof ProcessCanceled)) {
+          context.api.showErrorNotification('Failed to manage game', err);
+        }
+        return;
+      });
   });
 
   context.registerAction('game-managed-buttons', 50, 'activate', {
