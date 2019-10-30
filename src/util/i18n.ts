@@ -77,30 +77,32 @@ class MultiBackend {
 
   private backendType(language: string): { backendType: BackendType, extPath?: string } {
     try {
+      // translations from the user directory (custom installs or in-development)
       fs.statSync(path.join(this.mOptions.user, language));
       return { backendType: 'custom' };
     } catch (err) {
+      // extension-provided
+      const ext = this.mOptions.translationExts().find((iter: IExtension) => {
+        try {
+          fs.statSync(path.join(iter.path, language));
+          return true;
+        } catch (err) {
+          return false;
+        }
+      });
+      if (ext !== undefined) {
+        return { backendType: 'extension', extPath: ext.path };
+      }
+
       try {
+        // finally, see if we have the language bundled
         fs.statSync(path.join(this.mOptions.bundled, language));
         return { backendType: 'bundled' };
       } catch (err) {
-        const ext = this.mOptions.translationExts().find((iter: IExtension) => {
-          try {
-            fs.statSync(path.join(iter.path, language));
-            return true;
-          } catch (err) {
-            return false;
-          }
-        });
-        if (ext === undefined) {
-          log('warn', 'language not found', language);
-          return { backendType: 'custom' };
-        }
-        return { backendType: 'extension', extPath: ext.path };
+        return { backendType: 'custom' };
       }
     }
   }
-
 }
 
 /**
@@ -148,6 +150,7 @@ function init(language: string, translationExts: () => IExtension[]): Promise<II
       } as any,
 
       saveMissing: debugging,
+      saveMissingTo: 'current',
 
       missingKeyHandler: (lng, ns, key, fallbackValue) => {
         if (missingKeys[ns] === undefined) {

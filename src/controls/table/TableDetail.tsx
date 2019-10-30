@@ -123,7 +123,9 @@ class DetailCell extends React.Component<ICellProps, {}> {
     return content !== null ? (
       <FormGroup key={key}>
         { attribute.name !== undefined ? (
-          <ControlLabel title={attribute.description}>{attribute.name}{helpIcon}</ControlLabel>
+          <ControlLabel title={t(attribute.description)}>
+            {t(attribute.name)}{helpIcon}
+          </ControlLabel>
          ) : null }
         {content}
       </FormGroup>

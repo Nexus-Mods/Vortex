@@ -372,6 +372,12 @@ class EventProxy extends EventEmitter {
 
 const UNDEFINED = {};
 
+interface IStartHook {
+  priority: number;
+  id: string;
+  hook: (input: IRunParameters) => Promise<IRunParameters>;
+}
+
 /**
  * interface to extensions. This loads extensions and provides the api extensions
  * use
@@ -412,7 +418,7 @@ class ExtensionManager {
   private mExtensionState: { [extId: string]: IExtensionState };
   private mLoadFailures: { [extId: string]: IExtensionLoadFailure[] } = {};
   private mInterpreters: { [ext: string]: (input: IRunParameters) => IRunParameters };
-  private mStartHooks: Array<{ priority: number, id: string, hook: (input: IRunParameters) => Promise<IRunParameters> }>;
+  private mStartHooks: IStartHook[];
   private mLoadingCallbacks: Array<(name: string, idx: number) => void> = [];
   private mProgrammaticMetaServers: { [id: string]: any } = {};
   private mForceDBReconnect: boolean = false;
@@ -506,6 +512,10 @@ class ExtensionManager {
 
   public setTranslation(translator: I18next.i18n) {
     this.mTranslator = translator;
+  }
+
+  public get extensions() {
+    return this.mExtensions;
   }
 
   /**

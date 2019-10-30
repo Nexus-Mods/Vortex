@@ -79,10 +79,12 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             onToggle={this.associate}
             disabled={process.platform === 'linux'}
           >
-            {t('Handle ')}<DownloadButton/>{t('buttons on ')}
+            {t('Handle')}{' '}<DownloadButton/>{t('buttons on')}{' '}
             {<a onClick={this.openNexus}>NexusMods.com</a>}
           </Toggle>
-          {process.platform === 'linux' ? <HelpBlock>Not supported on Linux</HelpBlock> : null}
+          {process.platform === 'linux'
+            ? <HelpBlock>{t('Not supported on Linux')}</HelpBlock>
+            : null}
           <div style={{ marginTop: 15 }}>
             {t('Fix Nexus Mods links in Chrome '
               + '(Only required for Chrome. Requires Chrome to be closed)')}

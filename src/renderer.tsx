@@ -77,6 +77,7 @@ import * as Promise from 'bluebird';
 import { ipcRenderer, remote, webFrame } from 'electron';
 import { forwardToMain, getInitialStateRenderer, replayActionRenderer } from 'electron-redux';
 import { EventEmitter } from 'events';
+import * as fs from 'fs-extra-promise';
 import I18next from 'i18next';
 import * as nativeErr from 'native-errors';
 import * as React from 'react';
@@ -93,12 +94,12 @@ import crashDump from 'crash-dump';
 
 import { setLanguage } from './actions';
 import { ThunkStore } from './types/IExtensionContext';
+import { IState } from './types/IState';
 import { UserCanceled } from './util/CustomErrors';
 import {} from './util/extensionRequire';
 import { reduxLogger } from './util/reduxLogger';
 import { getSafe } from './util/storeHelper';
 import { getAllPropertyNames } from './util/util';
-import { IState } from './types/IState';
 
 log('debug', 'renderer process started', { pid: process.pid });
 
@@ -409,14 +410,38 @@ function renderer() {
   })
     .then(res => {
       ({ i18n, tFunc, error } = res);
-      extensions.setTranslation(i18n);
+
+      const dynamicExts: Array<{ name: string, path: string }> = extensions.extensions
+        .filter(ext => ext.dynamic)
+        .map(ext => ({ name: ext.name, path: ext.path }));
+
+      return Promise.map(dynamicExts, ext => {
+        const filePath = path.join(ext.path, 'language.json');
+        fs.readFileAsync(filePath, { encoding: 'utf-8' })
+          .then((fileData: string) => {
+            i18n.addResources('en', ext.name, JSON.parse(fileData));
+          })
+          .catch(err => {
+            if (err.code !== 'ENOENT') {
+              // an extension not providing a locale file is ok
+              log('error', 'Failed to load translation', { filePath, error: err.message });
+            }
+          });
+        })
+        .then(() => {
+          extensions.setTranslation(i18n);
+        });
+    }).then(() => {
       if (error !== undefined) {
         showError(store.dispatch, 'failed to initialize localization', error,
                   { allowReport: false });
       }
       return extensions.doOnce();
     })
-    .then(() => i18n.changeLanguage(store.getState().settings.interface.language))
+    .then(() => {
+      log('info', 'activating language', { lang: store.getState().settings.interface.language });
+      return i18n.changeLanguage(store.getState().settings.interface.language);
+    })
     .then(() => extensions.renderStyle()
       .catch(err => {
         terminate({
