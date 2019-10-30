@@ -1,0 +1,5 @@
+{
+  "{{ count }} conflicting file": "{{ count }} conflit",
+  "{{ count }} conflicting file_plural": "{{ count }} conflits",
+  "Save": "Sauvegarder"
+}

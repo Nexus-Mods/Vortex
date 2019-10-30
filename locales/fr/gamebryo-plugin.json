@@ -1,0 +1,15 @@
+{
+  "Autosort Enabled": "Tri automatique activé",
+  "Autosort Disabled": "Tri automatique désactivé",
+  "Sort Now": "Trier maintenant",
+  "Name": "Nom",
+  "Flags": "traits",
+  "Load Order": "Ordre de chargement",
+  "Mod Index": "Index de Mod",
+  "Loaded by the engine, can't be configured": "Chargé par le moteur, ne peut être configuré",
+  "Requires cleaning (LOOT)": "Nettoyage requis (LOOT)",
+  "Master": "Maitre",
+  "Save": "Sauvegarder",
+  "Loads after:": "Charger après:",
+  "load after {{ reference }}": "Charger après {{ reference }}"
+}
