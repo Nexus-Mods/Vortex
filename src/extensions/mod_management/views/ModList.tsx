@@ -397,6 +397,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           onClick={filtered[0].onBrowse}
           bsStyle='ghost'
         >
+          {this.sourceIcon(filtered[0])}
           {t('Get more mods')}
         </Button>
       );
@@ -414,8 +415,19 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     );
   }
 
+  private sourceIcon(source: IModSource) {
+    return (source.options !== undefined) && (source.options.icon !== undefined)
+      ? <Icon name={source.options.icon} />
+      : null;
+  }
+
   private renderModSource = (source: IModSource) => {
-    return <MenuItem key={source.id} onSelect={source.onBrowse}>{source.name}</MenuItem>;
+    return (
+      <MenuItem key={source.id} onSelect={source.onBrowse}>
+        {this.sourceIcon(source)}
+        {source.name}
+      </MenuItem>
+    );
   }
 
   private getMoreMods = () => {

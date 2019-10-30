@@ -86,6 +86,7 @@ export interface IModSourceOptions {
    * necessary.
    */
   condition?: () => boolean;
+  icon?: string;
 }
 
 export interface IMainPageOptions {

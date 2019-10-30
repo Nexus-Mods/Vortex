@@ -101,6 +101,7 @@
     "@types/react-i18next": "^8.1.0",
     "@types/react-redux": "^7.0.2",
     "@types/react-router": "^4.4.5",
+    "@types/react-select": "^1.2.1",
     "@types/react-sortable-tree": "^0.3.5",
     "@types/react-test-renderer": "^16.8.1",
     "@types/react-transition-group": "^2.0.16",

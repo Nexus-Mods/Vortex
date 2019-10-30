@@ -586,7 +586,12 @@ function genModsSourceAttribute(api: IExtensionApi): ITableAttribute<IMod> {
           }
           return source.options.condition();
         })
-        .map(source => ({ key: source.id, text: source.name })),
+        .map(source => {
+          const icon = ((source.options !== undefined) && (source.options.icon !== undefined))
+            ? source.options.icon
+            : undefined;
+          return { key: source.id, text: source.name, icon };
+        }),
       onChangeValue: (mods: IMod[], newValue: string) => {
         const store = api.store;
         const state = store.getState();

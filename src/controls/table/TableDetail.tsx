@@ -148,17 +148,23 @@ class DetailCell extends React.Component<ICellProps, {}> {
       );
     } else {
       const choiceKey = currentChoice !== undefined ? currentChoice.key : undefined;
+      const currentIcon = currentChoice !== undefined
+        ? currentChoice.icon
+        : undefined;
       return (
-        <Select
-          options={choices}
-          value={choiceKey}
-          onChange={this.changeCellSelect}
-          valueKey='key'
-          labelKey='text'
-          valueComponent={ValueComponent}
-          placeholder={(attribute.edit.placeholder !== undefined)
-            ? attribute.edit.placeholder() : undefined}
-        />
+        <div className='table-details-select-container'>
+          {currentIcon !== undefined ? <Icon name={currentIcon}/> : null}
+          <Select
+            options={choices}
+            value={choiceKey}
+            onChange={this.changeCellSelect}
+            valueKey='key'
+            labelKey='text'
+            valueComponent={ValueComponent}
+            placeholder={(attribute.edit.placeholder !== undefined)
+              ? attribute.edit.placeholder() : undefined}
+          />
+        </div>
       );
     }
   }

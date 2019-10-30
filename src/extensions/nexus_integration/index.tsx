@@ -883,6 +883,8 @@ function init(context: IExtensionContextExt): boolean {
       .then(game => {
         opn(`https://www.nexusmods.com/${nexusGameId(game)}`).catch(err => undefined);
       });
+  }, {
+    icon: 'nexus',
   });
 
   context.registerAction('categories-icons', 100, 'download', {}, 'Retrieve categories',

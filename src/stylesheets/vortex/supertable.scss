@@ -196,6 +196,18 @@
   }
 }
 
+.table-details-select-container {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  svg {
+    margin-right: 1em;
+  }
+  .Select {
+    flex: 1 1 0;
+  }
+}
+
 .table-form-details {
   flex: 1 1 0%;
   padding: 5px;
