@@ -142,11 +142,18 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
       }
     });
 
+    const unmanagedGameList = [].concat(discoveredGameList, supportedGameList);
+
     const filteredManaged =
       managedGameList.filter(game => this.applyGameFilter(game)).sort(byGameName);
     const filteredUnmanaged =
-      [].concat(discoveredGameList, supportedGameList)
+        unmanagedGameList
         .filter(game => this.applyGameFilter(game)).sort(byGameName);
+
+    const titleManaged = t('Modded ({{filterCount}})', {
+      replace: { filterCount: this.getTabGameNumber(managedGameList, filteredManaged) } });
+    const titleUnmanaged = t('Not modded ({{filterCount}})', {
+      replace: { filterCount: this.getTabGameNumber(unmanagedGameList, filteredUnmanaged) } });
 
     return (
       <MainPage domRef={this.setRef}>
@@ -206,7 +213,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
                 <PanelGroup id='game-panel-group'>
                   <Panel defaultExpanded eventKey='managed'>
                     <Panel.Heading>
-                      <Panel.Title toggle>{t('Modded')}</Panel.Title>
+                      <Panel.Title toggle>{titleManaged}</Panel.Title>
                     </Panel.Heading>
                     <Panel.Body collapsible>
                       {this.renderGames(filteredManaged, 'managed')}
@@ -214,7 +221,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
                   </Panel>
                   <Panel defaultExpanded eventKey='unmanaged'>
                     <Panel.Heading>
-                      <Panel.Title toggle>{t('Not modded')}</Panel.Title>
+                      <Panel.Title toggle>{titleUnmanaged}</Panel.Title>
                     </Panel.Heading>
                     <Panel.Body collapsible>
                       {this.renderGames(filteredUnmanaged, 'unmanaged')}
@@ -251,6 +258,11 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
 
   private onFilterInputChange = (evt) => {
     this.nextState.currentFilterValue = evt.target.value;
+  }
+
+  private getTabGameNumber(unfiltered: IGameStored[], filtered: IGameStored[]): string {
+    const { currentFilterValue } = this.state;
+    return currentFilterValue ? `${filtered.length}/${unfiltered.length}` : `${unfiltered.length}`;
   }
 
   private applyGameFilter = (game: IGameStored): boolean => {
@@ -316,10 +328,8 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
     const failedFilter = (): JSX.Element => (
       <EmptyPlaceholder
         icon='game'
-        text={t('Vortex cannot find "{{gameName}}" in selected tab',
+        text={t('"{{gameName}}" not found in this group',
                 {replace: { gameName: currentFilterValue } })}
-        subtext={t('Please switch tab, try alternative spellings, '
-                 + 'or submit a game request via the feedback system.')}
       />
     );
 
