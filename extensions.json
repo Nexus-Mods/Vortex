@@ -1,5 +1,5 @@
 {
-  "last_updated": 1572511757645,
+  "last_updated": 1572513069308,
   "extensions": [
     {
       "name": "Fallout 76 Support",
@@ -291,6 +291,7 @@
       "name": "German translation for Vortex",
       "tags": [],
       "version": "1.0.0",
+      "language": "de",
       "type": "translation"
     }
   ]
