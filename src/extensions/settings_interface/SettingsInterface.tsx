@@ -90,7 +90,7 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
 
   public componentDidMount() {
     (this.props.startup as any).attach(this);
-    this.readLocales();
+    this.readLocales(this.props);
   }
 
   public componentWillReceiveProps(newProps: IProps) {
@@ -102,6 +102,10 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
           ext: {},
         }] },
       }));
+    }
+
+    if (this.props.extensions !== newProps.extensions) {
+      this.readLocales(newProps);
     }
   }
 
@@ -250,7 +254,7 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
     const { value } = target;
     const dlProm: Promise<boolean[]> = ext.modId !== undefined
       ? this.context.api.emitAndAwait('download-extension', ext)
-        .tap(success => success ? this.readLocales() : Promise.resolve())
+        .tap(success => success ? this.readLocales(this.props) : Promise.resolve())
       : Promise.resolve([true]);
     dlProm.then((success: boolean[]) => {
       if (success.indexOf(false) === -1) {
@@ -327,8 +331,8 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
     onSetAdvancedMode(!advanced);
   }
 
-  private readLocales() {
-    const { extensions } = this.props;
+  private readLocales(props: IProps) {
+    const { extensions } = props;
     const bundledLanguages = getVortexPath('locales');
     const userLanguages = path.normalize(path.join(remote.app.getPath('userData'), 'locales'));
 

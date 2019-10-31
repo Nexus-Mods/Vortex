@@ -122,8 +122,6 @@ export function fetchAvailableExtensions(force: boolean): Promise<IAvailableExte
 function doFetchAvailableExtensions(): Promise<IAvailableExtension[]> {
   return Promise.resolve(jsonRequest<IExtensionManifest>(EXTENSIONS_URL))
     .then(manifest => manifest.extensions.filter(ext => ext.name !== undefined));
-  /*return fs.readFileAsync(path.join(__dirname, 'extensions.json'), { encoding: 'utf8' })
-    .then(data => JSON.parse(data).extensions.filter(ext => ext.name !== undefined));*/
 }
 
 export function downloadAndInstallExtension(api: IExtensionApi,
