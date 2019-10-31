@@ -12,7 +12,7 @@ class MyModal extends React.PureComponent<typeof Modal.prototype.props, {}> {
     menuLayer: PropTypes.object,
   };
 
-  private mMenuLayer: Element;
+  private mMenuLayer: Element = null;
 
   public getChildContext(): any {
     return { ...this.context, menuLayer: this.mMenuLayer };
@@ -23,7 +23,7 @@ class MyModal extends React.PureComponent<typeof Modal.prototype.props, {}> {
       <div className='modal-container'>
         <Modal {...this.props}>
           <div className='menu-layer' ref={this.setMenuLayer}/>
-          {this.props.children}
+          {this.mMenuLayer !== null ? this.props.children : null}
         </Modal>
       </div>
     );
