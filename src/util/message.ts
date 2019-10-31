@@ -556,7 +556,7 @@ export function renderError(err: string | Error | any):
   } else if (err instanceof Error) {
     const errMessage = prettifyNodeErrorMessage(err);
 
-    const flatErr = flatten(err || {});
+    const flatErr = flatten(err || {}, { maxLength: 5 });
 
     let attributes = Object.keys(flatErr || {})
         .filter(key => key[0].toUpperCase() === key[0]);

@@ -401,23 +401,49 @@ export function isMajorDowngrade(previous: string, current: string): boolean {
   }
 }
 
+export interface IFlattenParameters {
+  // maximum length of arrays. If this is not set the result object may become *huge*!
+  maxLength?: number;
+  // separator to use between keys. defaults to '.'
+  separator?: string;
+  // the base key that will be included in all attribute names. You will usually want
+  // to leave this as an empty array unless the result gets merged with something else
+  baseKey?: string[];
+}
+
 /**
  * turn an object into a flat one meaning all values are PODs, no nested objects/arrays
  * @param obj the input object
- * @param key the base key that will be included in all attribute names. You will usually
- *            want to leave this as an empty array unless the result gets merged with
- *            something else
- * @param separator the separator character. Defaults to a dot but if you intend to unflatten
- *                  the object at some point it may make sense to use something less likely to
- *                  be part of a key
+ * @param options parameters controlling the flattening process
  */
-export function flatten(obj: any, key: string[] = [], separator: string = '.'): any {
+export function flatten(obj: any, options?: IFlattenParameters): any {
+  if (options === undefined) {
+    options = {};
+  }
+  options.separator = options.separator || '.';
+  options.baseKey = options.baseKey || [];
+
+  return flattenInner(obj, options.baseKey, [], options);
+}
+
+function flattenInner(obj: any, key: string[],
+                      objStack: any[],
+                      options: IFlattenParameters): any {
+  if ((obj.length !== undefined) && (obj.length > 10)) {
+    return { [key.join(options.separator)]: '<long array cut>' };
+  }
   return Object.keys(obj).reduce((prev, attr: string) => {
+    if (objStack.indexOf(obj[attr]) !== -1) {
+      return prev;
+    }
     if ((typeof(obj[attr]) === 'object') && (obj[attr] !== null)) {
-      prev = { ...prev, ...flatten(obj[attr], [...key, attr]) };
+      prev = {
+        ...prev,
+        ...flattenInner(obj[attr], [...key, attr], [].concat(objStack, [obj[attr]]), options),
+      };
     } else {
       // POD
-      prev[[...key, attr].join(separator)] = obj[attr];
+      prev[[...key, attr].join(options.separator)] = obj[attr];
     }
     return prev;
   }, {});

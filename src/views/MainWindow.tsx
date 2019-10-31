@@ -106,7 +106,6 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   private menuLayer: HTMLDivElement = null;
   private menuObserver: MutationObserver;
 
-  private headerRef: HTMLElement = null;
   private sidebarRef: HTMLElement = null;
   private sidebarTimer: NodeJS.Timer;
 
@@ -428,12 +427,6 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       </div>
     );
   }
-
-  private setHeaderRef = ref => {
-    this.headerRef = ref;
-  }
-
-  private getHeaderRef = () => this.headerRef;
 
   private setSidebarRef = ref => {
     this.sidebarRef = ref;
