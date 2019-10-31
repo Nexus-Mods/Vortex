@@ -1,5 +1,5 @@
 {
-  "last_updated": 1572509710480,
+  "last_updated": 1572511757645,
   "extensions": [
     {
       "name": "Fallout 76 Support",
@@ -178,40 +178,6 @@
       "type": "translation"
     },
     {
-      "modId": 19,
-      "fileId": 248,
-      "author": "alfx3",
-      "description": {
-        "short": "Traduzione italiana di Vortex, il nuovo gestore di mod di Nexus Mods.",
-        "long": "[img]https://staticdelivery.nexusmods.com/mods/2295/images/26/26-1537874238-1564287998.png[/img]\n<br />\n<br />\n<br />[b][size=6]INSTALLAZIONE[/size][/b]\n<br />\n<br />[list]\n<br />[*]Installa [url=https://www.nexusmods.com/site/mods/1]Vortex[/url]﻿.\n<br />[*]Vai su [b]C:&#92;ProgramData&#92;Vortex&#92;[/b] ed estrai il contenuto dell'archivio della traduzione nella cartella. Potrebbe essere necessario mostrare gli elementi nascosti dalle Opzioni cartella di Esplora file.\n<br />[*]Vai su [b]C:&#92;Users&#92;NOMEUTENTE&#92;AppData&#92;Roaming&#92;Vortex&#92;[/b] ed estrai il contenuto dell'archivio della traduzione nella cartella.\n<br />[*]Avvia Vortex e scegli la lingua italiana dalle impostazioni.\n<br />[*]Riavvia Vortex.\n<br />[/list]\n<br />[i]Attenzione: la traduzione fa affidamento a strumenti creati dalla community per estrarre i testi originali. Alcune parti del programma potrebbero non essere tradotte.[/i]\n<br />\n<br />\n<br />[size=6][b]CHE COS'È VORTEX?[/b][/size]\n<br />\n<br />Vortex è il nuovo gestore di mod all'avanguardia di Nexus Mods. È progettato per consentire ai nuovi utenti di modificare facilmente i loro giochi, dando al contempo abbastanza controllo ai veterani della scena del modding. Sotto la guida di Tannin, il creatore di Mod Manager, Vortex fa tesoro degli insegnamenti appresi durante lo sviluppo di MO e Nexus Mod Manager per offrire la più potente e intuitiva esperienza di modding di sempre. \n<br />Il nostro approccio con Vortex è concentrato allo sviluppo di funzioni complesse, ad esempio cambiare l'ordine di caricamento o gestire le mod, automatizzando il più possibile il processo, con l'obiettivo di arrivare col minimo sforzo a una versione modificata del gioco. Vogliamo aiutarti a passare meno tempo a modificare giochi e più tempo a giocarli. \n<br />\n<br />\n<br />[b][size=6]PERCHÉ VORTEX?[/size][/b]\n<br />\n<br />[size=4][b]SUPPORTO PER GIOCHI MULTIPLI[/b][/size]\n<br />Supporto a mod per oltre 30 giochi diversi, in costante aumento. Da Dark Souls, Fallout e Skyrim fino alla saga di The Witcher e Stardew Valley. Vortex è il più versatile gestore di mod esistente.\n<br />[size=4]\n<br />[b]STRETTA INTEGRAZIONE CON NEXUS MODS[/b][/size]\n<br />Vortex è progettato per interagire perfettamente con Nexus Mods, consentendoti di trovare, installare e giocare facilmente mod dal nostro sito, scoprendo nuovi contenuti e le ultime notizie.\n<br />\n<br />[size=4][b]GESTIONE DEI MOD SEMPLIFICATA[/b][/size]\n<br />Il sistema di ordinamento automatico integrato gestisce il tuo ordine di caricamento e ti aiuta a risolvere i conflitti tra mod con funzioni di gestione dei plugin potenti ma facili da usare.\n<br />\n<br />[size=4][b]PROFILI DI MOD[/b][/size]\n<br />L'organizzazione, la gestione individuale e il passaggio da un profilo di mod all'altro ti permette di usare l'esatta combinazione di mod che desideri per una particolare partita.\n<br />\n<br />[size=4][b]INTERFACCIA MODERNA E INTUITIVA[/b][/size]\n<br />Vortex dispone di un'interfaccia completamente personalizzabile, permettendoti di accedere facilmente e rapidamente agli strumenti, alla gestione dei tuoi \n<br />giochi, dei plugin, dei download e dei salvataggi.\n<br />[size=4]\n<br />[b]ESTENSIONI E PLUGIN[/b][/size]\n<br />Vortex viene rilasciato sotto licenza GPL-3, dando alla community la possibilità di scrivere estensioni e framework che possono interagire con Vortex, accrescendo le sue funzionalità.\n<br />\n<br />\n<br />[size=6][b]GIOCHI SUPPORTATI[/b][/size]\n<br />\n<br />Attualmente Vortex supporta numerosi titoli, più altri che vengono aggiunti dai nostri sviluppatori e dalla community di Nexus Mods. Laddove vedi il pulsante \"Mod Manager Download\" sul nostro sito, vuol dire che Vortex può gestire quella mod. \n<br />\n<br />[img]https://staticdelivery.nexusmods.com/images/2295/31179975-1537873128.jpg[/img]\n<br />\n<br />\n<br />[size=6][b]VORTEX SOSTITUISCE NEXUS MOD MANAGER, MOD ORGANIZER, O ALTRI GESTORI DI MOD?[/b][/size]\n<br />\n<br />Non ci aspettiamo che tutti passino subito a Vortex, ma sentiamo che è pronto per essere provato. Se al momento hai una configurazione di mod stabile con un gestore di mod alternativo puoi usare quello, ma potresti trovare in Vortex una valida alternativa per la tua prossima configurazione.\n<br />\n<br />Molti utenti hanno eseguito il passaggio completo durante l'alfa tra febbraio e ottobre 2018. Ci sarà una lieve curva di apprendimento per abituarsi alla modalità d'uso di Vortex, ma speriamo che il sistema di aiuto e assistenza integrato ti aiuterà ad adattarti facilmente. Vortex dispone di tutte le funzioni di cui hai bisogno per modificare i giochi. Se manca qualcosa di importante, faccelo sapere nei forum così da poterlo migliorare. \n<br />\n<br />Tenendo conto di tutto questo, abbiamo sostituito ufficialmente NMM sul sito, inclusi il pulsante di download e il link nell'intestazione del sito. Puoi scaricare Vortex e le sue traduzioni o estensioni dalla nostra pagina dei giochi di [url=https://www.nexusmods.com/site]Nexus Mods[/url].\n<br />\n<br />\n<br />[size=6][b]AIUTO E ASSISTENZA[/b][/size]\n<br />\n<br />Vortex è ora il gestore di mod principale di Nexus Mods e intendiamo fornire assistenza ai nostri utenti. Puoi vedere la nostra [url=https://wiki.nexusmods.com/index.php/Category:Vortex]sezione dedicata all'assistenza[/url] per Vortex, visitare i [url=https://forums.nexusmods.com/index.php?/forum/4301-vortex/]forum di Vortex[/url] o dare un'occhiata a uno dei nostri topic d'aiuto in primo piano qui sotto.\n<br />\n<br />[list]\n<br />[*][url=https://wiki.nexusmods.com/index.php/Frequently_Asked_Questions]Domande frequenti su Vortex (F.A.Q.)[/url]﻿\n<br />[*][url=https://wiki.nexusmods.com/index.php/Migrating_to_Vortex_from_another_Mod_Manager]Come passare da un altro gestore di mod a Vortex[/url]﻿\n<br />[*][url=https://wiki.nexusmods.com/index.php?title=User-Interface-Overview]Interfaccia utente: panoramica[/url]﻿\n<br />[/list]\n<br />\n<br />[size=6][b]FEEDBACK[/b][/size]\n<br />\n<br />Vortex integra nel software un sistema di raccolta feedback e di segnalazione degli errori, accessibile mediante il menu nell'angolo in alto a destra. In caso Vortex si blocchi, avrai un'opzione di segnalazione simile. Se noti problemi con l'uso del software, segnalacelo usando queste modalità, fornendoci informazioni dettagliate su ciò che stavi facendo quando si è verificato il problema. È il modo più immediato per comunicare con Tannin e per trovare e correggere gli errori.\n<br />\n<br />\n<br />[size=6][b]PER GLI SVILUPPATORI[/b][/size]\n<br />\n<br />Il codice sorgente è disponibile su [url=https://github.com/Nexus-Mods/Vortex]GitHub[/url]﻿.\n<br />Ulteriori informazioni sulla struttura del codice, sulla sua estensione e altro si trovano sui [url=https://forums.nexusmods.com/index.php?/forum/4311-vortex-code-development/]forum di sviluppo del codice di Vortex[/url].\n<br />[list]\n<br />[*]Vai su [b]C:&#92;ProgramData&#92;Vortex&#92;[/b] ed estrai il contenuto dell'archivio della traduzione nella cartella.\n<br />[/list]"
-      },
-      "downloads": 704,
-      "endorsements": 35,
-      "image": "https://staticdelivery.nexusmods.com/mods/2295/images/19/19-1558574118-329022187.png",
-      "name": "Italian Translation for Vortex",
-      "tags": [],
-      "version": "1.0",
-      "language": "it",
-      "type": "translation"
-    },
-    {
-      "modId": 32,
-      "fileId": 247,
-      "author": "BowmoreLover",
-      "description": {
-        "short": "This file is Japanese translation for Vortex. This file contains locales/ja/*.json files.",
-        "long": "[b][color=#f1c232][size=5][u]Japanese Translation for Vortex (Vortex日本語化ファイル)[/u][/size][/color][/b]\n<br />\n<br />[color=#ffff00][u][b]お知らせ(2019/09/19):[/b][/u][/color]\n<br />Vortex 1.0.3がリリースされました。バージョン1.0.0用の日本語化ファイルでほぼ問題なく日本語化できます。\n<br />なお、以下のゲームで一部英語のメッセージが表示されることがありますが、対応予定ですので少し時間をください。\n<br />- 7 Days to Die\n<br />- Resident Evil 2 (2019)\n<br />- Spyro Reignited Trilogy\n<br />\n<br />言い訳：Vortexは翻訳の元ネタとなる原文の文字列ファイルを提供していません。\n<br />　　　　このため、自作のツールを作ってソースからローカライズ文字列（らしきもの）を抽出して翻訳しています。\n<br />　　　　上記3つのゲームでは従来とは少し違った処理をしているため、ツールの改造が必要です。\n<br />\n<br />[line]\n<br />バージョン: 1.0.0\n<br />最終更新日: 2019/07/31\n<br />制作: BowmoreLover\n<br />\n<br />[size=3][color=#f1c232][u][b]訳文改善について[/b][/u][/color][/size]\n<br />\n<br />0.18.2にて、ルール定義画面や依存関係/警告アイコンのツールチップに表示される文章を改善し、前後関係をわかりやすくしました(ご指摘いただいたmrredpizza氏に感謝)。\n<br />誤訳の指摘や改善提案があれば、私の[url=http://thinkingskeever.hatenablog.com/entry/2018/10/21/140000]ブログ記事のコメント[/url]、Nexusのプライベートメッセージ(漢字使用不可、ローマ字で書くこと)、Discordアカウント「[color=#6fa8dc][b]BowmoreLover#6259[/b][/color]」のいずれかまでお願いします。\n<br />\n<br />\n<br />[size=3][color=#f1c232][u][b]Vortexからのアナウンス[/b][/u][/color][/size]\n<br />[list]\n<br />[*]2019/06/03: \"missing .node module\"エラーが出る場合、Visual C++のランタイムパッケージのインストールが必要です。\n<br />こちらのページからvc_redist.x64.exeをインストールしてください（バージョンは明記されていませんが、最新のものでいいはず）。→ [url=https://support.microsoft.com/ja-jp/help/2977003/the-latest-supported-visual-c-downloads]最新のサポートされる Visual C++ のダウンロード（マイクロソフト）[/url][/list]\n<br />\n<br />\n<br />[size=3][color=#f1c232][u][b]このファイルについて[/b][/u][/color][/size]\n<br />\n<br />Vortexベータ版の日本語化ファイルです。\n<br />本ファイルをVortexのユーザデータフォルダにコピーすることで、UI/メッセージを日本語化できます。\n<br />\n<br />ご注意:\n<br />[list]\n<br />[*]現在のバージョンではVortex本体側のローカライズが不完全なため、UI/メッセージの一部が英語のままとなります。\n<br />[*]ローカライズ対象文字列は専用のツールを開発して出来る限り抽出したつもりですが、まだ漏れがあるかもしれません。\n<br />[*]各用語の対訳については今後変更/改善されることがあります(提案/指摘歓迎)。\n<br />[/list]\n<br />\n<br />[size=3][b][color=#f1c232][u]前提プログラム[/u][/color][/b][/size]\n<br />\n<br />[url=https://www.nexusmods.com/site/mods/1]Vortex[/url] Version 1.0.0\n<br />\n<br />※事前リリース版は[url=https://github.com/Nexus-Mods/Vortex/releases]Nexus ModsのGitHub[/url]からダウンロードできます。\n<br />\n<br />\n<br />[size=3][color=#f1c232][u][b]インストール方法[/b][/u][/color][/size]\n<br />\n<br />アーカイブファイルを任意のフォルダに展開した後、INSTALLER.CMDを実行します。\n<br />後はインストーラーの指示に従ってください。\n<br />\n<br />\n<br />手動でインストールする場合、localesフォルダを次のフォルダに手動でコピーしてください。\n<br />・ユーザ毎モード用: C:&#92;Users&#92;ユーザー名&#92;AppData&#92;Roaming&#92;Vortex&#92;\n<br />・全ユーザ共有モード用: C:&#92;ProgramData&#92;Vortex&#92;\n<br />\n<br />※Vortexはオプションによって2種類のユーザデータフォルダを利用するため、2個所にコピーする必要があります。\n<br />※パスはOS環境/ユーザアカウント名によって変化します。\n<br />\n<br />\n<br />[size=3][b][color=#f1c232][u]Vortexの日本語ドキュメントについて[/u][/color][/b][/size]\n<br />\n<br />以下のページでVortexのドキュメント/Wikiの和訳を公開中です。\n<br />\n<br />[url=http://thinkingskeever.hatenablog.com/entry/2018/10/15/182000]Vortex紹介ページの和訳 (Thinking Skeever)[/url]\n<br />\n<br />[url=http://thinkingskeever.hatenablog.com/entry/2018/10/17/183000]Nexus Mods: Vortexヘルプセンターの和訳 (Thinking Skeever)[/url]\n<br />\n<br />[url=http://thinkingskeever.hatenablog.com/entry/2018/10/21/140000]Nexus Wiki: Vortexページの和訳 (Thinking Skeever)[/url]\n<br />\n<br />\n<br />[size=3][b][color=#f1c232][u]変更履歴[/u][/color][/b][/size]\n<br />\n<br />2018/11/02 (0.16.10) : 初回リリース\n<br />2018/11/02 (0.16.11) : 最新の事前リリース版に対応\n<br />2018/11/06 (0.16.12) : 最新版に対応\n<br />2018/12/07 (0.16.15) : 最新版に対応\n<br />2019/02/12 (0.17.3)  : 最新版に対応\n<br />2019/03/01 (0.17.5)  : 最新版に対応\n<br />2019/03/07 (0.17.7)  : 最新版に対応\n<br />2019/03/21 (0.17.8)  : 最新版に対応、一部用語の訳文変更\n<br />2019/04/11 (0.17.11) : 最新版に対応\n<br />2019/05/28 (0.18.5)  : 最新版に対応\n<br />2019/05/30 (0.18.6)  : 最新版に対応\n<br />2019/06/13 (0.18.8)  : 最新版に対応\n<br />2019/06/27 (0.18.11) : 最新版に対応 (0.18.12でも利用可能)\n<br />2019/06/30 (0.18.12) : 訳文の改善(ルール定義/ツールチップで依存関係をわかりやすく)。ご指摘いただいたmrredpizza氏に感謝します。\n<br />2019/07/16 (0.18.14) : 最新版に対応\n<br />2019/07/17 (0.18.16) : 最新版に対応\n<br />2019/07/24 (0.19.1)  : 最新版に対応\n<br />2019/07/31 (1.0.0)   : 最新版に対応\n<br />\n<br />\n<br />[size=3][b][color=#f1c232][u]Credits[/u][/color][/b][/size]\n<br />\n<br />Vortex by Nexus Mods\n<br />The license of this file conforms to the license of Vortex (GPL-3 License).\n<br />\n<br />使用ツール:\n<br />[url=https://www.nexusmods.com/skyrimspecialedition/mods/134]xTranslater[/url] by McGuffin\n<br />[url=https://www.nexusmods.com/site/mods/33]Unofficial Vortex Translation Tool[/url] by BowmoreLover\n<br />\n<br />以上"
-      },
-      "downloads": 14080,
-      "endorsements": 447,
-      "image": "https://staticdelivery.nexusmods.com/mods/2295/images/32/32-1541090883-928894847.jpeg",
-      "name": "Japanese Translation for Vortex",
-      "tags": [],
-      "version": "1.0.0",
-      "language": "ja",
-      "type": "translation"
-    },
-    {
       "modId": 5,
       "fileId": 22,
       "author": "Aitor Rosell Torralba",
@@ -280,10 +246,6 @@
       "type": "translation"
     },
     {
-      "modId": 33,
-      "fileId": 234
-    },
-    {
       "modId": 53,
       "fileId": 251
     },
@@ -316,16 +278,20 @@
       "fileId": 272
     },
     {
-      "modId": 19,
-      "fileId": 274
-    },
-    {
-      "modId": 33,
-      "fileId": 273
-    },
-    {
-      "modId": 32,
-      "fileId": 272
+      "modId": 60,
+      "fileId": 282,
+      "author": "Various",
+      "description": {
+        "short": "German translation for Vortex",
+        "long": "Description / Beschreibung\n<br />\n<br />This file contains the german translation for Vortex which is bundled in Vortex versions before 1.1.0.\n<br />\n<br />Diese Datei enthält die Deutsche Übersetzung für Vortex die vor Version 1.1.0 mitgeliefert wurde.\n<br />\n<br />\n<br />Installation\n<br />\n<br />No installation necessary. Vortex up to 1.0.x includes this translation, from 1.1.0 forward the language drop-down in Settings-&gt;Interface includes third-party languages like this one.\n<br />\n<br />Eine Installation ist nicht nötig. Vortex bis einschließlich 1.0.x wird mit dieser Übersetzung ausgeliefert, ab 1.1.0 werden alle Übersetzungen von Dritten unter Settings-&gt;Interface aufgelistet.\n<br />\n<br />Contributing / Unterstützung\n<br />\n<br />This translation was mostly created by \"dertrutinator\" and me (Tannin) but all contributions are welcome. Also I'd very much welcome someone taking up maintenance of this page.\n<br />\n<br />Diese Übersetzung wurde hauptsächlich von \"dertrutinator\" und mir (Tannin) erstellt aber alle Beiträge sind herzlich willkommen. Ich würde mich auch freuen wenn jemand die Verwaltung dieser Seite übernimmt."
+      },
+      "downloads": 0,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/mods/2295/images/60/60-1572509321-568437082.jpeg",
+      "name": "German translation for Vortex",
+      "tags": [],
+      "version": "1.0.0",
+      "type": "translation"
     }
   ]
 }
