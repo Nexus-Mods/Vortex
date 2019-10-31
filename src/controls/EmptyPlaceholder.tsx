@@ -22,7 +22,7 @@ class EmptyPlaceholder extends React.PureComponent<IEmptyPlaceholderProps, {}> {
     }
     return (
       <div className={classes.join(' ')}>
-        <Icon name={icon} />
+        <Icon className='placeholder-icon' name={icon} />
         <div className='placeholder-text'>{text}</div>
         {
           subtext !== undefined

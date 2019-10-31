@@ -26,15 +26,6 @@ function installExtension(archivePath: string, info?: IExtension): Promise<void>
 
   return extractor.extractFull(archivePath, tempPath, {ssc: false}, () => undefined,
                         () => undefined)
-      /*
-      .then(() => fs.statAsync(path.join(tempPath, 'info.json'))
-        .catch({ code: 'ENOENT'}, err => (info !== undefined)
-          // if the extension contains no info.json but we have that info from the caller,
-          // write it to info.json and use that
-          ? fs.writeFileAsync(path.join(tempPath, 'info.json'), JSON.stringify(info, undefined, 2),
-                              { encoding: 'utf-8' })
-          : Promise.reject(err)))
-      */
       .then(() => readExtensionInfo(tempPath, false, info))
       // merge the caller-provided info with the stuff parsed from the info.json file because there
       // is data we may only know at runtime (e.g. the modId)

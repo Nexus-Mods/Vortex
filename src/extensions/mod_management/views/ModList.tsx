@@ -310,7 +310,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
               icon='folder-download'
               fill={true}
               text={t('You don\'t have any installed mods')}
-              subtext={<a onClick={this.getMoreMods}>{t('But don\'t worry, I know a place...')}</a>}
+              subtext={this.renderMoreModsLink(modSources)}
             />
           </div>
         </div>
@@ -409,6 +409,38 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         title={t('Get more mods')}
         container={this.mRef}
         bsStyle='ghost'
+      >
+        {filtered.map(this.renderModSource)}
+      </DropdownButton>
+    );
+  }
+
+  private renderMoreModsLink(sources: IModSource[]): JSX.Element {
+    const { t } = this.props;
+
+    const filtered = sources.filter(source => {
+      if ((source.options === undefined) || (source.options.condition === undefined)) {
+        return true;
+      }
+      return source.options.condition();
+    });
+
+    const text = t('But don\'t worry, I know a place...');
+
+    if (filtered.length === 1) {
+      return (
+        <a onClick={this.getMoreMods}>
+          {text}
+        </a>
+      );
+    }
+
+    return (
+      <DropdownButton
+        id='btn-more-mods'
+        title={text}
+        container={this.mRef}
+        bsStyle='link'
       >
         {filtered.map(this.renderModSource)}
       </DropdownButton>

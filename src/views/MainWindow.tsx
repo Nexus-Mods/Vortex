@@ -44,6 +44,7 @@ import { ThunkDispatch } from 'redux-thunk';
 addStyle(ReactButton, 'secondary');
 addStyle(ReactButton, 'ad');
 addStyle(ReactButton, 'ghost');
+addStyle(ReactButton, 'link');
 addStyle(ReactButton, 'inverted');
 
 export interface IBaseProps {
