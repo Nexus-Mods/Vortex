@@ -5241,10 +5241,22 @@ glob@^7.0.0, glob@~7.1.1:
     once "^1.3.0"
     path-is-absolute "^1.0.0"
 
-glob@^7.0.3, glob@^7.0.5, glob@^7.1.3:
+glob@^7.0.3, glob@^7.1.3:
   version "7.1.4"
   resolved "https://registry.yarnpkg.com/glob/-/glob-7.1.4.tgz#aa608a2f6c577ad357e1ae5a5c26d9a8d1969255"
   integrity sha512-hkLPepehmnKk41pUGm3sYxoFs/umurYfYJCerbXEyFIWcAzvpipAgVkBqqT9RBKMGjnq6kMuyYwha6csxbiM1A==
+  dependencies:
+    fs.realpath "^1.0.0"
+    inflight "^1.0.4"
+    inherits "2"
+    minimatch "^3.0.4"
+    once "^1.3.0"
+    path-is-absolute "^1.0.0"
+
+glob@^7.0.5:
+  version "7.1.5"
+  resolved "https://registry.yarnpkg.com/glob/-/glob-7.1.5.tgz#6714c69bee20f3c3e64c4dd905553e532b40cdc0"
+  integrity sha512-J9dlskqUXK1OeTOYBEn5s8aMukWMwWfs+rPTn/jn50Ux4MNXVhubL1wu/j2t+H4NVI+cXEcCaYellqaPVGXNqQ==
   dependencies:
     fs.realpath "^1.0.0"
     inflight "^1.0.4"
@@ -5385,7 +5397,7 @@ har-validator@~5.1.0:
 
 harmony-patcher@Nexus-Mods/harmony-patcher:
   version "0.0.1"
-  resolved "https://codeload.github.com/Nexus-Mods/harmony-patcher/tar.gz/165762a5027b6a54d01195b3a35786eb9283ae59"
+  resolved "https://codeload.github.com/Nexus-Mods/harmony-patcher/tar.gz/474e52146b240878ae3a223352a5248a6146d07f"
   dependencies:
     async "^2.6.2"
     copyfiles "^1.0.0"
