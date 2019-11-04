@@ -3,11 +3,18 @@
 }
 
 .game-filter-input {
-  padding: 10px 10px;
+  padding: 10px 0;
   margin-bottom: 5px !important;
+  position: relative;
   border-color: $border-color;
+  width: 20em;
   // prevent this from overlaying popovers from the iconbar above
   z-index: 0;
+  .form-control {
+    position: initial;
+    float: unset;
+    z-index: unset;
+  }
 }
 
 #games-picker-tabs {

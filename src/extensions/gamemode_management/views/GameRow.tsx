@@ -121,6 +121,7 @@ class GameRow extends ComponentEx<IProps, {}> {
               />
             </OverlayTrigger>
             <IconBar
+              t={t}
               className='btngroup-game-list'
               group={`game-${groupType}-buttons`}
               instanceId={game.id}
@@ -129,8 +130,7 @@ class GameRow extends ComponentEx<IProps, {}> {
               filter={this.priorityButtons}
               clickAnywhere={true}
               buttonType='icon'
-
-              t={t}
+              showAll
             />
           </Media.Right>
         </Media>

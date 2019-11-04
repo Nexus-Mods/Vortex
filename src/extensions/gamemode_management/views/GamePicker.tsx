@@ -1,5 +1,7 @@
 import EmptyPlaceholder from '../../../controls/EmptyPlaceholder';
 import FlexLayout from '../../../controls/FlexLayout';
+import FormInput from '../../../controls/FormInput';
+import Icon from '../../../controls/Icon';
 import IconBar from '../../../controls/IconBar';
 import { IconButton, ToggleButton } from '../../../controls/TooltipControls';
 import { IActionDefinition } from '../../../types/IActionDefinition';
@@ -68,6 +70,12 @@ type IProps = IBaseProps & IConnectedProps & IActionProps;
 interface IComponentState {
   showHidden: boolean;
   currentFilterValue: string;
+  expandManaged: boolean;
+  expandUnmanaged: boolean;
+}
+
+function nop() {
+  // nop
 }
 
 /**
@@ -88,6 +96,8 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
     this.initState({
       showHidden: false,
       currentFilterValue: '',
+      expandManaged: true,
+      expandUnmanaged: true,
     });
 
     this.buttons = [
@@ -101,7 +111,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
 
   public render(): JSX.Element {
     const { t, discoveredGames, discovery, knownGames, pickerLayout, profiles } = this.props;
-    const { showHidden, currentFilterValue } = this.state;
+    const { showHidden, currentFilterValue, expandManaged, expandUnmanaged } = this.state;
 
     // TODO: lots of computation and it doesn't actually change except through discovery
     //   or when adding a profile
@@ -150,9 +160,9 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
         unmanagedGameList
         .filter(game => this.applyGameFilter(game)).sort(byGameName);
 
-    const titleManaged = t('Modded ({{filterCount}})', {
+    const titleManaged = t('Managed ({{filterCount}})', {
       replace: { filterCount: this.getTabGameNumber(managedGameList, filteredManaged) } });
-    const titleUnmanaged = t('Not modded ({{filterCount}})', {
+    const titleUnmanaged = t('Unmanaged ({{filterCount}})', {
       replace: { filterCount: this.getTabGameNumber(unmanagedGameList, filteredUnmanaged) } });
 
     return (
@@ -200,28 +210,36 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
           <FlexLayout type='column' className='game-page'>
             <FlexLayout.Fixed>
               <InputGroup>
-                <FormControl
+                <FormInput
                   className='game-filter-input'
                   value={currentFilterValue}
                   placeholder={t('Search for a game...')}
                   onChange={this.onFilterInputChange}
+                  debounceTimer={100}
+                  clearable
                 />
               </InputGroup>
             </FlexLayout.Fixed>
             <FlexLayout.Flex>
               <div ref={this.setScrollRef} className='gamepicker-body'>
                 <PanelGroup id='game-panel-group'>
-                  <Panel defaultExpanded eventKey='managed'>
-                    <Panel.Heading>
-                      <Panel.Title toggle>{titleManaged}</Panel.Title>
+                  <Panel expanded={expandManaged} eventKey='managed' onToggle={nop}>
+                    <Panel.Heading onClick={this.toggleManaged}>
+                      <Icon name={expandManaged ? 'showhide-down' : 'showhide-right'} />
+                      <Panel.Title>{titleManaged}</Panel.Title>
                     </Panel.Heading>
                     <Panel.Body collapsible>
                       {this.renderGames(filteredManaged, 'managed')}
                     </Panel.Body>
                   </Panel>
-                  <Panel defaultExpanded eventKey='unmanaged'>
-                    <Panel.Heading>
-                      <Panel.Title toggle>{titleUnmanaged}</Panel.Title>
+                  <Panel
+                    expanded={expandUnmanaged}
+                    eventKey='unmanaged'
+                    onToggle={nop}
+                  >
+                    <Panel.Heading onClick={this.toggleUnmanaged}>
+                      <Icon name={expandUnmanaged ? 'showhide-down' : 'showhide-right'} />
+                      <Panel.Title>{titleUnmanaged}</Panel.Title>
                     </Panel.Heading>
                     <Panel.Body collapsible>
                       {this.renderGames(filteredUnmanaged, 'unmanaged')}
@@ -256,8 +274,16 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private onFilterInputChange = (evt) => {
-    this.nextState.currentFilterValue = evt.target.value;
+  private toggleManaged = () => {
+    this.nextState.expandManaged = !this.state.expandManaged;
+  }
+
+  private toggleUnmanaged = () => {
+    this.nextState.expandUnmanaged = !this.state.expandUnmanaged;
+  }
+
+  private onFilterInputChange = (input) => {
+    this.nextState.currentFilterValue = input;
   }
 
   private getTabGameNumber(unfiltered: IGameStored[], filtered: IGameStored[]): string {
@@ -325,17 +351,9 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
     const { t, gameMode, pickerLayout } = this.props;
     const { currentFilterValue } = this.state;
 
-    const failedFilter = (): JSX.Element => (
-      <EmptyPlaceholder
-        icon='game'
-        text={t('"{{gameName}}" not found in this group',
-                {replace: { gameName: currentFilterValue } })}
-      />
-    );
-
     if (games.length === 0) {
       if (truthy(currentFilterValue)) {
-        return failedFilter();
+        return null;
       } else if (type === 'managed') {
         return (
           <EmptyPlaceholder

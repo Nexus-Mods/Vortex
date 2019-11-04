@@ -10,6 +10,9 @@
   &:hover {
     color: $link-hover-color;
     background-color: initial !important;
+    &[disabled] {
+      color: $text-color-disabled;
+    }
   }
   &:active {
     color: $link-hover-color;
@@ -87,6 +90,14 @@
 
 .form-control-feedback {
   z-index: 4;
+}
+
+.form-input-clear {
+  z-index: 3;
+  position: absolute;
+  right: 4px;
+  top: 0;
+  bottom: 0;
 }
 
 .has-feedback label ~ .form-control-feedback {

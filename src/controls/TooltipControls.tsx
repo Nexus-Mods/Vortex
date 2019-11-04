@@ -100,7 +100,14 @@ export class IconButton extends React.Component<IconButtonProps, {}> {
       buttonProps['className'] += ' icon-button-horizontal';
     }
 
-    if (typeof (this.props.tooltip) === 'string') {
+    if (this.props.tooltip === undefined) {
+      return (
+        <BootstrapButton {...buttonProps}>
+          <SvgIcon name={this.props.icon} {...iconProps} />
+          {this.props.children}
+        </BootstrapButton>
+      );
+    } else if (typeof (this.props.tooltip) === 'string') {
       return (
         <BootstrapButton {...buttonProps} title={this.props.tooltip}>
           <SvgIcon name={this.props.icon} {...iconProps} />
