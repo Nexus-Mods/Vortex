@@ -452,7 +452,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
             prev.push((
               <GroupingRow
                 t={t}
-                key={group}
+                key={group || '__empty'}
                 groupName={group}
                 expanded={expanded}
                 count={groupItems.length}

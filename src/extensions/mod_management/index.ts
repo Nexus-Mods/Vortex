@@ -28,6 +28,7 @@ import {
   currentGameDiscovery,
   installPath,
   installPathForGame,
+  modPathsForGame,
 } from '../../util/selectors';
 import {getSafe} from '../../util/storeHelper';
 import { isChildPath, truthy } from '../../util/util';
@@ -64,7 +65,6 @@ import { getAllActivators, getCurrentActivator, getSelectedActivator,
 import { NoDeployment } from './util/exceptions';
 import { dealWithExternalChanges } from './util/externalChanges';
 import { registerAttributeExtractor } from './util/filterModInfo';
-import getModPaths from './util/getModPaths';
 import renderModName from './util/modName';
 import sortMods, { CycleError } from './util/sort';
 import ActivationButton from './views/ActivationButton';
@@ -616,7 +616,7 @@ function genValidActivatorCheck(api: IExtensionApi) {
     }
 
     const gameId = activeGameId(state);
-    const modPaths = getModPaths(state, gameId);
+    const modPaths = modPathsForGame(state, gameId);
 
     if (modPaths === undefined) {
       return resolve(undefined);

@@ -3,7 +3,7 @@ import {IState} from '../../../types/IState';
 import {ComponentEx, connect} from '../../../util/ComponentEx';
 import { bytesToString, truthy } from '../../../util/util';
 
-import {speedDataPoints} from '../reducers/state';
+import {NUM_SPEED_DATA_POINTS} from '../reducers/state';
 
 import I18next from 'i18next';
 import * as React from 'react';
@@ -105,7 +105,7 @@ class DownloadGraph extends ComponentEx<IProps, IComponentState> {
   }*/
 
   private convertData(speeds: number[]): any {
-    const padded = Array(speedDataPoints - speeds.length).fill(0).concat(speeds);
+    const padded = Array(NUM_SPEED_DATA_POINTS - speeds.length).fill(0).concat(speeds);
     return padded.map((value: number, idx: number) => ({
       name: idx.toString(), speed: value, formatted: this.valueFormatter(value),
     }));

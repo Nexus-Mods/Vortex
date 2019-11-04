@@ -341,12 +341,15 @@ function init(context: IExtensionContext): boolean {
     ['session', 'discovery'],
     ], (discovery: any) => discovery.running);
 
+  const onRefreshGameInfo = (gameId: string) => refreshGameInfo(context.api.store, gameId);
+  const onBrowseGameLocation = (gameId: string) => browseGameLocation(context.api, gameId);
+
   context.registerMainPage('game', 'Games', LazyComponent(() => require('./views/GamePicker')), {
     hotkey: 'G',
     group: 'global',
     props: () => ({
-      onRefreshGameInfo: (gameId: string) => refreshGameInfo(context.api.store, gameId),
-      onBrowseGameLocation: (gameId: string) => browseGameLocation(context.api, gameId),
+      onRefreshGameInfo,
+      onBrowseGameLocation,
     }),
     activity,
   });
