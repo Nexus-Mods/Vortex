@@ -217,7 +217,7 @@
     "re-reselect": "^3.0.0",
     "react": "^16.8.4",
     "react-bootstrap": "^0.32.1",
-    "react-datepicker": "^2.1.0",
+    "react-datepicker": "2.4.0",
     "react-dnd": "^7.3.1",
     "react-dnd-html5-backend": "^7.2.0",
     "react-dom": "^16.8.4",
