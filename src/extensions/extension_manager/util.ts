@@ -26,6 +26,8 @@ const caches: {
 const EXTENSIONS_URL =
   'https://raw.githubusercontent.com/Nexus-Mods/Vortex/announcements/extensions.json';
 
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
 function getAllDirectories(searchPath: string): Promise<string[]> {
   return fs.readdirAsync(searchPath)
     .filter(fileName =>
@@ -119,9 +121,21 @@ export function fetchAvailableExtensions(force: boolean): Promise<IAvailableExte
   return caches.__availableExtensions;
 }
 
-function doFetchAvailableExtensions(): Promise<IAvailableExtension[]> {
+function downloadExtensionList(cachePath: string): Promise<IAvailableExtension[]> {
   return Promise.resolve(jsonRequest<IExtensionManifest>(EXTENSIONS_URL))
-    .then(manifest => manifest.extensions.filter(ext => ext.name !== undefined));
+    .then(manifest => manifest.extensions.filter(ext => ext.name !== undefined))
+    .tap(extensions =>
+      fs.writeFileAsync(cachePath, JSON.stringify(extensions, undefined, 2), { encoding: 'utf8' }));
+}
+
+function doFetchAvailableExtensions(): Promise<IAvailableExtension[]> {
+  const cachePath = path.join(remote.app.getPath('temp'), 'extensions.json');
+  return fs.statAsync(cachePath)
+    .then(stat => ((Date.now() - stat.mtimeMs) > ONE_DAY_MS)
+      ? downloadExtensionList(cachePath)
+      : fs.readFileAsync(cachePath, { encoding: 'utf8' })
+          .then(data => JSON.parse(data)))
+    .catch({ code: 'ENOENT' }, err => downloadExtensionList(cachePath));
 }
 
 export function downloadAndInstallExtension(api: IExtensionApi,
