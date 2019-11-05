@@ -86,16 +86,15 @@ class DropdownMenu extends React.PureComponent<IProps, { open: boolean }> {
   public render(): JSX.Element {
     const { actions, id, className } = this.props;
 
-    if (actions.length === 0) {
-      return null;
-    }
-
     const classes: string[] = [];
     if (className) {
       classes.push(className);
     }
 
     const defaultIdx = actions.findIndex(act => act.show === true);
+    if (defaultIdx === -1) {
+      return null;
+    }
     const rest = actions.slice(0);
     rest.splice(defaultIdx, 1);
 
