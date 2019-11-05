@@ -56,7 +56,9 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
       return null;
     }
 
-    const logoPath: string = path.join(game.extensionPath, game.logo);
+    const logoPath: string = (game.extensionPath !== undefined)
+      ? path.join(game.extensionPath, game.logo)
+      : game.imageURL;
 
     // Mod count should only be shown for Managed and Discovered games as
     //  the supported type suggests that the game has been removed from the machine.

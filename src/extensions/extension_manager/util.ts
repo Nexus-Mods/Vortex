@@ -125,7 +125,9 @@ function downloadExtensionList(cachePath: string): Promise<IAvailableExtension[]
   return Promise.resolve(jsonRequest<IExtensionManifest>(EXTENSIONS_URL))
     .then(manifest => manifest.extensions.filter(ext => ext.name !== undefined))
     .tap(extensions =>
-      fs.writeFileAsync(cachePath, JSON.stringify(extensions, undefined, 2), { encoding: 'utf8' }));
+      fs.writeFileAsync(cachePath,
+                        JSON.stringify({ extensions }, undefined, 2),
+                        { encoding: 'utf8' }));
 }
 
 function doFetchAvailableExtensions(): Promise<IAvailableExtension[]> {
@@ -134,8 +136,9 @@ function doFetchAvailableExtensions(): Promise<IAvailableExtension[]> {
     .then(stat => ((Date.now() - stat.mtimeMs) > ONE_DAY_MS)
       ? downloadExtensionList(cachePath)
       : fs.readFileAsync(cachePath, { encoding: 'utf8' })
-          .then(data => JSON.parse(data)))
-    .catch({ code: 'ENOENT' }, err => downloadExtensionList(cachePath));
+          .then(data => JSON.parse(data).extensions))
+    .catch({ code: 'ENOENT' }, err => downloadExtensionList(cachePath))
+    .filter((ext: IAvailableExtension) => ext.description !== undefined);
 }
 
 export function downloadAndInstallExtension(api: IExtensionApi,

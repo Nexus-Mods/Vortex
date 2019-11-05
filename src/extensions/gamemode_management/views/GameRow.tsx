@@ -47,7 +47,9 @@ class GameRow extends ComponentEx<IProps, {}> {
       return null;
     }
 
-    const logoPath: string = path.join(game.extensionPath, game.logo);
+    const logoPath: string = game.extensionPath !== undefined
+      ? path.join(game.extensionPath, game.logo)
+      : game.imageURL;
 
     const location = (discovery !== undefined) && (discovery.path !== undefined)
       ? <a onClick={this.openLocation}>{discovery.path}</a>

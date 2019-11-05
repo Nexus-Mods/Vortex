@@ -14,6 +14,7 @@ import { getSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
 import MainPage from '../../../views/MainPage';
 
+import { IAvailableExtension, IExtension } from '../../extension_manager/types';
 import { IProfile } from '../../profile_management/types/IProfile';
 
 import { setPickerLayout } from '../actions/settings';
@@ -59,6 +60,8 @@ interface IConnectedProps {
   gameMode: string;
   discovery: IDiscoveryState;
   pickerLayout: 'list' | 'small' | 'large';
+  extensions: IAvailableExtension[];
+  extensionsInstalled: { [extId: string]: IExtension };
 }
 
 interface IActionProps {
@@ -110,8 +113,15 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, discoveredGames, discovery, knownGames, pickerLayout, profiles } = this.props;
+    const { t, discoveredGames, discovery, extensions, extensionsInstalled, knownGames,
+            pickerLayout, profiles } = this.props;
     const { showHidden, currentFilterValue, expandManaged, expandUnmanaged } = this.state;
+
+    const installedExtIds = new Set(Object.values(extensionsInstalled).map(ext => ext.modId));
+
+    const gameExts = extensions
+      .filter(ext => ext.type === 'game')
+      .filter(ext => !installedExtIds.has(ext.modId));
 
     // TODO: lots of computation and it doesn't actually change except through discovery
     //   or when adding a profile
@@ -138,6 +148,15 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
         supportedGameList.push(game);
       }
     });
+
+    supportedGameList.push(...gameExts.map(ext => ({
+      id: ext.name,
+      name: ext.gameName || ext.name,
+      extensionPath: undefined,
+      imageURL: ext.image,
+      requiredFiles: [],
+      executable: undefined,
+    })));
 
     Object.keys(discoveredGames).forEach(gameId => {
       if (knownGames.find(game => game.id === gameId) === undefined) {
@@ -431,6 +450,8 @@ function mapStateToProps(state: IState): IConnectedProps {
     profiles: state.persistent.profiles,
     knownGames: state.session.gameMode.known,
     discovery: state.session.discovery,
+    extensions: state.session.extensions.available,
+    extensionsInstalled: state.session.extensions.installed,
   };
 }
 

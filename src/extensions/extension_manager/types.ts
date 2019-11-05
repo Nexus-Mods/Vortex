@@ -30,6 +30,7 @@ export interface IAvailableExtension extends IExtensionDownloadInfo {
   };
   type?: ExtensionType;
   language?: string;
+  gameName?: string;
   image: string;
   author: string;
   version: string;

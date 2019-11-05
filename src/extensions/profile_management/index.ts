@@ -354,6 +354,42 @@ function init(context: IExtensionContextExt): boolean {
     noCollapse: true,
   }, 'Manage', (instanceIds: string[]) => {
     const gameId = instanceIds[0];
+    let state: IState = context.api.store.getState();
+    const knownGames = state.session.gameMode.known;
+    const gameStored = knownGames.find(game => game.id === gameId);
+
+    if (gameStored === undefined) {
+      const extension = state.session.extensions.available.find(ext => ext.name === gameId);
+      if (extension === undefined) {
+        throw new ProcessCanceled(`Invalid game id "${gameId}"`);
+      }
+
+      context.api.showDialog('question', 'Game support not installed', {
+        text: 'Support for this game is provided through an extension. To use it you have to '
+            + 'download that extension and restart Vortex.',
+      }, [
+        { label: 'Cancel' },
+        { label: 'Download', action: () => {
+          context.api.emitAndAwait('download-extension', extension)
+            .then(() => {
+              context.api.sendNotification({
+                type: 'success',
+                message: 'Extension installed, please restart Vortex',
+                actions: [
+                  {
+                    title: 'Restart now', action: () => {
+                      remote.app.relaunch();
+                      remote.app.exit(0);
+                    },
+                  },
+                ],
+              });
+            });
+        } },
+      ]);
+      return;
+    }
+
     context.api.showDialog('question', 'Game not discovered', {
       text: 'This game hasn\'t been automatically discovered, you will have to set the game '
         + 'folder manually.',
@@ -369,7 +405,7 @@ function init(context: IExtensionContextExt): boolean {
         });
       }))
       .then(() => {
-        const state: IState = context.api.store.getState();
+        state = context.api.store.getState();
 
         const discovered = state.settings.gameMode.discovered[gameId];
         if ((discovered === undefined) || (discovered.path === undefined)) {
