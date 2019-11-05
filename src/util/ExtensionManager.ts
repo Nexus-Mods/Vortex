@@ -3,6 +3,7 @@ import { addNotification, closeDialog, dismissNotification } from '../actions/no
 import { setExtensionLoadFailures } from '../actions/session';
 
 import { DialogActions, DialogType, IDialogContent, showDialog } from '../actions/notifications';
+import { IExtension } from '../extensions/extension_manager/types';
 import { ExtensionInit } from '../types/Extension';
 import {
   ArchiveHandlerCreator,
@@ -72,6 +73,7 @@ interface IRegisteredExtension {
   path: string;
   dynamic: boolean;
   initFunc: ExtensionInit;
+  info?: IExtension;
 }
 
 interface IWatcherRegistry {
@@ -89,6 +91,41 @@ interface IInitCall {
 interface IApiAddition {
   key: string;
   callback: (...args: any[]) => void;
+}
+
+class APIProxyHandler implements ProxyHandler<any> {
+  private mExtension: IRegisteredExtension;
+
+  constructor(extension: IRegisteredExtension) {
+    this.mExtension = extension;
+  }
+
+  public get(target, key: PropertyKey): any {
+    if (key === 'extension') {
+      return this.mExtension;
+    }
+    return target[key];
+  }
+}
+
+class APIProxyCreator implements ProxyHandler<any> {
+  private mExtension: IRegisteredExtension;
+  private mProxy: APIProxyHandler;
+
+  constructor(extension: IRegisteredExtension) {
+    this.mExtension = extension;
+  }
+
+  public get(target, key: PropertyKey): any {
+    if (key === 'api') {
+      if (this.mProxy === undefined) {
+        this.mProxy = new Proxy(target[key], new APIProxyHandler(this.mExtension));
+      }
+      return this.mProxy;
+    } else {
+      return target[key];
+    }
+  }
 }
 
 class ContextProxyHandler implements ProxyHandler<any> {
@@ -539,8 +576,21 @@ class ExtensionManager {
       store.dispatch(addNotification(noti));
       return noti.id;
     };
-    this.mApi.showErrorNotification =
-      (message: string, details: string | Error | any, options?: IErrorOptions) => {
+    // tslint:disable-next-line:only-arrow-functions
+    this.mApi.showErrorNotification = function(message: string,
+                                               details: string | Error | any,
+                                               options?: IErrorOptions) {
+      if ((this.extension !== undefined)
+          && (this.extension.info !== undefined)
+          && (this.extension.info.author !== 'Black Tree Gaming Ltd.')) {
+        if (options === undefined) {
+          options = {};
+        }
+        if (options.allowReport !== false) {
+          options['allowReport'] = false;
+          options.extension = this.extension.info;
+        }
+      }
       showError(store.dispatch, message, details, options);
     };
 
@@ -889,7 +939,8 @@ class ExtensionManager {
       }
       this.mContextProxyHandler.setExtension(ext.name, ext.path);
       try {
-        ext.initFunc(contextProxy as IExtensionContext);
+        const extProxy = new Proxy(contextProxy, new APIProxyCreator(ext));
+        ext.initFunc(extProxy as IExtensionContext);
       } catch (err) {
         this.mLoadFailures[ext.name] = [ { id: 'exception', args: { message: err.message } } ];
         log('warn', 'couldn\'t initialize extension',
@@ -925,19 +976,17 @@ class ExtensionManager {
       .forEach(ext => {
         try {
           const oldVersion = getSafe(state.app, ['extensions', ext.name, 'version'], '0.0.0');
-          const info = JSON.parse(fs.readFileSync(path.join(ext.path, 'info.json'),
-            { encoding: 'utf8' }));
-          if (oldVersion !== info.version) {
+          if (oldVersion !== ext.info.version) {
             if (migrations[ext.name] === undefined) {
-              this.mApi.store.dispatch(setExtensionVersion(ext.name, info.version));
+              this.mApi.store.dispatch(setExtensionVersion(ext.name, ext.info.version));
             } else {
               Promise.mapSeries(migrations[ext.name], mig => mig(oldVersion))
                 .then(() => {
-                  this.mApi.store.dispatch(setExtensionVersion(ext.name, info.version));
+                  this.mApi.store.dispatch(setExtensionVersion(ext.name, ext.info.version));
                 })
                 .catch(err => {
                   this.mApi.showErrorNotification('Extension failed to migrate', err, {
-                    allowReport: info.author === 'Black Tree Gaming Ltd.',
+                    allowReport: ext.info.author === 'Black Tree Gaming Ltd.',
                   });
                 });
             }
@@ -1447,11 +1496,20 @@ class ExtensionManager {
   private loadDynamicExtension(extensionPath: string): IRegisteredExtension {
     const indexPath = path.join(extensionPath, 'index.js');
     if (fs.existsSync(indexPath)) {
+      let info: IExtension = { name: '', author: '', description: '', version: '' };
+      try {
+        info = JSON.parse(fs.readFileSync(path.join(extensionPath, 'info.json'),
+        { encoding: 'utf8' }));
+      } catch (error) {
+        log('warn', 'extension has no info.json file', extensionPath);
+      }
+
       return {
         name: path.basename(extensionPath),
         initFunc: dynreq(indexPath).default,
         path: extensionPath,
         dynamic: true,
+        info,
       };
     } else {
       return undefined;

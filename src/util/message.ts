@@ -261,6 +261,12 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
       + options.attachments.map(attach => ` - ${attach.description}`).join('\n');
   }
 
+  if ((options.extension !== undefined) && (options.allowReport === false)) {
+    content.text = (content.text !== undefined ? (content.text + '\n\n') : '')
+      + `Note: This error was brought to you by "${options.extension.name}", please report `
+      + 'to its author, NOT to Nexus Mods.';
+  }
+
   const actions: IDialogAction[] = [];
 
   const context = (details !== undefined) && (details.context !== undefined)

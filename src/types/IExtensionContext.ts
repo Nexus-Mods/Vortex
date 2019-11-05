@@ -1,3 +1,4 @@
+import { IExtension } from '../extensions/extension_manager/types';
 import {
   IDeployedFile,
   IDeploymentMethod,
@@ -262,6 +263,7 @@ export interface IErrorOptions {
   hideDetails?: boolean;
   replace?: { [key: string]: string };
   attachments?: IAttachment[];
+  extension?: IExtension;
 }
 
 /**
@@ -325,6 +327,11 @@ export interface IRunParameters {
  * @interface IExtensionApi
  */
 export interface IExtensionApi {
+  /**
+   * name of the extension to use this api with
+   */
+  extension?: string;
+
   /**
    * show a notification to the user.
    * This is not available in the call to registerReducer
