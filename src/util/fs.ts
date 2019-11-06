@@ -178,7 +178,7 @@ function unknownErrorRetry(filePath: string, err: Error, stackErr: Error): Promi
       options.title = 'Anti Virus denied access';
       options.message = `Your Anti-Virus Software has blocked access to "${filePath}".`;
       options.detail = undefined;
-    } else if ([21, 59, 483, 793, 1005, 1392, 1920, 6800].indexOf(err['nativeCode']) !== -1) {
+    } else if ([21, 59, 483, 793, 1005, 1127, 1392, 1920, 6800].indexOf(err['nativeCode']) !== -1) {
       options.title = `I/O Error (${err['nativeCode']})`;
       options.message = `Accessing "${filePath}" failed with an error that indicates `
                       + 'a hardware problem. This may indicate the disk is defective, '
@@ -214,6 +214,10 @@ function unknownErrorRetry(filePath: string, err: Error, stackErr: Error): Promi
     } else if (err['nativeCode'] === 1816) {
       options.title = 'Not enough quota';
       options.message = `Windows reported insufficient quota writing to "${filePath}".`;
+    } else if (err['nativeCode'] === 6851) {
+      options.title = 'Volume dirty';
+      options.message = 'The operation could not be completed because the volume is dirty. '
+                      + 'Please run chkdsk and try again';
     } else {
       options.title += ` (${err['nativeCode']})`;
       options.buttons.unshift('Cancel and Report');
