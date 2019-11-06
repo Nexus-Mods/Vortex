@@ -757,6 +757,7 @@ class ExtensionManager {
     };
 
     return Promise.each(calls, (call, idx) => {
+      log('debug', 'once', { extension: call.extension });
       try {
         this.mLoadingCallbacks.forEach(cb => {
           cb(call.extension, idx);
@@ -770,7 +771,12 @@ class ExtensionManager {
         reportError(err, call);
       }
     })
-    .then(() => undefined);
+    .then(() => {
+      this.mLoadingCallbacks.forEach(cb => {
+        cb(undefined, calls.length);
+      });
+      log('debug', 'once done');
+    });
   }
 
   public renderStyle() {
