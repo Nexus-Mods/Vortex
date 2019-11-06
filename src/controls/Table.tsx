@@ -17,7 +17,7 @@ import {sanitizeCSSId, truthy} from '../util/util';
 import IconBar from './IconBar';
 import GroupingRow, { EMPTY_ID } from './table/GroupingRow';
 import HeaderCell from './table/HeaderCell';
-import { Table, TBody, TH, THead, TR } from './table/MyTable';
+import { Table, TBody, TD, TH, THead, TR } from './table/MyTable';
 import TableDetail from './table/TableDetail';
 import TableRow from './table/TableRow';
 import ToolbarIcon from './ToolbarIcon';
@@ -325,11 +325,11 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         </TR>
         {filterActive ? (
           <TR className='table-pinned' domRef={this.setPinnedRef}>
-            <div>
+            <TD colSpan={this.mVisibleAttributes.length + 1}>
               {t('This table is filtered, showing {{shown}}/{{hidden}} items.',
                 { replace: { shown: filteredLength, hidden: totalLength } })}
               <Button onClick={this.clearFilters}>{t('Clear all filters')}</Button>
-            </div>
+            </TD>
           </TR>
         ) : null}
       </THead>

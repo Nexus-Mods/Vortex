@@ -225,7 +225,7 @@
 
 .table-pinned {
   height: 3em;
-  > div {
+  > div, td {
     position: absolute;
     width: 100%;
     height: 3em;
