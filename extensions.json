@@ -1,5 +1,5 @@
 {
-  "last_updated": 1573048373190,
+  "last_updated": 1573050353218,
   "extensions": [
     {
       "name": "Fallout 76 Support",
@@ -315,7 +315,7 @@
     },
     {
       "modId": 62,
-      "fileId": 285,
+      "fileId": 286,
       "author": "Nexus Mods",
       "description": {
         "short": "Adds support for GTA V",
@@ -326,7 +326,7 @@
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/62/62-1573042371-804708962.png",
       "name": "GTA V support",
       "tags": [],
-      "version": "0.0.4",
+      "version": "0.0.5",
       "type": "game",
       "gameName": "GTA V"
     }
