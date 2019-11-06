@@ -2,6 +2,7 @@ import FlexLayout from '../../controls/FlexLayout';
 import Icon from '../../controls/Icon';
 import Modal from '../../controls/Modal';
 import Spinner from '../../controls/Spinner';
+import { IconButton } from '../../controls/TooltipControls';
 import ZoomableImage from '../../controls/ZoomableImage';
 import { IState } from '../../types/IState';
 import bbcode from '../../util/bbcode';
@@ -20,6 +21,7 @@ export interface IBrowseExtensionsProps {
     reloadNecessary: boolean,
   };
   updateExtensions: () => void;
+  onRefreshExtensions: () => void;
 }
 
 interface IBrowseExtensionsState {
@@ -31,6 +33,8 @@ interface IBrowseExtensionsState {
 interface IConnectedProps {
   availableExtensions: IAvailableExtension[];
   extensions: { [extId: string]: IExtension };
+  updateTime: number;
+  language: string;
 }
 
 type IProps = IBrowseExtensionsProps & IConnectedProps;
@@ -54,10 +58,13 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
   }
 
   public render() {
-    const { t, availableExtensions, onHide, visible } = this.props;
+    const { t, availableExtensions, language, onHide,
+            onRefreshExtensions, updateTime, visible } = this.props;
     const { selected } = this.state;
 
     const ext = selected === -1 ? null : availableExtensions[selected];
+
+    const updatedAt = new Date(updateTime);
 
     return (
       <Modal id='browse-extensions-dialog' show={visible} onHide={nop} ref={this.mModalRef}>
@@ -67,9 +74,16 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
         <Modal.Body>
           <FlexLayout type='row'>
             <FlexLayout.Fixed className='extension-list'>
-              <ListGroup>
-                {availableExtensions.map(this.renderListEntry)}
-              </ListGroup>
+              <FlexLayout type='column'>
+                <ListGroup>
+                  {availableExtensions.map(this.renderListEntry)}
+                </ListGroup>
+                <div className='extension-list-time'>
+                  {t('Last updated: {{time}}',
+                     { replace: { time: updatedAt.toLocaleString(language) } })}
+                  <IconButton icon='refresh' tooltip={t('Refresh')} onClick={onRefreshExtensions} />
+                </div>
+              </FlexLayout>
             </FlexLayout.Fixed>
             <FlexLayout.Flex fill={true}>
               {(selected === -1) ? null : this.renderDescription(ext, selected)}
@@ -240,6 +254,8 @@ function mapStateToProps(state: IState): IConnectedProps {
   return {
     availableExtensions: state.session.extensions.available,
     extensions: state.session.extensions.installed,
+    updateTime: state.session.extensions.updateTime,
+    language: state.settings.interface.language,
   };
 }
 

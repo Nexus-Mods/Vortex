@@ -16,6 +16,21 @@
   margin-right: 4px;
   border-right: $border-width solid $border-color;
   overflow: auto;
+
+  .list-group {
+    overflow-y: auto;
+  }
+}
+
+.extension-list-time {
+  font-size: smaller;
+  font-style: italic;
+  color: $text-color-disabled;
+
+  .btn {
+    @extend .btn-embed;
+    margin-left: 1em;
+  }
 }
 
 .extension-text {

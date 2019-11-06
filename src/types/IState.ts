@@ -283,6 +283,7 @@ export interface IState {
     extensions: {
       available: IAvailableExtension[],
       installed: { [extId: string]: IExtension },
+      updateTime: number,
     };
   };
   settings: ISettings;

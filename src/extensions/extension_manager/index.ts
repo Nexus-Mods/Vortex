@@ -2,7 +2,7 @@ import {IExtensionApi, IExtensionContext} from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
 import makeReactive from '../../util/makeReactive';
 
-import { setAvailableExtensions, setInstalledExtensions } from './actions';
+import { setAvailableExtensions, setExtensionsUpdate, setInstalledExtensions } from './actions';
 import BrowseExtensions from './BrowseExtensions';
 import ExtensionManager from './ExtensionManager';
 import sessionReducer from './reducers';
@@ -74,13 +74,14 @@ function checkForUpdates(api: IExtensionApi) {
     });
 }
 
-function updateAvailableExtensions(api: IExtensionApi) {
-  return fetchAvailableExtensions(true)
+function updateAvailableExtensions(api: IExtensionApi, force: boolean = false) {
+  return fetchAvailableExtensions(true, force)
     .catch(err => {
       api.showErrorNotification('Failed to fetch available extensions', err);
-      return [];
+      return { time: null, extensions: [] };
     })
-    .then(extensions => {
+    .then(({ time, extensions }: { time: Date, extensions: IAvailableExtension[] }) => {
+      api.store.dispatch(setExtensionsUpdate(time.getTime()));
       api.store.dispatch(setAvailableExtensions(extensions));
       return checkForUpdates(api);
     });
@@ -115,9 +116,14 @@ function init(context: IExtensionContext) {
     }),
   });
 
+  const forceUpdateExtensions = () => {
+    updateAvailableExtensions(context.api, true);
+  };
+
   context.registerDialog('browse-extensions', BrowseExtensions, () => ({
     localState,
     updateExtensions: updateInstalledExtensions,
+    onRefreshExtensions: forceUpdateExtensions,
   }));
 
   context.registerReducer(['session', 'extensions'], sessionReducer);

@@ -19,7 +19,7 @@ import { ExtensionType, IAvailableExtension, IExtension,
          IExtensionDownloadInfo, IExtensionManifest } from './types';
 
 const caches: {
-  __availableExtensions?: Promise<IAvailableExtension[]>,
+  __availableExtensions?: Promise<{ time: Date, extensions: IAvailableExtension[] }>,
   __installedExtensions?: Promise<{ [extId: string]: IExtension }>,
 } = {};
 
@@ -114,9 +114,10 @@ function doReadExtensions(): Promise<{ [extId: string]: IExtension }> {
     }, {});
 }
 
-export function fetchAvailableExtensions(force: boolean): Promise<IAvailableExtension[]> {
-  if ((caches.__availableExtensions === undefined) || force) {
-    caches.__availableExtensions = doFetchAvailableExtensions();
+export function fetchAvailableExtensions(forceCache: boolean, forceDownload: boolean = false)
+    : Promise<{ time: Date, extensions: IAvailableExtension[] }> {
+  if ((caches.__availableExtensions === undefined) || forceCache || forceDownload) {
+    caches.__availableExtensions = doFetchAvailableExtensions(forceDownload);
   }
   return caches.__availableExtensions;
 }
@@ -130,15 +131,30 @@ function downloadExtensionList(cachePath: string): Promise<IAvailableExtension[]
                         { encoding: 'utf8' }));
 }
 
-function doFetchAvailableExtensions(): Promise<IAvailableExtension[]> {
+function doFetchAvailableExtensions(forceDownload: boolean)
+                                    : Promise<{ time: Date, extensions: IAvailableExtension[] }> {
   const cachePath = path.join(remote.app.getPath('temp'), 'extensions.json');
-  return fs.statAsync(cachePath)
-    .then(stat => ((Date.now() - stat.mtimeMs) > ONE_DAY_MS)
-      ? downloadExtensionList(cachePath)
-      : fs.readFileAsync(cachePath, { encoding: 'utf8' })
+  let time = new Date();
+
+  const checkChache = forceDownload
+    ? Promise.resolve(true)
+    : fs.statAsync(cachePath).then(stat => {
+      if ((Date.now() - stat.mtimeMs) > ONE_DAY_MS) {
+        return true;
+      } else {
+        time = stat.mtime;
+        return false;
+      }
+    });
+
+  return checkChache
+    .then(needsDownload => needsDownload
+        ? downloadExtensionList(cachePath)
+        : fs.readFileAsync(cachePath, { encoding: 'utf8' })
           .then(data => JSON.parse(data).extensions))
     .catch({ code: 'ENOENT' }, err => downloadExtensionList(cachePath))
-    .filter((ext: IAvailableExtension) => ext.description !== undefined);
+    .filter((ext: IAvailableExtension) => ext.description !== undefined)
+    .then(extensions => ({ time, extensions }));
 }
 
 export function downloadAndInstallExtension(api: IExtensionApi,
@@ -161,7 +177,7 @@ export function downloadAndInstallExtension(api: IExtensionApi,
       return fetchAvailableExtensions(false);
     })
     .then(availableExtensions => {
-      const extDetail = availableExtensions
+      const extDetail = availableExtensions.extensions
         .find(iter => (iter.modId === ext.modId) && (iter.fileId === ext.fileId));
 
       const info: IExtension = (extDetail !== undefined)
