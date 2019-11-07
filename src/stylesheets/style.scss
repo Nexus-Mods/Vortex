@@ -322,6 +322,7 @@ div:hover > .hover-expand {
   top: 4px;
   right: 4px;
   width: initial;
+  z-index: 3;
 
   .btn {
     @extend .btn-embed;
