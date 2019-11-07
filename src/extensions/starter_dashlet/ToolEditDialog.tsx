@@ -276,7 +276,9 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
                 t={t}
                 controlId='workingdir'
                 label={t('Start In')}
-                placeholder={path.dirname(tool.exePath)}
+                placeholder={(tool.exePath !== undefined)
+                  ? path.dirname(tool.exePath)
+                  : t('Select the executable first')}
                 stateKey='workingDirectory'
                 value={tool.workingDirectory}
                 onChangeValue={this.handleChange}

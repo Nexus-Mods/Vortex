@@ -6,6 +6,7 @@ import Table, { ITableRowAction } from '../../controls/Table';
 import { IExtensionLoadFailure, IExtensionState, IState } from '../../types/IState';
 import { ITableAttribute } from '../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
+import { log } from '../../util/log';
 import * as selectors from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import MainPage from '../../views/MainPage';
@@ -157,6 +158,7 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
   private dropExtension = (type: DropType, extPaths: string[]): void => {
     const { downloads } = this.props;
     let success = false;
+    log('info', 'installing extension(s) via drag and drop', { extPaths });
     const prop: Promise<void[]> = (type === 'files')
       ? Promise.map(extPaths, extPath => installExtension(extPath)
           .then(() => { success = true; })
