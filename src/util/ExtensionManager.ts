@@ -444,7 +444,7 @@ class ExtensionManager {
   private mStyleManager: StyleManagerT;
   private mReduxWatcher: any;
   private mWatches: IWatcherRegistry = {};
-  private mProtocolHandlers: { [protocol: string]: (url: string) => void } = {};
+  private mProtocolHandlers: { [protocol: string]: (url: string, install: boolean) => void } = {};
   private mArchiveHandlers: { [extension: string]: ArchiveHandlerCreator };
   private mModDB: modmetaT.ModDB;
   private mModDBPromise: Promise<void>;
@@ -1072,7 +1072,7 @@ class ExtensionManager {
   }
 
   private registerProtocol = (protocol: string, def: boolean,
-                              callback: (url: string) => void): boolean => {
+                              callback: (url: string, install: boolean) => void): boolean => {
     log('info', 'register protocol', { protocol });
     // make it work when using the development version
     const args = process.execPath.endsWith('electron.exe')

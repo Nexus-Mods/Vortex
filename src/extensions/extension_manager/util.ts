@@ -8,6 +8,7 @@ import { getSafe } from '../../util/storeHelper';
 import { INVALID_FILENAME_RE } from '../../util/util';
 
 import { downloadPathForGame } from '../download_management/selectors';
+import { SITE_ID } from '../gamemode_management';
 
 import installExtension from './installExtension';
 
@@ -162,7 +163,7 @@ export function downloadAndInstallExtension(api: IExtensionApi,
                                             : Promise<boolean> {
   let download: IDownload;
 
-  return api.emitAndAwait('nexus-download', 'site', ext.modId, ext.fileId)
+  return api.emitAndAwait('nexus-download', SITE_ID, ext.modId, ext.fileId)
     .then((dlIds: string[]) => {
       const state: IState = api.store.getState();
 
@@ -190,7 +191,7 @@ export function downloadAndInstallExtension(api: IExtensionApi,
         : undefined;
 
       const state: IState = api.store.getState();
-      const downloadPath = downloadPathForGame(state, 'site');
+      const downloadPath = downloadPathForGame(state, SITE_ID);
       return installExtension(path.join(downloadPath, download.localPath), info);
     })
     .then(() => Promise.resolve(true))

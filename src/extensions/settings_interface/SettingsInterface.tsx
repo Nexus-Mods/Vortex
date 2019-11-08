@@ -5,7 +5,7 @@ import More from '../../controls/More';
 import Toggle from '../../controls/Toggle';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../types/IDialog';
 import { IState } from '../../types/IState';
-import { IParameters } from '../../util/commandLine';
+import { IParameters, relaunch } from '../../util/commandLine';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import getVortexPath from '../../util/getVortexPath';
 import { log } from '../../util/log';
@@ -253,7 +253,7 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
     const ext: { modId?: number } = extensions.find(iter => iter.name === extName) || {};
     const { value } = target;
     const dlProm: Promise<boolean[]> = ext.modId !== undefined
-      ? this.context.api.emitAndAwait('download-extension', ext)
+      ? this.context.api.emitAndAwait('install-extension', ext)
         .tap(success => success ? this.readLocales(this.props) : Promise.resolve())
       : Promise.resolve([true]);
     dlProm.then((success: boolean[]) => {
@@ -374,8 +374,7 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
   }
 
   private restart = () => {
-    remote.app.relaunch();
-    remote.app.exit(0);
+    relaunch();
   }
 }
 

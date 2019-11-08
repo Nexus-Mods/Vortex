@@ -209,10 +209,10 @@ class MainWindow {
     }
   }
 
-  public sendExternalURL(url: string) {
+  public sendExternalURL(url: string, install: boolean) {
     if (this.mWindow !== null) {
       try {
-        this.mWindow.webContents.send('external-url', url);
+        this.mWindow.webContents.send('external-url', url, undefined, install);
       } catch (err) {
         log('error', 'failed to send external url', { url, error: err.message });
       }

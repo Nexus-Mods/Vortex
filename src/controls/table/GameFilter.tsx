@@ -1,3 +1,4 @@
+import { SITE_ID } from '../../extensions/gamemode_management';
 import { IGameStored } from '../../extensions/gamemode_management/types/IGameStored';
 import { IDiscoveryResult, IState } from '../../types/IState';
 import {IFilterProps, ITableFilter} from '../../types/ITableAttribute';
@@ -35,7 +36,7 @@ export class GameFilterComponent extends React.Component<IProps, {}> {
       label: '<Current Game>',
       value: '$',
     }].concat(games.slice()
-      .concat({ id: 'site', shortName: 'Tools & Extensions', name: 'Tools & Extensions',
+      .concat({ id: SITE_ID, shortName: 'Tools & Extensions', name: 'Tools & Extensions',
                 extensionPath: null, requiredFiles: null, executable: null })
       .sort((lhs, rhs) => compare(lhs, rhs, discovered))
       .map(game => ({

@@ -153,7 +153,7 @@ export type RegisterToDo =
      priority: number) => void;
 
 export interface IRegisterProtocol {
-  (protocol: string, def: boolean, callback: (url: string) => void);
+  (protocol: string, def: boolean, callback: (url: string, install: boolean) => void);
 }
 
 export interface IFileFilter {

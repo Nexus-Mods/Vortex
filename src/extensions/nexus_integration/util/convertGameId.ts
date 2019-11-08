@@ -1,4 +1,5 @@
 import { IGameStored } from '../../../types/IState';
+import { SITE_ID } from '../../gamemode_management';
 
 /**
  * get the nexus page id for a game
@@ -75,7 +76,7 @@ export function toNXMId(game: IGameStored, gameId: string): string {
   // this is a bit of a workaround since "site" isn't and shouldn't be an
   // entry in the list of games (here or on the site)
   if (game === null) {
-    return 'site';
+    return SITE_ID;
   }
   if (game.details !== undefined) {
     if (game.details.nxmLinkId !== undefined) {

@@ -5,6 +5,7 @@ import FlexLayout from '../../controls/FlexLayout';
 import Table, { ITableRowAction } from '../../controls/Table';
 import { IExtensionLoadFailure, IExtensionState, IState } from '../../types/IState';
 import { ITableAttribute } from '../../types/ITableAttribute';
+import { relaunch } from '../../util/commandLine';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import { log } from '../../util/log';
 import * as selectors from '../../util/selectors';
@@ -18,7 +19,6 @@ import getTableAttributes from './tableAttributes';
 import { IExtension, IExtensionWithState } from './types';
 
 import * as Promise from 'bluebird';
-import { remote } from 'electron';
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as React from 'react';
@@ -201,8 +201,7 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
   }
 
   private restart = () => {
-    remote.app.relaunch();
-    remote.app.quit();
+    relaunch();
   }
 
   private mergeExt(extensions: { [id: string]: IExtension },

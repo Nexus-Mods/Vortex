@@ -10,6 +10,7 @@ import { activeGameId, gameById } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 
 import { DownloadIsHTML } from '../download_management/DownloadManager';
+import { SITE_ID } from '../gamemode_management';
 import {IGameStored} from '../gamemode_management/types/IGameStored';
 import { setUpdatingMods } from '../mod_management/actions/session';
 
@@ -169,10 +170,10 @@ export function onRequestOwnIssues(nexus: Nexus) {
   };
 }
 
-function download(api: IExtensionApi, nexus: Nexus,
-                  game: IGameStored, modId: number, fileId: number): Promise<string> {
+function downloadFile(api: IExtensionApi, nexus: Nexus,
+                      game: IGameStored, modId: number, fileId: number): Promise<string> {
     const state: IState = api.store.getState();
-    const gameId = game !== null ? game.id : 'site';
+    const gameId = game !== null ? game.id : SITE_ID;
     if ((game !== null)
         && !getSafe(state, ['persistent', 'nexus', 'userInfo', 'isPremium'], false)) {
       // nexusmods can't let users download files directly from client, without
@@ -196,9 +197,9 @@ function download(api: IExtensionApi, nexus: Nexus,
 
 export function onModUpdate(api: IExtensionApi, nexus: Nexus): (...args: any[]) => void {
   return (gameId, modId, fileId) => {
-    const game = gameId === 'site' ? null : gameById(api.store.getState(), gameId);
+    const game = gameId === SITE_ID ? null : gameById(api.store.getState(), gameId);
 
-    download(api, nexus, game, modId, fileId)
+    downloadFile(api, nexus, game, modId, fileId)
       .then(downloadId => {
         api.events.emit('start-install-download', downloadId);
       })
@@ -220,9 +221,9 @@ export function onNexusDownload(api: IExtensionApi,
                                 nexus: Nexus)
                                 : (...args: any[]) => Promise<any> {
   return (gameId, modId, fileId): Promise<string> => {
-    const game = gameId === 'site' ? null : gameById(api.store.getState(), gameId);
+    const game = gameId === SITE_ID ? null : gameById(api.store.getState(), gameId);
 
-    return download(api, nexus, game, modId, fileId)
+    return downloadFile(api, nexus, game, modId, fileId)
       .catch(ProcessCanceled, err => {
         api.sendNotification({
           type: 'error',

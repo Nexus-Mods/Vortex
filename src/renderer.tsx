@@ -296,7 +296,7 @@ const startupPromise = new Promise((resolve) => startupFinished = resolve);
 // tslint:disable-next-line:no-unused-variable
 const globalNotifications = new GlobalNotifications(extensions.getApi());
 
-function startDownloadFromURL(url: string, fileName?: string) {
+function startDownloadFromURL(url: string, fileName?: string, install?: boolean) {
   store.dispatch(addNotification({
     type: 'info',
     title: 'Download started',
@@ -314,7 +314,7 @@ function startDownloadFromURL(url: string, fileName?: string) {
       const handler = extensions.getProtocolHandler(protocol);
       if (handler !== null) {
         log('info', 'handling url', { url });
-        handler(url);
+        handler(url, install);
       } else {
         store.dispatch(addNotification({
           type: 'info',
@@ -330,8 +330,8 @@ eventEmitter.on('start-download-url', (url: string, fileName: string) => {
   startDownloadFromURL(url, fileName);
 });
 
-ipcRenderer.on('external-url', (event, url: string, fileName?: string) => {
-  startDownloadFromURL(url, fileName);
+ipcRenderer.on('external-url', (event, url: string, fileName?: string, install?: boolean) => {
+  startDownloadFromURL(url, fileName, install);
 });
 
 ipcRenderer.on('relay-event', (sender, event, ...args) => {

@@ -16,6 +16,7 @@ import { calcDuration, prettifyNodeErrorMessage, showError } from '../../util/me
 import { activeGameId } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { truthy } from '../../util/util';
+import { SITE_ID } from '../gamemode_management';
 import { gameById, knownGames } from '../gamemode_management/selectors';
 import modName from '../mod_management/util/modName';
 import { setUserInfo } from './actions/persistent';
@@ -78,7 +79,7 @@ export function startDownload(api: IExtensionApi, nexus: Nexus, nxmurl: string):
       });
     })
     .then(downloadId => {
-      if (gameId === 'site') {
+      if (gameId === SITE_ID) {
         return downloadId;
       }
       api.sendNotification({

@@ -21,6 +21,7 @@ import { addNotification, IDialogResult, showDialog } from '../../actions/notifi
 import { setProgress } from '../../actions/session';
 import { IExtensionApi, IExtensionContext, ThunkStore } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
+import { relaunch } from '../../util/commandLine';
 import { ProcessCanceled, SetupError, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
@@ -370,7 +371,7 @@ function init(context: IExtensionContextExt): boolean {
       }, [
         { label: 'Cancel' },
         { label: 'Download', action: () => {
-          context.api.emitAndAwait('download-extension', extension)
+          context.api.emitAndAwait('install-extension', extension)
             .then(() => {
               context.api.sendNotification({
                 type: 'success',
@@ -378,8 +379,7 @@ function init(context: IExtensionContextExt): boolean {
                 actions: [
                   {
                     title: 'Restart now', action: () => {
-                      remote.app.relaunch();
-                      remote.app.exit(0);
+                      relaunch();
                     },
                   },
                 ],

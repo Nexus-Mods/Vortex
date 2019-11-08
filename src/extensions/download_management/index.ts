@@ -641,12 +641,22 @@ function init(context: IExtensionContextExt): boolean {
     context.api.deregisterProtocol('http');
     context.api.deregisterProtocol('https');
 
-    context.api.registerProtocol('http', false, url => {
-      context.api.events.emit('start-download', [url], {});
+    context.api.registerProtocol('http', false, (url, install) => {
+      context.api.events.emit('start-download', [url], {}, undefined,
+                              (err: Error, dlId: string) => {
+        if (install && (err === null)) {
+          context.api.events.emit('start-install-download', dlId);
+        }
+      });
     });
 
-    context.api.registerProtocol('https', false, url => {
-      context.api.events.emit('start-download', [url], {});
+    context.api.registerProtocol('https', false, (url, install) => {
+      context.api.events.emit('start-download', [url], {}, undefined,
+                              (err: Error, dlId: string) => {
+          if (install && (err === null)) {
+            context.api.events.emit('start-install-download', dlId);
+          }
+        });
     });
 
     context.api.events.on('will-move-downloads', () => {

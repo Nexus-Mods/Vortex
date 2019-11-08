@@ -53,6 +53,8 @@ import * as path from 'path';
 import * as Redux from 'redux';
 import * as semver from 'semver';
 
+export const SITE_ID = 'site';
+
 const extensionGames: IGame[] = [];
 
 const $ = local<{

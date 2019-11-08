@@ -1,5 +1,7 @@
 import {IExtensionApi, IExtensionContext} from '../../types/IExtensionContext';
-import { IState } from '../../types/IState';
+import { IExtensionLoadFailure, IState } from '../../types/IState';
+import { relaunch } from '../../util/commandLine';
+import { log } from '../../util/log';
 import makeReactive from '../../util/makeReactive';
 
 import { setAvailableExtensions, setExtensionsUpdate, setInstalledExtensions } from './actions';
@@ -10,7 +12,6 @@ import { IAvailableExtension, IExtensionDownloadInfo } from './types';
 import { downloadAndInstallExtension, fetchAvailableExtensions, readExtensions } from './util';
 
 import * as Promise from 'bluebird';
-import { remote } from 'electron';
 import * as _ from 'lodash';
 
 interface ILocalState {
@@ -55,18 +56,20 @@ function checkForUpdates(api: IExtensionApi) {
     replace: { count: updateable.length },
   });
 
+  log('info', 'extensions can be updated', {
+    updateable: updateable.map(ext => `${ext.name} v${ext.version}`) });
+
   return Promise.map(updateable, ext => downloadAndInstallExtension(api, ext))
     .then(() => {
       localState.reloadNecessary = true;
       api.sendNotification({
         id: 'extension-updates',
         type: 'success',
-        message: 'Extensions update, please restart to apply them',
+        message: 'Extensions updated, please restart to apply them',
         actions: [
           {
             title: 'Restart now', action: () => {
-              remote.app.relaunch();
-              remote.app.exit(0);
+              relaunch();
             },
           },
         ],
@@ -131,7 +134,7 @@ function init(context: IExtensionContext) {
   context.once(() => {
     updateInstalledExtensions(true);
     updateAvailableExtensions(context.api);
-    context.api.onAsync('download-extension', (ext: IExtensionDownloadInfo) =>
+    context.api.onAsync('install-extension', (ext: IExtensionDownloadInfo) =>
       downloadAndInstallExtension(context.api, ext)
         .then(() => updateInstalledExtensions(false)));
   });
