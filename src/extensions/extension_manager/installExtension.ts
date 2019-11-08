@@ -31,7 +31,7 @@ function installExtension(archivePath: string, info?: IExtension): Promise<void>
       // is data we may only know at runtime (e.g. the modId)
       .then(manifestInfo => ({
         id: manifestInfo.id,
-        info: { ...(info || {}), ..._.omit(manifestInfo.info, ['path']) },
+        info: { ...(manifestInfo.info || {}), ...(info || {}) },
       }))
       .catch({ code: 'ENOENT' }, () => (info !== undefined)
         ? Promise.resolve({ id: path.basename(tempPath, '.installing'), info })
