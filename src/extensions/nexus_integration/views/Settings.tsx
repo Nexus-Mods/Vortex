@@ -27,7 +27,10 @@ function nop() {
 function DownloadButton(): JSX.Element {
   return (
     <div className='nexusmods-action-button'>
-      <Icon name='nexus' svgStyle='.st0, .st1, #path11 { fill-opacity: 0 !important }' />
+      <Icon
+        name='nexus'
+        svgStyle='.nexus-orange, .nexus-orange-darker { fill-opacity: 0 !important }'
+      />
       <a className='nexusmods-fake-link' onClick={nop}>Mod Manager Download</a>
     </div>
   );
