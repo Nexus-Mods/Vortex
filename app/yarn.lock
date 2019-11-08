@@ -3554,10 +3554,9 @@ simple-get@^3.0.3:
     once "^1.3.1"
     simple-concat "^1.0.0"
 
-simple-vdf@^1.1.1:
-  version "1.1.1"
-  resolved "https://registry.yarnpkg.com/simple-vdf/-/simple-vdf-1.1.1.tgz#07e2c4dec06cf614ed6f4211b18cce123c93fca9"
-  integrity sha1-B+LE3sBs9hTtb0IRsYzOEjyT/Kk=
+simple-vdf@Nexus-Mods/vdf-parser:
+  version "1.1.3"
+  resolved "https://codeload.github.com/Nexus-Mods/vdf-parser/tar.gz/f4c9249dc4e8029734673c5229ae2ae403174034"
 
 source-map-support@^0.5.9:
   version "0.5.12"
