@@ -90,11 +90,69 @@ function updateAvailableExtensions(api: IExtensionApi, force: boolean = false) {
     });
 }
 
-function init(context: IExtensionContext) {
-  const updateInstalledExtensions = (initial: boolean) => {
-    readExtensions(true)
+function installDependency(api: IExtensionApi,
+                           extName: string,
+                           updateInstalled: (initial: boolean) => Promise<void>): Promise<boolean> {
+  const state: IState = api.store.getState();
+  const availableExtensions = state.session.extensions.available;
+  const ext = availableExtensions.find(iter => iter.name === extName);
+  if (ext !== undefined) {
+    return downloadAndInstallExtension(api, ext)
+      .then(() => updateInstalled(false))
+      .then(() => true);
+  } else {
+    return Promise.resolve(false);
+  }
+}
+
+function checkMissingDependencies(api: IExtensionApi,
+                                  loadFailures: { [extId: string]: IExtensionLoadFailure[] }) {
+    const missingDependencies = Object.keys(loadFailures)
+      .reduce((prev, extId) => {
+        const deps = loadFailures[extId].filter(fail => fail.id === 'dependency');
+        deps.forEach(dep => {
+          const depId = dep.args.dependencyId;
+          if (prev[depId] === undefined) {
+            prev[depId] = [];
+          }
+          prev[depId].push(extId);
+        });
+        return prev;
+      }, {});
+
+    if (Object.keys(missingDependencies).length > 0) {
+      const updateInstalled = genUpdateInstalledExtensions(api);
+      api.sendNotification({
+        type: 'warning',
+        message: 'Some of the installed extensions couldn\'t be loaded because '
+               + 'they have missing dependencies.',
+        actions: [
+          { title: 'Fix', action: () => {
+            Promise.map(Object.keys(missingDependencies), depId =>
+              installDependency(api, depId, updateInstalled)
+                .then(results => {
+                  if (!results) {
+                    api.showErrorNotification('Failed to install extension', 'Not found', {
+                      message: depId,
+                      allowReport: false,
+                    });
+                  }
+                })
+                .catch(err => {
+                  api.showErrorNotification('Failed to install extension', err, {
+                    message: depId,
+                  });
+                }));
+          } },
+        ],
+      });
+    }
+}
+
+function genUpdateInstalledExtensions(api: IExtensionApi) {
+  return (initial: boolean): Promise<void> => {
+    return readExtensions(true)
       .then(ext => {
-        const api = context.api;
         const state: IState = api.store.getState();
         if (!initial && !_.isEqual(state.session.extensions.installed, ext)) {
           localState.reloadNecessary = true;
@@ -103,19 +161,22 @@ function init(context: IExtensionContext) {
       })
       .catch(err => {
         // this probably only occurs if the user deletes the plugins directory after start
-        context.api.showErrorNotification('Failed to read extension directory', err, {
+        api.showErrorNotification('Failed to read extension directory', err, {
           allowReport: false,
         });
       });
   };
+}
 
+function init(context: IExtensionContext) {
+  const updateExtensions = genUpdateInstalledExtensions(context.api);
   context.registerMainPage('extensions', 'Extensions', ExtensionManager, {
     hotkey: 'X',
     group: 'global',
     visible: () => context.api.store.getState().settings.interface.advanced,
     props: () => ({
       localState,
-      updateExtensions: updateInstalledExtensions,
+      updateExtensions,
     }),
   });
 
@@ -125,18 +186,27 @@ function init(context: IExtensionContext) {
 
   context.registerDialog('browse-extensions', BrowseExtensions, () => ({
     localState,
-    updateExtensions: updateInstalledExtensions,
+    updateExtensions,
     onRefreshExtensions: forceUpdateExtensions,
   }));
 
   context.registerReducer(['session', 'extensions'], sessionReducer);
 
   context.once(() => {
-    updateInstalledExtensions(true);
+    updateExtensions(true);
     updateAvailableExtensions(context.api);
     context.api.onAsync('install-extension', (ext: IExtensionDownloadInfo) =>
       downloadAndInstallExtension(context.api, ext)
-        .then(() => updateInstalledExtensions(false)));
+        .then(() => updateExtensions(false)));
+
+    context.api.onStateChange(['session', 'base', 'extLoadFailures'], (prev, current) => {
+      checkMissingDependencies(context.api, current);
+    });
+
+    {
+      const state: IState = context.api.store.getState();
+      checkMissingDependencies(context.api, state.session.base.extLoadFailures);
+    }
   });
 
   return true;
