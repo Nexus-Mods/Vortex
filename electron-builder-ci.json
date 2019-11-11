@@ -13,7 +13,7 @@
     "assets/css/**",
     "**/*.node"
   ],
-  "afterPack": "./createMD5List.js",
+  "afterSign": "./createMD5List.js",
   "appId": "com.nexusmods.vortex",
   "win": {
     "target": "nsis",

@@ -3,6 +3,7 @@ import { log } from './log';
 import * as crypto from 'crypto';
 import * as fs from 'fs-extra-promise';
 import * as path from 'path';
+import * as process from 'process';
 
 async function readHashList(basePath: string): Promise<{ [name: string]: string }> {
   const data = await fs.readFileAsync(path.join(basePath, 'md5sums.csv'), { encoding: 'utf-8' });
@@ -41,10 +42,12 @@ export async function validateFiles(basePath: string)
 
   log('info', 'start file validation');
 
+  const exePath = path.dirname(process.execPath);
+
   return Promise.all(Object.keys(fileList)
     .map(async fileName => {
       try {
-        const hash = await hashFile(path.join(basePath, fileName));
+        const hash = await hashFile(path.join(exePath, fileName));
         if (hash !== fileList[fileName]) {
           result.changed.push(fileName);
         }
