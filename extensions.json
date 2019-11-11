@@ -132,18 +132,6 @@
     {
       "modId": 51,
       "fileId": 249,
-      "author": "tesnexus8",
-      "description": {
-        "short": "A better \"Compact\" theme that avoids the antipattern of things moving around when using the toolbar, and keeps the toolbar icons properly and consistently visible.",
-        "long": "Details in this thread - https://forums.nexusmods.com/index.php?/topic/7843418-suggestion-thread-for-vortex-improvements/page-3#entry72082243 - but the overview and screenshot cover everything important.\n<br />\n<br />\n<br />I stole these un/installation instructions from Pickysaurus. If they're good, thank him. If not, blame me.  :)\n<br />\n<br />\n<br />[size=6]Installation[/size]\n<br />\n<br />Close Vortex before installing.\n<br />\n<br />Open up \"AppData&#92;Roaming&#92;Vortex&#92;Themes\".\n<br />\n<br />[b][i]Note: If you used Shared mode under Settings -&gt; Vortex your themes folder will be C:&#92;ProgramData&#92;vortex&#92;themes[/i][/b]\n<br />\n<br />Extract the archive [b][i]including the \"bettercompact/\" folder itself[/i][/b] into this directory.\n<br />\n<br />Open Vortex and navigate to Settings -&gt; Themes and select the \"bettercompact\" theme.\n<br />\n<br />\n<br />[size=6]Uninstallation[/size]\n<br />\n<br />Ensure you change to a different theme than the one you wish to remove.\n<br />\n<br />Close Vortex.\n<br />\n<br />Open the themes folder.\n<br />\n<br />Delete the  \"bettercompact\" theme."
-      },
-      "downloads": 141,
-      "endorsements": 10,
-      "image": "https://staticdelivery.nexusmods.com/mods/2295/images/51/51-1565912658-1365052559.jpeg",
-      "name": "Better Compact",
-      "tags": [],
-      "version": "1.0",
-      "type": "theme"
     },
     {
       "modId": 23,
