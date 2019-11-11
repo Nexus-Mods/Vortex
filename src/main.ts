@@ -18,6 +18,29 @@ if (process.env.NODE_ENV !== 'development') {
   rebuildRequire();
 }
 
+if (process.platform === 'win32') {
+  // On windows dlls may be loaded from directories in the path variable
+  // (which I don't know why you'd ever want that) so I filter path quite aggressively here
+  // to prevent dynamically loaded dlls to be loaded from unexpected locations.
+  // The most common problem this should prevent is the edge dll being loaded from
+  // "Browser Assistant" instead of our own.
+
+  const userPath = (process.env.HOMEDRIVE || 'c:') + (process.env.HOMEPATH || '\\Users');
+  const programFiles = process.env.ProgramFiles ||  'C:\\Program Files';
+  const programFilesX86 = process.env['ProgramFiles(x86)'] || 'C:\\Program Files (x86)';
+  const programData = process.env.ProgramData || 'C:\\ProgramData';
+
+  const pathFilter = (envPath: string): boolean => {
+    return !envPath.startsWith(userPath)
+        && !envPath.startsWith(programData)
+        && !envPath.startsWith(programFiles)
+        && !envPath.startsWith(programFilesX86);
+  };
+
+  process.env['PATH'] = process.env['PATH'].split(';')
+    .filter(pathFilter).join(';');
+}
+
 // Produce english error messages (windows only atm), otherwise they don't get
 // grouped correctly when reported through our feedback system
 import { SetProcessPreferredUILanguages } from 'winapi-bindings';
