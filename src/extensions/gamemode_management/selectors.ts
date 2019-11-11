@@ -5,7 +5,7 @@ import {getSafe} from '../../util/storeHelper';
 import {IDiscoveryResult} from './types/IDiscoveryResult';
 import {IGameStored} from './types/IGameStored';
 
-import { SITE_ID } from '.';
+import { SITE_ID } from './constants';
 
 import createCachedSelector from 're-reselect';
 import { createSelector } from 'reselect';

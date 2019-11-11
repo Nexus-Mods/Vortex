@@ -1,5 +1,5 @@
 import { IGameStored } from '../../../types/IState';
-import { SITE_ID } from '../../gamemode_management';
+import { SITE_ID } from '../../gamemode_management/constants';
 
 /**
  * get the nexus page id for a game

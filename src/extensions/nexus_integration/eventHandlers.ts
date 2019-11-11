@@ -10,7 +10,7 @@ import { activeGameId, gameById } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 
 import { DownloadIsHTML } from '../download_management/DownloadManager';
-import { SITE_ID } from '../gamemode_management';
+import { SITE_ID } from '../gamemode_management/constants';
 import {IGameStored} from '../gamemode_management/types/IGameStored';
 import { setUpdatingMods } from '../mod_management/actions/session';
 

@@ -22,7 +22,7 @@ import { IMod } from '../mod_management/types/IMod';
 import { IResolvedURL } from '../download_management';
 import { DownloadState } from '../download_management/types/IDownload';
 
-import { SITE_ID } from '../gamemode_management';
+import { SITE_ID } from '../gamemode_management/constants';
 
 import { setUserAPIKey } from './actions/account';
 import { setNewestVersion } from './actions/persistent';

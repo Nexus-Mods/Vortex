@@ -3,7 +3,7 @@ import { ThunkStore } from '../../../types/IExtensionContext';
 import { IState } from '../../../types/IState';
 import { UserCanceled } from '../../../util/CustomErrors';
 import { activeGameId, gameName } from '../../../util/selectors';
-import { SITE_ID } from '../../gamemode_management';
+import { SITE_ID } from '../../gamemode_management/constants';
 
 import * as Promise from 'bluebird';
 

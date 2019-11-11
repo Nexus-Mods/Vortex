@@ -8,7 +8,7 @@ import { getSafe } from '../../util/storeHelper';
 import { INVALID_FILENAME_RE } from '../../util/util';
 
 import { downloadPathForGame } from '../download_management/selectors';
-import { SITE_ID } from '../gamemode_management';
+import { SITE_ID } from '../gamemode_management/constants';
 
 import installExtension from './installExtension';
 
