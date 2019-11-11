@@ -30,7 +30,7 @@ async function walk(base, rel) {
 }
 
 exports.default = async function(context) {
-  // your custom code
+  const assetsPath = path.join(context.appOutDir, 'resources', 'app.asar.unpacked', 'assets');
 
   const hashes = await Promise.all((await walk(context.appOutDir, ''))
     .map(async relPath => {
@@ -42,7 +42,7 @@ exports.default = async function(context) {
       return `${relPath}:${buf.toString('hex')}`;
     }));
 
-  fs.writeFile(path.join(context.appOutDir, 'md5sums.csv'), hashes.join('\n'));
+  fs.writeFile(path.join(assetsPath, 'md5sums.csv'), hashes.join('\n'));
 
-  return [path.join(context.appOutDir, 'md5sums.csv')];
+  return [path.join(assetsPath, 'md5sums.csv')];
 }

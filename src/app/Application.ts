@@ -751,7 +751,7 @@ class Application {
   }
 
   private validateFiles(): Promise<void> {
-    return Promise.resolve(validateFiles(getVortexPath('base')))
+    return Promise.resolve(validateFiles(getVortexPath('assets')))
       .then(validation => new Promise(resolve => {
         if ((validation.changed.length > 0)
             || (validation.missing.length > 0)) {

@@ -31,12 +31,15 @@ export async function validateFiles(basePath: string)
   } catch (err) {
     // nop
     log('info', 'not validating vortex files', err.message);
+    return { missing: [], changed: [] };
   }
 
   const result: {
     missing: string[],
     changed: string[],
    } = { missing: [], changed: [] };
+
+  log('info', 'start file validation');
 
   return Promise.all(Object.keys(fileList)
     .map(async fileName => {
@@ -49,5 +52,8 @@ export async function validateFiles(basePath: string)
         result.missing.push(fileName);
       }
     }))
-    .then(() => result);
+    .then(() => {
+      log('info', 'done file validation');
+      return result;
+    });
 }
