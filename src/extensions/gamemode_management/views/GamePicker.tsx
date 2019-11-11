@@ -156,6 +156,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
       imageURL: ext.image,
       requiredFiles: [],
       executable: undefined,
+      contributed: ext.author,
     })));
 
     Object.keys(discoveredGames).forEach(gameId => {
