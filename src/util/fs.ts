@@ -206,7 +206,7 @@ function unknownErrorRetry(filePath: string, err: Error, stackErr: Error): Promi
                       + 'network drive, please make sure it\'s connected. Otherwise make sure '
                       + 'the drive letter hasn\'t changed and if necessary, update the path '
                       + 'within Vortex.';
-    } else if ([53, 4350].indexOf(err['nativeCode']) !== -1) {
+    } else if ([53, 55, 4350].indexOf(err['nativeCode']) !== -1) {
       options.title = `Network drive unavailable (${err['nativeCode']})`;
       options.message = `The file "${filePath}" is currently not accessible, very possibly the `
                       + 'network share as a whole is inaccesible due to a network problem '
@@ -217,7 +217,11 @@ function unknownErrorRetry(filePath: string, err: Error, stackErr: Error): Promi
     } else if (err['nativeCode'] === 6851) {
       options.title = 'Volume dirty';
       options.message = 'The operation could not be completed because the volume is dirty. '
-                      + 'Please run chkdsk and try again';
+                      + 'Please run chkdsk and try again.';
+    } else if (err['nativeCode'] === 1359) {
+      options.title = 'Internal error';
+      options.message = 'The operation failed with an internal (internal to windows) error. '
+                      + 'No further error information is available to us.';
     } else {
       options.title += ` (${err['nativeCode']})`;
       options.buttons.unshift('Cancel and Report');
