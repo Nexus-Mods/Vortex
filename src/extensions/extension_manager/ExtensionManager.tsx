@@ -160,7 +160,7 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
     let success = false;
     log('info', 'installing extension(s) via drag and drop', { extPaths });
     const prop: Promise<void[]> = (type === 'files')
-      ? Promise.map(extPaths, extPath => installExtension(extPath)
+      ? Promise.map(extPaths, extPath => installExtension(this.context.api, extPath)
           .then(() => { success = true; })
           .catch(err => {
             this.context.api.showErrorNotification('Failed to install extension', err,
@@ -170,7 +170,7 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
         this.context.api.events.emit('start-download', [url], undefined,
                                      (error: Error, id: string) => {
           const dlPath = path.join(this.props.downloadPath, downloads[id].localPath);
-          installExtension(dlPath)
+          installExtension(this.context.api, dlPath)
           .then(() => {
             success = true;
           })

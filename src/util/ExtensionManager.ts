@@ -959,8 +959,14 @@ class ExtensionManager {
       ...this.mLoadFailures,
       ...this.mContextProxyHandler.unloadIncompatible(
         ExtensionManager.sUIAPIs, this.mExtensions.reduce((prev, ext) => {
-          if ((ext.info !== undefined) && (ext.info.name !== undefined)) {
-            prev.push(ext.info.name);
+          if (ext.info !== undefined) {
+            if (ext.info.name !== undefined) {
+              prev.push(ext.info.name);
+            }
+
+            if (ext.info.id !== undefined) {
+              prev.push(ext.info.id);
+            }
           }
           prev.push(ext.name);
           return prev;

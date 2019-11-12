@@ -3,6 +3,7 @@ import {IExtensionLoadFailure, IExtensionState} from '../../types/IState';
 export type ExtensionType = 'game' | 'translation' | 'theme';
 
 export interface IExtension {
+  id?: string;
   name: string;
   author: string;
   description: string;
@@ -28,6 +29,7 @@ export interface IAvailableExtension extends IExtensionDownloadInfo {
     short: string;
     long: string;
   };
+  id?: string;
   type?: ExtensionType;
   language?: string;
   gameName?: string;

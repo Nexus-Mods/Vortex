@@ -1,3 +1,5 @@
+import { IExtensionApi } from '../../types/IExtensionContext';
+import { IState } from '../../types/IState';
 import * as fs from '../../util/fs';
 
 import { ExtensionType, IExtension } from './types';
@@ -14,7 +16,55 @@ const app = appIn || remote.app;
 
 const rimrafAsync: (removePath: string, options: any) => Promise<void> = Promise.promisify(rimraf);
 
-function installExtension(archivePath: string, info?: IExtension): Promise<void> {
+class ContextProxyHandler implements ProxyHandler<any> {
+  private mDependencies: string[] = [];
+
+  public get(target, key: PropertyKey): any {
+    if (key === 'requireExtension') {
+      return (dependencyId: string) => {
+        this.mDependencies.push(dependencyId);
+      };
+    } else {
+      return () => undefined;
+    }
+  }
+
+  public get dependencies(): string[] {
+    return this.mDependencies;
+  }
+}
+
+function installExtensionDependencies(api: IExtensionApi, extPath: string): Promise<void> {
+  const handler = new ContextProxyHandler();
+  const context = new Proxy({}, handler);
+
+  try {
+    const extension = require(path.join(extPath, 'index.js'));
+
+    extension.default(context);
+
+    const state: IState = api.store.getState();
+
+    return Promise.map(handler.dependencies, depId => {
+      const ext = state.session.extensions.available.find(iter =>
+        (!iter.type && ((iter.name === depId) || (iter.id === depId))));
+
+      if (ext !== undefined) {
+        return api.emitAndAwait('install-extension', ext);
+      } else {
+        return Promise.resolve();
+      }
+    })
+    .then(() => null);
+  } catch (err) {
+    return Promise.reject(err);
+  }
+
+}
+
+function installExtension(api: IExtensionApi,
+                          archivePath: string,
+                          info?: IExtension): Promise<void> {
   const extensionsPath = path.join(app.getPath('userData'), 'plugins');
   let destPath: string;
   const tempPath = path.join(extensionsPath, path.basename(archivePath)) + '.installing';
@@ -53,8 +103,10 @@ function installExtension(archivePath: string, info?: IExtension): Promise<void>
             .map(entry => fs.statAsync(path.join(destPath, entry))
               .then(stat => ({ name: entry, stat })))
             .then(() => null);
-        } else {
+        } else if (type === 'theme') {
           return Promise.resolve();
+        } else {
+          return installExtensionDependencies(api, destPath);
         }
       })
       .catch(err =>

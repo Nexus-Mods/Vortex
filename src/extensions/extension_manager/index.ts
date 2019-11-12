@@ -1,4 +1,5 @@
 import {IExtensionApi, IExtensionContext} from '../../types/IExtensionContext';
+import { NotificationDismiss } from '../../types/INotification';
 import { IExtensionLoadFailure, IState } from '../../types/IState';
 import { relaunch } from '../../util/commandLine';
 import { log } from '../../util/log';
@@ -91,11 +92,14 @@ function updateAvailableExtensions(api: IExtensionApi, force: boolean = false) {
 }
 
 function installDependency(api: IExtensionApi,
-                           extName: string,
+                           depId: string,
                            updateInstalled: (initial: boolean) => Promise<void>): Promise<boolean> {
   const state: IState = api.store.getState();
   const availableExtensions = state.session.extensions.available;
-  const ext = availableExtensions.find(iter => iter.name === extName);
+
+  const ext = availableExtensions.find(iter =>
+    (!iter.type && ((iter.name === depId) || (iter.id === depId))));
+
   if (ext !== undefined) {
     return downloadAndInstallExtension(api, ext)
       .then(() => updateInstalled(false))
@@ -127,15 +131,22 @@ function checkMissingDependencies(api: IExtensionApi,
         message: 'Some of the installed extensions couldn\'t be loaded because '
                + 'they have missing dependencies.',
         actions: [
-          { title: 'Fix', action: () => {
+          { title: 'Fix', action: (dismiss: NotificationDismiss) => {
             Promise.map(Object.keys(missingDependencies), depId =>
               installDependency(api, depId, updateInstalled)
                 .then(results => {
                   if (!results) {
-                    api.showErrorNotification('Failed to install extension', 'Not found', {
+                    api.showErrorNotification('Failed to install extension',
+                      'The extension "{{ name }}" wasn\'t found in the repository. '
+                      + 'This might mean that the extension isn\'t available on Nexus at all or '
+                      + 'has been excluded for compatibility reasons. '
+                      + 'Please check the installation instructions for this extension.', {
                       message: depId,
                       allowReport: false,
+                      replace: { name: depId },
                     });
+                  } else {
+                    dismiss();
                   }
                 })
                 .catch(err => {

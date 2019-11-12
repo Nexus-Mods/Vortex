@@ -192,7 +192,7 @@ export function downloadAndInstallExtension(api: IExtensionApi,
 
       const state: IState = api.store.getState();
       const downloadPath = downloadPathForGame(state, SITE_ID);
-      return installExtension(path.join(downloadPath, download.localPath), info);
+      return installExtension(api, path.join(downloadPath, download.localPath), info);
     })
     .then(() => Promise.resolve(true))
     .catch(UserCanceled, () => null)
