@@ -2,6 +2,7 @@ import {IExtensionApi, IExtensionContext} from '../../types/IExtensionContext';
 import { NotificationDismiss } from '../../types/INotification';
 import { IExtensionLoadFailure, IState } from '../../types/IState';
 import { relaunch } from '../../util/commandLine';
+import { DataInvalid } from '../../util/CustomErrors';
 import { log } from '../../util/log';
 import makeReactive from '../../util/makeReactive';
 
@@ -80,6 +81,11 @@ function checkForUpdates(api: IExtensionApi) {
 
 function updateAvailableExtensions(api: IExtensionApi, force: boolean = false) {
   return fetchAvailableExtensions(true, force)
+    .catch(DataInvalid, err => {
+      api.showErrorNotification('Failed to fetch available extensions', err,
+                                { allowReport: false });
+      return { time: null, extensions: [] };
+    })
     .catch(err => {
       api.showErrorNotification('Failed to fetch available extensions', err);
       return { time: null, extensions: [] };

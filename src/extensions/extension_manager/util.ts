@@ -1,6 +1,6 @@
 import { IExtensionApi } from '../../types/IExtensionContext';
 import { IDownload, IState } from '../../types/IState';
-import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
+import { DataInvalid, ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import getVortexPath from '../../util/getVortexPath';
 import { jsonRequest } from '../../util/network';
@@ -152,8 +152,15 @@ function doFetchAvailableExtensions(forceDownload: boolean)
     .then(needsDownload => needsDownload
         ? downloadExtensionList(cachePath)
         : fs.readFileAsync(cachePath, { encoding: 'utf8' })
-          .then(data => JSON.parse(data).extensions))
-    .catch({ code: 'ENOENT' }, err => downloadExtensionList(cachePath))
+          .then(data => {
+            try {
+              return JSON.parse(data).extensions;
+            } catch (err) {
+              return Promise.reject(
+                new DataInvalid('Extension cache invalid, please try again later'));
+            }
+          }))
+    .catch({ code: 'ENOENT' }, () => downloadExtensionList(cachePath))
     .filter((ext: IAvailableExtension) => ext.description !== undefined)
     .then(extensions => ({ time, extensions }));
 }
