@@ -16,8 +16,16 @@ export interface IExtensionProps {
 
 type IProps = IActionControlProps & IExtensionProps;
 
+function numOr(input: number, def: number): number {
+  if (input !== undefined) {
+    return input;
+  } else {
+    return 100;
+  }
+}
+
 function iconSort(lhs: IActionDefinition, rhs: IActionDefinition): number {
-  return (lhs.position || 100) - (rhs.position || 100);
+  return numOr(lhs.position, 100) - numOr(rhs.position, 100);
 }
 
 export interface IActionDefinitionEx extends IActionDefinition {
