@@ -224,6 +224,7 @@ export interface IRowProps {
   data: any;
   rawData: any;
   attributes: ITableAttribute[];
+  inlines: ITableAttribute[];
   sortAttribute: string;
   actions: ITableRowAction[];
   hasActions: boolean;
@@ -259,14 +260,15 @@ class TableRow extends React.Component<IRowProps, IRowState> {
     return (this.props.visible !== nextProps.visible)
       || (this.props.data !== nextProps.data)
       || (this.props.selected !== nextProps.selected)
+      || (this.props.grouped !== nextProps.grouped)
       || (this.props.highlighted !== nextProps.highlighted)
       || (this.props.attributes !== nextProps.attributes)
       || (this.state.contextVisible !== nextState.contextVisible)
       || (this.state.context !== nextState.context);
   }
 
-  public render(): JSX.Element {
-    const { data, domRef, grouped, highlighted, id, onClick,
+  public render(): JSX.Element | JSX.Element[] {
+    const { data, domRef, inlines, grouped, highlighted, id, onClick,
             selected } = this.props;
 
     const classes = [];
@@ -281,7 +283,7 @@ class TableRow extends React.Component<IRowProps, IRowState> {
       classes.push('table-row-grouped');
     }
 
-    return (
+    const res = [(
       <VisibilityProxy
         id={id}
         componentClass={TR}
@@ -299,7 +301,19 @@ class TableRow extends React.Component<IRowProps, IRowState> {
         placeholder={this.renderPlaceholder}
         content={this.renderRow}
       />
-    );
+    )];
+
+    if (this.props.visible) {
+      inlines.forEach(extra => {
+        res.push((
+          <tr key={data.__id + '_extra_' + extra.id}>
+            {this.renderAttributeExtra(extra)}
+          </tr>
+        ));
+      });
+    }
+
+    return res;
   }
 
   private renderPlaceholder = (): React.ReactNode => {
@@ -380,6 +394,24 @@ class TableRow extends React.Component<IRowProps, IRowState> {
       >
         {this.renderCell(attribute, rawData, data[attribute.id], t,
                          index >= (arr.length / 2))}
+      </TD>
+    );
+  }
+
+  private renderAttributeExtra = (attribute: ITableAttribute): JSX.Element => {
+    const { t, attributes, data, hasActions, rawData, tableId } = this.props;
+    const classes = [
+      `table-${tableId}`,
+      `cell-${attribute.id}`,
+    ];
+
+    return (
+      <TD
+        className={classes.join(' ')}
+        key={attribute.id}
+        colSpan={attributes.length + (hasActions ? 1 : 0)}
+      >
+        {this.renderCell(attribute, rawData, data[attribute.id], t, false)}
       </TD>
     );
   }

@@ -2,7 +2,7 @@ import I18next from 'i18next';
 
 export type AttributeRenderer = 'progress';
 
-export type Placement = 'table' | 'detail' | 'both';
+export type Placement = 'table' | 'detail' | 'both' | 'inline';
 
 export type ValidationState = 'success' | 'warning' | 'error';
 

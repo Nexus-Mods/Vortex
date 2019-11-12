@@ -112,6 +112,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
   private mVisibleAttributes: ITableAttribute[];
   private mVisibleDetails: ITableAttribute[];
+  private mVisibleInlines: ITableAttribute[];
 
   private mPinnedRef: HTMLElement;
   private mScrollRef: HTMLElement;
@@ -150,9 +151,10 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       multiRowActions: this.multiRowActions(props),
       columnToggles: this.columnToggles(props),
     };
-    const { table, detail } = this.visibleAttributes(props.objects, props.attributeState);
+    const { table, detail, inline } = this.visibleAttributes(props.objects, props.attributeState);
     this.mVisibleAttributes = table;
     this.mVisibleDetails = detail;
+    this.mVisibleInlines = inline;
     this.updateCalculatedValues(props)
     .then(didRun => {
       if (didRun) {
@@ -203,9 +205,10 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         || (newProps.objects !== this.props.objects)) {
       const { attributeState, objects } = newProps;
 
-      const { table, detail } = this.visibleAttributes(objects, attributeState);
+      const { table, detail, inline } = this.visibleAttributes(objects, attributeState);
       this.mVisibleAttributes = table;
       this.mVisibleDetails = detail;
+      this.mVisibleInlines = inline;
 
       if (Object.keys(newProps.attributeState).find(id =>
             (this.props.attributeState[id] === undefined)
@@ -585,30 +588,34 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private columnToggles(props: IProps): ITableRowAction[] {
     const { t, objects } = props;
 
-    let pos = 1;
-    const getPos = () => {
-      return pos++;
-    };
+    const result: ITableRowAction[] = [];
 
-    const toggleableColumns = objects.filter(attr => attr.isToggleable);
-    if (toggleableColumns.length === 0) {
-      return [];
-    }
-
-    return [{
-      icon: null,
-      title: t('Toggle Columns'),
-      position: getPos(),
-    }].concat(toggleableColumns
-      .map(attr => {
+    const { columns, inlines } = objects.reduce((prev, attr) => {
+      if (attr.isToggleable) {
         const attributeState = this.getAttributeState(attr, props.attributeState);
-        return {
+        prev[attr.placement === 'inline' ? 'inlines' : 'columns'].push({
           icon: attributeState.enabled ? 'checkbox-checked' : 'checkbox-unchecked',
           title: attr.name,
-          position: getPos(),
           action: (arg) => this.setAttributeVisible(attr.id, !attributeState.enabled),
-        };
-      }));
+        });
+      }
+      return prev;
+    }, { columns: [], inlines: [] });
+
+    if (columns.length > 0) {
+      result.push({
+        icon: null,
+        title: t('Toggle Columns'),
+      }, ...columns);
+    }
+    if (inlines.length > 0) {
+      result.push({
+        icon: null,
+        title: t('Toggle Inlines'),
+      }, ...inlines);
+    }
+
+    return result.map((res, idx) => ({ ...res, position: idx }));
   }
 
   private renderTableActions(hasActions: boolean): JSX.Element {
@@ -664,6 +671,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         data={calculatedValues[rowId]}
         rawData={data[rowId]}
         attributes={attributes}
+        inlines={this.mVisibleInlines}
         sortAttribute={sortAttribute !== undefined ? sortAttribute.id : undefined}
         actions={singleRowActions}
         hasActions={hasActions !== undefined ? hasActions : true}
@@ -1401,8 +1409,10 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private visibleAttributes(attributes: ITableAttribute[],
-                            attributeStates: { [id: string]: IAttributeState }):
-                            { table: ITableAttribute[], detail: ITableAttribute[] } {
+                            attributeStates: { [id: string]: IAttributeState })
+                            : { table: ITableAttribute[],
+                                detail: ITableAttribute[],
+                                inline: ITableAttribute[] } {
     const filtered = attributes.filter(attribute =>
       ((attribute.condition === undefined) || attribute.condition()));
 
@@ -1410,8 +1420,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       this.getAttributeState(attribute, attributeStates).enabled);
 
     return {
-      table: enabled.filter(attribute => attribute.placement !== 'detail'),
-      detail: filtered.filter(attribute => attribute.placement !== 'table'),
+      table: enabled.filter(attribute => ['table', 'both'].includes(attribute.placement)),
+      detail: filtered.filter(attribute => ['detail', 'both'].includes(attribute.placement)),
+      inline: enabled.filter(attribute => attribute.placement === 'inline'),
     };
   }
 
