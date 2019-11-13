@@ -1,6 +1,9 @@
+import { removeExtension } from '../../actions';
 import { IExtensionApi } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
 import * as fs from '../../util/fs';
+import { log } from '../../util/log';
+import { INVALID_FILENAME_RE } from '../../util/util';
 
 import { ExtensionType, IExtension } from './types';
 import { readExtensionInfo } from './util';
@@ -59,7 +62,25 @@ function installExtensionDependencies(api: IExtensionApi, extPath: string): Prom
   } catch (err) {
     return Promise.reject(err);
   }
+}
 
+function sanitize(input: string): string {
+  return input.replace(INVALID_FILENAME_RE, '_');
+}
+
+function removeOldVersion(api: IExtensionApi, info: IExtension): Promise<void> {
+  const state: IState = api.store.getState();
+  const { installed }  = state.session.extensions;
+
+  // should never be more than one but let's handle multiple to be safe
+  const previousVersions = Object.keys(installed)
+    .filter(key => (info.id !== undefined) && (installed[key].id === info.id)
+                || (info.modId !== undefined) && (installed[key].modId === info.modId)
+                || (installed[key].name === info.name));
+  log('info', 'removing previous versions of the extension', previousVersions);
+
+  previousVersions.forEach(key => api.store.dispatch(removeExtension(key)));
+  return Promise.resolve();
 }
 
 function installExtension(api: IExtensionApi,
@@ -92,10 +113,13 @@ function installExtension(api: IExtensionApi,
                           JSON.stringify(manifestInfo.info, undefined, 2))
           .then(() => manifestInfo))
       .then((manifestInfo: { id: string, info: IExtension }) => {
-        destPath = path.join(extensionsPath, manifestInfo.id);
+        const dirName = sanitize(manifestInfo.id);
+        destPath = path.join(extensionsPath, dirName);
         type = manifestInfo.info.type;
-        return fs.removeAsync(destPath);
+        return removeOldVersion(api, manifestInfo.info);
       })
+      // we don't actually expect the output directory to exist
+      .then(() => fs.removeAsync(destPath))
       .then(() => fs.renameAsync(tempPath, destPath))
       .then(() => {
         if (type === 'translation') {

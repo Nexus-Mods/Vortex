@@ -10,7 +10,7 @@ import { setAvailableExtensions, setExtensionsUpdate, setInstalledExtensions } f
 import BrowseExtensions from './BrowseExtensions';
 import ExtensionManager from './ExtensionManager';
 import sessionReducer from './reducers';
-import { IAvailableExtension, IExtensionDownloadInfo } from './types';
+import { IAvailableExtension, IExtension, IExtensionDownloadInfo } from './types';
 import { downloadAndInstallExtension, fetchAvailableExtensions, readExtensions } from './util';
 
 import * as Promise from 'bluebird';
@@ -28,24 +28,25 @@ function checkForUpdates(api: IExtensionApi) {
   const state: IState = api.store.getState();
   const { available, installed }  = state.session.extensions;
 
-  const updateable: IAvailableExtension[] = Object.values(installed).reduce((prev, ext) => {
-    if (ext.modId === undefined) {
+  const updateable: Array<{ update: IAvailableExtension, current: IExtension}> =
+    Object.values(installed).reduce((prev, ext) => {
+      if (ext.modId === undefined) {
+        return prev;
+      }
+
+      const update = available.find(iter => iter.modId === ext.modId);
+      if (update === undefined) {
+        return prev;
+      }
+
+      if (update.version === ext.version) {
+        return prev;
+      }
+
+      prev.push({ current: ext, update });
+
       return prev;
-    }
-
-    const current = available.find(iter => iter.modId === ext.modId);
-    if (current === undefined) {
-      return prev;
-    }
-
-    if (current.version === ext.version) {
-      return prev;
-    }
-
-    prev.push(current);
-
-    return prev;
-  }, []);
+    }, []);
 
   if (updateable.length === 0) {
     return Promise.resolve();
@@ -59,9 +60,10 @@ function checkForUpdates(api: IExtensionApi) {
   });
 
   log('info', 'extensions can be updated', {
-    updateable: updateable.map(ext => `${ext.name} v${ext.version}`) });
+    updateable: updateable.map(ext => `${ext.current.name} v${ext.current.version} `
+                                  + `-> ${ext.update.name} v${ext.update.version}`) });
 
-  return Promise.map(updateable, ext => downloadAndInstallExtension(api, ext))
+  return Promise.map(updateable, update => downloadAndInstallExtension(api, update.update))
     .then(() => {
       localState.reloadNecessary = true;
       api.sendNotification({
