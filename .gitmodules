@@ -140,3 +140,7 @@
 [submodule "extensions\\script-extender-error-check"]
 	path = extensions/script-extender-error-check
 	url = https://github.com/Nexus-Mods/extension-script-extender-error-check.git
+[submodule "extensions/game-launchers"]
+	path = extensions/game-launchers
+	url = https://github.com/Nexus-Mods/vortex-game-launchers.git
+	branch = master

@@ -5,6 +5,7 @@ import GameModeManager from '../GameModeManager';
 import { getModTypeExtensions } from './modTypeExtensions';
 
 import * as path from 'path';
+import { IGameStoreLauncher } from '../../../types/IGameStoreLauncher';
 
 // "decorate" IGame objects with added functionality
 const gameExHandler = {
@@ -67,4 +68,12 @@ export function getGame(gameId: string): IGame {
     throw new Error('getGame only available in renderer process');
   }
   return makeGameProxy($.gameModeManager.games.find(iter => iter.id === gameId));
+}
+
+export function getGameLaunchers(): IGameStoreLauncher[] {
+  if ($.gameModeManager === undefined) {
+    throw new Error('getGameLaunchers only available in renderer process');
+  }
+
+  return $.gameModeManager.gameLaunchers || [];
 }

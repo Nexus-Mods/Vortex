@@ -4,7 +4,8 @@ import {
   IExtensionApi,
   IExtensionContext,
 } from '../../types/IExtensionContext';
-import {IGame} from '../../types/IGame';
+import { IGame } from '../../types/IGame';
+import { IGameStoreLauncher } from '../../types/IGameStoreLauncher';
 import { IProfile, IRunningTool, IState } from '../../types/IState';
 import { IEditChoice, ITableAttribute } from '../../types/ITableAttribute';
 import {ProcessCanceled, SetupError, UserCanceled} from '../../util/CustomErrors';
@@ -53,6 +54,7 @@ import * as path from 'path';
 import * as Redux from 'redux';
 import * as semver from 'semver';
 
+const gameStoreLaunchers: IGameStoreLauncher[] = [];
 const extensionGames: IGame[] = [];
 
 const $ = local<{
@@ -361,6 +363,22 @@ function init(context: IExtensionContext): boolean {
 
   context.registerTableAttribute('mods', genModTypeAttribute(context.api));
 
+  context.registerGameStoreLauncher = ((gameStore: IGameStoreLauncher, extensionPath: string) => {
+    gameStore.extensionPath = extensionPath;
+    try {
+      const storeExtInfo = JSON.parse(
+        fs.readFileSync(path.join(extensionPath, 'info.json'), { encoding: 'utf8' }));
+
+      gameStore.version = storeExtInfo.version;
+      gameStoreLaunchers.push(gameStore);
+    } catch (err) {
+      context.api.showErrorNotification('Game store launcher extension not loaded', err, {
+        allowReport: false,
+        message: gameStore.name,
+      });
+    }
+  }) as any;
+
   // TODO: hack, we need the extension path to get at the assets but this parameter
   //   is only added internally and not part of the public api
   context.registerGame = ((game: IGame, extensionPath: string) => {
@@ -490,6 +508,7 @@ function init(context: IExtensionContext): boolean {
     const GameModeManagerImpl: typeof GameModeManager = require('./GameModeManager').default;
     $.gameModeManager = new GameModeManagerImpl(
       extensionGames,
+      gameStoreLaunchers,
       (gameMode: string) => {
         log('debug', 'gamemode activated', gameMode);
         events.emit('gamemode-activated', gameMode);

@@ -110,6 +110,15 @@
       ]
     },
     {
+      "srcPath": "extensions/game-launchers/*",
+      "outPath": "bundledPlugins",
+      "skipPaths": 2,
+      "target": [
+        "out",
+        "app"
+      ]
+    },
+    {
       "srcPath": "extensions/*/index.js",
       "outPath": "bundledPlugins",
       "skipPaths": 1,

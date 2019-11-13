@@ -2,6 +2,7 @@ import { addNotification, showDialog } from '../../actions/notifications';
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
 import { ThunkStore } from '../../types/IExtensionContext';
 import { IGame } from '../../types/IGame';
+import { IGameStoreLauncher } from '../../types/IGameStoreLauncher';
 import { IState } from '../../types/IState';
 import { ITool } from '../../types/ITool';
 import { getNormalizeFunc } from '../../util/api';
@@ -34,13 +35,16 @@ import * as Redux from 'redux';
 class GameModeManager {
   private mStore: ThunkStore<IState>;
   private mKnownGames: IGame[];
+  private mKnownGameStores: IGameStoreLauncher[];
   private mActiveSearch: Promise<any[]>;
   private mOnGameModeActivated: (mode: string) => void;
 
   constructor(extensionGames: IGame[],
+              gameStoreExtensions: IGameStoreLauncher[],
               onGameModeActivated: (mode: string) => void) {
     this.mStore = null;
     this.mKnownGames = extensionGames;
+    this.mKnownGameStores = gameStoreExtensions;
     this.mActiveSearch = null;
     this.mOnGameModeActivated = onGameModeActivated;
   }
@@ -147,6 +151,10 @@ class GameModeManager {
 
   public get games(): IGame[] {
     return this.mKnownGames;
+  }
+
+  public get gameLaunchers(): IGameStoreLauncher[] {
+    return this.mKnownGameStores;
   }
 
   /**
