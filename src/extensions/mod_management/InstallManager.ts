@@ -413,7 +413,15 @@ class InstallManager {
                     };
               }
               if (installContext !== undefined) {
-                installContext.reportError('Installation failed', message, undefined, replace);
+                const browserAssistantMsg = 'The installer has failed due to an external 3rd '
+                  + 'party application you have installed on your system named '
+                  + '"Browser Assistant". This application inserts itself globally '
+                  + 'and breaks any other application that uses the same libraries as it does.\n\n'
+                  + 'To use Vortex, please uninstall "Browser Assistant".';
+                const errorMessage = (typeof err === 'string') ? err : err.message;
+                (!this.isBrowserAssistantError(errorMessage))
+                  ? installContext.reportError('Installation failed', message, undefined, replace)
+                  : installContext.reportError('Installation failed', browserAssistantMsg, false);
               }
               if (callback !== undefined) {
                 callback(err, modId);
@@ -428,6 +436,11 @@ class InstallManager {
           installContext.stopIndicator(mod);
         }
       })));
+  }
+
+  private isBrowserAssistantError(error: string): boolean {
+    return (process.platform === 'win32')
+        && (error.indexOf('Roaming\\Browser Assistant') !== -1);
   }
 
   private isCritical(error: string): boolean {
