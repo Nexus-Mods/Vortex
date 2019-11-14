@@ -269,10 +269,11 @@
       "name": "modpack",
       "path": "extensions/modpack",
       "removeModules": ["vortex-api"],
-      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "**/*.scss", "*.json", "webpack.config.js"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/modpack"
     },
     {
+      "type": "build-copy",
       "name": "script-extender-error-check",
       "path": "extensions/script-extender-error-check",
       "removeModules": ["vortex-api"],
