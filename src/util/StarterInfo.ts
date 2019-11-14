@@ -2,7 +2,6 @@ import { setToolRunning } from '../actions';
 import { IDiscoveredTool } from '../types/IDiscoveredTool';
 import { IGame } from '../types/IGame';
 import { log } from '../util/log';
-import opn from '../util/opn';
 
 import GameStoreLauncher from './GameStoreHelper';
 
@@ -22,7 +21,7 @@ import * as Promise from 'bluebird';
 import { remote } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
-import { GameNotFound } from '../types/IGameStoreLauncher';
+import { GameEntryNotFound } from '../types/IGameStoreLauncher';
 
 export interface IStarterInfo {
   id: string;
@@ -84,14 +83,19 @@ class StarterInfo implements IStarterInfo {
 
     return launcherPromise.then(res => {
       if (res !== undefined) {
-        return StarterInfo.runThroughLauncher(res.launcher, res.addInfo)
+        const infoObj = (res.addInfo === undefined)
+          ? (!!game.details)
+            ? game.details
+            : path.dirname(info.exePath)
+          : res.addInfo;
+        return StarterInfo.runThroughLauncher(res.launcher, info, api, infoObj)
           .then(() => {
             // assuming that runThroughLauncher returns immediately on handing things off
             // to the launcher
             api.store.dispatch(setToolRunning(info.exePath, Date.now(), info.exclusive));
           })
           .catch(UserCanceled, () => null)
-          .catch(GameNotFound, err => {
+          .catch(GameEntryNotFound, err => {
             const errorMsg = [err.message, err.storeName, err.existingGames].join(' - ');
             log('error', errorMsg);
             onShowError('Failed to start game through launcher', err, true);
@@ -174,10 +178,14 @@ class StarterInfo implements IStarterInfo {
   }
 
   private static runThroughLauncher(launcher: string,
+                                    info: StarterInfo,
+                                    api: IExtensionApi,
                                     addInfo: any): Promise<void> {
     const gameLauncher = GameStoreLauncher.getLauncher(launcher);
+    const infoObj = (addInfo !== undefined)
+      ? addInfo : path.dirname(info.exePath);
     return (gameLauncher !== undefined)
-      ? gameLauncher.launchGame(addInfo)
+      ? gameLauncher.launchGame(infoObj, api)
       : Promise.reject(new Error(`unsupported launcher ${launcher}`));
   }
 

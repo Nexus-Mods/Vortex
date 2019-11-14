@@ -363,18 +363,13 @@ function init(context: IExtensionContext): boolean {
 
   context.registerTableAttribute('mods', genModTypeAttribute(context.api));
 
-  context.registerGameStoreLauncher = ((gameStore: IGameStoreLauncher, extensionPath: string) => {
-    gameStore.extensionPath = extensionPath;
+  context.registerGameStoreLauncher = ((gameStore: IGameStoreLauncher) => {
     try {
-      const storeExtInfo = JSON.parse(
-        fs.readFileSync(path.join(extensionPath, 'info.json'), { encoding: 'utf8' }));
-
-      gameStore.version = storeExtInfo.version;
       gameStoreLaunchers.push(gameStore);
     } catch (err) {
       context.api.showErrorNotification('Game store launcher extension not loaded', err, {
         allowReport: false,
-        message: gameStore.name,
+        message: gameStore.id,
       });
     }
   }) as any;

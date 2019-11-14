@@ -1,8 +1,11 @@
 import * as Promise from 'bluebird';
-import { GameLauncherNotFound,
-  GameNotFound, IGameStoreLauncher } from '../types/IGameStoreLauncher';
+import { GameEntryNotFound,
+  GameLauncherNotFound, IGameStoreLauncher } from '../types/IGameStoreLauncher';
 import { ILauncherEntry } from '../types/ILauncherEntry';
 import { log } from '../util/log';
+
+import EpicGamesLauncher from './EpicGamesLauncher';
+import Steam from './Steam';
 
 import { getGameLaunchers } from '../extensions/gamemode_management/util/getGame';
 
@@ -33,7 +36,7 @@ class GameStoreHelper {
   public findByName(name: string, launcherId?: string): Promise<ILauncherEntry> {
     return this.findGameEntry('name', name, launcherId)
       .catch(err => {
-        const isGameMissing  = err instanceof GameNotFound;
+        const isGameMissing  = err instanceof GameEntryNotFound;
         log(isGameMissing  ? 'debug' : 'error', 'launchers can\'t find game entry', err);
         return Promise.resolve(undefined);
       });
@@ -42,7 +45,7 @@ class GameStoreHelper {
   public findByAppId(appId: string | string[], launcherId?: string): Promise<ILauncherEntry> {
     return this.findGameEntry('id', appId, launcherId)
       .catch(err => {
-        const isGameMissing  = err instanceof GameNotFound;
+        const isGameMissing  = err instanceof GameEntryNotFound;
         log(isGameMissing  ? 'debug' : 'error', 'launchers can\'t find game entry', err);
         return Promise.resolve(undefined);
       });
@@ -55,7 +58,7 @@ class GameStoreHelper {
     // It's possible that the game mode manager has yet
     //  to load the launchers.
     try {
-      this.mLaunchers = getGameLaunchers();
+      this.mLaunchers = [Steam, EpicGamesLauncher, ...getGameLaunchers()];
       return this.mLaunchers;
     } catch (err) {
       log('debug', 'launchers have yet to load', err);
@@ -87,7 +90,7 @@ class GameStoreHelper {
         ? launcher.findByAppId(pattern)
         : launcher.findByName(pattern))
           .then(entry => resolve(entry))
-          .catch(GameNotFound, () => Promise.resolve()))
+          .catch(GameEntryNotFound, () => Promise.resolve()))
       .then(() => {
         // If we reached this point it means the loaded launchers
         //  have been unable to find a game entry for this game.
@@ -95,8 +98,8 @@ class GameStoreHelper {
           ? pattern.join(' - ')
           : pattern;
 
-        const stores = this.mLaunchers.map(launcher => launcher.name).join(', ');
-        return reject(new GameNotFound(name, stores));
+        const stores = this.mLaunchers.map(launcher => launcher.id).join(', ');
+        return reject(new GameEntryNotFound(name, stores));
     }));
   }
 }

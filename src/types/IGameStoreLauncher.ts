@@ -1,8 +1,8 @@
 import { IExecInfo } from './IExecInfo';
+import { IExtensionApi } from './IExtensionContext';
 import { ILauncherEntry } from './ILauncherEntry';
 
 import * as Promise from 'bluebird';
-import { ITool } from './ITool';
 
 export class GameLauncherNotFound extends Error {
   private mName: string;
@@ -18,7 +18,7 @@ export class GameLauncherNotFound extends Error {
   }
 }
 
-export class GameNotFound extends Error {
+export class GameEntryNotFound extends Error {
   private mName: string;
   private mStore: string;
   private mExistingNames: string[];
@@ -53,12 +53,11 @@ export class GameNotFound extends Error {
  *
  * @interface IGameStoreLauncher
  */
-export interface IGameStoreLauncher extends ITool {
+export interface IGameStoreLauncher  {
   /**
-   * Designated for the game store launcher extension to
-   *  configure itself and populate its game cache.
+   * This launcher's id.
    */
-  //setup: () => Promise<void>;
+  id: string;
 
   /**
    * Returns all recognized/installed games which are currently
@@ -115,16 +114,8 @@ export interface IGameStoreLauncher extends ITool {
 
   /**
    * Launches the game using this game launcher.
+   * @param appId whatever the game store uses to identify a game.
+   * @param api gives access to API functions if needed.
    */
-  launchGame: (appId: any) => Promise<void>;
-
-  /**
-   * Path to the game store launcher's extension.
-   */
-  extensionPath?: string;
-
-  /**
-   * The version of this extension.
-   */
-  version?: string;
+  launchGame: (appId: any, api?: IExtensionApi) => Promise<void>;
 }

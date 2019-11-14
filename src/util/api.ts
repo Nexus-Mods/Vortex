@@ -23,6 +23,7 @@ import copyRecursive from './copyRecursive';
 import { ArgumentInvalid, DataInvalid, MissingInterpreter, NotFound, NotSupportedError,
          ProcessCanceled, SetupError, UserCanceled } from './CustomErrors';
 import Debouncer from './Debouncer';
+import epicGamesLauncher from './EpicGamesLauncher';
 import { getVisibleWindow, terminate } from './errorHandling';
 import { extend } from './ExtensionProvider';
 import { copyFileAtomic, fileMD5 } from './fsAtomic';
@@ -38,6 +39,7 @@ import opn from './opn';
 import { getReduxLog } from './reduxLogger';
 import ReduxProp from './ReduxProp';
 import relativeTime from './relativeTime';
+import steam, { GameNotFound, ISteamEntry } from './Steam';
 import { bytesToString, deBOM, isChildPath, makeQueue, objDiff,
          pad, sanitizeCSSId, setdefault } from './util';
 import walk from './walk';
@@ -55,8 +57,10 @@ export {
   Debouncer,
   deBOM,
   deriveModInstallName as deriveInstallName,
+  epicGamesLauncher,
   extend,
   fileMD5,
+  GameNotFound,
   GameStoreHelper,
   getActivator,
   getCurrentActivator,
@@ -95,6 +99,8 @@ export {
   setdefault,
   SetupError,
   sortMods,
+  steam,
+  ISteamEntry,
   terminate,
   testModReference,
   UserCanceled,
