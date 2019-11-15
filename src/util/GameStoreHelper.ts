@@ -5,7 +5,7 @@ import { ILauncherEntry } from '../types/ILauncherEntry';
 import { log } from '../util/log';
 
 import EpicGamesLauncher from './EpicGamesLauncher';
-import Steam from './Steam';
+import Steam, { GameNotFound } from './Steam';
 
 import { getGameLaunchers } from '../extensions/gamemode_management/util/getGame';
 
@@ -36,7 +36,7 @@ class GameStoreHelper {
   public findByName(name: string, launcherId?: string): Promise<ILauncherEntry> {
     return this.findGameEntry('name', name, launcherId)
       .catch(err => {
-        const isGameMissing  = err instanceof GameEntryNotFound;
+        const isGameMissing  = (err instanceof GameEntryNotFound);
         log(isGameMissing  ? 'debug' : 'error', 'launchers can\'t find game entry', err);
         return Promise.resolve(undefined);
       });
@@ -45,7 +45,7 @@ class GameStoreHelper {
   public findByAppId(appId: string | string[], launcherId?: string): Promise<ILauncherEntry> {
     return this.findGameEntry('id', appId, launcherId)
       .catch(err => {
-        const isGameMissing  = err instanceof GameEntryNotFound;
+        const isGameMissing  = (err instanceof GameEntryNotFound);
         log(isGameMissing  ? 'debug' : 'error', 'launchers can\'t find game entry', err);
         return Promise.resolve(undefined);
       });
@@ -90,7 +90,8 @@ class GameStoreHelper {
         ? launcher.findByAppId(pattern)
         : launcher.findByName(pattern))
           .then(entry => resolve(entry))
-          .catch(GameEntryNotFound, () => Promise.resolve()))
+          .catch(GameEntryNotFound, () => Promise.resolve())
+          .catch(GameNotFound, () => Promise.resolve()))
       .then(() => {
         // If we reached this point it means the loaded launchers
         //  have been unable to find a game entry for this game.
