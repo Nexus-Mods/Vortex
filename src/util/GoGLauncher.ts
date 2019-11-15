@@ -71,14 +71,14 @@ class GoGLauncher implements IGameStoreLauncher {
   public getExecInfo(appId: string): Promise<IExecInfo> {
     return this.allGames()
       .then(entries => {
-        const gameEntry = entries.find(entry => entry.appId === appId);
+        const gameEntry = entries.find(entry => entry.appid === appId);
         return (gameEntry === undefined)
           ? Promise.reject(new GameEntryNotFound(appId, STORE_ID))
           : this.mClientPath.then((basePath) => {
               const gogClientExec = {
                 execPath: path.join(basePath, GOG_EXEC),
                 arguments: ['/command=runGame',
-                            `/gameId=${gameEntry.appId}`,
+                            `/gameId=${gameEntry.appid}`,
                             `path="${gameEntry.gamePath}"`],
               };
 
@@ -93,7 +93,7 @@ class GoGLauncher implements IGameStoreLauncher {
   public findByAppId(appId: string): Promise<ILauncherEntry> {
     return this.allGames()
       .then(entries => {
-        const gameEntry = entries.find(entry => entry.appId === appId);
+        const gameEntry = entries.find(entry => entry.appid === appId);
         if (gameEntry === undefined) {
           return Promise.reject(
             new GameEntryNotFound(Array.isArray(appId) ? appId.join(', ') : appId, STORE_ID));
@@ -117,7 +117,7 @@ class GoGLauncher implements IGameStoreLauncher {
           const keys = winapi.RegEnumKeys(hkey);
           const gameEntries: ILauncherEntry[] = keys.map(key => {
             const gameEntry: ILauncherEntry = {
-              appId: winapi.RegGetValue(hkey, key.key, 'gameID').value as string,
+              appid: winapi.RegGetValue(hkey, key.key, 'gameID').value as string,
               gamePath: winapi.RegGetValue(hkey, key.key, 'workingDir').value as string,
               name: winapi.RegGetValue(hkey, key.key, 'startMenu').value as string,
               gameStoreId: STORE_ID,

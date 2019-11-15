@@ -1,6 +1,6 @@
 
 export interface ILauncherEntry {
-  appId: string;
+  appid: string;
   name: string;
   gamePath: string;
   gameStoreId: string;

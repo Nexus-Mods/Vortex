@@ -68,7 +68,7 @@ class EpicGamesLauncher implements IGameStoreLauncher {
 
   public findByAppId(appId): Promise<ILauncherEntry> {
     return this.allGames()
-      .then(entries => entries.find(entry => entry.appId === appId))
+      .then(entries => entries.find(entry => entry.appid === appId))
       .then(entry => entry === undefined
         ? Promise.reject(new GameEntryNotFound(appId, STORE_ID))
         : Promise.resolve(entry));

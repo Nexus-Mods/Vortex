@@ -103,7 +103,7 @@ class Steam implements IGameStoreLauncher {
     return this.allGames()
       .then(entries => {
         const found = entries.find(entry => (!isDirPath)
-          ? (entry.appId === appId)
+          ? (entry.appid === appId)
           // Checking by gamepath is inefficient but I can't think of a different
           //  way to ascertain whether the launcher has this game entry with the
           //  provided information...
@@ -132,8 +132,8 @@ class Steam implements IGameStoreLauncher {
       : entry => entry.appid === appId;
 
     return this.allGames()
-      .then(entries => entries.find(matcher))
-      .then(entry => {
+      .then(entries => {
+        const entry = entries.find(matcher);
         if (entry === undefined) {
           return Promise.reject(new GameNotFound(Array.isArray(appId) ? appId.join(', ') : appId));
         } else {
@@ -216,7 +216,7 @@ class Steam implements IGameStoreLauncher {
                   }
                   try {
                     return {
-                      appId: obj['AppState']['appid'],
+                      appid: obj['AppState']['appid'],
                       gameStoreId: STORE_ID,
                       name: obj['AppState']['name'],
                       gamePath: path.join(steamAppsPath, 'common', obj['AppState']['installdir']),
