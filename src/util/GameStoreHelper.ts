@@ -5,6 +5,7 @@ import { ILauncherEntry } from '../types/ILauncherEntry';
 import { log } from '../util/log';
 
 import EpicGamesLauncher from './EpicGamesLauncher';
+import GoGLauncher from './GoGLauncher';
 import Steam, { GameNotFound } from './Steam';
 
 import { getGameLaunchers } from '../extensions/gamemode_management/util/getGame';
@@ -36,7 +37,8 @@ class GameStoreHelper {
   public findByName(name: string, launcherId?: string): Promise<ILauncherEntry> {
     return this.findGameEntry('name', name, launcherId)
       .catch(err => {
-        const isGameMissing  = (err instanceof GameEntryNotFound);
+        const isGameMissing  = ((err instanceof GameEntryNotFound)
+                             || (err instanceof GameNotFound));
         log(isGameMissing  ? 'debug' : 'error', 'launchers can\'t find game entry', err);
         return Promise.resolve(undefined);
       });
@@ -45,7 +47,8 @@ class GameStoreHelper {
   public findByAppId(appId: string | string[], launcherId?: string): Promise<ILauncherEntry> {
     return this.findGameEntry('id', appId, launcherId)
       .catch(err => {
-        const isGameMissing  = (err instanceof GameEntryNotFound);
+        const isGameMissing  = ((err instanceof GameEntryNotFound)
+                             || (err instanceof GameNotFound));
         log(isGameMissing  ? 'debug' : 'error', 'launchers can\'t find game entry', err);
         return Promise.resolve(undefined);
       });
@@ -58,7 +61,7 @@ class GameStoreHelper {
     // It's possible that the game mode manager has yet
     //  to load the launchers.
     try {
-      this.mLaunchers = [Steam, EpicGamesLauncher, ...getGameLaunchers()];
+      this.mLaunchers = [Steam, EpicGamesLauncher, GoGLauncher, ...getGameLaunchers()];
       return this.mLaunchers;
     } catch (err) {
       log('debug', 'launchers have yet to load', err);

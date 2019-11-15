@@ -15,6 +15,7 @@ import { IExtensionApi } from '../types/IExtensionContext';
 const app = (remote !== undefined) ? remote.app : appIn;
 
 const STORE_ID = 'steam';
+const STEAM_EXEC = 'Steam.exe';
 
 export interface ISteamEntry extends ILauncherEntry {}
 
@@ -112,7 +113,7 @@ class Steam implements IGameStoreLauncher {
         }
         return this.mBaseFolder.then((basePath) => {
           const steamExec = {
-            execPath: basePath + '\\Steam.exe',
+            execPath: path.join(basePath, STEAM_EXEC),
             arguments: ['-applaunch', appId],
           };
           return Promise.resolve(steamExec);
