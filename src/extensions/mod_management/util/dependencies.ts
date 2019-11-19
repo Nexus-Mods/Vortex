@@ -116,9 +116,9 @@ function makeLookupResult(lookup: ILookupResult, fromHint: IBrowserResult): ILoo
 /**
  * from a set of requires/recommends rules, deduce which of them need to be downloaded
  * and/or installed
- * @param rules 
- * @param api 
- * @param recommendations 
+ * @param rules
+ * @param api
+ * @param recommendations
  */
 function gatherDependencies(rules: IModRule[],
                             api: IExtensionApi,
@@ -134,6 +134,12 @@ function gatherDependencies(rules: IModRule[],
   // for each requirement, look up the reference and recursively their dependencies
   return Promise.reduce(requirements, (total: Dependency[], rule: IModRule) => {
     const mod: IMod = findModByRef(rule.reference, state);
+    if (mod !== undefined) {
+      // save ourself some time: For installed mods we assume the dependencies
+      // have already been checked
+      return total;
+    }
+
     const download = findDownloadByRef(rule.reference, state);
 
     let urlFromHint: IBrowserResult;
