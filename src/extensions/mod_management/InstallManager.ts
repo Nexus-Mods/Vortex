@@ -23,7 +23,8 @@ import { getGame } from '../gamemode_management/util/getGame';
 import modName, { renderModReference } from '../mod_management/util/modName';
 import { setModEnabled } from '../profile_management/actions/profiles';
 
-import {addModRule, setFileOverride, setModAttribute, setModType, removeModRule} from './actions/mods';
+import {addModRule, removeModRule, setFileOverride, setModAttribute,
+        setModType} from './actions/mods';
 import {Dependency, IDependency, IDependencyError, IModInfoEx} from './types/IDependency';
 import { IInstallContext } from './types/IInstallContext';
 import { IInstallResult, IInstruction, InstructionType } from './types/IInstallResult';
@@ -473,6 +474,8 @@ class InstallManager {
     const state: IState = api.store.getState();
     const mod: IMod = getSafe(state, ['persistent', 'mods', profile.gameId, modId], undefined);
 
+    this.repairRules(api, mod, profile.gameId);
+
     if (mod === undefined) {
       return Promise.reject(new ProcessCanceled(`Invalid mod specified "${mod}"`));
     }
@@ -489,6 +492,8 @@ class InstallManager {
     const state: IState = api.store.getState();
     const mod: IMod = getSafe(state, ['persistent', 'mods', profile.gameId, modId], undefined);
 
+    this.repairRules(api, mod, profile.gameId);
+
     if (mod === undefined) {
       return Promise.reject(new ProcessCanceled(`Invalid mod specified "${mod}"`));
     }
@@ -496,6 +501,34 @@ class InstallManager {
     const installPath = this.mGetInstallPath(profile.gameId);
     return this.installRecommendationsImpl(api, profile, mod.id, modName(mod),
                                            mod.rules, installPath);
+  }
+
+  private hasFuzzyReference(ref: IModReference): boolean {
+    return (ref.fileExpression !== undefined)
+        || (ref.fileMD5 !== undefined)
+        || (ref.logicalFileName !== undefined);
+  }
+
+  /**
+   * when installing a mod from a dependency rule we store the id of the installed mod
+   * in the rule for quicker and consistent matching but if - at a later time - we
+   * install those same dependencies again we have to unset those ids, otherwise the
+   * dependence installs would fail.
+   */
+  private repairRules(api: IExtensionApi, mod: IMod, gameId: string) {
+    const state: IState = api.store.getState();
+    const mods = state.persistent.mods[gameId];
+
+    (mod.rules || []).forEach(rule => {
+      if ((rule.reference.id !== undefined)
+          && (mods[rule.reference.id] === undefined)
+          && this.hasFuzzyReference(rule.reference)) {
+        const newRule: IModRule = JSON.parse(JSON.stringify(rule));
+        api.store.dispatch(removeModRule(gameId, mod.id, rule));
+        delete newRule.reference.id;
+        api.store.dispatch(addModRule(gameId, mod.id, newRule));
+      }
+    });
   }
 
   private isCritical(error: string): boolean {
