@@ -37,9 +37,15 @@ function modName(mod: IMod, options?: INameOptions): string {
   return modNameFromAttributes(mod.attributes, options) || mod.installationPath;
 }
 
-export function renderModReference(ref: IModReference, mod: IMod) {
+export interface IRenderOptions {
+  version?: boolean;
+}
+
+export function renderModReference(ref: IModReference, mod: IMod, options?: IRenderOptions) {
+  const version = (options === undefined) || options.version !== false;
+
   if ((ref.id !== undefined) && (mod !== undefined)) {
-    return modName(mod, { version: true });
+    return modName(mod, { version });
   }
 
   if (ref.description !== undefined) {
@@ -51,7 +57,7 @@ export function renderModReference(ref: IModReference, mod: IMod) {
   }
 
   let name = ref.logicalFileName || ref.fileExpression;
-  if (ref.versionMatch !== undefined) {
+  if ((ref.versionMatch !== undefined) && version) {
     name += ' v' + ref.versionMatch;
   }
   return name;
