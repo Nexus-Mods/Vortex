@@ -272,14 +272,17 @@ export class DownloadObserver {
   }
 
   private handlePauseDownload(downloadId: string) {
-    const download =
-        this.mApi.store.getState().persistent.downloads.files[downloadId];
+    const state: IState = this.mApi.store.getState();
+    const download = state.persistent.downloads.files[downloadId];
     if (download === undefined) {
       log('warn', 'failed to pause download: unknown', {downloadId});
       return;
     }
     if (['init', 'started'].indexOf(download.state) >= 0) {
-      this.mManager.pause(downloadId);
+      if (this.mManager.pause(downloadId) === undefined) {
+        // this indicates the download isn't actually running
+        this.mApi.store.dispatch(pauseDownload(downloadId, true, download.chunks));
+      }
     }
   }
 
