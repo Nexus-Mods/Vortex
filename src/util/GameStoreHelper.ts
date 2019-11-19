@@ -6,6 +6,7 @@ import { log } from '../util/log';
 
 import EpicGamesLauncher from './EpicGamesLauncher';
 import GoGLauncher from './GoGLauncher';
+import OriginLauncher from './OriginLauncher';
 import Steam, { GameNotFound } from './Steam';
 
 import { getGameLaunchers } from '../extensions/gamemode_management/util/getGame';
@@ -61,7 +62,8 @@ class GameStoreHelper {
     // It's possible that the game mode manager has yet
     //  to load the launchers.
     try {
-      this.mLaunchers = [Steam, EpicGamesLauncher, GoGLauncher, ...getGameLaunchers()];
+      this.mLaunchers = [Steam, EpicGamesLauncher,
+        OriginLauncher, GoGLauncher, ...getGameLaunchers()];
       return this.mLaunchers;
     } catch (err) {
       log('debug', 'launchers have yet to load', err);
