@@ -264,8 +264,13 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
     const openClass = detailsOpen ? 'open' : 'closed';
 
+    const containerClasses = ['table-container'];
+    if (showDetails) {
+      containerClasses.push('has-details');
+    }
+
     return (
-      <div id={`table-${tableId}`} className='table-container'>
+      <div id={`table-${tableId}`} className={containerClasses.join(' ')}>
         <div className='table-container-inner'>
           <div
             className='table-main-pane'
@@ -1306,9 +1311,12 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     const enabled = filtered.filter(attribute =>
       this.getAttributeState(attribute, attributeStates).enabled);
 
+    const attributeSort = (lhs: ITableAttribute, rhs: ITableAttribute) =>
+      (lhs.position || 100) - (rhs.position || 100);
+
     return {
-      table: enabled.filter(attribute => attribute.placement !== 'detail'),
-      detail: filtered.filter(attribute => attribute.placement !== 'table'),
+      table: enabled.filter(attribute => attribute.placement !== 'detail').sort(attributeSort),
+      detail: filtered.filter(attribute => attribute.placement !== 'table').sort(attributeSort),
     };
   }
 

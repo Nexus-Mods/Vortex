@@ -49,15 +49,22 @@
   position: absolute;
   top: 0;
   left: 0;
-  right: calc(#{$half-gutter} + #{$scrollbar-width});
-
 }
 
 .table-main-pane {
   overflow-y: auto;
   flex: 1 1 0%;
-  margin-right: $half-gutter;
   will-change: transform;
+}
+
+.table-container.has-details {
+  .table-header-pane { 
+    right: calc(#{$half-gutter} + #{$scrollbar-width});
+  }
+
+  .table-main-pane {
+    margin-right: $half-gutter;
+  }
 }
 
 .table-main-pane,

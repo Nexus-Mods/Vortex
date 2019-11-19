@@ -64,6 +64,16 @@ export interface ITableAttribute<T = any> {
    */
   description?: string;
   /**
+   * If set, determins the order in which attributes are displayed (the order of columns if
+   * placement is 'table' or vertical order in details).
+   * Lower number means further left/further up respectively.
+   * In the futuer users may be able to customize the column order at which point this
+   * should be considered a default.
+   * All attributes where this isn't set will default to 100 and be ordered according to how
+   * attributes appear in code
+   */
+  position?: number;
+  /**
    * optional help text regarding this field. This will only show up in the details pane, if there
    * is no custom renderer and only if a name is set (as otherwise the space for the help icon
    * doesn't exist)
@@ -219,7 +229,7 @@ export interface ITableAttribute<T = any> {
      * Please note: the value returned by calc has to appear in the text-field of one of these
      *   choices
      */
-    choices?: () => IEditChoice[],
+    choices?: (object: T) => IEditChoice[],
 
     /**
      * if set, this field is a text field that validates its input

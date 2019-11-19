@@ -131,11 +131,11 @@ class DetailCell extends React.Component<ICellProps, {}> {
   }
 
   private renderSelect(values: any[], readOnly: boolean): JSX.Element {
-    const { t, attribute } = this.props;
+    const { t, attribute, rawData } = this.props;
 
     const various = values.find(iter => !Object.is(iter, values[0])) !== undefined;
 
-    const choices = attribute.edit.choices();
+    const choices = attribute.edit.choices(rawData);
     let currentChoice: IEditChoice;
     if (!various) {
       currentChoice = choices.find(choice => choice.text === values[0]);

@@ -45,6 +45,7 @@ class HeaderCell extends React.Component<IHeaderProps, {}> {
     if (this.mMinWidth >= 0) {
       style['minWidth'] = this.mMinWidth;
     }
+
     return (
       <TH
         className={`table-header-cell ${className}`}

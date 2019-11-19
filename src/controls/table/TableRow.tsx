@@ -113,9 +113,9 @@ class TableCell extends React.Component<ICellProps, { isOpen: boolean }> {
   }
 
   private renderAction(data: any): JSX.Element {
-    const { t, attribute, container, right, tableId } = this.props;
+    const { t, attribute, container, rawData, right, tableId } = this.props;
 
-    const choices = attribute.edit.choices();
+    const choices = attribute.edit.choices(rawData);
     const currentChoice = choices.find(choice => choice.text === data);
     const key = currentChoice !== undefined ? currentChoice.key : undefined;
     return (
@@ -153,9 +153,9 @@ class TableCell extends React.Component<ICellProps, { isOpen: boolean }> {
   }
 
   private renderSelect(data: any): JSX.Element {
-    const { t, attribute } = this.props;
+    const { t, attribute, rawData } = this.props;
 
-    const choices = attribute.edit.choices();
+    const choices = attribute.edit.choices(rawData);
 
     const currentChoice: IEditChoice = choices.find(choice => choice.text === data);
 
