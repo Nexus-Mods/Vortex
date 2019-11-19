@@ -694,10 +694,6 @@ class DownloadManager {
 
     return (handler !== undefined)
       ? handler(input)
-        .catch(err => {
-          log('warn', 'failed to resolve', err.message);
-          return Promise.resolve({ urls: [] });
-        })
         .then(res => {
           this.mResolveCache[input] = { time: Date.now(), urls: res.urls };
           return res.urls;

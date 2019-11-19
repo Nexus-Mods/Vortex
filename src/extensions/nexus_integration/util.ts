@@ -8,7 +8,7 @@ import * as semver from 'semver';
 import * as util from 'util';
 import { addNotification, dismissNotification, setModAttribute } from '../../actions';
 import { IExtensionApi, IMod, IState, ThunkStore } from '../../types/api';
-import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
+import { HTTPError, ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import { contextify, setApiKey } from '../../util/errorHandling';
 import github, { RateLimitExceeded } from '../../util/github';
 import { log } from '../../util/log';
@@ -132,6 +132,15 @@ export function startDownload(api: IExtensionApi, nexus: Nexus, nxmurl: string):
         }
         showError(api.store.dispatch, 'Download failed', detail,
                   { allowReport });
+      } else if (err instanceof HTTPError) {
+        if (err.statusCode >= 400) {
+          api.showErrorNotification('Download failed', err, { allowReport: false });
+        } else {
+          api.showErrorNotification('Download failed', {
+            error: err,
+            message: 'This may be a temporary issue, please try again later',
+          }, { allowReport: false });
+        }
       } else if (err instanceof TimeoutError) {
         api.showErrorNotification('Download failed', err, { allowReport: false });
       } else if (err instanceof ProcessCanceled) {
@@ -153,7 +162,7 @@ export function startDownload(api: IExtensionApi, nexus: Nexus, nxmurl: string):
         api.showErrorNotification('Download failed', err, { allowReport });
       }
       log('warn', 'failed to get mod info', { err: util.inspect(err) });
-      return undefined;
+      return null;
     });
 }
 

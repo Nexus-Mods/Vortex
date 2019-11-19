@@ -42,9 +42,15 @@ export class InsufficientDiskSpace extends Error {
 }
 
 export class ProcessCanceled extends Error {
-  constructor(message: string) {
+  private mExtraInfo: any;
+  constructor(message: string, extraInfo?: any) {
     super(message);
     this.name = this.constructor.name;
+    this.mExtraInfo = extraInfo;
+  }
+
+  public get extraInfo() {
+    return this.mExtraInfo;
   }
 }
 

@@ -1134,6 +1134,8 @@ class InstallManager {
       lookupResult.source, lookupResult.gameId, modId, fileId, pattern)
       .then(dlId => (dlId === undefined)
           ? Promise.reject(new NotFound(`source not supported "${lookupResult.source}"`))
+          : (dlId === null)
+          ? Promise.reject(new ProcessCanceled('Download failed', { alreadyReported: true }))
           : Promise.resolve(dlId));
   }
 
@@ -1175,6 +1177,8 @@ class InstallManager {
             dep.lookupResults[0].value,
             api);
         }
+      } else if (dep.download === null) {
+        dlPromise = Promise.reject(new ProcessCanceled('Failed to determine download url'));
       }
       return dlPromise
         .then((downloadId: string) => (dep.mod === undefined)
@@ -1189,6 +1193,9 @@ class InstallManager {
         })
         // don't cancel the whole process if one dependency fails to install
         .catch(ProcessCanceled, err => {
+          if ((err.extraInfo !== undefined) && err.extraInfo.alreadyReported) {
+            return;
+          }
           api.showErrorNotification('Failed to install dependency',
             '{{errorMessage}}\nA common cause for issues here is that the file may no longer '
             + 'be available. You may want to install a current version of the specified mod '
@@ -1229,12 +1236,15 @@ class InstallManager {
         // adequate to show an error but not as a bug in Vortex
         api.showErrorNotification('Failed to install dependencies',
           err.message, { allowReport: false });
+        return [];
       })
-      .catch(UserCanceled, () => undefined)
+      .catch(UserCanceled, () => [])
       .catch(err => {
         api.showErrorNotification('Failed to install dependencies',
           err.message);
-      });
+        return [];
+      })
+      .filter(dep => dep !== undefined);
   }
 
   private updateRules(api: IExtensionApi, profile: IProfile, sourceModId: string,
@@ -1307,7 +1317,8 @@ class InstallManager {
             return prev;
           }, { success: [], existing: [], error: [] });
 
-        log('debug', 'determined unfulfilled dependencies', { count: success.length, errors: error.length });
+        log('debug', 'determined unfulfilled dependencies',
+            { count: success.length, errors: error.length });
 
         if (silent && (error.length === 0)) {
           return this.doInstallDependencies(api, profile, modId, success, false)
