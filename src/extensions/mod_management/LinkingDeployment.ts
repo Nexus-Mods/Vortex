@@ -14,7 +14,7 @@ import {
 } from './types/IDeploymentMethod';
 
 import Promise from 'bluebird';
-import I18next from 'i18next';
+import { TFunction } from 'i18next';
 import * as _ from 'lodash';
 import * as path from 'path';
 import turbowalk from 'turbowalk';
@@ -79,7 +79,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
     return Promise.resolve();
   }
 
-  public detailedDescription(t: I18next.TFunction): string {
+  public detailedDescription(t: TFunction): string {
     return t(this.description);
   }
 

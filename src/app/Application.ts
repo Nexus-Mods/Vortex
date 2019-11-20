@@ -28,9 +28,9 @@ import SplashScreenT from './SplashScreen';
 import TrayIconT from './TrayIcon';
 
 import Promise from 'bluebird';
-import crashDump from 'crash-dump';
+import crashDumpX from 'crash-dump';
 import {app, dialog, ipcMain, shell} from 'electron';
-import isAdmin from 'is-admin';
+import isAdmin = require('is-admin');
 import * as _ from 'lodash';
 import * as path from 'path';
 import { allow } from 'permissions';
@@ -38,6 +38,9 @@ import * as semver from 'semver';
 import * as uuidT from 'uuid';
 
 import { RegGetValue } from 'winapi-bindings';
+
+// export is currently a bit messed up
+const crashDump = (crashDumpX as any).default;
 
 const uuid = lazyRequire<typeof uuidT>(() => require('uuid'));
 
@@ -214,7 +217,7 @@ class Application {
           process.on('uncaughtException', handleError);
           process.on('unhandledRejection', handleError);
         })
-        .then(() => this.initDevel())
+        // .then(() => this.initDevel())
         .tap(() => log('debug', 'starting user interface'))
         .then(() => this.startUi())
         .tap(() => log('debug', 'setting up tray icon'))

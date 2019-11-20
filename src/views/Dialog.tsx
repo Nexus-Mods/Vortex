@@ -10,9 +10,9 @@ import {
 import { IState } from '../types/IState';
 import bbcode from '../util/bbcode';
 import { ComponentEx, connect, translate } from '../util/ComponentEx';
+import { TFunction } from '../util/i18n';
 
 import { remote } from 'electron';
-import I18next from 'i18next';
 import update from 'immutability-helper';
 import * as React from 'react';
 import {
@@ -158,7 +158,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private translateParts(message: string, t: I18next.TFunction, parameters?: any) {
+  private translateParts(message: string, t: TFunction, parameters?: any) {
     // split by linebreak, then by tab, apply translation function, then join
     // again (replacing tabs with spaces)
     return message

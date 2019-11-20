@@ -42,7 +42,6 @@ import { spawn, SpawnOptions } from 'child_process';
 import { app as appIn, dialog as dialogIn, ipcMain, ipcRenderer, remote } from 'electron';
 import { EventEmitter } from 'events';
 import * as fs from 'fs';
-import I18next from 'i18next';
 import * as JsonSocket from 'json-socket';
 import * as _ from 'lodash';
 import { IHashResult, ILookupResult, IModInfo, IReference } from 'modmeta-db';
@@ -56,6 +55,7 @@ import * as rimraf from 'rimraf';
 import * as semver from 'semver';
 import { generate as shortid } from 'shortid';
 import { dynreq, runElevated } from 'vortex-run';
+import { i18n } from './i18n';
 
 // tslint:disable-next-line:no-var-requires
 const ReduxWatcher = require('redux-watcher');
@@ -376,7 +376,7 @@ class ExtensionManager {
 
   private mExtensions: IRegisteredExtension[];
   private mApi: IExtensionApi;
-  private mTranslator: I18next.i18n;
+  private mTranslator: i18n;
   private mEventEmitter: NodeJS.EventEmitter;
   private mStyleManager: StyleManagerT;
   private mReduxWatcher: any;
@@ -482,7 +482,7 @@ class ExtensionManager {
     this.initExtensions();
   }
 
-  public setTranslation(translator: I18next.i18n) {
+  public setTranslation(translator: i18n) {
     this.mTranslator = translator;
   }
 

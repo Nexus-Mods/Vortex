@@ -19,15 +19,15 @@ import { getSafe } from '../util/storeHelper';
 import { truthy } from '../util/util';
 
 import Promise from 'bluebird';
-import I18next from 'i18next';
 import * as React from 'react';
 import { DropdownButton, MenuItem } from 'react-bootstrap';
 import { WithTranslation } from 'react-i18next';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
+import { TFunction } from '../util/i18n';
 
 export interface IBaseProps {
-  t: I18next.TFunction;
+  t: TFunction;
 }
 
 interface IConnectedProps {

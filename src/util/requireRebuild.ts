@@ -153,6 +153,8 @@ function patchedLoad(orig) {
         nodeGyp = nodeGyp + '.cmd';
       }
 
+      console.log(nodeGyp, gypArgs.join(' '), JSON.stringify(spawnOptions));
+
       const proc = spawnSync(nodeGyp, gypArgs, spawnOptions);
       if (proc.error) {
         log('info', 'stdout', proc.stdout);

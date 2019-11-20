@@ -5,6 +5,7 @@ import {IState} from '../../../types/IState';
 import {ProcessCanceled, UserCanceled} from '../../../util/CustomErrors';
 import * as fs from '../../../util/fs';
 import { writeFileAtomic } from '../../../util/fsAtomic';
+import { TFunction } from '../../../util/i18n';
 import { log } from '../../../util/log';
 import { activeGameId, currentGameDiscovery, installPathForGame } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
@@ -20,7 +21,6 @@ import format_1 from './manifest_formats/format_1';
 
 import * as msgpack from '@msgpack/msgpack';
 import Promise from 'bluebird';
-import I18next from 'i18next';
 import * as path from 'path';
 import { sync as writeAtomicSync } from 'write-file-atomic';
 
@@ -108,7 +108,7 @@ function doFallbackPurge(basePath: string,
   .then(() => undefined);
 }
 
-function queryPurgeTextSafe(t: I18next.TFunction) {
+function queryPurgeTextSafe(t: TFunction) {
   return t('IMPORTANT: This game was modded by another instance of Vortex.\n\n' +
       'If you switch between different instances (or between shared and ' +
       'single-user mode) it\'s better if you purge mods before switching.\n\n' +
@@ -124,7 +124,7 @@ function queryPurgeTextSafe(t: I18next.TFunction) {
       'be removed.');
 }
 
-function queryPurgeTextUnsafe(t: I18next.TFunction) {
+function queryPurgeTextUnsafe(t: TFunction) {
   return t('IMPORTANT: This game was modded by another instance of Vortex.\n\n' +
       'Vortex can only proceed by purging the mods from that other instance.\n\n' +
       'This will irreversably **destroy** the mod installations from that other ' +

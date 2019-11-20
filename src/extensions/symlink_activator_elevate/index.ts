@@ -3,6 +3,7 @@ import {IExtensionApi, IExtensionContext} from '../../types/IExtensionContext';
 import {ProcessCanceled, TemporaryError, UserCanceled} from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import { Normalize } from '../../util/getNormalizeFunc';
+import { TFunction } from '../../util/i18n';
 import { log } from '../../util/log';
 import { activeGameId, gameName, installPathForGame } from '../../util/selectors';
 
@@ -18,7 +19,6 @@ import walk from './walk';
 
 import Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
-import I18next from 'i18next';
 import * as JsonSocket from 'json-socket';
 import * as net from 'net';
 import * as path from 'path';
@@ -97,7 +97,7 @@ class DeploymentMethod extends LinkingDeployment {
     }
   }
 
-  public detailedDescription(t: I18next.TFunction): string {
+  public detailedDescription(t: TFunction): string {
     return t(
       'Symbolic links are special files containing a reference to another file. '
       + 'They are supported directly by the low-level API of the operating system '

@@ -64,7 +64,7 @@ import { setOutdated, terminate, toError } from './util/errorHandling';
 import ExtensionManager from './util/ExtensionManager';
 import { ExtensionProvider } from './util/ExtensionProvider';
 import GlobalNotifications from './util/GlobalNotifications';
-import getI18n, { fallbackTFunc } from './util/i18n';
+import getI18n, { fallbackTFunc, i18n, TFunction } from './util/i18n';
 import { log } from './util/log';
 import { initApplicationMenu } from './util/menu';
 import { showError } from './util/message';
@@ -88,7 +88,7 @@ import { applyMiddleware, compose, createStore } from 'redux';
 import thunkMiddleware from 'redux-thunk';
 import { generate as shortid } from 'shortid';
 
-import crashDump from 'crash-dump';
+import crashDumpX from 'crash-dump';
 
 import { setLanguage } from './actions';
 import { ThunkStore } from './types/IExtensionContext';
@@ -97,6 +97,8 @@ import {} from './util/extensionRequire';
 import { reduxLogger } from './util/reduxLogger';
 import { getSafe } from './util/storeHelper';
 import { getAllPropertyNames } from './util/util';
+
+const crashDump = (crashDumpX as any).default;
 
 log('debug', 'renderer process started', { pid: process.pid });
 
@@ -222,7 +224,7 @@ const eventEmitter: NodeJS.EventEmitter = new EventEmitter();
 
 let enhancer = null;
 
-if (process.env.NODE_ENV === 'development') {
+if (process.env.NODE_ENV === 'development' && false) {
   // tslint:disable-next-line:no-var-requires
   const freeze = require('redux-freeze');
   const devtool = (window as any).__REDUX_DEVTOOLS_EXTENSION__
@@ -247,7 +249,7 @@ if (process.env.NODE_ENV === 'development') {
 // extensions are to be loaded has to be retrieved from the main process
 const extensions: ExtensionManager = new ExtensionManager(undefined, eventEmitter);
 const extReducers = extensions.getReducers();
-let tFunc: I18next.TFunction = fallbackTFunc;
+let tFunc: TFunction = fallbackTFunc;
 
 // I only want to add reducers, but redux-electron-store seems to break
 // when calling replaceReducer in the renderer
@@ -375,15 +377,15 @@ store.subscribe(() => {
 });
 
 function renderer() {
-  let i18n: I18next.i18n;
+  let i18nObj: i18n;
   let error: Error;
 
   webFrame.setZoomFactor(getSafe(store.getState(), ['settings', 'window', 'zoomFactor'], 1));
 
   getI18n(store.getState().settings.interface.language)
     .then(res => {
-      ({ i18n, tFunc, error } = res);
-      extensions.setTranslation(i18n);
+      ({ i18n: i18nObj, tFunc, error } = res);
+      extensions.setTranslation(i18nObj);
       if (error !== undefined) {
         showError(store.dispatch, 'failed to initialize localization', error,
                   { allowReport: false });
@@ -399,7 +401,7 @@ function renderer() {
       }))
     .then(() => {
       extensions.setUIReady();
-      log('debug', 'render with language', { language: i18n.language });
+      log('debug', 'render with language', { language: i18nObj.language });
       const refresh = initApplicationMenu(extensions);
       extensions.getApi().events.on('gamemode-activated', () => refresh());
       startupFinished();
@@ -408,7 +410,7 @@ function renderer() {
       ReactDOM.render((
         <Provider store={store}>
           <DragDropContextProvider backend={HTML5Backend}>
-            <I18nextProvider i18n={i18n}>
+            <I18nextProvider i18n={i18nObj}>
               <ExtensionProvider extensions={extensions}>
                 <MainWindow className='full-height' api={extensions.getApi()} t={tFunc} />
               </ExtensionProvider>

@@ -11,7 +11,7 @@ import { IMod } from '../../mod_management/types/IMod';
 import { setLastUpdateCheck } from '../actions/session';
 
 import Promise from 'bluebird';
-import I18next from 'i18next';
+import { TFunction } from 'i18next';
 import NexusT, { IFileInfo, IFileUpdate, IModFiles, IModInfo,
                  IUpdateEntry, NexusError, RateLimitError } from 'nexus-api';
 import * as Redux from 'redux';
@@ -245,7 +245,7 @@ export function retrieveModInfo(
     api: IExtensionApi,
     gameMode: string,
     mod: IMod,
-    t: I18next.TFunction): Promise<void> {
+    t: TFunction): Promise<void> {
   const store = api.store;
   const nexusModId: string = getSafe(mod.attributes, ['modId'], undefined);
   if ((nexusModId === undefined) || (nexusModId.length === 0)) {

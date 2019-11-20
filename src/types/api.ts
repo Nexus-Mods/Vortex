@@ -13,7 +13,9 @@ export * from './IState';
 export * from './ITestResult';
 export * from './ITableAttribute';
 export * from './SortDirection';
-export { IDiscoveredTool } from '../types/IDiscoveredTool';
+export { IDiscoveredTool } from './IDiscoveredTool';
+
+export { TFunction } from '../util/i18n';
 
 export {
   IDeploymentMethod,

@@ -11,7 +11,7 @@ import {
   IPlugin, OrderType,
 } from '../types/interface';
 
-import I18next from 'i18next';
+import { TFunction } from 'i18next';
 import update from 'immutability-helper';
 import * as _ from 'lodash';
 import * as path from 'path';
@@ -22,7 +22,7 @@ import {
 } from 'react-bootstrap';
 
 interface IGroupProps {
-  t: I18next.TFunction;
+  t: TFunction;
   stepId: number;
   group: IGroup;
   onSelect: (groupId: number, plugins: number[], valid: boolean) => void;
@@ -235,7 +235,7 @@ function getGroupSortFunc(order: OrderType) {
 }
 
 interface IStepProps {
-  t: I18next.TFunction;
+  t: TFunction;
   step: IInstallStep;
   onSelect: (groupId: number, plugins: number[], valid: boolean) => void;
   onShowDescription: (image: string, description: string) => void;

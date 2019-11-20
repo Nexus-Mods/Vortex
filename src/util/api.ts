@@ -28,7 +28,7 @@ import { extend } from './ExtensionProvider';
 import { copyFileAtomic, fileMD5 } from './fsAtomic';
 import getNormalizeFunc, { Normalize } from './getNormalizeFunc';
 import github from './github';
-import { getCurrentLanguage } from './i18n';
+import { getCurrentLanguage, TFunction } from './i18n';
 import LazyComponent from './LazyComponent';
 import lazyRequire from './lazyRequire';
 import makeReactive from './makeReactive';
@@ -107,9 +107,7 @@ export {
 export type TextGroup = 'mod';
 import getTextModManagement from '../extensions/mod_management/texts';
 
-import I18next from 'i18next';
-
-export function getText(group: TextGroup, textId: string, t: I18next.TFunction) {
+export function getText(group: TextGroup, textId: string, t: TFunction) {
   if (group === 'mod') {
     return getTextModManagement(textId, t);
   }

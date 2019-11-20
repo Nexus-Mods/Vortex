@@ -47,7 +47,7 @@ import CheckModVersionsButton from './CheckModVersionsButton';
 import InstallArchiveButton from './InstallArchiveButton';
 
 import Promise from 'bluebird';
-import I18next from 'i18next';
+import { TFunction } from 'i18next';
 import * as _ from 'lodash';
 import * as React from 'react';
 import { Button, ButtonGroup, MenuItem, Panel } from 'react-bootstrap';
@@ -59,7 +59,7 @@ import * as semver from 'semver';
 type IModWithState = IMod & IProfileMod;
 
 interface IVersionOptionProps {
-  t: I18next.TFunction;
+  t: TFunction;
   modId: string;
   altId: string;
   mod: IModWithState;

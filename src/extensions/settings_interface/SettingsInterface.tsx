@@ -84,8 +84,8 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
     const userLanguages = path.normalize(path.join(remote.app.getPath('userData'), 'locales'));
 
     Promise.join(readdirAsync(bundledLanguages), readdirAsync(userLanguages).catch(() => []))
-      .then(fileLists => Array.from(new Set([].concat(...fileLists))))
-      .filter(langId => this.isValidLanguageCode(langId))
+      .then((fileLists: string[][]) => Array.from(new Set([].concat(...fileLists))))
+      .filter((langId: string) => this.isValidLanguageCode(langId))
       .then(files => {
         const locales = files.map(key => {
           let language;

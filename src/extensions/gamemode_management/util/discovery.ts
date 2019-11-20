@@ -17,7 +17,9 @@ import Progress from './Progress';
 import Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import * as path from 'path';
-import turbowalk from 'turbowalk';
+import turbowalkX from 'turbowalk';
+
+const turbowalk = (turbowalkX as any).default;
 
 const app = appIn || remote.app;
 

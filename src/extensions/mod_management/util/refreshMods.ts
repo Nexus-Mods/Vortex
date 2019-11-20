@@ -19,7 +19,7 @@ function refreshMods(api: IExtensionApi, installPath: string, knownMods: string[
                      onAddMod: (mod: IMod) => void, onRemoveMods: (names: string[]) => void) {
   return fs.ensureDirAsync(installPath)
     .then(() => fs.readdirAsync(installPath))
-    .filter(modName => fs.statAsync(path.join(installPath, modName))
+    .filter((modName: string) => fs.statAsync(path.join(installPath, modName))
       .then(stats => stats.isDirectory())
       .catch(() => Promise.resolve(false)))
     .then((modNames: string[]) => {

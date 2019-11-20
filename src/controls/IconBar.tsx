@@ -1,5 +1,6 @@
 import { IActionDefinition } from '../types/IActionDefinition';
 import { IExtensibleProps } from '../util/ExtensionProvider';
+import { TFunction } from '../util/i18n';
 import { setdefault } from '../util/util';
 
 import ActionControl, { IActionControlProps, IActionDefinitionEx } from './ActionControl';
@@ -9,7 +10,6 @@ import ToolbarDropdown from './ToolbarDropdown';
 import ToolbarIcon from './ToolbarIcon';
 import { IconButton } from './TooltipControls';
 
-import I18next from 'i18next';
 import update from 'immutability-helper';
 import * as _ from 'lodash';
 import * as PropTypes from 'prop-types';
@@ -31,12 +31,12 @@ export interface IBaseProps {
   icon?: string;
   pullRight?: boolean;
   clickAnywhere?: boolean;
-  t: I18next.TFunction;
+  t: TFunction;
 }
 
 type IProps = IBaseProps & { actions?: IActionDefinitionEx[] } & React.HTMLAttributes<any>;
 
-function genTooltip(t: I18next.TFunction, show: boolean | string): string {
+function genTooltip(t: TFunction, show: boolean | string): string {
   return typeof (show) === 'string'
     ? t(show)
     : undefined;
@@ -46,7 +46,7 @@ interface IMenuActionProps {
   id: string;
   action: IActionDefinitionEx;
   instanceId: string | string[];
-  t: I18next.TFunction;
+  t: TFunction;
 }
 
 class MenuAction extends React.PureComponent<IMenuActionProps, {}> {

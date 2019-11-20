@@ -3,12 +3,13 @@ import Spinner from '../controls/Spinner';
 import { INotification, NotificationType } from '../types/INotification';
 import { ComponentEx } from '../util/ComponentEx';
 
-import I18next from 'i18next';
+import { TFunction } from '../util/i18n';
+
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
 
 interface IActionProps {
-  t: I18next.TFunction;
+  t: TFunction;
   title: string;
   count: number;
   onTrigger: (actionTitle: string) => void;
@@ -27,7 +28,7 @@ class Action extends React.Component<IActionProps, {}> {
 }
 
 export interface IProps {
-  t: I18next.TFunction;
+  t: TFunction;
   collapsed: number;
   params: INotification & { process?: string };
   onExpand: (groupId: string) => void;

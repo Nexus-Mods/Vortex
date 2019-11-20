@@ -13,12 +13,13 @@ import { IValidateKeyData } from '../types/IValidateKeyData';
 import { getPageURL } from '../util/sso';
 
 import { clipboard } from 'electron';
-import I18next from 'i18next';
+import { TFunction } from 'i18next';
 import * as React from 'react';
-import { ControlLabel, FormControl, FormGroup, InputGroup, Modal, Alert } from 'react-bootstrap';
+import { Alert, ControlLabel, FormControl, FormGroup,
+         InputGroup, Modal } from 'react-bootstrap';
+import { WithTranslation } from 'react-i18next';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
-import { WithTranslation } from 'react-i18next';
 
 const API_ACCESS_URL = 'https://www.nexusmods.com/users/myaccount?tab=api+access';
 
@@ -42,7 +43,7 @@ interface IActionProps {
 }
 
 interface ILoginInProgressProps {
-  t: I18next.TFunction;
+  t: TFunction;
   loginId: string;
   onCopyToClipboard: () => void;
 }

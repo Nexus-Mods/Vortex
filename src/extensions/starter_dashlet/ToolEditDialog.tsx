@@ -9,6 +9,7 @@ import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import Debouncer from '../../util/Debouncer';
 import * as fs from '../../util/fs';
+import { TFunction } from '../../util/i18n';
 import StarterInfo, { IStarterInfo } from '../../util/StarterInfo';
 import { getSafe } from '../../util/storeHelper';
 
@@ -18,7 +19,6 @@ import ToolIcon from './ToolIcon';
 
 import Promise from 'bluebird';
 import { remote } from 'electron';
-import I18next from 'i18next';
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as PropTypes from 'prop-types';
@@ -31,7 +31,7 @@ import { ThunkDispatch } from 'redux-thunk';
 const {app} = remote;
 
 interface IEnvButtonProps {
-  t: I18next.TFunction;
+  t: TFunction;
   variable?: { key: string, value: string };
   open: boolean;
   onOpen: (itemId: string) => void;

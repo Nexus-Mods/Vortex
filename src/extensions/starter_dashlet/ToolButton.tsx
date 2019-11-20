@@ -2,18 +2,18 @@ import Icon from '../../controls/Icon';
 import IconBar from '../../controls/IconBar';
 import { IActionDefinition } from '../../types/IActionDefinition';
 import { PureComponentEx } from '../../util/ComponentEx';
+import { TFunction } from '../../util/i18n';
 import StarterInfo from '../../util/StarterInfo';
 import { truthy } from '../../util/util';
 
 import ToolIcon from './ToolIcon';
 
-import I18next from 'i18next';
 import * as React from 'react';
 
 export type RemoveTool = (gameId: string, toolId: string) => void;
 
 export interface IProps {
-  t: I18next.TFunction;
+  t: TFunction;
   counter: number;
   starter: StarterInfo;
   primary: boolean;

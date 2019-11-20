@@ -49,7 +49,7 @@ import { endorseModImpl, nexusGames, processErrorMessage, startDownload, updateK
 import Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import * as fuzz from 'fuzzball';
-import I18next from 'i18next';
+import { TFunction } from 'i18next';
 import NexusT, { IDownloadURL, NexusError, RateLimitError, TimeoutError } from 'nexus-api';
 import * as path from 'path';
 import * as React from 'react';
@@ -635,7 +635,7 @@ function once(api: IExtensionApi) {
     });
 }
 
-function toolbarBanner(t: I18next.TFunction): React.StatelessComponent<any> {
+function toolbarBanner(t: TFunction): React.StatelessComponent<any> {
   return () => {
     return (
       <div className='nexus-main-banner' style={{ background: 'url(assets/images/ad-banner.png)' }}>

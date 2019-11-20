@@ -15,8 +15,8 @@ import {
   dialog as dialogIn,
   remote,
 } from 'electron';
-import * as fs from 'fs-extra-promise';
-import i18next from 'i18next';
+import * as fs from 'fs-extra';
+import I18next from 'i18next';
 import NexusT, { IFeedbackResponse } from 'nexus-api';
 import * as os from 'os';
 import * as path from 'path';
@@ -179,7 +179,7 @@ export function disableErrorReport() {
 }
 
 export function sendReportFile(fileName: string): Promise<IFeedbackResponse> {
-  return fs.readFileAsync(fileName)
+  return Promise.resolve(fs.readFile(fileName, { encoding: 'utf8' }))
     .then(reportData => {
       const {type, error, labels, reporterId, reportProcess, sourceProcess, context} =
         JSON.parse(reportData.toString());
@@ -328,7 +328,7 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
  */
 export function toError(input: any, title?: string,
                         options?: IErrorOptions, sourceStack?: string): IError {
-  let ten = i18next.getFixedT('en');
+  let ten = I18next.getFixedT('en');
   try {
     ten('dummy');
   } catch (err) {

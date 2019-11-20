@@ -1,11 +1,11 @@
 import bbcode from '../../../util/bbcode';
 
-import I18next from 'i18next';
+import { TFunction } from 'i18next';
 import * as React from 'react';
 import { Overlay, Popover } from 'react-bootstrap';
 
 interface IBaseProps {
-  t: I18next.TFunction;
+  t: TFunction;
   short: string;
   long: string;
 }
