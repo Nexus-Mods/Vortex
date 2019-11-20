@@ -15,8 +15,6 @@ import opn from './opn';
 
 import { GameEntryNotFound, IGameStoreLauncher, ILauncherEntry } from '../types/api';
 
-import { util } from '..';
-
 const STORE_ID = 'origin';
 const MANIFEST_EXT = '.mfst';
 
@@ -24,6 +22,20 @@ const INSTALLER_DATA = path.join('__Installer', 'installerdata.xml');
 const ORIGIN_DATAPATH = 'c:\\ProgramData\\Origin\\';
 
 const INSTALL_PATH_PATTERN = '&dipInstallPath=&dipinstallpath=';
+
+export class MissingXMLElementError extends Error {
+  private mElementName: string;
+  constructor(elementName: string) {
+    super('Missing XML element');
+    Error.captureStackTrace(this, this.constructor);
+    this.name = this.constructor.name;
+    this.mElementName = elementName;
+  }
+
+  public get elementName() {
+    return this.mElementName;
+  }
+}
 
 /**
  * very limited functionality atm because so far the only source of information
@@ -47,7 +59,6 @@ class OriginLauncher implements IGameStoreLauncher {
         log('info', 'Origin launcher not found', { error: err.message });
         this.mClientPath = Promise.resolve(undefined);
       }
-      const bla = this.allGames();
     } else {
       this.mClientPath = Promise.resolve(undefined);
     }
@@ -105,6 +116,29 @@ class OriginLauncher implements IGameStoreLauncher {
     return this.mCache;
   }
 
+  // 3rd party game companies seem to generate their game
+  //  "DiP" manifest using a tool called EAInstaller, this
+  //  is the function we should be using _first_ when querying
+  //  the game's name as most games would be developed by non-EA
+  //  companies.
+  private getGameNameDiP(installerPath: string, encoding: string): Promise<string> {
+    return fs.readFileAsync(installerPath, { encoding })
+      .then(installerData => {
+        let xmlDoc;
+        try {
+          xmlDoc = xmlParser.parseXml(installerData);
+        } catch (err) {
+          return Promise.reject(err);
+        }
+
+        const elements = xmlDoc.find('//DiPManifest/gameTitles/gameTitle');
+        const element = elements.find(entry => entry.attr('locale').value() === 'en_US');
+        return element !== undefined
+          ? Promise.resolve(element.text())
+          : Promise.reject(new MissingXMLElementError('gameTitle(en_US)'));
+      });
+  }
+
   private getGameName(installerPath: string, encoding: string): Promise<string> {
     const regex = /\<title\>|\<\/title\>|™/gi;
     return fs.readFileAsync(installerPath, { encoding })
@@ -125,13 +159,14 @@ class OriginLauncher implements IGameStoreLauncher {
 
         return name !== undefined
           ? Promise.resolve(name)
-          : Promise.reject(new Error('cannot find game name'));
+          : Promise.reject(new MissingXMLElementError('localeInfo(en_US)/title'));
       });
   }
 
   private parseLocalContent(): Promise<ILauncherEntry[]> {
     const localData = path.join(ORIGIN_DATAPATH, 'LocalContent');
-    return turbowalk(localData, entries => {
+    return new Promise((resolve, reject) => {
+      turbowalk(localData, entries => {
       // Each game can have multiple manifest files (DLC and stuff)
       //  but only 1 manifest inside each game folder will have the
       //  game's installation path.
@@ -157,8 +192,10 @@ class OriginLauncher implements IGameStoreLauncher {
                 const gamePath = query.dipinstallpath as string;
                 const appid = query.id as string;
                 const installerFilepath = path.join(gamePath, INSTALLER_DATA);
-                return this.getGameName(installerFilepath, 'utf-8')
-                  .catch(err => this.getGameName(installerFilepath, 'utf16le'))
+                return Promise.any([this.getGameNameDiP(installerFilepath, 'utf-8'),
+                                    this.getGameNameDiP(installerFilepath, 'utf16le'),
+                                    this.getGameName(installerFilepath, 'utf-8'),
+                                    this.getGameName(installerFilepath, 'utf16le')])
                   .then(name => {
                     // We found the name.
                     const launcherEntry: ILauncherEntry = {
@@ -175,7 +212,10 @@ class OriginLauncher implements IGameStoreLauncher {
               }
             }
             return accum;
-          }), []);
+          }), [])
+          // tslint:disable-next-line: no-shadowed-variable
+          .then(entries => resolve(entries));
+      });
     });
   }
 }
