@@ -1,7 +1,6 @@
 import * as Promise from 'bluebird';
-import { GameEntryNotFound,
-  GameLauncherNotFound, IGameStoreLauncher } from '../types/IGameStoreLauncher';
-import { ILauncherEntry } from '../types/ILauncherEntry';
+import { GameEntryNotFound, GameLauncherNotFound,
+  IGameStoreLauncher, ILauncherEntry } from '../types/api';
 import { log } from '../util/log';
 
 import EpicGamesLauncher from './EpicGamesLauncher';
@@ -32,7 +31,8 @@ class GameStoreHelper {
     return ((launcherId !== undefined)
       ? this.findGameEntry('id', id, launcherId)
       : this.findGameEntry('id', id))
-      .then(entry => entry.gameStoreId);
+      .then(entry => entry.gameStoreId)
+      .catch(err => Promise.resolve(undefined));
   }
 
   public findByName(name: string, launcherId?: string): Promise<ILauncherEntry> {
@@ -40,7 +40,9 @@ class GameStoreHelper {
       .catch(err => {
         const isGameMissing  = ((err instanceof GameEntryNotFound)
                              || (err instanceof GameNotFound));
-        log(isGameMissing  ? 'debug' : 'error', 'launchers can\'t find game entry', err);
+        if (!isGameMissing) {
+          log('error', 'launchers can\'t find game entry', err);
+        }
         return Promise.resolve(undefined);
       });
   }
@@ -50,7 +52,9 @@ class GameStoreHelper {
       .catch(err => {
         const isGameMissing  = ((err instanceof GameEntryNotFound)
                              || (err instanceof GameNotFound));
-        log(isGameMissing  ? 'debug' : 'error', 'launchers can\'t find game entry', err);
+        if (!isGameMissing) {
+          log('error', 'launchers can\'t find game entry', err);
+        }
         return Promise.resolve(undefined);
       });
   }

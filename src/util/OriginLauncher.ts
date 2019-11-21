@@ -206,7 +206,11 @@ class OriginLauncher implements IGameStoreLauncher {
                     return accum;
                   })
                   .catch(err => {
-                    log('error', `failed to find game name for ${appid}`, err);
+                    const meta = Array.isArray(err)
+                      ? err.map(errInst => errInst.message).join(';')
+                      : err;
+
+                    log('error', `failed to find game name for ${appid}`, meta);
                     return accum;
                   });
               }

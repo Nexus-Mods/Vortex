@@ -14,9 +14,9 @@ const ITEM_EXT = '.item';
 const STORE_ID = 'epic';
 
 /**
- * very limited functionality atm because so far the only source of information
- * I found was this ini file, and it contains no meta data about the games, not
- * even the installation path
+ * Epic Store launcher seems to be holding game information inside
+ *  .item manifest files which are stored inside the launchers Data folder
+ *  "(C:\ProgramData\Epic\EpicGamesLauncher\Data\Manifests" by default
  */
 class EpicGamesLauncher implements IGameStoreLauncher {
   public id: string;
@@ -27,6 +27,7 @@ class EpicGamesLauncher implements IGameStoreLauncher {
     this.id = STORE_ID;
     if (process.platform === 'win32') {
       try {
+        // We find the launcher's dataPath
         const epicDataPath = winapi.RegGetValue('HKEY_LOCAL_MACHINE',
           'SOFTWARE\\WOW6432Node\\Epic Games\\EpicGamesLauncher',
           'AppDataPath');
@@ -66,7 +67,7 @@ class EpicGamesLauncher implements IGameStoreLauncher {
       .catch(err => Promise.resolve(false));
   }
 
-  public findByAppId(appId): Promise<ILauncherEntry> {
+  public findByAppId(appId: string): Promise<ILauncherEntry> {
     return this.allGames()
       .then(entries => entries.find(entry => entry.appid === appId))
       .then(entry => entry === undefined
@@ -79,10 +80,11 @@ class EpicGamesLauncher implements IGameStoreLauncher {
    *  e.g. "Flour" === "Untitled Goose Game" lol
    * @param name
    */
-  public findByName(name): Promise<ILauncherEntry> {
+  public findByName(name: string): Promise<ILauncherEntry> {
+    const re = new RegExp(name);
     return this.allGames()
-      .then(entries => entries.find(entry => entry.name === name))
-      .then(entry => entry === undefined
+      .then(entries => entries.find(entry => re.test(entry.name)))
+      .then(entry => (entry === undefined)
         ? Promise.reject(new GameEntryNotFound(name, STORE_ID))
         : Promise.resolve(entry));
   }
