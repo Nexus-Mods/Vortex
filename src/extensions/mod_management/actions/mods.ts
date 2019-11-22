@@ -13,6 +13,9 @@ export const addMods = safeCreateAction('ADD_MODS',
 export const removeMod = safeCreateAction('REMOVE_MOD',
   (gameId: string, modId: string) => ({ gameId, modId }));
 
+export const setModArchiveId = safeCreateAction('SET_MOD_ARCHIVEID',
+  (gameId: string, modId: string, archiveId: string) => ({ gameId, modId, archiveId }));
+
 /**
  * sets the state of a mod (whether it's downloaded, installed, ...)
  */

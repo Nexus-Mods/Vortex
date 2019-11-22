@@ -1,6 +1,10 @@
 import { IExtensionApi } from '../../../types/IExtensionContext';
+import { IState } from '../../../types/IState';
 import * as fs from '../../../util/fs';
+import { log } from '../../../util/log';
+import { getSafe } from '../../../util/storeHelper';
 
+import { setModArchiveId } from '../actions/mods';
 import {IMod} from '../types/IMod';
 
 import * as Promise from 'bluebird';
@@ -15,8 +19,10 @@ const app = remote !== undefined ? remote.app : appIn;
  * @param {string} installPath
  * @param {(mod: IMod) => void} onAddMod
  */
-function refreshMods(api: IExtensionApi, installPath: string, knownMods: string[],
+function refreshMods(api: IExtensionApi, gameId: string,
+                     installPath: string, knownMods: {[modId: string]: IMod},
                      onAddMod: (mod: IMod) => void, onRemoveMods: (names: string[]) => void) {
+  const knownModNames: string[] = Object.keys(knownMods);
   return fs.ensureDirAsync(installPath)
     .then(() => fs.readdirAsync(installPath))
     .filter(modName => fs.statAsync(path.join(installPath, modName))
@@ -27,11 +33,10 @@ function refreshMods(api: IExtensionApi, installPath: string, knownMods: string[
         .filter(name => !name.startsWith('__'))
         .map(name => name.replace(/.installing$/, ''));
       const addedMods =
-          filtered.filter((name: string) => knownMods.indexOf(name) === -1);
+          filtered.filter((name: string) => knownModNames.indexOf(name) === -1);
       const removedMods =
-          knownMods.filter((name: string) => filtered.indexOf(name) === -1);
+          knownModNames.filter((name: string) => filtered.indexOf(name) === -1);
 
-  
       if ((addedMods.length === 0) && (removedMods.length === 0)) {
         return Promise.resolve();
       }
@@ -53,7 +58,8 @@ function refreshMods(api: IExtensionApi, installPath: string, knownMods: string[
             + 'It is highly discouraged to modify the staging folder outside Vortex in any '
             + 'way!<br/>'
             + 'If you continue now, Vortex will lose all meta information about the deleted '
-            + 'mods [b]irreversibly[/b] and the added mods are added with minimal meta information.',
+            + 'mods [b]irreversibly[/b] and the added mods are added with minimal meta '
+            + 'information.',
         message: message.join('\n'),
       }, [
         { label: 'Quit Vortex' },
@@ -84,13 +90,14 @@ function refreshMods(api: IExtensionApi, installPath: string, knownMods: string[
                   // mods database so it wouldn't get cleaned up eiather
                   api.showDialog('error', modName, {
                     text: 'This mod was not installed completely, most likely the installation '
-                        + 'got interrupted before. You should delete it now and then install it again.'
+                        + 'got interrupted before. You should delete it now and then install '
+                        + 'it again.',
                   }, [
                     { label: 'Ignore' },
                     { label: 'Delete' },
                   ])
-                  .then(res => {
-                    if (res.action === 'Delete') {
+                  .then(dialogRes => {
+                    if (dialogRes.action === 'Delete') {
                       return fs.removeAsync(fullPath + '.installing');
                     }
                   })));
@@ -98,6 +105,26 @@ function refreshMods(api: IExtensionApi, installPath: string, knownMods: string[
             .then(() => onRemoveMods(removedMods));
         } else {
           app.quit();
+        }
+      });
+    })
+    .then(() => {
+      const state: IState = api.store.getState();
+      const downloads = state.persistent.downloads.files;
+      knownModNames.forEach(modId => {
+        if ((!!knownMods[modId].archiveId)
+            && (downloads[knownMods[modId].archiveId] === undefined)) {
+          const fileName = getSafe(knownMods, [modId, 'attributes', 'fileName'], undefined);
+          log('info', 'archive referenced in mod doesn\'t exist',
+              { modId, archiveId: knownMods[modId].archiveId, fileName });
+          if (fileName !== undefined) {
+            const archiveId = Object.keys(downloads)
+              .find(iter => downloads[iter].localPath === fileName);
+            if (archiveId !== undefined) {
+              log('debug', 'reassigning to archive', { modId, archiveId });
+              api.store.dispatch(setModArchiveId(gameId, modId, archiveId));
+            }
+          }
         }
       });
     });

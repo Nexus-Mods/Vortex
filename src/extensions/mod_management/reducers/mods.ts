@@ -31,6 +31,10 @@ export const modsReducer: IReducerSpec = {
       const { gameId, modId } = payload;
       return deleteOrNop(state, [gameId, modId]);
     },
+    [actions.setModArchiveId as any]: (state, payload) => {
+      const { gameId, modId, archiveId } = payload;
+      return setSafe(state, [gameId, modId, 'archiveId'], archiveId);
+    },
     [actions.setModInstallationPath as any]: (state, payload) => {
       const { gameId, modId, installPath } = payload;
       if ((state[gameId] === undefined) || (state[gameId][modId] === undefined)) {
