@@ -279,14 +279,7 @@ textarea {
 }
 
 .btn-ad {
-  background-color: white;
-  color: $brand-primary;
-  font-weight: bold;
-
-  &:hover {
-    background-color: $brand-primary;
-    color: $text-color;
-  }
+  @extend .btn-default;
 }
 
 .input-group-btn:last-child > .btn-primary {
