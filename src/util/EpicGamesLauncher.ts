@@ -8,7 +8,7 @@ import { getSafe } from './storeHelper';
 
 import opn from './opn';
 
-import { GameEntryNotFound, IGameStoreLauncher, ILauncherEntry } from '../types/api';
+import { GameEntryNotFound, IGameStore, IGameStoreEntry } from '../types/api';
 
 const ITEM_EXT = '.item';
 const STORE_ID = 'epic';
@@ -18,10 +18,10 @@ const STORE_ID = 'epic';
  *  .item manifest files which are stored inside the launchers Data folder
  *  "(C:\ProgramData\Epic\EpicGamesLauncher\Data\Manifests" by default
  */
-class EpicGamesLauncher implements IGameStoreLauncher {
+class EpicGamesLauncher implements IGameStore {
   public id: string;
   private mDataPath: Promise<string>;
-  private mCache: Promise<ILauncherEntry[]>;
+  private mCache: Promise<IGameStoreEntry[]>;
 
   constructor() {
     this.id = STORE_ID;
@@ -67,7 +67,7 @@ class EpicGamesLauncher implements IGameStoreLauncher {
       .catch(err => Promise.resolve(false));
   }
 
-  public findByAppId(appId: string): Promise<ILauncherEntry> {
+  public findByAppId(appId: string): Promise<IGameStoreEntry> {
     return this.allGames()
       .then(entries => entries.find(entry => entry.appid === appId))
       .then(entry => entry === undefined
@@ -80,7 +80,7 @@ class EpicGamesLauncher implements IGameStoreLauncher {
    *  e.g. "Flour" === "Untitled Goose Game" lol
    * @param name
    */
-  public findByName(name: string): Promise<ILauncherEntry> {
+  public findByName(name: string): Promise<IGameStoreEntry> {
     const re = new RegExp(name);
     return this.allGames()
       .then(entries => entries.find(entry => re.test(entry.name)))
@@ -89,7 +89,7 @@ class EpicGamesLauncher implements IGameStoreLauncher {
         : Promise.resolve(entry));
   }
 
-  public allGames(): Promise<ILauncherEntry[]> {
+  public allGames(): Promise<IGameStoreEntry[]> {
     if (!this.mCache) {
       this.mCache = this.parseManifests();
     }
@@ -104,7 +104,7 @@ class EpicGamesLauncher implements IGameStoreLauncher {
       : 'EpicGamesLauncher';
   }
 
-  private parseManifests(): Promise<ILauncherEntry[]> {
+  private parseManifests(): Promise<IGameStoreEntry[]> {
     let manifestsLocation;
     return this.mDataPath
       .then(dataPath => {
@@ -125,10 +125,10 @@ class EpicGamesLauncher implements IGameStoreLauncher {
                 const gameStoreId = STORE_ID;
                 const gamePath = getSafe(parsed, ['InstallLocation'], undefined);
                 const name = getSafe(parsed, ['DisplayName'], undefined);
-                const appId = getSafe(parsed, ['AppName'], undefined);
+                const appid = getSafe(parsed, ['AppName'], undefined);
 
-                return (!!gamePath && !!name && !!appId)
-                  ? Promise.resolve({ appId, name, gamePath, gameStoreId })
+                return (!!gamePath && !!name && !!appid)
+                  ? Promise.resolve({ appid, name, gamePath, gameStoreId })
                   : Promise.resolve(undefined);
               } catch (err) {
                 log('error', 'Cannot parse Epic Games manifest', err);
@@ -144,7 +144,7 @@ class EpicGamesLauncher implements IGameStoreLauncher {
   }
 }
 
-const instance: IGameStoreLauncher =
+const instance: IGameStore =
   process.platform === 'win32' ?  new EpicGamesLauncher() : undefined;
 
 export default instance;

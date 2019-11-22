@@ -5,7 +5,7 @@ import {
   IExtensionContext,
 } from '../../types/IExtensionContext';
 import { IGame } from '../../types/IGame';
-import { IGameStoreLauncher } from '../../types/IGameStoreLauncher';
+import { IGameStore } from '../../types/IGameStore';
 import { IProfile, IRunningTool, IState } from '../../types/IState';
 import { IEditChoice, ITableAttribute } from '../../types/ITableAttribute';
 import {ProcessCanceled, SetupError, UserCanceled} from '../../util/CustomErrors';
@@ -54,7 +54,7 @@ import * as path from 'path';
 import * as Redux from 'redux';
 import * as semver from 'semver';
 
-const gameStoreLaunchers: IGameStoreLauncher[] = [];
+const gameStoreLaunchers: IGameStore[] = [];
 const extensionGames: IGame[] = [];
 
 const $ = local<{
@@ -363,7 +363,7 @@ function init(context: IExtensionContext): boolean {
 
   context.registerTableAttribute('mods', genModTypeAttribute(context.api));
 
-  context.registerGameStoreLauncher = ((gameStore: IGameStoreLauncher) => {
+  context.registerGameStore = ((gameStore: IGameStore) => {
     try {
       gameStoreLaunchers.push(gameStore);
     } catch (err) {

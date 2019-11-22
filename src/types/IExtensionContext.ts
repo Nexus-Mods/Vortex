@@ -24,7 +24,7 @@ import { IActionOptions } from './IActionDefinition';
 import { IBannerOptions } from './IBannerOptions';
 import { DialogType, IDialogResult } from './IDialog';
 import { IGame } from './IGame';
-import { IGameStoreLauncher } from './IGameStoreLauncher';
+import { IGameStore } from './IGameStore';
 import { INotification } from './INotification';
 import { IDiscoveryResult } from './IState';
 import { ITableAttribute } from './ITableAttribute';
@@ -855,11 +855,11 @@ export interface IExtensionContext {
   registerGame: (game: IGame) => void;
 
   /**
-   * registers support for a game store launcher.
+   * registers support for a game store.
    *
-   * @param {IGameStoreLauncher} gameStore
+   * @param {IGameStore} gameStore
    */
-  registerGameStoreLauncher: (gameStore: IGameStoreLauncher) => void;
+  registerGameStore: (gameStore: IGameStore) => void;
 
   /**
    * registers a provider for general information about a game

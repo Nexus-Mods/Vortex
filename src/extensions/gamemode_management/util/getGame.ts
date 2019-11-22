@@ -5,7 +5,7 @@ import GameModeManager from '../GameModeManager';
 import { getModTypeExtensions } from './modTypeExtensions';
 
 import * as path from 'path';
-import { IGameStoreLauncher } from '../../../types/IGameStoreLauncher';
+import { IGameStore } from '../../../types/IGameStore';
 
 // "decorate" IGame objects with added functionality
 const gameExHandler = {
@@ -70,10 +70,10 @@ export function getGame(gameId: string): IGame {
   return makeGameProxy($.gameModeManager.games.find(iter => iter.id === gameId));
 }
 
-export function getGameLaunchers(): IGameStoreLauncher[] {
+export function getGameStores(): IGameStore[] {
   if ($.gameModeManager === undefined) {
-    throw new Error('getGameLaunchers only available in renderer process');
+    throw new Error('getGameStores only available in renderer process');
   }
 
-  return $.gameModeManager.gameLaunchers || [];
+  return $.gameModeManager.gameStores || [];
 }

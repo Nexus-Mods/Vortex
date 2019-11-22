@@ -6,7 +6,7 @@ import * as path from 'path';
 import * as winapi from 'winapi-bindings';
 
 import { GameEntryNotFound, IExecInfo,
-  IGameStoreLauncher, ILauncherEntry } from '../types/api';
+  IGameStore, IGameStoreEntry } from '../types/api';
 
 import { IExtensionApi } from '../types/IExtensionContext';
 
@@ -20,10 +20,10 @@ const REG_GOG_GAMES = 'SOFTWARE\\WOW6432Node\\GOG.com\\Games';
  * base class to interact with local GoG Galaxy client
  * @class GoGLauncher
  */
-class GoGLauncher implements IGameStoreLauncher {
+class GoGLauncher implements IGameStore {
   public id: string;
   private mClientPath: Promise<string>;
-  private mCache: Promise<ILauncherEntry[]>;
+  private mCache: Promise<IGameStoreEntry[]>;
 
   constructor() {
     this.id = STORE_ID;
@@ -45,7 +45,7 @@ class GoGLauncher implements IGameStoreLauncher {
   /**
    * find the first game that matches the specified name pattern
    */
-  public findByName(namePattern: string): Promise<ILauncherEntry> {
+  public findByName(namePattern: string): Promise<IGameStoreEntry> {
     const re = new RegExp(namePattern);
     return this.allGames()
       .then(entries => entries.find(entry => re.test(entry.name)))
@@ -90,7 +90,7 @@ class GoGLauncher implements IGameStoreLauncher {
   /**
    * find the first game with the specified appid or one of the specified appids
    */
-  public findByAppId(appId: string): Promise<ILauncherEntry> {
+  public findByAppId(appId: string): Promise<IGameStoreEntry> {
     return this.allGames()
       .then(entries => {
         const gameEntry = entries.find(entry => entry.appid === appId);
@@ -103,20 +103,20 @@ class GoGLauncher implements IGameStoreLauncher {
       });
   }
 
-  public allGames(): Promise<ILauncherEntry[]> {
+  public allGames(): Promise<IGameStoreEntry[]> {
     if (!this.mCache) {
       this.mCache = this.getGameEntries();
     }
     return this.mCache;
   }
 
-  private getGameEntries(): Promise<ILauncherEntry[]> {
-    return new Promise<ILauncherEntry[]>((resolve, reject) => {
+  private getGameEntries(): Promise<IGameStoreEntry[]> {
+    return new Promise<IGameStoreEntry[]>((resolve, reject) => {
       try {
         winapi.WithRegOpen('HKEY_LOCAL_MACHINE', REG_GOG_GAMES, hkey => {
           const keys = winapi.RegEnumKeys(hkey);
-          const gameEntries: ILauncherEntry[] = keys.map(key => {
-            const gameEntry: ILauncherEntry = {
+          const gameEntries: IGameStoreEntry[] = keys.map(key => {
+            const gameEntry: IGameStoreEntry = {
               appid: winapi.RegGetValue(hkey, key.key, 'gameID').value as string,
               gamePath: winapi.RegGetValue(hkey, key.key, 'workingDir').value as string,
               name: winapi.RegGetValue(hkey, key.key, 'startMenu').value as string,
@@ -133,7 +133,7 @@ class GoGLauncher implements IGameStoreLauncher {
   }
 }
 
-const instance: IGameStoreLauncher =
+const instance: IGameStore =
   process.platform === 'win32' ? new GoGLauncher() : undefined;
 
 export default instance;

@@ -21,7 +21,7 @@ import * as Promise from 'bluebird';
 import { remote } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
-import { GameEntryNotFound } from '../types/IGameStoreLauncher';
+import { GameEntryNotFound } from '../types/IGameStore';
 
 export interface IStarterInfo {
   id: string;
@@ -181,7 +181,7 @@ class StarterInfo implements IStarterInfo {
                                     info: StarterInfo,
                                     api: IExtensionApi,
                                     addInfo: any): Promise<void> {
-    const gameLauncher = GameStoreLauncher.getLauncher(launcher);
+    const gameLauncher = GameStoreLauncher.getGameStore(launcher);
     const infoObj = (addInfo !== undefined)
       ? addInfo : path.dirname(info.exePath);
     return (gameLauncher !== undefined)

@@ -1,19 +1,19 @@
 import { IExecInfo } from './IExecInfo';
 import { IExtensionApi } from './IExtensionContext';
-import { ILauncherEntry } from './ILauncherEntry';
+import { IGameStoreEntry } from './IGameStoreEntry';
 
 import * as Promise from 'bluebird';
 
-export class GameLauncherNotFound extends Error {
+export class GameStoreNotFound extends Error {
   private mName: string;
   constructor(name) {
-    super('Missing game launcher extension');
+    super('Missing game store extension');
     Error.captureStackTrace(this, this.constructor);
     this.name = this.constructor.name;
     this.mName = name;
   }
 
-  public get launcherName() {
+  public get storeName() {
     return this.mName;
   }
 }
@@ -51,9 +51,9 @@ export class GameEntryNotFound extends Error {
 /**
  * interface for game store launcher extensions
  *
- * @interface IGameStoreLauncher
+ * @interface IGameStore
  */
-export interface IGameStoreLauncher  {
+export interface IGameStore  {
   /**
    * This launcher's id.
    */
@@ -63,24 +63,7 @@ export interface IGameStoreLauncher  {
    * Returns all recognized/installed games which are currently
    *  installed with this game store/launcher.
    */
-  allGames: () => Promise<ILauncherEntry[]>;
-
-  /**
-   * Given a game's name, function will try to find and,
-   *  return the matching launcher entry for the game (if any)
-   *
-   * @param name The name of the game as it is stored within
-   *  then game store's manifests/database.
-   */
-  findByName: (name: string | string[]) => Promise<ILauncherEntry>;
-
-  /**
-   * Game stores will usually assign an internal id/s to their games,
-   *  attempt to match this id to any games we managed to identify.
-   *
-   * @param appId the game's app id as expected to be stored by the launcher.
-   */
-  findByAppId: (appId: string | string[]) => Promise<ILauncherEntry>;
+  allGames: () => Promise<IGameStoreEntry[]>;
 
   /**
    * Determine whether the game has been installed by this game store launcher.

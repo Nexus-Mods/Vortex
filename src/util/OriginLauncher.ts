@@ -13,7 +13,7 @@ import turbowalk, { IEntry } from 'turbowalk';
 
 import opn from './opn';
 
-import { GameEntryNotFound, IGameStoreLauncher, ILauncherEntry } from '../types/api';
+import { GameEntryNotFound, IGameStore, IGameStoreEntry } from '../types/api';
 
 const STORE_ID = 'origin';
 const MANIFEST_EXT = '.mfst';
@@ -42,10 +42,10 @@ export class MissingXMLElementError extends Error {
  * I found was this ini file, and it contains no meta data about the games, not
  * even the installation path
  */
-class OriginLauncher implements IGameStoreLauncher {
+class OriginLauncher implements IGameStore {
   public id: string;
   private mClientPath: Promise<string>;
-  private mCache: Promise<ILauncherEntry[]>;
+  private mCache: Promise<IGameStoreEntry[]>;
 
   constructor() {
     this.id = STORE_ID;
@@ -92,7 +92,7 @@ class OriginLauncher implements IGameStoreLauncher {
       .catch(err => Promise.resolve(false));
   }
 
-  public findByAppId(appId): Promise<ILauncherEntry> {
+  public findByAppId(appId): Promise<IGameStoreEntry> {
     return this.allGames()
       .then(entries => entries.find(entry => entry.appid === appId))
       .then(entry => entry === undefined
@@ -100,7 +100,7 @@ class OriginLauncher implements IGameStoreLauncher {
         : Promise.resolve(entry));
   }
 
-  public findByName(namePattern: string): Promise<ILauncherEntry> {
+  public findByName(namePattern: string): Promise<IGameStoreEntry> {
     const re = new RegExp(namePattern);
     return this.allGames()
       .then(entries => entries.find(entry => re.test(entry.name)))
@@ -109,7 +109,7 @@ class OriginLauncher implements IGameStoreLauncher {
         : Promise.resolve(entry));
   }
 
-  public allGames(): Promise<ILauncherEntry[]> {
+  public allGames(): Promise<IGameStoreEntry[]> {
     if (!this.mCache) {
       this.mCache = this.parseLocalContent();
     }
@@ -163,7 +163,7 @@ class OriginLauncher implements IGameStoreLauncher {
       });
   }
 
-  private parseLocalContent(): Promise<ILauncherEntry[]> {
+  private parseLocalContent(): Promise<IGameStoreEntry[]> {
     const localData = path.join(ORIGIN_DATAPATH, 'LocalContent');
     return new Promise((resolve, reject) => {
       turbowalk(localData, entries => {
@@ -173,7 +173,7 @@ class OriginLauncher implements IGameStoreLauncher {
       const manifests = entries.filter(manifest =>
         path.extname(manifest.filePath) === MANIFEST_EXT);
 
-      return Promise.reduce(manifests, (accum: ILauncherEntry[], manifest: IEntry) =>
+      return Promise.reduce(manifests, (accum: IGameStoreEntry[], manifest: IEntry) =>
         fs.readFileAsync(manifest.filePath, { encoding: 'utf-8' })
           .then(data => {
             if (data.indexOf(INSTALL_PATH_PATTERN) !== -1) {
@@ -198,7 +198,7 @@ class OriginLauncher implements IGameStoreLauncher {
                                     this.getGameName(installerFilepath, 'utf16le')])
                   .then(name => {
                     // We found the name.
-                    const launcherEntry: ILauncherEntry = {
+                    const launcherEntry: IGameStoreEntry = {
                       name, appid, gamePath, gameStoreId: STORE_ID,
                     };
 
@@ -224,7 +224,7 @@ class OriginLauncher implements IGameStoreLauncher {
   }
 }
 
-const instance: IGameStoreLauncher =
+const instance: IGameStore =
   process.platform === 'win32' ?  new OriginLauncher() : undefined;
 
 export default instance;

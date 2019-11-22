@@ -8,7 +8,7 @@ import { app as appIn, remote } from 'electron';
 import * as path from 'path';
 import { parse } from 'simple-vdf';
 import * as winapi from 'winapi-bindings';
-import { IExecInfo, IGameStoreLauncher, ILauncherEntry } from '../types/api';
+import { IExecInfo, IGameStore, IGameStoreEntry } from '../types/api';
 
 import { IExtensionApi } from '../types/IExtensionContext';
 
@@ -17,7 +17,7 @@ const app = (remote !== undefined) ? remote.app : appIn;
 const STORE_ID = 'steam';
 const STEAM_EXEC = 'Steam.exe';
 
-export interface ISteamEntry extends ILauncherEntry {}
+export interface ISteamEntry extends IGameStoreEntry {}
 
 export class GameNotFound extends Error {
   private mSearch;
@@ -37,7 +37,7 @@ export class GameNotFound extends Error {
  * base class to interact with local steam installation
  * @class Steam
  */
-class Steam implements IGameStoreLauncher {
+class Steam implements IGameStore {
   public static GameNotFound = GameNotFound;
   public id: string;
   private mBaseFolder: Promise<string>;
@@ -250,6 +250,6 @@ class Steam implements IGameStoreLauncher {
   }
 }
 
-const instance: IGameStoreLauncher = new Steam();
+const instance: IGameStore = new Steam();
 
 export default instance;
