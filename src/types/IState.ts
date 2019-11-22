@@ -181,7 +181,6 @@ export interface ISettingsProfiles {
 
 export interface ISettingsGameMode {
   discovered: { [id: string]: IDiscoveryResult };
-  searchPaths: string[];
   pickerLayout: 'list' | 'small' | 'large';
 }
 

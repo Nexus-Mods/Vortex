@@ -247,17 +247,19 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
           {content.choices.map(this.renderRadiobutton)}
         </div>
       ));
-    } else if (content.input !== undefined) {
-      controls.push((
-      <div key='dialog-form-content'>
-        {content.input.map(this.renderInput)}
-      </div>
-      ));
     } else if (content.links !== undefined) {
       controls.push((
         <div key='dialog-form-links'>
           {content.links.map(this.renderLink)}
         </div>
+      ));
+    }
+
+    if (content.input !== undefined) {
+      controls.push((
+      <div key='dialog-form-content'>
+        {content.input.map(this.renderInput)}
+      </div>
       ));
     }
 
