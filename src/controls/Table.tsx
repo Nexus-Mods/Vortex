@@ -713,9 +713,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
                       shift: boolean, alt: boolean, ctrl: boolean): boolean {
     return (action.hotKey !== undefined)
       && (action.hotKey.code === code)
-      && (action.hotKey.shift || false === shift)
-      && (action.hotKey.alt || false === alt)
-      && (action.hotKey.ctrl || false === ctrl);
+      && (action.hotKey.shift || (shift === false))
+      && (action.hotKey.alt || (alt === false))
+      && (action.hotKey.ctrl || (ctrl === false));
   }
 
   private refreshSorted(props: IProps) {

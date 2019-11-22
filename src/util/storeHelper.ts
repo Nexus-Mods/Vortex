@@ -35,6 +35,9 @@ export function getSafe<T>(state: any, path: Array<(string | number)>, fallback:
       current = current[segment];
     }
   }
+  if (current === undefined) {
+    return fallback;
+  }
   return current;
 }
 

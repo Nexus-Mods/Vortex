@@ -16,6 +16,7 @@ import { getActivator,
          getCurrentActivator } from '../extensions/mod_management/util/deploymentMethods';
 import renderModName, { renderModReference } from '../extensions/mod_management/util/modName';
 import { makeModReference } from '../extensions/mod_management/util/modReference';
+import { removeMods } from '../extensions/mod_management/util/removeMods';
 import sortMods, { CycleError } from '../extensions/mod_management/util/sort';
 import testModReference from '../extensions/mod_management/util/testModReference';
 import { Archive } from './archives';
@@ -95,6 +96,7 @@ export {
   ProcessCanceled,
   ReduxProp,
   relativeTime,
+  removeMods,
   renderBBCode,
   renderModName,
   renderModReference,

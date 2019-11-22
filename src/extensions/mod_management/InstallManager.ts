@@ -474,11 +474,11 @@ class InstallManager {
     const state: IState = api.store.getState();
     const mod: IMod = getSafe(state, ['persistent', 'mods', profile.gameId, modId], undefined);
 
-    this.repairRules(api, mod, profile.gameId);
-
     if (mod === undefined) {
       return Promise.reject(new ProcessCanceled(`Invalid mod specified "${mod}"`));
     }
+
+    this.repairRules(api, mod, profile.gameId);
 
     const installPath = this.mGetInstallPath(profile.gameId);
     return this.installDependenciesImpl(api, profile, mod.id, modName(mod), mod.rules,
@@ -492,11 +492,11 @@ class InstallManager {
     const state: IState = api.store.getState();
     const mod: IMod = getSafe(state, ['persistent', 'mods', profile.gameId, modId], undefined);
 
-    this.repairRules(api, mod, profile.gameId);
-
     if (mod === undefined) {
       return Promise.reject(new ProcessCanceled(`Invalid mod specified "${mod}"`));
     }
+
+    this.repairRules(api, mod, profile.gameId);
 
     const installPath = this.mGetInstallPath(profile.gameId);
     return this.installRecommendationsImpl(api, profile, mod.id, modName(mod),
