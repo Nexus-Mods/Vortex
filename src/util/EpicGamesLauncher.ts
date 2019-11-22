@@ -70,11 +70,13 @@ class EpicGamesLauncher implements IEpicGamesLauncher {
       if (ini.data === undefined) {
         return false;
       }
-      const settingsKey = Object.keys(ini.data).find(key => key.endsWith('_Settings'));
-      if (ini.data[settingsKey] === undefined) {
-        return false;
-      }
-      return Object.keys(ini.data[settingsKey]).indexOf(`${name}_AutoUpdate`) !== -1;
+      const settingsKeys = Object.keys(ini.data).filter(key => key.endsWith('_Settings'));
+      return settingsKeys.find(settingsKey => {
+        if (ini.data[settingsKey] === undefined) {
+          return false;
+        }
+        return Object.keys(ini.data[settingsKey]).indexOf(`${name}_AutoUpdate`) !== -1;
+      }) !== undefined;
     });
   }
 
