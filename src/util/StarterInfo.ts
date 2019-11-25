@@ -3,7 +3,7 @@ import { IDiscoveredTool } from '../types/IDiscoveredTool';
 import { IGame } from '../types/IGame';
 import { log } from '../util/log';
 
-import GameStoreLauncher from './GameStoreHelper';
+import GameStoreHelper from './GameStoreHelper';
 
 import { getSafe } from '../util/storeHelper';
 
@@ -181,7 +181,7 @@ class StarterInfo implements IStarterInfo {
                                     info: StarterInfo,
                                     api: IExtensionApi,
                                     addInfo: any): Promise<void> {
-    const gameLauncher = GameStoreLauncher.getGameStore(launcher);
+    const gameLauncher = GameStoreHelper.getGameStore(launcher);
     const infoObj = (addInfo !== undefined)
       ? addInfo : path.dirname(info.exePath);
     return (gameLauncher !== undefined)
