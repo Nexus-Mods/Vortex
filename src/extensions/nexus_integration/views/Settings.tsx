@@ -65,10 +65,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   public componentWillMount() {
-    getText('chrome-fix', this.props.t)
-    .then(text => {
-      this.setState({ helpText: text });
-    });
+    this.setState({ helpText: getText('chrome-fix', this.props.t) });
   }
 
   public render(): JSX.Element {
@@ -115,7 +112,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   private chromeFix = () => {
     const { onDialog, onShowError } = this.props;
     onDialog('info', 'Is Chrome running?', {
-      text: 'Chrome has to be closed, otherwise this fix has no effect.',
+      bbcode: 'Chrome has to be closed, otherwise this fix has no effect.<br/>'
+            + '[color="red"]IMPORTANT: You may have to repeat this step after '
+            + 'clearing the cache inside chrome![/color]',
     }, [
         { label: 'Cancel' },
         {
@@ -142,9 +141,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                     { allowReport: false },
                   );
                 } else {
-                  onShowError('Failed to fix NXM handling in Chrome. '
-                    + 'Please follow the manual instructions described in the info button.',
-                    err, { allowReport: false });
+                  onShowError('Failed to fix NXM handling in Chrome. ', err,
+                              { allowReport: false });
                 }
               });
           },
