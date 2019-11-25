@@ -74,6 +74,22 @@
     },
     {
       "type": "build-copy",
+      "name": "gamestore-gog",
+      "path": "extensions/gamestore-gog",
+      "removeModules": ["vortex-api"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
+      "copyTo": "{BUILD_DIR}/bundledPlugins/gamestore-gog"
+    },
+    {
+      "type": "build-copy",
+      "name": "gamestore-origin",
+      "path": "extensions/gamestore-origin",
+      "removeModules": ["vortex-api"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
+      "copyTo": "{BUILD_DIR}/bundledPlugins/gamestore-origin"
+    },
+    {
+      "type": "build-copy",
       "name": "mod-dependency-manager",
       "path": "extensions/mod-dependency-manager",
       "removeModules": ["vortex-api", "nexus-api"],
