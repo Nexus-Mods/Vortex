@@ -63,7 +63,20 @@ class ReduxPersistor<T> {
     return persistor.getAllKeys()
       .then(keys =>
         Promise.map(keys, key => persistor.getItem(key)
-          .then(value => ({ key, value: this.deserialize(value) }))))
+          .then(value => ({ key, value: this.deserialize(value) }))
+          .catch(err => {
+            if (err.name === 'NotFoundError') {
+              // Not sure how this happens, it's ultra-rare. Since we're expecting
+              // getAllKeys to return only exising keys, one not existing during this get
+              // just means it shouldn't have been returned in the first place.
+              // The more worrying part is: If getAllKeys may return keys that don't exist,
+              // may it be missing keys that do? Why is this happening in the first place?
+              log('error', 'key missing from database', { key });
+              return Promise.resolve(undefined);
+            }
+            return Promise.reject(err);
+          })))
+      .filter(kvPair => kvPair !== undefined)
       .then(kvPairs => {
         const res: any = {};
         kvPairs.forEach(pair => {
