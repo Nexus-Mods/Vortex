@@ -288,7 +288,7 @@ export function endorseModImpl(
           message,
           displayMS: calcDuration(message.length),
         });
-      } else if (['ENOENT', 'ECONNRESET'].indexOf(err.code) !== -1) {
+      } else if (['ENOENT', 'ECONNRESET', 'ESOCKETTIMEDOUT'].indexOf(err.code) !== -1) {
         api.showErrorNotification('Endorsing mod failed, please try again later', err, {
           allowReport: false,
         });

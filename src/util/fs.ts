@@ -186,7 +186,7 @@ function unknownErrorRetry(filePath: string, err: Error, stackErr: Error): Promi
                       + 'temporary network or server problems. '
                       + 'Please do not report this to us, this is not a bug in Vortex '
                       + 'and we can not provide remote assistance with hardware problems.';
-    } else if ([362, 383, 395, 396, 404, 4394].indexOf(err['nativeCode']) !== -1) {
+    } else if ([362, 383, 390, 395, 396, 404, 4394].indexOf(err['nativeCode']) !== -1) {
       options.title = `OneDrive error (${err['nativeCode']})`;
       options.message = `The file "${filePath}" is stored on a cloud storage drive `
                       + '(Microsoft OneDrive) which is currently unavailable. Please '

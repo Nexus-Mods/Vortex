@@ -18,7 +18,7 @@ if (process.env.NODE_ENV !== 'development') {
   rebuildRequire();
 }
 
-if (process.platform === 'win32') {
+if ((process.platform === 'win32') && (process.env.NODE_ENV !== 'development')) {
   // On windows dlls may be loaded from directories in the path variable
   // (which I don't know why you'd ever want that) so I filter path quite aggressively here
   // to prevent dynamically loaded dlls to be loaded from unexpected locations.
