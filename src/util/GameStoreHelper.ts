@@ -121,11 +121,7 @@ class GameStoreHelper {
             })
             .then(entry => resolve(entry))
             .catch(GameEntryNotFound, () => Promise.resolve())
-            .catch(GameNotFound, () => Promise.resolve())
-            .catch(GameStoreNotFound, err => {
-              log('error', 'could not find game store', err);
-              return Promise.resolve();
-            });
+            .catch(GameNotFound, () => Promise.resolve());
       })
       .then(() => {
         // If we reached this point it means the loaded stores
@@ -136,6 +132,10 @@ class GameStoreHelper {
 
         const stores = this.mStores.map(store => store.id).join(', ');
         return reject(new GameEntryNotFound(name, stores));
+    })
+    .catch(GameStoreNotFound, err => {
+      log('error', 'could not find game store', err);
+      return Promise.resolve();
     }));
   }
 }
