@@ -465,6 +465,7 @@ class DownloadManager {
   private mUserAgent: string;
   private mProtocolHandlers: IProtocolHandlers;
   private mResolveCache: { [url: string]: { time: number, urls: string[] } } = {};
+  private mFileExistsCB: (fileName: string) => Promise<boolean>;
 
   /**
    * Creates an instance of DownloadManager.
@@ -488,6 +489,10 @@ class DownloadManager {
     this.mUserAgent = userAgent;
     this.mSpeedCalculator = new SpeedCalculator(5, speedCB);
     this.mProtocolHandlers = protocolHandlers;
+  }
+
+  public setFileExistsCB(cb: (fileName: string) => Promise<boolean>) {
+    this.mFileExistsCB = cb;
   }
 
   public setDownloadPath(downloadPath: string) {
@@ -1060,6 +1065,7 @@ class DownloadManager {
       let counter = 0;
       const ext = path.extname(fileName);
       const base = path.basename(fileName, ext);
+      let first: boolean = true;
       let fullPath = path.join(destination, fileName);
 
       const loop = () => {
@@ -1073,7 +1079,20 @@ class DownloadManager {
             ++counter;
             fullPath = path.join(destination, `${base}.${counter}${ext}`);
             if (err.code === 'EEXIST') {
-              loop();
+              if (first && this.mFileExistsCB !== undefined) {
+                first = false;
+                this.mFileExistsCB(fileName)
+                  .then((cont: boolean) => {
+                    if (cont) {
+                      loop();
+                    } else {
+                      return reject(new UserCanceled());
+                    }
+                  })
+                  .catch(reject);
+              } else {
+                loop();
+              }
             } else {
               reject(err);
             }

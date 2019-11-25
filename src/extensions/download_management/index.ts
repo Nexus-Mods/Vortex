@@ -754,6 +754,19 @@ function init(context: IExtensionContextExt): boolean {
               speedsDebouncer.schedule();
             }
           }, `Nexus Client v2.${app.getVersion()}`, protocolHandlers);
+      manager.setFileExistsCB(fileName => {
+        return context.api.showDialog('question', 'File already exists', {
+          text: 'You\'ve already downloaded the file "{{fileName}}", do you want to '
+              + 'download it again?',
+          parameters: {
+            fileName,
+          },
+        }, [
+          { label: 'Cancel' },
+          { label: 'Continue' },
+        ])
+        .then(result => result.action === 'Continue');
+      });
       observer =
           observeImpl(context.api, manager);
 
