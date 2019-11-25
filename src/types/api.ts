@@ -7,8 +7,6 @@ export * from './IComponentContext';
 export * from './IDialog';
 export * from './IExtensionContext';
 export * from './IGame';
-export * from './IGameStore';
-export * from './IGameStoreEntry';
 export * from './IModifiers';
 export * from './INotification';
 export * from './IState';
@@ -17,6 +15,8 @@ export * from './ITableAttribute';
 export * from './SortDirection';
 export { IDiscoveredTool } from '../types/IDiscoveredTool';
 export { IExecInfo } from '../types/IExecInfo';
+export { IGameStoreEntry } from './IGameStoreEntry';
+export { GameEntryNotFound, GameStoreNotFound, IGameStore } from './IGameStore';
 
 export {
   IDeploymentMethod,
