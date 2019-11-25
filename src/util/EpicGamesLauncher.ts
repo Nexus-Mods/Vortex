@@ -10,6 +10,7 @@ import { getSafe } from './storeHelper';
 const ITEM_EXT = '.item';
 
 export interface IEpicEntry {
+  appid: string;
   name: string;
   gamePath: string;
 }
@@ -36,7 +37,8 @@ export class EpicGameNotFound extends Error {
 
 /**
  * very limited functionality atm because so far the only source of information
- * I found was this ini file, and it contains no meta data about the games, not even the installation path
+ * I found was this ini file, and it contains no meta data about the games, not
+ * even the installation path
  */
 class EpicGamesLauncher implements IEpicGamesLauncher {
   private mConfig: Promise<{ data: any }>;
@@ -86,11 +88,34 @@ class EpicGamesLauncher implements IEpicGamesLauncher {
    * @param name
    */
   public findByName(name: string): Promise<IEpicEntry> {
+    const re = new RegExp(name);
     return this.allGames()
-      .then(entries => entries.find(entry => entry.name === name))
+      .then(entries => entries.find(entry => re.test(entry.name)))
       .then(entry => entry === undefined
         ? Promise.reject(new EpicGameNotFound(name))
         : Promise.resolve(entry));
+  }
+
+  /**
+   * find the first game with the specified appid or one of the specified appids
+   */
+  public findByAppId(appId: string | string[]): Promise<IEpicEntry> {
+    // support searching for one app id or one out of a list (when there are multiple
+    // variants of a game)
+    const matcher = Array.isArray(appId)
+      ? entry => appId.indexOf(entry.appid) !== -1
+      : entry => entry.appid === appId;
+
+    return this.allGames()
+      .then(entries => entries.find(matcher))
+      .then(entry => {
+        if (entry === undefined) {
+          return Promise.reject(new EpicGameNotFound(Array.isArray(appId)
+            ? appId.join(', ') : appId));
+        } else {
+          return Promise.resolve(entry);
+        }
+      });
   }
 
   public allGames(): Promise<IEpicEntry[]> {
@@ -119,10 +144,11 @@ class EpicGamesLauncher implements IEpicGamesLauncher {
               try {
                 const parsed = JSON.parse(data);
                 const gamePath = getSafe(parsed, ['InstallLocation'], undefined);
-                const name = getSafe(parsed, ['AppName'], undefined);
+                const name = getSafe(parsed, ['DisplayName'], undefined);
+                const appid = getSafe(parsed, ['AppName'], undefined);
 
-                return (!!gamePath && !!name)
-                  ? Promise.resolve({ gamePath, name })
+                return (!!gamePath && !!name && !!appid)
+                  ? Promise.resolve({ gamePath, name, appid })
                   : Promise.resolve(undefined);
               } catch (err) {
                 log('error', 'Cannot parse Epic Games manifest', err);
