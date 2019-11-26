@@ -8,41 +8,16 @@ import { app as appIn, remote } from 'electron';
 import * as path from 'path';
 import { parse } from 'simple-vdf';
 import * as winapi from 'winapi-bindings';
+import { IExecInfo, IGameStore, IGameStoreEntry } from '../types/api';
+
+import { IExtensionApi } from '../types/IExtensionContext';
 
 const app = (remote !== undefined) ? remote.app : appIn;
 
-export interface ISteamEntry {
-  appid: string;
-  name: string;
-  gamePath: string;
-  lastUser: string;
-  lastUpdated: Date;
-}
+const STORE_ID = 'steam';
+const STEAM_EXEC = 'Steam.exe';
 
-export interface ISteamExec {
-  steamPath: string;
-  arguments: string[];
-}
-
-export class GamePathNotMatched extends Error {
-  private mGamePath: string;
-  private mEntryPaths: string[];
-  constructor(gamePath: string, entries: string[]) {
-    super('Unable to find matching steam path - '
-        + 'Please include your latest Vortex log file when reporting this issue!');
-    this.name = this.constructor.name;
-    this.mGamePath = gamePath;
-    this.mEntryPaths = entries;
-  }
-
-  public get gamePath() {
-    return this.mGamePath;
-  }
-
-  public get steamEntryPaths() {
-    return this.mEntryPaths;
-  }
-}
+export interface ISteamEntry extends IGameStoreEntry {}
 
 export class GameNotFound extends Error {
   private mSearch;
@@ -58,24 +33,18 @@ export class GameNotFound extends Error {
   }
 }
 
-export interface ISteam {
-  findByName(namePattern: string): Promise<ISteamEntry>;
-  findByAppId(appId: string | string[]): Promise<ISteamEntry>;
-  allGames(): Promise<ISteamEntry[]>;
-  getGameExecutionInfo(gamePath: string, appId?: number, args?: string[]): Promise<ISteamExec>;
-}
-
 /**
  * base class to interact with local steam installation
- *
  * @class Steam
  */
-class Steam implements ISteam {
+class Steam implements IGameStore {
   public static GameNotFound = GameNotFound;
+  public id: string;
   private mBaseFolder: Promise<string>;
   private mCache: Promise<ISteamEntry[]>;
 
   constructor() {
+    this.id = STORE_ID;
     if (process.platform === 'win32') {
         // windows
         try {
@@ -107,47 +76,45 @@ class Steam implements ISteam {
       });
   }
 
-  /**
-   * Look up Steam's executable path and launch arguments for
-   *  the game we're attempting to start-up.
-   * @param gamePath - Used to identify the game's cache entry and retrieve the
-   *  corresponding appId.
-   * @param appId - the application id, may be left undefined if the caller doesn't know
-   * @param args - Can be used to add additional launch arguments.
-   */
-  public getGameExecutionInfo(gamePath: string,
-                              appId?: number,
-                              args?: string[]): Promise<ISteamExec> {
+  public launchGame(appInfo: any, api?: IExtensionApi): Promise<void> {
+    // We expect appInfo to be one of three things at this point:
+    //  - The game extension's details object if provided, in which case
+    //      we want to extract the steamAppId entry. (preferred case as this
+    //      is used by the gameinfo-steam extension as well).
+    //  - The steam Id in string form.
+    //  - The directory path which contains the game's executable.
+    const info = (!!appInfo.steamAppId)
+      ? appInfo.steamAppId.toString() : appInfo.toString();
+    return this.getExecInfo(info)
+      .then(execInfo =>
+        api.runExecutable(execInfo.execPath, execInfo.arguments, {
+          cwd: path.dirname(execInfo.execPath),
+          suggestDeploy: true,
+          shell: true,
+      }));
+  }
+
+  public getExecInfo(appId: string): Promise<IExecInfo> {
+    // Steam uses numeric values to id games internally; if the provided appId
+    //  contains path separators, it's a clear indication that the game
+    //  extension did not provide a steam id and the starter info object
+    //  provided the game executables dirname instead.
+    const isDirPath = (appId.indexOf(path.sep) !== -1);
     return this.allGames()
       .then(entries => {
-        // TODO: This is not a reliable way of finding a game in this list,
-        //   it will fail on junction points
-        //   or multiple mount points for the same disk, it will also get confused by something like
-        //   steamapps/common/../common/gamename
-        const found = entries.find(entry => {
-          const steamPath = entry.gamePath.toLowerCase();
-          const discoveryPath = gamePath.toLowerCase();
-          return discoveryPath.indexOf(steamPath) !== -1;
-        });
-        if (found !== undefined) {
-          appId = parseInt(found.appid, 10);
-        } else {
-          log('warn', 'game not listed in steam manifest', {
-            gamePath,
-            entries: entries.map(iter => iter.gamePath),
-          });
+        const found = entries.find(entry => (!isDirPath)
+          ? (entry.appid === appId)
+          // Checking by gamepath is inefficient but I can't think of a different
+          //  way to ascertain whether the launcher has this game entry with the
+          //  provided information...
+          : (appId.toLowerCase().indexOf(entry.gamePath.toLowerCase()) !== -1));
+        if (found === undefined) {
+          return Promise.reject(new GameNotFound(appId));
         }
-        if (appId === undefined) {
-          return Promise.reject(
-            new GamePathNotMatched(gamePath, entries.map(entry => entry.gamePath)));
-        }
-
-        return this.mBaseFolder.then((basePath: string) => {
-          const steamExec: ISteamExec = {
-            steamPath: basePath + '\\Steam.exe',
-            arguments: args !== undefined
-              ? ['-applaunch', appId.toString(), ...args]
-              : ['-applaunch', appId.toString()],
+        return this.mBaseFolder.then((basePath) => {
+          const steamExec = {
+            execPath: path.join(basePath, STEAM_EXEC),
+            arguments: ['-applaunch', appId],
           };
           return Promise.resolve(steamExec);
         });
@@ -165,8 +132,8 @@ class Steam implements ISteam {
       : entry => entry.appid === appId;
 
     return this.allGames()
-      .then(entries => entries.find(matcher))
-      .then(entry => {
+      .then(entries => {
+        const entry = entries.find(matcher);
         if (entry === undefined) {
           return Promise.reject(new GameNotFound(Array.isArray(appId) ? appId.join(', ') : appId));
         } else {
@@ -176,7 +143,7 @@ class Steam implements ISteam {
   }
 
   public allGames(): Promise<ISteamEntry[]> {
-    if (this.mCache === undefined) {
+    if (!this.mCache) {
       this.mCache = this.parseManifests();
     }
     return this.mCache;
@@ -250,6 +217,7 @@ class Steam implements ISteam {
                   try {
                     return {
                       appid: obj['AppState']['appid'],
+                      gameStoreId: STORE_ID,
                       name: obj['AppState']['name'],
                       gamePath: path.join(steamAppsPath, 'common', obj['AppState']['installdir']),
                       lastUser: obj['AppState']['LastOwner'],
@@ -282,6 +250,6 @@ class Steam implements ISteam {
   }
 }
 
-const instance: ISteam = new Steam();
+const instance: IGameStore = new Steam();
 
 export default instance;

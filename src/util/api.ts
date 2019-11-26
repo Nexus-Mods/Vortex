@@ -17,6 +17,7 @@ import { getActivator,
 import renderModName from '../extensions/mod_management/util/modName';
 import sortMods, { CycleError } from '../extensions/mod_management/util/sort';
 import testModReference from '../extensions/mod_management/util/testModReference';
+import GameStoreHelper from '../util/GameStoreHelper';
 import { Archive } from './archives';
 import copyRecursive from './copyRecursive';
 import { ArgumentInvalid, DataInvalid, MissingInterpreter, NotFound, NotSupportedError,
@@ -60,6 +61,7 @@ export {
   extend,
   fileMD5,
   GameNotFound,
+  GameStoreHelper,
   getActivator,
   getCurrentActivator,
   getCurrentLanguage,
