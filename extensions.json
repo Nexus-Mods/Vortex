@@ -1,5 +1,5 @@
 {
-  "last_updated": 1574674266656,
+  "last_updated": 1574772418987,
   "extensions": [
     {
       "name": "Fallout 76 Support",
@@ -142,7 +142,7 @@
         "long": "[center][color=#ffd966][size=6]﻿[/size][/color][size=4][color=#ffd966][size=6][b]⯆ ОПИСАНИЕ[/b] ⯆[/size][/color]\n<br />[size=5]Русский перевод для Vortex[/size] [color=#999999](Ещё не всё переведено)[/color]\n<br />[color=#b6b6b6][size=3]Russian translate for Vortex[/size][/color]\n<br />[color=#ffe599][size=5]⯍[/size][/color][color=#ffe599] Текст выглядит не очень, так как шрифт программы не поддерживает кириллицу.[/color]\n<br />\n<br />\n<br />[color=#6fa8dc][b][size=6][color=#6d9eeb]⯆ УСТАНОВКА[/color][/size][/b][/color][color=#6d9eeb][size=6]﻿[/size][/color][/size][size=4][color=#c9daf8][size=4][color=#6d9eeb][size=6] ⯆[/size][/color]\n<br />[/size][/color][color=#6d9eeb]1.[/color] Скачайте архив и извлеките в удобное место\n<br />[color=#6d9eeb]2.[/color] Переместите папку ru по пути - %appdata%&#92;Roaming&#92;Vortex&#92;locales (если у вас нет папки locales, то создайте её)\n<br />[color=#c9daf8][size=5]Должно выглядеть так:[/size][/color][size=5]\n<br />[color=#c9daf8]⯆⯆⯆⯆⯆⯆⯆⯆﻿[/color][/size][/size][color=#c9daf8][size=5]⯆⯆⯆⯆[/size][/color]\n<br />[img]https://i.imgur.com/SBdFRs2.jpg[/img]﻿[/center]"
       },
       "downloads": 8203,
-      "endorsements": 416,
+      "endorsements": 418,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/23/23-1536688660-1615186348.png",
       "name": "Russian translate for Vortex (WIP)",
       "tags": [],
@@ -159,7 +159,7 @@
         "long": "[font=Verdana][size=6][center]Установка локализации очень проста:[/center][/size][/font]\n<br />[center][youtube]FPld_W_D6x0[/youtube]﻿\n<br />\n<br />О не доработках локализации пишите в ВКонтакте: https://vk.com/gasterkriper[/center]"
       },
       "downloads": 658,
-      "endorsements": 53,
+      "endorsements": 54,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/49/49-1563680920-832231383.png",
       "name": "Russian localization for Vortex",
       "tags": [],
@@ -210,7 +210,7 @@
         "long": "[center][i]Ceci est la traduction française de VORTEX, le successeur de Nexus Mod Manager. Pour l'heure, Vortex est encore en phase Beta, cette traduction évoluera donc à mesure que le logiciel sera modifié.[/i][/center]\n<br />\n<br />[center]﻿[/center][center]﻿[/center][center][b]IMPORTANT :\n<br />\n<br />Cette traduction a été effectuée à l'aide d'un plug-in bien pratique permettant d'ajouter les lignes à traduire directement en les survolant avec la souris. Cependant certaines lignes ne se rajoutent pas et je ne suis pas parvenu à les ajouter manuellement non plus (notamment certaines listes dropdown)[/b][/center]\n<br />[center][b]En tenant compte de ce qui a été écrit plus haut, je tiens à préciser que n'importe quel conseil avisé sur où trouver les lignes manquantes pour les traduire est plus que bienvenu, tout comme les habituelles remarques sur les fautes ou erreurs de n'importe quel type (mais toujours en lien avec la traduction).\n<br />\n<br />\n<br />\n<br />[/b][/center]\n<br />[center][b]INSTALLATION :[/b][/center]\n<br />\n<br />NOTE: A partir de la version 0.17.11, l'installeur n'est plus utilisé (pour plusieurs raisons). Pour installer manuellement la traduction, voici les étapes:\n<br />\n<br />Extrayez l'archive où bon vous semble puis placez le dossier \"fr\" dans:\n<br />[i]C:&#92;Utilisateurs&#92;&lt;VotreNom&gt;&#92;AppData&#92;Roaming&#92;vortex&#92;locales[/i]\n<br />Pensez bien à placer le [b]DOSSIER[/b] \"fr\" dans le dossier \"locales\" pas juste son contenu. Celui-ci contient toutes les traductions.\n<br />\n<br />Après l'installation, pour activer la langue, il vous suffit de lancer Vortex puis de vous rendre dans l'onglet \"Settings\" à gauche et de sélectionner la langue française dans la liste déroulante."
       },
       "downloads": 2221,
-      "endorsements": 116,
+      "endorsements": 117,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/13/13-1532360243-927790668.jpeg",
       "name": "French Translation for Vortex",
       "tags": [],
@@ -294,7 +294,7 @@
         "long": "Integrates an automated plugin cleaning function into Vortex for Gamebyro plugins.\n<br />\n<br />[b]This extension requires [url=https://github.com/TES5Edit/TES5Edit/releases]xEdit by ElminsterAU[/url] to be installed on your PC and defined in the dashboard of your chosen game inside Vortex.\n<br />[/b]\n<br />In v0.0.1 a new button has been added to the info pane for Gamebyro plugins which will launch xEdit and perform a \"quick auto clean\" operation on the selected plugin.\n<br />\n<br />A future update may allow the user to right-click a plugin to activate the cleaning function from the context menu, however, this is currently not possible.\n<br />[list]\n<br />[*]The cleaning option will not appear if the plugin is the primary master file (e.g. Skyrim.esm).\n<br />[*]The cleaning option will be disabled if either the plugin has missing masters or there is a LOOT message informing the user not to clean it. In the latter case, you are free to clean it manually, this just disables the automation.\n<br />[/list]\n<br />Once xEdit has closed, Vortex will show a confirmation of the plugin we attempted to clean.\n<br />\n<br />[img]https://staticdelivery.nexusmods.com/mods/2295/images/61/61-1572538680-559194572.png[/img]\n<br />\n<br />Currently supports:\n<br />[list]\n<br />[*]Skyrim\n<br />[*]Skyrim SE\n<br />[*]Skyrim VR\n<br />[*]Fallout 4\n<br />[*]Fallout 4 VR\n<br />[*]Fallout New Vegas\n<br />[*]Oblivion\n<br />[*]Fallout 3\n<br />[*]Enderal\n<br />[*]Fallout 76\n<br />[/list]\n<br />[img]https://staticdelivery.nexusmods.com/mods/2295/images/61/61-1573584841-371036160.png[/img]\n<br />\n<br />[b]Vortex Install\n<br />\n<br />[/b][list]\n<br />[*]In Vortex, enabled advanced mode in the settings.\n<br />[*]Navigate to the extensions tab.\n<br />[*]Drop the 7z archive into the \"drop zone\" at the bottom of the page.\n<br />[*]Click the prompt to restart Vortex.\n<br />[/list]\n<br />\n<br />[b]Manual Install[/b]\n<br />\n<br />Extract the 7z archive to %appdata%&#92;Vortex&#92;plugins."
       },
       "downloads": 27,
-      "endorsements": 6,
+      "endorsements": 7,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/61/61-1573584841-371036160.png",
       "name": "xEdit Cleaning Extension",
       "tags": [],
@@ -349,6 +349,39 @@
       "tags": [],
       "version": "0.1.1",
       "type": "game"
+    },
+    {
+      "modId": 68,
+      "fileId": 301,
+      "author": "Nexus Mods",
+      "description": {
+        "short": "Adds support for Red Dead Redemption 2 to Vortex.",
+        "long": "[size=4]Description\n<br />[/size]\n<br />This extension adds support for Red Dead Redemption 2 to Vortex.\n<br />You can use it to install plugins for script hook.\n<br />Asset mods and addons will be added as soon as the relevant tools (OpenIV) have been updated to support RDR2.\n<br />\n<br />Script Hook RDR2 (by Alexander Blade) is required, the extension will guide you through the correct installation once you start managing the game inside Vortex.\n<br />\n<br />[size=4]How to install\n<br />[/size]\n<br />This requires Vortex 1.1.0 or newer! To install, go to Extensions-&gt;Find More. Find this extension and click install.\n<br />\n<br />[size=4]Finally[/size]\n<br />\n<br />We do not support using mods in multiplayer. We do not condone using mods in multiplayer.\n<br />Your account may be banned for using any mods in public multiplayer and there is nothing we can do about that.\n<br />\n<br />If you do want to switch between modded singleplayer and unmodded multiplayer, do be careful that you deactivate mods before you start multiplayer.\n<br />Vortex will help you in two ways\n<br />a) When Vortex has modded your game, you should see the word \"Modded\" and a Vortex icon added to the game icon (in the lower left). If you see this, you still have mods installed. But: If you don't see it, you may still be running mods you installed outside Vortex!\n<br />b) Use Vortex to install scripthook. That way when you \"Purge\" mods within Vortex it will remove script hook from the game and in turn all scripts that depend on it."
+      },
+      "downloads": 0,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/mods/2295/images/68/68-1574772288-544584281.jpeg",
+      "name": "Red Dead Redemption 2 Support",
+      "tags": [],
+      "version": "0.0.1",
+      "type": "game",
+      "gameName": "Red Dead Redemption 2"
+    },
+    {
+      "modId": 67,
+      "fileId": 298,
+      "author": "Garethp",
+      "description": {
+        "short": "This is a very simple extension that takes the list of mods that Vortex currently has and writes them to a file. It then allows you to take that file and Restore your list of mods, making Vortex download them again as if you'd downloaded them from the Nexus Website.",
+        "long": "[b]What does this do?[/b]\n<br />\n<br />This is a very simple extension that takes the list of mods that Vortex currently has and writes them to a file. It then allows you to take that file and Restore your list of mods, making Vortex download them again as if you'd downloaded them from the Nexus Website.\n<br />\n<br />[b]Does this backup Mod Configs, Load Order, Dependencies Etc.\n<br />[/b]No, this is a simple and rather dumb extension that [i]just[/i] backs up the list of mods\n<br />\n<br />[b]Does it back up the mod files\n<br />[/b]No, this only stores list of mods. When you Restore the list, Vortex will download every mod on the list\n<br />\n<br />[b]Are there any requirements\n<br />[/b]You need to be a premium member on the Nexus site to Restore the list, since the Vortex client won't let you download the mods automatically unless you're a premium member, since you need to see the ads."
+      },
+      "downloads": 0,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/mods/2295/images/67/67-1574711459-1788149758.png",
+      "name": "Modlist Backup",
+      "tags": [],
+      "version": "0.2.0",
+      "type": null
     }
   ]
 }
