@@ -1308,7 +1308,12 @@ class ExtensionManager {
               if (errOut === undefined) {
                 errOut = '';
               }
-              errOut += chunk.toString();
+              try {
+                errOut += chunk.toString();
+              } catch (err) {
+                log('warn', 'error output from external process couldn\'t be processed',
+                    { executable });
+              }
             });
           }
         } catch (err) {
