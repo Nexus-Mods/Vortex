@@ -1,5 +1,5 @@
 {
-  "last_updated": 1574772418987,
+  "last_updated": 1574785571287,
   "extensions": [
     {
       "name": "Fallout 76 Support",
@@ -352,18 +352,18 @@
     },
     {
       "modId": 68,
-      "fileId": 301,
+      "fileId": 304,
       "author": "Nexus Mods",
       "description": {
         "short": "Adds support for Red Dead Redemption 2 to Vortex.",
         "long": "[size=4]Description\n<br />[/size]\n<br />This extension adds support for Red Dead Redemption 2 to Vortex.\n<br />You can use it to install plugins for script hook.\n<br />Asset mods and addons will be added as soon as the relevant tools (OpenIV) have been updated to support RDR2.\n<br />\n<br />Script Hook RDR2 (by Alexander Blade) is required, the extension will guide you through the correct installation once you start managing the game inside Vortex.\n<br />\n<br />[size=4]How to install\n<br />[/size]\n<br />This requires Vortex 1.1.0 or newer! To install, go to Extensions-&gt;Find More. Find this extension and click install.\n<br />\n<br />[size=4]Finally[/size]\n<br />\n<br />We do not support using mods in multiplayer. We do not condone using mods in multiplayer.\n<br />Your account may be banned for using any mods in public multiplayer and there is nothing we can do about that.\n<br />\n<br />If you do want to switch between modded singleplayer and unmodded multiplayer, do be careful that you deactivate mods before you start multiplayer.\n<br />Vortex will help you in two ways\n<br />a) When Vortex has modded your game, you should see the word \"Modded\" and a Vortex icon added to the game icon (in the lower left). If you see this, you still have mods installed. But: If you don't see it, you may still be running mods you installed outside Vortex!\n<br />b) Use Vortex to install scripthook. That way when you \"Purge\" mods within Vortex it will remove script hook from the game and in turn all scripts that depend on it."
       },
       "downloads": 0,
-      "endorsements": 0,
+      "endorsements": 1,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/68/68-1574772288-544584281.jpeg",
       "name": "Red Dead Redemption 2 Support",
       "tags": [],
-      "version": "0.0.1",
+      "version": "0.0.2",
       "type": "game",
       "gameName": "Red Dead Redemption 2"
     },
