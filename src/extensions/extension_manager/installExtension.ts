@@ -14,6 +14,7 @@ import * as _ from 'lodash';
 import ZipT = require('node-7z');
 import * as path from 'path';
 import * as rimraf from 'rimraf';
+import { dynreq } from 'vortex-run';
 
 const app = appIn || remote.app;
 
@@ -42,7 +43,7 @@ function installExtensionDependencies(api: IExtensionApi, extPath: string): Prom
   const context = new Proxy({}, handler);
 
   try {
-    const extension = require(path.join(extPath, 'index.js'));
+    const extension = dynreq(path.join(extPath, 'index.js'));
 
     extension.default(context);
 
