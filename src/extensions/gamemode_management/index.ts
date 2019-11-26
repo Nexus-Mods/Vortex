@@ -153,6 +153,11 @@ function verifyGamePath(game: IGame, gamePath: string): Promise<void> {
 function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
   const state: IState = api.store.getState();
   const game = getGame(gameId);
+
+  if (game === undefined) {
+    return Promise.resolve();
+  }
+
   const discovery = state.settings.gameMode.discovered[gameId];
 
   return new Promise<void>((resolve, reject) => {
