@@ -1,5 +1,5 @@
 {
-  "last_updated": 1574785571287,
+  "last_updated": 1574848859847,
   "extensions": [
     {
       "name": "Fallout 76 Support",
@@ -176,7 +176,7 @@
         "long": "English:\n<br />This is a Spanish translation for Vortex.\n<br />I strongly encourage you to find any grammatical errors and point them out.\n<br />\n<br />Translations should go in C:&#92;Users&#92;YourUserName&#92;AppData&#92;Roaming&#92;Vortex&#92;locales\n<br />\n<br />I have tried to adapt to spanish the best i could,  there are words for things that while have a lot of sense in english and there exist an actual direct translation for that word, in spanish that word does not have all the meanings, or worse, there are no single words that can have that meaning, soo in that cases i was forced to change it to a small phrase, like in the case of deployement, in spanish is \"desplegar\" and while is a very direct translation, the meaning in vortex was no good in spanish and was a very alien way of saying it, so i changes it for \"Agregar al Juego\" in english \"Add it to the game\", is not that \"desplegar\" was not correct, but it was a confusing way of saying it, please tell me suggestions to improve the translations. There are parts that i cannot translate even whit the plugin because it simply doesnt detect it, and even when i try to manually add it to the file, it doesnt work.\n<br />\n<br />\n<br />Spanish:\n<br />Esta es una traduccion al español de Vortex.\n<br />Por favor, ruego ser informado de errores de ortografia y gramaticales, sobretodo encontrareis una gran ausencia de tildes.\n<br />\n<br />Las traducciones se instalan en C:&#92;Users&#92;TuNombreDeUsuario&#92;AppData&#92;Roaming&#92;Vortex&#92;locales\n<br />\n<br />He intentado adaptarlo al español lo mejor que he podido, pero siempre hay palabras que mientras que tienen varios sentidos en ingles, no tienen todos los sentidos en español e incluso peor, puede no haber ninguna sola palabra que pueda sustituir uno de esos sentidos en español de forma clara en algunos casos, como en el caso de desplegar, esta palabra se usa dentro de vortex para referirse a lo que pasa cuando despues de instalar un juego, vortex añade los archivos al juego, si bien no es que desplegar este mal, es una forma un tanto alien de decirlo y no es nada clara, por lo que la he cambiado por Agregar al Juego, Agregando al juego, etc, que dentro de la interfaz es lo que tiene mas sentido, por favor aparte de los errores, agradeceria sugerencias para mejorar la traduccion. Aparte es tan completa como he podido, hay cosas que no he conseguido que me acepte la traduccion o partes que quizas podrian estar mejor expresadas."
       },
       "downloads": 4077,
-      "endorsements": 166,
+      "endorsements": 167,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/5/5-1524948099-197418350.png",
       "name": "Spanish Translation for Vortex",
       "tags": [],
@@ -210,7 +210,7 @@
         "long": "[center][i]Ceci est la traduction française de VORTEX, le successeur de Nexus Mod Manager. Pour l'heure, Vortex est encore en phase Beta, cette traduction évoluera donc à mesure que le logiciel sera modifié.[/i][/center]\n<br />\n<br />[center]﻿[/center][center]﻿[/center][center][b]IMPORTANT :\n<br />\n<br />Cette traduction a été effectuée à l'aide d'un plug-in bien pratique permettant d'ajouter les lignes à traduire directement en les survolant avec la souris. Cependant certaines lignes ne se rajoutent pas et je ne suis pas parvenu à les ajouter manuellement non plus (notamment certaines listes dropdown)[/b][/center]\n<br />[center][b]En tenant compte de ce qui a été écrit plus haut, je tiens à préciser que n'importe quel conseil avisé sur où trouver les lignes manquantes pour les traduire est plus que bienvenu, tout comme les habituelles remarques sur les fautes ou erreurs de n'importe quel type (mais toujours en lien avec la traduction).\n<br />\n<br />\n<br />\n<br />[/b][/center]\n<br />[center][b]INSTALLATION :[/b][/center]\n<br />\n<br />NOTE: A partir de la version 0.17.11, l'installeur n'est plus utilisé (pour plusieurs raisons). Pour installer manuellement la traduction, voici les étapes:\n<br />\n<br />Extrayez l'archive où bon vous semble puis placez le dossier \"fr\" dans:\n<br />[i]C:&#92;Utilisateurs&#92;&lt;VotreNom&gt;&#92;AppData&#92;Roaming&#92;vortex&#92;locales[/i]\n<br />Pensez bien à placer le [b]DOSSIER[/b] \"fr\" dans le dossier \"locales\" pas juste son contenu. Celui-ci contient toutes les traductions.\n<br />\n<br />Après l'installation, pour activer la langue, il vous suffit de lancer Vortex puis de vous rendre dans l'onglet \"Settings\" à gauche et de sélectionner la langue française dans la liste déroulante."
       },
       "downloads": 2221,
-      "endorsements": 117,
+      "endorsements": 118,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/13/13-1532360243-927790668.jpeg",
       "name": "French Translation for Vortex",
       "tags": [],
@@ -294,7 +294,7 @@
         "long": "Integrates an automated plugin cleaning function into Vortex for Gamebyro plugins.\n<br />\n<br />[b]This extension requires [url=https://github.com/TES5Edit/TES5Edit/releases]xEdit by ElminsterAU[/url] to be installed on your PC and defined in the dashboard of your chosen game inside Vortex.\n<br />[/b]\n<br />In v0.0.1 a new button has been added to the info pane for Gamebyro plugins which will launch xEdit and perform a \"quick auto clean\" operation on the selected plugin.\n<br />\n<br />A future update may allow the user to right-click a plugin to activate the cleaning function from the context menu, however, this is currently not possible.\n<br />[list]\n<br />[*]The cleaning option will not appear if the plugin is the primary master file (e.g. Skyrim.esm).\n<br />[*]The cleaning option will be disabled if either the plugin has missing masters or there is a LOOT message informing the user not to clean it. In the latter case, you are free to clean it manually, this just disables the automation.\n<br />[/list]\n<br />Once xEdit has closed, Vortex will show a confirmation of the plugin we attempted to clean.\n<br />\n<br />[img]https://staticdelivery.nexusmods.com/mods/2295/images/61/61-1572538680-559194572.png[/img]\n<br />\n<br />Currently supports:\n<br />[list]\n<br />[*]Skyrim\n<br />[*]Skyrim SE\n<br />[*]Skyrim VR\n<br />[*]Fallout 4\n<br />[*]Fallout 4 VR\n<br />[*]Fallout New Vegas\n<br />[*]Oblivion\n<br />[*]Fallout 3\n<br />[*]Enderal\n<br />[*]Fallout 76\n<br />[/list]\n<br />[img]https://staticdelivery.nexusmods.com/mods/2295/images/61/61-1573584841-371036160.png[/img]\n<br />\n<br />[b]Vortex Install\n<br />\n<br />[/b][list]\n<br />[*]In Vortex, enabled advanced mode in the settings.\n<br />[*]Navigate to the extensions tab.\n<br />[*]Drop the 7z archive into the \"drop zone\" at the bottom of the page.\n<br />[*]Click the prompt to restart Vortex.\n<br />[/list]\n<br />\n<br />[b]Manual Install[/b]\n<br />\n<br />Extract the 7z archive to %appdata%&#92;Vortex&#92;plugins."
       },
       "downloads": 27,
-      "endorsements": 7,
+      "endorsements": 9,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/61/61-1573584841-371036160.png",
       "name": "xEdit Cleaning Extension",
       "tags": [],
@@ -303,7 +303,7 @@
     },
     {
       "modId": 62,
-      "fileId": 286,
+      "fileId": 306,
       "author": "Nexus Mods",
       "description": {
         "short": "Adds support for GTA V",
@@ -314,7 +314,7 @@
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/62/62-1573042371-804708962.png",
       "name": "GTA V support",
       "tags": [],
-      "version": "0.0.5",
+      "version": "0.0.7",
       "type": "game",
       "gameName": "GTA V"
     },
@@ -381,6 +381,22 @@
       "name": "Modlist Backup",
       "tags": [],
       "version": "0.2.0",
+      "type": null
+    },
+    {
+      "modId": 69,
+      "fileId": 305,
+      "author": "Pickysaurus",
+      "description": {
+        "short": "Adds a button to the mods tab which allows you to easily share your latest SMAPI log.",
+        "long": "Adds a button to the mods tab which allows you to easily share your latest SMAPI log. Your latest crash log will be selected (if it exists), otherwise, the latest regular log will be included. \n<br />\n<br />The log details are copied to your clipboard and the SMAPI website is opened where you can paste the log details to share. A line is added to the top of the pasted log to show which version of Vortex you were using when this log was generated. \n<br />\n<br />[url=https://log.smapi.io/hh5PYBV5]Click here to see an example log.[/url]\n<br />\n<br />[b]Vortex Install\n<br />[/b]\n<br />[list]\n<br />[*]In Vortex, enabled advanced mode in the settings.\n<br />[*]Navigate to the Extensions tab.\n<br />[*]Drop the 7z archive into the \"drop zone\" at the bottom of the page.\n<br />[*]Click the prompt to restart Vortex.\n<br />[/list]\n<br />\n<br />[b]Manual Install\n<br />[/b]\n<br />Extract the 7z archive to %appdata%&#92;Vortex&#92;plugins."
+      },
+      "downloads": 0,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/mods/2295/images/69/69-1574788232-851593709.png",
+      "name": "SMAPI Log Share Button",
+      "tags": [],
+      "version": "1.0.0",
       "type": null
     }
   ]
