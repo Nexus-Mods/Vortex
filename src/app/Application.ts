@@ -5,7 +5,7 @@ import {IState} from '../types/IState';
 import commandLine, {IParameters} from '../util/commandLine';
 import { DocumentsPathMissing, ProcessCanceled, UserCanceled } from '../util/CustomErrors';
 import * as develT from '../util/devel';
-import { getVisibleWindow, setOutdated, setWindow,
+import { didIgnoreError, disableErrorReport, getVisibleWindow, setOutdated, setWindow,
          terminate, toError } from '../util/errorHandling';
 import ExtensionManagerT from '../util/ExtensionManager';
 import { validateFiles } from '../util/fileValidation';
@@ -90,6 +90,9 @@ class Application {
       this.mExtensions.setupApiMain(this.mStore, webContents);
       setOutdated(this.mExtensions.getApi());
       this.applyArguments(this.mArgs);
+      if (didIgnoreError()) {
+        webContents.send('did-ignore-error', true);
+      }
       return Promise.resolve();
     });
   }
@@ -751,6 +754,7 @@ class Application {
   }
 
   private validateFiles(): Promise<void> {
+    disableErrorReport();
     return Promise.resolve(validateFiles(getVortexPath('assets_unpacked')))
       .then(validation => new Promise(resolve => {
         if ((validation.changed.length > 0)
@@ -763,11 +767,13 @@ class Application {
                    + 'This could be the result of a virus or manual manipulation. '
                    + 'Vortex might still appear to work (partially) but we suggest '
                    + 'you reinstall it.',
+            noLink: true,
             buttons: ['Quit', 'Ignore'],
           }, (response => {
             if (response === 0) {
               app.quit();
             } else {
+              disableErrorReport();
               return resolve();
             }
           }));

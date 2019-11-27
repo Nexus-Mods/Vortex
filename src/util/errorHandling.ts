@@ -13,6 +13,7 @@ import * as Promise from 'bluebird';
 import {
   app as appIn,
   dialog as dialogIn,
+  ipcRenderer,
   remote,
 } from 'electron';
 import * as fs from 'fs-extra-promise';
@@ -176,6 +177,12 @@ export function didIgnoreError(): boolean {
 
 export function disableErrorReport() {
   errorIgnored = true;
+}
+
+if (ipcRenderer !== undefined) {
+  ipcRenderer.on('did-ignore-error', () => {
+    errorIgnored = true;
+  });
 }
 
 export function sendReportFile(fileName: string): Promise<IFeedbackResponse> {
