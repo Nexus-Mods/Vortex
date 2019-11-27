@@ -1244,7 +1244,11 @@ class ExtensionManager {
       }
 
       const cwd = options.cwd || path.dirname(executable);
-      const env = { ...process.env, ...options.env };
+      const env = {
+        ...process.env,
+        PATH: process.env['PATH_ORIG'] || process.env['PATH'],
+        ...options.env,
+      };
 
       return this.applyStartHooks({ executable, args, options })
       .then(updatedParameters => {

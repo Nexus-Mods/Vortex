@@ -37,6 +37,7 @@ if ((process.platform === 'win32') && (process.env.NODE_ENV !== 'development')) 
         && !envPath.startsWith(programFilesX86);
   };
 
+  process.env['PATH_ORIG'] = process.env['PATH'].slice(0);
   process.env['PATH'] = process.env['PATH'].split(';')
     .filter(pathFilter).join(';');
 }
