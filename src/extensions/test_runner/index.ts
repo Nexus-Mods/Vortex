@@ -64,6 +64,7 @@ function runCheck(api: IExtensionApi, check: ICheckEntry): Promise<void> {
             title: 'More',
             action: () => api.store.dispatch(showDialog('info', 'Check failed', {
               bbcode: result.description.long,
+              parameters: result.description.replace,
             }, [{ label: 'Close' }])),
           });
         }
@@ -86,6 +87,7 @@ function runCheck(api: IExtensionApi, check: ICheckEntry): Promise<void> {
           id,
           type: result.severity,
           message: result.description.short,
+          replace: result.description.replace,
           actions,
           noDismiss: true,
         });
