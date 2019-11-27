@@ -76,7 +76,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
             <FlexLayout.Fixed className='extension-list'>
               <FlexLayout type='column'>
                 <ListGroup>
-                  {availableExtensions.map(this.renderListEntry)}
+                  {availableExtensions.slice(0).sort(this.extensionSort).map(this.renderListEntry)}
                 </ListGroup>
                 <div className='extension-list-time'>
                   {t('Last updated: {{time}}',
@@ -94,6 +94,10 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
           <Button onClick={onHide}>{t('Close')}</Button>
         </Modal.Footer>
       </Modal>);
+  }
+
+  private extensionSort = (lhs: IAvailableExtension, rhs: IAvailableExtension): number => {
+    return lhs.name.localeCompare(rhs.name);
   }
 
   private isInstalled(ext: IAvailableExtension): boolean {
