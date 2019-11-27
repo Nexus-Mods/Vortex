@@ -27,7 +27,8 @@ const caches: {
 const EXTENSIONS_URL =
   'https://raw.githubusercontent.com/Nexus-Mods/Vortex/announcements/extensions.json';
 
-const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+// don't fetch more than once per hour
+const UPDATE_FREQUENCY = 60 * 60 * 1000;
 
 function getAllDirectories(searchPath: string): Promise<string[]> {
   return fs.readdirAsync(searchPath)
@@ -140,7 +141,7 @@ function doFetchAvailableExtensions(forceDownload: boolean)
   const checkChache = forceDownload
     ? Promise.resolve(true)
     : fs.statAsync(cachePath).then(stat => {
-      if ((Date.now() - stat.mtimeMs) > ONE_DAY_MS) {
+      if ((Date.now() - stat.mtimeMs) > UPDATE_FREQUENCY) {
         return true;
       } else {
         time = stat.mtime;
