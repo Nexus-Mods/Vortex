@@ -1371,7 +1371,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     });
 
     // then (re-)enable all visible selections
-    sortedRows.forEach(key => {
+    (sortedRows || []).forEach(key => {
       newState[key] = (newState[key] === undefined)
         ? { $set: { selected: true } }
         : { selected: { $set: true } };
