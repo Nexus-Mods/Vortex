@@ -7,12 +7,15 @@ import ZoomableImage from '../../controls/ZoomableImage';
 import { IState } from '../../types/IState';
 import bbcode from '../../util/bbcode';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
+import opn from '../../util/opn';
 
 import { IAvailableExtension, IExtension } from './types';
 import { downloadAndInstallExtension } from './util';
 
 import * as React from 'react';
 import { Button, ListGroup, ListGroupItem, ModalHeader } from 'react-bootstrap';
+
+const NEXUS_MODS_URL: string = 'http://nexusmods.com/site/mods/';
 
 export interface IBrowseExtensionsProps {
   visible: boolean;
@@ -138,7 +141,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
       <ListGroupItem
         className={classes.join(' ')}
         key={ext.modId}
-        data-idx={idx}
+        data-modid={ext.modId}
         onClick={this.select}
         disabled={installed}
       >
@@ -213,6 +216,15 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
                 </div>
                 <div className='description-actions'>
                   {action}
+                  {' '}
+                  <a
+                    className='extension-browse'
+                    data-idx={idx}
+                    onClick={this.openPage}
+                  >
+                    <Icon name='open-in-browser' />
+                    {t('Open in Browser')}
+                  </a>
                 </div>
               </FlexLayout>
             </FlexLayout.Flex>
@@ -249,8 +261,16 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
   }
 
   private select = (evt: React.MouseEvent<any>) => {
-    const idx = evt.currentTarget.getAttribute('data-idx');
-    this.nextState.selected = parseInt(idx, 10);
+    const modId = parseInt(evt.currentTarget.getAttribute('data-modid'), 10);
+    const idx = this.props.availableExtensions.findIndex(iter => iter.modId === modId);
+    this.nextState.selected = idx;
+  }
+
+  private openPage = (evt: React.MouseEvent<any>) => {
+    const idx = parseInt(evt.currentTarget.getAttribute('data-idx'), 10);
+
+    const ext = this.props.availableExtensions[idx];
+    opn(NEXUS_MODS_URL + ext.modId);
   }
 }
 
