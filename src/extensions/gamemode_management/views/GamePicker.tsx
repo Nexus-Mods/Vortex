@@ -157,7 +157,8 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
       requiredFiles: [],
       executable: undefined,
       contributed: ext.author,
-    })));
+    }))
+    .filter(ext => showHidden || !getAttr(discoveredGames, ext.id, { hidden: false }).hidden));
 
     Object.keys(discoveredGames).forEach(gameId => {
       if (knownGames.find(game => game.id === gameId) === undefined) {
