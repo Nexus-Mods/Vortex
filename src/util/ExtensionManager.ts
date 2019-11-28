@@ -1244,9 +1244,13 @@ class ExtensionManager {
       }
 
       const cwd = options.cwd || path.dirname(executable);
+      // process.env is case insensitive (on windows at least?), but the spawn parameter isn't.
+      // I think the key is called "Path" on windows but I'm not willing to bet this is consistent
+      // across all language variants and versions
+      const pathEnvName = Object.keys(process.env).find(key => key.toLowerCase() === 'path');
       const env = {
         ...process.env,
-        PATH: process.env['PATH_ORIG'] || process.env['PATH'],
+        [pathEnvName]: process.env['PATH_ORIG'] || process.env['PATH'],
         ...options.env,
       };
 
