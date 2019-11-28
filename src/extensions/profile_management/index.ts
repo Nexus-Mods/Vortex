@@ -232,7 +232,7 @@ function genOnProfileChange(api: IExtensionApi,
         if (game === undefined) {
           showError(store.dispatch,
             'Game no longer supported, please install the game extension',
-            profile.gameId, { allowReport: false });
+            undefined, { message: profile.gameId, allowReport: false });
           return Promise.reject(new ProcessCanceled('Game no longer supported'));
         }
 
