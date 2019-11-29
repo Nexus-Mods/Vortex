@@ -55,7 +55,7 @@ function writeFileAtomicImpl(filePath: string,
   .then(fd => {
     return fs.writeAsync(fd, buf, 0, buf.byteLength, 0)
       .then(() => fs.fsyncAsync(fd).catch(() => Promise.resolve()))
-      .then(() => fs.closeAsync(fd));
+      .then(() => fs.closeAsync(fd).catch({ code: 'EBADF' }, () => Promise.resolve()));
   })
   .then(() => fs.readFileAsync(tmpPath))
   .then(data => (checksum(data) !== hash)
