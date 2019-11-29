@@ -192,6 +192,7 @@ export interface IPersistor {
   setItem(key: PersistorKey, value: string): Promise<void>;
   removeItem(key: PersistorKey): Promise<void>;
   getAllKeys(): Promise<PersistorKey[]>;
+  getAllKVs?(prefix?: string): Promise<Array<{ key: PersistorKey, value: string }>>;
 }
 
 /**
