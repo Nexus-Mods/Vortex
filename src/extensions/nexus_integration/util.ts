@@ -16,6 +16,7 @@ import { calcDuration, prettifyNodeErrorMessage, showError } from '../../util/me
 import { activeGameId } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { truthy } from '../../util/util';
+import { SITE_ID } from '../gamemode_management/constants';
 import { gameById, knownGames } from '../gamemode_management/selectors';
 import modName from '../mod_management/util/modName';
 import { setUserInfo } from './actions/persistent';
@@ -78,6 +79,9 @@ export function startDownload(api: IExtensionApi, nexus: Nexus, nxmurl: string):
       });
     })
     .then(downloadId => {
+      if (gameId === SITE_ID) {
+        return downloadId;
+      }
       api.sendNotification({
         id: `ready-to-install-${downloadId}`,
         type: 'success',
@@ -284,7 +288,7 @@ export function endorseModImpl(
           message,
           displayMS: calcDuration(message.length),
         });
-      } else if (['ENOENT', 'ECONNRESET'].indexOf(err.code) !== -1) {
+      } else if (['ENOENT', 'ECONNRESET', 'ESOCKETTIMEDOUT'].indexOf(err.code) !== -1) {
         api.showErrorNotification('Endorsing mod failed, please try again later', err, {
           allowReport: false,
         });

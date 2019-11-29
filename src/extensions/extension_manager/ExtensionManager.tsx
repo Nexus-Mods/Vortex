@@ -1,12 +1,13 @@
+import { setDialogVisible } from '../../actions';
 import { removeExtension, setExtensionEnabled } from '../../actions/app';
 import Dropzone, { DropType } from '../../controls/Dropzone';
 import FlexLayout from '../../controls/FlexLayout';
 import Table, { ITableRowAction } from '../../controls/Table';
 import { IExtensionLoadFailure, IExtensionState, IState } from '../../types/IState';
 import { ITableAttribute } from '../../types/ITableAttribute';
+import { relaunch } from '../../util/commandLine';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
-import * as fs from '../../util/fs';
-import getVortexPath from '../../util/getVortexPath';
+import { log } from '../../util/log';
 import * as selectors from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import MainPage from '../../views/MainPage';
@@ -18,7 +19,6 @@ import getTableAttributes from './tableAttributes';
 import { IExtension, IExtensionWithState } from './types';
 
 import * as Promise from 'bluebird';
-import { remote } from 'electron';
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as React from 'react';
@@ -26,53 +26,31 @@ import { Alert, Button, Panel } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 
+export interface IExtensionManagerProps {
+  localState: {
+    reloadNecessary: boolean,
+  };
+  updateExtensions: () => void;
+}
+
 interface IConnectedProps {
   extensionConfig: { [extId: string]: IExtensionState };
   downloads: { [dlId: string]: IDownload };
   downloadPath: string;
   loadFailures: { [extId: string]: IExtensionLoadFailure[] };
+  extensions: { [extId: string]: IExtension };
 }
 
 interface IActionProps {
   onSetExtensionEnabled: (extId: string, enabled: boolean) => void;
   onRemoveExtension: (extId: string) => void;
+  onBrowseExtension: () => void;
 }
 
-type IProps = IConnectedProps & IActionProps;
+type IProps = IExtensionManagerProps & IConnectedProps & IActionProps;
 
 interface IComponentState {
-  extensions: { [extId: string]: IExtension };
   oldExtensionConfig: { [extId: string]: IExtensionState };
-  reloadNecessary: boolean;
-}
-
-function getAllDirectories(searchPath: string): Promise<string[]> {
-  return fs.readdirAsync(searchPath)
-    .filter(fileName =>
-      fs.statAsync(path.join(searchPath, fileName))
-        .then(stat => stat.isDirectory()));
-}
-
-function applyExtensionInfo(id: string, bundled: boolean, values: any): IExtension {
-  return {
-    name: values.name || id,
-    author: values.author || 'Unknown',
-    version: values.version || '0.0.0',
-    description: values.description || 'Missing',
-    bundled,
-  };
-}
-
-function readExtensionInfo(extensionPath: string,
-                           bundled: boolean): Promise<{ id: string, info: IExtension }> {
-  const id = path.basename(extensionPath);
-  return fs.readFileAsync(path.join(extensionPath, 'info.json'), { encoding: 'utf-8' })
-    .then(info => ({
-      id, info: applyExtensionInfo(id, bundled, JSON.parse(info)),
-    }))
-    .catch(err => ({
-      id, info: applyExtensionInfo(id, bundled, {}),
-    }));
 }
 
 class ExtensionManager extends ComponentEx<IProps, IComponentState> {
@@ -81,10 +59,11 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
 
   constructor(props: IProps) {
     super(props);
+
+    const { extensions, extensionConfig, onSetExtensionEnabled } = props;
+
     this.initState({
-      extensions: {},
       oldExtensionConfig: props.extensionConfig,
-      reloadNecessary: false,
     });
 
     this.actions = [
@@ -92,7 +71,7 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
         icon: 'delete',
         title: 'Remove',
         action: this.removeExtension,
-        condition: (instanceId: string) => !this.state.extensions[instanceId].bundled,
+        condition: (instanceId: string) => !extensions[instanceId].bundled,
         singleRowAction: true,
       },
     ];
@@ -100,41 +79,34 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
     this.staticColumns = getTableAttributes({
       onSetExtensionEnabled:
         (extName: string, enabled: boolean) => {
-          const extId = Object.keys(this.state.extensions)
-            .find(iter => this.state.extensions[iter].name === extName);
-          this.props.onSetExtensionEnabled(extId, enabled);
+          const extId = Object.keys(extensions)
+            .find(iter => extensions[iter].name === extName);
+          onSetExtensionEnabled(extId, enabled);
         },
       onToggleExtensionEnabled:
         (extName: string) => {
-          const extId = Object.keys(this.state.extensions)
-            .find(iter => this.state.extensions[iter].name === extName);
-          const { extensionConfig, onSetExtensionEnabled } = this.props;
+          const extId = Object.keys(extensions)
+            .find(iter => extensions[iter].name === extName);
           onSetExtensionEnabled(extId, !getSafe(extensionConfig, [extId, 'enabled'], true));
         },
     });
   }
 
-  public componentDidMount() {
-    this.readExtensions();
-  }
-
   public render(): JSX.Element {
-    const {t, extensionConfig} = this.props;
-    const {extensions, reloadNecessary, oldExtensionConfig} = this.state;
+    const {t, extensions, localState, extensionConfig} = this.props;
+    const {oldExtensionConfig} = this.state;
 
     const extensionsWithState = this.mergeExt(extensions, extensionConfig);
-
-    const PanelX: any = Panel;
 
     return (
       <MainPage>
         <MainPage.Body>
           <Panel>
-            <PanelX.Body>
+            <Panel.Body>
               <FlexLayout type='column'>
                 <FlexLayout.Fixed>
                   {
-                    reloadNecessary || !_.isEqual(extensionConfig, oldExtensionConfig)
+                    localState.reloadNecessary || !_.isEqual(extensionConfig, oldExtensionConfig)
                       ? this.renderReload()
                       : null
                   }
@@ -149,26 +121,46 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
                   />
                 </FlexLayout.Flex>
                 <FlexLayout.Fixed>
-                  <Dropzone
-                    accept={['files']}
-                    drop={this.dropExtension}
-                    dialogHint={t('Select extension file')}
-                    icon='folder-download'
-                  />
+                  <FlexLayout type='row'>
+                    <FlexLayout.Flex className='extensions-find-button-container'>
+                      <div className='flex-center-both'>
+                        <Button
+                          id='btn-more-extensions'
+                          onClick={this.onBrowse}
+                          bsStyle='ghost'
+                        >
+                          {t('Find more')}
+                        </Button>
+                      </div>
+                      </FlexLayout.Flex>
+                    <FlexLayout.Flex>
+                      <Dropzone
+                        accept={['files']}
+                        drop={this.dropExtension}
+                        dialogHint={t('Select extension file')}
+                        icon='folder-download'
+                      />
+                    </FlexLayout.Flex>
+                  </FlexLayout>
                 </FlexLayout.Fixed>
               </FlexLayout>
-            </PanelX.Body>
+            </Panel.Body>
           </Panel>
         </MainPage.Body>
       </MainPage>
     );
   }
 
+  private onBrowse = () => {
+    this.props.onBrowseExtension();
+  }
+
   private dropExtension = (type: DropType, extPaths: string[]): void => {
     const { downloads } = this.props;
     let success = false;
+    log('info', 'installing extension(s) via drag and drop', { extPaths });
     const prop: Promise<void[]> = (type === 'files')
-      ? Promise.map(extPaths, extPath => installExtension(extPath)
+      ? Promise.map(extPaths, extPath => installExtension(this.context.api, extPath)
           .then(() => { success = true; })
           .catch(err => {
             this.context.api.showErrorNotification('Failed to install extension', err,
@@ -178,7 +170,7 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
         this.context.api.events.emit('start-download', [url], undefined,
                                      (error: Error, id: string) => {
           const dlPath = path.join(this.props.downloadPath, downloads[id].localPath);
-          installExtension(dlPath)
+          installExtension(this.context.api, dlPath)
           .then(() => {
             success = true;
           })
@@ -193,9 +185,8 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
       }));
     prop.then(() => {
       if (success) {
-        this.nextState.reloadNecessary = true;
+        this.props.updateExtensions();
       }
-      this.readExtensions();
     });
   }
 
@@ -210,8 +201,7 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
   }
 
   private restart = () => {
-    remote.app.relaunch();
-    remote.app.exit(0);
+    relaunch();
   }
 
   private mergeExt(extensions: { [id: string]: IExtension },
@@ -235,41 +225,6 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
 
   private removeExtension = (extId: string) => {
     this.props.onRemoveExtension(extId);
-    this.nextState.reloadNecessary = true;
-  }
-
-  private readExtensions() {
-    const bundledPath = getVortexPath('bundledPlugins');
-    const extensionsPath = path.join(remote.app.getPath('userData'), 'plugins');
-
-    let bundledExtensions;
-    let dynamicExtensions;
-
-    getAllDirectories(bundledPath)
-      .map((extPath: string) => path.join(bundledPath, extPath))
-      .map((fullPath: string) => readExtensionInfo(fullPath, true))
-      .then(extensionInfo => {
-        bundledExtensions = extensionInfo;
-        return getAllDirectories(extensionsPath);
-      })
-      .map((extPath: string) => path.join(extensionsPath, extPath))
-      .map((fullPath: string) => readExtensionInfo(fullPath, false))
-      .then(extensionInfo => {
-        dynamicExtensions = extensionInfo;
-      })
-      .then(() => {
-        this.nextState.extensions = [].concat(bundledExtensions, dynamicExtensions)
-          .reduce((prev, value) => {
-            prev[value.id] = value.info;
-            return prev;
-          }, {});
-      })
-      .catch(err => {
-        // this probably only occurs if the user deletes the plugins directory after start
-        this.context.api.showErrorNotification('Failed to read extension directory', err, {
-          allowReport: false,
-        });
-      });
   }
 }
 
@@ -284,6 +239,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     loadFailures: state.session.base.extLoadFailures,
     downloads: state.persistent.downloads.files,
     downloadPath: selectors.downloadPath(state),
+    extensions: state.session.extensions.installed,
   };
 }
 
@@ -292,6 +248,7 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
     onSetExtensionEnabled: (extId: string, enabled: boolean) =>
       dispatch(setExtensionEnabled(extId, enabled)),
     onRemoveExtension: (extId: string) => dispatch(removeExtension(extId)),
+    onBrowseExtension: () => dispatch(setDialogVisible('browse-extensions')),
   };
 }
 

@@ -1,6 +1,10 @@
 {
-  "presets": ["@babel/react", "@babel/env"],
-  "plugins": [],
+  "presets": ["@babel/react", "@babel/env", "@babel/preset-typescript"],
+  "plugins": [
+    "i18next-extract",
+    "@babel/proposal-class-properties",
+    "@babel/proposal-object-rest-spread"
+  ],
   "env": {
     "development": {
       "presets": [],

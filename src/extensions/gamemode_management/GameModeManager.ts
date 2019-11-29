@@ -10,6 +10,7 @@ import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 import { activeProfile } from '../../util/selectors';
+import { getSafe } from '../../util/storeHelper';
 
 import {
   discoveryFinished,
@@ -270,7 +271,13 @@ class GameModeManager {
   }
 
   private onDiscoveredTool = (gameId: string, result: IDiscoveredTool) => {
-    this.mStore.dispatch(addDiscoveredTool(gameId, result.id, result));
+    const existing = getSafe(this.mStore.getState(),
+                             ['settings', 'gameMode', 'discovered', gameId, 'tools', result.id],
+                             undefined);
+    // don't overwrite customised tools
+    if ((existing === undefined) || !existing.custom) {
+      this.mStore.dispatch(addDiscoveredTool(gameId, result.id, result));
+    }
   }
 
   private onDiscoveredGame = (gameId: string, result: IDiscoveryResult) => {

@@ -2,7 +2,8 @@ import safeCreateAction from '../../../actions/safeCreateAction';
 import {UserCanceled} from '../../../util/CustomErrors';
 
 import {IFileChange} from '../types/IDeploymentMethod';
-import {FileAction, IFileEntry} from '../types/IFileEntry';
+import {IFileEntry} from '../types/IFileEntry';
+import { changeToEntry } from '../util/externalChanges';
 
 export interface IDeploymentProblem {
   activator: string;
@@ -32,28 +33,6 @@ export const setExternalChangeAction = safeCreateAction('SET_EXTERNAL_CHANGE_ACT
 
 let curResolve;
 let curReject;
-
-function defaultAction(changeType: string): FileAction {
-  switch (changeType) {
-    case 'refchange': return 'newest';
-    case 'valchange': return 'nop';
-    case 'deleted': return 'delete';
-    case 'srcdeleted': return 'drop';
-    default: throw new Error('invalid file change ' + changeType);
-  }
-}
-
-function changeToEntry(modTypeId: string, change: IFileChange): IFileEntry {
-  return {
-    modTypeId,
-    filePath: change.filePath,
-    source: change.source,
-    type: change.changeType,
-    action: defaultAction(change.changeType),
-    sourceModified: change.sourceTime,
-    destModified: change.destTime,
-  };
-}
 
 export function showExternalChanges(changes: { [typeId: string]: IFileChange[] }) {
   return (dispatch) =>

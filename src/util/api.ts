@@ -9,6 +9,7 @@ export * from './storeHelper';
 import { installIconSet } from '../controls/Icon';
 import { resolveCategoryName,
          resolveCategoryPath } from '../extensions/category_management/util/retrieveCategoryPath';
+import { readExtensibleDir } from '../extensions/extension_manager/util';
 import { getGame, getGames } from '../extensions/gamemode_management/util/getGame';
 import deriveModInstallName from '../extensions/mod_management/modIdManager';
 import { getManifest } from '../extensions/mod_management/util/activationStore';
@@ -44,6 +45,7 @@ import { bytesToString, deBOM, isChildPath, makeQueue, objDiff,
          pad, sanitizeCSSId, setdefault } from './util';
 import walk from './walk';
 
+import SevenZip = require('node-7z');
 import { runElevated, runThreaded } from 'vortex-run';
 
 export {
@@ -89,6 +91,7 @@ export {
   pad,
   ProcessCanceled,
   ReduxProp,
+  readExtensibleDir,
   relativeTime,
   renderModName,
   resolveCategoryName,
@@ -98,6 +101,7 @@ export {
   sanitizeCSSId,
   setdefault,
   SetupError,
+  SevenZip,
   sortMods,
   steam,
   ISteamEntry,

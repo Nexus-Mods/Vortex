@@ -133,7 +133,7 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderGameOptions() {
-    const { t, game } = this.props;
+    const { t, discoveredGames, game } = this.props;
     const { gameIconCache } = this.state;
     if (Object.keys(gameIconCache).length === 1) {
       return (
@@ -148,6 +148,7 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
 
     return Object.keys(gameIconCache)
       .filter(gameId => gameId !== game.id)
+      .filter(gameId => !getSafe(discoveredGames, [gameId, 'hidden'], false))
       .map(gameId => (
         <MenuItem key={gameId} eventKey={gameId}>
           {this.renderGameOption(gameId)}
@@ -207,9 +208,7 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
 
     const managedGamesIds = Array.from(new Set<string>(Object.keys(profiles)
       .map(profileId => profiles[profileId].gameId)
-      .filter(gameId =>
-        !getSafe(discoveredGames, [gameId, 'hidden'], false)
-        && truthy(getSafe(discoveredGames, [gameId, 'path'], undefined)))));
+      .filter(gameId => truthy(getSafe(discoveredGames, [gameId, 'path'], undefined)))));
 
     return managedGamesIds.reduce((prev, gameId) => {
       const game = knownGames.find(iter => iter.id === gameId);

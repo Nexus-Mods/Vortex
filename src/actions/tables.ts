@@ -15,6 +15,11 @@ export const setAttributeSort = safeCreateAction(
 export const setAttributeFilter = safeCreateAction('SET_ATTRIBUTE_FILTER',
   (tableId: string, attributeId: string, filter: any) => ({ tableId, attributeId, filter }));
 
-export const setSplitPos = safeCreateAction(
-    'SET_SPLIT_POS',
-    (tableId: string, pos: number) => ({ tableId, pos }));
+export const setGroupingAttribute = safeCreateAction('SET_GROUPING_ATTRIBUTE',
+  (tableId: string, attributeId: string) => ({ tableId, attributeId }));
+
+export const collapseGroup = safeCreateAction('COLLAPSE_GROUP',
+  (tableId: string, groupId: string, collapse: boolean) => ({ tableId, groupId, collapse }));
+
+export const setCollapsedGroups = safeCreateAction('SET_COLLAPSED_GROUPS',
+  (tableId: string, groups: string[]) => ({ tableId, groups }));

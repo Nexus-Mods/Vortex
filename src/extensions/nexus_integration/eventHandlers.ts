@@ -1,7 +1,7 @@
 import { setDownloadModInfo } from '../../actions';
 import { IDownload, IModTable, IState, StateChangeCallback } from '../../types/api';
 import { IExtensionApi } from '../../types/IExtensionContext';
-import { DataInvalid } from '../../util/api';
+import { DataInvalid, ProcessCanceled } from '../../util/api';
 import Debouncer from '../../util/Debouncer';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
@@ -10,6 +10,8 @@ import { activeGameId, gameById } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 
 import { DownloadIsHTML } from '../download_management/DownloadManager';
+import { SITE_ID } from '../gamemode_management/constants';
+import {IGameStored} from '../gamemode_management/types/IGameStored';
 import { setUpdatingMods } from '../mod_management/actions/session';
 
 import { setUserInfo } from './actions/persistent';
@@ -168,44 +170,70 @@ export function onRequestOwnIssues(nexus: Nexus) {
   };
 }
 
-export function onModUpdate(api: IExtensionApi, nexus: Nexus): (...args: any[]) => void {
-  return (gameId, modId, fileId) => {
+function downloadFile(api: IExtensionApi, nexus: Nexus,
+                      game: IGameStored, modId: number, fileId: number): Promise<string> {
     const state: IState = api.store.getState();
-    const game = gameById(api.store.getState(), gameId);
-    if (!getSafe(state, ['persistent', 'nexus', 'userInfo', 'isPremium'], false)) {
+    const gameId = game !== null ? game.id : SITE_ID;
+    if ((game !== null)
+        && !getSafe(state, ['persistent', 'nexus', 'userInfo', 'isPremium'], false)) {
       // nexusmods can't let users download files directly from client, without
       // showing ads
-      opn(['https://www.nexusmods.com', nexusGameId(game), 'mods', modId].join('/'))
-        .catch(() => undefined);
-      return;
+      return Promise.reject(new ProcessCanceled('Only available to premium users'));
     }
     // TODO: Need some way to identify if this request is actually for a nexus mod
     const url = `nxm://${toNXMId(game, gameId)}/mods/${modId}/files/${fileId}`;
+
     const downloads = state.persistent.downloads.files;
     // check if the file is already downloaded. If not, download before starting the install
     const existingId = Object.keys(downloads).find(downloadId =>
       getSafe(downloads, [downloadId, 'modInfo', 'nexus', 'ids', 'fileId'], undefined) === fileId);
     if (existingId !== undefined) {
-      api.events.emit('start-install-download', existingId);
+      return Promise.resolve(existingId);
     } else {
-      startDownload(api, nexus, url)
-        .then(downloadId => {
-          if (downloadId !== undefined) {
-            api.events.emit('start-install-download', downloadId);
-          } else {
-            api.showErrorNotification(
-              'Failed to download update file, please download it manually.',
-              undefined, { allowReport: false });
-          }
-        })
-        .catch(DownloadIsHTML, err => undefined)
-        .catch(DataInvalid, () => {
-          api.showErrorNotification('Invalid URL', url, { allowReport: false });
-        })
-        .catch(err => {
-          api.showErrorNotification('failed to start download', err);
-        });
+      // startDownload will report network errors and only reject on usage error
+      return startDownload(api, nexus, url);
     }
+}
+
+export function onModUpdate(api: IExtensionApi, nexus: Nexus): (...args: any[]) => void {
+  return (gameId, modId, fileId) => {
+    const game = gameId === SITE_ID ? null : gameById(api.store.getState(), gameId);
+
+    downloadFile(api, nexus, game, modId, fileId)
+      .then(downloadId => {
+        api.events.emit('start-install-download', downloadId);
+      })
+      .catch(DownloadIsHTML, err => undefined)
+      .catch(DataInvalid, () => {
+        const url = `nxm://${toNXMId(game, gameId)}/mods/${modId}/files/${fileId}`;
+        api.showErrorNotification('Invalid URL', url, { allowReport: false });
+      })
+      .catch(ProcessCanceled, () =>
+        opn(['https://www.nexusmods.com', nexusGameId(game), 'mods', modId].join('/'))
+          .catch(() => undefined))
+      .catch(err => {
+        api.showErrorNotification('failed to start download', err);
+      });
+  };
+}
+
+export function onNexusDownload(api: IExtensionApi,
+                                nexus: Nexus)
+                                : (...args: any[]) => Promise<any> {
+  return (gameId, modId, fileId): Promise<string> => {
+    const game = gameId === SITE_ID ? null : gameById(api.store.getState(), gameId);
+
+    return downloadFile(api, nexus, game, modId, fileId)
+      .catch(ProcessCanceled, err => {
+        api.sendNotification({
+          type: 'error',
+          message: err.message,
+        });
+      })
+      .catch(err => {
+        api.showErrorNotification('Nexus download failed', err);
+        return Promise.resolve(undefined);
+      });
   };
 }
 

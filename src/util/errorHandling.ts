@@ -7,12 +7,13 @@ import { fallbackTFunc } from './i18n';
 import { log } from './log';
 import opn from './opn';
 import { getSafe } from './storeHelper';
-import { getAllPropertyNames, spawnSelf, truthy } from './util';
+import { flatten, getAllPropertyNames, spawnSelf, truthy } from './util';
 
 import * as Promise from 'bluebird';
 import {
   app as appIn,
   dialog as dialogIn,
+  ipcRenderer,
   remote,
 } from 'electron';
 import * as fs from 'fs-extra-promise';
@@ -176,6 +177,12 @@ export function didIgnoreError(): boolean {
 
 export function disableErrorReport() {
   errorIgnored = true;
+}
+
+if (ipcRenderer !== undefined) {
+  ipcRenderer.on('did-ignore-error', () => {
+    errorIgnored = true;
+  });
 }
 
 export function sendReportFile(fileName: string): Promise<IFeedbackResponse> {
@@ -343,12 +350,13 @@ export function toError(input: any, title?: string,
     if (sourceStack !== undefined) {
       stack += '\n\nReported from:\n' + sourceStack;
     }
+    const flatErr = flatten(input);
     return {
       message: t(input.message),
       title,
       subtitle: (options || {}).message,
       stack,
-      details: Object.keys(input).map(key => `${key}: ${input[key]}`).join('\n'),
+      details: Object.keys(flatErr).map(key => `${key}: ${flatErr[key]}`).join('\n'),
     };
   }
 
@@ -387,13 +395,15 @@ export function toError(input: any, title?: string,
         }
       }
 
-      let attributes = Object.keys(input || {})
+      const flatErr = flatten(input);
+
+      let attributes = Object.keys(flatErr || {})
           .filter(key => key[0].toUpperCase() === key[0]);
       // if there are upper case characters, this is a custom, not properly typed, error object
       // with upper case attributes, intended to be displayed to the user.
       // Otherwise, who knows what this is, just send everything.
       if (attributes.length === 0) {
-        attributes = getAllPropertyNames(input || {})
+        attributes = getAllPropertyNames(flatErr || {})
           .filter(key => ['message', 'error', 'stack', 'context'].indexOf(key) === -1);
       }
 

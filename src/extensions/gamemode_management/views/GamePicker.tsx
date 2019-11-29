@@ -1,5 +1,7 @@
 import EmptyPlaceholder from '../../../controls/EmptyPlaceholder';
 import FlexLayout from '../../../controls/FlexLayout';
+import FormInput from '../../../controls/FormInput';
+import Icon from '../../../controls/Icon';
 import IconBar from '../../../controls/IconBar';
 import { IconButton, ToggleButton } from '../../../controls/TooltipControls';
 import { IActionDefinition } from '../../../types/IActionDefinition';
@@ -9,8 +11,10 @@ import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import getAttr from '../../../util/getAttr';
 import { activeGameId } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
+import { truthy } from '../../../util/util';
 import MainPage from '../../../views/MainPage';
 
+import { IAvailableExtension, IExtension } from '../../extension_manager/types';
 import { IProfile } from '../../profile_management/types/IProfile';
 
 import { setPickerLayout } from '../actions/settings';
@@ -24,7 +28,8 @@ import ShowHiddenButton from './ShowHiddenButton';
 import * as Promise from 'bluebird';
 import update from 'immutability-helper';
 import * as React from 'react';
-import { ListGroup, ProgressBar, Tab, Tabs, FormControl, InputGroup } from 'react-bootstrap';
+import { FormControl, InputGroup, ListGroup,
+         Panel, PanelGroup, ProgressBar } from 'react-bootstrap';
 
 function gameFromDiscovery(id: string, discovered: IDiscoveryResult): IGameStored {
   return {
@@ -55,6 +60,8 @@ interface IConnectedProps {
   gameMode: string;
   discovery: IDiscoveryState;
   pickerLayout: 'list' | 'small' | 'large';
+  extensions: IAvailableExtension[];
+  extensionsInstalled: { [extId: string]: IExtension };
 }
 
 interface IActionProps {
@@ -66,6 +73,12 @@ type IProps = IBaseProps & IConnectedProps & IActionProps;
 interface IComponentState {
   showHidden: boolean;
   currentFilterValue: string;
+  expandManaged: boolean;
+  expandUnmanaged: boolean;
+}
+
+function nop() {
+  // nop
 }
 
 /**
@@ -86,6 +99,8 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
     this.initState({
       showHidden: false,
       currentFilterValue: '',
+      expandManaged: true,
+      expandUnmanaged: true,
     });
 
     this.buttons = [
@@ -98,14 +113,22 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, discoveredGames, discovery, knownGames, pickerLayout, profiles } = this.props;
-    const { showHidden, currentFilterValue } = this.state;
+    const { t, discoveredGames, discovery, extensions, extensionsInstalled, knownGames,
+            pickerLayout, profiles } = this.props;
+    const { showHidden, currentFilterValue, expandManaged, expandUnmanaged } = this.state;
+
+    const installedExtIds = new Set(Object.values(extensionsInstalled).map(ext => ext.modId));
+
+    const gameExts = extensions
+      .filter(ext => ext.type === 'game')
+      .filter(ext => !installedExtIds.has(ext.modId));
 
     // TODO: lots of computation and it doesn't actually change except through discovery
     //   or when adding a profile
     const displayedGames: IGameStored[] = ((showHidden) || (!!currentFilterValue))
-      ? knownGames 
-      : knownGames.filter((game: IGameStored) => !getAttr(discoveredGames, game.id, { hidden: false }).hidden);
+      ? knownGames
+      : knownGames.filter((game: IGameStored) =>
+          !getAttr(discoveredGames, game.id, { hidden: false }).hidden);
 
     const profileGames = new Set<string>(
       Object.keys(profiles).map((profileId: string) => profiles[profileId].gameId));
@@ -126,6 +149,17 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
       }
     });
 
+    supportedGameList.push(...gameExts.map(ext => ({
+      id: ext.name,
+      name: ext.gameName || ext.name,
+      extensionPath: undefined,
+      imageURL: ext.image,
+      requiredFiles: [],
+      executable: undefined,
+      contributed: ext.author,
+    }))
+    .filter(ext => showHidden || !getAttr(discoveredGames, ext.id, { hidden: false }).hidden));
+
     Object.keys(discoveredGames).forEach(gameId => {
       if (knownGames.find(game => game.id === gameId) === undefined) {
         if (discoveredGames[gameId].extensionPath === undefined) {
@@ -139,18 +173,18 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
       }
     });
 
-    const title = (text: string, count: string) => {
-      return (
-        <div className='nav-title'>
-        <div className='nav-title-title'>{text}</div>
-        <div className='nav-title-count'>({count})</div>
-      </div>
-      );
-    };
+    const unmanagedGameList = [].concat(discoveredGameList, supportedGameList);
 
-    const filteredManaged = managedGameList.filter(game => this.applyGameFilter(game)).sort(byGameName);
-    const filteredDiscovered = discoveredGameList.filter(game => this.applyGameFilter(game)).sort(byGameName);
-    const filteredSupported = supportedGameList.filter(game => this.applyGameFilter(game)).sort(byGameName);
+    const filteredManaged =
+      managedGameList.filter(game => this.applyGameFilter(game)).sort(byGameName);
+    const filteredUnmanaged =
+        unmanagedGameList
+        .filter(game => this.applyGameFilter(game)).sort(byGameName);
+
+    const titleManaged = t('Managed ({{filterCount}})', {
+      replace: { filterCount: this.getTabGameNumber(managedGameList, filteredManaged) } });
+    const titleUnmanaged = t('Unmanaged ({{filterCount}})', {
+      replace: { filterCount: this.getTabGameNumber(unmanagedGameList, filteredUnmanaged) } });
 
     return (
       <MainPage domRef={this.setRef}>
@@ -197,36 +231,42 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
           <FlexLayout type='column' className='game-page'>
             <FlexLayout.Fixed>
               <InputGroup>
-                <FormControl
+                <FormInput
                   className='game-filter-input'
                   value={currentFilterValue}
                   placeholder={t('Search for a game...')}
                   onChange={this.onFilterInputChange}
+                  debounceTimer={100}
+                  clearable
                 />
               </InputGroup>
             </FlexLayout.Fixed>
             <FlexLayout.Flex>
               <div ref={this.setScrollRef} className='gamepicker-body'>
-                <Tabs defaultActiveKey='managed' id='games-picker-tabs'>
-                  <Tab
-                    eventKey='managed'
-                    title={title(t('Managed'), this.getTabGameNumber(managedGameList, filteredManaged))}
+                <PanelGroup id='game-panel-group'>
+                  <Panel expanded={expandManaged} eventKey='managed' onToggle={nop}>
+                    <Panel.Heading onClick={this.toggleManaged}>
+                      <Icon name={expandManaged ? 'showhide-down' : 'showhide-right'} />
+                      <Panel.Title>{titleManaged}</Panel.Title>
+                    </Panel.Heading>
+                    <Panel.Body collapsible>
+                      {this.renderGames(filteredManaged, 'managed')}
+                    </Panel.Body>
+                  </Panel>
+                  <Panel
+                    expanded={expandUnmanaged}
+                    eventKey='unmanaged'
+                    onToggle={nop}
                   >
-                    {this.renderGames(filteredManaged, 'managed')}
-                  </Tab>
-                  <Tab
-                    eventKey='discovered'
-                    title={title(t('Discovered'), this.getTabGameNumber(discoveredGameList, filteredDiscovered))}
-                  >
-                    {this.renderGames(filteredDiscovered, 'discovered')}
-                  </Tab>
-                  <Tab
-                    eventKey='supported'
-                    title={title(t('Supported'), this.getTabGameNumber(supportedGameList, filteredSupported))}
-                  >
-                    {this.renderGames(filteredSupported, 'undiscovered')}
-                  </Tab>
-                </Tabs>
+                    <Panel.Heading onClick={this.toggleUnmanaged}>
+                      <Icon name={expandUnmanaged ? 'showhide-down' : 'showhide-right'} />
+                      <Panel.Title>{titleUnmanaged}</Panel.Title>
+                    </Panel.Heading>
+                    <Panel.Body collapsible>
+                      {this.renderGames(filteredUnmanaged, 'unmanaged')}
+                    </Panel.Body>
+                  </Panel>
+                </PanelGroup>
               </div>
             </FlexLayout.Flex>
             <FlexLayout.Fixed>
@@ -255,8 +295,16 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private onFilterInputChange = (evt) => {
-    this.nextState.currentFilterValue = evt.target.value;
+  private toggleManaged = () => {
+    this.nextState.expandManaged = !this.state.expandManaged;
+  }
+
+  private toggleUnmanaged = () => {
+    this.nextState.expandUnmanaged = !this.state.expandUnmanaged;
+  }
+
+  private onFilterInputChange = (input) => {
+    this.nextState.currentFilterValue = input;
   }
 
   private getTabGameNumber(unfiltered: IGameStored[], filtered: IGameStored[]): string {
@@ -266,7 +314,8 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
 
   private applyGameFilter = (game: IGameStored): boolean => {
     const { currentFilterValue } = this.state;
-    return game.name.toLowerCase().includes(currentFilterValue.toLowerCase()) || !currentFilterValue;
+    return game.name.toLowerCase().includes(currentFilterValue.toLowerCase())
+        || !currentFilterValue;
   }
 
   private renderProgress = (phase: IDiscoveryPhase, idx: number): JSX.Element => {
@@ -323,37 +372,17 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
     const { t, gameMode, pickerLayout } = this.props;
     const { currentFilterValue } = this.state;
 
-    const failedFilter = (): JSX.Element => (
-      <EmptyPlaceholder
-        icon='game'
-        text={t('Vortex cannot find "{{gameName}}" in selected tab', {replace: { gameName: currentFilterValue } })}
-        subtext={t('Please switch tab, try alternative spellings, or submit a game request via the feedback system.')}
-      />
-    );
-
     if (games.length === 0) {
-      if (type === 'managed') {
-        return (!!currentFilterValue)
-        ? failedFilter()
-        : (
+      if (truthy(currentFilterValue)) {
+        return null;
+      } else if (type === 'managed') {
+        return (
           <EmptyPlaceholder
             icon='game'
             text={t('You haven\'t managed any games yet')}
             subtext={t('To start managing a game, go to "Discovered" and activate a game there.')}
           />
         );
-      } else if (type === 'discovered') {
-        return (!!currentFilterValue)
-        ? failedFilter()
-        : (
-          <EmptyPlaceholder
-            icon='game'
-            text={t('No games were discovered')}
-            subtext={t('You can manually add a game from "Supported" or start a full disk scan.')}
-          />
-        );
-      } else if ((type === 'undiscovered') && (!!currentFilterValue)) {
-        return failedFilter();
       }
     }
 
@@ -388,23 +417,28 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderGamesSmall(games: IGameStored[], type: string, gameMode: string) {
-    const { t, onRefreshGameInfo } = this.props;
+    const { t, discoveredGames, onRefreshGameInfo } = this.props;
+
+    const isDiscovered = (gameId: string) =>
+      getSafe(discoveredGames, [gameId, 'path'], undefined) !== undefined;
+
     return (
       <div>
-      <div className='game-group'>
-        {games.map(game => (
-          <GameThumbnail
-            t={t}
-            key={game.id}
-            game={game}
-            type={type}
-            active={game.id === gameMode}
-            onRefreshGameInfo={onRefreshGameInfo}
-            getBounds={this.getBounds}
-            container={this.mScrollRef}
-          />))
-        }
-      </div>
+        <div className='game-group'>
+          {games.map(game => (
+            <GameThumbnail
+              t={t}
+              key={game.id}
+              game={game}
+              type={type}
+              active={game.id === gameMode}
+              onRefreshGameInfo={onRefreshGameInfo}
+              getBounds={this.getBounds}
+              container={this.mScrollRef}
+              discovered={isDiscovered(game.id)}
+            />))
+          }
+        </div>
       </div>
     );
   }
@@ -418,6 +452,8 @@ function mapStateToProps(state: IState): IConnectedProps {
     profiles: state.persistent.profiles,
     knownGames: state.session.gameMode.known,
     discovery: state.session.discovery,
+    extensions: state.session.extensions.available,
+    extensionsInstalled: state.session.extensions.installed,
   };
 }
 

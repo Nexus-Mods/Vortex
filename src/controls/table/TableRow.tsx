@@ -9,7 +9,7 @@ import {ITableRowAction} from '../Table';
 import {Button, IconButton} from '../TooltipControls';
 import VisibilityProxy from '../VisibilityProxy';
 
-import { TD } from './MyTable';
+import { TD, TR } from './MyTable';
 
 import I18next from 'i18next';
 import * as _ from 'lodash';
@@ -224,8 +224,10 @@ export interface IRowProps {
   data: any;
   rawData: any;
   attributes: ITableAttribute[];
+  inlines: ITableAttribute[];
   sortAttribute: string;
   actions: ITableRowAction[];
+  hasActions: boolean;
   language: string;
   onClick: React.MouseEventHandler<any>;
   selected: boolean;
@@ -233,6 +235,7 @@ export interface IRowProps {
   domRef?: (ref) => void;
   container: HTMLElement;
   visible: boolean;
+  grouped: boolean;
   onSetVisible: (rowId: string, visible: boolean) => void;
   onHighlight: (rowId: string, highlight: boolean) => void;
 }
@@ -257,17 +260,18 @@ class TableRow extends React.Component<IRowProps, IRowState> {
     return (this.props.visible !== nextProps.visible)
       || (this.props.data !== nextProps.data)
       || (this.props.selected !== nextProps.selected)
+      || (this.props.grouped !== nextProps.grouped)
       || (this.props.highlighted !== nextProps.highlighted)
       || (this.props.attributes !== nextProps.attributes)
       || (this.state.contextVisible !== nextState.contextVisible)
       || (this.state.context !== nextState.context);
   }
 
-  public render(): JSX.Element {
-    const { data, domRef, highlighted, id, onClick,
+  public render(): JSX.Element | JSX.Element[] {
+    const { data, domRef, inlines, grouped, highlighted, id, onClick,
             selected } = this.props;
 
-    const classes = ['xtr'];
+    const classes = [];
 
     if (selected) {
       classes.push('table-selected');
@@ -275,17 +279,21 @@ class TableRow extends React.Component<IRowProps, IRowState> {
     if (highlighted) {
       classes.push('table-highlighted');
     }
+    if (grouped) {
+      classes.push('table-row-grouped');
+    }
 
-    return (
+    const res = [(
       <VisibilityProxy
         id={id}
+        componentClass={TR}
         data-rowid={data.__id}
         key={data.__id}
         className={classes.join(' ')}
         onClick={onClick}
         onContextMenu={this.onContext}
         ref={domRef}
-        style={{ display: 'table-row', position: 'relative' }}
+        style={{ position: 'relative' }}
 
         visible={this.props.visible}
         setVisible={this.setVisible}
@@ -293,7 +301,19 @@ class TableRow extends React.Component<IRowProps, IRowState> {
         placeholder={this.renderPlaceholder}
         content={this.renderRow}
       />
-    );
+    )];
+
+    if (this.props.visible) {
+      inlines.forEach(extra => {
+        res.push((
+          <tr key={data.__id + '_extra_' + extra.id}>
+            {this.renderAttributeExtra(extra)}
+          </tr>
+        ));
+      });
+    }
+
+    return res;
   }
 
   private renderPlaceholder = (): React.ReactNode => {
@@ -303,7 +323,7 @@ class TableRow extends React.Component<IRowProps, IRowState> {
   }
 
   private renderRow = (): React.ReactNode => {
-    const { actions, attributes, data, tableId } = this.props;
+    const { actions, attributes, data, hasActions, tableId } = this.props;
 
     const res = attributes.map(this.renderAttribute);
     const sorted = actions
@@ -316,7 +336,8 @@ class TableRow extends React.Component<IRowProps, IRowState> {
         }
       })
       .sort((lhs, rhs) => lhs.position - rhs.position);
-    if (sorted.length > 0) {
+
+    if (hasActions) {
       res.push(
         <TD
           style={{ textAlign: 'center' }}
@@ -328,7 +349,7 @@ class TableRow extends React.Component<IRowProps, IRowState> {
             group={`${tableId}-action-icons`}
             instanceId={data.__id}
             className='table-actions'
-            staticElements={actions}
+            staticElements={sorted}
             visible={this.state.contextVisible}
             position={this.state.context}
             onHide={this.onHideContext}
@@ -373,6 +394,24 @@ class TableRow extends React.Component<IRowProps, IRowState> {
       >
         {this.renderCell(attribute, rawData, data[attribute.id], t,
                          index >= (arr.length / 2))}
+      </TD>
+    );
+  }
+
+  private renderAttributeExtra = (attribute: ITableAttribute): JSX.Element => {
+    const { t, attributes, data, hasActions, rawData, tableId } = this.props;
+    const classes = [
+      `table-${tableId}`,
+      `cell-${attribute.id}`,
+    ];
+
+    return (
+      <TD
+        className={classes.join(' ')}
+        key={attribute.id}
+        colSpan={attributes.length + (hasActions ? 1 : 0)}
+      >
+        {this.renderCell(attribute, rawData, data[attribute.id], t, false)}
       </TD>
     );
   }

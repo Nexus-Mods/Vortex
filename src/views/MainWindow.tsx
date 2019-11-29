@@ -44,6 +44,7 @@ import { ThunkDispatch } from 'redux-thunk';
 addStyle(ReactButton, 'secondary');
 addStyle(ReactButton, 'ad');
 addStyle(ReactButton, 'ghost');
+addStyle(ReactButton, 'link');
 addStyle(ReactButton, 'inverted');
 
 export interface IBaseProps {
@@ -93,7 +94,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   public static childContextTypes: React.ValidationMap<any> = {
     api: PropTypes.object.isRequired,
     menuLayer: PropTypes.object,
-    getModifiers:  PropTypes.func,
+    getModifiers: PropTypes.func,
   };
 
   private applicationButtons: IActionDefinition[];
@@ -149,7 +150,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
   public getChildContext(): IComponentContext {
     const { api } = this.props;
-    return { api, menuLayer: this.menuLayer, getModifiers: () => this.modifiers };
+    return { api, menuLayer: this.menuLayer, getModifiers: this.getModifiers };
   }
 
   public componentWillMount() {
@@ -247,6 +248,10 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
           </div>
           {(uiBlocker !== undefined) ? this.renderBlocker(uiBlocker, uiBlockers[uiBlocker]) : null}
       </React.Suspense>);
+  }
+
+  private getModifiers = () => {
+    return this.modifiers;
   }
 
   private renderWait() {

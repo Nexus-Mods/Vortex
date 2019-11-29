@@ -1,3 +1,4 @@
+import { IExtension } from '../extensions/extension_manager/types';
 import {
   IDeployedFile,
   IDeploymentMethod,
@@ -81,6 +82,15 @@ export type RegisterBanner =
   (group: string, component: React.ComponentClass<any> | React.StatelessComponent<any>,
    options: IBannerOptions) => void;
 
+export interface IModSourceOptions {
+  /**
+   * condition for this source to show up. Please make sure this returns quickly, cache if
+   * necessary.
+   */
+  condition?: () => boolean;
+  icon?: string;
+}
+
 export interface IMainPageOptions {
   /**
    * id for this page. If none is specified the page title is used. Use the id to avoid
@@ -144,7 +154,7 @@ export type RegisterToDo =
      priority: number) => void;
 
 export interface IRegisterProtocol {
-  (protocol: string, def: boolean, callback: (url: string) => void);
+  (protocol: string, def: boolean, callback: (url: string, install: boolean) => void);
 }
 
 export interface IFileFilter {
@@ -255,6 +265,7 @@ export interface IErrorOptions {
   hideDetails?: boolean;
   replace?: { [key: string]: string };
   attachments?: IAttachment[];
+  extension?: IExtension;
 }
 
 /**
@@ -318,6 +329,11 @@ export interface IRunParameters {
  * @interface IExtensionApi
  */
 export interface IExtensionApi {
+  /**
+   * name of the extension to use this api with
+   */
+  extension?: string;
+
   /**
    * show a notification to the user.
    * This is not available in the call to registerReducer
@@ -538,7 +554,7 @@ export interface IExtensionApi {
    * emit an event and allow every receiver to return a Promise. This call will only return
    * after all these Promises are resolved.
    */
-  emitAndAwait: (eventName: string, ...args: any[]) => Promise<void>;
+  emitAndAwait: (eventName: string, ...args: any[]) => Promise<any>;
 
   /**
    * handle an event emitted with emitAndAwait. The listener can return a promise and the emitter
@@ -546,7 +562,7 @@ export interface IExtensionApi {
    * Note that listeners should report all errors themselves, it is considered a bug if the listener
    * returns a rejected promise.
    */
-  onAsync: (eventName: string, listener: (...args: any[]) => Promise<void>) => void;
+  onAsync: (eventName: string, listener: (...args: any[]) => Promise<any>) => void;
 
   /**
    * returns true if the running version of Vortex is considered outdated. This is mostly used
@@ -756,7 +772,10 @@ export interface IExtensionContext {
    * actual features
    * The source can also be used to browse for further mods
    */
-  registerModSource: (id: string, name: string, onBrowse: () => void) => void;
+  registerModSource: (id: string,
+                      name: string,
+                      onBrowse: () => void,
+                      options?: IModSourceOptions) => void;
 
   /**
    * register a reducer to introduce new set-operations on the application

@@ -4,7 +4,7 @@ import { deleteOrNop, getSafe, merge, setOrNop, setSafe } from '../../../util/st
 
 import * as action from '../actions/state';
 
-export const speedDataPoints = 30;
+export const NUM_SPEED_DATA_POINTS = 30;
 
 /**
  * reducer for changes to ephemeral session state
@@ -120,8 +120,8 @@ export const stateReducer: IReducerSpec = {
       const temp = setSafe(state, ['speed'], payload);
       let speeds = state.speedHistory !== undefined ? state.speedHistory.slice() : [];
       speeds.push(payload);
-      if (speeds.length > speedDataPoints) {
-        speeds = speeds.slice(speeds.length - speedDataPoints);
+      if (speeds.length > NUM_SPEED_DATA_POINTS) {
+        speeds = speeds.slice(speeds.length - NUM_SPEED_DATA_POINTS);
       }
       return setSafe(temp, ['speedHistory'], speeds);
     },

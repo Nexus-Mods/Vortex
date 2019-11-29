@@ -66,7 +66,7 @@
 
   .notification-enter-active {
     opacity: 1;
-    transition: opacity 500ms ease-in;
+    transition: opacity $transition-time ease-in;
   }
 }
 
@@ -74,7 +74,7 @@
   opacity: 1;
   .notification-leave-active {
     opacity: 0;
-    transition: opacity 300ms ease-in;
+    transition: opacity $transition-time-half ease-in;
   }
 }
 

@@ -188,13 +188,13 @@
     border-style: solid;
     border-color: lighten($brand-menu, 30%);
     border-width: 0px;
-    transition: max-width 300ms cubic-bezier(0, 1, 1, 1), border-width 0ms 300ms;
+    transition: max-width $transition-time-half cubic-bezier(0, 1, 1, 1), border-width 0ms $transition-time-half;
     display: flex;
     flex-direction: column;
     &.in {
       max-width: 30%;
       border-width: 2px;
-      transition: max-width 300ms cubic-bezier(1, 0, 1, 1), border-width 0ms 0ms;
+      transition: max-width $transition-time-half cubic-bezier(1, 0, 1, 1), border-width 0ms 0ms;
     }
   }
 }
@@ -204,7 +204,7 @@
   opacity: 0;
   &.mainpage-enter-active {
     opacity: 1;
-    transition: opacity 250ms ease-in;
+    transition: opacity $transition-time-half ease-in;
   }
 }
 
@@ -212,7 +212,7 @@
   opacity: 1;
   &.mainpage-leave-active {
     opacity: 0;
-    transition: opacity 150ms ease-out;
+    transition: opacity floor($transition-time-half / 2) ease-out;
   }
 }
 
@@ -255,7 +255,7 @@
 }
 
 .main-page {
-  transition: opacity 500ms;
+  transition: opacity $transition-time;
   flex: 1 1 0;
   position: relative;
   display: flex;
@@ -268,7 +268,7 @@
   }
 
   &.page-hidden {
-    transition: visibility 0s 500ms, opacity 500ms;
+    transition: visibility 0s $transition-time, opacity $transition-time;
     opacity: 0;
     z-index: 0;
     visibility: hidden;

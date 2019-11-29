@@ -178,7 +178,7 @@ function unknownErrorRetry(filePath: string, err: Error, stackErr: Error): Promi
       options.title = 'Anti Virus denied access';
       options.message = `Your Anti-Virus Software has blocked access to "${filePath}".`;
       options.detail = undefined;
-    } else if ([21, 59, 483, 793, 1005, 1392, 1920, 6800].indexOf(err['nativeCode']) !== -1) {
+    } else if ([21, 59, 483, 793, 1005, 1127, 1392, 1920, 6800].indexOf(err['nativeCode']) !== -1) {
       options.title = `I/O Error (${err['nativeCode']})`;
       options.message = `Accessing "${filePath}" failed with an error that indicates `
                       + 'a hardware problem. This may indicate the disk is defective, '
@@ -186,7 +186,7 @@ function unknownErrorRetry(filePath: string, err: Error, stackErr: Error): Promi
                       + 'temporary network or server problems. '
                       + 'Please do not report this to us, this is not a bug in Vortex '
                       + 'and we can not provide remote assistance with hardware problems.';
-    } else if ([362, 383, 395, 396, 404].indexOf(err['nativeCode']) !== -1) {
+    } else if ([362, 383, 390, 395, 396, 404, 4394].indexOf(err['nativeCode']) !== -1) {
       options.title = `OneDrive error (${err['nativeCode']})`;
       options.message = `The file "${filePath}" is stored on a cloud storage drive `
                       + '(Microsoft OneDrive) which is currently unavailable. Please '
@@ -206,7 +206,7 @@ function unknownErrorRetry(filePath: string, err: Error, stackErr: Error): Promi
                       + 'network drive, please make sure it\'s connected. Otherwise make sure '
                       + 'the drive letter hasn\'t changed and if necessary, update the path '
                       + 'within Vortex.';
-    } else if ([53, 4350].indexOf(err['nativeCode']) !== -1) {
+    } else if ([53, 55, 4350].indexOf(err['nativeCode']) !== -1) {
       options.title = `Network drive unavailable (${err['nativeCode']})`;
       options.message = `The file "${filePath}" is currently not accessible, very possibly the `
                       + 'network share as a whole is inaccesible due to a network problem '
@@ -214,6 +214,14 @@ function unknownErrorRetry(filePath: string, err: Error, stackErr: Error): Promi
     } else if (err['nativeCode'] === 1816) {
       options.title = 'Not enough quota';
       options.message = `Windows reported insufficient quota writing to "${filePath}".`;
+    } else if (err['nativeCode'] === 6851) {
+      options.title = 'Volume dirty';
+      options.message = 'The operation could not be completed because the volume is dirty. '
+                      + 'Please run chkdsk and try again.';
+    } else if (err['nativeCode'] === 1359) {
+      options.title = 'Internal error';
+      options.message = 'The operation failed with an internal (internal to windows) error. '
+                      + 'No further error information is available to us.';
     } else {
       options.title += ` (${err['nativeCode']})`;
       options.buttons.unshift('Cancel and Report');

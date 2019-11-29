@@ -1,5 +1,5 @@
 import { IActionDefinition, IActionOptions } from '../types/IActionDefinition';
-import { extend, IExtensibleProps } from '../util/ExtensionProvider';
+import { extend } from '../util/ExtensionProvider';
 
 import * as _ from 'lodash';
 import * as React from 'react';
@@ -7,6 +7,7 @@ import * as React from 'react';
 export interface IActionControlProps {
   instanceId?: string | string[];
   filter?: (action: IActionDefinition) => boolean;
+  showAll?: boolean;
 }
 
 export interface IExtensionProps {
@@ -15,8 +16,16 @@ export interface IExtensionProps {
 
 type IProps = IActionControlProps & IExtensionProps;
 
+function numOr(input: number, def: number): number {
+  if (input !== undefined) {
+    return input;
+  } else {
+    return 100;
+  }
+}
+
 function iconSort(lhs: IActionDefinition, rhs: IActionDefinition): number {
-  return (lhs.position || 100) - (rhs.position || 100);
+  return numOr(lhs.position, 100) - numOr(rhs.position, 100);
 }
 
 export interface IActionDefinitionEx extends IActionDefinition {
@@ -62,7 +71,7 @@ class ActionControl extends React.Component<IProps, { actions: IActionDefinition
   }
 
   private actionsToShow(props: IProps): IActionDefinitionEx[] {
-    const { filter, instanceId, objects } = props;
+    const { filter, instanceId, objects, showAll } = props;
     const instanceIds = typeof(instanceId) === 'string' ? [instanceId] : instanceId;
     const checkCondition = (def: IActionDefinition): boolean | string => {
       if (def.condition === undefined) {
@@ -80,7 +89,7 @@ class ActionControl extends React.Component<IProps, { actions: IActionDefinition
           ...iter,
           show: checkCondition(iter),
         }))
-      .filter(iter => iter.show !== false)
+      .filter(iter => showAll || (iter.show !== false))
       .filter(iter => (filter === undefined) || filter(iter))
       .sort(iconSort);
   }

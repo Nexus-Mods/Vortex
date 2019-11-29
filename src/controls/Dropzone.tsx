@@ -121,7 +121,7 @@ class Dropzone extends ComponentEx<IProps, IComponentState> {
         {dropActive === 'hover'
           ? t(clickText || 'Click to {{ clickMode }}', { replace: { clickMode } })
           : t(dropText || 'Drop {{ accept }}',
-              { replace: { accept: acceptList.join(t(' or ')) } }) }
+              { replace: { accept: acceptList.join(` ${t('or')} `) } }) }
       </div>
     );
   }

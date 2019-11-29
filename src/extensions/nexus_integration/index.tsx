@@ -22,6 +22,8 @@ import { IMod } from '../mod_management/types/IMod';
 import { IResolvedURL } from '../download_management';
 import { DownloadState } from '../download_management/types/IDownload';
 
+import { SITE_ID } from '../gamemode_management/constants';
+
 import { setUserAPIKey } from './actions/account';
 import { setNewestVersion } from './actions/persistent';
 import { setLoginError, setLoginId } from './actions/session';
@@ -56,6 +58,7 @@ import * as React from 'react';
 import { Button } from 'react-bootstrap';
 import {} from 'uuid';
 import * as WebSocket from 'ws';
+
 const app = remote !== undefined ? remote.app : appIn;
 
 let nexus: NexusT;
@@ -325,6 +328,8 @@ function processAttributes(input: any) {
                                        'fileInfo', 'uploaded_timestamp'], undefined),
     version: getSafe(input, ['download', 'modInfo', 'nexus', 'fileInfo', 'version'], undefined),
     modVersion: getSafe(input, ['download', 'modInfo', 'nexus', 'modInfo', 'version'], undefined),
+    allowRating: getSafe(input, ['download', 'modInfo', 'nexus', 'modInfo', 'allow_rating'],
+                         undefined),
     customFileName: fuzzRatio < 50 ? `${modName} - ${fileName}` : undefined,
   });
 }
@@ -478,16 +483,18 @@ function requestLogin(api: IExtensionApi, callback: (err: Error) => void) {
   }
 }
 
-function doDownload(api: IExtensionApi, url: string) {
+function doDownload(api: IExtensionApi, url: string): Promise<string> {
   return startDownload(api, nexus, url)
   .catch(DownloadIsHTML, () => undefined)
   // DataInvalid is used here to indicate invalid user input or invalid
   // data from remote, so it's presumably not a bug in Vortex
   .catch(DataInvalid, () => {
     api.showErrorNotification('Failed to start download', url, { allowReport: false });
+    return Promise.resolve(undefined);
   })
   .catch(err => {
     api.showErrorNotification('Failed to start download', err);
+    return Promise.resolve(undefined);
   });
 }
 
@@ -538,9 +545,36 @@ function once(api: IExtensionApi) {
       api.store.dispatch(setAssociatedWithNXMURLs(true));
     }
 
-    if (api.registerProtocol('nxm', def !== false, (url: string) => {
+    if (api.registerProtocol('nxm', def !== false, (url: string, install: boolean) => {
+      const nxmUrl = new NXMUrl(url);
+      if ((nxmUrl.gameId === SITE_ID) && install) {
+        return api.emitAndAwait('install-extension',
+              { name: 'Pending', modId: nxmUrl.modId, fileId: nxmUrl.fileId });
+      }
+
       ensureLoggedIn(api)
         .then(() => doDownload(api, url))
+        .then(dlId => {
+          if (dlId === undefined) {
+            return Promise.resolve(undefined);
+          }
+          return new Promise((resolve, reject) => {
+            const state: IState = api.store.getState();
+            const download = state.persistent.downloads.files[dlId];
+            if (download === undefined) {
+              return reject(new ProcessCanceled(`Download not found "${dlId}"`));
+            }
+            if (install) {
+              api.events.emit('start-install-download', dlId, (err: Error, id: string) => {
+                if (err !== null) {
+                  reject(err);
+                } else {
+                  resolve();
+                }
+              });
+            }
+          });
+        })
         // doDownload handles all download errors so the catches below are
         //  only for log in errors
         .catch(UserCanceled, () => null)
@@ -602,6 +636,7 @@ function once(api: IExtensionApi) {
   }
 
   api.onAsync('check-mods-version', eh.onCheckModsVersion(api, nexus));
+  api.onAsync('nexus-download', eh.onNexusDownload(api, nexus));
   api.events.on('endorse-mod', eh.onEndorseMod(api, nexus));
   api.events.on('submit-feedback', eh.onSubmitFeedback(nexus));
   api.events.on('mod-update', eh.onModUpdate(api, nexus));
@@ -624,7 +659,7 @@ function once(api: IExtensionApi) {
   api.addMetaServer('nexus_api',
                     { nexus, url: 'https://api.nexusmods.com', cacheDurationSec: 86400 });
 
-  nexus.getModInfo(1, 'site')
+  nexus.getModInfo(1, SITE_ID)
     .then(info => {
       api.store.dispatch(setNewestVersion(info.version));
     })
@@ -855,7 +890,7 @@ function init(context: IExtensionContextExt): boolean {
     const t = context.api.translate;
     return (
       <div className='nexus-download-banner'>
-        {t('Nexus downloads are capped at 1MB/s - '
+        {t('Nexus downloads are capped at 1-2MB/s - '
           + 'Go Premium for uncapped download speeds')}
         <Button bsStyle='ad' onClick={goBuyPremium}>{t('Go Premium')}</Button>
       </div>);
@@ -880,6 +915,8 @@ function init(context: IExtensionContextExt): boolean {
       .then(game => {
         opn(`https://www.nexusmods.com/${nexusGameId(game)}`).catch(err => undefined);
       });
+  }, {
+    icon: 'nexus',
   });
 
   context.registerAction('categories-icons', 100, 'download', {}, 'Retrieve categories',

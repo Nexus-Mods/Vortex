@@ -310,7 +310,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
               icon='folder-download'
               fill={true}
               text={t('You don\'t have any installed mods')}
-              subtext={<a onClick={this.getMoreMods}>{t('But don\'t worry, I know a place...')}</a>}
+              subtext={this.renderMoreModsLink(modSources)}
             />
           </div>
         </div>
@@ -382,13 +382,22 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
   private renderMoreMods(sources: IModSource[]): JSX.Element {
     const { t } = this.props;
-    if (sources.length === 1) {
+
+    const filtered = sources.filter(source => {
+      if ((source.options === undefined) || (source.options.condition === undefined)) {
+        return true;
+      }
+      return source.options.condition();
+    });
+
+    if (filtered.length === 1) {
       return (
         <Button
           id='btn-more-mods'
-          onClick={sources[0].onBrowse}
+          onClick={filtered[0].onBrowse}
           bsStyle='ghost'
         >
+          {this.sourceIcon(filtered[0])}
           {t('Get more mods')}
         </Button>
       );
@@ -401,13 +410,56 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         container={this.mRef}
         bsStyle='ghost'
       >
-        {sources.map(this.renderModSource)}
+        {filtered.map(this.renderModSource)}
       </DropdownButton>
     );
   }
 
+  private renderMoreModsLink(sources: IModSource[]): JSX.Element {
+    const { t } = this.props;
+
+    const filtered = sources.filter(source => {
+      if ((source.options === undefined) || (source.options.condition === undefined)) {
+        return true;
+      }
+      return source.options.condition();
+    });
+
+    const text = t('But don\'t worry, I know a place...');
+
+    if (filtered.length === 1) {
+      return (
+        <a onClick={this.getMoreMods}>
+          {text}
+        </a>
+      );
+    }
+
+    return (
+      <DropdownButton
+        id='btn-more-mods'
+        title={text}
+        container={this.mRef}
+        bsStyle='link'
+      >
+        {filtered.map(this.renderModSource)}
+      </DropdownButton>
+    );
+  }
+
+  private sourceIcon(source: IModSource) {
+    return (source.options !== undefined) && (source.options.icon !== undefined)
+      ? <Icon name={source.options.icon} />
+      : null;
+  }
+
   private renderModSource = (source: IModSource) => {
-    return <MenuItem key={source.id} onSelect={source.onBrowse}>{source.name}</MenuItem>;
+    return (
+      <MenuItem key={source.id} onSelect={source.onBrowse}>
+        {this.sourceIcon(source)}
+        {source.name}
+      </MenuItem>
+    );
   }
 
   private getMoreMods = () => {
@@ -569,6 +621,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       },
       noShrink: true,
       isSortable: false,
+      isGroupable: true,
       filter: new OptionsFilter([
         { value: true, label: 'Enabled' },
         { value: false, label: 'Disabled' },
@@ -606,6 +659,17 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       isVolatile: true,
       edit: {},
       isSortable: false,
+      isGroupable: (mod: IModWithState, t: I18next.TFunction) => {
+        if (mod === undefined) {
+          return '';
+        }
+        const state = modUpdateState(mod.attributes);
+        if (state === 'current') {
+          return t('Up-to-date');
+        } else {
+          return t('Update available');
+        }
+      },
       filter: new VersionFilter(),
     };
 
@@ -633,6 +697,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       calc: mod => getSafe(mod.attributes, ['author'], ''),
       placement: 'both',
       isToggleable: true,
+      isGroupable: true,
       isDefaultVisible: false,
       isSortable: true,
       sortFunc: (lhs: string, rhs: string) =>

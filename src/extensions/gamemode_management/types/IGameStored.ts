@@ -5,7 +5,8 @@ export interface IGameStored {
   name: string;
   shortName?: string;
   logo?: string;
-  extensionPath: string;
+  extensionPath?: string;
+  imageURL?: string;
   requiredFiles: string[];
   executable: string;
   parameters?: string[];

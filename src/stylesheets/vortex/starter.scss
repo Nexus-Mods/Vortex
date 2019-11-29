@@ -148,6 +148,9 @@ svg.tool-icon {
 }
 
 #tool-edit-dialog {
+  .modal-dialog {
+    width: 60vw;
+  }
   .input-group {
     width: 100%;
   }

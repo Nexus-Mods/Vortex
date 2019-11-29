@@ -1097,7 +1097,7 @@ class InstallManager {
 
         if (dependencies.length > 0) {
           bbcode += '[color=red]'
-            + '{{modName}} has unsolved dependencies that could not be found automatically. '
+            + '{{modName}} has unresolved dependencies that could not be found automatically. '
             + 'Please install them manually.'
             + '[/color]';
         }
