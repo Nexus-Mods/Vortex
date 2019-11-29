@@ -53,32 +53,32 @@ function writeFileAtomicImpl(filePath: string,
   };
 
   const hash = checksum(buf);
+  let fd = -1;
   return new Promise<number>((resolve, reject) => {
     file({ template: `${filePath}.XXXXXX.tmp` },
-      (err: any, genPath: string, fd: number, cleanupCB: () => void) => {
+      (err: any, genPath: string, fdIn: number, cleanupCB: () => void) => {
         if (err) {
           return reject(err);
         }
         cleanup = cleanupCB;
         tmpPath = genPath;
-        resolve(fd);
+        fd = fdIn;
+        resolve();
       });
   })
-    .then(fd => {
-      return fs.writeAsync(fd, buf, 0, buf.byteLength, 0)
-        .then(() => fs.fsyncAsync(fd).catch(() => Promise.resolve()))
-        .then(() => fs.closeAsync(fd))
-        .catch({ code: 'EBADF' }, () => {
-          log('warn', 'failed to access temporary file', {
-            filePath,
-            fd,
-          });
-          return Promise.resolve();
-        });
-    })
+    .then(() => fs.writeAsync(fd, buf, 0, buf.byteLength, 0)
+      .then(() => fs.fsyncAsync(fd).catch(() => Promise.resolve()))
+      .then(() => fs.closeAsync(fd).catch(() => Promise.resolve())))
     .then(() => fs.readFileAsync(tmpPath))
+    .catch({ code: 'EBADF' }, () => {
+      log('warn', 'failed to access temporary file', {
+        filePath,
+        fd,
+      });
+      return Promise.resolve(undefined);
+    })
     .then(data => {
-      if (checksum(data) !== hash) {
+      if ((data === undefined) || (checksum(data) !== hash)) {
         callCleanup();
         return (attempts > 0)
           // retry
