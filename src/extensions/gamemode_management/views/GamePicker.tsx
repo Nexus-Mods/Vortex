@@ -380,7 +380,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
           <EmptyPlaceholder
             icon='game'
             text={t('You haven\'t managed any games yet')}
-            subtext={t('To start managing a game, go to "Discovered" and activate a game there.')}
+            subtext={t('To start managing a game, go to "Unmanaged" and activate a game there.')}
           />
         );
       }
