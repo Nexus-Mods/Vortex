@@ -52,7 +52,7 @@ The automatic variant will skip dependency download and install if the download 
 # Further Information
 
 - see structure.md for an overview of how the project is organized
-- see the wiki for a description of the extension api
+- see the [wiki](https://github.com/Nexus-Mods/vortex-api/wiki) for a description of the extension api
 - run "yarn run doc" the create an html page from code documentation
 
 # Reporting bugs
