@@ -59,18 +59,20 @@ if(![System.IO.File]::Exists($path+"/downloads/$python_exe")) {
   & "downloads/$python_exe"
 }
 
-Write-Output "Downloading git"
+Write-Output "Downloading Git $git_ver"
 if(![System.IO.File]::Exists($path + "/downloads/$git_exe")) {
   #https://github.com/git-for-windows/git/releases/download/v2.24.0.windows.2/Git-2.24.0.2-64-bit.exe
   $wc.DownloadFile("https://github.com/git-for-windows/git/releases/download/v$git_ver.windows.2/$git_exe", $path + "/downloads/$git_exe")
   & "downloads/$git_exe"
 }
 
-Write-Output "Downloading c++ build tools"
+#$args = "--add Microsoft.VisualStudio.Workload.VCTools Microsoft.VisualStudio.Component.NuGet.BuildTools"
+
+Write-Output "Downloading C++ build tools"
 if(![System.IO.File]::Exists($path + "/downloads/vs_BuildTools.exe")) {
   #https://download.visualstudio.microsoft.com/download/pr/0ada7773-232e-4df0-b696-c9f628d08d83/cc0515d38477b47de088fde1270a17dc4b25401c33a3f031ba4e5a1728c83372/vs_BuildTools.exe
   $wc.DownloadFile("https://download.visualstudio.microsoft.com/download/pr/0ada7773-232e-4df0-b696-c9f628d08d83/cc0515d38477b47de088fde1270a17dc4b25401c33a3f031ba4e5a1728c83372/vs_BuildTools.exe", $path + "/downloads/vs_BuildTools.exe")
-  & "downloads/vs_BuildTools.exe --add Microsoft.VisualStudio.Workload.VCTools;includeRecommended Microsoft.VisualStudio.Component.NuGet.BuildTools"
+  & "downloads/vs_BuildTools.exe " --add Microsoft.VisualStudio.Workload.VCTools Microsoft.VisualStudio.Component.NuGet.BuildTools 
 }
 
 npm install --global yarn
