@@ -90,6 +90,14 @@
     },
     {
       "type": "build-copy",
+      "name": "gamestore-uplay",
+      "path": "extensions/gamestore-uplay",
+      "removeModules": ["vortex-api"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
+      "copyTo": "{BUILD_DIR}/bundledPlugins/gamestore-uplay"
+    },
+    {
+      "type": "build-copy",
       "name": "mod-dependency-manager",
       "path": "extensions/mod-dependency-manager",
       "removeModules": ["vortex-api", "nexus-api"],

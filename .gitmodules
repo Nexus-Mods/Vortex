@@ -148,3 +148,7 @@
 	path = extensions/gamestore-origin
 	url = https://github.com/nexus-mods/extension-gamestore-origin.git
 	branch = master
+[submodule "extensions/gamestore-uplay"]
+	path = extensions/gamestore-uplay
+	url = https://github.com/nexus-mods/extension-gamestore-uplay
+	branch = master
