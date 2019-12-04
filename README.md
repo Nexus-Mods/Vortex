@@ -6,12 +6,11 @@ To build from source you have two choices.
 
 ### Getting dependencies automatically
 
-_(outdated and unstable)_
+Do note that this method is not perfect and may result in a bad/broken installation
 
 - download _bootstrap.ps1_ and run the powershell script
 - in the dialog that shows up, select a build directory (should be a clean/new one)
-- this script will try to download and install all dependencies, then check out and build vortex
-- the dependencies are not installed headless so you have to click through the dialogs but it's only guaranteed to work if you keep the defaults
+- this script will try to download and install all dependencies
 
 ### Manual
 

@@ -2,12 +2,9 @@
 # Configuration
 #
 
-# has to be 2.7
-$python_ver = "2.7.14"
-# current lts
-$node_ver = "8.11.1"
-# newest version available
-$git_ver = "2.17.0"
+$python_ver = "2.7.17"
+$node_ver = "10.11.0"
+$git_ver = "2.24.0"
 
 trap [Exception] {
   write-host "We have an error!"
@@ -16,7 +13,7 @@ trap [Exception] {
   } else {
     write-error $("ERROR: " + $_.Exception.Message)
   }
-  sleep 30
+  Start-Sleep 30
   break
 }
 
@@ -30,7 +27,7 @@ if($dialog.ShowDialog() -ne "OK") {
 }
 
 $path = $dialog.SelectedPath
-cd $path
+Set-Location $path
 
 #
 # Download and install dependencies
@@ -45,33 +42,35 @@ $wc = New-Object System.Net.WebClient
 New-Item -ItemType Directory -Force -Path downloads
 
 $python_exe = "python-$python_ver.amd64.msi"
-
 $node_exe = "node-v$node_ver-x64.msi"
+$git_exe = "Git-$git_ver.2-64-bit.exe"
 
-$git_exe = "Git-$git_ver-64-bit.exe"
-
-Write-Output "Downloading c++ build tools"
-if(![System.IO.File]::Exists($path + "/downloads/visualcppbuildtools_full.exe")) {
-  $wc.DownloadFile("https://download.microsoft.com/download/5/f/7/5f7acaeb-8363-451f-9425-68a90f98b238/visualcppbuildtools_full.exe", $path + "/downloads/visualcppbuildtools_full.exe")
-  & "downloads/visualcppbuildtools_full.exe"
+Write-Output "Downloading Node.js $node_ver"
+if(![System.IO.File]::Exists($path + "/downloads/$node_exe")) {
+  #https://nodejs.org/download/release/v10.11.0/node-v10.11.0-x64.msi
+  $wc.DownloadFile("https://nodejs.org/download/release/v$node_ver/$node_exe", $path + "/downloads/$node_exe")
+  & "downloads/$node_exe"
 }
 
-Write-Output "Downloading python $python_ver"
-if(![System.IO.File]::Exists($path + "/downloads/$python_exe")) {
+Write-Output "Downloading Python $python_ver"
+if(![System.IO.File]::Exists($path+"/downloads/$python_exe")) {
+  #https://www.python.org/ftp/python/2.7.17/python-2.7.17.amd64.msi
   $wc.DownloadFile("https://www.python.org/ftp/python/$python_ver/$python_exe", $path + "/downloads/$python_exe")
   & "downloads/$python_exe"
 }
 
-Write-Output "Downloading node.js"
-if(![System.IO.File]::Exists($path + "/downloads/$node_exe")) {
-  $wc.DownloadFile("https://nodejs.org/dist/v$node_ver/$node_exe", $path + "/downloads/$node_exe")
-  & "downloads/$node_exe"
-}
-
 Write-Output "Downloading git"
 if(![System.IO.File]::Exists($path + "/downloads/$git_exe")) {
-  $wc.DownloadFile("https://github.com/git-for-windows/git/releases/download/v$git_ver.windows.1/$git_exe", $path + "/downloads/$git_exe")
+  #https://github.com/git-for-windows/git/releases/download/v2.24.0.windows.2/Git-2.24.0.2-64-bit.exe
+  $wc.DownloadFile("https://github.com/git-for-windows/git/releases/download/v$git_ver.windows.2/$git_exe", $path + "/downloads/$git_exe")
   & "downloads/$git_exe"
+}
+
+Write-Output "Downloading c++ build tools"
+if(![System.IO.File]::Exists($path + "/downloads/vs_BuildTools.exe")) {
+  #https://download.visualstudio.microsoft.com/download/pr/0ada7773-232e-4df0-b696-c9f628d08d83/cc0515d38477b47de088fde1270a17dc4b25401c33a3f031ba4e5a1728c83372/vs_BuildTools.exe
+  $wc.DownloadFile("https://download.visualstudio.microsoft.com/download/pr/0ada7773-232e-4df0-b696-c9f628d08d83/cc0515d38477b47de088fde1270a17dc4b25401c33a3f031ba4e5a1728c83372/vs_BuildTools.exe", $path + "/downloads/vs_BuildTools.exe")
+  & "downloads/vs_BuildTools.exe --add Microsoft.VisualStudio.Workload.VCTools;includeRecommended Microsoft.VisualStudio.Component.NuGet.BuildTools"
 }
 
 npm install --global yarn
@@ -82,18 +81,3 @@ Write-Output "Refreshing Environment"
 
 $wc.DownloadFile("https://raw.githubusercontent.com/chocolatey/chocolatey/master/src/redirects/RefreshEnv.cmd", $path + "/refreshenv.cmd")
 .\refreshenv.cmd
-
-#
-# Clone and build vortex
-#
-
-Write-Output "Cloning vortex repo"
-
-Remove-Item vortex -Recurse -Force -ErrorAction SilentlyContinue
-git clone https://github.com/Nexus-Mods/Vortex.git vortex
-
-Write-Output "Build vortex"
-& yarn config set msvs_version 2015 --global
-cd vortex
-& yarn install
-& yarn run build
