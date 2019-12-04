@@ -1,63 +1,100 @@
-# Usage
+# Vortex
+
+## Building from source
 
 To build from source you have two choices.
 
-Automatic (mostly):
-- download _bootstrap.ps1_ and run as a powershell script
-  - in the dialog that shows up, select a build directory (should be a clean/new one)
-  - this script will try to download and install all dependencies, then check out and build vortex
-  - the dependencies are not installed headless so you have to click through the dialogs but it's only guaranteed to work if you keep the defaults
+### Getting dependencies automatically
 
-Manual:
-- Before you can build vortex you need to download and install a couple of dependencies.
-  If any of the download links is no longer valid, try google or a search engine of your choice.
-  - node.js
-    * download installer from https://nodejs.org and run
-    * version doesn't matter much, latest lts should be fine
-  - yarn
-    * install through npm _"npm install --global yarn"_
-  - git
-    * download installer (64-bit) from https://git-scm.com and run
-    * default settings are fine
-  - python 2.7
-    * download installer (2.7.*, 64-bit) from https://www.python.org/downloads/ and run
-    * defaults are fine, you can disable samples and documentation if you want
-  - c++ build tools 2017
-    * download "Build Tools für Visual Studio 2017" from https://visualstudio.microsoft.com/de/downloads/ and run
-    * default settings are fine
-  - Call _"yarn config set msvs_version 2017 --global"_
-    * This sets up yarn to use the c++ build tools we just installed
-    * If you downloaded a newer version, change the version accordingly
-- Check out the repository
-  * create and _cd_ to an appropriate directory (i.e. c:\projects)
-  * _git clone https://github.com/Nexus-Mods/Vortex.git vortex_
-    * this creates a new directory _vortex_ below the current working directory
-  * _cd vortex_
-- Switch to the appropriate branch if necessary
-  * _git checkout somebranch_
-- For development
-  * _"yarn install"_ followed by _"yarn run build"_ to build
-  * _"yarn run start"_ to run
-- For production
-  * _"yarn dist"_ to build (this will take a while)
-  * Find the installer and an alread unpacked version in dist
+_(outdated and unstable)_
 
-### If something goes wrong:
+- download _bootstrap.ps1_ and run the powershell script
+- in the dialog that shows up, select a build directory (should be a clean/new one)
+- this script will try to download and install all dependencies, then check out and build vortex
+- the dependencies are not installed headless so you have to click through the dialogs but it's only guaranteed to work if you keep the defaults
+
+### Manual
+
+#### Node.js
+
+##### From Nodejs.org
+
+- go to [nodejs.org](https://nodejs.org/en/download/releases/), click download `Node.js.10.11.x` for your system.
+- verify the installation by opening your console of choice and typing `node --version`.
+
+##### From the Node Version Manager
+
+The [Node Version Manger](https://github.com/coreybutler/nvm-windows) for **Windows** is great if you want to manage multiple installations of node.js on your PC.
+
+- download and install the latest release on [GitHub](https://github.com/coreybutler/nvm-windows/releases) (use the setup version)
+- open an elevated terminal and type `nvm install 10.11.0`
+- `nvm use 10.11.0` after the download is finished
+
+#### Yarn
+
+- open an elevated terminal and install yarn using npm: `npm install --global yarn`
+- verify the version using `yarn --version` (should be >= `1.17.3`)
+
+### Git
+
+- download and install git from [git-scm.com](https://git-scm.com/downloads) for your system
+- verify the version using `git --version` (should be >= `2.21.0`)
+
+### Python 2.7
+
+- head over to [python.org](https://www.python.org/downloads/release/python-2717/) and download the `Windows x86 ... Installer` for your system.
+- during installation use the following options:
+  - `[*] Install for all users`
+  - `C:\Python27\`
+  - check all features options in the _Customize Python 2.7.17_ screen
+- verify the installation using `python --version`
+- configure `yarn` and `npm` to use python 2.7.17:
+  - `yarn config set python python2.7`
+  - `npm config set python python2.7`
+
+### Visual Studio Build Tools 2017
+
+- go to [visualstudio.microsoft.com/](https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=BuildTools&rel=15&src=myvs#) to download the Visual Installer
+- install `Visual Studio Build Tools 2017` (version: `15.9.16`)
+- when asked what components/workloads to install choose the following:
+  - `Workloads`:
+    - `Visual C++ build tools`
+  - `Individual components`:
+    - `NuGet targets and build tasks` (in the _Code tools_ section)
+
+(_you may need to restart your PC after installation is finished_)
+
+- to verify the installation use `msbuild -version` from a console
+- set up `yarn` to use these build tools:
+  - `yarn config set msvs_version 2017 --global`
+
+### Building
+
+You want to fork this repository on GitHub and clone the fork to begin working.
+
+- before you do anything use `yarn install` to install all dependencies.
+- after that is finished use `yarn run build` and pray to god that it builds successfully
+- when everything was build use `yarn run start` to start the dev environment of Vortex
+
+When you want to package your Vortex build use `yarn dist`.
+
+### Fixing build errors
 
 The build tools are unfortunately not particularly stable or robust, so the build may break for various reasons (i.e. network problems, dependencies that changed remotely, ...) and leave the checkout in an inconsistent state.
 In that case you will have to see if the error is something that needs to be fixed, then restart from the last step that failed.
 
 The automatic variant will skip dependency download and install if the download was installed previously. If a dependency install failed for some reason or you cancelled it, you will have to manually install that package (see the downloads directory).
 
-# Further Information
+## Further Information
 
-- see structure.md for an overview of how the project is organized
-- see the wiki for a description of the extension api
-- run "yarn run doc" the create an html page from code documentation
+- see `structure.md` for an overview of how the project is organized
+- see the [Wiki](https://github.com/Nexus-Mods/vortex-api/wiki) for a description of the extension api
+- run `yarn run doc` the create an html page from code documentation
 
-# Reporting bugs
+## Reporting bugs
 
-Please report issues to the issue tracker on github. Please always include at the very least the following information:
+Please report issues to the issue tracker on GitHub. Please always include at the very least the following information:
+
 - The exact version of Vortex you're using
 - Your operating system
 - What you were doing when the bug happened
