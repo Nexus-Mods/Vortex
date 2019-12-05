@@ -83,3 +83,25 @@ Write-Output "Refreshing Environment"
 
 $wc.DownloadFile("https://raw.githubusercontent.com/chocolatey/chocolatey/master/src/redirects/RefreshEnv.cmd", $path + "/refreshenv.cmd")
 .\refreshenv.cmd
+
+if ([System.IO.File]::Exists($path + "package.json")) {
+  Write-Output "Vortex repository already exists"
+} else {
+  Write-Output "Vortex repository does not exists, cloning..."
+  git clone https://github.com/Nexus-Mods/Vortex.git vortex
+}
+
+Write-Output "Configuring the environment"
+
+yarn config set msvs_version 2017 --global
+yarn config set python python2.7 --global
+npm config set python python2.7 --global
+
+Write-Output "Building vortex"
+
+if (![System.IO.File]::Exists($path + "package.json")) {
+  Set-Location vortex
+}
+
+yarn install
+yarn run build
