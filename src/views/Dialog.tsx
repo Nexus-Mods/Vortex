@@ -244,7 +244,9 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     } else if (content.choices !== undefined) {
       controls.push((
         <div key='dialog-content-choices' className='dialog-content-choices'>
-          {content.choices.map(this.renderRadiobutton)}
+          <div>
+            {content.choices.map(this.renderRadiobutton)}
+          </div>
         </div>
       ));
     } else if (content.input !== undefined) {
