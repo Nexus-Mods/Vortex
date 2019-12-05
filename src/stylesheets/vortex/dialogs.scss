@@ -23,8 +23,14 @@
 }
 
 .common-dialog-regular {
+  display: flex !important;
+  justify-content: center;
   .modal-dialog {
     width: 60em;
+    display: flex;
+    margin: 0;
+    align-items: center;
+    height: 100;
   }
 }
 

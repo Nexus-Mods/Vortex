@@ -8,7 +8,8 @@ export type ValidationState = 'success' | 'warning' | 'error';
 
 export interface IEditChoice {
   key: string;
-  text: string;
+  text?: string;
+  bool?: boolean;
   icon?: string;
   /**
    * select if this choice is visible (default) to the user.

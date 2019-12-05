@@ -91,7 +91,7 @@ export const INI_TWEAKS_PATH = 'Ini Tweaks';
 
 const archiveExtLookup = new Set<string>([
   '.zip', '.z01', '.7z', '.rar', '.r00', '.001', '.bz2', '.bzip2', '.gz', '.gzip',
-  '.xz', '.z',
+  '.xz', '.z', '.lzh'
 ]);
 
 /**

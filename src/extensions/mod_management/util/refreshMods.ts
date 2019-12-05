@@ -41,6 +41,12 @@ function refreshMods(api: IExtensionApi, gameId: string,
         return Promise.resolve();
       }
 
+      log('warn', 'manual mod changed', {
+        stagingFolder: installPath,
+        addedMods,
+        removedMods,
+      });
+
       const renderMod = modId => `  - "${modId}"`;
 
       let message: string[] = [];

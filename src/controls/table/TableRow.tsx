@@ -7,6 +7,7 @@ import ExtensionGate from '../ExtensionGate';
 import Icon from '../Icon';
 import SelectUpDown from '../SelectUpDown';
 import {ITableRowAction} from '../Table';
+import Toggle from '../Toggle';
 import {Button, IconButton} from '../TooltipControls';
 import VisibilityProxy from '../VisibilityProxy';
 
@@ -157,21 +158,28 @@ class TableCell extends React.Component<ICellProps, { isOpen: boolean }> {
 
     const choices = attribute.edit.choices(rawData);
 
-    const currentChoice: IEditChoice = choices.find(choice => choice.text === data);
+    if ((choices.length === 2) && (choices[0].bool !== undefined) && (choices[1].bool !== undefined)) {
+      // special case where we have exactly two choices: true and false
+      const currentChoice: IEditChoice = choices.find(choice => choice.bool === data);
 
-    const choiceKey = currentChoice !== undefined ? currentChoice.key : undefined;
-    return (
-      <SelectUpDown
-        options={choices}
-        value={choiceKey}
-        onChange={this.changeCellSelect}
-        valueKey='key'
-        labelKey='text'
-        valueComponent={ValueComponent}
-        clearable={false}
-        searchable={false}
-      />
-    );
+      return <Toggle checked={(currentChoice !== undefined) && currentChoice.bool} onToggle={this.changeCellToggle} />;
+    } else {
+      const currentChoice: IEditChoice = choices.find(choice => choice.text === data);
+
+      const choiceKey = currentChoice !== undefined ? currentChoice.key : undefined;
+      return (
+        <SelectUpDown
+          options={choices}
+          value={choiceKey}
+          onChange={this.changeCellSelect}
+          valueKey='key'
+          labelKey='text'
+          valueComponent={ValueComponent}
+          clearable={false}
+          searchable={false}
+        />
+      );
+    }
   }
 
   private cycle = () => {
@@ -190,6 +198,10 @@ class TableCell extends React.Component<ICellProps, { isOpen: boolean }> {
     } else {
       this.changeCell(undefined);
     }
+  }
+
+  private changeCellToggle = (value: boolean) => {
+    this.changeCell(value);
   }
 
   private openChoice = (isOpen: boolean) => {

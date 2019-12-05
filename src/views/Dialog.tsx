@@ -137,6 +137,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
       : 'regular';
     return (
       <Modal
+        id={dialog.id}
         className={`common-dialog-${type}`}
         show={dialog !== undefined}
         onHide={nop}
@@ -319,21 +320,22 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
 
     return (
       <FormGroup key={input.id} validationState={validationState}>
-      { input.label ? (
-        <ControlLabel>{t(input.label)}</ControlLabel>
-      ) : null }
-      <FormControl
-        id={`dialoginput-${input.id}`}
-        type={input.type || 'text'}
-        value={input.value || ''}
-        label={input.label}
-        placeholder={input.placeholder}
-        onChange={this.changeInput}
-        ref={idx === 0 ? this.focusMe : undefined}
-      />
-      {((valRes !== undefined) && (valRes.length !== 0))
-        ? <label className='control-label'>{valRes.map(res => res.errorText).join('\n')}</label>
-        : null}
+        {input.label ? (
+          <ControlLabel>{t(input.label)}</ControlLabel>
+        ) : null}
+        <FormControl
+          id={`dialoginput-${input.id}`}
+          componentClass={input.type === 'textarea' ? 'textarea' : 'input'}
+          type={input.type || 'text'}
+          value={input.value || ''}
+          label={input.label}
+          placeholder={input.placeholder}
+          onChange={this.changeInput}
+          ref={idx === 0 ? this.focusMe : undefined}
+        />
+        {((valRes !== undefined) && (valRes.length !== 0))
+          ? <label className='control-label'>{valRes.map(res => res.errorText).join('\n')}</label>
+          : null}
       </FormGroup>
     );
   }

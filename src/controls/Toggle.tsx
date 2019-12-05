@@ -34,7 +34,7 @@ class Toggle extends React.PureComponent<IProps, {}> {
               <Icon name='riffle' rotate={90} />
             </div>
           </div>
-          <div>
+          <div className='toggle-children'>
             {children}
           </div>
         </div>
