@@ -656,6 +656,7 @@ function once(api: IExtensionApi) {
   api.onAsync('check-mods-version', eh.onCheckModsVersion(api, nexus));
   api.events.on('endorse-mod', eh.onEndorseMod(api, nexus));
   api.events.on('submit-feedback', eh.onSubmitFeedback(nexus));
+  api.events.on('submit-collection', eh.onSubmitCollection(nexus));
   api.events.on('mod-update', eh.onModUpdate(api, nexus));
   api.events.on('open-mod-page', eh.onOpenModPage(api));
   api.events.on('request-nexus-login', callback => requestLogin(api, callback));

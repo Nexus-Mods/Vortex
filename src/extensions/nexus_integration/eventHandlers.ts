@@ -296,11 +296,19 @@ export function onDownloadUpdate(api: IExtensionApi,
 
 export function onSubmitFeedback(nexus: Nexus): (...args: any[]) => void {
   return (title: string, message: string, hash: string, feedbackFiles: string[],
-          anonymous: boolean, callback: (err: Error, respones?: IFeedbackResponse) => void) => {
+          anonymous: boolean, callback: (err: Error, response?: IFeedbackResponse) => void) => {
     submitFeedback(nexus, title, message, feedbackFiles, anonymous, hash)
       .then(response => callback(null, response))
       .catch(err => callback(err));
   };
+}
+
+export function onSubmitCollection(nexus: Nexus): (...args: any[]) => void {
+  return (collectionInfo: any, assetFilePath: string, callback: (err: Error, response?: any) => void) => {
+    (nexus as any).sendCollection(collectionInfo, assetFilePath)
+      .then(response => callback(null, response))
+      .catch(err => callback(err));
+  }
 }
 
 export function onEndorseMod(api: IExtensionApi, nexus: Nexus): (...args: any[]) => void {
