@@ -98,6 +98,14 @@
     },
     {
       "type": "build-copy",
+      "name": "gamestore-xbox",
+      "path": "extensions/gamestore-xbox",
+      "removeModules": ["vortex-api"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
+      "copyTo": "{BUILD_DIR}/bundledPlugins/gamestore-xbox"
+    },
+    {
+      "type": "build-copy",
       "name": "mod-dependency-manager",
       "path": "extensions/mod-dependency-manager",
       "removeModules": ["vortex-api", "nexus-api"],
