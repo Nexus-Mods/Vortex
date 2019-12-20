@@ -222,18 +222,26 @@ export function onNexusDownload(api: IExtensionApi,
                                 : (...args: any[]) => Promise<any> {
   return (gameId, modId, fileId): Promise<string> => {
     const game = gameId === SITE_ID ? null : gameById(api.store.getState(), gameId);
-
-    return downloadFile(api, nexus, game, modId, fileId)
-      .catch(ProcessCanceled, err => {
-        api.sendNotification({
-          type: 'error',
-          message: err.message,
+    const APIKEY = getSafe(api.store.getState(),
+                           ['confidential', 'account', 'nexus', 'APIKey'], '');
+    if (APIKEY === '') {
+      api.showErrorNotification('Failed to start download',
+                                'You are not logged in to Nexus Mods!',
+                                { allowReport: false });
+      return Promise.resolve(undefined);
+    } else {
+      return downloadFile(api, nexus, game, modId, fileId)
+        .catch(ProcessCanceled, err => {
+          api.sendNotification({
+            type: 'error',
+            message: err.message,
+          });
+        })
+        .catch(err => {
+          api.showErrorNotification('Nexus download failed', err);
+          return Promise.resolve(undefined);
         });
-      })
-      .catch(err => {
-        api.showErrorNotification('Nexus download failed', err);
-        return Promise.resolve(undefined);
-      });
+    }
   };
 }
 
