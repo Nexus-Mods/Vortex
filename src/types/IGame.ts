@@ -99,7 +99,7 @@ export interface IGame extends ITool {
 
   /**
    * determines if a file is to be merged with others with the same path, instead of the
-   * highest-priority one being used. This only work if support for repackaging the file type
+   * highest-priority one being used. This only works if support for repackaging the file type
    * is available
    */
   mergeArchive?: (filePath: string) => boolean;

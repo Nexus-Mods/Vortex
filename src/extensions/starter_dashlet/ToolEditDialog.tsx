@@ -181,7 +181,7 @@ interface IEditStarterInfo {
   environment: { [key: string]: string };
   shell: boolean;
   detach: boolean;
-  onStart?: 'hide' | 'close';
+  onStart?: 'hide' | 'hide_recover' | 'close';
 }
 
 interface IToolEditState {
@@ -324,7 +324,23 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
             </FormGroup>
             <FormGroup>
               <Col sm={3}>
-                <ControlLabel>{t('On Start')}</ControlLabel>
+                <ControlLabel>
+                  {t('On Start')}
+                  <More id='on-start' name={t('On Start behavior')}>
+                    {t('Use these options if you don\'t want to leave the Vortex window '
+                      + 'open while the game is running. In some games this may be necessary '
+                      + 'to avoid performance problems.\n\n'
+                      + 'The "Close Vortex" option will close Vortex entirely, meaning it '
+                      + 'will not use any system resources. This is not usually necessary.\n'
+                      + 'The hide options will hide Vortex to the system tray so the window '
+                      + 'isn\'t rendered at all.\n'
+                      + 'With the "restore when closed" option the Vortex window will '
+                      + 'automatically reappear. Please be aware that this option will not '
+                      + 'work correctly if you start the game via a "proxy", e.g. the script '
+                      + 'extenders for Elder Scrolls/Fallout games because Vortex will '
+                      + 'reappear as soon as the proxy closes.')}
+                  </More>
+                </ControlLabel>
               </Col>
               <Col sm={9}>
                 <ToggleButtonGroup
@@ -342,6 +358,11 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
                     value='hide'
                   >
                     {t('Hide Vortex')}
+                  </ToggleButton>
+                  <ToggleButton
+                    value='hide_recover'
+                  >
+                    {t('Hide Vortex, restore when closed')}
                   </ToggleButton>
                   <ToggleButton
                     value='close'
@@ -518,7 +539,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
     this.nextState.tool.detach = !this.state.tool.detach;
   }
 
-  private setStartEvent = (mode: 'nothing' | 'hide' | 'close') => {
+  private setStartEvent = (mode: 'nothing' | 'hide' | 'hide_recover' | 'close') => {
     this.nextState.tool.onStart = mode === 'nothing' ? undefined : mode;
     if ((mode === 'close') && !this.state.tool.detach) {
       this.nextState.tool.detach = true;

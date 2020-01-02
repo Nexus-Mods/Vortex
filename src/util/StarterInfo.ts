@@ -94,7 +94,7 @@ class StarterInfo implements IStarterInfo {
             // assuming that runThroughLauncher returns immediately on handing things off
             // to the launcher
             api.store.dispatch(setToolRunning(info.exePath, Date.now(), info.exclusive));
-            if (info.onStart === 'hide') {
+            if (['hide', 'hide_recover'].includes(info.onStart)) {
               remote.getCurrentWindow().hide();
             } else if (info.onStart === 'close') {
               remote.app.quit();
@@ -125,7 +125,7 @@ class StarterInfo implements IStarterInfo {
 
     const spawned = () => {
       onSpawned();
-      if (info.onStart === 'hide') {
+      if (['hide', 'hide_recover'].includes(info.onStart)) {
         remote.getCurrentWindow().hide();
       } else if (info.onStart === 'close') {
         remote.app.quit();
@@ -193,7 +193,7 @@ class StarterInfo implements IStarterInfo {
       }
     })
     .then(() => {
-      if ((info.onStart === 'hide')
+      if ((info.onStart === 'hide_recover')
           && !remote.getCurrentWindow().isVisible()) {
         remote.getCurrentWindow().show();
       }
@@ -263,7 +263,7 @@ class StarterInfo implements IStarterInfo {
   public details: { [key: string]: any } = {};
   public exclusive: boolean;
   public detach: boolean;
-  public onStart?: 'hide' | 'close';
+  public onStart?: 'hide' | 'hide_recover' | 'close';
   private mExtensionPath: string;
   private mLogoName: string;
   private mIconPathCache: string;
