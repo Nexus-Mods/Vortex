@@ -262,14 +262,14 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
                      + 'please try again later.',
               replace: { host: err.host || err.hostname },
             });
-          } else if (err.code === 'ENOTFOUND') {
+          } else if (['ENOTFOUND', 'ENOENT'].includes(err.code)) {
             api.sendNotification({
               type: 'warning',
               message: 'Failed to resolve address of server. This is probably a temporary problem '
                       + 'with your own internet connection.',
             });
             return;
-          } else if (['ECONNRESET', 'ECONNREFUSED', 'ECONNABORTED'].indexOf(err.code) !== -1) {
+          } else if (['ECONNRESET', 'ECONNREFUSED', 'ECONNABORTED'].includes(err.code)) {
             api.sendNotification({
               type: 'warning',
               message: 'The server refused the connection, please try again later.',

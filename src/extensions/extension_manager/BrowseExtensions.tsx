@@ -65,7 +65,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
             onRefreshExtensions, updateTime, visible } = this.props;
     const { selected } = this.state;
 
-    const ext = selected === -1 ? null : availableExtensions[selected];
+    const ext = selected === -1 ? null : availableExtensions.find(iter => iter.modId === selected);
 
     const updatedAt = new Date(updateTime);
 
@@ -117,7 +117,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
 
     const classes = ['extension-item'];
 
-    if (idx === selected) {
+    if (ext.modId === selected) {
       classes.push('selected');
     }
 
@@ -130,7 +130,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
         : (
           <a
             className='extension-subscribe'
-            data-idx={idx}
+            data-modid={ext.modId}
             onClick={this.install}
           >
             {t('Install')}
@@ -186,7 +186,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
         : (
           <a
             className='extension-subscribe'
-            data-idx={idx}
+            data-modid={ext.modId}
             onClick={this.install}
           >
             {t('Install')}
@@ -219,7 +219,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
                   {' '}
                   <a
                     className='extension-browse'
-                    data-idx={idx}
+                    data-modid={ext.modId}
                     onClick={this.openPage}
                   >
                     <Icon name='open-in-browser' />
@@ -241,8 +241,9 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
 
   private install = (evt: React.MouseEvent<any>) => {
     const { availableExtensions } = this.props;
-    const idx = parseInt(evt.currentTarget.getAttribute('data-idx'), 10);
-    const ext = availableExtensions[idx];
+
+    const modId = parseInt(evt.currentTarget.getAttribute('data-modid'), 10);
+    const ext = availableExtensions.find(iter => iter.modId === modId);
 
     this.nextState.installing.push(ext.name);
 
@@ -262,14 +263,15 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
 
   private select = (evt: React.MouseEvent<any>) => {
     const modId = parseInt(evt.currentTarget.getAttribute('data-modid'), 10);
-    const idx = this.props.availableExtensions.findIndex(iter => iter.modId === modId);
-    this.nextState.selected = idx;
+    this.nextState.selected = modId;
   }
 
   private openPage = (evt: React.MouseEvent<any>) => {
-    const idx = parseInt(evt.currentTarget.getAttribute('data-idx'), 10);
+    const { availableExtensions } = this.props;
 
-    const ext = this.props.availableExtensions[idx];
+    const modId = parseInt(evt.currentTarget.getAttribute('data-modid'), 10);
+
+    const ext = availableExtensions.find(iter => iter.modId === modId);
     opn(NEXUS_MODS_URL + ext.modId);
   }
 }
