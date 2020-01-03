@@ -175,7 +175,7 @@ class DeploymentMethod extends LinkingDeployment {
     });
   }
 
-  public deactivate(sourcePath: string, dataPath: string): Promise<void> {
+  public deactivate(sourcePath: string, dataPath: string, sourceName: string): Promise<void> {
     return turbowalk(sourcePath, entries => {
       if (this.context === undefined) {
         return;
@@ -184,7 +184,10 @@ class DeploymentMethod extends LinkingDeployment {
         if (!entry.isDirectory && (path.extname(entry.filePath) === LNK_EXT)) {
           const relPath: string = path.relative(sourcePath,
             entry.filePath.substring(0, entry.filePath.length - LNK_EXT.length));
-          delete this.context.newDeployment[this.normalize(relPath)];
+          const normPath = this.normalize(relPath);
+          if (this.context.newDeployment[normPath].source === sourceName) {
+            delete this.context.newDeployment[normPath];
+          }
         }
       });
     });

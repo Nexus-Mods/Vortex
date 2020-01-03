@@ -785,7 +785,7 @@ function onDeploySingleMod(api: IExtensionApi) {
       .then(() => (mod !== undefined)
         ? (enable !== false)
           ? activator.activate(modPath, mod.installationPath, subdir(mod), new Set())
-          : activator.deactivate(modPath, subdir(mod))
+          : activator.deactivate(modPath, subdir(mod), mod.installationPath)
         : Promise.resolve())
       .tapCatch(() => {
         if (activator.cancel !== undefined) {
