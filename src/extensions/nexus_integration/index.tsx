@@ -269,6 +269,12 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
                       + 'with your own internet connection.',
             });
             return;
+          } else if (['ENETUNREACH'].includes(err.code)) {
+            api.sendNotification({
+              type: 'warning',
+              message: 'Server can\'t be reached, please check your internet connection.',
+            });
+            return;
           } else if (['ECONNRESET', 'ECONNREFUSED', 'ECONNABORTED'].includes(err.code)) {
             api.sendNotification({
               type: 'warning',
