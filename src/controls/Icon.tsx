@@ -1,17 +1,15 @@
 import { log } from '../util/log';
 
+import IconBase from './Icon.base';
+
 import * as Promise from 'bluebird';
 // using fs directly because the svg may be bundled inside the asar so
 // we need the electron-fs hook here
 import { remote } from 'electron';
 import * as fs from 'fs';
+import update from 'immutability-helper';
 import * as path from 'path';
 import * as React from 'react';
-
-const debugMissingIcons = process.env.NODE_ENV === 'development';
-const debugReported = new Set<string>();
-
-const sets: { [setId: string]: Set<string> } = {};
 
 export interface IIconProps {
   className?: string;
@@ -29,7 +27,7 @@ export interface IIconProps {
   svgStyle?: string;
 }
 
-export function installIconSet(set: string, setPath: string): Promise<void> {
+export function installIconSet(set: string, setPath: string): Promise<Set<string>> {
   const newset = document.createElement('div');
   newset.id = 'iconset-' + set;
   document.getElementById('icon-sets').appendChild(newset);
@@ -45,138 +43,66 @@ export function installIconSet(set: string, setPath: string): Promise<void> {
     .then(data => {
       newset.innerHTML = data.toString();
       const newSymbols = newset.querySelectorAll('symbol');
-      sets[set] = new Set<string>();
+      const newSet = new Set<string>();
       newSymbols.forEach(ele => {
-        sets[set].add(ele.id);
+        newSet.add(ele.id);
       });
+      return newSet;
     });
 }
 
-class Icon extends React.Component<IIconProps, {}> {
-  private static sCache: { [id: string]: { width: number, height: number } } = {};
-  private mCurrentSize: { width: number, height: number };
+class Icon extends React.Component<IIconProps, { sets: { [setId: string]: Set<string> } }> {
+  constructor(props: IIconProps) {
+    super(props);
 
-  public componentWillMount() {
-    this.setIcon(this.props);
-  }
-
-  public componentWillReceiveProps(newProps: IIconProps) {
-    this.setIcon(newProps);
+    this.state = {
+      sets: {},
+    };
   }
 
   public render(): JSX.Element {
-    const { name, style, svgStyle } = this.props;
-
-    let classes = ['icon', `icon-${name}`];
-    // avoid using css for transforms. For one thing this is more flexible but more importantly
-    // it has no interactions with other css. For example css transforms tend to break z ordering
-    const transforms = [];
-
-    if (this.props.spin || (name === 'spinner')) {
-      classes.push('icon-spin');
-    }
-
-    if (this.props.pulse) {
-      classes.push('icon-pulse');
-    }
-
-    if (this.props.border) {
-      classes.push('icon-border');
-    }
-
-    if (this.props.stroke) {
-      classes.push('icon-stroke');
-    }
-
-    if (this.props.hollow) {
-      classes.push('icon-hollow');
-    }
-
-    if (this.props.flip) {
-      transforms.push(this.props.flip === 'horizontal'
-        ? `scale(-1, 1)`
-        : `scale(1, -1)`);
-    }
-
-    if (this.props.rotate) {
-      // narf... I can't use css transform for the rotation because that somehow
-      // messes up the z-ordering of items.
-      // with svg transforms we have to provide the center of rotation ourselves
-      // and we can't use relative units.
-      if (this.mCurrentSize !== undefined) {
-        const { width, height } = this.mCurrentSize;
-        transforms.push(
-          `rotate(${this.props.rotate}, ${Math.floor(width / 2)}, ${Math.floor(height / 2)})`);
-      }
-    }
-
-    if (this.props.className !== undefined) {
-      classes = classes.concat(this.props.className.split(' '));
-    }
-
-    return (
-      <svg
-        preserveAspectRatio='xMidYMid meet'
-        className={classes.join(' ')}
-        style={style}
-        ref={this.props.rotate && (this.mCurrentSize === undefined) ? this.setRef : undefined}
-      >
-        {svgStyle !== undefined ? <style type='text/css'>{svgStyle}</style> : null}
-        <use xlinkHref={`#icon-${name}`} transform={transforms.join(' ')} />
-      </svg>
-    );
+    return <IconBase {...this.props} getSet={this.loadSet} />;
   }
 
-  private setRef = (ref: Element) => {
-    if (ref !== null) {
-      const { width, height } = ref.getBoundingClientRect();
-      this.mCurrentSize = { width, height };
-      this.forceUpdate();
-      if (this.props.rotateId !== undefined) {
-        Icon.sCache[this.props.rotateId] = this.mCurrentSize;
-      }
-    }
-  }
-
-  private setIcon(props: IIconProps) {
-    const set = props.set || 'icons';
-    this.loadSet(set)
-    .then(() => {
-      if (debugMissingIcons
-          && (sets[set] !== null)
-          && !sets[set].has('icon-' + props.name)
-          && !debugReported.has(props.name)) {
-        // tslint:disable-next-line:no-console
-        console.trace('icon missing', props.name);
-        debugReported.add(props.name);
-      }
-    });
-
-    if (props.rotate && (props.rotateId !== undefined) && (this.mCurrentSize === undefined)) {
-      this.mCurrentSize = Icon.sCache[props.rotateId];
-    }
-  }
-
-  private loadSet(set: string): Promise<void> {
+  private loadSet = (set: string): Promise<Set<string>> => {
+    const { sets } = this.state;
     if (sets[set] === undefined) {
-      sets[set] = null;
+      { // mark the set as being loaded
+        const copy = { ...sets };
+        copy[set] = null;
+
+        this.setState(update(this.state, { sets: { $set: copy } }));
+      }
+
       // different extensions don't share the sets global so check in the dom
       // to see if the iconset is already loaded after all
       const existing = document.getElementById('iconset-' + set);
+
+      let loadProm: Promise<Set<string>>;
+
       if (existing !== null) {
         const newSymbols = existing.querySelectorAll('symbol');
-        sets[set] = new Set<string>();
+        const newSet = new Set<string>();
         newSymbols.forEach(ele => {
-          sets[set].add(ele.id);
+          newSet.add(ele.id);
         });
-        return Promise.resolve();
+        loadProm = Promise.resolve(newSet);
+      } else {
+        // make sure that no other icon instance tries to render this icon
+        const fontPath = path.resolve(remote.app.getAppPath(), 'assets', 'fonts', set + '.svg');
+        loadProm = installIconSet(set, fontPath);
       }
 
-      // make sure that no other icon instance tries to render this icon
-      const fontPath = path.resolve(remote.app.getAppPath(), 'assets', 'fonts', set + '.svg');
-      return installIconSet(set, fontPath);
+      return loadProm.then((newSet: Set<string>) => {
+        // need to copy the _current_ sets because for all we know another load might have completed
+        // in the meantime
+        const copy = { ...this.state.sets };
+        copy[set] = newSet;
+        this.setState(update(this.state, { sets: { $set: copy } }));
+        return newSet;
+      });
     } else {
-      return Promise.resolve();
+      return Promise.resolve(sets[set]);
     }
   }
 }

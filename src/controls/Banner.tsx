@@ -1,6 +1,7 @@
 import { IBannerOptions } from '../types/IBannerOptions';
+import { IExtensibleProps } from '../types/IExtensionProvider';
 import { connect } from '../util/ComponentEx';
-import { extend, IExtensibleProps } from '../util/ExtensionProvider';
+import { extend } from '../util/ExtensionProvider';
 import { truthy } from '../util/util';
 
 import * as _ from 'lodash';

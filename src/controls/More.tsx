@@ -1,22 +1,25 @@
+import { IExtensionApi } from '../types/api';
+import { ComponentEx, translate } from '../util/ComponentEx';
+
 import Icon from './Icon';
 import Overlay from './Overlay';
 import { IconButton } from './TooltipControls';
-import { IExtensionApi } from '../types/api';
-import { translate, ComponentEx } from '../util/ComponentEx';
 
 import * as React from 'react';
 import {Popover} from 'react-bootstrap';
 import { WithTranslation } from 'react-i18next';
 
-let _haveKnowledgeBase: boolean;
+const haveKnowledgeBase = (() => {
+  let value: boolean;
 
-function haveKnowledgeBase(api: IExtensionApi): boolean {
-  if (_haveKnowledgeBase === undefined) {
-    // is this expensive? Is it worth caching?
-    _haveKnowledgeBase = api.events.listenerCount('open-knowledge-base') > 0;
-  }
-  return _haveKnowledgeBase;
-}
+  return (api: IExtensionApi): boolean => {
+    if (value === undefined) {
+      // is this expensive? Is it worth caching?
+      value = api.events.listenerCount('open-knowledge-base') > 0;
+    }
+    return value;
+  };
+})();
 
 export interface IMoreProps {
   id: string;
@@ -104,7 +107,8 @@ class More extends ComponentEx<IProps, IComponentState> {
   }
 
   private openWiki = (evt: React.MouseEvent<HTMLAnchorElement>) => {
-    this.context.api.events.emit('open-knowledge-base', evt.currentTarget.getAttribute('href').slice(1));
+    this.context.api.events.emit('open-knowledge-base',
+                                 evt.currentTarget.getAttribute('href').slice(1));
     this.hide();
   }
 

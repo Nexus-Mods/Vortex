@@ -1,0 +1,25 @@
+{
+    "compileOnSave": true,
+    "compilerOptions": {
+        "target": "es6",
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "noImplicitAny": false,
+        "removeComments": true,
+        "preserveConstEnums": true,
+        "rootDir": "../src",
+        "outDir": "./out",
+        "inlineSourceMap": true,
+        "inlineSources": true,
+        "skipLibCheck": true,
+        "jsx":"react"
+    },
+    "files": [
+      "typings.custom/index.d.ts",
+      "src/main.ts",
+      "src/index.ts",
+      "src/renderer.tsx",
+      "src/splash.ts",
+      "src/extensions/index.ts"
+    ]
+}

@@ -2,13 +2,13 @@ import {collapseGroup, setAttributeFilter, setAttributeSort,
         setAttributeVisible, setCollapsedGroups, setGroupingAttribute} from '../actions/tables';
 import {IActionDefinition} from '../types/IActionDefinition';
 import {IAttributeState} from '../types/IAttributeState';
+import {IExtensibleProps} from '../types/IExtensionProvider';
 import { II18NProps } from '../types/II18NProps';
 import {IRowState, IState, ITableState} from '../types/IState';
 import {ITableAttribute} from '../types/ITableAttribute';
 import {SortDirection} from '../types/SortDirection';
 import {ComponentEx, connect, extend, translate} from '../util/ComponentEx';
 import Debouncer from '../util/Debouncer';
-import {IExtensibleProps} from '../util/ExtensionProvider';
 import { log } from '../util/log';
 import smoothScroll from '../util/smoothScroll';
 import { getSafe, setSafe } from '../util/storeHelper';

@@ -1,5 +1,5 @@
 import { IActionDefinition } from '../types/IActionDefinition';
-import { IExtensibleProps } from '../util/ExtensionProvider';
+import { IExtensibleProps } from '../types/IExtensionProvider';
 import { log } from '../util/log';
 import { truthy } from '../util/util';
 

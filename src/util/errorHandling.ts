@@ -343,6 +343,7 @@ export function toError(input: any, title?: string,
     ten = fallbackTFunc;
   }
 
+  /* i18next-extract-disable-next-line */
   const t = (text: string) => ten(text, { replace: (options || {}).replace });
 
   if (input instanceof Error) {
@@ -352,6 +353,7 @@ export function toError(input: any, title?: string,
     }
     const flatErr = flatten(input);
     return {
+      /* i18next-extract-disable-next-line */
       message: t(input.message),
       title,
       subtitle: (options || {}).message,
@@ -414,6 +416,7 @@ export function toError(input: any, title?: string,
       return {message, title, subtitle: (options || {}).message, stack, details};
     }
     case 'string': {
+      /* i18next-extract-disable-next-line */
       return { message: 'String exception: ' + t(input), title };
     }
     default: {
