@@ -21,6 +21,8 @@ const settingsReducer: IReducerSpec = {
       update(state, { hideTopLevelCategory: { $set: payload.hide } }),
     [actions.showUsageInstruction as any]: (state, payload) =>
       update(state, { usage: { [payload.usageId]: { $set: payload.show } } }),
+    [actions.setRelativeTimes as any]: (state, payload) =>
+      update(state, { relativeTimes: { $set: payload } }),
   },
   defaults: {
     language: 'en',
@@ -28,6 +30,7 @@ const settingsReducer: IReducerSpec = {
     profilesVisible: false,
     desktopNotifications: true,
     hideTopLevelCategory: false,
+    relativeTimes: true,
     usage: {},
   },
 };
