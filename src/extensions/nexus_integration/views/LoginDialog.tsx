@@ -1,6 +1,8 @@
 import { showDialog } from '../../../actions/notifications';
+import ContextMenu from '../../../controls/ContextMenu';
 import FormFeedback from '../../../controls/FormFeedback';
 import Icon from '../../../controls/Icon';
+import Modal from '../../../controls/Modal';
 import Spinner from '../../../controls/Spinner';
 import { Button, IconButton } from '../../../controls/TooltipControls';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
@@ -16,7 +18,10 @@ import { getPageURL } from '../util/sso';
 import { clipboard } from 'electron';
 import I18next from 'i18next';
 import * as React from 'react';
-import { Alert, ControlLabel, FormControl, FormGroup, InputGroup, Modal } from 'react-bootstrap';
+import { Alert, ControlLabel, FormControl, FormGroup,
+         InputGroup,
+         ModalBody } from 'react-bootstrap';
+import { findDOMNode } from 'react-dom';
 import { WithTranslation } from 'react-i18next';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
@@ -87,10 +92,12 @@ interface ILoginDialogState {
   troubleshoot: boolean;
   apiKeyInput: string;
   requested: boolean;
+  context: { x: number, y: number };
 }
 
 class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
   private mKeyValidation = /^[a-zA-Z0-9\-]*$/;
+  private mModalRef = React.createRef<ModalBody>();
 
   constructor(props: IProps) {
     super(props);
@@ -99,6 +106,7 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
       troubleshoot: false,
       apiKeyInput: '',
       requested: false,
+      context: undefined,
     });
   }
 
@@ -128,7 +136,7 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
         show={visible || (loginId !== undefined)}
         onHide={this.hide}
       >
-        <Modal.Body>
+        <Modal.Body ref={this.mModalRef}>
           <IconButton
             className='close-button'
             id='btn-close-login'
@@ -200,7 +208,7 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
   }
 
   private renderTroubleshoot() {
-    const { apiKeyInput } = this.state;
+    const { apiKeyInput, context } = this.state;
     const { t, loginError } = this.props;
 
     const keyValid = this.mKeyValidation.test(apiKeyInput);
@@ -241,10 +249,21 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
             <FormGroup controlId='' validationState={keyValid ? null : 'error'}>
               <FormControl
                 componentClass='textarea'
-                style={{display: 'inline', verticalAlign: 'top'}}
+                style={{display: 'inline', verticalAlign: 'top', height: '6em', resize: 'none'}}
                 placeholder={t('Paste that api key into this input field')}
                 value={apiKeyInput}
                 onChange={this.updateAPIKey}
+                onContextMenu={this.onShowContext}
+                draggable={false}
+              />
+              <ContextMenu
+                instanceId='login-context'
+                visible={context !== undefined}
+                position={context}
+                onHide={this.onHideContext}
+                actions={[
+                  { title: 'Paste', action: this.handlePaste, show: true },
+                ]}
               />
               <FormFeedback />
               {keyValid ? null : <ControlLabel>{t('Invalid key')}</ControlLabel>}
@@ -264,6 +283,21 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
         </ol>
       </div>
     );
+  }
+
+  private onShowContext = (event: React.MouseEvent<any>) => {
+    const modalDom = findDOMNode(this.mModalRef.current) as Element;
+    const rect: DOMRect = modalDom.getBoundingClientRect() as DOMRect;
+    this.nextState.context = { x: event.clientX - rect.x, y: event.clientY - rect.y };
+  }
+
+  private onHideContext = () => {
+    this.nextState.context = undefined;
+  }
+
+  private handlePaste = () => {
+    this.nextState.apiKeyInput = clipboard.readText();
+    this.nextState.context = undefined;
   }
 
   private renderConfirmDialog() {

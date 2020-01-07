@@ -65,7 +65,7 @@ class GroupingRow extends ComponentEx<IGroupingRowProps, IGroupingRowState> {
             instanceId={groupName}
             actions={this.mContextActions}
             visible={context !== undefined}
-            position={this.state.context}
+            position={context}
             onHide={this.onHideContext}
           />
 
