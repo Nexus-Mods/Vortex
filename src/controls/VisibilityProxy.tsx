@@ -95,7 +95,8 @@ class VisibilityProxy extends React.PureComponent<any, {}> {
     const { componentClass: Component } = this.props;
     return (
       <Component
-        {..._.omit(this.props, ['container', 'placeholder', 'content', 'visible', 'setVisible', 'componentClass'])}
+        {..._.omit(this.props, ['container', 'placeholder', 'content', 'visible',
+                                'setVisible', 'componentClass'])}
       >
       {
         (this.props.visible)

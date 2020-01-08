@@ -87,7 +87,7 @@ interface IComponentState {
   calculatedValues?: ILookupCalculated;
   rowState: { [id: string]: IRowState };
   sortedRows: string[];
-  groupedRows: Array<{ id: string, rows: string[] }>;
+  groupedRows: Array<{ id: string, count: number, rows: string[] }>;
   detailsOpen: boolean;
   rowIdsDelayed: string[];
   rowVisibility: { [id: string]: boolean };
@@ -248,7 +248,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
             || (newProps.language !== this.props.language)
             || (newProps.filter !== this.props.filter)) {
       this.refreshSorted(newProps);
-    } else if (newProps.groupBy !== this.props.groupBy) {
+    } else if ((newProps.groupBy !== this.props.groupBy)
+              || (newProps.collapsedGroups !== this.props.collapsedGroups)) {
       this.updateState(update(this.mNextState, {
         groupedRows: { $set: this.groupedRows(newProps, this.state.sortedRows) },
       }));
@@ -416,7 +417,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
                 key={group.id || '__empty'}
                 groupName={group.id}
                 expanded={expanded}
-                count={rows.length}
+                count={group.count}
                 width={this.mVisibleAttributes.length + 1}
                 onToggle={this.toggleGroup}
                 onExpandAll={this.expandAll}
@@ -640,7 +641,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
   private renderRow(rowId: string, sortAttribute: ITableAttribute, groupId?: string): JSX.Element {
     const { t, data, language, hasActions, tableId } = this.props;
-    const { calculatedValues, rowState, singleRowActions } = this.state;
+    const { calculatedValues, rowState, rowVisibility, singleRowActions } = this.state;
 
     if ((calculatedValues[rowId] === undefined) || (data[rowId] === undefined)) {
       return null;
@@ -670,7 +671,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         highlighted={getSafe(rowState, [rowId, 'highlighted'], false)}
         domRef={this.setRowRef}
         container={this.mScrollRef}
-        visible={this.state.rowVisibility[rowId] === true}
+        visible={rowVisibility[tableRowId] === true}
         grouped={groupId !== undefined}
         onSetVisible={this.setRowVisible}
         onHighlight={this.setRowHighlight}
@@ -1246,7 +1247,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     });
   }
 
-  private groupedRows(props: IProps, sortedRows: string[]): Array<{ id: string, rows: string[] }> {
+  private groupedRows(props: IProps, sortedRows: string[])
+      : Array<{ id: string, count: number, rows: string[] }> {
     const { t, attributeState, collapsedGroups, data, groupBy } = props;
     const { calculatedValues } = this.state;
 
@@ -1289,7 +1291,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
       if (groupItems.length !== 0) {
         const expanded = collapsedGroups.indexOf(group || '') === -1;
-        prev.push({ id: group, rows: expanded ? groupItems : null });
+        prev.push({ id: group, count: groupItems.length, rows: expanded ? groupItems : null });
       }
 
       return prev;
