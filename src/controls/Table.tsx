@@ -233,7 +233,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       Object.keys(this.mRowRefs).forEach(key => {
         if (newProps.data[key] === undefined) {
           delete this.mRowRefs[key];
-          if (this.state.lastSelected.rowId === key) {
+          if ((this.state.lastSelected !== undefined) && (this.state.lastSelected.rowId === key)) {
             this.updateState(update(this.mNextState, { lastSelected: { $set: undefined } }));
           }
         }
@@ -767,7 +767,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     // TODO: this calculation of the number of lines visible in the table is only
     // accurate under the assumption all lines have the same height
     let visibleLineCount = 0;
-    if (this.mRowRefs[lastSelected.rowId] !== undefined) {
+    if ((lastSelected !== undefined) && (this.mRowRefs[lastSelected.rowId] !== undefined)) {
       // the previously selected row might no longer be visible, which would cause
       // an exception when trying to find the associated dom node
       const lastIdx = sortedRows.indexOf(lastSelected.rowId);
@@ -1442,7 +1442,11 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
   private selectTo(rowId: string, groupId: string) {
     const { groupBy } = this.props;
-    const { calculatedValues, lastSelected, groupedRows, sortedRows } = this.mNextState;
+    const { lastSelected, groupedRows, sortedRows } = this.mNextState;
+
+    if (lastSelected === undefined) {
+      return;
+    }
 
     let groupSortedRows: Array<{ rowId: string, groupId: string }>;
     if (groupBy !== undefined) {
