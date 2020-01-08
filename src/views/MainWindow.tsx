@@ -562,7 +562,7 @@ function emptyFunc() {
 function mapStateToProps(state: IState): IConnectedProps {
   return {
     tabsMinimized: getSafe(state, ['settings', 'window', 'tabsMinimized'], false),
-    visibleDialog: state.session.base.visibleDialog,
+    visibleDialog: state.session.base.visibleDialog || undefined,
     mainPage: state.session.base.mainPage,
     secondaryPage: state.session.base.secondaryPage,
     activeProfileId: state.settings.profiles.activeProfileId,

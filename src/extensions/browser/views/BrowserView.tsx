@@ -6,6 +6,7 @@ import { INotification } from '../../../types/INotification';
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import Debouncer from '../../../util/Debouncer';
+import { truthy } from '../../../util/util';
 
 import { closeBrowser } from '../actions';
 
@@ -162,7 +163,7 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderUrl(input: string): JSX.Element {
-    if (input === undefined) {
+    if (!truthy(input)) {
       return null;
     }
     const parsed = nodeUrl.parse(input);
@@ -277,9 +278,9 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
 
 function mapStateToProps(state: IState): IConnectedProps {
   return {
-    subscriber: state.session.browser.subscriber,
-    instructions: state.session.browser.instructions,
-    url: state.session.browser.url,
+    subscriber: state.session.browser.subscriber || undefined,
+    instructions: state.session.browser.instructions || undefined,
+    url: state.session.browser.url || undefined,
   };
 }
 

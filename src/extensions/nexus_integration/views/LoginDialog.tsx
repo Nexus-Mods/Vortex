@@ -377,8 +377,8 @@ function mapStateToProps(state: any): IConnectedProps {
   return {
     APIKey: state.confidential.account.nexus.APIKey,
     userInfo: state.persistent.nexus.userInfo,
-    loginId: state.session.nexus.loginId,
-    loginError: state.session.nexus.loginError,
+    loginId: state.session.nexus.loginId || undefined,
+    loginError: state.session.nexus.loginError || undefined,
   };
 }
 

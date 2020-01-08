@@ -98,6 +98,7 @@
     "@types/libxmljs": "^0.18.3",
     "@types/lodash": "^4.14.122",
     "@types/minimatch": "^3.0.3",
+    "@types/msgpack": "^0.0.30",
     "@types/node": "^11.10.5",
     "@types/node-uuid": "^0.0.28",
     "@types/opn": "^5.1.0",

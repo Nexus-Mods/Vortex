@@ -34,6 +34,7 @@ import crashDump from 'crash-dump';
 import {app, dialog, ipcMain, shell} from 'electron';
 import * as isAdmin from 'is-admin';
 import * as _ from 'lodash';
+import * as msgpackT from 'msgpack';
 import * as path from 'path';
 import { allow } from 'permissions';
 import * as semver from 'semver';
@@ -42,6 +43,8 @@ import * as uuidT from 'uuid';
 import { RegGetValue } from 'winapi-bindings';
 
 const uuid = lazyRequire<typeof uuidT>(() => require('uuid'));
+
+const STATE_CHUNK_SIZE = 128 * 1024;
 
 function last(array: any[]): any {
   if (array.length === 0) {
@@ -680,6 +683,18 @@ class Application {
       })
       .then(() => {
         this.mStore = newStore;
+
+        let sendState: Buffer;
+
+        (global as any).getReduxStateMsgpack = (idx: number) => {
+          const msgpack: typeof msgpackT = require('msgpack');
+          if ((sendState === undefined) || (idx === 0)) {
+            sendState = msgpack.pack(this.mStore.getState());
+          }
+          const res = sendState.slice(idx * STATE_CHUNK_SIZE, (idx + 1) * STATE_CHUNK_SIZE);
+          return res.toString('base64');
+        };
+
         this.mExtensions.setStore(newStore);
         return extendStore(newStore, this.mExtensions);
       })
