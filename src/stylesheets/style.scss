@@ -630,6 +630,13 @@ div:hover > .hover-expand {
 ///////////////
 // nexus logo
 
+#nexus-dl-icon .svg-use {
+  --nexus-orange-color: transparent;
+  --nexus-orange-opacity: 0;
+  --nexus-orange-darker-opacity: 0;
+  --nexus-outline-opacity: 0;
+}
+
 .nexus-orange {
   fill: #D78F46;
 }

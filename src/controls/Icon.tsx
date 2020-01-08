@@ -14,6 +14,7 @@ const debugReported = new Set<string>();
 const sets: { [setId: string]: Set<string> } = {};
 
 export interface IIconProps {
+  id?: string;
   className?: string;
   style?: React.CSSProperties;
   set?: string;
@@ -26,6 +27,7 @@ export interface IIconProps {
   flip?: 'horizontal' | 'vertical';
   rotate?: number;
   rotateId?: string;
+  // avoid using this! These styles may affect other instances of this icon
   svgStyle?: string;
 }
 
@@ -65,7 +67,7 @@ class Icon extends React.Component<IIconProps, {}> {
   }
 
   public render(): JSX.Element {
-    const { name, style, svgStyle } = this.props;
+    const { id, name, style, svgStyle } = this.props;
 
     let classes = ['icon', `icon-${name}`];
     // avoid using css for transforms. For one thing this is more flexible but more importantly
@@ -116,13 +118,14 @@ class Icon extends React.Component<IIconProps, {}> {
 
     return (
       <svg
+        id={id}
         preserveAspectRatio='xMidYMid meet'
         className={classes.join(' ')}
         style={style}
         ref={this.props.rotate && (this.mCurrentSize === undefined) ? this.setRef : undefined}
       >
         {svgStyle !== undefined ? <style type='text/css'>{svgStyle}</style> : null}
-        <use xlinkHref={`#icon-${name}`} transform={transforms.join(' ')} />
+        <use className='svg-use' xlinkHref={`#icon-${name}`} transform={transforms.join(' ')} />
       </svg>
     );
   }
