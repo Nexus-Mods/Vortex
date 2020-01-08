@@ -9,6 +9,7 @@ import { IComponentContext } from '../../../types/IComponentContext';
 import { IDiscoveryPhase, IDiscoveryState, IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import getAttr from '../../../util/getAttr';
+import opn from '../../../util/opn';
 import { activeGameId } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
@@ -264,6 +265,16 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
                     </Panel.Heading>
                     <Panel.Body collapsible>
                       {this.renderGames(filteredUnmanaged, 'unmanaged')}
+                      <EmptyPlaceholder
+                        icon='in-progress'
+                        text={t('Can\'t find the game you\'re looking for?')}
+                        subtext={(
+                          <a onClick={this.openGameExtWiki}>
+                            {t('Your game may not be supported yet but adding it yourself '
+                               + 'may be easier than you think. Click to learn how!')}
+                          </a>
+                        )}
+                      />
                     </Panel.Body>
                   </Panel>
                 </PanelGroup>
@@ -293,6 +304,11 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
         </MainPage.Body>
       </MainPage>
     );
+  }
+
+  private openGameExtWiki = () => {
+    opn('https://wiki.nexusmods.com/index.php/Creating_a_game_extension_for_Vortex')
+      .catch(() => null);
   }
 
   private toggleManaged = () => {
