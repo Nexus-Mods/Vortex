@@ -82,11 +82,12 @@ export interface ILookupCalculated {
 }
 
 interface IComponentState {
-  lastSelected?: string;
-  selectionStart?: string;
+  lastSelected?: { rowId: string, groupId: string };
+  selectionStart?: { rowId: string, groupId: string };
   calculatedValues?: ILookupCalculated;
   rowState: { [id: string]: IRowState };
   sortedRows: string[];
+  groupedRows: Array<{ id: string, rows: string[] }>;
   detailsOpen: boolean;
   rowIdsDelayed: string[];
   rowVisibility: { [id: string]: boolean };
@@ -144,6 +145,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       calculatedValues: undefined,
       rowState: {},
       sortedRows: undefined,
+      groupedRows: undefined,
       detailsOpen: false,
       rowIdsDelayed: [],
       rowVisibility: {},
@@ -231,7 +233,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       Object.keys(this.mRowRefs).forEach(key => {
         if (newProps.data[key] === undefined) {
           delete this.mRowRefs[key];
-          if (this.state.lastSelected === key) {
+          if (this.state.lastSelected.rowId === key) {
             this.updateState(update(this.mNextState, { lastSelected: { $set: undefined } }));
           }
         }
@@ -246,6 +248,10 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
             || (newProps.language !== this.props.language)
             || (newProps.filter !== this.props.filter)) {
       this.refreshSorted(newProps);
+    } else if (newProps.groupBy !== this.props.groupBy) {
+      this.updateState(update(this.mNextState, {
+        groupedRows: { $set: this.groupedRows(newProps, this.state.sortedRows) },
+      }));
     }
   }
 
@@ -388,8 +394,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderBody = () => {
-    const { t, attributeState, collapsedGroups, data, groupBy, tableId } = this.props;
-    const { calculatedValues, sortedRows } = this.state;
+    const { t, attributeState, data } = this.props;
+    const { calculatedValues, groupedRows, sortedRows } = this.state;
 
     if ((data === undefined) || (calculatedValues === undefined) || (sortedRows === undefined)) {
       return <TBody />;
@@ -398,82 +404,27 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     const sortAttribute: ITableAttribute = this.mVisibleAttributes.find(attribute =>
       this.isSortColumn(attributeState[attribute.id]));
 
-    const groupAttribute = this.mVisibleAttributes.find(attribute => attribute.id === groupBy);
-
-    const valFunc = rowId => typeof(groupAttribute.isGroupable) === 'function'
-            ? groupAttribute.isGroupable(data[rowId], t)
-            : calculatedValues[rowId][groupAttribute.id];
-
-    if (groupAttribute !== undefined) {
-      let arrays: boolean = false;
-      const groupOptions = Array.from(new Set(
-        sortedRows.reduce((prev, rowId) => {
-          if (data[rowId] === undefined) {
-            return prev;
-          }
-          const value = valFunc(rowId);
-          if (Array.isArray(value)) {
-            arrays = true;
-            prev.push(...value);
-          } else {
-            prev.push(value);
-          }
-          return prev;
-        }, []))).sort((lhs: string, rhs: string) => {
-          if ((sortAttribute !== undefined)
-            && (sortAttribute.id === groupAttribute.id)
-            && (attributeState[sortAttribute.id].sortDirection === 'desc')) {
-            return rhs.toLowerCase().localeCompare(lhs.toLowerCase());
-          } else {
-            return lhs.toLowerCase().localeCompare(rhs.toLowerCase());
-          }
-        });
-      if (arrays) {
-        groupOptions.push(EMPTY_ID);
-      }
+    if (groupedRows !== undefined) {
       return (
         <TBody>
-          {groupOptions.reduce((prev, group) => {
-            const groupItems = sortedRows
-              .filter(row => {
-                if (data[row] === undefined) {
-                  return prev;
-                }
-                const rowVal = valFunc(row);
-                if (Array.isArray(rowVal)) {
-                  if (rowVal.length === 0) {
-                    return group === EMPTY_ID;
-                  }
-                  return (rowVal.indexOf(group) !== -1);
-                } else {
-                  return (rowVal === group);
-                }
-              });
-            if (groupItems.length === 0) {
-              return prev;
-            }
-            const expanded = collapsedGroups.indexOf(group || '') === -1;
-            prev.push((
+          {groupedRows.map(group => {
+            const expanded = group.rows !== null;
+            const rows = group.rows || [];
+            return [
               <GroupingRow
                 t={t}
-                key={group || '__empty'}
-                groupName={group}
+                key={group.id || '__empty'}
+                groupName={group.id}
                 expanded={expanded}
-                count={groupItems.length}
+                count={rows.length}
                 width={this.mVisibleAttributes.length + 1}
                 onToggle={this.toggleGroup}
                 onExpandAll={this.expandAll}
                 onCollapseAll={this.collapseAll}
-              />
-            ));
-            if (expanded) {
-              prev.push(...groupItems
-                .map((row, idx) =>
-                  this.renderRow(row, sortAttribute, group)));
-            }
-
-            return prev;
-          }, [])}
+              />,
+              ...rows.map(rowId => this.renderRow(rowId, sortAttribute, group.id)),
+            ];
+          })}
         </TBody>
       );
     } else {
@@ -528,6 +479,43 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
           { id, tableId: this.props.tableId, error: err.message });
       }
     }
+  }
+
+  private getGroupOptions(props: IProps,
+                          sortedRows: string[],
+                          sortAttribute: ITableAttribute,
+                          groupAttribute: ITableAttribute,
+                          valFunc: (key: string) => any) {
+    const { attributeState, data } = props;
+
+    let arrays: boolean = false;
+
+    const groupOptions = Array.from(new Set(
+      sortedRows.reduce((prev, rowId) => {
+        if (data[rowId] === undefined) {
+          return prev;
+        }
+        const value = valFunc(rowId);
+        if (Array.isArray(value)) {
+          arrays = true;
+          prev.push(...value);
+        } else {
+          prev.push(value);
+        }
+        return prev;
+      }, []))).sort((lhs: string, rhs: string) => {
+        if ((sortAttribute !== undefined)
+          && (sortAttribute.id === groupAttribute.id)
+          && (attributeState[sortAttribute.id].sortDirection === 'desc')) {
+          return rhs.toLowerCase().localeCompare(lhs.toLowerCase());
+        } else {
+          return lhs.toLowerCase().localeCompare(rhs.toLowerCase());
+        }
+      });
+    if (arrays) {
+      groupOptions.push(EMPTY_ID);
+    }
+    return groupOptions;
   }
 
   private invalidate(columnId: string)  {
@@ -669,6 +657,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         id={tableRowId}
         key={tableRowId}
         data={calculatedValues[rowId]}
+        group={groupId}
         rawData={data[rowId]}
         attributes={attributes}
         inlines={this.mVisibleInlines}
@@ -760,8 +749,12 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       }
 
       if (evt.shiftKey && (selectionStart === undefined)) {
+        const selection = lastSelected !== undefined
+          ? { rowId: lastSelected.rowId, groupId: lastSelected.groupId }
+          : undefined;
+
         this.updateState(update(this.mNextState, {
-          selectionStart: { $set: lastSelected },
+          selectionStart: { $set: selection },
         }));
       } else if (!evt.shiftKey && (selectionStart !== undefined)) {
         this.updateState(update(this.mNextState, {
@@ -773,12 +766,12 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     // TODO: this calculation of the number of lines visible in the table is only
     // accurate under the assumption all lines have the same height
     let visibleLineCount = 0;
-    if (this.mRowRefs[lastSelected] !== undefined) {
+    if (this.mRowRefs[lastSelected.rowId] !== undefined) {
       // the previously selected row might no longer be visible, which would cause
       // an exception when trying to find the associated dom node
-      const lastIdx = sortedRows.indexOf(lastSelected);
+      const lastIdx = sortedRows.indexOf(lastSelected.rowId);
       if (lastIdx !== -1) {
-        const selectedNode = ReactDOM.findDOMNode(this.mRowRefs[lastSelected]) as Element;
+        const selectedNode = ReactDOM.findDOMNode(this.mRowRefs[lastSelected.rowId]) as Element;
         visibleLineCount = this.mScrollRef.clientHeight / selectedNode.clientHeight;
         // account for the header. quite inaccurate.
         visibleLineCount -= 2;
@@ -799,7 +792,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     }
     if (offset !== 0) {
       evt.preventDefault();
-      const newItem = this.selectRelative(offset, evt.shiftKey);
+      const groupId = evt.currentTarget.getAttribute('data-group') || undefined;
+      const newItem = this.selectRelative(offset, groupId, evt.shiftKey);
       if ((this.mRowRefs[newItem] !== undefined) && this.mMounted) {
         this.scrollToItem(
           ReactDOM.findDOMNode(this.mRowRefs[newItem]) as HTMLElement, Math.abs(offset) > 1);
@@ -834,10 +828,12 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
     const attrState = this.getAttributeStates(props);
 
+    const sortedRows = this.sortedRows(attrState, this.mVisibleAttributes, filtered, language);
+    const groupedRows = this.groupedRows(props, sortedRows);
+
     this.updateState(update(this.mNextState, {
-      sortedRows: {
-        $set: this.sortedRows(attrState, this.mVisibleAttributes, filtered, language),
-      },
+      sortedRows: { $set: sortedRows },
+      groupedRows: { $set: groupedRows },
     }));
   }
 
@@ -862,13 +858,13 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       (action) => (action.multiRowAction === undefined) || action.multiRowAction);
   }
 
-  private selectRelative = (delta: number, shiftHeld: boolean): string => {
+  private selectRelative = (delta: number, groupId: string, shiftHeld: boolean): string => {
     const { lastSelected, selectionStart, sortedRows } = this.state;
     if ((lastSelected === undefined) || (sortedRows === undefined)) {
       return;
     }
 
-    let idx = sortedRows.indexOf(lastSelected);
+    let idx = sortedRows.indexOf(lastSelected.rowId);
     const oldIdx = idx;
     idx = Math.min(Math.max(idx + delta, 0), sortedRows.length - 1);
 
@@ -878,9 +874,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       return newSelection;
     }
 
-    this.selectOnly(newSelection, false);
+    this.selectOnly(newSelection, groupId, false);
     if (shiftHeld) {
-      this.selectTo(selectionStart);
+      this.selectTo(selectionStart.rowId, selectionStart.groupId);
     }
     return newSelection;
   }
@@ -1180,6 +1176,29 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     return result;
   }
 
+  private attributeSortFunction(sortAttribute: ITableAttribute,
+                                calculatedValues: ILookupCalculated,
+                                data: { [id: string]: any },
+                                locale: string) {
+    let sortFunction;
+    if (sortAttribute.sortFunc !== undefined) {
+      sortFunction = (lhsId: string, rhsId: string) =>
+        sortAttribute.sortFunc(
+          calculatedValues[lhsId][sortAttribute.id],
+          calculatedValues[rhsId][sortAttribute.id],
+          locale);
+    } else if (sortAttribute.sortFuncRaw !== undefined) {
+      sortFunction = (lhsId: string, rhsId: string) =>
+        sortAttribute.sortFuncRaw(data[lhsId], data[rhsId], locale);
+    } else {
+      sortFunction = (lhsId: string, rhsId: string) =>
+        this.standardSort(
+          calculatedValues[lhsId][sortAttribute.id],
+          calculatedValues[rhsId][sortAttribute.id]);
+    }
+    return sortFunction;
+  }
+
   private sortedRows(attributeState: { [id: string]: IAttributeState },
                      attributes: ITableAttribute[],
                      data: { [id: string]: any },
@@ -1201,22 +1220,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         .filter(rowId => data[rowId] !== undefined);
     }
 
-    let sortFunction;
-    if (sortAttribute.sortFunc !== undefined) {
-      sortFunction = (lhsId: string, rhsId: string) =>
-        sortAttribute.sortFunc(
-          calculatedValues[lhsId][sortAttribute.id],
-          calculatedValues[rhsId][sortAttribute.id],
-          locale);
-    } else if (sortAttribute.sortFuncRaw !== undefined) {
-      sortFunction = (lhsId: string, rhsId: string) =>
-        sortAttribute.sortFuncRaw(data[lhsId], data[rhsId], locale);
-    } else {
-      sortFunction = (lhsId: string, rhsId: string) =>
-        this.standardSort(
-          calculatedValues[lhsId][sortAttribute.id],
-          calculatedValues[rhsId][sortAttribute.id]);
-    }
+    const sortFunction =
+      this.attributeSortFunction(sortAttribute, calculatedValues, data, locale);
 
     const descending = attributeState[sortAttribute.id].sortDirection === 'desc';
 
@@ -1239,6 +1244,56 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
       return (descending) ? res * -1 : res;
     });
+  }
+
+  private groupedRows(props: IProps, sortedRows: string[]): Array<{ id: string, rows: string[] }> {
+    const { t, attributeState, collapsedGroups, data, groupBy } = props;
+    const { calculatedValues } = this.state;
+
+    const groupAttribute = this.mVisibleAttributes.find(attribute => attribute.id === groupBy);
+
+    if (groupAttribute === undefined) {
+      return undefined;
+    }
+
+    if (sortedRows === undefined) {
+      return [];
+    }
+
+    const sortAttribute: ITableAttribute = this.mVisibleAttributes.find(attribute =>
+      this.isSortColumn(attributeState[attribute.id]));
+
+    const valFunc = (rowId: string) => typeof(groupAttribute.isGroupable) === 'function'
+            ? groupAttribute.isGroupable(data[rowId], t)
+            : calculatedValues[rowId][groupAttribute.id];
+
+    const groupOptions = this.getGroupOptions(this.props, sortedRows, sortAttribute,
+                                              groupAttribute, valFunc);
+
+    return groupOptions.reduce((prev, group) => {
+      const groupItems = sortedRows
+        .filter(row => {
+          if (data[row] === undefined) {
+            return prev;
+          }
+          const rowVal = valFunc(row);
+          if (Array.isArray(rowVal)) {
+            if (rowVal.length === 0) {
+              return group === EMPTY_ID;
+            }
+            return (rowVal.indexOf(group) !== -1);
+          } else {
+            return (rowVal === group);
+          }
+        });
+
+      if (groupItems.length !== 0) {
+        const expanded = collapsedGroups.indexOf(group || '') === -1;
+        prev.push({ id: group, rows: expanded ? groupItems : null });
+      }
+
+      return prev;
+    }, []);
   }
 
   private setAttributeVisible = (attributeId: string, visible: boolean) => {
@@ -1284,21 +1339,22 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
     const row = (evt.currentTarget as HTMLTableRowElement);
     const rowId = row.getAttribute('data-rowid');
+    const groupId = row.getAttribute('data-group');
 
     if (this.useMultiSelect() && evt.ctrlKey) {
       // ctrl-click -> toggle the selected row, leave remaining selection intact
-      this.selectToggle(rowId);
+      this.selectToggle(rowId, groupId);
     } else if (this.useMultiSelect() && evt.shiftKey) {
       // shift-click -> select everything between this row and the last one clicked,
       //                deselect everything else
-      this.selectTo(rowId);
+      this.selectTo(rowId, groupId);
     } else {
       // regular click -> select only the clicked row, everything else get deselected
-      this.selectOnly(rowId, true);
+      this.selectOnly(rowId, groupId, true);
     }
   }
 
-  private selectOnly(rowId: string, click: boolean) {
+  private selectOnly(rowId: string, groupId: string, click: boolean) {
     const rowState = {};
     Object.keys(this.state.rowState)
     .forEach(iterId => {
@@ -1309,7 +1365,10 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       : { selected: { $set: true } };
 
     const now = Date.now();
-    if (click && (this.state.lastSelected === rowId) && ((now - this.mLastSelectOnly) < 500)) {
+    if (click
+        && (this.state.lastSelected !== undefined)
+        && (this.state.lastSelected.rowId === rowId)
+        && ((now - this.mLastSelectOnly) < 500)) {
       this.updateState(update(this.mNextState, {
         detailsOpen: { $set: !this.state.detailsOpen },
         rowState,
@@ -1319,20 +1378,20 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         this.mLastSelectOnly = now;
       }
       this.updateState(update(this.mNextState, {
-        lastSelected: { $set: rowId },
+        lastSelected: { $set: { rowId, groupId } },
         rowState,
       }), this.onRowStateChanged);
     }
   }
 
-  private selectToggle(rowId: string) {
+  private selectToggle(rowId: string, groupId: string) {
     const wasSelected = getSafe(this.state.rowState, [rowId, 'selected'], undefined);
     if (!wasSelected) {
       const rowState = wasSelected === undefined
             ? { $set: { selected: true } }
             : { selected: { $set: !wasSelected } };
       this.updateState(update(this.mNextState, {
-        lastSelected: { $set: rowId },
+        lastSelected: { $set: { rowId, groupId } },
         rowState: { [rowId]: rowState },
         }), this.onRowStateChanged);
     } else {
@@ -1379,20 +1438,33 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     this.updateState(update(this.mNextState, { rowState: newState }), this.onRowStateChanged);
   }
 
-  private selectTo(rowId: string) {
-    const { lastSelected, sortedRows } = this.mNextState;
+  private selectTo(rowId: string, groupId: string) {
+    const { groupBy } = this.props;
+    const { calculatedValues, lastSelected, groupedRows, sortedRows } = this.mNextState;
 
-    const selection: Set<string> = new Set([rowId, lastSelected]);
+    let groupSortedRows: Array<{ rowId: string, groupId: string }>;
+    if (groupBy !== undefined) {
+      groupSortedRows = groupedRows.reduce((prev, group) => {
+        prev.push(...(group.rows || []).map(rId => ({ rowId: rId, groupId: group.id })) || []);
+        return prev;
+      }, []);
+    } else {
+      groupSortedRows = sortedRows.map(rId => ({ rowId: rId, groupId: undefined }));
+    }
+
+    const selection: Set<string> = new Set([rowId, lastSelected.rowId]);
     let selecting = false;
 
-    sortedRows.forEach(iterId => {
-      let isBracket = (iterId === rowId) || (iterId === lastSelected);
+    groupSortedRows.forEach(iterId => {
+      let isBracket = ((iterId.rowId === rowId) && (!groupBy || (iterId.groupId === groupId)))
+        || ((iterId.rowId === lastSelected.rowId)
+            && (!groupBy || (iterId.groupId === lastSelected.groupId)));
       if (!selecting && isBracket) {
         selecting = true;
-        isBracket = rowId === lastSelected;
+        isBracket = (rowId === lastSelected.rowId) && (groupId === lastSelected.groupId);
       }
       if (selecting) {
-        selection.add(iterId);
+        selection.add(iterId.rowId);
         if (isBracket) {
           selecting = false;
         }
@@ -1400,10 +1472,10 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     });
 
     const rowState = {};
-    sortedRows.forEach(iterId => {
-      rowState[iterId] = (this.state.rowState[iterId] === undefined)
-        ? { $set: { selected: selection.has(iterId) } }
-        : { selected: { $set: selection.has(iterId) } };
+    groupSortedRows.forEach(iterId => {
+      rowState[iterId.rowId] = (this.state.rowState[iterId.rowId] === undefined)
+        ? { $set: { selected: selection.has(iterId.rowId) } }
+        : { selected: { $set: selection.has(iterId.rowId) } };
     });
     this.updateState(update(this.mNextState, { rowState }), this.onRowStateChanged);
   }
