@@ -42,13 +42,12 @@ export {
   linkSync,
   openSync,
   readFileSync,
-  readJSONSync,
   statSync,
   symlinkSync,
   watch,
   writeFileSync,
   writeSync,
-} from 'fs-extra-promise';
+} from 'fs';
 
 export interface ILinkFileOptions {
   // Used to dictate whether error dialogs should

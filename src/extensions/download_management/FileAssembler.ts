@@ -4,7 +4,7 @@ import * as fs from '../../util/fs';
 
 import Promise from 'bluebird';
 import { dialog as dialogIn, remote } from 'electron';
-import * as fsFast from 'fs-extra-promise';
+import * as fsFast from 'fs-extra';
 import * as path from 'path';
 
 const dialog = remote !== undefined ? remote.dialog : dialogIn;

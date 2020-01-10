@@ -1,7 +1,7 @@
-import { HTTPError } from '../../util/CustomErrors';
-
-import * as FeedParser from 'feedparser';
-import * as RequestT from 'request';
+import FeedParser from 'feedparser';
+import { IncomingMessage } from 'http';
+import { get } from 'https';
+import * as url from 'url';
 
 export interface IEnclosure {
   length: string;
@@ -25,39 +25,53 @@ export interface IFeedMessage {
   'nexusmods:summary'?: { '#': string };
 }
 
-function retrieve(url: string): Promise<IFeedMessage[]> {
+function retrieve(rssUrl: string): Promise<IFeedMessage[]> {
   return new Promise<IFeedMessage[]>((resolve, reject) => {
-    const req: RequestT.Request = require('request')(url);
-    req.setHeader('cookie', 'rd=true');
-    const parser = new FeedParser();
+    get({
+      ...url.parse(rssUrl),
+      headers: { 'User-Agent': 'Vortex', Cookie: 'rd=true' },
 
-    const result: IFeedMessage[] = [];
+    } as any, (res: IncomingMessage) => {
+      const { statusCode } = res;
+      const contentType = res.headers['content-type'];
 
-    parser.on('error', error => {
-      req.abort();
-      reject(error);
-    });
-    parser.on('readable', () => {
-      while (true) {
-        const item = parser.read();
-        if (item === null) {
-          break;
-        } else {
-          result.push(item);
+      let err: string;
+      if (statusCode !== 200) {
+        err = `Request Failed. Status Code: ${statusCode}`;
+      }
+
+      const parser = new FeedParser();
+
+      const result: IFeedMessage[] = [];
+
+      parser.on('error', error => {
+        res.destroy();
+        reject(error);
+      });
+      parser.on('readable', () => {
+        while (true) {
+          const item = parser.read();
+          if (item === null) {
+            break;
+          } else {
+            result.push(item);
+          }
         }
-      }
-    });
-    parser.on('end', () => {
-      resolve(result);
-    });
+      });
+      parser.on('end', () => {
+        resolve(result);
+      });
 
-    req.on('error', error => reject(error));
-    req.on('response', response => {
-      if (response.statusCode !== 200) {
-        return reject(new HTTPError(response.statusCode, response.statusMessage, url));
+      if (err !== undefined) {
+        res.resume();
+        return reject(new Error(err));
       }
-      req.pipe(parser);
-    });
+
+      res.pipe(parser);
+    })
+      .on('error', (err: Error) => {
+        return reject(err);
+      });
   });
 }
 

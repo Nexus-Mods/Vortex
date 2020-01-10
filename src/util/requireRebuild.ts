@@ -56,6 +56,20 @@ const initBuild = [
 
 const headerURL = 'https://atom.io/download/electron';
 
+function splitNodePath(input: string): { modulePath: string, moduleName: string } {
+  const segments = input.split(path.sep);
+  const modulesIdx = segments.indexOf('node_modules');
+  if (modulesIdx === -1) {
+    return { modulePath: undefined, moduleName: undefined };
+  }
+
+  const nodeModules = segments.slice(0, modulesIdx + 1).join(path.sep);
+  const moduleName = segments[modulesIdx + 1];
+  const modulePath = path.join(nodeModules, moduleName);
+
+  return { modulePath, moduleName };
+}
+
 function patchedLoad(orig) {
   const processed = new Set<string>();
   // tslint:disable-next-line:only-arrow-functions
@@ -85,22 +99,37 @@ function patchedLoad(orig) {
         log('info', 'already processed', request);
         throw err;
       }
+
+      let resolved: string;
+
+      try {
+        resolved = reqResolve.sync(request, {
+          basedir: path.dirname(parent.id),
+          extensions: ['.js', '.json', '.node'],
+        });
+      } catch (resErr) {
+        // if this happens the module has been previously borked by yarn and is incomplete.
+        // Why is it doing this???
+        const fullPath = path.resolve(path.dirname(parent.id), request);
+        const { modulePath: mp } = splitNodePath(fullPath);
+
+        if (mp === undefined) {
+          throw err;
+        }
+
+        const instProc = spawnSync('yarn.cmd', ['install'], { cwd: mp });
+        resolved = reqResolve.sync(request, {
+          basedir: path.dirname(parent.id),
+          extensions: ['.js', '.json', '.node'],
+        });
+      }
+
       processed.add(request);
-
-      const resolved = reqResolve.sync(request, {
-        basedir: path.dirname(parent.id),
-        extensions: ['.js', '.json', '.node'],
-      });
-
-      const segments = resolved.split(path.sep);
-      const modulesIdx = segments.indexOf('node_modules');
-      if (modulesIdx === -1) {
+      const { modulePath, moduleName } = splitNodePath(resolved);
+      if (modulePath === undefined) {
         throw err;
       }
 
-      const nodeModules = segments.slice(0, modulesIdx + 1).join(path.sep);
-      const moduleName = segments[modulesIdx + 1];
-      const modulePath = path.join(nodeModules, moduleName);
       const versionString = `${process.platform}-${process.arch}-${process.versions.modules}`;
       const abiPath = path.resolve(modulePath, 'bin', versionString);
       const buildPath = path.join(modulePath, 'build', 'Release');
@@ -148,7 +177,7 @@ function patchedLoad(orig) {
         },
       };
 
-      let nodeGyp = path.join(nodeModules, '.bin', 'node-gyp');
+      let nodeGyp = path.resolve(modulePath, '..', '.bin', 'node-gyp');
       if (process.platform === 'win32') {
         nodeGyp = nodeGyp + '.cmd';
       }

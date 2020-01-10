@@ -2,7 +2,16 @@ import { IncomingMessage } from 'http';
 import { get } from 'https';
 import * as url from 'url';
 
-export function jsonRequest<T>(apiURL: string): Promise<T> {
+export interface IRequestOptions {
+  expectedContentType?: RegExp;
+  encoding?: string;
+}
+
+export function rawRequest(apiURL: string, options?: IRequestOptions): Promise<string> {
+  if (options === undefined) {
+    options = {};
+  }
+
   return new Promise((resolve, reject) => {
     get({
       ...url.parse(apiURL),
@@ -14,7 +23,8 @@ export function jsonRequest<T>(apiURL: string): Promise<T> {
       let err: string;
       if (statusCode !== 200) {
         err = `Request Failed. Status Code: ${statusCode}`;
-      } else if (!/^application\/json/.test(contentType)) {
+      } else if ((options.expectedContentType !== undefined)
+                 && !options.expectedContentType.test(contentType)) {
         err = `Invalid content-type ${contentType}`;
       }
 
@@ -23,12 +33,14 @@ export function jsonRequest<T>(apiURL: string): Promise<T> {
         return reject(new Error(err));
       }
 
-      res.setEncoding('utf8');
+      if (options.encoding !== undefined) {
+        res.setEncoding(options.encoding);
+      }
       let rawData = '';
       res.on('data', (chunk) => { rawData += chunk; });
       res.on('end', () => {
         try {
-          resolve(JSON.parse(rawData));
+          resolve(rawData);
         } catch (e) {
           reject(e);
         }
@@ -38,4 +50,12 @@ export function jsonRequest<T>(apiURL: string): Promise<T> {
         return reject(err);
       });
   });
+}
+
+export function jsonRequest<T>(apiURL: string): Promise<T> {
+  return rawRequest(apiURL, {
+    expectedContentType: /^application\/json/,
+    encoding: 'utf-8',
+  })
+  .then(rawData => JSON.parse(rawData));
 }

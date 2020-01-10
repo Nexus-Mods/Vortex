@@ -44,6 +44,8 @@ import walk from './walk';
 
 import { runElevated, runThreaded } from 'vortex-run';
 
+export * from './network';
+
 export {
   Archive,
   ArgumentInvalid,
