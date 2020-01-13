@@ -90,7 +90,7 @@ class FileAssembler {
             // works on windows and linux.
             // I'll assume it means it will work on MacOS too...
             : this.writeAsync(data, offset))
-        .then((bytesWritten: any) => {
+        .then(({ bytesWritten, buffer }) => {
           this.mWritten += bytesWritten;
           const now = Date.now();
           if ((this.mWritten - this.mLastFlushedSize > FileAssembler.MIN_FLUSH_SIZE)

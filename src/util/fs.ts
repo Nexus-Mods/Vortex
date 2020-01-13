@@ -375,7 +375,10 @@ const readFileAsync: (...args: any[]) => PromiseBB<any> = genWrapperAsync(fsBB.r
 const statAsync: (path: string) => PromiseBB<fs.Stats> = genWrapperAsync(fsBB.statAsync);
 const symlinkAsync: (srcpath: string, dstpath: string, type?: string) => PromiseBB<void> = genWrapperAsync(fsBB.symlinkAsync);
 const utimesAsync: (path: string, atime: number, mtime: number) => PromiseBB<void> = genWrapperAsync(fsBB.utimesAsync);
-const writeAsync: (...args: any[]) => PromiseBB<void> = genWrapperAsync(fsBB.writeAsync);
+// fs.write and fs.read don't promisify correctly because it has two return values. fs-extra already works around this in their
+// promisified api so no reason to reinvent the wheel (also we want the api to be compatible)
+const writeAsync: (...args: any[]) => PromiseBB<void> = genWrapperAsync(fs.write);
+const readAsync: (...args: any[]) => PromiseBB<void> = genWrapperAsync(fs.read);
 const writeFileAsync: (file: string, data: any, options?: fs.WriteFileOptions) => PromiseBB<void> = genWrapperAsync(fsBB.writeFileAsync);
 // tslint:enable:max-line-length
 
@@ -389,6 +392,7 @@ export {
   moveAsync,
   openAsync,
   readdirAsync,
+  readAsync,
   readFileAsync,
   statAsync,
   symlinkAsync,
