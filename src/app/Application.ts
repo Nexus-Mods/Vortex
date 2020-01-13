@@ -5,10 +5,12 @@ import {IState} from '../types/IState';
 import commandLine, {IParameters} from '../util/commandLine';
 import { DocumentsPathMissing, ProcessCanceled, UserCanceled } from '../util/CustomErrors';
 import * as develT from '../util/devel';
-import { getVisibleWindow, setOutdated, setWindow,
+import { didIgnoreError, disableErrorReport, getVisibleWindow, setOutdated, setWindow,
          terminate, toError } from '../util/errorHandling';
 import ExtensionManagerT from '../util/ExtensionManager';
+import { validateFiles } from '../util/fileValidation';
 import * as fs from '../util/fs';
+import getVortexPath from '../util/getVortexPath';
 import lazyRequire from '../util/lazyRequire';
 import LevelPersist, { DatabaseLocked } from '../util/LevelPersist';
 import {log, setLogPath, setupLogging} from '../util/log';
@@ -91,6 +93,9 @@ class Application {
       this.mExtensions.setupApiMain(this.mStore, webContents);
       setOutdated(this.mExtensions.getApi());
       this.applyArguments(this.mArgs);
+      if (didIgnoreError()) {
+        webContents.send('did-ignore-error', true);
+      }
       return Promise.resolve();
     });
   }
@@ -191,6 +196,7 @@ class Application {
     let splash: SplashScreenT;
 
     return this.testUserEnvironment()
+        .then(() => this.validateFiles())
         .then(() => {
           log('info', '--------------------------');
           log('info', 'Vortex Version', app.getVersion());
@@ -747,8 +753,39 @@ class Application {
     }
   }
 
+  private validateFiles(): Promise<void> {
+    disableErrorReport();
+    return Promise.resolve(validateFiles(getVortexPath('assets_unpacked')))
+      .then(validation => {
+        if ((validation.changed.length > 0)
+            || (validation.missing.length > 0)) {
+          log('info', 'Files were manipulated', validation);
+          return dialog.showMessageBox(null, {
+            type: 'error',
+            title: 'Installation corrupted',
+            message: 'Your Vortex installation has been corrupted. '
+              + 'This could be the result of a virus or manual manipulation. '
+              + 'Vortex might still appear to work (partially) but we suggest '
+              + 'you reinstall it.',
+            noLink: true,
+            buttons: ['Quit', 'Ignore'],
+          }).then(dialogReturn => {
+            const { response } = dialogReturn;
+            if (response === 0) {
+              app.quit();
+            } else {
+              disableErrorReport();
+              return Promise.resolve();
+            }
+          });
+        } else {
+          return Promise.resolve();
+        }
+      });
+  }
+
   private applyArguments(args: IParameters) {
-    if (args.download) {
+    if (args.download || args.install) {
       const prom: Promise<void> = (this.mMainWindow === undefined)
         // give the main instance a moment to fully start up
         ? Promise.delay(2000)
@@ -756,7 +793,8 @@ class Application {
 
       prom.then(() => {
         if (this.mMainWindow !== undefined) {
-          this.mMainWindow.sendExternalURL(args.download);
+          this.mMainWindow.sendExternalURL(args.download || args.install,
+                                           args.install !== undefined);
         } else {
           // TODO: this instructions aren't very correct because we know Vortex doesn't have
           // a UI and needs to be shut down from the task manager

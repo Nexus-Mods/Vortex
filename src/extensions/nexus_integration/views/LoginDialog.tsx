@@ -1,4 +1,5 @@
 import { showDialog } from '../../../actions/notifications';
+import FormFeedback from '../../../controls/FormFeedback';
 import Icon from '../../../controls/Icon';
 import Spinner from '../../../controls/Spinner';
 import { Button, IconButton } from '../../../controls/TooltipControls';
@@ -78,11 +79,20 @@ function LoginInProgress(props: ILoginInProgressProps) {
 }
 
 function nop() {
+  // nop
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
 
-class LoginDialog extends ComponentEx<IProps, { troubleshoot: boolean, apiKeyInput: string, requested: boolean }> {
+interface ILoginDialogState {
+  troubleshoot: boolean;
+  apiKeyInput: string;
+  requested: boolean;
+}
+
+class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
+  private mKeyValidation = /^[a-zA-Z0-9\-]*$/;
+
   constructor(props: IProps) {
     super(props);
 
@@ -113,7 +123,12 @@ class LoginDialog extends ComponentEx<IProps, { troubleshoot: boolean, apiKeyInp
     const { t, loginId, visible } = this.props;
 
     return (
-      <Modal backdrop='static' id='login-dialog' show={visible || (loginId !== undefined)} onHide={this.hide}>
+      <Modal
+        backdrop='static'
+        id='login-dialog'
+        show={visible || (loginId !== undefined)}
+        onHide={this.hide}
+      >
         <Modal.Body>
           <IconButton
             className='close-button'
@@ -188,6 +203,9 @@ class LoginDialog extends ComponentEx<IProps, { troubleshoot: boolean, apiKeyInp
   private renderTroubleshoot() {
     const { apiKeyInput } = this.state;
     const { t, loginError } = this.props;
+
+    const keyValid = this.mKeyValidation.test(apiKeyInput);
+
     return (
       <div className='login-content'>
         <Icon
@@ -221,13 +239,17 @@ class LoginDialog extends ComponentEx<IProps, { troubleshoot: boolean, apiKeyInp
              + 'Of these buttons, click the right-most one (Copy API Key).')}
           </li>
           <li>
-            <FormControl
-              componentClass='textarea'
-              style={{display: 'inline', verticalAlign: 'top'}}
-              placeholder={t('Paste that api key into this input field')}
-              value={apiKeyInput}
-              onChange={this.updateAPIKey}
-            />
+            <FormGroup controlId='' validationState={keyValid ? null : 'error'}>
+              <FormControl
+                componentClass='textarea'
+                style={{display: 'inline', verticalAlign: 'top'}}
+                placeholder={t('Paste that api key into this input field')}
+                value={apiKeyInput}
+                onChange={this.updateAPIKey}
+              />
+              <FormFeedback />
+              {keyValid ? null : <ControlLabel>{t('Invalid key')}</ControlLabel>}
+            </FormGroup>
           </li>
           <li>
             {t('Then press')}
@@ -235,6 +257,7 @@ class LoginDialog extends ComponentEx<IProps, { troubleshoot: boolean, apiKeyInp
             <Button
               onClick={this.applyKey}
               tooltip={t('Save API Key')}
+              // disabled={!keyValid}
             >
               {t('Save')}
             </Button>
@@ -285,7 +308,7 @@ class LoginDialog extends ComponentEx<IProps, { troubleshoot: boolean, apiKeyInp
       return;
     }
     this.renderConfirmDialog().catch(err => {
-      log('error', 'failed to show dialog', err.message)
+      log('error', 'failed to show dialog', err.message);
     });
   }
 
@@ -298,7 +321,8 @@ class LoginDialog extends ComponentEx<IProps, { troubleshoot: boolean, apiKeyInp
       clipboard.writeText(getPageURL(this.props.loginId));
     } catch (err) {
       // apparently clipboard gets lazy-loaded and that load may fail for some reason
-      this.context.api.showErrorNotification('Failed to access clipboard', err, { allowReport: false });
+      this.context.api.showErrorNotification('Failed to access clipboard',
+                                             err, { allowReport: false });
     }
   }
 

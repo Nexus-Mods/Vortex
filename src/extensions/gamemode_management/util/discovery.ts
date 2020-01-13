@@ -22,7 +22,7 @@ import turbowalk from 'turbowalk';
 const app = appIn || remote.app;
 
 export type DiscoveredCB = (gameId: string, result: IDiscoveryResult) => void;
-export type DiscoveredToolCB = (toolId: string, result: IDiscoveredTool) => void;
+export type DiscoveredToolCB = (gameId: string, result: IDiscoveredTool) => void;
 
 interface IFileEntry {
   fileName: string;
@@ -45,13 +45,12 @@ function quickDiscoveryTools(gameId: string, tools: ITool[], onDiscoveredTool: D
       if (toolPath) {
         autoGenIcon(tool, toolPath, gameId)
           .then(() => {
-            onDiscoveredTool(tool.id, {
+            onDiscoveredTool(gameId, {
               ...tool,
-              path: toolPath,
+              path: path.join(toolPath, tool.executable(toolPath)),
               hidden: false,
-              parameters: [],
+              parameters: tool.parameters || [],
               custom: false,
-              workingDirectory: toolPath,
             });
           });
       } else {
@@ -63,13 +62,12 @@ function quickDiscoveryTools(gameId: string, tools: ITool[], onDiscoveredTool: D
             if (resolvedPath) {
               autoGenIcon(tool, resolvedPath, gameId)
                 .then(() => {
-                  onDiscoveredTool(tool.id, {
+                  onDiscoveredTool(gameId, {
                     ...tool,
-                    path: resolvedPath,
+                    path: path.join(resolvedPath, tool.executable(resolvedPath)),
                     hidden: false,
-                    parameters: [],
+                    parameters: tool.parameters || [],
                     custom: false,
-                    workingDirectory: resolvedPath,
                   });
                 });
             }

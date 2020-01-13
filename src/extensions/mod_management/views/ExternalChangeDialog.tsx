@@ -179,11 +179,11 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
                     + '"Revert" will restore the original file from the mod directory)'),
           'refchange', rc)}
         {this.renderChangedSources(t('Source files were deleted '
-          + '("Save" will remove the files permanenly, "Revert" will restore them)'),
+          + '("Save" will remove the corresponding files permanenly, "Revert" will restore them)'),
           'srcdeleted', sd)}
         {this.renderChangedSources(t('Links were deleted '
-          + '("Save" will remove the files permanently, "Revert" will restore them)'),
-          'deleted', d)}
+          + '("Save" will remove the corresponding source files permanently, '
+          + '"Revert" will recreate the links)'), 'deleted', d)}
       </div>
     );
   }
@@ -203,7 +203,8 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
           + '("Save" will remove the files permanenly, "Revert" will restore them)'),
           'srcdeleted', srcDeleted)}
         {this.renderChangedFile(t('Links were deleted'
-          + '("Save" will remove the files permanently, "Revert" will restore them)'),
+          + '("Save" will delete the corresponding source files, '
+          + '"Revert" will recreate the links)'),
           'deleted', deleted)}
       </div>
     );

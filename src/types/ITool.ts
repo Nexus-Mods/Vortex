@@ -52,13 +52,12 @@ export interface ITool {
   /**
    * determine installation path of this tool/game
    * This function should return quickly and, if it returns a value,
-   * it should definitively be the valid game path. Usually this function
+   * it should definitively be the valid tool/game path. Usually this function
    * will query the path from the registry or from steam.
    * This function may return a promise and it should do that if it's doing I/O
    *
    * This may be left undefined but then the tool/game can only be discovered
    * by searching the disk which is slow and only happens manually.
-   *
    */
   queryPath?: () => string | Promise<string>;
 
@@ -134,4 +133,16 @@ export interface ITool {
    * done. Defaults to false
    */
   exclusive?: boolean;
+
+  /**
+   * if set to true the process tool will be launched detached, that is: not part of Vortex's
+   * process hierarchy
+   */
+  detach?: boolean;
+
+  /**
+   * what to do with Vortex when starting the tool. Default is to do nothing. 'hide' will minimize
+   * Vortex and 'close' will make Vortex quit as soon as the tool is started.
+   */
+  onStart?: 'hide' | 'hide_recover' | 'close';
 }

@@ -26,7 +26,7 @@ import {addModRule, setFileOverride, setModAttribute, setModType} from './action
 import {IDependency} from './types/IDependency';
 import { IInstallContext } from './types/IInstallContext';
 import { IInstallResult, IInstruction, InstructionType } from './types/IInstallResult';
-import {IMod} from './types/IMod';
+import { IMod } from './types/IMod';
 import { IModInstaller } from './types/IModInstaller';
 import { InstallFunc } from './types/InstallFunc';
 import { ISupportedResult, TestSupported } from './types/TestSupported';
@@ -413,7 +413,15 @@ class InstallManager {
                     };
               }
               if (installContext !== undefined) {
-                installContext.reportError('Installation failed', message, undefined, replace);
+                const browserAssistantMsg = 'The installer has failed due to an external 3rd '
+                  + 'party application you have installed on your system named '
+                  + '"Browser Assistant". This application inserts itself globally '
+                  + 'and breaks any other application that uses the same libraries as it does.\n\n'
+                  + 'To use Vortex, please uninstall "Browser Assistant".';
+                const errorMessage = (typeof err === 'string') ? err : err.message;
+                (!this.isBrowserAssistantError(errorMessage))
+                  ? installContext.reportError('Installation failed', message, undefined, replace)
+                  : installContext.reportError('Installation failed', browserAssistantMsg, false);
               }
               if (callback !== undefined) {
                 callback(err, modId);
@@ -428,6 +436,11 @@ class InstallManager {
           installContext.stopIndicator(mod);
         }
       })));
+  }
+
+  private isBrowserAssistantError(error: string): boolean {
+    return (process.platform === 'win32')
+        && (error.indexOf('Roaming\\Browser Assistant') !== -1);
   }
 
   private isCritical(error: string): boolean {
@@ -1051,12 +1064,77 @@ class InstallManager {
       .then(() => undefined);
   }
 
-  private installDependencies(
-    rules: IRule[],
-    installPath: string,
-    profile: IProfile,
-    installContext: InstallContext,
-    api: IExtensionApi): Promise<void> {
+  private installDependencies(rules: IRule[],
+                              installPath: string,
+                              profile: IProfile,
+                              installContext: InstallContext,
+                              api: IExtensionApi): Promise<void> {
+    const notificationId = `${installPath}_activity`;
+    api.sendNotification({
+      id: notificationId,
+      type: 'activity',
+      message: 'Checking dependencies',
+    });
+    return gatherDependencies(rules, api)
+      .then((dependencies: IDependency[]) => {
+        api.dismissNotification(notificationId);
+
+        if (dependencies.length === 0) {
+          return Promise.resolve();
+        }
+
+        const requiredDownloads =
+          dependencies.reduce((prev: number, current: IDependency) => {
+            return prev + (current.download ? 0 : 1);
+          }, 0);
+
+        let bbcode = '';
+
+        if (dependencies.length > 0) {
+          bbcode += '{{modName}} has unresolved dependencies. {{count}} mods have to be '
+                  + 'installed, {{dlCount}} of them have to be downloaded first.<br/><br/>';
+        }
+
+        if (dependencies.length > 0) {
+          bbcode += '[color=red]'
+            + '{{modName}} has unresolved dependencies that could not be found automatically. '
+            + 'Please install them manually.'
+            + '[/color]';
+        }
+
+        const actions = dependencies.length > 0
+          ? [
+            { label: 'Don\'t install' },
+            { label: 'Install' },
+          ]
+          : [ { label: 'Close' } ];
+
+        return api.store.dispatch(
+          showDialog('question', 'Install Dependencies', { bbcode, parameters: {
+            modName: name,
+            count: dependencies.length,
+            dlCount: requiredDownloads,
+          } }, actions)).then(result => {
+            if (result.action === 'Install') {
+              return this.doInstallDependencies(dependencies, profile, api);
+            } else {
+              return Promise.resolve();
+            }
+          });
+      })
+      .catch((err) => {
+        api.dismissNotification(notificationId);
+        api.showErrorNotification('Failed to check dependencies', err);
+      });
+  }
+
+  private installRecommendationsImpl(api: IExtensionApi,
+                                     profile: IProfile,
+                                     modId: string,
+                                     name: string,
+                                     rules: IRule[],
+                                     installPath: string)
+                                     : Promise<void> {
     const notificationId = `${installPath}_activity`;
     api.sendNotification({
       id: notificationId,

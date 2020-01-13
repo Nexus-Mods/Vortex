@@ -1,10 +1,9 @@
 import { log } from '../util/log';
-
 import * as fs from './fs';
+import { getSafe } from './storeHelper';
 
 import Promise from 'bluebird';
 import * as path from 'path';
-import { getSafe } from './storeHelper';
 
 export type Normalize = (input: string) => string;
 

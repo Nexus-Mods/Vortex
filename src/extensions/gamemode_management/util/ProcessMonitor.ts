@@ -6,6 +6,7 @@ import { IState } from '../../../types/IState';
 import { log } from '../../../util/log';
 import { currentGame, currentGameDiscovery } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
+import { setdefault } from '../../../util/util';
 
 import { BrowserWindow, remote } from 'electron';
 import * as path from 'path';
@@ -74,23 +75,30 @@ class ProcessMonitor {
 
   private doCheck(): void {
     const processes = winapi.GetProcessList();
-    const runningExes: { [exeId: string]: winapi.ProcessEntry } =
+
+    const byPid: { [pid: number]: winapi.ProcessEntry } = processes.reduce((prev, proc) => {
+      prev[proc.processID] = proc;
+      return prev;
+    }, {});
+
+    const byName: { [exeId: string]: winapi.ProcessEntry[] } =
       processes.reduce((prev, entry) => {
-        prev[entry.exeFile.toLowerCase()] = entry;
+        setdefault(prev, entry.exeFile.toLowerCase(), []).push(entry);
         return prev;
       }, {});
     const state = this.mStore.getState();
 
-    // stop tools no longer running
-    Object.keys(state.session.base.toolsRunning)
-      .forEach(exeId => {
-        if (runningExes[exeId] === undefined) {
-          this.mStore.dispatch(setToolStopped(exeId));
-        }
-      });
+    const vortexPid = process.pid;
 
-    // now mark running or update tools that are running
-    //   this feels a bit complicated...
+    const isChildProcess = (proc: winapi.ProcessEntry): boolean => {
+      if ((proc === undefined) || (proc.parentProcessID === 0)) {
+        return false;
+      } else {
+        return (proc.parentProcessID === vortexPid)
+            || isChildProcess(byPid[proc.parentProcessID]);
+      }
+    };
+
     const game = currentGame(state);
     const gameDiscovery = currentGameDiscovery(state);
     const gameExe = getSafe(gameDiscovery, ['executable'], undefined)
@@ -103,27 +111,46 @@ class ProcessMonitor {
       return;
     }
 
-    const update = (exePath: string, exclusive: boolean) => {
+    const update = (exePath: string, exclusive: boolean, considerDetached: boolean) => {
       const exeId = makeExeId(exePath);
-      const exeRunning = runningExes[exeId];
+      const knownRunning = state.session.base.toolsRunning[exeId];
+      const exeRunning = byName[exeId];
+
       if (exeRunning === undefined) {
+        // nothing with a matching exe name is running
+        if (knownRunning !== undefined) {
+          this.mStore.dispatch(setToolStopped(exePath));
+        }
         return;
       }
 
-      const modules = winapi.GetModuleList((runningExes[exeId] as any).processID);
-
-      if ((modules.length === 0) || modules[0].exePath !== exePath) {
+      if ((knownRunning !== undefined) && (byPid[knownRunning.pid] !== undefined)) {
+        // we already know this tool is running and the corresponding process is still active
         return;
       }
 
-      if ((state.session.base.toolsRunning[exeId] === undefined)
-          || (state.session.base.toolsRunning[exeId].pid !== exeRunning.processID)) {
-        this.mStore.dispatch(setToolPid(exePath, exeRunning.processID, exclusive));
+      // at this point the tool is running (or an exe with the same name is)
+      // and we don't know about it
+
+      const candidates = considerDetached
+        ? exeRunning
+        : exeRunning.filter(isChildProcess);
+      const match = candidates.find(exe => {
+        const modules = winapi.GetModuleList(exe.processID);
+
+        return (modules.length > 0)
+            && (modules[0].exePath.toLowerCase() === exePath.toLowerCase());
+      });
+
+      if (match !== undefined) {
+        this.mStore.dispatch(setToolPid(exePath, match.processID, exclusive));
+      } else if (knownRunning !== undefined) {
+        this.mStore.dispatch(setToolStopped(exePath));
       }
     };
 
     const gameExePath = path.join(gamePath, gameExe);
-    update(gameExePath, true);
+    update(gameExePath, true, true);
 
     const discoveredTools: { [toolId: string]: IDiscoveredTool } =
       getSafe(state, ['settings', 'gameMode', 'discovered', game.id, 'tools'], {});
@@ -132,7 +159,7 @@ class ProcessMonitor {
       if (discoveredTools[toolId].path === undefined) {
         return;
       }
-      update(discoveredTools[toolId].path, discoveredTools[toolId].exclusive || false);
+      update(discoveredTools[toolId].path, discoveredTools[toolId].exclusive || false, false);
     });
   }
 }

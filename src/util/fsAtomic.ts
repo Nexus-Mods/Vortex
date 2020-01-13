@@ -7,7 +7,7 @@ import { file } from 'tmp';
 
 export function checksum(input: Buffer): string {
   return createHash('md5')
-    .update(input)
+    .update(input || '')
     .digest('hex');
 }
 
@@ -26,11 +26,13 @@ export function fileMD5(filePath: string): Promise<string> {
   });
 }
 
-export function writeFileAtomic(filePath: string, input: string | Buffer) {
+export function writeFileAtomic(filePath: string, input: string | Buffer): Promise<void> {
   return writeFileAtomicImpl(filePath, input, 3);
 }
 
-function writeFileAtomicImpl(filePath: string, input: string | Buffer, attempts: number) {
+function writeFileAtomicImpl(filePath: string,
+                             input: string | Buffer,
+                             attempts: number): Promise<void> {
   const stackErr = new Error();
   let cleanup: () => void;
   let tmpPath: string;
@@ -38,50 +40,64 @@ function writeFileAtomicImpl(filePath: string, input: string | Buffer, attempts:
     ? input
     : Buffer.from(input);
 
-  const hash = checksum(buf);
-  return new Promise<number>((resolve, reject) => {
-    file({ template: `${filePath}.XXXXXX.tmp` },
-         (err: any, genPath: string, fd: number, cleanupCB: () => void) => {
-      if (err) {
-        return reject(err);
-      }
-      cleanup = cleanupCB;
-      tmpPath = genPath;
-      resolve(fd);
-    });
-  })
-  .then(fd => {
-    return fs.writeAsync(fd, buf, 0, buf.byteLength, 0)
-      .then(() => fs.fsyncAsync(fd).catch(() => Promise.resolve()))
-      .then(() => fs.closeAsync(fd));
-  })
-  .then(() => fs.readFileAsync(tmpPath))
-  .then(data => (checksum(data) !== hash)
-      ? attempts > 0
-        // retry
-        ? writeFileAtomicImpl(filePath, input, attempts - 1)
-        : Promise.reject(new Error('Write failed, checksums differ'))
-      : Promise.resolve())
-  .then(() => fs.renameAsync(tmpPath, filePath)
-    .then(() => {
-      cleanup = undefined;
-    })
-    .catch({ code: 'EEXIST' }, () =>
-      // renameAsync is supposed to overwrite so this is likely to fail as well
-      fs.removeAsync(filePath).then(() => fs.renameAsync(tmpPath, filePath))))
-  .catch(err => {
-    err.stack = err.message + '\n' + stackErr.stack;
-    return Promise.reject(err);
-  })
-  .finally(() => {
+  const callCleanup = () => {
     if (cleanup !== undefined) {
       try {
         cleanup();
       } catch (err) {
         log('error', 'failed to clean up temporary file', err.message);
       }
+
+      cleanup = undefined;
     }
-  });
+  };
+
+  const hash = checksum(buf);
+  let fd = -1;
+  return new Promise<number>((resolve, reject) => {
+    file({ template: `${filePath}.XXXXXX.tmp` },
+      (err: any, genPath: string, fdIn: number, cleanupCB: () => void) => {
+        if (err) {
+          return reject(err);
+        }
+        cleanup = cleanupCB;
+        tmpPath = genPath;
+        fd = fdIn;
+        resolve();
+      });
+  })
+    .then(() => fs.writeAsync(fd, buf, 0, buf.byteLength, 0)
+      .then(() => fs.fsyncAsync(fd).catch(() => Promise.resolve()))
+      .then(() => fs.closeAsync(fd).catch(() => Promise.resolve())))
+    .then(() => fs.readFileAsync(tmpPath))
+    .catch({ code: 'EBADF' }, () => {
+      log('warn', 'failed to access temporary file', {
+        filePath,
+        fd,
+      });
+      return Promise.resolve(undefined);
+    })
+    .then(data => {
+      if ((data === undefined) || (checksum(data) !== hash)) {
+        callCleanup();
+        return (attempts > 0)
+          // retry
+          ? writeFileAtomicImpl(filePath, input, attempts - 1)
+          : Promise.reject(new Error('Write failed, checksums differ'));
+      } else {
+        return fs.renameAsync(tmpPath, filePath)
+          .catch({ code: 'EEXIST' }, () =>
+            // renameAsync is supposed to overwrite so this is likely to fail as well
+            fs.removeAsync(filePath).then(() => fs.renameAsync(tmpPath, filePath)));
+      }
+    })
+    .catch(err => {
+      err.stack = err.message + '\n' + stackErr.stack;
+      return Promise.reject(err);
+    })
+    .finally(() => {
+      callCleanup();
+    });
 }
 
 /**

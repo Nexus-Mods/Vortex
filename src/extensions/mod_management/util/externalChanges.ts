@@ -8,7 +8,9 @@ import { getSafe } from '../../../util/storeHelper';
 import { setdefault, truthy } from '../../../util/util';
 
 import { showExternalChanges } from '../actions/session';
-import { IFileEntry } from '../types/IFileEntry';
+import { FileAction, IFileEntry } from '../types/IFileEntry';
+
+import { MERGED_PATH } from '../modMerging';
 
 import Promise from 'bluebird';
 import * as path from 'path';
@@ -117,6 +119,42 @@ function applyFileActions(api: IExtensionApi,
     .then(() => lastDeployment);
 }
 
+function defaultAction(changeType: string): FileAction {
+  switch (changeType) {
+    case 'refchange': return 'newest';
+    case 'valchange': return 'nop';
+    case 'deleted': return 'delete';
+    case 'srcdeleted': return 'drop';
+    default: throw new Error('invalid file change ' + changeType);
+  }
+}
+
+export function changeToEntry(modTypeId: string, change: IFileChange): IFileEntry {
+  return {
+    modTypeId,
+    filePath: change.filePath,
+    source: change.source,
+    type: change.changeType,
+    action: defaultAction(change.changeType),
+    sourceModified: change.sourceTime,
+    destModified: change.destTime,
+  };
+}
+
+function defaultMergedAction(typeId: string, input: IFileChange): IFileEntry {
+  const action: FileAction = {
+    refchange: 'drop',
+    valchange: 'nop',
+    deleted: 'restore',
+    srcdeleted: 'drop',
+  }[input.changeType] as FileAction;
+
+  return {
+    ...changeToEntry(typeId, input),
+    action,
+  };
+}
+
 function checkForExternalChanges(api: IExtensionApi,
                                  activator: IDeploymentMethod,
                                  profileId: string,
@@ -160,12 +198,35 @@ export function dealWithExternalChanges(api: IExtensionApi,
                                         lastDeployment: { [typeId: string]: IDeployedFile[] }) {
   return checkForExternalChanges(api, activator, profileId, stagingPath, modPaths, lastDeployment)
     .then((changes: { [typeId: string]: IFileChange[] }) => {
-      const count = Object.keys(changes).length;
+      const automaticActions: IFileEntry[] = [];
+
+      const userChanges = Object.keys(changes).reduce((prev, typeId) => {
+        const { merged, rest } = changes[typeId].reduce((prevInner, change) => {
+          if (path.basename(change.source) === MERGED_PATH) {
+            prevInner.merged.push(change);
+          } else {
+            prevInner.rest.push(change);
+          }
+          return prevInner;
+        }, { merged: [], rest: [] });
+
+        if (merged.length > 0) {
+          automaticActions.push(...merged.map(change => defaultMergedAction(typeId, change)));
+        }
+
+        if (rest.length > 0) {
+          prev[typeId] = rest;
+        }
+        return prev;
+      }, {});
+
+      const count = Object.keys(userChanges).length;
       if (count > 0) {
-        log('info', 'found external changes', { count });
-        return api.store.dispatch(showExternalChanges(changes));
+        log('info', 'found external changes', { automated: automaticActions.length, user: count });
+        return api.store.dispatch(showExternalChanges(userChanges))
+          .then(userActions => [].concat(automaticActions, userActions));
       } else {
-        return Promise.resolve([]);
+        return Promise.resolve(automaticActions);
       }
     })
     .then((fileActions: IFileEntry[]) => Promise.mapSeries(Object.keys(lastDeployment),

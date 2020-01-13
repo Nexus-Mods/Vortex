@@ -13,6 +13,7 @@ import { IDiscoveredTool } from '../../../types/IDiscoveredTool';
  * @interface IDiscoveryResult
  */
 export interface IDiscoveryResult {
+  // base path of the game (NOT including the executable name)
   path?: string;
   pathSetManually?: boolean;
   tools?: {

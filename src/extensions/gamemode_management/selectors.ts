@@ -5,6 +5,8 @@ import {getSafe} from '../../util/storeHelper';
 import {IDiscoveryResult} from './types/IDiscoveryResult';
 import {IGameStored} from './types/IGameStored';
 
+import { SITE_ID } from './constants';
+
 import createCachedSelector from 're-reselect';
 import { createSelector } from 'reselect';
 
@@ -44,6 +46,9 @@ export const discoveryByGame =
   )((state, gameId) => gameId);
 
 export function gameName(state: any, gameId: string): string {
+  if (gameId === SITE_ID) {
+    return 'Tools & Extensions';
+  }
   const fromDiscovery = getSafe(
       state, ['settings', 'gameMode', 'discovered', gameId, 'name'], undefined);
   if (fromDiscovery !== undefined) {

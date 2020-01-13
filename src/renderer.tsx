@@ -64,19 +64,21 @@ import { setOutdated, terminate, toError } from './util/errorHandling';
 import ExtensionManager from './util/ExtensionManager';
 import { ExtensionProvider } from './util/ExtensionProvider';
 import GlobalNotifications from './util/GlobalNotifications';
-import getI18n, { fallbackTFunc, i18n, TFunction } from './util/i18n';
+import getI18n, { fallbackTFunc, TFunction } from './util/i18n';
 import { log } from './util/log';
 import { initApplicationMenu } from './util/menu';
 import { showError } from './util/message';
 import './util/monkeyPatching';
 import { reduxSanity, StateError } from './util/reduxSanity';
+import LoadingScreen from './views/LoadingScreen';
 import MainWindow from './views/MainWindow';
 
 import Promise from 'bluebird';
 import { ipcRenderer, remote, webFrame } from 'electron';
 import { forwardToMain, getInitialStateRenderer, replayActionRenderer } from 'electron-redux';
 import { EventEmitter } from 'events';
-import I18next from 'i18next';
+import * as fs from 'fs-extra';
+import * as I18next from 'i18next';
 import * as nativeErr from 'native-errors';
 import * as React from 'react';
 import { DragDropContextProvider } from 'react-dnd';
@@ -92,6 +94,7 @@ import crashDumpX from 'crash-dump';
 
 import { setLanguage } from './actions';
 import { ThunkStore } from './types/IExtensionContext';
+import { IState } from './types/IState';
 import { UserCanceled } from './util/CustomErrors';
 import {} from './util/extensionRequire';
 import { reduxLogger } from './util/reduxLogger';
@@ -295,10 +298,17 @@ const startupPromise = new Promise((resolve) => startupFinished = resolve);
 // tslint:disable-next-line:no-unused-variable
 const globalNotifications = new GlobalNotifications(extensions.getApi());
 
-ipcRenderer.on('external-url', (event, url) => {
+function startDownloadFromURL(url: string, fileName?: string, install?: boolean) {
+  store.dispatch(addNotification({
+    type: 'info',
+    title: 'Download started',
+    message: fileName,
+    displayMS: 4000,
+  }));
+
   startupPromise
     .then(() => {
-      if (typeof(url) !== 'string') {
+      if (typeof (url) !== 'string') {
         return;
       }
       const protocol = url.split(':')[0];
@@ -306,7 +316,7 @@ ipcRenderer.on('external-url', (event, url) => {
       const handler = extensions.getProtocolHandler(protocol);
       if (handler !== null) {
         log('info', 'handling url', { url });
-        handler(url);
+        handler(url, install);
       } else {
         store.dispatch(addNotification({
           type: 'info',
@@ -316,6 +326,14 @@ ipcRenderer.on('external-url', (event, url) => {
         }));
       }
     });
+}
+
+eventEmitter.on('start-download-url', (url: string, fileName: string) => {
+  startDownloadFromURL(url, fileName);
+});
+
+ipcRenderer.on('external-url', (event, url: string, fileName?: string, install?: boolean) => {
+  startDownloadFromURL(url, fileName, install);
 });
 
 ipcRenderer.on('relay-event', (sender, event, ...args) => {
@@ -360,7 +378,7 @@ store.subscribe(() => {
       return;
     }
     currentLanguage = newLanguage;
-    I18next.changeLanguage(newLanguage, (err, t) => {
+    I18next.default.changeLanguage(newLanguage, (err, t) => {
       if (err !== undefined) {
         if (Array.isArray(err)) {
           // don't show ENOENT errors because it shouldn't really matter
@@ -377,20 +395,54 @@ store.subscribe(() => {
 });
 
 function renderer() {
-  let i18nObj: i18n;
+  let i18n: I18next.i18n;
   let error: Error;
 
   webFrame.setZoomFactor(getSafe(store.getState(), ['settings', 'window', 'zoomFactor'], 1));
 
-  getI18n(store.getState().settings.interface.language)
+  ReactDOM.render(
+    <LoadingScreen extensions={extensions} />,
+    document.getElementById('content'),
+  );
+  ipcRenderer.send('show-window');
+  getI18n('en', () => {
+    const state: IState = store.getState();
+    return Object.values(state.session.extensions.installed)
+      .filter(ext => ext.type === 'translation');
+  })
     .then(res => {
-      ({ i18n: i18nObj, tFunc, error } = res);
-      extensions.setTranslation(i18nObj);
+      ({ i18n, tFunc, error } = res);
+
+      const dynamicExts: Array<{ name: string, path: string }> = extensions.extensions
+        .filter(ext => ext.dynamic)
+        .map(ext => ({ name: ext.name, path: ext.path }));
+
+      return Promise.map(dynamicExts, ext => {
+        const filePath = path.join(ext.path, 'language.json');
+        fs.readFile(filePath, { encoding: 'utf-8' })
+          .then((fileData: string) => {
+            i18n.addResources('en', ext.name, JSON.parse(fileData));
+          })
+          .catch(err => {
+            if (err.code !== 'ENOENT') {
+              // an extension not providing a locale file is ok
+              log('error', 'Failed to load translation', { filePath, error: err.message });
+            }
+          });
+        })
+        .then(() => {
+          extensions.setTranslation(i18n);
+        });
+    }).then(() => {
       if (error !== undefined) {
         showError(store.dispatch, 'failed to initialize localization', error,
                   { allowReport: false });
       }
       return extensions.doOnce();
+    })
+    .then(() => {
+      log('info', 'activating language', { lang: store.getState().settings.interface.language });
+      return i18n.changeLanguage(store.getState().settings.interface.language);
     })
     .then(() => extensions.renderStyle()
       .catch(err => {
@@ -401,7 +453,7 @@ function renderer() {
       }))
     .then(() => {
       extensions.setUIReady();
-      log('debug', 'render with language', { language: i18nObj.language });
+      log('debug', 'render with language', { language: i18n.language });
       const refresh = initApplicationMenu(extensions);
       extensions.getApi().events.on('gamemode-activated', () => refresh());
       startupFinished();
@@ -410,7 +462,7 @@ function renderer() {
       ReactDOM.render((
         <Provider store={store}>
           <DragDropContextProvider backend={HTML5Backend}>
-            <I18nextProvider i18n={i18nObj}>
+            <I18nextProvider i18n={i18n}>
               <ExtensionProvider extensions={extensions}>
                 <MainWindow className='full-height' api={extensions.getApi()} t={tFunc} />
               </ExtensionProvider>
@@ -420,7 +472,7 @@ function renderer() {
       ),
         document.getElementById('content'),
       );
-      ipcRenderer.send('show-window');
+      // ipcRenderer.send('show-window');
     });
 
   // prevent the page from being changed through drag&drop

@@ -3,10 +3,11 @@ import { setSettingsPage, startActivity, stopActivity } from '../../actions/sess
 import {
   IExtensionApi,
   IExtensionContext,
+  IModSourceOptions,
   MergeFunc,
   MergeTest,
 } from '../../types/IExtensionContext';
-import {IGame} from '../../types/IGame';
+import {IGame, IModType} from '../../types/IGame';
 import { INotification } from '../../types/INotification';
 import {IDiscoveryResult, IState} from '../../types/IState';
 import { ITableAttribute } from '../../types/ITableAttribute';
@@ -27,12 +28,14 @@ import {
   currentGameDiscovery,
   installPath,
   installPathForGame,
+  modPathsForGame,
 } from '../../util/selectors';
 import {getSafe} from '../../util/storeHelper';
 import { isChildPath, truthy } from '../../util/util';
 
 import {setDownloadModInfo} from '../download_management/actions/state';
 import {getGame} from '../gamemode_management/util/getGame';
+import { getModType } from '../gamemode_management/util/modTypeExtensions';
 import { setModEnabled } from '../profile_management/actions/profiles';
 import { IProfile, IProfileMod } from '../profile_management/types/IProfile';
 
@@ -62,7 +65,6 @@ import { getAllActivators, getCurrentActivator, getSelectedActivator,
 import { NoDeployment } from './util/exceptions';
 import { dealWithExternalChanges } from './util/externalChanges';
 import { registerAttributeExtractor } from './util/filterModInfo';
-import getModPaths from './util/getModPaths';
 import renderModName from './util/modName';
 import sortMods, { CycleError } from './util/sort';
 import ActivationButton from './views/ActivationButton';
@@ -105,8 +107,11 @@ function registerInstaller(id: string, priority: number,
   installers.push({ id, priority, testSupported, install });
 }
 
-function registerModSource(id: string, name: string, onBrowse: () => void) {
-  modSources.push({ id, name, onBrowse });
+function registerModSource(id: string,
+                           name: string,
+                           onBrowse: () => void,
+                           options?: IModSourceOptions) {
+  modSources.push({ id, name, onBrowse, options });
 }
 
 function registerMerge(test: MergeTest, merge: MergeFunc, modType: string) {
@@ -117,13 +122,17 @@ function bakeSettings(api: IExtensionApi, profile: IProfile, sortedModList: IMod
   return api.emitAndAwait('bake-settings', profile.gameId, sortedModList, profile);
 }
 
-function genSubDirFunc(game: IGame): (mod: IMod) => string {
-  if (typeof(game.mergeMods) === 'boolean') {
-    return game.mergeMods
+function genSubDirFunc(game: IGame, modType: IModType): (mod: IMod) => string {
+  const mergeModsOpt = (modType !== undefined) && (modType.options.mergeMods !== undefined)
+    ? modType.options.mergeMods
+    : game.mergeMods;
+
+  if (typeof(mergeModsOpt) === 'boolean') {
+    return mergeModsOpt
       ? () => ''
       : (mod: IMod) => mod.id;
   } else {
-    return game.mergeMods;
+    return mergeModsOpt;
   }
 }
 
@@ -165,7 +174,7 @@ function deployModType(api: IExtensionApi,
                     filteredModList,
                     activator, lastDeployment,
                     typeId, new Set(mergedFileMap[typeId]),
-                    genSubDirFunc(game),
+                    genSubDirFunc(game, getModType(typeId)),
                     onProgress)
     .then(newActivation => {
       overwritten.push(...filteredModList.filter(mod =>
@@ -406,8 +415,16 @@ function genUpdateModDeployment() {
     // files to begin with)
     let sortedModList: IMod[];
 
+    const userGate = () => {
+      if (game.deploymentGate !== undefined) {
+        return game.deploymentGate();
+      } else {
+        return activator.userGate();
+      }
+    };
+
     // test if anything was changed by an external application
-    return (manual ? Promise.resolve() : activator.userGate())
+    return (manual ? Promise.resolve() : userGate())
       .tap(() => {
         notification.id = api.sendNotification(notification);
       })
@@ -551,6 +568,7 @@ function genModsSourceAttribute(api: IExtensionApi): ITableAttribute<IMod> {
     placement: 'both',
     isSortable: true,
     isToggleable: true,
+    isGroupable: true,
     isDefaultVisible: false,
     supportsMultiple: true,
     calc: mod => {
@@ -561,7 +579,19 @@ function genModsSourceAttribute(api: IExtensionApi): ITableAttribute<IMod> {
       return source !== undefined ? source.name : 'None';
     },
     edit: {
-      choices: () => modSources.map(source => ({ key: source.id, text: source.name })),
+      choices: () => modSources
+        .filter(source => {
+          if ((source.options === undefined) || (source.options.condition === undefined)) {
+            return true;
+          }
+          return source.options.condition();
+        })
+        .map(source => {
+          const icon = ((source.options !== undefined) && (source.options.icon !== undefined))
+            ? source.options.icon
+            : undefined;
+          return { key: source.id, text: source.name, icon };
+        }),
       onChangeValue: (mods: IMod[], newValue: string) => {
         const store = api.store;
         const state = store.getState();
@@ -586,7 +616,7 @@ function genValidActivatorCheck(api: IExtensionApi) {
     }
 
     const gameId = activeGameId(state);
-    const modPaths = getModPaths(state, gameId);
+    const modPaths = modPathsForGame(state, gameId);
 
     if (modPaths === undefined) {
       return resolve(undefined);
@@ -744,7 +774,7 @@ function onDeploySingleMod(api: IExtensionApi) {
       return Promise.resolve();
     }
 
-    const subdir = genSubDirFunc(game);
+    const subdir = genSubDirFunc(game, getModType(mod.type));
     let normalize: Normalize;
     return withActivationLock(() => getNormalizeFunc(dataPath)
       .then(norm => {
@@ -755,7 +785,7 @@ function onDeploySingleMod(api: IExtensionApi) {
       .then(() => (mod !== undefined)
         ? (enable !== false)
           ? activator.activate(modPath, mod.installationPath, subdir(mod), new Set())
-          : activator.deactivate(modPath, subdir(mod))
+          : activator.deactivate(modPath, subdir(mod), mod.installationPath)
         : Promise.resolve())
       .tapCatch(() => {
         if (activator.cancel !== undefined) {

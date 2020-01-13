@@ -1,5 +1,4 @@
 import { IActionDefinition } from '../types/IActionDefinition';
-import { IExtensibleProps } from '../util/ExtensionProvider';
 import { TFunction } from '../util/i18n';
 import { setdefault } from '../util/util';
 
@@ -15,6 +14,7 @@ import * as _ from 'lodash';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
 import { ButtonGroup, MenuItem } from 'react-bootstrap';
+import { IExtensibleProps } from '../types/IExtensionProvider';
 
 export type ButtonType = 'text' | 'icon' | 'both' | 'menu';
 
@@ -31,6 +31,7 @@ export interface IBaseProps {
   icon?: string;
   pullRight?: boolean;
   clickAnywhere?: boolean;
+  showAll?: boolean;
   t: TFunction;
 }
 
@@ -119,8 +120,8 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
     if (collapse) {
       classes.push('btngroup-collapsed');
 
-      const collapsed: IActionDefinition[] = [];
-      const unCollapsed: IActionDefinition[] = [];
+      const collapsed: IActionDefinitionEx[] = [];
+      const unCollapsed: IActionDefinitionEx[] = [];
 
       actions.forEach(action => {
         if ((collapse === 'force')
@@ -223,7 +224,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
     }
   }
 
-  private renderIcon = (icon: IActionDefinition, index: number) => {
+  private renderIcon = (icon: IActionDefinitionEx, index: number) => {
     if ((icon.icon === null) && (icon.component === undefined)) {
       // skip text-only elements in this mode
       return null;
@@ -231,7 +232,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
     return this.renderIconInner(icon, index);
   }
 
-  private renderIcons = (icons: IActionDefinition[], index: number) => {
+  private renderIcons = (icons: IActionDefinitionEx[], index: number) => {
     if (icons.length === 1) {
       if ((icons[0].icon === null) && (icons[0].component === undefined)) {
         // skip text-only elements in this mode
@@ -262,7 +263,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
     );
   }
 
-  private renderIconInner = (icon: IActionDefinition, index: number,
+  private renderIconInner = (icon: IActionDefinitionEx, index: number,
                              forceButtonType?: ButtonType) => {
     const { t, instanceId, tooltipPlacement } = this.props;
 
@@ -293,6 +294,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
           tooltip={t(icon.title)}
           onClick={icon.action}
           placement={tooltipPlacement}
+          disabled={(icon.show !== true) && (icon.show !== undefined)}
         />
       );
     } else {
@@ -358,7 +360,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
 type ExportType = IBaseProps & IActionControlProps & IExtensibleProps & React.HTMLAttributes<any>;
 
 class ActionIconBar extends React.Component<ExportType> {
-  private static ACTION_PROPS = ['filter', 'group', 'instanceId', 'staticElements'];
+  private static ACTION_PROPS = ['filter', 'group', 'instanceId', 'showAll', 'staticElements'];
   public render() {
     const actionProps: IActionControlProps =
       _.pick(this.props, ActionIconBar.ACTION_PROPS) as IActionControlProps;

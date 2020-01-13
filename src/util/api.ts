@@ -9,6 +9,7 @@ export * from './storeHelper';
 import { installIconSet } from '../controls/Icon';
 import { resolveCategoryName,
          resolveCategoryPath } from '../extensions/category_management/util/retrieveCategoryPath';
+import { readExtensibleDir } from '../extensions/extension_manager/util';
 import { getGame, getGames } from '../extensions/gamemode_management/util/getGame';
 import deriveModInstallName from '../extensions/mod_management/modIdManager';
 import { getManifest } from '../extensions/mod_management/util/activationStore';
@@ -17,6 +18,7 @@ import { getActivator,
 import renderModName from '../extensions/mod_management/util/modName';
 import sortMods, { CycleError } from '../extensions/mod_management/util/sort';
 import testModReference from '../extensions/mod_management/util/testModReference';
+import GameStoreHelper from '../util/GameStoreHelper';
 import { Archive } from './archives';
 import copyRecursive from './copyRecursive';
 import { ArgumentInvalid, DataInvalid, MissingInterpreter, NotFound, NotSupportedError,
@@ -27,6 +29,7 @@ import { getVisibleWindow, terminate } from './errorHandling';
 import { extend } from './ExtensionProvider';
 import { copyFileAtomic, fileMD5 } from './fsAtomic';
 import getNormalizeFunc, { Normalize } from './getNormalizeFunc';
+import getVortexPath from './getVortexPath';
 import github from './github';
 import { getCurrentLanguage, TFunction } from './i18n';
 import LazyComponent from './LazyComponent';
@@ -42,6 +45,7 @@ import { bytesToString, deBOM, isChildPath, makeQueue, objDiff,
          pad, sanitizeCSSId, setdefault } from './util';
 import walk from './walk';
 
+import SevenZip = require('node-7z');
 import { runElevated, runThreaded } from 'vortex-run';
 
 export * from './network';
@@ -61,6 +65,7 @@ export {
   extend,
   fileMD5,
   GameNotFound,
+  GameStoreHelper,
   getActivator,
   getCurrentActivator,
   getCurrentLanguage,
@@ -70,6 +75,7 @@ export {
   getNormalizeFunc,
   getReduxLog,
   getVisibleWindow,
+  getVortexPath,
   github,
   installIconSet,
   isChildPath,
@@ -87,6 +93,7 @@ export {
   pad,
   ProcessCanceled,
   ReduxProp,
+  readExtensibleDir,
   relativeTime,
   renderModName,
   resolveCategoryName,
@@ -96,6 +103,7 @@ export {
   sanitizeCSSId,
   setdefault,
   SetupError,
+  SevenZip,
   sortMods,
   steam,
   ISteamEntry,

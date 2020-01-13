@@ -99,7 +99,7 @@ export interface IGame extends ITool {
 
   /**
    * determines if a file is to be merged with others with the same path, instead of the
-   * highest-priority one being used. This only work if support for repackaging the file type
+   * highest-priority one being used. This only works if support for repackaging the file type
    * is available
    */
   mergeArchive?: (filePath: string) => boolean;
@@ -140,4 +140,16 @@ export interface IGame extends ITool {
    *  cleaned up on each deploy event.
    */
   requiresCleanup?: boolean;
+
+  /**
+   * if set this function is always called before automatic deployment and it will be delayed
+   * until the promise resolves.
+   * This can be used if the deployment process is very slow and/or involves user interaction
+   * (e.g. through will-deploy/did-deploy event handlers) to prevent managament becoming impractical
+   * due to automated deployment constantly requiring attention.
+   *
+   * Once the promise resolves the mods as enabled at that time will be deployed, so for example
+   * if the user enabled a mod while this promise is pending, that mod will be deployed.
+   */
+  deploymentGate?: () => Promise<void>;
 }

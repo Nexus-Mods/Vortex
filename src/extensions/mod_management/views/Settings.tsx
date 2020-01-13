@@ -31,8 +31,8 @@ import { IDeploymentMethod } from '../types/IDeploymentMethod';
 import { getSupportedActivators } from '../util/deploymentMethods';
 import { NoDeployment } from '../util/exceptions';
 import getInstallPath, { getInstallPathPattern } from '../util/getInstallPath';
-import getModPaths from '../util/getModPaths';
 
+import { modPathsForGame } from '../selectors';
 import getText from '../texts';
 
 import Promise from 'bluebird';
@@ -57,7 +57,6 @@ interface IConnectedProps {
   gameMode: string;
   installPath: string;
   currentActivator: string;
-  state: any;
   modActivity: string[];
   modPaths: { [modType: string]: string };
 }
@@ -200,7 +199,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
    * @returns {IDeploymentMethod[]}
    */
   private supportedActivators(): IDeploymentMethod[] {
-    return getSupportedActivators(this.props.state);
+    return getSupportedActivators(this.context.api.store.getState());
   }
 
   private pathsChanged() {
@@ -802,6 +801,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 }
 
+const emptyArray = [];
+
 function mapStateToProps(state: any): IConnectedProps {
   const discovery = currentGameDiscovery(state);
   const game = currentGame(state);
@@ -814,9 +815,8 @@ function mapStateToProps(state: any): IConnectedProps {
     gameMode,
     installPath: state.settings.mods.installPath[gameMode],
     currentActivator: getSafe(state, ['settings', 'mods', 'activator', gameMode], undefined),
-    modActivity: getSafe(state, ['session', 'base', 'activity', 'mods'], []),
-    modPaths: getModPaths(state, gameMode),
-    state,
+    modActivity: getSafe(state, ['session', 'base', 'activity', 'mods'], emptyArray),
+    modPaths: modPathsForGame(state, gameMode),
   };
 }
 

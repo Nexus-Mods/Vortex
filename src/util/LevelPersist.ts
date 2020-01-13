@@ -74,6 +74,28 @@ class LevelPersist implements IPersistor {
     });
   }
 
+  public getAllKVs(prefix?: string): Promise<Array<{ key: string[], value: string }>> {
+    return new Promise((resolve, reject) => {
+      const kvs: Array<{ key: string[], value: string }> = [];
+
+      const options = (prefix === undefined)
+        ? undefined
+        : {
+          gt: `${prefix}${SEPARATOR}`,
+          lt: `${prefix}${SEPARATOR}zzzzzzzzzzz`,
+        };
+
+      this.mDB.createReadStream(options)
+        .on('data', data => {
+          kvs.push({ key: data.key.split(SEPARATOR), value: data.value });
+        })
+        .on('error', error => reject(error))
+        .on('close', () => {
+          resolve(kvs);
+        });
+    });
+  }
+
   public setItem(statePath: string[], newState: string): Promise<void> {
     const stackErr = new Error();
     return new Promise<void>((resolve, reject) => {

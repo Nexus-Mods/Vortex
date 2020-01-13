@@ -10,6 +10,7 @@ export interface IProps {
   content: () => React.ReactNode;
   visible: boolean;
   setVisible: (visible: boolean) => void;
+  componentClass?: React.ElementType;
 }
 
 /**
@@ -91,15 +92,17 @@ class VisibilityProxy extends React.PureComponent<any, {}> {
   }
 
   public render(): JSX.Element {
+    const { componentClass: Component } = this.props;
     return (
-      <div
-        {..._.omit(this.props, ['container', 'placeholder', 'content', 'visible', 'setVisible'])}
-      >{
+      <Component
+        {..._.omit(this.props, ['container', 'placeholder', 'content', 'visible', 'setVisible', 'componentClass'])}
+      >
+      {
         (this.props.visible)
           ? this.props.content()
           : this.props.placeholder()
       }
-      </div>
+      </Component>
     );
   }
 }

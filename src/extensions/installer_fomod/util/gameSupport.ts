@@ -1,3 +1,5 @@
+import { IGame } from '../../../types/IGame';
+
 import { app as appIn, remote } from 'electron';
 import * as path from 'path';
 
@@ -77,6 +79,11 @@ function stopPatterns(gameMode: string) {
               'hak', 'localvault', 'modules', 'movies', 'music', 'music_X1', 'music_X2', 'nwm',
               'override', 'patch', 'portraits', 'pwc', 'saves', 'servervault', 'texturepacks',
               'tlk', 'ui'].map(toWordExp);
+    case 'daggerfallunity':
+      return ['factions', 'fonts', 'mods', 'questpacks', 'quests', 'soundfonts', 'spellicons',
+              'tables', 'text', 'textures'].map(toWordExp);
+    case 'thesims4':
+      return ['[^/]*\\.package$', '[^/]*\\.ts4script$', '[^/]*\\.py[co]?$'];
     default: return [].concat(uniPatterns);
   }
 }
@@ -258,6 +265,12 @@ const gameSupport: { [gameId: string]: IGameSupport } = {
   neverwinter2: {
     stopPatterns: stopPatterns('neverwinter2'),
   },
+  daggerfallunity: {
+    stopPatterns: stopPatterns('daggerfallunity'),
+  },
+  thesims4: {
+    stopPatterns: stopPatterns('thesims4'),
+  },
 };
 
 export function getIniFilePath(gameMode: string): string {
@@ -269,7 +282,10 @@ export function getIniFilePath(gameMode: string): string {
   return gameSupport[gameMode].iniPath();
 }
 
-export function getStopPatterns(gameMode: string): string[] {
+export function getStopPatterns(gameMode: string, game: IGame): string[] {
+  if ((game.details !== undefined) && (game.details.stopPatterns !== undefined)) {
+    return game.details.stopPatterns;
+  }
   if ((gameSupport[gameMode] === undefined)
       || (gameSupport[gameMode].stopPatterns === undefined)) {
     return [];

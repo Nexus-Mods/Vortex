@@ -47,7 +47,9 @@ class GameRow extends ComponentEx<IProps, {}> {
       return null;
     }
 
-    const logoPath: string = path.join(game.extensionPath, game.logo);
+    const logoPath: string = game.extensionPath !== undefined
+      ? path.join(game.extensionPath, game.logo)
+      : game.imageURL;
 
     const location = (discovery !== undefined) && (discovery.path !== undefined)
       ? <a onClick={this.openLocation}>{discovery.path}</a>
@@ -57,13 +59,22 @@ class GameRow extends ComponentEx<IProps, {}> {
     if (active) {
       classes.push('game-list-selected');
     }
+    if (discovery === undefined) {
+      classes.push('game-list-undiscovered');
+    }
+
+    const groupType = (type !== 'unmanaged')
+      ? type
+      : discovery !== undefined
+      ? 'discovered'
+      : 'undiscovered';
 
     const gameInfoPopover = (
       <Popover id={`popover-info-${game.id}`} className='popover-game-info' >
         <IconBar
           id={`game-thumbnail-${game.id}`}
           className='buttons'
-          group={`game-${type}-buttons`}
+          group={`game-${groupType}-buttons`}
           instanceId={game.id}
           staticElements={[]}
           collapse={false}
@@ -91,7 +102,7 @@ class GameRow extends ComponentEx<IProps, {}> {
           </Media.Left>
           <Media.Body>
             <Media.Heading>{t(game.name.replace(/\t/g, ' '))}</Media.Heading>
-            <p>Location: {location}</p>
+            <p>{t('Location')}: {location}</p>
           </Media.Body>
           <Media.Right>
             <OverlayTrigger
@@ -112,16 +123,16 @@ class GameRow extends ComponentEx<IProps, {}> {
               />
             </OverlayTrigger>
             <IconBar
+              t={t}
               className='btngroup-game-list'
-              group={`game-${type}-buttons`}
+              group={`game-${groupType}-buttons`}
               instanceId={game.id}
               staticElements={[]}
               collapse={false}
               filter={this.priorityButtons}
               clickAnywhere={true}
               buttonType='icon'
-
-              t={t}
+              showAll
             />
           </Media.Right>
         </Media>

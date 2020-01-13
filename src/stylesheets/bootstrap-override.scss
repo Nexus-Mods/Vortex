@@ -202,10 +202,10 @@ textarea {
 
 .form-control, input {
   // border-width: $border-width;
-  @include box-shadow(none);
+  box-shadow: none;
 
   &:focus {
-    @include box-shadow(none);
+    box-shadow: none;
   }
 }
 
@@ -263,6 +263,10 @@ textarea {
     color: $text-color;
     background-color: $brand-primary;
   }
+}
+
+.btn-link {
+  border: 0;
 }
 
 .btn-secondary,

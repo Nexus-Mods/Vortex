@@ -61,6 +61,11 @@ function createEndorsedIcon(store: Redux.Store<any>,
     return null;
   }
 
+  const allowRating: boolean = getSafe(mod.attributes, ['allowRating'], true);
+  if (!allowRating) {
+    endorsed = 'Disabled';
+  }
+
   if ((endorsed === undefined && state === 'installing')
    || (endorsed === undefined && isNexusMod)) {
     endorsed = 'Undecided';

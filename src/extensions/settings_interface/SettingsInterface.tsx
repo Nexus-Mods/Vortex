@@ -5,12 +5,14 @@ import More from '../../controls/More';
 import Toggle from '../../controls/Toggle';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../types/IDialog';
 import { IState } from '../../types/IState';
+import { IParameters, relaunch } from '../../util/commandLine';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
-import { readdirAsync } from '../../util/fs';
 import getVortexPath from '../../util/getVortexPath';
 import { log } from '../../util/log';
-import { spawnSelf } from '../../util/util';
+import { truthy } from '../../util/util';
 
+import { IAvailableExtension, IExtensionDownloadInfo } from '../extension_manager/types';
+import { readExtensibleDir } from '../extension_manager/util';
 import getTextModManagement from '../mod_management/texts';
 import getTextProfiles from '../profile_management/texts';
 
@@ -34,6 +36,12 @@ interface ILanguage {
   key: string;
   language: string;
   country?: string;
+  ext: IExtensionDownloadInfo | {};
+}
+
+interface IBaseProps {
+  startup: IParameters;
+  changeStartup: (key: string, value: any) => void;
 }
 
 interface IConnectedProps {
@@ -46,6 +54,7 @@ interface IConnectedProps {
   minimizeToTray: boolean;
   desktopNotifications: boolean;
   hideTopLevelCategory: boolean;
+  extensions: IAvailableExtension[];
 }
 
 interface IActionProps {
@@ -65,7 +74,7 @@ interface IComponentState {
   languages: ILanguage[];
 }
 
-type IProps = IActionProps & IConnectedProps;
+type IProps = IBaseProps & IActionProps & IConnectedProps;
 
 class SettingsInterface extends ComponentEx<IProps, IComponentState> {
   private mInitialTitlebar: boolean;
@@ -80,32 +89,8 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
   }
 
   public componentDidMount() {
-    const bundledLanguages = getVortexPath('locales');
-    const userLanguages = path.normalize(path.join(remote.app.getPath('userData'), 'locales'));
-
-    Promise.join(readdirAsync(bundledLanguages), readdirAsync(userLanguages).catch(() => []))
-      .then((fileLists: string[][]) => Array.from(new Set([].concat(...fileLists))))
-      .filter((langId: string) => this.isValidLanguageCode(langId))
-      .then(files => {
-        const locales = files.map(key => {
-          let language;
-          let country;
-
-          const [languageKey, countryKey] = key.split('-');
-          language = nativeLanguageName(languageKey);
-          if (countryKey !== undefined) {
-            country = nativeCountryName(countryKey);
-          }
-          return { key, language, country };
-        });
-
-        this.setState(update(this.state, {
-          languages: { $set: locales },
-        }));
-      })
-    .catch(err => {
-      log('warn', 'failed to read locales', err);
-    });
+    (this.props.startup as any).attach(this);
+    this.readLocales(this.props);
   }
 
   public componentWillReceiveProps(newProps: IProps) {
@@ -114,15 +99,20 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
         languages: { $push: [{
           key: newProps.currentLanguage,
           language: nativeLanguageName(newProps.currentLanguage),
+          ext: {},
         }] },
       }));
+    }
+
+    if (this.props.extensions !== newProps.extensions) {
+      this.readLocales(newProps);
     }
   }
 
   public render(): JSX.Element {
     const { t, advanced, autoDeployment, autoEnable, currentLanguage,
             customTitlebar, desktopNotifications, profilesVisible,
-            hideTopLevelCategory } = this.props;
+            hideTopLevelCategory, startup } = this.props;
 
     const needRestart = (customTitlebar !== this.mInitialTitlebar);
 
@@ -144,7 +134,7 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
             onChange={this.selectLanguage}
             value={currentLanguage}
           >
-            {this.state.languages.map((language) => this.renderLanguage(language))}
+            {this.state.languages.map(language => this.renderLanguage(language))}
           </FormControl>
         </FormGroup>
         <FormGroup controlId='customization'>
@@ -204,6 +194,14 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
                 </More>
               </Toggle>
             </div>
+            <div>
+              <Toggle
+                checked={startup.disableGPU !== true}
+                onToggle={this.toggleAcceleration}
+              >
+                {t('Enable GPU Acceleration')}
+              </Toggle>
+            </div>
           </div>
         </FormGroup>
         <FormGroup controlId='automation'>
@@ -232,6 +230,9 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
   }
 
   private isValidLanguageCode(langId: string) {
+    if (!truthy(langId)) {
+      return false;
+    }
     try {
       new Date().toLocaleString(langId);
       return true;
@@ -241,9 +242,25 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
     }
   }
 
+  private toggleAcceleration = () => {
+    this.props.changeStartup('disableGPU', this.props.startup.disableGPU !== true);
+  }
+
   private selectLanguage = (evt) => {
+    const { extensions } = this.props;
     const target: HTMLSelectElement = evt.target as HTMLSelectElement;
-    this.props.onSetLanguage(target.value);
+    const extName: string = target.selectedOptions[0].getAttribute('data-ext');
+    const ext: { modId?: number } = extensions.find(iter => iter.name === extName) || {};
+    const { value } = target;
+    const dlProm: Promise<boolean[]> = ext.modId !== undefined
+      ? this.context.api.emitAndAwait('install-extension', ext)
+        .tap(success => success ? this.readLocales(this.props) : Promise.resolve())
+      : Promise.resolve([true]);
+    dlProm.then((success: boolean[]) => {
+      if (success.indexOf(false) === -1) {
+        this.props.onSetLanguage(value);
+      }
+    });
   }
 
   private languageName(language: ILanguage): string {
@@ -253,9 +270,15 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderLanguage(language: ILanguage): JSX.Element {
+    const { t } = this.props;
     return (
-      <option key={language.key} value={language.key}>
+      <option
+        key={language.key}
+        value={language.key}
+        data-ext={(language.ext as IExtensionDownloadInfo).name}
+      >
       {this.languageName(language)}
+      {(language.ext['modId'] !== undefined) ? ` (${t('Extension')})` : null}
       </option>
     );
   }
@@ -308,9 +331,50 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
     onSetAdvancedMode(!advanced);
   }
 
+  private readLocales(props: IProps) {
+    const { extensions } = props;
+    const bundledLanguages = getVortexPath('locales');
+    const userLanguages = path.normalize(path.join(remote.app.getPath('userData'), 'locales'));
+
+    const translationExts = extensions.filter(ext => ext.type === 'translation');
+
+    let local: string[] = [];
+
+    return Promise.join(readExtensibleDir('translation', bundledLanguages, userLanguages)
+                          .map(file => path.basename(file))
+                          .tap(files => local = files),
+                        translationExts.map(ext => ext.language))
+      .then(fileLists => Array.from(new Set([].concat(...fileLists))))
+      .filter(langId => this.isValidLanguageCode(langId))
+      .then(files => {
+        const loc = new Set(local);
+        const locales = files.map(key => {
+          let language;
+          let country;
+
+          const [languageKey, countryKey] = key.split('-');
+          language = nativeLanguageName(languageKey);
+          if (countryKey !== undefined) {
+            country = nativeCountryName(countryKey);
+          }
+
+          const ext: Partial<IAvailableExtension> = loc.has(key)
+            ? {}
+            : translationExts.find(iter => iter.language === key);
+          return { key, language, country, ext };
+        });
+
+        this.setState(update(this.state, {
+          languages: { $set: locales },
+        }));
+      })
+    .catch(err => {
+      log('warn', 'failed to read locales', err);
+    });
+  }
+
   private restart = () => {
-    remote.app.relaunch();
-    remote.app.exit(0);
+    relaunch();
   }
 }
 
@@ -325,6 +389,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     autoEnable: state.settings.automation.enable,
     customTitlebar: state.settings.window.customTitlebar,
     minimizeToTray: state.settings.window.minimizeToTray,
+    extensions: state.session.extensions.available,
   };
 }
 

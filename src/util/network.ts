@@ -1,5 +1,5 @@
-import { IncomingMessage } from 'http';
-import { get } from 'https';
+import { get as getHTTP, IncomingMessage } from 'http';
+import { get as getHTTPS } from 'https';
 import * as url from 'url';
 
 export interface IRequestOptions {
@@ -13,8 +13,13 @@ export function rawRequest(apiURL: string, options?: IRequestOptions): Promise<s
   }
 
   return new Promise((resolve, reject) => {
+    const parsed = url.parse(apiURL);
+    const get = (parsed.protocol === 'http:')
+      ? getHTTP
+      : getHTTPS;
+
     get({
-      ...url.parse(apiURL),
+      ...parsed,
       headers: { 'User-Agent': 'Vortex' },
     } as any, (res: IncomingMessage) => {
       const { statusCode } = res;
@@ -24,7 +29,7 @@ export function rawRequest(apiURL: string, options?: IRequestOptions): Promise<s
       if (statusCode !== 200) {
         err = `Request Failed. Status Code: ${statusCode}`;
       } else if ((options.expectedContentType !== undefined)
-                 && !options.expectedContentType.test(contentType)) {
+        && !options.expectedContentType.test(contentType)) {
         err = `Invalid content-type ${contentType}`;
       }
 
@@ -44,17 +49,17 @@ export function rawRequest(apiURL: string, options?: IRequestOptions): Promise<s
         } catch (e) {
           reject(e);
         }
-      });
-    })
-      .on('error', (err: Error) => {
-        return reject(err);
-      });
+      })
+        .on('error', (reqErr: Error) => {
+          return reject(reqErr);
+        });
+    });
   });
 }
 
 export function jsonRequest<T>(apiURL: string): Promise<T> {
   return rawRequest(apiURL, {
-    expectedContentType: /^application\/json/,
+    expectedContentType: /^(application\/json|text\/plain)/,
     encoding: 'utf-8',
   })
   .then(rawData => JSON.parse(rawData));

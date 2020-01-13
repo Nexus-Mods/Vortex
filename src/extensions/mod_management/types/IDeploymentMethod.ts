@@ -228,8 +228,12 @@ export interface IDeploymentMethod {
    * deactivate the specified mod, removing all files it has deployed to the destination
    * @param {string} sourcePath source where the mod is installed
    * @param {string} dataPath relative path within the data path where mods are installed to
+   * @param {string} sourceName name of the source mod
+   *
+   * @todo sorry about the stupid parameter order, sourceName was added after release so to
+   *   remain backwards compatible we have to append it
    */
-  deactivate: (sourcePath: string, dataPath: string) => Promise<void>;
+  deactivate: (sourcePath: string, dataPath: string, sourceName: string) => Promise<void>;
 
   /**
    * called before mods are being purged. If multiple mod types are going to be purged,

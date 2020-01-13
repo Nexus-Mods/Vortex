@@ -1,14 +1,13 @@
 import Modal from '../../../controls/Modal';
 import { IDeploymentMethod } from '../../../types/api';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { activeGameId, currentGameDiscovery } from '../../../util/selectors';
+import { activeGameId, currentGameDiscovery, modPathsForGame } from '../../../util/selectors';
 import { truthy } from '../../../util/util';
 import { getGame } from '../../gamemode_management/util/getGame';
 import { IDeploymentProblem, setDeploymentProblem } from '../actions/session';
 import { IUnavailableReason } from '../types/IDeploymentMethod';
 import allTypesSupported from '../util/allTypesSupported';
 import { getAllActivators } from '../util/deploymentMethods';
-import getModPaths from '../util/getModPaths';
 
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
@@ -148,7 +147,7 @@ class FixDeploymentDialog extends ComponentEx<IProps, IFixDeploymentDialogState>
       return;
     }
 
-    const modPaths = getModPaths(state, gameId);
+    const modPaths = modPathsForGame(state, gameId);
     if (truthy(modPaths)) {
       // we have to find the unavailable reason again because the data we have doesn't contain
       // the actual fix function (since we can't put functions into the store)

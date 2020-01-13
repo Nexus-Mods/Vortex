@@ -3,12 +3,20 @@ import { IPersistor } from '../types/IExtensionContext';
 import Promise from 'bluebird';
 
 class SubPersistor implements IPersistor {
+  public getAllKVs: () => Promise<Array<{ key: string[], value: string }>> = undefined;
+
   private mWrapped: IPersistor;
   private mHive: string;
 
   constructor(wrapped: IPersistor, hive: string) {
     this.mWrapped = wrapped;
     this.mHive = hive;
+
+    if (wrapped.getAllKVs !== undefined) {
+      this.getAllKVs = () => this.mWrapped.getAllKVs(hive)
+        .filter(kv => kv.key[0] === hive)
+        .map(kv => ({ key: kv.key.slice(1), value: kv.value }));
+    }
   }
 
   public setResetCallback(cb: () => Promise<void>): void {

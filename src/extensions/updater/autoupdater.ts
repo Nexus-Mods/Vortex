@@ -142,6 +142,7 @@ function setupAutoUpdate(api: IExtensionApi) {
 
   const checkNow = (channel: string) => {
     autoUpdater.allowPrerelease = channel === 'beta';
+    autoUpdater.allowDowngrade = true;
     autoUpdater.autoDownload = false;
     autoUpdater.checkForUpdates()
       .then(check => {

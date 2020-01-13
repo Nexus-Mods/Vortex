@@ -70,6 +70,9 @@ const simfail = (process.env.SIMULATE_FS_ERRORS === 'true')
     if (Math.random() < 0.25) {
       const code = Math.random() < 0.33 ? 'EBUSY' : Math.random() < 0.5 ? 'EIO' : 'UNKNOWN';
       const res: any = new Error(`fake error ${code}`);
+      if (code === 'UNKNOWN') {
+        res['nativeCode'] = 21;
+      }
       res.code = code;
       res.path = 'foobar file';
       return PromiseBB.reject(res);
@@ -146,7 +149,7 @@ function unlockConfirm(filePath: string): PromiseBB<boolean> {
     : PromiseBB.resolve(choice === 2);
 }
 
-function unknownErrorRetry(filePath: string, err: Error): PromiseBB<boolean> {
+function unknownErrorRetry(filePath: string, err: Error, stackErr: Error): PromiseBB<boolean> {
   if ((dialog === undefined) || !truthy(filePath)) {
     return PromiseBB.resolve(false);
   }
@@ -174,13 +177,50 @@ function unknownErrorRetry(filePath: string, err: Error): PromiseBB<boolean> {
       options.title = 'Anti Virus denied access';
       options.message = `Your Anti-Virus Software has blocked access to "${filePath}".`;
       options.detail = undefined;
-    } else if ([362, 383, 404].indexOf(err['nativeCode']) !== -1) {
-      options.title = 'OneDrive error';
-      options.message = `The file ${filePath} is stored on a cloud storage drive `
+    } else if ([21, 59, 483, 793, 1005, 1127, 1392, 1920, 6800].indexOf(err['nativeCode']) !== -1) {
+      options.title = `I/O Error (${err['nativeCode']})`;
+      options.message = `Accessing "${filePath}" failed with an error that indicates `
+                      + 'a hardware problem. This may indicate the disk is defective, '
+                      + 'if it\'s a network or cloud drive it may simply indicate '
+                      + 'temporary network or server problems. '
+                      + 'Please do not report this to us, this is not a bug in Vortex '
+                      + 'and we can not provide remote assistance with hardware problems.';
+    } else if ([362, 383, 390, 395, 396, 404, 4394].indexOf(err['nativeCode']) !== -1) {
+      options.title = `OneDrive error (${err['nativeCode']})`;
+      options.message = `The file "${filePath}" is stored on a cloud storage drive `
                       + '(Microsoft OneDrive) which is currently unavailable. Please '
                       + 'check your internet connection and verify the service is running, '
                       + 'then retry.';
       options.detail = undefined;
+    } else if ([4390].indexOf(err['nativeCode']) !== -1) {
+      options.title = 'Incompatible folder';
+      options.message = `Windows reported an error message regarding "${filePath}" that indicates `
+                      + 'the containing folder has limitations that make it unsuitable for what '
+                      + 'it\'s being used. '
+                      + 'A common example of this is if you try to put the staging folder on a '
+                      + 'OneDrive folder because OneDrive can\'t deal with hardlinks.';
+    } else if ([433, 1920].indexOf(err['nativeCode']) !== -1) {
+      options.title = `Drive unavailable (${err['nativeCode']})`;
+      options.message = `The file "${filePath}" is currently not accessible. If this is a `
+                      + 'network drive, please make sure it\'s connected. Otherwise make sure '
+                      + 'the drive letter hasn\'t changed and if necessary, update the path '
+                      + 'within Vortex.';
+    } else if ([53, 55, 4350].indexOf(err['nativeCode']) !== -1) {
+      options.title = `Network drive unavailable (${err['nativeCode']})`;
+      options.message = `The file "${filePath}" is currently not accessible, very possibly the `
+                      + 'network share as a whole is inaccesible due to a network problem '
+                      + 'or the server being offline.';
+    } else if (err['nativeCode'] === 1816) {
+      options.title = 'Not enough quota';
+      options.message = `Windows reported insufficient quota writing to "${filePath}".`;
+    } else if (err['nativeCode'] === 6851) {
+      options.title = 'Volume dirty';
+      options.message = 'The operation could not be completed because the volume is dirty. '
+                      + 'Please run chkdsk and try again.';
+    } else if (err['nativeCode'] === 1359) {
+      options.title = 'Internal error';
+      options.message = 'The operation failed with an internal (internal to windows) error. '
+                      + 'No further error information is available to us.';
     } else {
       options.title += ` (${err['nativeCode']})`;
       options.buttons.unshift('Cancel and Report');
@@ -190,10 +230,12 @@ function unknownErrorRetry(filePath: string, err: Error): PromiseBB<boolean> {
   const choice = dialog.showMessageBoxSync(getVisibleWindow(), options);
 
   if (options.buttons[choice] === 'Cancel and Report') {
+    // we're reporting this to collect a list of native errors and provide better error
+    // message
     const nat = err['nativeCode'];
     createErrorReport('Unknown error', {
-      message: `${nat.message} (${nat.code})`,
-      stack: err.stack,
+      message: `Windows System Error (${nat})`,
+      stack: restackErr(err, stackErr).stack,
       path: filePath,
     }, {}, ['bug'], {});
     return PromiseBB.reject(new UserCanceled());
@@ -238,7 +280,7 @@ function busyRetry(filePath: string): PromiseBB<boolean> {
 }
 
 function errorRepeat(error: NodeJS.ErrnoException, filePath: string, retries: number,
-                     showDialogCallback?: () => boolean): PromiseBB<boolean> {
+                     stackErr: Error, showDialogCallback?: () => boolean): PromiseBB<boolean> {
   if ((retries > 0) && RETRY_ERRORS.has(error.code)) {
     // retry these errors without query for a few times
     return PromiseBB.delay(100).then(() => PromiseBB.resolve(true));
@@ -278,7 +320,7 @@ function errorRepeat(error: NodeJS.ErrnoException, filePath: string, retries: nu
         }
       });
   } else if (error.code === 'UNKNOWN') {
-    return unknownErrorRetry(filePath, error);
+    return unknownErrorRetry(filePath, error, stackErr);
   } else {
     return PromiseBB.resolve(false);
   }
@@ -297,7 +339,8 @@ function restackErr(error: Error, stackErr: Error): Error {
 function errorHandler(error: NodeJS.ErrnoException,
                       stackErr: Error, tries: number,
                       showDialogCallback?: () => boolean): PromiseBB<void> {
-  return errorRepeat(error, (error as any).dest || error.path, tries, showDialogCallback)
+  return errorRepeat(error, (error as any).dest || error.path, tries,
+                     stackErr, showDialogCallback)
     .then(repeat => repeat
       ? PromiseBB.resolve()
       : PromiseBB.reject(restackErr(error, stackErr)))
@@ -642,7 +685,10 @@ function elevated(func: (ipc, req: NodeRequireFunction) => Promise<void>,
 }
 
 export function ensureDirWritableAsync(dirPath: string,
-                                       confirm: () => PromiseBB<void>): PromiseBB<void> {
+                                       confirm?: () => PromiseBB<void>): PromiseBB<void> {
+  if (confirm === undefined) {
+    confirm = () => PromiseBB.resolve();
+  }
   const stackErr = new Error();
   return ensureDirAsync(dirPath)
     .then(() => {

@@ -108,11 +108,37 @@
   }
 }
 
+.table-container .xthead .table-header-cell .cell-controls {
+  white-space: nowrap;
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.table-group-header {
+  background-color: darken($table-bg, 5%);
+  border-bottom: 1px solid $gray-dark !important;
+  border-top: 1em solid $table-bg !important;
+  > .icon {
+    margin-right: 1em;
+  }
+
+  &:hover {
+    background-color: $table-bg-active;
+  }
+}
+
+.table-row-grouped {
+  > td:first-child {
+    padding-left: 2em !important;
+  }
+}
+
 .table-details-pane {
   // overflow-y: auto;
   padding: 0px;
   background-color: $brand-menu;
-  transition: max-width 300ms;
+  transition: max-width $transition-time-half;
   border-right-width: 0px;
   position: absolute;
   right: 1px;
@@ -170,6 +196,18 @@
   }
 }
 
+.table-details-select-container {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  svg {
+    margin-right: 1em;
+  }
+  .Select {
+    flex: 1 1 0;
+  }
+}
+
 .table-form-details {
   flex: 1 1 0%;
   padding: 5px;
@@ -187,7 +225,7 @@
 
 .table-pinned {
   height: 3em;
-  > div {
+  > div, td {
     position: absolute;
     width: 100%;
     height: 3em;
@@ -276,6 +314,7 @@
 
 .xtable .cell-actions {
   display: inline-flex;
+  width: 100%;
   .dropdown .btn:first-child,
   .dropup .btn:first-child {
     text-align: left;
@@ -286,4 +325,8 @@
   .dropdown-toggle {
     min-width: initial;
   }
+}
+
+.table-group-enabled {
+  color: $brand-secondary;
 }

@@ -360,6 +360,8 @@ function undeploy(api: IExtensionApi,
   const modPaths = game.getModPaths(discovery.path);
   const modTypes = Object.keys(modPaths);
 
+  log('debug', 'undeploying single mod', { game: gameMode, modId: mod.id });
+
   const activatorId: string =
     getSafe(state, ['settings', 'mods', 'activator', gameMode], undefined);
   // TODO: can only use one activator that needs to support the whole game
@@ -386,7 +388,8 @@ function undeploy(api: IExtensionApi,
     })
     .then(lastActivation => activator.prepare(deployPath, false, lastActivation, normalize))
     .then(() => (mod !== undefined)
-      ? activator.deactivate(path.join(stagingPath, mod.installationPath), subdir(mod))
+      ? activator.deactivate(path.join(stagingPath, mod.installationPath),
+                             subdir(mod), mod.installationPath)
       : Promise.resolve())
     .tapCatch(() => {
       if (activator.cancel !== undefined) {
@@ -396,7 +399,10 @@ function undeploy(api: IExtensionApi,
     .then(() => activator.finalize(gameMode, deployPath, stagingPath))
     .then(newActivation =>
       saveActivation(mod.type, state.app.instanceId, deployPath,
-                     stagingPath, newActivation, activator.id));
+                     stagingPath, newActivation, activator.id))
+    .finally(() => {
+      log('debug', 'done undeploying single mod', { game: gameMode, modId: mod.id });
+    });
 }
 
 export function onRemoveMod(api: IExtensionApi,
@@ -406,6 +412,8 @@ export function onRemoveMod(api: IExtensionApi,
                             callback?: (error: Error) => void) {
   const store = api.store;
   const state: IState = store.getState();
+
+  log('debug', 'removing mod', { game: gameMode, mod: modId });
 
   const modState = getSafe(state, ['persistent', 'mods', gameMode, modId, 'state'], undefined);
   if (['downloaded', 'installed'].indexOf(modState) === -1) {
@@ -497,6 +505,7 @@ export function onRemoveMod(api: IExtensionApi,
   .then(() => {
     if (truthy(mod) && truthy(mod.installationPath)) {
       const fullModPath = path.join(installationPath, mod.installationPath);
+      log('debug', 'removing files for mod', { game: gameMode, mod: modId });
       return fs.removeAsync(fullModPath)
         .catch({ code: 'ENOTEMPTY' }, () => fs.removeAsync(fullModPath))
         .catch(err => err.code === 'ENOENT' ? Promise.resolve() : Promise.reject(err));
@@ -538,6 +547,7 @@ export function onRemoveMod(api: IExtensionApi,
     }
   })
   .finally(() => {
+    log('debug', 'done removing mod', { game: gameMode, mod: modId });
     store.dispatch(stopActivity('mods', `removing_${modId}`));
   });
 }

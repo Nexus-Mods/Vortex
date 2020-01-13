@@ -27,7 +27,10 @@ function nop() {
 function DownloadButton(): JSX.Element {
   return (
     <div className='nexusmods-action-button'>
-      <Icon name='nexus' svgStyle='.st0, .st1, #path11 { fill-opacity: 0 !important }' />
+      <Icon
+        name='nexus'
+        svgStyle='.nexus-orange, .nexus-orange-darker { fill-opacity: 0 !important }'
+      />
       <a className='nexusmods-fake-link' onClick={nop}>Mod Manager Download</a>
     </div>
   );
@@ -62,10 +65,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   public componentWillMount() {
-    getText('chrome-fix', this.props.t)
-    .then(text => {
-      this.setState({ helpText: text });
-    });
+    this.setState({ helpText: getText('chrome-fix', this.props.t) });
   }
 
   public render(): JSX.Element {
@@ -79,10 +79,12 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             onToggle={this.associate}
             disabled={process.platform === 'linux'}
           >
-            {t('Handle ')}<DownloadButton/>{t('buttons on ')}
+            {t('Handle')}{' '}<DownloadButton/>{t('buttons on')}{' '}
             {<a onClick={this.openNexus}>NexusMods.com</a>}
           </Toggle>
-          {process.platform === 'linux' ? <HelpBlock>Not supported on Linux</HelpBlock> : null}
+          {process.platform === 'linux'
+            ? <HelpBlock>{t('Not supported on Linux')}</HelpBlock>
+            : null}
           <div style={{ marginTop: 15 }}>
             {t('Fix Nexus Mods links in Chrome '
               + '(Only required for Chrome. Requires Chrome to be closed)')}
@@ -110,7 +112,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   private chromeFix = () => {
     const { onDialog, onShowError } = this.props;
     onDialog('info', 'Is Chrome running?', {
-      text: 'Chrome has to be closed, otherwise this fix has no effect.',
+      bbcode: 'Chrome has to be closed, otherwise this fix has no effect.<br/>'
+            + '[color="red"]IMPORTANT: You may have to repeat this step after '
+            + 'clearing the cache inside chrome![/color]',
     }, [
         { label: 'Cancel' },
         {
@@ -137,9 +141,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                     { allowReport: false },
                   );
                 } else {
-                  onShowError('Failed to fix NXM handling in Chrome. '
-                    + 'Please follow the manual instructions described in the info button.',
-                    err, { allowReport: false });
+                  onShowError('Failed to fix NXM handling in Chrome. ', err,
+                              { allowReport: false });
                 }
               });
           },

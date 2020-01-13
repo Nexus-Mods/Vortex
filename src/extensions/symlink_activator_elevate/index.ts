@@ -1,12 +1,14 @@
 import { clearUIBlocker, setUIBlocker } from '../../actions';
 import {IExtensionApi, IExtensionContext} from '../../types/IExtensionContext';
+import { IGame } from '../../types/IGame';
 import {ProcessCanceled, TemporaryError, UserCanceled} from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import { Normalize } from '../../util/getNormalizeFunc';
 import { TFunction } from '../../util/i18n';
 import { log } from '../../util/log';
-import { activeGameId, gameName, installPathForGame } from '../../util/selectors';
+import { activeGameId, gameName } from '../../util/selectors';
 
+import { getGame } from '../gamemode_management/util/getGame';
 import LinkingDeployment from '../mod_management/LinkingDeployment';
 import {
   IDeployedFile,
@@ -146,6 +148,12 @@ class DeploymentMethod extends LinkingDeployment {
     if (gameId === undefined) {
       gameId = activeGameId(state);
     }
+
+    const game: IGame = getGame(gameId);
+    if ((game.details !== undefined) && (game.details.supportsSymlinks === false)) {
+      return { description: t => t('Game doesn\'t support symlinks') };
+    }
+
     if (this.isGamebryoGame(gameId) || this.isUnsupportedGame(gameId)) {
       // Mods for this games use some file types that have issues working with symbolic links
       return {
@@ -422,7 +430,7 @@ class DeploymentMethod extends LinkingDeployment {
 
   private isUnsupportedGame(gameId: string): boolean {
     const unsupportedGames = (process.platform === 'win32')
-      ? ['nomanssky', 'stateofdecay', 'factorio']
+      ? ['nomanssky', 'stateofdecay', 'factorio', 'witcher3']
       : ['nomanssky', 'stateofdecay'];
 
     return unsupportedGames.indexOf(gameId) !== -1;

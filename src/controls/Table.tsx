@@ -1,22 +1,23 @@
-import {setAttributeFilter, setAttributeSort,
-        setAttributeVisible, setSplitPos} from '../actions/tables';
+import {collapseGroup, setAttributeFilter, setAttributeSort,
+        setAttributeVisible, setCollapsedGroups, setGroupingAttribute} from '../actions/tables';
 import {IActionDefinition} from '../types/IActionDefinition';
 import {IAttributeState} from '../types/IAttributeState';
+import {IExtensibleProps} from '../types/IExtensionProvider';
 import { II18NProps } from '../types/II18NProps';
 import {IRowState, IState, ITableState} from '../types/IState';
 import {ITableAttribute} from '../types/ITableAttribute';
 import {SortDirection} from '../types/SortDirection';
 import {ComponentEx, connect, extend, translate} from '../util/ComponentEx';
 import Debouncer from '../util/Debouncer';
-import {IExtensibleProps} from '../util/ExtensionProvider';
 import { log } from '../util/log';
 import smoothScroll from '../util/smoothScroll';
 import { getSafe, setSafe } from '../util/storeHelper';
 import {sanitizeCSSId, truthy} from '../util/util';
 
 import IconBar from './IconBar';
+import GroupingRow, { EMPTY_ID } from './table/GroupingRow';
 import HeaderCell from './table/HeaderCell';
-import { Table, TBody, TH, THead, TR } from './table/MyTable';
+import { Table, TBody, TD, TH, THead, TR } from './table/MyTable';
 import TableDetail from './table/TableDetail';
 import TableRow from './table/TableRow';
 import ToolbarIcon from './ToolbarIcon';
@@ -28,6 +29,7 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
+import { CSSTransition } from 'react-transition-group';
 import * as Redux from 'redux';
 import { createSelector, OutputSelector } from 'reselect';
 
@@ -42,7 +44,7 @@ export interface ITableRowAction extends IActionDefinition {
 export interface IBaseProps {
   tableId: string;
   data: { [rowId: string]: any };
-  // cheapass way to force the table to refresh its data cache. This will only affect
+  // cheap-ass way to force the table to refresh its data cache. This will only affect
   // 'volatile' fields as normal data fields would prompt a table refresh anyway
   dataId?: number;
   actions: ITableRowAction[];
@@ -51,19 +53,24 @@ export interface IBaseProps {
   defaultSort?: string;
   showHeader?: boolean;
   showDetails?: boolean;
+  hasActions?: boolean;
 }
 
 interface IConnectedProps {
   attributeState?: { [id: string]: IAttributeState };
   language: string;
   filter: { [id: string]: any };
+  groupBy: string;
+  collapsedGroups: string[];
 }
 
 interface IActionProps {
   onSetAttributeVisible: (tableId: string, attributeId: string, visible: boolean) => void;
   onSetAttributeSort: (tableId: string, attributeId: string, direction: SortDirection) => void;
   onSetAttributeFilter: (tableId: string, attributeId: string, filter: any) => void;
-  onSetSplitPos: (tableId: string, pos: number) => void;
+  onSetGroupingAttribute: (tableId: string, attributeId: string) => void;
+  onCollapseGroup: (tableId: string, groupId: string, collapse: boolean) => void;
+  onSetCollapsedGroups: (tableId: string, groupOptions: string[]) => void;
 }
 
 interface IExtensionProps {
@@ -105,6 +112,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
   private mVisibleAttributes: ITableAttribute[];
   private mVisibleDetails: ITableAttribute[];
+  private mVisibleInlines: ITableAttribute[];
 
   private mPinnedRef: HTMLElement;
   private mScrollRef: HTMLElement;
@@ -143,9 +151,10 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       multiRowActions: this.multiRowActions(props),
       columnToggles: this.columnToggles(props),
     };
-    const { table, detail } = this.visibleAttributes(props.objects, props.attributeState);
+    const { table, detail, inline } = this.visibleAttributes(props.objects, props.attributeState);
     this.mVisibleAttributes = table;
     this.mVisibleDetails = detail;
+    this.mVisibleInlines = inline;
     this.updateCalculatedValues(props)
     .then(didRun => {
       if (didRun) {
@@ -196,9 +205,10 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         || (newProps.objects !== this.props.objects)) {
       const { attributeState, objects } = newProps;
 
-      const { table, detail } = this.visibleAttributes(objects, attributeState);
+      const { table, detail, inline } = this.visibleAttributes(objects, attributeState);
       this.mVisibleAttributes = table;
       this.mVisibleDetails = detail;
+      this.mVisibleInlines = inline;
 
       if (Object.keys(newProps.attributeState).find(id =>
             (this.props.attributeState[id] === undefined)
@@ -255,6 +265,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       || (newProps.showHeader !== this.props.showHeader)
       || (newProps.detailsTitle !== this.props.detailsTitle)
       || (newProps.showDetails !== this.props.showDetails)
+      || (newProps.groupBy !== this.props.groupBy)
+      || (newProps.collapsedGroups !== this.props.collapsedGroups)
     );
   }
 
@@ -299,38 +311,28 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderHeader(proxy: boolean): JSX.Element {
-    const { t, actions, data } = this.props;
-    const { singleRowActions, sortedRows } = this.state;
-
-    let hasActions = false;
-    if (actions !== undefined) {
-      hasActions = singleRowActions.length > 0;
-    }
+    const { t, data, hasActions } = this.props;
+    const { sortedRows } = this.state;
 
     const filteredLength = sortedRows !== undefined ? sortedRows.length : undefined;
     const totalLength = Object.keys(data).length;
 
-    const actionHeader = this.renderTableActions(hasActions);
+    const actionHeader = this.renderTableActions(hasActions !== false);
     const filterActive = (filteredLength !== undefined) && (filteredLength < totalLength);
 
     return (
-      <THead
-        className='table-header'
-      >
-        <TR
-          domRef={proxy ? this.setProxyHeaderRef : this.setVisibleHeaderRef}
-        >
-
+      <THead className='table-header' >
+        <TR domRef={proxy ? this.setProxyHeaderRef : this.setVisibleHeaderRef}>
           {this.mVisibleAttributes.map(attribute => this.renderHeaderField(attribute, proxy))}
           {actionHeader}
         </TR>
         {filterActive ? (
           <TR className='table-pinned' domRef={this.setPinnedRef}>
-            <div>
+            <TD colSpan={this.mVisibleAttributes.length + 1}>
               {t('This table is filtered, showing {{shown}}/{{hidden}} items.',
                 { replace: { shown: filteredLength, hidden: totalLength } })}
               <Button onClick={this.clearFilters}>{t('Clear all filters')}</Button>
-            </div>
+            </TD>
           </TR>
         ) : null}
       </THead>
@@ -343,7 +345,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
     const selected = Object.keys(rowState).filter(key => rowState[key].selected);
 
-    if ((multiRowActions.length === 0) || !this.useMultiSelect()) {
+    if (!this.useMultiSelect()) {
       return null;
     }
 
@@ -386,7 +388,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderBody = () => {
-    const { attributeState, data } = this.props;
+    const { t, attributeState, collapsedGroups, data, groupBy, tableId } = this.props;
     const { calculatedValues, sortedRows } = this.state;
 
     if ((data === undefined) || (calculatedValues === undefined) || (sortedRows === undefined)) {
@@ -396,12 +398,112 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     const sortAttribute: ITableAttribute = this.mVisibleAttributes.find(attribute =>
       this.isSortColumn(attributeState[attribute.id]));
 
-    return (
-      <TBody>
-        {sortedRows.map((row, idx) =>
-          this.renderRow(row, sortAttribute))}
-      </TBody>
-    );
+    const groupAttribute = this.mVisibleAttributes.find(attribute => attribute.id === groupBy);
+
+    const valFunc = rowId => typeof(groupAttribute.isGroupable) === 'function'
+            ? groupAttribute.isGroupable(data[rowId], t)
+            : calculatedValues[rowId][groupAttribute.id];
+
+    if (groupAttribute !== undefined) {
+      let arrays: boolean = false;
+      const groupOptions = Array.from(new Set(
+        sortedRows.reduce((prev, rowId) => {
+          if (data[rowId] === undefined) {
+            return prev;
+          }
+          const value = valFunc(rowId);
+          if (Array.isArray(value)) {
+            arrays = true;
+            prev.push(...value);
+          } else {
+            prev.push(value);
+          }
+          return prev;
+        }, []))).sort((lhs: string, rhs: string) => {
+          if ((sortAttribute !== undefined)
+            && (sortAttribute.id === groupAttribute.id)
+            && (attributeState[sortAttribute.id].sortDirection === 'desc')) {
+            return rhs.toLowerCase().localeCompare(lhs.toLowerCase());
+          } else {
+            return lhs.toLowerCase().localeCompare(rhs.toLowerCase());
+          }
+        });
+      if (arrays) {
+        groupOptions.push(EMPTY_ID);
+      }
+      return (
+        <TBody>
+          {groupOptions.reduce((prev, group) => {
+            const groupItems = sortedRows
+              .filter(row => {
+                if (data[row] === undefined) {
+                  return prev;
+                }
+                const rowVal = valFunc(row);
+                if (Array.isArray(rowVal)) {
+                  if (rowVal.length === 0) {
+                    return group === EMPTY_ID;
+                  }
+                  return (rowVal.indexOf(group) !== -1);
+                } else {
+                  return (rowVal === group);
+                }
+              });
+            if (groupItems.length === 0) {
+              return prev;
+            }
+            const expanded = collapsedGroups.indexOf(group || '') === -1;
+            prev.push((
+              <GroupingRow
+                t={t}
+                key={group || '__empty'}
+                groupName={group}
+                expanded={expanded}
+                count={groupItems.length}
+                width={this.mVisibleAttributes.length + 1}
+                onToggle={this.toggleGroup}
+                onExpandAll={this.expandAll}
+                onCollapseAll={this.collapseAll}
+              />
+            ));
+            if (expanded) {
+              prev.push(...groupItems
+                .map((row, idx) =>
+                  this.renderRow(row, sortAttribute, group)));
+            }
+
+            return prev;
+          }, [])}
+        </TBody>
+      );
+    } else {
+      return (
+        <TBody>
+          {sortedRows.map((row, idx) =>
+            this.renderRow(row, sortAttribute))}
+        </TBody>
+      );
+    }
+  }
+
+  private toggleGroup = (groupName: string, expand: boolean) => {
+    const { onCollapseGroup, tableId } = this.props;
+
+    onCollapseGroup(tableId, groupName, !expand);
+  }
+
+  private expandAll = () => {
+    const { onSetCollapsedGroups, tableId } = this.props;
+    onSetCollapsedGroups(tableId, []);
+  }
+
+  private collapseAll = () => {
+    const { groupBy, onSetCollapsedGroups, tableId } = this.props;
+    const { calculatedValues, sortedRows } = this.state;
+
+    const groupOptions = Array.from(new Set(
+      sortedRows.map(rowId => calculatedValues[rowId][groupBy])));
+    onSetCollapsedGroups(tableId, groupOptions);
   }
 
   private scrollTo = (id: string, mayRetry?: boolean) => {
@@ -486,30 +588,34 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private columnToggles(props: IProps): ITableRowAction[] {
     const { t, objects } = props;
 
-    let pos = 1;
-    const getPos = () => {
-      return pos++;
-    };
+    const result: ITableRowAction[] = [];
 
-    const toggleableColumns = objects.filter(attr => attr.isToggleable);
-    if (toggleableColumns.length === 0) {
-      return [];
-    }
-
-    return [{
-      icon: null,
-      title: t('Toggle Columns'),
-      position: getPos(),
-    }].concat(toggleableColumns
-      .map(attr => {
+    const { columns, inlines } = objects.reduce((prev, attr) => {
+      if (attr.isToggleable) {
         const attributeState = this.getAttributeState(attr, props.attributeState);
-        return {
+        prev[attr.placement === 'inline' ? 'inlines' : 'columns'].push({
           icon: attributeState.enabled ? 'checkbox-checked' : 'checkbox-unchecked',
           title: attr.name,
-          position: getPos(),
           action: (arg) => this.setAttributeVisible(attr.id, !attributeState.enabled),
-        };
-      }));
+        });
+      }
+      return prev;
+    }, { columns: [], inlines: [] });
+
+    if (columns.length > 0) {
+      result.push({
+        icon: null,
+        title: t('Toggle Columns'),
+      }, ...columns);
+    }
+    if (inlines.length > 0) {
+      result.push({
+        icon: null,
+        title: t('Toggle Inlines'),
+      }, ...inlines);
+    }
+
+    return result.map((res, idx) => ({ ...res, position: idx }));
   }
 
   private renderTableActions(hasActions: boolean): JSX.Element {
@@ -544,8 +650,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       && (attributeState.sortDirection !== 'none');
   }
 
-  private renderRow(rowId: string, sortAttribute: ITableAttribute): JSX.Element {
-    const { t, data, language, tableId } = this.props;
+  private renderRow(rowId: string, sortAttribute: ITableAttribute, groupId?: string): JSX.Element {
+    const { t, data, language, hasActions, tableId } = this.props;
     const { calculatedValues, rowState, singleRowActions } = this.state;
 
     if ((calculatedValues[rowId] === undefined) || (data[rowId] === undefined)) {
@@ -554,7 +660,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
     const attributes = this.mVisibleAttributes;
 
-    const tableRowId = sanitizeCSSId(rowId);
+    const tableRowId = sanitizeCSSId(rowId + '_' + (groupId || ''));
 
     return (
       <TableRow
@@ -565,8 +671,10 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         data={calculatedValues[rowId]}
         rawData={data[rowId]}
         attributes={attributes}
+        inlines={this.mVisibleInlines}
         sortAttribute={sortAttribute !== undefined ? sortAttribute.id : undefined}
         actions={singleRowActions}
+        hasActions={hasActions !== undefined ? hasActions : true}
         language={language}
         onClick={this.selectRow}
         selected={getSafe(rowState, [rowId, 'selected'], false)}
@@ -574,6 +682,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         domRef={this.setRowRef}
         container={this.mScrollRef}
         visible={this.state.rowVisibility[rowId] === true}
+        grouped={groupId !== undefined}
         onSetVisible={this.setRowVisible}
         onHighlight={this.setRowHighlight}
       />
@@ -581,7 +690,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderHeaderField = (attribute: ITableAttribute, proxy: boolean): JSX.Element => {
-    const { t, filter } = this.props;
+    const { t, filter, groupBy } = this.props;
 
     const attributeState = this.getAttributeState(attribute);
 
@@ -607,7 +716,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
           attribute={attribute}
           state={attributeState}
           doFilter={true}
+          doGroup={attribute.id === groupBy}
           onSetSortDirection={this.setSortDirection}
+          onSetGroup={this.setGroup}
           onSetFilter={this.setFilter}
           ref={proxy ? this.setHeaderCellRef : undefined}
           t={t}
@@ -1260,7 +1371,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     });
 
     // then (re-)enable all visible selections
-    sortedRows.forEach(key => {
+    (sortedRows || []).forEach(key => {
       newState[key] = (newState[key] === undefined)
         ? { $set: { selected: true } }
         : { selected: { $set: true } };
@@ -1298,8 +1409,10 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private visibleAttributes(attributes: ITableAttribute[],
-                            attributeStates: { [id: string]: IAttributeState }):
-                            { table: ITableAttribute[], detail: ITableAttribute[] } {
+                            attributeStates: { [id: string]: IAttributeState })
+                            : { table: ITableAttribute[],
+                                detail: ITableAttribute[],
+                                inline: ITableAttribute[] } {
     const filtered = attributes.filter(attribute =>
       ((attribute.condition === undefined) || attribute.condition()));
 
@@ -1307,8 +1420,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       this.getAttributeState(attribute, attributeStates).enabled);
 
     return {
-      table: enabled.filter(attribute => attribute.placement !== 'detail'),
-      detail: filtered.filter(attribute => attribute.placement !== 'table'),
+      table: enabled.filter(attribute => ['table', 'both'].includes(attribute.placement)),
+      detail: filtered.filter(attribute => ['detail', 'both'].includes(attribute.placement)),
+      inline: enabled.filter(attribute => attribute.placement === 'inline'),
     };
   }
 
@@ -1342,6 +1456,15 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     onSetAttributeSort(tableId, id, direction);
   }
 
+  private setGroup = (id: string) => {
+    const { groupBy, onSetGroupingAttribute, tableId } = this.props;
+    if (groupBy === id) {
+      onSetGroupingAttribute(tableId, undefined);
+    } else {
+      onSetGroupingAttribute(tableId, id);
+    }
+  }
+
   private setFilter = (attributeId?: string, filter?: any) => {
     const { onSetAttributeFilter, tableId } = this.props;
     onSetAttributeFilter(tableId, attributeId, filter);
@@ -1371,6 +1494,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 }
 
 const emptyObj = {};
+const emptyList = [];
 
 function mapStateToProps(state: any, ownProps: any): IConnectedProps {
   return {
@@ -1378,6 +1502,10 @@ function mapStateToProps(state: any, ownProps: any): IConnectedProps {
     attributeState:
       getSafe(state, ['settings', 'tables', ownProps.tableId, 'attributes'], emptyObj),
     filter: getSafe(state, ['settings', 'tables', ownProps.tableId, 'filter'], undefined),
+    groupBy: getSafe(state, ['settings', 'tables', ownProps.tableId, 'groupBy'], undefined),
+    collapsedGroups: getSafe(state,
+                             ['settings', 'tables', ownProps.tableId, 'collapsedGroups'],
+                             emptyList),
   };
 }
 
@@ -1387,9 +1515,14 @@ function mapDispatchToProps(dispatch: Redux.Dispatch): IActionProps {
       dispatch(setAttributeVisible(tableId, attributeId, visible)),
     onSetAttributeSort: (tableId: string, attributeId: string, dir: SortDirection) =>
       dispatch(setAttributeSort(tableId, attributeId, dir)),
-    onSetSplitPos: (tableId: string, pos: number) => dispatch(setSplitPos(tableId, pos)),
     onSetAttributeFilter: (tableId: string, attributeId: string, filter: any) =>
       dispatch(setAttributeFilter(tableId, attributeId, filter)),
+    onSetGroupingAttribute: (tableId: string, attributeId: string) =>
+      dispatch(setGroupingAttribute(tableId, attributeId)),
+    onCollapseGroup: (tableId: string, groupId: string, collapse: boolean) =>
+      dispatch(collapseGroup(tableId, groupId, collapse)),
+    onSetCollapsedGroups: (tableId: string, collapsed: string[]) =>
+      dispatch(setCollapsedGroups(tableId, collapsed)),
   };
 }
 

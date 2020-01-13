@@ -42,6 +42,10 @@ function progress(props) {
   }
 }
 
+function capitalize(input: string): string {
+  return input.charAt(0).toUpperCase() + input.slice(1);
+}
+
 function calc(props) {
   const {download} = props;
   const {state, received, size} = download;
@@ -142,7 +146,8 @@ function createColumns(api: IExtensionApi, props: () => IDownloadViewProps)
               currentGames={getDownloadGames(download)}
               games={knownGames}
               fileName={download.localPath}
-            />);
+            />
+          );
         } else {
           const games = getDownloadGames(download);
           const name = gameName(store.getState(), games[0]);
@@ -159,6 +164,7 @@ function createColumns(api: IExtensionApi, props: () => IDownloadViewProps)
       isToggleable: true,
       edit: {},
       isSortable: true,
+      isGroupable: true,
       filter: new GameFilter(),
       sortFunc: (lhs: string, rhs: string, locale: string): number =>
         getCollator(locale).compare(lhs, rhs),
@@ -236,6 +242,7 @@ function createColumns(api: IExtensionApi, props: () => IDownloadViewProps)
       isToggleable: true,
       edit: {},
       isSortable: true,
+      isGroupable: (download: IDownload, t: TFunction) => t(capitalize(download.state)),
       filter: new DownloadProgressFilter(),
     },
   ];

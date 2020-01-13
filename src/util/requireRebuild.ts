@@ -194,6 +194,9 @@ function patchedLoad(orig) {
       if (nodeFile === undefined) {
         nodeFile = fs.readdirSync(buildPath).find(fileName => fileName.endsWith('.node'));
       }
+      if (nodeFile === undefined) {
+        throw err;
+      }
       const fileBuildPath = path.join(buildPath, nodeFile);
 
       fs.copySync(fileBuildPath, fileABIPath);

@@ -11,7 +11,7 @@ import * as storeHelperT from '../util/storeHelper';
 import { truthy } from '../util/util';
 
 import Promise from 'bluebird';
-import { screen } from 'electron';
+import { ipcMain, screen } from 'electron';
 import * as Redux from 'redux';
 import TrayIcon from './TrayIcon';
 
@@ -135,21 +135,17 @@ class MainWindow {
     });
 
     this.mWindow.webContents.session.on('will-download', (event, item) => {
-          event.preventDefault();
-          if (truthy(this.mWindow) && !this.mWindow.isDestroyed()) {
-            try {
-              this.mWindow.webContents.send('external-url', item.getURL());
-              store.dispatch(addNotification({
-                type: 'info',
-                title: 'Download started',
-                message: item.getFilename(),
-                displayMS: 4000,
-              }));
-            } catch (err) {
-              log('warn', 'starting download failed', err.message);
-            }
-          }
-        });
+      event.preventDefault();
+      // unfortunately we have to deal with these events in the main process even though
+      // we'll do the work in the renderer
+      if (truthy(this.mWindow) && !this.mWindow.isDestroyed()) {
+        try {
+          this.mWindow.webContents.send('received-url', item.getURL(), item.getFilename());
+        } catch (err) {
+          log('warn', 'starting download failed', err.message);
+        }
+      }
+    });
 
     this.mWindow.webContents.on('new-window', (event, url, frameName, disposition) => {
       if (disposition === 'background-tab') {
@@ -167,8 +163,17 @@ class MainWindow {
 
     return new Promise<Electron.WebContents>((resolve) => {
       this.mWindow.once('ready-to-show', () => {
-        if (this.mWindow !== null) {
+        if ((resolve !== undefined) && (this.mWindow !== null)) {
           resolve(this.mWindow.webContents);
+          resolve = undefined;
+        }
+      });
+      // if the show-window event is triggered before ready-to-show,
+      // that event never gets triggered so we'd be stuck
+      ipcMain.on('show-window', () => {
+        if ((resolve !== undefined) && (this.mWindow !== null)) {
+          resolve(this.mWindow.webContents);
+          resolve = undefined;
         }
       });
     });
@@ -204,10 +209,10 @@ class MainWindow {
     }
   }
 
-  public sendExternalURL(url: string) {
+  public sendExternalURL(url: string, install: boolean) {
     if (this.mWindow !== null) {
       try {
-        this.mWindow.webContents.send('external-url', url);
+        this.mWindow.webContents.send('external-url', url, undefined, install);
       } catch (err) {
         log('error', 'failed to send external url', { url, error: err.message });
       }

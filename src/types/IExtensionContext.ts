@@ -1,3 +1,4 @@
+import { IExtension } from '../extensions/extension_manager/types';
 import {
   IDeployedFile,
   IDeploymentMethod,
@@ -25,6 +26,7 @@ import { IActionOptions } from './IActionDefinition';
 import { IBannerOptions } from './IBannerOptions';
 import { DialogType, IDialogResult } from './IDialog';
 import { IGame } from './IGame';
+import { IGameStore } from './IGameStore';
 import { INotification } from './INotification';
 import { IDiscoveryResult } from './IState';
 import { ITableAttribute } from './ITableAttribute';
@@ -79,6 +81,15 @@ export type RegisterFooter =
 export type RegisterBanner =
   (group: string, component: React.ComponentClass<any> | React.StatelessComponent<any>,
    options: IBannerOptions) => void;
+
+export interface IModSourceOptions {
+  /**
+   * condition for this source to show up. Please make sure this returns quickly, cache if
+   * necessary.
+   */
+  condition?: () => boolean;
+  icon?: string;
+}
 
 export interface IMainPageOptions {
   /**
@@ -143,7 +154,7 @@ export type RegisterToDo =
      priority: number) => void;
 
 export interface IRegisterProtocol {
-  (protocol: string, def: boolean, callback: (url: string) => void);
+  (protocol: string, def: boolean, callback: (url: string, install: boolean) => void);
 }
 
 export interface IFileFilter {
@@ -191,6 +202,7 @@ export interface IPersistor {
   setItem(key: PersistorKey, value: string): Promise<void>;
   removeItem(key: PersistorKey): Promise<void>;
   getAllKeys(): Promise<PersistorKey[]>;
+  getAllKVs?(prefix?: string): Promise<Array<{ key: PersistorKey, value: string }>>;
 }
 
 /**
@@ -253,6 +265,7 @@ export interface IErrorOptions {
   hideDetails?: boolean;
   replace?: { [key: string]: string };
   attachments?: IAttachment[];
+  extension?: IExtension;
 }
 
 /**
@@ -316,6 +329,11 @@ export interface IRunParameters {
  * @interface IExtensionApi
  */
 export interface IExtensionApi {
+  /**
+   * name of the extension to use this api with
+   */
+  extension?: string;
+
   /**
    * show a notification to the user.
    * This is not available in the call to registerReducer
@@ -536,7 +554,7 @@ export interface IExtensionApi {
    * emit an event and allow every receiver to return a Promise. This call will only return
    * after all these Promises are resolved.
    */
-  emitAndAwait: (eventName: string, ...args: any[]) => Promise<void>;
+  emitAndAwait: (eventName: string, ...args: any[]) => Promise<any>;
 
   /**
    * handle an event emitted with emitAndAwait. The listener can return a promise and the emitter
@@ -544,7 +562,7 @@ export interface IExtensionApi {
    * Note that listeners should report all errors themselves, it is considered a bug if the listener
    * returns a rejected promise.
    */
-  onAsync: (eventName: string, listener: (...args: any[]) => Promise<void>) => void;
+  onAsync: (eventName: string, listener: (...args: any[]) => Promise<any>) => void;
 
   /**
    * returns true if the running version of Vortex is considered outdated. This is mostly used
@@ -620,6 +638,11 @@ export interface IReducerSpec {
   reducers: { [key: string]: (state: any, payload: any) => any };
   defaults: { [key: string]: any };
   verifiers?: { [key: string]: IStateVerifier };
+}
+
+export interface IModTypeOptions {
+  // if set, the merge behavior specified here overrides the one specified for the game
+  mergeMods?: boolean;
 }
 
 /**
@@ -749,7 +772,10 @@ export interface IExtensionContext {
    * actual features
    * The source can also be used to browse for further mods
    */
-  registerModSource: (id: string, name: string, onBrowse: () => void) => void;
+  registerModSource: (id: string,
+                      name: string,
+                      onBrowse: () => void,
+                      options?: IModSourceOptions) => void;
 
   /**
    * register a reducer to introduce new set-operations on the application
@@ -849,6 +875,13 @@ export interface IExtensionContext {
   registerGame: (game: IGame) => void;
 
   /**
+   * registers support for a game store.
+   *
+   * @param {IGameStore} gameStore
+   */
+  registerGameStore: (gameStore: IGameStore) => void;
+
+  /**
    * registers a provider for general information about a game
    * @param {string} id unique id identifying the provider
    * @param {number} priority if two providers provide the same info (same key) the one with the
@@ -891,12 +924,14 @@ export interface IExtensionContext {
    *                                          where games of this type should be installed.
    * @param {(instructions) => Promise<boolean>} test given the list of install instructions,
    *                                                  determine if the installed mod is of this type
+   * @param {IModTypeOptions} options options controlling the mod type
    */
   registerModType: (id: string,
                     priority: number,
                     isSupported: (gameId: string) => boolean,
                     getPath: (game: IGame) => string,
-                    test: (installInstructions: IInstruction[]) => Promise<boolean>) => void;
+                    test: (installInstructions: IInstruction[]) => Promise<boolean>,
+                    options?: IModTypeOptions) => void;
 
   /**
    * register an action sanity check
