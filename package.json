@@ -75,7 +75,6 @@
     "@types/babel-traverse": "^6.25.5",
     "@types/babel-types": "^7.0.7",
     "@types/babylon": "^6.16.5",
-    "@types/bluebird": "3.5.29",
     "@types/classnames": "^2.2.9",
     "@types/content-disposition": "^0.5.2",
     "@types/content-type": "^1.1.3",
