@@ -1,4 +1,4 @@
-import {IExtensionContext, IExtensionApi} from '../../types/IExtensionContext';
+import {IExtensionApi, IExtensionContext} from '../../types/IExtensionContext';
 import { IProfile, IState } from '../../types/IState';
 import { ITestResult } from '../../types/ITestResult';
 import { UserCanceled } from '../../util/CustomErrors';
