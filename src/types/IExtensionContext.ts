@@ -1001,6 +1001,24 @@ export interface IExtensionContext {
   registerMigration: (migrate: (oldVersion: string) => Promise<void>) => void;
 
   /**
+   * register a file to be stored with the profile. It will always be synchronised with the current
+   * profile, so when users switch to a different profile, this file will be copied to the
+   * profile they're switching away from, then the corresponding file from the profile they're
+   * switching to is copied to filePath.
+   * Right now this only supports static file paths, no patterns (glob or regular expressions) and
+   * no way to dynamically find the file to synchronize
+   */
+  registerProfileFile?: (gameId: string, filePath: string) => void;
+
+  /**
+   * register a profile feature that can be toggled/configured on the profiles screen.
+   * The configured value can be queried at
+   * state.persistent.profiles.<profile id>.features.<feature id>
+   */
+  registerProfileFeature?: (featureId: string, type: string, icon: string, label: string,
+                            description: string, supported: () => boolean) => void;
+
+  /**
    * specify that a certain range of versions of vortex is required
    * (see https://www.npmjs.com/package/semver for syntax documentation).
    * If you call this multiple times, all ranges have to match so that makes little sense
