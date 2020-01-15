@@ -456,7 +456,7 @@ function renderer() {
 
       return Promise.map(dynamicExts, ext => {
         const filePath = path.join(ext.path, 'language.json');
-        fs.readFileAsync(filePath, { encoding: 'utf-8' })
+        return fs.readFileAsync(filePath, { encoding: 'utf-8' })
           .then((fileData: string) => {
             i18n.addResources('en', ext.name, JSON.parse(fileData));
           })
