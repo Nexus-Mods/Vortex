@@ -307,7 +307,10 @@ export interface IRunOptions {
   // if true, a non-zero exit code will be treated as an error. default is false
   //   because too many windows applications don't report proper exit codes
   expectSuccess?: boolean;
-  onSpawned?: () => void;
+  // called after the process has been spawned. If possible the pid of the spawned process
+  // is set but in some cases (e.g. when the target process is run elevated) we don't know
+  // the pid so this will be undefined.
+  onSpawned?: (pid?: number) => void;
 }
 
 /**
