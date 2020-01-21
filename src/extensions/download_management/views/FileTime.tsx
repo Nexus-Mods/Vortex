@@ -1,6 +1,6 @@
 import { ComponentEx } from '../../../util/ComponentEx';
 import * as fs from '../../../util/fs';
-import relativeTime from '../../../util/relativeTime';
+import { userFriendlyTime } from '../../../util/relativeTime';
 
 import { IDownload } from '../types/IDownload';
 
@@ -59,7 +59,7 @@ class FileTime extends ComponentEx<IFileTimeProps, { mtime: Date }> {
         return <span>{mtime.toISOString()}</span>;
       }
     } else {
-      return <span>{relativeTime(mtime, t)}</span>;
+      return <span>{userFriendlyTime(mtime, t, language)}</span>;
     }
   }
 

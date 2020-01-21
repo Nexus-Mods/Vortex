@@ -243,7 +243,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       this.modAuthorAttribute,
       this.modVersionDetailAttribute,
       this.modVariantDetailAttribute,
-      INSTALL_TIME,
+      INSTALL_TIME(() => this.context.api.locale()),
     ];
 
     this.mUpdateDebouncer = new Debouncer((newProps) => {

@@ -12,6 +12,7 @@ import * as path from 'path';
 import * as React from 'react';
 
 export interface IIconProps {
+  id?: string;
   className?: string;
   style?: React.CSSProperties;
   set?: string;
@@ -24,6 +25,7 @@ export interface IIconProps {
   flip?: 'horizontal' | 'vertical';
   rotate?: number;
   rotateId?: string;
+  // avoid using this! These styles may affect other instances of this icon
   svgStyle?: string;
 }
 

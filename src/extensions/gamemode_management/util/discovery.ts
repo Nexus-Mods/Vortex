@@ -423,9 +423,16 @@ export function searchDiscovery(
             onFile(filePath, files, normalize, discoveredGames, onDiscoveredGame, onDiscoveredTool);
           return walk(searchPath, matchList, onFileCB, progressObj, normalize);
         })
-        .catch(err => (err.code === 'ENOENT')
-          ? Promise.resolve(onError('A search path doesn\'t exist or is not connected', searchPath))
-          : Promise.resolve(onError(err.message, searchPath)))
+        .then(() => {
+          log('info', 'finished game search', { searchPath });
+        })
+        .catch(err => {
+          log('error', 'game search failed', { error: err.message, searchPath });
+          return (err.code === 'ENOENT')
+            ? Promise.resolve(
+                onError('A search path doesn\'t exist or is not connected', searchPath))
+            : Promise.resolve(onError(err.message, searchPath));
+        })
         .then(() => {
           progressObj.completed(searchPath);
           return null;

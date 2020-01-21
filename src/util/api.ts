@@ -39,7 +39,7 @@ import onceCB from './onceCB';
 import opn from './opn';
 import { getReduxLog } from './reduxLogger';
 import ReduxProp from './ReduxProp';
-import relativeTime from './relativeTime';
+import relativeTime, { userFriendlyTime } from './relativeTime';
 import steam, { GameNotFound, ISteamEntry } from './Steam';
 import { bytesToString, deBOM, isChildPath, makeQueue, objDiff,
          pad, sanitizeCSSId, setdefault } from './util';
@@ -108,6 +108,7 @@ export {
   terminate,
   testModReference,
   UserCanceled,
+  userFriendlyTime,
   walk,
 };
 

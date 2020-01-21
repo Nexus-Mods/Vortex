@@ -26,8 +26,33 @@ import * as net from 'net';
 import * as path from 'path';
 import { generate as shortid } from 'shortid';
 import { runElevated } from 'vortex-run';
+import * as winapi from 'winapi-bindings';
 
 const app = appIn || remote.app;
+
+function monitorConsent(onDisappeared: () => void): () => void {
+  const doCheck = () => {
+    const consentExe = winapi.GetProcessList().find(proc => proc.exeFile === 'consent.exe');
+    if (consentExe === undefined) {
+      // no consent.exe, assume it finished
+      // still, wait a bit longer before doing anything so the "success" code has a chance to run
+      nextCheck = setTimeout(onDisappeared, 5000);
+    } else {
+      // consent exe still running, bring its window to front and reschedule test
+      const windows = winapi.GetProcessWindowList(consentExe.processID);
+      windows.forEach(win => winapi.SetForegroundWindow(win));
+
+      nextCheck = setTimeout(doCheck, 1000);
+    }
+  };
+
+  // give the first check a lot of time, who knows what the system has to do
+  let nextCheck = setTimeout(doCheck, 5000);
+
+  return () => {
+    clearTimeout(nextCheck);
+  };
+}
 
 class DeploymentMethod extends LinkingDeployment {
   public id: string;
@@ -142,6 +167,8 @@ class DeploymentMethod extends LinkingDeployment {
   }
 
   public isSupported(state: any, gameId?: string): IUnavailableReason {
+    return undefined;
+
     if (process.platform !== 'win32') {
       return { description: t => t('Elevation not required on non-windows systems') };
     }
@@ -295,6 +322,7 @@ class DeploymentMethod extends LinkingDeployment {
               log('debug', 'ipc connected');
               this.mElevatedClient = conn;
               this.api.store.dispatch(clearUIBlocker('elevating'));
+              cancelConsentMonitor();
               connected = true;
               resolve();
             } else if (message === 'completed') {
@@ -349,6 +377,33 @@ class DeploymentMethod extends LinkingDeployment {
       this.api.store.dispatch(setUIBlocker(
         'elevating', 'open-ext', 'Please confirm the "User Access Control" dialog', true));
 
+      const cancelConsentMonitor = monitorConsent(() => {
+        // this is called if consent.exe disappeared but none of our "regular" code paths ran
+        // which would have cancelled this timeout
+        this.api.store.dispatch(clearUIBlocker('elevating'));
+        try {
+          this.mIPCServer.close();
+          this.mIPCServer = undefined;
+        } catch (err) {
+          log('warn', 'Failed to close ipc server', err.message);
+        }
+        if (pongTimer !== undefined) {
+          clearInterval(pongTimer);
+        }
+        /*
+        this.api.showErrorNotification('Failed to run elevated process',
+          'Symlinks on your system can only be created by an elevated process and your system '
+          + 'just refused/failed to run the process elevated with no error message. '
+          + 'Please check your system settings regarding User Access Control or use a '
+          + 'different deployment method.', { allowReport: false });
+          */
+        reject(new ProcessCanceled(
+          'Symlinks on your system can only be created by an elevated process and your system '
+          + 'just refused/failed to run the process elevated with no error message. '
+          + 'Please check your system settings regarding User Access Control or use a '
+          + 'different deployment method.'));
+      });
+
       return Promise.delay(0).then(() => runElevated(ipcPath, remoteCode, {}))
         .tap(tmpPath => {
           this.mTmpFilePath = tmpPath;
@@ -356,6 +411,7 @@ class DeploymentMethod extends LinkingDeployment {
         })
         .tapCatch(() => {
           this.api.store.dispatch(clearUIBlocker('elevating'));
+          cancelConsentMonitor();
           log('error', 'failed to run remote process');
           try {
             this.mIPCServer.close();

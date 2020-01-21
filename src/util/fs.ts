@@ -186,15 +186,15 @@ function unknownErrorRetry(filePath: string, err: Error, stackErr: Error): Promi
                       + 'temporary network or server problems. '
                       + 'Please do not report this to us, this is not a bug in Vortex '
                       + 'and we can not provide remote assistance with hardware problems.';
-    } else if ([362, 383, 390, 395, 396, 404, 4394].indexOf(err['nativeCode']) !== -1) {
+    } else if ([362, 383, 390, 395, 396, 404].indexOf(err['nativeCode']) !== -1) {
       options.title = `OneDrive error (${err['nativeCode']})`;
       options.message = `The file "${filePath}" is stored on a cloud storage drive `
                       + '(Microsoft OneDrive) which is currently unavailable. Please '
                       + 'check your internet connection and verify the service is running, '
                       + 'then retry.';
       options.detail = undefined;
-    } else if ([4390].indexOf(err['nativeCode']) !== -1) {
-      options.title = 'Incompatible folder';
+    } else if ([4390, 4393, 4394].indexOf(err['nativeCode']) !== -1) {
+      options.title = `Incompatible folder (${err['nativeCode']})`;
       options.message = `Windows reported an error message regarding "${filePath}" that indicates `
                       + 'the containing folder has limitations that make it unsuitable for what '
                       + 'it\'s being used. '

@@ -118,7 +118,7 @@ class Icon extends React.Component<IIconProps, {}> {
         ref={this.props.rotate && (this.mCurrentSize === undefined) ? this.setRef : undefined}
       >
         {svgStyle !== undefined ? <style type='text/css'>{svgStyle}</style> : null}
-        <use xlinkHref={`#icon-${name}`} transform={transforms.join(' ')} />
+        <use className='svg-use' xlinkHref={`#icon-${name}`} transform={transforms.join(' ')} />
       </svg>
     );
   }

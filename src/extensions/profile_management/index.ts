@@ -305,13 +305,7 @@ function genOnProfileChange(api: IExtensionApi,
   };
 }
 
-export interface IExtensionContextExt extends IExtensionContext {
-  registerProfileFile: (gameId: string, filePath: string) => void;
-  registerProfileFeature: (featureId: string, type: string, icon: string, label: string,
-                           description: string, supported: () => boolean) => void;
-}
-
-function init(context: IExtensionContextExt): boolean {
+function init(context: IExtensionContext): boolean {
   context.registerMainPage('profile', 'Profiles', ProfileView, {
     hotkey: 'P',
     group: 'global',

@@ -18,7 +18,7 @@ import getTextProfiles from '../profile_management/texts';
 
 import { setAutoDeployment, setAutoEnable } from './actions/automation';
 import { setAdvancedMode, setDesktopNotifications, setHideTopLevelCategory,
-         setLanguage, setProfilesVisible } from './actions/interface';
+         setLanguage, setProfilesVisible, setRelativeTimes } from './actions/interface';
 import { nativeCountryName, nativeLanguageName } from './languagemap';
 import getText from './texts';
 
@@ -54,6 +54,7 @@ interface IConnectedProps {
   minimizeToTray: boolean;
   desktopNotifications: boolean;
   hideTopLevelCategory: boolean;
+  relativeTimes: boolean;
   extensions: IAvailableExtension[];
 }
 
@@ -68,6 +69,7 @@ interface IActionProps {
   onSetCustomTitlebar: (enable: boolean) => void;
   onSetDesktopNotifications: (enabled: boolean) => void;
   onSetHideTopLevelCategory: (hide: boolean) => void;
+  onSetRelativeTimes: (enabled: boolean) => void;
 }
 
 interface IComponentState {
@@ -112,7 +114,7 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
   public render(): JSX.Element {
     const { t, advanced, autoDeployment, autoEnable, currentLanguage,
             customTitlebar, desktopNotifications, profilesVisible,
-            hideTopLevelCategory, startup } = this.props;
+            hideTopLevelCategory, relativeTimes, startup } = this.props;
 
     const needRestart = (customTitlebar !== this.mInitialTitlebar);
 
@@ -165,6 +167,14 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
                 <More id='more-hide-toplevel-category' name={t('Top-Level Categories')}>
                   {getText('toplevel-categories', t)}
                 </More>
+              </Toggle>
+            </div>
+            <div>
+              <Toggle
+                checked={relativeTimes}
+                onToggle={this.toggleRelativeTimes}
+              >
+                {t('Use relative times (e.g. "3 months ago")')}
               </Toggle>
             </div>
           </div>
@@ -244,6 +254,10 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
 
   private toggleAcceleration = () => {
     this.props.changeStartup('disableGPU', this.props.startup.disableGPU !== true);
+  }
+
+  private toggleRelativeTimes = () => {
+    this.props.onSetRelativeTimes(!this.props.relativeTimes);
   }
 
   private selectLanguage = (evt) => {
@@ -390,6 +404,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     customTitlebar: state.settings.window.customTitlebar,
     minimizeToTray: state.settings.window.minimizeToTray,
     extensions: state.session.extensions.available,
+    relativeTimes: state.settings.interface.relativeTimes,
   };
 }
 
@@ -419,6 +434,9 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
     },
     onSetHideTopLevelCategory: (skip: boolean) => {
       dispatch(setHideTopLevelCategory(skip));
+    },
+    onSetRelativeTimes: (enabled: boolean) => {
+      dispatch(setRelativeTimes(enabled));
     },
   };
 }

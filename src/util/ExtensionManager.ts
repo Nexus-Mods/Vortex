@@ -1274,7 +1274,7 @@ class ExtensionManager {
           const child = spawn(runExe, options.shell ? args : args.map(arg => arg.replace(/"/g, '')),
                               spawnOptions);
           if (options.onSpawned !== undefined) {
-            options.onSpawned();
+            options.onSpawned(child.pid);
           }
 
           let errOut: string;
@@ -1339,7 +1339,7 @@ class ExtensionManager {
   }
 
   private runElevated(executable: string, cwd: string, args: string[],
-                      env: { [key: string]: string }, onSpawned: () => void) {
+                      env: { [key: string]: string }, onSpawned: (pid?: number) => void) {
     const ipcPath = shortid();
     let tmpFilePath: string;
     return new Promise((resolve, reject) => {

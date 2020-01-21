@@ -162,7 +162,7 @@ function registerSettings(instanceGroup: undefined,
 
 function mapStateToProps(state: IState): IConnectedProps {
   return {
-    settingsPage: state.session.base.settingsPage,
+    settingsPage: state.session.base.settingsPage || undefined,
   };
 }
 

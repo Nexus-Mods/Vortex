@@ -24,3 +24,6 @@ export const setHideTopLevelCategory = safeCreateAction('SET_HIDE_TOPLEVEL_CATEG
 
 export const showUsageInstruction = safeCreateAction('SHOW_USAGE_INSTRUCTION',
   (usageId: string, show: boolean) => ({ usageId, show }));
+
+export const setRelativeTimes = safeCreateAction('SET_RELATIVE_TIMES',
+  (enabled: boolean) => enabled);

@@ -2,6 +2,7 @@ import { IconButton } from '../../../controls/TooltipControls';
 import { IState } from '../../../types/IState';
 import { ComponentEx, translate } from '../../../util/ComponentEx';
 import { getSafe } from '../../../util/storeHelper';
+import { truthy } from '../../../util/util';
 
 import { IMod } from '../../mod_management/types/IMod';
 
@@ -63,8 +64,8 @@ class Editor extends ComponentEx<IProps, IComponentState> {
     const { dialog } = this.state;
 
     return (
-      <Modal show={dialog !== undefined} onHide={this.close}>
-        {dialog !== undefined
+      <Modal show={truthy(dialog)} onHide={this.close}>
+        {truthy(dialog)
           ? (
             <Modal.Body>
             <div>
@@ -122,11 +123,11 @@ class Editor extends ComponentEx<IProps, IComponentState> {
 }
 
 function mapStateToProps(state: IState): IConnectedProps {
-  const dialog: IDialog = (state.session as any).profileTransfer.dialog;
+  const dialog: IDialog = (state.session as any).profileTransfer.dialog || undefined;
   return {
     dialog,
     profiles: state.persistent.profiles,
-    mods: dialog !== undefined ? state.persistent.mods[dialog.gameId] : undefined,
+    mods: truthy(dialog) ? state.persistent.mods[dialog.gameId] : undefined,
   };
 }
 

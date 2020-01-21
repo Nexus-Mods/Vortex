@@ -54,8 +54,13 @@ class RootCloseWrapper extends React.Component<{ onClose: () => void }, {}> {
   }
 }
 
+export interface IContextPosition {
+  x: number;
+  y: number;
+}
+
 export interface IContextMenuProps {
-  position: { x: number, y: number };
+  position?: IContextPosition;
   visible: boolean;
   onHide: () => void;
   instanceId: string;
@@ -88,7 +93,7 @@ class ContextMenu extends ComponentEx<IProps, IComponentState> {
   public render(): JSX.Element {
     const { actions, children, onHide, position, visible } = this.props;
     const { right, bottom } = this.state;
-    if (!visible || (actions.length === 0)) {
+    if (!visible || ((actions || []).length === 0)) {
       return null;
     }
 
@@ -121,7 +126,7 @@ class ContextMenu extends ComponentEx<IProps, IComponentState> {
               open={true}
               onClick={onHide}
             >
-              {actions.map(this.renderMenuItem)}
+              {(actions || []).map(this.renderMenuItem)}
             </Dropdown.Menu>
           </div>
         </Portal>
@@ -152,7 +157,7 @@ class ContextMenu extends ComponentEx<IProps, IComponentState> {
     }
   }
 
-  private updatePlacement(position: { x: number, y: number }) {
+  private updatePlacement(position?: { x: number, y: number }) {
     if (this.mMenuRef === null) {
       return;
     }

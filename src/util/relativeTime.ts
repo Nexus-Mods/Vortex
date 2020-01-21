@@ -7,6 +7,25 @@ const SEC_PER_WEEK = SEC_PER_DAY * 7;
 const SEC_PER_MONTH = SEC_PER_DAY * 30;
 const SEC_PER_YEAR = SEC_PER_DAY * 365;
 
+export type TimeMode = 'relative' | 'absolute';
+
+let timeMode = 'relative';
+
+export function setTimeMode(mode: TimeMode) {
+  timeMode = mode;
+}
+
+/**
+ * format the specified date in a user-friendly way, depending on the globally set time mode
+ */
+export function userFriendlyTime(date: Date, t: I18next.TFunction, locale: string): string {
+  if (timeMode === 'relative') {
+    return relativeTime(date, t);
+  } else {
+    return date.toLocaleString(locale);
+  }
+}
+
 function relativeTime(date: Date, t: I18next.TFunction): string {
   let deltaSec = (Date.now() - date.getTime()) / 1000;
 

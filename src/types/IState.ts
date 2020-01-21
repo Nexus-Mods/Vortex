@@ -163,6 +163,7 @@ export interface ISettingsInterface {
   profilesVisible: boolean;
   desktopNotifications: boolean;
   hideTopLevelCategory: boolean;
+  relativeTimes: boolean;
   dashboardLayout: string[];
   dashletSettings: { [dashletId: string]: IDashletSettings };
   usage: { [usageId: string]: boolean };
