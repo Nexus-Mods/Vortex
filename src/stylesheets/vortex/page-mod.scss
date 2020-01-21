@@ -79,3 +79,26 @@
     animation: pulseColor 6s infinite linear;
     border: $border-width solid $brand-warning;
 }
+
+.mod-installing {
+  background-color: $gray-dark;
+}
+
+.mod-installed {
+  background-color: $table-bg;
+}
+
+#more-mods-container {
+ display: flex;
+ justify-content: center;
+}
+
+#table-mods #btn-more-mods {
+  margin-top: $half-gutter;
+  display: block;
+  border-radius: $btn-border-radius-base;
+  border: 2px solid $brand-primary;
+  svg {
+    margin-right: 0.5em;
+  }
+}

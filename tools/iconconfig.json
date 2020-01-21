@@ -51,6 +51,10 @@
     "endorse-yes": "{fa}/thumbs-up",
     "endorse-no": "{fa}/thumbs-down",
     "endorse-maybe": "{fa}/thumbs-o-up",
+    "endorse-disabled": {
+      "path": "{nucleo}/ui/{nucleo_simple}_bold-remove",
+      "rmFill": true
+    },
     "comments": {
       "path": "{fa}/commenting",
       "rmFill": true
@@ -479,6 +483,14 @@
     },
     "showhide-up": {
       "path": "{nucleo}/arrows/{nucleo_simple}_stre-up",
+      "rmFill": true
+    },
+    "showhide-left": {
+      "path": "{nucleo}/arrows/{nucleo_simple}_stre-left",
+      "rmFill": true
+    },
+    "showhide-right": {
+      "path": "{nucleo}/arrows/{nucleo_simple}_stre-right",
       "rmFill": true
     },
     "attention-required": {

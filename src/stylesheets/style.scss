@@ -10,6 +10,9 @@
   &:hover {
     color: $link-hover-color;
     background-color: initial !important;
+    &[disabled] {
+      color: $text-color-disabled;
+    }
   }
   &:active {
     color: $link-hover-color;
@@ -89,6 +92,14 @@
   z-index: 4;
 }
 
+.form-input-clear {
+  z-index: 3;
+  position: absolute;
+  right: 4px;
+  top: 0;
+  bottom: 0;
+}
+
 .has-feedback label ~ .form-control-feedback {
   top: ($line-height-computed + 0.4) * 1rem;
 }
@@ -101,6 +112,12 @@
 // fill the available space inside a flex display
 .flex-fill {
   flex: 1 1 0%;
+}
+
+.flex-center-both {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .vcenter {
@@ -305,6 +322,7 @@ div:hover > .hover-expand {
   top: 4px;
   right: 4px;
   width: initial;
+  z-index: 3;
 
   .btn {
     @extend .btn-embed;
@@ -423,6 +441,7 @@ div:hover > .hover-expand {
 @import "vortex/dialog-about";
 @import "vortex/dialog-categories";
 @import "vortex/dialog-diagnostic-files";
+@import "vortex/dialog-extensions";
 @import "vortex/dialog-external-change";
 @import "vortex/dialog-fix-deployment";
 @import "vortex/dialog-fomod";
@@ -459,6 +478,7 @@ div:hover > .hover-expand {
 
 .cell-installTime, .header-installTime {
   text-align: center;
+  white-space: nowrap;
 }
 
 .cell-filetime, .header-filetime {
@@ -588,6 +608,7 @@ div:hover > .hover-expand {
 .header-action-label {
   flex: 1 1 0;
   text-align: center;
+  margin-right: 1em;
 }
 
 // /specific table columns
@@ -610,6 +631,13 @@ div:hover > .hover-expand {
 
 ///////////////
 // nexus logo
+
+#nexus-dl-icon .svg-use {
+  --nexus-orange-color: transparent;
+  --nexus-orange-opacity: 0;
+  --nexus-orange-darker-opacity: 0;
+  --nexus-outline-opacity: 0;
+}
 
 .nexus-orange {
   fill: #D78F46;

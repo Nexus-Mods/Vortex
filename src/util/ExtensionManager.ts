@@ -3,6 +3,7 @@ import { addNotification, closeDialog, dismissNotification } from '../actions/no
 import { setExtensionLoadFailures } from '../actions/session';
 
 import { DialogActions, DialogType, IDialogContent, showDialog } from '../actions/notifications';
+import { IExtension } from '../extensions/extension_manager/types';
 import { ExtensionInit } from '../types/Extension';
 import {
   ArchiveHandlerCreator,
@@ -41,7 +42,7 @@ import * as Promise from 'bluebird';
 import { spawn, SpawnOptions } from 'child_process';
 import { app as appIn, dialog as dialogIn, ipcMain, ipcRenderer, remote } from 'electron';
 import { EventEmitter } from 'events';
-import * as fs from 'fs';
+import * as fs from 'fs-extra';
 import I18next from 'i18next';
 import * as JsonSocket from 'json-socket';
 import * as _ from 'lodash';
@@ -52,7 +53,6 @@ import * as net from 'net';
 import * as path from 'path';
 import * as Redux from 'redux';
 import {} from 'redux-watcher';
-import * as rimraf from 'rimraf';
 import * as semver from 'semver';
 import { generate as shortid } from 'shortid';
 import { dynreq, runElevated } from 'vortex-run';
@@ -73,6 +73,7 @@ interface IRegisteredExtension {
   path: string;
   dynamic: boolean;
   initFunc: ExtensionInit;
+  info?: IExtension;
 }
 
 interface IWatcherRegistry {
@@ -92,6 +93,41 @@ interface IApiAddition {
   callback: (...args: any[]) => void;
 }
 
+class APIProxyHandler implements ProxyHandler<any> {
+  private mExtension: IRegisteredExtension;
+
+  constructor(extension: IRegisteredExtension) {
+    this.mExtension = extension;
+  }
+
+  public get(target, key: PropertyKey): any {
+    if (key === 'extension') {
+      return this.mExtension;
+    }
+    return target[key];
+  }
+}
+
+class APIProxyCreator implements ProxyHandler<any> {
+  private mExtension: IRegisteredExtension;
+  private mProxy: APIProxyHandler;
+
+  constructor(extension: IRegisteredExtension) {
+    this.mExtension = extension;
+  }
+
+  public get(target, key: PropertyKey): any {
+    if (key === 'api') {
+      if (this.mProxy === undefined) {
+        this.mProxy = new Proxy(target[key], new APIProxyHandler(this.mExtension));
+      }
+      return this.mProxy;
+    } else {
+      return target[key];
+    }
+  }
+}
+
 class ContextProxyHandler implements ProxyHandler<any> {
   private mContext: any;
   private mInitCalls: IInitCall[];
@@ -99,6 +135,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
   private mCurrentExtension: string;
   private mCurrentPath: string;
   private mOptional: {};
+  private mMayRegister: boolean = true;
 
   constructor(context: any) {
     this.mContext = context;
@@ -111,6 +148,14 @@ class ContextProxyHandler implements ProxyHandler<any> {
     this.mOptional = new Proxy({}, {
       get(target, key: PropertyKey): any {
         return (...args) => {
+          if (!this.mMayRegister) {
+            log('warn', 'extension tries to use register call outside init function', {
+              extension: this.mCurrentExtension,
+              call: key,
+            });
+            return;
+          }
+
           that.mInitCalls.push({
             extension: that.mCurrentExtension,
             extensionPath: that.mCurrentPath,
@@ -121,6 +166,10 @@ class ContextProxyHandler implements ProxyHandler<any> {
         };
       },
     });
+  }
+
+  public endRegistration() {
+    this.mMayRegister = false;
   }
 
   /**
@@ -213,6 +262,14 @@ class ContextProxyHandler implements ProxyHandler<any> {
     return (key in this.mContext)
       ? this.mContext[key]
       : (...args) => {
+        if (!this.mMayRegister) {
+          log('warn', 'extension tries to use register call outside init function', {
+            extension: this.mCurrentExtension,
+            call: key,
+          });
+          return;
+        }
+
         this.mInitCalls.push({
           extension: this.mCurrentExtension,
           extensionPath: this.mCurrentPath,
@@ -253,6 +310,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
       registerTest: undefined,
       registerArchiveType: undefined,
       registerGame: undefined,
+      registerGameStore: undefined,
       registerGameInfoProvider: undefined,
       registerAttributeExtractor: undefined,
       registerModType: undefined,
@@ -352,6 +410,12 @@ class EventProxy extends EventEmitter {
 
 const UNDEFINED = {};
 
+interface IStartHook {
+  priority: number;
+  id: string;
+  hook: (input: IRunParameters) => Promise<IRunParameters>;
+}
+
 /**
  * interface to extensions. This loads extensions and provides the api extensions
  * use
@@ -381,7 +445,7 @@ class ExtensionManager {
   private mStyleManager: StyleManagerT;
   private mReduxWatcher: any;
   private mWatches: IWatcherRegistry = {};
-  private mProtocolHandlers: { [protocol: string]: (url: string) => void } = {};
+  private mProtocolHandlers: { [protocol: string]: (url: string, install: boolean) => void } = {};
   private mArchiveHandlers: { [extension: string]: ArchiveHandlerCreator };
   private mModDB: modmetaT.ModDB;
   private mModDBPromise: Promise<void>;
@@ -392,7 +456,8 @@ class ExtensionManager {
   private mExtensionState: { [extId: string]: IExtensionState };
   private mLoadFailures: { [extId: string]: IExtensionLoadFailure[] } = {};
   private mInterpreters: { [ext: string]: (input: IRunParameters) => IRunParameters };
-  private mStartHooks: Array<{ priority: number, id: string, hook: (input: IRunParameters) => Promise<IRunParameters> }>;
+  private mStartHooks: IStartHook[];
+  private mLoadingCallbacks: Array<(name: string, idx: number) => void> = [];
   private mProgrammaticMetaServers: { [id: string]: any } = {};
   private mForceDBReconnect: boolean = false;
   private mOnUIStarted: () => void;
@@ -462,7 +527,8 @@ class ExtensionManager {
       Object.keys(this.mExtensionState)
         .filter(extId => this.mExtensionState[extId].remove)
         .forEach(extId => {
-          rimraf.sync(path.join(extensionsPath, extId));
+          log('debug', 'removing', path.join(extensionsPath, extId));
+          fs.removeSync(path.join(extensionsPath, extId));
           initStore.dispatch(forgetExtension(extId));
         });
       ipcMain.on('__get_extension_state', event => {
@@ -486,6 +552,10 @@ class ExtensionManager {
     this.mTranslator = translator;
   }
 
+  public get extensions() {
+    return this.mExtensions;
+  }
+
   /**
    * sets up the extension manager to work with the specified store
    *
@@ -507,8 +577,21 @@ class ExtensionManager {
       store.dispatch(addNotification(noti));
       return noti.id;
     };
-    this.mApi.showErrorNotification =
-      (message: string, details: string | Error | any, options?: IErrorOptions) => {
+    // tslint:disable-next-line:only-arrow-functions
+    this.mApi.showErrorNotification = function(message: string,
+                                               details: string | Error | any,
+                                               options?: IErrorOptions) {
+      if ((this.extension !== undefined)
+          && (this.extension.info !== undefined)
+          && (this.extension.info.author !== 'Black Tree Gaming Ltd.')) {
+        if (options === undefined) {
+          options = {};
+        }
+        if (options.allowReport !== false) {
+          options['allowReport'] = false;
+          options.extension = this.extension.info;
+        }
+      }
       showError(store.dispatch, message, details, options);
     };
 
@@ -674,8 +757,12 @@ class ExtensionManager {
         });
     };
 
-    return Promise.each(calls, call => {
+    return Promise.each(calls, (call, idx) => {
+      log('debug', 'once', { extension: call.extension });
       try {
+        this.mLoadingCallbacks.forEach(cb => {
+          cb(call.extension, idx);
+        });
         const prom = call.arguments[0]() || Promise.resolve();
 
         return prom.catch(err => {
@@ -685,7 +772,12 @@ class ExtensionManager {
         reportError(err, call);
       }
     })
-    .then(() => undefined);
+    .then(() => {
+      this.mLoadingCallbacks.forEach(cb => {
+        cb(undefined, calls.length);
+      });
+      log('debug', 'once done');
+    });
   }
 
   public renderStyle() {
@@ -694,6 +786,15 @@ class ExtensionManager {
 
   public getProtocolHandler(protocol: string) {
     return this.mProtocolHandlers[protocol] || null;
+  }
+
+  public get numOnce() {
+    const calls = this.mContextProxyHandler.getCalls(remote !== undefined ? 'once' : 'onceMain');
+    return calls.length;
+  }
+
+  public onLoadingExtension(cb: (name: string, idx: number) => void) {
+    this.mLoadingCallbacks.push(cb);
   }
 
   public setUIReady() {
@@ -845,18 +946,32 @@ class ExtensionManager {
       }
       this.mContextProxyHandler.setExtension(ext.name, ext.path);
       try {
-        ext.initFunc(contextProxy as IExtensionContext);
+        const extProxy = new Proxy(contextProxy, new APIProxyCreator(ext));
+        ext.initFunc(extProxy as IExtensionContext);
       } catch (err) {
         this.mLoadFailures[ext.name] = [ { id: 'exception', args: { message: err.message } } ];
         log('warn', 'couldn\'t initialize extension',
           {name: ext.name, err: err.message, stack: err.stack});
       }
     });
+    this.mContextProxyHandler.endRegistration();
     // need to store them locally for now because the store isn't loaded at this time
     this.mLoadFailures = {
       ...this.mLoadFailures,
       ...this.mContextProxyHandler.unloadIncompatible(
-        ExtensionManager.sUIAPIs, this.mExtensions.map(ext => ext.name)),
+        ExtensionManager.sUIAPIs, this.mExtensions.reduce((prev, ext) => {
+          if (ext.info !== undefined) {
+            if (ext.info.name !== undefined) {
+              prev.push(ext.info.name);
+            }
+
+            if (ext.info.id !== undefined) {
+              prev.push(ext.info.id);
+            }
+          }
+          prev.push(ext.name);
+          return prev;
+        }, [])),
     };
 
     if (remote !== undefined) {
@@ -880,19 +995,17 @@ class ExtensionManager {
       .forEach(ext => {
         try {
           const oldVersion = getSafe(state.app, ['extensions', ext.name, 'version'], '0.0.0');
-          const info = JSON.parse(fs.readFileSync(path.join(ext.path, 'info.json'),
-            { encoding: 'utf8' }));
-          if (oldVersion !== info.version) {
+          if (oldVersion !== ext.info.version) {
             if (migrations[ext.name] === undefined) {
-              this.mApi.store.dispatch(setExtensionVersion(ext.name, info.version));
+              this.mApi.store.dispatch(setExtensionVersion(ext.name, ext.info.version));
             } else {
               Promise.mapSeries(migrations[ext.name], mig => mig(oldVersion))
                 .then(() => {
-                  this.mApi.store.dispatch(setExtensionVersion(ext.name, info.version));
+                  this.mApi.store.dispatch(setExtensionVersion(ext.name, ext.info.version));
                 })
                 .catch(err => {
                   this.mApi.showErrorNotification('Extension failed to migrate', err, {
-                    allowReport: info.author === 'Black Tree Gaming Ltd.',
+                    allowReport: ext.info.author === 'Black Tree Gaming Ltd.',
                   });
                 });
             }
@@ -972,7 +1085,7 @@ class ExtensionManager {
   }
 
   private registerProtocol = (protocol: string, def: boolean,
-                              callback: (url: string) => void): boolean => {
+                              callback: (url: string, install: boolean) => void): boolean => {
     log('info', 'register protocol', { protocol });
     // make it work when using the development version
     const args = process.execPath.endsWith('electron.exe')
@@ -1142,7 +1255,15 @@ class ExtensionManager {
       }
 
       const cwd = options.cwd || path.dirname(executable);
-      const env = { ...process.env, ...options.env };
+      // process.env is case insensitive (on windows at least?), but the spawn parameter isn't.
+      // I think the key is called "Path" on windows but I'm not willing to bet this is consistent
+      // across all language variants and versions
+      const pathEnvName = Object.keys(process.env).find(key => key.toLowerCase() === 'path');
+      const env = {
+        ...process.env,
+        [pathEnvName]: process.env['PATH_ORIG'] || process.env['PATH'],
+        ...options.env,
+      };
 
       return this.applyStartHooks({ executable, args, options })
       .then(updatedParameters => {
@@ -1163,7 +1284,7 @@ class ExtensionManager {
           const child = spawn(runExe, options.shell ? args : args.map(arg => arg.replace(/"/g, '')),
                               spawnOptions);
           if (options.onSpawned !== undefined) {
-            options.onSpawned();
+            options.onSpawned(child.pid);
           }
 
           let errOut: string;
@@ -1205,7 +1326,12 @@ class ExtensionManager {
               if (errOut === undefined) {
                 errOut = '';
               }
-              errOut += chunk.toString();
+              try {
+                errOut += chunk.toString();
+              } catch (err) {
+                log('warn', 'error output from external process couldn\'t be processed',
+                    { executable });
+              }
             });
           }
         } catch (err) {
@@ -1222,7 +1348,7 @@ class ExtensionManager {
   }
 
   private runElevated(executable: string, cwd: string, args: string[],
-                      env: { [key: string]: string }, onSpawned: () => void) {
+                      env: { [key: string]: string }, onSpawned: (pid?: number) => void) {
     const ipcPath = shortid();
     let tmpFilePath: string;
     return new Promise((resolve, reject) => {
@@ -1259,22 +1385,29 @@ class ExtensionManager {
     });
   }
 
-  private emitAndAwait = (event: string, ...args: any[]): Promise<void> => {
+  private emitAndAwait = (event: string, ...args: any[]): Promise<any> => {
     let queue = Promise.resolve();
-    const enqueue = (prom: Promise<void>) => {
+    const results: any[] = [];
+    const enqueue = (prom: Promise<any>) => {
       if (prom !== undefined) {
-        queue = queue.then(() => prom.catch(err => {
-          this.mApi.showErrorNotification(`Unhandled error in event "${event}"`, err);
-        }));
+        queue = queue.then(() => prom
+          .then(res => {
+            if ((res !== undefined) && (res !== null)) {
+              results.push(res);
+            }
+          })
+          .catch(err => {
+            this.mApi.showErrorNotification(`Unhandled error in event "${event}"`, err);
+          }));
       }
     };
 
     this.mEventEmitter.emit(event, ...args, enqueue);
 
-    return queue;
+    return queue.then(() => results);
   }
 
-  private onAsync = (event: string, listener: (...args) => Promise<void>) => {
+  private onAsync = (event: string, listener: (...args) => Promise<any>) => {
     this.mEventEmitter.on(event, (...args: any[]) => {
       const enqueue = args.pop();
       if ((enqueue === undefined) || (typeof(enqueue) !== 'function')) {
@@ -1285,7 +1418,6 @@ class ExtensionManager {
         }
         // call the listener anyway
         listener(...args)
-          .then(() => null)
           .catch(err => {
             this.mApi.showErrorNotification(`Failed to call event ${event}`, err);
           });
@@ -1405,11 +1537,20 @@ class ExtensionManager {
   private loadDynamicExtension(extensionPath: string): IRegisteredExtension {
     const indexPath = path.join(extensionPath, 'index.js');
     if (fs.existsSync(indexPath)) {
+      let info: IExtension = { name: '', author: '', description: '', version: '' };
+      try {
+        info = JSON.parse(fs.readFileSync(path.join(extensionPath, 'info.json'),
+        { encoding: 'utf8' }));
+      } catch (error) {
+        log('warn', 'extension has no info.json file', extensionPath);
+      }
+
       return {
         name: path.basename(extensionPath),
         initFunc: dynreq(indexPath).default,
         path: extensionPath,
         dynamic: true,
+        info,
       };
     } else {
       return undefined;

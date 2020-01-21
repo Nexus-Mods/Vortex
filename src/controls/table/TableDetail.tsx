@@ -123,7 +123,9 @@ class DetailCell extends React.Component<ICellProps, {}> {
     return content !== null ? (
       <FormGroup key={key}>
         { attribute.name !== undefined ? (
-          <ControlLabel title={attribute.description}>{attribute.name}{helpIcon}</ControlLabel>
+          <ControlLabel title={t(attribute.description)}>
+            {t(attribute.name)}{helpIcon}
+          </ControlLabel>
          ) : null }
         {content}
       </FormGroup>
@@ -148,17 +150,23 @@ class DetailCell extends React.Component<ICellProps, {}> {
       );
     } else {
       const choiceKey = currentChoice !== undefined ? currentChoice.key : undefined;
+      const currentIcon = currentChoice !== undefined
+        ? currentChoice.icon
+        : undefined;
       return (
-        <Select
-          options={choices}
-          value={choiceKey}
-          onChange={this.changeCellSelect}
-          valueKey='key'
-          labelKey='text'
-          valueComponent={ValueComponent}
-          placeholder={(attribute.edit.placeholder !== undefined)
-            ? attribute.edit.placeholder() : undefined}
-        />
+        <div className='table-details-select-container'>
+          {currentIcon !== undefined ? <Icon name={currentIcon}/> : null}
+          <Select
+            options={choices}
+            value={choiceKey}
+            onChange={this.changeCellSelect}
+            valueKey='key'
+            labelKey='text'
+            valueComponent={ValueComponent}
+            placeholder={(attribute.edit.placeholder !== undefined)
+              ? attribute.edit.placeholder() : undefined}
+          />
+        </div>
       );
     }
   }

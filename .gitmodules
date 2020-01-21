@@ -144,3 +144,19 @@
 [submodule "extensions\\script-extender-error-check"]
 	path = extensions/script-extender-error-check
 	url = https://github.com/Nexus-Mods/extension-script-extender-error-check.git
+[submodule "extensions/gamestore-gog"]
+	path = extensions/gamestore-gog
+	url = https://github.com/nexus-mods/extension-gamestore-gog.git
+	branch = master
+[submodule "extensions/gamestore-origin"]
+	path = extensions/gamestore-origin
+	url = https://github.com/nexus-mods/extension-gamestore-origin.git
+	branch = master
+[submodule "extensions/gamestore-uplay"]
+	path = extensions/gamestore-uplay
+	url = https://github.com/nexus-mods/extension-gamestore-uplay
+	branch = master
+[submodule "extensions/gamestore-xbox"]
+	path = extensions/gamestore-xbox
+	url = https://github.com/nexus-mods/extension-gamestore-xbox
+	branch = master

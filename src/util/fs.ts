@@ -178,33 +178,50 @@ function unknownErrorRetry(filePath: string, err: Error, stackErr: Error): Promi
       options.title = 'Anti Virus denied access';
       options.message = `Your Anti-Virus Software has blocked access to "${filePath}".`;
       options.detail = undefined;
-    } else if ([21, 1005, 1392].indexOf(err['nativeCode']) !== -1) {
-      options.title = 'I/O Error';
+    } else if ([21, 59, 483, 793, 1005, 1127, 1392, 1920, 6800].indexOf(err['nativeCode']) !== -1) {
+      options.title = `I/O Error (${err['nativeCode']})`;
       options.message = `Accessing "${filePath}" failed with an error that indicates `
                       + 'a hardware problem. This may indicate the disk is defective, '
                       + 'if it\'s a network or cloud drive it may simply indicate '
                       + 'temporary network or server problems. '
                       + 'Please do not report this to us, this is not a bug in Vortex '
                       + 'and we can not provide remote assistance with hardware problems.';
-    } else if ([362, 383, 396, 404].indexOf(err['nativeCode']) !== -1) {
-      options.title = 'OneDrive error';
+    } else if ([362, 383, 390, 395, 396, 404].indexOf(err['nativeCode']) !== -1) {
+      options.title = `OneDrive error (${err['nativeCode']})`;
       options.message = `The file "${filePath}" is stored on a cloud storage drive `
                       + '(Microsoft OneDrive) which is currently unavailable. Please '
                       + 'check your internet connection and verify the service is running, '
                       + 'then retry.';
       options.detail = undefined;
-    } else if ([4390].indexOf(err['nativeCode']) !== -1) {
-      options.title = 'Incompatible folder';
+    } else if ([4390, 4393, 4394].indexOf(err['nativeCode']) !== -1) {
+      options.title = `Incompatible folder (${err['nativeCode']})`;
       options.message = `Windows reported an error message regarding "${filePath}" that indicates `
                       + 'the containing folder has limitations that make it unsuitable for what '
                       + 'it\'s being used. '
                       + 'A common example of this is if you try to put the staging folder on a '
                       + 'OneDrive folder because OneDrive can\'t deal with hardlinks.';
-    } else if ([4350].indexOf(err['nativeCode']) !== -1) {
-      options.title = 'Network drive unavailable';
+    } else if ([433, 1920].indexOf(err['nativeCode']) !== -1) {
+      options.title = `Drive unavailable (${err['nativeCode']})`;
+      options.message = `The file "${filePath}" is currently not accessible. If this is a `
+                      + 'network drive, please make sure it\'s connected. Otherwise make sure '
+                      + 'the drive letter hasn\'t changed and if necessary, update the path '
+                      + 'within Vortex.';
+    } else if ([53, 55, 4350].indexOf(err['nativeCode']) !== -1) {
+      options.title = `Network drive unavailable (${err['nativeCode']})`;
       options.message = `The file "${filePath}" is currently not accessible, very possibly the `
                       + 'network share as a whole is inaccesible due to a network problem '
                       + 'or the server being offline.';
+    } else if (err['nativeCode'] === 1816) {
+      options.title = 'Not enough quota';
+      options.message = `Windows reported insufficient quota writing to "${filePath}".`;
+    } else if (err['nativeCode'] === 6851) {
+      options.title = 'Volume dirty';
+      options.message = 'The operation could not be completed because the volume is dirty. '
+                      + 'Please run chkdsk and try again.';
+    } else if (err['nativeCode'] === 1359) {
+      options.title = 'Internal error';
+      options.message = 'The operation failed with an internal (internal to windows) error. '
+                      + 'No further error information is available to us.';
     } else {
       options.title += ` (${err['nativeCode']})`;
       options.buttons.unshift('Cancel and Report');
@@ -663,6 +680,9 @@ function elevated(func: (ipc, req: NodeRequireFunction) => Promise<void>,
 
 export function ensureDirWritableAsync(dirPath: string,
                                        confirm: () => PromiseLike<void>): PromiseBB<void> {
+  if (confirm === undefined) {
+    confirm = () => PromiseBB.resolve();
+  }
   const stackErr = new Error();
   return ensureDirAsync(dirPath)
     .then(() => {

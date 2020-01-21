@@ -1,8 +1,8 @@
 import { setMultiUser } from '../../actions/user';
 import More from '../../controls/More';
 import { IState } from '../../types/IState';
+import { relaunch } from '../../util/commandLine';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
-import { spawnSelf } from '../../util/util';
 
 import getText from './texts';
 
@@ -77,8 +77,7 @@ class SettingsVortex extends ComponentEx<IProps, IComponentState> {
   }
 
   private restart = () => {
-    remote.app.relaunch();
-    remote.app.exit(0);
+    relaunch();
   }
 }
 

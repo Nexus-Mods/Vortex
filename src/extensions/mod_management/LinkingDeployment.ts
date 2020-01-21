@@ -282,7 +282,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
       .catch({ code: 'ENOENT' }, () => null);
   }
 
-  public deactivate(sourcePath: string, dataPath: string): Promise<void> {
+  public deactivate(sourcePath: string, dataPath: string, sourceName: string): Promise<void> {
     return turbowalk(sourcePath, entries => {
       if (this.mContext === undefined) {
         return;
@@ -290,7 +290,11 @@ abstract class LinkingActivator implements IDeploymentMethod {
       entries.forEach(entry => {
         if (!entry.isDirectory) {
           const relPath: string = path.relative(sourcePath, entry.filePath);
-          delete this.mContext.newDeployment[this.mNormalize(path.join(dataPath, relPath))];
+          const normPath = this.mNormalize(path.join(dataPath, relPath));
+          if ((this.mContext.newDeployment[normPath] !== undefined)
+              && (this.mContext.newDeployment[normPath].source === sourceName)) {
+            delete this.mContext.newDeployment[normPath];
+          }
         }
       });
     });

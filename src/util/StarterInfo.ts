@@ -2,8 +2,9 @@ import { setToolRunning } from '../actions';
 import { IDiscoveredTool } from '../types/IDiscoveredTool';
 import { IGame } from '../types/IGame';
 import { log } from '../util/log';
-import opn from '../util/opn';
-import Steam, { GamePathNotMatched } from '../util/Steam';
+
+import GameStoreHelper from './GameStoreHelper';
+
 import { getSafe } from '../util/storeHelper';
 
 import { IDiscoveryResult } from '../extensions/gamemode_management/types/IDiscoveryResult';
@@ -20,6 +21,7 @@ import * as Promise from 'bluebird';
 import { remote } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
+import { GameEntryNotFound } from '../types/IGameStore';
 
 export interface IStarterInfo {
   id: string;
@@ -32,6 +34,7 @@ export interface IStarterInfo {
   commandLine: string[];
   workingDirectory: string;
   exclusive: boolean;
+  detach: boolean;
   environment: { [key: string]: string };
 }
 
@@ -81,15 +84,25 @@ class StarterInfo implements IStarterInfo {
 
     return launcherPromise.then(res => {
       if (res !== undefined) {
-        return StarterInfo.runThroughLauncher(res.launcher, info, api, res.addInfo)
+        const infoObj = (res.addInfo === undefined)
+          ? (!!game.details)
+            ? game.details
+            : path.dirname(info.exePath)
+          : res.addInfo;
+        return StarterInfo.runThroughLauncher(res.launcher, info, api, infoObj)
           .then(() => {
             // assuming that runThroughLauncher returns immediately on handing things off
             // to the launcher
             api.store.dispatch(setToolRunning(info.exePath, Date.now(), info.exclusive));
+            if (['hide', 'hide_recover'].includes(info.onStart)) {
+              remote.getCurrentWindow().hide();
+            } else if (info.onStart === 'close') {
+              remote.app.quit();
+            }
           })
           .catch(UserCanceled, () => null)
-          .catch(GamePathNotMatched, err => {
-            const errorMsg = [err.message, err.gamePath, err.steamEntryPaths].join(' - ');
+          .catch(GameEntryNotFound, err => {
+            const errorMsg = [err.message, err.storeName, err.existingGames].join(' - ');
             log('error', errorMsg);
             onShowError('Failed to start game through launcher', err, true);
             return StarterInfo.runGameExecutable(info, api, onShowError, onSpawned);
@@ -104,46 +117,28 @@ class StarterInfo implements IStarterInfo {
     });
   }
 
-  private static executeWithSteam(info: StarterInfo, api: IExtensionApi): Promise<void> {
-    // Should never happen but it's worth adding
-    //  the game check just in case.
-    if (!info.isGame) {
-      return Promise.reject(new Error(`Attempted to execute a tool via Steam - ${info.exePath}`));
-    }
-
-    return new Promise((resolve, reject) => {
-      Steam.getGameExecutionInfo(path.dirname(info.exePath),
-                                 getSafe(info.details, ['steamAppId'], undefined))
-        .then(execInfo =>
-          api.runExecutable(execInfo.steamPath, execInfo.arguments, {
-            cwd: path.dirname(execInfo.steamPath),
-            env: info.environment,
-            suggestDeploy: true,
-            shell: true,
-          }))
-        .then(() => resolve())
-        .catch(err => reject(err));
-    });
-  }
-
-  private static executeWithEpic(info: StarterInfo,
-                                 api: IExtensionApi,
-                                 addInfo: any): Promise<void> {
-    return opn(`com.epicgames.launcher://apps/${addInfo}?action=launch&silent=true`)
-      .catch(err => null);
-  }
-
   private static runGameExecutable(info: StarterInfo,
                                    api: IExtensionApi,
                                    onShowError: OnShowErrorFunc,
                                    onSpawned: () => void,
                                    ): Promise<void> {
+
+    const spawned = () => {
+      onSpawned();
+      if (['hide', 'hide_recover'].includes(info.onStart)) {
+        remote.getCurrentWindow().hide();
+      } else if (info.onStart === 'close') {
+        remote.app.quit();
+      }
+    };
+
     return api.runExecutable(info.exePath, info.commandLine, {
-      cwd: info.workingDirectory,
+      cwd: info.workingDirectory || path.dirname(info.exePath),
       env: info.environment,
       suggestDeploy: true,
       shell: info.shell,
-      onSpawned,
+      detach: info.detach || (info.onStart === 'close'),
+      onSpawned: spawned,
     })
     .catch(ProcessCanceled, () => undefined)
     .catch(UserCanceled, () => undefined)
@@ -196,6 +191,12 @@ class StarterInfo implements IStarterInfo {
           error: err,
         });
       }
+    })
+    .then(() => {
+      if ((info.onStart === 'hide_recover')
+          && !remote.getCurrentWindow().isVisible()) {
+        remote.getCurrentWindow().show();
+      }
     });
   }
 
@@ -203,15 +204,12 @@ class StarterInfo implements IStarterInfo {
                                     info: StarterInfo,
                                     api: IExtensionApi,
                                     addInfo: any): Promise<void> {
-    const launchFunc = {
-      steam: this.executeWithSteam,
-      epic: this.executeWithEpic,
-    }[launcher];
-    if (launchFunc !== undefined) {
-      return launchFunc(info, api, addInfo);
-    } else {
-      return Promise.reject(new Error(`Unsupported launcher ${launcher}`));
-    }
+    const gameLauncher = GameStoreHelper.getGameStore(launcher);
+    const infoObj = (addInfo !== undefined)
+      ? addInfo : path.dirname(info.exePath);
+    return (gameLauncher !== undefined)
+      ? gameLauncher.launchGame(infoObj, api)
+      : Promise.reject(new Error(`unsupported launcher ${launcher}`));
   }
 
   private static gameIcon(gameId: string, extensionPath: string, logo: string) {
@@ -264,6 +262,8 @@ class StarterInfo implements IStarterInfo {
   public shell: boolean;
   public details: { [key: string]: any } = {};
   public exclusive: boolean;
+  public detach: boolean;
+  public onStart?: 'hide' | 'hide_recover' | 'close';
   private mExtensionPath: string;
   private mLogoName: string;
   private mIconPathCache: string;
@@ -272,6 +272,8 @@ class StarterInfo implements IStarterInfo {
               tool?: IToolStored, toolDiscovery?: IDiscoveredTool) {
     this.gameId = gameDiscovery.id || game.id;
     this.mExtensionPath = gameDiscovery.extensionPath || game.extensionPath;
+    this.detach = getSafe(toolDiscovery, ['detach'], getSafe(tool, ['detach'], true));
+    this.onStart = getSafe(toolDiscovery, ['onStart'], getSafe(tool, ['onStart'], undefined));
 
     if ((tool === undefined) && (toolDiscovery === undefined)) {
       this.id = this.gameId;
@@ -327,9 +329,8 @@ class StarterInfo implements IStarterInfo {
       this.environment =
         getSafe(toolDiscovery, ['environment'], getSafe(tool, ['environment'], {})) || {};
       this.mLogoName = getSafe(toolDiscovery, ['logo'], getSafe(tool, ['logo'], undefined));
-      this.workingDirectory = toolDiscovery.workingDirectory !== undefined
-        ? toolDiscovery.workingDirectory
-        : path.dirname(toolDiscovery.path || '');
+      this.workingDirectory = getSafe(toolDiscovery, ['workingDirectory'],
+        getSafe(tool, ['workingDirectory'], ''));
       this.shell = getSafe(toolDiscovery, ['shell'], getSafe(tool, ['shell'], undefined));
       this.exclusive = getSafe(tool, ['exclusive'], false) || false;
     } else {

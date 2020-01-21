@@ -1,30 +1,280 @@
+import { removeExtension } from '../../actions';
+import { IExtensionApi } from '../../types/IExtensionContext';
+import { IState } from '../../types/IState';
+import { DataInvalid } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
+import { log } from '../../util/log';
+import { INVALID_FILENAME_RE } from '../../util/util';
+
+import { ExtensionType, IExtension } from './types';
+import { readExtensionInfo } from './util';
 
 import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
+import * as _ from 'lodash';
 import ZipT = require('node-7z');
 import * as path from 'path';
 import * as rimraf from 'rimraf';
+import { dynreq } from 'vortex-run';
 
 const app = appIn || remote.app;
 
-type rimrafType = (path: string, options: any, callback: (err?) => void) => void;
 const rimrafAsync: (removePath: string, options: any) => Promise<void> = Promise.promisify(rimraf);
 
-function installExtension(archivePath: string): Promise<void> {
+class ContextProxyHandler implements ProxyHandler<any> {
+  private mDependencies: string[] = [];
+
+  public get(target, key: PropertyKey): any {
+    if (key === 'requireExtension') {
+      return (dependencyId: string) => {
+        this.mDependencies.push(dependencyId);
+      };
+    } else {
+      return () => undefined;
+    }
+  }
+
+  public get dependencies(): string[] {
+    return this.mDependencies;
+  }
+}
+
+function installExtensionDependencies(api: IExtensionApi, extPath: string): Promise<void> {
+  const handler = new ContextProxyHandler();
+  const context = new Proxy({}, handler);
+
+  try {
+    const extension = dynreq(path.join(extPath, 'index.js'));
+
+    extension.default(context);
+
+    const state: IState = api.store.getState();
+
+    return Promise.map(handler.dependencies, depId => {
+      const ext = state.session.extensions.available.find(iter =>
+        (!iter.type && ((iter.name === depId) || (iter.id === depId))));
+
+      if (ext !== undefined) {
+        return api.emitAndAwait('install-extension', ext);
+      } else {
+        return Promise.resolve();
+      }
+    })
+    .then(() => null);
+  } catch (err) {
+    return Promise.reject(err);
+  }
+}
+
+function sanitize(input: string): string {
+  return input.replace(INVALID_FILENAME_RE, '_');
+}
+
+function removeOldVersion(api: IExtensionApi, info: IExtension): Promise<void> {
+  const state: IState = api.store.getState();
+  const { installed }  = state.session.extensions;
+
+  // should never be more than one but let's handle multiple to be safe
+  const previousVersions = Object.keys(installed)
+    .filter(key => (info.id !== undefined) && (installed[key].id === info.id)
+                || (info.modId !== undefined) && (installed[key].modId === info.modId)
+                || (installed[key].name === info.name));
+  log('info', 'removing previous versions of the extension', previousVersions);
+
+  previousVersions.forEach(key => api.store.dispatch(removeExtension(key)));
+  return Promise.resolve();
+}
+
+/**
+ * validate a theme extension. A theme extension can contain multiple themes, one directory
+ * per theme, each is expected to contain at least one of
+ * "variables.scss", "styles.scss" or "fonts.scss"
+ */
+function validateTheme(extPath: string): Promise<void> {
+  return fs.readdirAsync(extPath)
+    .filter(fileName =>
+      fs.statAsync(path.join(extPath, fileName))
+        .then(stats => stats.isDirectory()))
+    .then(dirNames => {
+      if (dirNames.length === 0) {
+        return Promise.reject(
+          new DataInvalid('Expected a subdirectory containing the stylesheets'));
+      }
+      return Promise.map(dirNames, dirName =>
+        fs.readdirAsync(path.join(extPath, dirName))
+          .then(files => {
+            if (!files.includes('variables.scss')
+                && !files.includes('styles.scss')
+                && !files.includes('fonts.scss')) {
+              return Promise.reject(
+                new DataInvalid('Theme not found'));
+            } else {
+              return Promise.resolve();
+            }
+          }))
+        .then(() => null);
+    });
+}
+
+function isLocaleCode(input: string): boolean {
+  try {
+    new Date().toLocaleString(input);
+    return true;
+  } catch (err) {
+    return false;
+  }
+}
+
+/**
+ * validate a translation extension. Can only contain one iso-code named directory (other
+ * directories are ignored) which needs to contain at least one json file
+ */
+function validateTranslation(extPath: string): Promise<void> {
+  return fs.readdirAsync(extPath)
+    .filter(fileName => isLocaleCode(fileName))
+    .filter(fileName =>
+      fs.statAsync(path.join(extPath, fileName))
+        .then(stats => stats.isDirectory()))
+    .then(dirNames => {
+      if (dirNames.length !== 1) {
+        return Promise.reject(
+          new DataInvalid('Expected exactly one language subdirectory'));
+      }
+      return fs.readdirAsync(path.join(extPath, dirNames[0]))
+        .then(files => {
+          if (files.find(fileName => path.extname(fileName) === '.json') === undefined) {
+            return Promise.reject('No translation files');
+          }
+
+          return Promise.resolve();
+        });
+    });
+}
+
+/**
+ * validate an extension. It has to contain an index.js and info.json on the top-level
+ */
+function validateExtension(extPath: string): Promise<void> {
+  return Promise.all([
+    fs.statAsync(path.join(extPath, 'index.js')),
+    fs.statAsync(path.join(extPath, 'info.json')),
+  ])
+  .then(() => null)
+  .catch({ code: 'ENOENT' }, err =>
+    Promise.reject(
+      new DataInvalid('Extension needs to include index.js and info.json on top-level')));
+}
+
+function validateInstall(extPath: string, info?: IExtension): Promise<ExtensionType> {
+  if (info === undefined) {
+    let validAsTheme: boolean = true;
+    let validAsTranslation: boolean = true;
+    let validAsExtension: boolean = true;
+
+    const guessedType: ExtensionType = undefined;
+    // if we don't know the type we can only check if _any_ extension type applies
+    return validateTheme(extPath)
+      .catch(DataInvalid, () => validAsTheme = false)
+      .then(() => validateTranslation(extPath))
+      .catch(DataInvalid, () => validAsTranslation = false)
+      .then(() => validateExtension(extPath))
+      .catch(DataInvalid, () => validAsExtension = false)
+      .then(() => {
+        if (!validAsExtension && !validAsTheme && !validAsTranslation) {
+          return Promise.reject(
+            new DataInvalid('Doesn\'t seem to contain a correctly packaged extension, '
+              + 'theme or translation'));
+        }
+
+        // at least one type was valid, let's guess what it really is
+        if (validAsExtension) {
+          return Promise.resolve(undefined);
+        } else if (validAsTranslation) {
+          // it's unlikely we would mistake a theme for a translation since it would require
+          // it to contain a directory named like a iso language code including json files.
+          return Promise.resolve('translation' as ExtensionType);
+        } else {
+          return Promise.resolve('theme' as ExtensionType);
+        }
+      });
+  } else if (info.type === 'theme') {
+    return validateTheme(extPath).then(() => Promise.resolve('theme' as ExtensionType));
+  } else if (info.type === 'translation') {
+    return validateTranslation(extPath).then(() => Promise.resolve('translation' as ExtensionType));
+  } else {
+    return validateExtension(extPath).then(() => Promise.resolve(undefined));
+  }
+}
+
+function installExtension(api: IExtensionApi,
+                          archivePath: string,
+                          info?: IExtension): Promise<void> {
   const extensionsPath = path.join(app.getPath('userData'), 'plugins');
-  const destPath = path.join(extensionsPath, path.basename(archivePath, path.extname(archivePath)));
-  const tempPath = destPath + '.installing';
+  let destPath: string;
+  const tempPath = path.join(extensionsPath, path.basename(archivePath)) + '.installing';
 
   const Zip: typeof ZipT = require('node-7z');
   const extractor = new Zip();
 
+  let type: ExtensionType;
+
   return extractor.extractFull(archivePath, tempPath, {ssc: false}, () => undefined,
                         () => undefined)
-      .then(() => fs.statAsync(path.join(tempPath, 'info.json')))
-      .catch(err => Promise.reject(new Error('not an extension, info.json missing')))
+      .then(() => validateInstall(tempPath, info).then(guessedType => type = guessedType))
+      .then(() => readExtensionInfo(tempPath, false, info))
+      // merge the caller-provided info with the stuff parsed from the info.json file because there
+      // is data we may only know at runtime (e.g. the modId)
+      .then(manifestInfo => {
+        const res: { id: string, info: Partial<IExtension> } = {
+          id: manifestInfo.id,
+          info: {
+            ...(manifestInfo.info || {}),
+            ...(info || {}),
+          },
+        };
+
+        if (res.info.type === undefined) {
+          res.info.type = type;
+        }
+
+        return res;
+      })
+      .catch({ code: 'ENOENT' }, () => (info !== undefined)
+        ? Promise.resolve({ id: path.basename(tempPath, '.installing'), info })
+        : Promise.reject(new Error('not an extension, info.json missing')))
+      .then(manifestInfo =>
+        // update the manifest on disc, in case we had new info from the caller
+        fs.writeFileAsync(path.join(tempPath, 'info.json'),
+                          JSON.stringify(manifestInfo.info, undefined, 2))
+          .then(() => manifestInfo))
+      .then((manifestInfo: { id: string, info: IExtension }) => {
+        const dirName = sanitize(manifestInfo.id);
+        destPath = path.join(extensionsPath, dirName);
+        if (manifestInfo.info.type !== undefined) {
+          type = manifestInfo.info.type;
+        }
+        return removeOldVersion(api, manifestInfo.info);
+      })
+      // we don't actually expect the output directory to exist
       .then(() => fs.removeAsync(destPath))
       .then(() => fs.renameAsync(tempPath, destPath))
+      .then(() => {
+        if (type === 'translation') {
+          return fs.readdirAsync(destPath)
+            .map(entry => fs.statAsync(path.join(destPath, entry))
+              .then(stat => ({ name: entry, stat })))
+            .then(() => null);
+        } else if (type === 'theme') {
+          return Promise.resolve();
+        } else {
+          return installExtensionDependencies(api, destPath);
+        }
+      })
+      .catch(DataInvalid, err => {
+        rimrafAsync(tempPath, { glob: false })
+        .then(() => api.showErrorNotification('Invalid Extension', err,
+                                              { allowReport: false, message: archivePath }));
+      })
       .catch(err =>
         rimrafAsync(tempPath, { glob: false })
         .then(() => Promise.reject(err)));

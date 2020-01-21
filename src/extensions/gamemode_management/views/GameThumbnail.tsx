@@ -22,6 +22,7 @@ export interface IBaseProps {
   t: I18next.TFunction;
   game: IGameStored;
   active: boolean;
+  discovered?: boolean;
   onRefreshGameInfo?: (gameId: string) => Promise<void>;
   type: string;
   getBounds?: () => ClientRect;
@@ -49,13 +50,15 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
   private mRef = null;
 
   public render(): JSX.Element {
-    const { t, active, game, mods, profile, type } = this.props;
+    const { t, active, discovered, game, mods, profile, type } = this.props;
 
     if (game === undefined) {
       return null;
     }
 
-    const logoPath: string = path.join(game.extensionPath, game.logo);
+    const logoPath: string = (game.extensionPath !== undefined)
+      ? path.join(game.extensionPath, game.logo)
+      : game.imageURL;
 
     // Mod count should only be shown for Managed and Discovered games as
     //  the supported type suggests that the game has been removed from the machine.
@@ -66,8 +69,13 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
 
     const nameParts = game.name.split('\t');
 
+    const classes = [
+      'game-thumbnail',
+      `game-thumbnail-${(discovered !== false) ? 'discovered' : 'undiscovered'}`,
+    ];
+
     return (
-      <Panel className='game-thumbnail' bsStyle={active ? 'primary' : 'default'}>
+      <Panel className={classes.join(' ')} bsStyle={active ? 'primary' : 'default'}>
         <Panel.Body className='game-thumbnail-body'>
           <img
             className={'thumbnail-img'}
@@ -136,13 +144,18 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
   }
 
   private renderMenu(): JSX.Element[] {
-    const { t, container, game, getBounds, onRefreshGameInfo, type } = this.props;
+    const { t, container, discovered, game, getBounds, onRefreshGameInfo, type } = this.props;
+    const groupType = (type !== 'unmanaged')
+      ? type
+      : discovered
+      ? 'discovered'
+      : 'undiscovered';
     const gameInfoPopover = (
       <Popover id={`popover-info-${game.id}`} className='popover-game-info' >
         <IconBar
           id={`game-thumbnail-${game.id}`}
           className='buttons'
-          group={`game-${type}-buttons`}
+          group={`game-${groupType}-buttons`}
           instanceId={game.id}
           staticElements={[]}
           collapse={false}
@@ -165,7 +178,7 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
         <IconBar
           id={`game-thumbnail-${game.id}`}
           className='buttons'
-          group={`game-${type}-buttons`}
+          group={`game-${groupType}-buttons`}
           instanceId={game.id}
           staticElements={[]}
           collapse={false}

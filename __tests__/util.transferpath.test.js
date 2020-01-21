@@ -4,8 +4,8 @@ const walk = require('turbowalk');
 const du = require('diskusage');
 import * as fs from '../src/util/fs';
 
-require("babel-core/register");
-require("babel-polyfill");
+require("@babel/register");
+require("@babel/polyfill");
 
 const MB = 1024 * 1024;
 

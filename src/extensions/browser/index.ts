@@ -44,8 +44,10 @@ function triggerEvent(subscriber: string, eventId: string, value: any): Subscrip
 }
 
 function init(context: IExtensionContext): boolean {
+  let lastURL: string;
   context.registerDialog('browser', BrowserView, () => ({
     onEvent: triggerEvent,
+    onNavigate: (url: string) => { lastURL = url; },
   }));
   context.registerReducer(['session', 'browser'], sessionReducer);
 
@@ -57,7 +59,6 @@ function init(context: IExtensionContext): boolean {
       const subscriptionId = shortid();
 
       return new Promise<IBrowserResult>((resolve, reject) => {
-        let lastURL = url;
         subscribe(subscriptionId, 'close', () => {
           reject(new UserCanceled());
           return 'continue';

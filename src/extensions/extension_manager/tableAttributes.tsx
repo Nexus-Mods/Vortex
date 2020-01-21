@@ -51,6 +51,7 @@ function getTableAttributes(context: IAttributesContext):
             : context.onSetExtensionEnabled(extension.name, value === 'enabled'),
       },
       isSortable: false,
+      isGroupable: true,
     }, {
       id: 'name',
       name: 'Name',
@@ -71,6 +72,7 @@ function getTableAttributes(context: IAttributesContext):
       isToggleable: true,
       edit: {},
       isSortable: true,
+      isGroupable: true,
     }, {
       id: 'description',
       name: 'Description',

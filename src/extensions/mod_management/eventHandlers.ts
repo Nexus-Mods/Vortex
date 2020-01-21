@@ -389,7 +389,8 @@ function undeploy(api: IExtensionApi,
     })
     .then(lastActivation => activator.prepare(deployPath, false, lastActivation, normalize))
     .then(() => (mod !== undefined)
-      ? activator.deactivate(path.join(stagingPath, mod.installationPath), subdir(mod))
+      ? activator.deactivate(path.join(stagingPath, mod.installationPath),
+                             subdir(mod), mod.installationPath)
       : Promise.resolve())
     .tapCatch(() => {
       if (activator.cancel !== undefined) {

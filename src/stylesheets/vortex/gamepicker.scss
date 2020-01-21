@@ -10,7 +10,7 @@ $thumbnail-width: 256px;
   grid-template-columns: repeat(auto-fill, $thumbnail-width + $gutter-width);
 
   > .game-thumbnail {
-    margin: $half-gutter;
+    margin: $half-gutter !important;
   }
 }
 
@@ -38,6 +38,10 @@ $thumbnail-width: 256px;
   &panel-default {
     @extend .panel-default;
     border-color: transparent;
+  }
+
+  &.game-thumbnail-undiscovered img {
+    filter: grayscale(100%) contrast(50%) brightness(50%);
   }
 }
 
@@ -113,6 +117,7 @@ $thumbnail-width: 256px;
 
   .thumbnail-img {
     max-width: 256px;
+    max-height: 144px;
   }
 }
 
@@ -171,6 +176,10 @@ $thumbnail-width: 256px;
   .list-group-item:hover {
     background-color: $gray-lighter;
   }
+
+  &.game-list-undiscovered img {
+    filter: grayscale(100%) contrast(50%) brightness(50%);
+  }
 }
 
 .btngroup-game-list {
@@ -223,4 +232,25 @@ $thumbnail-width: 256px;
 
 #img-add-game {
   margin-bottom: 10px;
+}
+
+#game-panel-group {
+  .panel-heading {
+    background-color: darken($table-bg, 5%);
+    border-bottom: 1px solid $gray-dark !important;
+    display: flex;
+    align-items: center;
+
+    > .icon {
+      margin-right: 1em;
+    }
+  }
+
+  .panel, .panel-body {
+    border: 0;
+  }
+
+  &:hover {
+    background-color: $table-bg-active;
+  }
 }

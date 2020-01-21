@@ -42,6 +42,15 @@
   width: 100%;
 }
 
+#table-external-change-refchange,
+#table-external-change-valchange,
+#table-external-change-srcdeleted,
+#table-external-change-deleted {
+  .table-header-cell p {
+    white-space: nowrap;
+  }
+}
+
 .xtd.table-external-change-refchange.cell-file_count,
 .xtd.table-external-change-valchange.cell-file_count,
 .xtd.table-external-change-srcdeleted.cell-file_count,

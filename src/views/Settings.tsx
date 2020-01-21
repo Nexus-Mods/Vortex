@@ -3,9 +3,15 @@ import EmptyPlaceholder from '../controls/EmptyPlaceholder';
 import { PropsCallback } from '../types/IExtensionContext';
 import { IState } from '../types/IState';
 import { ComponentEx, connect, extend, translate } from '../util/ComponentEx';
+import * as fs from '../util/fs';
+import { writeFileAtomic } from '../util/fsAtomic';
+import { log } from '../util/log';
+import makeReactive from '../util/makeReactive';
 
 import MainPage from './MainPage';
 
+import { remote } from 'electron';
+import * as path from 'path';
 import * as React from 'react';
 import { Panel, Tab, Tabs } from 'react-bootstrap';
 import * as Redux from 'redux';
@@ -45,6 +51,19 @@ type IProps = ISettingsProps & IConnectedProps & IActionProps;
  * @extends {ComponentEx<ISettingsProps, {}>}
  */
 class Settings extends ComponentEx<IProps, {}> {
+  private mStartupPath = path.join(remote.app.getPath('appData'),
+                                   remote.app.getName(),
+                                   'startup.json');
+  private mStartupSettings = makeReactive({});
+  public componentWillMount() {
+    try {
+      this.mStartupSettings =
+        makeReactive(JSON.parse(fs.readFileSync(this.mStartupPath, { encoding: 'utf-8' })));
+    } catch (err) {
+      // nop
+    }
+  }
+
   public render(): JSX.Element {
     const { settingsPage, objects } = this.props;
 
@@ -109,7 +128,11 @@ class Settings extends ComponentEx<IProps, {}> {
       <Panel key={idx}>
         <PanelX.Body>
         {idx !== 0 ? <hr style={{ marginTop: 0 }} /> : null}
-        <page.component {...props} />
+        <page.component
+          {...props}
+          startup={this.mStartupSettings}
+          changeStartup={this.changeStartup}
+        />
         </PanelX.Body>
       </Panel>
     );
@@ -117,6 +140,14 @@ class Settings extends ComponentEx<IProps, {}> {
 
   private setCurrentPage = (page) => {
     this.props.onSetPage(page);
+  }
+
+  private changeStartup = (key: string, value: any) => {
+    this.mStartupSettings[key] = value;
+    writeFileAtomic(this.mStartupPath, JSON.stringify(this.mStartupSettings))
+      .catch(err => {
+        log('error', 'failed to write startup.json', { error: err.message });
+      });
   }
 }
 
@@ -131,7 +162,7 @@ function registerSettings(instanceGroup: undefined,
 
 function mapStateToProps(state: IState): IConnectedProps {
   return {
-    settingsPage: state.session.base.settingsPage,
+    settingsPage: state.session.base.settingsPage || undefined,
   };
 }
 

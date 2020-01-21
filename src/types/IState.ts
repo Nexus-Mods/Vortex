@@ -4,6 +4,7 @@ import { INotification } from './INotification';
 
 import { ICategoryDictionary } from '../extensions/category_management/types/ICategoryDictionary';
 import { IDownload } from '../extensions/download_management/types/IDownload';
+import { IAvailableExtension, IExtension } from '../extensions/extension_manager/types';
 import { IDiscoveryResult } from '../extensions/gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../extensions/gamemode_management/types/IGameStored';
 import { IMod } from '../extensions/mod_management/types/IMod';
@@ -162,6 +163,7 @@ export interface ISettingsInterface {
   profilesVisible: boolean;
   desktopNotifications: boolean;
   hideTopLevelCategory: boolean;
+  relativeTimes: boolean;
   dashboardLayout: string[];
   dashletSettings: { [dashletId: string]: IDashletSettings };
   usage: { [usageId: string]: boolean };
@@ -211,6 +213,10 @@ export interface ISettingsUpdate {
   channel: 'stable' | 'beta' | 'none';
 }
 
+export interface ISettingsWorkarounds {
+  userSymlinks: boolean;
+}
+
 export interface ISettings {
   interface: ISettingsInterface;
   automation: ISettingsAutomation;
@@ -221,6 +227,7 @@ export interface ISettings {
   mods: ISettingsMods;
   tables: ITableStates;
   update: ISettingsUpdate;
+  workarounds: ISettingsWorkarounds;
 }
 
 export interface IStateTransactions {
@@ -279,6 +286,11 @@ export interface IState {
     discovery: IDiscoveryState,
     notifications: INotificationState;
     browser: IBrowserState;
+    extensions: {
+      available: IAvailableExtension[],
+      installed: { [extId: string]: IExtension },
+      updateTime: number,
+    };
   };
   settings: ISettings;
   persistent: {

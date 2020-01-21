@@ -308,7 +308,7 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
   public render(): JSX.Element {
     const { t, installerInfo, installerState } = this.props;
     const { currentDescription } = this.state;
-    if ((installerInfo === undefined) || (installerState === undefined)) {
+    if (!truthy(installerInfo) || !truthy(installerState)) {
       return null;
     }
     const idx = installerState.currentStep;
@@ -433,7 +433,7 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
       currentDescription: option.description,
     });
 
-    if (props.installerState === undefined) {
+    if (!truthy(props.installerState)) {
       return ret({});
     }
     const { currentStep, installSteps } = props.installerState;
@@ -455,9 +455,9 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
 
 function mapStateToProps(state: any): IConnectedProps {
   return {
-    dataPath: state.session.fomod.installer.dialog.dataPath,
-    installerInfo: state.session.fomod.installer.dialog.info,
-    installerState: state.session.fomod.installer.dialog.state,
+    dataPath: state.session.fomod.installer.dialog.dataPath || undefined,
+    installerInfo: state.session.fomod.installer.dialog.info || undefined,
+    installerState: state.session.fomod.installer.dialog.state || undefined,
   };
 }
 

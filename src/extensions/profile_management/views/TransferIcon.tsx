@@ -210,7 +210,7 @@ class TransferIcon extends ComponentEx<IProps, IComponentState> {
             disabled={disabled}
             className={classes.join(' ')}
             key={`rules-${profile.id}`}
-            tooltip={t('Drag to another profile to transfer settings')}
+            tooltip={t('Drag to another profile to transfer settings.')}
             icon='connection'
             ref={this.setRef}
             onClick={this.toggleOverlay}

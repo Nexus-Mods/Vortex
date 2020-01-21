@@ -1,8 +1,8 @@
 import DateTimeFilter from '../../controls/table/DateTimeFilter';
 import ZoomableImage from '../../controls/ZoomableImage';
-import {ITableAttribute} from '../../types/ITableAttribute';
+import { ITableAttribute } from '../../types/ITableAttribute';
 import { getCurrentLanguage } from '../../util/i18n';
-import relativeTime from '../../util/relativeTime';
+import { userFriendlyTime } from '../../util/relativeTime';
 import { getSafe } from '../../util/storeHelper';
 
 import { IModWithState } from './types/IModProps';
@@ -34,37 +34,39 @@ export const PICTURE: ITableAttribute<IModWithState> = {
   edit: {},
 };
 
-export const INSTALL_TIME: ITableAttribute = {
-  id: 'installTime',
-  name: 'Installation Time',
-  description: 'Time when this mod was installed',
-  icon: 'calendar-plus-o',
-  customRenderer: (mod: IModWithState, detail: boolean, t) => {
-    const timeString = getSafe(mod, ['attributes', 'installTime'], undefined);
-    if (detail) {
-      const lang = getCurrentLanguage();
-      return (
-        <span>
-          {
-            timeString !== undefined
-              ? new Date(timeString).toLocaleString(lang)
-              : t('Not installed')
-          }
-        </span>
-      );
-    } else {
-      if (timeString === undefined) {
-        return <span>{t('Not installed')}</span>;
+export const INSTALL_TIME = (locale: () => string): ITableAttribute<IModWithState> => {
+  return {
+    id: 'installTime',
+    name: 'Installation Time',
+    description: 'Time when this mod was installed',
+    icon: 'calendar-plus-o',
+    customRenderer: (mod: IModWithState, detail: boolean, t) => {
+      const timeString = getSafe(mod, ['attributes', 'installTime'], undefined);
+      if (detail) {
+        const lang = getCurrentLanguage();
+        return (
+          <span>
+            {
+              timeString !== undefined
+                ? new Date(timeString).toLocaleString(lang)
+                : t('Not installed')
+            }
+          </span>
+        );
+      } else {
+        if (timeString === undefined) {
+          return <span>{t('Not installed')}</span>;
+        }
+        return <span>{userFriendlyTime(new Date(timeString), t, locale())}</span>;
       }
-      return <span>{relativeTime(new Date(timeString), t)}</span>;
-    }
-  },
-  calc: (mod: IModWithState) => new Date(getSafe(mod.attributes, ['installTime'], 0)),
-  placement: 'both',
-  isToggleable: true,
-  isDefaultVisible: false,
-  edit: {},
-  isSortable: true,
-  sortFunc: (lhs: Date, rhs: Date) => (lhs.getTime() || 0) - (rhs.getTime() || 0),
-  filter: new DateTimeFilter(),
+    },
+    calc: (mod: IModWithState) => new Date(getSafe(mod.attributes, ['installTime'], 0)),
+    placement: 'both',
+    isToggleable: true,
+    isDefaultVisible: false,
+    edit: {},
+    isSortable: true,
+    sortFunc: (lhs: Date, rhs: Date) => (lhs.getTime() || 0) - (rhs.getTime() || 0),
+    filter: new DateTimeFilter(),
+  };
 };

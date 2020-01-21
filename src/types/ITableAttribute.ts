@@ -2,7 +2,7 @@ import I18next from 'i18next';
 
 export type AttributeRenderer = 'progress';
 
-export type Placement = 'table' | 'detail' | 'both';
+export type Placement = 'table' | 'detail' | 'both' | 'inline';
 
 export type ValidationState = 'success' | 'warning' | 'error';
 
@@ -94,6 +94,13 @@ export interface ITableAttribute<T = any> {
    */
   isSortable?: boolean;
   /**
+   * if true (or a function), the table can be grouped by this attribute.
+   * if this is a function it will be called with the object to determine the value to use for
+   * grouping, otherwise the output of calc is used. This function must be fast, unlike calc
+   * the result from this is not cached (at this time)
+   */
+  isGroupable?: boolean | ((object: T, t: I18next.TFunction) => string);
+  /**
    * if set, the table can be filtered by this attribute using the specified control
    */
   filter?: ITableFilter;
@@ -144,7 +151,7 @@ export interface ITableAttribute<T = any> {
    * renderer. Please note that if you want caching or asynchronous calculation for this cell you'll
    * have to implement it yourself.
    * Also note that table cells using customRenderer will do more unnecessary rerenders than a
-   * calc-based field so please use customRenderer only when neccessary.
+   * calc-based field so please use customRenderer only when necessary.
    */
   customRenderer?: (object: T | T[], detailCell: boolean,
                     t: I18next.TFunction, props: ICustomProps) => JSX.Element;
@@ -178,7 +185,7 @@ export interface ITableAttribute<T = any> {
    * if specified, this is called to determine if the attribute is visible at all.
    * This can be used to hide attributes on game where they aren't supported.
    * This will only be evaluated when the table is created, when the user switches column visibility
-   * manually or when the list of table columns programatically changes but you can not use it
+   * manually or when the list of table columns programmatically changes but you can not use it
    * to dynamically hide columns _without_ changing any table props.
    */
   condition?: () => boolean;
@@ -201,7 +208,7 @@ export interface ITableAttribute<T = any> {
    */
   edit: {
     /**
-     * if set, this function determins if the attribute is editable. If "edit" is an empty
+     * if set, this function determines if the attribute is editable. If "edit" is an empty
      * object, the attribute is readonly. If "edit" is non-empty and "readonly" is
      * undefined, the attribute is editable.
      */
@@ -214,7 +221,7 @@ export interface ITableAttribute<T = any> {
 
     /**
      * Affects how choices are displayed if you have a choice attribute
-     * if true (or undefined) then we display a dropdown box where each item immediately triggers
+     * if true (or undefined) then we display a drop-down box where each item immediately triggers
      * an action. If false, render a selection box
      */
     actions?: boolean,

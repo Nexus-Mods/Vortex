@@ -70,13 +70,16 @@ import { initApplicationMenu } from './util/menu';
 import { showError } from './util/message';
 import './util/monkeyPatching';
 import { reduxSanity, StateError } from './util/reduxSanity';
+import LoadingScreen from './views/LoadingScreen';
 import MainWindow from './views/MainWindow';
 
 import * as Promise from 'bluebird';
 import { ipcRenderer, remote, webFrame } from 'electron';
 import { forwardToMain, getInitialStateRenderer, replayActionRenderer } from 'electron-redux';
 import { EventEmitter } from 'events';
+import * as fs from 'fs-extra-promise';
 import I18next from 'i18next';
+import * as msgpackT from 'msgpack';
 import * as nativeErr from 'native-errors';
 import * as React from 'react';
 import { DragDropContextProvider } from 'react-dnd';
@@ -92,6 +95,7 @@ import crashDump from 'crash-dump';
 
 import { setLanguage } from './actions';
 import { ThunkStore } from './types/IExtensionContext';
+import { IState } from './types/IState';
 import { UserCanceled } from './util/CustomErrors';
 import {} from './util/extensionRequire';
 import { reduxLogger } from './util/reduxLogger';
@@ -99,6 +103,44 @@ import { getSafe } from './util/storeHelper';
 import { getAllPropertyNames } from './util/util';
 
 log('debug', 'renderer process started', { pid: process.pid });
+
+function initialState(): any {
+  try {
+    return getInitialStateRenderer();
+  } catch (err) {
+    if (err instanceof SyntaxError) {
+      const dumpPath = path.join(remote.app.getPath('temp'), 'invalid_state.json');
+      fs.writeFileSync(dumpPath, remote.getGlobal('getReduxState')());
+      log('error', 'Failed to transfer application state. This indicates an issue with a '
+          + 'foreign library we need help debugging with. Please pack up and send in the file'
+          + `"${dumpPath}"`);
+
+      // we don't understand the error yet but most likely large state gets corrupted during IPC
+      // somehow, so we try a chunked transfer as a fallback
+      // NOTE: This uses msgpack for serialization to rule out json as the problem. However this
+      //   msgpack library converts undefined to null whereas JSON encoding just drops all undefined
+      //   values so going this route may cause new issues where code isn't capable of handling
+      //   null. This is only an issue for the "session" hive because everything that had been
+      //   serialized had the undefined values dropped anyway.
+      let stateSerialized: Buffer = Buffer.alloc(0);
+
+      const getReduxStateMsgpack = remote.getGlobal('getReduxStateMsgpack');
+
+      let idx = 0;
+      while (true) {
+        const newData: string = getReduxStateMsgpack(idx++);
+        if (newData === '') {
+          break;
+        }
+        stateSerialized = Buffer.concat([stateSerialized, Buffer.from(newData, 'base64')]);
+      }
+
+      const msgpack: typeof msgpackT = require('msgpack');
+
+      return msgpack.unpack(stateSerialized);
+    }
+  }
+}
 
 const tempPath = path.join(remote.app.getPath('userData'), 'temp');
 remote.app.setPath('temp', tempPath);
@@ -256,7 +298,7 @@ let tFunc: I18next.TFunction = fallbackTFunc;
 // store.replaceReducer(reducer(extReducers));
 store = createStore(
   reducer(extReducers, () => Decision.QUIT),
-  getInitialStateRenderer(),
+  initialState(),
   enhancer);
 replayActionRenderer(store);
 extensions.setStore(store);
@@ -293,7 +335,7 @@ const startupPromise = new Promise((resolve) => startupFinished = resolve);
 // tslint:disable-next-line:no-unused-variable
 const globalNotifications = new GlobalNotifications(extensions.getApi());
 
-function startDownloadFromURL(url: string, fileName?: string) {
+function startDownloadFromURL(url: string, fileName?: string, install?: boolean) {
   store.dispatch(addNotification({
     type: 'info',
     title: 'Download started',
@@ -311,7 +353,7 @@ function startDownloadFromURL(url: string, fileName?: string) {
       const handler = extensions.getProtocolHandler(protocol);
       if (handler !== null) {
         log('info', 'handling url', { url });
-        handler(url);
+        handler(url, install);
       } else {
         store.dispatch(addNotification({
           type: 'info',
@@ -327,8 +369,8 @@ eventEmitter.on('start-download-url', (url: string, fileName: string) => {
   startDownloadFromURL(url, fileName);
 });
 
-ipcRenderer.on('external-url', (event, url: string, fileName?: string) => {
-  startDownloadFromURL(url, fileName);
+ipcRenderer.on('external-url', (event, url: string, fileName?: string, install?: boolean) => {
+  startDownloadFromURL(url, fileName, install);
 });
 
 ipcRenderer.on('relay-event', (sender, event, ...args) => {
@@ -395,15 +437,49 @@ function renderer() {
 
   webFrame.setZoomFactor(getSafe(store.getState(), ['settings', 'window', 'zoomFactor'], 1));
 
-  getI18n(store.getState().settings.interface.language)
+  ReactDOM.render(
+    <LoadingScreen extensions={extensions} />,
+    document.getElementById('content'),
+  );
+  ipcRenderer.send('show-window');
+  getI18n('en', () => {
+    const state: IState = store.getState();
+    return Object.values(state.session.extensions.installed)
+      .filter(ext => ext.type === 'translation');
+  })
     .then(res => {
       ({ i18n, tFunc, error } = res);
-      extensions.setTranslation(i18n);
+
+      const dynamicExts: Array<{ name: string, path: string }> = extensions.extensions
+        .filter(ext => ext.dynamic)
+        .map(ext => ({ name: ext.name, path: ext.path }));
+
+      return Promise.map(dynamicExts, ext => {
+        const filePath = path.join(ext.path, 'language.json');
+        return fs.readFileAsync(filePath, { encoding: 'utf-8' })
+          .then((fileData: string) => {
+            i18n.addResources('en', ext.name, JSON.parse(fileData));
+          })
+          .catch(err => {
+            if (err.code !== 'ENOENT') {
+              // an extension not providing a locale file is ok
+              log('error', 'Failed to load translation', { filePath, error: err.message });
+            }
+          });
+        })
+        .then(() => {
+          extensions.setTranslation(i18n);
+        });
+    }).then(() => {
       if (error !== undefined) {
         showError(store.dispatch, 'failed to initialize localization', error,
                   { allowReport: false });
       }
       return extensions.doOnce();
+    })
+    .then(() => {
+      log('info', 'activating language', { lang: store.getState().settings.interface.language });
+      return i18n.changeLanguage(store.getState().settings.interface.language);
     })
     .then(() => extensions.renderStyle()
       .catch(err => {
@@ -432,7 +508,7 @@ function renderer() {
         </Provider>,
         document.getElementById('content'),
       );
-      ipcRenderer.send('show-window');
+      // ipcRenderer.send('show-window');
     });
 
   // prevent the page from being changed through drag&drop

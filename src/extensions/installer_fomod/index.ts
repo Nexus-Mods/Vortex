@@ -14,6 +14,7 @@ import { log } from '../../util/log';
 import { getSafe } from '../../util/storeHelper';
 import {truthy} from '../../util/util';
 
+import { getGame } from '../gamemode_management/util/getGame';
 import { ArchiveBrokenError } from '../mod_management/InstallManager';
 import { IMod } from '../mod_management/types/IMod';
 
@@ -137,7 +138,7 @@ function assertEdgeValid() {
   }
 }
 
-function testSupported(files: string[]): Promise<ISupportedResult> {
+function tsLib() {
   if (testSupportedLib === undefined) {
     try {
       assertEdgeValid();
@@ -152,14 +153,33 @@ function testSupported(files: string[]): Promise<ISupportedResult> {
           'Failed to load the fomod support library. This is an indication your .Net '
           + 'installation is invalid or outdated.');
         newErr.stack = err.stack;
-        return Promise.reject(newErr);
+        throw newErr;
       }
-      return Promise.reject(err.Data === undefined ? err : transformError(err));
+      throw err.Data === undefined ? err : transformError(err);
     }
   }
+  return testSupportedLib;
+}
 
+function testSupportedScripted(files: string[]): Promise<ISupportedResult> {
+  const testSupported = tsLib();
   return new Promise<ISupportedResult>((resolve, reject) => {
-    testSupportedLib({files}, (err: Error, result: ISupportedResult) => {
+    testSupported({files, allowedTypes: ['XmlScript', 'CSharpScript']},
+                  (err: Error, result: ISupportedResult) => {
+      if ((err !== null) && (err !== undefined)) {
+        reject(transformError(err));
+      } else {
+        resolve(result);
+      }
+    });
+  });
+}
+
+function testSupportedFallback(files: string[]): Promise<ISupportedResult> {
+  const testSupported = tsLib();
+  return new Promise<ISupportedResult>((resolve, reject) => {
+    testSupported({files, allowedTypes: ['Basic']},
+                  (err: Error, result: ISupportedResult) => {
       if ((err !== null) && (err !== undefined)) {
         reject(transformError(err));
       } else {
@@ -305,29 +325,29 @@ function checkNetInstall() {
 }
 
 function init(context: IExtensionContext): boolean {
-  (context.registerInstaller as any)(
-    'fomod', 100, testSupported,
-    (files, scriptPath, gameId, progressDelegate, choices, unattended) => {
-      const canBeUnattended = (choices !== undefined) && (choices.type === 'fomod');
-      const coreDelegates =
-        new Core(context.api, gameId, canBeUnattended && (unattended === true));
-      const stopPatterns = getStopPatterns(gameId);
-      const pluginPath = getPluginPath(gameId);
-      return currentInstallPromise
-        .then(() => {
-          context.api.store.dispatch(setInstallerDataPath(scriptPath));
-          const fomodChoices = (choices !== undefined) && (choices.type === 'fomod')
-            ? choices.options
-            : undefined;
-          return install(context.api, files, stopPatterns, pluginPath,
-                         scriptPath, fomodChoices,
-                         progressDelegate, coreDelegates);
-        })
-        .finally(() => {
-          context.api.store.dispatch(endDialog());
-          coreDelegates.detach();
-        });
+  const installWrap = (files, scriptPath, gameId, progressDelegate, choices, unattended) => {
+    const canBeUnattended = (choices !== undefined) && (choices.type === 'fomod');
+    const coreDelegates = new Core(context.api, gameId, canBeUnattended && (unattended === true));
+    const stopPatterns = getStopPatterns(gameId, getGame(gameId));
+    const pluginPath = getPluginPath(gameId);
+    return currentInstallPromise
+      .then(() => {
+        context.api.store.dispatch(setInstallerDataPath(scriptPath));
+        const fomodChoices = (choices !== undefined) && (choices.type === 'fomod')
+          ? choices.options
+          : undefined;
+        return install(context.api, files, stopPatterns, pluginPath,
+          scriptPath, fomodChoices,
+          progressDelegate, coreDelegates);
+      })
+      .finally(() => {
+        context.api.store.dispatch(endDialog());
+        coreDelegates.detach();
       });
+  };
+
+  context.registerInstaller('fomod', 20, testSupportedScripted, installWrap);
+  context.registerInstaller('fomod', 100, testSupportedFallback, installWrap);
 
   context.registerTest('net-current', 'startup', checkNetInstall);
   context.registerDialog('fomod-installer', InstallerDialog);

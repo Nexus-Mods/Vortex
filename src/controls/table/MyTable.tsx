@@ -18,12 +18,12 @@ export function Table(props: TableProps) {
   }
 
   return (
-    <div
-      style={{ ...props.style, display: 'table' }}
+    <table
+      style={{ ...props.style }}
       className={classes.join(' ')}
     >
       {props.children}
-    </div>
+    </table>
   );
 }
 
@@ -33,13 +33,13 @@ export function THead(props: DProps<HTMLTableSectionElement>
                               & { domRef?: ((instance: any | null) => any) }) {
   const classes = ['table-header', 'xthead'].concat((props.className || '').split(' '));
   return (
-    <div
-      style={{ ...props.style, display: 'table-header-group' }}
+    <thead
+      style={{ ...props.style }}
       className={classes.join(' ')}
       ref={props.domRef}
     >
       {props.children}
-    </div>
+    </thead>
   );
 }
 
@@ -47,13 +47,13 @@ export function TBody(props: DProps<HTMLTableSectionElement>
                               & { domRef?: ((instance: any | null) => any) }) {
   const classes = ['xtbody'].concat((props.className || '').split(' '));
   return (
-    <div
-      style={{ ...props.style, display: 'table-row-group' }}
+    <tbody
+      style={{ ...props.style }}
       className={classes.join(' ')}
       ref={props.domRef}
     >
       {props.children}
-    </div>
+    </tbody>
   );
 }
 
@@ -64,14 +64,14 @@ export class TH extends React.Component<THProps, {}> {
     const { children, className, domRef, style } = this.props;
     const classes = ['table-header-cell', 'xth'].concat((className || '').split(' '));
     return (
-      <div
-        style={{ ...style, display: 'table-cell' }}
+      <th
+        style={{ ...style }}
         className={classes.join(' ')}
         ref={domRef}
         {..._.omit(this.props, ['style', 'className', 'domRef']) as any}
       >
         {children}
-      </div>
+      </th>
     );
   }
 }
@@ -79,30 +79,33 @@ export class TH extends React.Component<THProps, {}> {
 type TRProps = DProps<HTMLTableRowElement> & { domRef?: (ref: HTMLDivElement) => void };
 
 export function TR(props: TRProps) {
-  const classes = ['xtr'].concat((props.className || '').split(' '));
+  const {className, domRef} = props;
+  const classes = ['xtr'].concat((className || '').split(' '));
   return (
-    <div
-      style={{ ...props.style, display: 'table-row' }}
+    <tr
       className={classes.join(' ')}
-      ref={props.domRef}
+      ref={domRef}
+      {..._.omit(props, ['className', 'domRef']) as any}
     >
       {props.children}
-    </div>
+    </tr>
   );
 }
 
-type TDProps = DProps<HTMLTableCellElement> & { domRef?: (ref: HTMLDivElement) => void };
+type TDProps = DProps<HTMLTableCellElement> & {
+  domRef?: (ref: HTMLDivElement) => void;
+  colSpan?: number;
+};
 
 export function TD(props: TDProps) {
   const classes = ['xtd'].concat((props.className || '').split(' '));
   return (
-    <div
-      style={{ ...props.style, display: 'table-cell' }}
+    <td
       className={classes.join(' ')}
-      {..._.omit(props, ['style', 'className']) as any}
+      {..._.omit(props, ['className', 'domRef']) as any}
       ref={props.domRef}
     >
       {props.children}
-    </div>
+    </td>
   );
 }

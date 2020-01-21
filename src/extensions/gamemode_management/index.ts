@@ -4,7 +4,8 @@ import {
   IExtensionApi,
   IExtensionContext,
 } from '../../types/IExtensionContext';
-import {IGame} from '../../types/IGame';
+import { IGame } from '../../types/IGame';
+import { IGameStore } from '../../types/IGameStore';
 import { IProfile, IRunningTool, IState } from '../../types/IState';
 import { IEditChoice, ITableAttribute } from '../../types/ITableAttribute';
 import {ProcessCanceled, SetupError, UserCanceled} from '../../util/CustomErrors';
@@ -45,7 +46,7 @@ import RecentlyManagedDashlet from './views/RecentlyManagedDashlet';
 import {} from './views/Settings';
 
 import GameModeManager from './GameModeManager';
-import { currentGame, currentGameDiscovery } from './selectors';
+import { currentGame, currentGameDiscovery, discoveryByGame } from './selectors';
 
 import * as Promise from 'bluebird';
 import { remote } from 'electron';
@@ -53,6 +54,7 @@ import * as path from 'path';
 import * as Redux from 'redux';
 import * as semver from 'semver';
 
+const gameStoreLaunchers: IGameStore[] = [];
 const extensionGames: IGame[] = [];
 
 const $ = local<{
@@ -153,6 +155,11 @@ function verifyGamePath(game: IGame, gamePath: string): Promise<void> {
 function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
   const state: IState = api.store.getState();
   const game = getGame(gameId);
+
+  if (game === undefined) {
+    return Promise.resolve();
+  }
+
   const discovery = state.settings.gameMode.discovered[gameId];
 
   return new Promise<void>((resolve, reject) => {
@@ -341,12 +348,15 @@ function init(context: IExtensionContext): boolean {
     ['session', 'discovery'],
     ], (discovery: any) => discovery.running);
 
+  const onRefreshGameInfo = (gameId: string) => refreshGameInfo(context.api.store, gameId);
+  const onBrowseGameLocation = (gameId: string) => browseGameLocation(context.api, gameId);
+
   context.registerMainPage('game', 'Games', LazyComponent(() => require('./views/GamePicker')), {
     hotkey: 'G',
     group: 'global',
     props: () => ({
-      onRefreshGameInfo: (gameId: string) => refreshGameInfo(context.api.store, gameId),
-      onBrowseGameLocation: (gameId: string) => browseGameLocation(context.api, gameId),
+      onRefreshGameInfo,
+      onBrowseGameLocation,
     }),
     activity,
   });
@@ -360,6 +370,17 @@ function init(context: IExtensionContext): boolean {
   context.registerFooter('discovery-progress', ProgressFooter);
 
   context.registerTableAttribute('mods', genModTypeAttribute(context.api));
+
+  context.registerGameStore = ((gameStore: IGameStore) => {
+    try {
+      gameStoreLaunchers.push(gameStore);
+    } catch (err) {
+      context.api.showErrorNotification('Game store launcher extension not loaded', err, {
+        allowReport: false,
+        message: gameStore.id,
+      });
+    }
+  }) as any;
 
   // TODO: hack, we need the extension path to get at the assets but this parameter
   //   is only added internally and not part of the public api
@@ -476,7 +497,7 @@ function init(context: IExtensionContext): boolean {
     context.api.translate('Manually Set Location'),
     (instanceIds: string[]) => { browseGameLocation(context.api, instanceIds[0]); });
 
-  context.registerAction('game-undiscovered-buttons', 50, 'browse', {},
+  context.registerAction('game-undiscovered-buttons', 120, 'browse', {},
     context.api.translate('Manually Set Location'),
     (instanceIds: string[]) => { browseGameLocation(context.api, instanceIds[0]); });
 
@@ -488,8 +509,10 @@ function init(context: IExtensionContext): boolean {
     const events = context.api.events;
 
     const GameModeManagerImpl: typeof GameModeManager = require('./GameModeManager').default;
+
     $.gameModeManager = new GameModeManagerImpl(
       extensionGames,
+      gameStoreLaunchers,
       (gameMode: string) => {
         log('debug', 'gamemode activated', gameMode);
         events.emit('gamemode-activated', gameMode);
@@ -526,6 +549,12 @@ function init(context: IExtensionContext): boolean {
       .catch(err => callback(err));
     });
 
+    events.on('manually-set-game-location', (gameId: string, callback: (err: Error) => void) => {
+      browseGameLocation(context.api, gameId)
+        .then(() => callback(null))
+        .catch(err => callback(err));
+    });
+
     let { searchPaths } = store.getState().settings.gameMode;
 
     if ((searchPaths !== undefined) && Array.isArray(searchPaths[0])) {
@@ -558,6 +587,12 @@ function init(context: IExtensionContext): boolean {
       //   and while the ui is usable again so at this point the user can already
       //   switch the game/profile again. The code below has to be able to deal with that
       return $.gameModeManager.setupGameMode(newGameId)
+        .then(() => {
+          // only calling to check if it works, some game extensions might discover
+          // a setup-error when trying to resolve the mod path
+          const discovery = discoveryByGame(store.getState(), newGameId);
+          getGame(newGameId).getModPaths(discovery.path);
+        })
         .then(() => $.gameModeManager.setGameMode(oldGameId, newGameId, currentProfileId))
         .catch((err) => {
           if (err instanceof UserCanceled) {

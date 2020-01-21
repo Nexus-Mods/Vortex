@@ -11,7 +11,7 @@ import * as storeHelperT from '../util/storeHelper';
 import { truthy } from '../util/util';
 
 import * as Promise from 'bluebird';
-import { screen } from 'electron';
+import { ipcMain, screen } from 'electron';
 import * as Redux from 'redux';
 import TrayIcon from './TrayIcon';
 
@@ -163,8 +163,17 @@ class MainWindow {
 
     return new Promise<Electron.WebContents>((resolve) => {
       this.mWindow.once('ready-to-show', () => {
-        if (this.mWindow !== null) {
+        if ((resolve !== undefined) && (this.mWindow !== null)) {
           resolve(this.mWindow.webContents);
+          resolve = undefined;
+        }
+      });
+      // if the show-window event is triggered before ready-to-show,
+      // that event never gets triggered so we'd be stuck
+      ipcMain.on('show-window', () => {
+        if ((resolve !== undefined) && (this.mWindow !== null)) {
+          resolve(this.mWindow.webContents);
+          resolve = undefined;
         }
       });
     });
@@ -200,10 +209,10 @@ class MainWindow {
     }
   }
 
-  public sendExternalURL(url: string) {
+  public sendExternalURL(url: string, install: boolean) {
     if (this.mWindow !== null) {
       try {
-        this.mWindow.webContents.send('external-url', url);
+        this.mWindow.webContents.send('external-url', url, undefined, install);
       } catch (err) {
         log('error', 'failed to send external url', { url, error: err.message });
       }

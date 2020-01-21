@@ -9,6 +9,7 @@ export * from './storeHelper';
 import { installIconSet } from '../controls/Icon';
 import { resolveCategoryName,
          resolveCategoryPath } from '../extensions/category_management/util/retrieveCategoryPath';
+import { readExtensibleDir } from '../extensions/extension_manager/util';
 import { getGame, getGames } from '../extensions/gamemode_management/util/getGame';
 import deriveModInstallName from '../extensions/mod_management/modIdManager';
 import { getManifest } from '../extensions/mod_management/util/activationStore';
@@ -19,6 +20,7 @@ import { makeModReference } from '../extensions/mod_management/util/modReference
 import { removeMods } from '../extensions/mod_management/util/removeMods';
 import sortMods, { CycleError } from '../extensions/mod_management/util/sort';
 import testModReference from '../extensions/mod_management/util/testModReference';
+import GameStoreHelper from '../util/GameStoreHelper';
 import { Archive } from './archives';
 import renderBBCode from './bbcode';
 import { checksum, fileMD5 } from './checksum';
@@ -41,12 +43,13 @@ import onceCB from './onceCB';
 import opn from './opn';
 import { getReduxLog } from './reduxLogger';
 import ReduxProp from './ReduxProp';
-import relativeTime from './relativeTime';
+import relativeTime, { userFriendlyTime } from './relativeTime';
 import steam, { GameNotFound, ISteamEntry } from './Steam';
 import { bytesToString, deBOM, isChildPath, isFilenameValid, isPathValid, makeQueue, objDiff,
          pad, sanitizeCSSId, setdefault } from './util';
 import walk from './walk';
 
+import SevenZip = require('node-7z');
 import { runElevated, runThreaded } from 'vortex-run';
 
 export {
@@ -65,6 +68,7 @@ export {
   extend,
   fileMD5,
   GameNotFound,
+  GameStoreHelper,
   getActivator,
   getCurrentActivator,
   getCurrentLanguage,
@@ -95,6 +99,7 @@ export {
   pad,
   ProcessCanceled,
   ReduxProp,
+  readExtensibleDir,
   relativeTime,
   removeMods,
   renderBBCode,
@@ -107,12 +112,14 @@ export {
   sanitizeCSSId,
   setdefault,
   SetupError,
+  SevenZip,
   sortMods,
   steam,
   ISteamEntry,
   terminate,
   testModReference,
   UserCanceled,
+  userFriendlyTime,
   walk,
 };
 

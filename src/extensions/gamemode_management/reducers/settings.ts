@@ -9,7 +9,7 @@ import * as actions from '../actions/settings';
 export const settingsReducer: IReducerSpec = {
   reducers: {
     [actions.addDiscoveredGame as any]: (state, payload) =>
-      // don't replace previously discovered tools as the settings
+      // don't replace previously discovered games as the settings
       // there may also be user configuration
       merge(state, ['discovered', payload.id], payload.result),
     [actions.setGamePath as any]: (state, payload) =>

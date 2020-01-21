@@ -3,25 +3,16 @@ import chromePath from './util/chromePath';
 import * as Promise from 'bluebird';
 import I18next from 'i18next';
 
-function getText(id: string, t: I18next.TFunction): Promise<string> {
+function getText(id: string, t: I18next.TFunction): string {
   switch (id) {
-    case 'chrome-fix': return chromePath()
-      .catch(() => '%LOCALAPPDATA%\\Google\\Chrome\\User Data')
-      .then(resolvedPath => t(
-        'Chrome requires a change to a configuration file to allow an external program to handle '
-        + 'links where chrome doesn\'t know the protocol. This is the case for the green "Download '
-        + 'with Manager" buttons on Nexus.\n\n'
-        + 'We can apply this change for you, but only if all instances of Chrome are closed, '
-        + 'otherwise it will look like it worked but the change is reset when chrome closes.\n\n'
-        + 'To clarify: we\'re only enabling support for nxm:// links as used on nexusmods, '
-        + 'we\'re not changing anything else.\n\n'
-        + 'If you\'d rather do this manually close Chrome, open the file "{{filePath}}",\n'
-        + 'find the section "excluded_schemes" below "protocol_handler" and add\n'
-        + '"nxm": false,\n'
-        + 'below the line \'"nntp": true,\'.\n'
-        + 'Make sure you don\'t break the format of the file, '
-        + 'it will not accept any incorrect or missing symbols anywhere.',
-        { replace: { filePath: resolvedPath } }));
+    case 'chrome-fix': return t(
+      'Chrome requires a change to a configuration file to allow an external program to handle '
+      + 'links where chrome doesn\'t know the protocol. As of chrome 77 this also allows '
+      + 'This is the case for the "Download with Manager" buttons on Nexus.\n\n'
+      + 'We can apply this change for you, but only if all instances of Chrome are closed, '
+      + 'otherwise it will look like it worked but the change is reset when chrome closes.\n\n'
+      + 'To clarify: we\'re only enabling support for nxm:// links as used on nexusmods, '
+      + 'we\'re not changing anything else.\n');
     default: return undefined;
   }
 }

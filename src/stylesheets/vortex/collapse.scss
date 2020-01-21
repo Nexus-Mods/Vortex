@@ -6,7 +6,7 @@
 
   .collapse-content {
     flex: 1 1 0;
-    transition: opacity 300ms;
+    transition: opacity $transition-time-half;
     opacity: 1;
     display: flex;
   }

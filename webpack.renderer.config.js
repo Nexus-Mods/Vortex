@@ -20,6 +20,7 @@ module.exports = {
         loader: 'ts-loader',
         exclude: /node_modules/,
         options: {
+          transpileOnly: process.env['BUILD_QUICK_AND_DIRTY'] !== undefined,
           compilerOptions: {
             sourceMap: true,
             inlineSourceMap: false,

@@ -1,21 +1,22 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import Select from 'react-select';
+import Select, { ReactSelectProps } from 'react-select';
 
 export interface ISelectUpDownProps {
-  container: Element;
+  container?: Element;
+  className?: string;
 }
 
 interface ISelectUpDownState {
   up: boolean;
 }
 
-type IProps = ISelectUpDownProps | Select.ReactSelectProps;
+type IProps = ISelectUpDownProps & ReactSelectProps;
 
 class SelectUpDown extends React.Component<IProps, ISelectUpDownState> {
-  private mNode: Select = null;
+  private mNode: Element = null;
 
-  public constructor(props: Select.ReactSelectProps) {
+  public constructor(props: IProps) {
     super(props);
 
     this.state = {

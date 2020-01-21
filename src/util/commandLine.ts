@@ -1,8 +1,13 @@
 import * as program from 'commander';
-import { app } from 'electron';
+import { app, ipcMain, ipcRenderer } from 'electron';
+import * as fs from 'fs-extra';
+import * as path from 'path';
+import * as process from 'process';
+import { log } from './log';
 
 export interface IParameters {
   download?: string;
+  install?: string;
   report?: string;
   restore?: string;
   get?: string;
@@ -11,6 +16,7 @@ export interface IParameters {
   run?: string;
   shared?: boolean;
   maxMemory?: string;
+  disableGPU?: boolean;
 }
 
 function assign(input: string): string[] {
@@ -21,10 +27,24 @@ function parseCommandline(argv: string[]): IParameters {
   if (!argv[0].includes('electron.exe')) {
     argv = ['dummy'].concat(argv);
   }
-  return program
+
+  let cfgFile: IParameters = {};
+
+  try {
+    cfgFile = JSON.parse(fs.readFileSync(path.join(app.getPath('userData'), 'startup.json'),
+                                         { encoding: 'utf-8' }));
+  } catch (err) {
+    if (err.code !== 'ENOENT') {
+      log('warn', 'failed to parse startup.json', { error: err.message });
+    }
+  }
+
+  const commandLine = program
     .command('Vortex')
     .version(app.getVersion())
     .option('-d, --download [url]', 'Start downloadling the specified url '
+                                  + '(any supported protocol like nxm:, https:, ...).')
+    .option('-i, --install [url]', 'Start downloadling & installing the specified url '
                                   + '(any supported protocol like nxm:, https:, ...).')
     .option('-g, --get [path]', 'Print the state variable at the specified path and quit. '
                               + 'For debugging')
@@ -42,6 +62,57 @@ function parseCommandline(argv: string[]): IParameters {
     // allow unknown options since they may be interpreted by electron/node
     .allowUnknownOption()
     .parse(argv || []) as IParameters;
+
+  return {
+    ...cfgFile,
+    ...commandLine,
+  };
+}
+
+const SKIP_ARGS = {
+  '-d': 1,
+  '--download': 1,
+  '-i': 1,
+  '--install': 1,
+  '--restore': 1,
+};
+
+export function filterArgs(input: string[]): string[] {
+  let skipCount = 0;
+  const result = [];
+
+  input.forEach((arg, idx) => {
+    if (skipCount > 0) {
+      skipCount --;
+    } else if (idx === 0)  {
+      // skip
+    } else if (SKIP_ARGS[arg] !== undefined) {
+      skipCount = SKIP_ARGS[arg];
+    } else {
+      result.push(arg);
+    }
+  });
+
+  return result;
+}
+
+function relaunchImpl() {
+  app.relaunch({ args: filterArgs(process.argv) });
+  app.quit();
+}
+
+if (ipcMain !== undefined) {
+  ipcMain.on('relaunch-self', () => {
+    relaunchImpl();
+  });
+}
+
+export function relaunch() {
+  if (ipcRenderer !== undefined) {
+    ipcRenderer.send('relaunch-self');
+  } else {
+    relaunchImpl();
+  }
 }
 
 export default parseCommandline;

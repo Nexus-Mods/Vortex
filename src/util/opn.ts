@@ -14,6 +14,10 @@ function open(target: string, wait?: boolean): Promise<void> {
       if (err.errno === 1155) {
         return Promise.reject(
           new MissingInterpreter('No default application set up for file type.', err.path));
+      } else if (err.errno === 1223) {
+        // Operation was canceled by the user.
+        //  https://docs.microsoft.com/en-us/windows/win32/debug/system-error-codes--1000-1299-
+        return Promise.resolve();
       } else {
         return Promise.reject(err);
       }

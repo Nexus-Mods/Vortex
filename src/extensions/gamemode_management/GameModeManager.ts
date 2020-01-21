@@ -2,6 +2,7 @@ import { addNotification, showDialog } from '../../actions/notifications';
 import { IDiscoveredTool } from '../../types/IDiscoveredTool';
 import { ThunkStore } from '../../types/IExtensionContext';
 import { IGame } from '../../types/IGame';
+import { IGameStore } from '../../types/IGameStore';
 import { IState } from '../../types/IState';
 import { ITool } from '../../types/ITool';
 import { getNormalizeFunc } from '../../util/api';
@@ -9,6 +10,7 @@ import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 import { activeProfile } from '../../util/selectors';
+import { getSafe } from '../../util/storeHelper';
 
 import {
   discoveryFinished,
@@ -34,13 +36,16 @@ import * as Redux from 'redux';
 class GameModeManager {
   private mStore: ThunkStore<IState>;
   private mKnownGames: IGame[];
+  private mKnownGameStores: IGameStore[];
   private mActiveSearch: Promise<any[]>;
   private mOnGameModeActivated: (mode: string) => void;
 
   constructor(extensionGames: IGame[],
+              gameStoreExtensions: IGameStore[],
               onGameModeActivated: (mode: string) => void) {
     this.mStore = null;
     this.mKnownGames = extensionGames;
+    this.mKnownGameStores = gameStoreExtensions;
     this.mActiveSearch = null;
     this.mOnGameModeActivated = onGameModeActivated;
   }
@@ -147,6 +152,10 @@ class GameModeManager {
 
   public get games(): IGame[] {
     return this.mKnownGames;
+  }
+
+  public get gameStores(): IGameStore[] {
+    return this.mKnownGameStores;
   }
 
   /**
@@ -262,7 +271,13 @@ class GameModeManager {
   }
 
   private onDiscoveredTool = (gameId: string, result: IDiscoveredTool) => {
-    this.mStore.dispatch(addDiscoveredTool(gameId, result.id, result));
+    const existing = getSafe(this.mStore.getState(),
+                             ['settings', 'gameMode', 'discovered', gameId, 'tools', result.id],
+                             undefined);
+    // don't overwrite customised tools
+    if ((existing === undefined) || !existing.custom) {
+      this.mStore.dispatch(addDiscoveredTool(gameId, result.id, result));
+    }
   }
 
   private onDiscoveredGame = (gameId: string, result: IDiscoveryResult) => {

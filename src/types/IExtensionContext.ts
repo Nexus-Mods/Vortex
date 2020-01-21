@@ -1,3 +1,4 @@
+import { IExtension } from '../extensions/extension_manager/types';
 import {
   IDeployedFile,
   IDeploymentMethod,
@@ -25,6 +26,7 @@ import { IActionOptions } from './IActionDefinition';
 import { IBannerOptions } from './IBannerOptions';
 import { DialogType, IDialogResult } from './IDialog';
 import { IGame } from './IGame';
+import { IGameStore } from './IGameStore';
 import { INotification } from './INotification';
 import { IDiscoveryResult } from './IState';
 import { ITableAttribute } from './ITableAttribute';
@@ -80,6 +82,15 @@ export type RegisterFooter =
 export type RegisterBanner =
   (group: string, component: React.ComponentClass<any> | React.StatelessComponent<any>,
    options: IBannerOptions) => void;
+
+export interface IModSourceOptions {
+  /**
+   * condition for this source to show up. Please make sure this returns quickly, cache if
+   * necessary.
+   */
+  condition?: () => boolean;
+  icon?: string;
+}
 
 export interface IMainPageOptions {
   /**
@@ -144,7 +155,7 @@ export type RegisterToDo =
      priority: number) => void;
 
 export interface IRegisterProtocol {
-  (protocol: string, def: boolean, callback: (url: string) => void);
+  (protocol: string, def: boolean, callback: (url: string, install: boolean) => void);
 }
 
 export interface IFileFilter {
@@ -194,6 +205,7 @@ export interface IPersistor {
   setItem(key: PersistorKey, value: string): Promise<void>;
   removeItem(key: PersistorKey): Promise<void>;
   getAllKeys(): Promise<PersistorKey[]>;
+  getAllKVs?(prefix?: string): Promise<Array<{ key: PersistorKey, value: string }>>;
 }
 
 /**
@@ -263,6 +275,7 @@ export interface IErrorOptions {
   hideDetails?: boolean;
   replace?: { [key: string]: string };
   attachments?: IAttachment[];
+  extension?: IExtension;
 }
 
 /**
@@ -306,7 +319,10 @@ export interface IRunOptions {
   // if true, a non-zero exit code will be treated as an error. default is false
   //   because too many windows applications don't report proper exit codes
   expectSuccess?: boolean;
-  onSpawned?: () => void;
+  // called after the process has been spawned. If possible the pid of the spawned process
+  // is set but in some cases (e.g. when the target process is run elevated) we don't know
+  // the pid so this will be undefined.
+  onSpawned?: (pid?: number) => void;
 }
 
 /**
@@ -326,6 +342,11 @@ export interface IRunParameters {
  * @interface IExtensionApi
  */
 export interface IExtensionApi {
+  /**
+   * name of the extension to use this api with
+   */
+  extension?: string;
+
   /**
    * show a notification to the user.
    * This is not available in the call to registerReducer
@@ -632,6 +653,11 @@ export interface IReducerSpec {
   verifiers?: { [key: string]: IStateVerifier };
 }
 
+export interface IModTypeOptions {
+  // if set, the merge behavior specified here overrides the one specified for the game
+  mergeMods?: boolean;
+}
+
 /**
  * The extension context is an object passed into all extensions during initialisation.
  *
@@ -759,7 +785,10 @@ export interface IExtensionContext {
    * actual features
    * The source can also be used to browse for further mods
    */
-  registerModSource: (id: string, name: string, onBrowse: () => void) => void;
+  registerModSource: (id: string,
+                      name: string,
+                      onBrowse: () => void,
+                      options?: IModSourceOptions) => void;
 
   /**
    * register a reducer to introduce new set-operations on the application
@@ -859,6 +888,13 @@ export interface IExtensionContext {
   registerGame: (game: IGame) => void;
 
   /**
+   * registers support for a game store.
+   *
+   * @param {IGameStore} gameStore
+   */
+  registerGameStore: (gameStore: IGameStore) => void;
+
+  /**
    * registers a provider for general information about a game
    * @param {string} id unique id identifying the provider
    * @param {number} priority if two providers provide the same info (same key) the one with the
@@ -901,12 +937,14 @@ export interface IExtensionContext {
    *                                          where games of this type should be installed.
    * @param {(instructions) => Promise<boolean>} test given the list of install instructions,
    *                                                  determine if the installed mod is of this type
+   * @param {IModTypeOptions} options options controlling the mod type
    */
   registerModType: (id: string,
                     priority: number,
                     isSupported: (gameId: string) => boolean,
                     getPath: (game: IGame) => string,
-                    test: (installInstructions: IInstruction[]) => Promise<boolean>) => void;
+                    test: (installInstructions: IInstruction[]) => Promise<boolean>,
+                    options?: IModTypeOptions) => void;
 
   /**
    * register an action sanity check
@@ -983,6 +1021,24 @@ export interface IExtensionContext {
    *                           version number is updated.
    */
   registerMigration: (migrate: (oldVersion: string) => Promise<void>) => void;
+
+  /**
+   * register a file to be stored with the profile. It will always be synchronised with the current
+   * profile, so when users switch to a different profile, this file will be copied to the
+   * profile they're switching away from, then the corresponding file from the profile they're
+   * switching to is copied to filePath.
+   * Right now this only supports static file paths, no patterns (glob or regular expressions) and
+   * no way to dynamically find the file to synchronize
+   */
+  registerProfileFile?: (gameId: string, filePath: string) => void;
+
+  /**
+   * register a profile feature that can be toggled/configured on the profiles screen.
+   * The configured value can be queried at
+   * state.persistent.profiles.<profile id>.features.<feature id>
+   */
+  registerProfileFeature?: (featureId: string, type: string, icon: string, label: string,
+                            description: string, supported: () => boolean) => void;
 
   /**
    * specify that a certain range of versions of vortex is required

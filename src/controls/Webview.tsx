@@ -25,6 +25,7 @@ export interface IWebView extends
 
 export interface IWebviewProps {
   onLoading?: (loading: boolean) => void;
+  onNewWindow?: (url: string, disposition: string) => void;
 }
 
 class Webview extends React.Component<IWebviewProps & IWebView, {}> {
@@ -39,17 +40,18 @@ class Webview extends React.Component<IWebviewProps & IWebView, {}> {
       // this.mNode.openDevTools();
     });
     this.mNode.addEventListener('console-message', this.logMessage);
+    this.mNode.addEventListener('new-window', this.newWindow);
   }
 
   public componentWillUnmount() {
     this.mNode.removeEventListener('did-start-loading', this.startLoad);
     this.mNode.removeEventListener('did-stop-loading', this.stopLoad);
     this.mNode.removeEventListener('console-message', this.logMessage);
-
+    this.mNode.removeEventListener('new-window', this.newWindow);
   }
 
   public render(): JSX.Element {
-    return React.createElement('webview', omit(this.props, ['onLoading']));
+    return React.createElement('webview', omit(this.props, ['onLoading', 'onNewWindow']));
   }
 
   private startLoad = () => {
@@ -63,6 +65,13 @@ class Webview extends React.Component<IWebviewProps & IWebView, {}> {
     const { onLoading } = this.props;
     if (onLoading !== undefined) {
       onLoading(false);
+    }
+  }
+
+  private newWindow = (evt) => {
+    const { onNewWindow } = this.props;
+    if (onNewWindow !== undefined) {
+      onNewWindow(evt.url, evt.disposition);
     }
   }
 

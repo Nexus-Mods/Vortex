@@ -91,7 +91,7 @@ export const INI_TWEAKS_PATH = 'Ini Tweaks';
 
 const archiveExtLookup = new Set<string>([
   '.zip', '.z01', '.7z', '.rar', '.r00', '.001', '.bz2', '.bzip2', '.gz', '.gzip',
-  '.xz', '.z', '.lzh'
+  '.xz', '.z', '.lzh',
 ]);
 
 /**
@@ -442,22 +442,34 @@ class InstallManager {
               }
             });
         } else {
-          const id = `${path.basename(archivePath)} (md5: ${archiveMD5})`;
-          let message = err;
-          let replace = {};
-          if (typeof err === 'string') {
-            message = 'The installer "{{ id }}" failed: {{ message }}';
-            replace = {
-              id,
-              message: err,
-            };
-          }
-          if (installContext !== undefined) {
-            installContext.reportError('Installation failed', message, undefined, replace);
-          }
-          if (callback !== undefined) {
-            callback(err, modId);
-          }
+          return prom
+            .then(() => genHash(archivePath).catch(() => ({})))
+            .then((hashResult: IHashResult) => {
+              const id = `${path.basename(archivePath)} (md5: ${hashResult.md5sum})`;
+              let message = err;
+              let replace = {};
+              if (typeof err === 'string') {
+                message = 'The installer "{{ id }}" failed: {{ message }}';
+                replace = {
+                      id,
+                      message: err,
+                    };
+              }
+              if (installContext !== undefined) {
+                const browserAssistantMsg = 'The installer has failed due to an external 3rd '
+                  + 'party application you have installed on your system named '
+                  + '"Browser Assistant". This application inserts itself globally '
+                  + 'and breaks any other application that uses the same libraries as it does.\n\n'
+                  + 'To use Vortex, please uninstall "Browser Assistant".';
+                const errorMessage = (typeof err === 'string') ? err : err.message;
+                (!this.isBrowserAssistantError(errorMessage))
+                  ? installContext.reportError('Installation failed', message, undefined, replace)
+                  : installContext.reportError('Installation failed', browserAssistantMsg, false);
+              }
+              if (callback !== undefined) {
+                callback(err, modId);
+              }
+            });
         }
       })
       .finally(() => {
@@ -529,6 +541,11 @@ class InstallManager {
         api.store.dispatch(addModRule(gameId, mod.id, newRule));
       }
     });
+  }
+
+  private isBrowserAssistantError(error: string): boolean {
+    return (process.platform === 'win32')
+        && (error.indexOf('Roaming\\Browser Assistant') !== -1);
   }
 
   private isCritical(error: string): boolean {

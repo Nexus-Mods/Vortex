@@ -29,6 +29,7 @@
 import {showDialog} from '../../actions/notifications';
 import {CheckFunction, IExtensionApi, IExtensionContext} from '../../types/IExtensionContext';
 import {INotificationAction} from '../../types/INotification';
+import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import { log } from '../../util/log';
 import { activeGameId, activeProfile } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
@@ -47,7 +48,11 @@ const checks: { [type: string]: ICheckEntry[] } = {};
 const triggerDelays: { [type: string]: NodeJS.Timer } = {};
 
 function runCheck(api: IExtensionApi, check: ICheckEntry): Promise<void> {
-  return check.check()
+  let res = check.check();
+  if ((res === undefined) || (res.then === undefined)) {
+    res = Promise.resolve(undefined);
+  }
+  return res
     .then(result => {
       const id: string = `test-${check.id}`;
       if (result === undefined) {
@@ -59,6 +64,7 @@ function runCheck(api: IExtensionApi, check: ICheckEntry): Promise<void> {
             title: 'More',
             action: () => api.store.dispatch(showDialog('info', 'Check failed', {
               bbcode: result.description.long,
+              parameters: result.description.replace,
             }, [{ label: 'Close' }])),
           });
         }
@@ -67,6 +73,8 @@ function runCheck(api: IExtensionApi, check: ICheckEntry): Promise<void> {
             title: 'Fix',
             action: () => result.automaticFix()
               .then(() => runCheck(api, check))
+              .catch(UserCanceled, () => null)
+              .catch(ProcessCanceled, () => null)
               .catch(err => api.showErrorNotification('Failed to run automatic fix', err)),
           });
         } else {
@@ -79,6 +87,7 @@ function runCheck(api: IExtensionApi, check: ICheckEntry): Promise<void> {
           id,
           type: result.severity,
           message: result.description.short,
+          replace: result.description.replace,
           actions,
           noDismiss: true,
         });

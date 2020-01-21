@@ -76,6 +76,10 @@ class DeploymendMethod extends LinkingDeployment {
     const game: IGame = getGame(gameId);
     const modPaths = game.getModPaths(discovery.path);
 
+    if ((game.details !== undefined) && (game.details.supportsSymlinks === false)) {
+      return { description: t => t('Game doesn\'t support symlinks') };
+    }
+
     try {
       fs.accessSync(modPaths[typeId], fs.constants.W_OK);
       if (!this.ensureAdmin()) {
@@ -91,7 +95,9 @@ class DeploymendMethod extends LinkingDeployment {
     try {
       try {
         fs.removeSync(canary + '.link');
-      } catch (err) {}
+      } catch (err) {
+        // nop
+      }
       fs.writeFileSync(canary, 'Should only exist temporarily, feel free to delete');
       fs.symlinkSync(canary, canary + '.link');
     } catch (err) {
@@ -168,7 +174,7 @@ class DeploymendMethod extends LinkingDeployment {
     let hadErrors = false;
     let canceled = false;
 
-    let showDialogCallback = () => !canceled;
+    const showDialogCallback = () => !canceled;
 
     // purge by removing all symbolic links that point to a file inside the install directory
     return walk(dataPath, (iterPath: string, stats: fs.Stats) => {
@@ -196,7 +202,8 @@ class DeploymendMethod extends LinkingDeployment {
     })
       .then(() => {
         if (hadErrors) {
-          return Promise.reject(new Error('Some files could not be purged, please check the log file'));
+          return Promise.reject(
+            new Error('Some files could not be purged, please check the log file'));
         } else {
           return Promise.resolve();
         }
@@ -223,7 +230,9 @@ class DeploymendMethod extends LinkingDeployment {
       try {
         // ensure the dummy file wasn't left over from a previous test
         fs.removeSync(destFile);
-      } catch (err) {}
+      } catch (err) {
+        // nop
+      }
       fs.symlinkSync(srcFile, destFile);
       fs.removeSync(destFile);
       return true;
@@ -242,7 +251,7 @@ class DeploymendMethod extends LinkingDeployment {
 
   private isUnsupportedGame(gameId: string): boolean {
     const unsupportedGames = (process.platform === 'win32')
-      ? ['nomanssky', 'stateofdecay', 'factorio']
+      ? ['nomanssky', 'stateofdecay', 'factorio', 'witcher3']
       : ['nomanssky', 'stateofdecay'];
 
     return unsupportedGames.indexOf(gameId) !== -1;

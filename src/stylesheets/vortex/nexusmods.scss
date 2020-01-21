@@ -5,13 +5,7 @@
   margin: 0 8px;
   > svg {
     margin-right: 5px;
-    use {
-      .st0,
-      .st1 {
-        fill: #57a5cc !important;
-        fill-opacity: 0 !important;
-      }
-    }
+    color: transparent;
   }
 
   >.nexusmods-fake-link {

@@ -1,5 +1,5 @@
 import { IActionDefinition } from '../types/IActionDefinition';
-import { IExtensibleProps } from '../util/ExtensionProvider';
+import { IExtensibleProps } from '../types/IExtensionProvider';
 import { log } from '../util/log';
 import { truthy } from '../util/util';
 
@@ -92,6 +92,9 @@ class DropdownMenu extends React.PureComponent<IProps, { open: boolean }> {
     }
 
     const defaultIdx = actions.findIndex(act => act.show === true);
+    if (defaultIdx === -1) {
+      return null;
+    }
     const rest = actions.slice(0);
     rest.splice(defaultIdx, 1);
 

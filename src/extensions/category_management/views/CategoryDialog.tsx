@@ -1,3 +1,4 @@
+import Modal from '../../../controls/Modal';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import DNDContainer from '../../../views/DNDContainer';
 
@@ -6,7 +7,6 @@ import { showCategoriesDialog } from '../actions/session';
 import CategoryList from './CategoryList';
 
 import * as React from 'react';
-import { Modal } from 'react-bootstrap';
 import * as Redux from 'redux';
 
 interface IConnectedProps {

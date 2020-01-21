@@ -1,11 +1,14 @@
 import { ValidationState } from '../types/ITableAttribute';
 import Debouncer from '../util/Debouncer';
 
+import { IconButton } from './TooltipControls';
+
 import * as React from 'react';
 import { FormGroup } from 'react-bootstrap';
 import FormFeedback from './FormFeedback';
 
 export interface IProps {
+  className?: string;
   value: string;
   onChange: (newValue: string) => void;
   onFocus?: (focused: boolean) => void;
@@ -15,6 +18,7 @@ export interface IProps {
   placeholder?: string;
   validate?: (value: any) => ValidationState;
   debounceTimer?: number;
+  clearable?: boolean;
 }
 
 interface IComponentState {
@@ -46,7 +50,7 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
         this.props.onChange(newValue);
       }
       return null;
-    }, this.props.debounceTimer | 1000);
+    }, this.props.debounceTimer || 1000);
   }
 
   public componentWillReceiveProps(newProps: IProps) {
@@ -58,21 +62,24 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { id, label, placeholder, readOnly, validate } = this.props;
+    const { className, clearable, id, label, placeholder, readOnly, validate } = this.props;
     const { cachedValue } = this.state;
     const content = (
-      <input
-        className='form-control'
-        type='text'
-        title={label}
-        value={cachedValue}
-        id={id}
-        onChange={this.onChange}
-        readOnly={readOnly}
-        placeholder={placeholder}
-        onBlur={this.onBlur}
-        onFocus={this.onFocus}
-      />
+      <div className={className}>
+        <input
+          className={'form-control'}
+          type='text'
+          title={label}
+          value={cachedValue}
+          id={id}
+          onChange={this.onChange}
+          readOnly={readOnly}
+          placeholder={placeholder}
+          onBlur={this.onBlur}
+          onFocus={this.onFocus}
+        />
+        {clearable ? this.renderClear() : null}
+      </div>
     );
 
     if (validate) {
@@ -89,6 +96,22 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
     } else {
       return content;
     }
+  }
+
+  private renderClear() {
+    return (
+      <IconButton
+        className='form-input-clear btn-embed'
+        icon='input-cancel'
+        tooltip={undefined}
+        onClick={this.clear}
+      />
+    );
+  }
+
+  private clear = () => {
+    this.setState({ cachedValue: '' });
+    this.mDebouncer.schedule(undefined, '');
   }
 
   private onBlur = (evt: React.FocusEvent<HTMLInputElement>) => {

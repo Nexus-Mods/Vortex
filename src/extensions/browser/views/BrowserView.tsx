@@ -6,6 +6,7 @@ import { INotification } from '../../../types/INotification';
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import Debouncer from '../../../util/Debouncer';
+import { truthy } from '../../../util/util';
 
 import { closeBrowser } from '../actions';
 
@@ -22,6 +23,7 @@ export type SubscriptionResult = 'close' | 'continue' | 'ignore';
 
 export interface IBaseProps {
   onHide: () => void;
+  onNavigate: (url: string) => void;
   onEvent: (subscriber: string, eventId: string, value: any) => SubscriptionResult;
 }
 
@@ -80,6 +82,12 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
           ++this.nextState.historyIdx;
         }
       },
+      'did-navigate': (evt) => {
+        this.navigate(evt.url);
+      },
+      'did-navigate-in-page': (evt) => {
+        this.navigate(evt.url);
+      },
     };
   }
 
@@ -97,9 +105,22 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
     }
   }
 
+  public shouldComponentUpdate(newProps: IProps, newState: IComponentState) {
+    const res = (this.props.url !== newProps.url)
+        || (this.props.instructions !== newProps.instructions)
+        || (this.state.url !== newState.url)
+        || (this.state.loading !== newState.loading)
+        || (this.state.confirmed !== newState.confirmed)
+        || (this.state.history !== newState.history);
+    return res;
+  }
+
   public render(): JSX.Element {
     const { instructions } = this.props;
-    const { confirmed, loading, url } = this.state;
+    const { confirmed, history, historyIdx, loading, url } = this.state;
+    const referrer = (history.length > 0)
+      ? history[historyIdx - 1]
+      : undefined;
     return (
       <Modal id='browser-dialog' show={url !== undefined} onHide={this.close}>
         <Modal.Header>
@@ -114,7 +135,9 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
                 id='browser-webview'
                 src={url}
                 ref={this.setRef}
+                httpreferrer={referrer}
                 onLoading={this.loading}
+                onNewWindow={this.newWindow}
               />
             )
             : this.renderConfirm()}
@@ -149,7 +172,7 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderUrl(input: string): JSX.Element {
-    if (input === undefined) {
+    if (!truthy(input)) {
       return null;
     }
     const parsed = nodeUrl.parse(input);
@@ -177,7 +200,7 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
            + 'that electron might contain it\'s own security issues pertaining to website '
            + 'access.')}</p>
         <p>{t('If you have security concerns or don\'t fully trust this page, please don\'t '
-              + 'continue.')}</p>
+              + 'continue. Don\'t navigate away from pages you don\'t trust.')}</p>
         <Button onClick={this.confirm}>{t('Continue')}</Button>
       </div>
     );
@@ -188,6 +211,19 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
       this.mLoadingDebouncer.schedule(undefined, true);
     } else {
       this.mLoadingDebouncer.runNow(undefined, false);
+    }
+  }
+
+  private newWindow = (url: string, disposition: string) => {
+    const { onEvent, subscriber } = this.props;
+
+    // currently we try to download any url that isn't opened in the same window
+    const res = onEvent(subscriber, 'download-url', url);
+    if (res === 'close') {
+      this.props.onClose();
+    } else if (res === 'continue') {
+      // no handler for download-url? Then lets try to open the link
+      this.nextState.url = url;
     }
   }
 
@@ -232,6 +268,15 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
     this.nextState.confirmed = true;
   }
 
+  private navigate(url: string) {
+    this.props.onNavigate(url);
+    this.nextState.url = url;
+    if (url !== this.nextState.history[this.nextState.historyIdx]) {
+      this.nextState.history.splice(this.nextState.historyIdx + 1, 9999, url);
+      ++this.nextState.historyIdx;
+    }
+  }
+
   private close = () => {
     const { onClose, onEvent, subscriber } = this.props;
     if (onEvent(subscriber, 'close', null) !== 'ignore') {
@@ -242,9 +287,9 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
 
 function mapStateToProps(state: IState): IConnectedProps {
   return {
-    subscriber: state.session.browser.subscriber,
-    instructions: state.session.browser.instructions,
-    url: state.session.browser.url,
+    subscriber: state.session.browser.subscriber || undefined,
+    instructions: state.session.browser.instructions || undefined,
+    url: state.session.browser.url || undefined,
   };
 }
 

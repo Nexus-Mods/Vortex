@@ -1,8 +1,10 @@
 import ExtensionManager from './ExtensionManager';
 
+import { IExtendedProps, IExtensibleProps } from '../types/IExtensionProvider';
+
+import * as _ from 'lodash';
 import * as PropTypes from 'prop-types';
 import * as React from 'react';
-import * as _ from 'lodash';
 
 type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
 
@@ -34,15 +36,6 @@ export class ExtensionProvider extends React.Component<IExtensionProps, {}> {
   }
 }
 
-export interface IExtensibleProps {
-  group?: string;
-  staticElements?: any[];
-}
-
-export interface IExtendedProps {
-  objects: any[];
-}
-
 /*
 export function withTranslation(
   ns?: Namespace,
@@ -60,7 +53,8 @@ export function withTranslation(
  * @returns {React.ComponentClass<P>} the wrapper component
  */
 export function extend(registerFunc: (...args) => void, groupProp?: string):
-    <P extends IExtendedProps>(component: React.ComponentType<P>) => React.ComponentType<Omit<P, keyof IExtendedProps> & IExtensibleProps> {
+    <P extends IExtendedProps>(component: React.ComponentType<P>) =>
+      React.ComponentType<Omit<P, keyof IExtendedProps> & IExtensibleProps> {
   const ExtensionManagerImpl: typeof ExtensionManager = require('./ExtensionManager').default;
   ExtensionManagerImpl.registerUIAPI(registerFunc.name);
   const extensions: { [group: string]: any } = {};
@@ -75,9 +69,12 @@ export function extend(registerFunc: (...args) => void, groupProp?: string):
     });
   };
 
-  return <P extends IExtendedProps, S>(ComponentToWrap: React.ComponentType<P>): React.ComponentType<Omit<P, keyof IExtendedProps>> => {
+  return <P extends IExtendedProps, S>(ComponentToWrap: React.ComponentType<P>)
+        : React.ComponentType<Omit<P, keyof IExtendedProps>> => {
     // tslint:disable-next-line:class-name
-    return class __ExtendedComponent extends React.Component<Omit<P, keyof IExtendedProps> & IExtensibleProps, S> {
+    type PropsT = Omit<P, keyof IExtendedProps> & IExtensibleProps;
+    // tslint:disable-next-line:class-name
+    return class __ExtendedComponent extends React.Component<PropsT, S> {
       public static contextTypes: React.ValidationMap<any> = {
         extensions: PropTypes.object.isRequired,
       };

@@ -78,9 +78,9 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
 
   public componentWillUnmount() {
     clearTimeout(this.mUpdateTimer);
-    const window = remote.getCurrentWindow();
-    window.removeListener('focus', this.onFocus);
-    window.removeListener('blur', this.onBlur);
+    const win = remote.getCurrentWindow();
+    win.removeListener('focus', this.onFocus);
+    win.removeListener('blur', this.onBlur);
   }
 
   public componentWillReceiveProps(nextProps: IProps) {

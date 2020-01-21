@@ -643,12 +643,22 @@ function init(context: IExtensionContextExt): boolean {
     context.api.deregisterProtocol('http');
     context.api.deregisterProtocol('https');
 
-    context.api.registerProtocol('http', false, url => {
-      context.api.events.emit('start-download', [url], {});
+    context.api.registerProtocol('http', false, (url, install) => {
+      context.api.events.emit('start-download', [url], {}, undefined,
+                              (err: Error, dlId: string) => {
+        if (install && (err === null)) {
+          context.api.events.emit('start-install-download', dlId);
+        }
+      });
     });
 
-    context.api.registerProtocol('https', false, url => {
-      context.api.events.emit('start-download', [url], {});
+    context.api.registerProtocol('https', false, (url, install) => {
+      context.api.events.emit('start-download', [url], {}, undefined,
+                              (err: Error, dlId: string) => {
+          if (install && (err === null)) {
+            context.api.events.emit('start-install-download', dlId);
+          }
+        });
     });
 
     context.api.events.on('will-move-downloads', () => {
@@ -746,6 +756,19 @@ function init(context: IExtensionContextExt): boolean {
               speedsDebouncer.schedule();
             }
           }, `Nexus Client v2.${app.getVersion()}`, protocolHandlers);
+      manager.setFileExistsCB(fileName => {
+        return context.api.showDialog('question', 'File already exists', {
+          text: 'You\'ve already downloaded the file "{{fileName}}", do you want to '
+              + 'download it again?',
+          parameters: {
+            fileName,
+          },
+        }, [
+          { label: 'Cancel' },
+          { label: 'Continue' },
+        ])
+        .then(result => result.action === 'Continue');
+      });
       observer =
           observeImpl(context.api, manager);
 

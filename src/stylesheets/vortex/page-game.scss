@@ -3,9 +3,18 @@
 }
 
 .game-filter-input {
-  padding: 10px 10px;
+  padding: 10px 0;
   margin-bottom: 5px !important;
+  position: relative;
   border-color: $border-color;
+  width: 20em;
+  // prevent this from overlaying popovers from the iconbar above
+  z-index: 0;
+  .form-control {
+    position: initial;
+    float: unset;
+    z-index: unset;
+  }
 }
 
 #games-picker-tabs {
@@ -42,21 +51,6 @@
 .game-info-value {
   word-wrap: break-word;
   overflow-x: auto;
-}
-
-.mod-installing {
-  background-color: $gray-dark;
-}
-
-.mod-installed {
-  background-color: $table-bg;
-}
-
-#btn-more-mods {
-  margin-top: $half-gutter;
-  display: block;
-  margin-left: auto;
-  margin-right: auto;
 }
 
 .discovery-footer {

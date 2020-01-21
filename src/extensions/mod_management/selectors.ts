@@ -1,5 +1,8 @@
-import { IState } from '../../types/IState';
+import { IDiscoveryResult, IState } from '../../types/IState';
 import { activeGameId } from '../../util/selectors';
+import { getSafe } from '../../util/storeHelper';
+
+import { getGame } from '../gamemode_management/util/getGame';
 
 import getInstallPath from './util/getInstallPath';
 
@@ -61,3 +64,25 @@ export const needToDeployForGame = createCachedSelector(
     (state: IState, gameId: string) => gameId,
     (inNeedToDeploy: INeedToDeployMap, inGameId: string) => inNeedToDeploy[inGameId])(
       (state, gameId) => gameId);
+
+const emptyObj = {};
+
+function discoveries(state: IState) {
+  return getSafe(state, ['settings', 'gameMode', 'discovered'], emptyObj);
+}
+
+export const modPathsForGame = createSelector(
+  discoveries,
+  (state: IState, gameId: string) => gameId,
+  (inDiscoveries: { [gameId: string]: IDiscoveryResult }, inGameId: string) => {
+    const game = getGame(inGameId);
+    const discovery = inDiscoveries[inGameId];
+    if (game === undefined) {
+      return undefined;
+    }
+    if ((discovery === undefined) || (discovery.path === undefined)) {
+      return undefined;
+    }
+    return game.getModPaths(discovery.path);
+  },
+);

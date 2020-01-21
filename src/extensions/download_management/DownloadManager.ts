@@ -164,8 +164,12 @@ class DownloadWorker {
 
   private startDownload(job: IDownloadJob, jobUrl: string, cookies: Electron.Cookie[]) {
     let parsed: url.UrlWithStringQuery;
+    let referer: string;
     try {
-      parsed = url.parse(encodeURI(jobUrl));
+      const [urlIn, refererIn] = jobUrl.split('<');
+      parsed = url.parse(decodeURI(urlIn));
+      referer = refererIn;
+      jobUrl = urlIn;
     } catch (err) {
       this.handleError(new Error('No valid URL for this download'));
       return;
@@ -184,6 +188,15 @@ class DownloadWorker {
     }
 
     try {
+      const headers = {
+          Range: `bytes=${job.offset}-${job.offset + job.size}`,
+          'User-Agent': this.mUserAgent,
+          'Accept-Encoding': 'gzip, deflate',
+          Cookie: (cookies || []).map(cookie => `${cookie.name}=${cookie.value}`),
+        };
+      if (referer !== undefined) {
+        headers['Referer'] = referer;
+      }
       this.mRequest = lib.request({
         method: 'GET',
         protocol: parsed.protocol,
@@ -196,7 +209,7 @@ class DownloadWorker {
         log('debug', 'downloading from',
           { address: `${res.connection.remoteAddress}:${res.connection.remotePort}` });
         this.mResponse = res;
-        this.handleResponse(res, encodeURI(jobUrl));
+        this.handleResponse(res, encodeURI(decodeURI(jobUrl)));
         res
           .on('data', (data: Buffer) => {
             this.handleData(data);
@@ -465,6 +478,7 @@ class DownloadManager {
   private mUserAgent: string;
   private mProtocolHandlers: IProtocolHandlers;
   private mResolveCache: { [url: string]: { time: number, urls: string[] } } = {};
+  private mFileExistsCB: (fileName: string) => Promise<boolean>;
 
   /**
    * Creates an instance of DownloadManager.
@@ -488,6 +502,10 @@ class DownloadManager {
     this.mUserAgent = userAgent;
     this.mSpeedCalculator = new SpeedCalculator(5, speedCB);
     this.mProtocolHandlers = protocolHandlers;
+  }
+
+  public setFileExistsCB(cb: (fileName: string) => Promise<boolean>) {
+    this.mFileExistsCB = cb;
   }
 
   public setDownloadPath(downloadPath: string) {
@@ -518,10 +536,12 @@ class DownloadManager {
     }
     log('info', 'queueing download', id);
     let nameTemplate: string;
+    let baseUrl: string;
     try {
-      nameTemplate = fileName || decodeURI(path.basename(url.parse(urls[0]).pathname));
+      baseUrl = urls[0].split('<')[0];
+      nameTemplate = fileName || decodeURI(path.basename(url.parse(baseUrl).pathname));
     } catch (err) {
-      return Promise.reject(new DataInvalid(`failed to parse url "${urls[0]}"`));
+      return Promise.reject(new DataInvalid(`failed to parse url "${baseUrl}"`));
     }
     const destPath = destinationPath || this.mDownloadPath;
     let download: IRunningDownload;
@@ -724,7 +744,8 @@ class DownloadManager {
       url: () => download.resolvedUrls()
         .then(urls => {
           if ((fileNameFromURL === undefined) && (urls.length > 0)) {
-            fileNameFromURL = decodeURI(path.basename(url.parse(urls[0]).pathname));
+            const urlIn = urls[0].split('<')[0];
+            fileNameFromURL = decodeURI(path.basename(url.parse(urlIn).pathname));
           }
           return urls[0];
         }),
@@ -1060,6 +1081,7 @@ class DownloadManager {
       let counter = 0;
       const ext = path.extname(fileName);
       const base = path.basename(fileName, ext);
+      let first: boolean = true;
       let fullPath = path.join(destination, fileName);
 
       const loop = () => {
@@ -1073,7 +1095,20 @@ class DownloadManager {
             ++counter;
             fullPath = path.join(destination, `${base} (${counter})${ext}`);
             if (err.code === 'EEXIST') {
-              loop();
+              if (first && this.mFileExistsCB !== undefined) {
+                first = false;
+                this.mFileExistsCB(fileName)
+                  .then((cont: boolean) => {
+                    if (cont) {
+                      loop();
+                    } else {
+                      return reject(new UserCanceled());
+                    }
+                  })
+                  .catch(reject);
+              } else {
+                loop();
+              }
             } else {
               reject(err);
             }
