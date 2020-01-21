@@ -10,10 +10,10 @@ import Icon from './Icon';
 import * as Promise from 'bluebird';
 
 import * as React from 'react';
+import { WithTranslation } from 'react-i18next';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import * as url from 'url';
-import { WithTranslation } from 'react-i18next';
 
 export type DropType = 'urls' | 'files';
 

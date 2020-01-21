@@ -103,6 +103,8 @@ export function remoteCode(ipcClient, req) {
       quit: () => {
         // currently don't need this message, the server closes the connection and
         // we clean up when the ipc is disconnected
+        resolve();
+        resolve = undefined;
       },
     };
 
@@ -120,7 +122,11 @@ export function remoteCode(ipcClient, req) {
       }
     });
 
-    ipcClient.on('disconnect', () => { resolve(); });
+    ipcClient.on('disconnect', () => {
+      if (resolve !== undefined) {
+        resolve();
+      }
+    });
     emit('initialised', {});
   });
 }

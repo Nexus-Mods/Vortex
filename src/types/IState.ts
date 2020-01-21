@@ -213,6 +213,10 @@ export interface ISettingsUpdate {
   channel: 'stable' | 'beta' | 'none';
 }
 
+export interface ISettingsWorkarounds {
+  userSymlinks: boolean;
+}
+
 export interface ISettings {
   interface: ISettingsInterface;
   automation: ISettingsAutomation;
@@ -223,6 +227,7 @@ export interface ISettings {
   mods: ISettingsMods;
   tables: ITableStates;
   update: ISettingsUpdate;
+  workarounds: ISettingsWorkarounds;
 }
 
 export interface IStateTransactions {
