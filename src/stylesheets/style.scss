@@ -56,6 +56,10 @@
   background-color: $white;
 }
 
+.badge {
+  text-shadow: none;
+}
+
 .dropdown .btn-group, .btn-group-vertical {
   display: flex;
 }
