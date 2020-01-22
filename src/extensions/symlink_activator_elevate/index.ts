@@ -181,7 +181,11 @@ class DeploymentMethod extends LinkingDeployment {
   }
 
   public userGate(): Promise<void> {
-    return this.mWaitForUser();
+    const state: IState = this.api.store.getState();
+
+    return state.settings.workarounds.userSymlinks
+      ? Promise.resolve()
+      : this.mWaitForUser();
   }
 
   public prepare(dataPath: string, clean: boolean, lastActivation: IDeployedFile[],
