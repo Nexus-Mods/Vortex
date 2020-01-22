@@ -17,7 +17,8 @@
       "env": {
         "NODE_ENV": "development",
         "SIMULATE_FS_ERRORS": "false",
-        "BLUEBIRD_DEBUG": "0"
+        "BLUEBIRD_DEBUG": "0",
+        "FORCE_ALLOW_ELEVATED_SYMLINKING": "yes"
       },
       "console": "integratedTerminal",
       "sourceMaps": true,

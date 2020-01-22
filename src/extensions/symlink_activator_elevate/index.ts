@@ -241,9 +241,27 @@ class DeploymentMethod extends LinkingDeployment {
   }
 
   protected linkFile(linkPath: string, sourcePath: string): Promise<void> {
-    return this.emitOperation('link-file', {
-      source: sourcePath, destination: linkPath,
-    });
+    const dirName = path.dirname(linkPath);
+    return fs.ensureDirAsync(dirName)
+      .then(created => {
+        if (created !== null) {
+          log('debug', 'created directory', dirName);
+          return fs.writeFileAsync(
+            path.join(dirName, LinkingDeployment.NEW_TAG_NAME),
+            'This directory was created by Vortex deployment and will be removed ' +
+            'during purging if it\'s empty');
+        } else {
+          // if the directory did exist there is a chance the destination file already
+          // exists
+          return fs.removeAsync(linkPath)
+            .catch(err => (err.code === 'ENOENT')
+              ? Promise.resolve()
+              : Promise.reject(err));
+        }
+      })
+      .then(() => this.emitOperation('link-file', {
+        source: sourcePath, destination: linkPath,
+      }));
   }
 
   protected unlinkFile(linkPath: string): Promise<void> {
@@ -564,6 +582,9 @@ export interface IExtensionContextEx extends IExtensionContext {
   registerDeploymentMethod: (deployment: IDeploymentMethod) => void;
 }
 
+// tslint:disable-next-line:variable-name
+const __req = undefined; // dummy
+
 // copy&pasted from elevatedMain
 function baseFunc(moduleRoot: string, ipcPath: string,
                   main: (ipc, req: NodeRequireFunction) => void | Promise<void>) {
@@ -575,19 +596,17 @@ function baseFunc(moduleRoot: string, ipcPath: string,
   process.on('unhandledRejection', handleError);
   // tslint:disable-next-line:no-shadowed-variable
   (module as any).paths.push(moduleRoot);
-  // prevent webpack from modifying these require calls
-  const req = global['require'];
   const imp = {
-    net: req('net'),
-    JsonSocket: req('json-socket'),
-    path: req('path'),
+    net: __req('net'),
+    JsonSocket: __req('json-socket'),
+    path: __req('path'),
   };
 
   const client = new imp.JsonSocket(new imp.net.Socket());
   client.connect(imp.path.join('\\\\?\\pipe', ipcPath));
 
   client.on('connect', () => {
-    Promise.resolve(main(client, req))
+    Promise.resolve(main(client, __req))
       .catch(error => {
         client.emit('error', error.message);
       })
@@ -612,7 +631,8 @@ function makeScript(args: any): string {
   const projectRoot = getVortexPath('modules_unpacked').split('\\').join('/');
 
   let funcBody = baseFunc.toString();
-  funcBody = funcBody.slice(funcBody.indexOf('{') + 1, funcBody.lastIndexOf('}'));
+  funcBody = 'const __req = require;'
+    + funcBody.slice(funcBody.indexOf('{') + 1, funcBody.lastIndexOf('}'));
   let prog: string = `
         let moduleRoot = '${projectRoot}';\n
         let ipcPath = '${IPC_ID}';\n
