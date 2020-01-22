@@ -28,7 +28,8 @@ function findModByRef(reference: IReference, state: IState): IMod {
   const gameMode = activeGameId(state);
   const mods = state.persistent.mods[gameMode];
 
-  if (isFuzzyVersion(reference.versionMatch)
+  if ((reference.versionMatch !== undefined)
+      && isFuzzyVersion(reference.versionMatch)
       && (reference.fileMD5 !== undefined)
       && ((reference.logicalFileName !== undefined)
           || (reference.fileExpression !== undefined))) {

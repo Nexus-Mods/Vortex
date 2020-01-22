@@ -226,7 +226,7 @@
     "msgpack": "^1.0.3",
     "native-errors": "Nexus-Mods/node-native-errors",
     "nbind": "^0.3.15",
-    "nexus-api": "Nexus-Mods/node-nexus-api",
+    "nexus-api": "Nexus-Mods/node-nexus-api#mod-packs",
     "node-7z": "Nexus-Mods/node-7z",
     "node-sass": "^4.11.0",
     "opn": "TanninOne/opn",
