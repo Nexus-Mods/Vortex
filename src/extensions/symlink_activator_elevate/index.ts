@@ -167,8 +167,6 @@ class DeploymentMethod extends LinkingDeployment {
   }
 
   public isSupported(state: any, gameId?: string): IUnavailableReason {
-    return undefined;
-
     if (process.platform !== 'win32') {
       return { description: t => t('Elevation not required on non-windows systems') };
     }
