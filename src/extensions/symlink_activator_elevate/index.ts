@@ -205,8 +205,6 @@ class DeploymentMethod extends LinkingDeployment {
   }
 
   public isSupported(state: any, gameId?: string): IUnavailableReason {
-    return undefined;
-
     if (process.platform !== 'win32') {
       return { description: t => t('Elevation not required on non-windows systems') };
     }
@@ -229,7 +227,7 @@ class DeploymentMethod extends LinkingDeployment {
         }),
       };
     }
-    if (this.ensureAdmin()) {
+    if (this.ensureAdmin() && (process.env['FORCE_ALLOW_ELEVATED_SYMLINKING'] !== 'yes')) {
       return {
         description: t =>
           t('No need to use the elevated variant, use the regular symlink deployment'),
@@ -577,18 +575,19 @@ function baseFunc(moduleRoot: string, ipcPath: string,
   process.on('unhandledRejection', handleError);
   // tslint:disable-next-line:no-shadowed-variable
   (module as any).paths.push(moduleRoot);
-  // tslint:disable-next-line:no-shadowed-variable
+  // prevent webpack from modifying these require calls
+  const req = global['require'];
   const imp = {
-    net: require('net'),
-    JsonSocket: require('json-socket'),
-    path: require('path'),
+    net: req('net'),
+    JsonSocket: req('json-socket'),
+    path: req('path'),
   };
 
   const client = new imp.JsonSocket(new imp.net.Socket());
   client.connect(imp.path.join('\\\\?\\pipe', ipcPath));
 
   client.on('connect', () => {
-    Promise.resolve(main(client, require))
+    Promise.resolve(main(client, req))
       .catch(error => {
         client.emit('error', error.message);
       })
