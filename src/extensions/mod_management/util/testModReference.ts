@@ -44,7 +44,7 @@ export function sanitizeExpression(fileName: string): string {
 
 function testRef(mod: IModLookupInfo, modId: string, ref: IModReference): boolean {
   if ((ref.id !== undefined)
-      && (modId !== undefined)
+      && ((modId !== undefined) || (Object.keys(ref).length === 1))
       && (ref.id !== modId)) {
     return false;
   }

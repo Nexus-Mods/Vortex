@@ -8,7 +8,7 @@ import { truthy } from '../../../util/util';
 
 import { IBrowserResult } from '../../browser/types';
 
-import {Dependency, IDependency, ILookupResultEx} from '../types/IDependency';
+import { Dependency, IDependency, ILookupResultEx } from '../types/IDependency';
 import { IDownloadHint, IMod, IModRule } from '../types/IMod';
 
 import testModReference, { IModLookupInfo } from './testModReference';
@@ -19,6 +19,10 @@ import {ILookupResult, IReference, IRule} from 'modmeta-db';
 import * as semver from 'semver';
 
 export function isFuzzyVersion(versionMatch: string) {
+  if (!truthy(versionMatch)) {
+    return false;
+  }
+
   return isNaN(parseInt(versionMatch[0], 16))
     || (semver.validRange(versionMatch)
       !== versionMatch);
