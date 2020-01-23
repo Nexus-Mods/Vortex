@@ -993,7 +993,12 @@ class ExtensionManager {
       .filter(ext => ext.dynamic)
       .forEach(ext => {
         try {
-          const oldVersion = getSafe(state.app, ['extensions', ext.name, 'version'], '0.0.0');
+          let oldVersion = getSafe(state.app, ['extensions', ext.name, 'version'], '0.0.0');
+          if (!semver.valid(oldVersion)) {
+            log('error', 'invalid version stored for extension',
+                { extension: ext.name, oldVersion });
+            oldVersion = '0.0.0';
+          }
           if (oldVersion !== ext.info.version) {
             if (migrations[ext.name] === undefined) {
               this.mApi.store.dispatch(setExtensionVersion(ext.name, ext.info.version));
@@ -1532,7 +1537,10 @@ class ExtensionManager {
         info = JSON.parse(fs.readFileSync(path.join(extensionPath, 'info.json'),
         { encoding: 'utf8' }));
       } catch (error) {
-        log('warn', 'extension has no info.json file', extensionPath);
+        const errMessage = (error.code === 'ENOENT')
+          ? 'extension has no info.json file'
+          : 'failed to parse info.json file';
+        log('warn', errMessage, { extensionPath, error: error.message });
       }
 
       return {
