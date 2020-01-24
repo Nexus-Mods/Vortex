@@ -5,7 +5,7 @@ import { UserCanceled } from '../../../util/CustomErrors';
 import { activeGameId, gameName } from '../../../util/selectors';
 import { SITE_ID } from '../../gamemode_management/constants';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 
 /**
  * Determine which game to install a download for.

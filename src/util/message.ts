@@ -15,7 +15,7 @@ import * as fs from './fs';
 import { log } from './log';
 import { flatten, truthy } from './util';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { IFeedbackResponse } from 'nexus-api';
 import ZipT = require('node-7z');
 import * as Redux from 'redux';

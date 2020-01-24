@@ -28,8 +28,8 @@ import { DownloadIsHTML } from '../DownloadManager';
 
 import DownloadGraph from './DownloadGraph';
 
-import * as Promise from 'bluebird';
-import I18next from 'i18next';
+import Promise from 'bluebird';
+import { TFunction } from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
 import { Button, Panel } from 'react-bootstrap';
@@ -63,7 +63,7 @@ interface IActionProps {
 }
 
 export type IDownloadViewProps =
-  IDownloadViewBaseProps & IConnectedProps & IActionProps & { t: I18next.TFunction };
+  IDownloadViewBaseProps & IConnectedProps & IActionProps & { t: TFunction };
 
 interface IComponentState {
   viewAll: boolean;

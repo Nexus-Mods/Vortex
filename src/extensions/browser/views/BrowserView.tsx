@@ -10,7 +10,7 @@ import { truthy } from '../../../util/util';
 
 import { closeBrowser } from '../actions';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import {  WebviewTag } from 'electron';
 import * as React from 'react';
 import { Breadcrumb, Button, Modal } from 'react-bootstrap';

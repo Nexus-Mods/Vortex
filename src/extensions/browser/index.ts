@@ -82,7 +82,8 @@ function init(context: IExtensionContext): boolean {
       });
     });
 
-    ipcRenderer.on('received-url', (evt: string, dlUrl: string, fileName?: string) => {
+    ipcRenderer.on('received-url',
+        (evt: Electron.IpcRendererEvent, dlUrl: string, fileName?: string) => {
       if (lastURL !== undefined) {
         dlUrl += '<' + lastURL;
       }

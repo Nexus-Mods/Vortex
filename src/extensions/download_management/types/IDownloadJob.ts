@@ -1,6 +1,6 @@
 import { IChunk } from './IChunk';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 
 export interface IDownloadJob extends IChunk {
   state: 'init' | 'running' | 'paused' | 'finished';

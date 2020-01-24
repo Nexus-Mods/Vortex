@@ -4,12 +4,12 @@ import { userFriendlyTime } from '../../../util/relativeTime';
 
 import { IDownload } from '../types/IDownload';
 
-import I18next from 'i18next';
+import { TFunction } from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
 
 interface IFileTimeProps {
-  t: I18next.TFunction;
+  t: TFunction;
   language: string;
   detail: boolean;
   download: IDownload;

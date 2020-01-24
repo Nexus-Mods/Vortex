@@ -1,6 +1,6 @@
 import { log } from './log';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as path from 'path';
 import * as winapi from 'winapi-bindings';
 import * as fs from './fs';

@@ -34,7 +34,7 @@ import ToolButton from './ToolButton';
 import ToolEditDialogT from './ToolEditDialog';
 let ToolEditDialog: typeof ToolEditDialogT;
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { remote } from 'electron';
 import * as React from 'react';
 import { Media, MenuItem } from 'react-bootstrap';
@@ -461,5 +461,4 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
   };
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(
-  Starter) as React.ComponentClass<{}>;
+export default connect(mapStateToProps, mapDispatchToProps)(Starter);

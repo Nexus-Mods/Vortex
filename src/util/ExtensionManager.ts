@@ -3,6 +3,7 @@ import { addNotification, closeDialog, DialogActions, DialogType, dismissNotific
          IDialogContent, showDialog } from '../actions/notifications';
 import { suppressNotification } from '../actions/notificationSettings';
 import { setExtensionLoadFailures } from '../actions/session';
+
 import { IExtension } from '../extensions/extension_manager/types';
 import { ExtensionInit } from '../types/Extension';
 import {
@@ -38,7 +39,7 @@ import { getSafe } from './storeHelper';
 import StyleManagerT from './StyleManager';
 import { setdefault, truthy } from './util';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { spawn, SpawnOptions } from 'child_process';
 import { app as appIn, dialog as dialogIn, ipcMain, ipcRenderer, remote } from 'electron';
 import { EventEmitter } from 'events';
@@ -56,6 +57,7 @@ import {} from 'redux-watcher';
 import * as semver from 'semver';
 import { generate as shortid } from 'shortid';
 import { dynreq, runElevated } from 'vortex-run';
+import { i18n } from './i18n';
 
 // tslint:disable-next-line:no-var-requires
 const ReduxWatcher = require('redux-watcher');
@@ -440,7 +442,7 @@ class ExtensionManager {
 
   private mExtensions: IRegisteredExtension[];
   private mApi: IExtensionApi;
-  private mTranslator: I18next.i18n;
+  private mTranslator: i18n;
   private mEventEmitter: NodeJS.EventEmitter;
   private mStyleManager: StyleManagerT;
   private mReduxWatcher: any;
@@ -548,7 +550,7 @@ class ExtensionManager {
     this.initExtensions();
   }
 
-  public setTranslation(translator: I18next.i18n) {
+  public setTranslation(translator: i18n) {
     this.mTranslator = translator;
   }
 
@@ -1026,68 +1028,53 @@ class ExtensionManager {
   }
 
   private getPath(name: string) {
-    return app.getPath(name);
+    return app.getPath(name as any);
   }
 
   private selectFile(options: IOpenOptions): Promise<string> {
-    return new Promise<string>((resolve, reject) => {
-      const fullOptions: Electron.OpenDialogOptions = {
-        ..._.omit(options, ['create']),
-        properties: ['openFile'],
-      };
-      if (options.create === true) {
-        fullOptions.properties.push('promptToCreate');
-      }
-      const win = remote !== undefined ? remote.getCurrentWindow() : null;
-      dialog.showOpenDialog(win, fullOptions, (fileNames: string[]) => {
-        if ((fileNames !== undefined) && (fileNames.length > 0)) {
-          resolve(fileNames[0]);
-        } else {
-          resolve(undefined);
-        }
-      });
-    });
+    const fullOptions: Electron.OpenDialogOptions = {
+      ..._.omit(options, ['create']),
+      properties: ['openFile'],
+    };
+    if (options.create === true) {
+      fullOptions.properties.push('promptToCreate');
+    }
+    const win = remote !== undefined ? remote.getCurrentWindow() : null;
+    return Promise.resolve(dialog.showOpenDialog(win, fullOptions))
+      .then(result => (result.filePaths !== undefined) && (result.filePaths.length > 0)
+        ? result.filePaths[0]
+        : undefined);
   }
 
   private selectExecutable(options: IOpenOptions) {
-    return new Promise<string>((resolve, reject) => {
-      // TODO: make the filter list dynamic based on the list of registered interpreters?
-      const fullOptions: Electron.OpenDialogOptions = {
-        ..._.omit(options, ['create']),
-        properties: ['openFile'],
-        filters: [
-          { name: 'All Executables', extensions: ['exe', 'cmd', 'bat', 'jar', 'py'] },
-          { name: 'Native', extensions: ['exe', 'cmd', 'bat'] },
-          { name: 'Java', extensions: ['jar'] },
-          { name: 'Python', extensions: ['py'] },
-        ],
-      };
-      const win = remote !== undefined ? remote.getCurrentWindow() : null;
-      dialog.showOpenDialog(win, fullOptions, (fileNames: string[]) => {
-        if ((fileNames !== undefined) && (fileNames.length > 0)) {
-          resolve(fileNames[0]);
-        } else {
-          resolve(undefined);
-        }
-      });
-    });
+    // TODO: make the filter list dynamic based on the list of registered interpreters?
+    const fullOptions: Electron.OpenDialogOptions = {
+      ..._.omit(options, ['create']),
+      properties: ['openFile'],
+      filters: [
+        { name: 'All Executables', extensions: ['exe', 'cmd', 'bat', 'jar', 'py'] },
+        { name: 'Native', extensions: ['exe', 'cmd', 'bat'] },
+        { name: 'Java', extensions: ['jar'] },
+        { name: 'Python', extensions: ['py'] },
+      ],
+    };
+    const win = remote !== undefined ? remote.getCurrentWindow() : null;
+    return Promise.resolve(dialog.showOpenDialog(win, fullOptions))
+      .then(result => (result.filePaths !== undefined) && (result.filePaths.length > 0)
+        ? result.filePaths[0]
+        : undefined);
   }
 
   private selectDir(options: IOpenOptions) {
-    return new Promise<string>((resolve, reject) => {
-      const fullOptions: Electron.OpenDialogOptions = {
-        ..._.omit(options, ['create']),
-        properties: ['openDirectory'],
-      };
-      const win = remote !== undefined ? remote.getCurrentWindow() : null;
-      dialog.showOpenDialog(win, fullOptions, (fileNames: string[]) => {
-        if ((fileNames !== undefined) && (fileNames.length > 0)) {
-          resolve(fileNames[0]);
-        } else {
-          resolve(undefined);
-        }
-      });
-    });
+    const fullOptions: Electron.OpenDialogOptions = {
+      ..._.omit(options, ['create']),
+      properties: ['openDirectory'],
+    };
+    const win = remote !== undefined ? remote.getCurrentWindow() : null;
+    return Promise.resolve(dialog.showOpenDialog(win, fullOptions))
+      .then(result => (result.filePaths !== undefined) && (result.filePaths.length > 0)
+        ? result.filePaths[0]
+        : undefined);
   }
 
   private registerProtocol = (protocol: string, def: boolean,

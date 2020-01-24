@@ -23,7 +23,7 @@ import TableRow from './table/TableRow';
 import ToolbarIcon from './ToolbarIcon';
 import Usage from './Usage';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import update from 'immutability-helper';
 import * as _ from 'lodash';
 import * as React from 'react';

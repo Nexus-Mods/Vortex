@@ -13,8 +13,8 @@ import {
   IUnavailableReason,
 } from './types/IDeploymentMethod';
 
-import * as Promise from 'bluebird';
-import I18next from 'i18next';
+import Promise from 'bluebird';
+import { TFunction } from 'i18next';
 import * as _ from 'lodash';
 import * as path from 'path';
 import turbowalk from 'turbowalk';
@@ -79,7 +79,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
     return Promise.resolve();
   }
 
-  public detailedDescription(t: I18next.TFunction): string {
+  public detailedDescription(t: TFunction): string {
     return t(this.description);
   }
 
@@ -452,11 +452,11 @@ abstract class LinkingActivator implements IDeploymentMethod {
   }
 
   protected stat(filePath: string): Promise<fs.Stats> {
-    return fs.statAsync(filePath);
+    return fs.statAsync(filePath) as any;
   }
 
   protected statLink(filePath: string): Promise<fs.Stats> {
-    return fs.lstatAsync(filePath);
+    return fs.lstatAsync(filePath) as any;
   }
 
   private removeDeployedFile(installationPath: string,

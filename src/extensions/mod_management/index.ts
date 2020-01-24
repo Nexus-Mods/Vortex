@@ -82,7 +82,7 @@ import mergeMods, { MERGED_PATH } from './modMerging';
 import preStartDeployHook from './preStartDeployHook';
 import getText from './texts';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as path from 'path';
 import * as Redux from 'redux';
 import shortid = require('shortid');

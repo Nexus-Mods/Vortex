@@ -19,15 +19,15 @@ import {activeGameId} from '../profile_management/selectors';
 import {iniFiles, iniFormat} from './gameSupport';
 import renderINITweaks from './TweakList';
 
-import * as Promise from 'bluebird';
-import I18next from 'i18next';
+import Promise from 'bluebird';
+import { TFunction } from 'i18next';
 import * as path from 'path';
 import IniParser, { IniFile, WinapiFormat } from 'vortex-parse-ini';
 
 import { app as appIn, remote } from 'electron';
 const app = appIn || remote.app;
 
-function ensureIniBackups(t: I18next.TFunction, gameMode: string,
+function ensureIniBackups(t: TFunction, gameMode: string,
                           discovery: IDiscoveryResult): Promise<void> {
   return Promise.map(iniFiles(gameMode, discovery), file => {
     const backupFile = file + '.base';
@@ -84,7 +84,7 @@ function discoverSettingsChanges(api: IExtensionApi, gameMode: string,
 
   const parser = new IniParser(genIniFormat(format));
 
-  const t: I18next.TFunction = api.translate;
+  const t: TFunction = api.translate;
 
   return Promise.map(iniFiles(gameMode, discovery), iniFileName => {
     let newContent: any;
@@ -139,7 +139,7 @@ function getBaseFile(input: string): string {
 
 type ApplySettings = (fileName: string, parser: IniFile<any>) => Promise<void>;
 
-function bakeSettings(t: I18next.TFunction,
+function bakeSettings(t: TFunction,
                       gameMode: string, discovery: IDiscoveryResult,
                       mods: IMod[], state: IState,
                       onApplySettings: ApplySettings): Promise<void> {
@@ -202,7 +202,7 @@ function bakeSettings(t: I18next.TFunction,
           ini.data = deepMerge(ini.data, patchIni.data);
         }))
         .then(() => onApplySettings(iniFileName, ini))
-        .then(() => fs.forcePerm(t, () => parser.write(iniFileName + '.baked', ini)))
+        .then(() => fs.forcePerm(t, () => parser.write(iniFileName + '.baked', ini) as any))
         .then(() => {
           if (iniFileName === undefined) {
             return Promise.reject(new Error(
@@ -215,7 +215,7 @@ function bakeSettings(t: I18next.TFunction,
   .then(() => undefined);
 }
 
-function purgeChanges(t: I18next.TFunction, gameMode: string, discovery: IDiscoveryResult) {
+function purgeChanges(t: TFunction, gameMode: string, discovery: IDiscoveryResult) {
   return Promise.map(
       iniFiles(gameMode, discovery),
       iniFileName =>

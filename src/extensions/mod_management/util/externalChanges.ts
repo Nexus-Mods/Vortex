@@ -12,7 +12,7 @@ import { FileAction, IFileEntry } from '../types/IFileEntry';
 
 import { MERGED_PATH } from '../modMerging';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as path from 'path';
 
 /**

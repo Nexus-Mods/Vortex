@@ -21,7 +21,7 @@ import submitFeedback from './util/submitFeedback';
 
 import { checkModVersionsImpl, endorseModImpl, startDownload, updateKey } from './util';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import Nexus, { IFeedbackResponse, IIssue, NexusError,
                 RateLimitError, TimeoutError } from 'nexus-api';
 

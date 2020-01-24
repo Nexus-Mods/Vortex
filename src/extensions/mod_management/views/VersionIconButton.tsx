@@ -7,11 +7,11 @@ import { IDownload } from '../../download_management/types/IDownload';
 import { IModWithState } from '../types/IModProps';
 import { UpdateState } from '../util/modUpdateState';
 
-import I18next from 'i18next';
+import { TFunction } from 'i18next';
 import * as React from 'react';
 
 export interface IBaseProps {
-  t: I18next.TFunction;
+  t: TFunction;
   gameMode: string;
   mod: IModWithState;
   state: UpdateState;

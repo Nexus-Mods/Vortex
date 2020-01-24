@@ -157,7 +157,7 @@ function setupAutoUpdate(api: IExtensionApi) {
       });
   };
 
-  ipcMain.on('check-for-updates', (channel: string) => {
+  ipcMain.on('check-for-updates', (event, channel: string) => {
     checkNow(channel);
   });
 

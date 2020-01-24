@@ -26,7 +26,7 @@ import GameRow from './GameRow';
 import GameThumbnail from './GameThumbnail';
 import ShowHiddenButton from './ShowHiddenButton';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import update from 'immutability-helper';
 import * as React from 'react';
 import { FormControl, InputGroup, ListGroup,

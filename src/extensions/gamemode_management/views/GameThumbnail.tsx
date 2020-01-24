@@ -12,14 +12,14 @@ import { IGameStored } from '../types/IGameStored';
 
 import GameInfoPopover from './GameInfoPopover';
 
-import * as Promise from 'bluebird';
-import I18next from 'i18next';
+import Promise from 'bluebird';
+import { TFunction } from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
 import { Button, Panel, Popover } from 'react-bootstrap';
 
 export interface IBaseProps {
-  t: I18next.TFunction;
+  t: TFunction;
   game: IGameStored;
   active: boolean;
   discovered?: boolean;
@@ -262,5 +262,4 @@ function mapStateToProps(state: IState, ownProps: IBaseProps): IConnectedProps {
 }
 
 export default
-  connect(mapStateToProps)(
-    GameThumbnail) as React.ComponentClass<IBaseProps>;
+  connect(mapStateToProps)(GameThumbnail);

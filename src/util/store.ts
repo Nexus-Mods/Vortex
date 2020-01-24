@@ -9,7 +9,7 @@ import { log } from './log';
 import ReduxPersistor from './ReduxPersistor';
 import {reduxSanity, StateError} from './reduxSanity';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { dialog } from 'electron';
 import { forwardToRenderer, replayActionMain } from 'electron-redux';
 import * as encode from 'encoding-down';
@@ -27,7 +27,7 @@ const IMPORTED_TAG = 'imported__do_not_delete.txt';
 export const currentStatePath = 'state.v2';
 
 export function querySanitize(errors: string[]): Decision {
-  const response = dialog.showMessageBox(getVisibleWindow(), {
+  const response = dialog.showMessageBoxSync(getVisibleWindow(), {
     message:
         'Application state is invalid. I can try to repair it but you may lose data.',
     detail: errors.join('\n'),
@@ -129,7 +129,8 @@ function exists(filePath: string): boolean {
 
 export function markImported(basePath: string): Promise<void> {
   return fs.writeFileAsync(
-    path.join(basePath, currentStatePath, IMPORTED_TAG), '');
+      path.join(basePath, currentStatePath, IMPORTED_TAG), '')
+    .then(() => null);
 }
 
 export function importState(basePath: string): Promise<any> {

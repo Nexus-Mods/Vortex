@@ -4,28 +4,29 @@ import * as fs from './fs';
 import getVortexPath from './getVortexPath';
 import { log } from './log';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
-import I18next from 'i18next';
-import * as FSBackend from 'i18next-node-fs-backend';
+import I18next, { i18n, TOptions } from 'i18next';
+import FSBackend from 'i18next-node-fs-backend';
+import * as path from 'path';
 import { initReactI18next } from 'react-i18next';
 
-import * as path from 'path';
+type TFunction = typeof I18next.t;
 
 const app = remote !== undefined ? remote.app : appIn;
 
 let debugging = false;
 let currentLanguage = 'en';
-const fallbackTFunc: I18next.TFunction =
+const fallbackTFunc: TFunction =
   str => (Array.isArray(str) ? str[0].toString() : str.toString()) as any;
 
-export { fallbackTFunc };
+export { fallbackTFunc, i18n, TFunction };
 
 let missingKeys = { common: {} };
 
 export interface IInitResult {
-  i18n: I18next.i18n;
-  tFunc: I18next.TFunction;
+  i18n: i18n;
+  tFunc: TFunction;
   error?: Error;
 }
 
@@ -122,11 +123,11 @@ function init(language: string, translationExts: () => IExtension[]): Promise<II
 
   currentLanguage = language;
 
-  const i18n = I18next
-    .use(MultiBackend)
+  const i18nObj = I18next
+    .use(MultiBackend as any)
     .use(initReactI18next);
 
-  return Promise.resolve(i18n.init(
+  return Promise.resolve(i18nObj.init(
     {
       lng: language,
       fallbackLng: 'en',
@@ -170,11 +171,11 @@ function init(language: string, translationExts: () => IExtension[]): Promise<II
       },
     }))
     .then(tFunc => Promise.resolve({
-      i18n,
+      i18n: i18nObj,
       tFunc,
     }))
     .catch((error) => ({
-      i18n,
+      i18n: i18nObj,
       tFunc: fallbackTFunc,
       error,
     }));
@@ -184,7 +185,7 @@ export function getCurrentLanguage() {
   return currentLanguage;
 }
 
-export function globalT(key: string | string[], options: I18next.TOptions) {
+export function globalT(key: string | string[], options: TOptions) {
   return fallbackTFunc(key, options);
 }
 

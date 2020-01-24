@@ -2,7 +2,7 @@ import {IPersistor} from '../types/IExtensionContext';
 import { terminate } from '../util/errorHandling';
 import { log } from '../util/log';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as Redux from 'redux';
 
 function insert(target: any, key: string[], value: any, hive: string) {

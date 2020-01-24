@@ -1,6 +1,6 @@
 import { log } from './log';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 
 /**
  * downloads and installs development extensions that help with redux / react development.

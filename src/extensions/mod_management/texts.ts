@@ -1,6 +1,6 @@
-import I18next from 'i18next';
+import { TFunction } from '../../util/i18n';
 
-function getText(id: string, t: I18next.TFunction) {
+function getText(id: string, t: TFunction) {
   switch (id) {
     case 'deployment':
       return t(
@@ -96,8 +96,7 @@ function getText(id: string, t: I18next.TFunction) {
         + 'If you don\'t know which order to use, look for instructions by the mod authors. If the instruction you get '
         + 'says \'Install mod x after mod y\' this translates to a mod rule of \'mod x loads after mod y\'.\n\n'
         + 'If you can\'t find any information, a good rule of thumb is: Load the newest mod (the one released last) after '
-        + 'the older one.'
-      );
+        + 'the older one.');
     }
     default:
       return undefined;

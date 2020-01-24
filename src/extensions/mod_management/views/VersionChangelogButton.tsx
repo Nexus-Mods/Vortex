@@ -5,13 +5,13 @@ import { truthy } from '../../../util/util';
 
 import { IMod } from '../../mod_management/types/IMod';
 
-import I18next from 'i18next';
+import { TFunction } from 'i18next';
 import * as React from 'react';
 import { ControlLabel, FormGroup, OverlayTrigger, Popover } from 'react-bootstrap';
 import * as ReactSafeHtmlT from 'react-safe-html';
 
 export interface IBaseProps {
-  t: I18next.TFunction;
+  t: TFunction;
   mod: IMod;
 }
 

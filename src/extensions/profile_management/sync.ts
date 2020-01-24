@@ -3,7 +3,7 @@ import * as fs from '../../util/fs';
 import {copyFileAtomic} from '../../util/fsAtomic';
 import {log} from '../../util/log';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as path from 'path';
 
 export function syncToProfile(

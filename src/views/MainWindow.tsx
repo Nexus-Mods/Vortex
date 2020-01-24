@@ -16,6 +16,7 @@ import { IModifiers } from '../types/IModifiers';
 import { INotification } from '../types/INotification';
 import { IProgress, IState, IUIBlocker } from '../types/IState';
 import { connect, extend } from '../util/ComponentEx';
+import { TFunction } from '../util/i18n';
 import { log } from '../util/log';
 import { getSafe } from '../util/storeHelper';
 import { truthy } from '../util/util';
@@ -30,7 +31,6 @@ import QuickLauncher from './QuickLauncher';
 import Settings from './Settings';
 import WindowControls from './WindowControls';
 
-import I18next from 'i18next';
 import update from 'immutability-helper';
 import * as _ from 'lodash';
 import * as PropTypes from 'prop-types';
@@ -48,7 +48,7 @@ addStyle(ReactButton, 'link');
 addStyle(ReactButton, 'inverted');
 
 export interface IBaseProps {
-  t: I18next.TFunction;
+  t: TFunction;
   className: string;
   api: IExtensionApi;
 }

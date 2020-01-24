@@ -49,4 +49,4 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-export default connect(mapStateToProps)(Advanced) as React.ComponentClass<{}>;
+export default connect(mapStateToProps)(Advanced);

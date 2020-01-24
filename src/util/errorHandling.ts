@@ -9,15 +9,15 @@ import opn from './opn';
 import { getSafe } from './storeHelper';
 import { flatten, getAllPropertyNames, spawnSelf, truthy } from './util';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import {
   app as appIn,
   dialog as dialogIn,
   ipcRenderer,
   remote,
 } from 'electron';
-import * as fs from 'fs-extra-promise';
-import i18next from 'i18next';
+import * as fs from 'fs-extra';
+import I18next from 'i18next';
 import NexusT, { IFeedbackResponse } from 'nexus-api';
 import * as os from 'os';
 import * as path from 'path';
@@ -186,7 +186,7 @@ if (ipcRenderer !== undefined) {
 }
 
 export function sendReportFile(fileName: string): Promise<IFeedbackResponse> {
-  return fs.readFileAsync(fileName)
+  return Promise.resolve(fs.readFile(fileName, { encoding: 'utf8' }))
     .then(reportData => {
       const {type, error, labels, reporterId, reportProcess, sourceProcess, context} =
         JSON.parse(reportData.toString());
@@ -268,7 +268,7 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
     if ((allowReport !== false) && !outdated && !errorIgnored) {
       buttons.push('Report and Quit');
     }
-    let action = dialog.showMessageBox(getVisibleWindow(), {
+    let action = dialog.showMessageBoxSync(getVisibleWindow(), {
       type: 'error',
       buttons,
       defaultId: buttons.length - 1,
@@ -283,7 +283,7 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
       createErrorReport('Crash', error, contextNow, ['bug', 'crash'], state, source);
     } else if (action === 0) {
       // Ignore
-      action = dialog.showMessageBox(getVisibleWindow(), {
+      action = dialog.showMessageBoxSync(getVisibleWindow(), {
         type: 'error',
         buttons: ['Quit', 'I won\'t whine'],
         title: 'Are you sure?',
@@ -300,7 +300,7 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
       }
     }
     if (error.extension !== undefined) {
-      action = dialog.showMessageBox(getVisibleWindow(), {
+      action = dialog.showMessageBoxSync(getVisibleWindow(), {
         type: 'error',
         buttons: ['Disable', 'Keep'],
         title: 'Extension crashed',
@@ -333,7 +333,7 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
  */
 export function toError(input: any, title?: string,
                         options?: IErrorOptions, sourceStack?: string): IError {
-  let ten = i18next.getFixedT('en');
+  let ten = I18next.getFixedT('en');
   try {
     ten('dummy');
   } catch (err) {

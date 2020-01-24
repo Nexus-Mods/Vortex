@@ -1,6 +1,6 @@
-import I18next from 'i18next';
+import { TFunction } from '../../util/i18n';
 
-function getText(id: string, t: I18next.TFunction) {
+function getText(id: string, t: TFunction) {
   switch (id) {
     case 'meta-server': return t(
       'A meta server provides additional information about mods, giving you '

@@ -6,7 +6,7 @@ import {truthy} from '../util/util';
 
 import safeCreateAction from './safeCreateAction';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { ipcMain, ipcRenderer } from 'electron';
 
 import * as reduxAct from 'redux-act';

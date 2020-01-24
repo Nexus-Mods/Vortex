@@ -24,7 +24,7 @@ import { IGameStored } from './types/IGameStored';
 import { IToolStored } from './types/IToolStored';
 import { discoverRelativeTools, quickDiscovery, searchDiscovery } from './util/discovery';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as path from 'path';
 import * as Redux from 'redux';
 

@@ -18,7 +18,7 @@ import installExtension from './installExtension';
 import getTableAttributes from './tableAttributes';
 import { IExtension, IExtensionWithState } from './types';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as React from 'react';
@@ -255,4 +255,4 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
 export default
   translate(['common'])(
     connect(mapStateToProps, mapDispatchToProps)(
-      ExtensionManager)) as React.ComponentClass<{}>;
+      ExtensionManager));

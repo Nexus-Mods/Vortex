@@ -2,13 +2,13 @@ import { IAttributeState } from '../../types/IAttributeState';
 import { ITableAttribute } from '../../types/ITableAttribute';
 import { SortDirection } from '../../types/SortDirection';
 import getAttr from '../../util/getAttr';
+import { TFunction } from '../../util/i18n';
 
 import { IconButton } from '../TooltipControls';
 
 import { TH } from './MyTable';
 import SortIndicator from './SortIndicator';
 
-import I18next from 'i18next';
 import * as _ from 'lodash';
 import * as React from 'react';
 
@@ -21,7 +21,7 @@ export interface IHeaderProps {
   onSetSortDirection: (id: string, dir: SortDirection) => void;
   onSetGroup: (id: string) => void;
   onSetFilter: (id?: string, filter?: any) => void;
-  t: I18next.TFunction;
+  t: TFunction;
 }
 
 function nextDirection(direction: SortDirection): SortDirection {

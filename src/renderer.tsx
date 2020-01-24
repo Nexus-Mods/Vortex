@@ -64,7 +64,7 @@ import { setOutdated, terminate, toError } from './util/errorHandling';
 import ExtensionManager from './util/ExtensionManager';
 import { ExtensionProvider } from './util/ExtensionProvider';
 import GlobalNotifications from './util/GlobalNotifications';
-import getI18n, { fallbackTFunc } from './util/i18n';
+import getI18n, { fallbackTFunc, TFunction } from './util/i18n';
 import { log } from './util/log';
 import { initApplicationMenu } from './util/menu';
 import { showError } from './util/message';
@@ -73,12 +73,12 @@ import { reduxSanity, StateError } from './util/reduxSanity';
 import LoadingScreen from './views/LoadingScreen';
 import MainWindow from './views/MainWindow';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { ipcRenderer, remote, webFrame } from 'electron';
 import { forwardToMain, getInitialStateRenderer, replayActionRenderer } from 'electron-redux';
 import { EventEmitter } from 'events';
-import * as fs from 'fs-extra-promise';
-import I18next from 'i18next';
+import * as fs from 'fs-extra';
+import * as I18next from 'i18next';
 import * as msgpackT from 'msgpack';
 import * as nativeErr from 'native-errors';
 import * as React from 'react';
@@ -91,7 +91,7 @@ import { applyMiddleware, compose, createStore } from 'redux';
 import thunkMiddleware from 'redux-thunk';
 import { generate as shortid } from 'shortid';
 
-import crashDump from 'crash-dump';
+import crashDumpX from 'crash-dump';
 
 import { setLanguage } from './actions';
 import { ThunkStore } from './types/IExtensionContext';
@@ -101,6 +101,8 @@ import {} from './util/extensionRequire';
 import { reduxLogger } from './util/reduxLogger';
 import { getSafe } from './util/storeHelper';
 import { getAllPropertyNames } from './util/util';
+
+const crashDump = (crashDumpX as any).default;
 
 log('debug', 'renderer process started', { pid: process.pid });
 
@@ -264,7 +266,7 @@ const eventEmitter: NodeJS.EventEmitter = new EventEmitter();
 
 let enhancer = null;
 
-if (process.env.NODE_ENV === 'development') {
+if (process.env.NODE_ENV === 'development' && false) {
   // tslint:disable-next-line:no-var-requires
   const freeze = require('redux-freeze');
   const devtool = (window as any).__REDUX_DEVTOOLS_EXTENSION__
@@ -289,7 +291,7 @@ if (process.env.NODE_ENV === 'development') {
 // extensions are to be loaded has to be retrieved from the main process
 const extensions: ExtensionManager = new ExtensionManager(undefined, eventEmitter);
 const extReducers = extensions.getReducers();
-let tFunc: I18next.TFunction = fallbackTFunc;
+let tFunc: TFunction = fallbackTFunc;
 
 // I only want to add reducers, but redux-electron-store seems to break
 // when calling replaceReducer in the renderer
@@ -420,7 +422,7 @@ store.subscribe(() => {
       return;
     }
     currentLanguage = newLanguage;
-    I18next.changeLanguage(newLanguage, (err, t) => {
+    I18next.default.changeLanguage(newLanguage, (err, t) => {
       if (err !== undefined) {
         if (Array.isArray(err)) {
           // don't show ENOENT errors because it shouldn't really matter
@@ -461,7 +463,7 @@ function renderer() {
 
       return Promise.map(dynamicExts, ext => {
         const filePath = path.join(ext.path, 'language.json');
-        return fs.readFileAsync(filePath, { encoding: 'utf-8' })
+        return fs.readFile(filePath, { encoding: 'utf-8' })
           .then((fileData: string) => {
             i18n.addResources('en', ext.name, JSON.parse(fileData));
           })
@@ -501,7 +503,7 @@ function renderer() {
       startupFinished();
       eventEmitter.emit('startup');
       // render the page content
-      ReactDOM.render(
+      ReactDOM.render((
         <Provider store={store}>
           <DragDropContextProvider backend={HTML5Backend}>
             <I18nextProvider i18n={i18n}>
@@ -510,7 +512,8 @@ function renderer() {
               </ExtensionProvider>
             </I18nextProvider>
           </DragDropContextProvider>
-        </Provider>,
+        </Provider>
+      ),
         document.getElementById('content'),
       );
       // ipcRenderer.send('show-window');

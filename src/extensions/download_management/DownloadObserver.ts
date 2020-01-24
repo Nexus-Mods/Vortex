@@ -28,7 +28,7 @@ import getDownloadGames from './util/getDownloadGames';
 
 import DownloadManager, { DownloadIsHTML } from './DownloadManager';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import {IHashResult} from 'modmeta-db';
 import * as path from 'path';
 import * as Redux from 'redux';

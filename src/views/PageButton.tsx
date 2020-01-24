@@ -1,13 +1,13 @@
 import Icon from '../controls/Icon';
 import Spinner from '../controls/Spinner';
 import { IMainPage } from '../types/IMainPage';
+import { TFunction } from '../util/i18n';
 
-import I18next from 'i18next';
 import * as React from 'react';
 import { Badge } from 'react-bootstrap';
 
 interface IPageButtonProps {
-  t: I18next.TFunction;
+  t: TFunction;
   page: IMainPage;
 }
 

@@ -8,7 +8,7 @@ import { setProfilesVisible } from '../settings_interface/actions/interface';
 
 import { IToDo } from './IToDo';
 
-import I18next from 'i18next';
+import { TFunction } from 'i18next';
 import * as React from 'react';
 import * as winapi from 'winapi-bindings';
 
@@ -70,7 +70,7 @@ function todos(api: IExtensionApi): IToDo[] {
       priority: 20,
       props: state => ({ profilesVisible: state.settings.interface.profilesVisible }),
       text: 'Profile Management',
-      value: (t: I18next.TFunction, props: any) => props.profilesVisible ? t('Yes') : t('No'),
+      value: (t: TFunction, props: any) => props.profilesVisible ? t('Yes') : t('No'),
       action: (props: any) => api.store.dispatch(setProfilesVisible(!props.profilesVisible)),
     },
     {
@@ -80,7 +80,7 @@ function todos(api: IExtensionApi): IToDo[] {
       priority: 30,
       props: state => ({ dlPath: selectors.downloadPath(state) }),
       text: 'Downloads are on drive',
-      value: (t: I18next.TFunction, props: any) => winapi.GetVolumePathName(props.dlPath),
+      value: (t: TFunction, props: any) => winapi.GetVolumePathName(props.dlPath),
       action: () => {
         openSettingsPage('Download');
         api.highlightControl('#settings-tab-pane-Download #download-path-form', 5000,
@@ -95,7 +95,7 @@ function todos(api: IExtensionApi): IToDo[] {
       priority: 31,
       props: state => ({ instPath: selectors.installPath(state) }),
       text: 'Mods are staged on drive',
-      value: (t: I18next.TFunction, props: any) => {
+      value: (t: TFunction, props: any) => {
         try {
           return winapi.GetVolumePathName(props.instPath);
         } catch (err) {
@@ -121,7 +121,7 @@ function todos(api: IExtensionApi): IToDo[] {
         discoveryRunning: state.session.discovery.running,
       }),
       condition: props => props.searchPaths !== undefined,
-      text: (t: I18next.TFunction, props: any): JSX.Element =>
+      text: (t: TFunction, props: any): JSX.Element =>
           props.discoveryRunning
           ? t('Discovery running')
           : t('Scan for missing games'),

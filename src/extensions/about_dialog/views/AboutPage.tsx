@@ -1,24 +1,25 @@
 import More from '../../../controls/More';
 import { ComponentEx, translate } from '../../../util/ComponentEx';
-import * as fs from 'fs';
+import github from '../../../util/github';
 import {log} from '../../../util/log';
 import MainPage from '../../../views/MainPage';
 
 import { ILicense } from '../types/ILicense';
 
 import { remote } from 'electron';
+import * as fs from 'fs';
 import I18next from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
 import { Image, Media, Panel } from 'react-bootstrap';
-import * as ReactMarkdown from 'react-markdown';
-import * as RequestT from 'request';
+import ReactMarkdown from 'react-markdown';
 
 let modules = {};
 let ownLicenseText: string = '';
 if (remote !== undefined) {
   try {
-    modules = JSON.parse(fs.readFileSync(path.join(remote.app.getAppPath(), 'assets', 'modules.json'), { encoding: 'utf8' }));
+    const modulesPath = path.join(remote.app.getAppPath(), 'assets', 'modules.json');
+    modules = JSON.parse(fs.readFileSync(modulesPath, { encoding: 'utf8' }));
     ownLicenseText = fs.readFileSync(path.join(remote.app.getAppPath(), 'LICENSE.md')).toString();
   } catch (err) {
     // should we display this in the ui? It shouldn't ever happen in the release and 99% of users
@@ -68,30 +69,27 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
     if (this.mVersion === '0.0.1') {
       this.nextState.tag = 'Development';
     } else {
-      const request: typeof RequestT = require('request');
-      request.get(`https://api.github.com/repos/Nexus-Mods/Vortex/releases`, {
-        headers: { 'User-Agent': 'Vortex' },
-      }, (error, response, body) => {
-        if ((error === null) && this.mMounted) {
-          try {
-            const releases = JSON.parse(body);
-            const thisVersion = 'v' + this.mVersion;
-            const thisRelease = releases.find(rel => rel.tag_name === thisVersion);
-            if (thisRelease !== undefined) {
-              this.nextState.releaseDate = new Date(thisRelease.published_at);
-              this.nextState.changelog = thisRelease.body;
-              this.nextState.tag = thisRelease.prerelease ? 'Testing' : undefined;
-            } else {
-              this.nextState.tag = 'Unknown';
+      github.releases()
+        .then(releases => {
+          if (this.mMounted) {
+            try {
+              const thisVersion = 'v' + this.mVersion;
+              const thisRelease = releases.find(rel => rel.tag_name === thisVersion);
+              if (thisRelease !== undefined) {
+                this.nextState.releaseDate = new Date(thisRelease.published_at);
+                this.nextState.changelog = thisRelease.body;
+                this.nextState.tag = thisRelease.prerelease ? 'Testing' : undefined;
+              } else {
+                this.nextState.tag = 'Unknown';
+              }
+            } catch (err) {
+              log('warn', 'Failed to parse release info', err.message);
             }
-          } catch (err) {
-            log('warn', 'Failed to parse release info', err.message);
           }
-        }
-      })
-      .on('error', err => {
-        log('warn', 'Failed to look up current Vortex releases', err.message);
-      });
+        })
+        .catch(err => {
+          log('warn', 'Failed to look up current Vortex releases', err.message);
+        });
     }
   }
 

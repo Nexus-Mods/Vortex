@@ -1,8 +1,7 @@
 import { log } from '../util/log';
-
 import IconBase from './Icon.base';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 // using fs directly because the svg may be bundled inside the asar so
 // we need the electron-fs hook here
 import { remote } from 'electron';

@@ -119,4 +119,4 @@ function mapStateToProps(state: any, ownProps: IProps): IConnectedProps {
 export default
   extend(registerBanner, 'group')(
     connect(mapStateToProps)(
-      Banner as any)) as React.ComponentClass<ExportType>;
+      Banner) as any) as React.ComponentClass<ExportType>;

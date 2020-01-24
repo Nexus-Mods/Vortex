@@ -25,7 +25,7 @@ import {
 import { checkAssemblies, getNetVersion } from './util/netVersion';
 import InstallerDialog from './views/InstallerDialog';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import * as edgeT from 'electron-edge-js';
 const edge = lazyRequire<typeof edgeT>(() => require('electron-edge-js'));

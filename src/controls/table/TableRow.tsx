@@ -1,4 +1,5 @@
 import { IEditChoice, ITableAttribute } from '../../types/ITableAttribute';
+import { TFunction } from '../../util/i18n';
 
 import ContextMenu from '../ActionContextMenu';
 import ActionDropdown from '../ActionDropdown';
@@ -11,7 +12,6 @@ import VisibilityProxy from '../VisibilityProxy';
 
 import { TD, TR } from './MyTable';
 
-import I18next from 'i18next';
 import * as _ from 'lodash';
 import * as React from 'react';
 import { MenuItem } from 'react-bootstrap';
@@ -32,7 +32,7 @@ interface ICellProps {
   data: any;
   rawData: any;
   tableId: string;
-  t: I18next.TFunction;
+  t: TFunction;
   container: HTMLElement;
   onHighlight: (highlight: boolean) => void;
   right: boolean;
@@ -142,11 +142,13 @@ class TableCell extends React.Component<ICellProps, { isOpen: boolean }> {
             + `toggle-${tableId}-${attribute.id}-${key}`}
         />
         {this.state.isOpen
-          ? (<Dropdown.Menu
-            onSelect={this.changeCell}
-          >
-            {choices.filter(choice => choice.visible !== false).map(this.renderChoice)}
-          </Dropdown.Menu>)
+          ? (
+            <Dropdown.Menu
+              onSelect={this.changeCell}
+            >
+              {choices.filter(choice => choice.visible !== false).map(this.renderChoice)}
+            </Dropdown.Menu>
+          )
           : <DummyMenu />}
       </Dropdown>
     );
@@ -218,7 +220,7 @@ class TableCell extends React.Component<ICellProps, { isOpen: boolean }> {
 }
 
 export interface IRowProps {
-  t: I18next.TFunction;
+  t: TFunction;
   id: string;
   tableId: string;
   data: any;
@@ -427,7 +429,7 @@ class TableRow extends React.Component<IRowProps, IRowState> {
     attribute: ITableAttribute,
     rawData: any,
     calculatedData: any,
-    t: I18next.TFunction,
+    t: TFunction,
     right: boolean): JSX.Element {
 
     const { container, data, language, tableId } = this.props;

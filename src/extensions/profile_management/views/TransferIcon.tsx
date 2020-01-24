@@ -5,7 +5,7 @@ import { setCreateTransfer, setSource, setTarget } from '../actions/transferSetu
 import * as selectors from '../selectors';
 import { IProfile } from '../types/IProfile';
 
-import I18next from 'i18next';
+import { TFunction } from 'i18next';
 import * as React from 'react';
 import { Overlay, Popover } from 'react-bootstrap';
 import { ConnectDragPreview, ConnectDragSource, ConnectDropTarget,
@@ -17,7 +17,7 @@ import { connect } from 'react-redux';
 
 export interface IBaseProps {
   profile: IProfile;
-  t: I18next.TFunction;
+  t: TFunction;
   onSetHighlightGameId: (gameId: string) => void;
   disabled: boolean;
 }
@@ -270,4 +270,4 @@ function mapDispatchToProps(dispatch): IActionProps {
 
 export default
   connect<IConnectedProps, IActionProps, IBaseProps>(mapStateToProps, mapDispatchToProps)(
-      TransferIconDrag) as React.ComponentClass<IBaseProps>;
+      TransferIconDrag);

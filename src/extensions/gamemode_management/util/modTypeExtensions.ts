@@ -1,7 +1,7 @@
 import { IInstruction, IModTypeOptions } from '../../../types/IExtensionContext';
 import { IGame, IModType } from '../../../types/IGame';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 
 const modTypeExtensions: IModType[] = [];
 

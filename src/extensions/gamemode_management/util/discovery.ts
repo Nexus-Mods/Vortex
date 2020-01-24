@@ -14,7 +14,7 @@ import getNormalizeFunc, { Normalize } from '../../../util/getNormalizeFunc';
 
 import Progress from './Progress';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import * as path from 'path';
 import turbowalk from 'turbowalk';
@@ -277,16 +277,10 @@ export function discoverRelativeTools(game: IGame, gamePath: string,
 function autoGenIcon(application: ITool, exePath: string, gameId: string): Promise<void> {
   const iconPath = StarterInfo.toolIconRW(gameId, application.id);
   return (application.logo === 'auto')
-    ? new Promise<Electron.NativeImage>((resolve, reject) => {
-      fs.ensureDirWritableAsync(path.dirname(iconPath), () => Promise.resolve())
-        .then(() => fs.statAsync(iconPath))
-        .catch(() => app.getFileIcon(exePath, { size: 'normal' },
-          (err: Error, icon: Electron.NativeImage) =>
-            (err !== null)
-              ? reject(err)
-              : resolve(icon)));
-    })
-      .then(icon => fs.writeFileAsync(iconPath, icon.toPNG()))
+    ? fs.ensureDirWritableAsync(path.dirname(iconPath), () => Promise.resolve())
+        .then(() => fs.statAsync(iconPath).then(() => null))
+        .catch(() => app.getFileIcon(exePath, { size: 'normal' })
+          .then(icon => fs.writeFileAsync(iconPath, icon.toPNG())))
       .catch(err => log('warn', 'failed to fetch exe icon', err.message))
     : Promise.resolve();
 }

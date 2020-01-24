@@ -37,7 +37,7 @@ import SpeedOMeter from './views/SpeedOMeter';
 import DownloadManager from './DownloadManager';
 import observe, { DownloadObserver } from './DownloadObserver';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import * as _ from 'lodash';
 import * as path from 'path';

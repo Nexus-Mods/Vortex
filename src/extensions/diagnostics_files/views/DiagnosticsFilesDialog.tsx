@@ -9,7 +9,7 @@ import { showError } from '../../../util/message';
 import { ILog, ISession } from '../types/ISession';
 import { loadVortexLogs } from '../util/loadVortexLogs';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { remote } from 'electron';
 import update from 'immutability-helper';
 import * as os from 'os';

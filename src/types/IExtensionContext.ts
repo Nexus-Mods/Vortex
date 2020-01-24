@@ -17,6 +17,7 @@ import {
   TestSupported,
 } from '../extensions/mod_management/types/TestSupported';
 import { Archive } from '../util/archives';
+import { i18n, TFunction } from '../util/i18n';
 import ReduxProp from '../util/ReduxProp';
 import { SanityCheck } from '../util/reduxSanity';
 
@@ -31,8 +32,7 @@ import { IDiscoveryResult } from './IState';
 import { ITableAttribute } from './ITableAttribute';
 import { ITestResult } from './ITestResult';
 
-import * as Promise from 'bluebird';
-import I18next from 'i18next';
+import Promise from 'bluebird';
 import { ILookupResult, IModInfo, IReference } from 'modmeta-db';
 import * as React from 'react';
 import * as Redux from 'redux';
@@ -147,10 +147,10 @@ export type RegisterToDo =
      type: ToDoType,
      props: (state: any) => any,
      icon: ((props: any) => JSX.Element) | string,
-     text: ((t: I18next.TFunction, props: any) => JSX.Element) | string,
+     text: ((t: TFunction, props: any) => JSX.Element) | string,
      action: (props: any) => void,
      condition: (props: any) => boolean,
-     value: ((t: I18next.TFunction, props: any) => JSX.Element) | string,
+     value: ((t: TFunction, props: any) => JSX.Element) | string,
      priority: number) => void;
 
 export interface IRegisterProtocol {
@@ -431,7 +431,7 @@ export interface IExtensionApi {
   /**
    * translation function
    */
-  translate: I18next.TFunction;
+  translate: TFunction;
 
   /**
    * active locale
@@ -443,7 +443,7 @@ export interface IExtensionApi {
    * This is only needed to influence how localisation works in general,
    * to just translate a text, use "translate"
    */
-  getI18n: () => I18next.i18n;
+  getI18n: () => i18n;
 
   /**
    * retrieve path for a known directory location.

@@ -5,7 +5,7 @@ import getNormalizeFunc, { Normalize } from './getNormalizeFunc';
 import { log } from './log';
 import { isChildPath } from './util';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as diskusage from 'diskusage';
 import * as path from 'path';
 import turbowalk, { IEntry } from 'turbowalk';

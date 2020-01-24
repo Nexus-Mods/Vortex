@@ -1,6 +1,6 @@
 import { IArchiveHandler } from '../types/IExtensionContext';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 
 /**
  * wrapper around an format-specific archive handler

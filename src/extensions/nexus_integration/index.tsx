@@ -48,17 +48,16 @@ import NXMUrl from './NXMUrl';
 import * as sel from './selectors';
 import { endorseModImpl, nexusGames, processErrorMessage, startDownload, updateKey } from './util';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import * as fuzz from 'fuzzball';
-import I18next from 'i18next';
+import { TFunction } from 'i18next';
 import NexusT, { IDownloadURL, NexusError, RateLimitError, TimeoutError } from 'nexus-api';
 import * as path from 'path';
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
 import {} from 'uuid';
-import * as WebSocket from 'ws';
-
+import WebSocket from 'ws';
 const app = remote !== undefined ? remote.app : appIn;
 
 let nexus: NexusT;
@@ -137,7 +136,8 @@ const requestLog = {
     // TODO: why does "this" not point to the right object here?
     const reqs = requestLog.requests;
     requestLog.requests = [];
-    return fs.writeFileAsync(requestLog.logPath, reqs.join('\n') + '\n', { flag: 'a' });
+    return fs.writeFileAsync(requestLog.logPath, reqs.join('\n') + '\n', { flag: 'a' })
+      .then(() => null);
   }, 500),
   log(prop: string, args: any[], caller: string) {
     this.requests.push(`success - (${Date.now()}) ${prop} (${args.join(', ')}) from ${caller}`);
@@ -675,7 +675,7 @@ function once(api: IExtensionApi) {
     });
 }
 
-function toolbarBanner(t: I18next.TFunction): React.StatelessComponent<any> {
+function toolbarBanner(t: TFunction): React.StatelessComponent<any> {
   return () => {
     return (
       <div className='nexus-main-banner' style={{ background: 'url(assets/images/ad-banner.png)' }}>
@@ -685,7 +685,8 @@ function toolbarBanner(t: I18next.TFunction): React.StatelessComponent<any> {
         <div className='right-center'>
           <Button bsStyle='ad' onClick={goBuyPremium}>{t('Go Premium')}</Button>
         </div>
-      </div>);
+      </div>
+    );
   };
 }
 
@@ -899,7 +900,8 @@ function init(context: IExtensionContextExt): boolean {
         {t('Nexus downloads are capped at 1-2MB/s - '
           + 'Go Premium for uncapped download speeds')}
         <Button bsStyle='ad' onClick={goBuyPremium}>{t('Go Premium')}</Button>
-      </div>);
+      </div>
+    );
   }, {
     props: {
       isPremium: state => getSafe(state, ['persistent', 'nexus', 'userInfo', 'isPremium'], false),

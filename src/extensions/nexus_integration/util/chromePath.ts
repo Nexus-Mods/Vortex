@@ -1,7 +1,7 @@
 import * as fs from '../../../util/fs';
 import { deBOM, truthy } from '../../../util/util';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import * as path from 'path';
 

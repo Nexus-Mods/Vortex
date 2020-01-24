@@ -34,7 +34,7 @@ import refreshMods from './util/refreshMods';
 import InstallManager from './InstallManager';
 import {currentActivator, installPath, installPathForGame} from './selectors';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import * as path from 'path';
 import { generate as shortid } from 'shortid';

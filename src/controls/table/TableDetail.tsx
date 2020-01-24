@@ -1,5 +1,6 @@
 import {IEditChoice, ITableAttribute, ValidationState} from '../../types/ITableAttribute';
 import {ComponentEx} from '../../util/ComponentEx';
+import { TFunction } from '../../util/i18n';
 import { log } from '../../util/log';
 import { getSafe } from '../../util/storeHelper';
 
@@ -8,7 +9,6 @@ import FormInput from '../FormInput';
 import Icon from '../Icon';
 import More from '../More';
 
-import I18next from 'i18next';
 import * as _ from 'lodash';
 import * as React from 'react';
 import { Button, ControlLabel, FormControl, FormGroup,
@@ -21,7 +21,7 @@ interface ICellProps {
   rowIds: string[];
   rowData: { [rowId: string]: any };
   rawData: { [rowId: string]: any };
-  t: I18next.TFunction;
+  t: TFunction;
   onChangeData: (rowIds: string[], attributeId: string, value: any) => void;
 }
 
@@ -268,7 +268,7 @@ export interface IDetailProps {
   rowData: { [rowId: string]: any };
   rawData: { [rowId: string]: any };
   attributes: ITableAttribute[];
-  t: I18next.TFunction;
+  t: TFunction;
   show: boolean;
   title: string;
   onToggleShow: () => void;

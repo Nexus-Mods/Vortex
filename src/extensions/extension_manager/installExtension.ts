@@ -9,12 +9,12 @@ import { INVALID_FILENAME_RE } from '../../util/util';
 import { ExtensionType, IExtension } from './types';
 import { readExtensionInfo } from './util';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import * as _ from 'lodash';
 import ZipT = require('node-7z');
 import * as path from 'path';
-import * as rimraf from 'rimraf';
+import rimraf from 'rimraf';
 import { dynreq } from 'vortex-run';
 
 const app = appIn || remote.app;

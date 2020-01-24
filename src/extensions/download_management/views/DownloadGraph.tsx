@@ -5,13 +5,12 @@ import { bytesToString, truthy } from '../../../util/util';
 
 import {NUM_SPEED_DATA_POINTS} from '../reducers/state';
 
-import I18next from 'i18next';
+import { TFunction } from 'i18next';
 import * as React from 'react';
 import ResizeDetector from 'react-resize-detector';
 import * as recharts from 'recharts';
 
 interface IBaseProps {
-  t: I18next.TFunction;
 }
 
 interface IConnectedProps {
@@ -118,5 +117,4 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-export default connect(mapStateToProps)(
-  DownloadGraph) as React.ComponentClass<{}>;
+export default connect(mapStateToProps)(DownloadGraph);

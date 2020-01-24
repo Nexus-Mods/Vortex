@@ -23,9 +23,9 @@ import { remoteCode } from './remoteCode';
 import Settings from './Settings';
 import walk from './walk';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
-import I18next from 'i18next';
+import { TFunction } from 'i18next';
 import * as JsonSocket from 'json-socket';
 import * as net from 'net';
 import * as os from 'os';
@@ -161,7 +161,7 @@ class DeploymentMethod extends LinkingDeployment {
     }
   }
 
-  public detailedDescription(t: I18next.TFunction): string {
+  public detailedDescription(t: TFunction): string {
     return t(
       'Symbolic links are special files containing a reference to another file. '
       + 'They are supported directly by the low-level API of the operating system '

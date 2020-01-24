@@ -1,6 +1,6 @@
 import * as fs from '../../../util/fs';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as path from 'path';
 import * as winapi from 'winapi-bindings';
 
@@ -58,8 +58,8 @@ export function checkAssemblies(): Promise<boolean> {
     return Promise.resolve(false);
   }
   return fs.readdirAsync(instPath)
-    .map(iter => iter.toLowerCase())
-    .filter(iter => path.extname(iter) === '.dll')
+    .map((iter: string) => iter.toLowerCase())
+    .filter((iter: string) => path.extname(iter) === '.dll')
     .then(files => {
       const installed = new Set(files);
       const missing = REQUIRED_ASSEMBLIES.find(name => !installed.has(name));
