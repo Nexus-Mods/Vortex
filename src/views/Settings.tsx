@@ -52,7 +52,7 @@ type IProps = ISettingsProps & IConnectedProps & IActionProps;
  */
 class Settings extends ComponentEx<IProps, {}> {
   private mStartupPath = path.join(remote.app.getPath('appData'),
-                                   remote.app.getName(),
+                                   remote.app.name,
                                    'startup.json');
   private mStartupSettings = makeReactive({});
   public componentWillMount() {

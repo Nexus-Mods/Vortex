@@ -26,7 +26,7 @@ import walk from './walk';
 import Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import { TFunction } from 'i18next';
-import * as JsonSocket from 'json-socket';
+import JsonSocket from 'json-socket';
 import * as net from 'net';
 import * as os from 'os';
 import * as path from 'path';
@@ -610,7 +610,7 @@ function baseFunc(moduleRoot: string, ipcPath: string,
   client.connect(imp.path.join('\\\\?\\pipe', ipcPath));
 
   client.on('connect', () => {
-    Promise.resolve(main(client, __req))
+    main(client, __req)
       .catch(error => {
         client.emit('error', error.message);
       })

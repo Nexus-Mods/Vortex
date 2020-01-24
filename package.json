@@ -101,6 +101,7 @@
     "@types/graphlib": "^2.1.5",
     "@types/immutability-helper": "^2.6.3",
     "@types/jest": "^24.0.23",
+    "@types/json-socket": "0.1.17",
     "@types/levelup": "^3.1.1",
     "@types/lodash": "^4.14.149",
     "@types/minimatch": "^3.0.3",
