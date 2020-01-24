@@ -20,7 +20,7 @@ import { truthy } from './util';
 import PromiseBB from 'bluebird';
 import { dialog as dialogIn, remote } from 'electron';
 import * as fs from 'fs-extra';
-import * as JsonSocket from 'json-socket';
+import JsonSocket from 'json-socket';
 import * as net from 'net';
 import * as path from 'path';
 import { allow as allowT, getUserId } from 'permissions';

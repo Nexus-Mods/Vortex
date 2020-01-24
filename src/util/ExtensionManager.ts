@@ -45,7 +45,7 @@ import { app as appIn, dialog as dialogIn, ipcMain, ipcRenderer, remote } from '
 import { EventEmitter } from 'events';
 import * as fs from 'fs-extra';
 import I18next from 'i18next';
-import * as JsonSocket from 'json-socket';
+import JsonSocket from 'json-socket';
 import * as _ from 'lodash';
 import { IHashResult, ILookupResult, IModInfo, IReference } from 'modmeta-db';
 import * as modmetaT from 'modmeta-db';
