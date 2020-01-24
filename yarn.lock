@@ -11420,8 +11420,8 @@ napi-build-utils@^1.0.1:
   integrity sha512-boQj1WFgQH3v4clhu3mTNfP+vOBxorDlE8EKiMjUlLG3C4qAESnn9AxIOkFgTR2c9LtzNjPrjS60cT27ZKBhaA==
 
 native-errors@Nexus-Mods/node-native-errors:
-  version "0.0.4"
-  resolved "https://codeload.github.com/Nexus-Mods/node-native-errors/tar.gz/1024589b0724fed19b4c4089b840a20ddd0bd417"
+  version "0.0.5"
+  resolved "https://codeload.github.com/Nexus-Mods/node-native-errors/tar.gz/19e250f7ac56f7f9efc3f0dc4e57215fc0f7363d"
   dependencies:
     autogypi "^0.2.2"
     nan "^2.14.0"
