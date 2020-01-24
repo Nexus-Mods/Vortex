@@ -17,6 +17,7 @@ import { deleteOrNop, getSafe, rehydrate, setSafe } from '../util/storeHelper';
 import { appReducer } from './app';
 import { loReducer } from './loadOrder';
 import { notificationsReducer } from './notifications';
+import { notificationSettingsReducer } from './notificationSettings';
 import { sessionReducer } from './session';
 import { tableReducer } from './tables';
 import { userReducer } from './user';
@@ -245,6 +246,7 @@ function reducers(extensionReducers: IExtensionReducer[],
     settings: {
       window: windowReducer,
       tables: tableReducer,
+      notifications: notificationSettingsReducer,
     },
   };
 

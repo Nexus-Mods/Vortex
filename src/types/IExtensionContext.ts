@@ -262,6 +262,7 @@ export interface IErrorOptions {
   isBBCode?: boolean;
   isHTML?: boolean;
   allowReport?: boolean;
+  allowSuppress?: boolean;
   hideDetails?: boolean;
   replace?: { [key: string]: string };
   attachments?: IAttachment[];
@@ -375,6 +376,13 @@ export interface IExtensionApi {
    * @memberOf IExtensionApi
    */
   dismissNotification?: (id: string) => void;
+
+  /**
+   * hides a notification and don't show it again
+   * if this is called with the second parameter set to false, it re-enables the notification
+   * instead
+   */
+  suppressNotification?: (id: string, suppress?: boolean) => void;
 
   /**
    * show a system dialog to open a single file

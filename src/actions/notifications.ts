@@ -102,6 +102,12 @@ if (ipcMain !== undefined) {
   });
 }
 
+let suppressNotification: (id: string) => boolean = () => false;
+
+export function setupNotificationSuppression(cb: (id: string) => boolean) {
+  suppressNotification = cb;
+}
+
 /**
  * show a notification
  *
@@ -112,6 +118,11 @@ if (ipcMain !== undefined) {
 export function addNotification(notification: INotification) {
   return (dispatch) => {
     const noti = { ...notification };
+
+    if ((noti.id !== undefined) && (suppressNotification(noti.id))) {
+      return Promise.resolve();
+    }
+
     if (noti.id === undefined) {
       noti.id = shortid();
     } else if (timers[noti.id] !== undefined) {

@@ -309,6 +309,7 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
     type: 'error',
     title: haveMessage ? title : undefined,
     message: haveMessage ? options.message : title,
+    allowSuppress: options.allowSuppress,
     replace: options.replace,
     actions: details !== undefined ? [{
       title: 'More',

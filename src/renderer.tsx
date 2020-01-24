@@ -58,7 +58,7 @@ import * as path from 'path';
 process.env.SASS_BINARY_PATH = path.resolve(getVortexPath('modules'), 'node-sass', 'bin',
   `${process.platform}-${process.arch}-${process.versions.modules}`, 'node-sass.node');
 
-import { addNotification } from './actions/notifications';
+import { addNotification, setupNotificationSuppression } from './actions/notifications';
 import reducer, { Decision } from './reducers/index';
 import { setOutdated, terminate, toError } from './util/errorHandling';
 import ExtensionManager from './util/ExtensionManager';
@@ -305,6 +305,11 @@ extensions.setStore(store);
 setOutdated(extensions.getApi());
 extensions.applyExtensionsOfExtensions();
 log('debug', 'renderer connected to store');
+
+setupNotificationSuppression(id => {
+  const state: IState = store.getState();
+  return getSafe(state.settings.notifications, ['suppress', id], false);
+});
 
 let lastHeapSize = 0;
 const REPORT_HEAP_INCREASE = 100 * 1024;

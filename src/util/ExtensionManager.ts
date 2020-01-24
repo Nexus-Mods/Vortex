@@ -1,8 +1,8 @@
 import { forgetExtension, setExtensionEnabled, setExtensionVersion } from '../actions/app';
-import { addNotification, closeDialog, dismissNotification } from '../actions/notifications';
+import { addNotification, closeDialog, DialogActions, DialogType, dismissNotification,
+         IDialogContent, showDialog } from '../actions/notifications';
+import { suppressNotification } from '../actions/notificationSettings';
 import { setExtensionLoadFailures } from '../actions/session';
-
-import { DialogActions, DialogType, IDialogContent, showDialog } from '../actions/notifications';
 import { IExtension } from '../extensions/extension_manager/types';
 import { ExtensionInit } from '../types/Extension';
 import {
@@ -602,6 +602,12 @@ class ExtensionManager {
       store.dispatch(closeDialog(id, actionKey, input));
     this.mApi.dismissNotification = (id: string) =>
       store.dispatch(dismissNotification(id));
+    this.mApi.suppressNotification = (id: string, suppress: boolean) => {
+      if (suppress !== false) {
+        store.dispatch(dismissNotification(id));
+      }
+      store.dispatch(suppressNotification(id, suppress !== false));
+    };
     this.mApi.store = store;
     this.mApi.onStateChange = this.stateChangeHandler;
 

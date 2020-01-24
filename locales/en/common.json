@@ -17,5 +17,6 @@
   "Enable All": "Enable",
   "Enable All_plural": "Enable All",
   "Install All": "Install",
-  "Install All_plural": "Install All"
+  "Install All_plural": "Install All",
+  "{{ count }} notification is being suppressed_plural": "{{ count }} notifications are being suppressed"
 }

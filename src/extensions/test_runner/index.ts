@@ -90,6 +90,7 @@ function runCheck(api: IExtensionApi, check: ICheckEntry): Promise<void> {
           replace: result.description.replace,
           actions,
           noDismiss: true,
+          allowSuppress: result.severity !== 'error',
         });
       }
     })

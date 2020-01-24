@@ -1,4 +1,5 @@
 import { showDialog } from '../../actions/notifications';
+import { resetSuppression } from '../../actions/notificationSettings';
 import { setCustomTitlebar } from '../../actions/window';
 
 import More from '../../controls/More';
@@ -56,6 +57,7 @@ interface IConnectedProps {
   hideTopLevelCategory: boolean;
   relativeTimes: boolean;
   extensions: IAvailableExtension[];
+  suppressedNotifications: { [id: string]: boolean };
 }
 
 interface IActionProps {
@@ -70,6 +72,7 @@ interface IActionProps {
   onSetDesktopNotifications: (enabled: boolean) => void;
   onSetHideTopLevelCategory: (hide: boolean) => void;
   onSetRelativeTimes: (enabled: boolean) => void;
+  onResetNotificationSuppression: () => void;
 }
 
 interface IComponentState {
@@ -114,7 +117,8 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
   public render(): JSX.Element {
     const { t, advanced, autoDeployment, autoEnable, currentLanguage,
             customTitlebar, desktopNotifications, profilesVisible,
-            hideTopLevelCategory, relativeTimes, startup } = this.props;
+            hideTopLevelCategory, relativeTimes, startup,
+            suppressedNotifications } = this.props;
 
     const needRestart = (customTitlebar !== this.mInitialTitlebar);
 
@@ -126,6 +130,8 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
         </Alert>
       </HelpBlock>
     ) : null;
+
+    const numSuppressed = Object.values(suppressedNotifications).filter(val => val === true).length;
 
     return (
       <form>
@@ -234,6 +240,15 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
             </Toggle>
           </div>
         </FormGroup>
+        <FormGroup controlId='notifications'>
+          <ControlLabel>{t('Notifications')}</ControlLabel>
+          <div>
+            <Button onClick={this.resetSuppression}>{t('Reset suppressed notifications')}</Button>
+            {' '}
+            {t('({{count}} notification is being suppressed)',
+              { replace: { count: numSuppressed } })}
+          </div>
+        </FormGroup>
         {restartNotification}
       </form>
     );
@@ -305,6 +320,11 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
   private toggleAutoEnable = () => {
     const { autoEnable, onSetAutoEnable } = this.props;
     onSetAutoEnable(!autoEnable);
+  }
+
+  private resetSuppression = () => {
+    const { onResetNotificationSuppression } = this.props;
+    onResetNotificationSuppression();
   }
 
   private toggleDesktopNotifications = () => {
@@ -405,6 +425,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     minimizeToTray: state.settings.window.minimizeToTray,
     extensions: state.session.extensions.available,
     relativeTimes: state.settings.interface.relativeTimes,
+    suppressedNotifications: state.settings.notifications.suppress,
   };
 }
 
@@ -437,6 +458,9 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
     },
     onSetRelativeTimes: (enabled: boolean) => {
       dispatch(setRelativeTimes(enabled));
+    },
+    onResetNotificationSuppression: () => {
+      dispatch(resetSuppression(null));
     },
   };
 }

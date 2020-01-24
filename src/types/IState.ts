@@ -209,6 +209,10 @@ export interface ISettingsMods {
   confirmPurge: boolean;
 }
 
+export interface ISettingsNotification {
+  suppress: { [notificationId: string]: boolean };
+}
+
 export interface ISettingsUpdate {
   channel: 'stable' | 'beta' | 'none';
 }
@@ -225,6 +229,7 @@ export interface ISettings {
   window: IWindow;
   downloads: ISettingsDownloads;
   mods: ISettingsMods;
+  notifications: ISettingsNotification;
   tables: ITableStates;
   update: ISettingsUpdate;
   workarounds: ISettingsWorkarounds;
