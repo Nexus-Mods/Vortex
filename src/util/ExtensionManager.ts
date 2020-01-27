@@ -1590,6 +1590,7 @@ class ExtensionManager {
         } catch (err) {
           log('warn', 'failed to load dynamic extension',
               { name, error: err.message, stack: err.stack });
+          this.mLoadFailures[name] = [{ id: 'exception', args: { message: err.message } }];
           return undefined;
         }
       });
