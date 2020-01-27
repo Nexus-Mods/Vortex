@@ -1,6 +1,8 @@
+import ContextMenu from '../../../controls/ContextMenu';
 import Icon from '../../../controls/Icon';
 
 import {} from 'draggabilly';
+import update from 'immutability-helper';
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
 
@@ -14,10 +16,27 @@ export interface IProps {
   packery?: any;
   fixed: boolean;
   onDismiss?: (id: string) => void;
+  onSetWidth?: (id: string, width: number) => void;
+  onSetHeight?: (id: string, height: number) => void;
 }
 
-class PackeryItem extends React.Component<IProps, {}> {
+interface IPackeryItemState {
+  context: {
+    x: number;
+    y: number;
+  };
+}
+
+class PackeryItem extends React.Component<IProps, IPackeryItemState> {
   private mRef: Element = null;
+
+  constructor(props: IProps) {
+    super(props);
+
+    this.state = {
+      context: undefined,
+    };
+  }
 
   public componentWillReceiveProps(newProps: IProps) {
     if (!newProps.fixed && (newProps.packery !== this.props.packery)) {
@@ -48,7 +67,7 @@ class PackeryItem extends React.Component<IProps, {}> {
       >
         {this.props.children}
         <div className='packery-buttons'>
-          {!fixed ? <Icon name='drag-handle' className='drag-handle' /> : null}
+          {!fixed ? this.renderDragHandle() : null}
           {(onDismiss !== undefined) ? (
             <Button
               className='btn-embed'
@@ -58,7 +77,82 @@ class PackeryItem extends React.Component<IProps, {}> {
             </Button>
           ) : null}
         </div>
-      </div>);
+      </div>
+    );
+  }
+
+  private renderDragHandle() {
+    return [(
+      <Icon
+        key='drag-icon'
+        name='drag-handle'
+        className='drag-handle'
+        onContextMenu={this.onContext}
+      />
+    ), (
+        <ContextMenu
+          key='drag-context'
+          position={this.state.context}
+          visible={this.state.context !== undefined}
+          onHide={this.hideContext}
+          instanceId='42'
+          actions={[
+            { title: 'Width', icon: null, show: true },
+            { title: '33%', show: true, action: this.setWidth1 },
+            { title: '66%', show: true, action: this.setWidth2 },
+            { title: '100%', show: true, action: this.setWidth3 },
+            { title: 'Height', icon: null, show: true },
+            { title: '1', show: true, action: this.setHeight1 },
+            { title: '2', show: true, action: this.setHeight2 },
+            { title: '3', show: true, action: this.setHeight3 },
+            { title: '4', show: true, action: this.setHeight4 },
+            { title: '5', show: true, action: this.setHeight5 },
+          ]}
+        />
+      )];
+  }
+
+  private setWidth1 = () => {
+    this.props.onSetWidth(this.props.id, 1);
+  }
+
+  private setWidth2 = () => {
+    this.props.onSetWidth(this.props.id, 2);
+  }
+
+  private setWidth3 = () => {
+    this.props.onSetWidth(this.props.id, 3);
+  }
+
+  private setHeight1 = () => {
+    this.props.onSetHeight(this.props.id, 1);
+  }
+
+  private setHeight2 = () => {
+    this.props.onSetHeight(this.props.id, 2);
+  }
+
+  private setHeight3 = () => {
+    this.props.onSetHeight(this.props.id, 3);
+  }
+
+  private setHeight4 = () => {
+    this.props.onSetHeight(this.props.id, 4);
+  }
+
+  private setHeight5 = () => {
+    this.props.onSetHeight(this.props.id, 5);
+  }
+
+  private onContext = (event: React.MouseEvent<any>) => {
+    this.setState(update(this.state, {
+      context: { $set: {
+        x: event.clientX, y: event.clientY,
+      } } }));
+  }
+
+  private hideContext = () => {
+    this.setState({ context: undefined });
   }
 
   private dismissWidget = () => {

@@ -26,6 +26,7 @@ export interface IIconProps {
   rotateId?: string;
   // avoid using this! These styles may affect other instances of this icon
   svgStyle?: string;
+  onContextMenu?: React.MouseEventHandler<Icon>;
 }
 
 export function installIconSet(set: string, setPath: string): Promise<Set<string>> {

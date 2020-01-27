@@ -228,19 +228,19 @@
 
 .lodpi, .hidpi {
   .packery-height-1 {
-    height: 120px;
+    height: $dashlet-height * 1;
   }
   .packery-height-2 {
-    height: 240px;
+    height: $dashlet-height * 2;
   }
   .packery-height-3 {
-    height: 360px;
+    height: $dashlet-height * 3;
   }
   .packery-height-4 {
-    height: 480px;
+    height: $dashlet-height * 4;
   }
   .packery-height-5 {
-    height: 600px;
+    height: $dashlet-height * 5;
   }
 }
 

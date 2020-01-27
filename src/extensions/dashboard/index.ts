@@ -10,7 +10,7 @@ const dashlets: IDashletProps[] = [];
 
 function registerDashlet(title: string,
                          width: 1 | 2 | 3,
-                         height: 1 | 2 | 3,
+                         height: 1 | 2 | 3 | 4 | 5,
                          position: number,
                          component: React.ComponentClass<any>,
                          isVisible?: (state) => boolean,

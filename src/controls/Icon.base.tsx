@@ -43,6 +43,8 @@ export interface IIconProps {
    * on demand
    */
   getSet: (set: string) => Promise<Set<string>>;
+
+  onContextMenu?: React.MouseEventHandler<any>;
 }
 
 /**
@@ -116,6 +118,7 @@ class Icon extends React.Component<IIconProps, {}> {
         className={classes.join(' ')}
         style={style}
         ref={this.props.rotate && (this.mCurrentSize === undefined) ? this.setRef : undefined}
+        onContextMenu={this.props.onContextMenu}
       >
         {svgStyle !== undefined ? <style type='text/css'>{svgStyle}</style> : null}
         <use className='svg-use' xlinkHref={`#icon-${name}`} transform={transforms.join(' ')} />
