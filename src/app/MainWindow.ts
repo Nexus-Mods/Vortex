@@ -245,6 +245,7 @@ class MainWindow {
       webPreferences: {
         nodeIntegration: true,
         nodeIntegrationInWorker: true,
+        webviewTag: true,
       },
     };
   }

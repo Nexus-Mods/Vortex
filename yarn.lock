@@ -7428,8 +7428,8 @@ electron-rebuild@^1.8.8:
     yargs "^13.2.4"
 
 electron-redux@TanninOne/electron-redux:
-  version "1.3.2-sync"
-  resolved "https://codeload.github.com/TanninOne/electron-redux/tar.gz/24490cae3c0091409e93f5a710ef212069f13d98"
+  version "1.4.3-sync"
+  resolved "https://codeload.github.com/TanninOne/electron-redux/tar.gz/5b2250a1dab73894243d575e4e5288e06ba90a96"
   dependencies:
     debug "^3.0.0"
     flux-standard-action "^2.0.0"
@@ -8938,6 +8938,9 @@ harmony-patcher@Nexus-Mods/harmony-patcher:
     async "^2.6.2"
     copyfiles "^1.0.0"
     msbuild "^1.0.3"
+    node-gyp "^5.0.7"
+    turbowalk Nexus-Mods/node-turbowalk
+    vortex-api Nexus-Mods/vortex-api
 
 has-ansi@^2.0.0:
   version "2.0.0"
@@ -11878,6 +11881,23 @@ node-gyp@^3.8.0:
     semver "~5.3.0"
     tar "^2.0.0"
     which "1"
+
+node-gyp@^5.0.7:
+  version "5.0.7"
+  resolved "https://registry.yarnpkg.com/node-gyp/-/node-gyp-5.0.7.tgz#dd4225e735e840cf2870e4037c2ed9c28a31719e"
+  integrity sha512-K8aByl8OJD51V0VbUURTKsmdswkQQusIvlvmTyhHlIT1hBvaSxzdxpSle857XuXa7uc02UEZx9OR5aDxSWS5Qw==
+  dependencies:
+    env-paths "^2.2.0"
+    glob "^7.1.4"
+    graceful-fs "^4.2.2"
+    mkdirp "^0.5.1"
+    nopt "^4.0.1"
+    npmlog "^4.1.2"
+    request "^2.88.0"
+    rimraf "^2.6.3"
+    semver "^5.7.1"
+    tar "^4.4.12"
+    which "^1.3.1"
 
 node-gyp@^6.0.0, node-gyp@^6.0.1, node-gyp@^6.1.0:
   version "6.1.0"
@@ -16837,6 +16857,10 @@ void-elements@^2.0.1:
   version "2.0.1"
   resolved "https://registry.yarnpkg.com/void-elements/-/void-elements-2.0.1.tgz#c066afb582bb1cb4128d60ea92392e94d5e9dbec"
   integrity sha1-wGavtYK7HLQSjWDqkjkulNXp2+w=
+
+vortex-api@Nexus-Mods/vortex-api:
+  version "1.1.8"
+  resolved "https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/77970ec07a1723689597b7d5f9bca2039b155d54"
 
 vortex-parse-ini@Nexus-Mods/vortex-parse-ini:
   version "0.2.6"
