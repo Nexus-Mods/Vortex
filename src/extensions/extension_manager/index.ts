@@ -93,9 +93,13 @@ function updateAvailableExtensions(api: IExtensionApi, force: boolean = false) {
       return { time: null, extensions: [] };
     })
     .then(({ time, extensions }: { time: Date, extensions: IAvailableExtension[] }) => {
-      api.store.dispatch(setExtensionsUpdate(time.getTime()));
-      api.store.dispatch(setAvailableExtensions(extensions));
-      return checkForUpdates(api);
+      if (time !== null) {
+        api.store.dispatch(setExtensionsUpdate(time.getTime()));
+        api.store.dispatch(setAvailableExtensions(extensions));
+        return checkForUpdates(api);
+      } else {
+        return Promise.resolve();
+      }
     });
 }
 
