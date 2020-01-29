@@ -28,6 +28,14 @@
   dependencies:
     regenerator-runtime "^0.13.2"
 
+"@nexusmods/nexus-api@^1.0.5":
+  version "1.0.5"
+  resolved "https://registry.yarnpkg.com/@nexusmods/nexus-api/-/nexus-api-1.0.5.tgz#a5bd4434d10120d86e2760a5ea60c0e407d055d2"
+  integrity sha512-VRuoJfZt8FNI2whvkHoV8SmEtd4K/qeCMbrabJj82fbTLB6SIL/AKPimsep/2lCIQjYEpKrMteTLAfL6lRVyRw==
+  dependencies:
+    request "^2.85.0"
+    string-template "^1.0.0"
+
 abbrev@1:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/abbrev/-/abbrev-1.1.1.tgz#f8f2c887ad10bf67f634f005b6987fed3179aac8"
@@ -551,8 +559,8 @@ core-util-is@1.0.2, core-util-is@~1.0.0:
   integrity sha1-tf1UIgqivFq1eqtxQMlAdUUDwac=
 
 crash-dump@Nexus-Mods/node-crash-dump:
-  version "1.2.1"
-  resolved "https://codeload.github.com/Nexus-Mods/node-crash-dump/tar.gz/33d9ccd7d6a1e4ec7b5618048a41cf5b68cdd53d"
+  version "1.2.2"
+  resolved "https://codeload.github.com/Nexus-Mods/node-crash-dump/tar.gz/e256c8a65ac0290ad97a887952817cd52c359398"
   dependencies:
     autogypi "^0.2.2"
     nan "^2.14.0"
@@ -2333,13 +2341,6 @@ needle@^2.2.1:
     iconv-lite "^0.4.4"
     sax "^1.2.4"
 
-nexus-api@Nexus-Mods/node-nexus-api:
-  version "1.0.2"
-  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/3d41c29f7914514cc6520da19b4b2982bd7d5502"
-  dependencies:
-    request "^2.85.0"
-    string-template "^1.0.0"
-
 node-7z@Nexus-Mods/node-7z:
   version "0.7.1"
   resolved "https://codeload.github.com/Nexus-Mods/node-7z/tar.gz/005e81cbc03bd2f3bb926e0af52087b87bbdb251"
@@ -2414,27 +2415,10 @@ node-gyp@^5.0.0:
     tar "^4.4.12"
     which "1"
 
-node-gyp@^6.0.0:
+node-gyp@^6.0.0, node-gyp@^6.0.1:
   version "6.1.0"
   resolved "https://registry.yarnpkg.com/node-gyp/-/node-gyp-6.1.0.tgz#64e31c61a4695ad304c1d5b82cf6b7c79cc79f3f"
   integrity sha512-h4A2zDlOujeeaaTx06r4Vy+8MZ1679lU+wbCKDS4ZtvY2A37DESo37oejIw0mtmR3+rvNwts5B6Kpt1KrNYdNw==
-  dependencies:
-    env-paths "^2.2.0"
-    glob "^7.1.4"
-    graceful-fs "^4.2.2"
-    mkdirp "^0.5.1"
-    nopt "^4.0.1"
-    npmlog "^4.1.2"
-    request "^2.88.0"
-    rimraf "^2.6.3"
-    semver "^5.7.1"
-    tar "^4.4.12"
-    which "^1.3.1"
-
-node-gyp@^6.0.1:
-  version "6.0.1"
-  resolved "https://registry.yarnpkg.com/node-gyp/-/node-gyp-6.0.1.tgz#d59c4247df61bb343f56e2c41d9c8dc2bc361470"
-  integrity sha512-udHG4hGe3Ji97AYJbJhaRwuSOuQO7KHnE4ZPH3Sox3tjRZ+bkBsDvfZ7eYA1qwD8eLWr//193x806ss3HFTPRw==
   dependencies:
     env-paths "^2.2.0"
     glob "^7.1.4"
