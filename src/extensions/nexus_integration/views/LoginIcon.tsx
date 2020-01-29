@@ -7,7 +7,7 @@ import opn from '../../../util/opn';
 import { setUserAPIKey } from '../actions/account';
 import { IValidateKeyData } from '../types/IValidateKeyData';
 
-import NexusT from 'nexus-api';
+import NexusT from '@nexusmods/nexus-api';
 import * as React from 'react';
 import { Image } from 'react-bootstrap';
 import { WithTranslation } from 'react-i18next';

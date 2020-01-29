@@ -1,5 +1,5 @@
 import * as Promise from 'bluebird';
-import NexusT from 'nexus-api';
+import NexusT from '@nexusmods/nexus-api';
 
 /**
  * endorse the mod by the server call

@@ -3,7 +3,7 @@ import { log } from '../../../util/log';
 
 import { ICategoryDictionary } from '../../category_management/types/ICategoryDictionary';
 
-import NexusT, { ICategory } from 'nexus-api';
+import NexusT, { ICategory } from '@nexusmods/nexus-api';
 
 interface IGameInfo {
   categories: ICategory[];

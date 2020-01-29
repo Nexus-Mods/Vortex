@@ -13,7 +13,7 @@ import { setLastUpdateCheck } from '../actions/session';
 import * as Promise from 'bluebird';
 import I18next from 'i18next';
 import NexusT, { IFileInfo, IFileUpdate, IModFiles, IModInfo,
-                 IUpdateEntry, NexusError, RateLimitError } from 'nexus-api';
+                 IUpdateEntry, NexusError, RateLimitError } from '@nexusmods/nexus-api';
 import * as Redux from 'redux';
 import * as semver from 'semver';
 

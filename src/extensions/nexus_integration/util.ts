@@ -2,7 +2,7 @@ import * as Promise from 'bluebird';
 import { app as appIn, ipcRenderer, remote } from 'electron';
 import I18next from 'i18next';
 import Nexus, { EndorsedStatus, IEndorsement, IFileInfo, IGameListEntry, IModInfo,
-                IUpdateEntry, NexusError, RateLimitError, TimeoutError } from 'nexus-api';
+                IUpdateEntry, NexusError, RateLimitError, TimeoutError } from '@nexusmods/nexus-api';
 import * as Redux from 'redux';
 import * as semver from 'semver';
 import * as util from 'util';

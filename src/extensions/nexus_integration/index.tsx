@@ -52,7 +52,7 @@ import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import * as fuzz from 'fuzzball';
 import I18next from 'i18next';
-import NexusT, { IDownloadURL, NexusError, RateLimitError, TimeoutError } from 'nexus-api';
+import NexusT, { IDownloadURL, NexusError, RateLimitError, TimeoutError } from '@nexusmods/nexus-api';
 import * as path from 'path';
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
@@ -620,7 +620,7 @@ function once(api: IExtensionApi) {
   { // limit lifetime of state
     const state = api.store.getState();
 
-    const Nexus: typeof NexusT = require('nexus-api').default;
+    const Nexus: typeof NexusT = require('@nexusmods/nexus-api').default;
     const apiKey = getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], undefined);
     const gameMode = activeGameId(state);
 

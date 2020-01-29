@@ -1,6 +1,6 @@
 import {IValidateKeyData} from '../types/IValidateKeyData';
 
-import {IValidateKeyResponse} from 'nexus-api';
+import {IValidateKeyResponse} from '@nexusmods/nexus-api';
 
 // transform the server response into the format we store internally
 function transformUserInfo(input: IValidateKeyResponse): IValidateKeyData {
