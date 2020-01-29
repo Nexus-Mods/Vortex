@@ -2267,8 +2267,8 @@ minizlib@^1.2.1:
     minimist "0.0.8"
 
 modmeta-db@Nexus-Mods/modmeta-db:
-  version "0.5.4"
-  resolved "https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/a34b0751810529dcb713b85f5832d7c4b4e4f7f5"
+  version "0.5.5"
+  resolved "https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/baaa6a16ea4cef5d8f3f7ef303a91519902634d7"
   dependencies:
     bluebird "^3.4.6"
     minimatch "^3.0.4"
