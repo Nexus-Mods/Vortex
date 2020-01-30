@@ -573,7 +573,7 @@ export interface IExtensionApi {
    * Note that listeners should report all errors themselves, it is considered a bug if the listener
    * returns a rejected promise.
    */
-  onAsync: (eventName: string, listener: (...args: any[]) => Promise<any>) => void;
+  onAsync: (eventName: string, listener: (...args: any[]) => PromiseLike<any>) => void;
 
   /**
    * returns true if the running version of Vortex is considered outdated. This is mostly used

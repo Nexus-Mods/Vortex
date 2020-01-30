@@ -28,7 +28,7 @@ import epicGamesLauncher from './EpicGamesLauncher';
 import { getVisibleWindow, terminate } from './errorHandling';
 import { extend } from './ExtensionProvider';
 import { copyFileAtomic, fileMD5 } from './fsAtomic';
-import getNormalizeFunc, { Normalize } from './getNormalizeFunc';
+import getNormalizeFunc, { makeNormalizingDict, Normalize } from './getNormalizeFunc';
 import getVortexPath from './getVortexPath';
 import github from './github';
 import { getCurrentLanguage, TFunction } from './i18n';
@@ -81,6 +81,7 @@ export {
   isChildPath,
   LazyComponent,
   lazyRequire,
+  makeNormalizingDict,
   makeQueue,
   makeReactive,
   MissingInterpreter,

@@ -156,3 +156,7 @@
 	path = extensions/gamestore-xbox
 	url = https://github.com/nexus-mods/extension-gamestore-xbox
 	branch = master
+[submodule "extensions/new-file-monitor"]
+	path = extensions/new-file-monitor
+	url = https://github.com/Nexus-Mods/extension-new-file-monitor.git
+	branch = master
