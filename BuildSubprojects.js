@@ -256,7 +256,7 @@ function main(args) {
         })
         .then(() => {
           buildState[project.name] = Date.now();
-          return fsP.writeFile(buildStateName, JSON.stringify(buildState));
+          return fsP.writeFile(buildStateName, JSON.stringify(buildState, undefined, 2));
         })
         .catch((err) => {
           if (err instanceof Unchanged) {

@@ -107,6 +107,8 @@ class PackeryItem extends React.Component<IProps, IPackeryItemState> {
             { title: '3', show: true, action: this.setHeight3 },
             { title: '4', show: true, action: this.setHeight4 },
             { title: '5', show: true, action: this.setHeight5 },
+            { title: '6', show: true, action: this.setHeight6 },
+            { title: 'Fit Content', show: true, action: this.setHeight0 },
           ]}
         />
       )];
@@ -122,6 +124,10 @@ class PackeryItem extends React.Component<IProps, IPackeryItemState> {
 
   private setWidth3 = () => {
     this.props.onSetWidth(this.props.id, 3);
+  }
+
+  private setHeight0 = () => {
+    this.props.onSetHeight(this.props.id, 0);
   }
 
   private setHeight1 = () => {
@@ -142,6 +148,10 @@ class PackeryItem extends React.Component<IProps, IPackeryItemState> {
 
   private setHeight5 = () => {
     this.props.onSetHeight(this.props.id, 5);
+  }
+
+  private setHeight6 = () => {
+    this.props.onSetHeight(this.props.id, 6);
   }
 
   private onContext = (event: React.MouseEvent<any>) => {

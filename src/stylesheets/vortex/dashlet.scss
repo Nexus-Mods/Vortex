@@ -227,20 +227,10 @@
 }
 
 .lodpi, .hidpi {
-  .packery-height-1 {
-    height: $dashlet-height * 1;
-  }
-  .packery-height-2 {
-    height: $dashlet-height * 2;
-  }
-  .packery-height-3 {
-    height: $dashlet-height * 3;
-  }
-  .packery-height-4 {
-    height: $dashlet-height * 4;
-  }
-  .packery-height-5 {
-    height: $dashlet-height * 5;
+  @for $i from 1 through 8 {
+    .packery-height-#{$i} {
+      height: $dashlet-height * $i
+    }
   }
 }
 
