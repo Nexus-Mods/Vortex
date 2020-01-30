@@ -298,6 +298,14 @@
     },
     {
       "type": "build-copy",
+      "name": "new-file-monitor",
+      "path": "extensions/new-file-monitor",
+      "removeModules": ["vortex-api"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "src/**/*.scss"],
+      "copyTo": "{BUILD_DIR}/bundledPlugins/new-file-monitor"
+    },
+    {
+      "type": "build-copy",
       "name": "script-extender-error-check",
       "path": "extensions/script-extender-error-check",
       "removeModules": ["vortex-api"],

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const Promise = require("bluebird");
+const bluebird_1 = require("bluebird");
 const fs = require("fs");
 const path = require("path");
 const tmp = require("tmp");
@@ -46,7 +46,7 @@ function writeProgram(func, moduleBase, args) {
     return prog;
 }
 function runThreaded(func, moduleBase, ...args) {
-    return new Promise((resolve, reject) => {
+    return new bluebird_1.default((resolve, reject) => {
         tmp.file((err, tmpPath, fd, cleanup) => {
             if (err) {
                 return reject(err);

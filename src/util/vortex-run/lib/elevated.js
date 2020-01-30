@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const Bluebird = require("bluebird");
+const bluebird_1 = require("bluebird");
 const fs = require("fs");
 const path = require("path");
 const tmp = require("tmp");
@@ -64,7 +64,7 @@ function elevatedMain(moduleRoot, ipcPath, main) {
  *                             out when the process is done (using ipc) it should delete it
  */
 function runElevated(ipcPath, func, args) {
-    return new Bluebird((resolve, reject) => {
+    return new bluebird_1.default((resolve, reject) => {
         tmp.file((err, tmpPath, fd, cleanup) => {
             if (err) {
                 return reject(err);
@@ -97,7 +97,16 @@ function runElevated(ipcPath, func, args) {
                     }
                     return reject(writeErr);
                 }
-                fs.closeSync(fd);
+                try {
+                    fs.closeSync(fd);
+                }
+                catch (err) {
+                    if (err.code !== 'EBADF') {
+                        return reject(err);
+                    }
+                    // not sure what causes EBADF, don't want to return now if there is a chance this
+                    // will actually work
+                }
                 try {
                     winapi.ShellExecuteEx({
                         verb: 'runas',

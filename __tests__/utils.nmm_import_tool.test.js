@@ -3,21 +3,20 @@ import { ParseError } from '../extensions/nmm-import-tool/src/types/nmmEntries';
 
 import { Readable } from 'stream';
 
-jest.mock('fs-extra-promise', () => ({
+jest.mock('vortex-api', () => ({
+  fs: {
     statAsync: () => {
       return Promise.resolve({});
     },
-    createReadStream: () => {
-      return {
-        on: (type, cb) => {
-          if (type === 'end') {
-            cb();
-          }
-          return this;
-        }
-      };
-    },
-  }));
+  },
+  util: {
+    deriveInstallName: (input) => input,
+  },
+}));
+
+jest.mock('modmeta-db', () => ({
+  genHash: () => Promise.resolve({ md5sum: 'fake hash' }),
+}));
 
 describe('parseModEntries', () => {
   it('parse the NMM virtual config file', () => {
@@ -40,11 +39,11 @@ describe('parseModEntries', () => {
       modFilename: 'TestMod',
       archivePath: '',
       modVersion: '1.0.0',
-      archiveMD5: 'd41d8cd98f00b204e9800998ecf8427e',
+      archiveMD5: 'fake hash',
       importFlag: true,
       isAlreadyManaged: false,
     });
-    return parseModEntries(inputXML, undefined, 'c:\\temp')
+    return parseModEntries(inputXML, undefined)
     .then(result => {
       expect(result).toEqual(modEntry);
     });

@@ -4,6 +4,7 @@ let handlers = {
 };
 
 module.exports = {
+  __esModule: true,
   default: (path, cb) => {
     return new Promise((resolve, reject) => {
       if (handlers[path] !== undefined) {
