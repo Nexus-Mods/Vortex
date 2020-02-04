@@ -26,7 +26,7 @@ import { IDownloadResult } from './types/IDownloadResult';
 import { ProgressCallback } from './types/ProgressCallback';
 import getDownloadGames from './util/getDownloadGames';
 
-import DownloadManager, { DownloadIsHTML } from './DownloadManager';
+import DownloadManager, { DownloadIsHTML, RedownloadMode } from './DownloadManager';
 
 import Promise from 'bluebird';
 import {IHashResult} from 'modmeta-db';
@@ -72,8 +72,8 @@ export class DownloadObserver {
     events.on('resume-download',
               (downloadId, callback?) => this.handleResumeDownload(downloadId, callback));
     events.on('start-download',
-              (urls, modInfo, fileName?, callback?) =>
-                  this.handleStartDownload(urls, modInfo, fileName, events, callback));
+              (urls, modInfo, fileName?, callback?, redownload?) =>
+                  this.handleStartDownload(urls, modInfo, fileName, events, callback, redownload));
   }
 
   private translateError(err: any): string {
@@ -88,7 +88,8 @@ export class DownloadObserver {
                               modInfo: any,
                               fileName: string,
                               events: NodeJS.EventEmitter,
-                              callback?: (error: Error, id?: string) => void) {
+                              callback?: (error: Error, id?: string) => void,
+                              redownload?: RedownloadMode) {
     const id = shortid();
     if (typeof(urls) !== 'function') {
       if (!Array.isArray(urls)) {
@@ -127,7 +128,8 @@ export class DownloadObserver {
     const urlIn = urls[0].split('<')[0];
 
     return withContext(`Downloading "${fileName || urlIn}"`, urlIn,
-                       () => this.mManager.enqueue(id, urls, fileName, processCB, downloadPath)
+                       () => this.mManager.enqueue(id, urls, fileName,
+                                                   processCB, downloadPath, redownload)
         .then((res: IDownloadResult) => {
           log('debug', 'download finished', { file: res.filePath });
           this.handleDownloadFinished(id, callback, res);

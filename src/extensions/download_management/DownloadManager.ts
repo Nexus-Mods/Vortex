@@ -25,6 +25,23 @@ const URL_RESOLVE_EXPIRE_MS = 1000 * 60 * 5;
 // don't follow redirects arbitrarily long
 const MAX_REDIRECT_FOLLOW = 2;
 
+export type RedownloadMode = 'always' | 'never' | 'ask';
+
+export class AlreadyDownloaded extends Error {
+  private mFileName: string;
+  constructor(fileName: string) {
+    super('File already downloaded');
+    Error.captureStackTrace(this, this.constructor);
+
+    this.name = this.constructor.name;
+    this.mFileName = fileName;
+  }
+
+  public get fileName(): string {
+    return this.mFileName;
+  }
+}
+
 export class DownloadIsHTML extends Error {
   private mUrl: string;
   constructor(inputUrl: string) {
@@ -64,6 +81,7 @@ interface IRunningDownload {
   size?: number;
   headers?: any;
   assembler?: FileAssembler;
+  redownload: RedownloadMode;
   chunks: IDownloadJob[];
   promises: Array<Promise<any>>;
   progressCB?: ProgressCallback;
@@ -518,7 +536,8 @@ class DownloadManager {
   public enqueue(id: string, urls: string[],
                  fileName: string,
                  progressCB: ProgressCallback,
-                 destinationPath?: string): Promise<IDownloadResult> {
+                 destinationPath?: string,
+                 redownload: RedownloadMode = 'ask'): Promise<IDownloadResult> {
     if (urls.length === 0) {
       return Promise.reject(new Error('No download urls'));
     }
@@ -534,7 +553,7 @@ class DownloadManager {
     const destPath = destinationPath || this.mDownloadPath;
     let download: IRunningDownload;
     return fs.ensureDirAsync(destPath)
-      .then(() => this.unusedName(destPath, nameTemplate || 'deferred'))
+      .then(() => this.unusedName(destPath, nameTemplate || 'deferred', redownload))
       .then((filePath: string) =>
         new Promise<IDownloadResult>((resolve, reject) => {
           download = {
@@ -543,6 +562,7 @@ class DownloadManager {
             tempName: filePath,
             error: false,
             urls,
+            redownload,
             resolvedUrls: this.resolveUrls(urls),
             started: new Date(),
             lastProgressSent: 0,
@@ -584,6 +604,9 @@ class DownloadManager {
         resolvedUrls: this.resolveUrls(urls),
         lastProgressSent: 0,
         received,
+        // we don't know what this was set to initially but going to assume that it was always
+        // or the user said yes, otherwise why is this resumable and not canceled?
+        redownload: 'always',
         size,
         started: new Date(started),
         chunks: [],
@@ -889,7 +912,8 @@ class DownloadManager {
   private updateDownload(download: IRunningDownload, size: number,
                          fileName: string, chunkable: boolean) {
     if ((fileName !== undefined) && (fileName !== download.origName)) {
-      const newName = this.unusedName(path.dirname(download.tempName), fileName);
+      const newName = this.unusedName(
+        path.dirname(download.tempName), fileName, download.redownload);
       download.finalName = newName;
       newName.then(resolvedName => {
         if (!download.assembler.isClosed()) {
@@ -1057,7 +1081,9 @@ class DownloadManager {
    * @param {string} fileName
    * @returns {Promise<string>}
    */
-  private unusedName(destination: string, fileName: string): Promise<string> {
+  private unusedName(destination: string,
+                     fileName: string,
+                     redownload: RedownloadMode): Promise<string> {
     fileName = this.sanitizeFilename(fileName);
     if (fileName === '') {
       fileName = 'unnamed';
@@ -1079,19 +1105,26 @@ class DownloadManager {
             resolve(fullPath);
           }).catch((err) => {
             ++counter;
-            fullPath = path.join(destination, `${base}.${counter}${ext}`);
+            const tryName = `${base}.${counter}${ext}`;
+            fullPath = path.join(destination, tryName);
             if (err.code === 'EEXIST') {
               if (first && this.mFileExistsCB !== undefined) {
                 first = false;
-                this.mFileExistsCB(fileName)
-                  .then((cont: boolean) => {
-                    if (cont) {
-                      loop();
-                    } else {
-                      return reject(new UserCanceled());
-                    }
-                  })
-                  .catch(reject);
+                if (redownload === 'always') {
+                  loop();
+                } else if (redownload === 'never') {
+                  return reject(new AlreadyDownloaded(tryName));
+                } else {
+                  this.mFileExistsCB(fileName)
+                    .then((cont: boolean) => {
+                      if (cont) {
+                        loop();
+                      } else {
+                        return reject(new UserCanceled());
+                      }
+                    })
+                    .catch(reject);
+                }
               } else {
                 loop();
               }

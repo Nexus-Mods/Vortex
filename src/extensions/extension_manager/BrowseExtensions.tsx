@@ -9,8 +9,8 @@ import bbcode from '../../util/bbcode';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import opn from '../../util/opn';
 
-import { IAvailableExtension, IExtension } from './types';
-import { downloadAndInstallExtension } from './util';
+import { IAvailableExtension, IExtension, ISelector } from './types';
+import { downloadAndInstallExtension, selectorMatch } from './util';
 
 import * as React from 'react';
 import { Button, ListGroup, ListGroupItem, ModalHeader } from 'react-bootstrap';
@@ -29,8 +29,16 @@ export interface IBrowseExtensionsProps {
 
 interface IBrowseExtensionsState {
   error: Error;
-  selected: number;
+  selected?: ISelector;
   installing: string[];
+}
+
+function makeSelectorId(ext: IAvailableExtension): string {
+  if (ext.modId !== undefined) {
+    return `${ext.modId}`;
+  } else {
+    return `${ext.github}/${ext.githubRawPath}`;
+  }
 }
 
 interface IConnectedProps {
@@ -53,7 +61,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
 
     this.initState({
       error: undefined,
-      selected: -1,
+      selected: undefined,
       installing: [],
     });
 
@@ -65,7 +73,9 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
             onRefreshExtensions, updateTime, visible } = this.props;
     const { selected } = this.state;
 
-    const ext = selected === -1 ? null : availableExtensions.find(iter => iter.modId === selected);
+    const ext = (selected === undefined)
+      ? null
+      : availableExtensions.find(iter => selectorMatch(iter, selected));
 
     const updatedAt = new Date(updateTime);
 
@@ -83,20 +93,21 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
                 </ListGroup>
                 <div className='extension-list-time'>
                   {t('Last updated: {{time}}',
-                     { replace: { time: updatedAt.toLocaleString(language) } })}
+                    { replace: { time: updatedAt.toLocaleString(language) } })}
                   <IconButton icon='refresh' tooltip={t('Refresh')} onClick={onRefreshExtensions} />
                 </div>
               </FlexLayout>
             </FlexLayout.Fixed>
             <FlexLayout.Flex fill={true}>
-              {(selected === -1) ? null : this.renderDescription(ext, selected)}
+              {(selected === undefined) ? null : this.renderDescription(ext)}
             </FlexLayout.Flex>
           </FlexLayout>
         </Modal.Body>
         <Modal.Footer>
           <Button onClick={onHide}>{t('Close')}</Button>
         </Modal.Footer>
-      </Modal>);
+      </Modal>
+    );
   }
 
   private extensionSort = (lhs: IAvailableExtension, rhs: IAvailableExtension): number => {
@@ -117,7 +128,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
 
     const classes = ['extension-item'];
 
-    if (ext.modId === selected) {
+    if (selectorMatch(ext, selected)) {
       classes.push('selected');
     }
 
@@ -131,6 +142,8 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
           <a
             className='extension-subscribe'
             data-modid={ext.modId}
+            data-github={ext.github}
+            data-githubrawpath={ext.githubRawPath}
             onClick={this.install}
           >
             {t('Install')}
@@ -140,8 +153,10 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
     return (
       <ListGroupItem
         className={classes.join(' ')}
-        key={ext.modId}
+        key={makeSelectorId(ext)}
         data-modid={ext.modId}
+        data-github={ext.github}
+        data-githubrawpath={ext.githubRawPath}
         onClick={this.select}
         disabled={installed}
       >
@@ -151,14 +166,22 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
             <span className='extension-version'>{ext.version}</span>
           </div>
           <div className='extension-stats'>
-            <div className='extension-downloads'>
-              <Icon name='download' />
-              {' '}{ext.downloads}
-            </div>
-            <div className='extension-endorsements'>
-              <Icon name='endorse-yes' />
-              {' '}{ext.endorsements}
-            </div>
+            {ext.downloads !== undefined
+              ? (
+                <div className='extension-downloads'>
+                  <Icon name='download' />
+                  {' '}{ext.downloads}
+                </div>
+              ) : null
+            }
+            {ext.endorsements !== undefined
+              ? (
+                <div className='extension-endorsements'>
+                  <Icon name='endorse-yes' />
+                  {' '}{ext.endorsements}
+                </div>
+              ) : null
+            }
           </div>
         </div>
         <div className='extension-description'>{ext.description.short}</div>
@@ -170,8 +193,8 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
     );
   }
 
-  private renderDescription = (ext: IAvailableExtension, idx: number) => {
-    const { t, extensions } = this.props;
+  private renderDescription = (ext: IAvailableExtension) => {
+    const { t } = this.props;
     const { installing } = this.state;
     if (ext === undefined) {
       return null;
@@ -187,6 +210,8 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
           <a
             className='extension-subscribe'
             data-modid={ext.modId}
+            data-github={ext.github}
+            data-githubrawpath={ext.githubRawPath}
             onClick={this.install}
           >
             {t('Install')}
@@ -220,6 +245,8 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
                   <a
                     className='extension-browse'
                     data-modid={ext.modId}
+                    data-github={ext.github}
+                    data-githubrawpath={ext.githubRawPath}
                     onClick={this.openPage}
                   >
                     <Icon name='open-in-browser' />
@@ -262,8 +289,11 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
   }
 
   private select = (evt: React.MouseEvent<any>) => {
-    const modId = parseInt(evt.currentTarget.getAttribute('data-modid'), 10);
-    this.nextState.selected = modId;
+    const modIdStr = evt.currentTarget.getAttribute('data-modid');
+    const modId = modIdStr !== null ? parseInt(modIdStr, 10) : undefined;
+    const github = evt.currentTarget.getAttribute('data-github');
+    const githubRawPath = evt.currentTarget.getAttribute('data-githubrawpath');
+    this.nextState.selected = { modId, github, githubRawPath };
   }
 
   private openPage = (evt: React.MouseEvent<any>) => {

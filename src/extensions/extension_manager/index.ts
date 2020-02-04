@@ -30,11 +30,10 @@ function checkForUpdates(api: IExtensionApi) {
 
   const updateable: Array<{ update: IAvailableExtension, current: IExtension}> =
     Object.values(installed).reduce((prev, ext) => {
-      if (ext.modId === undefined) {
-        return prev;
-      }
+      const update = available.find(iter => (iter.modId !== undefined)
+        ? iter.modId === ext.modId
+        : iter.name === ext.name);
 
-      const update = available.find(iter => iter.modId === ext.modId);
       if (update === undefined) {
         return prev;
       }
@@ -212,8 +211,10 @@ function init(context: IExtensionContext) {
   context.registerReducer(['session', 'extensions'], sessionReducer);
 
   context.once(() => {
-    updateExtensions(true);
-    updateAvailableExtensions(context.api);
+    updateExtensions(true)
+    .then(() => {
+      updateAvailableExtensions(context.api);
+    });
     context.api.onAsync('install-extension', (ext: IExtensionDownloadInfo) =>
       downloadAndInstallExtension(context.api, ext)
         .then(() => updateExtensions(false)));
