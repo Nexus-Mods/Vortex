@@ -19,6 +19,9 @@ export { IDiscoveredTool } from '../types/IDiscoveredTool';
 export { IExecInfo } from '../types/IExecInfo';
 export { IGameStoreEntry } from './IGameStoreEntry';
 export { GameEntryNotFound, GameStoreNotFound, IGameStore } from './IGameStore';
+export { IStarterInfo } from '../util/StarterInfo';
+
+export { IRegisteredExtension } from '../util/ExtensionManager';
 
 export {
   IDeploymentMethod,

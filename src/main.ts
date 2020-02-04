@@ -126,6 +126,8 @@ function main() {
     return;
   }
 
+  app.allowRendererProcessReuse = false;
+
   if (mainArgs.disableGPU) {
     app.disableHardwareAcceleration();
     app.commandLine.appendSwitch('--disable-software-rasterizer');

@@ -6162,8 +6162,8 @@ cosmiconfig@^6.0.0:
     yaml "^1.7.2"
 
 crash-dump@Nexus-Mods/node-crash-dump:
-  version "1.2.1"
-  resolved "https://codeload.github.com/Nexus-Mods/node-crash-dump/tar.gz/33d9ccd7d6a1e4ec7b5618048a41cf5b68cdd53d"
+  version "1.2.3"
+  resolved "https://codeload.github.com/Nexus-Mods/node-crash-dump/tar.gz/4a326a9fc8f1c449b0f925e8167931bb69836d6c"
   dependencies:
     autogypi "^0.2.2"
     nan "^2.14.0"
@@ -7459,10 +7459,10 @@ electron-updater@^4.2.0:
     pako "^1.0.10"
     semver "^6.3.0"
 
-electron@^8.0.0-beta.5:
-  version "8.0.0-beta.5"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-8.0.0-beta.5.tgz#9065907c1cc1e7804d77a073c83a14a4f6752b7c"
-  integrity sha512-+/61ONgb85cgHh4aghpaRQ7m6cbJm5dX0QqrH4g+6My94swwffn0HY6QWNQ43NsrYHUOsFy9ou9AP2KomOvL6w==
+electron@^8.0.0-beta.9:
+  version "8.0.0-beta.9"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-8.0.0-beta.9.tgz#2ffb042398991d382656f51284839589fd1515ed"
+  integrity sha512-5aVB7ixySU5WF4p4NiGN/378idgOLSggEh80FfvKzbE5kKmegWA4m0mppkypwMWAVFzNcVubkI6vE0rerFQZKw==
   dependencies:
     "@electron/get" "^1.0.1"
     "@types/node" "^12.0.12"
@@ -16301,8 +16301,8 @@ tunnel-agent@^0.6.0:
     safe-buffer "^5.0.1"
 
 turbowalk@Nexus-Mods/node-turbowalk:
-  version "1.3.15"
-  resolved "https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/5a40c7215c2c5ddb3f319c77a1871fc3809d03f5"
+  version "1.3.17"
+  resolved "https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/f826acb49847f4f0ae836ca3813695708e1f793d"
   dependencies:
     autogypi "^0.2.2"
     fs-extra "^8.1.0"

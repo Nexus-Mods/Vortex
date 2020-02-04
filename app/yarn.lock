@@ -533,8 +533,8 @@ core-util-is@1.0.2, core-util-is@~1.0.0:
   integrity sha1-tf1UIgqivFq1eqtxQMlAdUUDwac=
 
 crash-dump@Nexus-Mods/node-crash-dump:
-  version "1.2.1"
-  resolved "https://codeload.github.com/Nexus-Mods/node-crash-dump/tar.gz/33d9ccd7d6a1e4ec7b5618048a41cf5b68cdd53d"
+  version "1.2.3"
+  resolved "https://codeload.github.com/Nexus-Mods/node-crash-dump/tar.gz/4a326a9fc8f1c449b0f925e8167931bb69836d6c"
   dependencies:
     autogypi "^0.2.2"
     nan "^2.14.0"
@@ -2434,27 +2434,10 @@ node-gyp@^5.0.7:
     tar "^4.4.12"
     which "^1.3.1"
 
-node-gyp@^6.0.0, node-gyp@^6.1.0:
+node-gyp@^6.0.0, node-gyp@^6.0.1, node-gyp@^6.1.0:
   version "6.1.0"
   resolved "https://registry.yarnpkg.com/node-gyp/-/node-gyp-6.1.0.tgz#64e31c61a4695ad304c1d5b82cf6b7c79cc79f3f"
   integrity sha512-h4A2zDlOujeeaaTx06r4Vy+8MZ1679lU+wbCKDS4ZtvY2A37DESo37oejIw0mtmR3+rvNwts5B6Kpt1KrNYdNw==
-  dependencies:
-    env-paths "^2.2.0"
-    glob "^7.1.4"
-    graceful-fs "^4.2.2"
-    mkdirp "^0.5.1"
-    nopt "^4.0.1"
-    npmlog "^4.1.2"
-    request "^2.88.0"
-    rimraf "^2.6.3"
-    semver "^5.7.1"
-    tar "^4.4.12"
-    which "^1.3.1"
-
-node-gyp@^6.0.1:
-  version "6.0.1"
-  resolved "https://registry.yarnpkg.com/node-gyp/-/node-gyp-6.0.1.tgz#d59c4247df61bb343f56e2c41d9c8dc2bc361470"
-  integrity sha512-udHG4hGe3Ji97AYJbJhaRwuSOuQO7KHnE4ZPH3Sox3tjRZ+bkBsDvfZ7eYA1qwD8eLWr//193x806ss3HFTPRw==
   dependencies:
     env-paths "^2.2.0"
     glob "^7.1.4"
@@ -3893,8 +3876,8 @@ tunnel-agent@^0.6.0:
     safe-buffer "^5.0.1"
 
 turbowalk@Nexus-Mods/node-turbowalk:
-  version "1.3.15"
-  resolved "https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/5a40c7215c2c5ddb3f319c77a1871fc3809d03f5"
+  version "1.3.17"
+  resolved "https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/f826acb49847f4f0ae836ca3813695708e1f793d"
   dependencies:
     autogypi "^0.2.2"
     fs-extra "^8.1.0"

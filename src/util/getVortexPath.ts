@@ -66,6 +66,16 @@ function getPackagePath(): string {
     : basePath;
 }
 
+const cachedAppPath = (() => {
+  const cache: { [id: string]: string } = {};
+  return (id: string) => {
+    if (cache[id] === undefined) {
+      cache[id] = app.getPath(id as any);
+    }
+    return cache[id];
+  };
+})();
+
 /**
  * the electron getAppPath function and globals like __dirname
  * or process.resourcesPath don't do a great job of abstracting away
@@ -76,11 +86,11 @@ function getPackagePath(): string {
  */
 function getVortexPath(id: AppPath): string {
   switch (id) {
-    case 'userData': return app.getPath('userData');
-    case 'temp': return app.getPath('temp');
-    case 'appData': return app.getPath('appData');
-    case 'home': return app.getPath('home');
-    case 'documents': return app.getPath('documents');
+    case 'userData': return cachedAppPath('userData');
+    case 'temp': return cachedAppPath('temp');
+    case 'appData': return cachedAppPath('appData');
+    case 'home': return cachedAppPath('home');
+    case 'documents': return cachedAppPath('documents');
     case 'base': return basePath;
     case 'package': return getPackagePath();
     case 'assets': return getAssets(false);

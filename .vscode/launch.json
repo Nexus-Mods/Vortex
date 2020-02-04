@@ -6,7 +6,7 @@
       "type": "node",
       "request": "launch",
       "protocol": "inspector",
-      "program": "${workspaceRoot}/out/main.js",
+      "program": "${workspaceFolder}/out/main.js",
       "stopOnEntry": false,
       "args": [],
       "cwd": "${workspaceRoot}",

@@ -288,7 +288,8 @@ function errorRepeat(error: NodeJS.ErrnoException, filePath: string, retries: nu
   if ((showDialogCallback !== undefined) && !showDialogCallback()) {
     return PromiseBB.resolve(false);
   }
-  if (error.code === 'EBUSY') {
+  // system error code 1224 means there is a user-mapped section open in the file
+  if ((error.code === 'EBUSY') || (error['nativeCode'] === 1224)) {
     return busyRetry(filePath);
   } else if (error.code === 'ENOSPC') {
     return nospcQuery();

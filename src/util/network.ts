@@ -1,13 +1,14 @@
 import { get as getHTTP, IncomingMessage } from 'http';
 import { get as getHTTPS } from 'https';
 import * as url from 'url';
+import { DataInvalid } from './api';
 
 export interface IRequestOptions {
   expectedContentType?: RegExp;
   encoding?: string;
 }
 
-export function rawRequest(apiURL: string, options?: IRequestOptions): Promise<string> {
+export function rawRequest(apiURL: string, options?: IRequestOptions): Promise<string | Buffer> {
   if (options === undefined) {
     options = {};
   }
@@ -36,8 +37,16 @@ export function rawRequest(apiURL: string, options?: IRequestOptions): Promise<s
       if (options.encoding !== undefined) {
         res.setEncoding(options.encoding);
       }
-      let rawData = '';
-      res.on('data', (chunk) => { rawData += chunk; });
+      let rawData: string | Buffer = (options.encoding !== undefined)
+        ? ''
+        : Buffer.alloc(0);
+      res.on('data', (chunk) => {
+        if (options.encoding !== undefined) {
+          rawData += chunk;
+        } else {
+          rawData = Buffer.concat([rawData, chunk]);
+        }
+      });
       res.on('end', () => {
         try {
           resolve(rawData);
@@ -57,5 +66,11 @@ export function jsonRequest<T>(apiURL: string): Promise<T> {
     expectedContentType: /^(application\/json|text\/plain)/,
     encoding: 'utf-8',
   })
-  .then(rawData => JSON.parse(rawData));
+  .then(rawData => {
+    try {
+      return JSON.parse(rawData as string);
+    } catch (err) {
+      return Promise.reject(new DataInvalid('Invalid json response: ' + rawData));
+    }
+  });
 }

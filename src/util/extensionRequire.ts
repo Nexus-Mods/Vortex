@@ -28,7 +28,7 @@ function extensionRequire(orig) {
     if (extensionPaths.find(iter => this.filename.startsWith(iter)) !== undefined) {
       let res;
       try {
-        res = dynreq.main.require(id);
+        res = dynreq(id);
       } catch (err) {
         // nop, leave res undefined so orig gets tried
       }

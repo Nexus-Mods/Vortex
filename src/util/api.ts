@@ -40,6 +40,7 @@ import opn from './opn';
 import { getReduxLog } from './reduxLogger';
 import ReduxProp from './ReduxProp';
 import relativeTime, { userFriendlyTime } from './relativeTime';
+import StarterInfo from './StarterInfo';
 import steam, { GameNotFound, ISteamEntry } from './Steam';
 import { bytesToString, deBOM, isChildPath, makeQueue, objDiff,
          pad, sanitizeCSSId, setdefault } from './util';
@@ -106,6 +107,7 @@ export {
   SetupError,
   SevenZip,
   sortMods,
+  StarterInfo,
   steam,
   ISteamEntry,
   terminate,

@@ -28,7 +28,7 @@ import { DialogType, IDialogResult } from './IDialog';
 import { IGame } from './IGame';
 import { IGameStore } from './IGameStore';
 import { INotification } from './INotification';
-import { IDiscoveryResult } from './IState';
+import { IDiscoveryResult, IState } from './IState';
 import { ITableAttribute } from './ITableAttribute';
 import { ITestResult } from './ITestResult';
 
@@ -37,6 +37,7 @@ import { ILookupResult, IModInfo, IReference } from 'modmeta-db';
 import * as React from 'react';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
+import { IRegisteredExtension } from '../util/ExtensionManager';
 
 export { TestSupported, IInstallResult, IInstruction, IDeployedFile, IDeploymentMethod,
          IFileChange, ILookupResult, IModInfo, IReference, InstallFunc, ISupportedResult,
@@ -595,6 +596,16 @@ export interface IExtensionApi {
    * Specifically events can only be sent once this event has been triggered
    */
   awaitUI: () => Promise<void>;
+
+  /**
+   * wrapper for api.store.getState() with the benefit that it automatically assigns a type
+   */
+  getState: <T extends IState = IState>() => T;
+
+  /**
+   * get a list of extensions currently loaded into Vortex
+   */
+  getLoadedExtensions: () => IRegisteredExtension[];
 }
 
 export interface IStateVerifier {

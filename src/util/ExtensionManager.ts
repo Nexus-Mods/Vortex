@@ -62,6 +62,8 @@ import { i18n } from './i18n';
 // tslint:disable-next-line:no-var-requires
 const ReduxWatcher = require('redux-watcher');
 
+const ERROR_OUTPUT_CUTOFF = 3;
+
 let app = appIn;
 let dialog = dialogIn;
 
@@ -70,7 +72,7 @@ if (remote !== undefined) {
   dialog = remote.dialog;
 }
 
-interface IRegisteredExtension {
+export interface IRegisteredExtension {
   name: string;
   path: string;
   dynamic: boolean;
@@ -503,7 +505,9 @@ class ExtensionManager {
       onAsync: this.onAsync,
       highlightControl: this.highlightControl,
       addMetaServer: this.addMetaServer,
+      getLoadedExtensions: () => this.extensions,
       awaitUI: () => this.mUIStartedPromise,
+      getState: () => undefined,
     };
     if (initStore !== undefined) {
       // apologies for the sync operation but this needs to happen before extensions are loaded
@@ -554,7 +558,7 @@ class ExtensionManager {
     this.mTranslator = translator;
   }
 
-  public get extensions() {
+  public get extensions(): IRegisteredExtension[] {
     return this.mExtensions;
   }
 
@@ -566,7 +570,7 @@ class ExtensionManager {
    *
    * @memberOf ExtensionManager
    */
-  public setStore<S>(store: ThunkStore<S>) {
+  public setStore<S extends IState>(store: ThunkStore<S>) {
     this.mReduxWatcher = new ReduxWatcher(store);
 
     this.mExtensionState = getSafe(store.getState(), ['app', 'extensions'], {});
@@ -611,6 +615,7 @@ class ExtensionManager {
       store.dispatch(suppressNotification(id, suppress !== false));
     };
     this.mApi.store = store;
+    this.mApi.getState = <T extends IState>() => this.mApi.store.getState() as T;
     this.mApi.onStateChange = this.stateChangeHandler;
 
     this.mApi.onStateChange(['settings', 'metaserver', 'servers'], () => {
@@ -1266,10 +1271,20 @@ class ExtensionManager {
           };
           const child = spawn(runExe, options.shell ? args : args.map(arg => arg.replace(/"/g, '')),
                               spawnOptions);
+          if (truthy(child['exitCode'])) {
+            // brilliant, apparently there is no way for me to get at the stdout/stderr when running
+            // through a shell if starting the application fails immediately
+            return reject(new Error(`Failed to start (exit code ${child['exitCode']})`));
+          }
           if (options.onSpawned !== undefined) {
             options.onSpawned(child.pid);
           }
 
+          if (options.detach) {
+            child.unref();
+          }
+
+          let stdOut: string;
           let errOut: string;
           child
             .on('error', err => {
@@ -1277,11 +1292,23 @@ class ExtensionManager {
             })
             .on('close', (code) => {
               const game = activeGameId(this.mApi.store.getState());
-              if ((game === 'fallout3') && (code === 3221225781)) {
-                // FO3 is dependent on several redistributables being installed to run.
-                //  code 3221225781 suggests that xlive and possibly other redistribs are
+              if ((game === 'fallout3') && (code === 0xC0000135)) {
+                // 0xC0000135 means that a dll couldn't be found.
+                // In the context of FO3 it's commonly xlive or other redistribs are
                 //  not installed.
                 return reject(new MissingDependency());
+              } else if (code === 0xE0434352) {
+                // A .net error, unfortunately we can't now if/how the actual exception
+                // text has been reported
+                log('warn', '.Net error', { stdOut, errOut });
+                if (game === 'stardewvalley') {
+                  // In the case of SDV the interesting information seems to get printed to stdout
+                  return reject(new Error(stdOut || errOut));
+                } else if (errOut) {
+                  return reject(new Error(errOut));
+                } else {
+                  return reject(new ProcessCanceled('.Net error'));
+                }
               } else if (code !== 0) {
                 // TODO: the child process returns an exit code of 53 for SSE and
                 // FO4, and an exit code of 1 for Skyrim. We don't know why but it
@@ -1295,7 +1322,9 @@ class ExtensionManager {
 
                   if (errOut !== undefined) {
                     const lines = errOut.trim().split('\n');
-                    lastLine = lines[lines.length - 1];
+                    lastLine = (lines.length > ERROR_OUTPUT_CUTOFF)
+                      ? lines[lines.length - 1]
+                      : lines.join('\n');
                   }
                   const err: any = new Error(
                     `Failed to run "${executable}": "${lastLine} (${code.toString(16)})"`);
@@ -1314,6 +1343,19 @@ class ExtensionManager {
                 errOut += chunk.toString();
               } catch (err) {
                 log('warn', 'error output from external process couldn\'t be processed',
+                    { executable });
+              }
+            });
+          }
+          if (child.stdout !== undefined) {
+            child.stdout.on('data', (chunk: Buffer) => {
+              if (stdOut === undefined) {
+                stdOut = '';
+              }
+              try {
+                stdOut += chunk.toString();
+              } catch (err) {
+                log('warn', 'output from external process couldn\'t be processed',
                     { executable });
               }
             });
@@ -1391,7 +1433,7 @@ class ExtensionManager {
     return queue.then(() => results);
   }
 
-  private onAsync = (event: string, listener: (...args) => Promise<any>) => {
+  private onAsync = (event: string, listener: (...args) => PromiseLike<any>) => {
     this.mEventEmitter.on(event, (...args: any[]) => {
       const enqueue = args.pop();
       if ((enqueue === undefined) || (typeof(enqueue) !== 'function')) {
@@ -1401,10 +1443,12 @@ class ExtensionManager {
           args.push(enqueue);
         }
         // call the listener anyway
-        listener(...args)
-          .catch(err => {
+        const prom = listener(...args);
+        if (prom['catch'] !== undefined) {
+          prom['catch'](err => {
             this.mApi.showErrorNotification(`Failed to call event ${event}`, err);
           });
+        }
       } else {
         enqueue(listener(...args));
       }
@@ -1571,7 +1615,7 @@ class ExtensionManager {
           const before = Date.now();
           const ext = this.loadDynamicExtension(path.join(extensionsPath, name));
           const loadTime = Date.now() - before;
-          log('debug', 'loaded extension', { name, loadTime });
+          log('debug', 'loaded extension', { name, loadTime, location: extensionsPath });
           return ext;
         } catch (err) {
           log('warn', 'failed to load dynamic extension',

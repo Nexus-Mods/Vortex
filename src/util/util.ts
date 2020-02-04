@@ -1,11 +1,13 @@
 import { Normalize } from './getNormalizeFunc';
 import getVortexPath from './getVortexPath';
+import { log } from './log';
 
 import Promise from 'bluebird';
 import { spawn } from 'child_process';
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as semver from 'semver';
+import * as tmp from 'tmp';
 
 /**
  * count the elements in an array for which the predicate matches
@@ -447,4 +449,30 @@ function flattenInner(obj: any, key: string[],
     }
     return prev;
   }, {});
+}
+
+export function withTmpDir<T>(cb: (tmpPath: string) => Promise<T>): Promise<T> {
+  return new Promise<void>((resolve, reject) => {
+    tmp.dir({ unsafeCleanup: true }, (err, tmpPath, cleanup) => {
+      if (err !== null) {
+        return reject(err);
+      } else {
+        cb(tmpPath)
+          .then((out: T) => {
+            resolve(out);
+          })
+          .catch(tmpErr => {
+            reject(tmpErr);
+          })
+          .finally(() => {
+            try {
+              cleanup();
+            } catch (err) {
+              // cleanup failed
+              log('warn', 'Failed to clean up temp file', { tmpPath });
+            }
+          });
+      }
+    });
+  });
 }

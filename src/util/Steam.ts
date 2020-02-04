@@ -151,6 +151,7 @@ class Steam implements IGameStore {
 
   private parseManifests(): Promise<ISteamEntry[]> {
     log('debug', 'parsing steam manifest');
+    const start = Date.now();
     const steamPaths: string[] = [];
     return this.mBaseFolder
       .then((basePath: string) => {
@@ -172,7 +173,7 @@ class Steam implements IGameStore {
           return Promise.resolve([]);
         }
 
-        log('debug', 'steam config parsed');
+        log('debug', 'steam config parsed', { seconds: (Date.now() - start) / 1000 });
 
         let counter = 1;
         const steamObj: any =
