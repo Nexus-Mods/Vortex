@@ -1,6 +1,7 @@
 import { clearUIBlocker, setDialogVisible, setOpenMainPage } from '../actions/session';
 import { setTabsMinimized } from '../actions/window';
 import Banner from '../controls/Banner';
+import DynDiv from '../controls/DynDiv';
 import FlexLayout from '../controls/FlexLayout';
 import Icon from '../controls/Icon';
 import IconBar from '../controls/IconBar';
@@ -88,6 +89,8 @@ export interface IActionProps {
 }
 
 export type IProps = IBaseProps & IConnectedProps & IExtendedProps & IActionProps & II18NProps;
+
+export const MainContext = React.createContext({});
 
 export class MainWindow extends React.Component<IProps, IMainWindowState> {
   // tslint:disable-next-line:no-unused-variable
@@ -230,8 +233,11 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       ? Object.keys(uiBlockers).find(() => true)
       : undefined;
 
+    const contextValue = this.getChildContext();
+
     return (
       <React.Suspense fallback={<Spinner className='suspense-spinner' />}>
+        <MainContext.Provider value={contextValue}>
           <div
             key='main'
             className={classes.join(' ')}
@@ -247,7 +253,9 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
             {customTitlebar ? <WindowControls /> : null}
           </div>
           {(uiBlocker !== undefined) ? this.renderBlocker(uiBlocker, uiBlockers[uiBlocker]) : null}
-      </React.Suspense>);
+        </MainContext.Provider>
+      </React.Suspense>
+    );
   }
 
   private getModifiers = () => {
@@ -275,10 +283,13 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       <div className='ui-blocker'>
         <Icon name={blocker.icon}/>
         <div className='blocker-text'>{blocker.description}</div>
-        {blocker.mayCancel ? (<ReactButton data-id={id} onClick={this.unblock}>
-          {t('Cancel')}
-        </ReactButton>
-        ) : null}
+        {blocker.mayCancel
+          ? (
+            <ReactButton data-id={id} onClick={this.unblock}>
+              {t('Cancel')}
+            </ReactButton>
+          )
+          : null}
       </div>
     );
   }
@@ -315,6 +326,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       <FlexLayout.Fixed id='main-toolbar' className={className}>
         <QuickLauncher t={t} />
         <Banner group='main-toolbar' />
+        <DynDiv group='main-toolbar' />
         <div className='flex-fill' />
         <div className='main-toolbar-right'>
           <NotificationButton id='notification-button' hide={switchingProfile} />
