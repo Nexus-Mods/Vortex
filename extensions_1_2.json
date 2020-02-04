@@ -591,6 +591,1114 @@
       "version": "1.0.0",
       "type": "game",
       "gameName": "UnderMine"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-7daystodie/gameart.jpg",
+      "name": "Game: 7 Days to Die",
+      "author": "nelson3219",
+      "description": {
+        "short": "Support for 7 Days to Die",
+        "long": "Support for 7 Days to Die"
+      },
+      "gameName": "7 Days to Die",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-7daystodie",
+      "version": "0.2.0",
+      "id": "game-7daystodie"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-ahatintime/gameart.jpg",
+      "name": "Game: A Hat in Time",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for A Hat in Time",
+        "long": "Support for A Hat in Time"
+      },
+      "gameName": "A Hat in Time",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-ahatintime",
+      "version": "1.0.0",
+      "id": "game-ahatintime"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-breakingwheel/gameart.jpg",
+      "name": "Game: Breaking Wheel",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for Breaking Wheel",
+        "long": "Support for Breaking Wheel"
+      },
+      "gameName": "Breaking Wheel",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-breakingwheel",
+      "version": "1.0.0",
+      "id": "game-breakingwheel"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-bloodstainedritualofthenight/gameart.jpg",
+      "name": "Game: Bloodstained: Ritual of the Night",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for Bloodstained: Ritual of the Night",
+        "long": "Support for Bloodstained: Ritual of the Night"
+      },
+      "gameName": "Bloodstained: Ritual of the Night",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-bloodstainedritualofthenight",
+      "version": "1.0.0",
+      "id": "game-bloodstainedritualofthenight"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-codevein/gameart.jpg",
+      "name": "Game: Code Vein",
+      "author": "Daymarr",
+      "description": {
+        "short": "Support for Code Vein",
+        "long": "Support for Code Vein"
+      },
+      "gameName": "Code Vein",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-codevein",
+      "version": "0.0.1",
+      "id": "game-codevein"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-bladeandsorcery/gameart.jpg",
+      "name": "Game: Blade & Sorcery",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for Blade & Sorcery",
+        "long": "Support for Blade & Sorcery"
+      },
+      "gameName": "Blade & Sorcery",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-bladeandsorcery",
+      "version": "0.0.2",
+      "id": "game-bladeandsorcery"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-daggerfallunity/gameart.jpg",
+      "name": "Game: Daggerfall Unity",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for Daggerfall Unity",
+        "long": "Support for Daggerfall Unity"
+      },
+      "gameName": "Daggerfall Unity",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-daggerfallunity",
+      "version": "0.0.1",
+      "id": "game-daggerfallunity"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-darkestdungeon/gameart.jpg",
+      "name": "Game: Darkest Dungeon",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for Darkest Dungeon",
+        "long": "Support for Darkest Dungeon"
+      },
+      "gameName": "Darkest Dungeon",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-darkestdungeon",
+      "version": "0.0.1",
+      "id": "game-darkestdungeon"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-divinityoriginalsin2/gameart.jpg",
+      "name": "Game: Divinity: Original Sin 2",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for Divinity: Original Sin 2",
+        "long": "Support for Divinity: Original Sin 2"
+      },
+      "gameName": "Divinity: Original Sin 2",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-divinityoriginalsin2",
+      "version": "1.0.0",
+      "id": "game-divinityoriginalsin2"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-darksouls/gameart.jpg",
+      "name": "Game: Dark Souls",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for Dark Souls",
+        "long": "Support for Dark Souls"
+      },
+      "gameName": "Dark Souls",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-darksouls",
+      "version": "1.0.0",
+      "id": "game-darksouls"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-dawnofman/gameart.jpg",
+      "name": "Game: Dawn of Man",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for Dawn of Man",
+        "long": "Support for Dawn of Man"
+      },
+      "gameName": "Dawn of Man",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-dawnofman",
+      "version": "0.0.1",
+      "id": "game-dawnofman"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-dragonage/gameart.jpg",
+      "name": "Game: Dragon Age",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for Dragon Age",
+        "long": "Support for Dragon Age"
+      },
+      "gameName": "Dragon Age",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-dragonage",
+      "version": "1.0.0",
+      "id": "game-dragonage"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-dragonage2/gameart.jpg",
+      "name": "Game: Dragon Age 2",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for Dragon Age 2",
+        "long": "Support for Dragon Age 2"
+      },
+      "gameName": "Dragon Age 2",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-dragonage2",
+      "version": "1.0.0",
+      "id": "game-dragonage2"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-dmc5/gameart.jpg",
+      "name": "Game: Devil May Cry 5",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for Devil May Cry 5",
+        "long": "Support for Devil May Cry 5"
+      },
+      "gameName": "Devil May Cry 5",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-dmc5",
+      "version": "0.0.2",
+      "id": "game-dmc5"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-dragons-dogma/gameart.jpg",
+      "name": "Game: Dragon's Dogma: Dark Arisen",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for Dragon's Dogma: Dark Arisen",
+        "long": "Support for Dragon's Dogma: Dark Arisen"
+      },
+      "gameName": "Dragon's Dogma: Dark Arisen",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-dragons-dogma",
+      "version": "1.0.0",
+      "id": "game-dragons-dogma"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-elex/gameart.jpg",
+      "name": "Game: Elex",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for Elex",
+        "long": "Support for Elex"
+      },
+      "gameName": "Elex",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-elex",
+      "version": "0.0.1",
+      "id": "game-elex"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-enderal/gameart.jpg",
+      "name": "Game: Enderal",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for Enderal (a Skyrim Total Conversion)",
+        "long": "Support for Enderal (a Skyrim Total Conversion)"
+      },
+      "gameName": "Enderal",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-enderal",
+      "version": "1.0.0",
+      "id": "game-enderal"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-darksouls2/gameart.jpg",
+      "name": "Game: Dark Souls II",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for Dark Souls II",
+        "long": "Support for Dark Souls II"
+      },
+      "gameName": "Dark Souls II",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-darksouls2",
+      "version": "1.0.0",
+      "id": "game-darksouls2"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-factorio/gameart.jpg",
+      "name": "Game: Factorio",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for Factorio",
+        "long": "Support for Factorio"
+      },
+      "gameName": "Factorio",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-factorio",
+      "version": "1.0.0",
+      "id": "game-factorio"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-fallout3/gameart.jpg",
+      "name": "Game: Fallout 3",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for Fallout 3",
+        "long": "Support for Fallout 3"
+      },
+      "gameName": "Fallout 3",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-fallout3",
+      "version": "1.0.0",
+      "id": "game-fallout3"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-fallout4/gameart.jpg",
+      "name": "Game: Fallout 4",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for Fallout 4",
+        "long": "Support for Fallout 4"
+      },
+      "gameName": "Fallout 4",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-fallout4",
+      "version": "1.0.0",
+      "id": "game-fallout4"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-fallout4vr/gameart.jpg",
+      "name": "Game: Fallout 4 VR",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for the VR variant of Fallout 4",
+        "long": "Support for the VR variant of Fallout 4"
+      },
+      "gameName": "Fallout 4 VR",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-fallout4vr",
+      "version": "1.0.0",
+      "id": "game-fallout4vr"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-falloutnv/gameart.jpg",
+      "name": "Game: Fallout: New Vegas",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for Fallout: New Vegas",
+        "long": "Support for Fallout: New Vegas"
+      },
+      "gameName": "Fallout: New Vegas",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-falloutnv",
+      "version": "1.0.0",
+      "id": "game-falloutnv"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-galciv3/gameart.jpg",
+      "name": "Game: Galactic Civilizations III",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for Galactic Civilizations III",
+        "long": "Support for Galactic Civilizations III"
+      },
+      "gameName": "Galactic Civilizations III",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-galciv3",
+      "version": "0.0.1",
+      "id": "game-galciv3"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-greedfall/gameart.jpg",
+      "name": "Game: Greedfall",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for Greedfall",
+        "long": "Support for Greedfall"
+      },
+      "gameName": "Greedfall",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-greedfall",
+      "version": "1.0.0",
+      "id": "game-greedfall"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-gardenpaws/gameart.jpg",
+      "name": "Game: Garden Paws",
+      "author": "m0nster",
+      "description": {
+        "short": "Support for Garden Paws",
+        "long": "Support for Garden Paws"
+      },
+      "gameName": "Garden Paws",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-gardenpaws",
+      "version": "0.1.0",
+      "id": "game-gardenpaws"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-kenshi/gameart.jpg",
+      "name": "Game: Kenshi",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for Kenshi",
+        "long": "Support for Kenshi"
+      },
+      "gameName": "Kenshi",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-kenshi",
+      "version": "1.0.0",
+      "id": "game-kenshi"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-grimdawn/gameart.jpg",
+      "name": "Game: Grim Dawn",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for Grim Dawn",
+        "long": "Support for Grim Dawn"
+      },
+      "gameName": "Grim Dawn",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-grimdawn",
+      "version": "1.0.0",
+      "id": "game-grimdawn"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-grimrock/gameart.jpg",
+      "name": "Game: Legend of Grimrock",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for Legend of Grimrock",
+        "long": "Support for Legend of Grimrock"
+      },
+      "gameName": "Legend of Grimrock",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-grimrock",
+      "version": "1.0.0",
+      "id": "game-grimrock"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-kerbalspaceprogram/gameart.jpg",
+      "name": "Game: Kerbal Space Program",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for Kerbal Space Program",
+        "long": "Support for Kerbal Space Program"
+      },
+      "gameName": "Kerbal Space Program",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-kerbalspaceprogram",
+      "version": "1.0.0",
+      "id": "game-kerbalspaceprogram"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-kingdomcome-deliverance/gameart.jpg",
+      "name": "Game: Kingdom Come: Deliverance",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for Kingdom Come: Deliverance",
+        "long": "Support for Kingdom Come: Deliverance"
+      },
+      "gameName": "Kingdom Come: Deliverance",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-kingdomcome-deliverance",
+      "version": "1.0.0",
+      "id": "game-kingdomcome-deliverance"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-mount-and-blade/gameart.jpg",
+      "name": "Game: Mount and Blade",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for Mount and Blade games.",
+        "long": "Support for Mount and Blade games."
+      },
+      "gameName": "Mount and Blade",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-mount-and-blade",
+      "version": "1.0.0",
+      "id": "game-mount-and-blade"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-morrowind/gameart.jpg",
+      "name": "Game: Morrowind",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for The Elder Scrolls III: Morrowind",
+        "long": "Support for The Elder Scrolls III: Morrowind"
+      },
+      "gameName": "Morrowind",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-morrowind",
+      "version": "1.0.0",
+      "id": "game-morrowind"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-monster-hunter-world/gameart.jpg",
+      "name": "Game: Monster Hunter: World",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for Monster Hunter: World",
+        "long": "Support for Monster Hunter: World"
+      },
+      "gameName": "Monster Hunter: World",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-monster-hunter-world",
+      "version": "1.0.0",
+      "id": "game-monster-hunter-world"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-neverwinter-nights/gameart.jpg",
+      "name": "Game: Neverwinter Nights",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for Neverwinter Nights",
+        "long": "Support for Neverwinter Nights"
+      },
+      "gameName": "Neverwinter Nights",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-neverwinter-nights",
+      "version": "1.0.0",
+      "id": "game-neverwinter-nights"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-neverwinter-nights2/gameart.jpg",
+      "name": "Game: Neverwinter Nights 2",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for Neverwinter Nights 2",
+        "long": "Support for Neverwinter Nights 2"
+      },
+      "gameName": "Neverwinter Nights 2",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-neverwinter-nights2",
+      "version": "1.0.0",
+      "id": "game-neverwinter-nights2"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-oni/gameart.jpg",
+      "name": "Game: Oxygen Not Included",
+      "author": "newman55",
+      "description": {
+        "short": "Support for Oxygen Not Included",
+        "long": "Support for Oxygen Not Included"
+      },
+      "gameName": "Oxygen Not Included",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-oni",
+      "version": "1.0.0",
+      "id": "game-oni"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-nomanssky/gameart.jpg",
+      "name": "Game: No Man's Sky",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for No Man's Sky",
+        "long": "Support for No Man's Sky"
+      },
+      "gameName": "No Man's Sky",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-nomanssky",
+      "version": "1.0.0",
+      "id": "game-nomanssky"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-pathfinderkingmaker/gameart.jpg",
+      "name": "Game: Pathfinder: Kingmaker",
+      "author": "m0nster",
+      "description": {
+        "short": "Support for Pathfinder: Kingmaker",
+        "long": "Support for Pathfinder: Kingmaker"
+      },
+      "gameName": "Pathfinder: Kingmaker",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-pathfinderkingmaker",
+      "version": "0.2.0",
+      "id": "game-pathfinderkingmaker"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-oblivion/gameart.jpg",
+      "name": "Game: Oblivion",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for The Elder Scrolls IV: Oblivion",
+        "long": "Support for The Elder Scrolls IV: Oblivion"
+      },
+      "gameName": "Oblivion",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-oblivion",
+      "version": "1.0.0",
+      "id": "game-oblivion"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-prisonarchitect/gameart.jpg",
+      "name": "Game: Prison Architect",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for Prison Architect",
+        "long": "Support for Prison Architect"
+      },
+      "gameName": "Prison Architect",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-prisonarchitect",
+      "version": "0.0.1",
+      "id": "game-prisonarchitect"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-shadowrunreturns/gameart.jpg",
+      "name": "Game: Shadowrun Returns",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for Shadowrun Returns",
+        "long": "Support for Shadowrun Returns"
+      },
+      "gameName": "Shadowrun Returns",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-shadowrunreturns",
+      "version": "1.0.0",
+      "id": "game-shadowrunreturns"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-re2remake/gameart.jpg",
+      "name": "Game: Resident Evil 2 (2019)",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for RE2 (2019)",
+        "long": "Support for RE2 (2019)"
+      },
+      "gameName": "Resident Evil 2 (2019)",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-re2remake",
+      "version": "0.1.1",
+      "id": "game-re2remake"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-sekiro/gameart.jpg",
+      "name": "Game: Sekiro",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for Sekiro",
+        "long": "Support for Sekiro"
+      },
+      "gameName": "Sekiro",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-sekiro",
+      "version": "0.0.1",
+      "id": "game-sekiro"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-rimworld/gameart.jpg",
+      "name": "Game: RimWorld",
+      "author": "Chloe S.",
+      "description": {
+        "short": "Support for RimWorld",
+        "long": "Support for RimWorld"
+      },
+      "gameName": "RimWorld",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-rimworld",
+      "version": "0.0.1",
+      "id": "game-rimworld"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-sims3/gameart.jpg",
+      "name": "Game: The Sims 3",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for The Sims 3",
+        "long": "Support for The Sims 3"
+      },
+      "gameName": "The Sims 3",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-sims3",
+      "version": "1.0.0",
+      "id": "game-sims3"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-sims4/gameart.jpg",
+      "name": "Game: The Sims 4",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for The Sims 4",
+        "long": "Support for The Sims 4"
+      },
+      "gameName": "The Sims 4",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-sims4",
+      "version": "2.0.1",
+      "id": "game-sims4"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-skyrim/gameart.jpg",
+      "name": "Game: Skyrim",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for The Elder Scrolls V: Skyrim",
+        "long": "Support for The Elder Scrolls V: Skyrim"
+      },
+      "gameName": "Skyrim",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-skyrim",
+      "version": "1.0.0",
+      "id": "game-skyrim"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-skyrimse/gameart.jpg",
+      "name": "Game: Skyrim: Special Edition",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for The Elder Scrolls V: Skyrim Special Edition",
+        "long": "Support for The Elder Scrolls V: Skyrim Special Edition"
+      },
+      "gameName": "Skyrim: Special Edition",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-skyrimse",
+      "version": "1.0.0",
+      "id": "game-skyrimse"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-spyroreignitedtrilogy/gameart.jpg",
+      "name": "Game: Spyro Reignited Trilogy",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for Spyro Reignited Trilogy",
+        "long": "Support for Spyro Reignited Trilogy"
+      },
+      "gameName": "Spyro Reignited Trilogy",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-spyroreignitedtrilogy",
+      "version": "0.0.1",
+      "id": "game-spyroreignitedtrilogy"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-skyrimvr/gameart.jpg",
+      "name": "Game: Skyrim VR",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for The Elder Scrolls V: Skyrim VR",
+        "long": "Support for The Elder Scrolls V: Skyrim VR"
+      },
+      "gameName": "Skyrim VR",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-skyrimvr",
+      "version": "1.0.0",
+      "id": "game-skyrimvr"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-stardewvalley/gameart.jpg",
+      "name": "Game: Stardew Valley",
+      "author": "Pathoschild",
+      "description": {
+        "short": "Support for Stardew Valley",
+        "long": "Support for Stardew Valley"
+      },
+      "gameName": "Stardew Valley",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-stardewvalley",
+      "version": "0.1.0",
+      "id": "game-stardewvalley"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-starsector/gameart.jpg",
+      "name": "Game: Starsector",
+      "author": "ALazyWizard",
+      "description": {
+        "short": "Support for Starsector",
+        "long": "Support for Starsector"
+      },
+      "gameName": "Starsector",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-starsector",
+      "version": "1.0.0",
+      "id": "game-starsector"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-starbound/gameart.jpg",
+      "name": "Game: Starbound",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for Starbound",
+        "long": "Support for Starbound"
+      },
+      "gameName": "Starbound",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-starbound",
+      "version": "1.0.0",
+      "id": "game-starbound"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-stateofdecay/gameart.jpg",
+      "name": "Game: State of Decay",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for State of Decay",
+        "long": "Support for State of Decay"
+      },
+      "gameName": "State of Decay",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-stateofdecay",
+      "version": "1.0.0",
+      "id": "game-stateofdecay"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-subnautica/gameart.jpg",
+      "name": "Game: Subnautica",
+      "author": "Chloe S. & AlexejheroYTB",
+      "description": {
+        "short": "Support for Subnautica",
+        "long": "Support for Subnautica"
+      },
+      "gameName": "Subnautica",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-subnautica",
+      "version": "1.0.1",
+      "id": "game-subnautica"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-survivingmars/gameart.jpg",
+      "name": "Game: Surviving Mars",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for Surviving Mars",
+        "long": "Support for Surviving Mars"
+      },
+      "gameName": "Surviving Mars",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-survivingmars",
+      "version": "0.0.1",
+      "id": "game-survivingmars"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-sw-kotor/gameart.jpg",
+      "name": "Game: Star Wars: Knights of the Old Republic II",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for Star Wars: Knights of the Old Republic II",
+        "long": "Support for Star Wars: Knights of the Old Republic II"
+      },
+      "gameName": "Star Wars: Knights of the Old Republic II",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-sw-kotor",
+      "version": "1.0.0",
+      "id": "game-sw-kotor"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-subnauticabelowzero/gameart.jpg",
+      "name": "Game: Subnautica Below Zero",
+      "author": "Chloe S. & AlexejheroYTB",
+      "description": {
+        "short": "Support for Subnautica: Below Zero",
+        "long": "Support for Subnautica: Below Zero"
+      },
+      "gameName": "Subnautica Below Zero",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-subnauticabelowzero",
+      "version": "1.0.1",
+      "id": "game-subnauticabelowzero"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-teamfortress2/gameart.jpg",
+      "name": "Game: Team Fortress 2",
+      "author": "AtomicTEM",
+      "description": {
+        "short": "Support for Team Fortress 2",
+        "long": "Support for Team Fortress 2"
+      },
+      "gameName": "Team Fortress 2",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-teamfortress2",
+      "version": "1.1.0",
+      "id": "game-teamfortress2"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-torchlight2/gameart.jpg",
+      "name": "Game: Torchlight II",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for Torchlight II",
+        "long": "Support for Torchlight II"
+      },
+      "gameName": "Torchlight II",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-torchlight2",
+      "version": "1.0.0",
+      "id": "game-torchlight2"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-teso/gameart.jpg",
+      "name": "Game: The Elder Scrolls Online",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for The Elder Scrolls Online",
+        "long": "Support for The Elder Scrolls Online"
+      },
+      "gameName": "The Elder Scrolls Online",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-teso",
+      "version": "1.0.0",
+      "id": "game-teso"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-vtmbloodlines/gameart.jpg",
+      "name": "Game: Vampire the Masquerade - Bloodlines",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for Vampire the Masquerade - Bloodlines",
+        "long": "Support for Vampire the Masquerade - Bloodlines"
+      },
+      "gameName": "Vampire the Masquerade - Bloodlines",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-vtmbloodlines",
+      "version": "0.0.1",
+      "id": "game-vtmbloodlines"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-untitledgoose/gameart.jpg",
+      "name": "Game: Untitled Goose Game",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for Untitled Goose Game",
+        "long": "Support for Untitled Goose Game"
+      },
+      "gameName": "Untitled Goose Game",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-untitledgoose",
+      "version": "0.0.1",
+      "id": "game-untitledgoose"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-warthunder/gameart.jpg",
+      "name": "Game: War Thunder",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for War Thunder",
+        "long": "Support for War Thunder"
+      },
+      "gameName": "War Thunder",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-warthunder",
+      "version": "1.0.0",
+      "id": "game-warthunder"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-totalwarthreekingdoms/gameart.jpg",
+      "name": "Game: Total War: Three Kingdoms",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for Total War: Three Kingdoms",
+        "long": "Support for Total War: Three Kingdoms"
+      },
+      "gameName": "Total War: Three Kingdoms",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-totalwarthreekingdoms",
+      "version": "0.0.1",
+      "id": "game-totalwarthreekingdoms"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-witcher/gameart.jpg",
+      "name": "Game: The Witcher",
+      "author": "Evanito",
+      "description": {
+        "short": "Support for The Witcher: Enhanced Edition",
+        "long": "Support for The Witcher: Enhanced Edition"
+      },
+      "gameName": "The Witcher",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-witcher",
+      "version": "0.1.0",
+      "id": "game-witcher"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-x4foundations/gameart.jpg",
+      "name": "Game: X4: Foundations",
+      "author": "Homonoia Studios Ltd.",
+      "description": {
+        "short": "Support for X4: Foundations",
+        "long": "Support for X4: Foundations"
+      },
+      "gameName": "X4: Foundations",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-x4foundations",
+      "version": "1.0.0",
+      "id": "game-x4foundations"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-worldoftanks/gameart.jpg",
+      "name": "Game: World of Tanks",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for World of Tanks",
+        "long": "Support for World of Tanks"
+      },
+      "gameName": "World of Tanks",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-worldoftanks",
+      "version": "1.0.0",
+      "id": "game-worldoftanks"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-witcher3/gameart.jpg",
+      "name": "Game: The Witcher 3",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for The Witcher 3",
+        "long": "Support for The Witcher 3"
+      },
+      "gameName": "The Witcher 3",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-witcher3",
+      "version": "1.0.0",
+      "id": "game-witcher3"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-witcher2/gameart.jpg",
+      "name": "Game: The Witcher 2",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for The Witcher 2",
+        "long": "Support for The Witcher 2"
+      },
+      "gameName": "The Witcher 2",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-witcher2",
+      "version": "1.0.0",
+      "id": "game-witcher2"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-xcom2/gameart.jpg",
+      "name": "Game: XCOM 2",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for XCOM 2",
+        "long": "Support for XCOM 2"
+      },
+      "gameName": "XCOM 2",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-xcom2",
+      "version": "1.0.0",
+      "id": "game-xcom2"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-xrebirth/gameart.jpg",
+      "name": "Game: X Rebirth",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Support for X Rebirth",
+        "long": "Support for X Rebirth"
+      },
+      "gameName": "X Rebirth",
+      "type": "game",
+      "github": "Nexus-Mods/vortex-games",
+      "githubRawPath": "game-xrebirth",
+      "version": "1.0.0",
+      "id": "game-xrebirth"
+    },
+    {
+      "id": "gamebryo-plugin-management",
+      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/master/game-xrebirth/gameart.jpg",
+      "name": "Gamebryo Plugin Management",
+      "author": "Black Tree Gaming Ltd.",
+      "description": {
+        "short": "Plugin Managament for gamebryo games",
+        "long": "Plugin Managament for gamebryo games"
+      },
+      "github": "Nexus-Mods/extension-plugin-management",
+      "version": "0.2.2",
+      "githubRelease": "https://github.com/Nexus-Mods/extension-plugin-management/releases/download/v0.2.1/gpm_0_2_1.7z"
     }
   ]
 }
