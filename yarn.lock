@@ -2734,6 +2734,14 @@
   dependencies:
     defer-to-connect "^1.0.1"
 
+"@nexusmods/nexus-api@^1.0.5":
+  version "1.0.5"
+  resolved "https://registry.yarnpkg.com/@nexusmods/nexus-api/-/nexus-api-1.0.5.tgz#a5bd4434d10120d86e2760a5ea60c0e407d055d2"
+  integrity sha512-VRuoJfZt8FNI2whvkHoV8SmEtd4K/qeCMbrabJj82fbTLB6SIL/AKPimsep/2lCIQjYEpKrMteTLAfL6lRVyRw==
+  dependencies:
+    request "^2.85.0"
+    string-template "^1.0.0"
+
 "@types/abstract-leveldown@*":
   version "5.0.1"
   resolved "https://registry.yarnpkg.com/@types/abstract-leveldown/-/abstract-leveldown-5.0.1.tgz#3c7750d0186b954c7f2d2f6acc8c3c7ba0c3412e"
@@ -11629,8 +11637,8 @@ mkdirp@0.5.1, mkdirp@0.x, "mkdirp@>=0.5 0", mkdirp@^0.5.0, mkdirp@^0.5.1, mkdirp
     minimist "0.0.8"
 
 modmeta-db@Nexus-Mods/modmeta-db:
-  version "0.5.3"
-  resolved "https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/3a76d08fb721e4e2ca6536e06cb7ec470e79b179"
+  version "0.5.5"
+  resolved "https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/baaa6a16ea4cef5d8f3f7ef303a91519902634d7"
   dependencies:
     bluebird "^3.4.6"
     minimatch "^3.0.4"

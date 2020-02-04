@@ -9,6 +9,7 @@ import opn from './opn';
 import { getSafe } from './storeHelper';
 import { flatten, getAllPropertyNames, spawnSelf, truthy } from './util';
 
+import NexusT, { IFeedbackResponse } from '@nexusmods/nexus-api';
 import Promise from 'bluebird';
 import {
   app as appIn,
@@ -18,7 +19,6 @@ import {
 } from 'electron';
 import * as fs from 'fs-extra';
 import I18next from 'i18next';
-import NexusT, { IFeedbackResponse } from 'nexus-api';
 import * as os from 'os';
 import * as path from 'path';
 import * as semver from 'semver';
@@ -120,7 +120,7 @@ function nexusReport(hash: string, type: string, error: IError, labels: string[]
                      context: IErrorContext, apiKey: string, reporterProcess: string,
                      sourceProcess: string, attachment: string): Promise<IFeedbackResponse> {
   const app = appIn || remote.app;
-  const Nexus: typeof NexusT = require('nexus-api').default;
+  const Nexus: typeof NexusT = require('@nexusmods/nexus-api').default;
 
   const referenceId = require('uuid').v4();
   return Promise.resolve(Nexus.create(apiKey, 'Vortex', app.getVersion(), undefined))

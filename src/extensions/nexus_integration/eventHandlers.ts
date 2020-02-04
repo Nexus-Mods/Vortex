@@ -23,7 +23,7 @@ import { checkModVersionsImpl, endorseModImpl, startDownload, updateKey } from '
 
 import Promise from 'bluebird';
 import Nexus, { IFeedbackResponse, IIssue, NexusError,
-                RateLimitError, TimeoutError } from 'nexus-api';
+                RateLimitError, TimeoutError } from '@nexusmods/nexus-api';
 
 export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
   const state: IState = api.store.getState();

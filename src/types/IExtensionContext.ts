@@ -1016,10 +1016,13 @@ export interface IExtensionContext {
    * it can be done from there. The version that was previously run is being passed to the migration
    * function so the extension can determine if the upgrade is actually necessary and if so, which
    * (if there are multiple).
+   * IMPORTANT: Use the old version only to save time, your migration must not cause break anything
+   *   if this version is inaccurate. E.g. if state was manipulated/damaged, Vortex may send 0.0.0
+   *   for the old version even when the current version was run before.
    * If the extension was never loaded before, the version "0.0.0" is passed in.
    * Please note: Vortex will continue running, with the extension loaded, after migrate is called,
    *   it is not currently possible to delay loading an extension until the migration is complete.
-   *   This means one of these to be true:
+   *   This means one of these must be true:
    *     - the extension is functional without the migration, at least so much so that it doesn't
    *       cause "damage"
    *     - the extension disables/blocks itself until the migration is done
