@@ -15,6 +15,7 @@ import { downloadAndInstallExtension, fetchAvailableExtensions, readExtensions }
 
 import * as Promise from 'bluebird';
 import * as _ from 'lodash';
+import * as semver from 'semver';
 
 interface ILocalState {
   reloadNecessary: boolean;
@@ -38,7 +39,7 @@ function checkForUpdates(api: IExtensionApi) {
         return prev;
       }
 
-      if (update.version === ext.version) {
+      if (semver.gte(ext.version, update.version)) {
         return prev;
       }
 
@@ -63,20 +64,22 @@ function checkForUpdates(api: IExtensionApi) {
                                   + `-> ${ext.update.name} v${ext.update.version}`) });
 
   return Promise.map(updateable, update => downloadAndInstallExtension(api, update.update))
-    .then(() => {
+    .then((success: boolean[]) => {
       localState.reloadNecessary = true;
-      api.sendNotification({
-        id: 'extension-updates',
-        type: 'success',
-        message: 'Extensions updated, please restart to apply them',
-        actions: [
-          {
-            title: 'Restart now', action: () => {
-              relaunch();
+      if (success.find(iter => iter === true)) {
+        api.sendNotification({
+          id: 'extension-updates',
+          type: 'success',
+          message: 'Extensions updated, please restart to apply them',
+          actions: [
+            {
+              title: 'Restart now', action: () => {
+                relaunch();
+              },
             },
-          },
-        ],
-      });
+          ],
+        });
+      }
     });
 }
 
@@ -113,8 +116,12 @@ function installDependency(api: IExtensionApi,
 
   if (ext !== undefined) {
     return downloadAndInstallExtension(api, ext)
-      .then(() => updateInstalled(false))
-      .then(() => true);
+      .then(success => {
+        if (success) {
+          updateInstalled(false);
+        }
+        return success;
+      });
   } else {
     return Promise.resolve(false);
   }
@@ -221,7 +228,11 @@ function init(context: IExtensionContext) {
     });
     context.api.onAsync('install-extension', (ext: IExtensionDownloadInfo) =>
       downloadAndInstallExtension(context.api, ext)
-        .then(() => updateExtensions(false)));
+        .tap(success => {
+          if (success) {
+            updateExtensions(false);
+          }
+        }));
 
     context.api.onStateChange(['session', 'base', 'extLoadFailures'], (prev, current) => {
       checkMissingDependencies(context.api, current);

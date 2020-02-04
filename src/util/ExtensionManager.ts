@@ -1,4 +1,4 @@
-import { forgetExtension, setExtensionEnabled, setExtensionVersion } from '../actions/app';
+import { forgetExtension, removeExtension, setExtensionEnabled, setExtensionVersion } from '../actions/app';
 import { addNotification, closeDialog, DialogActions, DialogType, dismissNotification,
          IDialogContent, showDialog } from '../actions/notifications';
 import { suppressNotification } from '../actions/notificationSettings';
@@ -25,10 +25,12 @@ import { INotification } from '../types/INotification';
 import { IExtensionLoadFailure, IExtensionState, IState } from '../types/IState';
 
 import { Archive } from './archives';
+import { relaunch } from './commandLine';
 import { MissingDependency, NotSupportedError,
         ProcessCanceled, UserCanceled } from './CustomErrors';
 import { isOutdated } from './errorHandling';
 import getVortexPath from './getVortexPath';
+import { i18n } from './i18n';
 import lazyRequire from './lazyRequire';
 import { log } from './log';
 import { showError } from './message';
@@ -57,7 +59,6 @@ import {} from 'redux-watcher';
 import * as semver from 'semver';
 import { generate as shortid } from 'shortid';
 import { dynreq, runElevated } from 'vortex-run';
-import { i18n } from './i18n';
 
 // tslint:disable-next-line:no-var-requires
 const ReduxWatcher = require('redux-watcher');
@@ -466,6 +467,7 @@ class ExtensionManager {
   private mForceDBReconnect: boolean = false;
   private mOnUIStarted: () => void;
   private mUIStartedPromise: Promise<void>;
+  private mOutdated: string[] = [];
 
   constructor(initStore?: Redux.Store<any>, eventEmitter?: NodeJS.EventEmitter) {
     this.mEventEmitter = eventEmitter;
@@ -551,6 +553,17 @@ class ExtensionManager {
       this.mStyleManager = new StyleManager(this.mApi);
     }
     this.mExtensions = this.loadExtensions();
+
+    if (this.mOutdated.length > 0) {
+      this.mOutdated.forEach(ext => {
+        log('info', 'extension older than bundled version, will be removed',
+          { name: ext });
+        initStore.dispatch(removeExtension(ext));
+      });
+
+      relaunch();
+    }
+
     this.initExtensions();
   }
 
@@ -1019,6 +1032,8 @@ class ExtensionManager {
             } else {
               Promise.mapSeries(migrations[ext.name], mig => mig(oldVersion))
                 .then(() => {
+                  log('info', 'set extension version',
+                      { name: ext.name, info: JSON.stringify(ext.info) });
                   this.mApi.store.dispatch(setExtensionVersion(ext.name, ext.info.version));
                 })
                 .catch(err => {
@@ -1567,13 +1582,15 @@ class ExtensionManager {
     .listen(path.join('\\\\?\\pipe', ipcPath));
   }
 
-  private loadDynamicExtension(extensionPath: string): IRegisteredExtension {
+  private loadDynamicExtension(extensionPath: string,
+                               alreadyLoaded: IRegisteredExtension[])
+                               : IRegisteredExtension {
     const indexPath = path.join(extensionPath, 'index.js');
     if (fs.existsSync(indexPath)) {
       let info: IExtension = { name: '', author: '', description: '', version: '' };
       try {
         info = JSON.parse(fs.readFileSync(path.join(extensionPath, 'info.json'),
-        { encoding: 'utf8' }));
+                                          { encoding: 'utf8' }));
       } catch (error) {
         const errMessage = (error.code === 'ENOENT')
           ? 'extension has no info.json file'
@@ -1581,20 +1598,36 @@ class ExtensionManager {
         log('warn', errMessage, { extensionPath, error: error.message });
       }
 
+      const name = info.id || path.basename(extensionPath);
+
+      const existing = alreadyLoaded.find(reg => reg.name === name);
+
+      if (existing) {
+        if (semver.gt(info.version, existing.info.version)) {
+          this.mOutdated.push(path.basename(existing.path));
+        }
+
+        return undefined;
+      }
+
       return {
-        name: path.basename(extensionPath),
+        name,
         initFunc: dynreq(indexPath).default,
         path: extensionPath,
         dynamic: true,
         info,
       };
     } else {
+      // this is not necessarily a problem, translation extensions for example
+      // have no index.js file
+      log('debug', 'extension directory contains no index.js file', { extensionPath });
       return undefined;
     }
   }
 
   private loadDynamicExtensions(extensionsPath: string,
-                                loadedExtensions: Set<string>): IRegisteredExtension[] {
+                                loadedExtensions: Set<string>,
+                                alreadyLoaded: IRegisteredExtension[]): IRegisteredExtension[] {
     if (!fs.existsSync(extensionsPath)) {
       log('info', 'failed to load dynamic extensions, path doesn\'t exist', extensionsPath);
       try {
@@ -1607,7 +1640,6 @@ class ExtensionManager {
     }
 
     const res = fs.readdirSync(extensionsPath)
-      .filter(name => !loadedExtensions.has(name))
       .filter(name => fs.statSync(path.join(extensionsPath, name)).isDirectory())
       .map(name => {
         if (!getSafe(this.mExtensionState, [name, 'enabled'], true)) {
@@ -1619,11 +1651,13 @@ class ExtensionManager {
           // extension with the same name in the bundle we could otherwise end up loading the
           // bundled one if this one fails to load which could be convenient but also massively
           // confusing.
-          loadedExtensions.add(name);
           const before = Date.now();
-          const ext = this.loadDynamicExtension(path.join(extensionsPath, name));
-          const loadTime = Date.now() - before;
-          log('debug', 'loaded extension', { name, loadTime, location: extensionsPath });
+          const ext = this.loadDynamicExtension(path.join(extensionsPath, name), alreadyLoaded);
+          if (ext !== undefined) {
+            loadedExtensions.add(ext.name);
+            const loadTime = Date.now() - before;
+            log('debug', 'loaded extension', { name, loadTime, location: extensionsPath });
+          }
           return ext;
         } catch (err) {
           log('warn', 'failed to load dynamic extension',
@@ -1678,6 +1712,7 @@ class ExtensionManager {
 
     const extensionPaths = ExtensionManager.getExtensionPaths();
     const loadedExtensions = new Set<string>();
+    let dynamicallyLoaded = [];
     return staticExtensions
       .filter(ext => getSafe(this.mExtensionState, [ext, 'enabled'], true))
       .map((name: string) => ({
@@ -1686,7 +1721,11 @@ class ExtensionManager {
           initFunc: require(`../extensions/${name}/index`).default,
           dynamic: false,
         }))
-      .concat(...extensionPaths.map(ext => this.loadDynamicExtensions(ext, loadedExtensions)));
+      .concat(...extensionPaths.map(ext => {
+        const newExtensions = this.loadDynamicExtensions(ext, loadedExtensions, dynamicallyLoaded);
+        dynamicallyLoaded = dynamicallyLoaded.concat(newExtensions);
+        return newExtensions;
+      }));
   }
 }
 

@@ -1,8 +1,9 @@
 import { IExtensionApi } from '../../types/IExtensionContext';
 import { IDownload, IState } from '../../types/IState';
-import { DataInvalid, ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
+import { DataInvalid, ProcessCanceled, ServiceTemporarilyUnavailable, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import getVortexPath from '../../util/getVortexPath';
+import { log } from '../../util/log';
 import { jsonRequest, rawRequest } from '../../util/network';
 import { getSafe } from '../../util/storeHelper';
 import { INVALID_FILENAME_RE, withTmpDir } from '../../util/util';
@@ -269,6 +270,10 @@ export function downloadAndInstallExtension(api: IExtensionApi,
       ]);
       return Promise.resolve(false);
     })
+    .catch(ServiceTemporarilyUnavailable, err => {
+      log('warn', 'Failed to download from github', { message: err.message });
+      return Promise.resolve(false);
+    })
     .catch(err => {
       api.showDialog('error', 'Installation failed', {
         text: 'Failed to install the extension',
@@ -336,11 +341,16 @@ export function downloadGithubRaw(api: IExtensionApi,
   return cleanProm.then(() => withTmpDir(tmpPath => {
     const archivePath = path.join(tmpPath, archiveName);
 
-    return rawRequest(githubApiUrl(ext.github, 'contents', ext.githubRawPath))
+    return rawRequest(githubApiUrl(ext.github, 'contents', ext.githubRawPath), { encoding: 'utf8' })
       .then((content: string) => {
         const data = JSON.parse(content);
         if (!Array.isArray(data)) {
-          return Promise.reject(new Error('Unexpected response from github'));
+          if ((typeof(data) === 'object') && (data.message !== undefined)) {
+            return Promise.reject(new ServiceTemporarilyUnavailable(data.message));
+          } else {
+            log('info', 'unexpected response from github', content);
+            return Promise.reject(new Error('Unexpected response from github (see log file)'));
+          }
         }
 
         const repoFiles: string[] =
