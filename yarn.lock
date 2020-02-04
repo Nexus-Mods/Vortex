@@ -2139,6 +2139,14 @@
     call-me-maybe "^1.0.1"
     glob-to-regexp "^0.3.0"
 
+"@nexusmods/nexus-api@^1.0.5":
+  version "1.0.5"
+  resolved "https://registry.yarnpkg.com/@nexusmods/nexus-api/-/nexus-api-1.0.5.tgz#a5bd4434d10120d86e2760a5ea60c0e407d055d2"
+  integrity sha512-VRuoJfZt8FNI2whvkHoV8SmEtd4K/qeCMbrabJj82fbTLB6SIL/AKPimsep/2lCIQjYEpKrMteTLAfL6lRVyRw==
+  dependencies:
+    request "^2.85.0"
+    string-template "^1.0.0"
+
 "@nodelib/fs.stat@^1.1.2":
   version "1.1.3"
   resolved "https://registry.yarnpkg.com/@nodelib/fs.stat/-/fs.stat-1.1.3.tgz#2b5a3ab3f918cca48a8c754c08168e3f03eba61b"
@@ -2733,14 +2741,6 @@
   integrity sha512-XIB2XbzHTN6ieIjfIMV9hlVcfPU26s2vafYWQcZHWXHOxiaRZYEDKEwdl129Zyg50+foYV2jCgtrqSA6qNuNSA==
   dependencies:
     defer-to-connect "^1.0.1"
-
-"@nexusmods/nexus-api@^1.0.5":
-  version "1.0.5"
-  resolved "https://registry.yarnpkg.com/@nexusmods/nexus-api/-/nexus-api-1.0.5.tgz#a5bd4434d10120d86e2760a5ea60c0e407d055d2"
-  integrity sha512-VRuoJfZt8FNI2whvkHoV8SmEtd4K/qeCMbrabJj82fbTLB6SIL/AKPimsep/2lCIQjYEpKrMteTLAfL6lRVyRw==
-  dependencies:
-    request "^2.85.0"
-    string-template "^1.0.0"
 
 "@types/abstract-leveldown@*":
   version "5.0.1"
@@ -11806,13 +11806,6 @@ next-tick@1, next-tick@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/next-tick/-/next-tick-1.0.0.tgz#ca86d1fe8828169b0120208e3dc8424b9db8342c"
   integrity sha1-yobR/ogoFpsBICCOPchCS524NCw=
-
-nexus-api@Nexus-Mods/node-nexus-api:
-  version "1.0.3"
-  resolved "https://codeload.github.com/Nexus-Mods/node-nexus-api/tar.gz/96056449b26c0e7bb394b3d44065ada2cc1f056d"
-  dependencies:
-    request "^2.85.0"
-    string-template "^1.0.0"
 
 nice-try@^1.0.4:
   version "1.0.5"

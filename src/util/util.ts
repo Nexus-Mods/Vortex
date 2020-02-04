@@ -101,7 +101,7 @@ export function objDiff(lhs: any, rhs: any, skip?: string[]): any {
       if ((skip !== undefined) && (skip.indexOf(key) !== -1)) {
         return;
       }
-      if ((rhs[key] === undefined) && (lhs[key] !== undefined)) {
+      if (!rhs.hasOwnProperty(key) && lhs.hasOwnProperty(key)) {
         res['-' + key] = lhs[key];
       } else {
         const sub = objDiff(lhs[key], rhs[key]);
@@ -114,7 +114,7 @@ export function objDiff(lhs: any, rhs: any, skip?: string[]): any {
       }
     });
     Object.keys(rhs || {}).forEach(key => {
-      if ((lhs[key] === undefined) && (rhs[key] !== undefined)) {
+      if (!lhs.hasOwnProperty(key) && rhs.hasOwnProperty(key)) {
         res['+' + key] = rhs[key];
       }
     });
