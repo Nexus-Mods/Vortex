@@ -282,6 +282,16 @@ export function downloadGithubRelease(api: IExtensionApi,
     api.events.emit('start-download', [ext.githubRelease], { game: SITE_ID }, undefined,
                     (err: Error, dlId: string) => {
       if (err !== null) {
+        if (err instanceof AlreadyDownloaded) {
+          const state = api.getState();
+          const downloads = state.persistent.downloads.files;
+          const existingId = Object.keys(downloads).find(iter =>
+            downloads[iter].localPath === err.fileName);
+
+          return (existingId !== undefined)
+            ? resolve([existingId])
+            : reject(err);
+        }
         return reject(err);
       } else {
         return resolve([dlId]);

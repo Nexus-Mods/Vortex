@@ -1113,7 +1113,7 @@ class DownloadManager {
                 if (redownload === 'always') {
                   loop();
                 } else if (redownload === 'never') {
-                  return reject(new AlreadyDownloaded(tryName));
+                  return reject(new AlreadyDownloaded(fileName));
                 } else {
                   this.mFileExistsCB(fileName)
                     .then((cont: boolean) => {
