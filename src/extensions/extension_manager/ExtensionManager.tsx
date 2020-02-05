@@ -224,7 +224,8 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
   }
 
   private removeExtension = (extId: string) => {
-    this.props.onRemoveExtension(extId);
+    const ext = this.props.extensions[extId];
+    this.props.onRemoveExtension(path.basename(ext.path || extId));
   }
 }
 
