@@ -327,14 +327,18 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
       .filter(starter =>
         (truthy(starter.exePath))
         && (Object.keys(starter.environment || {}).length === 0))
-      .map(starter => ({
-        arguments: starter.commandLine.join(' '),
-        description: starter.name,
-        iconIndex: 0,
-        iconPath: starter.iconPath,
-        program: starter.exePath,
-        title: starter.name,
-      }));
+      .map(starter => {
+        const task: Electron.Task = {
+          arguments: starter.commandLine.join(' '),
+          description: starter.name,
+          iconIndex: 0,
+          iconPath: starter.iconPath,
+          program: starter.exePath,
+          title: starter.name,
+          workingDirectory: starter.workingDirectory,
+        };
+        return task;
+      });
     remote.app.setUserTasks(userTasks);
   }
 

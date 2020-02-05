@@ -42,6 +42,7 @@ export interface IAvailableExtension extends IExtensionDownloadInfo {
   downloads: number;
   endorsements: number;
   tags: string[];
+  dependencies?: { [key: string]: any };
 }
 
 export interface IExtensionManifest {

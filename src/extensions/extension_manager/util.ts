@@ -6,7 +6,7 @@ import getVortexPath from '../../util/getVortexPath';
 import { log } from '../../util/log';
 import { jsonRequest, rawRequest } from '../../util/network';
 import { getSafe } from '../../util/storeHelper';
-import { INVALID_FILENAME_RE, withTmpDir } from '../../util/util';
+import { INVALID_FILENAME_RE, truthy, withTmpDir } from '../../util/util';
 
 import { addLocalDownload } from '../download_management/actions/state';
 import { AlreadyDownloaded } from '../download_management/DownloadManager';
@@ -41,25 +41,9 @@ function githubRawUrl(repo: string, branch: string, repoPath: string) {
   return `https://raw.githubusercontent.com/${repo}/${branch}/${repoPath}`;
 }
 
-const extensionURL = (() => {
-  let result: string;
+const EXTENSION_FORMAT = '1_2';
 
-  return () => {
-    if (result === undefined) {
-      let version = remote.app.getVersion();
-      if (version === '0.0.1') {
-        // development version
-        version = '1.2.0';
-      }
-
-      const sem = new SemVer(version);
-
-      result = githubRawUrl('Nexus-Mods/Vortex', 'announcements', `extensions_${sem.major}_${sem.minor}.json`);
-    }
-
-    return result;
-  };
-})();
+const EXTENSION_URL = githubRawUrl('Nexus-Mods/Vortex', 'announcements', `extensions_${EXTENSION_FORMAT}.json`);
 
 function getAllDirectories(searchPath: string): Promise<string[]> {
   return fs.readdirAsync(searchPath)
@@ -96,9 +80,9 @@ function applyExtensionInfo(id: string, bundled: boolean, values: any, fallback:
 export function selectorMatch(ext: IAvailableExtension, selector: ISelector): boolean {
   if (selector === undefined) {
     return false;
-  } else if (selector.modId !== undefined) {
+  } else if (truthy(selector.modId)) {
     return ext.modId === selector.modId;
-  } else if (selector.githubRawPath !== undefined) {
+  } else if (truthy(selector.githubRawPath)) {
     return (ext.github === selector.github) && (ext.githubRawPath === selector.githubRawPath);
   } else {
     return (ext.github === selector.github);
@@ -169,7 +153,7 @@ export function fetchAvailableExtensions(forceCache: boolean, forceDownload: boo
 }
 
 function downloadExtensionList(cachePath: string): Promise<IAvailableExtension[]> {
-  return Promise.resolve(jsonRequest<IExtensionManifest>(extensionURL()))
+  return Promise.resolve(jsonRequest<IExtensionManifest>(EXTENSION_URL))
     .then(manifest => manifest.extensions.filter(ext => ext.name !== undefined))
     .tap(extensions =>
       fs.writeFileAsync(cachePath,
@@ -217,11 +201,11 @@ export function downloadAndInstallExtension(api: IExtensionApi,
 
   let dlPromise: Promise<string[]>;
 
-  if (ext.modId !== undefined) {
+  if (truthy(ext.modId)) {
     dlPromise = downloadFromNexus(api, ext);
-  } else if (ext.githubRawPath !== undefined) {
+  } else if (truthy(ext.githubRawPath)) {
     dlPromise = downloadGithubRaw(api, ext);
-  } else if (ext.githubRelease !== undefined) {
+  } else if (truthy(ext.githubRelease)) {
     dlPromise = downloadGithubRelease(api, ext);
   } else {
     dlPromise = Promise.reject(new ProcessCanceled('Failed to download'));

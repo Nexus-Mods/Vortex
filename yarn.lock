@@ -4293,9 +4293,9 @@ async-limiter@~1.0.0:
   integrity sha512-csOlWGAcRFJaI6m+F2WKdnMKr4HhdhFVBk0H/QbJFMCr+uO2kwohwXQPxw/9OCxp05r5ghVBFSyioixx3gfkNQ==
 
 async@*:
-  version "3.1.0"
-  resolved "https://registry.yarnpkg.com/async/-/async-3.1.0.tgz#42b3b12ae1b74927b5217d8c0016baaf62463772"
-  integrity sha512-4vx/aaY6j/j3Lw3fbCHNWP0pPaTCew3F6F3hYyl/tHs/ndmV1q7NW9T5yuJ2XAGwdQrP+6Wu20x06U4APo/iQQ==
+  version "3.1.1"
+  resolved "https://registry.yarnpkg.com/async/-/async-3.1.1.tgz#dd3542db03de837979c9ebbca64ca01b06dc98df"
+  integrity sha512-X5Dj8hK1pJNC2Wzo2Rcp9FBVdJMGRR/S7V+lH46s8GVFhtbo5O4Le5GECCF/8PISVdkUA6mMPvgz7qTTD1rf1g==
 
 async@^2.1.4, async@^2.6.1, async@^2.6.2:
   version "2.6.3"
@@ -7467,10 +7467,10 @@ electron-updater@^4.2.0:
     pako "^1.0.10"
     semver "^6.3.0"
 
-electron@^8.0.0-beta.9:
-  version "8.0.0-beta.9"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-8.0.0-beta.9.tgz#2ffb042398991d382656f51284839589fd1515ed"
-  integrity sha512-5aVB7ixySU5WF4p4NiGN/378idgOLSggEh80FfvKzbE5kKmegWA4m0mppkypwMWAVFzNcVubkI6vE0rerFQZKw==
+electron@^8.0.0:
+  version "8.0.0"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-8.0.0.tgz#b5f105cda6985ca2f2496de15e44b2bbb0c8e4f4"
+  integrity sha512-vBXUKRqTUq0jv1upvISdvScDDH3uCPwXj4eA5BeR3UDbJp2hOhq7eJxwjIQbfLQql98aYz4X6pSlzBnhfyQqHA==
   dependencies:
     "@electron/get" "^1.0.1"
     "@types/node" "^12.0.12"
@@ -8941,7 +8941,7 @@ har-validator@~5.1.0:
 
 harmony-patcher@Nexus-Mods/harmony-patcher:
   version "0.1.6"
-  resolved "https://codeload.github.com/Nexus-Mods/harmony-patcher/tar.gz/8e449f218a2cab41eaef5dab2933135522cac5aa"
+  resolved "https://codeload.github.com/Nexus-Mods/harmony-patcher/tar.gz/bde302ace80ecc5acb68301e310a2f951b189c57"
   dependencies:
     async "^2.6.2"
     copyfiles "^1.0.0"
@@ -11884,9 +11884,9 @@ node-gyp@^3.8.0:
     which "1"
 
 node-gyp@^5.0.7:
-  version "5.0.7"
-  resolved "https://registry.yarnpkg.com/node-gyp/-/node-gyp-5.0.7.tgz#dd4225e735e840cf2870e4037c2ed9c28a31719e"
-  integrity sha512-K8aByl8OJD51V0VbUURTKsmdswkQQusIvlvmTyhHlIT1hBvaSxzdxpSle857XuXa7uc02UEZx9OR5aDxSWS5Qw==
+  version "5.1.0"
+  resolved "https://registry.yarnpkg.com/node-gyp/-/node-gyp-5.1.0.tgz#8e31260a7af4a2e2f994b0673d4e0b3866156332"
+  integrity sha512-OUTryc5bt/P8zVgNUmC6xdXiDJxLMAW8cF5tLQOT9E5sOQj+UeQxnnPy74K3CLCa/SOjjBlbuzDLR8ANwA+wmw==
   dependencies:
     env-paths "^2.2.0"
     glob "^7.1.4"

@@ -12,8 +12,10 @@ import opn from '../../util/opn';
 import { IAvailableExtension, IExtension, ISelector } from './types';
 import { downloadAndInstallExtension, selectorMatch } from './util';
 
+import { app, remote } from 'electron';
 import * as React from 'react';
 import { Button, ListGroup, ListGroupItem, ModalHeader } from 'react-bootstrap';
+import * as semver from 'semver';
 
 const NEXUS_MODS_URL: string = 'http://nexusmods.com/site/mods/';
 
@@ -49,6 +51,19 @@ interface IConnectedProps {
 }
 
 type IProps = IBrowseExtensionsProps & IConnectedProps;
+
+const version = (() => {
+  let result: string;
+
+  return () => {
+    if (result === undefined) {
+      const electronApp = remote !== undefined ? remote.app : app;
+      result = electronApp.getVersion();
+    }
+
+    return result;
+  };
+})();
 
 function nop() {
   // nop
@@ -114,12 +129,21 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
     return lhs.name.localeCompare(rhs.name);
   }
 
+  private isCompatible(ext: IAvailableExtension): boolean {
+    if ((ext.dependencies === undefined)
+        || (ext.dependencies['vortex'] === undefined)) {
+      return true;
+    }
+
+    return semver.satisfies(version(), ext.dependencies['vortex']);
+  }
+
   private isInstalled(ext: IAvailableExtension): boolean {
     const { extensions } = this.props;
 
     return Object.values(extensions)
-      .find(iter => iter.modId === ext.modId
-                 || iter.name === ext.name) !== undefined;
+      .find(iter => ((ext.modId !== undefined) && (iter.modId === ext.modId))
+                 || (iter.name === ext.name)) !== undefined;
   }
 
   private renderListEntry = (ext: IAvailableExtension, idx: number) => {
@@ -133,11 +157,14 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
     }
 
     const installed = this.isInstalled(ext);
+    const incompatible = !this.isCompatible(ext);
 
     const action = (installing.indexOf(ext.name) !== -1)
       ? <Spinner />
       : installed
         ? <div>{t('Installed')}</div>
+        : incompatible
+        ? <div>{t('Incompatible')}</div>
         : (
           <a
             className='extension-subscribe'
@@ -158,7 +185,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
         data-github={ext.github}
         data-githubrawpath={ext.githubRawPath}
         onClick={this.select}
-        disabled={installed}
+        disabled={installed || incompatible}
       >
         <div className='extension-header'>
           <div>
@@ -269,8 +296,13 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
   private install = (evt: React.MouseEvent<any>) => {
     const { availableExtensions } = this.props;
 
-    const modId = parseInt(evt.currentTarget.getAttribute('data-modid'), 10);
-    const ext = availableExtensions.find(iter => iter.modId === modId);
+    const modIdStr = evt.currentTarget.getAttribute('data-modid');
+    const modId = modIdStr !== null ? parseInt(modIdStr, 10) : undefined;
+    const github = evt.currentTarget.getAttribute('data-github');
+    const githubRawPath = evt.currentTarget.getAttribute('data-githubrawpath');
+
+    const ext = availableExtensions.find(iter =>
+      selectorMatch(iter, { modId, github, githubRawPath }));
 
     this.nextState.installing.push(ext.name);
 
@@ -299,9 +331,13 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
   private openPage = (evt: React.MouseEvent<any>) => {
     const { availableExtensions } = this.props;
 
-    const modId = parseInt(evt.currentTarget.getAttribute('data-modid'), 10);
+    const modIdStr = evt.currentTarget.getAttribute('data-modid');
+    const modId = modIdStr !== null ? parseInt(modIdStr, 10) : undefined;
+    const github = evt.currentTarget.getAttribute('data-github');
+    const githubRawPath = evt.currentTarget.getAttribute('data-githubrawpath');
 
-    const ext = availableExtensions.find(iter => iter.modId === modId);
+    const ext = availableExtensions.find(iter =>
+      selectorMatch(iter, { modId, github, githubRawPath }));
     opn(NEXUS_MODS_URL + ext.modId);
   }
 }
