@@ -17,6 +17,7 @@ import { TFunction } from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
 import { Button, Panel, Popover } from 'react-bootstrap';
+import { Provider } from 'react-redux';
 
 export interface IBaseProps {
   t: TFunction;
@@ -87,10 +88,12 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
             </div>
             {
               modCount !== undefined
-                ? <div className='active-mods'>
+                ? (
+                  <div className='active-mods'>
                     <Icon name='mods' />
                     <span>{t('{{ count }} active mod', { count: modCount })}</span>
                   </div>
+                )
                 : null
             }
           </div>
@@ -152,24 +155,26 @@ class GameThumbnail extends PureComponentEx<IProps, {}> {
       : 'undiscovered';
     const gameInfoPopover = (
       <Popover id={`popover-info-${game.id}`} className='popover-game-info' >
-        <IconBar
-          id={`game-thumbnail-${game.id}`}
-          className='buttons'
-          group={`game-${groupType}-buttons`}
-          instanceId={game.id}
-          staticElements={[]}
-          collapse={false}
-          buttonType='text'
-          orientation='vertical'
-          filter={this.lowPriorityButtons}
-          t={t}
-        />
-        <GameInfoPopover
-          t={t}
-          game={game}
-          onRefreshGameInfo={onRefreshGameInfo}
-          onChange={this.redraw}
-        />
+        <Provider store={this.context.api.store}>
+          <IconBar
+            id={`game-thumbnail-${game.id}`}
+            className='buttons'
+            group={`game-${groupType}-buttons`}
+            instanceId={game.id}
+            staticElements={[]}
+            collapse={false}
+            buttonType='text'
+            orientation='vertical'
+            filter={this.lowPriorityButtons}
+            t={t}
+          />
+          <GameInfoPopover
+            t={t}
+            game={game}
+            onRefreshGameInfo={onRefreshGameInfo}
+            onChange={this.redraw}
+          />
+        </Provider>
       </Popover>
     );
 
