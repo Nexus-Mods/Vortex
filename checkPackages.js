@@ -31,6 +31,8 @@ function checkVersions() {
     if (develLock[devKey].version !== releaseLock[key].version) {
       console.error('Version mismatch!', key, releaseLock[key].version, 'vs', develLock[devKey].version);
       valid = false;
+    } else if (develLock[devKey].resolved !== releaseLock[key].resolved) {
+      console.error('Same version but different commit id', key);
     }
   });
   return valid;

@@ -694,7 +694,7 @@ function init(context: IExtensionContextExt): boolean {
             }
           })
           .catch(err => {
-            log('warn', 'failed to look up mod info', err.message);
+            log('warn', 'failed to look up mod info', err);
           });
       });
     });
