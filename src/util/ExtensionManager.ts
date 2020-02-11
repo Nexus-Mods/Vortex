@@ -38,7 +38,7 @@ import { registerSanityCheck, SanityCheck } from './reduxSanity';
 import runElevatedCustomTool from './runElevatedCustomTool';
 import { activeGameId } from './selectors';
 import { getSafe } from './storeHelper';
-import StyleManagerT from './StyleManager';
+import StyleManager from './StyleManager';
 import { setdefault, truthy } from './util';
 
 import Promise from 'bluebird';
@@ -447,7 +447,7 @@ class ExtensionManager {
   private mApi: IExtensionApi;
   private mTranslator: i18n;
   private mEventEmitter: NodeJS.EventEmitter;
-  private mStyleManager: StyleManagerT;
+  private mStyleManager: StyleManager;
   private mReduxWatcher: any;
   private mWatches: IWatcherRegistry = {};
   private mProtocolHandlers: { [protocol: string]: (url: string, install: boolean) => void } = {};
@@ -549,7 +549,6 @@ class ExtensionManager {
       this.mExtensionState = ipcRenderer.sendSync('__get_extension_state');
     }
     if (remote !== undefined) {
-      const StyleManager = require('./StyleManager').default;
       this.mStyleManager = new StyleManager(this.mApi);
     }
     this.mExtensions = this.loadExtensions();

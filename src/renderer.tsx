@@ -51,12 +51,7 @@ if (SetProcessPreferredUILanguages !== undefined) {
   SetProcessPreferredUILanguages(['en-US']);
 }
 
-import getVortexPath from './util/getVortexPath';
-
 import * as path from 'path';
-
-process.env.SASS_BINARY_PATH = path.resolve(getVortexPath('modules'), 'node-sass', 'bin',
-  `${process.platform}-${process.arch}-${process.versions.modules}`, 'node-sass.node');
 
 import { addNotification, setupNotificationSuppression } from './actions/notifications';
 import reducer, { Decision } from './reducers/index';
