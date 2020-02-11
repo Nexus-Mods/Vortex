@@ -89,6 +89,7 @@
     "shortid": "^2.2.15",
     "simple-vdf": "Nexus-Mods/vdf-parser",
     "string-template": "^1.0.0",
+    "source-map-support": "^0.5.16",
     "tmp": "^0.1.0",
     "turbowalk": "Nexus-Mods/node-turbowalk",
     "uuid": "^3.3.3",
