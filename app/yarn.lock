@@ -1096,23 +1096,10 @@ ecc-jsbn@~0.1.1:
     jsbn "~0.1.0"
     safer-buffer "^2.1.0"
 
-edge-cs@1.2.1:
-  version "1.2.1"
-  resolved "https://registry.yarnpkg.com/edge-cs/-/edge-cs-1.2.1.tgz#bd1a9ecdb94ef0ed40c894582046749e57045e5a"
-  integrity sha1-vRqezblO8O1AyJRYIEZ0nlcEXlo=
-
 ee-first@1.1.1:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/ee-first/-/ee-first-1.1.1.tgz#590c61156b0ae2f4f0255732a158b266bc56b21d"
   integrity sha1-WQxhFWsK4vTwJVcyoViyZrxWsh0=
-
-electron-edge-js@^12.4.1:
-  version "12.8.1"
-  resolved "https://registry.yarnpkg.com/electron-edge-js/-/electron-edge-js-12.8.1.tgz#d964682b8551ce9020ae233cba020d624dd5c69d"
-  integrity sha512-yoKx9EUXUqNysjaHEaIum49fgKcS27wMC35OGVPVXIHhCSJsMJxW3dPvlNyB92IyVA6ghLveC3pFoGTxP3tGnA==
-  dependencies:
-    edge-cs "1.2.1"
-    nan "^2.14.0"
 
 electron-redux@TanninOne/electron-redux:
   version "1.4.3-sync"
@@ -1342,8 +1329,8 @@ flux-standard-action@^2.0.0:
     lodash "^4.17.15"
 
 fomod-installer@Nexus-Mods/fomod-installer:
-  version "0.1.18"
-  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/5ce455f02d922d1a671de6e97bb7c0a63ff6ce2d"
+  version "0.2.3"
+  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/0d79e155a0a75c0a6d99d3374565a52702dc5187"
   dependencies:
     async "^2.6.2"
     copyfiles "^1.0.0"
@@ -2033,10 +2020,9 @@ levelup@^4.3.2:
     level-supports "~1.0.0"
     xtend "~4.0.0"
 
-libxmljs@^0.19.7:
+libxmljs@TanninOne/libxmljs:
   version "0.19.7"
-  resolved "https://registry.yarnpkg.com/libxmljs/-/libxmljs-0.19.7.tgz#96c2151b0b73f33dd29917edec82902587004e5a"
-  integrity sha512-lFJyG9T1mVwTzNTw6ZkvIt0O+NsIR+FTE+RcC2QDFGU8YMnQrnyEOGrj6HWSe1AdwQK7s37BOp4NL+pcAqfK2g==
+  resolved "https://codeload.github.com/TanninOne/libxmljs/tar.gz/898a7731025993c168967772fd383368d4659e94"
   dependencies:
     bindings "~1.3.0"
     nan "~2.14.0"
@@ -2394,6 +2380,11 @@ node-abi@^2.7.0:
   integrity sha512-9HrZGFVTR5SOu3PZAnAY2hLO36aW1wmA+FDsVkr85BTST32TLCA1H/AEcatVRAsWLyXS3bqUDYCAjq5/QGuSTA==
   dependencies:
     semver "^5.4.1"
+
+node-gyp-build@^4.1.0:
+  version "4.2.0"
+  resolved "https://registry.yarnpkg.com/node-gyp-build/-/node-gyp-build-4.2.0.tgz#2c2b05f461f4178641a6ce2d7159f04094e9376d"
+  integrity sha512-4oiumOLhCDU9Rronz8PZ5S4IvT39H5+JEv/hps9V8s7RSLhsac0TCP78ulnHXOo8X1wdpPiTayGlM1jr4IbnaQ==
 
 node-gyp-build@~4.1.0:
   version "4.1.1"
@@ -4233,3 +4224,10 @@ yargs@^7.0.0:
     which-module "^1.0.0"
     y18n "^3.2.1"
     yargs-parser "^5.0.0"
+
+zeromq@^6.0.0-beta.6:
+  version "6.0.0-beta.6"
+  resolved "https://registry.yarnpkg.com/zeromq/-/zeromq-6.0.0-beta.6.tgz#2b8934cafce735ea9007fd3074ec8aca9bf11204"
+  integrity sha512-wLf6M7pBHijl+BRltUL2VoDpgbQcOZetiX8UzycHL8CcYFxYnRrpoG5fi3UX3+Umavz1lk4/dGaQez8qiDgr/Q==
+  dependencies:
+    node-gyp-build "^4.1.0"

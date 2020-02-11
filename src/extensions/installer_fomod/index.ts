@@ -7,8 +7,6 @@ import {
 import { ITestResult } from '../../types/ITestResult';
 import { DataInvalid, SetupError, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
-import getVortexPath from '../../util/getVortexPath';
-import lazyRequire from '../../util/lazyRequire';
 import { log } from '../../util/log';
 import {truthy} from '../../util/util';
 
@@ -25,20 +23,16 @@ import {
 import { checkAssemblies, getNetVersion } from './util/netVersion';
 import InstallerDialog from './views/InstallerDialog';
 
-import Promise from 'bluebird';
+import { ChildProcess } from 'child_process';
 import { app as appIn, remote } from 'electron';
-import * as edgeT from 'electron-edge-js';
-const edge = lazyRequire<typeof edgeT>(() => require('electron-edge-js'));
+import { createIPC } from 'fomod-installer';
 import * as path from 'path';
 import * as semver from 'semver';
+import { generate as shortid } from 'shortid';
 import * as util from 'util';
+import { Pair } from 'zeromq';
 
 const app = appIn !== undefined ? appIn : remote.app;
-
-let testSupportedLib;
-let installLib;
-
-const basePath = path.join(getVortexPath('modules_unpacked'), 'fomod-installer', 'dist');
 
 function transformError(err: any): Error {
   let result: Error;
@@ -124,104 +118,6 @@ function transformError(err: any): Error {
   return result;
 }
 
-function assertEdgeValid() {
-  if (typeof(edge.func) !== 'function') {
-    log('error', 'edge.func isn\'t a function', { type: typeof(edge.func) });
-    throw new SetupError(
-      '.Net interface library not loaded correctly. This usually means your .Net framework '
-      + 'is damaged or outdated. Please report this only if you have further insight into '
-      + 'what might have caused this and how to fix.');
-  }
-}
-
-function tsLib() {
-  if (testSupportedLib === undefined) {
-    try {
-      assertEdgeValid();
-      testSupportedLib = edge.func({
-        assemblyFile: path.join(basePath, 'ModInstaller.dll'),
-        typeName: 'FomodInstaller.ModInstaller.InstallerProxy',
-        methodName: 'TestSupported',
-      });
-    } catch (err) {
-      if (err.message.startsWith('error: 126')) {
-        const newErr = new SetupError(
-          'Failed to load the fomod support library. This is an indication your .Net '
-          + 'installation is invalid or outdated.');
-        newErr.stack = err.stack;
-        throw newErr;
-      }
-      throw err.Data === undefined ? err : transformError(err);
-    }
-  }
-  return testSupportedLib;
-}
-
-function testSupportedScripted(files: string[]): Promise<ISupportedResult> {
-  const testSupported = tsLib();
-  return new Promise<ISupportedResult>((resolve, reject) => {
-    testSupported({files, allowedTypes: ['XmlScript', 'CSharpScript']},
-                  (err: Error, result: ISupportedResult) => {
-      if ((err !== null) && (err !== undefined)) {
-        reject(transformError(err));
-      } else {
-        resolve(result);
-      }
-    });
-  });
-}
-
-function testSupportedFallback(files: string[]): Promise<ISupportedResult> {
-  const testSupported = tsLib();
-  return new Promise<ISupportedResult>((resolve, reject) => {
-    testSupported({files, allowedTypes: ['Basic']},
-                  (err: Error, result: ISupportedResult) => {
-      if ((err !== null) && (err !== undefined)) {
-        reject(transformError(err));
-      } else {
-        resolve(result);
-      }
-    });
-  });
-}
-
-let currentInstallPromise: Promise<any> = Promise.resolve();
-
-function install(files: string[],
-                 stopPatterns: string[],
-                 pluginPath: string,
-                 scriptPath: string,
-                 progressDelegate: ProgressDelegate,
-                 coreDelegates: Core): Promise<IInstallResult> {
-  if (installLib === undefined) {
-    try {
-      assertEdgeValid();
-      installLib = edge.func({
-        assemblyFile: path.join(basePath, 'ModInstaller.dll'),
-        typeName: 'FomodInstaller.ModInstaller.InstallerProxy',
-        methodName: 'Install',
-      });
-    } catch (err) {
-      return Promise.reject(err.Data === undefined ? err : transformError(err));
-    }
-  }
-
-  currentInstallPromise = new Promise((resolve, reject) => {
-    installLib({ files, stopPatterns, pluginPath,
-                 scriptPath, progressDelegate, coreDelegates },
-      (err: Error, result: any) => {
-        if ((err !== null) && (err !== undefined)) {
-          reject(transformError(err));
-        } else {
-          resolve(result);
-        }
-      });
-  }).finally(() => {
-    currentInstallPromise = Promise.resolve();
-  });
-  return currentInstallPromise;
-}
-
 function processAttributes(input: any, modPath: string): Promise<any> {
   if (modPath === undefined) {
     return Promise.resolve({});
@@ -281,22 +177,183 @@ function checkNetInstall() {
   }
 }
 
+interface IAwaitingPromise {
+  resolve: (data: any) => void;
+  reject: (err: Error) => void;
+}
+
+class ConnectionIPC {
+  public static async bind(): Promise<ConnectionIPC> {
+    const socket = new Pair();
+    // connect to random free port
+    await socket.bind('tcp://127.0.0.1:*');
+    // invoke the c# installer, passing the port
+    const proc: ChildProcess = await createIPC(socket.lastEndpoint.split(':')[2]);
+
+    // wait until the child process has actually connected, any error in this phase
+    // probably means it's not going to happen...
+    await new Promise((resolve, reject) => {
+      let wasResolved = false;
+      socket.events.on('accept', () => {
+        if (!wasResolved) {
+          resolve();
+          wasResolved = true;
+        }
+      });
+
+      proc.stderr.on('data', (dat: Buffer) => {
+        const errorMessage = dat.toString();
+        log('error', 'from installer: ', errorMessage);
+        if (!wasResolved) {
+          reject(new Error(errorMessage));
+          wasResolved = true;
+        }
+      });
+    });
+
+    return new ConnectionIPC(socket, proc);
+  }
+
+  private mSocket: Pair;
+  private mProcess: ChildProcess;
+  private mAwaitedReplies: { [id: string]: IAwaitingPromise } = {};
+  private mDelegates: { [id: string]: Core } = {};
+
+  constructor(socket: Pair, proc: ChildProcess) {
+    this.mSocket = socket;
+    this.mProcess = proc;
+  }
+
+  public handleMessages() {
+    this.receiveNext();
+  }
+
+  public isActive(): boolean {
+    // kill accepts numeric signal codes and returns a boolean to signal success
+    // For some reason the type declaration is incomplete
+    return (this.mProcess.kill as any)(0);
+  }
+
+  public async sendMessage(command: string, data: any, delegate?: Core): Promise<any> {
+    const id = shortid();
+
+    const res = new Promise((resolve, reject) => {
+      this.mAwaitedReplies[id] = { resolve, reject };
+      if (delegate !== undefined) {
+        this.mDelegates[id] = delegate;
+      }
+    });
+
+    this.mSocket.send(JSON.stringify({
+      id,
+      payload: {
+        ...data,
+        command,
+      },
+    }));
+    return res;
+  }
+
+  private processData(msg: Buffer) {
+    const data = JSON.parse(msg.toString(), (key: string, value: any) => {
+      if (truthy(value) && (typeof(value) === 'object')) {
+        Object.keys(value).forEach(subKey => {
+          if (truthy(value[subKey])
+              && (typeof(value[subKey]) === 'object')
+              && (value[subKey].__callback !== undefined)) {
+            const callbackId = value[subKey].__callback;
+            value[subKey] = (...args: any[]) => {
+              this.sendMessage('Invoke', {
+                requestId: data.id,
+                callbackId,
+                args,
+              });
+            };
+          }
+        });
+      }
+      return value;
+    });
+    if ((data.callback !== null)
+        && (this.mDelegates[data.callback.id] !== undefined)) {
+      const func = this.mDelegates[data.callback.id][data.callback.type][data.data.name];
+      func(...data.data.args, (err, response) => {
+        this.sendMessage(`Reply`, { request: data, data: response, error: err });
+      });
+    } else if (this.mAwaitedReplies[data.id] !== undefined) {
+      if (data.error !== null) {
+        const err = new Error(data.error.message);
+        err.stack = data.error.stack;
+        this.mAwaitedReplies[data.id].reject(err);
+      } else {
+        this.mAwaitedReplies[data.id].resolve(data.data);
+      }
+      delete this.mAwaitedReplies[data.id];
+    }
+  }
+
+  private receiveNext(): void {
+    this.mSocket.receive().then(data => {
+      data.forEach(dat => this.processData(dat));
+      this.receiveNext();
+    });
+  }
+}
+
+const ensureConnected = (() => {
+  let conn: ConnectionIPC;
+  return async (): Promise<ConnectionIPC> => {
+    if ((conn === undefined) || !conn.isActive()) {
+      conn = await ConnectionIPC.bind();
+      conn.handleMessages();
+    }
+    return Promise.resolve(conn);
+  };
+})();
+
+async function testSupportedScripted(files: string[]): Promise<ISupportedResult> {
+  const connection = await ensureConnected();
+
+  return connection.sendMessage('TestSupported',
+                                { files, allowedTypes: ['XmlScript', 'CSharpScript'] });
+}
+
+async function testSupportedFallback(files: string[]): Promise<ISupportedResult> {
+  const connection = await ensureConnected();
+
+  return connection.sendMessage('TestSupported', { files, allowedTypes: ['Basic'] });
+}
+
+async function install(files: string[],
+                       stopPatterns: string[],
+                       pluginPath: string,
+                       scriptPath: string,
+                       progressDelegate: ProgressDelegate,
+                       coreDelegates: Core): Promise<IInstallResult> {
+  const connection = await ensureConnected();
+
+  return connection.sendMessage('Install',
+                                { files, stopPatterns, pluginPath, scriptPath },
+                                coreDelegates);
+}
+
 function init(context: IExtensionContext): boolean {
-  const installWrap = (files, scriptPath, gameId, progressDelegate) => {
+  const installWrap = async (files, scriptPath, gameId, progressDelegate) => {
     const coreDelegates = new Core(context.api, gameId);
     const stopPatterns = getStopPatterns(gameId, getGame(gameId));
     const pluginPath = getPluginPath(gameId);
-    return currentInstallPromise
-      .then(() => {
-        context.api.store.dispatch(setInstallerDataPath(scriptPath));
-        return install(files, stopPatterns, pluginPath,
-          scriptPath, progressDelegate, coreDelegates);
-      })
-      .catch((err) => {
-        context.api.store.dispatch(endDialog());
-        return Promise.reject(err);
-      })
-      .finally(() => coreDelegates.detach());
+    // await currentInstallPromise;
+
+    context.api.store.dispatch(setInstallerDataPath(scriptPath));
+    try {
+      return await install(files, stopPatterns, pluginPath,
+        scriptPath, progressDelegate, coreDelegates);
+    } catch (err) {
+      context.api.store.dispatch(endDialog());
+      return Promise.reject(err);
+    } finally {
+      coreDelegates.detach();
+    }
   };
 
   context.registerInstaller('fomod', 20, testSupportedScripted, installWrap);

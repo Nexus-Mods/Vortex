@@ -202,7 +202,6 @@
     "dnd-core": "^9.4.0",
     "draggabilly": "^2.2.0",
     "drivelist": "TanninOne/drivelist",
-    "electron-edge-js": "^12.4.1",
     "electron-redux": "TanninOne/electron-redux",
     "electron-updater": "^4.2.0",
     "encoding-down": "^6.3.0",
@@ -221,8 +220,8 @@
     "json-socket": "foi/node-json-socket",
     "leveldown": "^5.4.1",
     "levelup": "^4.3.2",
-    "libxmljs": "^0.19.7",
     "lodash": "^4.17.15",
+    "libxmljs": "TanninOne/libxmljs",
     "minimatch": "^3.0.4",
     "modmeta-db": "Nexus-Mods/modmeta-db",
     "msgpack": "^1.0.3",
@@ -271,6 +270,7 @@
     "winapi-bindings": "Nexus-Mods/node-winapi-bindings",
     "winston": "^2.4.3",
     "write-file-atomic": "^3.0.1",
-    "ws": "^7.2.0"
+    "ws": "^7.2.0",
+    "zeromq": "^6.0.0-beta.6"
   }
 }

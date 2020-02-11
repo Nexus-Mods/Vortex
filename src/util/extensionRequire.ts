@@ -1,16 +1,11 @@
 import ExtensionManager from './ExtensionManager';
 
-import {app as appIn, remote} from 'electron';
 import {} from 'module';
-import * as path from 'path';
 import { dynreq } from 'vortex-run';
 
 // tslint:disable-next-line:no-var-requires
 const Module = require('module');
 
-const app = appIn || remote.app;
-
-const extensionsPath = path.join(app.getPath('userData'), 'plugins');
 import * as api from '../index';
 
 /**
