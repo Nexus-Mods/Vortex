@@ -46,12 +46,12 @@ const ARG_COUNTS = {
 // their api, basically breaking all sensible user-facing clis:
 // https://github.com/electron/electron/issues/20322
 //
-// Fortunately looking at the code at least chrome seems to keep the order of switches and
+// Fortunately, looking at the code, at least chrome seems to keep the order of switches and
 // arguments so since we don't have positional arguments and as long as we know which
 // switches expect an argument and as long as the
 // command line passed in is valid, we should be able to reconstruct it.
 function electronIsShitArgumentSort(argv: string[]): string[] {
-  const firstArgumentIdx = argv.findIndex((arg, idx) => (idx !== 0) && !arg.startsWith('-'));
+  const firstArgumentIdx = argv.findIndex((arg, idx) => (idx > 1) && !arg.startsWith('-'));
   const switches = argv.slice(1, firstArgumentIdx - 1);
   const args = argv.slice(firstArgumentIdx);
   let nextArg = 0;
@@ -97,9 +97,17 @@ function parseCommandline(argv: string[], electronIsShitHack: boolean): IParamet
     }
   }
 
+  let version: string = '1.0.0';
+  try {
+    // won't happen in regular operation but lets us test this function outside vortex
+    version = app.getVersion();
+  } catch (err) {
+    // nop
+  }
+
   const commandLine = program
     .command('Vortex')
-    .version(app.getVersion())
+    .version(version)
     .option('-d, --download [url]', 'Start downloadling the specified url '
                                   + '(any supported protocol like nxm:, https:, ...).')
     .option('-i, --install [url]', 'Start downloadling & installing the specified url '
