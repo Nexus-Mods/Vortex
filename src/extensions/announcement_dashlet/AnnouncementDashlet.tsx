@@ -41,7 +41,9 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
 
     return (
       <Dashlet className='dashlet-announcement' title={t('Announcements')}>
-        {filtered.length > 0 ? this.renderContent(filtered) : this.renderPlaceholder()}
+        <div className='list-announcements-container'>
+          {filtered.length > 0 ? this.renderContent(filtered) : this.renderPlaceholder()}
+        </div>
       </Dashlet>
     );
   }
