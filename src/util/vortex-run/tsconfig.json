@@ -12,7 +12,8 @@
         "sourceMap": false,
         "jsx":"react",
         "declaration": true,
-        "skipLibCheck": true
+        "skipLibCheck": true,
+        "esModuleInterop": true
     },
     "files": [
         "./src/index.ts"
