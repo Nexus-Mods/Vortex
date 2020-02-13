@@ -114,8 +114,11 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
         (layoutMap[lhs.title] || lhs.position) - (layoutMap[rhs.title] || rhs.position))
       ;
 
-    const fixed = sorted.filter(dash => dash.fixed);
-    const dynamic = sorted.filter(dash => !dash.fixed);
+    const { fixed, dynamic } = sorted.reduce((prev, dash) => {
+      const isFixed = getSafe(dashletSettings, [dash.title, 'fixed'], dash.fixed);
+      prev[isFixed ? 'fixed' : 'dynamic'].push(dash);
+      return prev;
+    }, { fixed: [], dynamic: [] });
 
     return (
       <MainPage id='page-dashboard' className='page-dashboard'>

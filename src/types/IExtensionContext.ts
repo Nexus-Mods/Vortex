@@ -124,8 +124,12 @@ export interface IDashletOptions {
   closable?: boolean;
 }
 
+/**
+ * @param height Height of the dashlet in rows. Please note that 1 row is very slim, it's not
+ *               commonly used in practice
+ */
 export type RegisterDashlet =
-  (title: string, width: 1 | 2 | 3, height: 1 | 2 | 3 | 4 | 5, position: number,
+  (title: string, width: 1 | 2 | 3, height: 1 | 2 | 3 | 4 | 5 | 6, position: number,
    component: React.ComponentClass<any> | React.FunctionComponent<any>,
    isVisible: (state) => boolean,
    props: PropsCallback, options: IDashletOptions) => void;

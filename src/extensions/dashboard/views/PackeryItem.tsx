@@ -82,6 +82,7 @@ class PackeryItem extends React.Component<IProps, IPackeryItemState> {
   }
 
   private renderDragHandle() {
+    const { height, width } = this.props;
     return [(
       <Icon
         key='drag-icon'
@@ -98,17 +99,16 @@ class PackeryItem extends React.Component<IProps, IPackeryItemState> {
           instanceId='42'
           actions={[
             { title: 'Width', icon: null, show: true },
-            { title: '33%', show: true, action: this.setWidth1 },
-            { title: '66%', show: true, action: this.setWidth2 },
-            { title: '100%', show: true, action: this.setWidth3 },
+            { title: '33%', show: width !== 1, action: this.setWidth1 },
+            { title: '66%', show: width !== 2, action: this.setWidth2 },
+            { title: '100%', show: width !== 3, action: this.setWidth3 },
             { title: 'Height', icon: null, show: true },
-            { title: '1', show: true, action: this.setHeight1 },
-            { title: '2', show: true, action: this.setHeight2 },
-            { title: '3', show: true, action: this.setHeight3 },
-            { title: '4', show: true, action: this.setHeight4 },
-            { title: '5', show: true, action: this.setHeight5 },
-            { title: '6', show: true, action: this.setHeight6 },
-            { title: 'Fit Content', show: true, action: this.setHeight0 },
+            { title: '1', show: height !== 2, action: this.setHeight2 },
+            { title: '2', show: height !== 3, action: this.setHeight3 },
+            { title: '3', show: height !== 4, action: this.setHeight4 },
+            { title: '4', show: height !== 5, action: this.setHeight5 },
+            { title: '5', show: height !== 6, action: this.setHeight6 },
+            { title: 'Fit Content', show: height !== 0, action: this.setHeight0 },
           ]}
         />
       )];

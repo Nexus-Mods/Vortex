@@ -3,11 +3,6 @@
   background-color: $brand-menu;
   padding: $half-gutter;
   height: 100%;
-  h2 {
-    margin-top: 0;
-    text-transform: uppercase;
-    font-family: $font-family-headings;
-  }
   li {
     border: 0px;
     background-color: lighten($brand-menu, 5%);
@@ -232,6 +227,13 @@
       height: $dashlet-height * $i
     }
   }
+}
+
+.dashlet-title {
+  font-size: 2rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  font-family: $font-family-headings;
 }
 
 .dashlet-game-title {
