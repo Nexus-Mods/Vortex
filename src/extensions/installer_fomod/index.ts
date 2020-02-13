@@ -43,6 +43,8 @@ function transformError(err: any): Error {
       // weeell, we don't actually know if it was the user who cancelled...
       ? new UserCanceled()
       : new Error(err);
+  } else if (err.name === 'System.Threading.Tasks.TaskCanceledException') {
+    result = new UserCanceled();
   } else if (err.name === 'System.IO.FileNotFoundException') {
     if (err.FileName !== undefined) {
       if (err.FileName.indexOf('PublicKeyToken') !== -1) {
@@ -233,15 +235,17 @@ class ConnectionIPC {
     this.mSocket = socket;
     this.mProcess = proc;
 
-    proc.on('exit', async (code, signal) => {
-      log(code === 0 ? 'info' : 'error', 'remote process exited', { code, signal });
-      try {
-        await socket.unbind(socket.lastEndpoint);
-        this.interrupt(new Error(`Installer process quit unexpectedly (Code ${code})`));
-      } catch (err) {
-        log('warn', 'failed to close connection to fomod installer process', err.message);
-      }
-    });
+    if (proc !== null) {
+      proc.on('exit', async (code, signal) => {
+        log(code === 0 ? 'info' : 'error', 'remote process exited', { code, signal });
+        try {
+          await socket.unbind(socket.lastEndpoint);
+          this.interrupt(new Error(`Installer process quit unexpectedly (Code ${code})`));
+        } catch (err) {
+          log('warn', 'failed to close connection to fomod installer process', err.message);
+        }
+      });
+    }
 
     socket.events.on('disconnect', async () => {
       log('info', 'remote was disconnected');
@@ -301,11 +305,11 @@ class ConnectionIPC {
 
   private processData(msg: Buffer) {
     const data = JSON.parse(msg.toString(), (key: string, value: any) => {
-      if (truthy(value) && (typeof(value) === 'object')) {
+      if (truthy(value) && (typeof (value) === 'object')) {
         Object.keys(value).forEach(subKey => {
           if (truthy(value[subKey])
-              && (typeof(value[subKey]) === 'object')
-              && (value[subKey].__callback !== undefined)) {
+            && (typeof (value[subKey]) === 'object')
+            && (value[subKey].__callback !== undefined)) {
             const callbackId = value[subKey].__callback;
             value[subKey] = (...args: any[]) => {
               this.sendMessageInner('Invoke', {
@@ -313,9 +317,9 @@ class ConnectionIPC {
                 callbackId,
                 args,
               })
-              .catch(err => {
-                log('info', 'process data', err.message);
-              });
+                .catch(err => {
+                  log('info', 'process data', err.message);
+                });
             };
           }
         });
@@ -335,6 +339,9 @@ class ConnectionIPC {
       if (data.error !== null) {
         const err = new Error(data.error.message);
         err.stack = data.error.stack;
+        if (truthy(data.error.name)) {
+          err.name = data.error.name;
+        }
         this.mAwaitedReplies[data.id].reject(err);
       } else {
         this.mAwaitedReplies[data.id].resolve(data.data);
