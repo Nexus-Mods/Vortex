@@ -94,9 +94,9 @@ class UI extends DelegateBase {
     }
   }
 
-  private onDialogContinue = (direction) => {
+  private onDialogContinue = (direction, currentStepId: number) => {
     if (this.mContinueCB !== undefined) {
-      this.mContinueCB(direction);
+      this.mContinueCB({ direction, currentStepId });
     }
   }
 

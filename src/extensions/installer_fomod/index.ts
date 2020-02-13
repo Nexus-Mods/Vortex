@@ -38,7 +38,8 @@ function transformError(err: any): Error {
   let result: Error;
   if (typeof(err) === 'string') {
     // I hope these errors aren't localised or something...
-    result = (err === 'The operation was cancelled.')
+    result = ((err === 'The operation was cancelled.')
+              || (err === 'A task was canceled'))
       // weeell, we don't actually know if it was the user who cancelled...
       ? new UserCanceled()
       : new Error(err);
@@ -72,20 +73,20 @@ function transformError(err: any): Error {
     result = new SetupError('The installer tried to access a file with a path longer than 260 '
                         + 'characters. This usually means that your mod staging path is too long.');
   } else if ((err.name === 'System.IO.IOException')
-             && (err.StackTrace.indexOf('System.IO.Path.InternalGetTempFileName'))) {
+             && (err.stack.indexOf('System.IO.Path.InternalGetTempFileName'))) {
     const tempDir = app.getPath('temp');
     result = new SetupError(`Your temp directory "${tempDir}" contains too many files. `
                           + 'You need to clean up that directory. Files in that directory '
                           + 'should be safe to delete (they are temporary after all) but '
                           + 'some will be inaccessible, just ignore those.');
-  } else if ((err.StackTrace.indexOf('XNodeValidator.ValidationCallback') !== -1)
-             || (err.StackTrace.indexOf('XmlTextReaderImpl.ParseXmlDeclaration') !== -1)
-             || (err.StackTrace.indexOf('XmlTextReaderImpl.ParseAttributes') !== -1)
-             || (err.StackTrace.indexOf('XmlScriptType.GetXmlScriptVersion') !== -1)
+  } else if ((err.stack.indexOf('XNodeValidator.ValidationCallback') !== -1)
+             || (err.stack.indexOf('XmlTextReaderImpl.ParseXmlDeclaration') !== -1)
+             || (err.stack.indexOf('XmlTextReaderImpl.ParseAttributes') !== -1)
+             || (err.stack.indexOf('XmlScriptType.GetXmlScriptVersion') !== -1)
              ) {
     result = new DataInvalid('Invalid installer script: ' + err.message);
   } else if ((err.name === 'System.Xml.XmlException')
-             && ((err.StackTrace.indexOf('System.Xml.XmlTextReaderImpl.ParseText') !== -1)
+             && ((err.stack.indexOf('System.Xml.XmlTextReaderImpl.ParseText') !== -1)
                  || (err.message.indexOf('does not match the end tag') !== -1))) {
     result = new DataInvalid('Invalid installer script: ' + err.message);
   } else if (err.name === 'System.AggregateException') {
@@ -185,10 +186,16 @@ interface IAwaitingPromise {
 class ConnectionIPC {
   public static async bind(): Promise<ConnectionIPC> {
     const socket = new Pair();
-    // connect to random free port
-    await socket.bind('tcp://127.0.0.1:*');
-    // invoke the c# installer, passing the port
-    const proc: ChildProcess = await createIPC(socket.lastEndpoint.split(':')[2]);
+    let proc: ChildProcess = null;
+    if (false) {
+      // for debugging purposes, the user has to run the installer manually
+      await socket.bind('tcp://127.0.0.1:12345');
+    } else {
+      // connect to random free port
+      await socket.bind('tcp://127.0.0.1:*');
+      // invoke the c# installer, passing the port
+      proc = await createIPC(socket.lastEndpoint.split(':')[2]);
+    }
 
     // wait until the child process has actually connected, any error in this phase
     // probably means it's not going to happen...
@@ -201,14 +208,16 @@ class ConnectionIPC {
         }
       });
 
-      proc.stderr.on('data', (dat: Buffer) => {
-        const errorMessage = dat.toString();
-        log('error', 'from installer: ', errorMessage);
-        if (!wasResolved) {
-          reject(new Error(errorMessage));
-          wasResolved = true;
-        }
-      });
+      if (proc !== null) {
+        proc.stderr.on('data', (dat: Buffer) => {
+          const errorMessage = dat.toString();
+          log('error', 'from installer: ', errorMessage);
+          if (!wasResolved) {
+            reject(new Error(errorMessage));
+            wasResolved = true;
+          }
+        });
+      }
     });
 
     return new ConnectionIPC(socket, proc);
@@ -218,10 +227,33 @@ class ConnectionIPC {
   private mProcess: ChildProcess;
   private mAwaitedReplies: { [id: string]: IAwaitingPromise } = {};
   private mDelegates: { [id: string]: Core } = {};
+  private mOnInterrupted: (err: Error) => void;
 
   constructor(socket: Pair, proc: ChildProcess) {
     this.mSocket = socket;
     this.mProcess = proc;
+
+    proc.on('exit', async (code, signal) => {
+      log(code === 0 ? 'info' : 'error', 'remote process exited', { code, signal });
+      try {
+        await socket.unbind(socket.lastEndpoint);
+        this.interrupt(new Error(`Installer process quit unexpectedly (Code ${code})`));
+      } catch (err) {
+        log('warn', 'failed to close connection to fomod installer process', err.message);
+      }
+    });
+
+    socket.events.on('disconnect', async () => {
+      log('info', 'remote was disconnected');
+      try {
+        // just making sure, the remote is probably closing anyway
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        this.mProcess.kill();
+        this.interrupt(new Error(`Installer process disconnected unexpectedly`));
+      } catch (err) {
+        // nop
+      }
+    });
   }
 
   public handleMessages() {
@@ -231,10 +263,23 @@ class ConnectionIPC {
   public isActive(): boolean {
     // kill accepts numeric signal codes and returns a boolean to signal success
     // For some reason the type declaration is incomplete
-    return (this.mProcess.kill as any)(0);
+    return (this.mProcess === null) ||  (this.mProcess.kill as any)(0);
   }
 
   public async sendMessage(command: string, data: any, delegate?: Core): Promise<any> {
+    return Promise.race([
+      this.interruptible(),
+      this.sendMessageInner(command, data, delegate),
+    ]);
+  }
+
+  private async interruptible() {
+    return new Promise((resolve, reject) => {
+      this.mOnInterrupted = reject;
+    });
+  }
+
+  private async sendMessageInner(command: string, data: any, delegate?: Core): Promise<any> {
     const id = shortid();
 
     const res = new Promise((resolve, reject) => {
@@ -263,10 +308,13 @@ class ConnectionIPC {
               && (value[subKey].__callback !== undefined)) {
             const callbackId = value[subKey].__callback;
             value[subKey] = (...args: any[]) => {
-              this.sendMessage('Invoke', {
+              this.sendMessageInner('Invoke', {
                 requestId: data.id,
                 callbackId,
                 args,
+              })
+              .catch(err => {
+                log('info', 'process data', err.message);
               });
             };
           }
@@ -278,7 +326,10 @@ class ConnectionIPC {
         && (this.mDelegates[data.callback.id] !== undefined)) {
       const func = this.mDelegates[data.callback.id][data.callback.type][data.data.name];
       func(...data.data.args, (err, response) => {
-        this.sendMessage(`Reply`, { request: data, data: response, error: err });
+        this.sendMessageInner(`Reply`, { request: data, data: response, error: err })
+          .catch(e => {
+            log('info', 'process data', e.message);
+          });
       });
     } else if (this.mAwaitedReplies[data.id] !== undefined) {
       if (data.error !== null) {
@@ -292,11 +343,17 @@ class ConnectionIPC {
     }
   }
 
-  private receiveNext(): void {
-    this.mSocket.receive().then(data => {
-      data.forEach(dat => this.processData(dat));
-      this.receiveNext();
-    });
+  private interrupt(err: Error) {
+    if (this.mOnInterrupted !== undefined) {
+      this.mOnInterrupted(err);
+      this.mOnInterrupted = undefined;
+    }
+  }
+
+  private async receiveNext(): Promise<void> {
+    const data = await this.mSocket.receive();
+    data.forEach(dat => this.processData(dat));
+    return this.receiveNext();
   }
 }
 
@@ -315,13 +372,15 @@ async function testSupportedScripted(files: string[]): Promise<ISupportedResult>
   const connection = await ensureConnected();
 
   return connection.sendMessage('TestSupported',
-                                { files, allowedTypes: ['XmlScript', 'CSharpScript'] });
+                                { files, allowedTypes: ['XmlScript', 'CSharpScript'] })
+    .catch(err => Promise.reject(transformError(err)));
 }
 
 async function testSupportedFallback(files: string[]): Promise<ISupportedResult> {
   const connection = await ensureConnected();
 
-  return connection.sendMessage('TestSupported', { files, allowedTypes: ['Basic'] });
+  return connection.sendMessage('TestSupported', { files, allowedTypes: ['Basic'] })
+    .catch(err => Promise.reject(transformError(err)));
 }
 
 async function install(files: string[],
@@ -350,7 +409,7 @@ function init(context: IExtensionContext): boolean {
         scriptPath, progressDelegate, coreDelegates);
     } catch (err) {
       context.api.store.dispatch(endDialog());
-      return Promise.reject(err);
+      return Promise.reject(transformError(err));
     } finally {
       coreDelegates.detach();
     }

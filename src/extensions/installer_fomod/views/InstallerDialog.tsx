@@ -1,5 +1,6 @@
 import FlexLayout from '../../../controls/FlexLayout';
 import Modal from '../../../controls/Modal';
+import Spinner from '../../../controls/Spinner';
 import { IconButton } from '../../../controls/TooltipControls';
 import ZoomableImage from '../../../controls/ZoomableImage';
 import { connect, PureComponentEx, translate } from '../../../util/ComponentEx';
@@ -263,7 +264,8 @@ function Step(props: IStepProps) {
           group={group}
           onSelect={props.onSelect}
           onShowDescription={props.onShowDescription}
-        />))}
+        />
+      ))}
     </Form>
   );
 }
@@ -286,6 +288,7 @@ interface IDialogState {
   invalidGroups: string[];
   currentImage: string;
   currentDescription: string;
+  waiting: boolean;
 }
 
 type IProps = IBaseProps & IConnectedProps;
@@ -306,7 +309,7 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
   }
   public render(): JSX.Element {
     const { t, installerInfo, installerState } = this.props;
-    const { currentDescription } = this.state;
+    const { currentDescription, waiting } = this.state;
     if (!truthy(installerInfo) || !truthy(installerState)) {
       return null;
     }
@@ -366,8 +369,8 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
             <div>{
               lastVisible !== undefined
                 ? (
-                  <Button onClick={this.prev}>
-                   {lastVisible.name || t('Previous')}
+                  <Button onClick={this.prev} disabled={waiting}>
+                    {waiting ? <Spinner /> : lastVisible.name || t('Previous')}
                   </Button>
                 ) : null
             }</div>
@@ -377,11 +380,11 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
             <div>{
               nextVisible !== undefined
                 ? (
-                  <Button disabled={nextDisabled} onClick={this.next}>
-                    {nextVisible.name || t('Next')}
+                  <Button disabled={nextDisabled || waiting} onClick={this.next}>
+                    {waiting ? <Spinner /> : (nextVisible.name || t('Next'))}
                   </Button>
                 ) : (
-                  <Button disabled={nextDisabled} onClick={this.next}>
+                  <Button disabled={nextDisabled || waiting} onClick={this.next}>
                     {t('Finish')}
                   </Button>
                 )
@@ -430,6 +433,7 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
       invalidGroups: [],
       currentImage: option.image,
       currentDescription: option.description,
+      waiting: false,
     });
 
     if (!truthy(props.installerState)) {
@@ -447,8 +451,20 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
       currentImage: { $set: image },
     }));
   }
-  private prev = () => this.context.api.events.emit('fomod-installer-continue', 'back');
-  private next = () => this.context.api.events.emit('fomod-installer-continue', 'forward');
+  private prev = () => {
+    const { events } = this.context.api;
+    this.setState(update(this.state, {
+      waiting: { $set: true },
+    }));
+    events.emit('fomod-installer-continue', 'back', this.props.installerState.currentStep);
+  }
+  private next = () => {
+    const { events } = this.context.api;
+    this.setState(update(this.state, {
+      waiting: { $set: true },
+    }));
+    events.emit('fomod-installer-continue', 'forward', this.props.installerState.currentStep);
+  }
   private cancel = () => this.context.api.events.emit('fomod-installer-cancel');
 }
 function mapStateToProps(state: any): IConnectedProps {
