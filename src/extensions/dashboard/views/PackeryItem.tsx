@@ -64,33 +64,20 @@ class PackeryItem extends React.Component<IProps, IPackeryItemState> {
         ref={this.setRef}
         style={{ width: `${widthPerc}%` }}
         className={classes.join(' ')}
+        onContextMenu={this.onContext}
       >
         {this.props.children}
         <div className='packery-buttons'>
           {!fixed ? this.renderDragHandle() : null}
-          {(onDismiss !== undefined) ? (
+          {/*(onDismiss !== undefined) ? (
             <Button
               className='btn-embed'
               onClick={this.dismissWidget}
             >
               <Icon name='close-slim' />
             </Button>
-          ) : null}
+          ) : null*/}
         </div>
-      </div>
-    );
-  }
-
-  private renderDragHandle() {
-    const { height, width } = this.props;
-    return [(
-      <Icon
-        key='drag-icon'
-        name='drag-handle'
-        className='drag-handle'
-        onContextMenu={this.onContext}
-      />
-    ), (
         <ContextMenu
           key='drag-context'
           position={this.state.context}
@@ -109,9 +96,25 @@ class PackeryItem extends React.Component<IProps, IPackeryItemState> {
             { title: '4', show: height !== 5, action: this.setHeight5 },
             { title: '5', show: height !== 6, action: this.setHeight6 },
             { title: 'Fit Content', show: height !== 0, action: this.setHeight0 },
+            { icon: null, show: true },
+            { title: 'Close',
+              show: onDismiss !== undefined,
+              action: this.dismissWidget,
+            },
           ]}
         />
-      )];
+      </div>
+    );
+  }
+
+  private renderDragHandle() {
+    return (
+      <Icon
+        key='drag-icon'
+        name='drag-handle'
+        className='drag-handle'
+      />
+    );
   }
 
   private setWidth1 = () => {
@@ -166,7 +169,9 @@ class PackeryItem extends React.Component<IProps, IPackeryItemState> {
   }
 
   private dismissWidget = () => {
-    return this.props.onDismiss(this.props.id);
+    if (this.props.onDismiss !== undefined) {
+      return this.props.onDismiss(this.props.id);
+    }
   }
 
   private setRef = (ref) => {
