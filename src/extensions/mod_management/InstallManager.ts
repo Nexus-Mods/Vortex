@@ -85,6 +85,10 @@ class InstructionGroups {
 
 export const INI_TWEAKS_PATH = 'Ini Tweaks';
 
+export const INSTALL_ACTION = 'Update current profile';
+export const REPLACE_ACTION = 'Update all profiles';
+export const VARIANT_ACTION = 'Add Variant';
+
 const archiveExtLookup = new Set<string>([
   '.zip', '.z01', '.7z', '.rar', '.r00', '.001', '.bz2', '.bzip2', '.gz', '.gzip',
   '.xz', '.z',
@@ -228,14 +232,14 @@ class InstallManager {
           const wasEnabled = getSafe(currentProfile.modState, [oldMod.id, 'enabled'], false);
           return this.userVersionChoice(oldMod, api.store)
             .then((action: string) => {
-              if (action === 'Install') {
+              if (action === INSTALL_ACTION) {
                 enable = enable || wasEnabled;
                 if (wasEnabled) {
-                  setModEnabled(currentProfile.id, oldMod.id, false);
+                  api.store.dispatch(setModEnabled(currentProfile.id, oldMod.id, false));
                   api.events.emit('mods-enabled', [oldMod.id], false, currentProfile.gameId);
                 }
                 return Promise.resolve();
-              } else if (action === 'Replace') {
+              } else if (action === REPLACE_ACTION) {
                 rules = oldMod.rules || [];
                 overrides = oldMod.fileOverrides;
                 // we need to remove the old mod before continuing. This ensures
@@ -892,15 +896,16 @@ class InstallManager {
           'question', modName(oldMod),
           {
             text:
-            'An older version of this mod is already installed.' +
-            'You can replace the existing one or install this one alongside it. ' +
-            'If you have other profiles they will continue using the old version.',
+            'An older version of this mod is already installed. '
+            + 'You can replace the existing one - which will update all profiles - '
+            + 'or install this one alongside it. In the latter case both versions '
+            + 'will be available and only the active profile will be updated. ',
             options: { wrap: true },
           },
           [
             { label: 'Cancel' },
-            { label: 'Replace' },
-            { label: 'Install' },
+            { label: REPLACE_ACTION },
+            { label: INSTALL_ACTION },
           ]))
         .then((result: IDialogResult) => {
           if (result.action === 'Cancel') {
@@ -921,11 +926,12 @@ class InstallManager {
           'question', modName(mod, { version: false }),
           {
             text:
-              'This mod seems to be installed already. You can replace the ' +
-              'existing one or install the new one under a different name. ' +
-              'If you do the latter, the new installation will appear as a variant ' +
-              'of the other mod that can be toggled through the version dropdown. ' +
-              'Use the input below to make the variant distinguishable.',
+              'This mod seems to be installed already. '
+              + 'You can replace the existing one - which will update all profiles - '
+              + 'or install the new one under a different name. '
+              + 'If you do the latter, the new installation will appear as a variant '
+              + 'of the other mod that can be toggled through the version dropdown. '
+              + 'Use the input below to make the variant distinguishable.',
             input: [{
               id: 'variant',
               value: '2',
@@ -937,24 +943,28 @@ class InstallManager {
           },
           [
             { label: 'Cancel' },
-            { label: 'Add Variant' },
-            { label: 'Replace' },
+            { label: VARIANT_ACTION },
+            { label: REPLACE_ACTION },
           ]))
         .then((result: IDialogResult) => {
+          const currentProfile = activeProfile(api.store.getState());
+          const wasEnabled = () => {
+            return (currentProfile !== undefined) && (currentProfile.gameId === gameId)
+              ? getSafe(currentProfile.modState, [modId, 'enabled'], false)
+              : false;
+          };
+
           if (result.action === 'Cancel') {
             reject(new UserCanceled());
-          } else if (result.action === 'Add Variant') {
+          } else if (result.action === VARIANT_ACTION) {
+            api.store.dispatch(setModEnabled(currentProfile.id, modId, false));
             resolve({
               id: modId + '+' + result.input.variant,
               variant: result.input.variant,
-              enable: false,
+              enable: wasEnabled(),
               attributes: {},
             });
-          } else if (result.action === 'Replace') {
-            const currentProfile = activeProfile(api.store.getState());
-            const wasEnabled = (currentProfile !== undefined) && (currentProfile.gameId === gameId)
-              ? getSafe(currentProfile.modState, [modId, 'enabled'], false)
-              : false;
+          } else if (result.action === REPLACE_ACTION) {
             api.events.emit('remove-mod', gameId, modId, (err) => {
               if (err !== null) {
                 reject(err);
@@ -962,7 +972,7 @@ class InstallManager {
                 resolve({
                   id: modId,
                   variant: '',
-                  enable: wasEnabled,
+                  enable: wasEnabled(),
                   attributes: _.omit(mod.attributes, ['version', 'fileName', 'fileVersion']),
                 });
               }
