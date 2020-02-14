@@ -37,7 +37,7 @@ interface ILanguage {
   key: string;
   language: string;
   country?: string;
-  ext: IExtensionDownloadInfo | {};
+  ext: IExtensionDownloadInfo[];
 }
 
 interface IBaseProps {
@@ -104,7 +104,7 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
         languages: { $push: [{
           key: newProps.currentLanguage,
           language: nativeLanguageName(newProps.currentLanguage),
-          ext: {},
+          ext: [],
         }] },
       }));
     }
@@ -142,8 +142,18 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
             onChange={this.selectLanguage}
             value={currentLanguage}
           >
-            {this.state.languages.map(language => this.renderLanguage(language))}
+            {this.state.languages.reduce((prev, language) => {
+              if (language.ext.length < 2) {
+                prev.push(this.renderLanguage(language));
+              } else {
+                language.ext.forEach(ext => prev.push(this.renderLanguage(language, ext)));
+              }
+              return prev;
+            }, [])}
           </FormControl>
+          <ControlLabel>
+            {t('When you select a language for the first time you may have to restart Vortex.')}
+          </ControlLabel>
         </FormGroup>
         <FormGroup controlId='customization'>
           <ControlLabel>{t('Customisation')}</ControlLabel>
@@ -298,16 +308,21 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
       : `${language.language} (${language.country})`;
   }
 
-  private renderLanguage(language: ILanguage): JSX.Element {
+  private renderLanguage(language: ILanguage, ext?: IExtensionDownloadInfo): JSX.Element {
     const { t } = this.props;
+    if (ext === undefined) {
+      ext = language.ext.length > 0 ? language.ext[0] : { name: undefined };
+    }
     return (
       <option
-        key={language.key}
+        key={`${language.key}-${ext['author'] || 'local'}`}
         value={language.key}
-        data-ext={(language.ext as IExtensionDownloadInfo).name}
+        data-ext={ext.name}
       >
       {this.languageName(language)}
-      {(language.ext['modId'] !== undefined) ? ` (${t('Extension')})` : null}
+      {(ext.modId !== undefined)
+        ? ` (${t('Extension')} by ${ext['author'] || 'unknown author'})`
+        : null}
       </option>
     );
   }
@@ -381,6 +396,8 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
       .then(fileLists => Array.from(new Set([].concat(...fileLists))))
       .filter(langId => this.isValidLanguageCode(langId))
       .then(files => {
+        // files contains just the unique languages being supported, but there
+        // may be multiple extensions providing the same language
         const loc = new Set(local);
         const locales = files.map(key => {
           let language;
@@ -392,9 +409,9 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
             country = nativeCountryName(countryKey);
           }
 
-          const ext: Partial<IAvailableExtension> = loc.has(key)
-            ? {}
-            : translationExts.find(iter => iter.language === key);
+          const ext: Array<Partial<IAvailableExtension>> = loc.has(key)
+            ? []
+            : translationExts.filter(iter => iter.language === key);
           return { key, language, country, ext };
         });
 
