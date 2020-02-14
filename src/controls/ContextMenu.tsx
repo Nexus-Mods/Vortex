@@ -142,7 +142,7 @@ class ContextMenu extends ComponentEx<IProps, IComponentState> {
     if ((action.icon === null) && (action.component === undefined)) {
       return (
         <MenuItem className='menu-separator-line' key={id} disabled={true}>
-          {action.title}
+          {action.title !== undefined ? action.title : <hr />}
         </MenuItem>
       );
     }
