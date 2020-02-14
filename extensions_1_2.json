@@ -427,20 +427,7 @@
     },
     {
       "modId": 71,
-      "fileId": 333,
-      "author": "xuqingxin",
-      "description": {
-        "short": "Vortex的中文翻译",
-        "long": "给Vortex添加中文翻译。下载解压后点击安装.bat批处理就行安装，然后在Vortex设置-界面-语言下修改。\n<br />[img]http://chuantu.xyz/t6/703/1575606275x3703728804.jpg[/img]\n<br />部分无法翻译是Vortex本身UI所致，等待官方修复。"
-      },
-      "downloads": 180,
-      "endorsements": 6,
-      "image": null,
-      "name": "Vortex Simplified Chinese",
-      "tags": [],
-      "version": "1.0.1",
-      "type": "translation",
-      "language": "zh"
+      "fileId": 333
     },
     {
       "modId": 73,
