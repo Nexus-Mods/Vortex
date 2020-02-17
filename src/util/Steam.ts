@@ -244,7 +244,10 @@ class Steam implements ISteam {
                 })
                 .map(res => {
                   const { obj, name } = res;
-                  if (obj === undefined) {
+                  if ((obj === undefined)
+                      || (obj['AppState'] === undefined)
+                      || (obj['AppState']['installdir'] === undefined)) {
+                    log('debug', 'invalid appmanifest', name);
                     return undefined;
                   }
                   try {
