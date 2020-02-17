@@ -52,7 +52,8 @@ class DeactivationButton extends ComponentEx<IProps, {}> {
         icon='purge'
         text={t('Purge Mods')}
         onClick={activator !== undefined ? this.activate : this.noMethod}
-      />);
+      />
+    );
   }
 
   private activate = () => {
