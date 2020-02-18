@@ -181,8 +181,7 @@
     "typescript": "^3.7.2",
     "webpack": "^4.41.2",
     "webpack-cli": "^3.3.10",
-    "webpack-node-externals": "^1.7.2",
-    "xml2js": "^0.4.22"
+    "webpack-node-externals": "^1.7.2"
   },
   "dependencies": {
     "@nexusmods/nexus-api": "^1.0.5",
@@ -271,6 +270,7 @@
     "winston": "^2.4.3",
     "write-file-atomic": "^3.0.1",
     "ws": "^7.2.0",
+    "xml2js": "^0.4.23",
     "zeromq": "^6.0.0-beta.6"
   }
 }
