@@ -94,7 +94,7 @@ export function purgeMods(api: IExtensionApi): Promise<void> {
                                           modPaths, lastDeployment))
       // purge all mod types
       .then(() => Promise.mapSeries(modTypes, typeId =>
-          activator.purge(stagingPath, modPaths[typeId])))
+          activator.purge(stagingPath, modPaths[typeId], gameId)))
       // save (empty) activation
       .then(() => Promise.map(modTypes, typeId =>
           saveActivation(typeId, state.app.instanceId, modPaths[typeId], stagingPath,

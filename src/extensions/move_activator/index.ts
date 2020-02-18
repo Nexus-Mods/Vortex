@@ -214,7 +214,7 @@ class DeploymentMethod extends LinkingDeployment {
       .then(() => Promise.map(links, entry => this.restoreLink(entry.filePath)));
   }
 
-  protected linkFile(linkPath: string, sourcePath: string): Promise<void> {
+  protected linkFile(linkPath: string, sourcePath: string, dirTags?: boolean): Promise<void> {
     if (path.extname(sourcePath) === LNK_EXT) {
       // sanity check, don't link the links
       return Promise.resolve();
@@ -223,7 +223,7 @@ class DeploymentMethod extends LinkingDeployment {
     return this.ensureDir(basePath)
         .then((created: any) => {
           let tagDir;
-          if (created !== null) {
+          if ((dirTags !== false) && (created !== null)) {
             const tagPath = path.join(created, LinkingDeployment.NEW_TAG_NAME);
             tagDir = fs.writeFileAsync(tagPath,
                 'This directory was created by Vortex deployment and will be removed '

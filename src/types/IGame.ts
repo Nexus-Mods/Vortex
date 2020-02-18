@@ -8,6 +8,8 @@ import Promise from 'bluebird';
 
 export { IModType };
 
+export type DirectoryCleaningMode = 'tag' | 'all';
+
 /**
  * interface for game extensions
  *
@@ -140,6 +142,15 @@ export interface IGame extends ITool {
    *  cleaned up on each deploy event.
    */
   requiresCleanup?: boolean;
+
+  /**
+   * decides how Vortex decides which empty directories to clean.
+   * With 'tag' (default) we put a dummy file into each directory created by Vortex and only
+   *   those get removed during purge (or after deployment if requiresCleanup is enabled)
+   * With 'all' Vortex will simply clean up all empty directories, whether Vortex created them
+   *   or not. In some (unusual) cases this may break mods
+   */
+  directoryCleaning?: DirectoryCleaningMode;
 
   /**
    * if set this function is always called before automatic deployment and it will be delayed

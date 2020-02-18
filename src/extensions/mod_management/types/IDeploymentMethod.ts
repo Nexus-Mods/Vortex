@@ -254,7 +254,7 @@ export interface IDeploymentMethod {
    *
    * @memberOf IDeploymentMethod
    */
-  purge: (installPath: string, dataPath: string) => Promise<void>;
+  purge: (installPath: string, dataPath: string, gameId?: string) => Promise<void>;
 
   /**
    * called after mods were purged. If multiple mod types wer purged, this is only called

@@ -244,11 +244,11 @@ class DeploymentMethod extends LinkingDeployment {
     return undefined;
   }
 
-  protected linkFile(linkPath: string, sourcePath: string): Promise<void> {
+  protected linkFile(linkPath: string, sourcePath: string, dirTags?: boolean): Promise<void> {
     const dirName = path.dirname(linkPath);
     return fs.ensureDirAsync(dirName)
       .then(created => {
-        if (created !== null) {
+        if ((dirTags !== false) && (created !== null)) {
           log('debug', 'created directory', dirName);
           return fs.writeFileAsync(
             path.join(dirName, LinkingDeployment.NEW_TAG_NAME),
