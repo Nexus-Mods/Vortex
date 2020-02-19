@@ -1,7 +1,7 @@
 import { IExtensionContext } from '../../types/IExtensionContext';
 import { activeGameId } from '../profile_management/selectors';
 
-import { REPLACEABLE_GAMEID } from './constants';
+import { GAMEID_PLACEHOLDER } from './constants';
 import RSSDashlet from './Dashlet';
 
 function init(context: IExtensionContext): boolean {
@@ -22,7 +22,7 @@ function init(context: IExtensionContext): boolean {
         return {
           title: t('New Files'),
           emptyText: t('No New Files'),
-          url: `https://www.nexusmods.com/${REPLACEABLE_GAMEID}/rss/newtoday/`,
+          url: `https://www.nexusmods.com/${GAMEID_PLACEHOLDER}/rss/newtoday/`,
           maxLength: 400,
           extras: [
             { attribute: 'nexusmods:endorsements', icon: 'endorse-yes', text: '{{ value }}' },

@@ -7,9 +7,9 @@ import { ComponentEx, translate } from '../../util/ComponentEx';
 import opn from '../../util/opn';
 import { getSafe } from '../../util/storeHelper';
 import { currentGame } from '../gamemode_management/selectors';
-import { REPLACEABLE_GAMEID } from './constants';
-import rss, {IFeedMessage} from './rss';
 import { nexusGameId } from '../nexus_integration/util/convertGameId';
+import { GAMEID_PLACEHOLDER } from './constants';
+import rss, {IFeedMessage} from './rss';
 
 import * as React from 'react';
 import { Alert, ListGroup, ListGroupItem } from 'react-bootstrap';
@@ -96,9 +96,9 @@ class RSSDashlet extends ComponentEx<IProps, IComponentState> {
 
   private refresh = () => {
     const { url } = this.props;
-    const rssUrl = ((this.props.nexusGameId !== undefined) 
-                 && (url.indexOf(REPLACEABLE_GAMEID) !== -1))
-      ? url.replace(REPLACEABLE_GAMEID, this.props.nexusGameId)
+    const rssUrl = ((this.props.nexusGameId !== undefined)
+                 && (url.indexOf(GAMEID_PLACEHOLDER) !== -1))
+      ? url.replace(GAMEID_PLACEHOLDER, this.props.nexusGameId)
       : url;
 
     rss(rssUrl)
@@ -127,7 +127,8 @@ class RSSDashlet extends ComponentEx<IProps, IComponentState> {
     res.descriptionRendered = bbcode(messageInput);
     res.descriptionShortened = stripBBCode(messageInput);
     if (res.descriptionShortened.length > RSSDashlet.MAX_MESSAGE_LENGTH) {
-      res.descriptionShortened = res.descriptionShortened.substr(0, RSSDashlet.MAX_MESSAGE_LENGTH) + '...';
+      res.descriptionShortened =
+        res.descriptionShortened.substr(0, RSSDashlet.MAX_MESSAGE_LENGTH) + '...';
     }
     return res;
   }
@@ -178,7 +179,7 @@ class RSSDashlet extends ComponentEx<IProps, IComponentState> {
       return null;
     }
 
-    let count = undefined;
+    let count: number;
 
     if ((typeof(value) === 'object') && (value['#'] !== undefined)) {
       value = value['#'];
