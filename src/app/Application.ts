@@ -3,7 +3,8 @@ import {} from '../reducers/index';
 import { ThunkStore } from '../types/api';
 import {IState} from '../types/IState';
 import commandLine, {IParameters} from '../util/commandLine';
-import { DocumentsPathMissing, ProcessCanceled, UserCanceled } from '../util/CustomErrors';
+import { DataInvalid, DocumentsPathMissing, ProcessCanceled,
+         UserCanceled } from '../util/CustomErrors';
 import * as develT from '../util/devel';
 import { didIgnoreError, disableErrorReport, getVisibleWindow, setOutdated, setWindow,
          terminate, toError } from '../util/errorHandling';
@@ -210,7 +211,8 @@ class Application {
         .tap(() => log('debug', 'showing splash screen'))
         .then(splashIn => {
           splash = splashIn;
-          return this.createStore(args.restore);
+          return this.createStore(args.restore)
+            .catch(DataInvalid, () => this.createStore(args.restore, true));
         })
         .tap(() => log('debug', 'checking admin rights'))
         .then(() => this.warnAdmin())
@@ -566,7 +568,7 @@ class Application {
     }
   }
 
-  private createStore(restoreBackup?: string): Promise<void> {
+  private createStore(restoreBackup?: string, repair?: boolean): Promise<void> {
     const newStore = createVortexStore(this.sanityCheckCB);
     const backupPath = path.join(app.getPath('temp'), 'state_backups');
     let backups: string[];
@@ -585,11 +587,18 @@ class Application {
     // 1. load only user settings to determine if we're in multi-user mode
     // 2. load app settings to determine which extensions to load
     // 3. load extensions, then load all settings, including extensions
-    return LevelPersist.create(path.join(this.mBasePath, currentStatePath))
+    return LevelPersist.create(path.join(this.mBasePath, currentStatePath),
+                               undefined,
+                               repair || false)
       .then(levelPersistor => {
         this.mLevelPersistors.push(levelPersistor);
         return insertPersistor(
           'user', new SubPersistor(levelPersistor, 'user'));
+      })
+      .catch(DataInvalid, err => {
+        const failedPersistor = this.mLevelPersistors.pop();
+        return failedPersistor.close()
+          .then(() => Promise.reject(err));
       })
       .then(() => {
         const multiUser = newStore.getState().user.multiUser;

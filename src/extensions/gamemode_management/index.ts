@@ -595,6 +595,9 @@ function init(context: IExtensionContext): boolean {
           // only calling to check if it works, some game extensions might discover
           // a setup-error when trying to resolve the mod path
           const discovery = discoveryByGame(store.getState(), newGameId);
+          if ((discovery === undefined) || (discovery.path === undefined)) {
+            return Promise.reject(new ProcessCanceled('The game is no longer discovered'));
+          }
           getGame(newGameId).getModPaths(discovery.path);
         })
         .then(() => $.gameModeManager.setGameMode(oldGameId, newGameId, currentProfileId))

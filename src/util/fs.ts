@@ -177,7 +177,8 @@ function unknownErrorRetry(filePath: string, err: Error, stackErr: Error): Promi
       options.title = 'Anti Virus denied access';
       options.message = `Your Anti-Virus Software has blocked access to "${filePath}".`;
       options.detail = undefined;
-    } else if ([21, 59, 483, 793, 1005, 1127, 1392, 1920, 6800].indexOf(err['nativeCode']) !== -1) {
+    } else if ([21, 59, 67, 483, 793, 1005, 1006,
+                1127, 1392, 1920, 6800].includes(err['nativeCode'])) {
       options.title = `I/O Error (${err['nativeCode']})`;
       options.message = `Accessing "${filePath}" failed with an error that indicates `
                       + 'a hardware problem. This may indicate the disk is defective, '
@@ -185,6 +186,12 @@ function unknownErrorRetry(filePath: string, err: Error, stackErr: Error): Promi
                       + 'temporary network or server problems. '
                       + 'Please do not report this to us, this is not a bug in Vortex '
                       + 'and we can not provide remote assistance with hardware problems.';
+    } else if ([1336].includes(err['nativeCode'])) {
+      options.title = `I/O Error (${err['nativeCode']})`;
+      options.message = `Accessing "${filePath}" failed with an error that indicates `
+                      + 'file system corruption. If this isn\'t a temporary problem '
+                      + 'you may want to run chkdsk or similar software to check for problems. '
+                      + 'It may also help to reinstall the software that this file belongs to.';
     } else if ([362, 383, 390, 395, 396, 404].indexOf(err['nativeCode']) !== -1) {
       options.title = `OneDrive error (${err['nativeCode']})`;
       options.message = `The file "${filePath}" is stored on a cloud storage drive `

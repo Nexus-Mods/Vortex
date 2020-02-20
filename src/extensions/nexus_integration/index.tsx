@@ -704,6 +704,10 @@ function queryInfo(api: IExtensionApi, instanceIds: string[]) {
 
   Promise.map(instanceIds, dlId => {
     const dl = state.persistent.downloads.files[dlId];
+    if (dl === undefined) {
+      log('warn', 'download no longer exists', dlId);
+      return;
+    }
     const gameId = Array.isArray(dl.game) ? dl.game[0] : dl.game;
     const downloadPath = downloadPathForGame(state, gameId);
     if ((downloadPath === undefined) || (dl.localPath === undefined) || (dl.state !== 'finished')) {
