@@ -314,11 +314,19 @@
     },
     {
       "type": "build-copy",
-      "name": "extensions-dashlet",
-      "path": "extensions/extensions-dashlet",
+      "name": "extension-dashlet",
+      "path": "extensions/extension-dashlet",
       "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "src/**/*.scss"],
-      "copyTo": "{BUILD_DIR}/bundledPlugins/extensions-dashlet"
+      "copyTo": "{BUILD_DIR}/bundledPlugins/extension-dashlet"
+    },
+    {
+      "type": "build-copy",
+      "name": "test-setup",
+      "path": "extensions/test-setup",
+      "removeModules": ["vortex-api"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "src/**/*.scss"],
+      "copyTo": "{BUILD_DIR}/bundledPlugins/test-setup"
     },
     {
       "type": "build-copy",

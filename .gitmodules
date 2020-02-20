@@ -168,3 +168,7 @@
 	path = extensions/extension-dashlet
 	url = https://github.com/Nexus-Mods/extension-extension-dashlet.git
 	branch = master
+[submodule "extensions/test-setup"]
+	path = extensions/test-setup
+	url = https://github.com/Nexus-Mods/extension-test-setup.git
+	branch = master
