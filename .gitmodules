@@ -164,3 +164,7 @@
 	path = extensions/modtype-harmony-patcher
 	url = https://github.com/nexus-mods/extension-modtype-harmony-patcher
 	branch = master
+[submodule "extensions/extension-dashlet"]
+	path = extensions/extension-dashlet
+	url = https://github.com/Nexus-Mods/extension-extension-dashlet.git
+	branch = master

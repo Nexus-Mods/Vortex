@@ -314,6 +314,14 @@
     },
     {
       "type": "build-copy",
+      "name": "extensions-dashlet",
+      "path": "extensions/extensions-dashlet",
+      "removeModules": ["vortex-api"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "src/**/*.scss"],
+      "copyTo": "{BUILD_DIR}/bundledPlugins/extensions-dashlet"
+    },
+    {
+      "type": "build-copy",
       "name": "script-extender-error-check",
       "path": "extensions/script-extender-error-check",
       "removeModules": ["vortex-api"],
