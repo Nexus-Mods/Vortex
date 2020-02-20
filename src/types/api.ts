@@ -23,6 +23,7 @@ export { IStarterInfo } from '../util/StarterInfo';
 
 export { IRegisteredExtension } from '../util/ExtensionManager';
 
+export { IAvailableExtension, IExtension } from '../extensions/extension_manager/types';
 export {
   IDeploymentMethod,
   IUnavailableReason,

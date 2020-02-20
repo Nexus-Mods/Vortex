@@ -1,12 +1,14 @@
+import Nexus, {
+  EndorsedStatus, IEndorsement, IFileInfo, IGameListEntry, IModInfo,
+  IUpdateEntry, NexusError, RateLimitError, TimeoutError,
+} from '@nexusmods/nexus-api';
 import Promise from 'bluebird';
 import { app as appIn, ipcRenderer, remote } from 'electron';
 import { TFunction } from 'i18next';
-import Nexus, { EndorsedStatus, IEndorsement, IFileInfo, IGameListEntry, IModInfo,
-                IUpdateEntry, NexusError, RateLimitError, TimeoutError } from '@nexusmods/nexus-api';
 import * as Redux from 'redux';
 import * as semver from 'semver';
 import * as util from 'util';
-import { addNotification, dismissNotification, setModAttribute } from '../../actions';
+import { addNotification, dismissNotification, setExtensionEndorsed, setModAttribute } from '../../actions';
 import { IExtensionApi, IMod, IState, ThunkStore } from '../../types/api';
 import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import { contextify, setApiKey } from '../../util/errorHandling';
@@ -230,6 +232,50 @@ function resolveEndorseError(t: TFunction, err: Error): string {
   return undefined;
 }
 
+function reportEndorseError(api: IExtensionApi, err: Error,
+                            gameId: string, modId: number, version: string) {
+  const expectedError = resolveEndorseError(api.translate, err);
+  if (expectedError !== undefined) {
+    api.sendNotification({
+      type: 'info',
+      message: expectedError,
+    });
+  } else if (err instanceof TimeoutError) {
+    const message = 'A timeout occurred trying to endorse the mod, please try again later.';
+    api.sendNotification({
+      type: 'error',
+      title: 'Timeout',
+      message,
+      displayMS: calcDuration(message.length),
+    });
+  } else if (['ENOENT', 'ECONNRESET', 'ESOCKETTIMEDOUT'].indexOf((err as any).code) !== -1) {
+    api.showErrorNotification('Endorsing mod failed, please try again later', err, {
+      allowReport: false,
+    });
+  } else {
+    const detail = processErrorMessage(err as NexusError);
+    detail.Game = gameId;
+    detail.Mod = modId;
+    detail.Version = version;
+    let allowReport = detail.Servermessage === undefined;
+    if (detail.noReport) {
+      allowReport = false;
+      delete detail.noReport;
+    }
+    showError(api.store.dispatch, 'An error occurred endorsing a mod', detail,
+      { allowReport });
+  }
+}
+
+export function endorseDirectImpl(api: IExtensionApi, nexus: Nexus,
+                                  gameId: string, nexusId: number, version: string,
+                                  endorsedStatus: string) {
+  return sendEndorseMod(nexus, gameId, nexusId, version, endorsedStatus)
+    .catch(err => {
+      reportEndorseError(api, err, gameId, nexusId, version);
+    });
+}
+
 export function endorseModImpl(
   api: IExtensionApi,
   nexus: Nexus,
@@ -272,39 +318,9 @@ export function endorseModImpl(
     .then((endorsed: string) => {
       store.dispatch(setModAttribute(gameMode, modId, 'endorsed', endorsed));
     })
-    .catch((err) => {
+    .catch((err: Error | NexusError) => {
       store.dispatch(setModAttribute(gameMode, modId, 'endorsed', 'Undecided'));
-      const expectedError = resolveEndorseError(api.translate, err);
-      if (expectedError !== undefined) {
-        api.sendNotification({
-          type: 'info',
-          message: expectedError,
-        });
-      } else if (err instanceof TimeoutError) {
-        const message = 'A timeout occurred trying to endorse the mod, please try again later.';
-        api.sendNotification({
-          type: 'error',
-          title: 'Timeout',
-          message,
-          displayMS: calcDuration(message.length),
-        });
-      } else if (['ENOENT', 'ECONNRESET', 'ESOCKETTIMEDOUT'].indexOf(err.code) !== -1) {
-        api.showErrorNotification('Endorsing mod failed, please try again later', err, {
-          allowReport: false,
-        });
-      } else {
-        const detail = processErrorMessage(err);
-        detail.Game = gameId;
-        detail.Mod = nexusModId;
-        detail.Version = version;
-        let allowReport = detail.Servermessage === undefined;
-        if (detail.noReport) {
-          allowReport = false;
-          delete detail.noReport;
-        }
-        showError(store.dispatch, 'An error occurred endorsing a mod', detail,
-                  { allowReport });
-      }
+      reportEndorseError(api, err, gameId, nexusModId, version);
     });
 }
 
@@ -330,6 +346,14 @@ export function refreshEndorsements(store: Redux.Store<any>, nexus: Nexus) {
           return prev;
         }, {});
       const state: IState = store.getState();
+      Object.keys(state.session.extensions.installed).forEach(extId => {
+        const modId = state.session.extensions.installed[extId].modId;
+
+        if (modId !== undefined) {
+          const endorsed = getSafe(endorseMap, [SITE_ID, modId], 'Undecided');
+          store.dispatch(setExtensionEndorsed(extId, endorsed));
+        }
+      });
       const allMods = state.persistent.mods;
       Object.keys(allMods).forEach(gameId => {
         Object.keys(allMods[gameId]).forEach(modId => {

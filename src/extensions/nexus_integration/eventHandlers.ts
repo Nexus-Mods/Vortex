@@ -19,11 +19,11 @@ import { retrieveModInfo } from './util/checkModsVersion';
 import { nexusGameId, toNXMId } from './util/convertGameId';
 import submitFeedback from './util/submitFeedback';
 
-import { checkModVersionsImpl, endorseModImpl, startDownload, updateKey } from './util';
+import { checkModVersionsImpl, endorseDirectImpl, endorseModImpl, startDownload, updateKey } from './util';
 
-import Promise from 'bluebird';
-import Nexus, { IFeedbackResponse, IIssue, NexusError,
+import Nexus, { EndorsedStatus, IFeedbackResponse, IIssue, NexusError,
                 RateLimitError, TimeoutError } from '@nexusmods/nexus-api';
+import Promise from 'bluebird';
 
 export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
   const state: IState = api.store.getState();
@@ -265,6 +265,13 @@ export function onEndorseMod(api: IExtensionApi, nexus: Nexus): (...args: any[])
     } else {
       endorseModImpl(api, nexus, gameId, modId, endorsedStatus);
     }
+  };
+}
+
+export function onEndorseDirect(api: IExtensionApi, nexus: Nexus) {
+  return (gameId: string, nexusId: number, version: string,
+          endorsedStatus: EndorsedStatus): Promise<EndorsedStatus> => {
+    return endorseDirectImpl(api, nexus, gameId, nexusId, version, endorsedStatus);
   };
 }
 

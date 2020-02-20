@@ -118,6 +118,7 @@ export interface IExtensionState {
   enabled: boolean | 'failed';
   version: string;
   remove: boolean;
+  endorsed: string;
 }
 
 /**

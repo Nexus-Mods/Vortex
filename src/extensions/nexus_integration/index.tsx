@@ -643,6 +643,7 @@ function once(api: IExtensionApi) {
 
   api.onAsync('check-mods-version', eh.onCheckModsVersion(api, nexus));
   api.onAsync('nexus-download', eh.onNexusDownload(api, nexus));
+  api.onAsync('endorse-nexus-mod', eh.onEndorseDirect(api, nexus));
   api.events.on('endorse-mod', eh.onEndorseMod(api, nexus));
   api.events.on('submit-feedback', eh.onSubmitFeedback(nexus));
   api.events.on('mod-update', eh.onModUpdate(api, nexus));

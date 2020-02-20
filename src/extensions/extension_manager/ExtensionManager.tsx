@@ -1,5 +1,5 @@
 import { setDialogVisible } from '../../actions';
-import { removeExtension, setExtensionEnabled } from '../../actions/app';
+import { removeExtension, setExtensionEnabled, setExtensionEndorsed } from '../../actions/app';
 import Dropzone, { DropType } from '../../controls/Dropzone';
 import FlexLayout from '../../controls/FlexLayout';
 import Table, { ITableRowAction } from '../../controls/Table';
@@ -13,11 +13,13 @@ import { getSafe } from '../../util/storeHelper';
 import MainPage from '../../views/MainPage';
 
 import { IDownload } from '../download_management/types/IDownload';
+import { SITE_ID } from '../gamemode_management/constants';
 
 import installExtension from './installExtension';
 import getTableAttributes from './tableAttributes';
 import { IExtension, IExtensionWithState } from './types';
 
+import { EndorsedStatus } from '@nexusmods/nexus-api';
 import Promise from 'bluebird';
 import * as _ from 'lodash';
 import * as path from 'path';
@@ -88,6 +90,26 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
           const extId = Object.keys(extensions)
             .find(iter => extensions[iter].name === extName);
           onSetExtensionEnabled(extId, !getSafe(extensionConfig, [extId, 'enabled'], true));
+        },
+      onEndorseMod:
+        (gameId: string, modIdStr: string, endorseState: EndorsedStatus) => {
+          const { api } = this.context;
+          const modId: number = parseInt(modIdStr, 10);
+          const extId = Object.keys(extensions)
+            .find(iter => extensions[iter].modId === modId);
+
+          if (extId === undefined) {
+            return;
+          }
+
+          api.emitAndAwait('endorse-nexus-mod',
+                           SITE_ID, modId, extensions[extId].version, endorseState)
+            .then((endorsed: EndorsedStatus[])  => {
+              api.store.dispatch(setExtensionEndorsed(extId, endorsed[0]));
+            })
+            .catch(() => {
+              api.store.dispatch(setExtensionEndorsed(extId, 'Undecided'));
+            });
         },
     });
   }
@@ -213,9 +235,11 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
         const enabled = loadFailures[id] === undefined ?
           getSafe(extensionConfig, [id, 'enabled'], true)
           : 'failed';
+        const endorsed: EndorsedStatus = getSafe(extensionConfig, [id, 'endorsed'], 'Undecided');
         prev[id] = {
           ...extensions[id],
           enabled,
+          endorsed,
           loadFailures: loadFailures[id] || [],
         };
       }
