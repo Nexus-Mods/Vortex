@@ -202,7 +202,7 @@ function init(context: IExtensionContext) {
   context.registerMainPage('extensions', 'Extensions', ExtensionManager, {
     hotkey: 'X',
     group: 'global',
-    visible: () => context.api.store.getState().settings.interface.advanced,
+    // visible: () => context.api.store.getState().settings.interface.advanced,
     props: () => ({
       localState,
       updateExtensions,

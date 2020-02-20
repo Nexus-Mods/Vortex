@@ -198,6 +198,7 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
         <FormGroup controlId='advanced'>
           <ControlLabel>{t('Advanced')}</ControlLabel>
           <div>
+            {/*
             <div>
               <Toggle
                 checked={advanced}
@@ -209,6 +210,7 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
                 </More>
               </Toggle>
             </div>
+            */}
             <div>
               <Toggle
                 checked={profilesVisible}
