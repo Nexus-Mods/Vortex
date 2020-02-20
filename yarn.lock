@@ -5577,7 +5577,7 @@ chokidar@^2.0.2, chokidar@^2.0.4, chokidar@^2.1.8:
   optionalDependencies:
     fsevents "^1.2.7"
 
-chownr@^1.0.1, chownr@^1.1.1:
+chownr@^1.1.1, chownr@^1.1.2:
   version "1.1.4"
   resolved "https://registry.yarnpkg.com/chownr/-/chownr-1.1.4.tgz#6fc9d7b42d32a583596337666e7d08084da2cc6b"
   integrity sha512-jJ0bqzaylmJtVnNgzTeSOs8DPavpbYgEr/b0YL8/2GO3xJEhInFmhKMUnEJQjZumK7KXGFhUy89PrsJWlakBVg==
@@ -7423,8 +7423,8 @@ electron-rebuild@^1.8.8:
     yargs "^14.2.0"
 
 electron-redux@TanninOne/electron-redux:
-  version "1.4.3-sync"
-  resolved "https://codeload.github.com/TanninOne/electron-redux/tar.gz/5b2250a1dab73894243d575e4e5288e06ba90a96"
+  version "1.4.4-sync"
+  resolved "https://codeload.github.com/TanninOne/electron-redux/tar.gz/6cca4126f8040f47be25b62c207fa2c80702b545"
   dependencies:
     debug "^3.0.0"
     flux-standard-action "^2.0.0"
@@ -11303,7 +11303,7 @@ mem@^4.0.0:
     mimic-fn "^2.0.0"
     p-is-promise "^2.0.0"
 
-memoize-one@^5.0.0:
+memoize-one@^5.0.0, memoize-one@^5.1.1:
   version "5.1.1"
   resolved "https://registry.yarnpkg.com/memoize-one/-/memoize-one-5.1.1.tgz#047b6e3199b508eaec03504de71229b8eb1d75c0"
   integrity sha512-HKeeBpWvqiVJD57ZUAsJNm71eHTykffzcLZVYWiVfQeI1rJtuEaS7hQiEpWfVVk18donPwJEcFKIkCmPJNOhHA==
