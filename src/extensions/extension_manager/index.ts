@@ -13,7 +13,7 @@ import sessionReducer from './reducers';
 import { IAvailableExtension, IExtension, IExtensionDownloadInfo } from './types';
 import { downloadAndInstallExtension, fetchAvailableExtensions, readExtensions } from './util';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as _ from 'lodash';
 import * as semver from 'semver';
 

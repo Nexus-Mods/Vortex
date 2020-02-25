@@ -186,7 +186,7 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
         <h3>{t('Attention')}</h3>
         <p>{t('Vortex is about to open an external web page:')}</p>
         <a href='#'>{url}</a>
-        <p>{t('Please be aware that Vortex is based on electron which in turn is based on '
+        <p>{t('Please be aware that Vortex is based on Electron which in turn is based on '
            + 'Chrome, but it will not always be the newest version. Also, we can\'t rule out '
            + 'that electron might contain it\'s own security issues pertaining to website '
            + 'access.')}</p>

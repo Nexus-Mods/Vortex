@@ -8,7 +8,7 @@ import BrowserView, { SubscriptionResult } from './views/BrowserView';
 import { closeBrowser, showURL } from './actions';
 import { sessionReducer } from './reducers';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { ipcRenderer } from 'electron';
 import { generate as shortid } from 'shortid';
 import { IState } from '../../types/IState';
