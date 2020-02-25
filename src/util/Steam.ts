@@ -211,6 +211,9 @@ class Steam implements IGameStore {
                   }
                 })
                 .map(res => {
+                  if (res === undefined) {
+                    return undefined;
+                  }
                   const { obj, name } = res;
                   if ((obj === undefined)
                       || (obj['AppState'] === undefined)
