@@ -77,7 +77,7 @@ import * as I18next from 'i18next';
 import * as msgpackT from 'msgpack';
 import * as nativeErr from 'native-errors';
 import * as React from 'react';
-import { DragDropContextProvider } from 'react-dnd';
+import { DndProvider } from 'react-dnd';
 import HTML5Backend from 'react-dnd-html5-backend';
 import * as ReactDOM from 'react-dom';
 import { I18nextProvider } from 'react-i18next';
@@ -504,13 +504,13 @@ function renderer() {
       // render the page content
       ReactDOM.render((
         <Provider store={store}>
-          <DragDropContextProvider backend={HTML5Backend}>
+          <DndProvider backend={HTML5Backend}>
             <I18nextProvider i18n={i18n}>
               <ExtensionProvider extensions={extensions}>
                 <MainWindow className='full-height' api={extensions.getApi()} t={tFunc} />
               </ExtensionProvider>
             </I18nextProvider>
-          </DragDropContextProvider>
+          </DndProvider>
         </Provider>
       ),
         document.getElementById('content'),
