@@ -1,4 +1,5 @@
 import FlexLayout from '../../controls/FlexLayout';
+import FormInput from '../../controls/FormInput';
 import Icon from '../../controls/Icon';
 import Modal from '../../controls/Modal';
 import Spinner from '../../controls/Spinner';
@@ -33,6 +34,7 @@ interface IBrowseExtensionsState {
   error: Error;
   selected?: ISelector;
   installing: string[];
+  searchTerm: string;
 }
 
 function makeSelectorId(ext: IAvailableExtension): string {
@@ -78,6 +80,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
       error: undefined,
       selected: undefined,
       installing: [],
+      searchTerm: '',
     });
 
     this.mModalRef = React.createRef();
@@ -86,7 +89,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
   public render() {
     const { t, availableExtensions, language, onHide,
             onRefreshExtensions, updateTime, visible } = this.props;
-    const { selected } = this.state;
+    const { searchTerm, selected } = this.state;
 
     const ext = (selected === undefined)
       ? null
@@ -103,8 +106,18 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
           <FlexLayout type='row'>
             <FlexLayout.Fixed className='extension-list'>
               <FlexLayout type='column'>
+                <FormInput
+                  id='browse-extensions-search'
+                  label={t('Search')}
+                  value={searchTerm}
+                  onChange={this.changeSearch}
+                  debounceTimer={200}
+                />
                 <ListGroup>
-                  {availableExtensions.slice(0).sort(this.extensionSort).map(this.renderListEntry)}
+                  {availableExtensions
+                    .filter(this.filterSearch)
+                    .sort(this.extensionSort)
+                    .map(this.renderListEntry)}
                 </ListGroup>
                 <div className='extension-list-time'>
                   {t('Last updated: {{time}}',
@@ -123,6 +136,22 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
         </Modal.Footer>
       </Modal>
     );
+  }
+
+  private changeSearch = (newValue: string) => {
+    this.nextState.searchTerm = newValue;
+  }
+
+  private filterSearch = (test: IAvailableExtension)  => {
+    const { searchTerm } = this.state;
+    if (searchTerm.length === 0) {
+      return true;
+    }
+
+    return (test.name.indexOf(searchTerm) !== -1)
+        || (test.author.indexOf(searchTerm) !== -1)
+        || (test.description.short.indexOf(searchTerm) !== -1)
+        || (test.description.long.indexOf(searchTerm) !== -1);
   }
 
   private extensionSort = (lhs: IAvailableExtension, rhs: IAvailableExtension): number => {
