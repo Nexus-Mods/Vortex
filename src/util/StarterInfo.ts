@@ -38,6 +38,7 @@ export interface IStarterInfo {
   shell: boolean;
   onStart?: 'hide' | 'hide_recover' | 'close';
   environment: { [key: string]: string };
+  defaultPrimary?: boolean;
 }
 
 const userDataPath = ((): () => string => {
@@ -267,6 +268,7 @@ class StarterInfo implements IStarterInfo {
   public exclusive: boolean;
   public detach: boolean;
   public onStart?: 'hide' | 'hide_recover' | 'close';
+  public defaultPrimary: boolean;
   private mExtensionPath: string;
   private mLogoName: string;
   private mIconPathCache: string;
@@ -336,6 +338,7 @@ class StarterInfo implements IStarterInfo {
         getSafe(tool, ['workingDirectory'], ''));
       this.shell = getSafe(toolDiscovery, ['shell'], getSafe(tool, ['shell'], undefined));
       this.exclusive = getSafe(tool, ['exclusive'], false) || false;
+      this.defaultPrimary = getSafe(tool, ['defaultPrimary'], false);
     } else {
       // defaults for undiscovered & unconfigured tools
       this.name = tool.name;

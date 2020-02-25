@@ -346,7 +346,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
     const { primaryTool } = this.props;
     const { tools } = this.state;
 
-    if (primaryTool === undefined) {
+    if (!truthy(primaryTool)) {
       this.startTool(tools[0]);
     } else {
       const info = tools.find(iter => iter.id === primaryTool);
@@ -429,7 +429,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
   }
 
   private makePrimary = (starter: StarterInfo) => {
-    this.props.onMakePrimary(starter.gameId, starter.isGame ? undefined : starter.id);
+    this.props.onMakePrimary(starter.gameId, starter.isGame ? null : starter.id);
   }
 }
 

@@ -182,6 +182,8 @@ interface IEditStarterInfo {
   shell: boolean;
   detach: boolean;
   onStart?: 'hide' | 'hide_recover' | 'close';
+  defaultPrimary?: boolean;
+  exclusive?: boolean;
 }
 
 interface IToolEditState {
@@ -603,6 +605,8 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
       shell: tool.shell,
       detach: tool.detach,
       onStart: tool.onStart,
+      defaultPrimary: tool.defaultPrimary,
+      exclusive: tool.exclusive,
     };
   }
 

@@ -249,7 +249,7 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
     }
 
     try {
-      if ((primaryTool === undefined)
+      if (!truthy(primaryTool)
         || ((game.supportedTools[primaryTool] === undefined)
           && (discoveredTools[primaryTool] === undefined))) {
         return new StarterInfo(game, gameDiscovery);

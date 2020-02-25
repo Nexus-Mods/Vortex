@@ -8,6 +8,7 @@ export interface IToolStored {
   environment: { [key: string]: string };
   shell?: boolean;
   detach?: boolean;
-  onStart?: 'hide' | 'close';
+  onStart?: 'hide' | 'hide_recover' | 'close';
   exclusive?: boolean;
+  defaultPrimary?: boolean;
 }
