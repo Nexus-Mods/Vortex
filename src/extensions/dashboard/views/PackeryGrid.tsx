@@ -1,6 +1,8 @@
 import { PackeryOptions } from 'packery';
 import * as React from 'react';
 
+const LAYOUT_SETTLE_MS = 5000;
+
 export interface IProps {
   totalWidth: number;
   onChangeLayout: (items: string[]) => void;
@@ -30,6 +32,7 @@ class Packery extends React.Component<IProps, {}> {
   private mLayoutTimer: NodeJS.Timer;
   private mRefreshTimer: NodeJS.Timer;
   private mChildren: Set<string>;
+  private mMounted: number = 0;
 
   constructor(props: typeof Packery.prototype.props) {
     super(props);
@@ -37,7 +40,17 @@ class Packery extends React.Component<IProps, {}> {
   }
 
   public componentDidUpdate() {
-    this.scheduleLayout();
+    // TODO: If we layout here without condition packery end up in an endless loop were every
+    //   layout triggers didUpdate again
+    //   But on startup we need several layout calls before the the layout has actually settled
+    //   and everything is where it should be. Haven't found a nice solution yet
+    if (Date.now() - this.mMounted < LAYOUT_SETTLE_MS) {
+      this.scheduleLayout();
+    }
+  }
+
+  public componentDidMount() {
+    this.mMounted = Date.now();
   }
 
   public componentWillReceiveProps(nextProps: typeof Packery.prototype.props) {
@@ -82,6 +95,9 @@ class Packery extends React.Component<IProps, {}> {
       const PackeryLib = require('packery');
       this.mPackery = new PackeryLib(ref, options);
       this.mPackery.on('layoutComplete', this.saveLayout);
+      this.mPackery.on('dragItemPositioned', (draggedItem) => {
+        this.scheduleLayout();
+      });
       this.scheduleRefresh();
     } else {
       this.mPackery = undefined;
