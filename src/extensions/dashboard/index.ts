@@ -30,7 +30,7 @@ function init(context: IExtensionContext): boolean {
     props: () => ({ dashlets }),
   });
 
-  context.registerSettings('Interface', Settings, () => ({ dashlets }));
+  context.registerSettings('Interface', Settings, () => ({ dashlets }), undefined, 1000);
 
   context.registerDashlet = registerDashlet;
 

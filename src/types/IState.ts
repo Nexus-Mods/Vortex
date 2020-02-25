@@ -208,6 +208,7 @@ export interface ISettingsMods {
   activator: { [gameId: string]: string };
   showDropzone: boolean;
   confirmPurge: boolean;
+  cleanupOnDeploy: boolean;
 }
 
 export interface ISettingsNotification {

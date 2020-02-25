@@ -26,6 +26,7 @@ interface ISettingsPage {
 }
 
 interface ICombinedSettingsPage {
+  priority: number;
   title: string;
   elements: ISettingsPage[];
 }
@@ -71,9 +72,12 @@ class Settings extends ComponentEx<IProps, {}> {
       const result = prev.slice();
       const existingPage = prev.find((ele: ICombinedSettingsPage) => ele.title === current.title);
       if (existingPage === undefined) {
-        result.push({ title: current.title, elements: [ current ] });
+        result.push({ title: current.title, elements: [ current ], priority: current.priority });
       } else {
         existingPage.elements.push(current);
+        if ((existingPage.priority === undefined) || (current.priority < existingPage.priority)) {
+          existingPage.priority = current.priority;
+        }
       }
       return result;
     }, []);
@@ -85,7 +89,7 @@ class Settings extends ComponentEx<IProps, {}> {
       <MainPage>
         <MainPage.Body>
           <Tabs id='settings-tab' activeKey={page} onSelect={this.setCurrentPage}>
-            {combined.map(this.renderTab)}
+            {combined.sort(this.sortByPriority).map(this.renderTab)}
           </Tabs>
         </MainPage.Body>
       </MainPage>
@@ -136,6 +140,10 @@ class Settings extends ComponentEx<IProps, {}> {
         </PanelX.Body>
       </Panel>
     );
+  }
+
+  private sortByPriority = (lhs: ICombinedSettingsPage, rhs: ICombinedSettingsPage) => {
+    return lhs.priority - rhs.priority;
   }
 
   private setCurrentPage = (page) => {

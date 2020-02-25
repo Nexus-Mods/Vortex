@@ -73,6 +73,7 @@ import {} from './views/ExternalChangeDialog';
 import {} from './views/FixDeploymentDialog';
 import {} from './views/ModList';
 import {} from './views/Settings';
+import Workarounds from './views/Workarounds';
 
 import { onAddMod, onGameModeActivated, onModsChanged, onPathsChanged,
          onRemoveMod, onStartInstallDownload } from './eventHandlers';
@@ -1066,7 +1067,8 @@ function init(context: IExtensionContext): boolean {
   context.registerTest('valid-activator', 'settings-changed', validActivatorCheck);
 
   context.registerSettings('Mods', LazyComponent(() => require('./views/Settings')),
-                           () => ({activators: getAllActivators()}));
+                           () => ({activators: getAllActivators()}), undefined, 75);
+  context.registerSettings('Workarounds', Workarounds, undefined, undefined, 1000);
 
   context.registerDialog('external-changes',
                          LazyComponent(() => require('./views/ExternalChangeDialog')));

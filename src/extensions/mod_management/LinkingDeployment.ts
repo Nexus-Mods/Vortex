@@ -1,5 +1,7 @@
 import {addNotification} from '../../actions/notifications';
 import {IExtensionApi} from '../../types/IExtensionContext';
+import { DirectoryCleaningMode, IGame } from '../../types/IGame';
+import { IState } from '../../types/IState';
 import { getGame, UserCanceled } from '../../util/api';
 import * as fs from '../../util/fs';
 import {Normalize} from '../../util/getNormalizeFunc';
@@ -18,7 +20,6 @@ import { TFunction } from 'i18next';
 import * as _ from 'lodash';
 import * as path from 'path';
 import turbowalk, { IEntry } from 'turbowalk';
-import { DirectoryCleaningMode, IGame } from '../../types/IGame';
 
 export interface IDeployment {
   [relPath: string]: IDeployedFile;
@@ -236,7 +237,9 @@ abstract class LinkingActivator implements IDeploymentMethod {
             }));
           }
 
-          if ((removed.length > 0) && game.requiresCleanup) {
+          const state: IState = this.mApi.store.getState();
+          const { cleanupOnDeploy } = state.settings.mods;
+          if ((removed.length > 0) && (game.requiresCleanup || cleanupOnDeploy)) {
             this.postLinkPurge(dataPath, false, directoryCleaning)
               .catch(err => {
                 this.mApi.showErrorNotification('Failed to clean up',

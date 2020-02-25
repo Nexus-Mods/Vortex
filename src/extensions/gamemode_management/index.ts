@@ -366,7 +366,7 @@ function init(context: IExtensionContext): boolean {
   });
   context.registerSettings('Games', LazyComponent(() => require('./views/Settings')), () => ({
     onResetSearchPaths: () => resetSearchPaths(context.api),
-  }));
+  }), undefined, 90);
   context.registerReducer(['session', 'discovery'], discoveryReducer);
   context.registerReducer(['session', 'gameMode'], sessionReducer);
   context.registerReducer(['settings', 'gameMode'], settingsReducer);

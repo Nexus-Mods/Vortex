@@ -605,7 +605,7 @@ function init(context: IExtensionContextExt): boolean {
                              badge: downloadCount,
                            });
 
-  context.registerSettings('Download', Settings);
+  context.registerSettings('Download', Settings, undefined, undefined, 75);
 
   context.registerFooter('speed-o-meter', SpeedOMeter);
 
