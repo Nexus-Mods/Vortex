@@ -247,9 +247,11 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
     }, {});
   }
 
-  private removeExtension = (extId: string) => {
-    const ext = this.props.extensions[extId];
-    this.props.onRemoveExtension(path.basename(ext.path || extId));
+  private removeExtension = (extIds: string[]) => {
+    extIds.forEach(extId => {
+      const ext = this.props.extensions[extId];
+      this.props.onRemoveExtension(path.basename(ext.path || extId));
+    });
   }
 }
 
