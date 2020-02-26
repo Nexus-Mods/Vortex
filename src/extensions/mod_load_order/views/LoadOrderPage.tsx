@@ -13,7 +13,6 @@ import { IGameLoadOrderEntry, ILoadOrder,
 import DraggableList from './DraggableList';
 
 import DefaultItemRenderer from './DefaultItemRenderer';
-import { currentActivator } from '../../../util/selectors';
 
 const PanelX: any = Panel;
 
@@ -127,6 +126,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
       newList.forEach((item, idx) => newOrder[item.id] = { pos: idx, enabled: true });
       onSetOrder(profile.id, newOrder);
       onSetDeploymentNecessary(profile.gameId, true);
+      this.mCallbackDebouncer.schedule();
     };
 
     const activeGameEntry: IGameLoadOrderEntry = getGameEntry(profile.gameId);
@@ -179,7 +179,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
                 <FlexLayout type='row'>
                   <FlexLayout.Flex>
                     <DraggableList
-                      id='mod-loadorder'
+                      id='mod-loadorder-draggable-list'
                       itemRenderer={itemRenderer}
                       items={sorted}
                       apply={this.onApply}
@@ -206,19 +206,17 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
 
   private renderWait() {
     return (
-      <div className='spinner'>
-        <Spinner
-          style={{
-            width: '64px',
-            height: '64px',
-          }}
-        />
-      </div>
+      <Spinner
+        style={{
+          width: '64px',
+          height: '64px',
+        }}
+      />
     );
   }
 
   private updateState(props: IProps) {
-    const { getGameEntry, mods, profile, loadOrder } = props;
+    const { getGameEntry, mods, profile } = props;
     const activeGameEntry = getGameEntry(profile.gameId);
 
     const renderer = this.getItemRenderer();
@@ -241,15 +239,6 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
       ? activeGameEntry.filter(modState.map(id => mods[id])).map(mod => mapToDisplay(mod))
       : modState.map(mod => mapToDisplay(mods[mod]));
 
-    const missing = Object.keys(loadOrder)
-      .filter(lo => filtered.find(fil => fil.id === lo) === undefined);
-
-    // const id = (missing.length > 0)
-    //   ? (missing.length > 1)
-    //     ? `${missing[0] + '-' + missing[missing.length - 1]}`
-    //     : `${missing[0]}`
-    //   : undefined;
-
     const en = this.state.enabled.filter(mod =>
       filtered.find(entry => entry.id === mod.id) !== undefined);
 
@@ -257,15 +246,10 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
       en.find(mod => mod.id === x.id) === undefined);
 
     const spread = [ ...en, ...difference ];
-    // const spread = (id !== undefined)
-    //   ? [ ...en, ...difference, ({ id, name: id, imgUrl: activeGameEntry.gameArtURL }) ]
-    //   : [ ...en, ...difference ];
 
     (!!activeGameEntry.preSort)
       ? activeGameEntry.preSort(spread).then(newList => this.nextState.enabled = newList)
       : this.nextState.enabled = spread;
-
-    this.mCallbackDebouncer.schedule();
   }
 }
 

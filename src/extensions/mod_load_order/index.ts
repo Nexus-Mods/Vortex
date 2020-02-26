@@ -1,12 +1,17 @@
-import * as path from 'path';
-import { IGameLoadOrderEntry, ILoadOrder } from './types/types';
+import { IGameLoadOrderEntry } from './types/types';
 import LoadOrderPage from './views/LoadOrderPage';
 
-import { log, selectors, types, util } from 'vortex-api';
+import { log, selectors, types } from 'vortex-api';
 
 const SUPPORTED_GAMES: IGameLoadOrderEntry[] = [];
 
-export default function init(context: types.IExtensionContext) {
+export interface IExtensionContextExt extends types.IExtensionContext {
+  // Provides game extensions with an easy way to add a load order page
+  //  if they require it.
+  registerLoadOrderPage: (gameEntry: IGameLoadOrderEntry) => void;
+}
+
+export default function init(context: IExtensionContextExt) {
   context.registerMainPage('sort-none', 'Load Order', LoadOrderPage, {
     id: 'generic-loadorder',
     hotkey: 'E',
@@ -23,19 +28,9 @@ export default function init(context: types.IExtensionContext) {
     },
   });
 
-  context.once(() => {
-    context.api.events.on('add-loadorder-game', (gameEntry: IGameLoadOrderEntry) =>
-      addGameEntry(gameEntry));
-
-    context.api.events.on('gamemode-activated', (gameMode: string) => {
-      const gameEntry: IGameLoadOrderEntry = findGameEntry(gameMode);
-      if (gameEntry !== undefined) {
-        // Do stuff
-      }
-    });
-
-    context.api.setStylesheet('modloadorder', path.join(__dirname, 'modloadorder.scss'));
-  });
+  context.registerLoadOrderPage = (gameEntry: IGameLoadOrderEntry) => {
+    addGameEntry(gameEntry);
+  };
 
   return true;
 }
