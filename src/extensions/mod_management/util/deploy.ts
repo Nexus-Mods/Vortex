@@ -1,9 +1,10 @@
 import { IDeployedFile, IDeploymentMethod, IExtensionApi } from '../../../types/IExtensionContext';
 import { IGame } from '../../../types/IGame';
 import { INotification } from '../../../types/INotification';
+import { IProfile } from '../../../types/IState';
 import { ProcessCanceled } from '../../../util/CustomErrors';
 import { log } from '../../../util/log';
-import { activeGameId, activeProfile, currentGameDiscovery } from '../../../util/selectors';
+import { activeProfile, currentGameDiscovery, lastActiveProfileForGame, profileById } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
 import { getGame } from '../../gamemode_management/util/getGame';
@@ -32,6 +33,20 @@ function filterManifest(activator: IDeploymentMethod,
                         deployment: IDeployedFile[]): Promise<IDeployedFile[]> {
   return Promise.filter(deployment, file =>
     activator.isDeployed(stagingPath, deployPath, file));
+}
+
+export function loadAllManifests(api: IExtensionApi,
+                                 deploymentMethod: IDeploymentMethod,
+                                 modPaths: { [typeId: string]: string },
+                                 stagingPath: string) {
+  const modTypes = Object.keys(modPaths).filter(typeId => truthy(modPaths[typeId]));
+
+  return Promise.reduce(modTypes, (prev, typeId) =>
+        loadActivation(api, typeId, modPaths[typeId], stagingPath, deploymentMethod)
+          .then(deployment => {
+            prev[typeId] = deployment;
+            return prev;
+          }), {});
 }
 
 export function purgeMods(api: IExtensionApi): Promise<void> {
@@ -82,13 +97,9 @@ export function purgeMods(api: IExtensionApi): Promise<void> {
     //   deployment method.
     return activator.prePurge(stagingPath)
       // load previous deployments
-      .then(() => Promise.reduce(modTypes, (prev, typeId) =>
-        loadActivation(api, typeId, modPaths[typeId], stagingPath, activator)
-          .then(deployment => {
-            prev[typeId] = deployment;
-            return prev;
-          }), {})
+      .then(() => loadAllManifests(api, activator, modPaths, stagingPath)
         .then(deployments => { lastDeployment = deployments; }))
+      .then(() => api.emitAndAwait('will-purge', profile.id, lastDeployment))
       // deal with all external changes
       .then(() => dealWithExternalChanges(api, activator, profile.id, stagingPath,
                                           modPaths, lastDeployment))
@@ -114,7 +125,8 @@ export function purgeMods(api: IExtensionApi): Promise<void> {
       })
       .catch(ProcessCanceled, () => null)
       .then(() => Promise.resolve())
-      .finally(() => activator.postPurge());
+      .finally(() => activator.postPurge())
+      .then(() => api.emitAndAwait('did-purge', profile.id));
   }, true)
     .then(() => null)
     .finally(() => {
@@ -125,8 +137,12 @@ export function purgeMods(api: IExtensionApi): Promise<void> {
 export function purgeModsInPath(api: IExtensionApi, gameId: string, typeId: string,
                                 modPath: string): Promise<void> {
   const state = api.store.getState();
+  const profile: IProfile = (gameId !== undefined)
+    ? profileById(state, lastActiveProfileForGame(state, gameId))
+    : activeProfile(state);
+
   if (gameId === undefined) {
-    gameId = activeGameId(state);
+    gameId = profile.gameId;
   }
   const stagingPath = installPathForGame(state, gameId);
 
@@ -171,7 +187,8 @@ export function purgeModsInPath(api: IExtensionApi, gameId: string, typeId: stri
                          [], activator.id))
       .catch(ProcessCanceled, () => null)
       .then(() => Promise.resolve())
-      .finally(() => activator.postPurge());
+      .finally(() => activator.postPurge())
+      .then(() => api.emitAndAwait('did-purge', profile.id));
   }, true)
     .then(() => null)
     .finally(() => {

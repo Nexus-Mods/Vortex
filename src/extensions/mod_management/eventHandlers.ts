@@ -1,6 +1,6 @@
 import { startActivity, stopActivity } from '../../actions/session';
 import {IExtensionApi} from '../../types/IExtensionContext';
-import {IModTable, IState} from '../../types/IState';
+import {IModTable, IProfile, IState} from '../../types/IState';
 import { ProcessCanceled, TemporaryError, UserCanceled } from '../../util/CustomErrors';
 import { setErrorContext } from '../../util/errorHandling';
 import * as fs from '../../util/fs';
@@ -12,7 +12,7 @@ import {getSafe} from '../../util/storeHelper';
 import {truthy} from '../../util/util';
 
 import {IDownload} from '../download_management/types/IDownload';
-import {activeGameId} from '../profile_management/selectors';
+import {activeGameId, activeProfile} from '../profile_management/selectors';
 
 import { setDeploymentNecessary } from './actions/deployment';
 import {addMod, removeMod} from './actions/mods';
@@ -27,7 +27,7 @@ import {setModEnabled} from '../profile_management/actions/profiles';
 
 import { setInstallPath } from './actions/settings';
 import allTypesSupported from './util/allTypesSupported';
-import { genSubDirFunc } from './util/deploy';
+import { genSubDirFunc, loadAllManifests } from './util/deploy';
 import queryGameId from './util/queryGameId';
 import refreshMods from './util/refreshMods';
 
@@ -86,13 +86,87 @@ function validateStagingTag(api: IExtensionApi, tagPath: string): Promise<void> 
     });
 }
 
+function ensureStagingDirectory(api: IExtensionApi,
+                                instPath: string,
+                                gameId: string)
+                                : Promise<string> {
+  return fs.statAsync(instPath)
+    .catch(err =>
+      api.showDialog('error', 'Mod Staging Folder missing!', {
+        text: 'Your mod staging folder (see below) is missing. This might happen because you '
+          + 'deleted it or - if you have it on a removable drive - it is not currently '
+          + 'connected.\nIf you continue now, a new staging folder will be created but all '
+          + 'your previously managed mods will be lost.\n\n'
+          + 'If you have moved the folder or the drive letter changed, you can browse '
+          + 'for the new location manually, but please be extra careful to select the right '
+          + 'folder!',
+        message: instPath,
+      }, [
+        { label: 'Quit Vortex' },
+        { label: 'Reinitialize' },
+        { label: 'Browse...' },
+      ])
+        .then(dialogResult => {
+          if (dialogResult.action === 'Quit Vortex') {
+            app.exit(0);
+            return Promise.reject(new UserCanceled());
+          } else if (dialogResult.action === 'Reinitialize') {
+            const id = shortid();
+            api.sendNotification({
+              id,
+              type: 'activity',
+              message: 'Purging mods',
+            });
+            return fallbackPurge(api)
+              .then(() => fs.ensureDirWritableAsync(instPath, () => Promise.resolve()))
+              .catch(purgeErr => {
+                if (purgeErr instanceof ProcessCanceled) {
+                  log('warn', 'Mods not purged', purgeErr.message);
+                } else {
+                  api.showDialog('error', 'Mod Staging Folder missing!', {
+                    bbcode: 'The staging folder could not be created. '
+                      + 'You [b][color=red]have[/color][/b] to go to settings->mods and change it '
+                      + 'to a valid directory [b][color=red]before doing anything else[/color][/b] '
+                      + 'or you will get further error messages.',
+                  }, [
+                    { label: 'Close' },
+                  ]);
+                }
+                return Promise.reject(new ProcessCanceled('not purged'));
+              })
+              .finally(() => {
+                api.dismissNotification(id);
+              });
+          } else { // Browse...
+            return api.selectDir({
+              defaultPath: instPath,
+              title: api.translate('Select staging folder'),
+            })
+              .then((selectedPath) => {
+                if (!truthy(selectedPath)) {
+                  return Promise.reject(new UserCanceled());
+                }
+                return validateStagingTag(api, path.join(selectedPath, STAGING_DIR_TAG))
+                  .then(() => {
+                    instPath = selectedPath;
+                    api.store.dispatch(setInstallPath(gameId, instPath));
+                  });
+              })
+              .catch(() => ensureStagingDirectory(api, instPath, gameId));
+          }
+        }))
+    .then(() => writeStagingTag(api, path.join(instPath, STAGING_DIR_TAG), gameId))
+    .then(() => instPath);
+}
+
 export function onGameModeActivated(
     api: IExtensionApi, activators: IDeploymentMethod[], newGame: string) {
   const store = api.store;
   const state: IState = store.getState();
   const supported = getSupportedActivators(state);
   const activatorToUse = getCurrentActivator(state, newGame, true);
-  const gameId = activeGameId(state);
+  const profile: IProfile = activeProfile(state);
+  const gameId = profile.gameId;
   if (gameId !== newGame) {
     // this should never happen
     api.showErrorNotification('Event was triggered with incorrect parameter',
@@ -115,74 +189,8 @@ export function onGameModeActivated(
 
   let instPath = installPath(state);
 
-  const ensureStagingDirectory = () => fs.statAsync(instPath)
-    .catch(err =>
-      api.showDialog('error', 'Mod Staging Folder missing!', {
-        text: 'Your mod staging folder (see below) is missing. This might happen because you '
-            + 'deleted it or - if you have it on a removable drive - it is not currently '
-            + 'connected.\nIf you continue now, a new staging folder will be created but all '
-            + 'your previously managed mods will be lost.\n\n'
-            + 'If you have moved the folder or the drive letter changed, you can browse '
-            + 'for the new location manually, but please be extra careful to select the right '
-            + 'folder!',
-        message: instPath,
-      }, [
-        { label: 'Quit Vortex' },
-        { label: 'Reinitialize' },
-        { label: 'Browse...' },
-      ])
-      .then(dialogResult => {
-        if (dialogResult.action === 'Quit Vortex') {
-          app.exit(0);
-          return Promise.reject(new UserCanceled());
-        } else if (dialogResult.action === 'Reinitialize') {
-          const id = shortid();
-          api.sendNotification({
-            id,
-            type: 'activity',
-            message: 'Purging mods',
-          });
-          return fallbackPurge(api)
-            .then(() => fs.ensureDirWritableAsync(instPath, () => Promise.resolve()))
-            .catch(purgeErr => {
-              if (purgeErr instanceof ProcessCanceled) {
-                log('warn', 'Mods not purged', purgeErr.message);
-              } else {
-                api.showDialog('error', 'Mod Staging Folder missing!', {
-                  bbcode: 'The staging folder could not be created. '
-                    + 'You [b][color=red]have[/color][/b] to go to settings->mods and change it '
-                    + 'to a valid directory [b][color=red]before doing anything else[/color][/b] '
-                    + 'or you will get further error messages.',
-                }, [
-                    { label: 'Close' },
-                  ]);
-              }
-              return Promise.reject(new ProcessCanceled('not purged'));
-            })
-            .finally(() => {
-              api.dismissNotification(id);
-            });
-        } else { // Browse...
-          return api.selectDir({
-            defaultPath: instPath,
-            title: api.translate('Select staging folder'),
-          })
-            .then((selectedPath) => {
-              if (!truthy(selectedPath)) {
-                return Promise.reject(new UserCanceled());
-              }
-              return validateStagingTag(api, path.join(selectedPath, STAGING_DIR_TAG))
-                .then(() => {
-                  instPath = selectedPath;
-                  store.dispatch(setInstallPath(gameId, instPath));
-                });
-            })
-            .catch(() => ensureStagingDirectory());
-        }
-      }))
-      .then(() => writeStagingTag(api, path.join(instPath, STAGING_DIR_TAG), gameId));
-
-  let initProm = ensureStagingDirectory;
+  let initProm = () => ensureStagingDirectory(api, instPath, gameId)
+    .tap(updatedPath => instPath = updatedPath);
 
   const configuredActivatorId = currentActivator(state);
 
@@ -233,8 +241,11 @@ export function onGameModeActivated(
 
     if (changeActivator) {
       if (oldActivator !== undefined) {
+        const stagingPath = installPath(state);
+        const deployment = loadAllManifests(api, oldActivator, modPaths, stagingPath);
         const oldInit = initProm;
         initProm = () => oldInit()
+          .then(() => api.emitAndAwait('will-purge', profile.id, deployment))
           .then(() => oldActivator.prePurge(instPath))
           .then(() => Promise.mapSeries(Object.keys(modPaths),
             typeId => oldActivator.purge(instPath, modPaths[typeId]))
@@ -247,7 +258,8 @@ export function onGameModeActivated(
               allowReport: ['ENOENT', 'ENOTFOUND'].indexOf(err.code) !== -1,
             })))
           .catch(ProcessCanceled, () => Promise.resolve())
-          .finally(() => oldActivator.postPurge());
+          .finally(() => oldActivator.postPurge())
+          .then(() => api.emitAndAwait('did-purge', profile.id));
       }
 
       {
