@@ -208,9 +208,12 @@ export function onModUpdate(api: IExtensionApi, nexus: Nexus): (...args: any[]) 
         const url = `nxm://${toNXMId(game, gameId)}/mods/${modId}/files/${fileId}`;
         api.showErrorNotification('Invalid URL', url, { allowReport: false });
       })
-      .catch(ProcessCanceled, () =>
-        opn(['https://www.nexusmods.com', nexusGameId(game), 'mods', modId].join('/'))
-          .catch(() => undefined))
+      .catch(ProcessCanceled, () => {
+        const url = ['https://www.nexusmods.com', nexusGameId(game), 'mods', modId].join('/');
+        const params = `?tab=files&file_id=${fileId}&nmm=1`;
+        return opn(url + params)
+          .catch(() => undefined);
+      })
       .catch(err => {
         api.showErrorNotification('failed to start download', err);
       });
