@@ -1684,6 +1684,7 @@ class ExtensionManager {
       'dashboard',
       'starter_dashlet',
       'firststeps_dashlet',
+      'mod_load_order',
       'mod_management',
       'category_management',
       'profile_management',

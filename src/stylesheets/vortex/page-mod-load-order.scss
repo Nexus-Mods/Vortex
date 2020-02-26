@@ -1,0 +1,50 @@
+.spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+#mod-loadorder {
+  height: 100%;
+  overflow: auto;
+  border-width: 1px;
+  border-style: solid;
+  border-color: white;
+}
+
+#loadorderinfo {
+  padding: 15px;
+  height: 100%;
+}
+
+.list-group-item {
+  background-color: $brand-bg;
+  margin: 4px;
+  
+  height: 100%;
+  overflow: auto;
+  border-width: 1px;
+  border-style: solid;
+  border-color: white;
+
+  &.dragging {
+    opacity: 0;
+  }
+
+  &.locked {
+    background-color: $brand-info;
+    opacity: 0.7;
+  }
+}
+
+#mod-info {
+  font-size: 1.2em;
+}
+
+#mod-img {
+  width: 150px;
+  height: 90px;
+  margin: 5px 10px 5px 5px;
+  border: 1px solid #d78f46;
+}

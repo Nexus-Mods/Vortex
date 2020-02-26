@@ -15,6 +15,7 @@ import {} from './hardlink_activator';
 import {} from './ini_prep';
 import {} from './installer_fomod';
 import {} from './installer_nested_fomod';
+import {} from './mod_load_order';
 import {} from './mod_management';
 import {} from './move_activator';
 import {} from './news_dashlet';
