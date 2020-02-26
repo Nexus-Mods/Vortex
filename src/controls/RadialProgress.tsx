@@ -30,7 +30,7 @@ class RadialProgress extends React.Component<IProps, {}> {
     this.updateArcGen(props);
   }
 
-  public componentWillReceiveProps(newProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(newProps: IProps) {
     this.updateArcGen(newProps);
   }
 

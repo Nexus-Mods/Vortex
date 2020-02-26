@@ -42,11 +42,11 @@ class CategoryFilterComponent extends React.Component<IProps, IComponentState> {
     };
   }
 
-  public componentWillMount() {
+  public componentDidMount() {
     this.updateState([], this.props, true);
   }
 
-  public componentWillReceiveProps(newProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(newProps: IProps) {
     if (this.props.downloads !== newProps.downloads) {
 
       const before = Object.keys(this.props.downloads)

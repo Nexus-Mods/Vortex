@@ -29,12 +29,12 @@ class Description extends React.Component<IProps, IComponentState> {
     };
   }
 
-  public componentWillMount() {
-    const { long, short } = this.props;
+  public componentDidMount() {
+    const { short } = this.props;
     this.mShortBB = bbcode(short);
   }
 
-  public componentWillReceiveProps(newProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(newProps: IProps) {
     if (this.props.short !== newProps.short) {
       this.mShortBB = bbcode(newProps.short);
     }

@@ -98,7 +98,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
     this.mIsMounted = false;
   }
 
-  public componentWillReceiveProps(nextProps: IStarterProps) {
+  public UNSAFE_componentWillReceiveProps(nextProps: IStarterProps) {
     if ((nextProps.discoveredGames !== this.props.discoveredGames)
        || (nextProps.discoveredTools !== this.props.discoveredTools)
        || (nextProps.gameMode !== this.props.gameMode)

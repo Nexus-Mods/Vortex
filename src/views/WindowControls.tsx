@@ -13,7 +13,7 @@ const window = (() => {
 })();
 
 class WindowControls extends React.Component<{}, {}> {
-  public componentWillMount() {
+  public componentDidMount() {
     window().on('maximize', this.onMaximize);
     window().on('unmaximize', this.onMaximize);
   }

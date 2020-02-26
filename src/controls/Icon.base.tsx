@@ -54,11 +54,11 @@ class Icon extends React.Component<IIconProps, {}> {
   private static sCache: { [id: string]: { width: number, height: number } } = {};
   private mCurrentSize: { width: number, height: number };
 
-  public componentWillMount() {
+  public componentDidMount() {
     this.setIcon(this.props);
   }
 
-  public componentWillReceiveProps(newProps: IIconProps) {
+  public UNSAFE_componentWillReceiveProps(newProps: IIconProps) {
     this.setIcon(newProps);
   }
 

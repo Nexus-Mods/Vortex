@@ -61,7 +61,6 @@ interface IComponentState {
   busy: string;
   progress: number;
   progressFile: string;
-  currentPlatform: string;
 }
 
 const nop = () => null;
@@ -76,15 +75,10 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       busy: undefined,
       progress: 0,
       progressFile: undefined,
-      currentPlatform: '',
     });
   }
 
-  public componentWillMount() {
-    this.nextState.currentPlatform = process.platform;
-  }
-
-  public componentWillReceiveProps(newProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(newProps: IProps) {
     if (this.props.downloadPath !== newProps.downloadPath) {
       this.nextState.downloadPath = newProps.downloadPath;
     }
@@ -223,8 +217,6 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private validateDownloadPath(input: string): { state: ValidationState, reason?: string } {
-    const { currentPlatform } = this.state;
-
     let vortexPath = remote.app.getAppPath();
     if (path.basename(vortexPath) === 'app.asar') {
       // in asar builds getAppPath returns the path of the asar so need to go up 2 levels

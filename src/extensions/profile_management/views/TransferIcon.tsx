@@ -165,7 +165,7 @@ class TransferIcon extends ComponentEx<IProps, IComponentState> {
     this.mIsMounted = false;
   }
 
-  public componentWillReceiveProps(nextProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(nextProps: IProps) {
     if (this.props.isDragging !== nextProps.isDragging) {
       let pos;
       if (nextProps.isDragging) {
@@ -203,7 +203,7 @@ class TransferIcon extends ComponentEx<IProps, IComponentState> {
     </Popover>
     );
 
-    const connectorIcon = connectDragSource(
+    const connectorIcon = connectDragSource((
         <div style={{ display: 'inline-block' }}>
           <tooltip.IconButton
             id={`btn-meta-data-${profile.id}`}
@@ -224,12 +224,14 @@ class TransferIcon extends ComponentEx<IProps, IComponentState> {
           >
             {popover}
           </Overlay>
-        </div>);
+        </div>
+        ));
 
-    return connectDropTarget(
+    return connectDropTarget((
       <div style={{ textAlign: 'center', display: 'inline-block' }}>
         {connectorIcon}
-      </div>);
+      </div>
+    ));
   }
 
   private setRef = (ref) => {

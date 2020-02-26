@@ -110,7 +110,7 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
     });
   }
 
-  public componentWillReceiveProps(newProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(newProps: IProps) {
     if (newProps.visible && !this.props.visible) {
       this.nextState.troubleshoot = false;
       this.nextState.apiKeyInput = '';

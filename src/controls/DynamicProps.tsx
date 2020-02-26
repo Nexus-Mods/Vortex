@@ -26,11 +26,8 @@ export interface IBaseProps {
 class DynamicProps extends React.Component<IBaseProps, {}> {
   private mLastProps: any = {};
 
-  public componentWillMount() {
-    this.mLastProps = this.props.dynamicProps();
-  }
-
   public componentDidMount() {
+    this.mLastProps = this.props.dynamicProps();
     listeners.push(this);
     if (listeners.length === 1) {
       refreshListeners();

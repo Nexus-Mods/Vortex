@@ -85,7 +85,7 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
     win.removeListener('blur', this.onBlur);
   }
 
-  public componentWillReceiveProps(nextProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(nextProps: IProps) {
     if (this.props.active !== nextProps.active) {
       if (nextProps.active && (this.mUpdateTimer === undefined)) {
         this.startUpdateCycle();

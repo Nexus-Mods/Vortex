@@ -53,7 +53,7 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
     }, this.props.debounceTimer || 1000);
   }
 
-  public componentWillReceiveProps(newProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(newProps: IProps) {
     if ((newProps.value !== this.props.value)
         && (this.mLastCommitted !== newProps.value)) {
       this.mLastCommitted = newProps.value;

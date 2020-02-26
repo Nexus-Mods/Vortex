@@ -82,7 +82,7 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
     };
   }
 
-  public componentWillReceiveProps(newProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(newProps: IProps) {
     if (newProps.url !== this.props.url) {
       if ((newProps.url === undefined) || (this.props.url === undefined)
         || (new URL(newProps.url).hostname !== new URL(this.props.url).hostname)) {

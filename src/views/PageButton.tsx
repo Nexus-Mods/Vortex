@@ -12,7 +12,7 @@ interface IPageButtonProps {
 }
 
 class PageButton extends React.Component<IPageButtonProps, {}> {
-  public componentWillMount() {
+  public componentDidMount() {
     const { page } = this.props;
     if (page.badge) {
       page.badge.attach(this);

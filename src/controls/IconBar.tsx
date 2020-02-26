@@ -104,7 +104,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
     this.updateBGClick();
   }
 
-  public componentWillReceiveProps() {
+  public UNSAFE_componentWillReceiveProps() {
     this.updateBGClick();
   }
 

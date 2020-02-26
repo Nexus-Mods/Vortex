@@ -48,7 +48,7 @@ class ActionControl extends React.Component<IProps, { actions: IActionDefinition
     };
   }
 
-  public componentWillReceiveProps(newProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(newProps: IProps) {
     // TODO: since we can't know how the condition callback is implemented,
     //   there is no way to determine, based on props, whether the actions
     //   to be shown need to be updated.

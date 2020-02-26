@@ -122,7 +122,7 @@ class ServerRow extends React.Component<RowProps, {}> {
   public render(): JSX.Element {
     const {t, connectDragSource, connectDropTarget, isDragging, server} = this.props;
     return connectDropTarget(
-      connectDragSource(
+      connectDragSource((
         <div>
           <ListGroupItem
             active={isDragging}
@@ -138,7 +138,8 @@ class ServerRow extends React.Component<RowProps, {}> {
               <Icon name='remove' />
             </Button>
           </ListGroupItem>
-        </div>));
+        </div>
+        )));
   }
   private removeServer = () => {
     const {serverId, onRemoveMetaserver} = this.props;
@@ -177,7 +178,7 @@ class ServerList extends React.Component<IListProps, IListState> {
     };
   }
 
-  public componentWillMount() {
+  public componentDidMount() {
     this.pullServerState();
   }
 

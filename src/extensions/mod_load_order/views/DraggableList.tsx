@@ -163,7 +163,7 @@ class DraggableList extends ComponentEx<IProps, IState> {
 
   }
 
-  public componentWillReceiveProps(newProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(newProps: IProps) {
     if (this.props.items !== newProps.items) {
       this.nextState.ordered = newProps.items.slice(0);
     }
@@ -172,7 +172,7 @@ class DraggableList extends ComponentEx<IProps, IState> {
   public render(): JSX.Element {
     const { connectDropTarget, id, itemRenderer } = this.props;
     const { ordered } = this.state;
-    return connectDropTarget(
+    return connectDropTarget((
       <div style={{ height: '100%' }}>
         <ListGroup>
           {ordered.map((item, idx) => (
@@ -188,7 +188,8 @@ class DraggableList extends ComponentEx<IProps, IState> {
             />
           ))}
         </ListGroup>
-      </div>);
+      </div>
+    ));
   }
 
   public changeIndex = (oldIndex: number, newIndex: number,

@@ -138,7 +138,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
     ];
   }
 
-  public componentWillMount() {
+  public componentDidMount() {
     this.nextState.viewAll = false;
 
     this.mColumns = createColumns(this.context.api, () => this.props);

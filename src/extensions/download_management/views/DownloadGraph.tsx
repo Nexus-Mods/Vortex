@@ -33,7 +33,7 @@ class DownloadGraph extends ComponentEx<IProps, IComponentState> {
     this.initState({ width: 800 });
   }
 
-  public componentWillMount() {
+  public componentDidMount() {
     this.forceUpdate();
   }
 

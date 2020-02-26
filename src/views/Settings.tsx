@@ -56,7 +56,7 @@ class Settings extends ComponentEx<IProps, {}> {
                                    remote.app.name,
                                    'startup.json');
   private mStartupSettings = makeReactive({});
-  public componentWillMount() {
+  public componentDidMount() {
     try {
       this.mStartupSettings =
         makeReactive(JSON.parse(fs.readFileSync(this.mStartupPath, { encoding: 'utf-8' })));

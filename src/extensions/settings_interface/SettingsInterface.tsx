@@ -98,7 +98,7 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
     this.readLocales(this.props);
   }
 
-  public componentWillReceiveProps(newProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(newProps: IProps) {
     if (this.state.languages.find(lang => lang.key === newProps.currentLanguage) === undefined) {
       this.setState(update(this.state, {
         languages: { $push: [{

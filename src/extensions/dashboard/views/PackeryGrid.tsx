@@ -53,7 +53,7 @@ class Packery extends React.Component<IProps, {}> {
     this.mMounted = Date.now();
   }
 
-  public componentWillReceiveProps(nextProps: typeof Packery.prototype.props) {
+  public UNSAFE_componentWillReceiveProps(nextProps: typeof Packery.prototype.props) {
     const nextChildren = new Set(React.Children.map(nextProps.children, (child: any) => child.key));
     if ((nextProps.totalWidth !== this.props.totalWidth)
         || !setEqual(this.mChildren, nextChildren)) {

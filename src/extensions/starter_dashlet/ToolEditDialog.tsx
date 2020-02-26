@@ -49,7 +49,7 @@ class EnvButton extends ComponentEx<IEnvButtonProps, IEnvButtonState> {
     this.initState({ varCopy: { ...props.variable } });
   }
 
-  public componentWillReceiveProps(newProps: IEnvButtonProps) {
+  public UNSAFE_componentWillReceiveProps(newProps: IEnvButtonProps) {
     this.nextState.varCopy = { ...newProps.variable };
   }
 

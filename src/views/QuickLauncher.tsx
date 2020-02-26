@@ -77,7 +77,7 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
     this.context.api.events.removeListener('quick-launch', this.start);
   }
 
-  public componentWillReceiveProps(nextProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(nextProps: IProps) {
     if ((nextProps.discoveredTools !== this.props.discoveredTools)
         || (nextProps.game !== this.props.game)
         || (nextProps.gameDiscovery !== this.props.primaryTool)) {

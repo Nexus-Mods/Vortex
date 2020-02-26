@@ -88,7 +88,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     };
   }
 
-  public componentWillReceiveProps(newProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(newProps: IProps) {
     if ((newProps.dialogs.length > 0) &&
       (newProps.dialogs[0].id !== this.state.currentDialogId)) {
       let newState = update(this.state, {
@@ -113,7 +113,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     }
   }
 
-  public componentWillMount() {
+  public componentDidMount() {
     if (this.props.dialogs.length > 0) {
       this.setState(update(this.state, {
         currentDialogId: { $set: this.props.dialogs[0].id },
@@ -213,7 +213,8 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
             hideText={t('Hide Details')}
           >
             {ctrl}
-          </Collapse>));
+          </Collapse>
+          ));
       } else {
         controls.push(ctrl);
       }
@@ -468,7 +469,8 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         isDefault={isDefault}
         onDismiss={this.dismiss}
         isDisabled={isDisabled}
-      />);
+      />
+      );
   }
 
   private iconForType(type: DialogType) {

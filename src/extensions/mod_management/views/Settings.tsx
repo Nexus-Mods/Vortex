@@ -104,7 +104,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     });
   }
 
-  public componentWillMount() {
+  public componentDidMount() {
     const activators = this.supportedActivators();
     this.nextState.supportedActivators = activators;
     if (activators.find(act => act.id === this.state.currentActivator) === undefined) {
@@ -117,7 +117,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     }
   }
 
-  public componentWillReceiveProps(newProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(newProps: IProps) {
     if (this.props.installPath !== newProps.installPath) {
       this.nextState.installPath = newProps.installPath;
     }

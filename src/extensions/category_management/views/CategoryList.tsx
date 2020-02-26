@@ -110,11 +110,11 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
     ];
   }
 
-  public componentWillMount() {
+  public componentDidMount() {
     this.refreshTree(this.props);
   }
 
-  public componentWillReceiveProps(newProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(newProps: IProps) {
     if (this.props.categories !== newProps.categories) {
       this.refreshTree(newProps);
     }

@@ -38,7 +38,7 @@ class PackeryItem extends React.Component<IProps, IPackeryItemState> {
     };
   }
 
-  public componentWillReceiveProps(newProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(newProps: IProps) {
     if (!newProps.fixed && (newProps.packery !== this.props.packery)) {
       this.makeDraggable(newProps);
     }

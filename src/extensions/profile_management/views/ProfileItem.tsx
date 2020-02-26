@@ -60,7 +60,7 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
     this.mUserData = remote.app.getPath('userData');
   }
 
-  public componentWillMount() {
+  public componentDidMount() {
     if (this.props.profile === undefined) {
       this.setHasProfileImage(false);
     } else {
@@ -72,9 +72,6 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
         this.setHasProfileImage(false);
       }
     }
-  }
-
-  public componentDidMount() {
     this.mMounted = true;
   }
 

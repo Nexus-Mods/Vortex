@@ -259,7 +259,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     });
   }
 
-  public componentWillMount() {
+  public componentDidMount() {
     this.mIsMounted = true;
     this.updateModsWithState(this.props)
     .then(() => this.forceUpdate());
@@ -276,7 +276,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     this.mIsMounted = false;
   }
 
-  public componentWillReceiveProps(newProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(newProps: IProps) {
     if ((this.props.gameMode !== newProps.gameMode)
         || (this.props.mods !== newProps.mods)
         || (this.props.modState !== newProps.modState)

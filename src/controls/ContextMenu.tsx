@@ -83,7 +83,7 @@ class ContextMenu extends ComponentEx<IProps, IComponentState> {
     this.initState({});
   }
 
-  public componentWillReceiveProps(newProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(newProps: IProps) {
     if ((this.props.visible !== newProps.visible)
         && newProps.visible) {
       this.updatePlacement(newProps.position);

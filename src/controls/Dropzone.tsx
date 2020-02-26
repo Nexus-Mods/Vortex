@@ -56,7 +56,7 @@ class Dropzone extends ComponentEx<IProps, IComponentState> {
     });
   }
 
-  public componentWillMount() {
+  public componentDidMount() {
     // styling is considerably different depending on whether this is
     // a stand-alone control or a wrapper for other controls
     this.mWrapperMode = React.Children.count(this.props.children) > 0;

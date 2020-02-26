@@ -181,7 +181,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     }, 200, true);
   }
 
-  public componentWillMount() {
+  public componentDidMount() {
     this.updateSelection(this.props);
     this.context.api.events.on(this.props.tableId + '-scroll-to', this.scrollTo);
     this.props.objects.forEach(object => {
@@ -191,9 +191,6 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         });
       }
     });
-  }
-
-  public componentDidMount() {
     this.mMounted = true;
   }
 
@@ -202,7 +199,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     this.mMounted = false;
   }
 
-  public componentWillReceiveProps(newProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(newProps: IProps) {
     if ((newProps.attributeState !== this.props.attributeState)
         || (newProps.objects !== this.props.objects)) {
       const { attributeState, objects } = newProps;
@@ -308,11 +305,13 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
             <Table hover>
               {this.renderHeader(false)}
             </Table>
-          </div>)}
+          </div>
+          )}
         {showDetails === false ? null : (
           <div className={`table-details-pane ${openClass}`}>
             {this.renderDetails()}
-          </div>)}
+          </div>
+          )}
       </div>
     );
   }
@@ -411,7 +410,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
           {groupedRows.map(group => {
             const expanded = group.rows !== null;
             const rows = group.rows || [];
-            return [
+            return [(
               <GroupingRow
                 t={t}
                 key={group.id || '__empty'}
@@ -422,7 +421,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
                 onToggle={this.toggleGroup}
                 onExpandAll={this.expandAll}
                 onCollapseAll={this.collapseAll}
-              />,
+              />
+            ),
               ...rows.map(rowId => this.renderRow(rowId, sortAttribute, group.id)),
             ];
           })}
@@ -1451,7 +1451,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     let groupSortedRows: Array<{ rowId: string, groupId: string }>;
     if (groupBy !== undefined) {
       groupSortedRows = groupedRows.reduce((prev, group) => {
-        prev.push(...(group.rows || []).map(rId => ({ rowId: rId, groupId: group.id })) || []);
+        prev.push(...((group.rows || []).map(rId => ({ rowId: rId, groupId: group.id })) || []));
         return prev;
       }, []);
     } else {

@@ -156,7 +156,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     return { api, menuLayer: this.menuLayer, getModifiers: this.getModifiers };
   }
 
-  public componentWillMount() {
+  public componentDidMount() {
     if (this.props.objects.length > 0) {
       const def = this.props.objects.sort((lhs, rhs) => lhs.priority - rhs.priority)[0];
       this.setMainPage(def.title, false);
@@ -167,9 +167,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     }
 
     this.updateSize();
-  }
 
-  public componentDidMount() {
     window.addEventListener('resize', this.updateSize);
     window.addEventListener('keydown', this.updateModifiers);
     window.addEventListener('keyup', this.updateModifiers);
@@ -202,7 +200,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       ;
   }
 
-  public componentWillReceiveProps(newProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(newProps: IProps) {
     const page = newProps.objects.find(iter => iter.id === newProps.mainPage);
     if ((page !== undefined) && !page.visible()) {
       this.setMainPage('Dashboard', false);

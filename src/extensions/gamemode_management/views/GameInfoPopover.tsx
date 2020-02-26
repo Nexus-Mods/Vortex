@@ -34,7 +34,7 @@ class GameInfoPopover extends ComponentEx<IProps, { loading: boolean }> {
     this.state = { loading: false };
   }
 
-  public componentWillMount() {
+  public componentDidMount() {
     const { game, onRefreshGameInfo } = this.props;
     this.mMounted = true;
     if (onRefreshGameInfo !== undefined) {
@@ -52,7 +52,7 @@ class GameInfoPopover extends ComponentEx<IProps, { loading: boolean }> {
     this.mMounted = false;
   }
 
-  public componentWillReceiveProps(nextProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(nextProps: IProps) {
     if ((this.props.discoveredGames !== nextProps.discoveredGames)
       && (nextProps.onRefreshGameInfo !== undefined)) {
       // A change in discovered games would suggest that the player has

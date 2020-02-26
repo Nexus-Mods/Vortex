@@ -39,7 +39,7 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
     this.initState({ expand: undefined });
   }
 
-  public componentWillReceiveProps(newProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(newProps: IProps) {
     if ((this.props.notifications !== newProps.notifications)
         && (this.mRef !== null)) {
       if (newProps.notifications.length === 0) {

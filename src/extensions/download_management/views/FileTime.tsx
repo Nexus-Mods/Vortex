@@ -35,7 +35,7 @@ class FileTime extends ComponentEx<IFileTimeProps, { mtime: Date }> {
     this.mIsMounted = false;
   }
 
-  public componentWillReceiveProps(nextProps: IFileTimeProps) {
+  public UNSAFE_componentWillReceiveProps(nextProps: IFileTimeProps) {
     if ((nextProps.time === undefined)
       && ((this.props.downloadPath !== nextProps.downloadPath)
         || (this.props.download !== nextProps.download))) {

@@ -45,7 +45,7 @@ interface ITweakProps {
 
 class Tweak extends PureComponentEx<ITweakProps, {}> {
   public render(): JSX.Element {
-    const { enabled, fileName, onToggle } = this.props;
+    const { enabled, fileName } = this.props;
     const match = fileName.match(/(.*)\[(.*)\]\.ini/);
 
     if (!truthy(match) || (match.length < 2)) {
@@ -55,7 +55,8 @@ class Tweak extends PureComponentEx<ITweakProps, {}> {
     return (
       <ListGroupItem className='listitem-tweak'>
         <Toggle checked={enabled} onToggle={this.toggle}>{match[1]}</Toggle>
-      </ListGroupItem>);
+      </ListGroupItem>
+      );
   }
 
   private toggle = (enabled: boolean) => {
@@ -73,7 +74,7 @@ class TweakList extends ComponentEx<IProps, IComponentState> {
     });
   }
 
-  public componentWillMount() {
+  public componentDidMount() {
     const { mod, modsPath } = this.props;
 
     if ((mod !== undefined) && (mod.installationPath !== undefined)) {
@@ -113,7 +114,8 @@ class TweakList extends ComponentEx<IProps, IComponentState> {
         fileName={fileName}
         enabled={isEnabled}
         onToggle={this.toggle}
-      />);
+      />
+      );
   }
 
   private toggle = (fileName: string, enabled: boolean) => {

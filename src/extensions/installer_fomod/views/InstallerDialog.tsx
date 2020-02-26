@@ -54,14 +54,14 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
     }
   }
 
-  public componentWillReceiveProps(newProps: IGroupProps) {
+  public UNSAFE_componentWillReceiveProps(newProps: IGroupProps) {
     if (!_.isEqual(this.props.group, newProps.group)) {
       this.setState({ selectedPlugins: this.getSelectedPlugins(newProps) });
       this.mValidate = this.validateFunc(newProps.group.type);
     }
   }
 
-  public componentWillMount() {
+  public UNSAFE_componentWillMount() {
     const { group, onSelect } = this.props;
     const { selectedPlugins } = this.state;
     this.mValidate = this.validateFunc(group.type);
@@ -298,7 +298,7 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
     super(props);
     this.state = this.initDescription(props);
   }
-  public componentWillReceiveProps(nextProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(nextProps: IProps) {
     if (
       ((this.props.installerState === undefined) && (nextProps.installerState !== undefined))
       || ((this.props.installerState !== undefined)

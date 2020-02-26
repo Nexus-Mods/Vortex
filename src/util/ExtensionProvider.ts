@@ -8,41 +8,11 @@ import * as React from 'react';
 
 type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
 
+export const ExtensionContext = React.createContext({});
+
 export interface IExtensionProps {
   extensions: ExtensionManager;
 }
-
-/**
- * provider for ui extensions. This makes extensions available to
- * to extensible components
- *
- * @export
- * @class ExtensionProvider
- * @extends {React.Component<IExtensionProps, {}>}
- */
-export class ExtensionProvider extends React.Component<IExtensionProps, {}> {
-  // tslint:disable-next-line:no-unused-variable
-  private static childContextTypes = {
-    extensions: PropTypes.object.isRequired,
-  };
-
-  public getChildContext(): any {
-    const { extensions } = this.props;
-    return { extensions };
-  }
-
-  public render() {
-    return React.Children.only(this.props.children);
-  }
-}
-
-/*
-export function withTranslation(
-  ns?: Namespace,
-): <P extends WithTranslation>(
-  component: React.ComponentType<P>,
-) => React.ComponentType<Omit<P, keyof IExtensionProps>>;
-*/
 
 /**
  * extension function. This function creates a wrapper around a component that
@@ -61,7 +31,7 @@ export function extend(registerFunc: (...args) => void, groupProp?: string):
 
   const updateExtensions = (props: any, context: any) => {
     extensions[props[groupProp]] = [];
-    context.extensions.apply(registerFunc.name, (...args) => {
+    context.apply(registerFunc.name, (...args) => {
       const res = registerFunc(props[groupProp], ...args);
       if (res !== undefined) {
         extensions[props[groupProp]].push(res);
@@ -75,20 +45,11 @@ export function extend(registerFunc: (...args) => void, groupProp?: string):
     type PropsT = Omit<P, keyof IExtendedProps> & IExtensibleProps;
     // tslint:disable-next-line:class-name
     return class __ExtendedComponent extends React.Component<PropsT, S> {
-      public static contextTypes: React.ValidationMap<any> = {
-        extensions: PropTypes.object.isRequired,
-      };
+      public static contextType = ExtensionContext;
 
-      public context: IExtensionProps;
       private mObjects: any[];
 
-      public componentWillMount(): void {
-        if (extensions[this.props[groupProp]] === undefined) {
-          updateExtensions(this.props, this.context);
-        }
-      }
-
-      public componentWillReceiveProps(nextProps: any) {
+      public UNSAFE_componentWillReceiveProps(nextProps: any) {
         if (this.props[groupProp] !== nextProps[groupProp]) {
           if (extensions[nextProps[groupProp]] === undefined) {
             updateExtensions(nextProps, this.context);
@@ -101,6 +62,10 @@ export function extend(registerFunc: (...args) => void, groupProp?: string):
 
       public render(): JSX.Element {
         const { children, staticElements } = this.props;
+
+        if (extensions[this.props[groupProp]] === undefined) {
+          updateExtensions(this.props, this.context);
+        }
 
         if (this.mObjects === undefined) {
           this.mObjects = [].concat(staticElements || [], extensions[this.props[groupProp]] || []);

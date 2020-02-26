@@ -57,7 +57,7 @@ import { addNotification, setupNotificationSuppression } from './actions/notific
 import reducer, { Decision } from './reducers/index';
 import { setOutdated, terminate, toError } from './util/errorHandling';
 import ExtensionManager from './util/ExtensionManager';
-import { ExtensionProvider } from './util/ExtensionProvider';
+import { ExtensionContext } from './util/ExtensionProvider';
 import GlobalNotifications from './util/GlobalNotifications';
 import getI18n, { fallbackTFunc, TFunction } from './util/i18n';
 import { log } from './util/log';
@@ -506,9 +506,9 @@ function renderer() {
         <Provider store={store}>
           <DndProvider backend={HTML5Backend}>
             <I18nextProvider i18n={i18n}>
-              <ExtensionProvider extensions={extensions}>
+              <ExtensionContext.Provider value={extensions}>
                 <MainWindow className='full-height' api={extensions.getApi()} t={tFunc} />
-              </ExtensionProvider>
+              </ExtensionContext.Provider>
             </I18nextProvider>
           </DndProvider>
         </Provider>
