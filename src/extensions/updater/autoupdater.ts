@@ -8,14 +8,14 @@ import { truthy } from '../../util/util';
 
 import {app as appIn, ipcMain, remote} from 'electron';
 import {autoUpdater as AUType, UpdateInfo} from 'electron-updater';
-import { RegGetValue } from 'winapi-bindings';
 import * as semver from 'semver';
-import * as uuidv5 from 'uuid/v5';
+import uuidv5 from 'uuid/v5';
+import { RegGetValue } from 'winapi-bindings';
 
 const app = remote !== undefined ? remote.app : appIn;
 
 const appName = 'com.nexusmods.vortex';
-const ELECTRON_BUILDER_NS_UUID = '50e065bc-3134-11e6-9bab-38c9862bdaf3'
+const ELECTRON_BUILDER_NS_UUID = '50e065bc-3134-11e6-9bab-38c9862bdaf3';
 
 const myguid = (() => {
   let cached: string;
@@ -112,7 +112,9 @@ function setupAutoUpdate(api: IExtensionApi) {
     let instPath: string;
     if (process.platform === 'win32') {
       try {
-        instPath = RegGetValue('HKEY_LOCAL_MACHINE', `SOFTWARE\\${myguid()}`, 'InstallLocation').value as string;
+        instPath = RegGetValue('HKEY_LOCAL_MACHINE',
+                               `SOFTWARE\\${myguid()}`,
+                               'InstallLocation').value as string;
       } catch (err) {
         api.sendNotification({
           type: 'warning',
@@ -135,7 +137,7 @@ function setupAutoUpdate(api: IExtensionApi) {
                 } },
               ]);
             } },
-          ]
+          ],
         });
         return;
       }
@@ -145,7 +147,7 @@ function setupAutoUpdate(api: IExtensionApi) {
       update: info.version,
       instPath,
     });
-    
+
     queryUpdate(info.version)
       .then(() => autoUpdater.downloadUpdate()
         .catch(err => {
