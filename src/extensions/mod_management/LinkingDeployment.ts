@@ -239,7 +239,10 @@ abstract class LinkingActivator implements IDeploymentMethod {
 
           const state: IState = this.mApi.store.getState();
           const { cleanupOnDeploy } = state.settings.mods;
-          if ((removed.length > 0) && (game.requiresCleanup || cleanupOnDeploy)) {
+          const gameRequiresCleanup = game.requiresCleanup === undefined
+            ? (game.mergeMods !== true)
+            : game.requiresCleanup;
+          if ((removed.length > 0) && (gameRequiresCleanup || cleanupOnDeploy)) {
             this.postLinkPurge(dataPath, false, directoryCleaning)
               .catch(err => {
                 this.mApi.showErrorNotification('Failed to clean up',
