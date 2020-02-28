@@ -3,6 +3,7 @@ import Icon from '../../../controls/Icon';
 import { Button } from '../../../controls/TooltipControls';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import opn from '../../../util/opn';
+import { truthy } from '../../../util/util';
 
 import { setUserAPIKey } from '../actions/account';
 import { IValidateKeyData } from '../types/IValidateKeyData';
@@ -29,6 +30,8 @@ interface IActionProps {
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
+
+const START_TIME = Date.now();
 
 class LoginIcon extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
@@ -69,6 +72,10 @@ class LoginIcon extends ComponentEx<IProps, {}> {
 
     const loggedIn = (APIKey !== undefined) && (userInfo !== undefined) && (userInfo !== null);
 
+    const profileIcon = truthy(userInfo.profileUrl)
+      ? `${userInfo.profileUrl}?r_${START_TIME}`
+      : 'assets/images/noavatar.png';
+
     return (
       <Button
         id='btn-login'
@@ -77,7 +84,7 @@ class LoginIcon extends ComponentEx<IProps, {}> {
       >
         {loggedIn ? (
           <Image
-            src={userInfo.profileUrl  || 'assets/images/noavatar.png'}
+            src={profileIcon}
             circle
             style={{ height: 32, width: 32 }}
           />
