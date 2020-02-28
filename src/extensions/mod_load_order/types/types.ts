@@ -71,7 +71,7 @@ export interface IGameLoadOrderEntry {
   filter?: (mods: types.IMod[]) => types.IMod[];
 
   // Some game extension's may need a regular callback
-  //  function to be called every x amount of time (currently set to 2 seconds)
+  //  function to be called every x amount of time (currently set to 500 MSEC)
   //  e.g. if we wish to read/write from/to a file.
   callback?: (loadOrder: ILoadOrder) => void;
 

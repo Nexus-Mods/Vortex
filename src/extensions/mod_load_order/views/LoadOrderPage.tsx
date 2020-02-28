@@ -85,7 +85,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
       }
 
       return null;
-    }, 2000);
+    }, 500);
   }
 
   public componentWillReceiveProps(newProps: IProps) {
@@ -248,7 +248,8 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
     const spread = [ ...en, ...difference ];
 
     (!!activeGameEntry.preSort)
-      ? activeGameEntry.preSort(spread).then(newList => this.nextState.enabled = newList)
+      ? activeGameEntry.preSort(spread).then(newList =>
+          this.nextState.enabled = (!!newList) ? newList : spread)
       : this.nextState.enabled = spread;
   }
 }
