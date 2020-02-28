@@ -6,6 +6,7 @@ const LAYOUT_SETTLE_MS = 5000;
 export interface IProps {
   totalWidth: number;
   onChangeLayout: (items: string[]) => void;
+  settings: any;
 }
 
 function setEqual(lhs: Set<any>, rhs: Set<any>) {
@@ -59,6 +60,10 @@ class Packery extends React.Component<IProps, {}> {
         || !setEqual(this.mChildren, nextChildren)) {
       this.mChildren = nextChildren;
       this.scheduleRefresh();
+    }
+
+    if (nextProps.settings !== this.props.settings) {
+      this.scheduleLayout();
     }
   }
 
