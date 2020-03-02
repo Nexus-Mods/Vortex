@@ -21,6 +21,7 @@ export default function init(context: IExtensionContextExt) {
       const gameEntry: IGameLoadOrderEntry = findGameEntry(currentGameId);
       return (gameEntry !== undefined) ? true : false;
     },
+    priority: 120,
     props: () => {
       return {
         getGameEntry: (gameId) => findGameEntry(gameId),

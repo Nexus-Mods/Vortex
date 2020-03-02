@@ -138,8 +138,12 @@ export interface IGame extends ITool {
   version?: string;
 
   /**
-   * should be set to true only if the game in question needs its mod folders
-   *  cleaned up on each deploy event.
+   * if true, empty directories are cleaned up during deployment.
+   * Right now this defaults to false if mergeMods is true, this defaults to true if mergeMods
+   * is false or a function.
+   * The reason being that otherwise we would be leaving empty directories every time a mod gets
+   * disabled or the deployment name changes.
+   * Users can also manually force the cleanup for all games.
    */
   requiresCleanup?: boolean;
 

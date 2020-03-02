@@ -85,7 +85,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
       }
 
       return null;
-    }, 2000);
+    }, 500);
   }
 
   public componentWillReceiveProps(newProps: IProps) {
@@ -131,7 +131,9 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
 
     const activeGameEntry: IGameLoadOrderEntry = getGameEntry(profile.gameId);
     if (!!activeGameEntry.preSort) {
-      activeGameEntry.preSort(list).then(newList => setNewOrder(newList));
+      activeGameEntry.preSort(list).then(newList => !!newList
+                                                      ? setNewOrder(newList)
+                                                      : setNewOrder(list));
     } else {
       setNewOrder(list);
     }
@@ -218,6 +220,12 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
   private updateState(props: IProps) {
     const { getGameEntry, mods, profile } = props;
     const activeGameEntry = getGameEntry(profile.gameId);
+    if (activeGameEntry === undefined) {
+      // User may have switched to a game which does not use
+      //  the generic load order extension. In this case we just
+      //  return.
+      return;
+    }
 
     const renderer = this.getItemRenderer();
     if (renderer !== this.state.itemRenderer) {
@@ -248,7 +256,8 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
     const spread = [ ...en, ...difference ];
 
     (!!activeGameEntry.preSort)
-      ? activeGameEntry.preSort(spread).then(newList => this.nextState.enabled = newList)
+      ? activeGameEntry.preSort(spread).then(newList =>
+          this.nextState.enabled = (!!newList) ? newList : spread)
       : this.nextState.enabled = spread;
   }
 }

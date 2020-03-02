@@ -129,7 +129,11 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
             {fixed.map(this.renderFixedItem)}
           </div>
           <div className='dynamic-dashlets'>
-            <PackeryGrid totalWidth={3} onChangeLayout={this.onChangeLayout}>
+            <PackeryGrid
+              totalWidth={3}
+              onChangeLayout={this.onChangeLayout}
+              settings={dashletSettings}
+            >
               {dynamic.map(this.renderItem)}
             </PackeryGrid>
           </div>

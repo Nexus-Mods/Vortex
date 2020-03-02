@@ -6,6 +6,7 @@ import bbcode, { stripBBCode } from '../../util/bbcode';
 import { ComponentEx, translate } from '../../util/ComponentEx';
 import opn from '../../util/opn';
 import { getSafe } from '../../util/storeHelper';
+import { truthy } from '../../util/util';
 import { currentGame } from '../gamemode_management/selectors';
 import { nexusGameId } from '../nexus_integration/util/convertGameId';
 import { GAMEID_PLACEHOLDER } from './constants';
@@ -149,7 +150,8 @@ class RSSDashlet extends ComponentEx<IProps, IComponentState> {
     }
 
     const category = getSafe(message, ['categories', 0], undefined);
-    const image = message.enclosures.find(enc => enc.type.startsWith('image/'));
+    const image = message.enclosures.find(enc =>
+      (!truthy(enc.type) || enc.type.startsWith('image/')) && truthy(enc.url));
 
     return (
       <ListGroupItem className='rss-item' key={message.guid}>
