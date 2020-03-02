@@ -570,7 +570,7 @@
       "rmFill": true
     },
     "disconnected": {
-      "path": "{nucleo}/text editing/{nucleo_simple}_link-broken-70",
+      "path": "{nucleo}/technology/{nucleo_simple}_wifi-off",
       "rmFill": true
     }
   }

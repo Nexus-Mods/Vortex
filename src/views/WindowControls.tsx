@@ -29,7 +29,7 @@ class WindowControls extends React.Component<{}, {}> {
     }
     return (
       <div id='window-controls'>
-        { window().isMinimizable()
+        { window().minimizable
           ? (
             <IconButton
               id='window-minimize'
@@ -40,7 +40,7 @@ class WindowControls extends React.Component<{}, {}> {
             />
           ) : null
         }
-        { window().isMaximizable()
+        { window().maximizable
           ? (
             <IconButton
               id='window-maximize'
@@ -51,7 +51,7 @@ class WindowControls extends React.Component<{}, {}> {
             />
           ) : null
         }
-        { window().isClosable()
+        { window().closable
           ? (
             <IconButton
               id='window-close'
