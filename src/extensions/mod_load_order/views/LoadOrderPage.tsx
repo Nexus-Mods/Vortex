@@ -220,6 +220,12 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
   private updateState(props: IProps) {
     const { getGameEntry, mods, profile } = props;
     const activeGameEntry = getGameEntry(profile.gameId);
+    if (activeGameEntry === undefined) {
+      // User may have switched to a game which does not use
+      //  the generic load order extension. In this case we just
+      //  return.
+      return;
+    }
 
     const renderer = this.getItemRenderer();
     if (renderer !== this.state.itemRenderer) {
