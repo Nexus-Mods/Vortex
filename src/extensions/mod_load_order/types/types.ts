@@ -70,9 +70,8 @@ export interface IGameLoadOrderEntry {
   //  reason why this is optional.
   filter?: (mods: types.IMod[]) => types.IMod[];
 
-  // Some game extension's may need a regular callback
-  //  function to be called every x amount of time (currently set to 500 MSEC)
-  //  e.g. if we wish to read/write from/to a file.
+  // Allow game extensions to react whenever the load order
+  //  changes.
   callback?: (loadOrder: ILoadOrder) => void;
 
   // Add option to provide a custom item renderer if wanted.
