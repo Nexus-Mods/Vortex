@@ -82,26 +82,29 @@ class Disableable {
   }
 
   public get(obj, prop) {
+    const state: IState = this.mApi.store.getState();
+    const { networkConnected } = state.session.base;
     if (prop === 'disable') {
       return () => this.mDisabled = true;
-    } else if ((!this.mDisabled)
-               || mgmtFuncs.has(prop)
-               || (typeof obj[prop] !== 'function')) {
-      if (prop === 'getFileByMD5') {
-        return (hash: string, gameId: string) => {
-          if (gameId.toLowerCase() === 'skyrimse') {
-            this.mApi.showErrorNotification(
-              'Attempt to send invalid API request, please report this (once)',
-              new Error(`getFileByMD5 called with game id ${gameId}`),
-                        { id: 'api-invalid-gameid' });
-            gameId = 'skyrimspecialedition';
-          }
-          return obj[prop](hash, gameId);
-        };
-      }
+    } else if (mgmtFuncs.has(prop) || (typeof obj[prop] !== 'function')) {
       return obj[prop];
-    } else {
+    } else if (!networkConnected) {
+      return () => Promise.reject(new ProcessCanceled('network disconnected'));
+    } else if (this.mDisabled) {
       return () => Promise.reject(new APIDisabled(prop));
+    } else if (prop === 'getFileByMD5') {
+      return (hash: string, gameId: string) => {
+        if (gameId.toLowerCase() === 'skyrimse') {
+          this.mApi.showErrorNotification(
+            'Attempt to send invalid API request, please report this (once)',
+            new Error(`getFileByMD5 called with game id ${gameId}`),
+            { id: 'api-invalid-gameid' });
+          gameId = 'skyrimspecialedition';
+        }
+        return obj[prop](hash, gameId);
+      };
+    } else {
+      return obj[prop];
     }
   }
 }

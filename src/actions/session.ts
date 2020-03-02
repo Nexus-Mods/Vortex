@@ -46,3 +46,5 @@ export const setUIBlocker =
   ({ id, icon, description, mayCancel }));
 
 export const clearUIBlocker = safeCreateAction('CLEAR_UI_BLOCKER', (id: string) => id);
+
+export const setNetworkConnected = safeCreateAction('SET_NETWORK_CONNECTED', (connected: boolean) => connected);

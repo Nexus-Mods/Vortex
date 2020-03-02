@@ -84,6 +84,10 @@ function checkForUpdates(api: IExtensionApi) {
 }
 
 function updateAvailableExtensions(api: IExtensionApi, force: boolean = false) {
+  const state: IState = api.store.getState();
+  if (!state.session.base.networkConnected) {
+    return Promise.resolve();
+  }
   return fetchAvailableExtensions(true, force)
     .catch(DataInvalid, err => {
       api.showErrorNotification('Failed to fetch available extensions', err,

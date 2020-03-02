@@ -57,6 +57,9 @@ export function rawRequest(apiURL: string, options?: IRequestOptions): Promise<s
         .on('error', (reqErr: Error) => {
           return reject(reqErr);
         });
+    })
+    .on('error', err => {
+      return reject(err);
     });
   });
 }

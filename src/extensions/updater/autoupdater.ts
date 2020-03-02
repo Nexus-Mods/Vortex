@@ -10,7 +10,7 @@ import {app as appIn, ipcMain, remote} from 'electron';
 import {autoUpdater as AUType, UpdateInfo} from 'electron-updater';
 import { RegGetValue } from 'winapi-bindings';
 import * as semver from 'semver';
-import * as uuidv5 from 'uuid/v5';
+import uuidv5 from 'uuid/v5';
 
 const app = remote !== undefined ? remote.app : appIn;
 
@@ -45,7 +45,7 @@ function openTesting() {
 function setupAutoUpdate(api: IExtensionApi) {
   const autoUpdater: typeof AUType = require('electron-updater').autoUpdater;
 
-  const state: IState = api.store.getState();
+  const state: () => IState = () => api.store.getState();
   let notified: boolean = false;
 
   const queryUpdate = (version: string): Promise<void> => {
@@ -125,7 +125,7 @@ function setupAutoUpdate(api: IExtensionApi) {
               }, [
                 { label: 'Close' },
                 { label: 'Open Page', action: () => {
-                  const { channel } = state.settings.update;
+                  const { channel } = state().settings.update;
                   if (channel === 'beta') {
                     openTesting();
                   } else {
@@ -198,6 +198,9 @@ function setupAutoUpdate(api: IExtensionApi) {
     });
 
   const checkNow = (channel: string) => {
+    if (!state().session.base.networkConnected) {
+      log('info', 'Not checking for updates because network is offline');
+    }
     autoUpdater.allowPrerelease = channel === 'beta';
     autoUpdater.allowDowngrade = true;
     autoUpdater.autoDownload = false;

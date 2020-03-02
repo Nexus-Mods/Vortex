@@ -190,6 +190,10 @@ function doFetchAvailableExtensions(forceDownload: boolean)
             }
           }))
     .catch({ code: 'ENOENT' }, () => downloadExtensionList(cachePath))
+    .catch(err => {
+      log('error', 'failed to fetch list of extensions', err);
+      return Promise.resolve([]);
+    })
     .filter((ext: IAvailableExtension) => ext.description !== undefined)
     .then(extensions => ({ time, extensions }));
 }

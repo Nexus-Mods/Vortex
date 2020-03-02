@@ -568,6 +568,10 @@
     "extension-render-failed": {
       "path": "{nucleo}/user interface/{nucleo_simple}_t-warning",
       "rmFill": true
+    },
+    "disconnected": {
+      "path": "{nucleo}/text editing/{nucleo_simple}_link-broken-70",
+      "rmFill": true
     }
   }
 }

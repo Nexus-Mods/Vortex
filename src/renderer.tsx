@@ -88,7 +88,7 @@ import { generate as shortid } from 'shortid';
 
 import crashDumpX from 'crash-dump';
 
-import { setLanguage } from './actions';
+import { setLanguage, setNetworkConnected } from './actions';
 import { ThunkStore } from './types/IExtensionContext';
 import { IState } from './types/IState';
 import { UserCanceled } from './util/CustomErrors';
@@ -223,15 +223,16 @@ function errorHandler(evt: any) {
   }
 
   if ((error.stack !== undefined)
-      // TODO: socket hang up should trigger another error that we catch,
-      //  unfortunately I don't know yet if this is caused by mod download
-      //  or vortex update check or api requests and why it's unhandled but
-      //  reports indicate it's probably the api
+      // some exceptions from foreign libraries can't be caught so we have to ignore them
+      // the main offender here is electron-update. Unfortunately newer versions that may
+      // have fixed this have even more significant bugs.
       && (
           (error.message === 'socket hang up')
           || (error.stack.indexOf('net::ERR_CONNECTION_RESET') !== -1)
           || (error.stack.indexOf('net::ERR_ABORTED') !== -1)
           || (error.stack.indexOf('PackeryItem.proto.positionDropPlaceholder') !== -1)
+          || ((error.syscall === 'getaddrinfo') && (error.code === 'ENOTFOUND'))
+          || (error.code === 'ETIMEDOUT')
          )
       ) {
     log('warn', 'suppressing error message', { message: error.message, stack: error.stack });
@@ -448,6 +449,16 @@ function renderer() {
     document.getElementById('content'),
   );
   ipcRenderer.send('show-window');
+
+  store.dispatch(setNetworkConnected(navigator.onLine));
+  window.addEventListener('online', () => {
+    store.dispatch(setNetworkConnected(true));
+  });
+  window.addEventListener('offline', () => {
+    store.dispatch(setNetworkConnected(false));
+  });
+
+
   getI18n('en', () => {
     const state: IState = store.getState();
     return Object.values(state.session.extensions.installed)

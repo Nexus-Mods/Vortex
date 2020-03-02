@@ -67,11 +67,14 @@ export const sessionReducer: IReducerSpec = {
       }),
     [actions.clearUIBlocker as any]: (state, payload) =>
       deleteOrNop(state, ['uiBlockers', payload]),
+    [actions.setNetworkConnected as any]: (state, payload) =>
+      setSafe(state, ['networkConnected'], payload),
   },
   defaults: {
     displayGroups: {},
     visibleDialog: undefined,
     overlayOpen: false,
+    networkConnected: true,
     mainPage: '',
     secondaryPage: '',
     activity: {},

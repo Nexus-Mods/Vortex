@@ -640,6 +640,10 @@ export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promis
         errorFromNexusError(err), { allowReport: false });
       api.store.dispatch(setUserInfo(undefined));
     })
+    .catch(ProcessCanceled, err => {
+      log('debug', 'login canceled', err.message);
+      api.store.dispatch(setUserInfo(undefined));
+    })
     .catch(err => {
       const t = api.translate;
       const pretty = prettifyNodeErrorMessage(err);

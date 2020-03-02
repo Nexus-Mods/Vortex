@@ -1,6 +1,7 @@
 import { setDialogVisible } from '../../../actions/session';
 import Icon from '../../../controls/Icon';
-import { Button } from '../../../controls/TooltipControls';
+import * as tooltip from '../../../controls/TooltipControls';
+import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import opn from '../../../util/opn';
 
@@ -21,6 +22,7 @@ export interface IBaseProps extends WithTranslation {
 interface IConnectedProps {
   APIKey: string;
   userInfo: IValidateKeyData;
+  networkConnected: boolean;
 }
 
 interface IActionProps {
@@ -32,6 +34,14 @@ type IProps = IBaseProps & IConnectedProps & IActionProps;
 
 class LoginIcon extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
+    const { t, networkConnected } = this.props;
+    if (!networkConnected) {
+      return (
+        <span id='login-control'>
+          <tooltip.Icon name='disconnected' tooltip={t('Network is offline')} />
+        </span>
+      );
+    }
     return (
       <span id='login-control'>
         {this.renderLoginName()}
@@ -70,7 +80,7 @@ class LoginIcon extends ComponentEx<IProps, {}> {
     const loggedIn = (APIKey !== undefined) && (userInfo !== undefined) && (userInfo !== null);
 
     return (
-      <Button
+      <tooltip.Button
         id='btn-login'
         tooltip={loggedIn ? t('Show Details') : t('Log in')}
         onClick={this.showLoginLayer}
@@ -85,7 +95,7 @@ class LoginIcon extends ComponentEx<IProps, {}> {
             <Icon name='user' className='logout-avatar' />
           )
         }
-      </Button>
+      </tooltip.Button>
     );
   }
 
@@ -107,10 +117,11 @@ class LoginIcon extends ComponentEx<IProps, {}> {
   }
 }
 
-function mapStateToProps(state: any): IConnectedProps {
+function mapStateToProps(state: IState): IConnectedProps {
   return {
-    APIKey: state.confidential.account.nexus.APIKey,
-    userInfo: state.persistent.nexus.userInfo,
+    APIKey: (state.confidential.account as any).nexus.APIKey,
+    userInfo: (state.persistent as any).nexus.userInfo,
+    networkConnected: state.session.base.networkConnected,
   };
 }
 

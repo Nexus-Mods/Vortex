@@ -102,6 +102,7 @@ export interface ISession {
   extLoadFailures: { [extId: string]: IExtensionLoadFailure[] };
   toolsRunning: { [exeId: string]: IRunningTool };
   uiBlockers: { [id: string]: IUIBlocker };
+  networkConnected: boolean;
 }
 
 export interface IRowState {
