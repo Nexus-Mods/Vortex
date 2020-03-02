@@ -131,7 +131,9 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
 
     const activeGameEntry: IGameLoadOrderEntry = getGameEntry(profile.gameId);
     if (!!activeGameEntry.preSort) {
-      activeGameEntry.preSort(list).then(newList => setNewOrder(newList));
+      activeGameEntry.preSort(list).then(newList => !!newList
+                                                      ? setNewOrder(newList)
+                                                      : setNewOrder(list));
     } else {
       setNewOrder(list);
     }
