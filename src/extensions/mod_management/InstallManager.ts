@@ -1179,6 +1179,9 @@ class InstallManager {
                                 sourceModId: string,
                                 dependencies: IDependency[],
                                 recommended: boolean): Promise<IDependency[]> {
+    const state: IState = api.store.getState();
+    const downloads = state.persistent.downloads.files;
+
     return Promise.map(dependencies, (dep: IDependency) => {
       let dlPromise = Promise.resolve(dep.download);
       log('debug', 'installing as dependency', {
@@ -1196,6 +1199,10 @@ class InstallManager {
         }
       } else if (dep.download === null) {
         dlPromise = Promise.reject(new ProcessCanceled('Failed to determine download url'));
+      } else if (downloads[dep.download].state === 'paused') {
+        dlPromise = new Promise((resolve, reject) => {
+          api.events.emit('resume-download', dep.download, (err) => err !== null ? reject(err) : resolve(dep.download));
+        });
       }
       return dlPromise
         .then((downloadId: string) => (dep.mod === undefined)
@@ -1343,8 +1350,14 @@ class InstallManager {
               [].concat(existing, updated), false));
         }
 
+        const state: IState = api.store.getState();
+        const downloads = state.persistent.downloads.files;
+
         const requiredInstalls = success.filter(dep => dep.mod === undefined);
-        const requiredDownloads = requiredInstalls.filter(dep => dep.download === undefined);
+        const requiredDownloads = requiredInstalls.filter(dep => {
+          return (dep.download === undefined)
+              || (downloads[dep.download].state === 'paused');
+        });
 
         let bbcode = '';
 
@@ -1440,9 +1453,14 @@ class InstallManager {
             return prev;
           }, { success: [], existing: [], error: [] });
 
+        const state: IState = api.store.getState();
+        const downloads = state.persistent.downloads.files;
+
         const requiredDownloads =
           success.reduce((prev: number, current: IDependency) => {
-            return prev + (current.download ? 0 : 1);
+            const isDownloaded = current.download !== undefined
+                              && downloads[current.download].state !== 'paused';
+            return prev + (isDownloaded ? 0 : 1);
           }, 0);
 
         let bbcode = '';
@@ -1530,6 +1548,9 @@ class InstallManager {
     return new Promise<string>((resolve, reject) => {
       const state = api.store.getState();
       const download: IDownload = state.persistent.downloads.files[downloadId];
+      if (download === undefined) {
+        return reject(new Error('Invalid download id'));
+      }
       const downloadGame: string = Array.isArray(download.game) ? download.game[0] : download.game;
       const fullPath: string =
         path.join(downloadPathForGame(state, downloadGame), download.localPath);

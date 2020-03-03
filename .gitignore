@@ -13,8 +13,6 @@ app/bundledPlugins
 attachments
 sourcemaps
 
-extensions/usvfs-deploy/node_modules/*
-
 # User-specific files
 *.suo
 
@@ -39,6 +37,7 @@ bld/
 [Oo]bj/
 lib/cpp/loot/loot/
 lib/cpp/loot/loot_api/docs/
+icons/fontawesome/
 icons/Font-Awesome-SVG-PNG-master/
 icons/Nucleo_Colored/
 icons/Nucleo_Glyph/
