@@ -82,7 +82,7 @@ class LoginIcon extends ComponentEx<IProps, {}> {
 
     const loggedIn = (APIKey !== undefined) && (userInfo !== undefined) && (userInfo !== null);
 
-    const profileIcon = truthy(userInfo.profileUrl)
+    const profileIcon = truthy(userInfo) && truthy(userInfo.profileUrl)
       ? `${userInfo.profileUrl}?r_${START_TIME}`
       : 'assets/images/noavatar.png';
 
