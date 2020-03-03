@@ -82,8 +82,9 @@ function testRef(mod: IModLookupInfo, modId: string, ref: IModReference): boolea
       && (ref.versionMatch !== '*')
       && truthy(mod.version)) {
     if (semver.valid(semver.coerce(mod.version))) {
+      let versionMatch = ref.versionMatch.split('+')[0];
       if ((mod.version !== ref.versionMatch)
-        && !semver.satisfies(semver.coerce(mod.version), ref.versionMatch, true)) {
+        && !semver.satisfies(semver.coerce(mod.version), versionMatch, true)) {
         return false;
       }
     } else {
