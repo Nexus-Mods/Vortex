@@ -66,8 +66,6 @@ export interface IGameLoadOrderEntry {
 
   // Allow game extensions to run custom filtering logic
   //  and display only mods which need to be sorted.
-  //  This can obviously be done during the sort function call
-  //  reason why this is optional.
   filter?: (mods: types.IMod[]) => types.IMod[];
 
   // Allow game extensions to react whenever the load order
