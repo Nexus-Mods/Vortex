@@ -182,6 +182,17 @@ function updateFileAttributes(dispatch: Redux.Dispatch<any>,
                               mod: IMod,
                               files: IModFiles) {
   const fileId = getSafe(mod.attributes, ['fileId'], undefined);
+  if (fileId === undefined) {
+    const candidate = files.files.find(fileInfo => fileInfo.file_name === getSafe(mod.attributes, ['fileName'], undefined));
+    if (candidate !== undefined) {
+      dispatch(setModAttribute(gameId, mod.id, 'fileId', candidate.file_id));
+      if (getSafe(mod.attributes, ['version'], undefined) === undefined) {
+        dispatch(setModAttribute(gameId, mod.id, 'version', candidate.version));
+      }
+      console.log('fileid now', mod.attributes['fileId']);
+      //  = candidate.file_id;
+    }
+  }
   const latestFileId = fileId;
   let fileUpdates: IFileUpdate[] = findLatestUpdate(files.file_updates, [], latestFileId);
   if (fileUpdates.length === 0) {
