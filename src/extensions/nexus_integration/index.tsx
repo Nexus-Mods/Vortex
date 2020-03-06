@@ -42,7 +42,7 @@ import LoginDialog from './views/LoginDialog';
 import LoginIcon from './views/LoginIcon';
 import { } from './views/Settings';
 
-import { genEndorsedAttribute, genGameAttribute, genModIdAttribute } from './attributes';
+import { genEndorsedAttribute, genGameAttribute, genModIdAttribute, genFileIdAttribute } from './attributes';
 import * as eh from './eventHandlers';
 import NXMUrl from './NXMUrl';
 import * as sel from './selectors';
@@ -54,7 +54,7 @@ import { app as appIn, remote } from 'electron';
 import * as fuzz from 'fuzzball';
 import I18next from 'i18next';
 import NexusT, { IDownloadURL, IFileInfo, IModInfo, NexusError,
-                 RateLimitError, TimeoutError } from 'nexus-api';
+                 RateLimitError, TimeoutError, ICollectionDownloadLink } from 'nexus-api';
 import * as path from 'path';
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
@@ -550,6 +550,7 @@ function doDownload(api: IExtensionApi, url: string): Promise<string> {
     api.showErrorNotification('Failed to start download', url, { allowReport: false });
     return Promise.resolve(undefined);
   })
+  .catch(UserCanceled, () => Promise.resolve(undefined))
   .catch(err => {
     api.showErrorNotification('Failed to start download', err);
     return Promise.resolve(undefined);
@@ -695,6 +696,8 @@ function once(api: IExtensionApi) {
 
   api.onAsync('check-mods-version', eh.onCheckModsVersion(api, nexus));
   api.onAsync('nexus-download', eh.onNexusDownload(api, nexus));
+  api.onAsync('get-nexus-collections', eh.onGetNexusCollection(api, nexus));
+  api.onAsync('get-nexus-collection-revisions', eh.onGetNexusRevisions(api, nexus));
   api.events.on('endorse-mod', eh.onEndorseMod(api, nexus));
   api.events.on('submit-feedback', eh.onSubmitFeedback(nexus));
   api.events.on('submit-collection', eh.onSubmitCollection(nexus));
@@ -915,8 +918,12 @@ function init(context: IExtensionContextExt): boolean {
     const gameId = convertNXMIdReverse(games, url.gameId);
     const pageId = nexusGameId(gameById(state, gameId), url.gameId);
     return Promise.resolve()
-      .then(() => nexus.getDownloadURLs(url.modId, url.fileId, url.key, url.expires, pageId))
-      .then((res: IDownloadURL[]) => ({ urls: res.map(u => u.URI), meta: {} }))
+      .then(() => (url.type === 'mod')
+        ? nexus.getDownloadURLs(url.modId, url.fileId, url.key, url.expires, pageId)
+          .then((res: IDownloadURL[]) => ({ urls: res.map(u => u.URI), meta: {} }))
+        : nexus.getCollectionDownloadURLs(url.collectionId as any, url.revisionId as any,
+                                          url.key, url.expires, pageId)
+          .then((res: ICollectionDownloadLink) => ({ urls: [res.download_link], meta: {} })))
       .catch(NexusError, err => {
         const newError = new HTTPError(err.statusCode, err.message, err.request);
         newError.stack = err.stack;

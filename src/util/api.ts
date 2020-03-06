@@ -46,7 +46,7 @@ import ReduxProp from './ReduxProp';
 import relativeTime, { userFriendlyTime } from './relativeTime';
 import steam, { GameNotFound, ISteamEntry } from './Steam';
 import { bytesToString, deBOM, isChildPath, isFilenameValid, isPathValid, makeQueue, objDiff,
-         pad, sanitizeCSSId, setdefault } from './util';
+         pad, sanitizeCSSId, setdefault, toPromise } from './util';
 import walk from './walk';
 
 import SevenZip = require('node-7z');
@@ -118,6 +118,7 @@ export {
   ISteamEntry,
   terminate,
   testModReference,
+  toPromise,
   UserCanceled,
   userFriendlyTime,
   walk,

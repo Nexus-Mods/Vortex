@@ -23,7 +23,7 @@ import { checkModVersionsImpl, endorseModImpl, startDownload, updateKey } from '
 
 import * as Promise from 'bluebird';
 import Nexus, { IFeedbackResponse, IIssue, NexusError,
-                RateLimitError, TimeoutError } from 'nexus-api';
+                RateLimitError, TimeoutError, ICollection, IRevision } from 'nexus-api';
 import * as semver from 'semver';
 
 export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
@@ -255,6 +255,14 @@ export function onNexusDownload(api: IExtensionApi,
         });
     }
   };
+}
+
+export function onGetNexusCollection(api: IExtensionApi, nexus: Nexus): (gameId: string) => Promise<ICollection[]> {
+  return (gameId: string): Promise<ICollection[]> => Promise.resolve(nexus.getCollectionsByGame(gameId));
+}
+
+export function onGetNexusRevisions(api: IExtensionApi, nexus: Nexus): (collectionId: number) => Promise<IRevision[]> {
+  return (collectionId: number): Promise<IRevision[]> => Promise.resolve(nexus.getRevisions(collectionId));
 }
 
 export function onDownloadUpdate(api: IExtensionApi,

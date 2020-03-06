@@ -2,7 +2,7 @@ import * as Promise from 'bluebird';
 import { app as appIn, ipcRenderer, remote } from 'electron';
 import I18next from 'i18next';
 import Nexus, { EndorsedStatus, IEndorsement, IFileInfo, IGameListEntry, IModInfo,
-                IUpdateEntry, NexusError, RateLimitError, TimeoutError } from 'nexus-api';
+                IUpdateEntry, NexusError, RateLimitError, TimeoutError, IRevisionDetailed } from 'nexus-api';
 import * as Redux from 'redux';
 import * as semver from 'semver';
 import * as util from 'util';
@@ -15,7 +15,7 @@ import { log } from '../../util/log';
 import { calcDuration, prettifyNodeErrorMessage, showError } from '../../util/message';
 import { activeGameId } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
-import { truthy } from '../../util/util';
+import { truthy, toPromise } from '../../util/util';
 import { SITE_ID } from '../gamemode_management/constants';
 import { gameById, knownGames } from '../gamemode_management/selectors';
 import modName from '../mod_management/util/modName';
@@ -30,12 +30,6 @@ const UPDATE_CHECK_DELAY = 60 * 60 * 1000;
 
 const app = remote !== undefined ? remote.app : appIn;
 
-export function getInfo(nexus: Nexus, domain: string, modId: number, fileId: number)
-                        : Promise<{ modInfo: IModInfo, fileInfo: IFileInfo }> {
-  return Promise.all([ nexus.getModInfo(modId, domain), nexus.getFileInfo(modId, fileId, domain) ])
-    .then(([ modInfo, fileInfo ]) => ({modInfo, fileInfo}));
-}
-
 export function startDownload(api: IExtensionApi, nexus: Nexus, nxmurl: string): Promise<string> {
   let url: NXMUrl;
 
@@ -45,12 +39,54 @@ export function startDownload(api: IExtensionApi, nexus: Nexus, nxmurl: string):
     return Promise.reject(err);
   }
 
-  let nexusFileInfo: IFileInfo;
+  return url.type === 'mod'
+    ? startDownloadMod(api, nexus, nxmurl, url)
+    : startDownloadCollection(api, nexus, nxmurl, url);
+}
 
+function startDownloadCollection(api: IExtensionApi, nexus: Nexus, urlStr: string, url: NXMUrl): Promise<string> {
   const state = api.store.getState();
   const games = knownGames(state);
   const gameId = convertNXMIdReverse(games, url.gameId);
   const pageId = nexusGameId(gameById(state, gameId), url.gameId);
+  let revisionInfo: IRevisionDetailed;
+
+  return Promise.resolve(nexus.getRevisionInfo(url.collectionId as any, url.revisionId as any))
+    .then(revision => {
+      revisionInfo = revision;
+      api.sendNotification({
+        id: revision.revision_id.toString(),
+        type: 'global',
+        message: 'Downloading Collection',
+        displayMS: 40000,
+      });
+      return toPromise<string>(cb => api.events.emit('start-download', [urlStr], {
+        game: gameId,
+        source: 'nexus',
+        name: revision.collection.name,
+        nexus: {
+          ids: { gameId: pageId, collectionId: url.collectionId, revisionId: url.revisionId },
+          revisionInfo,
+        },
+      }, (revision as any).file_name, cb))
+      .catch(err => Promise.reject(contextify(err)));
+    })
+    .tap(dlId => api.events.emit('did-download-collection', dlId));
+}
+
+export function getInfo(nexus: Nexus, domain: string, modId: number, fileId: number)
+                        : Promise<{ modInfo: IModInfo, fileInfo: IFileInfo }> {
+  return Promise.all([ nexus.getModInfo(modId, domain), nexus.getFileInfo(modId, fileId, domain) ])
+    .then(([ modInfo, fileInfo ]) => ({modInfo, fileInfo}));
+}
+
+function startDownloadMod(api: IExtensionApi, nexus: Nexus, urlStr: string, url: NXMUrl): Promise<string> {
+  const state = api.store.getState();
+  const games = knownGames(state);
+  const gameId = convertNXMIdReverse(games, url.gameId);
+  const pageId = nexusGameId(gameById(state, gameId), url.gameId);
+
+  let nexusFileInfo: IFileInfo;
 
   return getInfo(nexus, pageId, url.modId, url.fileId)
     .then(({ modInfo, fileInfo }) => {
@@ -63,7 +99,7 @@ export function startDownload(api: IExtensionApi, nexus: Nexus, nxmurl: string):
         displayMS: 4000,
       });
       return new Promise<string>((resolve, reject) => {
-        api.events.emit('start-download', [nxmurl], {
+        api.events.emit('start-download', [urlStr], {
           game: gameId,
           source: 'nexus',
           name: fileInfo.name,

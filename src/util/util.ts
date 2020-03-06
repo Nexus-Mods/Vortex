@@ -448,3 +448,16 @@ function flattenInner(obj: any, key: string[],
     return prev;
   }, {});
 }
+
+export function toPromise<ResT>(func: (cb) => void): Promise<ResT> {
+  return new Promise((resolve, reject) => {
+    const cb = (err, res) => {
+      if (err !== null) {
+        return reject(err);
+      } else {
+        return resolve(res);
+      }
+    };
+    func(cb);
+  });
+}
