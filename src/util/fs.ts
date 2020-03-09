@@ -229,8 +229,10 @@ function unknownErrorRetry(filePath: string, err: Error, stackErr: Error): Promi
       options.message = 'The operation failed with an internal (internal to windows) error. '
                       + 'No further error information is available to us.';
     } else {
-      options.title += ` (${err['nativeCode']})`;
-      options.buttons.unshift('Cancel and Report');
+      options.title = `${err.message} (${err['nativeCode']})`;
+      // no longer offering the report option because for month we got no report that we could actually do anything about,
+      // it's always setup problems
+      // options.buttons.unshift('Cancel and Report');
     }
   }
 
