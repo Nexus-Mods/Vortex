@@ -17,6 +17,9 @@ export interface IModLookupInfo {
   customFileName?: string;
   version: string;
   game?: string[];
+  fileId?: string;
+  modId?: string;
+  source?: string;
 }
 
 // test if the reference is by id only, meaning it is only useful in the current setup
@@ -53,6 +56,15 @@ function testRef(mod: IModLookupInfo, modId: string, ref: IModReference): boolea
   if ((ref.fileMD5 !== undefined)
       && (mod.fileMD5 !== ref.fileMD5)) {
     return false;
+  }
+
+  if ((ref.repo !== undefined)
+      && (mod.source !== undefined)
+      && (mod.modId !== undefined)
+      && (mod.fileId !== undefined)) {
+    return (ref.repo.repository === mod.source)
+        && (ref.repo.modId === mod.modId.toString())
+        && (ref.repo.fileId === mod.fileId.toString());
   }
 
   // right file?

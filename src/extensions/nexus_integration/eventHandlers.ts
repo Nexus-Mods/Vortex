@@ -1,7 +1,7 @@
 import { setDownloadModInfo } from '../../actions';
 import { IDownload, IModTable, IState, StateChangeCallback } from '../../types/api';
 import { IExtensionApi } from '../../types/IExtensionContext';
-import { DataInvalid, ProcessCanceled } from '../../util/CustomErrors';
+import { DataInvalid, ProcessCanceled, ArgumentInvalid } from '../../util/CustomErrors';
 import Debouncer from '../../util/Debouncer';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
@@ -275,6 +275,10 @@ export function onDownloadUpdate(api: IExtensionApi,
     }
 
     const game = gameById(api.store.getState(), gameId);
+    
+    if (game === undefined) {
+      return Promise.reject(new ArgumentInvalid(gameId));
+    }
 
     const fileIdNum = parseInt(fileId, 10);
 

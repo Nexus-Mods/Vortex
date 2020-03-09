@@ -33,8 +33,20 @@ export interface IMod {
   fileOverrides?: string[];
 }
 
+// identifies a mod in an online repository (like nexusmods.com)
+// we're assuming there will be at least an id for the file.
+// if the fileid is not unique across all mods we require an id to identify the mod.
+// if the modid is not unique across all games, we require an id to identify the game as well.
+export interface IModRepoId {
+  gameId?: string;
+  modId?: string;
+  fileId: string;
+}
+
 export interface IModReference extends IReference {
   id?: string;
+  // using a set of ids identifying the mod on a specific repository
+  repo?: { repository: string } & IModRepoId;
   // optional parameter used to display the reference in a user-friendly way if available.
   // This is only used when the mod isn't installed, otherwise we always try to use the name
   // the user chose for the mod.

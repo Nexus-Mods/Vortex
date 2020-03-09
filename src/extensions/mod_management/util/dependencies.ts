@@ -86,7 +86,7 @@ function browseForDownload(api: IExtensionApi,
                            url: string,
                            instruction: string)
                            : Promise<IBrowserResult> {
-  return api.emitAndAwait('browse-for-download', url, instruction);
+  return api.emitAndAwait('browse-for-download', url, instruction).then(res => res[0]);
 }
 
 function lookupDownloadHint(api: IExtensionApi,

@@ -582,6 +582,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       isSortable: true,
       isDefaultSort: true,
       filter: new TextFilter(true),
+      position: 25,
       sortFunc: (lhs: string, rhs: string, locale: string): number => {
         if ((collator === undefined) || (locale !== lang)) {
           lang = locale;
@@ -606,6 +607,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         }
         return mod.enabled === true ? 'Enabled' : 'Disabled';
       },
+      position: 5,
       placement: 'table',
       isToggleable: false,
       edit: {

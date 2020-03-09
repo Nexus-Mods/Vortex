@@ -302,11 +302,15 @@ class DetailBox extends ComponentEx<IDetailProps, { hovered: boolean }> {
       return null;
     }
 
+    const attributeSort = (lhs: ITableAttribute, rhs: ITableAttribute) =>
+      (lhs.position || 100) - (rhs.position || 100);
+
     const detailList = attributes
       .filter(obj =>
         (obj.isVolatile || (rowData[rowIds[0]][obj.id] !== undefined))
         && ((rowIds.length === 1)
-          || obj.supportsMultiple));
+          || obj.supportsMultiple))
+      .sort(attributeSort);
 
     const innerClasses = ['table-details-inner'];
     if (this.state.hovered) {

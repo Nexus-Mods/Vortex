@@ -1148,7 +1148,7 @@ class InstallManager {
       return this.downloadURL(api, lookupResult);
     }
     return api.emitAndAwait('start-download-update',
-      lookupResult.source, lookupResult.gameId, modId, fileId, pattern)
+      lookupResult.source, lookupResult.domainName || lookupResult.gameId, modId, fileId, pattern)
       .then(dlId => (dlId === undefined)
           ? Promise.reject(new NotFound(`source not supported "${lookupResult.source}"`))
           : (dlId === null)

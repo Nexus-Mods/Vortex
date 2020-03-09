@@ -4,7 +4,9 @@ import { setExtensionLoadFailures } from '../actions/session';
 
 import { DialogActions, DialogType, IDialogContent, showDialog } from '../actions/notifications';
 import { IExtension } from '../extensions/extension_manager/types';
+import { IModReference, IModRepoId } from '../extensions/mod_management/types/IMod';
 import { ExtensionInit } from '../types/Extension';
+import { IModLookupResult } from '../types/IModLookupResult';
 import {
   ArchiveHandlerCreator,
   IArchiveHandler,
@@ -416,6 +418,10 @@ interface IStartHook {
   hook: (input: IRunParameters) => Promise<IRunParameters>;
 }
 
+function convertMD5Result(input: ILookupResult): IModLookupResult {
+  return input;
+}
+
 /**
  * interface to extensions. This loads extensions and provides the api extensions
  * use
@@ -446,6 +452,7 @@ class ExtensionManager {
   private mReduxWatcher: any;
   private mWatches: IWatcherRegistry = {};
   private mProtocolHandlers: { [protocol: string]: (url: string, install: boolean) => void } = {};
+  private mRepositoryLookup: { [repository: string]: { preferOverMD5: boolean, func: (id: IModRepoId) => Promise<IModLookupResult[]> } } = {};
   private mArchiveHandlers: { [extension: string]: ArchiveHandlerCreator };
   private mModDB: modmetaT.ModDB;
   private mModDBPromise: Promise<void>;
@@ -489,6 +496,7 @@ class ExtensionManager {
       getPath: this.getPath,
       onStateChange: (statePath: string[], callback: StateChangeCallback) => undefined,
       registerProtocol: this.registerProtocol,
+      registerRepositoryLookup: this.registerRepositoryLookup,
       deregisterProtocol: this.deregisterProtocol,
       lookupModReference: this.lookupModReference,
       lookupModMeta: this.lookupModMeta,
@@ -1100,6 +1108,10 @@ class ExtensionManager {
     return haveToRegister;
   }
 
+  private registerRepositoryLookup = (repository: string, preferOverMD5: boolean, func: (id: IModRepoId) => Promise<IModLookupResult[]>) => {
+    this.mRepositoryLookup[repository] = { preferOverMD5, func };
+  }
+
   private registerArchiveHandler = (extension: string, handler: ArchiveHandlerCreator) => {
     this.mArchiveHandlers[extension] = handler;
   }
@@ -1115,9 +1127,36 @@ class ExtensionManager {
     }
   }
 
-  private lookupModReference = (reference: IReference): Promise<ILookupResult[]> => {
-    return this.getModDB()
-      .then(modDB => modDB.getByReference(reference));
+  private lookupModReference = (reference: IModReference): Promise<IModLookupResult[]> => {
+    let lookup: { preferOverMD5: boolean, func: (id: IModRepoId) => Promise<IModLookupResult[]> };
+    let preMD5: Promise<IModLookupResult[]> = Promise.resolve([]);
+    if (reference.repo !== undefined) {
+      lookup = this.mRepositoryLookup[reference.repo.repository];
+    }
+    if ((lookup != undefined) && lookup.preferOverMD5) {
+      preMD5 = lookup.func(reference.repo);
+    }
+
+    return preMD5.then((results: IModLookupResult[]) => {
+      if (results.length !== 0) {
+        return results;
+      } else {
+        return this.getModDB()
+          .then(modDB => modDB.getByReference(reference))
+          .map(mod => convertMD5Result(mod));
+      }
+    })
+    .then((results: IModLookupResult[]) => {
+      if (results.length !== 0) {
+        return results;
+      } else {
+        if ((lookup !== undefined) && !lookup.preferOverMD5) {
+          return lookup.func(reference.repo);
+        } else {
+          return [];
+        }
+      }
+    });
   }
 
   private modLookupId(detail: ILookupDetails): string {
@@ -1131,7 +1170,7 @@ class ExtensionManager {
          + `_${detail.fileSize}_${detail.gameId}`;
   }
 
-  private lookupModMeta = (detail: ILookupDetails): Promise<ILookupResult[]> => {
+  private lookupModMeta = (detail: ILookupDetails): Promise<IModLookupResult[]> => {
     if ((detail.fileMD5 === undefined) && (detail.filePath === undefined)) {
       return Promise.resolve([]);
     }

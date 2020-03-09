@@ -5,6 +5,7 @@ import { IState } from '../../types/IState';
 import { DataInvalid, HTTPError, ProcessCanceled,
          ServiceTemporarilyUnavailable, UserCanceled } from '../../util/CustomErrors';
 import Debouncer from '../../util/Debouncer';
+import { IModLookupResult } from '../../types/IModLookupResult';
 import * as fs from '../../util/fs';
 import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
@@ -17,7 +18,7 @@ import { decodeHTML, truthy } from '../../util/util';
 import { ICategoryDictionary } from '../category_management/types/ICategoryDictionary';
 import { DownloadIsHTML } from '../download_management/DownloadManager';
 import { IGameStored } from '../gamemode_management/types/IGameStored';
-import { IMod } from '../mod_management/types/IMod';
+import { IMod, IModRepoId } from '../mod_management/types/IMod';
 
 import { IResolvedURL } from '../download_management';
 import { DownloadState } from '../download_management/types/IDownload';
@@ -598,63 +599,107 @@ function onceMain(api: IExtensionApi) {
   }
 }
 
+function makeNXMLinkCallback(api: IExtensionApi) {
+  return (url: string, install: boolean) => {
+    const nxmUrl = new NXMUrl(url);
+    if ((nxmUrl.gameId === SITE_ID) && install) {
+      return api.emitAndAwait('install-extension',
+        { name: 'Pending', modId: nxmUrl.modId, fileId: nxmUrl.fileId });
+    }
+
+    ensureLoggedIn(api)
+      .then(() => doDownload(api, url))
+      .then(dlId => {
+        if (dlId === undefined) {
+          return Promise.resolve(undefined);
+        }
+        return new Promise((resolve, reject) => {
+          const state: IState = api.store.getState();
+          const download = state.persistent.downloads.files[dlId];
+          if (download === undefined) {
+            return reject(new ProcessCanceled(`Download not found "${dlId}"`));
+          }
+          if (install) {
+            api.events.emit('start-install-download', dlId, (err: Error, id: string) => {
+              if (err !== null) {
+                reject(err);
+              } else {
+                resolve();
+              }
+            });
+          }
+        });
+      })
+      // doDownload handles all download errors so the catches below are
+      //  only for log in errors
+      .catch(UserCanceled, () => null)
+      .catch(ProcessCanceled, err => {
+        api.showErrorNotification('Log-in failed', err, {
+          id: 'failed-get-nexus-key',
+          allowReport: false,
+        });
+      })
+      .catch(ServiceTemporarilyUnavailable, err => {
+        api.showErrorNotification('Service temporarily unavailable', err, {
+          id: 'failed-get-nexus-key',
+          allowReport: false,
+        });
+      })
+      .catch(err => {
+        api.showErrorNotification('Failed to get access key', err, {
+          id: 'failed-get-nexus-key',
+        });
+      });
+  };
+}
+
+function makeRepositoryLookup(nexus: NexusT) {
+  return (repoInfo: IModRepoId): Promise<IModLookupResult[]> => {
+    const modId = parseInt(repoInfo.modId, 10);
+    const fileId = parseInt(repoInfo.fileId, 10);
+    let modInfo: IModInfo;
+    let fileInfo: IFileInfo;
+    return Promise.resolve(nexus.getModInfo(modId, repoInfo.gameId))
+      .then(modInfoIn => {
+        modInfo = modInfoIn;
+        return nexus.getFileInfo(modId, fileId, repoInfo.gameId);
+      })
+      .then(fileInfoIn => {
+        fileInfo = fileInfoIn;
+        let res: IModLookupResult = {
+          key: `${repoInfo.gameId}_${repoInfo.modId}_${repoInfo.fileId}`,
+          value: {
+            fileName: fileInfo.file_name,
+            fileSizeBytes: fileInfo.size,
+            fileVersion: fileInfo.version,
+            gameId: modInfo.game_id.toString(),
+            domainName: modInfo.domain_name,
+            sourceURI: `nxm://${repoInfo.gameId}/mods/${modId}/files/${fileId}`,
+            source: 'nexus',
+            logicalFileName: fileInfo.name,
+            rules: [],
+            details: {
+              modId: repoInfo.modId,
+              fileId: repoInfo.fileId,
+              author: modInfo.author,
+              category: modInfo.category_id.toString(),
+              description: fileInfo.description,
+              homepage: `https://www.nexusmods.com/${repoInfo.gameId}/mods/${modId}`,
+            }
+          },
+        };
+        return [res];
+      });
+  };
+}
+
 function once(api: IExtensionApi) {
   const registerFunc = (def?: boolean) => {
     if (def === undefined) {
       api.store.dispatch(setAssociatedWithNXMURLs(true));
     }
 
-    if (api.registerProtocol('nxm', def !== false, (url: string, install: boolean) => {
-      const nxmUrl = new NXMUrl(url);
-      if ((nxmUrl.gameId === SITE_ID) && install) {
-        return api.emitAndAwait('install-extension',
-              { name: 'Pending', modId: nxmUrl.modId, fileId: nxmUrl.fileId });
-      }
-
-      ensureLoggedIn(api)
-        .then(() => doDownload(api, url))
-        .then(dlId => {
-          if (dlId === undefined) {
-            return Promise.resolve(undefined);
-          }
-          return new Promise((resolve, reject) => {
-            const state: IState = api.store.getState();
-            const download = state.persistent.downloads.files[dlId];
-            if (download === undefined) {
-              return reject(new ProcessCanceled(`Download not found "${dlId}"`));
-            }
-            if (install) {
-              api.events.emit('start-install-download', dlId, (err: Error, id: string) => {
-                if (err !== null) {
-                  reject(err);
-                } else {
-                  resolve();
-                }
-              });
-            }
-          });
-        })
-        // doDownload handles all download errors so the catches below are
-        //  only for log in errors
-        .catch(UserCanceled, () => null)
-        .catch(ProcessCanceled, err => {
-          api.showErrorNotification('Log-in failed', err, {
-            id: 'failed-get-nexus-key',
-            allowReport: false,
-          });
-        })
-        .catch(ServiceTemporarilyUnavailable, err => {
-          api.showErrorNotification('Service temporarily unavailable', err, {
-            id: 'failed-get-nexus-key',
-            allowReport: false,
-          });
-        })
-        .catch(err => {
-          api.showErrorNotification('Failed to get access key', err, {
-            id: 'failed-get-nexus-key',
-          });
-        });
-    })) {
+    if (api.registerProtocol('nxm', def !== false, makeNXMLinkCallback(api))) {
       api.sendNotification({
         type: 'info',
         message: 'Vortex will now handle Nexus Download links',
@@ -692,6 +737,8 @@ function once(api: IExtensionApi) {
     updateKey(api, nexus, apiKey);
 
     registerFunc(getSafe(state, ['settings', 'nexus', 'associateNXM'], undefined));
+  
+    api.registerRepositoryLookup('nexus', false, makeRepositoryLookup(nexus));
   }
 
   api.onAsync('check-mods-version', eh.onCheckModsVersion(api, nexus));

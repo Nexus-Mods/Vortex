@@ -1,5 +1,5 @@
 import {ILookupResult, IModInfo, IReference} from 'modmeta-db';
-import { IFileListItem, IMod } from './IMod';
+import { IFileListItem, IMod, IModReference } from './IMod';
 
 export interface IModInfoEx extends IModInfo {
   referer?: string;
@@ -11,7 +11,7 @@ export interface ILookupResultEx extends ILookupResult {
 
 export interface IDependency {
   download: string;
-  reference: IReference;
+  reference: IModReference;
   lookupResults: ILookupResultEx[];
   fileList?: IFileListItem[];
   installerChoices?: any;

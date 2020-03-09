@@ -31,6 +31,7 @@ export const PICTURE: ITableAttribute<IModWithState> = {
   },
   calc: mod => getSafe(mod.attributes, ['pictureUrl'], ''),
   placement: 'detail',
+  position: 10,
   edit: {},
 };
 
