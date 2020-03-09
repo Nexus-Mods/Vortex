@@ -181,7 +181,7 @@ export function purgeModsInPath(api: IExtensionApi, gameId: string, typeId: stri
     //   deployment method.
     return activator.prePurge(stagingPath)
       // purge the specified mod type
-      .then(() => activator.purge(stagingPath, modPath))
+      .then(() => activator.purge(stagingPath, modPath, gameId))
       // save (empty) activation
       .then(() => saveActivation(typeId, state.app.instanceId, modPath, stagingPath,
                          [], activator.id))

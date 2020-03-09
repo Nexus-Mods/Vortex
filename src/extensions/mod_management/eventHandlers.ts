@@ -248,7 +248,7 @@ export function onGameModeActivated(
           .then(() => api.emitAndAwait('will-purge', profile.id, deployment))
           .then(() => oldActivator.prePurge(instPath))
           .then(() => Promise.mapSeries(Object.keys(modPaths),
-            typeId => oldActivator.purge(instPath, modPaths[typeId]))
+            typeId => oldActivator.purge(instPath, modPaths[typeId], profile.gameId))
             .then(() => undefined)
             .catch(ProcessCanceled, () => Promise.resolve())
             .catch(TemporaryError, err =>

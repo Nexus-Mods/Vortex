@@ -6,6 +6,7 @@ import { getGame, UserCanceled } from '../../util/api';
 import * as fs from '../../util/fs';
 import {Normalize} from '../../util/getNormalizeFunc';
 import {log} from '../../util/log';
+import { activeGameId } from '../../util/selectors';
 import { truthy } from '../../util/util';
 
 import {
@@ -320,11 +321,14 @@ abstract class LinkingActivator implements IDeploymentMethod {
     return Promise.resolve();
   }
 
-  public purge(installPath: string, dataPath: string, gameId: string): Promise<void> {
+  public purge(installPath: string, dataPath: string, gameId?: string): Promise<void> {
     if (!truthy(dataPath)) {
       // previously we reported an issue here, but we want the ability to have mod types
       // that don't actually deploy
       return Promise.resolve();
+    }
+    if (gameId === undefined) {
+      gameId = activeGameId(this.mApi.store.getState());
     }
     const game = getGame(gameId);
     const directoryCleaning = game.directoryCleaning || 'tag';
