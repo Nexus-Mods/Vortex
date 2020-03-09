@@ -171,6 +171,7 @@ class Application {
     delete webPreferences.preloadURL;
 
     webPreferences.nodeIntegration = false;
+    webPreferences.enableRemoteModule = false;
   }
 
   private genHandleError() {
