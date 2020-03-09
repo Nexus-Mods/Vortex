@@ -212,6 +212,7 @@ class DraggableList extends ComponentEx<IProps, IState> {
       : undefined;
     if (!!condRes && !condRes.success) {
       currentItem.message = condRes.errMessage;
+      return;
     }
 
     const copy = this.state.ordered.slice();
