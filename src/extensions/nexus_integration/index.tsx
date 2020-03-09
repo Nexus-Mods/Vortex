@@ -43,6 +43,7 @@ import LoginIcon from './views/LoginIcon';
 import { } from './views/Settings';
 
 import { genEndorsedAttribute, genGameAttribute, genModIdAttribute } from './attributes';
+import { NEXUS_MEMBERSHIP_URL } from './constants';
 import * as eh from './eventHandlers';
 import NXMUrl from './NXMUrl';
 import * as sel from './selectors';
@@ -695,7 +696,7 @@ function toolbarBanner(t: TFunction): React.StatelessComponent<any> {
 }
 
 function goBuyPremium() {
-  opn('https://www.nexusmods.com/register/premium').catch(err => undefined);
+  opn(NEXUS_MEMBERSHIP_URL).catch(err => undefined);
 }
 
 function queryInfo(api: IExtensionApi, instanceIds: string[]) {

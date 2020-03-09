@@ -37,6 +37,8 @@ import { Button as BSButton, ControlLabel, FormControl, FormGroup, HelpBlock, In
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 
+const NEXUS_MEMBERSHIP_URL = 'https://users.nexusmods.com/register/memberships';
+
 interface IConnectedProps {
   parallelDownloads: number;
   isPremium: boolean;
@@ -281,7 +283,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private goBuyPremium = () => {
-    opn('https://www.nexusmods.com/register/premium').catch(err => undefined);
+    opn(NEXUS_MEMBERSHIP_URL).catch(err => undefined);
   }
 
   private setDownloadPath = (newPath: string) => {

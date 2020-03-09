@@ -2,6 +2,8 @@ import Dashlet from '../../../controls/Dashlet';
 import { ComponentEx, translate } from '../../../util/ComponentEx';
 import opn from '../../../util/opn';
 
+import { NEXUS_MEMBERSHIP_URL } from '../constants';
+
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
 import { WithTranslation } from 'react-i18next';
@@ -23,7 +25,7 @@ class GoPremiumDashlet extends ComponentEx<WithTranslation, {}> {
   }
 
   private goBuyPremium = () => {
-    opn('https://www.nexusmods.com/register/premium').catch(err => undefined);
+    opn(NEXUS_MEMBERSHIP_URL).catch(err => undefined);
   }
 }
 
