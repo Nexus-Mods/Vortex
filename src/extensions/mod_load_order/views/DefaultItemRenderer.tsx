@@ -2,7 +2,7 @@ import * as React from 'react';
 import { ListGroupItem } from 'react-bootstrap';
 import { withTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
-import { ComponentEx, selectors, types, util } from 'vortex-api';
+import { ComponentEx, Icon, selectors, types, util } from 'vortex-api';
 import { ILoadOrder, ILoadOrderDisplayItem } from '../types/types';
 
 interface IConnectedProps {
@@ -42,16 +42,19 @@ class DefaultItemRenderer extends ComponentEx<IProps, {}> {
     }
     return (
       <ListGroupItem key={key} className={classes.join(' ')}>
+        <Icon className='load-order-index' name='locked'/>
         <img src={item.imgUrl} id='mod-img'/>
         {item.name}
-        <p>This item is locked in this position and cannot be moved</p>
       </ListGroupItem>
     );
   }
 
   private renderDraggable(item: ILoadOrderDisplayItem): JSX.Element {
     const { loadOrder, className } = this.props;
-    const position = loadOrder[item.id].pos;
+    const position = (item.prefix !== undefined)
+      ? item.prefix
+      : loadOrder[item.id].pos + 1;
+
     const key = `${item.name}-${position}`;
 
     let classes = ['load-order-entry'];
@@ -61,6 +64,7 @@ class DefaultItemRenderer extends ComponentEx<IProps, {}> {
 
     return (
       <ListGroupItem ref={this.setRef} key={key} className={classes.join(' ')}>
+        <p className='load-order-index'>{position}</p>
         <img src={item.imgUrl} id='mod-img'/>
         {item.name}
       </ListGroupItem>

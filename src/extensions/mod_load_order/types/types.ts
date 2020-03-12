@@ -1,6 +1,16 @@
 import * as Promise from 'bluebird';
 import { types } from 'vortex-api';
 
+export type SortDirection = 'ascending' | 'descending';
+
+// A set of props forwarded to game extensions which
+//  will allow these to control certain aspects of the
+//  load order extension from within the info panel.
+export interface IInfoPanelProps {
+  // Will force the load order page to re-render.
+  refresh: () => void;
+}
+
 export interface ILoadOrderEntry {
   pos: number;
   enabled: boolean;
@@ -53,12 +63,13 @@ export interface IGameLoadOrderEntry {
   // The domain gameId for this entry.
   gameId: string;
 
-  // Load order information that the extension wishes
-  //  to display on the side panel.
-  loadOrderInfo: string;
-
   // The path to the game extension's default image.
   gameArtURL: string;
+
+  // Provides game extensions with relevant props that the extension writer
+  //  can use to build the information panel. Providing a string here instead
+  //  of a react component will create a default component instead.
+  createInfoPanel: (props: IInfoPanelProps) => string | React.Component;
 
   // Give the game extension the opportunity to modify the load order
   //  before we start sorting the mods.

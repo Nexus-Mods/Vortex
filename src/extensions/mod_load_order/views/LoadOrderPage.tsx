@@ -4,21 +4,25 @@ import { Panel } from 'react-bootstrap';
 import { withTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
 
-import { actions, ComponentEx, DNDContainer,
-  FlexLayout, MainPage, selectors, Spinner, types, util } from 'vortex-api';
+import { actions, ComponentEx, DNDContainer, FlexLayout, IconBar, MainPage,
+  selectors, Spinner, ToolbarIcon, types, util } from 'vortex-api';
 
 import { IGameLoadOrderEntry, ILoadOrder,
-  ILoadOrderDisplayItem } from '../types/types';
+  ILoadOrderDisplayItem, SortDirection } from '../types/types';
 
 import DraggableList from './DraggableList';
 
+import DefaultInfoPanel from './DefaultInfoPanel';
 import DefaultItemRenderer from './DefaultItemRenderer';
 
 const PanelX: any = Panel;
 
+const NAMESPACE: string = 'generic-load-order-extension';
+
 interface IBaseState {
   i18nNamespace: string;
   loading: boolean;
+  sortDirection: SortDirection;
   itemRenderer: React.ComponentClass<{
     className?: string,
     item: ILoadOrderDisplayItem,
@@ -39,6 +43,9 @@ interface IConnectedProps {
 
   // The profile we're managing this load order for.
   profile: types.IProfile;
+
+  // Does the user need to deploy ?
+  needToDeploy: boolean;
 }
 
 interface IActionProps {
@@ -56,11 +63,14 @@ type IComponentState = IBaseState & ILoadOrderState;
 class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
   private mCallbackDebouncer: util.Debouncer;
   private mUpdateDebouncer: util.Debouncer;
+  private mForceUpdateDebouncer: util.Debouncer;
+  private mStaticButtons: types.IActionDefinition[];
 
   constructor(props: IProps) {
     super(props);
     this.initState({
       enabled: [],
+      sortDirection: 'ascending',
       loading: false,
       itemRenderer: undefined,
       i18nNamespace: undefined,
@@ -86,6 +96,41 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
 
       return null;
     }, 500);
+
+    this.mForceUpdateDebouncer = new util.Debouncer(() => {
+      this.updateState(this.props);
+      return null;
+    }, 1000);
+
+    this.mStaticButtons = [
+      {
+        component: ToolbarIcon,
+        props: () => {
+          return {
+            id: 'btn-deploy',
+            key: 'btn-deploy',
+            icon: 'deploy',
+            text: 'Deploy Mods',
+            className: this.props.needToDeploy ? 'need-to-deploy' : 'no-deploy',
+            onClick: () => this.context.api.events.emit('deploy-mods', () => undefined),
+          };
+        },
+      },
+      {
+        component: ToolbarIcon,
+        props: () => {
+          return {
+            id: 'btn-sort-direction',
+            key: 'btn-sort-direction',
+            icon: (this.state.sortDirection === 'ascending') ? 'sort-down' : 'sort-up',
+            text: (this.state.sortDirection === 'ascending') ? 'Sort Down' : 'Sort Up',
+            className: 'load-order-sort-direction',
+            onClick: () => this.nextState.sortDirection = (this.state.sortDirection === 'ascending')
+              ? 'descending' : 'ascending',
+          };
+        },
+      },
+    ];
   }
 
   public componentWillReceiveProps(newProps: IProps) {
@@ -158,7 +203,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
 
   private renderLoadOrderPage(): JSX.Element {
     const { t, getGameEntry, profile, loadOrder } = this.props;
-    const { enabled, itemRenderer, i18nNamespace } = this.state;
+    const { enabled, itemRenderer } = this.state;
 
     const enabledIds = enabled.map(mod => mod.id);
     const loadOrderIds = Object.keys(loadOrder);
@@ -170,10 +215,32 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
     }
 
     const activeGameEntry = (profile !== undefined) ? getGameEntry(profile.gameId) : undefined;
-    const sorted = enabled.sort((lhs, rhs) => loadOrder[lhs.id].pos - loadOrder[rhs.id].pos);
-    return ((activeGameEntry !== undefined) && !!sorted)
+    if (activeGameEntry === undefined) {
+      return null;
+    }
+
+    const res = activeGameEntry.createInfoPanel({
+      refresh: () => this.mForceUpdateDebouncer.schedule(),
+    });
+
+    const infoPanel = (typeof(res) === 'string')
+      ? <DefaultInfoPanel infoText={res} />
+      : res;
+
+    const sorted = (this.state.sortDirection === 'ascending')
+      ? enabled.sort((lhs, rhs) => loadOrder[lhs.id].pos - loadOrder[rhs.id].pos)
+      : enabled.sort((lhs, rhs) => loadOrder[rhs.id].pos - loadOrder[lhs.id].pos);
+    return (!!sorted)
       ? (
       <MainPage>
+        <MainPage.Header>
+          <IconBar
+            group='generic-load-order-icons'
+            staticElements={this.mStaticButtons}
+            className='menubar'
+            t={t}
+          />
+        </MainPage.Header>
         <MainPage.Body>
           <Panel>
             <PanelX.Body>
@@ -188,10 +255,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
                     />
                   </FlexLayout.Flex>
                   <FlexLayout.Flex>
-                    <div id='loadorderinfo'>
-                      <h2>{t('Changing your load order', { ns: i18nNamespace })}</h2>
-                      <p>{activeGameEntry.loadOrderInfo}</p>
-                    </div>
+                    {infoPanel}
                   </FlexLayout.Flex>
                 </FlexLayout>
               </DNDContainer>
@@ -272,6 +336,7 @@ function mapStateToProps(state: types.IState, ownProps: IProps): IConnectedProps
     loadOrder,
     mods: util.getSafe(state, ['persistent', 'mods', profile.gameId], []),
     profile,
+    needToDeploy: selectors.needToDeploy(state),
   };
 }
 
@@ -285,6 +350,6 @@ function mapDispatchToProps(dispatch: any): IActionProps {
   };
 }
 
-export default withTranslation(['common'])(
+export default withTranslation(['common', NAMESPACE])(
   connect(mapStateToProps, mapDispatchToProps)(
     LoadOrderPage) as any) as React.ComponentClass<{}>;

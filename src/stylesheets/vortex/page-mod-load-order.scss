@@ -4,6 +4,9 @@
   }
 
   .load-order-entry {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
     background-color: $brand-bg;
     margin: 0px;
 
@@ -13,13 +16,17 @@
     border-style: solid;
     border-color: $gray;
   
+    .load-order-index {
+      padding: 2px 2px;
+      margin-right: 15px;
+    }
+
     &.dragging {
       opacity: 0;
     }
 
     &.locked {
       background-color: $brand-primary;
-      opacity: 0.7;
     }
   }
   
