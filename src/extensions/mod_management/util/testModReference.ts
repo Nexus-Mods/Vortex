@@ -45,26 +45,52 @@ export function sanitizeExpression(fileName: string): string {
     .replace(/ \(\d+\)$/, '');
 }
 
+function isFuzzyVersion(input: string) {
+  if (input === undefined) {
+    return false;
+  }
+
+  return input.endsWith('+prefer')
+      || (semver.validRange(input) !== input);
+}
+
+function hasIdentifyingMarker(mod: IModLookupInfo, modId: string, ref: IModReference): boolean {
+  const fuzzyVersion = isFuzzyVersion(ref.versionMatch);
+
+  return ((ref.id !== undefined) && (modId !== undefined))
+      || (!fuzzyVersion && (mod.fileMD5 !== undefined))
+      || ((ref.fileExpression !== undefined) && (mod.fileName !== undefined))
+      || ((ref.logicalFileName !== undefined) && (mod.logicalFileName !== undefined))
+      || ((ref.repo !== undefined) && (mod.source !== undefined));
+}
+
 function testRef(mod: IModLookupInfo, modId: string, ref: IModReference): boolean {
+  if (!hasIdentifyingMarker(mod, modId, ref)) {
+    // if the reference doesn't have any marker that _could_ match this mod, return !false!, otherwise
+    // we might match any random mod that also has no matching marker
+    return false;
+  }
+
   if ((ref.id !== undefined)
       && ((modId !== undefined) || (Object.keys(ref).length === 1))
       && (ref.id !== modId)) {
     return false;
   }
 
-  // if reference is by file hash, use only that
+  const versionMatchSafe = ref.versionMatch || '1.0.0';
+
+  // if reference is by file hash and the match , use only that
   if ((ref.fileMD5 !== undefined)
+      && !versionMatchSafe.endsWith('+prefer')
+      && (semver.validRange(versionMatchSafe) === versionMatchSafe)
       && (mod.fileMD5 !== ref.fileMD5)) {
     return false;
   }
 
-  if ((ref.repo !== undefined)
-      && (mod.source !== undefined)
-      && (mod.modId !== undefined)
-      && (mod.fileId !== undefined)) {
+  if (ref.repo !== undefined) {
     return (ref.repo.repository === mod.source)
-        && (ref.repo.modId === mod.modId.toString())
-        && (ref.repo.fileId === mod.fileId.toString());
+        && (ref.repo.modId === (mod.modId || -1).toString())
+        && (ref.repo.fileId === (mod.fileId || -1).toString());
   }
 
   // right file?
