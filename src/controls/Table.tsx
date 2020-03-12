@@ -12,7 +12,7 @@ import Debouncer from '../util/Debouncer';
 import { log } from '../util/log';
 import smoothScroll from '../util/smoothScroll';
 import { getSafe, setSafe } from '../util/storeHelper';
-import {sanitizeCSSId, truthy} from '../util/util';
+import {sanitizeCSSId, truthy, makeUnique} from '../util/util';
 
 import IconBar from './IconBar';
 import GroupingRow, { EMPTY_ID } from './table/GroupingRow';
@@ -87,7 +87,7 @@ interface IComponentState {
   calculatedValues?: ILookupCalculated;
   rowState: { [id: string]: IRowState };
   sortedRows: string[];
-  groupedRows: Array<{ id: string, count: number, rows: string[] }>;
+  groupedRows: Array<{ id: string, name: string, count: number, rows: string[] }>;
   detailsOpen: boolean;
   rowIdsDelayed: string[];
   rowVisibility: { [id: string]: boolean };
@@ -420,7 +420,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
               <GroupingRow
                 t={t}
                 key={group.id || '__empty'}
-                groupName={group.id}
+                groupId={group.id}
+                groupName={group.name}
                 expanded={expanded}
                 count={group.count}
                 width={this.mVisibleAttributes.length + 1}
@@ -458,8 +459,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     const { groupBy, onSetCollapsedGroups, tableId } = this.props;
     const { calculatedValues, sortedRows } = this.state;
 
-    const groupOptions = Array.from(new Set(
-      sortedRows.map(rowId => calculatedValues[rowId][groupBy])));
+    const groupOptions = makeUnique(
+      sortedRows.map(rowId => calculatedValues[rowId][groupBy]));
     onSetCollapsedGroups(tableId, groupOptions);
   }
 
@@ -496,7 +497,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
     let arrays: boolean = false;
 
-    const groupOptions = Array.from(new Set(
+    const groupOptions = makeUnique(
       sortedRows.reduce((prev, rowId) => {
         if (data[rowId] === undefined) {
           return prev;
@@ -509,7 +510,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
           prev.push(value);
         }
         return prev;
-      }, []))).sort((lhs: string, rhs: string) => {
+      }, [])).sort((lhs: string, rhs: string) => {
         if ((sortAttribute !== undefined)
           && (sortAttribute.id === groupAttribute.id)
           && (attributeState[sortAttribute.id].sortDirection === 'desc')) {
@@ -1296,7 +1297,10 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
       if (groupItems.length !== 0) {
         const expanded = collapsedGroups.indexOf(group || '') === -1;
-        prev.push({ id: group, count: groupItems.length, rows: expanded ? groupItems : null });
+        const groupName = (groupAttribute.groupName !== undefined)
+          ? groupAttribute.groupName(group)
+          : group;
+        prev.push({ id: group, name: groupName, count: groupItems.length, rows: expanded ? groupItems : null });
       }
 
       return prev;

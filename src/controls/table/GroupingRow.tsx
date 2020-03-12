@@ -13,6 +13,7 @@ export const EMPTY_ID = '<Unspecified>';
 
 export interface IGroupingRowProps {
   t: i18next.TFunction;
+  groupId: string;
   groupName: string;
   count: number;
   expanded: boolean;
@@ -51,18 +52,18 @@ class GroupingRow extends ComponentEx<IGroupingRowProps, IGroupingRowState> {
   }
 
   public render(): JSX.Element {
-    const { t, count, expanded, groupName, width } = this.props;
+    const { t, count, expanded, groupId, groupName, width } = this.props;
     const { context } = this.state;
     return (
-      <TR key={`group-${groupName}`} onContextMenu={this.onContext}>
+      <TR key={`group-${groupId}`} onContextMenu={this.onContext}>
         <TD
           className='table-group-header'
-          data-group={groupName}
+          data-group={groupId}
           onClick={this.toggleGroup}
           colSpan={width}
         >
           <ContextMenu
-            instanceId={groupName}
+            instanceId={groupId}
             actions={this.mContextActions}
             visible={context !== undefined}
             position={context}
@@ -77,8 +78,8 @@ class GroupingRow extends ComponentEx<IGroupingRowProps, IGroupingRowState> {
   }
 
   private toggleGroup = () => {
-    const { expanded, groupName, onToggle } = this.props;
-    onToggle(groupName, !expanded);
+    const { expanded, groupId, onToggle } = this.props;
+    onToggle(groupId, !expanded);
   }
 
   private onContext = (event: React.MouseEvent<any>) => {

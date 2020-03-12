@@ -7,10 +7,17 @@ import Select from 'react-select';
 
 type IProps = IFilterProps;
 
-type Options = Array<{ value: any, label: string }>;
+export interface IOptionsFilterOption {
+  value: any;
+  label: string;
+};
+
+type OptionsFilterOptionFunc = () => IOptionsFilterOption[];
+
+type Options = IOptionsFilterOption[];
 
 interface IBoundProps {
-  options: Options;
+  options: Options | OptionsFilterOptionFunc;
   multi: boolean;
 }
 
@@ -18,7 +25,11 @@ const dummy = '__undefined_BJL9vbThZ';
 
 class OptionsFilterComponent extends React.Component<IProps & IBoundProps, {}> {
   public render(): JSX.Element {
-    const { filter, multi, options } = this.props;
+    const { filter, multi } = this.props;
+
+    let options = Array.isArray(this.props.options)
+      ? this.props.options
+      : this.props.options();
 
     // can't use undefined as a value in Select
     const optionsSane = options.map(
@@ -54,7 +65,7 @@ class OptionsFilter implements ITableFilter {
 
   private mMulti: boolean;
 
-  constructor(options: Array<{ value: any, label: string }>, multi: boolean, raw?: boolean) {
+  constructor(options: IOptionsFilterOption[] | OptionsFilterOptionFunc, multi: boolean, raw?: boolean) {
     this.component = bindProps({ options, multi })(OptionsFilterComponent);
     this.mMulti = multi;
     this.raw = raw !== false;

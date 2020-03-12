@@ -461,3 +461,7 @@ export function toPromise<ResT>(func: (cb) => void): Promise<ResT> {
     func(cb);
   });
 }
+
+export function makeUnique<T>(input: T[]): T[] {
+  return Array.from(new Set(input));
+}

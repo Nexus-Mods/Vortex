@@ -101,6 +101,12 @@ export interface ITableAttribute<T = any> {
    */
   isGroupable?: boolean | ((object: T, t: I18next.TFunction) => string);
   /**
+   * if set, the group name is going to be translated using this function before being displayed to the user
+   * (this affects only the group headers, not filters)
+   * You probably want to use this if you have a customRenderer on a column that is groupable
+   */
+  groupName?: (id: string) => string;
+  /**
    * if set, the table can be filtered by this attribute using the specified control
    */
   filter?: ITableFilter;
