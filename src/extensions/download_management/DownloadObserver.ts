@@ -66,9 +66,9 @@ export class DownloadObserver {
     this.mManager = manager;
 
     events.on('remove-download',
-              downloadId => this.handleRemoveDownload(downloadId));
+              (downloadId, callback?) => this.handleRemoveDownload(downloadId, callback));
     events.on('pause-download',
-              downloadId => this.handlePauseDownload(downloadId));
+              (downloadId, callback?) => this.handlePauseDownload(downloadId, callback));
     events.on('resume-download',
               (downloadId, callback?) => this.handleResumeDownload(downloadId, callback));
     events.on('start-download',
@@ -245,13 +245,20 @@ export class DownloadObserver {
     };
   }
 
-  private handleRemoveDownload(downloadId: string) {
+  private handleRemoveDownload(downloadId: string, cb?: (err: Error) => void) {
     const download =
         this.mApi.store.getState().persistent.downloads.files[downloadId];
     if (download === undefined) {
       log('warn', 'failed to remove download: unknown', {downloadId});
       return;
     }
+
+    const callCB = (err: Error) => {
+      if (cb !== undefined) {
+        cb(err);
+      }
+    }
+
     if (['init', 'started'].indexOf(download.state) >= 0) {
       // need to cancel the download
       this.mManager.stop(downloadId);
@@ -260,28 +267,43 @@ export class DownloadObserver {
       const dlPath = selectors.downloadPathForGame(this.mApi.store.getState(),
                                                    getDownloadGames(download)[0]);
       fs.removeAsync(path.join(dlPath, download.localPath))
-          .then(() => { this.mApi.store.dispatch(removeDownload(downloadId)); })
-          .catch(UserCanceled, () => undefined)
+          .then(() => {
+            this.mApi.store.dispatch(removeDownload(downloadId));
+            callCB(null);
+          })
+          .catch(UserCanceled, callCB)
           .catch(err => {
-            showError(this.mApi.store.dispatch, 'Failed to remove file', err, {
-                      allowReport: ['EBUSY', 'EPERM'].indexOf(err.code) === -1 });
+            if (cb !== undefined) {
+              cb(err);
+            } else {
+              showError(this.mApi.store.dispatch, 'Failed to remove file', err, {
+                allowReport: ['EBUSY', 'EPERM'].indexOf(err.code) === -1
+              });
+            }
           });
     } else {
       this.mApi.store.dispatch(removeDownload(downloadId));
+      callCB(null);
     }
   }
 
-  private handlePauseDownload(downloadId: string) {
+  private handlePauseDownload(downloadId: string, callback?: (error: Error) => void) {
     const state: IState = this.mApi.store.getState();
     const download = state.persistent.downloads.files[downloadId];
     if (download === undefined) {
       log('warn', 'failed to pause download: unknown', {downloadId});
+      if (callback !== undefined) {
+        callback(new ProcessCanceled('invalid download id'));
+      }
       return;
     }
     if (['init', 'started'].indexOf(download.state) >= 0) {
       if (this.mManager.pause(downloadId) === undefined) {
         // this indicates the download isn't actually running
         this.mApi.store.dispatch(pauseDownload(downloadId, true, download.chunks));
+      }
+      if (callback !== undefined) {
+        callback(null);
       }
     }
   }

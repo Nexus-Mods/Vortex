@@ -38,7 +38,7 @@ import { ILookupResult, IModInfo, IReference } from 'modmeta-db';
 import * as React from 'react';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
-import { IModLookupResult } from './IModLookupResult';
+import { IModLookupResult, ILookupOptions } from './IModLookupResult';
 
 export { TestSupported, IInstallResult, IInstruction, IDeployedFile, IDeploymentMethod,
          IFileChange, ILookupResult, IModInfo, InstructionType, IReference, InstallFunc,
@@ -513,7 +513,7 @@ export interface IExtensionApi {
    *
    * @memberOf IExtensionApi
    */
-  lookupModReference: (ref: IModReference) => Promise<IModLookupResult[]>;
+  lookupModReference: (ref: IModReference, options?: ILookupOptions) => Promise<IModLookupResult[]>;
 
   /**
    * add a meta server

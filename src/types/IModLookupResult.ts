@@ -40,3 +40,8 @@ export interface IModLookupResult {
   key: string;
   value: IModLookupData;
 }
+
+// options that can be passed in when looking up mod references to specify the lookup behavior
+export interface ILookupOptions {
+  requireURL?: boolean;
+}

@@ -78,6 +78,7 @@ export interface IModRule extends IRule {
   downloadHint?: IDownloadHint;
   // additional information attached to the rule. This will not have
   // any effect on the resolution of the rule but may be used to
-  // customize/improve its presentation
+  // customize/improve its presentation or used to add details to a mod
+  // after/if it got installed through this rule.
   extra?: { [key: string]: any };
 }

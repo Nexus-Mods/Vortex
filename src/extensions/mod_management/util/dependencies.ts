@@ -159,7 +159,7 @@ function gatherDependencies(rules: IModRule[],
               : lookupDownloadHint(api, rule.downloadHint))
         .then(res => {
           urlFromHint = truthy(res) ? res : undefined;
-          return api.lookupModReference(rule.reference);
+          return api.lookupModReference(rule.reference, { requireURL: true });
         })
         .then((details: ILookupResult[]) => {
           lookupDetails = details;
@@ -189,6 +189,7 @@ function gatherDependencies(rules: IModRule[],
               : [],
             fileList: rule.fileList,
             installerChoices: rule.installerChoices,
+            extra: rule.extra,
             mod,
           };
           return [].concat(total, dependencies, [res]);

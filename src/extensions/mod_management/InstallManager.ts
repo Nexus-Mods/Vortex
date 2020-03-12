@@ -1149,11 +1149,11 @@ class InstallManager {
     }
     return api.emitAndAwait('start-download-update',
       lookupResult.source, lookupResult.domainName || lookupResult.gameId, modId, fileId, pattern)
-      .then(dlId => (dlId === undefined)
+      .then(dlIds => (dlIds === undefined)
           ? Promise.reject(new NotFound(`source not supported "${lookupResult.source}"`))
-          : (dlId === null)
+          : !truthy(dlIds[0])
           ? Promise.reject(new ProcessCanceled('Download failed', { alreadyReported: true }))
-          : Promise.resolve(dlId));
+          : Promise.resolve(dlIds[0]));
   }
 
   private downloadModAsync(
@@ -1171,6 +1171,20 @@ class InstallManager {
           : res);
     } else {
       return this.downloadURL(api, lookupResult);
+    }
+  }
+
+  private applyExtraFromRule(api: IExtensionApi, profile: IProfile, modId: string, extra?: { [key: string]: any }) {
+    if (extra === undefined) {
+      return;
+    }
+
+    if (extra.type !== undefined) {
+      api.store.dispatch(setModType(profile.gameId, modId, extra.type));
+    }
+
+    if (extra.name !== undefined) {
+      api.store.dispatch(setModAttribute(profile.gameId, modId, 'customFileName', extra.name));
     }
   }
 
@@ -1211,6 +1225,8 @@ class InstallManager {
            : Promise.resolve(dep.mod.id))
         .then((modId: string) => {
           api.store.dispatch(setModEnabled(profile.id, modId, true));
+          this.applyExtraFromRule(api, profile, modId, dep.extra);
+
           const state: IState = api.store.getState();
           const mods = state.persistent.mods[profile.gameId];
           return { ...dep, mod: mods[modId] };
@@ -1549,7 +1565,7 @@ class InstallManager {
       const state = api.store.getState();
       const download: IDownload = state.persistent.downloads.files[downloadId];
       if (download === undefined) {
-        return reject(new Error('Invalid download id'));
+        return reject(new Error(`Invalid download id (${downloadId})`));
       }
       const downloadGame: string = Array.isArray(download.game) ? download.game[0] : download.game;
       const fullPath: string =

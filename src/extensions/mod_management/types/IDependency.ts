@@ -16,6 +16,7 @@ export interface IDependency {
   fileList?: IFileListItem[];
   installerChoices?: any;
   mod: IMod;
+  extra?: { [key: string]: any };
 }
 
 export interface IDependencyError {

@@ -6,7 +6,7 @@ import { DialogActions, DialogType, IDialogContent, showDialog } from '../action
 import { IExtension } from '../extensions/extension_manager/types';
 import { IModReference, IModRepoId } from '../extensions/mod_management/types/IMod';
 import { ExtensionInit } from '../types/Extension';
-import { IModLookupResult } from '../types/IModLookupResult';
+import { IModLookupResult, ILookupOptions } from '../types/IModLookupResult';
 import {
   ArchiveHandlerCreator,
   IArchiveHandler,
@@ -1127,7 +1127,11 @@ class ExtensionManager {
     }
   }
 
-  private lookupModReference = (reference: IModReference): Promise<IModLookupResult[]> => {
+  private lookupModReference = (reference: IModReference, options?: ILookupOptions): Promise<IModLookupResult[]> => {
+    if (options === undefined) {
+      options = {};
+    }
+
     let lookup: { preferOverMD5: boolean, func: (id: IModRepoId) => Promise<IModLookupResult[]> };
     let preMD5: Promise<IModLookupResult[]> = Promise.resolve([]);
     if (reference.repo !== undefined) {
@@ -1138,11 +1142,21 @@ class ExtensionManager {
     }
 
     return preMD5.then((results: IModLookupResult[]) => {
+      if (options.requireURL === true) {
+        results = results.filter(res => truthy(res.value.sourceURI));
+      }
       if (results.length !== 0) {
         return results;
       } else {
         return this.getModDB()
           .then(modDB => modDB.getByReference(reference))
+          .filter(mod => {
+            if (options.requireURL === true) {
+              return truthy(mod.value.sourceURI);
+            } else {
+              return true;
+            }
+          })
           .map(mod => convertMD5Result(mod));
       }
     })
