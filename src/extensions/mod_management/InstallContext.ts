@@ -9,6 +9,7 @@ import { showError } from '../../util/message';
 import { getSafe } from '../../util/storeHelper';
 
 import { setDownloadInstalled } from '../download_management/actions/state';
+import { getModType } from '../gamemode_management/util/modTypeExtensions';
 import { setModEnabled } from '../profile_management/actions/profiles';
 
 import {
@@ -136,7 +137,7 @@ class InstallContext implements IInstallContext {
       this.mAddNotification(
         this.outcomeNotification(
           this.mInstallOutcome, this.mIndicatorId, this.mIsEnabled(this.mAddedId),
-          mod !== undefined ? getModName(mod) : this.mIndicatorId));
+          mod !== undefined ? getModName(mod) : this.mIndicatorId, mod));
     });
   }
 
@@ -222,14 +223,21 @@ class InstallContext implements IInstallContext {
   }
 
   private outcomeNotification(outcome: InstallOutcome, id: string,
-                              isEnabled: boolean, modName: string): INotification {
+                              isEnabled: boolean, modName: string,
+                              mod: IMod): INotification {
+    const type = mod !== undefined ? getModType(mod.type) : undefined;
+    const typeName = (type !== undefined)
+                  && (type.options !== undefined)
+                  && (type.options.name !== undefined)
+      ? type.options.name
+      : 'Mod';
     switch (outcome) {
       case 'success':
         return {
           id: `may-enable-${id}`,
           type: 'success',
           message: modName,
-          title: 'Mod installed',
+          title: `${typeName} installed`,
           group: 'mod-installed',
           displayMS: isEnabled ? 4000 : undefined,
           actions: isEnabled ? [] : [
