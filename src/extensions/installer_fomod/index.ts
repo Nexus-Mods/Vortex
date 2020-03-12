@@ -362,7 +362,7 @@ function init(context: IExtensionContext): boolean {
     calc: (mod: IMod) => {
       const choices = getSafe(mod.attributes, ['installerChoices'], undefined);
       if ((choices === undefined) || (choices.type !== 'fomod')) {
-        return undefined;
+        return '<None>';
       }
       return (choices.options || []).reduce((prev, step) => {
         prev.push(...step.groups

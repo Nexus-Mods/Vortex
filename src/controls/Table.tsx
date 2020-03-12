@@ -1254,7 +1254,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private groupedRows(props: IProps, sortedRows: string[])
-      : Array<{ id: string, count: number, rows: string[] }> {
+      : Array<{ id: string, name: string, count: number, rows: string[] }> {
     const { t, attributeState, collapsedGroups, data, groupBy } = props;
     const { calculatedValues } = this.state;
 
