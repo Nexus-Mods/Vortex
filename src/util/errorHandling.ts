@@ -1,6 +1,7 @@
 import { IErrorOptions, IExtensionApi } from '../types/api';
 import { IError } from '../types/IError';
 
+import { COMPANY_ID } from './constants';
 import { UserCanceled } from './CustomErrors';
 import { genHash } from './genHash';
 import { fallbackTFunc } from './i18n';
@@ -252,6 +253,10 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
     win = null;
   }
 
+  if ((allowReport === undefined) && (error.extension !== undefined)) {
+    allowReport = error.extension === COMPANY_ID;
+  }
+  
   const contextNow = { ...globalContext };
 
   log('error', 'unrecoverable error', { error, process: process.type });

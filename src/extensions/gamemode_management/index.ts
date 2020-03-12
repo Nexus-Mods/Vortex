@@ -9,6 +9,7 @@ import { IGameStore } from '../../types/IGameStore';
 import { IProfile, IRunningTool, IState } from '../../types/IState';
 import { IEditChoice, ITableAttribute } from '../../types/ITableAttribute';
 import {ProcessCanceled, SetupError, UserCanceled} from '../../util/CustomErrors';
+import { COMPANY_ID } from '../../util/constants';
 import * as fs from '../../util/fs';
 import LazyComponent from '../../util/LazyComponent';
 import local from '../../util/local';
@@ -393,7 +394,7 @@ function init(context: IExtensionContext): boolean {
     try {
       const gameExtInfo = JSON.parse(
         fs.readFileSync(path.join(extensionPath, 'info.json'), { encoding: 'utf8' }));
-      game.contributed = (gameExtInfo.author === 'Black Tree Gaming Ltd.')
+      game.contributed = (gameExtInfo.author === COMPANY_ID)
         ? undefined
         : gameExtInfo.author;
       game.final = semver.gte(gameExtInfo.version, '1.0.0');

@@ -37,7 +37,19 @@ class PortalMenu extends React.Component<IPortalMenuProps, {}> {
           },
         }}
       >
-        {args => (
+        {args => {
+          if ((args.props.style !== undefined)
+              && (args.props.style.transform !== undefined)) {
+            // translate3d causes blurry text on "low-res" screens. Newer popper versions seem to account for that but react-popper still
+            // relies on an old version at the time of writing
+            const translateMatch = args.props.style.transform.match(/translate3d\((\w+), (\w+), 0\)/);
+            if (translateMatch !== undefined) {
+              args.props.style.top = translateMatch[2];
+              args.props.style.left = translateMatch[1];
+              delete args.props.style.transform;
+            }
+          }
+          return (
             <div {...args.props} className='icon-menu-positioner'>
               <div className='menu-content'>
                 <Dropdown.Menu
@@ -50,7 +62,8 @@ class PortalMenu extends React.Component<IPortalMenuProps, {}> {
                 </Dropdown.Menu>
               </div>
             </div>
-          )}
+          );
+        }}
       </Overlay>
     );
   }

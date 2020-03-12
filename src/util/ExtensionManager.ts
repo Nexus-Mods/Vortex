@@ -26,6 +26,7 @@ import { IExtensionLoadFailure, IExtensionState, IState } from '../types/IState'
 
 import { Archive } from './archives';
 import { relaunch } from './commandLine';
+import { COMPANY_ID } from './constants';
 import { MissingDependency, NotSupportedError,
         ProcessCanceled, UserCanceled } from './CustomErrors';
 import { isOutdated } from './errorHandling';
@@ -601,7 +602,7 @@ class ExtensionManager {
                                                options?: IErrorOptions) {
       if ((this.extension !== undefined)
           && (this.extension.info !== undefined)
-          && (this.extension.info.author !== 'Black Tree Gaming Ltd.')) {
+          && (this.extension.info.author !== COMPANY_ID)) {
         if (options === undefined) {
           options = {};
         }
@@ -1037,7 +1038,7 @@ class ExtensionManager {
                 })
                 .catch(err => {
                   this.mApi.showErrorNotification('Extension failed to migrate', err, {
-                    allowReport: ext.info.author === 'Black Tree Gaming Ltd.',
+                    allowReport: ext.info.author === COMPANY_ID,
                   });
                 });
             }
