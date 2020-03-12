@@ -43,7 +43,7 @@ import LoginDialog from './views/LoginDialog';
 import LoginIcon from './views/LoginIcon';
 import { } from './views/Settings';
 
-import { genEndorsedAttribute, genGameAttribute, genModIdAttribute, genFileIdAttribute } from './attributes';
+import { genEndorsedAttribute, genGameAttribute, genModIdAttribute } from './attributes';
 import * as eh from './eventHandlers';
 import NXMUrl from './NXMUrl';
 import * as sel from './selectors';
@@ -745,6 +745,7 @@ function once(api: IExtensionApi) {
   api.onAsync('nexus-download', eh.onNexusDownload(api, nexus));
   api.onAsync('get-nexus-collections', eh.onGetNexusCollection(api, nexus));
   api.onAsync('get-nexus-collection-revisions', eh.onGetNexusRevisions(api, nexus));
+  api.onAsync('get-nexus-collection-revision', eh.onGetNexusRevision(api, nexus));
   api.events.on('endorse-mod', eh.onEndorseMod(api, nexus));
   api.events.on('submit-feedback', eh.onSubmitFeedback(nexus));
   api.events.on('submit-collection', eh.onSubmitCollection(nexus));

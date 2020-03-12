@@ -23,7 +23,7 @@ import { checkModVersionsImpl, endorseModImpl, startDownload, updateKey } from '
 
 import * as Promise from 'bluebird';
 import Nexus, { IFeedbackResponse, IIssue, NexusError,
-                RateLimitError, TimeoutError, ICollection, IRevision } from 'nexus-api';
+                RateLimitError, TimeoutError, ICollection, IRevision, IRevisionDetailed } from 'nexus-api';
 import * as semver from 'semver';
 
 export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
@@ -265,6 +265,16 @@ export function onGetNexusRevisions(api: IExtensionApi, nexus: Nexus): (collecti
   return (collectionId: number): Promise<IRevision[]> => Promise.resolve(nexus.getRevisions(collectionId));
 }
 
+export function onGetNexusRevision(api: IExtensionApi, nexus: Nexus): (collectionId: number, revisionId: number) => Promise<IRevisionDetailed> {
+  return (collectionId: number, revisionId: number): Promise<IRevisionDetailed> => {
+    return Promise.resolve(nexus.getRevisionInfo(collectionId, revisionId))
+      .catch(err => {
+        api.showErrorNotification('Failed to get nexus revision info', err);
+        return Promise.resolve(undefined);
+      });
+  }
+}
+
 export function onDownloadUpdate(api: IExtensionApi,
                                  nexus: Nexus)
                                  : (...args: any[]) => Promise<string> {
@@ -315,7 +325,7 @@ export function onDownloadUpdate(api: IExtensionApi,
         }
 
         const url = `nxm://${toNXMId(game, gameId)}/mods/${modId}/files/${updateFileId}`;
-        const state = api.store.getState();
+        const state: IState = api.store.getState();
         const downloads = state.persistent.downloads.files;
         // check if the file is already downloaded. If not, download before starting the install
         const existingId = Object.keys(downloads).find(downloadId =>
