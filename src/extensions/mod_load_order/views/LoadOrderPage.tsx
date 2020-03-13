@@ -100,7 +100,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
     this.mForceUpdateDebouncer = new util.Debouncer(() => {
       this.updateState(this.props);
       return null;
-    }, 1000);
+    }, 200);
 
     this.mStaticButtons = [
       {
