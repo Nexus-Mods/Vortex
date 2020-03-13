@@ -48,6 +48,7 @@ export interface IBaseProps {
   // 'volatile' fields as normal data fields would prompt a table refresh anyway
   dataId?: number;
   actions: ITableRowAction[];
+  columnBlacklist?: string[];
   detailsTitle?: string;
   multiSelect?: boolean;
   defaultSort?: string;
@@ -581,12 +582,14 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private columnToggles(props: IProps): ITableRowAction[] {
-    const { t, objects } = props;
+    const { t, columnBlacklist, objects } = props;
 
     const result: ITableRowAction[] = [];
 
+    const blacklist: Set<string> = new Set(columnBlacklist || []);
+
     const { columns, inlines } = objects.reduce((prev, attr) => {
-      if (attr.isToggleable) {
+      if (attr.isToggleable && !blacklist.has(attr.id)) {
         const attributeState = this.getAttributeState(attr, props.attributeState);
         prev[attr.placement === 'inline' ? 'inlines' : 'columns'].push({
           icon: attributeState.enabled ? 'checkbox-checked' : 'checkbox-unchecked',
@@ -1501,7 +1504,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
                                 detail: ITableAttribute[],
                                 inline: ITableAttribute[] } {
     const filtered = attributes.filter(attribute =>
-      ((attribute.condition === undefined) || attribute.condition()));
+      ((attribute.condition === undefined) || attribute.condition())
+      && !(this.props.columnBlacklist || []).includes(attribute.id));
 
     const enabled = filtered.filter(attribute =>
       this.getAttributeState(attribute, attributeStates).enabled);
