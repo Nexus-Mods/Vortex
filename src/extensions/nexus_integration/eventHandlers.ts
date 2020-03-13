@@ -198,7 +198,8 @@ function downloadFile(api: IExtensionApi, nexus: Nexus,
     const downloads = state.persistent.downloads.files;
     // check if the file is already downloaded. If not, download before starting the install
     const existingId = Object.keys(downloads).find(downloadId =>
-      getFileId(downloads[downloadId]) === fileId);
+      downloads[downloadId].game.includes(gameId)
+      && (getFileId(downloads[downloadId]) === fileId));
     if (existingId !== undefined) {
       return Promise.resolve(existingId);
     } else {
