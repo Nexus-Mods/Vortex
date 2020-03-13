@@ -33,7 +33,10 @@ class DefaultItemRenderer extends ComponentEx<IProps, {}> {
 
   private renderLocked(item: ILoadOrderDisplayItem): JSX.Element {
     const { loadOrder, className } = this.props;
-    const position = loadOrder[item.id].pos;
+    const position = (item.prefix !== undefined)
+      ? item.prefix
+      : loadOrder[item.id].pos + 1;
+
     const key = `${item.name}-${position}`;
 
     let classes = ['load-order-entry'];
@@ -42,9 +45,10 @@ class DefaultItemRenderer extends ComponentEx<IProps, {}> {
     }
     return (
       <ListGroupItem key={key} className={classes.join(' ')}>
-        <Icon className='load-order-index' name='locked'/>
+        <p className='load-order-index'>{position}</p>
         <img src={item.imgUrl} id='mod-img'/>
         {item.name}
+        <Icon className='locked-entry-logo' name='locked'/>
       </ListGroupItem>
     );
   }

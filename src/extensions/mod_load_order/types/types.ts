@@ -1,7 +1,7 @@
 import * as Promise from 'bluebird';
 import { types } from 'vortex-api';
 
-export type SortDirection = 'ascending' | 'descending';
+export type SortType = 'ascending' | 'descending';
 
 // A set of props forwarded to game extensions which
 //  will allow these to control certain aspects of the
@@ -73,7 +73,8 @@ export interface IGameLoadOrderEntry {
 
   // Give the game extension the opportunity to modify the load order
   //  before we start sorting the mods.
-  preSort?: (items: ILoadOrderDisplayItem[]) => Promise<ILoadOrderDisplayItem[]>;
+  preSort?: (items: ILoadOrderDisplayItem[],
+             sortDir: SortType) => Promise<ILoadOrderDisplayItem[]>;
 
   // Allow game extensions to run custom filtering logic
   //  and display only mods which need to be sorted.

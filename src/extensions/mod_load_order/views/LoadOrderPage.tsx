@@ -8,7 +8,7 @@ import { actions, ComponentEx, DNDContainer, FlexLayout, IconBar, MainPage,
   selectors, Spinner, ToolbarIcon, types, util } from 'vortex-api';
 
 import { IGameLoadOrderEntry, ILoadOrder,
-  ILoadOrderDisplayItem, SortDirection } from '../types/types';
+  ILoadOrderDisplayItem, SortType } from '../types/types';
 
 import DraggableList from './DraggableList';
 
@@ -22,7 +22,7 @@ const NAMESPACE: string = 'generic-load-order-extension';
 interface IBaseState {
   i18nNamespace: string;
   loading: boolean;
-  sortDirection: SortDirection;
+  sortType: SortType;
   itemRenderer: React.ComponentClass<{
     className?: string,
     item: ILoadOrderDisplayItem,
@@ -70,7 +70,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
     super(props);
     this.initState({
       enabled: [],
-      sortDirection: 'ascending',
+      sortType: 'ascending',
       loading: false,
       itemRenderer: undefined,
       i18nNamespace: undefined,
@@ -122,11 +122,14 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
           return {
             id: 'btn-sort-direction',
             key: 'btn-sort-direction',
-            icon: (this.state.sortDirection === 'ascending') ? 'sort-down' : 'sort-up',
-            text: (this.state.sortDirection === 'ascending') ? 'Sort Down' : 'Sort Up',
+            icon: (this.state.sortType === 'ascending') ? 'sort-down' : 'sort-up',
+            text: (this.state.sortType === 'ascending') ? 'Sort Descending' : 'Sort Ascending',
             className: 'load-order-sort-direction',
-            onClick: () => this.nextState.sortDirection = (this.state.sortDirection === 'ascending')
-              ? 'descending' : 'ascending',
+            onClick: () => {
+              this.nextState.sortType = (this.state.sortType === 'ascending')
+                ? 'descending' : 'ascending';
+              this.mForceUpdateDebouncer.schedule();
+            },
           };
         },
       },
@@ -176,9 +179,8 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
 
     const activeGameEntry: IGameLoadOrderEntry = getGameEntry(profile.gameId);
     if (!!activeGameEntry.preSort) {
-      activeGameEntry.preSort(list).then(newList => !!newList
-                                                      ? setNewOrder(newList)
-                                                      : setNewOrder(list));
+      activeGameEntry.preSort(list, this.state.sortType).then(newList =>
+        !!newList ? setNewOrder(newList) : setNewOrder(list));
     } else {
       setNewOrder(list);
     }
@@ -227,7 +229,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
       ? <DefaultInfoPanel infoText={res} />
       : res;
 
-    const sorted = (this.state.sortDirection === 'ascending')
+    const sorted = (this.state.sortType === 'ascending')
       ? enabled.sort((lhs, rhs) => loadOrder[lhs.id].pos - loadOrder[rhs.id].pos)
       : enabled.sort((lhs, rhs) => loadOrder[rhs.id].pos - loadOrder[lhs.id].pos);
     return (!!sorted)
@@ -320,7 +322,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
     const spread = [ ...en, ...difference ];
 
     (!!activeGameEntry.preSort)
-      ? activeGameEntry.preSort(spread).then(newList =>
+      ? activeGameEntry.preSort(spread, this.state.sortType).then(newList =>
           this.nextState.enabled = (!!newList) ? newList : spread)
       : this.nextState.enabled = spread;
   }
