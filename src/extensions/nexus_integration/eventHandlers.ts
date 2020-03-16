@@ -23,7 +23,7 @@ import { checkModVersionsImpl, endorseModImpl, startDownload, updateKey } from '
 
 import * as Promise from 'bluebird';
 import Nexus, { IFeedbackResponse, IIssue, NexusError,
-                RateLimitError, TimeoutError, ICollection, IRevision, IRevisionDetailed } from 'nexus-api';
+                RateLimitError, TimeoutError, ICollection, IRevision, IRevisionDetailed, ICollectionDetailed } from 'nexus-api';
 import * as semver from 'semver';
 
 export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
@@ -258,7 +258,17 @@ export function onNexusDownload(api: IExtensionApi,
   };
 }
 
-export function onGetNexusCollection(api: IExtensionApi, nexus: Nexus): (gameId: string) => Promise<ICollection[]> {
+export function onGetNexusCollection(api: IExtensionApi, nexus: Nexus): (collectionId: number) => Promise<ICollectionDetailed> {
+  return (collectionId: number): Promise<ICollectionDetailed> => {
+    return Promise.resolve(nexus.getCollectionInfo(collectionId))
+      .catch(err => {
+        api.showErrorNotification('Failed to get nexus collection info', err);
+        return Promise.resolve(undefined);
+      });
+  }
+}
+
+export function onGetNexusCollections(api: IExtensionApi, nexus: Nexus): (gameId: string) => Promise<ICollection[]> {
   return (gameId: string): Promise<ICollection[]> => Promise.resolve(nexus.getCollectionsByGame(gameId));
 }
 
@@ -274,6 +284,17 @@ export function onGetNexusRevision(api: IExtensionApi, nexus: Nexus): (collectio
         return Promise.resolve(undefined);
       });
   }
+}
+
+export function onRateCollection(api: IExtensionApi, nexus: Nexus): (collectionId: number, rating: number) => Promise<boolean> {
+  return (collectionId: number, rating: number): Promise<boolean> => {
+    return Promise.resolve(nexus.rateCollection(collectionId, rating))
+      .then(() => true)
+      .catch(err => {
+        api.showErrorNotification('Failed to rate collection', err);
+        return Promise.resolve(false);
+      });
+  };
 }
 
 export function onDownloadUpdate(api: IExtensionApi,
