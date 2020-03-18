@@ -599,12 +599,23 @@ function onceMain(api: IExtensionApi) {
   }
 }
 
+const awaitedLinks: Array<{ gameId: string, modId: number, fileId: number, resolve: (url: string) => void }> = [];
+
 function makeNXMLinkCallback(api: IExtensionApi) {
   return (url: string, install: boolean) => {
     const nxmUrl = new NXMUrl(url);
     if ((nxmUrl.gameId === SITE_ID) && install) {
       return api.emitAndAwait('install-extension',
         { name: 'Pending', modId: nxmUrl.modId, fileId: nxmUrl.fileId });
+    }
+
+    // test if we're already awaiting this link
+    const awaitedIdx = awaitedLinks.findIndex(link =>
+      (link.gameId === nxmUrl.gameId) && (link.modId === nxmUrl.modId) && (link.fileId === nxmUrl.fileId));
+    if (awaitedIdx !== -1) {
+      const awaited = awaitedLinks.splice(awaitedIdx, 1);
+      awaited[0].resolve(url);
+      return;
     }
 
     ensureLoggedIn(api)
@@ -887,6 +898,73 @@ function guessIds(api: IExtensionApi, instanceIds: string[]) {
   });
 }
 
+function makeNXMProtocol(api: IExtensionApi, onAwaitLink: (gameId: string, modId: number, fileId: number) => Promise<string>) {
+  const resolveFunc = (input: string): Promise<IResolvedURL> => {
+    const state = api.store.getState();
+
+    let url: NXMUrl;
+    try {
+      url = new NXMUrl(input);
+    } catch (err) {
+      return Promise.reject(err);
+    }
+
+    const userInfo: any = getSafe(state, ['persistent', 'nexus', 'userInfo'], undefined);
+    if ((url.userId !== undefined) && (url.userId !== userInfo.userId)) {
+      const userName: string =
+        getSafe(state, ['persistent', 'nexus', 'userInfo', 'name'], undefined);
+      api.showErrorNotification('Invalid download links',
+        'The link was not created for this account ({{userName}}). '
+        + 'You have to be logged into nexusmods.com with the same account that you use in Vortex.',
+        { allowReport: false, replace: { userName } });
+      return Promise.reject(new ProcessCanceled('Wrong user id'));
+    }
+
+    if (!userInfo.isPremium && (url.key === undefined)) {
+      // non-premium user trying to download a file with no id, have to send the user to the corresponding site to generate a proper link
+      return new Promise((resolve, reject) => {
+        api.showDialog('info', 'About to open Nexus Mods', {
+          text: 'To download this file you have to go through the website. Please click the button below to take you to the '
+            + 'appropriate site (in your default webbrowser).',
+          links: [{ label: 'Open Site', action: (dismiss) => {
+            onAwaitLink(url.gameId, url.modId, url.fileId).then(updatedLink => {
+              return resolveFunc(updatedLink)
+                .then(resolve)
+                .catch(reject)
+                .finally(dismiss);
+            });
+            opn(`https://www.nexusmods.com/${url.gameId}/mods/${url.modId}?tab=files&file_id=${url.fileId}&nmm=1`).catch(() => null);
+          } }]
+        }, [
+          { label: 'Cancel' },
+        ]);
+      });
+    }
+
+    const games = knownGames(state);
+    const gameId = convertNXMIdReverse(games, url.gameId);
+    const pageId = nexusGameId(gameById(state, gameId), url.gameId);
+    return Promise.resolve()
+      .then(() => (url.type === 'mod')
+        ? nexus.getDownloadURLs(url.modId, url.fileId, url.key, url.expires, pageId)
+          .then((res: IDownloadURL[]) => ({ urls: res.map(u => u.URI), meta: {} }))
+        : nexus.getCollectionDownloadURLs(url.collectionId as any, url.revisionId as any,
+          url.key, url.expires, pageId)
+          .then((res: ICollectionDownloadLink) => ({ urls: [res.download_link], meta: {} })))
+      .catch(NexusError, err => {
+        const newError = new HTTPError(err.statusCode, err.message, err.request);
+        newError.stack = err.stack;
+        return Promise.reject(newError);
+      })
+      .catch(RateLimitError, err => {
+        api.showErrorNotification('Rate limit exceeded', err, { allowReport: false });
+        return Promise.reject(err);
+      });
+  }
+
+  return resolveFunc;
+}
+
 function init(context: IExtensionContextExt): boolean {
   context.registerAction('application-icons', 200, LoginIcon, {}, () => ({ nexus }));
   context.registerAction('mods-action-icons', 999, 'open-ext', {}, 'Open on Nexus Mods',
@@ -943,48 +1021,11 @@ function init(context: IExtensionContextExt): boolean {
     (instanceIds: string[]) => queryInfo(context.api, instanceIds), queryCondition);
 
   // this makes it so the download manager can use nxm urls as download urls
-  context.registerDownloadProtocol('nxm', (input: string): Promise<IResolvedURL> => {
-    const state = context.api.store.getState();
-
-    let url: NXMUrl;
-    try {
-      url = new NXMUrl(input);
-    } catch (err) {
-      return Promise.reject(err);
-    }
-
-    const userId: number = getSafe(state, ['persistent', 'nexus', 'userInfo', 'userId'], undefined);
-    if ((url.userId !== undefined) && (url.userId !== userId)) {
-      const userName: string =
-        getSafe(state, ['persistent', 'nexus', 'userInfo', 'name'], undefined);
-      context.api.showErrorNotification('Invalid download links',
-        'The link was not created for this account ({{userName}}). '
-        + 'You have to be logged into nexusmods.com with the same account that you use in Vortex.',
-        { allowReport: false, replace: { userName } });
-      return Promise.reject(new ProcessCanceled('Wrong user id'));
-    }
-
-    const games = knownGames(state);
-    const gameId = convertNXMIdReverse(games, url.gameId);
-    const pageId = nexusGameId(gameById(state, gameId), url.gameId);
-    return Promise.resolve()
-      .then(() => (url.type === 'mod')
-        ? nexus.getDownloadURLs(url.modId, url.fileId, url.key, url.expires, pageId)
-          .then((res: IDownloadURL[]) => ({ urls: res.map(u => u.URI), meta: {} }))
-        : nexus.getCollectionDownloadURLs(url.collectionId as any, url.revisionId as any,
-                                          url.key, url.expires, pageId)
-          .then((res: ICollectionDownloadLink) => ({ urls: [res.download_link], meta: {} })))
-      .catch(NexusError, err => {
-        const newError = new HTTPError(err.statusCode, err.message, err.request);
-        newError.stack = err.stack;
-        return Promise.reject(newError);
-      })
-      .catch(RateLimitError, err => {
-        context.api.showErrorNotification('Rate limit exceeded', err, { allowReport: false });
-        return Promise.reject(err);
-      });
-  });
-
+  context.registerDownloadProtocol('nxm', makeNXMProtocol(context.api, (gameId: string, modId: number, fileId: number) => {
+    return new Promise(resolve => {
+      awaitedLinks.push({ gameId, modId, fileId, resolve });
+    });
+  }));
   context.registerSettings('Download', LazyComponent(() => require('./views/Settings')));
   context.registerReducer(['confidential', 'account', 'nexus'], accountReducer);
   context.registerReducer(['settings', 'nexus'], settingsReducer);

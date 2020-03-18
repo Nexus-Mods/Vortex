@@ -200,8 +200,8 @@ export class DownloadObserver {
       this.mApi.store.dispatch(pauseDownload(id, true, res.unfinishedChunks));
     } else if (res.filePath.toLowerCase().endsWith('.html')) {
       this.mApi.store.dispatch(downloadProgress(id, res.size, res.size, [], undefined));
-      this.mApi.store.dispatch(
-          finishDownload(id, 'redirect', {htmlFile: res.filePath}));
+      this.mApi.store.dispatch(finishDownload(id, 'redirect', {htmlFile: res.filePath}));
+      this.mApi.events.emit('did-finish-download', id, 'redirect');
       if (callback !== undefined) {
         callback(new Error('html result'), id);
       }
@@ -223,6 +223,7 @@ export class DownloadObserver {
             // still storing the download as successful even if we didn't manage to calculate its
             // hash
             this.mApi.store.dispatch(finishDownload(id, 'finished', undefined));
+            this.mApi.events.emit('did-finish-download', id, 'finished');
           });
     }
   }
@@ -364,6 +365,7 @@ export class DownloadObserver {
       this.mApi.store.dispatch(finishDownload(downloadId, 'failed', {
         message,
       }));
+      this.mApi.events.emit('did-finish-download', downloadId, 'failed');
       if (callback !== undefined) {
         callback(err, downloadId);
       } else {

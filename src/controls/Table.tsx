@@ -1462,7 +1462,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
     let groupSortedRows: Array<{ rowId: string, groupId: string }>;
     if (groupBy !== undefined) {
-      groupSortedRows = groupedRows.reduce((prev, group) => {
+      groupSortedRows = (groupedRows || []).reduce((prev, group) => {
         prev.push(...(group.rows || []).map(rId => ({ rowId: rId, groupId: group.id })) || []);
         return prev;
       }, []);
