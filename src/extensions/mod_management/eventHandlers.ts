@@ -220,7 +220,7 @@ export function onGameModeActivated(
         const modTypes = Object.keys(modPaths);
 
         const reason = allTypesSupported(oldActivator, state, gameId, modTypes);
-        if (reason === undefined) {
+        if (reason.errors.length === 0) {
           // wut? Guess the problem was temporary
           changeActivator = false;
         } else {
@@ -231,7 +231,7 @@ export function onGameModeActivated(
                 'The deployment method you had configured is no longer applicable.\n' +
                 'Please resolve the problem described below or go to "Settings" and ' +
                 'change the deployment method.',
-              reason: reason.description(api.translate),
+              reason: reason.errors[0].description(api.translate),
             },
             { allowReport: false },
           );
@@ -379,7 +379,9 @@ function undeploy(api: IExtensionApi,
   // TODO: can only use one activator that needs to support the whole game
   const activator: IDeploymentMethod = activatorId !== undefined
     ? activators.find(act => act.id === activatorId)
-    : activators.find(act => allTypesSupported(act, state, gameMode, modTypes) === undefined);
+    : activators.find(act => allTypesSupported(act, state, gameMode, modTypes).errors.length === 0);
+
+  console.log('activators', activators.map(act => allTypesSupported(act, state, gameMode, modTypes)));
 
   if (activator === undefined) {
     return Promise.reject(new ProcessCanceled('No deployment method active'));
