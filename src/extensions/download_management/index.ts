@@ -739,6 +739,18 @@ function init(context: IExtensionContextExt): boolean {
     }, 1000);
 
     {
+      let powerTimer: NodeJS.Timeout;
+      let powerBlockerId: number;
+      const stopTimer = () => {
+        if (remote.powerSaveBlocker.isStarted(powerBlockerId)) {
+          console.log('stop prevent sleep', powerBlockerId);
+          remote.powerSaveBlocker.stop(powerBlockerId);
+        }
+        powerBlockerId = undefined;
+        powerTimer = undefined;
+      }
+
+
       const speedsDebouncer = new Debouncer(() => {
         store.dispatch(setDownloadSpeeds(store.getState().persistent.downloads.speedHistory));
         return null;
@@ -752,6 +764,14 @@ function init(context: IExtensionContextExt): boolean {
               store.dispatch(setDownloadSpeed(speed));
               // this schedules the main progress to be updated
               speedsDebouncer.schedule();
+              if (powerTimer !== undefined) {
+                clearTimeout(powerTimer);
+              }
+              if (powerBlockerId !== undefined) {
+                powerBlockerId = remote.powerSaveBlocker.start('prevent-app-suspension');
+                console.log('start prevent sleep', powerBlockerId);
+              }
+              powerTimer = setTimeout(stopTimer, 60000);
             }
           }, `Nexus Client v2.${app.getVersion()}`, protocolHandlers);
       manager.setFileExistsCB(fileName => {
