@@ -1,5 +1,7 @@
-import {IDeploymentMethod, IUnavailableReason} from '../types/IDeploymentMethod';
+import { IModType } from '../../gamemode_management/types/IModType';
 import { getModType } from '../../gamemode_management/util/modTypeExtensions';
+
+import {IDeploymentMethod, IUnavailableReason} from '../types/IDeploymentMethod';
 
 function allTypesSupported(activator: IDeploymentMethod, state: any,
                            gameId: string, types: string[])
@@ -10,8 +12,11 @@ function allTypesSupported(activator: IDeploymentMethod, state: any,
   return types.reduce((prev, type) => {
     const reason = activator.isSupported(state, gameId, type);
     if (reason !== undefined) {
-      const typeInfo = getModType(type);
-      prev[(typeInfo.options.deploymentEssential === false) ? 'warnings' : 'errors'].push(reason);
+      const typeInfo: IModType = getModType(type);
+      if (typeInfo !== undefined) {
+        const { deploymentEssential } = (typeInfo.options || {});
+        prev[(deploymentEssential === false) ? 'warnings' : 'errors'].push(reason);
+      }
     }
     return prev;
   }, { errors: [], warnings: [] });
