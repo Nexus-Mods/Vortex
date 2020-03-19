@@ -20,6 +20,9 @@ class Debouncer {
   private mReschedule: 'no' | 'yes' | 'immediately' = 'no';
   private mArgs: any[] = [];
   private mResetting: boolean;
+  private mTriggerImmediately: boolean;
+  // only used with triggerImmediately
+  private mRetrigger: boolean = false;
 
   /**
    * constructor
@@ -29,13 +32,19 @@ class Debouncer {
    *              time schedule gets called. This means if the debouncer
    *              is triggered regularly in less than debounceMS it never
    *              gets run.
+   * @param triggerImmediately if true, the debouncer will trigger immediately
+   *                           when first called and then not be called again
+   *                           until the timer expires. Otherwise (the default)
+   *                           the initial call is delay.
    */
   constructor(func: (...args: any[]) => Error | Promise<void>,
               debounceMS: number,
-              reset?: boolean) {
+              reset?: boolean,
+              triggerImmediately: boolean = false) {
     this.mResetting = reset !== false;
     this.mFunc = func;
     this.mDebounceMS = debounceMS;
+    this.mTriggerImmediately = triggerImmediately;
   }
 
   /**
@@ -46,30 +55,39 @@ class Debouncer {
    *             parameters will be used
    */
   public schedule(callback?: (err: Error) => void, ...args: any[]) {
-    if ((this.mTimer !== undefined) && this.mResetting) {
-      clearTimeout(this.mTimer);
-      this.mTimer = undefined;
-    }
-
-    if ((callback !== undefined) && (callback !== null)) {
-      this.mCallbacks.push(callback);
-    }
-
-    this.mArgs = args;
-
-    if (this.mRunning) {
-      if (this.mReschedule !== 'immediately') {
-        this.mReschedule = 'yes';
+    if (this.mTriggerImmediately && (this.mTimer === undefined)) {
+      this.run();
+    } else {
+      const doReset = (this.mTimer !== undefined) && this.mResetting;
+      if (doReset) {
+        this.clear();
       }
-    } else if (this.mTimer === undefined) {
-      this.startTimer();
+
+      if ((callback !== undefined) && (callback !== null)) {
+        this.mCallbacks.push(callback);
+      }
+
+      this.mArgs = args;
+
+      if (this.mTriggerImmediately) {
+        this.mRetrigger = true;
+        if (doReset) {
+          this.startTimer();
+        }
+      } else if (this.mRunning) {
+        if (this.mReschedule !== 'immediately') {
+          this.mReschedule = 'yes';
+        }
+      } else if (this.mTimer === undefined) {
+        this.startTimer();
+      }
     }
   }
 
   /**
    * run the function immediately without waiting for the timer
    * to run out. (It does cancel the timer though and invokes all
-   * scheduled timeouts)
+   * scheduled callbacks)
    *
    * @param {(err: Error) => void} callback
    * @param {...any[]} args
@@ -78,7 +96,7 @@ class Debouncer {
    */
   public runNow(callback: (err: Error) => void, ...args: any[]) {
     if (this.mTimer !== undefined) {
-      clearTimeout(this.mTimer);
+      this.clear();
     }
 
     if ((callback !== undefined) && (callback !== null)) {
@@ -115,7 +133,7 @@ class Debouncer {
     this.mAddCallbacks.push(callback);
 
     if (immediately && !this.mRunning)  {
-      clearTimeout(this.mTimer);
+      this.clear();
 
       this.run();
     }
@@ -152,12 +170,17 @@ class Debouncer {
       this.mRunning = false;
       this.invokeCallbacks(callbacks, prom as Error);
     }
+
+    // in the default case the "run" marks the end of the timer,
+    // in the "trigger immediately" case it marks the start
+    if (this.mTriggerImmediately) {
+      this.startTimer();
+    }
   }
 
   private reschedule() {
     if ((this.mTimer !== undefined) && this.mResetting) {
-      clearTimeout(this.mTimer);
-      this.mTimer = undefined;
+      this.clear();
     }
 
     if (this.mTimer === undefined) {
@@ -172,7 +195,17 @@ class Debouncer {
   }
 
   private startTimer() {
-    this.mTimer = setTimeout(() => this.run(), this.mDebounceMS);
+    this.mTimer = setTimeout(() => {
+      this.mTimer = undefined;
+      if (!this.mTriggerImmediately || this.mRetrigger) {
+        this.mRetrigger = false;
+        if (this.mRunning) {
+          this.mReschedule = 'immediately';
+        } else {
+          this.run();
+        }
+      }
+    }, this.mDebounceMS);
   }
 }
 
