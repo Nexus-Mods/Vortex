@@ -8935,8 +8935,8 @@ har-validator@~5.1.0:
     har-schema "^2.0.0"
 
 harmony-patcher@Nexus-Mods/harmony-patcher:
-  version "0.2.2"
-  resolved "https://codeload.github.com/Nexus-Mods/harmony-patcher/tar.gz/24d3b6caa4207b1758350b137cf294c7e8cc5820"
+  version "0.2.4"
+  resolved "https://codeload.github.com/Nexus-Mods/harmony-patcher/tar.gz/a7d5a49c5f06953a8d2330c1d9ceb5d5719cf5e4"
   dependencies:
     async "^2.6.2"
     copyfiles "^1.0.0"
@@ -11550,6 +11550,11 @@ minimist@^1.1.0, minimist@^1.1.1, minimist@^1.1.3, minimist@^1.2.0:
   resolved "https://registry.yarnpkg.com/minimist/-/minimist-1.2.0.tgz#a35008b20f41383eec1fb914f4cd5df79a264284"
   integrity sha1-o1AIsg9BOD7sH7kU9M1d95omQoQ=
 
+minimist@^1.2.5:
+  version "1.2.5"
+  resolved "https://registry.yarnpkg.com/minimist/-/minimist-1.2.5.tgz#67d66014b66a6a8aaa0c083c5fd58df4e4e97602"
+  integrity sha512-FM9nNUYrRBAELZQT3xeZQ7fmMOBg6nWNmJKTcgsJeaLstP/UODVpGsr5OhXhhXg6f+qtJ8uiZ+PUxkDWcgIXLw==
+
 minimist@~0.0.1:
   version "0.0.10"
   resolved "https://registry.yarnpkg.com/minimist/-/minimist-0.0.10.tgz#de3f98543dbf96082be48ad1a0c7cda836301dcf"
@@ -11630,12 +11635,19 @@ mixin-object@^2.0.1:
     for-in "^0.1.3"
     is-extendable "^0.1.1"
 
-mkdirp@0.5.1, mkdirp@0.x, "mkdirp@>=0.5 0", mkdirp@^0.5.0, mkdirp@^0.5.1, mkdirp@~0.5.1:
+mkdirp@0.5.1, mkdirp@0.x, "mkdirp@>=0.5 0", mkdirp@~0.5.1:
   version "0.5.1"
   resolved "https://registry.yarnpkg.com/mkdirp/-/mkdirp-0.5.1.tgz#30057438eac6cf7f8c4767f38648d6697d75c903"
   integrity sha1-MAV0OOrGz3+MR2fzhkjWaX11yQM=
   dependencies:
     minimist "0.0.8"
+
+mkdirp@^0.5.0, mkdirp@^0.5.1:
+  version "0.5.3"
+  resolved "https://registry.yarnpkg.com/mkdirp/-/mkdirp-0.5.3.tgz#5a514b7179259287952881e94410ec5465659f8c"
+  integrity sha512-P+2gwrFqx8lhew375MQHHeTlY8AuOJSrGf0R5ddkEndUkmwpgUob/vQuBD1V22/Cw1/lJr4x+EjllSezBThzBg==
+  dependencies:
+    minimist "^1.2.5"
 
 modmeta-db@Nexus-Mods/modmeta-db:
   version "0.5.5"
@@ -11684,7 +11696,7 @@ ms@^2.1.1:
   resolved "https://registry.yarnpkg.com/ms/-/ms-2.1.2.tgz#d09d1f357b443f493382a8eb3ccd183872ae6009"
   integrity sha512-sGkPx+VjMtmA6MX27oA4FBFELFCZZ4S4XqeGOXCv68tT+jb3vk/RyaKWP0PTKyWtmLSM0b+adUTEvbs1PEaH2w==
 
-msbuild@^1.0.3:
+msbuild@1.1.2, msbuild@^1.0.3:
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/msbuild/-/msbuild-1.1.2.tgz#c6bf66aabc70d81b7a2590ed85ed5e7cd6eaee53"
   integrity sha512-uokwgHTir5KkZjfNSgJEJu3tBKgqBCCKQVwOzA/7TSSUhzC/p1vvSxwunLY0d0lzo2rb9fuIR0o5wU0IVypBnQ==
