@@ -742,14 +742,13 @@ function init(context: IExtensionContextExt): boolean {
       let powerTimer: NodeJS.Timeout;
       let powerBlockerId: number;
       const stopTimer = () => {
-        if (remote.powerSaveBlocker.isStarted(powerBlockerId)) {
-          console.log('stop prevent sleep', powerBlockerId);
+        if ((powerBlockerId !== undefined)
+            && remote.powerSaveBlocker.isStarted(powerBlockerId)) {
           remote.powerSaveBlocker.stop(powerBlockerId);
         }
         powerBlockerId = undefined;
         powerTimer = undefined;
-      }
-
+      };
 
       const speedsDebouncer = new Debouncer(() => {
         store.dispatch(setDownloadSpeeds(store.getState().persistent.downloads.speedHistory));
@@ -767,9 +766,8 @@ function init(context: IExtensionContextExt): boolean {
               if (powerTimer !== undefined) {
                 clearTimeout(powerTimer);
               }
-              if (powerBlockerId !== undefined) {
+              if (powerBlockerId === undefined) {
                 powerBlockerId = remote.powerSaveBlocker.start('prevent-app-suspension');
-                console.log('start prevent sleep', powerBlockerId);
               }
               powerTimer = setTimeout(stopTimer, 60000);
             }
