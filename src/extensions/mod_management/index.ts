@@ -640,7 +640,7 @@ function genValidActivatorCheck(api: IExtensionApi) {
 
     const reasons: IUnavailableReasonEx[] = getAllActivators().map(activator => {
       const problems = allTypesSupported(activator, state, gameId, Object.keys(modPaths));
-      return problems.errors[0];
+      return { activator: activator.id, ...problems.errors[0] };
     });
 
     if (reasons.indexOf(undefined) !== -1) {
