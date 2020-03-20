@@ -72,7 +72,10 @@ function validateStagingTag(api: IExtensionApi, tagPath: string): Promise<void> 
       }
       return Promise.resolve();
     })
-    .catch(() => {
+    .catch(err => {
+      if (err instanceof UserCanceled) {
+        return Promise.reject(err);
+      }
       return api.showDialog('question', 'Confirm', {
         text: 'This directory is not marked as a staging folder. '
             + 'Are you *sure* it\'s the right directory?',
