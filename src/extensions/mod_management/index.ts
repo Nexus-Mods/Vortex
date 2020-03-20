@@ -853,7 +853,7 @@ function once(api: IExtensionApi) {
     installManager = new InstallManager(
         (gameId: string) => installPathForGame(store.getState(), gameId));
     installers.forEach((installer: IInstaller) => {
-      installManager.addInstaller(installer.priority, installer.testSupported,
+      installManager.addInstaller(installer.id, installer.priority, installer.testSupported,
                                   installer.install);
     });
   }
@@ -930,8 +930,10 @@ function once(api: IExtensionApi) {
 
   api.events.on(
       'start-install-download',
-      (downloadId: string, allowAutoEnable?: boolean, callback?: (error, id: string) => void) =>
-          onStartInstallDownload(api, installManager, downloadId, allowAutoEnable, callback));
+      (downloadId: string, allowAutoEnable?: boolean, callback?: (error, id: string) => void,
+       forceInstaller?: string) =>
+          onStartInstallDownload(api, installManager, downloadId, allowAutoEnable,
+                                 forceInstaller, callback));
 
   api.events.on(
       'remove-mod',

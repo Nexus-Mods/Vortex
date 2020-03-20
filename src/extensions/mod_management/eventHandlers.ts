@@ -587,6 +587,7 @@ export function onStartInstallDownload(api: IExtensionApi,
                                        installManager: InstallManager,
                                        downloadId: string,
                                        allowAutoEnable?: boolean,
+                                       forceInstaller?: string,
                                        callback?: (error, id: string) => void): Promise<void> {
   const store = api.store;
   const state: IState = store.getState();
@@ -624,7 +625,8 @@ export function onStartInstallDownload(api: IExtensionApi,
       const fullPath: string = path.join(downloadPath, download.localPath);
       const { enable } = state.settings.automation;
       installManager.install(downloadId, fullPath, download.game, api,
-        { download }, true, enable && (allowAutoEnable !== false), callback, gameId);
+        { download }, true, enable && (allowAutoEnable !== false), callback, gameId,
+        forceInstaller);
     })
     .catch(err => {
       if (callback !== undefined) {

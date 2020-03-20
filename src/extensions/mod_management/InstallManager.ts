@@ -122,10 +122,11 @@ class InstallManager {
    * @memberOf InstallManager
    */
   public addInstaller(
+    id: string,
     priority: number,
     testSupported: TestSupported,
     install: InstallFunc) {
-    this.mInstallers.push({ priority, testSupported, install });
+    this.mInstallers.push({ id, priority, testSupported, install });
     this.mInstallers.sort((lhs: IModInstaller, rhs: IModInstaller): number => {
       return lhs.priority - rhs.priority;
     });
@@ -157,7 +158,8 @@ class InstallManager {
     processDependencies: boolean,
     enable: boolean,
     callback: (error: Error, id: string) => void,
-    forceGameId?: string): void {
+    forceGameId?: string,
+    forceInstaller?: string): void {
 
     if (this.mTask === undefined) {
       this.mTask = new Zip();
@@ -273,7 +275,7 @@ class InstallManager {
         installContext.setInstallPathCB(modId, destinationPath);
         tempPath = destinationPath + '.installing';
         return this.installInner(api, archivePath,
-          tempPath, destinationPath, installGameId, installContext);
+          tempPath, destinationPath, installGameId, installContext, forceInstaller);
       })
       .then(result => {
         const state: IState = api.store.getState();
@@ -458,7 +460,8 @@ class InstallManager {
    */
   private installInner(api: IExtensionApi, archivePath: string,
                        tempPath: string, destinationPath: string,
-                       gameId: string, installContext: IInstallContext): Promise<IInstallResult> {
+                       gameId: string, installContext: IInstallContext,
+                       forceInstaller: string): Promise<IInstallResult> {
     const fileList: string[] = [];
     const progress = (files: string[], percent: number) => {
       if ((percent !== undefined) && (installContext !== undefined)) {
@@ -527,15 +530,31 @@ class InstallManager {
         .finally(() => {
           // process.noAsar = false;
         })
-        .then(() => this.getInstaller(fileList, gameId))
+        .then(() => {
+          if (forceInstaller === undefined) {
+            return this.getInstaller(fileList, gameId);
+          } else {
+            const forced = this.mInstallers.find(inst => inst.id === forceInstaller);
+            return forced.testSupported(fileList, gameId)
+              .then((testResult: ISupportedResult) => {
+                if (!testResult.supported) {
+                  return undefined;
+                } else {
+                  return {
+                    installer: forced,
+                    requiredFiles: testResult.requiredFiles,
+                  };
+                }
+              });
+          }
+        })
         .then(supportedInstaller => {
           if (supportedInstaller === undefined) {
             throw new Error('no installer supporting this file');
           }
 
           const {installer, requiredFiles} = supportedInstaller;
-          // TODO: We don't have an id for installers - that would be useful here...
-          log('debug', 'invoking installer', supportedInstaller.installer.priority);
+          log('debug', 'invoking installer', installer.id);
           return installer.install(
               fileList, tempPath, gameId,
               (perc: number) => log('info', 'progress', perc));
@@ -716,7 +735,7 @@ class InstallManager {
       mod => {
         const tempPath = destinationPath + '.' + mod.key + '.installing';
         return this.installInner(api, mod.path, tempPath, destinationPath,
-                                 gameId, undefined)
+                                 gameId, undefined, undefined)
           .then((resultInner) => this.processInstructions(
             api, mod.path, tempPath, destinationPath,
             gameId, mod.key, resultInner))
