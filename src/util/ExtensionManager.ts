@@ -101,14 +101,26 @@ interface IApiAddition {
 
 class APIProxyHandler implements ProxyHandler<any> {
   private mExtension: IRegisteredExtension;
+  private mEnabled: boolean;
 
-  constructor(extension: IRegisteredExtension) {
+  constructor(extension: IRegisteredExtension, enable: boolean) {
     this.mExtension = extension;
+    this.mEnabled = enable;
+  }
+
+  public enable() {
+    this.mEnabled = true;
   }
 
   public get(target, key: PropertyKey): any {
     if (key === 'extension') {
       return this.mExtension;
+    }
+    if (key === 'translate') {
+      return target[key];
+    }
+    if (!this.mEnabled) {
+      throw new Error('extension uses api in init function');
     }
     return target[key];
   }
@@ -116,16 +128,26 @@ class APIProxyHandler implements ProxyHandler<any> {
 
 class APIProxyCreator implements ProxyHandler<any> {
   private mExtension: IRegisteredExtension;
-  private mProxy: APIProxyHandler;
+  private mProxyHandler: APIProxyHandler;
+  private mProxy: IExtensionApi;
+  private mAPIEnabled: boolean = false;
 
   constructor(extension: IRegisteredExtension) {
     this.mExtension = extension;
   }
 
+  public enableAPI() {
+    this.mAPIEnabled = true;
+    if (this.mProxyHandler !== undefined) {
+      this.mProxyHandler.enable();
+    }
+  }
+
   public get(target, key: PropertyKey): any {
     if (key === 'api') {
       if (this.mProxy === undefined) {
-        this.mProxy = new Proxy(target[key], new APIProxyHandler(this.mExtension));
+        this.mProxyHandler = new APIProxyHandler(this.mExtension, this.mAPIEnabled);
+        this.mProxy = new Proxy(target[key], this.mProxyHandler);
       }
       return this.mProxy;
     } else {
@@ -972,8 +994,10 @@ class ExtensionManager {
       }
       this.mContextProxyHandler.setExtension(ext.name, ext.path);
       try {
-        const extProxy = new Proxy(contextProxy, new APIProxyCreator(ext));
+        const apiProxy = new APIProxyCreator(ext);
+        const extProxy = new Proxy(contextProxy, apiProxy);
         ext.initFunc(extProxy as IExtensionContext);
+        apiProxy.enableAPI();
       } catch (err) {
         this.mLoadFailures[ext.name] = [ { id: 'exception', args: { message: err.message } } ];
         log('warn', 'couldn\'t initialize extension',
