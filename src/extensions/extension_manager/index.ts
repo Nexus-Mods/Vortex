@@ -39,7 +39,7 @@ function checkForUpdates(api: IExtensionApi) {
         return prev;
       }
 
-      if (semver.gte(ext.version, update.version)) {
+      if (semver.gte(semver.coerce(ext.version), semver.coerce(update.version))) {
         return prev;
       }
 
