@@ -1,5 +1,5 @@
 import {setApplicationVersion, setInstanceId, setWarnedAdmin} from '../actions/app';
-import {} from '../reducers/index';
+import { STATE_BACKUP_PATH } from '../reducers/index';
 import { ThunkStore } from '../types/api';
 import {IState} from '../types/IState';
 import commandLine, {IParameters} from '../util/commandLine';
@@ -18,7 +18,7 @@ import {log, setLogPath, setupLogging} from '../util/log';
 import { prettifyNodeErrorMessage, showError } from '../util/message';
 import migrate from '../util/migrate';
 import { StateError } from '../util/reduxSanity';
-import { allHives, createVortexStore, currentStatePath, extendStore,
+import { allHives, createFullStateBackup, createVortexStore, currentStatePath, extendStore,
          importState, insertPersistor, markImported, querySanitize } from '../util/store';
 import {} from '../util/storeHelper';
 import SubPersistor from '../util/SubPersistor';
@@ -213,7 +213,25 @@ class Application {
         .then(splashIn => {
           splash = splashIn;
           return this.createStore(args.restore)
-            .catch(DataInvalid, () => this.createStore(args.restore, true));
+            .catch(DataInvalid, err => {
+              log('error', 'store data invalid', err.message);
+              dialog.showMessageBox(getVisibleWindow(), {
+                type: 'error',
+                buttons: ['Continue'],
+                title: 'Error',
+                message: 'Data corrupted',
+                detail: 'The application state which contains things like your Vortex '
+                      + 'settings, meta data about mods and other important data is '
+                      + 'corrupted and can\'t be read. This could be a result of '
+                      + 'hard disk corruption, a power outage or something similar. '
+                      + 'Vortex will now try to repair the database, usually this '
+                      + 'should work fine but please check that settings, mod list and so '
+                      + 'on are ok before you deploy anything. '
+                      + 'If not, you can go to settings->workarounds and restore a backup '
+                      + 'which shouldn\'t lose you more than an hour of progress.',
+              })
+              .then(() => this.createStore(args.restore, true));
+            });
         })
         .tap(() => log('debug', 'checking admin rights'))
         .then(() => this.warnAdmin())
@@ -571,7 +589,7 @@ class Application {
 
   private createStore(restoreBackup?: string, repair?: boolean): Promise<void> {
     const newStore = createVortexStore(this.sanityCheckCB);
-    const backupPath = path.join(app.getPath('temp'), 'state_backups');
+    const backupPath = path.join(app.getPath('temp'), STATE_BACKUP_PATH);
     let backups: string[];
 
     const updateBackups = () => fs.ensureDirAsync(backupPath)
@@ -726,7 +744,11 @@ class Application {
               } },
             ],
           }));
+        } else if (!repair) {
+          // we started without any problems, save this application state
+          return createFullStateBackup('startup', this.mStore);
         }
+        return Promise.resolve();
       })
       .then(() => this.mExtensions.doOnce());
   }

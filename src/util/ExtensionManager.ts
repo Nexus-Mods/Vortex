@@ -1731,6 +1731,7 @@ class ExtensionManager {
       'news_dashlet',
       'sticky_mods',
       'browser',
+      'recovery',
     ];
 
     require('./extensionRequire').default();

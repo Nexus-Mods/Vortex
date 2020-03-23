@@ -30,6 +30,8 @@ import * as path from 'path';
 import { combineReducers, Reducer, ReducersMapObject } from 'redux';
 import { createReducer } from 'redux-act';
 
+export const STATE_BACKUP_PATH = 'state_backups';
+
 /**
  * wrapper for combineReducers that doesn't drop unexpected keys
  */
@@ -165,7 +167,7 @@ function deriveReducer(statePath: string,
               }
               const decision = querySanitize(errors);
               if (decision === Decision.SANITIZE) {
-                const backupPath = path.join(app.getPath('temp'), 'state_backups');
+                const backupPath = path.join(app.getPath('temp'), STATE_BACKUP_PATH);
                 log('info', 'sanitizing application state');
                 let backupData;
                 if (backupTime !== undefined) {

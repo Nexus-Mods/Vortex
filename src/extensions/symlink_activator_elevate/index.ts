@@ -146,7 +146,9 @@ class DeploymentMethod extends LinkingDeployment {
         api.showErrorNotification('Unknown error', report);
       }
     };
+  }
 
+  public initEvents(api: IExtensionApi) {
     if (api.events !== undefined) {
       api.events.on('force-unblock-elevating', () => {
         try {
@@ -756,7 +758,8 @@ function ensureTask(api: IExtensionApi, enabled: boolean): void {
 }
 
 function init(context: IExtensionContextEx): boolean {
-  context.registerDeploymentMethod(new DeploymentMethod(context.api));
+  const method = new DeploymentMethod(context.api);
+  context.registerDeploymentMethod(method);
 
   context.registerReducer(['settings', 'workarounds'], reducer);
 
@@ -765,6 +768,8 @@ function init(context: IExtensionContextEx): boolean {
   }
 
   context.once(() => {
+    method.initEvents(context.api);
+
     if (process.platform === 'win32') {
       const userSymlinksPath = ['settings', 'workarounds', 'userSymlinks'];
       context.api.onStateChange(userSymlinksPath, (prev, current) => {
