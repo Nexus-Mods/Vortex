@@ -4,6 +4,8 @@ import { IGameStoreEntry } from './IGameStoreEntry';
 
 import Promise from 'bluebird';
 
+export type GameLaunchType = 'posix' | 'commandline';
+
 export class GameStoreNotFound extends Error {
   private mName: string;
   constructor(name) {
@@ -46,6 +48,19 @@ export class GameEntryNotFound extends Error {
   public get existingGames() {
     return this.mExistingNames;
   }
+}
+
+// Allows game extensions to pass arguments and attempt to partially
+//  control how the game gets started. Please use the optional addInfo
+//  parameter when returning from IGame::requiresLauncher
+// requiresLauncher?: (gamePath: string) => Promise<{
+//   launcher: string;
+//   addInfo?: any; <- return a ICustomExecutionInfo object here.
+// }>;
+export interface ICustomExecutionInfo {
+  appId: string;
+  args: string[];
+  launchType?: GameLaunchType;
 }
 
 /**
