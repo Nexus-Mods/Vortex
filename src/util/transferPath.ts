@@ -182,7 +182,9 @@ export function transferPath(source: string,
               //  was supposed to prevent.
               // ENOTSUP implies that we attempted to hardlink a file on a file system
               //  which does not support it - copy instead.
-              if (['EXDEV', 'ENOTSUP'].indexOf(err.code) !== -1) {
+              // EISDIR is reported in node 12 if hardlinks aren't supported on the drive
+              //  come on...
+              if (['EXDEV', 'ENOTSUP', 'EISDIR'].indexOf(err.code) !== -1) {
                 func = fs.copyAsync;
                 return func(sourcePath, destPath, { showDialogCallback });
               } else if (err.code === 'ENOENT') {
