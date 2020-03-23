@@ -1,4 +1,5 @@
 import { startActivity, stopActivity } from '../../actions/session';
+import { IDialogResult } from '../../types/IDialog';
 import {IExtensionApi} from '../../types/IExtensionContext';
 import {IModTable, IProfile, IState} from '../../types/IState';
 import { ProcessCanceled, TemporaryError, UserCanceled } from '../../util/CustomErrors';
@@ -17,9 +18,10 @@ import {activeGameId, activeProfile} from '../profile_management/selectors';
 import { setDeploymentNecessary } from './actions/deployment';
 import {addMod, removeMod} from './actions/mods';
 import {setActivator} from './actions/settings';
+import { IDeploymentManifest } from './types/IDeploymentManifest';
 import {IDeploymentMethod} from './types/IDeploymentMethod';
 import {IMod} from './types/IMod';
-import {fallbackPurge, loadActivation, saveActivation} from './util/activationStore';
+import {fallbackPurge, getManifest, loadActivation, saveActivation} from './util/activationStore';
 import { getCurrentActivator, getSupportedActivators } from './util/deploymentMethods';
 
 import {getGame} from '../gamemode_management/util/getGame';
@@ -162,12 +164,65 @@ function ensureStagingDirectory(api: IExtensionApi,
     .then(() => instPath);
 }
 
+// check staging folder against deployment manifest
+function checkStagingFolder(api: IExtensionApi, gameId: string,
+                            manifestPath: string, configuredPath: string)
+                            : Promise<boolean> {
+  const t = api.translate;
+
+  if ((manifestPath !== undefined) && (manifestPath !== configuredPath)) {
+    log('error', 'staging folder stored in manifest differs from configured one', {
+      configured: configuredPath,
+      manifest: manifestPath,
+    });
+    return api.showDialog('error', 'Staging folder changed', {
+      bbcode: 'The staging folder configured in Vortex doesn\'t match what was '
+        + 'previously used to deploy mods. This may be caused by manual tampering '
+        + 'with the application state or some other kind of data corruption '
+        + '(hardware failure, virus, ...).<br/><br/>'
+        + '[color=red]If you continue with the wrong settings all installed mods '
+        + 'may get corrupted![/color].<br/><br/>'
+        + 'Please check the following two folders and pick the one that actually '
+        + 'contains your mods.',
+      choices: [
+        {
+          id: 'configured',
+          text: t('From config: {{path}}', { replace: { path: configuredPath } }),
+          value: true,
+        },
+        {
+          id: 'manifest',
+          text: t('From manifest: {{path}}', { replace: { path: manifestPath } }),
+          value: false,
+        },
+      ],
+    }, [
+      { label: 'Quit Vortex' },
+      { label: 'Use selected' },
+    ])
+      .then((result: IDialogResult) => {
+        if (result.action === 'Quit Vortex') {
+          app.exit();
+          // resolve never
+          return new Promise(() => null);
+        } else if ((result.action === 'Use selected')
+                   && (result.input.manifest)) {
+          return true;
+        } else {
+          return false;
+        }
+      });
+  } else {
+    return Promise.resolve(false);
+  }
+}
+
 export function onGameModeActivated(
     api: IExtensionApi, activators: IDeploymentMethod[], newGame: string) {
   const store = api.store;
-  const state: IState = store.getState();
-  const supported = getSupportedActivators(state);
-  const activatorToUse = getCurrentActivator(state, newGame, true);
+  let state: IState = store.getState();
+  let supported = getSupportedActivators(state);
+  let activatorToUse = getCurrentActivator(state, newGame, true);
   const profile: IProfile = activeProfile(state);
   const gameId = profile.gameId;
   if (gameId !== newGame) {
@@ -192,7 +247,42 @@ export function onGameModeActivated(
 
   let instPath = installPath(state);
 
-  let initProm = () => ensureStagingDirectory(api, instPath, gameId)
+  let changeActivator = false;
+
+  let existingManifest: IDeploymentManifest;
+
+  let initProm = () => getManifest(api, '', gameId)
+    .then((manifest: IDeploymentManifest) => {
+      if (manifest.instance !== state.app.instanceId) {
+        // if the manifest is from a different instance we do nothing with it, there
+        // is other code to deal with that during deployment
+        return Promise.resolve();
+      }
+      existingManifest = manifest;
+
+      return checkStagingFolder(api, gameId, manifest.stagingPath, instPath)
+        .then(useManifest => {
+          if (useManifest) {
+            log('info', 'reverting to staging path used in manifest');
+            instPath = manifest.stagingPath;
+            api.store.dispatch(setInstallPath(gameId, instPath));
+            state = api.store.getState();
+            if (manifest.deploymentMethod !== undefined) {
+              log('info', 'also reverting the deployment method', {
+                method: manifest.deploymentMethod });
+              api.store.dispatch(setActivator(gameId, manifest.deploymentMethod));
+              state = api.store.getState();
+            }
+            supported = getSupportedActivators(state);
+            activatorToUse = getCurrentActivator(state, newGame, true);
+            // cancel out of the activator reset because we have determined to use the
+            // one from the manifest
+            api.dismissNotification('deployment-method-unavailable');
+            changeActivator = false;
+          }
+        });
+    })
+    .then(() => ensureStagingDirectory(api, instPath, gameId))
     .tap(updatedPath => instPath = updatedPath);
 
   const configuredActivatorId = currentActivator(state);
@@ -201,10 +291,13 @@ export function onGameModeActivated(
     // current activator is not valid for this game. This should only occur
     // if compatibility of the activator has changed
 
-    let changeActivator = true;
+    changeActivator = true;
     const oldActivator = activators.find(iter => iter.id === configuredActivatorId);
     const modPaths = game.getModPaths(gameDiscovery.path);
 
+    // TODO: at this point we may also want to take into consideration the deployment
+    //   method stored in the manifest, just in case that doesn't match the configured
+    //   method for some reason
     if (configuredActivatorId !== undefined) {
       if (oldActivator === undefined) {
         api.showErrorNotification(
@@ -218,7 +311,7 @@ export function onGameModeActivated(
               'You should try to restore it, purge deployment and then switch ' +
               'to a different method.',
             method: configuredActivatorId,
-          }, { allowReport: false });
+          }, { allowReport: false, id: 'deployment-method-unavailable' });
       } else {
         const modTypes = Object.keys(modPaths);
 
@@ -236,11 +329,13 @@ export function onGameModeActivated(
                 'change the deployment method.',
               reason: reason.errors[0].description(api.translate),
             },
-            { allowReport: false },
+            { allowReport: false, id: 'deployment-method-unavailable' },
           );
         }
       }
     }
+
+    log('info', 'change activator', { changeActivator, oldActivator });
 
     if (changeActivator) {
       if (oldActivator !== undefined) {
@@ -269,8 +364,11 @@ export function onGameModeActivated(
         const oldInit = initProm;
         initProm = () => oldInit()
           .then(() => {
-            if (supported.length > 0) {
-              api.store.dispatch(setActivator(gameId, supported[0].id));
+            // by this point the flag may have been reset
+            if (changeActivator) {
+              if (supported.length > 0) {
+                api.store.dispatch(setActivator(gameId, supported[0].id));
+              }
             }
           });
       }
@@ -383,8 +481,6 @@ function undeploy(api: IExtensionApi,
   const activator: IDeploymentMethod = activatorId !== undefined
     ? activators.find(act => act.id === activatorId)
     : activators.find(act => allTypesSupported(act, state, gameMode, modTypes).errors.length === 0);
-
-  console.log('activators', activators.map(act => allTypesSupported(act, state, gameMode, modTypes)));
 
   if (activator === undefined) {
     return Promise.reject(new ProcessCanceled('No deployment method active'));

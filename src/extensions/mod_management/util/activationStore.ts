@@ -375,6 +375,7 @@ export function saveActivation(modType: string, instance: string,
     instance,
     version: CURRENT_VERSION,
     deploymentMethod: activatorId,
+    stagingPath,
     files: activation,
   };
   const dataJSON = JSON.stringify(dataRaw, undefined, 2);
