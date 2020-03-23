@@ -163,7 +163,7 @@ function deployModType(api: IExtensionApi,
                        stagingPath: string,
                        targetPath: string,
                        overwritten: IMod[],
-                       mergedFileMap: { [modType: string]: string[] },
+                       mergedFileMap: { [modType: string]: { [relPath: string]: string[] } },
                        lastDeployment: IDeployedFile[],
                        onProgress: (text: string, perc: number) => void): Promise<IDeployedFile[]> {
   const filteredModList = sortedModList.filter(mod => (mod.type || '') === typeId);
@@ -174,13 +174,18 @@ function deployModType(api: IExtensionApi,
                     stagingPath, targetPath,
                     filteredModList,
                     activator, lastDeployment,
-                    typeId, new Set(mergedFileMap[typeId]),
+                    typeId, new Set(Object.keys(mergedFileMap[typeId] || {})),
                     genSubDirFunc(game, getModType(typeId)),
                     onProgress)
-    .then(newActivation => {
+    .then((newActivation: IDeployedFile[]) => {
+      const mergedMap = mergedFileMap[typeId] || {};
+      newActivation.forEach(act => {
+        act.merged = mergedMap[act.relPath];
+      });
       overwritten.push(...filteredModList.filter(mod =>
         newActivation.find(entry =>
-          entry.source === mod.installationPath) === undefined));
+          (entry.source === mod.installationPath)
+          || ((entry.merged || []).includes(mod.id))) === undefined));
 
       return doSaveActivation(api, typeId,
         targetPath, stagingPath,
@@ -199,7 +204,7 @@ function deployAllModTypes(api: IExtensionApi,
                            profile: IProfile,
                            sortedModList: IMod[],
                            stagingPath: string,
-                           mergedFileMap: { [modType: string]: string[] },
+                           mergedFileMap: { [modType: string]: { [relPath: string]: string[] } },
                            modPaths: { [typeId: string]: string },
                            lastDeployment: { [typeId: string]: IDeployedFile[] },
                            newDeployment: { [typeId: string]: IDeployedFile[] },
@@ -256,7 +261,7 @@ function doMergeMods(api: IExtensionApi,
                      sortedModList: IMod[],
                      modPaths: { [typeId: string]: string },
                      lastDeployment: { [typeId: string]: IDeployedFile[] }):
-    Promise<{ [typeId: string]: string[] }> {
+    Promise<{ [typeId: string]: { [relPath: string]: string[] } }> {
 
   const fileMergers = mergers.reduce((prev: IResolvedMerger[], merge) => {
     const match = merge.test(game, gameDiscovery);
@@ -270,7 +275,7 @@ function doMergeMods(api: IExtensionApi,
   const mergeModTypes = Object.keys(modPaths)
     .filter(modType => fileMergers.find(merger => merger.modType === modType) !== undefined);
 
-  const result: { [typeId: string]: string[] } = {};
+  const result: { [typeId: string]: { [relPath: string]: string[] } } = {};
 
   // clean up merged mods
   return Promise.mapSeries(mergeModTypes, typeId => {
@@ -410,7 +415,8 @@ function genUpdateModDeployment() {
         } else if (err.warnings.length > 0) {
           api.sendNotification({
             type: 'warning',
-            message: t('Deployment method "{{method}}" does not support all mod types: {{reason}}', {
+            message: t('Deployment method "{{method}}" does not support '
+                        + 'all mod types: {{reason}}', {
               replace: {
                 method: selectedActivator.name,
                 reason: err.warnings[0].description(t),
@@ -449,7 +455,7 @@ function genUpdateModDeployment() {
           method: activator.name,
         });
 
-        let mergedFileMap: { [modType: string]: string[] };
+        let mergedFileMap: { [modType: string]: { [relPath: string]: string[] } };
         const lastDeployment: { [typeId: string]: IDeployedFile[] } = {};
         const mods = state.persistent.mods[profile.gameId] || {};
         notification.message = t('Deploying mods');

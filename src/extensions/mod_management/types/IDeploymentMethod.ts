@@ -51,6 +51,13 @@ export interface IDeployedFile {
    */
   source: string;
   /**
+   * if this file was created by merging, this lists all mods which were the basis of
+   * the merge
+   * deployment methods don't have to set this, it will be filled in by the the core
+   * functionality
+   */
+  merged?: string[];
+  /**
    * the output directory for the file. This will be empty for games that put all mods
    * in the same directory (mergeMods is true).
    */
