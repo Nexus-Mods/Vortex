@@ -193,6 +193,15 @@ class Application {
         return;
       }
 
+      if ((error.errno === 'EACCES')
+          && (error.path !== undefined)
+          && (error.path.indexOf('vortex-setup') !== -1)) {
+        // It's wonderous how electron-builder finds new ways to be more shit without even being
+        // updated. Probably caused by node update
+        log('warn', 'suppressing error message', { message: error.message, stack: error.stack });
+        return;
+      }
+
       terminate(toError(error), this.mStore.getState());
     };
   }

@@ -35,16 +35,16 @@ class Settings extends ComponentEx<IProps, {}> {
 
     return (
       <form>
-        <FormGroup controlId='restore-backup'>
+        <FormGroup id='database-backups' controlId='restore-backup'>
           <ControlLabel>{t('Database backup')}</ControlLabel>
-          <div>
+          <div className='button-container'>
             <Button
               onClick={this.onSelectBackup}
             >
               {t('Restore') + '...'}
             </Button>
           </div>
-          <div>
+          <div className='button-container'>
             <Button
               onClick={onCreateManualBackup}
             >
@@ -52,17 +52,21 @@ class Settings extends ComponentEx<IProps, {}> {
             </Button>
           </div>
           <HelpBlock>
-            {t('Vortex stores application settings as well as mod meta data and a lot '
-              + 'of other important things in a database. Here you can restore a '
-              + 'backup of this database (Vortex creates automatic updates). '
-              + 'Please note that after this reset, the state may not agree with other '
-              + 'data stored on disk, e.g. Vortex may report external file changes for things '
-              + 'that it installed itself. Please be very careful to not lose data. '
-              + 'We strongly advice you use this only in an emergency, not as an "undo" '
-              + 'function.')}
-            {t('You can have up to 3 backups: One is automatically created whenever Vortex '
-              + 'starts up with no issue, one is automatically created hourly (while using '
-              + 'Vortex) and one you can create manually.')}
+            <div>
+              {t('Vortex stores application settings as well as mod meta data and a lot '
+                + 'of other important things in a database. Here you can restore a '
+                + 'backup of this database (Vortex creates automatic updates). '
+                + 'Please note that after this reset, the state may not agree with other '
+                + 'data stored on disk, e.g. Vortex may report external file changes for things '
+                + 'that it installed itself. Please be very careful to not lose data. '
+                + 'We strongly advice you use this only in an emergency, not as an "undo" '
+                + 'function.')}
+            </div>
+            <div>
+              {t('You can have up to 3 backups: One is automatically created whenever Vortex '
+                + 'starts up with no issue, one is automatically created hourly (while using '
+                + 'Vortex) and one you can create manually.')}
+            </div>
           </HelpBlock>
         </FormGroup>
       </form>

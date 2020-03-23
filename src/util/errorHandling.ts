@@ -256,7 +256,7 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
   if ((allowReport === undefined) && (error.extension !== undefined)) {
     allowReport = error.extension === COMPANY_ID;
   }
-  
+
   const contextNow = { ...globalContext };
 
   log('error', 'unrecoverable error', { error, process: process.type });

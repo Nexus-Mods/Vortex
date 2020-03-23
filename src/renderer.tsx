@@ -224,7 +224,7 @@ function errorHandler(evt: any) {
 
   if ((error.stack !== undefined)
       // some exceptions from foreign libraries can't be caught so we have to ignore them
-      // the main offender here is electron-update. Unfortunately newer versions that may
+      // the main offender here is electron-builder. Unfortunately newer versions that may
       // have fixed this have even more significant bugs.
       && (
           (error.message === 'socket hang up')
