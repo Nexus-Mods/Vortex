@@ -170,51 +170,55 @@ function checkStagingFolder(api: IExtensionApi, gameId: string,
                             : Promise<boolean> {
   const t = api.translate;
 
-  if ((manifestPath !== undefined) && (manifestPath !== configuredPath)) {
-    log('error', 'staging folder stored in manifest differs from configured one', {
-      configured: configuredPath,
-      manifest: manifestPath,
+  return getNormalizeFunc(manifestPath)
+    .then(normalize => {
+      if ((manifestPath !== undefined)
+          && (normalize(manifestPath) !== normalize(configuredPath))) {
+        log('error', 'staging folder stored in manifest differs from configured one', {
+          configured: configuredPath,
+          manifest: manifestPath,
+        });
+        return api.showDialog('error', 'Staging folder changed', {
+          bbcode: 'The staging folder configured in Vortex doesn\'t match what was '
+            + 'previously used to deploy mods. This may be caused by manual tampering '
+            + 'with the application state or some other kind of data corruption '
+            + '(hardware failure, virus, ...).<br/><br/>'
+            + '[color=red]If you continue with the wrong settings all installed mods '
+            + 'may get corrupted![/color].<br/><br/>'
+            + 'Please check the following two folders and pick the one that actually '
+            + 'contains your mods.',
+          choices: [
+            {
+              id: 'configured',
+              text: t('From config: {{path}}', { replace: { path: configuredPath } }),
+              value: true,
+            },
+            {
+              id: 'manifest',
+              text: t('From manifest: {{path}}', { replace: { path: manifestPath } }),
+              value: false,
+            },
+          ],
+        }, [
+          { label: 'Quit Vortex' },
+          { label: 'Use selected' },
+        ])
+          .then((result: IDialogResult) => {
+            if (result.action === 'Quit Vortex') {
+              app.exit();
+              // resolve never
+              return new Promise(() => null);
+            } else if ((result.action === 'Use selected')
+              && (result.input.manifest)) {
+              return true;
+            } else {
+              return false;
+            }
+          });
+      } else {
+        return Promise.resolve(false);
+      }
     });
-    return api.showDialog('error', 'Staging folder changed', {
-      bbcode: 'The staging folder configured in Vortex doesn\'t match what was '
-        + 'previously used to deploy mods. This may be caused by manual tampering '
-        + 'with the application state or some other kind of data corruption '
-        + '(hardware failure, virus, ...).<br/><br/>'
-        + '[color=red]If you continue with the wrong settings all installed mods '
-        + 'may get corrupted![/color].<br/><br/>'
-        + 'Please check the following two folders and pick the one that actually '
-        + 'contains your mods.',
-      choices: [
-        {
-          id: 'configured',
-          text: t('From config: {{path}}', { replace: { path: configuredPath } }),
-          value: true,
-        },
-        {
-          id: 'manifest',
-          text: t('From manifest: {{path}}', { replace: { path: manifestPath } }),
-          value: false,
-        },
-      ],
-    }, [
-      { label: 'Quit Vortex' },
-      { label: 'Use selected' },
-    ])
-      .then((result: IDialogResult) => {
-        if (result.action === 'Quit Vortex') {
-          app.exit();
-          // resolve never
-          return new Promise(() => null);
-        } else if ((result.action === 'Use selected')
-                   && (result.input.manifest)) {
-          return true;
-        } else {
-          return false;
-        }
-      });
-  } else {
-    return Promise.resolve(false);
-  }
 }
 
 export function onGameModeActivated(
