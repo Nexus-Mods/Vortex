@@ -173,7 +173,7 @@ class Steam implements IGameStore {
     if (typeof(object) !== 'object') {
       return false;
     }
-    return ('appId' in object) && ('args' in object);
+    return ('appId' in object) && ('parameters' in object);
   }
 
   private parseManifests(): Promise<ISteamEntry[]> {
