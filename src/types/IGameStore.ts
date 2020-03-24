@@ -4,7 +4,7 @@ import { IGameStoreEntry } from './IGameStoreEntry';
 
 import Promise from 'bluebird';
 
-export type GameLaunchType = 'posix' | 'commandline';
+export type GameLaunchType = 'gamestore' | 'commandline';
 
 export class GameStoreNotFound extends Error {
   private mName: string;
@@ -59,7 +59,7 @@ export class GameEntryNotFound extends Error {
 // }>;
 export interface ICustomExecutionInfo {
   appId: string;
-  args: string[];
+  parameters: string[];
   launchType?: GameLaunchType;
 }
 

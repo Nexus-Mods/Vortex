@@ -85,7 +85,7 @@ class Steam implements IGameStore {
     //      is used by the gameinfo-steam extension as well).
     //  - The steam Id in string form.
     //  - The directory path which contains the game's executable.
-    if (this.isCustomExecObject(appInfo) && (appInfo.launchType === 'posix')) {
+    if (this.isCustomExecObject(appInfo) && (appInfo.launchType === 'gamestore')) {
       return this.getPosixPath(appInfo)
         .then(posix => opn(posix).catch(err => Promise.resolve()));
     }
@@ -101,7 +101,7 @@ class Steam implements IGameStore {
   }
 
   public getPosixPath(appInfo: any) {
-    const posixCommand = `steam://launch/${appInfo.appId}/${appInfo.args.join()}`;
+    const posixCommand = `steam://launch/${appInfo.appId}/${appInfo.parameters.join()}`;
     return Promise.resolve(posixCommand);
   }
 
@@ -111,10 +111,10 @@ class Steam implements IGameStore {
     //  extension did not provide a steam id and the starter info object
     //  provided the game executables dirname instead.
     let appId;
-    let args: string[] = [];
+    let parameters: string[] = [];
     if (this.isCustomExecObject(appInfo)) {
       appId = appInfo.appId;
-      args = appInfo.args;
+      parameters = appInfo.parameters;
     } else {
       appId = appInfo.toString();
     }
@@ -134,7 +134,7 @@ class Steam implements IGameStore {
         return this.mBaseFolder.then((basePath) => {
           const steamExec = {
             execPath: path.join(basePath, STEAM_EXEC),
-            arguments: ['-applaunch', appId, ...args],
+            arguments: ['-applaunch', appId, ...parameters],
           };
           return Promise.resolve(steamExec);
         });
