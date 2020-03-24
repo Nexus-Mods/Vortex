@@ -106,6 +106,7 @@ function init(context: IExtensionContext): boolean {
         .then(() => context.api.sendNotification({
           type: 'success',
           message: 'Backup created',
+          displayMS: 4000,
         }));
     },
   }));
