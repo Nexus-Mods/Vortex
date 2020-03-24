@@ -8,7 +8,7 @@ import { getSafe } from './storeHelper';
 
 import opn from './opn';
 
-import { GameEntryNotFound, IGameStore, IGameStoreEntry } from '../types/api';
+import { GameEntryNotFound, IExtensionApi, IGameStore, IGameStoreEntry } from '../types/api';
 
 const ITEM_EXT = '.item';
 const STORE_ID = 'epic';
@@ -42,7 +42,10 @@ class EpicGamesLauncher implements IGameStore {
     }
   }
 
-  public launchGame(appId: string): Promise<void> {
+  public launchGame(appInfo: any, api?: IExtensionApi): Promise<void> {
+    const appId = ((typeof(appInfo) === 'object') && ('appId' in appInfo))
+      ? appInfo.appId : appInfo.toString();
+
     return this.getPosixPath(appId)
       .then(posPath => opn(posPath).catch(err => Promise.resolve()));
   }
