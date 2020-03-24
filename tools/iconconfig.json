@@ -572,6 +572,10 @@
     "disconnected": {
       "path": "{nucleo}/technology/{nucleo_simple}_wifi-off",
       "rmFill": true
+    },
+    "undo": {
+      "path": "{nucleo}/arrows/{nucleo_simple}_undo-25",
+      "rmFill": true
     }
   }
 }
