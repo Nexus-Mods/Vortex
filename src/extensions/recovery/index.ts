@@ -59,7 +59,7 @@ async function resetToManifest(api: IExtensionApi) {
       const manifest: IDeploymentManifest = await getManifest(api, modType, profile.gameId);
       manifest.files.forEach(file => {
         enabledMods.add(file.source);
-        file.merged.forEach(merged => enabledMods.add(merged));
+        (file.merged || []).forEach(merged => enabledMods.add(merged));
       });
     }));
 
