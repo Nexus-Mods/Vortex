@@ -11,6 +11,7 @@ import { IState } from '../../types/IState';
 import { ComponentEx } from '../../util/ComponentEx';
 import * as fs from '../../util/fs';
 import getVortexPath from '../../util/getVortexPath';
+import { log } from '../../util/log';
 import relativeTime from '../../util/relativeTime';
 import { FULL_BACKUP_PATH } from '../../util/store';
 import { spawnSelf } from '../../util/util';
@@ -79,67 +80,77 @@ class Settings extends ComponentEx<IProps, {}> {
     const locale = this.context.api.locale();
 
     const choices: ICheckbox[] = [];
-    const files: string[] = await fs.readdirAsync(basePath);
-    await Promise.all(files.map(async name => {
-      const stats: fs.Stats = await fs.statAsync(path.join(basePath, name));
-      if (!stats.isFile()) {
-        return;
-      }
-      const time = stats.mtime.toLocaleString(locale);
-      if (name === 'startup.json') {
-        choices.push({
-          id: 'startup',
-          text: t('Last successful startup ({{time}})', { replace: { time } }),
-          value: false,
-        });
-      } else if (name === 'hourly.json') {
-        choices.push({
-          id: 'hourly',
-          text: t('Last hourly backup ({{time}})', { replace: { time } }),
-          value: false,
-        });
-      } else if (name === 'manual.json') {
-        choices.push({
-          id: 'manual',
-          text: t('Last manual backup ({{time}})', { replace: { time } }),
-          value: false,
-        });
-      }
-    }));
-    const choice = await onShowDialog('question', 'Select backup', {
-      text: 'Please select the backup to restore',
-      choices,
-    }, [
-      { label: 'Cancel', default: true },
-      { label: 'Restore' },
-    ]);
-    if  (choice.action !== 'Restore') {
-      return;
-    }
-
-    const selected = Object.keys(choice.input).find(key => choice.input[key] === true);
-    if (selected !== undefined) {
-      const fileName = selected + '.json';
-      const stats: fs.Stats = await fs.statAsync(path.join(basePath, fileName));
-      const confirm = await onShowDialog('question', 'Confirm', {
-        bbcode: 'Are you sure? This will reset Vortex settings and persistent data '
-          + 'to a state from {{time}}.<br/><br/>'
-          + 'It does not restore mods/files deleted or moved in the '
-          + 'meantime and it does not undo deployments!<br/>'
-          + '[color=red]If you changed the mod staging folder for any games or the download folder '
-          + 'since the backup was created, do not continue![/color]<br/><br/>'
-          + 'Please continue only if you know what you\'re doing!',
-        parameters: {
-          time: relativeTime(stats.mtime, t),
-        },
+    try {
+      const files: string[] = await fs.readdirAsync(basePath);
+      await Promise.all(files.map(async name => {
+        const stats: fs.Stats = await fs.statAsync(path.join(basePath, name));
+        if (!stats.isFile()) {
+          return;
+        }
+        const time = stats.mtime.toLocaleString(locale);
+        if (name === 'startup.json') {
+          choices.push({
+            id: 'startup',
+            text: t('Last successful startup ({{time}})', { replace: { time } }),
+            value: false,
+          });
+        } else if (name === 'hourly.json') {
+          choices.push({
+            id: 'hourly',
+            text: t('Last hourly backup ({{time}})', { replace: { time } }),
+            value: false,
+          });
+        } else if (name === 'manual.json') {
+          choices.push({
+            id: 'manual',
+            text: t('Last manual backup ({{time}})', { replace: { time } }),
+            value: false,
+          });
+        }
+      }));
+      const choice = await onShowDialog('question', 'Select backup', {
+        text: 'Please select the backup to restore',
+        choices,
       }, [
         { label: 'Cancel', default: true },
-        { label: 'Confirm' },
+        { label: 'Restore' },
       ]);
-      if (confirm.action === 'Confirm') {
-        spawnSelf(['--restore', path.join(basePath, selected + '.json')]);
-        remote.app.exit();
+      if (choice.action !== 'Restore') {
+        return;
       }
+
+      const selected = Object.keys(choice.input).find(key => choice.input[key] === true);
+      if (selected !== undefined) {
+        const fileName = selected + '.json';
+        const stats: fs.Stats = await fs.statAsync(path.join(basePath, fileName));
+        const confirm = await onShowDialog('question', 'Confirm', {
+          bbcode: 'Are you sure? This will reset Vortex settings and persistent data '
+            + 'to a state from {{time}}.<br/><br/>'
+            + 'It does not restore mods/files deleted or moved in the '
+            + 'meantime and it does not undo deployments!<br/>'
+            + '[color=red]If you changed the mod staging folder for any games or the download folder '
+            + 'since the backup was created, do not continue![/color]<br/><br/>'
+            + 'Please continue only if you know what you\'re doing!',
+          parameters: {
+            time: relativeTime(stats.mtime, t),
+          },
+        }, [
+          { label: 'Cancel', default: true },
+          { label: 'Confirm' },
+        ]);
+        if (confirm.action === 'Confirm') {
+          spawnSelf(['--restore', path.join(basePath, selected + '.json')]);
+          remote.app.exit();
+        }
+      }
+    } catch (err) {
+      log('error', 'failed to list state backups');
+      await onShowDialog('error', 'There are no backups to restore', {
+        text: 'Found no backup to restore',
+        message: err.code === 'ENOENT' ? undefined : err.message,
+      }, [
+        { label: 'Close' },
+      ]);
     }
   }
 }

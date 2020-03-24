@@ -167,7 +167,7 @@ export function createFullStateBackup(backupName: string, store: Redux.Store<any
     return Promise.reject(new DataInvalid('Failed to create state backup'));
   }
 
-  const basePath = path.join(app.getPath('temp'), FULL_BACKUP_PATH);
+  const basePath = path.join(app.getPath('userData'), 'temp', FULL_BACKUP_PATH);
 
   return fs.ensureDirWritableAsync(basePath, () => true)
     .then(() => writeFileAtomic(path.join(basePath, backupName + '.json'),
