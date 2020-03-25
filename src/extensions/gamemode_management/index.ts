@@ -8,8 +8,8 @@ import { IGame } from '../../types/IGame';
 import { IGameStore } from '../../types/IGameStore';
 import { IProfile, IRunningTool, IState } from '../../types/IState';
 import { IEditChoice, ITableAttribute } from '../../types/ITableAttribute';
-import {ProcessCanceled, SetupError, UserCanceled} from '../../util/CustomErrors';
 import { COMPANY_ID } from '../../util/constants';
+import {ProcessCanceled, SetupError, UserCanceled} from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import LazyComponent from '../../util/LazyComponent';
 import local from '../../util/local';
@@ -51,6 +51,7 @@ import { currentGame, currentGameDiscovery, discoveryByGame } from './selectors'
 
 import Promise from 'bluebird';
 import { remote } from 'electron';
+import * as fsExtra from 'fs-extra';
 import * as path from 'path';
 import * as Redux from 'redux';
 import * as semver from 'semver';
@@ -244,9 +245,14 @@ function removeDisappearedGames(api: IExtensionApi): Promise<void> {
       return stored === undefined
         ? Promise.resolve()
         : Promise.map(stored.requiredFiles,
-          file => fs.statAsync(path.join(discovered[gameId].path, file)))
+          file => fsExtra.stat(path.join(discovered[gameId].path, file)))
           .then(() => undefined)
           .catch(err => {
+            if (err.code === 'EPERM') {
+              // ignore permission errors because this is "normal" for games installed
+              // through the microsoft store.
+              return;
+            }
             log('info', 'game no longer found', stored.name);
             api.sendNotification({
               type: 'info',

@@ -230,8 +230,8 @@ function unknownErrorRetry(filePath: string, err: Error, stackErr: Error): Promi
                       + 'No further error information is available to us.';
     } else {
       options.title = `${err.message} (${err['nativeCode']})`;
-      // no longer offering the report option because for month we got no report that we could actually do anything about,
-      // it's always setup problems
+      // no longer offering the report option because for month we got no report that we could
+      // actually do anything about, it's always setup problems
       // options.buttons.unshift('Cancel and Report');
     }
   }
@@ -662,7 +662,11 @@ function elevated(func: (ipc, req: NodeRequireFunction) => Promise<void>,
 
       conn
         .on('message', data => {
+          if (data.error !== undefined) {
+            log('error', 'elevated process failed', data.error);
+          } else {
           log('warn', 'got unexpected ipc message', JSON.stringify(data));
+          }
         })
         .on('end', () => {
           if (!resolved) {
@@ -704,7 +708,7 @@ export function ensureDirWritableAsync(dirPath: string,
     confirm = () => PromiseBB.resolve();
   }
   const stackErr = new Error();
-  return ensureDirAsync(dirPath)
+  return PromiseBB.resolve(fs.ensureDir(dirPath))
     .then(() => {
       const canary = path.join(dirPath, '__vortex_canary');
       return ensureFileAsync(canary)
@@ -720,10 +724,34 @@ export function ensureDirWritableAsync(dirPath: string,
             const userId = getUserId();
             return elevated((ipcPath, req: NodeRequireFunction) => {
               // tslint:disable-next-line:no-shadowed-variable
-              const fs = req('fs-extra-promise');
+              const fs = req('fs-extra');
+              // tslint:disable-next-line:no-shadowed-variable
+              const path = req('path');
               const { allow } = req('permissions');
-              return fs.ensureDirAsync(dirPath)
-                .then(() => allow(dirPath, userId, 'rwx'));
+              // recurse upwards in the directory tree if necessary
+              const ensureAndAllow = (targetPath, allowRecurse) => {
+                return fs.ensureDir(targetPath)
+                .catch(elevatedErr => {
+                  const parentPath = path.dirname(targetPath);
+                  if (['EPERM', 'ENOENT'].includes(elevatedErr.code)
+                      && (parentPath !== targetPath)
+                      && allowRecurse) {
+                    return ensureAndAllow(parentPath, true)
+                      .then(() => ensureAndAllow(targetPath, false));
+                  } else {
+                    return Promise.reject(elevatedErr);
+                  }
+                })
+                .then(() => {
+                  try {
+                    allow(targetPath, userId, 'rwx');
+                    return Promise.resolve();
+                  } catch (err) {
+                    return Promise.reject(err);
+                  }
+                });
+              };
+              return ensureAndAllow(dirPath, true);
             }, { dirPath, userId })
             // if elevation fails, rethrow the original error, not the failure to elevate
             .catch(elevatedErr => {
