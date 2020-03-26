@@ -109,7 +109,7 @@ function init(context: IExtensionContext): boolean {
           displayMS: 4000,
         }));
     },
-  }));
+  }), undefined, 5000);
 
   context.registerAction('mod-icons', 115, 'undo', {}, 'Reset to manifest', () => {
     resetToManifest(context.api);
