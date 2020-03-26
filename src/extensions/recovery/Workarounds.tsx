@@ -35,42 +35,45 @@ class Settings extends ComponentEx<IProps, {}> {
     const { t, onCreateManualBackup } = this.props;
 
     return (
-      <form>
-        <FormGroup id='database-backups' controlId='restore-backup'>
-          <ControlLabel>{t('Database backup')}</ControlLabel>
-          <div className='button-container'>
-            <Button
-              onClick={this.onSelectBackup}
-            >
-              {t('Restore') + '...'}
-            </Button>
-          </div>
-          <div className='button-container'>
-            <Button
-              onClick={onCreateManualBackup}
-            >
-              {t('Create Backup')}
-            </Button>
-          </div>
-          <HelpBlock>
-            <div>
-              {t('Vortex stores application settings as well as mod meta data and a lot '
-                + 'of other important things in a database. Here you can restore a '
-                + 'backup of this database (Vortex creates automatic updates). '
-                + 'Please note that after this reset, the state may not agree with other '
-                + 'data stored on disk, e.g. Vortex may report external file changes for things '
-                + 'that it installed itself. Please be very careful to not lose data. '
-                + 'We strongly advice you use this only in an emergency, not as an "undo" '
-                + 'function.')}
+      <div className='danger-outline'>
+        <div className='danger-heading'>{t('Caution')}</div>
+        <form>
+          <FormGroup id='database-backups' controlId='restore-backup'>
+            <ControlLabel>{t('Database backup')}</ControlLabel>
+            <div className='button-container'>
+              <Button
+                onClick={this.onSelectBackup}
+              >
+                {t('Restore') + '...'}
+              </Button>
             </div>
-            <div>
-              {t('You can have up to 3 backups: One is automatically created whenever Vortex '
-                + 'starts up with no issue, one is automatically created hourly (while using '
-                + 'Vortex) and one you can create manually.')}
+            <div className='button-container'>
+              <Button
+                onClick={onCreateManualBackup}
+              >
+                {t('Create Backup')}
+              </Button>
             </div>
-          </HelpBlock>
-        </FormGroup>
-      </form>
+            <HelpBlock>
+              <div>
+                {t('Vortex stores application settings as well as mod meta data and a lot '
+                  + 'of other important things in a database. Here you can restore a '
+                  + 'backup of this database (Vortex creates automatic updates). '
+                  + 'Please note that after this reset, the state may not agree with other '
+                  + 'data stored on disk, e.g. Vortex may report external file changes for things '
+                  + 'that it installed itself. Please be very careful to not lose data. '
+                  + 'We strongly advice you use this only in an emergency, not as an "undo" '
+                  + 'function.')}
+              </div>
+              <div>
+                {t('You can have up to 3 backups: One is automatically created whenever Vortex '
+                  + 'starts up with no issue, one is automatically created hourly (while using '
+                  + 'Vortex) and one you can create manually.')}
+              </div>
+            </HelpBlock>
+          </FormGroup>
+        </form>
+      </div>
     );
   }
 
@@ -123,14 +126,22 @@ class Settings extends ComponentEx<IProps, {}> {
       if (selected !== undefined) {
         const fileName = selected + '.json';
         const stats: fs.Stats = await fs.statAsync(path.join(basePath, fileName));
+        const paragraph = (text: string) => `${text}<br/><br/>`;
         const confirm = await onShowDialog('question', 'Confirm', {
-          bbcode: 'Are you sure? This will reset Vortex settings and persistent data '
-            + 'to a state from {{time}}.<br/><br/>'
-            + 'It does not restore mods/files deleted or moved in the '
-            + 'meantime and it does not undo deployments!<br/>'
-            + '[color=red]If you changed the mod staging folder for any games or the download folder '
-            + 'since the backup was created, do not continue![/color]<br/><br/>'
-            + 'Please continue only if you know what you\'re doing!',
+          bbcode:
+            paragraph('This will reset Vortex settings and persistent data '
+                      + 'to a state from {{time}}.')
+            + paragraph('Are you sure you want to proceed? Note that this option is not meant '
+                        + 'to be used lightly or in a haphazard attempt to fix an issue.')
+            + paragraph('This will not: [list]'
+                        + '[*]Restore or delete mods/files on disk'
+                        + '[*]Undo deployments'
+                        + '[/list]')
+            + paragraph('DO NOT CONTINUE if you have changed the download folder or the '
+                        + 'mod staging folder for ANY game.')
+            + paragraph('ONLY proceed if you have been instructed by Nexus Mods staff, are '
+                        + 'following official documentation, or are absolutely certain that you '
+                        + 'know what you are doing.'),
           parameters: {
             time: relativeTime(stats.mtime, t),
           },
