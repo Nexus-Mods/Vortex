@@ -458,7 +458,6 @@ function renderer() {
     store.dispatch(setNetworkConnected(false));
   });
 
-
   getI18n('en', () => {
     const state: IState = store.getState();
     return Object.values(state.session.extensions.installed)

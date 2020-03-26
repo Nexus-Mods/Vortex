@@ -829,6 +829,7 @@ class ExtensionManager {
   }
 
   public renderStyle() {
+    this.mStyleManager.startAutoUpdate();
     return this.mStyleManager.renderNow();
   }
 
