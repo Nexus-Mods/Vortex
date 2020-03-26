@@ -42,7 +42,7 @@ class Settings extends ComponentEx<IProps, {}> {
               + 'if the game or related tools would otherwise not work correctly.\n'
               + 'Usually empty directories cause no harm and cleaning them up takes '
               + 'some extra time during deployment so '
-              + 'we advice you only enable this option if you\'re experience problems we didn\'t '
+              + 'we advise you only enable this option if you\'re experience problems we didn\'t '
               + 'anticipate. In that case please also inform us.')}
           </HelpBlock>
         </FormGroup>

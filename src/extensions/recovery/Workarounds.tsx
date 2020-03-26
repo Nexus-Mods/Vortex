@@ -62,7 +62,7 @@ class Settings extends ComponentEx<IProps, {}> {
                   + 'Please note that after this reset, the state may not agree with other '
                   + 'data stored on disk, e.g. Vortex may report external file changes for things '
                   + 'that it installed itself. Please be very careful to not lose data. '
-                  + 'We strongly advice you use this only in an emergency, not as an "undo" '
+                  + 'We strongly advise you use this only in an emergency, not as an "undo" '
                   + 'function.')}
               </div>
               <div>
