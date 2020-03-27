@@ -41,6 +41,7 @@ class DraggableItem extends React.Component<IItemProps, {}> {
   public render(): JSX.Element {
     const { isDragging, item } = this.props;
     const classNames = [].concat(!!item.locked ? 'locked' : undefined,
+                                 !!item.external ? 'external' : undefined,
                                   isDragging ? 'dragging' : undefined);
 
     return (

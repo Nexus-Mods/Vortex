@@ -12,9 +12,18 @@ export interface IInfoPanelProps {
 }
 
 export interface ILoadOrderEntry {
+  // The position/index/priority for this entry.
   pos: number;
+
+  // Is this entry enabled ?
   enabled: boolean;
+
+  // If the load order entry is locked to its current position/index/priority.
   locked?: boolean;
+
+  // Externally managed or manually managed mods have been added externally
+  //  by the user or a 3rd party application and has been detected by Vortex.
+  external?: boolean;
 }
 
 export interface ILoadOrder {
@@ -46,6 +55,9 @@ export interface ILoadOrderDisplayItem {
 
   // Is this mod locked - locked mods are not draggable.
   locked?: boolean;
+
+  // Is this mod externally sourced (manually added, or 3rd party app)
+  external?: boolean;
 
   // An optional message which can be displayed beneath the mod's
   //  image.

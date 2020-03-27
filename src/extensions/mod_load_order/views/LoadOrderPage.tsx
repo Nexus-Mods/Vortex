@@ -330,6 +330,8 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
       ? activeGameEntry.preSort(spread, this.state.sortType).then(newList =>
           this.nextState.enabled = (!!newList) ? newList : spread)
       : this.nextState.enabled = spread;
+
+    this.mCallbackDebouncer.schedule();
   }
 }
 

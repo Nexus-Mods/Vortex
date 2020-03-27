@@ -47,7 +47,7 @@ class DefaultItemRenderer extends ComponentEx<IProps, {}> {
       <ListGroupItem key={key} className={classes.join(' ')}>
         <p className='load-order-index'>{position}</p>
         <img src={item.imgUrl} id='mod-img'/>
-        {item.name}
+        <p>{item.name}</p>
         <Icon className='locked-entry-logo' name='locked'/>
       </ListGroupItem>
     );
@@ -66,11 +66,23 @@ class DefaultItemRenderer extends ComponentEx<IProps, {}> {
       classes = classes.concat(className.split(' '));
     }
 
+    const unmanagedBanner = () => (!!item.external)
+      ? (
+          <div className='load-order-unmanaged-banner'>
+            <span>Not managed by Vortex</span>
+            <Icon className='external-caution-logo' name='dialog-info'/>
+          </div>
+        )
+      : null;
+
     return (
       <ListGroupItem ref={this.setRef} key={key} className={classes.join(' ')}>
         <p className='load-order-index'>{position}</p>
-        <img src={item.imgUrl} id='mod-img'/>
-        {item.name}
+        <div>
+          {unmanagedBanner()}
+          <img src={item.imgUrl} id='mod-img'/>
+        </div>
+        <p>{item.name}</p>
       </ListGroupItem>
     );
   }
