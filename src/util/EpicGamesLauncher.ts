@@ -112,6 +112,10 @@ class EpicGamesLauncher implements IGameStore {
     let manifestsLocation;
     return this.mDataPath
       .then(dataPath => {
+        if (dataPath === undefined) {
+          return Promise.resolve([]);
+        }
+
         manifestsLocation = path.join(dataPath, 'Manifests');
         return fs.readdirAsync(manifestsLocation);
       })
