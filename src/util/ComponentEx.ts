@@ -119,7 +119,7 @@ export class ComponentEx<P, S extends object>
   public nextState: S;
 
   protected initState(value: S) {
-    this.state = value;
+    this.state = JSON.parse(JSON.stringify(value));
 
     const proxyHandler = new StateProxyHandler(this, value, undefined, []);
 
@@ -140,7 +140,7 @@ export class PureComponentEx<P, S extends object>
   public nextState: S;
 
   protected initState(value: S) {
-    this.state = value;
+    this.state = JSON.parse(JSON.stringify(value));
 
     const proxyHandler = new StateProxyHandler(this, value, undefined, []);
 
