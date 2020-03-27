@@ -670,6 +670,7 @@ export interface IModTypeOptions {
   // if set, the merge behavior specified here overrides the one specified for the game
   mergeMods?: boolean;
   deploymentEssential?: boolean;
+  name?: string;
 }
 
 /**

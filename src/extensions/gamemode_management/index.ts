@@ -326,7 +326,13 @@ function genModTypeAttribute(api: IExtensionApi): ITableAttribute<IModWithState>
     name: 'Mod Type',
     description: 'Type of the mod (decides where it gets deployed to)',
     placement: 'detail',
-    calc: mod => mod.type,
+    calc: mod => {
+      const modType = getModTypeExtensions().find(iter => iter.typeId === mod.type);
+      if (modType === undefined) {
+        return mod.type;
+      }
+      return modType.options.name || mod.type;
+    },
     help: 'The mod type controls where (and maybe even how) a mod gets deployed. '
       + 'Leave empty (default) unless you know what you\'re doing.',
     supportsMultiple: true,
@@ -337,7 +343,7 @@ function genModTypeAttribute(api: IExtensionApi): ITableAttribute<IModWithState>
         return getModTypeExtensions()
           .filter((type: IModType) => type.isSupported(gameMode))
           .map((type: IModType): IEditChoice =>
-            ({ key: type.typeId, text: (type.typeId || 'Default') }));
+            ({ key: type.typeId, text: (type.options.name || type.typeId || 'Default') }));
       },
       onChangeValue: (mods, newValue) => {
         const gameMode = activeGameId(api.store.getState());
