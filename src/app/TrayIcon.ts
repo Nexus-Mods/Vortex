@@ -85,6 +85,7 @@ class TrayIcon {
       title,
       content,
       icon,
+      noSound: true,
     });
   }
 }
