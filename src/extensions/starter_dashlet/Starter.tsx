@@ -332,7 +332,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
           arguments: starter.commandLine.join(' '),
           description: starter.name,
           iconIndex: 0,
-          iconPath: starter.iconPath,
+          iconPath: StarterInfo.getIconPath(starter),
           program: starter.exePath,
           title: starter.name,
           workingDirectory: starter.workingDirectory,
