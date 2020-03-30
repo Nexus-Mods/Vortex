@@ -145,7 +145,9 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
     if ((this.props.loadOrder !== newProps.loadOrder)
         || (this.props.mods !== newProps.mods)
         || (this.props.profile !== newProps.profile)) {
-      this.updateState(newProps);
+      const updateLO: boolean = ((this.props.profile === newProps.profile)
+        && (this.props.mods !== newProps.mods));
+      this.updateState(newProps, updateLO);
     }
   }
 
@@ -288,7 +290,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private updateState(props: IProps) {
+  private updateState(props: IProps, updateLO: boolean = false) {
     const { getGameEntry, mods, profile } = props;
     const activeGameEntry = getGameEntry(profile.gameId);
     if (activeGameEntry === undefined) {
@@ -331,7 +333,9 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
           this.nextState.enabled = (!!newList) ? newList : spread)
       : this.nextState.enabled = spread;
 
-    this.mCallbackDebouncer.schedule();
+    if (updateLO) {
+      this.setLoadOrder(this.nextState.enabled);
+    }
   }
 }
 
