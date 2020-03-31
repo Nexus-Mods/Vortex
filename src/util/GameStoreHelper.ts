@@ -34,27 +34,11 @@ class GameStoreHelper {
   }
 
   public findByName(name: string | string[], storeId?: string): Promise<IGameStoreEntry> {
-    return this.findGameEntry('name', name, storeId)
-      .catch(err => {
-        const isGameMissing  = ((err instanceof GameEntryNotFound)
-                             || (err instanceof GameNotFound));
-        if (!isGameMissing) {
-          log('error', 'stores can\'t find game entry', err);
-        }
-        return Promise.resolve(undefined);
-      });
+    return this.findGameEntry('name', name, storeId);
   }
 
   public findByAppId(appId: string | string[], storeId?: string): Promise<IGameStoreEntry> {
-    return this.findGameEntry('id', appId, storeId)
-      .catch(err => {
-        const isGameMissing  = ((err instanceof GameEntryNotFound)
-                             || (err instanceof GameNotFound));
-        if (!isGameMissing) {
-          log('error', 'stores can\'t find game entry', err);
-        }
-        return Promise.resolve(undefined);
-      });
+    return this.findGameEntry('id', appId, storeId);
   }
 
   private getstores(): IGameStore[] {
@@ -95,48 +79,44 @@ class GameStoreHelper {
       ? entry => pattern.indexOf(entryInfo(entry)) !== -1
       : entry => entryInfo(entry) === pattern;
 
-    const gameStores = (!!storeId) ? [this.getGameStore(storeId)] : this.getstores();
+    const gameStores = ((!!storeId)
+      ? [this.getGameStore(storeId)]
+      : this.getstores()).filter(store => !!store);
 
-    let foundEntry: boolean = false;
-    return new Promise((resolve, reject) =>
-      Promise.each(gameStores, store => {
-        if (foundEntry) {
-          // We already found the entry, no point
-          //  to continue.
-          return Promise.resolve();
+    if ((gameStores === undefined) || (gameStores.length === 0)) {
+      const errMsg = (!!storeId) ? storeId : 'Gamestores unavailable';
+      return Promise.reject(new GameStoreNotFound(errMsg));
+    }
+
+    return Promise.reduce(gameStores, (accum, store) => store.allGames()
+      .then(entries => {
+        const entry = (searchType === 'id')
+          ? entries.find(matcher)
+          : entries.find(ent => rgxMatcher.test(ent.name));
+
+        if (!!entry) {
+          accum.push(entry);
         }
 
-        return (!store)
-          ? Promise.reject(new GameStoreNotFound(storeId))
-          : store.allGames()
-            .then(entries => {
-              const entry = (searchType === 'id')
-                ? entries.find(matcher) : entries.find(ent => rgxMatcher.test(ent.name));
-              foundEntry = (!!entry);
-
-              const errMessage = (Array.isArray(pattern)) ? pattern.join(';') : pattern;
-              return (entry === undefined)
-                ? Promise.reject(new GameEntryNotFound(errMessage, store.id))
-                : Promise.resolve(entry);
-            })
-            .then(entry => resolve(entry))
-            .catch(GameEntryNotFound, () => Promise.resolve())
-            .catch(GameNotFound, () => Promise.resolve());
+        return Promise.resolve(accum);
       })
-      .then(() => {
-        // If we reached this point it means the loaded stores
-        //  have been unable to find a game entry for this game.
-        const name = (Array.isArray(pattern))
-          ? pattern.join(' - ')
-          : pattern;
+      .catch(GameEntryNotFound, () => Promise.resolve())
+      .catch(GameNotFound, () => Promise.resolve()), [])
+      .then(foundEntries => {
+        // TODO: A cool future feature here would be to allow the user to select
+        //  the gamestore he wants to use. But for now, we just return the
+        //  first instance we found.
+        if (foundEntries.length > 0) {
+          return Promise.resolve(foundEntries[0]);
+        } else {
+          const name = (Array.isArray(pattern))
+            ? pattern.join(' - ')
+            : pattern;
 
-        const stores = this.mStores.map(store => store.id).join(', ');
-        return reject(new GameEntryNotFound(name, stores));
-    })
-    .catch(GameStoreNotFound, err => {
-      log('error', 'could not find game store', err);
-      return Promise.resolve();
-    }));
+          const stores = this.mStores.map(store => store.id).join(', ');
+          return Promise.reject(new GameEntryNotFound(name, stores));
+        }
+      });
   }
 }
 
