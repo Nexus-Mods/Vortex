@@ -16,16 +16,19 @@ function asarUnpacked(input: string): string {
   return input.replace('app.asar' + path.sep, 'app.asar.unpacked' + path.sep);
 }
 
+function cachePath() {
+  return path.join(getVortexPath('temp'), 'css-cache.json');
+}
+
 if (ipcMain !== undefined) {
   ipcMain.on('__renderSASS', (evt, stylesheets: string[]) => {
-    const cachePath = path.join(getVortexPath('temp'), 'css-cache.json');
     let cache: { stylesheets: string[], css: string };
     try {
       // TODO: evil sync read
-      cache = JSON.parse(fs.readFileSync(cachePath, { encoding: 'utf8' }));
+      cache = JSON.parse(fs.readFileSync(cachePath(), { encoding: 'utf8' }));
       if (_.isEqual(cache.stylesheets, stylesheets)) {
         evt.sender.send('__renderSASS_result', null, cache.css);
-        log('debug', 'using cached css');
+        log('debug', 'using cached css', { cached: cache.stylesheets, stylesheets });
         return;
       }
       log('debug', 'updating css cache', {
@@ -33,7 +36,7 @@ if (ipcMain !== undefined) {
         current: stylesheets,
       });
     } catch (err) {
-      log('debug', 'no css cache', { cachePath });
+      log('debug', 'no css cache', { cachePath: cachePath() });
     }
 
     const sassIndex: string =
@@ -64,7 +67,7 @@ if (ipcMain !== undefined) {
             ? output.css.slice(3)
             : output.css;
           evt.sender.send('__renderSASS_result', null, css.toString());
-          fs.writeFileAsync(cachePath, JSON.stringify({
+          fs.writeFileAsync(cachePath(), JSON.stringify({
             stylesheets,
             css: css.toString(),
           }), { encoding: 'utf8' })
@@ -122,6 +125,13 @@ class StyleManager {
 
   public startAutoUpdate() {
     this.mAutoRefresh = true;
+  }
+
+  public clearCache(): void {
+    this.mSetQueue = this.mSetQueue.then(() =>
+      fs.removeAsync(cachePath())
+        .catch({ code: 'ENOENT' }, () => null)
+        .catch(err => log('error', 'failed to remove css cache', {error: err.message})));
   }
 
   /**

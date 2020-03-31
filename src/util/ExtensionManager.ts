@@ -523,6 +523,7 @@ class ExtensionManager {
       lookupModMeta: this.lookupModMeta,
       saveModMeta: this.saveModMeta,
       openArchive: this.openArchive,
+      clearStylesheet: () => this.mStyleManager.clearCache(),
       setStylesheet: (key, filePath) => this.mStyleManager.setSheet(key, filePath),
       runExecutable: this.runExecutable,
       emitAndAwait: this.emitAndAwait,

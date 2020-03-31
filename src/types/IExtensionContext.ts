@@ -536,6 +536,11 @@ export interface IExtensionApi {
                 extension?: string) => Promise<Archive>;
 
   /**
+   * clear the stylesheet cache to ensure it gets rebuilt even if the list of files hasn't changed
+   */
+  clearStylesheet: () => void;
+
+  /**
    * insert or replace a sass-stylesheet. It gets integrated into the existing sheets based
    * on the key:
    * By default, the sheets "variables", "details" and "style" are intended to customize the
