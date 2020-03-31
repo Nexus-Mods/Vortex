@@ -860,16 +860,27 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   }
 
   private selectRelative = (delta: number, groupId: string, shiftHeld: boolean): string => {
-    const { lastSelected, selectionStart, sortedRows } = this.state;
+    const { groupBy } = this.props;
+    const { groupedRows, lastSelected, selectionStart, sortedRows } = this.state;
     if ((lastSelected === undefined) || (sortedRows === undefined)) {
       return;
     }
 
-    let idx = sortedRows.indexOf(lastSelected.rowId);
-    const oldIdx = idx;
-    idx = Math.min(Math.max(idx + delta, 0), sortedRows.length - 1);
+    let groupSortedRows: string[];
+    if (groupBy !== undefined) {
+      groupSortedRows = groupedRows.reduce((prev, group) => {
+        prev.push(...(group.rows || []));
+        return prev;
+      }, []);
+    } else {
+      groupSortedRows = sortedRows;
+    }
 
-    const newSelection = sortedRows[idx];
+    let idx = groupSortedRows.indexOf(lastSelected.rowId);
+    const oldIdx = idx;
+    idx = Math.min(Math.max(idx + delta, 0), groupSortedRows.length - 1);
+
+    const newSelection = groupSortedRows[idx];
 
     if (oldIdx === idx) {
       return newSelection;
