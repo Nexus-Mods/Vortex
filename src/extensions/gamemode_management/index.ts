@@ -154,6 +154,30 @@ function verifyGamePath(game: IGame, gamePath: string): Promise<void> {
     .then(() => undefined);
 }
 
+function searchDepth(files: string[]): number {
+  return files.reduce((prev, filePath) => {
+    const len = process.platform === 'win32'
+      ? filePath.split(/[/\\]/).length
+      : filePath.split(path.sep).length;
+    return Math.max(prev, len);
+  }, 0);
+}
+
+// based on a path the user selected, traverse the directory tree upwards because
+// if the game contains a directory hierarchy like Game/Binaries/Win64/foobar.exe, the user
+// may have selected the "Win64" directory instead of "Game"
+function findGamePath(game: IGame, selectedPath: string,
+                      depth: number, maxDepth: number): Promise<string> {
+  if (depth > maxDepth) {
+    return Promise.reject(new ProcessCanceled('not found'));
+  }
+
+  return verifyGamePath(game, selectedPath)
+    .then(() => selectedPath)
+    .catch({ code: 'ENOENT' }, () =>
+      findGamePath(game, path.dirname(selectedPath), depth + 1, maxDepth));
+}
+
 function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
   const state: IState = api.store.getState();
   const game = getGame(gameId);
@@ -173,9 +197,9 @@ function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
       .then(result => {
         const { filePaths } = result;
         if ((filePaths !== undefined) && truthy(filePaths[0])) {
-          verifyGamePath(game, filePaths[0])
-            .then(() => {
-              api.store.dispatch(setGamePath(game.id, filePaths[0]));
+          findGamePath(game, filePaths[0], 0, searchDepth(game.requiredFiles))
+            .then((corrected: string) => {
+              api.store.dispatch(setGamePath(game.id, corrected));
               resolve();
             })
             .catch(err => {
@@ -201,11 +225,11 @@ function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
       .then(result => {
         const { filePaths } = result;
         if ((filePaths !== undefined) && (filePaths.length > 0)) {
-          verifyGamePath(game, filePaths[0])
-            .then(() => {
-              const exe = game.executable(filePaths[0]);
+          findGamePath(game, filePaths[0], 0, searchDepth(game.requiredFiles))
+            .then((corrected: string) => {
+              const exe = game.executable(corrected);
               api.store.dispatch(addDiscoveredGame(game.id, {
-                path: filePaths[0],
+                path: corrected,
                 tools: {},
                 hidden: false,
                 environment: game.environment,
