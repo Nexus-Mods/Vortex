@@ -177,6 +177,9 @@ class ModList extends ComponentEx<IProps, IComponentState> {
                 .indexOf(this.state.modsWithState[instanceId].state) !== -1)
             : true,
         hotKey: { code: 46 },
+        // remove is usually the default option for the menu, please put stuff above
+        // it only if it really makes more sense as the default
+        position: 5,
       },
       {
         icon: 'refresh',
