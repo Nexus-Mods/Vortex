@@ -1,13 +1,14 @@
 import { setDownloadModInfo } from '../../actions';
 import { IDownload, IModTable, IState, StateChangeCallback } from '../../types/api';
 import { IExtensionApi } from '../../types/IExtensionContext';
-import { DataInvalid, ProcessCanceled, ArgumentInvalid } from '../../util/CustomErrors';
+import { ArgumentInvalid, DataInvalid, ProcessCanceled } from '../../util/CustomErrors';
 import Debouncer from '../../util/Debouncer';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import opn from '../../util/opn';
 import { activeGameId, gameById } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
+import { toPromise } from '../../util/util';
 
 import { DownloadIsHTML } from '../download_management/DownloadManager';
 import { SITE_ID } from '../gamemode_management/constants';
@@ -22,8 +23,9 @@ import submitFeedback from './util/submitFeedback';
 import { checkModVersionsImpl, endorseModImpl, startDownload, updateKey } from './util';
 
 import * as Promise from 'bluebird';
-import Nexus, { IFeedbackResponse, IIssue, NexusError,
-                RateLimitError, TimeoutError, ICollection, IRevision, IRevisionDetailed, ICollectionDetailed } from 'nexus-api';
+import Nexus, { ICollection, ICollectionDetailed, IFeedbackResponse, IIssue,
+                IRevision, IRevisionDetailed,
+                NexusError, RateLimitError, TimeoutError } from 'nexus-api';
 import * as semver from 'semver';
 
 export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
@@ -258,37 +260,47 @@ export function onNexusDownload(api: IExtensionApi,
   };
 }
 
-export function onGetNexusCollection(api: IExtensionApi, nexus: Nexus): (collectionId: number) => Promise<ICollectionDetailed> {
+export function onGetNexusCollection(api: IExtensionApi, nexus: Nexus)
+    : (collectionId: number) => Promise<ICollectionDetailed> {
   return (collectionId: number): Promise<ICollectionDetailed> => {
     return Promise.resolve(nexus.getCollectionInfo(collectionId))
       .catch(err => {
-        api.showErrorNotification('Failed to get nexus collection info', err);
+        api.showErrorNotification('Failed to get collection info', err);
         return Promise.resolve(undefined);
       });
-  }
+  };
 }
 
-export function onGetNexusCollections(api: IExtensionApi, nexus: Nexus): (gameId: string) => Promise<ICollection[]> {
-  return (gameId: string): Promise<ICollection[]> => Promise.resolve(nexus.getCollectionsByGame(gameId));
+export function onGetNexusCollections(api: IExtensionApi, nexus: Nexus)
+    : (gameId: string) => Promise<ICollection[]> {
+  return (gameId: string): Promise<ICollection[]> =>
+    Promise.resolve(nexus.getCollectionsByGame(gameId))
+      .catch(err => {
+        api.showErrorNotification('Failed to get list of collections', err);
+        return Promise.resolve(undefined);
+      });
 }
 
-export function onGetNexusRevisions(api: IExtensionApi, nexus: Nexus): (collectionId: number) => Promise<IRevision[]> {
-  return (collectionId: number): Promise<IRevision[]> => Promise.resolve(nexus.getRevisions(collectionId));
+export function onGetNexusRevisions(api: IExtensionApi, nexus: Nexus)
+    : (collectionId: number) => Promise<IRevision[]> {
+  return (collectionId: number): Promise<IRevision[]> =>
+    Promise.resolve(nexus.getRevisions(collectionId));
 }
 
-export function onGetNexusRevision(api: IExtensionApi, nexus: Nexus): (collectionId: number, revisionId: number) => Promise<IRevisionDetailed> {
-  return (collectionId: number, revisionId: number): Promise<IRevisionDetailed> => {
-    return Promise.resolve(nexus.getRevisionInfo(collectionId, revisionId))
+export function onGetNexusRevision(api: IExtensionApi, nexus: Nexus)
+    : (collectionId: number, revisionId: number) => Promise<IRevisionDetailed> {
+  return (collectionId: number, revisionId: number): Promise<IRevisionDetailed> =>
+    Promise.resolve(nexus.getRevisionInfo(collectionId, revisionId))
       .catch(err => {
         api.showErrorNotification('Failed to get nexus revision info', err);
         return Promise.resolve(undefined);
       });
-  }
 }
 
-export function onRateCollection(api: IExtensionApi, nexus: Nexus): (collectionId: number, rating: number) => Promise<boolean> {
-  return (collectionId: number, rating: number): Promise<boolean> => {
-    return Promise.resolve(nexus.rateCollection(collectionId, rating))
+export function onRateRevision(api: IExtensionApi, nexus: Nexus)
+    : (revisionId: number, rating: number) => Promise<boolean> {
+  return (revisionId: number, rating: number): Promise<boolean> => {
+    return Promise.resolve(nexus.rateRevision(revisionId, rating))
       .then(() => true)
       .catch(err => {
         api.showErrorNotification('Failed to rate collection', err);
@@ -307,7 +319,7 @@ export function onDownloadUpdate(api: IExtensionApi,
     }
 
     const game = gameById(api.store.getState(), gameId);
-    
+
     if (game === undefined) {
       return Promise.reject(new ArgumentInvalid(gameId));
     }
@@ -350,11 +362,18 @@ export function onDownloadUpdate(api: IExtensionApi,
         const state: IState = api.store.getState();
         const downloads = state.persistent.downloads.files;
         // check if the file is already downloaded. If not, download before starting the install
-        const existingId = Object.keys(downloads).find(downloadId =>
-          getFileId(downloads[downloadId]) === fileIdNum);
+        const existingId = Object.keys(downloads).find(downloadId => {
+          return (getFileId(downloads[downloadId]) === fileIdNum)
+              && downloads[downloadId].state !== 'failed';
+        });
 
         if (existingId !== undefined) {
-          return Promise.resolve(existingId);
+          if (downloads[existingId].state === 'paused') {
+            return toPromise(cb => api.events.emit('resume-download', existingId, cb))
+              .then(() => existingId);
+          } else {
+            return Promise.resolve(existingId);
+          }
         }
 
         return startDownload(api, nexus, url)
@@ -384,11 +403,13 @@ export function onSubmitFeedback(nexus: Nexus): (...args: any[]) => void {
 }
 
 export function onSubmitCollection(nexus: Nexus): (...args: any[]) => void {
-  return (collectionInfo: any, assetFilePath: string, callback: (err: Error, response?: any) => void) => {
+  return (collectionInfo: any,
+          assetFilePath: string,
+          callback: (err: Error, response?: any) => void) => {
     (nexus as any).sendCollection(collectionInfo, assetFilePath)
       .then(response => callback(null, response))
       .catch(err => callback(err));
-  }
+  };
 }
 
 export function onEndorseMod(api: IExtensionApi, nexus: Nexus): (...args: any[]) => void {

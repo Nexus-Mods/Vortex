@@ -3,7 +3,7 @@ import { DataInvalid } from '../../util/CustomErrors';
 import { URL } from 'url';
 
 const sUrlExpression = /\/mods\/(\d+)\/files\/(\d+)/i;
-const sCollectionUrlExpression = /\/collection\/(\d+)\/revision\/(\d+)/i;
+const sCollectionUrlExpression = /\/collections\/(\d+)\/revisions\/(\d+)/i;
 
 class NXMUrl {
   private mGameId: string;
@@ -44,6 +44,8 @@ class NXMUrl {
 
       this.mCollectionId = parseInt(collMatches[1], 10);
       this.mRevisionId = parseInt(collMatches[2], 10);
+    } else {
+      throw new DataInvalid(`invalid nxm url "${input}"`);
     }
     this.mKey = parsed.searchParams.get('key') || undefined;
     const exp = parsed.searchParams.get('expires') || undefined;

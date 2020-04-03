@@ -1,11 +1,11 @@
 import { setDownloadModInfo, setModAttribute } from '../../actions';
 import { IDialogResult, showDialog } from '../../actions/notifications';
 import { IExtensionApi, IExtensionContext, ILookupResult } from '../../types/IExtensionContext';
+import { IModLookupResult } from '../../types/IModLookupResult';
 import { IState } from '../../types/IState';
 import { DataInvalid, HTTPError, ProcessCanceled,
          ServiceTemporarilyUnavailable, UserCanceled } from '../../util/CustomErrors';
 import Debouncer from '../../util/Debouncer';
-import { IModLookupResult } from '../../types/IModLookupResult';
 import * as fs from '../../util/fs';
 import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
@@ -54,8 +54,8 @@ import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import * as fuzz from 'fuzzball';
 import I18next from 'i18next';
-import NexusT, { IDownloadURL, IFileInfo, IModInfo, NexusError,
-                 RateLimitError, TimeoutError, ICollectionDownloadLink } from 'nexus-api';
+import NexusT, { ICollectionDownloadLink, IDownloadURL, IFileInfo, IModInfo, NexusError,
+                 RateLimitError, TimeoutError } from 'nexus-api';
 import * as path from 'path';
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
@@ -360,7 +360,7 @@ function processAttributes(state: IState, input: any, quick: boolean): Promise<a
   return fetchPromise.then((info: { modInfo: IModInfo, fileInfo: IFileInfo }) => {
     const nexusModInfo = info !== undefined
       ? info.modInfo
-      : getSafe(input, ['download', 'modInfo', 'nexus', 'modInfo'], undefined);
+      :  getSafe(input, ['download', 'modInfo', 'nexus', 'modInfo'], undefined);
     const nexusFileInfo = info !== undefined
       ? info.fileInfo
       : getSafe(input, ['download', 'modInfo', 'nexus', 'fileInfo'], undefined);
@@ -374,6 +374,7 @@ function processAttributes(state: IState, input: any, quick: boolean): Promise<a
       modId: getSafe(input, ['download', 'modInfo', 'nexus', 'ids', 'modId'], undefined),
       fileId: getSafe(input, ['download', 'modInfo', 'nexus', 'ids', 'fileId'], undefined),
       author: getSafe(nexusModInfo, ['author'], undefined),
+      uploader: getSafe(nexusModInfo, ['uploaded_by'], undefined),
       category,
       pictureUrl: getSafe(nexusModInfo, ['picture_url'], undefined),
       description: getSafe(nexusModInfo, ['description'], undefined),
@@ -599,7 +600,14 @@ function onceMain(api: IExtensionApi) {
   }
 }
 
-const awaitedLinks: Array<{ gameId: string, modId: number, fileId: number, resolve: (url: string) => void }> = [];
+interface IAwaitedLink {
+  gameId: string;
+  modId: number;
+  fileId: number;
+  resolve: (url: string) => void;
+}
+
+const awaitedLinks: IAwaitedLink[] = [];
 
 function makeNXMLinkCallback(api: IExtensionApi) {
   return (url: string, install: boolean) => {
@@ -611,7 +619,9 @@ function makeNXMLinkCallback(api: IExtensionApi) {
 
     // test if we're already awaiting this link
     const awaitedIdx = awaitedLinks.findIndex(link =>
-      (link.gameId === nxmUrl.gameId) && (link.modId === nxmUrl.modId) && (link.fileId === nxmUrl.fileId));
+      (link.gameId === nxmUrl.gameId)
+      && (link.modId === nxmUrl.modId)
+      && (link.fileId === nxmUrl.fileId));
     if (awaitedIdx !== -1) {
       const awaited = awaitedLinks.splice(awaitedIdx, 1);
       awaited[0].resolve(url);
@@ -621,9 +631,17 @@ function makeNXMLinkCallback(api: IExtensionApi) {
     ensureLoggedIn(api)
       .then(() => doDownload(api, url))
       .then(dlId => {
-        if (dlId === undefined) {
+        if ((dlId === undefined) || (dlId === null)) {
           return Promise.resolve(undefined);
         }
+
+        if (nxmUrl.collectionId !== undefined) {
+          setDownloadModInfo(dlId, 'collectionId', nxmUrl.collectionId);
+        }
+        if (nxmUrl.revisionId !== undefined) {
+          setDownloadModInfo(dlId, 'revisionIdId', nxmUrl.revisionId);
+        }
+
         return new Promise((resolve, reject) => {
           const state: IState = api.store.getState();
           const download = state.persistent.downloads.files[dlId];
@@ -664,20 +682,20 @@ function makeNXMLinkCallback(api: IExtensionApi) {
   };
 }
 
-function makeRepositoryLookup(nexus: NexusT) {
+function makeRepositoryLookup(nexusConn: NexusT) {
   return (repoInfo: IModRepoId): Promise<IModLookupResult[]> => {
     const modId = parseInt(repoInfo.modId, 10);
     const fileId = parseInt(repoInfo.fileId, 10);
     let modInfo: IModInfo;
     let fileInfo: IFileInfo;
-    return Promise.resolve(nexus.getModInfo(modId, repoInfo.gameId))
+    return Promise.resolve(nexusConn.getModInfo(modId, repoInfo.gameId))
       .then(modInfoIn => {
         modInfo = modInfoIn;
-        return nexus.getFileInfo(modId, fileId, repoInfo.gameId);
+        return nexusConn.getFileInfo(modId, fileId, repoInfo.gameId);
       })
       .then(fileInfoIn => {
         fileInfo = fileInfoIn;
-        let res: IModLookupResult = {
+        const res: IModLookupResult = {
           key: `${repoInfo.gameId}_${repoInfo.modId}_${repoInfo.fileId}`,
           value: {
             fileName: fileInfo.file_name,
@@ -696,7 +714,7 @@ function makeRepositoryLookup(nexus: NexusT) {
               category: modInfo.category_id.toString(),
               description: fileInfo.description,
               homepage: `https://www.nexusmods.com/${repoInfo.gameId}/mods/${modId}`,
-            }
+            },
           },
         };
         return [res];
@@ -748,7 +766,7 @@ function once(api: IExtensionApi) {
     updateKey(api, nexus, apiKey);
 
     registerFunc(getSafe(state, ['settings', 'nexus', 'associateNXM'], undefined));
-  
+
     api.registerRepositoryLookup('nexus', false, makeRepositoryLookup(nexus));
   }
 
@@ -758,7 +776,7 @@ function once(api: IExtensionApi) {
   api.onAsync('get-nexus-collections', eh.onGetNexusCollections(api, nexus));
   api.onAsync('get-nexus-collection-revisions', eh.onGetNexusRevisions(api, nexus));
   api.onAsync('get-nexus-collection-revision', eh.onGetNexusRevision(api, nexus));
-  api.onAsync('rate-collection', eh.onRateCollection(api, nexus));
+  api.onAsync('rate-nexus-collection-revision', eh.onRateRevision(api, nexus));
   api.events.on('endorse-mod', eh.onEndorseMod(api, nexus));
   api.events.on('submit-feedback', eh.onSubmitFeedback(nexus));
   api.events.on('submit-collection', eh.onSubmitCollection(nexus));
@@ -898,7 +916,9 @@ function guessIds(api: IExtensionApi, instanceIds: string[]) {
   });
 }
 
-function makeNXMProtocol(api: IExtensionApi, onAwaitLink: (gameId: string, modId: number, fileId: number) => Promise<string>) {
+type AwaitLinkCB = (gameId: string, modId: number, fileId: number) => Promise<string>;
+
+function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
   const resolveFunc = (input: string): Promise<IResolvedURL> => {
     const state = api.store.getState();
 
@@ -921,11 +941,13 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: (gameId: string, modId
     }
 
     if (!userInfo.isPremium && (url.key === undefined)) {
-      // non-premium user trying to download a file with no id, have to send the user to the corresponding site to generate a proper link
+      // non-premium user trying to download a file with no id, have to send the user to the
+      // corresponding site to generate a proper link
       return new Promise((resolve, reject) => {
         api.showDialog('info', 'About to open Nexus Mods', {
-          text: 'To download this file you have to go through the website. Please click the button below to take you to the '
-            + 'appropriate site (in your default webbrowser).',
+          text: 'To download this file you have to go through the website. '
+              + 'Please click the button below to take you to the '
+              + 'appropriate site (in your default webbrowser).',
           links: [{ label: 'Open Site', action: (dismiss) => {
             onAwaitLink(url.gameId, url.modId, url.fileId).then(updatedLink => {
               return resolveFunc(updatedLink)
@@ -933,8 +955,11 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: (gameId: string, modId
                 .catch(reject)
                 .finally(dismiss);
             });
-            opn(`https://www.nexusmods.com/${url.gameId}/mods/${url.modId}?tab=files&file_id=${url.fileId}&nmm=1`).catch(() => null);
-          } }]
+            opn('https://www.nexusmods.com/'
+                + `${url.gameId}/mods/${url.modId}`
+                + `?tab=files&file_id=${url.fileId}&nmm=1`)
+              .catch(() => null);
+          } }],
         }, [
           { label: 'Cancel' },
         ]);
@@ -948,9 +973,17 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: (gameId: string, modId
       .then(() => (url.type === 'mod')
         ? nexus.getDownloadURLs(url.modId, url.fileId, url.key, url.expires, pageId)
           .then((res: IDownloadURL[]) => ({ urls: res.map(u => u.URI), meta: {} }))
-        : nexus.getCollectionDownloadURLs(url.collectionId as any, url.revisionId as any,
-          url.key, url.expires, pageId)
-          .then((res: ICollectionDownloadLink) => ({ urls: [res.download_link], meta: {} })))
+        : nexus.getCollectionDownloadURLs(url.collectionId, url.revisionId,
+                                          url.key, url.expires, pageId)
+          .then((res: ICollectionDownloadLink) =>
+            ({ urls: [res.download_link], meta: {
+              nexus: {
+                ids: {
+                  collectionId: url.collectionId,
+                  revisionId: url.revisionId,
+                },
+              },
+            } })))
       .catch(NexusError, err => {
         const newError = new HTTPError(err.statusCode, err.message, err.request);
         newError.stack = err.stack;
@@ -960,7 +993,7 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: (gameId: string, modId
         api.showErrorNotification('Rate limit exceeded', err, { allowReport: false });
         return Promise.reject(err);
       });
-  }
+  };
 
   return resolveFunc;
 }
@@ -1021,11 +1054,11 @@ function init(context: IExtensionContextExt): boolean {
     (instanceIds: string[]) => queryInfo(context.api, instanceIds), queryCondition);
 
   // this makes it so the download manager can use nxm urls as download urls
-  context.registerDownloadProtocol('nxm', makeNXMProtocol(context.api, (gameId: string, modId: number, fileId: number) => {
-    return new Promise(resolve => {
+  context.registerDownloadProtocol('nxm',
+      makeNXMProtocol(context.api, (gameId: string, modId: number, fileId: number) =>
+    new Promise(resolve => {
       awaitedLinks.push({ gameId, modId, fileId, resolve });
-    });
-  }));
+    })));
   context.registerSettings('Download', LazyComponent(() => require('./views/Settings')));
   context.registerReducer(['confidential', 'account', 'nexus'], accountReducer);
   context.registerReducer(['settings', 'nexus'], settingsReducer);

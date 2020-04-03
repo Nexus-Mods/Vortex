@@ -39,12 +39,16 @@ export function startDownload(api: IExtensionApi, nexus: Nexus, nxmurl: string):
     return Promise.reject(err);
   }
 
-  return url.type === 'mod'
+  return (url.type === 'mod')
     ? startDownloadMod(api, nexus, nxmurl, url)
     : startDownloadCollection(api, nexus, nxmurl, url);
 }
 
-function startDownloadCollection(api: IExtensionApi, nexus: Nexus, urlStr: string, url: NXMUrl): Promise<string> {
+function startDownloadCollection(api: IExtensionApi,
+                                 nexus: Nexus,
+                                 urlStr: string,
+                                 url: NXMUrl)
+                                 : Promise<string> {
   const state = api.store.getState();
   const games = knownGames(state);
   const gameId = convertNXMIdReverse(games, url.gameId);
@@ -80,7 +84,10 @@ export function getInfo(nexus: Nexus, domain: string, modId: number, fileId: num
     .then(([ modInfo, fileInfo ]) => ({modInfo, fileInfo}));
 }
 
-function startDownloadMod(api: IExtensionApi, nexus: Nexus, urlStr: string, url: NXMUrl): Promise<string> {
+function startDownloadMod(api: IExtensionApi,
+                          nexus: Nexus,
+                          urlStr: string,
+                          url: NXMUrl): Promise<string> {
   const state = api.store.getState();
   const games = knownGames(state);
   const gameId = convertNXMIdReverse(games, url.gameId);
