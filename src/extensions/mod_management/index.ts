@@ -898,7 +898,8 @@ function once(api: IExtensionApi) {
     }
 
     Promise.map(modIds, modId =>
-        installManager.installDependencies(api, profile, modId, silent === true))
+        installManager.installDependencies(api, profile, modId, silent === true)
+        .catch(ProcessCanceled, () => null))
       .catch(err => api.showErrorNotification('Failed to install dependencies', err));
   });
 
@@ -914,7 +915,14 @@ function once(api: IExtensionApi) {
   });
 
   api.events.on('mod-enabled', (profileId: string, modId: string) => {
-    const profile = profileById(api.store.getState(), profileId);
+    const state: IState = api.store.getState();
+    const profile = profileById(state, profileId);
+    const mod = state.persistent.mods[profile.gameId]?.[modId];
+    const modType = getModType(mod.type);
+    if (modType?.options?.customDependencyManagement === true) {
+      return;
+    }
+
     installManager.installDependencies(api, profile, modId, false)
       .then(() => installManager.installRecommendations(api, profile, modId))
       .catch(err => api.showErrorNotification('Failed to install dependencies', err));

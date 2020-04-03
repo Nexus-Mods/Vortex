@@ -673,6 +673,11 @@ export interface IModTypeOptions {
   mergeMods?: boolean;
   // if set, may be used as a user-readable name for the mod type
   name?: string;
+  // if set, the default mechanism to install dependencies for mods of this mod type is disabled.
+  // Vortex will show that dependencies are unfulfilled but not act upon it.
+  // I have to admit this is fairly specific to collections, not sure if this flag is useful in
+  // any other context
+  customDependencyManagement?: boolean;
 }
 
 /**
