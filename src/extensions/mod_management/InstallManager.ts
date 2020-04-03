@@ -1116,13 +1116,25 @@ class InstallManager {
     return deriveModInstallName(archiveName, info);
   }
 
-  private downloadURL(api: IExtensionApi, lookupResult: IModInfoEx): Promise<string> {
-    return new Promise<string>((resolve, reject) => {
-      if (!api.events.emit('start-download', [lookupResult.sourceURI], {
+  private downloadURL(api: IExtensionApi,
+                      lookupResult: IModInfoEx,
+                      referenceTag?: string): Promise<string> {
+    const call = (input: string | (() => Promise<string>)): Promise<string> =>
+      (input !== undefined) && (typeof(input) === 'function')
+      ? input() : Promise.resolve(input as string);
+
+    let resolvedSource: string;
+    let resolvedReferer: string;
+
+    return call(lookupResult.sourceURI).then(res => resolvedSource = res)
+      .then(() => call(lookupResult.referer).then(res => resolvedReferer = res))
+      .then(() => new Promise<string>((resolve, reject) => {
+      if (!api.events.emit('start-download', [resolvedSource], {
         game: lookupResult.gameId,
         source: lookupResult.source,
         name: lookupResult.logicalFileName,
-        referer: lookupResult.referer,
+        referer: resolvedReferer,
+        referenceTag,
         ids: {
           modId: getSafe(lookupResult, ['details', 'modId'], undefined),
           fileId: getSafe(lookupResult, ['details', 'fileId'], undefined),
@@ -1137,15 +1149,15 @@ class InstallManager {
         })) {
         reject(new Error('download manager not installed?'));
       }
-    });
+    }));
   }
 
   private downloadMatching(api: IExtensionApi, lookupResult: IModInfoEx,
-                           pattern: string): Promise<string> {
+                           pattern: string, referenceTag: string): Promise<string> {
     const modId: string = getSafe(lookupResult, ['details', 'modId'], undefined);
     const fileId: string = getSafe(lookupResult, ['details', 'fileId'], undefined);
     if ((modId === undefined) && (fileId === undefined)) {
-      return this.downloadURL(api, lookupResult);
+      return this.downloadURL(api, lookupResult, referenceTag);
     }
     return api.emitAndAwait('start-download-update',
       lookupResult.source, lookupResult.domainName || lookupResult.gameId, modId, fileId, pattern)
@@ -1160,17 +1172,19 @@ class InstallManager {
     requirement: IReference,
     lookupResult: IModInfoEx,
     api: IExtensionApi): Promise<string> {
+    const referenceTag = requirement['tag'];
     if ((requirement.versionMatch !== undefined)
       && (isNaN(parseInt(requirement.versionMatch[0], 16))
         || (semver.validRange(requirement.versionMatch)
           !== requirement.versionMatch))) {
       // seems to be a fuzzy matcher so we may have to look for an update
-      return this.downloadMatching(api, lookupResult, requirement.versionMatch)
+      return this.downloadMatching(api, lookupResult, requirement.versionMatch,
+                                   referenceTag)
         .then(res => (res === undefined)
-          ? this.downloadURL(api, lookupResult)
+          ? this.downloadURL(api, lookupResult, referenceTag)
           : res);
     } else {
-      return this.downloadURL(api, lookupResult);
+      return this.downloadURL(api, lookupResult, referenceTag);
     }
   }
 
@@ -1215,7 +1229,9 @@ class InstallManager {
         dlPromise = Promise.reject(new ProcessCanceled('Failed to determine download url'));
       } else if (downloads[dep.download].state === 'paused') {
         dlPromise = new Promise((resolve, reject) => {
-          api.events.emit('resume-download', dep.download, (err) => err !== null ? reject(err) : resolve(dep.download));
+          api.events.emit('resume-download',
+                          dep.download,
+                          (err) => err !== null ? reject(err) : resolve(dep.download));
         });
       }
       return dlPromise
@@ -1227,8 +1243,7 @@ class InstallManager {
           api.store.dispatch(setModEnabled(profile.id, modId, true));
           this.applyExtraFromRule(api, profile, modId, dep.extra);
 
-          const state: IState = api.store.getState();
-          const mods = state.persistent.mods[profile.gameId];
+          const mods = api.store.getState().persistent.mods[profile.gameId];
           return { ...dep, mod: mods[modId] };
         })
         // don't cancel the whole process if one dependency fails to install

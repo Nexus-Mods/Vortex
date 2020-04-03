@@ -1127,7 +1127,8 @@ class ExtensionManager {
     }
   }
 
-  private lookupModReference = (reference: IModReference, options?: ILookupOptions): Promise<IModLookupResult[]> => {
+  private lookupModReference =
+      (reference: IModReference, options?: ILookupOptions): Promise<IModLookupResult[]> => {
     if (options === undefined) {
       options = {};
     }
@@ -1137,7 +1138,7 @@ class ExtensionManager {
     if (reference.repo !== undefined) {
       lookup = this.mRepositoryLookup[reference.repo.repository];
     }
-    if ((lookup != undefined) && lookup.preferOverMD5) {
+    if ((lookup !== undefined) && lookup.preferOverMD5) {
       preMD5 = lookup.func(reference.repo);
     }
 

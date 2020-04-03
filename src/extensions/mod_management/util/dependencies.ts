@@ -86,7 +86,22 @@ function browseForDownload(api: IExtensionApi,
                            url: string,
                            instruction: string)
                            : Promise<IBrowserResult> {
-  return api.emitAndAwait('browse-for-download', url, instruction).then(res => res[0]);
+  return new Promise((resolve, reject) => {
+    let lookupResult: Promise<{ url: string, referer: string }>;
+
+    const doLookup = () => {
+      if (lookupResult === undefined) {
+        lookupResult = api.emitAndAwait('browse-for-download', url, instruction)
+          .then(resultList => resultList[0]);
+      }
+      return lookupResult;
+    };
+
+    return resolve({
+      url: () => doLookup().then(out => out?.url),
+      referer: () => doLookup().then(out => out?.referer),
+    });
+  });
 }
 
 function lookupDownloadHint(api: IExtensionApi,

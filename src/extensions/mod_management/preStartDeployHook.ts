@@ -66,7 +66,6 @@ function checkDeploy(api: IExtensionApi): Promise<void> {
     });
 }
 
-
 function preStartDeployHook(api: IExtensionApi, input: IRunParameters): Promise<IRunParameters> {
    return (input.options.suggestDeploy === true)
     ? checkDeploy(api).then(() => input)

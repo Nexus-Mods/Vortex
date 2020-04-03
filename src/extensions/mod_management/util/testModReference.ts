@@ -20,6 +20,7 @@ export interface IModLookupInfo {
   fileId?: string;
   modId?: string;
   source?: string;
+  referenceTag?: string;
 }
 
 // test if the reference is by id only, meaning it is only useful in the current setup
@@ -61,14 +62,19 @@ function hasIdentifyingMarker(mod: IModLookupInfo, modId: string, ref: IModRefer
       || (!fuzzyVersion && (mod.fileMD5 !== undefined))
       || ((ref.fileExpression !== undefined) && (mod.fileName !== undefined))
       || ((ref.logicalFileName !== undefined) && (mod.logicalFileName !== undefined))
-      || ((ref.repo !== undefined) && (mod.source !== undefined));
+      || ((ref.repo !== undefined) && (mod.source !== undefined))
+      || ((ref.tag !== undefined) && (mod.referenceTag !== undefined));
 }
 
 function testRef(mod: IModLookupInfo, modId: string, ref: IModReference): boolean {
   if (!hasIdentifyingMarker(mod, modId, ref)) {
-    // if the reference doesn't have any marker that _could_ match this mod, return !false!, otherwise
-    // we might match any random mod that also has no matching marker
+    // if the reference doesn't have any marker that _could_ match this mod,
+    // return !false!, otherwise we might match any random mod that also has no matching marker
     return false;
+  }
+
+  if ((ref.tag !== undefined) && (mod.referenceTag === ref.tag)) {
+    return true;
   }
 
   if ((ref.id !== undefined)

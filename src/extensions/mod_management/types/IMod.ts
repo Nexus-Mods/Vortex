@@ -51,6 +51,7 @@ export interface IModReference extends IReference {
   // This is only used when the mod isn't installed, otherwise we always try to use the name
   // the user chose for the mod.
   description?: string;
+  tag?: string;
 }
 
 /**
