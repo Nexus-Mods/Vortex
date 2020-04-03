@@ -4,6 +4,8 @@ import { deleteOrNop, getSafe, merge, setOrNop, setSafe } from '../../../util/st
 
 import * as action from '../actions/state';
 
+import * as _ from 'lodash';
+
 export const NUM_SPEED_DATA_POINTS = 30;
 
 /**
@@ -12,6 +14,7 @@ export const NUM_SPEED_DATA_POINTS = 30;
 export const stateReducer: IReducerSpec = {
   reducers: {
     [action.initDownload as any]: (state, payload) => {
+      if (typeof(payload.id) !== 'string') { throw new Error('invalid download id'); }
       if (state.files[payload.id] !== undefined) {
         // The code that called this action can't continue using this id.
         // We rely on the calling code to have a reliable way of generating unique id so
@@ -35,6 +38,7 @@ export const stateReducer: IReducerSpec = {
       });
     },
     [action.downloadProgress as any]: (state, payload) => {
+      if (typeof(payload.id) !== 'string') { throw new Error('invalid download id'); }
       if (state.files[payload.id] === undefined) {
         return state;
       }
@@ -63,12 +67,14 @@ export const stateReducer: IReducerSpec = {
       if (downloadId === undefined) {
         return state;
       }
+      if (typeof(downloadId) !== 'string') { throw new Error('invalid download id'); }
       return merge(state, ['files', downloadId], {
         fileMD5: payload.fileMD5,
         size: payload.fileSize,
       });
     },
     [action.setDownloadInterrupted as any]: (state, payload) => {
+      if (typeof(payload.id) !== 'string') { throw new Error('invalid download id'); }
       if (state.files[payload.id] === undefined) {
         return state;
       }
@@ -78,6 +84,7 @@ export const stateReducer: IReducerSpec = {
       });
     },
     [action.startDownload as any]: (state, payload) => {
+      if (typeof(payload.id) !== 'string') { throw new Error('invalid download id'); }
       if (getSafe<string>(state, [ 'files', payload.id, 'state' ], 'unknown') !== 'init') {
         return state;
       }
@@ -87,6 +94,7 @@ export const stateReducer: IReducerSpec = {
       });
     },
     [action.finishDownload as any]: (state, payload) => {
+      if (typeof(payload.id) !== 'string') { throw new Error('invalid download id'); }
       if (state.files[payload.id] === undefined) {
         return state;
       }
@@ -143,6 +151,7 @@ export const stateReducer: IReducerSpec = {
         chunks: [],
       }),
     [action.setDownloadModInfo as any]: (state, payload) => {
+      if (typeof(payload.id) !== 'string') { throw new Error('invalid download id'); }
       if (state.files[payload.id] === undefined) {
         return state;
       }
@@ -150,6 +159,19 @@ export const stateReducer: IReducerSpec = {
       return setSafe(state,
         ['files', payload.id, 'modInfo'].concat(payload.key.split('.')),
         payload.value);
+    },
+    [action.mergeDownloadModInfo as any]: (state, payload) => {
+      const { id, value } = payload;
+
+      if (typeof(id) !== 'string') { throw new Error('invalid download id'); }
+
+      if (state.files[payload.id] === undefined) {
+        return state;
+      }
+
+      return setSafe(state,
+        ['files', id, 'modInfo'],
+        _.merge(state.files[id]?.modInfo || {}, value));
     },
     [action.setDownloadInstalled as any]: (state, payload) =>
       setSafe(state,

@@ -79,6 +79,9 @@ export const addLocalDownload = safeCreateAction('ADD_LOCAL_DOWNLOAD',
   (id: string, game: string, localPath: string, fileSize: number) =>
     ({ id, game, localPath, fileSize }));
 
+export const mergeDownloadModInfo = safeCreateAction('MERGE_DOWNLOAD_MODINFO',
+  (id: string, value: any) => ({ id, value }));
+
 export const setDownloadModInfo = safeCreateAction('SET_DOWNLOAD_MODINFO',
   (id: string, key: string, value: any) => ({ id, key, value }));
 

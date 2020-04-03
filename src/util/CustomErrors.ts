@@ -147,3 +147,10 @@ export class NotFound extends Error {
     this.name = this.constructor.name;
   }
 }
+
+export class StalledError extends Error {
+  constructor() {
+    super('Operation stalled');
+    this.name = this.constructor.name;
+  }
+}

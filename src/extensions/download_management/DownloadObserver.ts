@@ -15,6 +15,7 @@ import {
   downloadProgress,
   finishDownload,
   initDownload,
+  mergeDownloadModInfo,
   pauseDownload,
   removeDownload,
   setDownloadFilePath,
@@ -195,7 +196,7 @@ export class DownloadObserver {
     } else {
       log('error', 'finished download has no filename?', res);
     }
-    log('debug', 'unfinished chunks', { chunks: res.unfinishedChunks });
+    log('debug', 'unfinished chunks', { chunks: JSON.stringify(res.unfinishedChunks) });
     if (res.unfinishedChunks.length > 0) {
       this.mApi.store.dispatch(pauseDownload(id, true, res.unfinishedChunks));
     } else if (res.filePath.toLowerCase().endsWith('.html')) {
@@ -222,6 +223,9 @@ export class DownloadObserver {
           .finally(() => {
             // still storing the download as successful even if we didn't manage to calculate its
             // hash
+            if (res.metaInfo !== undefined) {
+              this.mApi.store.dispatch(mergeDownloadModInfo(id, res.metaInfo));
+            }
             this.mApi.store.dispatch(finishDownload(id, 'finished', undefined));
             this.mApi.events.emit('did-finish-download', id, 'finished');
           });

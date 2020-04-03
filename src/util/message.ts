@@ -8,7 +8,7 @@ import { IAttachment, IErrorOptions } from '../types/IExtensionContext';
 import { IState } from '../types/IState';
 import { jsonRequest } from '../util/network';
 
-import { HTTPError } from './CustomErrors';
+import { HTTPError, StalledError } from './CustomErrors';
 import { didIgnoreError, getErrorContext, isOutdated,
          sendReport, toError } from './errorHandling';
 import * as fs from './fs';
@@ -560,6 +560,14 @@ export function renderError(err: string | Error | any):
   }
   if (typeof(err) === 'string') {
     return { text: err, wrap: true };
+  } else if (err instanceof StalledError) {
+    return {
+      message: 'Download stalled',
+      text: 'Download made no progress even after reconnecting. Please check your internet '
+          + 'connection and try a different download server if you can.',
+      wrap: false,
+      allowReport: false,
+    };
   } else if (err instanceof HTTPError) {
     return prettifyHTTPError(err);
   } else if (err instanceof Error) {
