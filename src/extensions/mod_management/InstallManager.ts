@@ -407,11 +407,23 @@ class InstallManager {
           return prom
             .then(() => {
               if (installContext !== undefined) {
-                installContext.reportError(
-                  'Installation failed',
-                  `The archive {{ installerPath }} is damaged and couldn't be installed. `
-                  + 'This is most likely fixed by re-downloading the file.', false,
-                  { installerPath: path.basename(archivePath) });
+                api.sendNotification({
+                  type: 'info',
+                  title: 'Installation failed, archive is damaged',
+                  message: path.basename(archivePath),
+                  actions: [
+                    { title: 'Delete', action: () => {
+                      api.events.emit('remove-download', archiveId); } },
+                    { title: 'Delete & Redownload', action: () => {
+                      const state: IState = api.store.getState();
+                      const download = state.persistent.downloads.files[archiveId];
+                      api.events.emit('remove-download', archiveId, () => {
+                        api.events.emit('start-download', download.urls, info.download,
+                                        path.basename(archivePath));
+                      });
+                    } },
+                  ]
+                });
               }
             });
         } else if (err instanceof SetupError) {
@@ -484,10 +496,10 @@ class InstallManager {
   public installDependencies(api: IExtensionApi, profile: IProfile, modId: string,
                              silent: boolean): Promise<void> {
     const state: IState = api.store.getState();
-    const mod: IMod = getSafe(state, ['persistent', 'mods', profile.gameId, modId], undefined);
+    const mod: IMod = state.persistent.mods[profile.gameId]?.[modId];
 
     if (mod === undefined) {
-      return Promise.reject(new ProcessCanceled(`Invalid mod specified "${mod}"`));
+      return Promise.reject(new ProcessCanceled(`Invalid mod specified "${modId}"`));
     }
 
     this.repairRules(api, mod, profile.gameId);
@@ -588,7 +600,7 @@ class InstallManager {
             if (critical !== undefined) {
               return Promise.reject(new ArchiveBrokenError(critical));
             }
-            return this.queryContinue(api, errors);
+            return this.queryContinue(api, errors, archivePath);
           } else {
             return Promise.resolve();
           }
@@ -679,20 +691,37 @@ class InstallManager {
   }
 
   private queryContinue(api: IExtensionApi,
-                        errors: string[]): Promise<void> {
+                        errors: string[],
+                        archivePath: string): Promise<void> {
     const terminal = errors.find(err => err.indexOf('Can not open the file as archive') !== -1);
 
     return new Promise<void>((resolve, reject) => {
-      api.store.dispatch(showDialog('error', api.translate('Archive damaged'), {
+      const actions = [
+        { label: 'Cancel', action: () => reject(new UserCanceled()) },
+        { label: 'Delete', action: () => {
+          const state: IState = api.store.getState();
+          fs.removeAsync(archivePath)
+            .catch(err => api.showErrorNotification('Failed to remove archive', err,
+                                                    { allowReport: false }))
+            .finally(() => {
+              reject(new UserCanceled());
+            });
+        } },
+      ];
+
+      if (!terminal) {
+        actions.push({ label: 'Continue', action: () => resolve() });
+      }
+
+      const title = api.translate('Archive damaged "{{archiveName}}"',
+                                  { replace: { archiveName: path.basename(archivePath) } });
+      api.store.dispatch(showDialog('error', title, {
         bbcode: api.translate('Encountered errors extracting this archive. Please verify this '
-                  + 'file was downloaded correctly.\n[list]{{ errors }}[/list]', {
-                  replace: { errors: errors.map(err => '[*] ' + err) } }),
+          + 'file was downloaded correctly.\n[list]{{ errors }}[/list]', {
+          replace: { errors: errors.map(err => '[*] ' + err) },
+        }),
         options: { translated: true },
-      }, [
-          { label: 'Cancel', action: () => reject(new UserCanceled()) },
-      ].concat(terminal ? [] : [
-          { label: 'Continue', action: () => resolve() },
-        ])));
+      }, actions));
     });
   }
 
@@ -1188,7 +1217,10 @@ class InstallManager {
     }
   }
 
-  private applyExtraFromRule(api: IExtensionApi, profile: IProfile, modId: string, extra?: { [key: string]: any }) {
+  private applyExtraFromRule(api: IExtensionApi,
+                             profile: IProfile,
+                             modId: string,
+                             extra?: { [key: string]: any }) {
     if (extra === undefined) {
       return;
     }
