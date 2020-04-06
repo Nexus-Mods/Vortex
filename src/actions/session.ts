@@ -1,3 +1,5 @@
+import { IParameters } from '../util/commandLine';
+
 import safeCreateAction from './safeCreateAction';
 
 import * as reduxAct from 'redux-act';
@@ -47,4 +49,7 @@ export const setUIBlocker =
 
 export const clearUIBlocker = safeCreateAction('CLEAR_UI_BLOCKER', (id: string) => id);
 
-export const setNetworkConnected = safeCreateAction('SET_NETWORK_CONNECTED', (connected: boolean) => connected);
+export const setNetworkConnected =
+  safeCreateAction('SET_NETWORK_CONNECTED', (connected: boolean) => connected);
+
+export const setCommandLine = safeCreateAction('SET_COMMAND_LINE', (args: IParameters) => args);

@@ -69,6 +69,8 @@ export const sessionReducer: IReducerSpec = {
       deleteOrNop(state, ['uiBlockers', payload]),
     [actions.setNetworkConnected as any]: (state, payload) =>
       setSafe(state, ['networkConnected'], payload),
+    [actions.setCommandLine as any]: (state, payload) =>
+      setSafe(state, ['commandLine'], payload),
   },
   defaults: {
     displayGroups: {},
@@ -83,5 +85,6 @@ export const sessionReducer: IReducerSpec = {
     extLoadFailures: {},
     toolsRunning: {},
     uiBlockers: {},
+    commandLine: {},
   },
 };

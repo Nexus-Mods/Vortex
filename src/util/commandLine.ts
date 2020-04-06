@@ -10,6 +10,7 @@ export interface IParameters {
   install?: string;
   report?: string;
   restore?: string;
+  game?: string;
   get?: string;
   set?: string[];
   del?: string;
@@ -30,6 +31,7 @@ const ARG_COUNTS = {
   '-s': 1,
   '--download': 1,
   '--install': 1,
+  '--game': 1,
   '--get': 1,
   '--set': 1,
   '--del': 1,
@@ -117,6 +119,7 @@ function parseCommandline(argv: string[], electronIsShitHack: boolean): IParamet
     .option('-s, --set [path]=[value]', 'Change a value in the state. Please be very careful '
                                       + 'with this, incorrect use will break Vortex and you may '
                                       + 'lose data', assign)
+    .option('--game [game id]', 'Starts Vortex with a different enabled')
     .option('--del [path]', 'Remove a value in state')
     .option('--run [path]', 'Execute the js program instead of Vortex itself.')
     .option('--report [path]', 'Send an error report. For internal use')
@@ -127,7 +130,7 @@ function parseCommandline(argv: string[], electronIsShitHack: boolean): IParamet
                                        + '(defaults to 4096)')
     // allow unknown options since they may be interpreted by electron/node
     .allowUnknownOption()
-    .parse(argv || []) as IParameters;
+    .parse(argv || []).opts() as IParameters;
 
   return {
     ...cfgFile,
@@ -140,6 +143,7 @@ const SKIP_ARGS = {
   '-d': 1,
   '--download': 1,
   '-i': 1,
+  '--game': 1,
   '--install': 1,
   '--restore': 1,
 };
@@ -163,22 +167,22 @@ export function filterArgs(input: string[]): string[] {
   return result;
 }
 
-function relaunchImpl() {
-  app.relaunch({ args: filterArgs(process.argv) });
+function relaunchImpl(args?: string[]) {
+  app.relaunch({ args: [...filterArgs(process.argv), ...(args || []) ] });
   app.quit();
 }
 
 if (ipcMain !== undefined) {
-  ipcMain.on('relaunch-self', () => {
-    relaunchImpl();
+  ipcMain.on('relaunch-self', (evt: Electron.IpcMainEvent, args: string[]) => {
+    relaunchImpl(args);
   });
 }
 
-export function relaunch() {
+export function relaunch(args?: string[]) {
   if (ipcRenderer !== undefined) {
-    ipcRenderer.send('relaunch-self');
+    ipcRenderer.send('relaunch-self', args);
   } else {
-    relaunchImpl();
+    relaunchImpl(args);
   }
 }
 

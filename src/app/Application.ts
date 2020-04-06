@@ -24,7 +24,7 @@ import {} from '../util/storeHelper';
 import SubPersistor from '../util/SubPersistor';
 import { isMajorDowngrade, spawnSelf, timeout, truthy } from '../util/util';
 
-import { addNotification } from '../actions';
+import { addNotification, setCommandLine } from '../actions';
 
 import MainWindowT from './MainWindow';
 import SplashScreenT from './SplashScreen';
@@ -255,6 +255,9 @@ class Application {
           process.removeAllListeners('unhandledRejection');
           process.on('uncaughtException', handleError);
           process.on('unhandledRejection', handleError);
+        })
+        .then(() => {
+          this.mStore.dispatch(setCommandLine(args));
         })
         // .then(() => this.initDevel())
         .tap(() => log('debug', 'starting user interface'))
