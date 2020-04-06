@@ -107,7 +107,11 @@ class Notification extends ComponentEx<IProps, { open: boolean }> {
     }
 
     return (
-      <Dropdown id='notification-extra-options' ref={this.menuRef}>
+      <Dropdown
+          id={`notification-${params.id}-extra`}
+          className='notification-extra-options'
+          ref={this.menuRef}
+      >
         <Dropdown.Toggle onClick={this.open}>
           <Icon name='settings'/>
         </Dropdown.Toggle>
