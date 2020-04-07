@@ -6092,6 +6092,18 @@ copy-to-clipboard@^3.0.8:
   dependencies:
     toggle-selection "^1.0.6"
 
+copyfiles@*:
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/copyfiles/-/copyfiles-2.2.0.tgz#d9fc6c06f299337fb7eeb7ea5887e9d7188d9d47"
+  integrity sha512-iJbHJI+8OKqsq+4JF0rqgRkZzo++jqO6Wf4FUU1JM41cJF6JcY5968XyF4tm3Kkm7ZOMrqlljdm8N9oyY5raGw==
+  dependencies:
+    glob "^7.0.5"
+    minimatch "^3.0.3"
+    mkdirp "^0.5.1"
+    noms "0.0.0"
+    through2 "^2.0.1"
+    yargs "^13.2.4"
+
 copyfiles@^1.0.0:
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/copyfiles/-/copyfiles-1.2.0.tgz#a8da3ac41aa2220ae29bd3c58b6984294f2c593c"
@@ -8362,12 +8374,12 @@ focus-lock@^0.6.6:
   integrity sha512-Dx69IXGCq1qsUExWuG+5wkiMqVM/zGx/reXSJSLogECwp3x6KeNQZ+NAetgxEFpnC41rD8U3+jRCW68+LNzdtw==
 
 fomod-installer@Nexus-Mods/fomod-installer#mod-packs:
-  version "0.3.2"
-  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/8c7168c7d2418ce4b18386d827fd13d84df38f5e"
+  version "0.3.5"
+  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/cf1d7dfd1221fd9e0ff82902e96ba3c3df06a444"
   dependencies:
     async "^2.6.2"
-    copyfiles "^1.0.0"
-    msbuild "^1.0.3"
+    copyfiles "*"
+    msbuild "1.1.2"
 
 for-in@^0.1.3:
   version "0.1.8"
@@ -8940,12 +8952,12 @@ har-validator@~5.1.0:
     har-schema "^2.0.0"
 
 harmony-patcher@Nexus-Mods/harmony-patcher:
-  version "0.2.4"
-  resolved "https://codeload.github.com/Nexus-Mods/harmony-patcher/tar.gz/a7d5a49c5f06953a8d2330c1d9ceb5d5719cf5e4"
+  version "0.2.5"
+  resolved "https://codeload.github.com/Nexus-Mods/harmony-patcher/tar.gz/4b86987a0c8ad65484324bc5df7e35213ce39eaf"
   dependencies:
     async "^2.6.2"
     copyfiles "^1.0.0"
-    msbuild "^1.0.3"
+    msbuild "1.1.2"
     node-gyp "^5.0.7"
     turbowalk Nexus-Mods/node-turbowalk
     vortex-api Nexus-Mods/vortex-api
@@ -11652,9 +11664,9 @@ mkdirp@0.5.1, mkdirp@0.x, "mkdirp@>=0.5 0", mkdirp@~0.5.1:
     minimist "0.0.8"
 
 mkdirp@^0.5.0, mkdirp@^0.5.1:
-  version "0.5.4"
-  resolved "https://registry.yarnpkg.com/mkdirp/-/mkdirp-0.5.4.tgz#fd01504a6797ec5c9be81ff43d204961ed64a512"
-  integrity sha512-iG9AK/dJLtJ0XNgTuDbSyNS3zECqDlAhnQW4CsNxBG3LQJBbHmRX1egw39DmtOdCAqY+dKXV+sgPgilNWUKMVw==
+  version "0.5.5"
+  resolved "https://registry.yarnpkg.com/mkdirp/-/mkdirp-0.5.5.tgz#d91cefd62d1436ca0f41620e251288d420099def"
+  integrity sha512-NKmAlESf6jMGym1++R0Ra7wvhV+wFW63FaSOFPwRahvea0gMUcGUhVeAg/0BC0wiv9ih5NYPB1Wn1UEI1/L+xQ==
   dependencies:
     minimist "^1.2.5"
 
@@ -11705,7 +11717,7 @@ ms@^2.1.1:
   resolved "https://registry.yarnpkg.com/ms/-/ms-2.1.2.tgz#d09d1f357b443f493382a8eb3ccd183872ae6009"
   integrity sha512-sGkPx+VjMtmA6MX27oA4FBFELFCZZ4S4XqeGOXCv68tT+jb3vk/RyaKWP0PTKyWtmLSM0b+adUTEvbs1PEaH2w==
 
-msbuild@^1.0.3:
+msbuild@1.1.2:
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/msbuild/-/msbuild-1.1.2.tgz#c6bf66aabc70d81b7a2590ed85ed5e7cd6eaee53"
   integrity sha512-uokwgHTir5KkZjfNSgJEJu3tBKgqBCCKQVwOzA/7TSSUhzC/p1vvSxwunLY0d0lzo2rb9fuIR0o5wU0IVypBnQ==
@@ -15119,7 +15131,12 @@ side-channel@^1.0.2:
     es-abstract "^1.17.0-next.1"
     object-inspect "^1.7.0"
 
-signal-exit@^3.0.0, signal-exit@^3.0.2:
+signal-exit@^3.0.0:
+  version "3.0.3"
+  resolved "https://registry.yarnpkg.com/signal-exit/-/signal-exit-3.0.3.tgz#a1410c2edd8f077b08b4e253c8eacfcaf057461c"
+  integrity sha512-VUJ49FC8U1OxwZLxIbTTrDvLnf/6TDgxZcK8wxR8zs13xpx7xbG60ndBlhNrFi2EMuFRoeDoJO7wthSLq42EjA==
+
+signal-exit@^3.0.2:
   version "3.0.2"
   resolved "https://registry.yarnpkg.com/signal-exit/-/signal-exit-3.0.2.tgz#b5fdc08f1287ea1178628e415e25132b73646c6d"
   integrity sha1-tf3AjxKH6hF4Yo5BXiUTK3NkbG0=
@@ -16872,7 +16889,7 @@ void-elements@^2.0.1:
 
 vortex-api@Nexus-Mods/vortex-api:
   version "1.1.13"
-  resolved "https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/b3f0873523350f463fe357e24845ada6c487da84"
+  resolved "https://codeload.github.com/Nexus-Mods/vortex-api/tar.gz/4cf67bb8340d979bc0beb6c21e93990401c335c9"
 
 vortex-parse-ini@Nexus-Mods/vortex-parse-ini:
   version "0.2.6"
