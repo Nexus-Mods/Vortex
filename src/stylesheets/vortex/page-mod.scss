@@ -75,11 +75,6 @@
   }
 }
 
-.window-focused .need-to-deploy:not(:hover) {
-    animation: pulseColor 6s infinite linear;
-    border: $border-width solid $brand-warning;
-}
-
 .mod-installing {
   background-color: $gray-dark;
 }

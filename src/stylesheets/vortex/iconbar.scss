@@ -65,3 +65,8 @@
     top: 50%;
   }
 }
+
+.window-focused .toolbar-flash-button:not(:hover) {
+    animation: pulseColor 6s infinite linear;
+    border: $border-width solid $brand-warning;
+}

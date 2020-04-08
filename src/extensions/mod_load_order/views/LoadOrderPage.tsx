@@ -116,7 +116,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
             key: 'btn-deploy',
             icon: 'deploy',
             text: 'Deploy Mods',
-            className: this.props.needToDeploy ? 'need-to-deploy' : 'no-deploy',
+            className: this.props.needToDeploy ? 'toolbar-flash-button' : undefined,
             onClick: () => this.context.api.events.emit('deploy-mods', () => undefined),
           };
         },
