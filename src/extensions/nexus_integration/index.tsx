@@ -49,11 +49,12 @@ import NXMUrl from './NXMUrl';
 import * as sel from './selectors';
 import { endorseModImpl, nexusGames, processErrorMessage, startDownload, updateKey } from './util';
 
+import NexusT, { IDownloadURL, NexusError,
+  RateLimitError, TimeoutError } from '@nexusmods/nexus-api';
 import Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import * as fuzz from 'fuzzball';
 import { TFunction } from 'i18next';
-import NexusT, { IDownloadURL, NexusError, RateLimitError, TimeoutError } from '@nexusmods/nexus-api';
 import * as path from 'path';
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
