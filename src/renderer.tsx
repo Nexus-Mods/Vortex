@@ -228,7 +228,8 @@ function errorHandler(evt: any) {
       // have fixed this have even more significant bugs.
       && (
           (error.message === 'socket hang up')
-          || (error.message.include('Error invoking remote method'))
+          || ((error.message !== undefined)
+              && (error.message.includes('Error invoking remote method')))
           || (error.stack.indexOf('net::ERR_CONNECTION_RESET') !== -1)
           || (error.stack.indexOf('net::ERR_ABORTED') !== -1)
           || (error.stack.indexOf('PackeryItem.proto.positionDropPlaceholder') !== -1)
