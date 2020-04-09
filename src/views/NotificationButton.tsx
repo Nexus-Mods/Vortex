@@ -128,14 +128,20 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
     this.nextState.filtered = filtered;
 
     if (!open && (filtered.length > 0)) {
-      this.mRef.show();
+      if (this.mRef !== null) {
+        this.mRef.show();
+      }
       setTimeout(() => this.updateFiltered(), 1000);
-    } else {
+    } else if (this.mRef !== null) {
       this.mRef.hide();
     }
   }
 
   private toggle = () => {
+    if (this.mRef === null) {
+      // not sure how this could happen, just making sure
+      return;
+    }
     if (!this.state.open) {
       this.mRef.show();
       this.nextState.filtered = this.props.notifications.slice();
