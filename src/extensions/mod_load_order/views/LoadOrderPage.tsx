@@ -174,11 +174,17 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
   }
 
   private setLoadOrder(list: ILoadOrderDisplayItem[]) {
-    const { onSetDeploymentNecessary, onSetOrder, profile, getGameEntry } = this.props;
+    const { loadOrder, onSetDeploymentNecessary,
+            onSetOrder, profile, getGameEntry } = this.props;
+
+    const loKeys = Object.keys(loadOrder);
 
     const setNewOrder = (newList: ILoadOrderDisplayItem[]) => {
       const newOrder: ILoadOrder = {};
-      newList.forEach((item, idx) => newOrder[item.id] = { pos: idx, enabled: true });
+      newList.forEach((item, idx) => newOrder[item.id] = {
+        pos: idx,
+        enabled: loKeys.includes(item.id) ? loadOrder[item.id].enabled : true });
+
       onSetOrder(profile.id, newOrder);
       onSetDeploymentNecessary(profile.gameId, true);
       this.mCallbackDebouncer.schedule();
@@ -204,10 +210,12 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
     }
 
     const activeGameEntry: IGameLoadOrderEntry = getGameEntry(profile.gameId);
+    if ((itemRenderer === undefined) && (activeGameEntry.itemRenderer === undefined)) {
+      return DefaultItemRenderer;
+    }
 
-    return ((itemRenderer === undefined) && (activeGameEntry.itemRenderer === undefined))
-      || ((!!activeGameEntry.itemRenderer) && (activeGameEntry.itemRenderer !== itemRenderer))
-          ? DefaultItemRenderer : itemRenderer;
+    return (!!activeGameEntry.itemRenderer)
+      ? activeGameEntry.itemRenderer : DefaultItemRenderer;
   }
 
   private renderLoadOrderPage(): JSX.Element {
