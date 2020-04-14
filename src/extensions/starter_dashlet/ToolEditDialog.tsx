@@ -512,7 +512,10 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
     if (!this.state.tool.name) {
       this.handleChange('name', path.basename(filePath, path.extname(filePath)));
     }
-    this.mUpdateImageDebouncer.schedule(undefined, filePath);
+    // don't replace a logo set through the setup code
+    if (this.props.tool.logoName === undefined) {
+      this.mUpdateImageDebouncer.schedule(undefined, filePath);
+    }
   }
 
   private handleChangeIcon = () => {
