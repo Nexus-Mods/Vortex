@@ -106,6 +106,7 @@
     "@types/lodash": "^4.14.149",
     "@types/minimatch": "^3.0.3",
     "@types/msgpack": "^0.0.30",
+    "@types/node": "12.12.35",
     "@types/node-uuid": "^0.0.28",
     "@types/opn": "^5.5.0",
     "@types/react": "^16.9.11",
