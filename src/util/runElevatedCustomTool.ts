@@ -7,7 +7,7 @@ let parameters: string[];
 // tslint:disable-next-line:prefer-const
 let environment: any;
 
-function runElevatedCustomTool(ipcClient, req: NodeRequireFunction): Promise<void> {
+function runElevatedCustomTool(ipcClient, req: NodeRequire): Promise<void> {
   return new Promise((resolve, reject) => {
     const emit = (message, payload) => {
       ipcClient.sendMessage({ message, payload });

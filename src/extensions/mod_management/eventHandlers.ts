@@ -237,9 +237,7 @@ export function onGameModeActivated(
   const gameDiscovery = state.settings.gameMode.discovered[gameId];
   const game = getGame(gameId);
 
-  if ((gameDiscovery === undefined)
-      || (gameDiscovery.path === undefined)
-      || (game === undefined)) {
+  if ((gameDiscovery?.path === undefined) || (game === undefined)) {
     // TODO: I don't think we should ever get here but if we do, is this a
     //   reasonable way of dealing with it? We're getting this callback because the profile
     //   has been changed, leaving the profile set without activating the game mode properly

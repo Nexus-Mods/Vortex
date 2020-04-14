@@ -5,7 +5,7 @@ import * as tmp from 'tmp';
 import * as winapi from 'winapi-bindings';
 
 function elevatedMain(moduleRoot: string, ipcPath: string,
-                      main: (ipc, req: NodeRequireFunction) =>
+                      main: (ipc, req: NodeRequire) =>
                         void | Promise<void> | Bluebird<void>) {
   const handleError = (error: any) => {
     // tslint:disable-next-line:no-console
@@ -67,7 +67,7 @@ function elevatedMain(moduleRoot: string, ipcPath: string,
  *                             the path of the tmpFile we had to create. If the caller can figure
  *                             out when the process is done (using ipc) it should delete it
  */
-function runElevated(ipcPath: string, func: (ipc: any, req: NodeRequireFunction) =>
+function runElevated(ipcPath: string, func: (ipc: any, req: NodeRequire) =>
                         void | Promise<void> | Bluebird<void>,
                      args?: any): Bluebird<any> {
   return new Bluebird((resolve, reject) => {

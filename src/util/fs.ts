@@ -334,7 +334,7 @@ function errorRepeat(error: NodeJS.ErrnoException, filePath: string, retries: nu
       .then(doUnlock => {
         if (doUnlock) {
           const userId = getUserId();
-          return elevated((ipcPath, req: NodeRequireFunction) => {
+          return elevated((ipcPath, req: NodeRequire) => {
             const { allow }: { allow: typeof allowT } = req('permissions');
             return allow(filePath, userId as any, 'rwx');
           }, { filePath, userId })
@@ -749,7 +749,7 @@ export function ensureDirWritableAsync(dirPath: string,
         return PromiseBB.resolve(confirm())
           .then(() => {
             const userId = getUserId();
-            return elevated((ipcPath, req: NodeRequireFunction) => {
+            return elevated((ipcPath, req: NodeRequire) => {
               // tslint:disable-next-line:no-shadowed-variable
               const fs = req('fs-extra');
               // tslint:disable-next-line:no-shadowed-variable
@@ -890,7 +890,7 @@ function raiseUACDialog<T>(t: TFunction,
         }
         return PromiseBB.resolve();
       })
-      .then(() => elevated((ipcPath, req: NodeRequireFunction) => {
+      .then(() => elevated((ipcPath, req: NodeRequire) => {
         // tslint:disable-next-line:no-shadowed-variable
         const { allow } = req('permissions');
         return allow(fileToAccess, userId, 'rwx');
