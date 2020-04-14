@@ -176,7 +176,6 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
   private setLoadOrder(list: ILoadOrderDisplayItem[]) {
     const { loadOrder, onSetDeploymentNecessary,
             onSetOrder, profile, getGameEntry } = this.props;
-
     const loKeys = Object.keys(loadOrder);
 
     const setNewOrder = (newList: ILoadOrderDisplayItem[]) => {
@@ -184,6 +183,11 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
       newList.forEach((item, idx) => newOrder[item.id] = {
         pos: idx,
         enabled: loKeys.includes(item.id) ? loadOrder[item.id].enabled : true });
+
+      if (JSON.stringify(Object.keys(newOrder)) === JSON.stringify(loKeys)) {
+        // Nothing changed, go home load order page, you're drunk.
+        return;
+      }
 
       onSetOrder(profile.id, newOrder);
       onSetDeploymentNecessary(profile.gameId, true);
