@@ -3330,7 +3330,7 @@
   resolved "https://registry.yarnpkg.com/@types/node/-/node-13.11.1.tgz#49a2a83df9d26daacead30d0ccc8762b128d53c7"
   integrity sha512-eWQGP3qtxwL8FGneRrC5DwrJLGN4/dH1clNTuLfN81HCrxVtxRjygDTUoZJ5ASlDEeo0ppYFQjQIlXhtXpOn6g==
 
-"@types/node@^12.0.12", "@types/node@^12.12.35":
+"@types/node@12.12.35", "@types/node@^12.0.12":
   version "12.12.35"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-12.12.35.tgz#1e61b226c14380f4384f70cfe49a65c2c553ad2b"
   integrity sha512-ASYsaKecA7TUsDrqIGPNk3JeEox0z/0XR/WsJJ8BIX/9+SkMSImQXKWfU/yBrSyc7ZSE/NPqLu36Nur0miCFfQ==
@@ -16695,8 +16695,8 @@ tunnel@^0.0.6:
   integrity sha512-1h/Lnq9yajKY2PEbBadPXj3VxsDDu844OnaAo52UVmIzIvwwtBPIuNvkjuzBlTWpfJyUbG3ez0KSBibQkj4ojg==
 
 turbowalk@Nexus-Mods/node-turbowalk:
-  version "1.3.17"
-  resolved "https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/f826acb49847f4f0ae836ca3813695708e1f793d"
+  version "2.0.0"
+  resolved "https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/36334f9d5ae1280f8645e6ef27e3379cc6233f54"
   dependencies:
     autogypi "^0.2.2"
     fs-extra "^8.1.0"
