@@ -50,7 +50,7 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
   }
 
   public componentDidUpdate(prevProps: IProps) {
-    if (!this.state.open && (prevProps.notifications !== this.props.notifications)) {
+    if (prevProps.notifications !== this.props.notifications) {
       this.updateFiltered();
     }
   }
@@ -127,23 +127,22 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
 
     this.nextState.filtered = filtered;
 
-    if (!open && (filtered.length > 0)) {
-      if (this.mRef !== null) {
-        this.mRef.show();
+    if (!open) {
+      if (filtered.length > 0) {
+        this.mRef?.show();
+        setTimeout(() => this.updateFiltered(), 1000);
+      } else {
+        this.mRef?.hide();
       }
-      setTimeout(() => this.updateFiltered(), 1000);
-    } else if (this.mRef !== null) {
-      this.mRef.hide();
+    } else {
+      // if open, make sure it gets displayed, just to be sure
+      this.mRef?.show();
     }
   }
 
   private toggle = () => {
-    if (this.mRef === null) {
-      // not sure how this could happen, just making sure
-      return;
-    }
     if (!this.state.open) {
-      this.mRef.show();
+      this.mRef?.show();
       this.nextState.filtered = this.props.notifications.slice();
     }
     this.nextState.open = !this.state.open;
