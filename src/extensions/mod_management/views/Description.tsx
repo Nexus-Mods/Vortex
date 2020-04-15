@@ -1,6 +1,7 @@
 import bbcode from '../../../util/bbcode';
 
 import { TFunction } from 'i18next';
+import memoizeOne from 'memoize-one';
 import * as React from 'react';
 import { Overlay, Popover } from 'react-bootstrap';
 
@@ -19,7 +20,8 @@ interface IComponentState {
 class Description extends React.Component<IProps, IComponentState> {
   private mRef: Element;
   private mLongBB: React.ReactChild[];
-  private mShortBB: React.ReactChild[];
+
+  private shortBB = memoizeOne((short: string) => bbcode(short));
 
   constructor(props: IProps) {
     super(props);
@@ -29,19 +31,12 @@ class Description extends React.Component<IProps, IComponentState> {
     };
   }
 
-  public componentDidMount() {
-    const { short } = this.props;
-    this.mShortBB = bbcode(short);
-  }
-
-  public UNSAFE_componentWillReceiveProps(newProps: IProps) {
-    if (this.props.short !== newProps.short) {
-      this.mShortBB = bbcode(newProps.short);
-    }
-  }
-
   public render(): JSX.Element {
-    const {t, long, short} = this.props;
+    const { t, long, short } = this.props;
+
+    if (!long && !short) {
+      return <div>{t('No description')}</div>;
+    }
 
     const popover = (
       <Popover id='popover-mod-description'>
@@ -60,7 +55,9 @@ class Description extends React.Component<IProps, IComponentState> {
         >
           {popover}
         </Overlay>
-        <a ref={this.setRef} onClick={this.toggle}>{this.mShortBB}</a>
+        <a ref={this.setRef} onClick={this.toggle}>
+          {!short ? t('Description') : this.shortBB(short)}
+        </a>
       </div>
     );
   }

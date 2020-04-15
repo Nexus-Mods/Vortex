@@ -16,7 +16,7 @@ export const PICTURE: ITableAttribute<IModWithState> = {
   description: 'A picture provided by the author',
   customRenderer: (mod: IModWithState, detail: boolean, t: TFunction) => {
     const long = getSafe(mod, ['attributes', 'description'], '');
-    const short = getSafe(mod, ['attributes', 'shortDescription'], t('Description'));
+    const short = getSafe(mod, ['attributes', 'shortDescription'], '');
 
     const url = getSafe(mod, ['attributes', 'pictureUrl'], undefined);
     return (
