@@ -728,20 +728,32 @@ function queryInfo(api: IExtensionApi, instanceIds: string[]) {
     .then((modInfo: ILookupResult[]) => {
       if (modInfo.length > 0) {
         const info = modInfo[0].value;
+        const { store } = api;
+
+        const setInfo = (key: string, value: any) => {
+          if (value !== undefined) { store.dispatch(setDownloadModInfo(dlId, key, value)); }
+        };
+
         try {
           const nxmUrl = new NXMUrl(info.sourceURI);
-          api.store.dispatch(setDownloadModInfo(dlId, 'source', 'nexus'));
-          api.store.dispatch(setDownloadModInfo(dlId, 'nexus.ids.gameId', nxmUrl.gameId));
-          api.store.dispatch(setDownloadModInfo(dlId, 'nexus.ids.fileId', nxmUrl.fileId));
-          api.store.dispatch(setDownloadModInfo(dlId, 'nexus.ids.modId', nxmUrl.modId));
-
-          api.store.dispatch(setDownloadModInfo(dlId, 'version', info.fileVersion));
-          api.store.dispatch(setDownloadModInfo(dlId, 'game', info.gameId));
-          api.store.dispatch(setDownloadModInfo(dlId, 'name',
-                                                info.logicalFileName || info.fileName));
+          setInfo('source', 'nexus');
+          setInfo('nexus.ids.gameId', nxmUrl.gameId);
+          setInfo('nexus.ids.fileId', nxmUrl.fileId);
+          setInfo('nexus.ids.modId', nxmUrl.modId);
         } catch (err) {
           // failed to parse the uri as an nxm link - that's not an error in this case, if
           // the meta server wasn't nexus mods this is to be expected
+        }
+
+        setInfo('source', info.source);
+        setInfo('version', info.fileVersion);
+        setInfo('game', info.gameId);
+        setInfo('name', info.logicalFileName || info.fileName);
+
+        if (info.details !== undefined) {
+          Object.keys(info.details).forEach((key: string) => {
+            setInfo(`custom.${key}`, info.details[key]);
+          });
         }
       }
     })
@@ -840,6 +852,8 @@ function init(context: IExtensionContextExt): boolean {
       ? true
       : context.api.translate('Can only query finished downloads') as string;
   };
+
+  // TODO: this shouldn't be here, it uses the meta server not the nexus api
   context.registerAction('downloads-action-icons', 100, 'refresh', {}, 'Query Info',
     (instanceIds: string[]) => queryInfo(context.api, instanceIds), queryCondition);
   context.registerAction('downloads-multirow-actions', 100, 'refresh', {}, 'Query Info',

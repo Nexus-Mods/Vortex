@@ -154,9 +154,7 @@ function attributeExtractor(input: any) {
 }
 
 function attributeExtractorCustom(input: any) {
-  return Promise.resolve({
-    category: getSafe(input, ['download', 'modInfo', 'custom', 'category'], undefined),
-  });
+  return Promise.resolve(input.download?.modInfo?.custom || {});
 }
 
 function genDownloadChangeHandler(api: IExtensionApi,

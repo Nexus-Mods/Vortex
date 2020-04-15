@@ -1200,6 +1200,10 @@ class ExtensionManager {
     } else {
       promise = Promise.resolve();
     }
+    // lookup id may be updated now
+    if (this.mModDBCache[lookupId] !== undefined) {
+      return Promise.resolve(this.mModDBCache[lookupId]);
+    }
     return promise
       .then(() => this.getModDB())
       .then(modDB => fileSize !== 0

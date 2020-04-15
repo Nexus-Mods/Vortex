@@ -191,7 +191,12 @@ class InstallManager {
         }
         installContext = new InstallContext(gameId, api);
         installContext.startIndicator(baseName);
-        return api.lookupModMeta({ filePath: archivePath, gameId });
+        return api.lookupModMeta({
+          filePath: archivePath,
+          gameId,
+          fileMD5: fullInfo.download.fileMD5,
+          fileSize: fullInfo.download.size,
+        });
       })
       .then((modInfo: ILookupResult[]) => {
         log('debug', 'got mod meta information', { archivePath, resultCount: modInfo.length });
