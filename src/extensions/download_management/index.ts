@@ -127,7 +127,7 @@ export interface IResolvedURL {
   meta: any;
 }
 
-export type ProtocolHandler = (inputUrl: string) => Promise<IResolvedURL>;
+export type ProtocolHandler = (inputUrl: string, name: string) => Promise<IResolvedURL>;
 
 export interface IExtensionContextExt extends IExtensionContext {
   // register a download protocol handler

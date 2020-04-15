@@ -197,7 +197,7 @@ const requestLog = {
 export interface IExtensionContextExt extends IExtensionContext {
   registerDownloadProtocol: (
     schema: string,
-    handler: (inputUrl: string) => Promise<{ urls: string[], meta: any }>) => void;
+    handler: (inputUrl: string, name: string) => Promise<{ urls: string[], meta: any }>) => void;
 }
 
 function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
@@ -919,7 +919,7 @@ function guessIds(api: IExtensionApi, instanceIds: string[]) {
 type AwaitLinkCB = (gameId: string, modId: number, fileId: number) => Promise<string>;
 
 function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
-  const resolveFunc = (input: string): Promise<IResolvedURL> => {
+  const resolveFunc = (input: string, name?: string): Promise<IResolvedURL> => {
     const state = api.store.getState();
 
     let url: NXMUrl;
@@ -947,7 +947,10 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
         api.showDialog('info', 'About to open Nexus Mods', {
           text: 'To download this file you have to go through the website. '
               + 'Please click the button below to take you to the '
-              + 'appropriate site (in your default webbrowser).',
+              + 'appropriate site (in your default webbrowser). '
+              + 'This dialog will close automatically (or move to the next required file) '
+              + 'once the download has started.',
+          message: name || input,
           links: [{ label: 'Open Site', action: (dismiss) => {
             onAwaitLink(url.gameId, url.modId, url.fileId).then(updatedLink => {
               return resolveFunc(updatedLink)

@@ -599,7 +599,7 @@ class DownloadManager {
             tempName: filePath,
             error: false,
             urls,
-            resolvedUrls: this.resolveUrls(urls),
+            resolvedUrls: this.resolveUrls(urls, nameTemplate),
             options,
             started: new Date(),
             lastProgressSent: 0,
@@ -639,7 +639,7 @@ class DownloadManager {
         tempName: filePath,
         error: false,
         urls,
-        resolvedUrls: this.resolveUrls(urls),
+        resolvedUrls: this.resolveUrls(urls, path.basename(filePath)),
         options,
         lastProgressSent: 0,
         received,
@@ -745,7 +745,7 @@ class DownloadManager {
     return unfinishedChunks;
   }
 
-  private resolveUrl(input: string): Promise<{urls: string[], meta: any}> {
+  private resolveUrl(input: string, name: string): Promise<{urls: string[], meta: any}> {
     if ((this.mResolveCache[input] !== undefined)
       && ((Date.now() - this.mResolveCache[input].time) < URL_RESOLVE_EXPIRE_MS)) {
       const cache = this.mResolveCache[input];
@@ -758,7 +758,7 @@ class DownloadManager {
     const handler = this.mProtocolHandlers[protocol.slice(0, protocol.length - 1)];
 
     return (handler !== undefined)
-      ? handler(input)
+      ? handler(input, name)
         .then(res => {
           this.mResolveCache[input] = { time: Date.now(), urls: res.urls, meta: res.meta };
           return res;
@@ -766,7 +766,7 @@ class DownloadManager {
       : Promise.resolve({ urls: [input], meta: {} });
   }
 
-  private resolveUrls(urls: string[]): () => Promise<{ urls: string[], meta: any }> {
+  private resolveUrls(urls: string[], name: string): () => Promise<{ urls: string[], meta: any }> {
     let cache: Promise<{ urls: string[], meta: any }>;
 
     return () => {
@@ -775,7 +775,7 @@ class DownloadManager {
         //   For all we know they could resolve to an empty list so
         //   it wouldn't be enough to just one source url
         cache = Promise.reduce(urls, (prev, iter) => {
-          return this.resolveUrl(iter)
+          return this.resolveUrl(iter, name)
             .then(resolved => {
               return Promise.resolve({
                 urls: [...prev.urls, ...resolved.urls],
