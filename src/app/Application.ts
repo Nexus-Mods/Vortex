@@ -193,7 +193,7 @@ class Application {
         return;
       }
 
-      if ((error.errno === 'EACCES')
+      if (['EACCES', 'EPERM'].includes(error.errno)
           && (error.path !== undefined)
           && (error.path.indexOf('vortex-setup') !== -1)) {
         // It's wonderous how electron-builder finds new ways to be more shit without even being
