@@ -6416,10 +6416,11 @@ cosmiconfig@^6.0.0:
     yaml "^1.7.2"
 
 crash-dump@Nexus-Mods/node-crash-dump:
-  version "1.2.4"
-  resolved "https://codeload.github.com/Nexus-Mods/node-crash-dump/tar.gz/fa2201cdca2b6ca657b0d64deff23f304b00236d"
+  version "1.2.6"
+  resolved "https://codeload.github.com/Nexus-Mods/node-crash-dump/tar.gz/270c7476627d0430267f106b992204745fe1f34e"
   dependencies:
     autogypi "^0.2.2"
+    minimist "^1.2.3"
     nan "^2.14.0"
     node-gyp "^6.0.1"
 
@@ -11833,7 +11834,7 @@ minimatch@3.0.4, minimatch@^3.0.2, minimatch@^3.0.3, minimatch@^3.0.4, minimatch
   dependencies:
     brace-expansion "^1.1.7"
 
-minimist@^1.1.0, minimist@^1.1.1, minimist@^1.1.3, minimist@^1.2.0, minimist@^1.2.5:
+minimist@^1.1.0, minimist@^1.1.1, minimist@^1.1.3, minimist@^1.2.0, minimist@^1.2.3, minimist@^1.2.5:
   version "1.2.5"
   resolved "https://registry.yarnpkg.com/minimist/-/minimist-1.2.5.tgz#67d66014b66a6a8aaa0c083c5fd58df4e4e97602"
   integrity sha512-FM9nNUYrRBAELZQT3xeZQ7fmMOBg6nWNmJKTcgsJeaLstP/UODVpGsr5OhXhhXg6f+qtJ8uiZ+PUxkDWcgIXLw==
