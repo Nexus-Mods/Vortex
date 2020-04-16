@@ -259,7 +259,21 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
     this.nextState.confirmed = true;
   }
 
+  private sanitised(input: string): string {
+    const parsed = nodeUrl.parse(input);
+    parsed.hash = null;
+    parsed.search = null;
+    parsed.query = null;
+    return nodeUrl.format(parsed);
+  }
+
   private navigate(url: string) {
+    url = this.sanitised(url);
+    if (url === this.state.url) {
+      // don't do anything if just the hash changed
+      return;
+    }
+
     this.props.onNavigate(url);
     this.nextState.url = url;
     if (url !== this.nextState.history[this.nextState.historyIdx]) {
