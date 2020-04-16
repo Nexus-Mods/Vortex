@@ -59,6 +59,9 @@ export interface ILoadOrderDisplayItem {
   // Is this mod externally sourced (manually added, or 3rd party app)
   external?: boolean;
 
+  // Is this an official module/dlc item?
+  official?: boolean;
+
   // Is this mod invalid - the 'message' paramater can be used to
   //  specify what went wrong.
   invalid?: boolean;
