@@ -20,8 +20,8 @@ import { DownloadIsHTML } from '../download_management/DownloadManager';
 import { IGameStored } from '../gamemode_management/types/IGameStored';
 import { IMod, IModRepoId } from '../mod_management/types/IMod';
 
-import { IResolvedURL } from '../download_management';
 import { DownloadState } from '../download_management/types/IDownload';
+import { IResolvedURL } from '../download_management/types/ProtocolHandlers';
 
 import { SITE_ID } from '../gamemode_management/constants';
 
@@ -61,6 +61,8 @@ import * as React from 'react';
 import { Button } from 'react-bootstrap';
 import {} from 'uuid';
 import * as WebSocket from 'ws';
+
+const NEXUS_DOMAIN = process.env['NEXUS_DOMAIN'] || 'nexusmods.com';
 
 const app = remote !== undefined ? remote.app : appIn;
 
@@ -301,7 +303,7 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
 
 function openNexusPage(state: IState, gameIds: string[]) {
   const game = gameById(state, gameIds[0]);
-  opn(`https://www.nexusmods.com/${nexusGameId(game)}`).catch(err => undefined);
+  opn(`https://www.${NEXUS_DOMAIN}/${nexusGameId(game)}`).catch(err => undefined);
 }
 
 function remapCategory(state: IState, category: number, fromGame: string, toGame: string) {
@@ -441,7 +443,7 @@ function requestLogin(api: IExtensionApi, callback: (err: Error) => void) {
   let attempts = 5;
 
   const connect = () => {
-    connection = new WebSocket('wss://sso.nexusmods.com')
+    connection = new WebSocket(`wss://sso.${NEXUS_DOMAIN}`)
       .on('open', () => {
         cancelLogin = () => {
           connection.close();
@@ -713,7 +715,7 @@ function makeRepositoryLookup(nexusConn: NexusT) {
               author: modInfo.author,
               category: modInfo.category_id.toString(),
               description: fileInfo.description,
-              homepage: `https://www.nexusmods.com/${repoInfo.gameId}/mods/${modId}`,
+              homepage: `https://www.${NEXUS_DOMAIN}/${repoInfo.gameId}/mods/${modId}`,
             },
           },
         };
@@ -800,7 +802,7 @@ function once(api: IExtensionApi) {
   api.onStateChange(['persistent', 'downloads', 'files'], eh.onChangeDownloads(api, nexus));
 
   api.addMetaServer('nexus_api',
-                    { nexus, url: 'https://api.nexusmods.com', cacheDurationSec: 86400 });
+                    { nexus, url: `https://api.${NEXUS_DOMAIN}`, cacheDurationSec: 86400 });
 
   nexus.getModInfo(1, SITE_ID)
     .then(info => {
@@ -827,7 +829,7 @@ function toolbarBanner(t: I18next.TFunction): React.StatelessComponent<any> {
 }
 
 function goBuyPremium() {
-  opn('https://www.nexusmods.com/register/premium').catch(err => undefined);
+  opn(`https://www.${NEXUS_DOMAIN}/register/premium`).catch(err => undefined);
 }
 
 function queryInfo(api: IExtensionApi, instanceIds: string[]) {
@@ -919,7 +921,9 @@ function guessIds(api: IExtensionApi, instanceIds: string[]) {
 type AwaitLinkCB = (gameId: string, modId: number, fileId: number) => Promise<string>;
 
 function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
-  const resolveFunc = (input: string, name?: string): Promise<IResolvedURL> => {
+  const resolveFunc = (input: string,
+                       name?: string)
+                       : Promise<IResolvedURL> => {
     const state = api.store.getState();
 
     let url: NXMUrl;
@@ -945,22 +949,21 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
       // corresponding site to generate a proper link
       return new Promise((resolve, reject) => {
         api.showDialog('info', 'About to open Nexus Mods', {
-          text: 'To download this file you have to go through the website. '
-              + 'Please click the button below to take you to the '
-              + 'appropriate site (in your default webbrowser). '
+          text: 'Since you\'re not a premium user, every download has to be started from the '
+              + 'website. Please click the button below to take you to the '
+              + 'appropriate site (in your default webbrowser).\n\n'
               + 'This dialog will close automatically (or move to the next required file) '
               + 'once the download has started.',
           message: name || input,
           links: [{ label: 'Open Site', action: (dismiss) => {
             onAwaitLink(url.gameId, url.modId, url.fileId).then(updatedLink => {
-              return resolveFunc(updatedLink)
+              return resolveFunc(updatedLink, name)
                 .then(resolve)
                 .catch(reject)
                 .finally(dismiss);
             });
-            opn('https://www.nexusmods.com/'
-                + `${url.gameId}/mods/${url.modId}`
-                + `?tab=files&file_id=${url.fileId}&nmm=1`)
+            opn(`https://www.${NEXUS_DOMAIN}/${url.gameId}/mods/${url.modId}?`
+                + `tab=files&file_id=${url.fileId}&nmm=1`)
               .catch(() => null);
           } }],
         }, [
@@ -975,18 +978,23 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
     return Promise.resolve()
       .then(() => (url.type === 'mod')
         ? nexus.getDownloadURLs(url.modId, url.fileId, url.key, url.expires, pageId)
-          .then((res: IDownloadURL[]) => ({ urls: res.map(u => u.URI), meta: {} }))
+          .then((res: IDownloadURL[]) =>
+            ({ urls: res.map(u => u.URI), meta: {}, updatedUrl: input }))
         : nexus.getCollectionDownloadURLs(url.collectionId, url.revisionId,
                                           url.key, url.expires, pageId)
           .then((res: ICollectionDownloadLink) =>
-            ({ urls: [res.download_link], meta: {
-              nexus: {
-                ids: {
-                  collectionId: url.collectionId,
-                  revisionId: url.revisionId,
+            ({
+              urls: [res.download_link],
+              updatedUrl: input,
+              meta: {
+                nexus: {
+                  ids: {
+                    collectionId: url.collectionId,
+                    revisionId: url.revisionId,
+                  },
                 },
               },
-            } })))
+            })))
       .catch(NexusError, err => {
         const newError = new HTTPError(err.statusCode, err.message, err.request);
         newError.stack = err.stack;
@@ -1108,7 +1116,7 @@ function init(context: IExtensionContextExt): boolean {
   context.registerModSource('nexus', 'Nexus Mods', () => {
     currentGame(context.api.store)
       .then(game => {
-        opn(`https://www.nexusmods.com/${nexusGameId(game)}`).catch(err => undefined);
+        opn(`https://www.${NEXUS_DOMAIN}/${nexusGameId(game)}`).catch(err => undefined);
       });
   }, {
     icon: 'nexus',

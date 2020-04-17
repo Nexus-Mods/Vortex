@@ -27,7 +27,7 @@ import { settingsReducer } from './reducers/settings';
 import { stateReducer } from './reducers/state';
 import { transactionsReducer } from './reducers/transactions';
 import { IDownload } from './types/IDownload';
-import { IProtocolHandlers } from './types/ProtocolHandlers';
+import { IProtocolHandlers, IResolvedURL } from './types/ProtocolHandlers';
 import getDownloadGames from './util/getDownloadGames';
 import writeDownloadsTag, { DOWNLOADS_DIR_TAG } from './util/writeDownloadsTag';
 import DownloadView from './views/DownloadView';
@@ -120,11 +120,6 @@ function refreshDownloads(downloadPath: string, knownDLs: string[],
       return Promise.map(addedDLs, onAddDownload)
         .then(() => Promise.map(removedDLs, onRemoveDownload));
     });
-}
-
-export interface IResolvedURL {
-  urls: string[];
-  meta: any;
 }
 
 export type ProtocolHandler = (inputUrl: string, name: string) => Promise<IResolvedURL>;

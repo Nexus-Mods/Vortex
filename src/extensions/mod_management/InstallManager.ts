@@ -414,15 +414,17 @@ class InstallManager {
                   actions: [
                     { title: 'Delete', action: () => {
                       api.events.emit('remove-download', archiveId); } },
-                    { title: 'Delete & Redownload', action: () => {
+                    { title: 'Delete & Redownload', action: dismiss => {
                       const state: IState = api.store.getState();
                       const download = state.persistent.downloads.files[archiveId];
                       api.events.emit('remove-download', archiveId, () => {
                         api.events.emit('start-download', download.urls, info.download,
-                                        path.basename(archivePath));
+                          path.basename(archivePath), () => {
+                            dismiss();
+                          });
                       });
                     } },
-                  ]
+                  ],
                 });
               }
             });

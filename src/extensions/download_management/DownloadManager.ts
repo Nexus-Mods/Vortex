@@ -8,7 +8,7 @@ import { IDownloadOptions } from './types/IDownload';
 import { IDownloadJob } from './types/IDownloadJob';
 import { IDownloadResult } from './types/IDownloadResult';
 import { ProgressCallback } from './types/ProgressCallback';
-import { IProtocolHandlers } from './types/ProtocolHandlers';
+import { IProtocolHandlers, IResolvedURL, IResolvedURLs } from './types/ProtocolHandlers';
 
 import FileAssembler from './FileAssembler';
 import SpeedCalculator from './SpeedCalculator';
@@ -60,7 +60,7 @@ interface IRunningDownload {
   fd?: number;
   error: boolean;
   urls: string[];
-  resolvedUrls: () => Promise<{ urls: string[], meta: any }>;
+  resolvedUrls: () => Promise<IResolvedURLs>;
   origName: string;
   tempName: string;
   finalName?: Promise<string>;
@@ -745,7 +745,7 @@ class DownloadManager {
     return unfinishedChunks;
   }
 
-  private resolveUrl(input: string, name: string): Promise<{urls: string[], meta: any}> {
+  private resolveUrl(input: string, name: string): Promise<IResolvedURL> {
     if ((this.mResolveCache[input] !== undefined)
       && ((Date.now() - this.mResolveCache[input].time) < URL_RESOLVE_EXPIRE_MS)) {
       const cache = this.mResolveCache[input];
@@ -766,8 +766,8 @@ class DownloadManager {
       : Promise.resolve({ urls: [input], meta: {} });
   }
 
-  private resolveUrls(urls: string[], name: string): () => Promise<{ urls: string[], meta: any }> {
-    let cache: Promise<{ urls: string[], meta: any }>;
+  private resolveUrls(urls: string[], name: string): () => Promise<IResolvedURLs> {
+    let cache: Promise<IResolvedURLs>;
 
     return () => {
       if (cache === undefined) {
@@ -780,9 +780,10 @@ class DownloadManager {
               return Promise.resolve({
                 urls: [...prev.urls, ...resolved.urls],
                 meta: _.merge(prev.meta, resolved.meta),
+                updatedUrls: [...prev.updatedUrls, resolved.updatedUrl || iter],
               });
             });
-        }, { urls: [], meta: {} });
+        }, { urls: [], meta: {}, updatedUrls: [] });
       }
       return cache;
     };
@@ -793,6 +794,9 @@ class DownloadManager {
     return {
       url: () => download.resolvedUrls()
         .then(resolved => {
+          if (resolved.updatedUrls !== undefined) {
+            download.urls = resolved.updatedUrls;
+          }
           if ((fileNameFromURL === undefined) && (resolved.urls.length > 0)) {
             const urlIn = resolved.urls[0].split('<')[0];
             fileNameFromURL = decodeURI(path.basename(url.parse(urlIn).pathname));

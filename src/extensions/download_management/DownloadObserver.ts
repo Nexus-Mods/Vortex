@@ -108,7 +108,10 @@ export class DownloadObserver {
     }
 
     const state: IState = this.mApi.store.getState();
-    const gameMode = (modInfo || {}).game || selectors.activeGameId(state);
+    let gameMode = (modInfo || {}).game || selectors.activeGameId(state);
+    if (Array.isArray(gameMode)) {
+      gameMode = gameMode[0];
+    }
 
     if (gameMode === undefined) {
       if (callback !== undefined) {
