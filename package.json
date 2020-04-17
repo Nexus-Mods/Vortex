@@ -109,6 +109,8 @@
     "@types/node": "12.12.35",
     "@types/node-uuid": "^0.0.28",
     "@types/opn": "^5.5.0",
+    "@types/bluebird": "3.5.20",
+    "@types/bluebird-global": "3.5.5",
     "@types/react": "^16.9.11",
     "@types/react-bootstrap": "^0.32.20",
     "@types/react-datepicker": "^2.9.4",

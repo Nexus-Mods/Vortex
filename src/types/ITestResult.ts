@@ -7,7 +7,9 @@ export interface ITestResult {
     short: string;
     long?: string;
     replace?: { [key: string]: any },
+    localize?: boolean;
   };
   severity: ProblemSeverity;
   automaticFix?: () => Promise<void>;
+  onRecheck?: () => Promise<void>;
 }

@@ -80,7 +80,12 @@ function runCheck(api: IExtensionApi, check: ICheckEntry): Promise<void> {
         } else {
           actions.push({
             title: 'Check again',
-            action: () => runCheck(api, check),
+            action: () => {
+              const preCheck = (result.onRecheck !== undefined)
+              ? result.onRecheck()
+              : Promise.resolve();
+              return preCheck.then(() => runCheck(api, check));
+            },
           });
         }
         api.sendNotification({
@@ -91,6 +96,7 @@ function runCheck(api: IExtensionApi, check: ICheckEntry): Promise<void> {
           actions,
           noDismiss: true,
           allowSuppress: result.severity !== 'error',
+          localize: { title: result.description.localize, message: result.description.localize },
         });
       }
     })
