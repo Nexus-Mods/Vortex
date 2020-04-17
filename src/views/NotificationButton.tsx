@@ -120,6 +120,9 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
       const now = Date.now();
 
       filtered = notifications.filter(item => {
+        if (item.type === 'activity') {
+          return true;
+        }
         const displayTime = this.displayTime(item);
         return (displayTime === null) || (item.createdTime + displayTime > now);
       });
