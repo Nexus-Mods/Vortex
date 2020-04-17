@@ -141,7 +141,7 @@ class InstallContext implements IInstallContext {
   }
 
   public setProgress(percent?: number) {
-    if ((percent - this.mLastProgress) >= 2) {
+    if ((percent === undefined) || ((percent - this.mLastProgress) >= 2)) {
       this.mLastProgress = percent;
       this.mUpdateNotification(
         'install_' + this.mIndicatorId,
