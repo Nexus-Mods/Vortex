@@ -804,7 +804,7 @@ function guessIds(api: IExtensionApi, instanceIds: string[]) {
 
 function init(context: IExtensionContextExt): boolean {
   context.registerAction('application-icons', 200, LoginIcon, {}, () => ({ nexus }));
-  context.registerAction('mod-action-icons', 999, 'nexus', {}, 'Open on Nexus Mods',
+  context.registerAction('mods-action-icons', 999, 'nexus', {}, 'Open on Nexus Mods',
                          instanceIds => {
     const state: IState = context.api.store.getState();
     const gameMode = activeGameId(state);
