@@ -34,6 +34,8 @@ interface IComponentState {
 
 class NotificationButton extends ComponentEx<IProps, IComponentState> {
   private mRef: any = null;
+  private mUpdateTimer: NodeJS.Timeout = undefined;
+  private mMounted: boolean = false;
 
   constructor(props: IProps) {
     super(props);
@@ -47,6 +49,14 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
 
   public componentDidMount() {
     this.updateFiltered();
+    this.mMounted = true;
+  }
+
+  public componentWillUnmount() {
+    this.mMounted = false;
+    if (this.mUpdateTimer !== undefined) {
+      clearTimeout(this.mUpdateTimer);
+    }
   }
 
   public componentDidUpdate(prevProps: IProps) {
@@ -115,6 +125,12 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
     const { notifications } = this.props;
     const { open } = this.state;
 
+    this.mUpdateTimer = undefined;
+
+    if (!this.mMounted) {
+      return;
+    }
+
     let filtered = notifications.slice();
     if (!open) {
       const now = Date.now();
@@ -133,7 +149,11 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
     if (!open) {
       if (filtered.length > 0) {
         this.mRef?.show();
-        setTimeout(() => this.updateFiltered(), 1000);
+        if (this.mUpdateTimer !== undefined) {
+          // should never happen
+          clearTimeout(this.mUpdateTimer);
+        }
+        this.mUpdateTimer = setTimeout(() => this.updateFiltered(), 1000);
       } else {
         this.mRef?.hide();
       }
