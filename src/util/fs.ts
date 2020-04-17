@@ -276,7 +276,7 @@ function unknownErrorRetry(filePath: string, err: Error, stackErr: Error): Promi
     case 'Retry': return PromiseBB.resolve(true);
     case 'Ignore': {
       err['code'] = rethrowAs;
-      return Promise.reject(err);
+      return PromiseBB.reject(err);
     }
     case 'Cancel': PromiseBB.reject(new UserCanceled());
   }
@@ -414,8 +414,8 @@ const symlinkAsync: (srcpath: string, dstpath: string, type?: string) => Promise
 const utimesAsync: (path: string, atime: number, mtime: number) => PromiseBB<void> = genWrapperAsync(fsBB.utimesAsync);
 // fs.write and fs.read don't promisify correctly because it has two return values. fs-extra already works around this in their
 // promisified api so no reason to reinvent the wheel (also we want the api to be compatible)
-const writeAsync: (...args: any[]) => PromiseBB<void> = genWrapperAsync(fs.write);
-const readAsync: (...args: any[]) => PromiseBB<void> = genWrapperAsync(fs.read);
+const writeAsync: (...args: any[]) => PromiseBB<fs.WriteResult> = genWrapperAsync(fs.write) as any;
+const readAsync: (...args: any[]) => PromiseBB<fs.ReadResult> = genWrapperAsync(fs.read) as any;
 const writeFileAsync: (file: string, data: any, options?: fs.WriteFileOptions) => PromiseBB<void> = genWrapperAsync(fsBB.writeFileAsync);
 // tslint:enable:max-line-length
 
@@ -698,14 +698,14 @@ function elevated(func: (ipc, req: NodeRequireFunction) => Promise<void>,
         .on('end', () => {
           if (!resolved) {
             resolved = true;
-            resolve(null);
+            resolve();
           }
         })
         .on('error', err => {
           log('error', 'elevated code reported error', err);
           if (!resolved) {
             resolved = true;
-            resolve(err);
+            reject(err);
           }
         });
     })

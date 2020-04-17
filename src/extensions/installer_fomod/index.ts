@@ -23,6 +23,7 @@ import {
 import { checkAssemblies, getNetVersion } from './util/netVersion';
 import InstallerDialog from './views/InstallerDialog';
 
+import Bluebird from 'bluebird';
 import { ChildProcess } from 'child_process';
 import { app as appIn, remote } from 'electron';
 import { createIPC } from 'fomod-installer';
@@ -121,9 +122,9 @@ function transformError(err: any): Error {
   return result;
 }
 
-function processAttributes(input: any, modPath: string): Promise<any> {
+function processAttributes(input: any, modPath: string): Bluebird<any> {
   if (modPath === undefined) {
-    return Promise.resolve({});
+    return Bluebird.resolve({});
   }
   return fs.readFileAsync(path.join(modPath, 'fomod', 'info.xml'))
       .then((data: Buffer) => {
@@ -158,12 +159,12 @@ function checkNetInstall() {
       },
       severity: 'error',
     };
-    return Promise.resolve(res);
+    return Bluebird.resolve(res);
   } else {
     return checkAssemblies()
       .then(valid => {
         if (valid) {
-          return Promise.resolve(undefined);
+          return Bluebird.resolve(undefined);
         } else {
           const res: ITestResult = {
             description: {
@@ -174,7 +175,7 @@ function checkNetInstall() {
             },
             severity: 'error',
           };
-          return Promise.resolve(res);
+          return Bluebird.resolve(res);
         }
       });
   }
@@ -403,6 +404,10 @@ async function install(files: string[],
                                 coreDelegates);
 }
 
+function toBlue<T>(func: (...args: any[]) => Promise<T>): (...args: any[]) => Bluebird<T> {
+  return (...args: any[]) => Bluebird.resolve(func(...args));
+}
+
 function init(context: IExtensionContext): boolean {
   const installWrap = async (files, scriptPath, gameId, progressDelegate) => {
     const coreDelegates = new Core(context.api, gameId);
@@ -422,8 +427,8 @@ function init(context: IExtensionContext): boolean {
     }
   };
 
-  context.registerInstaller('fomod', 20, testSupportedScripted, installWrap);
-  context.registerInstaller('fomod', 100, testSupportedFallback, installWrap);
+  context.registerInstaller('fomod', 20, toBlue(testSupportedScripted), toBlue(installWrap));
+  context.registerInstaller('fomod', 100, toBlue(testSupportedFallback), toBlue(installWrap));
 
   context.registerTest('net-current', 'startup', checkNetInstall);
   context.registerDialog('fomod-installer', InstallerDialog);

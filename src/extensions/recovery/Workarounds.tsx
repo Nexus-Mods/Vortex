@@ -1,3 +1,4 @@
+import PromiseBB from 'bluebird';
 import { remote } from 'electron';
 import * as path from 'path';
 import * as React from 'react';
@@ -25,7 +26,7 @@ interface IConnectedProps {
 
 interface IActionProps {
   onShowDialog: (type: DialogType, title: string,
-                 content: IDialogContent, actions: DialogActions) => Promise<IDialogResult>;
+                 content: IDialogContent, actions: DialogActions) => PromiseBB<IDialogResult>;
 }
 
 type IProps = IBaseProps & IActionProps & IConnectedProps;

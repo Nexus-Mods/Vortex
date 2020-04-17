@@ -36,14 +36,15 @@ function applyFileActions(api: IExtensionApi,
     return Promise.resolve(lastDeployment);
   }
 
-  const actionGroups: { [type: string]: IFileEntry[] } = fileActions.reduce((prev, value) => {
-    const action = (value.action === 'newest')
-      ? (value.sourceModified > value.destModified) ? 'drop' : 'import'
-      : value.action;
+  const actionGroups: { [type: string]: IFileEntry[] } = fileActions.reduce(
+    (prev: { [type: string]: IFileEntry[] }, value) => {
+      const action = (value.action === 'newest')
+        ? (value.sourceModified > value.destModified) ? 'drop' : 'import'
+        : value.action;
 
-    setdefault(prev, action, []).push(value);
-    return prev;
-  }, {});
+      setdefault(prev, action, []).push(value);
+      return prev;
+    }, {});
 
   // not doing anything with 'nop'. The regular deployment code is responsible for doing the right
   // thing in this case.

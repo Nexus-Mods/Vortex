@@ -169,7 +169,7 @@ export function createFullStateBackup(backupName: string, store: Redux.Store<any
 
   const basePath = path.join(app.getPath('userData'), 'temp', FULL_BACKUP_PATH);
 
-  return fs.ensureDirWritableAsync(basePath, () => true)
+  return fs.ensureDirWritableAsync(basePath, () => Promise.resolve())
     .then(() => writeFileAtomic(path.join(basePath, backupName + '.json'),
       serialized))
     .then(() => {

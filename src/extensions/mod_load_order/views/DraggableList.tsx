@@ -1,4 +1,4 @@
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as React from 'react';
 import { ListGroup } from 'react-bootstrap';
 import { ConnectDragPreview,  ConnectDragSource, ConnectDropTarget, DragSource,
@@ -159,7 +159,7 @@ class DraggableList extends ComponentEx<IProps, IState> {
 
     this.applyDebouncer = new util.Debouncer(() => {
       this.apply();
-      return Promise.resolve();
+      return Promise.resolve() as any;
     }, 500);
 
   }

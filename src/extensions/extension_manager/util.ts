@@ -282,7 +282,7 @@ export function downloadFromNexus(api: IExtensionApi,
 export function downloadGithubRelease(api: IExtensionApi,
                                       ext: IExtensionDownloadInfo)
                                   : Promise<string[]> {
-  return new Promise((resolve, reject) => {
+  return new Promise<string[]>((resolve, reject) => {
     api.events.emit('start-download', [ext.githubRelease], { game: SITE_ID }, undefined,
                     (err: Error, dlId: string) => {
       if (err !== null) {
@@ -311,7 +311,8 @@ export function downloadGithubRelease(api: IExtensionApi,
 }
 
 export function downloadFile(url: string, outputPath: string): Promise<void> {
-  return rawRequest(url).then((data: Buffer) => fs.writeFileAsync(outputPath, data));
+  return Promise.resolve(rawRequest(url))
+    .then((data: Buffer) => fs.writeFileAsync(outputPath, data));
 }
 
 export function downloadGithubRaw(api: IExtensionApi,
@@ -331,15 +332,17 @@ export function downloadGithubRaw(api: IExtensionApi,
   // the only plausible reason the file could already exist is if a previous install failed
   // or if we don't know the version. We could create a new new, numbered, download, but considering
   // these are small files I think that is more likely to frustrate the user
-  const cleanProm = existing !== undefined
+  const cleanProm: Promise<void> = existing !== undefined
     ? fs.removeAsync(path.join(downloadPath, archiveName))
-      .then(() => api.events.emit('remove-download', existing))
+      .then(() => { api.events.emit('remove-download', existing) })
     : Promise.resolve();
 
-  return cleanProm.then(() => withTmpDir(tmpPath => {
+  return cleanProm.then(() => withTmpDir((tmpPath: string) => {
     const archivePath = path.join(tmpPath, archiveName);
 
-    return rawRequest(githubApiUrl(ext.github, 'contents', ext.githubRawPath), { encoding: 'utf8' })
+    const apiUrl = githubApiUrl(ext.github, 'contents', ext.githubRawPath); 
+
+    return Promise.resolve(rawRequest(apiUrl, { encoding: 'utf8' }))
       .then((content: string) => {
         const data = JSON.parse(content);
         if (!Array.isArray(data)) {
@@ -374,8 +377,9 @@ export function downloadGithubRaw(api: IExtensionApi,
 export function readExtensibleDir(extType: ExtensionType, bundledPath: string, customPath: string) {
   const readBaseDir = (baseName: string): Promise<string[]> => {
     return fs.readdirAsync(baseName)
-      .filter(name => fs.statAsync(path.join(baseName, name)).then(stats => stats.isDirectory()))
-      .map(name => path.join(baseName, name))
+      .filter((name: string) => fs.statAsync(path.join(baseName, name))
+        .then(stats => stats.isDirectory()))
+      .map((name: string) => path.join(baseName, name))
       .catch({ code: 'ENOENT' }, () => []);
   };
 

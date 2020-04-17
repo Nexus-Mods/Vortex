@@ -6,7 +6,7 @@ import { ComponentEx } from '../../util/ComponentEx';
 
 import { enableUserSymlinks } from './actions';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as React from 'react';
 import { ControlLabel, FormGroup, HelpBlock } from 'react-bootstrap';
 import { withTranslation } from 'react-i18next';

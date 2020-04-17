@@ -392,16 +392,16 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
     let local: string[] = [];
 
     return Promise.join(readExtensibleDir('translation', bundledLanguages, userLanguages)
-                          .map(file => path.basename(file))
+                          .map((file: string) => path.basename(file))
                           .tap(files => local = files),
                         translationExts.map(ext => ext.language))
       .then(fileLists => Array.from(new Set([].concat(...fileLists))))
-      .filter(langId => this.isValidLanguageCode(langId))
+      .filter((langId: string) => this.isValidLanguageCode(langId))
       .then(files => {
         // files contains just the unique languages being supported, but there
         // may be multiple extensions providing the same language
         const loc = new Set(local);
-        const locales = files.map(key => {
+        const locales = files.map((key: string) => {
           let language;
           let country;
 
@@ -418,7 +418,7 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
         });
 
         this.setState(update(this.state, {
-          languages: { $set: locales },
+          languages: { $set: locales as any },
         }));
       })
     .catch(err => {

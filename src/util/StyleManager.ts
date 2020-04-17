@@ -203,7 +203,7 @@ class StyleManager {
         ? asarUnpacked(partial.file)
         : partial.file);
 
-    return new Promise<void>((resolve, reject) => {
+    return new Promise<string>((resolve, reject) => {
       this.mExpectingResult = { resolve, reject };
       ipcRenderer.send('__renderSASS', stylesheets);
     })

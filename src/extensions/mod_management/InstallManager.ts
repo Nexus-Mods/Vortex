@@ -786,7 +786,8 @@ class InstallManager {
       return Promise.resolve();
     }
 
-    const byDest: { [dest: string]: IInstruction[] } = iniEdits.reduce((prev, value) => {
+    const byDest: { [dest: string]: IInstruction[] } = iniEdits.reduce(
+      (prev: { [dest: string]: IInstruction[] }, value) => {
       setdefault(prev, value.destination, []).push(value);
       return prev;
     }, {});
@@ -794,7 +795,7 @@ class InstallManager {
     return fs.ensureDirAsync(path.join(destinationPath, INI_TWEAKS_PATH))
       .then(() => Promise.map(Object.keys(byDest), destination => {
       const bySection: {[section: string]: IInstruction[]} =
-          byDest[destination].reduce((prev, value) => {
+          byDest[destination].reduce((prev: { [section: string]: IInstruction[] }, value) => {
             setdefault(prev, value.section, []).push(value);
             return prev;
           }, {});
@@ -1274,7 +1275,7 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
         })
         .then(() => {
           const sourceMap: {[src: string]: string[]} =
-              copies.reduce((prev, copy) => {
+              copies.reduce((prev: { [src: string]: string[] }, copy) => {
                 setdefault(prev, copy.source, []).push(copy.destination);
                 return prev;
               }, {});

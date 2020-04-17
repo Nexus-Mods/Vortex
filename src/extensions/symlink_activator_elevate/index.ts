@@ -612,14 +612,17 @@ function baseFunc(moduleRoot: string, ipcPath: string,
   client.connect(imp.path.join('\\\\?\\pipe', ipcPath));
 
   client.on('connect', () => {
-    main(client, __req)
-      .catch(error => {
-        client.emit('error', error.message);
-      })
-      .finally(() => {
-        client.end();
-        process.exit(0);
-      });
+    const res = main(client, __req);
+    if (res instanceof Promise) {
+      res
+        .catch(error => {
+          client.emit('error', error.message);
+        })
+        .finally(() => {
+          client.end();
+          process.exit(0);
+        });
+    }
   })
     .on('close', () => {
       process.exit(0);

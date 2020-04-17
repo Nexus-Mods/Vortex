@@ -98,7 +98,7 @@ function removeOldVersion(api: IExtensionApi, info: IExtension): Promise<void> {
  */
 function validateTheme(extPath: string): Promise<void> {
   return fs.readdirAsync(extPath)
-    .filter(fileName =>
+    .filter((fileName: string) =>
       fs.statAsync(path.join(extPath, fileName))
         .then(stats => stats.isDirectory()))
     .then(dirNames => {
@@ -137,8 +137,8 @@ function isLocaleCode(input: string): boolean {
  */
 function validateTranslation(extPath: string): Promise<void> {
   return fs.readdirAsync(extPath)
-    .filter(fileName => isLocaleCode(fileName))
-    .filter(fileName =>
+    .filter((fileName: string) => isLocaleCode(fileName))
+    .filter((fileName: string) =>
       fs.statAsync(path.join(extPath, fileName))
         .then(stats => stats.isDirectory()))
     .then(dirNames => {
@@ -268,7 +268,7 @@ function installExtension(api: IExtensionApi,
       .then(() => {
         if (type === 'translation') {
           return fs.readdirAsync(destPath)
-            .map(entry => fs.statAsync(path.join(destPath, entry))
+            .map((entry: string) => fs.statAsync(path.join(destPath, entry))
               .then(stat => ({ name: entry, stat })))
             .then(() => null);
         } else if (type === 'theme') {

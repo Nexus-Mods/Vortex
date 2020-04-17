@@ -53,6 +53,9 @@ if (SetProcessPreferredUILanguages !== undefined) {
 
 import * as path from 'path';
 
+import Promise from 'bluebird';
+global.Promise = Promise;
+
 import { addNotification, setupNotificationSuppression } from './actions/notifications';
 import reducer, { Decision } from './reducers/index';
 import { setOutdated, terminate, toError } from './util/errorHandling';

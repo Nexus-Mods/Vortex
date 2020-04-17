@@ -269,10 +269,11 @@ function reportEndorseError(api: IExtensionApi, err: Error,
 
 export function endorseDirectImpl(api: IExtensionApi, nexus: Nexus,
                                   gameId: string, nexusId: number, version: string,
-                                  endorsedStatus: string) {
+                                  endorsedStatus: string): Promise<string> {
   return sendEndorseMod(nexus, gameId, nexusId, version, endorsedStatus)
     .catch(err => {
       reportEndorseError(api, err, gameId, nexusId, version);
+      return endorsedStatus as EndorsedStatus;
     });
 }
 

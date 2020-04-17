@@ -66,8 +66,8 @@ class EpicGamesLauncher implements IGameStore {
    */
   public isGameInstalled(name: string): Promise<boolean> {
     return this.findByAppId(name)
-      .then(() => Promise.resolve(true))
       .catch(() => this.findByName(name))
+      .then(() => Promise.resolve(true))
       .catch(() => Promise.resolve(false));
   }
 

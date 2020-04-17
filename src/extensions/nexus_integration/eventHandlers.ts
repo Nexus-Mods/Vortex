@@ -274,7 +274,8 @@ export function onEndorseMod(api: IExtensionApi, nexus: Nexus): (...args: any[])
 export function onEndorseDirect(api: IExtensionApi, nexus: Nexus) {
   return (gameId: string, nexusId: number, version: string,
           endorsedStatus: EndorsedStatus): Promise<EndorsedStatus> => {
-    return endorseDirectImpl(api, nexus, gameId, nexusId, version, endorsedStatus);
+    return endorseDirectImpl(api, nexus, gameId, nexusId, version, endorsedStatus)
+      .then(res => res as EndorsedStatus);
   };
 }
 

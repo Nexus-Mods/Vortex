@@ -253,7 +253,7 @@ export function onGameModeActivated(
 
   let existingManifest: IDeploymentManifest;
 
-  let initProm = () => getManifest(api, '', gameId)
+  let initProm: () => Promise<void> = () => getManifest(api, '', gameId)
     .then((manifest: IDeploymentManifest) => {
       if (manifest.instance !== state.app.instanceId) {
         // if the manifest is from a different instance we do nothing with it, there
@@ -285,7 +285,8 @@ export function onGameModeActivated(
         });
     })
     .then(() => ensureStagingDirectory(api, instPath, gameId))
-    .tap(updatedPath => instPath = updatedPath);
+    .tap(updatedPath => instPath = updatedPath)
+    .then(() => undefined);
 
   const configuredActivatorId = currentActivator(state);
 

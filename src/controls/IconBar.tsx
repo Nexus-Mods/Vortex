@@ -168,7 +168,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
       );
     } else {
       const grouped: { [key: string]: IActionDefinition[] } =
-        actions.reduce((prev, action, idx) => {
+        actions.reduce((prev: { [key: string]: IActionDefinition[] }, action, idx) => {
           if ((action.icon !== undefined) && (groupByIcon !== false)) {
             setdefault(prev, action.icon, []).push(action);
           } else {

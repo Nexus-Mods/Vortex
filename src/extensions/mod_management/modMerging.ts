@@ -126,7 +126,7 @@ function mergeMods(api: IExtensionApi,
                    deployedFiles: IDeployedFile[],
                    mergers: IResolvedMerger[]): Promise<{ [relPath: string]: string[] }> {
   if ((mergers.length === 0) && (game.mergeArchive === undefined)) {
-    return Promise.resolve([]);
+    return Promise.resolve({});
   }
 
   const mergeDest = path.join(modBasePath, MERGED_PATH);
@@ -147,7 +147,7 @@ function mergeMods(api: IExtensionApi,
   return Promise.mapSeries(mods, mod => {
     const modPath = path.join(modBasePath, mod.installationPath);
     return getFileList(modPath)
-      .filter(entry => entry.stats.isFile())
+      .filter((entry: IFileEntry) => entry.stats.isFile())
       .then(fileList =>
       Promise.mapSeries(fileList, fileEntry => {
         if ((game.mergeArchive !== undefined) && game.mergeArchive(fileEntry.filePath)) {

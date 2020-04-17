@@ -82,7 +82,7 @@ class ProcessMonitor {
     }, {});
 
     const byName: { [exeId: string]: winapi.ProcessEntry[] } =
-      processes.reduce((prev, entry) => {
+      processes.reduce((prev: { [exeId: string]: winapi.ProcessEntry[] }, entry) => {
         setdefault(prev, entry.exeFile.toLowerCase(), []).push(entry);
         return prev;
       }, {});

@@ -88,7 +88,8 @@ class GameStoreHelper {
       return Promise.reject(new GameStoreNotFound(errMsg));
     }
 
-    return Promise.reduce(gameStores, (accum, store) => store.allGames()
+    return Promise.reduce(gameStores, (accum: IGameStoreEntry[], store) =>
+      store.allGames()
       .then(entries => {
         const entry = (searchType === 'id')
           ? entries.find(matcher)
@@ -100,8 +101,8 @@ class GameStoreHelper {
 
         return Promise.resolve(accum);
       })
-      .catch(GameEntryNotFound, () => Promise.resolve())
-      .catch(GameNotFound, () => Promise.resolve()), [])
+      .catch(GameEntryNotFound, () => Promise.resolve([]))
+      .catch(GameNotFound, () => Promise.resolve([])), [])
       .then(foundEntries => {
         // TODO: A cool future feature here would be to allow the user to select
         //  the gamestore he wants to use. But for now, we just return the

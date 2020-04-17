@@ -41,7 +41,7 @@ export function sum(container: number[]): number {
  * returns the attribute "key" from "obj". If that attribute doesn't exist
  * on obj, it will be set to the default value and that is returned.
  */
-export function setdefault<T>(obj: any, key: PropertyKey, def: T): T {
+export function setdefault<T, K extends keyof T>(obj: T, key: K, def: T[K]): T[K] {
   if (!obj.hasOwnProperty(key)) {
     obj[key] = def;
   }
@@ -452,7 +452,7 @@ function flattenInner(obj: any, key: string[],
 }
 
 export function withTmpDir<T>(cb: (tmpPath: string) => Promise<T>): Promise<T> {
-  return new Promise<void>((resolve, reject) => {
+  return new Promise<T>((resolve, reject) => {
     tmp.dir({ unsafeCleanup: true }, (err, tmpPath, cleanup) => {
       if (err !== null) {
         return reject(err);

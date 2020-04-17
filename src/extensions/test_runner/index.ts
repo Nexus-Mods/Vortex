@@ -123,7 +123,11 @@ function init(context: IExtensionContext): boolean {
   context.registerTest = (id, eventType, check) => {
     log('debug', 'register test', { id, eventType });
     const stackErr = new Error();
-    setdefault(checks, eventType, []).push({ id, check, stack: () => stackErr.stack });
+    setdefault(checks, eventType, []).push({
+      id,
+      check,
+      stack: () => stackErr.stack,
+    });
   };
 
   context.once(() => {
