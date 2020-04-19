@@ -84,6 +84,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
     this.mUpdateDebouncer = new util.Debouncer(() => {
       const { enabled } = this.state;
       this.setLoadOrder(enabled);
+      this.mCallbackDebouncer.schedule();
 
       return null;
     }, 500);
@@ -146,7 +147,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
         || (this.props.mods !== newProps.mods)
         || (this.props.profile !== newProps.profile)) {
       const updateLO: boolean = ((this.props.profile === newProps.profile)
-        && (this.props.mods !== newProps.mods));
+        && (this.props.loadOrder !== newProps.loadOrder));
       this.updateState(newProps, updateLO);
     }
   }
@@ -184,14 +185,12 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
         pos: idx,
         enabled: loKeys.includes(item.id) ? loadOrder[item.id].enabled : true });
 
-      if (JSON.stringify(Object.keys(newOrder)) === JSON.stringify(loKeys)) {
+      if (JSON.stringify(newOrder) === JSON.stringify(loadOrder)) {
         // Nothing changed, go home load order page, you're drunk.
         return;
       }
 
       onSetOrder(profile.id, newOrder);
-      onSetDeploymentNecessary(profile.gameId, true);
-      this.mCallbackDebouncer.schedule();
     };
 
     const activeGameEntry: IGameLoadOrderEntry = getGameEntry(profile.gameId);
@@ -289,6 +288,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
 
   private onApply = (ordered: ILoadOrderDisplayItem[]) => {
     this.setLoadOrder(ordered);
+    this.mCallbackDebouncer.schedule();
   }
 
   private renderWait() {
@@ -347,6 +347,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
 
     if (updateLO) {
       this.setLoadOrder(this.nextState.enabled);
+      this.mCallbackDebouncer.schedule();
     }
   }
 }
