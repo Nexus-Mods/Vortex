@@ -81,6 +81,20 @@ export interface IGameStore  {
   allGames: () => Promise<IGameStoreEntry[]>;
 
   /**
+   * Attempt to find a game entry using its game store ID/IDS.
+   *
+   * @param appId of the game entry. This is obviously game store specific.
+   */
+  findByAppId: (appId: string | string[]) => Promise<IGameStoreEntry>;
+
+  /**
+   * Attempt to find a game store entry using the game's name/names
+   *
+   * @param appName the game name which the game store uses to identify this game.
+   */
+  findByName: (appName: string | string[]) => Promise<IGameStoreEntry>;
+
+  /**
    * Determine whether the game has been installed by this game store launcher.
    *  returns true if the game store installed this game, false otherwise.
    *
