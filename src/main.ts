@@ -8,9 +8,6 @@ sourceMapSupport.install();
 import requireRemap from './util/requireRemap';
 requireRemap();
 
-import Promise from 'bluebird';
-global.Promise = Promise;
-
 if (process.env.NODE_ENV !== 'development') {
   // see renderer.ts for why this is so ugly
   const key = 'NODE_ENV';
@@ -64,6 +61,7 @@ import {} from './util/extensionRequire';
 import './util/monkeyPatching';
 import { truthy } from './util/util';
 
+import Promise from 'bluebird';
 import * as child_processT from 'child_process';
 import { app, dialog } from 'electron';
 import * as path from 'path';
