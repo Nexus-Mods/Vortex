@@ -197,7 +197,7 @@ export class DownloadObserver {
     } else {
       log('error', 'finished download has no filename?', res);
     }
-    log('debug', 'unfinished chunks', { chunks: res.unfinishedChunks });
+    log('debug', 'unfinished chunks', { chunks: JSON.stringify(res.unfinishedChunks) });
     if (res.unfinishedChunks.length > 0) {
       this.mApi.store.dispatch(pauseDownload(id, true, res.unfinishedChunks));
     } else if (res.filePath.toLowerCase().endsWith('.html')) {

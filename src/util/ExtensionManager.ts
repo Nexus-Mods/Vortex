@@ -44,7 +44,8 @@ import { setdefault, truthy } from './util';
 
 import Promise from 'bluebird';
 import { spawn, SpawnOptions } from 'child_process';
-import { app as appIn, dialog as dialogIn, ipcMain, ipcRenderer, remote } from 'electron';
+import { app as appIn, dialog as dialogIn, ipcMain, ipcRenderer, OpenDialogOptions,
+         remote, WebContents } from 'electron';
 import { EventEmitter } from 'events';
 import * as fs from 'fs-extra';
 import I18next from 'i18next';
@@ -360,11 +361,11 @@ class ContextProxyHandler implements ProxyHandler<any> {
 }
 
 class EventProxy extends EventEmitter {
-  private mTarget: Electron.WebContents;
+  private mTarget: WebContents;
   private mRemoteCallbacks: { [id: string]: (...args) => void } = {};
   private mRemotePromises: { [id: string]: { resolve: (res) => void, reject: (err) => void } } = {};
 
-  constructor(target: Electron.WebContents) {
+  constructor(target: WebContents) {
     super();
     this.mTarget = target;
     // any listener attached to this proxy will be attached to
@@ -684,7 +685,7 @@ class ExtensionManager {
    *
    * @memberOf ExtensionManager
    */
-  public setupApiMain<S>(store: Redux.Store<S>, ipc: Electron.WebContents) {
+  public setupApiMain<S>(store: Redux.Store<S>, ipc: WebContents) {
     this.mApi.showErrorNotification =
         (message: string, details: string | Error, options: IErrorOptions) => {
           try {
@@ -1083,7 +1084,7 @@ class ExtensionManager {
   }
 
   private selectFile(options: IOpenOptions): Promise<string> {
-    const fullOptions: Electron.OpenDialogOptions = {
+    const fullOptions: OpenDialogOptions = {
       ..._.omit(options, ['create']),
       properties: ['openFile'],
     };
@@ -1099,7 +1100,7 @@ class ExtensionManager {
 
   private selectExecutable(options: IOpenOptions) {
     // TODO: make the filter list dynamic based on the list of registered interpreters?
-    const fullOptions: Electron.OpenDialogOptions = {
+    const fullOptions: OpenDialogOptions = {
       ..._.omit(options, ['create']),
       properties: ['openFile'],
       filters: [
@@ -1117,7 +1118,7 @@ class ExtensionManager {
   }
 
   private selectDir(options: IOpenOptions) {
-    const fullOptions: Electron.OpenDialogOptions = {
+    const fullOptions: OpenDialogOptions = {
       ..._.omit(options, ['create']),
       properties: ['openDirectory'],
     };
