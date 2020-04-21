@@ -123,7 +123,10 @@ class MainWindow {
           message: 'Vortex restarted after a crash, sorry about that.',
         }));
         if (this.mWindow !== null) {
-          this.mWindow.loadURL(`file://${getVortexPath('base')}/index.html`);
+          // workaround for electron issue #19887
+          setImmediate(() => {
+            this.mWindow.loadURL(`file://${getVortexPath('base')}/index.html`);
+          });
         } else {
           process.exit();
         }
