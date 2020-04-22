@@ -27,14 +27,18 @@ export class StateProxyHandler<T extends object> implements ProxyHandler<T> {
     proxy: any,
     obj: any,
   } };
+  private mDelayed: boolean;
+  private mDelayedTimer: NodeJS.Immediate;
 
   constructor(component: ComponentEx<any, T> | PureComponentEx<any, T>,
-              baseObject: T, parent: StateProxyHandler<T>, objPath: string[]) {
+              baseObject: T, parent: StateProxyHandler<T>, objPath: string[],
+              delayed: boolean) {
     this.mComponent = component;
     this.mPath = objPath;
     this.mBaseObject = baseObject;
     this.mParent = parent;
     this.mSubProxies = {};
+    this.mDelayed = delayed;
   }
 
   public has(target: T, key: PropertyKey): boolean {
@@ -71,7 +75,17 @@ export class StateProxyHandler<T extends object> implements ProxyHandler<T> {
   private setBaseObject(newObj: T) {
     if (this.mParent === undefined) {
       this.mBaseObject = newObj;
-      this.mComponent.setState(this.mBaseObject);
+      if (this.mDelayed) {
+        if (this.mDelayedTimer !== undefined) {
+          clearImmediate(this.mDelayedTimer);
+        }
+        this.mDelayedTimer = setImmediate(() => {
+          this.mComponent.setState(this.mBaseObject);
+          this.mDelayedTimer = undefined;
+        });
+      } else {
+        this.mComponent.setState(this.mBaseObject);
+      }
     } else {
       this.mParent.setBaseObject(newObj);
     }
@@ -85,7 +99,8 @@ export class StateProxyHandler<T extends object> implements ProxyHandler<T> {
     if (!(key in this.mSubProxies) || (obj[key] !== this.mSubProxies[key].obj)) {
       this.mSubProxies[key] = {
         proxy: new Proxy(obj[key],
-          new StateProxyHandler(this.mComponent, null, this, [].concat(this.mPath, key))),
+          new StateProxyHandler(this.mComponent, null, this,
+                                [].concat(this.mPath, key), this.mDelayed)),
         obj: obj[key],
       };
     }
@@ -118,10 +133,10 @@ export class ComponentEx<P, S extends object>
 
   public nextState: S;
 
-  protected initState(value: S) {
+  protected initState(value: S, delayed: boolean = false) {
     this.state = JSON.parse(JSON.stringify(value));
 
-    const proxyHandler = new StateProxyHandler(this, value, undefined, []);
+    const proxyHandler = new StateProxyHandler(this, value, undefined, [], delayed);
 
     this.nextState = new Proxy<S>(value, proxyHandler);
   }
@@ -139,10 +154,10 @@ export class PureComponentEx<P, S extends object>
 
   public nextState: S;
 
-  protected initState(value: S) {
+  protected initState(value: S, delayed: boolean = false) {
     this.state = JSON.parse(JSON.stringify(value));
 
-    const proxyHandler = new StateProxyHandler(this, value, undefined, []);
+    const proxyHandler = new StateProxyHandler(this, value, undefined, [], delayed);
 
     this.nextState = new Proxy<S>(value, proxyHandler);
   }

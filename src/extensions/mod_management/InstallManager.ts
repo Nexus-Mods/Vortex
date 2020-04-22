@@ -301,7 +301,10 @@ class InstallManager {
         ? fs.removeAsync(tempPath) : Promise.resolve())
       .then(() => filterModInfo(fullInfo, destinationPath))
       .then(modInfo => {
-        installContext.finishInstallCB('success', modInfo);
+        const state = api.getState();
+        const existingKeys =
+          Object.keys(state.persistent.mods[installGameId]?.[modId]?.attributes || {});
+        installContext.finishInstallCB('success', _.omit(modInfo, existingKeys));
         rules.forEach(rule => {
           api.store.dispatch(addModRule(installGameId, modId, rule));
         });
@@ -313,7 +316,6 @@ class InstallManager {
           }
           if (processDependencies) {
             log('info', 'process dependencies', { modId });
-            const state: IState = api.store.getState();
             const mod: IMod = getSafe(state, ['persistent', 'mods', installGameId, modId],
                                       undefined);
 
