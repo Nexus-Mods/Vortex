@@ -82,9 +82,10 @@ function removeOldVersion(api: IExtensionApi, info: IExtension): Promise<void> {
 
   // should never be more than one but let's handle multiple to be safe
   const previousVersions = Object.keys(installed)
-    .filter(key => (info.id !== undefined) && (installed[key].id === info.id)
-                || (info.modId !== undefined) && (installed[key].modId === info.modId)
-                || (installed[key].name === info.name));
+    .filter(key => !installed[key].bundled
+                  && ((info.id !== undefined) && (installed[key].id === info.id)
+                    || (info.modId !== undefined) && (installed[key].modId === info.modId)
+                    || (installed[key].name === info.name)));
   log('info', 'removing previous versions of the extension', previousVersions);
 
   previousVersions.forEach(key => api.store.dispatch(removeExtension(key)));
