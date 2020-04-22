@@ -53,9 +53,6 @@ if (SetProcessPreferredUILanguages !== undefined) {
 
 import * as path from 'path';
 
-import Promise from 'bluebird';
-global.Promise = Promise;
-
 import { addNotification, setupNotificationSuppression } from './actions/notifications';
 import reducer, { Decision } from './reducers/index';
 import { setOutdated, terminate, toError } from './util/errorHandling';
@@ -71,6 +68,7 @@ import { reduxSanity, StateError } from './util/reduxSanity';
 import LoadingScreen from './views/LoadingScreen';
 import MainWindow from './views/MainWindow';
 
+import Promise from 'bluebird';
 import { ipcRenderer, remote, webFrame } from 'electron';
 import { forwardToMain, getInitialStateRenderer, replayActionRenderer } from 'electron-redux';
 import { EventEmitter } from 'events';

@@ -182,11 +182,16 @@ function downloadFile(api: IExtensionApi, nexus: Nexus,
     }
     // TODO: Need some way to identify if this request is actually for a nexus mod
     const url = `nxm://${toNXMId(game, gameId)}/mods/${modId}/files/${fileId}`;
+    log('debug', 'downloading from generated nxm link', { url });
 
     const downloads = state.persistent.downloads.files;
     // check if the file is already downloaded. If not, download before starting the install
     const existingId = Object.keys(downloads).find(downloadId =>
-      getSafe(downloads, [downloadId, 'modInfo', 'nexus', 'ids', 'fileId'], undefined) === fileId);
+      (downloads[downloadId]?.game || []).includes(gameId)
+      && (downloads[downloadId]?.modInfo?.nexus?.ids?.modId === modId)
+      && (downloads[downloadId]?.modInfo?.nexus?.ids?.fileId === fileId));
+    log('debug', 'found an existing matching download',
+      { id: existingId, data: JSON.stringify(downloads[existingId]) });
     if (existingId !== undefined) {
       return Promise.resolve(existingId);
     } else {

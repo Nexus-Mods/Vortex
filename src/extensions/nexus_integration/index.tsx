@@ -886,7 +886,11 @@ function init(context: IExtensionContextExt): boolean {
     const pageId = nexusGameId(gameById(state, gameId), url.gameId);
     return Promise.resolve()
       .then(() => nexus.getDownloadURLs(url.modId, url.fileId, url.key, url.expires, pageId))
-      .then((res: IDownloadURL[]) => ({ urls: res.map(u => u.URI), meta: {} }))
+      .then((res: IDownloadURL[]) => {
+        log('debug', 'nxm link resolved', {
+          modId: url.modId, fileId: url.fileId, pageId, urls: JSON.stringify(res) });
+        return { urls: res.map(u => u.URI), meta: {} };
+      })
       .catch(NexusError, err => {
         const newError = new HTTPError(err.statusCode, err.message, err.request);
         newError.stack = err.stack;

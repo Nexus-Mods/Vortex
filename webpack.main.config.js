@@ -1,8 +1,20 @@
 const webpack = require('webpack');
 const nodeExternals = require('webpack-node-externals');
 const TerserPlugin = require('terser-webpack-plugin');
+const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
 
 const mode = 'production';
+
+const transpileOnly = (ForkTsCheckerWebpackPlugin !== undefined)
+                    || (process.env['BUILD_QUICK_AND_DIRTY'] !== undefined);
+
+const plugins = [
+  new webpack.DefinePlugin({ 'process.env.NODE_ENV': JSON.stringify('production') }),
+];
+
+if ((ForkTsCheckerWebpackPlugin !== undefined) && (process.env['BUILD_QUICK_AND_DIRTY'] === undefined)) {
+  plugins.push(new ForkTsCheckerWebpackPlugin());
+}
 
 module.exports = {
   entry: './src/main.ts',
@@ -20,7 +32,7 @@ module.exports = {
         loader: 'ts-loader',
         exclude: /node_modules/,
         options: {
-          transpileOnly: process.env['BUILD_QUICK_AND_DIRTY'] !== undefined,
+          transpileOnly,
           compilerOptions: {
             sourceMap: true,
             inlineSourceMap: false,
@@ -31,11 +43,7 @@ module.exports = {
     ],
   },
   resolve: { extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'] },
-  plugins: [
-    new webpack.DefinePlugin({
-      'process.env.NODE_ENV': JSON.stringify('production'),
-    }),
-  ],
+  plugins,
   devtool: 'source-map',
   optimization: {
     minimizer: [
