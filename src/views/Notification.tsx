@@ -33,10 +33,10 @@ export interface IProps {
   t: TFunction;
   collapsed: number;
   params: INotification & { process?: string };
-  onExpand: (groupId: string) => void;
-  onTriggerAction: (notificationId: string, actionTitle: string) => void;
-  onDismiss: (id: string) => void;
-  onSuppress: (id: string) => void;
+  onExpand?: (groupId: string) => void;
+  onTriggerAction?: (notificationId: string, actionTitle: string) => void;
+  onDismiss?: (id: string) => void;
+  onSuppress?: (id: string) => void;
 }
 
 class Notification extends ComponentEx<IProps, { open: boolean }> {
@@ -51,7 +51,7 @@ class Notification extends ComponentEx<IProps, { open: boolean }> {
   }
 
   public render(): JSX.Element {
-    const { t, collapsed } = this.props;
+    const { t, collapsed, onDismiss, onExpand, onTriggerAction } = this.props;
     const { actions, id, message, noDismiss, progress, title, type } = this.props.params;
 
     if ((message === undefined) && (title === undefined)) {
@@ -75,15 +75,15 @@ class Notification extends ComponentEx<IProps, { open: boolean }> {
           </div>
         </div>
         <div className='notification-buttons'>
-          {actions !== undefined
+          {(actions !== undefined) && (onTriggerAction !== undefined)
             ? actions.map(action => this.renderAction(action, collapsed))
             : null}
-          {!noDismiss ? (
+          {!noDismiss && (onDismiss !== undefined) ? (
             <Button onClick={this.dismiss}>
               {(collapsed > 1) ? t('Dismiss All') : t('Dismiss')}
             </Button>
           ) : null}
-          {(collapsed > 1) ? (
+          {((collapsed > 1) && (onExpand !== undefined)) ? (
             <Button onClick={this.expand}>
               {t('{{ count }} More', { count: collapsed - 1 })}
             </Button>
@@ -97,7 +97,7 @@ class Notification extends ComponentEx<IProps, { open: boolean }> {
   }
 
   private renderExtraOptions() {
-    const { t, params } = this.props;
+    const { t, onSuppress, params } = this.props;
     const { open } = this.state;
 
     // currently that's the only extra option
@@ -123,7 +123,7 @@ class Notification extends ComponentEx<IProps, { open: boolean }> {
           bsRole='menu'
         >
           {
-            params.allowSuppress ? (
+            (params.allowSuppress && (onSuppress !== undefined)) ? (
               <MenuItem
                 onClick={this.suppressNotification}
                 eventKey='suppress'
