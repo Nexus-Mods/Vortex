@@ -32,6 +32,7 @@ const caches: {
 
 // don't fetch more than once per hour
 const UPDATE_FREQUENCY = 60 * 60 * 1000;
+const GAMES_BRANCH = 'release';
 
 function githubApiUrl(repo: string, api: string, args: string) {
   return `https://api.github.com/repos/${repo}/${api}/${args}`;
@@ -334,13 +335,13 @@ export function downloadGithubRaw(api: IExtensionApi,
   // these are small files I think that is more likely to frustrate the user
   const cleanProm: Promise<void> = existing !== undefined
     ? fs.removeAsync(path.join(downloadPath, archiveName))
-      .then(() => { api.events.emit('remove-download', existing) })
+      .then(() => { api.events.emit('remove-download', existing); })
     : Promise.resolve();
 
   return cleanProm.then(() => withTmpDir((tmpPath: string) => {
     const archivePath = path.join(tmpPath, archiveName);
 
-    const apiUrl = githubApiUrl(ext.github, 'contents', ext.githubRawPath); 
+    const apiUrl = githubApiUrl(ext.github, 'contents', ext.githubRawPath);
 
     return Promise.resolve(rawRequest(apiUrl, { encoding: 'utf8' }))
       .then((content: string) => {
@@ -358,7 +359,7 @@ export function downloadGithubRaw(api: IExtensionApi,
           data.filter(iter => iter.type === 'file').map(iter => iter.name);
 
         return Promise.map(repoFiles, fileName => downloadFile(
-          githubRawUrl(ext.github, 'master', `${ext.githubRawPath}/${fileName}`),
+          githubRawUrl(ext.github, GAMES_BRANCH, `${ext.githubRawPath}/${fileName}`),
           path.join(tmpPath, fileName)))
           .then(() => {
             const pack = new SevenZip();
