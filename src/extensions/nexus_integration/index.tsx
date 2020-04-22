@@ -95,8 +95,8 @@ class Disableable {
     } else if (this.mDisabled) {
       return () => Promise.reject(new APIDisabled(prop));
     } else if (prop === 'getFileByMD5') {
-      return (hash: string, gameId: string) => {
-        if (gameId.toLowerCase() === 'skyrimse') {
+      return (hash: string, gameId?: string) => {
+        if (gameId?.toLowerCase() === 'skyrimse') {
           this.mApi.showErrorNotification(
             'Attempt to send invalid API request, please report this (once)',
             new Error(`getFileByMD5 called with game id ${gameId}`),
