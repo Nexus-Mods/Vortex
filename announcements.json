@@ -40,5 +40,11 @@
 	"severity": "warning",
 	"gamemode": "*",
 	"version": "<=0.18.12"
+}, {
+  "date": "2020-04-23T15:51:10",
+  "description": "Bannerlord: If you are experiencing issues, make sure to delete any existing bannerlord folders in your Vortex plugins folder (press the Windows Key + R and type \"%appdata%/vortex/plugins\" to check).",
+  "severity": "warning",
+  "gamemode": "mountandblade2bannerlord",
+  "version": "~1.2.7"
 }
 ]
