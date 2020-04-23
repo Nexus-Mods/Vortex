@@ -185,7 +185,8 @@ class DeploymentMethod extends LinkingDeployment {
           const relPath: string = path.relative(sourcePath,
             entry.filePath.substring(0, entry.filePath.length - LNK_EXT.length));
           const normPath = this.normalize(relPath);
-          if (this.context.newDeployment[normPath].source === sourceName) {
+          if ((this.context.newDeployment[normPath] !== undefined)
+              && (this.context.newDeployment[normPath].source === sourceName)) {
             delete this.context.newDeployment[normPath];
           }
         }
