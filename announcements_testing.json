@@ -9,4 +9,28 @@
 	"severity": "warning",
 	"gamemode": "*",
 	"version": "0.18.0 || 0.18.1"
-}]
+}, {
+  "date": "2019-06-03T11:24:10",
+	"description": "KCD patch 1.9 will automatically move all installed mods to a new directory within your game path: \"../mods_old/\" when the game is run for the first time since the update! To avoid having to manually remove/curate the moved mods, we recommend all KCD users to purge their mod setup and re-deploy once the game has been run at least once since the update. Any mod issues should be reported to the respective mod authors as 1.9 includes some major changes to how the game loads its mods, which may cause issues with outdated mods.",
+	"severity": "warning",
+	"gamemode": "kingdomcomedeliverance"
+}, {
+  "date": "2019-06-03T11:24:10",
+  "description": "All users affected by the infamous \"missing .node module\" errors, need to install the latest Visual C++ runtime packages. Please click this announcement to be taken to the downloads page and download/install (vc_redist.x64.exe)",
+  "link": "https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads",
+  "severity": "warning",
+  "version": "0.18.0 || 0.18.1"
+}, {
+	"date": "2019-06-03T11:24:10",
+	"description": "The NMM Import process will not function correctly with NMM 0.70.x",
+	"severity": "warning",
+	"gamemode": "*",
+	"version": "~0.18.12"
+  }, {
+    "date": "2020-04-23T15:16:10",
+    "description": "Bannerlord: If you are experiencing issues, make sure to delete any existing bannerlord folders in your Vortex plugins folder (press the Windows Key + R and paste \"%appdata%/vortex/plugins\" to check).",
+    "severity": "warning",
+    "gamemode": "mountandblade2bannerlord",
+    "version": "~1.2.7"
+  }
+]
