@@ -304,6 +304,17 @@ class ConnectionIPC {
     return res;
   }
 
+  private copyErr(input: Error): any {
+    if (input === null) {
+      return null;
+    }
+    return {
+      message: input.message,
+      name: input.name,
+      code: input['code'],
+    };
+  }
+
   private processData(msg: Buffer) {
     const data = JSON.parse(msg.toString(), (key: string, value: any) => {
       if (truthy(value) && (typeof (value) === 'object')) {
@@ -331,7 +342,7 @@ class ConnectionIPC {
         && (this.mDelegates[data.callback.id] !== undefined)) {
       const func = this.mDelegates[data.callback.id][data.callback.type][data.data.name];
       func(...data.data.args, (err, response) => {
-        this.sendMessageInner(`Reply`, { request: data, data: response, error: err })
+        this.sendMessageInner(`Reply`, { request: data, data: response, error: this.copyErr(err) })
           .catch(e => {
             log('info', 'process data', e.message);
           });
