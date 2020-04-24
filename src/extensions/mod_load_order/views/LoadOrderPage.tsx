@@ -143,11 +143,11 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
   }
 
   public componentWillReceiveProps(newProps: IProps) {
-    if ((this.props.loadOrder !== newProps.loadOrder)
-        || (this.props.mods !== newProps.mods)
-        || (this.props.profile !== newProps.profile)) {
+    if ((this.stringified(this.props.loadOrder) !== this.stringified(newProps.loadOrder))
+        || (this.stringified(this.props.mods) !== this.stringified(newProps.mods))
+        || (this.stringified(this.props.profile) !== this.stringified(newProps.profile))) {
       const updateLO: boolean = ((this.props.profile === newProps.profile)
-        && (this.props.loadOrder !== newProps.loadOrder));
+        && (this.stringified(this.props.loadOrder) !== this.stringified(newProps.loadOrder)));
       this.updateState(newProps, updateLO);
     }
   }
@@ -165,6 +165,10 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
     return (loading)
       ? this.renderWait()
       : this.renderLoadOrderPage();
+  }
+
+  private stringified(obj: object) {
+    return JSON.stringify(obj);
   }
 
   private resetState() {
