@@ -131,12 +131,18 @@ class EpicGamesLauncher implements IGameStore {
               try {
                 const parsed = JSON.parse(data);
                 const gameStoreId = STORE_ID;
+                const gameExec = getSafe(parsed, ['LaunchExecutable'], undefined);
                 const gamePath = getSafe(parsed, ['InstallLocation'], undefined);
                 const name = getSafe(parsed, ['DisplayName'], undefined);
                 const appid = getSafe(parsed, ['AppName'], undefined);
 
+                // Epic does not seem to clean old manifests. We need
+                //  to stat the executable for each item to ensure that the
+                //  game entry is actually valid.
                 return (!!gamePath && !!name && !!appid)
-                  ? Promise.resolve({ appid, name, gamePath, gameStoreId })
+                  ? fs.statAsync(path.join(gamePath, gameExec))
+                      .then(() => Promise.resolve({ appid, name, gamePath, gameStoreId }))
+                      .catch(err => Promise.resolve(undefined))
                   : Promise.resolve(undefined);
               } catch (err) {
                 log('error', 'Cannot parse Epic Games manifest', err);
