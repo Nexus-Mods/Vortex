@@ -5,6 +5,7 @@ import {
   IExtensionContext,
 } from '../../types/IExtensionContext';
 import { IGame } from '../../types/IGame';
+import { ajv, isIGame } from '../../types/IGame.validator';
 import { IGameStore } from '../../types/IGameStore';
 import { IProfile, IRunningTool, IState } from '../../types/IState';
 import { IEditChoice, ITableAttribute } from '../../types/ITableAttribute';
@@ -225,7 +226,7 @@ function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
       .then(result => {
         const { filePaths } = result;
         if ((filePaths !== undefined) && (filePaths.length > 0)) {
-          findGamePath(game, filePaths[0], 0, searchDepth(game.requiredFiles))
+          findGamePath(game, filePaths[0], 0, searchDepth(game.requiredFiles || []))
             .then((corrected: string) => {
               const exe = game.executable(corrected);
               api.store.dispatch(addDiscoveredGame(game.id, {
@@ -426,8 +427,11 @@ function init(context: IExtensionContext): boolean {
   // TODO: hack, we need the extension path to get at the assets but this parameter
   //   is only added internally and not part of the public api
   context.registerGame = ((game: IGame, extensionPath: string) => {
-    game.extensionPath = extensionPath;
     try {
+      if (!isIGame(game)) {
+        throw new Error('Invalid game extension: ' + ajv.errorsText(isIGame.errors.slice(0, 1)));
+      }
+      game.extensionPath = extensionPath;
       const gameExtInfo = JSON.parse(
         fs.readFileSync(path.join(extensionPath, 'info.json'), { encoding: 'utf8' }));
       game.contributed = (gameExtInfo.author === COMPANY_ID)
