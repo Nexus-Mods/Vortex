@@ -1372,13 +1372,20 @@ class InstallManager {
                                   : Promise<void> {
     const notificationId = `${installPath}_activity`;
     api.events.emit('will-install-dependencies', profile.id, modId, false);
-    api.sendNotification({
-      id: notificationId,
-      type: 'activity',
-      message: 'Checking dependencies',
-    });
+    const progress = (perc: number) => {
+      api.sendNotification({
+        id: notificationId,
+        type: 'activity',
+        title: 'Checking dependencies',
+        message: 'Resolving dependencies',
+        progress: perc * 100,
+      });
+    };
+
+    progress(0);
+
     log('debug', 'installing dependencies', { modId, name });
-    return gatherDependencies(rules, api, false)
+    return gatherDependencies(rules, api, false, progress)
       .then((dependencies: Dependency[]) => {
         api.dismissNotification(notificationId);
 

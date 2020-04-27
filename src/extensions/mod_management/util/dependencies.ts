@@ -142,14 +142,24 @@ function makeLookupResult(lookup: ILookupResult, fromHint: IBrowserResult): ILoo
  */
 function gatherDependencies(rules: IModRule[],
                             api: IExtensionApi,
-                            recommendations: boolean)
+                            recommendations: boolean,
+                            progressCB?: (percent: number) => void)
                             : Promise<Dependency[]> {
+
   const state = api.store.getState();
   const requirements: IModRule[] =
       rules === undefined ?
           [] :
           rules.filter((rule: IRule) =>
             rule.type === (recommendations ? 'recommends' : 'requires'));
+
+  let numCompleted = 0;
+  const onProgress = () => {
+    ++numCompleted;
+    if (progressCB !== undefined) {
+      progressCB(numCompleted / requirements.length);
+    }
+  };
 
   // for each requirement, look up the reference and recursively their dependencies
   return Promise.reduce(requirements, (total: Dependency[], rule: IModRule) => {
@@ -214,6 +224,9 @@ function gatherDependencies(rules: IModRule[],
             log('warn', 'failed to look up', err.message);
           }
           return [].concat(total, { error: err.message });
+        })
+        .finally(() => {
+          onProgress();
         });
   }, []);
 }
