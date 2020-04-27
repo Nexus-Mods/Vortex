@@ -139,7 +139,7 @@ class EpicGamesLauncher implements IGameStore {
                 // Epic does not seem to clean old manifests. We need
                 //  to stat the executable for each item to ensure that the
                 //  game entry is actually valid.
-                return (!!gamePath && !!name && !!appid)
+                return (!!gamePath && !!name && !!appid && !!gameExec)
                   ? fs.statAsync(path.join(gamePath, gameExec))
                       .then(() => Promise.resolve({ appid, name, gamePath, gameStoreId }))
                       .catch(err => Promise.resolve(undefined))
