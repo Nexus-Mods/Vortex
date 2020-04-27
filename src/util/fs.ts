@@ -410,6 +410,7 @@ const openAsync: (path: string, flags: string | number, mode?: number) => Promis
 const readdirAsync: (path: string) => PromiseBB<string[]> = genWrapperAsync(fsBB.readdirAsync);
 const readFileAsync: (...args: any[]) => PromiseBB<any> = genWrapperAsync(fsBB.readFileAsync);
 const statAsync: (path: string) => PromiseBB<fs.Stats> = genWrapperAsync(fsBB.statAsync);
+const statSilentAsync: (path: string) => PromiseBB<fs.Stats> = fsBB.statAsync;
 const symlinkAsync: (srcpath: string, dstpath: string, type?: string) => PromiseBB<void> = genWrapperAsync(fsBB.symlinkAsync);
 const utimesAsync: (path: string, atime: number, mtime: number) => PromiseBB<void> = genWrapperAsync(fsBB.utimesAsync);
 // fs.write and fs.read don't promisify correctly because it has two return values. fs-extra already works around this in their
@@ -432,6 +433,7 @@ export {
   readAsync,
   readFileAsync,
   statAsync,
+  statSilentAsync,
   symlinkAsync,
   utimesAsync,
   writeAsync,

@@ -140,7 +140,7 @@ class EpicGamesLauncher implements IGameStore {
                 //  to stat the executable for each item to ensure that the
                 //  game entry is actually valid.
                 return (!!gamePath && !!name && !!appid && !!gameExec)
-                  ? fs.statAsync(path.join(gamePath, gameExec))
+                  ? fs.statSilentAsync(path.join(gamePath, gameExec))
                       .then(() => Promise.resolve({ appid, name, gamePath, gameStoreId }))
                       .catch(err => Promise.resolve(undefined))
                   : Promise.resolve(undefined);
