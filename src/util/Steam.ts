@@ -169,6 +169,10 @@ class Steam implements IGameStore {
     return this.mCache;
   }
 
+  public getGameStorePath() {
+    return this.mBaseFolder.then(baseFolder => path.join(baseFolder, STEAM_EXEC));
+  }
+
   private isCustomExecObject(object: any): object is ICustomExecutionInfo {
     if (typeof(object) !== 'object') {
       return false;

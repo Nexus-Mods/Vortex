@@ -21,6 +21,7 @@ const STORE_ID = 'epic';
 class EpicGamesLauncher implements IGameStore {
   public id: string;
   private mDataPath: Promise<string>;
+  private mLauncherExecPath: string;
   private mCache: Promise<IGameStoreEntry[]>;
 
   constructor() {
@@ -50,6 +51,11 @@ class EpicGamesLauncher implements IGameStore {
       .then(posPath => opn(posPath).catch(err => Promise.resolve()));
   }
 
+  public launchGameStore(api: IExtensionApi, parameters?: string[]): Promise<void> {
+    const launchCommand = 'com.epicgames.launcher://start';
+    return opn(launchCommand).catch(err => Promise.resolve());
+  }
+
   public getPosixPath(name) {
     const posixPath = `com.epicgames.launcher://apps/${name}?action=launch&silent=true`;
     return Promise.resolve(posixPath);
@@ -71,11 +77,15 @@ class EpicGamesLauncher implements IGameStore {
       .catch(() => Promise.resolve(false));
   }
 
-  public findByAppId(appId: string): Promise<IGameStoreEntry> {
+  public findByAppId(appId: string | string[]): Promise<IGameStoreEntry> {
+    const matcher = Array.isArray(appId)
+      ? (entry: IGameStoreEntry) => (appId.includes(entry.appid))
+      : (entry: IGameStoreEntry) => (appId === entry.appid);
+
     return this.allGames()
-      .then(entries => entries.find(entry => entry.appid === appId))
-      .then(entry => entry === undefined
-        ? Promise.reject(new GameEntryNotFound(appId, STORE_ID))
+      .then(entries => entries.find(matcher))
+      .then(entry => (entry === undefined)
+        ? new GameEntryNotFound(Array.isArray(appId) ? appId.join(', ') : appId, STORE_ID)
         : Promise.resolve(entry));
   }
 
@@ -98,6 +108,26 @@ class EpicGamesLauncher implements IGameStore {
       this.mCache = this.parseManifests();
     }
     return this.mCache;
+  }
+
+  public getGameStorePath(): Promise<string> {
+    const getExecPath = () => {
+      try {
+        const epicLauncher = winapi.RegGetValue('HKEY_LOCAL_MACHINE',
+          'SOFTWARE\\Classes\\com.epicgames.launcher\\DefaultIcon',
+          '(Default)');
+        const val = epicLauncher.value;
+        this.mLauncherExecPath = val.toString().split(',')[0];
+        return Promise.resolve(this.mLauncherExecPath);
+      } catch (err) {
+        log('info', 'Epic games launcher not found', { error: err.message });
+        return Promise.resolve(undefined);
+      }
+    };
+
+    return (!!this.mLauncherExecPath)
+      ? Promise.resolve(this.mLauncherExecPath)
+      : getExecPath();
   }
 
   private executable() {

@@ -1,12 +1,17 @@
 import Promise from 'bluebird';
 import { GameEntryNotFound, GameStoreNotFound,
-  IGameStore, IGameStoreEntry } from '../types/api';
+  IExtensionApi, IGameStore, IGameStoreEntry } from '../types/api';
 import { log } from '../util/log';
 
 import EpicGamesLauncher from './EpicGamesLauncher';
 import Steam, { GameNotFound } from './Steam';
 
+import * as winapi from 'winapi-bindings';
+import { makeExeId } from '../reducers/session';
+
 import { getGameStores } from '../extensions/gamemode_management/util/getGame';
+
+import { UserCanceled } from '../util/CustomErrors';
 
 type SearchType = 'name' | 'id';
 
@@ -39,6 +44,69 @@ class GameStoreHelper {
 
   public findByAppId(appId: string | string[], storeId?: string): Promise<IGameStoreEntry> {
     return this.findGameEntry('id', appId, storeId);
+  }
+
+  public launchGameStore(api: IExtensionApi, gameStoreId: string,
+                         parameters?: string[], askConsent: boolean = false): Promise<void> {
+    const gameStore = this.getGameStore(gameStoreId);
+    if (gameStore === undefined) {
+      api.showErrorNotification('Unknown game store id', gameStoreId);
+      return Promise.resolve();
+    }
+
+    const launchStore = () => {
+      // Game Store specific launch has priority.
+      if (!!gameStore.launchGameStore) {
+        return gameStore.launchGameStore(api, parameters)
+          .catch(err => {
+            api.showErrorNotification('Failed to launch game store', err);
+            return Promise.resolve();
+          });
+      }
+
+      if (!!gameStore.getGameStorePath) {
+        return gameStore.getGameStorePath()
+          .then(launcherPath => {
+            if (!!launcherPath && !this.isStoreRunning(launcherPath)) {
+              api.runExecutable(launcherPath, parameters || [], { suggestDeploy: false });
+            }
+            return Promise.resolve();
+          });
+      }
+
+      api.showErrorNotification('Game store not configured correctly', gameStoreId);
+      return Promise.resolve();
+    };
+
+    const askConsentDialog = () => {
+      return new Promise((resolve, reject) => {
+        api.showDialog('info', api.translate('Game Store not Started'), {
+          text: api.translate('The game requires {{storeid}} to be running in parallel. '
+            + 'Vortex will now attempt to start up the store for you.',
+              { replace: { storeid: gameStoreId } }),
+        }, [
+          { label: 'Cancel', action: () => reject(new UserCanceled()) },
+          { label: 'Ok', action: () => resolve() },
+        ]);
+      });
+    };
+
+    // Ask consent or start up the store directly.
+    const startStore = () => (askConsent)
+      ? askConsentDialog()
+          .then(() => launchStore())
+          .catch(err => Promise.resolve())
+      : launchStore();
+
+    // Start up the store.
+    return startStore();
+  }
+
+  private isStoreRunning(storeExecPath: string) {
+    const runningProcesses = winapi.GetProcessList();
+    const exeId = makeExeId(storeExecPath);
+    return runningProcesses.find(runningProc =>
+      (exeId === runningProc.exeFile.toLowerCase())) !== undefined;
   }
 
   private getstores(): IGameStore[] {

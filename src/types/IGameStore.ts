@@ -81,18 +81,18 @@ export interface IGameStore  {
   allGames: () => Promise<IGameStoreEntry[]>;
 
   /**
-   * Attempt to find a game entry using its game store ID/IDS.
+   * Attempt to find a game entry using its game store Id/Ids.
    *
    * @param appId of the game entry. This is obviously game store specific.
    */
   findByAppId: (appId: string | string[]) => Promise<IGameStoreEntry>;
 
   /**
-   * Attempt to find a game store entry using the game's name/names
+   * Attempt to find a game store entry using the game's name.
    *
    * @param appName the game name which the game store uses to identify this game.
    */
-  findByName: (appName: string | string[]) => Promise<IGameStoreEntry>;
+  findByName: (appName: string) => Promise<IGameStoreEntry>;
 
   /**
    * Determine whether the game has been installed by this game store launcher.
@@ -123,6 +123,18 @@ export interface IGameStore  {
    * @param appId - Whatever the game store uses to identify a game.
    */
   getExecInfo?: (appId: any) => Promise<IExecInfo>;
+
+  /**
+   * Generally the game store helper should be able to launch games directly.
+   *  This functor allows game stores to define their own custom start up logic
+   *  if needed. e.g. gamestore-xbox
+   */
+  launchGameStore?: (api: IExtensionApi, parameters?: string[]) => Promise<void>;
+
+  /**
+   * Returns the full path to the launcher's executable.
+   */
+  getGameStorePath?: () => Promise<string>;
 
   /**
    * Launches the game using this game launcher.
