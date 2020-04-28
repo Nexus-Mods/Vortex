@@ -60,7 +60,7 @@ function byFile(input: IModWithState[]): IModWithState[][] {
   return groups;
 }
 
-function newestFirst(lhs: IModWithState, rhs: IModWithState) {
+function newestFirst(lhs: IModWithState, rhs: IModWithState): number {
   if (lhs.enabled !== rhs.enabled) {
     return rhs.enabled ? 1 : -1;
   }
@@ -93,6 +93,16 @@ function byEnabled(input: IModWithState[]): IModWithState[][] {
   return groups;
 }
 
+function byEnabledTime(lhs: IModWithState, rhs: IModWithState): number {
+  const lTime = lhs.enabledTime || 0;
+  const rTime = rhs.enabledTime || 0;
+
+  if ((lTime !== 0) || (rTime !== 0)) {
+    return rTime - lTime;
+  }
+  return newestFirst(lhs, rhs);
+}
+
 function group(input: IModWithState[][],
                groupFunc: (input: IModWithState[]) => IModWithState[][]): IModWithState[][] {
   return input.reduce((prev: IModWithState[][], value: IModWithState[]) =>
@@ -115,7 +125,7 @@ function groupMods(mods: IModWithState[], options: IGroupingOptions): IModWithSt
     temp = group(temp, byEnabled);
   }
 
-  return temp.map(iter => iter.sort(newestFirst));
+  return temp.map(iter => iter.sort(byEnabledTime));
 }
 
 export default groupMods;
