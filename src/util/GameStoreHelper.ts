@@ -78,8 +78,15 @@ class GameStoreHelper {
       return Promise.resolve();
     };
 
+    const isGameStoreRunning = () => (!!gameStore.getGameStorePath)
+      ? gameStore.getGameStorePath()
+        .then(launcherPath => !!launcherPath && this.isStoreRunning(launcherPath))
+      : Promise.resolve(false);
+
     const askConsentDialog = () => {
-      return new Promise((resolve, reject) => {
+      return isGameStoreRunning().then(res => (res)
+        ? Promise.resolve()
+        : new Promise((resolve, reject) => {
         api.showDialog('info', api.translate('Game Store not Started'), {
           text: api.translate('The game requires {{storeid}} to be running in parallel. '
             + 'Vortex will now attempt to start up the store for you.',
@@ -88,7 +95,7 @@ class GameStoreHelper {
           { label: 'Cancel', action: () => reject(new UserCanceled()) },
           { label: 'Ok', action: () => resolve() },
         ]);
-      });
+      }));
     };
 
     // Ask consent or start up the store directly.
