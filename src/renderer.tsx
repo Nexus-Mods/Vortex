@@ -69,7 +69,7 @@ import LoadingScreen from './views/LoadingScreen';
 import MainWindow from './views/MainWindow';
 
 import Promise from 'bluebird';
-import { ipcRenderer, remote, webFrame } from 'electron';
+import { crashReporter as crashReporterT, ipcRenderer, remote, webFrame } from 'electron';
 import { forwardToMain, getInitialStateRenderer, replayActionRenderer } from 'electron-redux';
 import { EventEmitter } from 'events';
 import * as fs from 'fs-extra';
@@ -86,7 +86,7 @@ import { applyMiddleware, compose, createStore } from 'redux';
 import thunkMiddleware from 'redux-thunk';
 import { generate as shortid } from 'shortid';
 
-import crashDumpX from 'crash-dump';
+import crashDumpT from 'crash-dump';
 
 import { setLanguage, setNetworkConnected } from './actions';
 import { ThunkStore } from './types/IExtensionContext';
@@ -96,8 +96,6 @@ import {} from './util/extensionRequire';
 import { reduxLogger } from './util/reduxLogger';
 import { getSafe } from './util/storeHelper';
 import { getAllPropertyNames } from './util/util';
-
-const crashDump = (crashDumpX as any).default;
 
 log('debug', 'renderer process started', { pid: process.pid });
 
@@ -142,8 +140,24 @@ function initialState(): any {
 const tempPath = path.join(remote.app.getPath('userData'), 'temp');
 remote.app.setPath('temp', tempPath);
 
-const deinitCrashDump =
-  crashDump(path.join(remote.app.getPath('temp'), 'dumps', `crash-renderer-${Date.now()}.dmp`));
+let deinitCrashDump: () => void;
+
+if (process.env.CRASH_REPORTING === 'electron') {
+  // tslint:disable-next-line:no-var-requires
+  const crashReporter: typeof crashReporterT = require('electron').crashReporter;
+  crashReporter.start({
+    productName: 'Vortex',
+    companyName: 'Black Tree Gaming Ltd.',
+    uploadToServer: false,
+    submitURL: '',
+    crashesDirectory: path.join(tempPath, 'dumps'),
+  });
+} else if (process.env.CRASH_REPORTING === 'vortex') {
+  // tslint:disable-next-line:no-var-requires
+  const crashDump: typeof crashDumpT = require('crash-dump').default;
+  deinitCrashDump =
+    crashDump(path.join(remote.app.getPath('temp'), 'dumps', `crash-renderer-${Date.now()}.dmp`));
+}
 
 // on windows, inject the native error code into "unknown" errors to help track those down
 if (process.platform === 'win32') {
@@ -257,7 +271,9 @@ window.addEventListener('unhandledrejection', errorHandler);
 window.removeEventListener('error', earlyErrHandler);
 window.removeEventListener('unhandledrejection', earlyErrHandler);
 window.addEventListener('close', () => {
-  deinitCrashDump();
+  if (deinitCrashDump !== undefined) {
+    deinitCrashDump();
+  }
 });
 
 const eventEmitter: NodeJS.EventEmitter = new EventEmitter();

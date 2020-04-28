@@ -125,6 +125,7 @@ class MainWindow {
         if (this.mWindow !== null) {
           // workaround for electron issue #19887
           setImmediate(() => {
+            process.env.CRASH_REPORTING = Math.random() ? 'vortex' : 'electron';
             this.mWindow.loadURL(`file://${getVortexPath('base')}/index.html`);
           });
         } else {

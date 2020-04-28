@@ -31,8 +31,8 @@ import SplashScreenT from './SplashScreen';
 import TrayIconT from './TrayIcon';
 
 import Promise from 'bluebird';
-import crashDumpX from 'crash-dump';
-import {app, dialog, ipcMain, shell} from 'electron';
+import crashDumpT from 'crash-dump';
+import {app, crashReporter as crashReporterT, dialog, ipcMain, shell} from 'electron';
 import isAdmin = require('is-admin');
 import * as _ from 'lodash';
 import * as msgpackT from 'msgpack';
@@ -42,9 +42,6 @@ import * as semver from 'semver';
 import * as uuidT from 'uuid';
 
 import { RegGetValue } from 'winapi-bindings';
-
-// export is currently a bit messed up
-const crashDump = (crashDumpX as any).default;
 
 const uuid = lazyRequire<typeof uuidT>(() => require('uuid'));
 
@@ -66,7 +63,8 @@ class Application {
   private mExtensions: ExtensionManagerT;
   private mTray: TrayIconT;
   private mFirstStart: boolean = false;
-  private mDeinitCrashDump: () => void = undefined;
+  private mStartupLogPath: string;
+  private mDeinitCrashDump: () => void;
 
   constructor(args: IParameters) {
     this.mArgs = args;
@@ -82,7 +80,28 @@ class Application {
     app.setPath('temp', tempPath);
     fs.ensureDirSync(path.join(tempPath, 'dumps'));
 
-    this.mDeinitCrashDump = crashDump(path.join(tempPath, 'dumps', `crash-main-${Date.now()}.dmp`));
+    this.mStartupLogPath = path.join(tempPath, 'startup.log');
+    try {
+      fs.statSync(this.mStartupLogPath);
+      process.env.CRASH_REPORTING = Math.random() > 0.5 ? 'vortex' : 'electron';
+    } catch (err) {
+      // nop, this is the expected case
+    }
+
+    if (process.env.CRASH_REPORTING === 'electron') {
+      const crashReporter: typeof crashReporterT = require('electron').crashReporter;
+      crashReporter.start({
+        productName: 'Vortex',
+        companyName: 'Black Tree Gaming Ltd.',
+        uploadToServer: false,
+        submitURL: '',
+        crashesDirectory: path.join(tempPath, 'dumps'),
+      });
+    } else if (process.env.CRASH_REPORTING === 'vortex') {
+      const crashDump: typeof crashDumpT = require('crash-dump').default;
+      this.mDeinitCrashDump =
+        crashDump(path.join(tempPath, 'dumps', `crash-main-${Date.now()}.dmp`));
+    }
 
     setupLogging(app.getPath('userData'), process.env.NODE_ENV === 'development');
     this.setupAppEvents(args);
@@ -120,7 +139,9 @@ class Application {
       if (this.mTray !== undefined) {
         this.mTray.close();
       }
-      this.mDeinitCrashDump();
+      if (this.mDeinitCrashDump !== undefined) {
+        this.mDeinitCrashDump();
+      }
       if (process.platform !== 'darwin') {
         app.quit();
       }
@@ -209,7 +230,9 @@ class Application {
   private regularStart(args: IParameters): Promise<void> {
     let splash: SplashScreenT;
 
-    return this.testUserEnvironment()
+    return fs.writeFileAsync(this.mStartupLogPath, (new Date()).toUTCString())
+        .catch(() => null)
+        .then(() => this.testUserEnvironment())
         .then(() => this.validateFiles())
         .then(() => {
           log('info', '--------------------------');
@@ -324,7 +347,8 @@ class Application {
           } catch (err) {
             // nop
           }
-        });
+        })
+        .finally(() => fs.removeAsync(this.mStartupLogPath).catch(() => null));
   }
 
   private isUACEnabled(): Promise<boolean> {
