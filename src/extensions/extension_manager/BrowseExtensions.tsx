@@ -109,6 +109,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
                 <FormInput
                   id='browse-extensions-search'
                   label={t('Search')}
+                  placeholder={t('Search')}
                   value={searchTerm}
                   onChange={this.changeSearch}
                   debounceTimer={200}
