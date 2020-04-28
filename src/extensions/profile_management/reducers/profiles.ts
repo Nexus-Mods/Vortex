@@ -24,6 +24,10 @@ export const profilesReducer: IReducerSpec = {
         return state;
       }
 
+      if (enable) {
+        state = setSafe(state, [profileId, 'modState', modId, 'enabledTime'], Date.now());
+      }
+
       return setSafe(
         state,
         [profileId, 'modState', modId, 'enabled'],

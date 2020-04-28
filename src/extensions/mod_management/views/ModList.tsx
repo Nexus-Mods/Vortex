@@ -40,7 +40,7 @@ import VersionFilter from '../util/VersionFilter';
 import VersionChangelogButton from '../views/VersionChangelogButton';
 import VersionIconButton from '../views/VersionIconButton';
 
-import { INSTALL_TIME, PICTURE } from '../modAttributes';
+import { ENABLED_TIME, INSTALL_TIME, PICTURE } from '../modAttributes';
 import getText from '../texts';
 
 import CheckModVersionsButton from './CheckModVersionsButton';
@@ -248,6 +248,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       this.modVersionDetailAttribute,
       this.modVariantDetailAttribute,
       INSTALL_TIME(() => this.context.api.locale()),
+      ENABLED_TIME(() => this.context.api.locale()),
     ];
 
     this.mUpdateDebouncer = new Debouncer((newProps) => {
