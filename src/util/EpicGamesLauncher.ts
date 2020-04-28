@@ -85,7 +85,8 @@ class EpicGamesLauncher implements IGameStore {
     return this.allGames()
       .then(entries => entries.find(matcher))
       .then(entry => (entry === undefined)
-        ? new GameEntryNotFound(Array.isArray(appId) ? appId.join(', ') : appId, STORE_ID)
+        ? Promise.reject(
+            new GameEntryNotFound(Array.isArray(appId) ? appId.join(', ') : appId, STORE_ID))
         : Promise.resolve(entry));
   }
 
