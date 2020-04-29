@@ -26,6 +26,7 @@ export interface IWebView extends
 export interface IWebviewProps {
   onLoading?: (loading: boolean) => void;
   onNewWindow?: (url: string, disposition: string) => void;
+  onFullscreen?: (fullscreen: boolean) => void;
 }
 
 class Webview extends React.Component<IWebviewProps & IWebView, {}> {
@@ -41,6 +42,8 @@ class Webview extends React.Component<IWebviewProps & IWebView, {}> {
     });
     this.mNode.addEventListener('console-message', this.logMessage);
     this.mNode.addEventListener('new-window', this.newWindow);
+    this.mNode.addEventListener('enter-html-full-screen', this.enterFullscreen);
+    this.mNode.addEventListener('leave-html-full-screen', this.leaveFullscreen);
   }
 
   public componentWillUnmount() {
@@ -48,10 +51,12 @@ class Webview extends React.Component<IWebviewProps & IWebView, {}> {
     this.mNode.removeEventListener('did-stop-loading', this.stopLoad);
     this.mNode.removeEventListener('console-message', this.logMessage);
     this.mNode.removeEventListener('new-window', this.newWindow);
+    this.mNode.removeEventListener('enter-html-full-screen', this.enterFullscreen);
+    this.mNode.removeEventListener('leave-html-full-screen', this.leaveFullscreen);
   }
 
   public render(): JSX.Element {
-    return React.createElement('webview', omit(this.props, ['onLoading', 'onNewWindow']));
+    return React.createElement('webview', omit(this.props, ['onLoading', 'onNewWindow', 'onFullscreen']));
   }
 
   private startLoad = () => {
@@ -72,6 +77,22 @@ class Webview extends React.Component<IWebviewProps & IWebView, {}> {
     const { onNewWindow } = this.props;
     if (onNewWindow !== undefined) {
       onNewWindow(evt.url, evt.disposition);
+    }
+  }
+
+  private enterFullscreen = (evt) => {
+    const { onFullscreen } = this.props;
+
+    if (onFullscreen !== undefined) {
+      onFullscreen(true);
+    }
+  }
+
+  private leaveFullscreen = (evt) => {
+    const { onFullscreen } = this.props;
+
+    if (onFullscreen !== undefined) {
+      onFullscreen(false);
     }
   }
 
