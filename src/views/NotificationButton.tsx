@@ -113,12 +113,12 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
     }
 
     return {
-      warning: 10000,
-      error: 10000,
-      success: 5000,
-      info: 5000,
+      warning: 30000,
+      error: 30000,
+      success: 10000,
+      info: 10000,
       activity: null,
-    }[item.type] || 5000;
+    }[item.type] || 10000;
   }
 
   private updateFiltered() {

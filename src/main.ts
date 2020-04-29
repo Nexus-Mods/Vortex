@@ -90,6 +90,8 @@ const handleError = (error: any) => {
 };
 
 function main() {
+  app.allowRendererProcessReuse = false;
+
   const mainArgs = commandLine(process.argv, false);
   if (mainArgs.report) {
     return sendReportFile(mainArgs.report)
@@ -126,8 +128,6 @@ function main() {
     app.quit();
     return;
   }
-
-  app.allowRendererProcessReuse = false;
 
   if (mainArgs.disableGPU) {
     app.disableHardwareAcceleration();
