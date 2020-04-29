@@ -5,7 +5,7 @@ import {
   IExtensionContext,
 } from '../../types/IExtensionContext';
 import { IGame } from '../../types/IGame';
-import { ajv, isIGame } from '../../types/IGame.validator';
+import isIGame from '../../types/IGame.validator';
 import { IGameStore } from '../../types/IGameStore';
 import { IProfile, IRunningTool, IState } from '../../types/IState';
 import { IEditChoice, ITableAttribute } from '../../types/ITableAttribute';
@@ -429,7 +429,7 @@ function init(context: IExtensionContext): boolean {
   context.registerGame = ((game: IGame, extensionPath: string) => {
     try {
       if (!isIGame(game)) {
-        throw new Error('Invalid game extension: ' + ajv.errorsText(isIGame.errors.slice(0, 1)));
+        throw new Error('Invalid game extension: ' + isIGame.errors.map(err => err.message).join(', '));
       }
       game.extensionPath = extensionPath;
       const gameExtInfo = JSON.parse(
