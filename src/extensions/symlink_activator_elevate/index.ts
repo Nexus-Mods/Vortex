@@ -30,6 +30,7 @@ import JsonSocket from 'json-socket';
 import * as net from 'net';
 import * as os from 'os';
 import * as path from 'path';
+import * as semver from 'semver';
 import { generate as shortid } from 'shortid';
 import { runElevated } from 'vortex-run';
 import * as winapi from 'winapi-bindings';
@@ -613,8 +614,9 @@ function baseFunc(moduleRoot: string, ipcPath: string,
 
   client.on('connect', () => {
     const res = main(client, __req);
-    if (res instanceof Promise) {
-      res
+    // bit of a hack but the type "bluebird" isn't known in this context
+    if (res?.['catch'] !== undefined) {
+      (res as any)
         .catch(error => {
           client.emit('error', error.message);
         })
@@ -667,7 +669,7 @@ function ensureTaskEnabled() {
 
   return fs.writeFileAsync(scriptPath, makeScript({ }))
     .then(() => {
-      if (winapi.GetTasks().find(task => task.Name === TASK_NAME) !== undefined) {
+      if (findTask() !== undefined) {
         // not checking if the task is actually set up correctly
         // (proper path and arguments for the action) so if we change any of those we
         // need migration code. If the user changes the task, screw them.
@@ -720,8 +722,15 @@ function ensureTaskEnabled() {
     });
 }
 
+function findTask() {
+  if (process.platform !== 'win32') {
+    return undefined;
+  }
+  return winapi.GetTasks().find(task => task.Name === TASK_NAME);
+}
+
 function ensureTaskDeleted() {
-  if (winapi.GetTasks().find(task => task.Name === TASK_NAME) === undefined) {
+  if (findTask() === undefined) {
     return Promise.resolve();
   }
 
@@ -760,6 +769,20 @@ function ensureTask(api: IExtensionApi, enabled: boolean): void {
   }
 }
 
+function migrate(api: IExtensionApi, oldVersion: string) {
+  if (process.platform === 'win32'
+      && semver.satisfies(oldVersion, '>=1.2.0  <1.2.10')
+      && (findTask() !== undefined)) {
+    api.sendNotification({
+      type: 'warning',
+      title: 'Due to a bug you have to disable and re-enable the Workaround "Allow Symlinks without elevation"',
+      message: 'I am sorry for the inconvenience',
+      displayMS: null,
+    });
+  }
+  return Promise.resolve();
+}
+
 function init(context: IExtensionContextEx): boolean {
   const method = new DeploymentMethod(context.api);
   context.registerDeploymentMethod(method);
@@ -769,6 +792,8 @@ function init(context: IExtensionContextEx): boolean {
   if (process.platform === 'win32') {
     context.registerSettings('Workarounds', Settings);
   }
+
+  context.registerMigration(oldVersion => migrate(context.api, oldVersion));
 
   context.once(() => {
     method.initEvents(context.api);
