@@ -20,7 +20,7 @@
     "subprojects_ci": "node BuildSubprojects.js app --noparallel",
     "build_api": "cd api && yarn run build",
     "build_rest": "yarn run _assets_out && yarn run build_api && yarn run subprojects",
-    "build_dist": "webpack --config webpack.main.config.js && webpack --config webpack.renderer.config.js",
+    "build_dist": "concurrently \"webpack --config webpack.main.config.js\" \"webpack --config webpack.renderer.config.js\"",
     "extract_sourcemaps": "node copy_sourcemaps.js",
     "package": "electron-builder --config electron-builder-oneclick.json && electron-builder --config electron-builder-advanced.json",
     "predist": "yarn run --non-interactive build_api && yarn run --non-interactive _install_app && yarn run --non-interactive subprojects_app && yarn run --non-interactive _assets_app",
@@ -146,7 +146,7 @@
     "babel-plugin-i18next-extract": "^0.4.0",
     "babel-polyfill": "^6.26.0",
     "bootswatch": "^4.3.1",
-    "concurrently": "^5.0.0",
+    "concurrently": "^5.2.0",
     "copyfiles": "^2.1.1",
     "cross-env": "^6.0.3",
     "devtron": "^1.4.0",
@@ -183,6 +183,7 @@
     "typescript": "^3.7.2",
     "webpack": "^4.41.2",
     "webpack-cli": "^3.3.10",
+    "webpack-merge": "^4.2.2",
     "webpack-node-externals": "^1.7.2"
   },
   "dependencies": {
