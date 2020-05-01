@@ -4,7 +4,7 @@ import * as path from 'path';
 const app = remote !== undefined ? remote.app : appIn;
 
 export type AppPath = 'base' | 'assets' | 'assets_unpacked' | 'modules' | 'modules_unpacked'
-                    | 'bundledPlugins' | 'locales' | 'package'
+                    | 'bundledPlugins' | 'locales' | 'package' | 'resources'
                     | 'userData' | 'appData' | 'temp' | 'home' | 'documents';
 
 /**
@@ -17,8 +17,8 @@ export type AppPath = 'base' | 'assets' | 'assets_unpacked' | 'modules' | 'modul
  * after all
  */
 const appPath = app !== undefined ? app.getAppPath() : path.resolve(__dirname, '..', '..');
-const resourcePath =  path.resolve(appPath, '..');
 const isDevelopment = path.basename(appPath, '.asar') !== 'app';
+const resourcePath =  isDevelopment ? path.resolve(appPath, '..') : process.resourcesPath;
 
 // appPath is the path to the dir containing main.js, index.html, etc.
 // resourcePath is the path to the dir containing unpacked resources: assets, bundledPlugins, locales, etc.
@@ -85,6 +85,7 @@ function getVortexPath(id: AppPath): string {
     case 'modules_unpacked': return getModulesPath(true);
     case 'bundledPlugins': return getBundledPluginsPath();
     case 'locales': return getLocalesPath();
+    case 'resources': return resourcePath;
   }
 }
 

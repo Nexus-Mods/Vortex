@@ -13,6 +13,7 @@ import opn from '../../util/opn';
 import { activeGameId, downloadPathForGame, gameById, knownGames } from '../../util/selectors';
 import { currentGame, getSafe } from '../../util/storeHelper';
 import { decodeHTML, truthy } from '../../util/util';
+import { getVortexPath } from '../../util/api';
 
 import { ICategoryDictionary } from '../category_management/types/ICategoryDictionary';
 import { DownloadIsHTML } from '../download_management/DownloadManager';
@@ -683,8 +684,9 @@ function once(api: IExtensionApi) {
 
 function toolbarBanner(t: TFunction): React.StatelessComponent<any> {
   return () => {
+    const assetsPath = path.relative(getVortexPath('base'), getVortexPath('assets')).replace(path.sep, '/');
     return (
-      <div className='nexus-main-banner' style={{ background: 'url(assets/images/ad-banner.png)' }}>
+      <div className='nexus-main-banner' style={{ background: `url(${assetsPath}/images/ad-banner.png)` }}>
         <div>{t('Go Premium')}</div>
         <div>{t('Uncapped downloads, no adverts')}</div>
         <div>{t('Support Nexus Mods')}</div>
