@@ -16,54 +16,40 @@ export type AppPath = 'base' | 'assets' | 'assets_unpacked' | 'modules' | 'modul
  * when running from unit tests, app may not be defined at all, in that case we use __dirname
  * after all
  */
-let basePath = app !== undefined ? app.getAppPath() : path.resolve(__dirname, '..', '..');
-const isDevelopment = path.basename(basePath, '.asar') !== 'app';
-const isAsar = !isDevelopment && (path.extname(basePath) === '.asar');
-const applicationPath = isDevelopment
-  ? basePath
-  : path.resolve(path.dirname(basePath), '..');
+const appPath = app !== undefined ? app.getAppPath() : path.resolve(__dirname, '..', '..');
+const resourcePath =  path.resolve(appPath, '..');
+const isDevelopment = path.basename(appPath, '.asar') !== 'app';
 
-if (isDevelopment) {
-  basePath = path.join(applicationPath, 'out');
-}
-
-// basePath is now the path that contains assets, bundledPlugins, index.html, main.js and so on
-// applicationPath is still different between development and production
+// appPath is the path to the dir containing main.js, index.html, etc.
+// resourcePath is the path to the dir containing unpacked resources: assets, bundledPlugins, locales, etc.
 
 function getModulesPath(unpacked: boolean): string {
   if (isDevelopment) {
-    return path.join(applicationPath, 'node_modules');
+    return path.join(resourcePath, 'node_modules');
   }
-  const asarPath = unpacked && isAsar ? basePath + '.unpacked' : basePath;
+  const asarPath = unpacked ? appPath + '.unpacked' : appPath;
   return path.join(asarPath, 'node_modules');
 }
 
 function getAssets(unpacked: boolean): string {
-  const asarPath = unpacked && isAsar ? basePath + '.unpacked' : basePath;
-  return path.join(asarPath, 'assets');
+  // In development, [un]packed locations are inverted. XOR to flip when both true
+  const base = (+unpacked ^ +isDevelopment) ? resourcePath : appPath;
+  return path.join(base, 'assets');
 }
 
 function getBundledPluginsPath(): string {
-  // bundled plugins are never packed in the asar
-  return isAsar
-    ? path.join(basePath + '.unpacked', 'bundledPlugins')
-    : path.join(basePath, 'bundledPlugins');
+  return path.join(isDevelopment ? appPath : resourcePath, 'bundledPlugins');
 }
 
 function getLocalesPath(): string {
-  // in production builds the locales are not inside the app(.asar) directory but alongside it
-  return isDevelopment
-    ? path.join(basePath, 'locales')
-    : path.resolve(basePath, '..', 'locales');
+  return path.resolve(resourcePath, 'locales');
 }
 
 /**
  * path to the directory containing package.json file
  */
 function getPackagePath(): string {
-  return isDevelopment
-    ? applicationPath
-    : basePath;
+  return appPath;
 }
 
 const cachedAppPath = (() => {
@@ -91,7 +77,7 @@ function getVortexPath(id: AppPath): string {
     case 'appData': return cachedAppPath('appData');
     case 'home': return cachedAppPath('home');
     case 'documents': return cachedAppPath('documents');
-    case 'base': return basePath;
+    case 'base': return appPath;
     case 'package': return getPackagePath();
     case 'assets': return getAssets(false);
     case 'assets_unpacked': return getAssets(true);
