@@ -4,6 +4,7 @@ import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as process from 'process';
 import { log } from './log';
+import getVortexPath from './getVortexPath';
 
 export interface IParameters {
   download?: string;
@@ -91,7 +92,7 @@ function parseCommandline(argv: string[], electronIsShitHack: boolean): IParamet
   let cfgFile: IParameters = {};
 
   try {
-    cfgFile = JSON.parse(fs.readFileSync(path.join(app.getPath('userData'), 'startup.json'),
+    cfgFile = JSON.parse(fs.readFileSync(path.join(getVortexPath('userData'), 'startup.json'),
                                          { encoding: 'utf-8' }));
   } catch (err) {
     if (err.code !== 'ENOENT') {

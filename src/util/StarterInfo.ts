@@ -4,6 +4,7 @@ import { IGame } from '../types/IGame';
 import { log } from '../util/log';
 
 import GameStoreHelper from './GameStoreHelper';
+import getVortexPath from './getVortexPath';
 
 import { getSafe } from '../util/storeHelper';
 
@@ -43,15 +44,6 @@ export interface IStarterInfo {
   logoName: string;
 }
 
-const userDataPath = ((): () => string => {
-  let cache: string;
-  return () => {
-    if (cache === undefined) {
-      cache = remote.app.getPath('userData');
-    }
-    return cache;
-  };
-})();
 
 type OnShowErrorFunc =
   (message: string, details?: string | Error | any, allowReport?: boolean) => void;
@@ -71,7 +63,7 @@ class StarterInfo implements IStarterInfo {
   }
 
   public static toolIconRW(gameId: string, toolId: string) {
-    return path.join(userDataPath(), gameId, 'icons', toolId + '.png');
+    return path.join(getVortexPath('userData'), gameId, 'icons', toolId + '.png');
   }
 
   public static run(info: IStarterInfo, api: IExtensionApi, onShowError: OnShowErrorFunc) {
@@ -247,7 +239,7 @@ class StarterInfo implements IStarterInfo {
   }
 
   private static gameIconRW(gameId: string) {
-    return path.join(userDataPath(), gameId, 'icon.png');
+    return path.join(getVortexPath('userData'), gameId, 'icon.png');
   }
 
   private static toolIcon(gameId: string, extensionPath: string,

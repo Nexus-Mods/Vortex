@@ -30,6 +30,7 @@ import onceCB from '../../util/onceCB';
 import { installPathForGame, needToDeployForGame } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { truthy } from '../../util/util';
+import { getVortexPath } from '../../util/api';
 
 import { IExtension } from '../extension_manager/types';
 import { readExtensions } from '../extension_manager/util';
@@ -51,7 +52,6 @@ import { activeGameId, activeProfile, lastActiveProfileForGame, profileById } fr
 import { syncFromProfile, syncToProfile } from './sync';
 
 import Promise from 'bluebird';
-import { app as appIn, remote } from 'electron';
 import * as path from 'path';
 import * as Redux from 'redux';
 import { generate as shortid } from 'shortid';
@@ -61,9 +61,7 @@ const profileFiles: { [gameId: string]: string[] } = {};
 const profileFeatures: IProfileFeature[] = [];
 
 function profilePath(store: Redux.Store<any>, profile: IProfile): string {
-  const app = appIn || remote.app;
-
-  return path.join(app.getPath('userData'), profile.gameId, 'profiles', profile.id);
+  return path.join(getVortexPath('userData'), profile.gameId, 'profiles', profile.id);
 }
 
 function checkProfile(store: Redux.Store<any>, currentProfile: IProfile): Promise<void> {

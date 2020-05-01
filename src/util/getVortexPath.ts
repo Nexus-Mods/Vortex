@@ -3,9 +3,10 @@ import * as path from 'path';
 
 const app = remote !== undefined ? remote.app : appIn;
 
+export type CachedPath = 'userData' | 'temp' | 'appData' | 'home' | 'documents'
 export type AppPath = 'base' | 'assets' | 'assets_unpacked' | 'modules' | 'modules_unpacked'
                     | 'bundledPlugins' | 'locales' | 'package' | 'resources'
-                    | 'userData' | 'appData' | 'temp' | 'home' | 'documents';
+                    | CachedPath;
 
 /**
  * app.getAppPath() returns the path to the app.asar,
@@ -45,20 +46,19 @@ function getLocalesPath(): string {
   return path.resolve(resourcePath, 'locales');
 }
 
-/**
- * path to the directory containing package.json file
- */
-function getPackagePath(): string {
-  return appPath;
-}
-
-const cachedAppPath = (() => {
+const { get: cachedAppPath, set: setCachedAppPath } = (() => {
   const cache: { [id: string]: string } = {};
-  return (id: string) => {
-    if (cache[id] === undefined) {
-      cache[id] = app.getPath(id as any);
+  return {
+    get: (id: CachedPath) => {
+      if (cache[id] === undefined) {
+        cache[id] = app.getPath(id as any);
+      }
+      return cache[id];
+    },
+    set: (id: CachedPath, val: string) => {
+      app.setPath(id, val);
+      return cache[id] = val;
     }
-    return cache[id];
   };
 })();
 
@@ -70,7 +70,7 @@ const cachedAppPath = (() => {
  * This function aims to provide paths to application data independent
  * of any of that.
  */
-function getVortexPath(id: AppPath): string {
+export function getVortexPath(id: AppPath): string {
   switch (id) {
     case 'userData': return cachedAppPath('userData');
     case 'temp': return cachedAppPath('temp');
@@ -78,7 +78,7 @@ function getVortexPath(id: AppPath): string {
     case 'home': return cachedAppPath('home');
     case 'documents': return cachedAppPath('documents');
     case 'base': return appPath;
-    case 'package': return getPackagePath();
+    case 'package': return appPath;
     case 'assets': return getAssets(false);
     case 'assets_unpacked': return getAssets(true);
     case 'modules': return getModulesPath(false);
@@ -88,5 +88,7 @@ function getVortexPath(id: AppPath): string {
     case 'resources': return resourcePath;
   }
 }
+
+export {setCachedAppPath as setVortexPath};
 
 export default getVortexPath;

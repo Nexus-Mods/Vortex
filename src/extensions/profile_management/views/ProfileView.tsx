@@ -7,6 +7,7 @@ import { log } from '../../../util/log';
 import { activeGameId } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import MainPage from '../../../views/MainPage';
+import { getVortexPath } from '../../../util/api';
 
 import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../../gamemode_management/types/IGameStored';
@@ -19,7 +20,6 @@ import { IProfileFeature } from '../types/IProfileFeature';
 import ProfileEdit from './ProfileEdit';
 import ProfileItem from './ProfileItem';
 
-import { remote } from 'electron';
 import update from 'immutability-helper';
 import * as path from 'path';
 import * as React from 'react';
@@ -330,7 +330,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
 }
 
 function profilePath(profile: IProfile): string {
-  return path.join(remote.app.getPath('userData'), profile.gameId, 'profiles', profile.id);
+  return path.join(getVortexPath('userData'), profile.gameId, 'profiles', profile.id);
 }
 
 const emptyArray = [];

@@ -460,7 +460,7 @@ class ExtensionManager {
     // only the first extension with a specific name is loaded, so
     // load the bundled ones last so a user can replace them
     return [
-      path.join(app.getPath('userData'), 'plugins'),
+      path.join(getVortexPath('userData'), 'plugins'),
       getVortexPath('bundledPlugins'),
     ];
   }
@@ -541,11 +541,11 @@ class ExtensionManager {
       // and everything in this phase of startup is synchronous anyway
       try {
         const disableExtensions =
-            fs.readdirSync(app.getPath('temp'))
+            fs.readdirSync(getVortexPath('temp'))
                 .filter(name => name.startsWith('__disable_'));
         disableExtensions.forEach(ext => {
           initStore.dispatch(setExtensionEnabled(ext.substr(10), false));
-          fs.unlinkSync(path.join(app.getPath('temp'), ext));
+          fs.unlinkSync(path.join(getVortexPath('temp'), ext));
         });
       } catch (err) {
         // an ENOENT will happen on the first start where the dir doesn't
@@ -556,7 +556,7 @@ class ExtensionManager {
       }
 
       this.mExtensionState = initStore.getState().app.extensions;
-      const extensionsPath = path.join(app.getPath('userData'), 'plugins');
+      const extensionsPath = path.join(getVortexPath('userData'), 'plugins');
       Object.keys(this.mExtensionState)
         .filter(extId => this.mExtensionState[extId].remove)
         .forEach(extId => {
@@ -924,7 +924,7 @@ class ExtensionManager {
   }
 
   private connectMetaDB(gameId: string, apiKey: string) {
-    const dbPath = path.join(app.getPath('userData'), 'metadb');
+    const dbPath = path.join(getVortexPath('userData'), 'metadb');
     return modmeta.ModDB.create(
       dbPath,
       gameId, this.getMetaServerList(), log)
@@ -1087,7 +1087,7 @@ class ExtensionManager {
   }
 
   private getPath(name: string) {
-    return app.getPath(name as any);
+    return getVortexPath(name as any);
   }
 
   private selectFile(options: IOpenOptions): Promise<string> {
