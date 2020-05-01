@@ -93,6 +93,7 @@ import {} from './util/extensionRequire';
 import { reduxLogger } from './util/reduxLogger';
 import { getSafe } from './util/storeHelper';
 import { getAllPropertyNames } from './util/util';
+import { getVortexPath, setVortexPath } from './util/api';
 
 log('debug', 'renderer process started', { pid: process.pid });
 
@@ -101,7 +102,7 @@ function initialState(): any {
     return getInitialStateRenderer();
   } catch (err) {
     if (err instanceof SyntaxError) {
-      const dumpPath = path.join(remote.app.getPath('temp'), 'invalid_state.json');
+      const dumpPath = path.join(getVortexPath('temp'), 'invalid_state.json');
       fs.writeFileSync(dumpPath, remote.getGlobal('getReduxState')());
       log('error', 'Failed to transfer application state. This indicates an issue with a '
           + 'foreign library we need help debugging with. Please pack up and send in the file'
@@ -134,8 +135,8 @@ function initialState(): any {
   }
 }
 
-const tempPath = path.join(remote.app.getPath('userData'), 'temp');
-remote.app.setPath('temp', tempPath);
+const tempPath = path.join(getVortexPath('userData'), 'temp');
+setVortexPath('temp', tempPath);
 
 let deinitCrashDump: () => void;
 
@@ -153,7 +154,7 @@ if (process.env.CRASH_REPORTING === 'electron') {
   // tslint:disable-next-line:no-var-requires
   const crashDump: typeof crashDumpT = require('crash-dump').default;
   deinitCrashDump =
-    crashDump(path.join(remote.app.getPath('temp'), 'dumps', `crash-renderer-${Date.now()}.dmp`));
+    crashDump(path.join(getVortexPath('temp'), 'dumps', `crash-renderer-${Date.now()}.dmp`));
 }
 
 // on windows, inject the native error code into "unknown" errors to help track those down

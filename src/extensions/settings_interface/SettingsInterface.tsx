@@ -385,7 +385,7 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
   private readLocales(props: IProps) {
     const { extensions } = props;
     const bundledLanguages = getVortexPath('locales');
-    const userLanguages = path.normalize(path.join(remote.app.getPath('userData'), 'locales'));
+    const userLanguages = path.normalize(path.join(getVortexPath('userData'), 'locales'));
 
     const translationExts = extensions.filter(ext => ext.type === 'translation');
 

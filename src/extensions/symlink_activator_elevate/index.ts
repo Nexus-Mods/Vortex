@@ -339,7 +339,7 @@ class DeploymentMethod extends LinkingDeployment {
   }
 
   private ensureAdmin(): boolean {
-    const userData = app.getPath('userData');
+    const userData = getVortexPath('userData');
     // any file we know exists
     const srcFile = path.join(userData, 'Cookies');
     const destFile = path.join(userData, '__link_test');
@@ -665,7 +665,7 @@ function makeScript(args: any): string {
 }
 
 function ensureTaskEnabled() {
-  const scriptPath = path.join(app.getPath('userData'), SCRIPT_NAME);
+  const scriptPath = path.join(getVortexPath('userData'), SCRIPT_NAME);
 
   return fs.writeFileAsync(scriptPath, makeScript({ }))
     .then(() => {

@@ -2,18 +2,14 @@ import { IExtension } from '../extensions/extension_manager/types';
 
 import * as fs from './fs';
 import getVortexPath from './getVortexPath';
-import { log } from './log';
 
 import Promise from 'bluebird';
-import { app as appIn, remote } from 'electron';
 import I18next, { i18n, TOptions } from 'i18next';
 import FSBackend from 'i18next-node-fs-backend';
 import * as path from 'path';
 import { initReactI18next } from 'react-i18next';
 
 type TFunction = typeof I18next.t;
-
-const app = remote !== undefined ? remote.app : appIn;
 
 let debugging = false;
 let currentLanguage = 'en';
@@ -166,7 +162,7 @@ function init(language: string, translationExts: () => IExtension[]): Promise<II
 
       backend: {
         bundled: getVortexPath('locales'),
-        user: path.normalize(path.join(app.getPath('userData'), 'locales')),
+        user: path.normalize(path.join(getVortexPath('userData'), 'locales')),
         translationExts,
       },
     }))

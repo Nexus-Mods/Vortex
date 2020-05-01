@@ -47,7 +47,6 @@ type IProps = IBaseProps;
 class AboutPage extends ComponentEx<IProps, IComponentState> {
   private mMounted: boolean;
   private mVersion: string;
-  private mAppPath: string;
   constructor(props) {
     super(props);
     this.mMounted = false;
@@ -61,7 +60,6 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
     });
 
     this.mVersion = remote.app.getVersion();
-    this.mAppPath = remote.app.getAppPath();
   }
 
   public componentDidMount() {

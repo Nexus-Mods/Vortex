@@ -565,9 +565,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private validateModPath(input: string): { state: ValidationState, reason?: string } {
-    let vortexPath = remote.app.getAppPath();
+    let vortexPath = getVortexPath('base');
     if (path.basename(vortexPath) === 'app.asar') {
-      // in asar builds getAppPath returns the path of the asar so need to go up 2 levels
+      // in asar builds, returns the path of the asar so need to go up 2 levels
       // (resources/app.asar)
       vortexPath = path.dirname(path.dirname(vortexPath));
     }
@@ -688,7 +688,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
   private suggestPath = () => {
     const { modPaths, onShowError } = this.props;
-    Promise.join(fs.statAsync(modPaths['']), fs.statAsync(remote.app.getPath('userData')))
+    Promise.join(fs.statAsync(modPaths['']), fs.statAsync(getVortexPath('userData')))
       .then(stats => {
         let suggestion: string;
         if (stats[0].dev === stats[1].dev) {

@@ -137,7 +137,7 @@ function framePos(frame: any) {
 
 const requestLog = {
   requests: [],
-  logPath: path.join(app.getPath('userData'), 'network.log'),
+  logPath: path.join(getVortexPath('userData'), 'network.log'),
   debouncer: new Debouncer(() => {
     // TODO: why does "this" not point to the right object here?
     const reqs = requestLog.requests;

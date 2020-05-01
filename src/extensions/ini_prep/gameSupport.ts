@@ -1,11 +1,9 @@
 import { getSafe } from '../../util/storeHelper';
+import { getVortexPath } from '../../util/api';
 
-import { app as appIn, remote } from 'electron';
 import * as path from 'path';
 import format from 'string-template';
 import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
-
-const app = appIn || remote.app;
 
 const gameSupport = {
   skyrim: {
@@ -81,7 +79,7 @@ const gameSupport = {
 };
 
 export function iniFiles(gameMode: string, discovery: IDiscoveryResult) {
-  const mygames = path.join(app.getPath('documents'), 'My Games');
+  const mygames = path.join(getVortexPath('documents'), 'My Games');
 
   return getSafe(gameSupport, [gameMode, 'iniFiles'], [])
     .map(file => format(file, { mygames, game: discovery.path }));
