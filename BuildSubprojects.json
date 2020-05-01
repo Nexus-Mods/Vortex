@@ -341,21 +341,5 @@
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "src/**/*.scss"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/script-extender-error-check"
     }
-  ], [
-    {
-      "type": "electron-rebuild",
-      "condition": "buildType !== 'out'",
-      "name": "node-sass-rebuild",
-      "module": "node-sass",
-      "sources": ["node_modules/node-sass/build/Release/binding.node"]
-    }
-  ], [
-    {
-      "type": "electron-rebuild",
-      "condition": "false",
-      "name": "edge-rebuild",
-      "module": "edge",
-      "sources": ["node_modules/edge/build/Release/binding.node"]
-    }
   ]
 ]

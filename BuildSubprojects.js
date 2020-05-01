@@ -1,7 +1,6 @@
 const Promise = require('bluebird');
 const { spawn } = require('child_process');
 const copyfiles = require('copyfiles');
-const rebuild = require('electron-rebuild').default;
 const fs = require('fs');
 const fsP = require('fs').promises;
 const glob = require('glob');
@@ -11,8 +10,6 @@ const rimraf = require('rimraf');
 const vm = require('vm');
 
 const projectGroups = JSON.parse(fs.readFileSync('./BuildSubprojects.json'));
-
-const packageJSON = JSON.parse(fs.readFileSync('./package.json'));
 
 const npmcli = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 
@@ -172,28 +169,6 @@ function processCustom(project, buildType, feedback, noparallel) {
   return res;
 }
 
-function processRebuild(project, buildType, feedback) {
-  const moduleDir = buildType === 'out'
-    ? __dirname
-    : path.join(__dirname, buildType);
-
-  return rebuild({
-    buildPath: moduleDir,
-    electronVersion: packageJSON.vortex.electron,
-    arch: process.arch,
-    onlyModules: [project.module],
-    force: true,
-  })
-    .then(() => {
-      if (project.name !== undefined) {
-        feedback.log('electron-rebuild process finished: ' + project.name);
-      }
-    })
-    .catch((err) => {
-        feedback.err('An error occurred during the electron-rebuild process: ' + err);
-    });
-}
-
 function evalCondition(condition, context) {
   if (condition === undefined) {
     return true;
@@ -210,8 +185,6 @@ function processProject(project, buildType, feedback, noparallel) {
     return processModule(project, buildType, feedback);
   } else if (project.type === 'build-copy') {
     return processCustom(project, buildType, feedback, noparallel);
-  } else if (project.type === 'electron-rebuild') {
-    return processRebuild(project, buildType, feedback);
   }
   if (project.type.startsWith('_')) {
     return Promise.resolve();
@@ -224,7 +197,7 @@ function main(args) {
     console.error('No command line parameters specified');
     return Promise.reject(1);
   }
-  
+
   const globalFeedback = new ProcessFeedback('global');
 
   const buildType = args._[0];
