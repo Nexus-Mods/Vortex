@@ -1,3 +1,5 @@
 **/*.json
 **/*.tsx
 **/*.ts
+/out/
+/app/

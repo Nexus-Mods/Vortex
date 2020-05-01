@@ -1,5 +1,4 @@
 {
-  "version": "0.0.1",
   "configurations": [
     {
       "name": "Launch",
@@ -7,46 +6,24 @@
       "request": "launch",
       "protocol": "inspector",
       "program": "${workspaceFolder}/out/main.js",
-      "stopOnEntry": false,
-      "args": [],
-      "cwd": "${workspaceRoot}",
       "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron",
       "windows": {
         "runtimeExecutable": "${workspaceRoot}/node_modules/electron/dist/electron.exe",
       },
       "runtimeArgs": [
-        "."
+        "out"
       ],
       "env": {
         "NODE_ENV": "development",
         "SIMULATE_FS_ERRORS": "false",
-        "BLUEBIRD_DEBUG": "0",
+        "BLUEBIRD_DEBUG": "1",
         "FORCE_ALLOW_ELEVATED_SYMLINKING": "yes"
       },
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
       "console": "integratedTerminal",
       "sourceMaps": true,
-      "outFiles": []
-    },
-    {
-      "name": "Launch Linux",
-      "type": "node",
-      "request": "launch",
-      "program": "${workspaceRoot}/out/main.js",
-      "stopOnEntry": false,
-      "args": [],
-      "cwd": "${workspaceRoot}",
-      "preLaunchTask": "prestart",
-      "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron",
-      "runtimeArgs": [
-        "."
-      ],
-      "env": {
-        "NODE_ENV": "development",
-        "BLUEBIRD_DEBUG": "0"
-      },
-      "console": "internalConsole",
-      "sourceMaps": true,
-      "outFiles": []
     },
     {
       "name": "Attach to renderer",
