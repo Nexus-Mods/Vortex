@@ -9,6 +9,7 @@ import * as fs from 'fs';
 import update from 'immutability-helper';
 import * as path from 'path';
 import * as React from 'react';
+import { getVortexPath } from '../util/api';
 
 export interface IIconProps {
   id?: string;
@@ -108,7 +109,7 @@ class Icon extends React.Component<IIconProps, { sets: { [setId: string]: Set<st
         this.mLoadPromise = Promise.resolve(newSet);
       } else {
         // make sure that no other icon instance tries to render this icon
-        const fontPath = path.resolve(remote.app.getAppPath(), 'assets', 'fonts', set + '.svg');
+        const fontPath = path.resolve(getVortexPath('assets'), 'fonts', set + '.svg');
         this.mLoadPromise = installIconSet(set, fontPath);
       }
 

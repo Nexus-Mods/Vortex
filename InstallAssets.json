@@ -1,122 +1,34 @@
 {
-  "spawn": [],
   "copy": [
     {
-      "srcPath": "./LICENSE.md",
-      "outPath": "",
-      "skipPaths": 0,
-      "target": [
-        "app"
-      ]
+      "srcPath": "src/**/*.js",
+      "skipPaths": 1
     },
     {
       "srcPath": "src/stylesheets",
       "outPath": "assets/css",
-      "skipPaths": 2,
-      "target": [
-        "out",
-        "app"
-      ]
+      "skipPaths": 2
     },
     {
       "srcPath": "node_modules/bootstrap-sass/assets/stylesheets/_bootstrap.scss",
       "outPath": "assets/css",
       "rename": "bootstrap.scss",
-      "skipPaths": 4,
-      "target": [
-        "out",
-        "app"
-      ]
+      "skipPaths": 4
     },
     {
       "srcPath": "src/index.dev.html",
-      "outPath": "",
       "rename": "index.html",
-      "target": [
-        "out"
-      ],
       "skipPaths": 1
-    },
-    {
-      "srcPath": "src/index.html",
-      "outPath": "",
-      "target": [
-        "app"
-      ],
-      "skipPaths": 1
-    },
-    {
-      "srcPath": "src/splash.html",
-      "outPath": "",
-      "target": [
-        "out",
-        "app"
-      ],
-      "skipPaths": 1
-    },
-    {
-      "srcPath": "locales/*/*",
-      "outPath": "",
-      "target": [
-        "out"
-      ]
-    },
-    {
-      "srcPath": "locales/*/*",
-      "outPath": "",
-      "target": [
-        "app"
-      ]
-    },
-    {
-      "srcPath": "assets/images/",
-      "outPath": "",
-      "target": [
-        "out",
-        "app"
-      ]
-    },
-    {
-      "srcPath": "assets/fonts/*",
-      "outPath": "",
-      "target": [
-        "out",
-        "app"
-      ]
-    },
-    {
-      "srcPath": "assets/*.json",
-      "outPath": "",
-      "target": [
-        "out",
-        "app"
-      ]
-    },
-    {
-      "srcPath": "assets/licenses/*",
-      "outPath": "",
-      "target": [
-        "out",
-        "app"
-      ]
     },
     {
       "srcPath": "extensions/games/*",
       "outPath": "bundledPlugins",
-      "skipPaths": 2,
-      "target": [
-        "out",
-        "app"
-      ]
+      "skipPaths": 2
     },
     {
       "srcPath": "extensions/*/index.js",
       "outPath": "bundledPlugins",
-      "skipPaths": 1,
-      "target": [
-        "out",
-        "app"
-      ]
+      "skipPaths": 1
     }
   ]
 }

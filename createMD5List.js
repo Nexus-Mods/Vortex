@@ -30,7 +30,7 @@ async function walk(base, rel) {
 }
 
 exports.default = async function(context) {
-  const assetsPath = path.join(context.appOutDir, 'resources', 'app.asar.unpacked', 'assets');
+  const assetsPath = path.join(context.appOutDir, 'resources', 'assets');
 
   const hashes = await Promise.all((await walk(context.appOutDir, ''))
     .map(async relPath => {

@@ -1,18 +1,14 @@
 {
   "asar": true,
   "asarUnpack": [
-    "7z.exe",
-    "LICENSE.md",
-    "bundledPlugins",
-    "lib/modinstaller",
     "node_modules/7z-bin",
     "node_modules/nbind",
     "node_modules/bootstrap-sass/assets/stylesheets",
     "node_modules/react-select/scss",
     "node_modules/fomod-installer/dist",
     "node_modules/json-socket",
-    "assets/css/**",
-    "**/*.node"
+    "**/*.node",
+    "!node_modules/**/node_modules/**/*.node"
   ],
   "afterSign": "./createMD5List.js",
   "appId": "com.nexusmods.vortex",
@@ -45,29 +41,77 @@
     "icon": "assets/images/vortex.png"
   },
   "extraResources": [
-    "locales"
+    "LICENSE.md",
+    "locales",
+    {
+      "from": "app/bundledPlugins",
+      "to": "bundledPlugins"
+    },
+    {
+      "from": "extensions",
+      "to": "bundledPlugins",
+      "filter": "*/index.js"
+    },
+    {
+      "from": "extensions/games",
+      "to": "bundledPlugins"
+    },
+    {
+      "from": "src/stylesheets",
+      "to": "assets/css"
+    },
+    {
+      "from": "node_modules/bootstrap-sass/assets/stylesheets/_bootstrap.scss",
+      "to": "assets/css/bootstrap.scss"
+    }
   ],
+  // NOTE: Having object rules in the list causes it to be split into independent groups. The builtin defaults will only get
+  //       applied to the first group if its "from" is the appdir, otherwise they won't be used, contrary to the docs.
+  //       Also, any "group" that has only exclusions will be treated as an implicit `**/*` rule. Since rules are applied in order,
+  //       this will cancel out any rules that came before it.
+  // https://github.com/electron-userland/electron-builder/blob/v22.6.0/packages/app-builder-lib/src/fileMatcher.ts#L132-L136
   "files": [
-    "**/*",
+    { "filter": "$defaults$" }, // Dummy group for the builtin default rules. Filter placeholder to prevent implicit **/*
+    {
+      "from": "app",
+      "filter": [
+        "!bundledPlugins",
+        "!**/*.map"
+      ]
+    },
+    {
+      "from": "src",
+      "filter": [
+        "index.html",
+        "splash.html"
+      ]
+    },
+    "assets",
+    "!assets/vcruntime",
+
+    // Exclude native build output except for the node file
+    "!**/build${/*}",
+    "node_modules/**/*.node",
+
+    // Only include win32-x64 prebuilds
+    "!**/node_modules/*/prebuilds${/*}",
+    "**/node_modules/*/prebuilds/win32-x64/*",
+
     "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme,test,__tests__,tests,powered-test,example,examples,*.d.ts}",
     "!**/node_modules/.bin${/*}",
     "!**/*.{o,hprof,orig,pyc,pyo,rbc}",
-    "!**/*.js.map",
     "!**/*.iobj",
     "!**/*.ipdb",
     "!**/*.vcxproj",
     "!**/*.vcxproj.filters",
     "!**/Makefile",
     "!**/._*",
-    "!**/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,__pycache__,thumbs.db,.gitignore,.gitattributes,.editorconfig,.flowconfig,.yarn-metadata.json,.idea,appveyor.yml,.travis.yml,circle.yml,npm-debug.log,.nyc_output,yarn.lock,.yarn-integrity}",
+    "!**/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,__pycache__,[tT]humbs.db,.gitignore,.gitattributes,.editorconfig,.flowconfig,.yarn-metadata.json,.idea,appveyor.yml,.travis.yml,circle.yml,npm-debug.log,.nyc_output,yarn.lock,.yarn-integrity}",
     "!**/*.{pdb,lib,VC.db,exp,gypi,d.ts}",
-    "!**/build/Debug${/*}",
-    "!**/build/Release/obj${/*}",
-    "!**/build/.vs${/*}",
+    "!**/*.{c,h,cpp,hpp,hxx,cxx}",
     "!**/autogypi.json",
-    "!**/binding.gyp",
-    "!**/binding.map",
-    "!**/build/src/Release/obj${/*}",
+    "!**/*.gyp",
+    "!**/*.map",
     "!**/node_modules/edge/lib/native${/*}",
     "!**/node_modules/edge/src${/*}",
     "!**/node_modules/leveldown/deps${/*}",
@@ -75,14 +119,10 @@
     "!**/node_modules/recharts/umd${/*}",
     "!**/node_modules/ffi/deps",
     "!**/node_modules/harmony-patcher/VortexHarmonyInstaller",
-    "!**/Release/*.map",
     "!**/node_modules/bootstrap-sass/assets/fonts",
     "!**/node_modules/recharts/node_modules/d3-scale/img",
     "!**/node_modules/recharts/node_modules/d3-shape/img",
     "!**/node_modules/d3-geo/img",
-    "!**/node_modules/*/prebuilds/linux-*",
-    "!**/node_modules/*/prebuilds/darwin-*",
-    "!**/node_modules/*/prebuilds/*-ia32",
     "!**/node_modules/fomod-installer/Build",
     "!**/node_modules/fomod-installer/lib",
     "!**/node_modules/fomod-installer/InstallScripting",
