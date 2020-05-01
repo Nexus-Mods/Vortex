@@ -27,9 +27,6 @@ import requireRemap from './util/requireRemap';
 requireRemap();
 
 if (process.env.NODE_ENV === 'development') {
-  // tslint:disable-next-line:no-var-requires
-  const rebuildRequire = require('./util/requireRebuild').default;
-  rebuildRequire();
   process.traceProcessWarnings = true;
   // tslint:disable-next-line:no-var-requires
   const sourceMapSupport = require('source-map-support');
