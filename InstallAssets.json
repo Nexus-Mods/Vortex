@@ -1,26 +1,6 @@
 {
   "copy": [
     {
-      "srcPath": "src/**/*.js",
-      "skipPaths": 1
-    },
-    {
-      "srcPath": "src/stylesheets",
-      "outPath": "assets/css",
-      "skipPaths": 2
-    },
-    {
-      "srcPath": "node_modules/bootstrap-sass/assets/stylesheets/_bootstrap.scss",
-      "outPath": "assets/css",
-      "rename": "bootstrap.scss",
-      "skipPaths": 4
-    },
-    {
-      "srcPath": "src/index.dev.html",
-      "rename": "index.html",
-      "skipPaths": 1
-    },
-    {
       "srcPath": "extensions/games/*",
       "outPath": "bundledPlugins",
       "skipPaths": 2
@@ -29,6 +9,39 @@
       "srcPath": "extensions/*/index.js",
       "outPath": "bundledPlugins",
       "skipPaths": 1
+    },
+    {
+      "srcPath": "src/**/*.js",
+      "skipPaths": 1
+    },
+    {
+      "srcPath": "src/index.dev.html",
+      "rename": "index.html",
+      "skipPaths": 1
+    },
+    {
+      "srcPath": "src/splash.html",
+      "skipPaths": 1,
+      "replace": {
+        "from": "(assets/)",
+        "to": "../$1"
+      }
+    },
+    {
+      "srcPath": "node_modules/bootstrap-sass/assets/stylesheets/_bootstrap.scss",
+      "outPath": "assets/css",
+      "rename": "bootstrap.scss",
+      "skipPaths": 4
+    },
+    {
+      "srcPath": "src/stylesheets",
+      "outPath": "assets/css",
+      "skipPaths": 2,
+      "replace": {
+        "from": "url\\((['\"])?(([-\\w]+)(\\/[-\\w]+)*(\\.[-\\w]+)?)\\1\\)",
+        "to": "url($1../$2$1)"
+      },
+      "runAfter": ["yarn", "run", "node-sass", "${this.outPath}/loadingScreen.scss", "-o", "${this.outPath}"]
     }
   ]
 }
