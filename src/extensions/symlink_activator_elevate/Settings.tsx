@@ -8,13 +8,14 @@ import { enableUserSymlinks } from './actions';
 
 import Promise from 'bluebird';
 import * as React from 'react';
-import { ControlLabel, FormGroup, HelpBlock } from 'react-bootstrap';
+import { Alert, ControlLabel, FormGroup, HelpBlock } from 'react-bootstrap';
 import { withTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 
 export interface IBaseProps {
+  supported: string;
 }
 
 interface IConnectedProps {
@@ -31,7 +32,7 @@ type IProps = IBaseProps & IActionProps & IConnectedProps;
 
 class Settings extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
-    const { t, userSymlinks } = this.props;
+    const { t, supported, userSymlinks } = this.props;
 
     return (
       <form>
@@ -40,9 +41,16 @@ class Settings extends ComponentEx<IProps, {}> {
           <Toggle
             checked={userSymlinks}
             onToggle={this.toggle}
+            disabled={supported !== null}
           >
             {t('Allow Symlinks without elevation')}
           </Toggle>
+          {(supported !== null) ? (
+            <Alert>
+              {t('This feature doesn\'t seem to be supported on your system: {{reason}}', {
+                 replace: { reason: supported }})}
+            </Alert>
+          ) : null}
         </FormGroup>
       </form>
     );

@@ -722,14 +722,29 @@ function ensureTaskEnabled() {
     });
 }
 
+function tasksSupported() {
+  try {
+    winapi.GetTasks();
+    return null;
+  } catch (err) {
+    log('info', 'windows tasks api failed', err.message);
+    return err.message;
+  }
+}
+
 function findTask() {
   if (process.platform !== 'win32') {
     return undefined;
   }
-  return winapi.GetTasks().find(task => task.Name === TASK_NAME);
+  try {
+    return winapi.GetTasks().find(task => task.Name === TASK_NAME);
+  } catch (err) {
+    log('warn', 'failed to list windows tasks', err.message);
+    return undefined;
+  }
 }
 
-function ensureTaskDeleted() {
+function ensureTaskDeleted(): Promise<void> {
   if (findTask() === undefined) {
     return Promise.resolve();
   }
@@ -790,7 +805,9 @@ function init(context: IExtensionContextEx): boolean {
   context.registerReducer(['settings', 'workarounds'], reducer);
 
   if (process.platform === 'win32') {
-    context.registerSettings('Workarounds', Settings);
+    context.registerSettings('Workarounds', Settings, () => ({
+      supported: tasksSupported(),
+    }));
   }
 
   context.registerMigration(oldVersion => migrate(context.api, oldVersion));
