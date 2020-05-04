@@ -617,6 +617,13 @@ class ExtensionManager {
       if (noti.id === undefined) {
         noti.id = shortid();
       }
+      if (notification.type === 'warning') {
+        log('warn', 'warning notification',
+            { message: notification.message, title: notification.title });
+      } else if (notification.type === 'error') {
+        log('warn', 'error notification',
+            { message: notification.message, title: notification.title });
+      }
       store.dispatch(addNotification(noti));
       return noti.id;
     };
