@@ -190,38 +190,41 @@ class ConnectionIPC {
   public static async bind(): Promise<ConnectionIPC> {
     const socket = new Pair();
     let proc: ChildProcess = null;
+    let onResolve: () => void;
+    let onReject: (err: Error) => void;
+    const connectedPromise = new Promise((resolve, reject) => {
+      onResolve = resolve;
+      onReject = reject;
+    });
+    let wasConnected = false;
+
     if (false) {
       // for debugging purposes, the user has to run the installer manually
       await socket.bind('tcp://127.0.0.1:12345');
     } else {
       // connect to random free port
       await socket.bind('tcp://127.0.0.1:*');
+      socket.events.on('accept', () => {
+        if (!wasConnected) {
+          onResolve();
+          wasConnected = true;
+        }
+      });
       // invoke the c# installer, passing the port
       proc = await createIPC(socket.lastEndpoint.split(':')[2]);
+      proc.stderr.on('data', (dat: Buffer) => {
+        const errorMessage = dat.toString();
+        log('error', 'from installer: ', errorMessage);
+        if (!wasConnected) {
+          onReject(new Error(errorMessage));
+          wasConnected = true;
+        }
+      });
     }
 
     // wait until the child process has actually connected, any error in this phase
     // probably means it's not going to happen...
-    await new Promise((resolve, reject) => {
-      let wasResolved = false;
-      socket.events.on('accept', () => {
-        if (!wasResolved) {
-          resolve();
-          wasResolved = true;
-        }
-      });
-
-      if (proc !== null) {
-        proc.stderr.on('data', (dat: Buffer) => {
-          const errorMessage = dat.toString();
-          log('error', 'from installer: ', errorMessage);
-          if (!wasResolved) {
-            reject(new Error(errorMessage));
-            wasResolved = true;
-          }
-        });
-      }
-    });
+    await connectedPromise;
 
     return new ConnectionIPC(socket, proc);
   }
@@ -390,9 +393,12 @@ const ensureConnected = (() => {
 async function testSupportedScripted(files: string[]): Promise<ISupportedResult> {
   const connection = await ensureConnected();
 
-  return connection.sendMessage('TestSupported',
-                                { files, allowedTypes: ['XmlScript', 'CSharpScript'] })
-    .catch(err => Promise.reject(transformError(err)));
+  try {
+    return await connection.sendMessage('TestSupported',
+      { files, allowedTypes: ['XmlScript', 'CSharpScript'] })
+  } catch (err) {
+    throw transformError(err);
+  }
 }
 
 async function testSupportedFallback(files: string[]): Promise<ISupportedResult> {
