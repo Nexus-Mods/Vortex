@@ -963,16 +963,16 @@
       "author": "BinaryMisfit",
       "uploader": "BinaryMisfit",
       "description": {
-        "short": "Recolor of the VortexNeue theme by alistair3149  using the Covid-19 Scheme color",
-        "long": "This is a simple recolor of the VortexNeue plugin using the Covid-19 scheme colors. Starting with Dark Copper as it's base it fits nicely with the aesthetic created by VortexNeue which removes the border colors."
+        "short": "Recolour of the VortexNeue theme by alistair3149  using the Covid-19 scheme colour",
+        "long": "This is a simple recolour of the VortexNeue plugin using the Covid-19 scheme colours. Starting with Dark Copper as it's base it fits nicely with the aesthetic created by VortexNeue which removes the border colours."
       },
       "downloads": 70,
       "endorsements": 5,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/113/113-1587633353-1151960725.png",
       "name": "VortexNeue Covid",
-      "timestamp": 1587795548,
+      "timestamp": 1588579078,
       "tags": [],
-      "version": "0.0.2",
+      "version": "0.0.3",
       "type": "theme"
     },
     {
@@ -988,9 +988,9 @@
       "endorsements": 0,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/114/114-1587989197-840423380.jpeg",
       "name": "Import from Steam Workshop",
-      "timestamp": 1588027523,
+      "timestamp": 1588458674,
       "tags": [],
-      "version": "0.1.0",
+      "version": "1.0.0",
       "type": null
     }
   ]
