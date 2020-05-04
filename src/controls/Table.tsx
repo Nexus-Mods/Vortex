@@ -739,74 +739,78 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private handleKeyDown = (evt: React.KeyboardEvent<any>) => {
     const { lastSelected, selectionStart, sortedRows }  = this.state;
 
-    if (evt.target !== this.mScrollRef) {
-      return;
-    }
-
-    if (this.useMultiSelect()) {
-      if ((evt.keyCode === 65) && evt.ctrlKey) {
-        this.selectAll();
+    try {
+      if (evt.target !== this.mScrollRef) {
         return;
       }
 
-      if (evt.shiftKey && (selectionStart === undefined)) {
-        const selection = lastSelected !== undefined
-          ? { rowId: lastSelected.rowId, groupId: lastSelected.groupId }
-          : undefined;
+      if (this.useMultiSelect()) {
+        if ((evt.keyCode === 65) && evt.ctrlKey) {
+          this.selectAll();
+          return;
+        }
 
-        this.updateState(update(this.mNextState, {
-          selectionStart: { $set: selection },
-        }));
-      } else if (!evt.shiftKey && (selectionStart !== undefined)) {
-        this.updateState(update(this.mNextState, {
-          selectionStart: { $set: undefined },
-        }));
+        if (evt.shiftKey && (selectionStart === undefined)) {
+          const selection = lastSelected !== undefined
+            ? { rowId: lastSelected.rowId, groupId: lastSelected.groupId }
+            : undefined;
+
+          this.updateState(update(this.mNextState, {
+            selectionStart: { $set: selection },
+          }));
+        } else if (!evt.shiftKey && (selectionStart !== undefined)) {
+          this.updateState(update(this.mNextState, {
+            selectionStart: { $set: undefined },
+          }));
+        }
       }
-    }
 
-    // TODO: this calculation of the number of lines visible in the table is only
-    // accurate under the assumption all lines have the same height
-    let visibleLineCount = 0;
-    if ((lastSelected !== undefined) && (this.mRowRefs[lastSelected.rowId] !== undefined)) {
-      // the previously selected row might no longer be visible, which would cause
-      // an exception when trying to find the associated dom node
-      const lastIdx = sortedRows.indexOf(lastSelected.rowId);
-      if (lastIdx !== -1) {
-        const selectedNode = ReactDOM.findDOMNode(this.mRowRefs[lastSelected.rowId]) as Element;
-        visibleLineCount = this.mScrollRef.clientHeight / selectedNode.clientHeight;
-        // account for the header. quite inaccurate.
-        visibleLineCount -= 2;
+      // TODO: this calculation of the number of lines visible in the table is only
+      // accurate under the assumption all lines have the same height
+      let visibleLineCount = 0;
+      if ((lastSelected !== undefined) && (this.mRowRefs[lastSelected.rowId] !== undefined)) {
+        // the previously selected row might no longer be visible, which would cause
+        // an exception when trying to find the associated dom node
+        const lastIdx = sortedRows.indexOf(lastSelected.rowId);
+        if (lastIdx !== -1) {
+          const selectedNode = ReactDOM.findDOMNode(this.mRowRefs[lastSelected.rowId]) as Element;
+          visibleLineCount = this.mScrollRef.clientHeight / selectedNode.clientHeight;
+          // account for the header. quite inaccurate.
+          visibleLineCount -= 2;
+        }
       }
-    }
 
-    let offset = 0;
-    switch (evt.keyCode) {
-      case 32: {
+      let offset = 0;
+      switch (evt.keyCode) {
+        case 32: {
+          evt.preventDefault();
+          this.toggleDetails();
+          break;
+        }
+        case 33: offset = Math.round(visibleLineCount * -0.5); break;
+        case 34: offset = Math.round(visibleLineCount * 0.5); break;
+        case 38: offset = -1; break;
+        case 40: offset = 1; break;
+      }
+      if (offset !== 0) {
         evt.preventDefault();
-        this.toggleDetails();
-        break;
+        const groupId = evt.currentTarget.getAttribute('data-group') || undefined;
+        const newItem = this.selectRelative(offset, groupId, evt.shiftKey);
+        if ((this.mRowRefs[newItem] !== undefined) && this.mMounted) {
+          this.scrollToItem(
+            ReactDOM.findDOMNode(this.mRowRefs[newItem]) as HTMLElement, Math.abs(offset) > 1);
+        }
+      } else {
+        const action = this.props.actions.find(iter =>
+          this.matchHotKey(iter, evt.keyCode, evt.shiftKey, evt.altKey, evt.ctrlKey));
+        if (action !== undefined) {
+          evt.preventDefault();
+          const { rowState } = this.state;
+          action.action(Object.keys(rowState).filter(id => rowState[id].selected));
+        }
       }
-      case 33: offset = Math.round(visibleLineCount * -0.5); break;
-      case 34: offset = Math.round(visibleLineCount * 0.5); break;
-      case 38: offset = -1; break;
-      case 40: offset = 1; break;
-    }
-    if (offset !== 0) {
-      evt.preventDefault();
-      const groupId = evt.currentTarget.getAttribute('data-group') || undefined;
-      const newItem = this.selectRelative(offset, groupId, evt.shiftKey);
-      if ((this.mRowRefs[newItem] !== undefined) && this.mMounted) {
-        this.scrollToItem(
-          ReactDOM.findDOMNode(this.mRowRefs[newItem]) as HTMLElement, Math.abs(offset) > 1);
-      }
-    } else {
-      const action = this.props.actions.find(iter =>
-        this.matchHotKey(iter, evt.keyCode, evt.shiftKey, evt.altKey, evt.ctrlKey));
-      if (action !== undefined) {
-        evt.preventDefault();
-        const { rowState } = this.state;
-        action.action(Object.keys(rowState).filter(id => rowState[id].selected));
-      }
+    } catch (err) {
+      log('warn', 'failed to handle keydown event', err.message);
     }
   }
 
