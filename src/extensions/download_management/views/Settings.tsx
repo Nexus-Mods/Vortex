@@ -20,6 +20,7 @@ import { testPathTransfer, transferPath } from '../../../util/transferPath';
 import { isChildPath, isPathValid } from '../../../util/util';
 import { setDownloadPath, setMaxDownloads } from '../actions/settings';
 import { setTransferDownloads } from '../actions/transactions';
+import { getVortexPath } from '../../../util/api';
 
 import getDownloadPath, {getDownloadPathPattern} from '../util/getDownloadPath';
 import writeDownloadsTag from '../util/writeDownloadsTag';
@@ -28,7 +29,6 @@ import getTextMod from '../../mod_management/texts';
 import getText from '../texts';
 
 import Promise from 'bluebird';
-import { remote } from 'electron';
 import * as path from 'path';
 import * as process from 'process';
 import * as React from 'react';
@@ -219,9 +219,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private validateDownloadPath(input: string): { state: ValidationState, reason?: string } {
-    let vortexPath = remote.app.getAppPath();
+    let vortexPath = getVortexPath('base');
     if (path.basename(vortexPath) === 'app.asar') {
-      // in asar builds getAppPath returns the path of the asar so need to go up 2 levels
+      // in asar builds, returns the path of the asar so need to go up 2 levels
       // (resources/app.asar)
       vortexPath = path.dirname(path.dirname(vortexPath));
     }
@@ -313,9 +313,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     const newPath: string = getDownloadPath(this.state.downloadPath);
     const oldPath: string = getDownloadPath(this.props.downloadPath);
 
-    let vortexPath = remote.app.getAppPath();
+    let vortexPath = getVortexPath('base');
     if (path.basename(vortexPath) === 'app.asar') {
-      // in asar builds getAppPath returns the path of the asar so need to go up 2 levels
+      // in asar builds, returns the path of the asar so need to go up 2 levels
       // (resources/app.asar)
       vortexPath = path.dirname(path.dirname(vortexPath));
     }

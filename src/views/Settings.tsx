@@ -7,10 +7,10 @@ import * as fs from '../util/fs';
 import { writeFileAtomic } from '../util/fsAtomic';
 import { log } from '../util/log';
 import makeReactive from '../util/makeReactive';
+import { getVortexPath } from '../util/api';
 
 import MainPage from './MainPage';
 
-import { remote } from 'electron';
 import * as path from 'path';
 import * as React from 'react';
 import { Panel, Tab, Tabs } from 'react-bootstrap';
@@ -52,9 +52,7 @@ type IProps = ISettingsProps & IConnectedProps & IActionProps;
  * @extends {ComponentEx<ISettingsProps, {}>}
  */
 class Settings extends ComponentEx<IProps, {}> {
-  private mStartupPath = path.join(remote.app.getPath('appData'),
-                                   remote.app.name,
-                                   'startup.json');
+  private mStartupPath = path.join(getVortexPath('userData'), 'startup.json');
   private mStartupSettings = makeReactive({});
 
   constructor(props: IProps) {

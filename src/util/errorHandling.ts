@@ -9,6 +9,7 @@ import { log } from './log';
 import opn from './opn';
 import { getSafe } from './storeHelper';
 import { flatten, getAllPropertyNames, spawnSelf, truthy } from './util';
+import getVortexPath from './getVortexPath';
 
 import NexusT, { IFeedbackResponse } from '@nexusmods/nexus-api';
 import Promise from 'bluebird';
@@ -108,8 +109,7 @@ ${error.stack}
 
 export function createErrorReport(type: string, error: IError, context: IErrorContext,
                                   labels: string[], state: any, sourceProcess?: string) {
-  const app = appIn || remote.app;
-  const reportPath = path.join(app.getPath('userData'), 'crashinfo.json');
+  const reportPath = path.join(getVortexPath('userData'), 'crashinfo.json');
   fs.writeFileSync(reportPath, JSON.stringify({
     type, error, labels: labels || [], context,
     reporterId: getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], undefined),
@@ -317,7 +317,7 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
       if (action === 0) {
         // can't access the store at this point because we won't be waiting for the store
         // to be persisted
-        fs.writeFileSync(path.join(app.getPath('temp'), '__disable_' + error.extension), '');
+        fs.writeFileSync(path.join(getVortexPath('temp'), '__disable_' + error.extension), '');
       }
     }
   } catch (err) {

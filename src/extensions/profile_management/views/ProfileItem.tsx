@@ -5,6 +5,7 @@ import { ComponentEx } from '../../../util/ComponentEx';
 import * as fs from '../../../util/fs';
 import { log } from '../../../util/log';
 import { getSafe } from '../../../util/storeHelper';
+import { getVortexPath } from '../../../util/api';
 
 import { getGame } from '../../gamemode_management/util/getGame';
 
@@ -13,7 +14,7 @@ import { IProfileFeature } from '../types/IProfileFeature';
 
 import TransferIcon from './TransferIcon';
 
-import { nativeImage, remote } from 'electron';
+import { nativeImage } from 'electron';
 import { TFunction } from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
@@ -49,7 +50,6 @@ function nop() {
  * @extends {React.Component<IConnectedProps, {}>}
  */
 class ProfileItem extends ComponentEx<IProps, IComponentState> {
-  private mUserData: string;
   private mMounted: boolean = false;
   constructor(props: IProps) {
     super(props);
@@ -57,7 +57,6 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
       hasProfileImage: false,
       counter: 0,
     });
-    this.mUserData = remote.app.getPath('userData');
   }
 
   public componentDidMount() {
@@ -255,7 +254,7 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
   private get imagePath(): string {
     const { profile } = this.props;
     return path.join(
-      this.mUserData, profile.gameId, 'profiles', profile.id, 'banner.png');
+      getVortexPath('userData'), profile.gameId, 'profiles', profile.id, 'banner.png');
   }
 
   private cloneProfile = () => {

@@ -6,6 +6,7 @@ import { TFunction } from '../../util/i18n';
 import { log } from '../../util/log';
 import { activeGameId, gameName } from '../../util/selectors';
 import walk from '../../util/walk';
+import { getVortexPath } from '../../util/api';
 
 import { IDiscoveryResult } from '../gamemode_management/types/IDiscoveryResult';
 import { getGame } from '../gamemode_management/util/getGame';
@@ -13,10 +14,8 @@ import LinkingDeployment from '../mod_management/LinkingDeployment';
 import { IDeploymentMethod, IUnavailableReason } from '../mod_management/types/IDeploymentMethod';
 
 import Promise from 'bluebird';
-import { app as appIn, remote } from 'electron';
 import * as path from 'path';
 
-const app = appIn || remote.app;
 
 class DeploymendMethod extends LinkingDeployment {
   public id: string;
@@ -222,7 +221,7 @@ class DeploymendMethod extends LinkingDeployment {
   }
 
   private ensureAdmin(): boolean {
-    const userData = app.getPath('userData');
+    const userData = getVortexPath('userData');
     // any file we know exists
     const srcFile = path.join(userData, 'Cookies');
     const destFile = path.join(userData, '__link_test');

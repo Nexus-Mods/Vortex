@@ -10,9 +10,10 @@ import { writeFileAtomic } from './fsAtomic';
 import { log } from './log';
 import ReduxPersistor from './ReduxPersistor';
 import {reduxSanity, StateError} from './reduxSanity';
+import getVortexPath from './getVortexPath';
 
 import Promise from 'bluebird';
-import { app as appIn, dialog, remote } from 'electron';
+import { dialog } from 'electron';
 import { forwardToRenderer, replayActionMain } from 'electron-redux';
 import * as encode from 'encoding-down';
 import * as leveldown from 'leveldown';
@@ -25,8 +26,6 @@ import thunkMiddleware from 'redux-thunk';
 let basePersistor: ReduxPersistor<IState>;
 
 const IMPORTED_TAG = 'imported__do_not_delete.txt';
-
-const app = remote !== undefined ? remote.app : appIn;
 
 export const currentStatePath = 'state.v2';
 export const FULL_BACKUP_PATH = 'state_backups_full';
@@ -167,7 +166,7 @@ export function createFullStateBackup(backupName: string, store: Redux.Store<any
     return Promise.reject(new DataInvalid('Failed to create state backup'));
   }
 
-  const basePath = path.join(app.getPath('userData'), 'temp', FULL_BACKUP_PATH);
+  const basePath = path.join(getVortexPath('userData'), 'temp', FULL_BACKUP_PATH);
 
   return fs.ensureDirWritableAsync(basePath, () => Promise.resolve())
     .then(() => writeFileAtomic(path.join(basePath, backupName + '.json'),

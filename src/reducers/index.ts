@@ -8,7 +8,7 @@
 import { IExtensionReducer } from '../types/Extension';
 import { IReducerSpec, IStateVerifier,
          VerifierDrop, VerifierDropParent } from '../types/IExtensionContext';
-import { UserCanceled } from '../util/api';
+import { UserCanceled, getVortexPath } from '../util/api';
 import deepMerge from '../util/deepMerge';
 import * as fs from '../util/fs';
 import { log } from '../util/log';
@@ -167,7 +167,7 @@ function deriveReducer(statePath: string,
               }
               const decision = querySanitize(errors);
               if (decision === Decision.SANITIZE) {
-                const backupPath = path.join(app.getPath('temp'), STATE_BACKUP_PATH);
+                const backupPath = path.join(getVortexPath('temp'), STATE_BACKUP_PATH);
                 log('info', 'sanitizing application state');
                 let backupData;
                 if (backupTime !== undefined) {

@@ -11,7 +11,7 @@ import { didIgnoreError, disableErrorReport, getVisibleWindow, setOutdated, setW
 import ExtensionManagerT from '../util/ExtensionManager';
 import { validateFiles } from '../util/fileValidation';
 import * as fs from '../util/fs';
-import getVortexPath from '../util/getVortexPath';
+import { getVortexPath, setVortexPath } from '../util/getVortexPath';
 import lazyRequire from '../util/lazyRequire';
 import LevelPersist, { DatabaseLocked } from '../util/LevelPersist';
 import {log, setLogPath, setupLogging} from '../util/log';
@@ -73,10 +73,10 @@ class Application {
 
     app.commandLine.appendSwitch('js-flags', `--max-old-space-size=${args.maxMemory || 4096}`);
 
-    this.mBasePath = app.getPath('userData');
+    this.mBasePath = getVortexPath('userData');
     fs.ensureDirSync(this.mBasePath);
 
-    const tempPath = path.join(app.getPath('userData'), 'temp');
+    const tempPath = path.join(getVortexPath('userData'), 'temp');
     app.setPath('temp', tempPath);
     fs.ensureDirSync(path.join(tempPath, 'dumps'));
 
@@ -103,7 +103,7 @@ class Application {
         crashDump(path.join(tempPath, 'dumps', `crash-main-${Date.now()}.dmp`));
     }
 
-    setupLogging(app.getPath('userData'), process.env.NODE_ENV === 'development');
+    setupLogging(getVortexPath('userData'), process.env.NODE_ENV === 'development');
     this.setupAppEvents(args);
   }
 
@@ -619,13 +619,13 @@ class Application {
       return muPath;
     } else {
       log('error', 'Multi-User mode not implemented outside windows');
-      return app.getPath('userData');
+      return getVortexPath('userData');
     }
   }
 
   private createStore(restoreBackup?: string, repair?: boolean): Promise<void> {
     const newStore = createVortexStore(this.sanityCheckCB);
-    const backupPath = path.join(app.getPath('temp'), STATE_BACKUP_PATH);
+    const backupPath = path.join(getVortexPath('temp'), STATE_BACKUP_PATH);
     let backups: string[];
 
     const updateBackups = () => fs.ensureDirAsync(backupPath)
@@ -659,8 +659,8 @@ class Application {
         const multiUser = newStore.getState().user.multiUser;
         const dataPath = multiUser
           ? this.multiUserPath()
-          : app.getPath('userData');
-        app.setPath('userData', dataPath);
+          : getVortexPath('userData');
+        setVortexPath('userData', dataPath);
         this.mBasePath = dataPath;
         let created = false;
         try {
@@ -823,7 +823,7 @@ class Application {
     //  - Ensure we're able to retrieve the user's documents folder.
     if (process.platform === 'win32') {
       try {
-        const documentsFolder = app.getPath('documents');
+        const documentsFolder = getVortexPath('documents');
         return (documentsFolder !== '')
           ? Promise.resolve()
           : Promise.reject(new DocumentsPathMissing());

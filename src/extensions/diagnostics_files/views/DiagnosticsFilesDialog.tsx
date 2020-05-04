@@ -5,6 +5,7 @@ import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { didIgnoreError, isOutdated } from '../../../util/errorHandling';
 import * as fs from '../../../util/fs';
 import { showError } from '../../../util/message';
+import { getVortexPath } from '../../../util/api';
 
 import { ILog, ISession } from '../types/ISession';
 import { loadVortexLogs } from '../util/loadVortexLogs';
@@ -303,7 +304,7 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
     const { onShowError } = this.props;
     const { logSessions, sessionIdx } = this.state;
 
-    const nativeCrashesPath = path.join(remote.app.getPath('userData'), 'temp');
+    const nativeCrashesPath = path.join(getVortexPath('userData'), 'temp');
     const fullLog: string = logSessions[sessionIdx].logs
       .map(line => `${line.time} - ${line.type}: ${line.text}`)
       .join(os.EOL);

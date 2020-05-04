@@ -2,13 +2,13 @@ import { IMainPageOptions } from '../types/IExtensionContext';
 
 import ExtensionManager from './ExtensionManager';
 import { debugTranslations, getMissingTranslations } from './i18n';
-import { log } from './log';
+import getVortexPath from './getVortexPath';
 
 import { remote, webFrame } from 'electron';
 import * as path from 'path';
 import { setZoomFactor } from '../actions/window';
 
-const { app, Menu, clipboard, contentTracing } = remote;
+const { Menu, clipboard, contentTracing } = remote;
 
 /**
  * initializes the application menu and with it, hotkeys
@@ -141,7 +141,7 @@ export function initApplicationMenu(extensions: ExtensionManager) {
 
     let profiling: boolean = false;
     const stopProfiling = () => {
-      const outPath = path.join(app.getPath('temp'), 'profile.dat');
+      const outPath = path.join(getVortexPath('temp'), 'profile.dat');
       contentTracing.stopRecording(outPath).then(() => {
         extensions.getApi().sendNotification({
           id: 'profiling',

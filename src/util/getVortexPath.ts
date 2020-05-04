@@ -3,9 +3,10 @@ import * as path from 'path';
 
 const app = remote !== undefined ? remote.app : appIn;
 
+export type CachedPath = 'userData' | 'temp' | 'appData' | 'home' | 'documents'
 export type AppPath = 'base' | 'assets' | 'assets_unpacked' | 'modules' | 'modules_unpacked'
-                    | 'bundledPlugins' | 'locales' | 'package'
-                    | 'userData' | 'appData' | 'temp' | 'home' | 'documents';
+                    | 'bundledPlugins' | 'locales' | 'package' | 'resources'
+                    | CachedPath;
 
 /**
  * app.getAppPath() returns the path to the app.asar,
@@ -16,63 +17,48 @@ export type AppPath = 'base' | 'assets' | 'assets_unpacked' | 'modules' | 'modul
  * when running from unit tests, app may not be defined at all, in that case we use __dirname
  * after all
  */
-let basePath = app !== undefined ? app.getAppPath() : path.resolve(__dirname, '..', '..');
-const isDevelopment = path.basename(basePath, '.asar') !== 'app';
-const isAsar = !isDevelopment && (path.extname(basePath) === '.asar');
-const applicationPath = isDevelopment
-  ? basePath
-  : path.resolve(path.dirname(basePath), '..');
+const appPath = app !== undefined ? app.getAppPath() : path.resolve(__dirname, '..', '..');
+const isDevelopment = path.basename(appPath, '.asar') !== 'app';
+const resourcePath =  isDevelopment ? path.resolve(appPath, '..') : process.resourcesPath;
 
-if (isDevelopment) {
-  basePath = path.join(applicationPath, 'out');
-}
-
-// basePath is now the path that contains assets, bundledPlugins, index.html, main.js and so on
-// applicationPath is still different between development and production
+// appPath is the path to the dir containing main.js, index.html, etc.
+// resourcePath is the path to the dir containing unpacked resources: assets, bundledPlugins, locales, etc.
 
 function getModulesPath(unpacked: boolean): string {
   if (isDevelopment) {
-    return path.join(applicationPath, 'node_modules');
+    return path.join(resourcePath, 'node_modules');
   }
-  const asarPath = unpacked && isAsar ? basePath + '.unpacked' : basePath;
+  const asarPath = unpacked ? appPath + '.unpacked' : appPath;
   return path.join(asarPath, 'node_modules');
 }
 
 function getAssets(unpacked: boolean): string {
-  const asarPath = unpacked && isAsar ? basePath + '.unpacked' : basePath;
-  return path.join(asarPath, 'assets');
+  // In development, [un]packed locations are inverted. XOR to flip when both true
+  const base = (+unpacked ^ +isDevelopment) ? resourcePath : appPath;
+  return path.join(base, 'assets');
 }
 
 function getBundledPluginsPath(): string {
-  // bundled plugins are never packed in the asar
-  return isAsar
-    ? path.join(basePath + '.unpacked', 'bundledPlugins')
-    : path.join(basePath, 'bundledPlugins');
+  return path.join(isDevelopment ? appPath : resourcePath, 'bundledPlugins');
 }
 
 function getLocalesPath(): string {
-  // in production builds the locales are not inside the app(.asar) directory but alongside it
-  return isDevelopment
-    ? path.join(basePath, 'locales')
-    : path.resolve(basePath, '..', 'locales');
+  return path.resolve(resourcePath, 'locales');
 }
 
-/**
- * path to the directory containing package.json file
- */
-function getPackagePath(): string {
-  return isDevelopment
-    ? applicationPath
-    : basePath;
-}
-
-const cachedAppPath = (() => {
+const { get: cachedAppPath, set: setCachedAppPath } = (() => {
   const cache: { [id: string]: string } = {};
-  return (id: string) => {
-    if (cache[id] === undefined) {
-      cache[id] = app.getPath(id as any);
+  return {
+    get: (id: CachedPath) => {
+      if (cache[id] === undefined) {
+        cache[id] = app.getPath(id as any);
+      }
+      return cache[id];
+    },
+    set: (id: CachedPath, val: string) => {
+      app.setPath(id, val);
+      return cache[id] = val;
     }
-    return cache[id];
   };
 })();
 
@@ -84,22 +70,25 @@ const cachedAppPath = (() => {
  * This function aims to provide paths to application data independent
  * of any of that.
  */
-function getVortexPath(id: AppPath): string {
+export function getVortexPath(id: AppPath): string {
   switch (id) {
     case 'userData': return cachedAppPath('userData');
     case 'temp': return cachedAppPath('temp');
     case 'appData': return cachedAppPath('appData');
     case 'home': return cachedAppPath('home');
     case 'documents': return cachedAppPath('documents');
-    case 'base': return basePath;
-    case 'package': return getPackagePath();
+    case 'base': return appPath;
+    case 'package': return appPath;
     case 'assets': return getAssets(false);
     case 'assets_unpacked': return getAssets(true);
     case 'modules': return getModulesPath(false);
     case 'modules_unpacked': return getModulesPath(true);
     case 'bundledPlugins': return getBundledPluginsPath();
     case 'locales': return getLocalesPath();
+    case 'resources': return resourcePath;
   }
 }
+
+export {setCachedAppPath as setVortexPath};
 
 export default getVortexPath;
