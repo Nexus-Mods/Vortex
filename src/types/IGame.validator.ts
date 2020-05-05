@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 'use strict';
 var equal = require('ajv/lib/compile/equal');
 var validate = (function() {

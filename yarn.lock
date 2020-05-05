@@ -12060,8 +12060,8 @@ napi-macros@~2.0.0:
   integrity sha512-A0xLykHtARfueITVDernsAWdtIMbOJgKgcluwENp3AlsKN/PloyO10HtmoqnFAQAcxPkgZN7wdfPfEd0zNGxbg==
 
 native-errors@Nexus-Mods/node-native-errors:
-  version "0.0.6"
-  resolved "https://codeload.github.com/Nexus-Mods/node-native-errors/tar.gz/fab45c52441893e5a5fa3645474933e28e6a3237"
+  version "0.0.7"
+  resolved "https://codeload.github.com/Nexus-Mods/node-native-errors/tar.gz/a39d7ff31c30dccee919c2794598e0a981d15594"
   dependencies:
     autogypi "^0.2.2"
     nan "^2.14.0"
