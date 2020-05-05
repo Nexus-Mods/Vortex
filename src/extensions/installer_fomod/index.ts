@@ -198,18 +198,19 @@ class ConnectionIPC {
     });
     let wasConnected = false;
 
+    socket.events.on('accept', () => {
+      if (!wasConnected) {
+        onResolve();
+        wasConnected = true;
+      }
+    });
+
     if (false) {
       // for debugging purposes, the user has to run the installer manually
       await socket.bind('tcp://127.0.0.1:12345');
     } else {
       // connect to random free port
       await socket.bind('tcp://127.0.0.1:*');
-      socket.events.on('accept', () => {
-        if (!wasConnected) {
-          onResolve();
-          wasConnected = true;
-        }
-      });
       // invoke the c# installer, passing the port
       proc = await createIPC(socket.lastEndpoint.split(':')[2]);
       proc.stderr.on('data', (dat: Buffer) => {
@@ -447,7 +448,7 @@ function init(context: IExtensionContext): boolean {
   context.registerInstaller('fomod', 20, toBlue(testSupportedScripted), toBlue(installWrap));
   context.registerInstaller('fomod', 100, toBlue(testSupportedFallback), toBlue(installWrap));
 
-  context.registerTest('net-current', 'startup', checkNetInstall);
+    context.registerTest('net-current', 'startup', checkNetInstall);
   context.registerDialog('fomod-installer', InstallerDialog);
   context.registerReducer(['session', 'fomod', 'installer', 'dialog'], installerUIReducer);
 
