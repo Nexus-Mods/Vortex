@@ -93,9 +93,9 @@
     "!**/build${/*}",
     "node_modules/**/*.node",
 
-    // Only include win32-x64 prebuilds
+    // Only include prebuilds for this platform
     "!**/node_modules/*/prebuilds${/*}",
-    "**/node_modules/*/prebuilds/win32-x64/*",
+    "**/node_modules/*/prebuilds/${platform}-${arch}/*",
 
     "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme,test,__tests__,tests,powered-test,example,examples,*.d.ts}",
     "!**/node_modules/.bin${/*}",
