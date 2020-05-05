@@ -369,6 +369,8 @@ export function isPathValid(input: string, allowRelative: boolean = false): bool
   if ((process.platform === 'win32') && input.startsWith('\\\\')) {
     // UNC path, skip the leading \\ for validation
     input = input.slice(2);
+  } else if ((process.platform !== 'win32') && input.startsWith('/')) {
+    input = input.slice(1);
   }
   let split = input.replace(trimTrailingSep, '').split(path.sep);
   if (allowRelative) {

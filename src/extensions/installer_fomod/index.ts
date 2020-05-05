@@ -448,7 +448,9 @@ function init(context: IExtensionContext): boolean {
   context.registerInstaller('fomod', 20, toBlue(testSupportedScripted), toBlue(installWrap));
   context.registerInstaller('fomod', 100, toBlue(testSupportedFallback), toBlue(installWrap));
 
+  if (process.platform === 'win32') {
     context.registerTest('net-current', 'startup', checkNetInstall);
+  }
   context.registerDialog('fomod-installer', InstallerDialog);
   context.registerReducer(['session', 'fomod', 'installer', 'dialog'], installerUIReducer);
 
