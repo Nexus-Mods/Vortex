@@ -1298,4 +1298,4 @@ validate.schema = {
   "type": "object"
 };
 validate.errors = null;
-module.exports = validate;
+export default validate as any;
