@@ -45,6 +45,10 @@
     "allowToChangeInstallationDirectory": true,
     "uninstallDisplayName": "${productName}"
   },
+  "linux": {
+    "target": "tar.bz2",
+    "icon": "assets/images/vortex.png"
+  },
   "extraResources": [
     "locales"
   ],
