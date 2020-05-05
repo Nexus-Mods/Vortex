@@ -323,6 +323,9 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
   }
 
   private updateJumpList(starters: IStarterInfo[]) {
+    if (process.platform !== 'win32') {
+      return;
+    }
     const userTasks: Electron.Task[] = starters
       .filter(starter =>
         (truthy(starter.exePath))

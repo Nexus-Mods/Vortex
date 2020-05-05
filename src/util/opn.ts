@@ -5,7 +5,7 @@ import opn = require('opn');
 import * as winapi from 'winapi-bindings';
 
 function open(target: string, wait?: boolean): Promise<void> {
-  if ((winapi !== undefined) && !wait) {
+  if ((winapi?.ShellExecuteEx !== undefined) && !wait) {
     try {
       // TODO: technically with ShellExecuteEx we should be able to reproduce the wait behaviour
       winapi.ShellExecuteEx({ verb: 'open', show: 'restore', file: target, mask: ['flag_no_ui'] });

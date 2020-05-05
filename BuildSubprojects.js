@@ -199,7 +199,7 @@ function evalCondition(condition, context) {
     return true;
   }
   const script = new vm.Script(condition);
-  return script.runInNewContext(context);
+  return script.runInNewContext({ ... context, process });
 }
 
 function processProject(project, buildType, feedback, noparallel) {

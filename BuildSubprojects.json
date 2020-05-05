@@ -4,6 +4,7 @@
       "type": "build-copy",
       "name": "gamebryo-plugin-management",
       "path": "extensions/gamebryo-plugin-management",
+      "condition": "process.platform === 'win32'",
       "removeModules": ["vortex-api", "nexus-api", "esptk", "loot"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "src/**/*.scss", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/gamebryo-plugin-management"
@@ -20,6 +21,7 @@
       "type": "build-copy",
       "name": "gamebryo-savegame-management",
       "path": "extensions/gamebryo-savegame-management",
+      "condition": "process.platform === 'win32'",
       "removeModules": ["vortex-api", "nexus-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/gamebryo-savegame-management"
@@ -44,6 +46,7 @@
       "type": "build-copy",
       "name": "gamebryo-bsa-support",
       "path": "extensions/gamebryo-bsa-support",
+      "condition": "process.platform === 'win32'",
       "removeModules": ["vortex-api", "nexus-api", "bsatk"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/gamebryo-bsa-support"
@@ -52,6 +55,7 @@
       "type": "build-copy",
       "name": "gamebryo-ba2-support",
       "path": "extensions/gamebryo-ba2-support",
+      "condition": "process.platform === 'win32'",
       "removeModules": ["vortex-api", "nexus-api", "ba2tk"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "typings.custom/index.d.ts"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/gamebryo-ba2-support"
@@ -100,6 +104,7 @@
       "type": "build-copy",
       "name": "gamestore-xbox",
       "path": "extensions/gamestore-xbox",
+      "condition": "process.platform === 'win32'",
       "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/gamestore-xbox"
