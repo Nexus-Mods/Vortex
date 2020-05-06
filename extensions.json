@@ -84,10 +84,10 @@
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/9/9-1529662049-893434642.jpeg",
       "name": "Hungarian translation for Vortex",
       "tags": [],
-      "version": "1.17",
+      "version": "1.18",
       "language": "hu",
       "type": "translation",
-      "timestamp": 1577978788,
+      "timestamp": 1588761325,
       "uploader": "Luke2135"
     },
     {
@@ -982,15 +982,15 @@
       "uploader": "Pickysaurus",
       "description": {
         "short": "Import mods installed via Steam Workshop into Vortex",
-        "long": "This extension is currently in beta and may include bugs. Please report any problems you encounter. I have only tested this with Steam Workshop for Skyrim 2011. \n<br />\n<br />You can select which mods to import, then you will be prompted to unsubscribe from the workshop versions before the process completes. Vortex will offer you handy buttons to open each workshop page. If for some reason Steam falls out of whack and doesn't uninstall the mods properly you will need to manually delete the files from your workshop folder. \n<br />\n<br />Once mods have been import to Vortex they will no longer be updated when the Steam Workshop entry updates. You also cannot reinstall the mods as no archive is created (possible improvement).\n<br />\n<br />I've gone all in with games, just to see how robust it is. Remember, this is very much a beta extension. Currently supports importing from:\n<br />[code]﻿['skyrim', 'ahatintime', 'enderal', 'darkestdungeon', 'dawnofman', 'divinityoriginalsin2', \"divinityoriginalsin2definitiveedition', 'faleanniversary', 'galacticcivilisations3', 'kenshi', 'kerbalspaceprogram', 'legendofgrimrock', 'mbwarband', 'neverwinternightsenhancededition', 'oxygennotincluded', 'payday2', 'pillarsofeternity2deadfire', 'portal2', 'prisonarchitect', 'rimworld' ];[/code]\n<br />\n<br />[b]Vortex Install\n<br />[/b]\n<br />[list]\n<br />[*]In Vortex, enabled advanced mode in the settings.\n<br />[*]Navigate to the Extensions tab.\n<br />[*]Drop the 7z archive into the \"drop zone\" at the bottom of the page.\n<br />[*]Click the prompt to restart Vortex.\n<br />[/list]\n<br />\n<br />[b]Manual Install\n<br />[/b]\n<br />Extract the 7z archive to %appdata%&#92;Vortex&#92;plugins&#92;steam-import"
+        "long": "This extension is currently in beta and may include bugs. Please report any problems you encounter. I have only tested this with Steam Workshop for Skyrim 2011. \n<br />\n<br />You can select which mods to import, then you will be prompted to unsubscribe from the workshop versions before the process completes. Vortex will offer you handy buttons to open each workshop page. If for some reason Steam falls out of whack and doesn't uninstall the mods properly you will need to manually delete the files from your workshop folder. \n<br />\n<br />Once mods have been import to Vortex they will no longer be updated when the Steam Workshop entry updates. You also cannot reinstall the mods as no archive is created (possible improvement).\n<br />\n<br />I've gone all in with games, just to see how robust it is. Remember, this is very much a beta extension. Currently supports importing from:\n<br />[code]﻿['skyrim', 'ahatintime', 'enderal', 'darkestdungeon', 'dawnofman', 'divinityoriginalsin2', 'divinityoriginalsin2definitiveedition', 'faleanniversary', 'galacticcivilisations3', 'kenshi', 'kerbalspaceprogram', 'legendofgrimrock', 'mbwarband', 'neverwinternightsenhancededition', 'oxygennotincluded', 'payday2', 'pillarsofeternity2deadfire', 'portal2', 'prisonarchitect', 'rimworld', 'x4foundations' ];\n<br />[/code]\n<br />\n<br />[b]Vortex Install\n<br />[/b]\n<br />[list]\n<br />[*]In Vortex, enabled advanced mode in the settings.\n<br />[*]Navigate to the Extensions tab.\n<br />[*]Drop the 7z archive into the \"drop zone\" at the bottom of the page.\n<br />[*]Click the prompt to restart Vortex.\n<br />[/list]\n<br />\n<br />[b]Manual Install\n<br />[/b]\n<br />Extract the 7z archive to %appdata%&#92;Vortex&#92;plugins&#92;steam-import"
       },
       "downloads": 6,
       "endorsements": 0,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/114/114-1587989197-840423380.jpeg",
       "name": "Import from Steam Workshop",
-      "timestamp": 1588458674,
+      "timestamp": 1588764520,
       "tags": [],
-      "version": "1.0.0",
+      "version": "1.0.1",
       "type": null
     }
   ]
