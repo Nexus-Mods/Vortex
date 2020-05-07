@@ -141,3 +141,10 @@ export class NotFound extends Error {
     this.name = this.constructor.name;
   }
 }
+
+export class TimeoutError extends Error {
+  constructor() {
+    super('Operation timed out');
+    this.name = this.constructor.name;
+  }
+}

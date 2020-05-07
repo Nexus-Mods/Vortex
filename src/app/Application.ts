@@ -232,14 +232,14 @@ class Application {
 
     return fs.writeFileAsync(this.mStartupLogPath, (new Date()).toUTCString())
         .catch(() => null)
-        .then(() => this.testUserEnvironment())
-        .then(() => this.validateFiles())
-        .then(() => {
+        .tap(() => {
           log('info', '--------------------------');
           log('info', 'Vortex Version', app.getVersion());
           log('info', 'Parameters', process.argv.join(' '));
-          return this.startSplash();
         })
+        .then(() => this.testUserEnvironment())
+        .then(() => this.validateFiles())
+        .then(() => this.startSplash())
         // start initialization
         .tap(() => log('debug', 'showing splash screen'))
         .then(splashIn => {
@@ -675,6 +675,7 @@ class Application {
 
         log('info', `using ${dataPath} as the storage directory`);
         if (multiUser) {
+          log('info', 'all further logging will happen in', path.join(dataPath, 'vortex.log'));
           setLogPath(dataPath);
           log('info', '--------------------------');
           log('info', 'Vortex Version', app.getVersion());
@@ -686,12 +687,18 @@ class Application {
           return Promise.resolve();
         }
       })
-      .then(() => insertPersistor('app', new SubPersistor(last(this.mLevelPersistors), 'app')))
+      .then(() => {
+        log('debug', 'reading app state');
+        return insertPersistor('app', new SubPersistor(last(this.mLevelPersistors), 'app'));
+      })
       .then(() => {
         if (newStore.getState().app.instanceId === undefined) {
           this.mFirstStart = true;
           const newId = uuid.v4();
+          log('debug', 'first startup, generated instance id', { instanceId: newId });
           newStore.dispatch(setInstanceId(newId));
+        } else {
+          log('debug', 'startup instance', { instanceId: newStore.getState().app.instanceId });
         }
         const ExtensionManager = require('../util/ExtensionManager').default;
         this.mExtensions = new ExtensionManager(newStore);
@@ -700,9 +707,12 @@ class Application {
         return Promise.mapSeries(allHives(this.mExtensions), hive =>
           insertPersistor(hive, new SubPersistor(last(this.mLevelPersistors), hive)));
       })
-      .then(() => importState(this.mBasePath))
+      .then(() => {
+        log('debug', 'checking if state db needs to be upgraded');
+        return importState(this.mBasePath);
+      })
       .then(oldState => {
-        // mark as imported first, otherwise we risk importing again overwriting data.
+        // mark as imported first, otherwise we risk importing again, overwriting data.
         // this way we risk not importing but since the old state is still there, that
         // can be repaired
         return oldState !== undefined ?
@@ -715,7 +725,10 @@ class Application {
                        }) :
                    Promise.resolve();
       })
-      .then(() => updateBackups())
+      .then(() => {
+        log('debug', 'updating state backups');
+        return updateBackups();
+      })
       .then(() => {
         if (restoreBackup !== undefined) {
           log('info', 'restoring state backup', restoreBackup);
@@ -760,6 +773,7 @@ class Application {
         };
 
         this.mExtensions.setStore(newStore);
+        log('debug', 'setting up extended store');
         return extendStore(newStore, this.mExtensions);
       })
       .then(() => {

@@ -636,9 +636,17 @@ export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promis
       api.store.dispatch(setUserInfo(undefined));
     })
     .catch(NexusError, err => {
-      showError(api.store.dispatch,
-        'Failed to log in',
-        errorFromNexusError(err), { allowReport: false });
+      api.sendNotification({
+        id: 'nexus-login-failed',
+        type: 'error',
+        title: 'Failed to log in',
+        message: errorFromNexusError(err),
+        actions: [
+          { title: 'Try again', action: dismiss => {
+            updateKey(api, nexus, key);
+          } },
+        ],
+      });
       api.store.dispatch(setUserInfo(undefined));
     })
     .catch(ProcessCanceled, err => {

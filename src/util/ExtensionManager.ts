@@ -28,7 +28,7 @@ import { Archive } from './archives';
 import { relaunch } from './commandLine';
 import { COMPANY_ID } from './constants';
 import { MissingDependency, NotSupportedError,
-        ProcessCanceled, UserCanceled } from './CustomErrors';
+        ProcessCanceled, TimeoutError, UserCanceled } from './CustomErrors';
 import { isOutdated } from './errorHandling';
 import getVortexPath from './getVortexPath';
 import { i18n } from './i18n';
@@ -40,7 +40,7 @@ import runElevatedCustomTool from './runElevatedCustomTool';
 import { activeGameId } from './selectors';
 import { getSafe } from './storeHelper';
 import StyleManager from './StyleManager';
-import { setdefault, truthy } from './util';
+import { setdefault, timeout, truthy } from './util';
 
 import Promise from 'bluebird';
 import { spawn, SpawnOptions } from 'child_process';
@@ -804,14 +804,11 @@ class ExtensionManager {
     const reportError = (err: Error, call: IInitCall) => {
       log('warn', 'failed to call once',
         { err: err.message, stack: err.stack });
+      err['extension'] = call.extension;
       this.mApi.showErrorNotification(
         'Extension failed to initialize. If this isn\'t an official extension, ' +
         'please report the error to the respective author.',
-        {
-          extension: call.extension,
-          err: err.message,
-          stack: err.stack,
-        });
+        err);
     };
 
     return Promise.each(calls, (call, idx) => {
@@ -822,9 +819,13 @@ class ExtensionManager {
         });
         const prom = call.arguments[0]() || Promise.resolve();
 
-        return prom.catch(err => {
-          reportError(err, call);
-        });
+        return timeout(prom, 10000, { throw: true })
+          .catch(TimeoutError, () => {
+            reportError(new Error('Initialization didn\'t finish in time.'), call);
+          })
+          .catch(err => {
+            reportError(err, call);
+          });
       } catch (err) {
         reportError(err, call);
       }

@@ -8,6 +8,7 @@ import * as _ from 'lodash';
 import * as path from 'path';
 import * as semver from 'semver';
 import * as tmp from 'tmp';
+import { TimeoutError } from './CustomErrors';
 
 /**
  * count the elements in an array for which the predicate matches
@@ -297,22 +298,30 @@ export function escapeRE(input: string): string {
   return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+export interface ITimeoutOptions {
+  cancel?: boolean;
+  throw?: boolean;
+}
+
 /**
  * set a timeout for a promise. When the timeout expires the promise returned by this
- * resolves with a value of undefined.
+ * resolves with a value of undefined (or throws a TimeoutError).
  * @param prom the promise that should be wrapped
  * @param delay the time in milliseconds after which this should return
- * @param cancel if true, the input promise is canceled when the timeout expires. Otherwise
- *               it's allowed to continue and may finish after all.
+ * @param options options detailing how this timeout acts
  */
-export function timeout<T>(prom: Promise<T>, delay: number, cancel: boolean = false): Promise<T> {
+export function timeout<T>(prom: Promise<T>, delay: number, options?: ITimeoutOptions): Promise<T> {
   let timedOut: boolean = false;
-  return Promise.any<T>([prom, Promise.delay(delay).then(() => {
+  return Promise.race<T>([prom, Promise.delay(delay).then(() => {
     timedOut = true;
-    return undefined;
+    if (options?.throw === true) {
+      return Promise.reject(new TimeoutError());
+    } else {
+      return undefined;
+    }
   })])
-    .tap(() => {
-      if (timedOut && cancel) {
+    .finally(() => {
+      if (timedOut && (options?.cancel === true)) {
         prom.cancel();
       }
     });

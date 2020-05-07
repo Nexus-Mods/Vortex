@@ -18,5 +18,7 @@
   "Enable All_plural": "Enable All",
   "Install All": "Install",
   "Install All_plural": "Install All",
-  "{{ count }} notification is being suppressed_plural": "{{ count }} notifications are being suppressed"
+  "{{ count }} notification is being suppressed_plural": "{{ count }} notifications are being suppressed",
+  "{{ count }} extensions will be updated": "An extension will be updated",
+  "{{ count }} extensions will be updated_plural": "{{ count }} extensions will be updated"
 }
