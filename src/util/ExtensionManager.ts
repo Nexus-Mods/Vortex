@@ -1169,7 +1169,7 @@ class ExtensionManager {
 
   private lookupModReference = (reference: IReference): Promise<ILookupResult[]> => {
     return this.getModDB()
-      .then(modDB => modDB.getByKey(reference.fileMD5));
+      .then(modDB => modDB.getByReference(reference));
   }
 
   private modLookupId(detail: ILookupDetails): string {
