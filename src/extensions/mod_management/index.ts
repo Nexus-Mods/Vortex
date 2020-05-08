@@ -451,7 +451,7 @@ function genUpdateModDeployment() {
       .then(() => withActivationLock(() => {
         log('debug', 'deploying mods', {
           game: gameId,
-          profile: profileId,
+          profile: profile?.id,
           method: activator.name,
         });
 

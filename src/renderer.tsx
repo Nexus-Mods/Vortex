@@ -95,7 +95,7 @@ import { UserCanceled } from './util/CustomErrors';
 import {} from './util/extensionRequire';
 import { reduxLogger } from './util/reduxLogger';
 import { getSafe } from './util/storeHelper';
-import { getAllPropertyNames } from './util/util';
+import { bytesToString, getAllPropertyNames } from './util/util';
 
 log('debug', 'renderer process started', { pid: process.pid });
 
@@ -342,14 +342,17 @@ setInterval(() => {
       id: 'high-memory-usage',
       type: 'warning',
       title: 'Vortex is using a lot of memory and may crash',
-      message: `${Math.floor(stat.totalHeapSize / 1024)} MB`,
+      message: bytesToString(stat.totalHeapSize * 1024),
     });
     log('warn', 'High memory usage', { usage: stat.totalHeapSize, max: stat.heapSizeLimit });
   }
   highUsageReport = heapPerc > 0.75;
   if ((lastHeapSize > 0) && ((stat.totalHeapSize - lastHeapSize) > REPORT_HEAP_INCREASE)) {
-    log('info', 'memory usage growing fast',
-        { usage: stat.totalHeapSize, previous: lastHeapSize, max: stat.heapSizeLimit });
+    log('info', 'memory usage growing fast', {
+      usage: bytesToString(stat.totalHeapSize * 1024),
+      previous: bytesToString(lastHeapSize * 1024),
+      max: bytesToString(stat.heapSizeLimit * 1024),
+    });
   }
   lastHeapSize = stat.totalHeapSize;
 }, 5000);
