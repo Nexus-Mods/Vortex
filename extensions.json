@@ -231,17 +231,17 @@
       "author": "liuyanxi",
       "description": {
         "short": "Chinese Translation for Vortex",
-        "long": "[i][color=#b6b6b6][size=3]这是一个中文翻译文件。本人由于也是第一次做翻译，英语水平也是实在渣渣，翻译内容可能存在[b][u]极多的错误[/u][/b]（很多专业名词没办法理解，只能机翻外加自己理解，让句子读起来尽可能通畅），希望各位大佬多多指正。\n<br />[/size][/color][/i]\n<br />[color=#ff0000][size=4]没有N网账号下载不了汉化？请前往[url=http://www.9damao.com/forum.php?mod=viewthread&amp;tid=143115&amp;fromuid=737507]9DM论坛[/url]下载！\n<br />[/size][/color]\n<br />\n<br />[color=#00ff00][size=5]安装教程：[/size][/color]\n<br />\n<br />[color=#ff7700][size=5]一、自动安装[/size]\n<br />[/color]\n<br />[size=3][url=https://www.nexusmods.com/site/mods/29?tab=files]下载文件[/url]，将自动安装脚本于zh文件夹解压至同一目录，运行脚本即可（支持从旧翻译升级）。更改语言参见下方手动安装第4步。安装完成后可删除解压出的zh文件夹与脚本。如果安装失败您需要手动安装。\n<br />\n<br />\n<br />[/size][color=#ff7700][size=5]二、手动安装[/size][/color]\n<br />\n<br />[size=3]1.首先进入目录：[b][color=#00ffff]%appdata%&#92;vortex[/color][/b]（资源管理器直接输入就行，如果没有进入 [/size][size=3][b]C:&#92;Users&#92;你的用户名&#92;AppData&#92;Roaming&#92;vortex[/b] ）\n<br />\n<br />[/size][size=3]2.创建一个名为 [color=#00ffff][b]locales[/b][/color] 的文件夹（如果有就不用创建了）\n<br />\n<br />[/size][size=3]3.[url=https://www.nexusmods.com/site/mods/29?tab=files]下载翻译文件[/url]，把解压出来的，名为 [b][color=#00ffff]zh[/color][/b] 的文件夹丢到 [b][color=#00ffff]locales[/color][/b] 文件夹里！\n<br />\n<br />[img]http://ww1.sinaimg.cn/large/5ea3e879ly1fzc0jjc9ozj20ey05udgw.jpg[/img]\n<br />[/size][code]﻿[/code]\n<br />[size=3]4.打开Vortex，进入：SETTINGS-INTERFACE-LANGUAGE选择中文\n<br />[/size]\n<br />[img]http://ww1.sinaimg.cn/large/5ea3e879ly1fzc0kegdfvj20df08uaar.jpg[/img]"
+        "long": "[i][size=3][color=#b6b6b6]这是一个中文翻译文件。本人由于也是第一次做翻译，英语水平也是实在渣渣，翻译内容可能存在[/color][b][u]极多的错误[/u][/b][color=#b6b6b6]（很多专业名词没办法理解，只能机翻外加自己理解，让句子读起来尽可能通畅），希望各位大佬多多指正。[/color]\n<br />\n<br />2020年5月8日更新：大家好，很抱歉这次更新耽误了一年之久，因为本人学业确实过于繁忙，一直咕咕了，望理解。。为了翻译的持续发展，所有人可以随意使用本项目中的文件/内容，无需我的授权（我在上面已经声明了）。但需要遵守 [url=https://creativecommons.org/licenses/by-nc-sa/4.0/]CC BY-NC-SA 4.0[/url]﻿ 协议。简单解释此协议：1.任何人可自由使用，修改，分发本项目，但务必署名。2.新的项目本身也得依照本协议进行分发。3.不得以任何方式进行盈利（非商业性）。\n<br />\n<br />[color=#ff00ff]但是我更希望大家能以合作方式共同完善此项目。我已经创建了[url=https://github.com/liuyanxi975/Chinese-Translation-for-Vortex]Github项目[/url]，您可进入了解详情。[/color]\n<br />[/size][/i]\n<br />[color=#ff0000][size=4]没有N网账号下载不了汉化？请前往[url=http://www.9damaomods.net/forum.php?mod=viewthread&amp;tid=143115&amp;fromuid=737507]9DM论坛[/url]下载！\n<br />[/size][/color]\n<br />\n<br />[color=#00ff00][size=5]安装教程：[/size][/color]\n<br />\n<br />[color=#ff7700][size=5]一、自动安装[/size]\n<br />[/color]\n<br />[size=3][url=https://www.nexusmods.com/site/mods/29?tab=files]下载文件[/url]，将自动安装脚本于zh文件夹解压至同一目录，运行脚本即可（支持从旧翻译升级）。更改语言参见下方手动安装第4步。安装完成后可删除解压出的zh文件夹与脚本。如果安装失败您需要手动安装。\n<br />\n<br />\n<br />[/size][color=#ff7700][size=5]二、手动安装[/size][/color]\n<br />\n<br />[size=3]1.首先进入目录：[b][color=#00ffff]%appdata%&#92;vortex[/color][/b]（资源管理器直接输入就行，如果没有进入 [/size][size=3][b]C:&#92;Users&#92;你的用户名&#92;AppData&#92;Roaming&#92;vortex[/b] ）\n<br />\n<br />[/size][size=3]2.创建一个名为 [color=#00ffff][b]locales[/b][/color] 的文件夹（如果有就不用创建了）\n<br />\n<br />[/size][size=3]3.[url=https://www.nexusmods.com/site/mods/29?tab=files]下载翻译文件[/url]，把解压出来的，名为 [b][color=#00ffff]zh[/color][/b] 的文件夹丢到 [b][color=#00ffff]locales[/color][/b] 文件夹里！\n<br />\n<br />[img]http://ww1.sinaimg.cn/large/5ea3e879ly1fzc0jjc9ozj20ey05udgw.jpg[/img]\n<br />[/size][code]﻿[/code]\n<br />[size=3]4.打开Vortex，进入：SETTINGS-INTERFACE-LANGUAGE选择中文\n<br />[/size]\n<br />[img]http://ww1.sinaimg.cn/large/5ea3e879ly1fzc0kegdfvj20df08uaar.jpg[/img]"
       },
       "downloads": 16388,
       "endorsements": 622,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/29/29-1540373659-1000981133.png",
       "name": "Chinese Translation for Vortex",
       "tags": [],
-      "version": "0.17.8",
+      "version": "1.2.11",
       "language": "zh",
       "type": "translation",
-      "timestamp": 1553251801,
+      "timestamp": 1588933547,
       "uploader": "liuyanxi"
     },
     {
