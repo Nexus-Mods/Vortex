@@ -299,7 +299,7 @@ class GameModeManager {
     // don't overwrite customised tools
     if ((existing === undefined) || !existing.custom) {
       delete result.executable;
-      this.mStore.dispatch(addDiscoveredTool(gameId, result.id, result));
+      this.mStore.dispatch(addDiscoveredTool(gameId, result.id, result, false));
     }
   }
 

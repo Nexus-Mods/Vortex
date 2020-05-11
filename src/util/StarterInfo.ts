@@ -287,6 +287,7 @@ class StarterInfo implements IStarterInfo {
   public defaultPrimary: boolean;
   public extensionPath: string;
   public logoName: string;
+  public timestamp: number;
 
   constructor(game: IGameStored, gameDiscovery: IDiscoveryResult,
               tool?: IToolStored, toolDiscovery?: IDiscoveredTool) {
@@ -340,6 +341,7 @@ class StarterInfo implements IStarterInfo {
       this.shell = getSafe(toolDiscovery, ['shell'], getSafe(tool, ['shell'], undefined));
       this.exclusive = getSafe(tool, ['exclusive'], false) || false;
       this.defaultPrimary = getSafe(tool, ['defaultPrimary'], false);
+      this.timestamp = toolDiscovery.timestamp;
     } else {
       // defaults for undiscovered & unconfigured tools
       this.name = tool.name;

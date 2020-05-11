@@ -11,7 +11,7 @@ import { getGame } from '../../gamemode_management/util/getGame';
 import { installPath, installPathForGame } from '../selectors';
 import { IMod } from '../types/IMod';
 import { getManifest, loadActivation, saveActivation, withActivationLock } from './activationStore';
-import { getCurrentActivator } from './deploymentMethods';
+import { getActivator, getCurrentActivator } from './deploymentMethods';
 import { NoDeployment } from './exceptions';
 import { dealWithExternalChanges } from './externalChanges';
 

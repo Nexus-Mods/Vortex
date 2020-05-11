@@ -25,7 +25,8 @@ export const setGamePath = safeCreateAction('SET_GAME_PATH',
  */
 export const addDiscoveredTool =
   safeCreateAction('ADD_DISCOVERED_TOOL',
-  (gameId: string, toolId: string, result: IDiscoveredTool) => ({ gameId, toolId, result }));
+  (gameId: string, toolId: string, result: IDiscoveredTool, manual: boolean) =>
+    ({ gameId, toolId, result, manual }));
 
 /**
  * set visibility of a tool. Tools that have been added by the user will be removed entirely whereas

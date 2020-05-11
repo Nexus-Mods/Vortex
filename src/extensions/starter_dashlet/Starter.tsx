@@ -455,7 +455,7 @@ function mapStateToProps(state: any): IConnectedProps {
 function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onAddDiscoveredTool: (gameId: string, toolId: string, result: IDiscoveredTool) => {
-      dispatch(addDiscoveredTool(gameId, toolId, result));
+      dispatch(addDiscoveredTool(gameId, toolId, result, true));
     },
     onSetToolVisible: (gameId: string, toolId: string, visible: boolean) => {
       dispatch(setToolVisible(gameId, toolId, visible));

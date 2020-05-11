@@ -643,7 +643,8 @@ function mapStateToProps(state: any): IConnectedProps {
 
 function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
-    onAddTool: (gameId, toolId, result) => dispatch(addDiscoveredTool(gameId, toolId, result)),
+    onAddTool: (gameId, toolId, result) =>
+      dispatch(addDiscoveredTool(gameId, toolId, result, true)),
     onEditEnv: (itemId: string) => dispatch(displayGroup('envEdit', itemId)),
     onSetGameParameters: (gameId, parameters) => dispatch(setGameParameters(gameId, parameters)),
   };
