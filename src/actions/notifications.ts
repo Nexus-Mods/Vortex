@@ -136,6 +136,7 @@ export function addNotification(notification: INotification) {
     if (noti.createdTime === undefined) {
       noti.createdTime = Date.now();
     }
+    noti.updatedTime = Date.now();
 
     notificationActions[noti.id] = noti.actions === undefined
       ? []

@@ -140,7 +140,7 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
           return true;
         }
         const displayTime = this.displayTime(item);
-        return (displayTime === null) || (item.createdTime + displayTime > now);
+        return (displayTime === null) || (item.updatedTime + displayTime > now);
       });
     }
 
