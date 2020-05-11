@@ -576,6 +576,10 @@
     "undo": {
       "path": "{nucleo}/arrows/{nucleo_simple}_undo-25",
       "rmFill": true
+    },
+    "report": {
+      "path": "{nucleo}/design-development/{nucleo_simple}_todo",
+      "rmFill": true
     }
   }
 }

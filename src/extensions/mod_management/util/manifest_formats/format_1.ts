@@ -6,6 +6,7 @@ function deserialize(input: any): IDeploymentManifest {
     instance: input.instance,
     files: input.files,
     deploymentMethod: input.deploymentMethod,
+    deploymentTime: input.deploymentTime,
     stagingPath: input.stagingPath,
   };
 }

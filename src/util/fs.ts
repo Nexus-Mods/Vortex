@@ -63,7 +63,7 @@ export interface IRemoveFileOptions {
 
 const NUM_RETRIES = 5;
 const RETRY_DELAY_MS = 100;
-const RETRY_ERRORS = new Set(['EPERM', 'EBUSY', 'EIO', 'EBADF', 'ENOTEMPTY', 'UNKNOWN']);
+const RETRY_ERRORS = new Set(['EPERM', 'EBUSY', 'EIO', 'EBADF', 'ENOTEMPTY', 'EMFILE', 'UNKNOWN']);
 
 const simfail = (process.env.SIMULATE_FS_ERRORS === 'true')
   ? (func: () => PromiseBB<any>): PromiseBB<any> => {

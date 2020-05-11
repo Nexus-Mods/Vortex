@@ -4,6 +4,7 @@ export interface IDeploymentManifest {
   version: number;
   instance: string;
   deploymentMethod?: string;
+  deploymentTime?: number;
   stagingPath?: string;
   files: IDeployedFile[];
 }

@@ -20,6 +20,8 @@ import sortMods, { CycleError } from '../extensions/mod_management/util/sort';
 import testModReference from '../extensions/mod_management/util/testModReference';
 import GameStoreHelper from '../util/GameStoreHelper';
 import { Archive } from './archives';
+import bbcodeToReact, { bbcodeToHTML } from './bbcode';
+import ConcurrencyLimiter from './ConcurrencyLimiter';
 import copyRecursive from './copyRecursive';
 import { ArgumentInvalid, DataInvalid, MissingInterpreter, NotFound, NotSupportedError,
          ProcessCanceled, SetupError, UserCanceled } from './CustomErrors';
@@ -42,7 +44,7 @@ import ReduxProp from './ReduxProp';
 import relativeTime, { userFriendlyTime } from './relativeTime';
 import StarterInfo from './StarterInfo';
 import steam, { GameNotFound, ISteamEntry } from './Steam';
-import { bytesToString, deBOM, isChildPath, makeQueue, objDiff,
+import { bytesToString, deBOM, delay, isChildPath, makeQueue, objDiff,
          pad, sanitizeCSSId, setdefault } from './util';
 import walk from './walk';
 
@@ -54,13 +56,17 @@ export * from './network';
 export {
   Archive,
   ArgumentInvalid,
+  bbcodeToHTML,
+  bbcodeToReact,
   bytesToString,
   copyFileAtomic,
   copyRecursive,
+  ConcurrencyLimiter,
   CycleError,
   DataInvalid,
   Debouncer,
   deBOM,
+  delay,
   deriveModInstallName as deriveInstallName,
   epicGamesLauncher,
   extend,

@@ -375,6 +375,7 @@ export function saveActivation(modType: string, instance: string,
     instance,
     version: CURRENT_VERSION,
     deploymentMethod: activatorId,
+    deploymentTime: Date.now(),
     stagingPath,
     files: activation,
   };
