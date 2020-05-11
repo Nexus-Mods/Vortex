@@ -19,9 +19,9 @@ import { setDeploymentNecessary } from './actions/deployment';
 import {addMod, removeMod} from './actions/mods';
 import {setActivator} from './actions/settings';
 import { IDeploymentManifest } from './types/IDeploymentManifest';
-import {IDeploymentMethod} from './types/IDeploymentMethod';
+import {IDeployedFile, IDeploymentMethod} from './types/IDeploymentMethod';
 import {IMod} from './types/IMod';
-import {fallbackPurge, getManifest, loadActivation, saveActivation} from './util/activationStore';
+import {fallbackPurge, getManifest, loadActivation, purgeDeployedFiles, saveActivation} from './util/activationStore';
 import { getCurrentActivator, getSupportedActivators } from './util/deploymentMethods';
 
 import {getGame} from '../gamemode_management/util/getGame';
@@ -223,6 +223,8 @@ function checkStagingFolder(api: IExtensionApi, gameId: string,
 
 export function onGameModeActivated(
     api: IExtensionApi, activators: IDeploymentMethod[], newGame: string) {
+  // TODO: This function is a monster and needs to be refactored desperately, unfortunately
+  //   it's also sensitive code
   const store = api.store;
   let state: IState = store.getState();
   let supported = getSupportedActivators(state);
@@ -343,13 +345,38 @@ export function onGameModeActivated(
     if (changeActivator) {
       if (oldActivator !== undefined) {
         const stagingPath = installPath(state);
-        const deployment = loadAllManifests(api, oldActivator, modPaths, stagingPath);
+        const manifests: { [typeId: string]: IDeploymentManifest } = {};
+        const deployments: { [typeId: string]: IDeployedFile[] } = {};
         const oldInit = initProm;
         initProm = () => oldInit()
-          .then(() => api.emitAndAwait('will-purge', profile.id, deployment))
+          .then(() => Promise.all(Object.keys(modPaths).map((modType) =>
+            getManifest(api, modType, gameId)
+              .then(manifest => {
+                manifests[modType] = manifest;
+                deployments[modType] = manifest.files;
+              })))
+          .then(() => api.emitAndAwait('will-purge', profile.id, deployments))
           .then(() => oldActivator.prePurge(instPath))
-          .then(() => Promise.mapSeries(Object.keys(modPaths),
-            typeId => oldActivator.purge(instPath, modPaths[typeId], profile.gameId))
+          .then(() => Promise.mapSeries(Object.keys(modPaths), typeId => {
+            return getNormalizeFunc(modPaths[typeId])
+              .then(normalize => {
+                // test for the special case where the game has been moved since the deployment
+                // happened. Based on the assumption that this is the reason the deployment method
+                // changed, the regular purge is almost guaranteed to not work correctly and we're
+                // better off using the manifest-based fallback purge.
+                // For example: if the game directory with hard links was moved, those links were
+                // turned into real files, the regular purge op wouldn't clean up anything
+                if ((manifests[typeId].targetPath !== undefined)
+                    && (normalize(modPaths[typeId]) !== normalize(manifests[typeId].targetPath))
+                    && oldActivator.isFallbackPurgeSafe) {
+                  log('warn', 'using manifest-based purge because deployment path changed',
+                      { from: manifests[typeId].targetPath, to: modPaths[typeId] });
+                  return purgeDeployedFiles(modPaths[typeId], deployments[typeId]);
+                } else {
+                  return oldActivator.purge(instPath, modPaths[typeId], profile.gameId);
+                }
+              });
+          }))
             .then(() => undefined)
             .catch(ProcessCanceled, () => Promise.resolve())
             .catch(TemporaryError, err =>

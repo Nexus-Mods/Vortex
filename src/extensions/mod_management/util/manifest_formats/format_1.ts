@@ -8,6 +8,7 @@ function deserialize(input: any): IDeploymentManifest {
     deploymentMethod: input.deploymentMethod,
     deploymentTime: input.deploymentTime,
     stagingPath: input.stagingPath,
+    targetPath: input.targetPath,
   };
 }
 
