@@ -35,11 +35,20 @@ function checkForUpdates(api: IExtensionApi) {
         ? iter.modId === ext.modId
         : iter.name === ext.name);
 
-      if (update === undefined) {
+      if ((update === undefined)
+          || (update.version === undefined)) {
         return prev;
       }
 
-      if (semver.gte(semver.coerce(ext.version), semver.coerce(update.version))) {
+      const extVer = semver.coerce(ext.version);
+      const updateVer = semver.coerce(update.version);
+
+      if ((extVer === null) || (updateVer === null)) {
+        log('warn', 'invalid version on extension', { local: ext.version, update: update.version });
+        return prev;
+      }
+
+      if (semver.gte(extVer, updateVer)) {
         return prev;
       }
 
