@@ -133,6 +133,7 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
               totalWidth={3}
               onChangeLayout={this.onChangeLayout}
               settings={dashletSettings}
+              items={dynamic.map(iter => iter.title).sort()}
             >
               {dynamic.map(this.renderItem)}
             </PackeryGrid>
