@@ -468,7 +468,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
           this.scrollTo(id, false);
         }, 2000);
       } else {
-        log('warn', 'node not found', this.mRowRefs);
+        log('warn', 'node not found', id);
       }
     } catch (err) {
       if (mayRetry !== false) {
