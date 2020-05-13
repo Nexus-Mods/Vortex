@@ -1,4 +1,5 @@
 import { settingsReducer } from '../src/extensions/gamemode_management/reducers/settings';
+import _ from 'lodash';
 
 describe('setToolVisible', () => {
   it('sets the tool visible', () => {
@@ -163,6 +164,7 @@ describe('addDiscoveredTool', () => {
       workingDirectory: 'C:',
     };
     let result = settingsReducer.reducers.ADD_DISCOVERED_TOOL(input, { gameId: 'gameId1', toolId: 'toolId1',  result: parameters });
+    delete result.discovered.gameId1.tools.toolId1.timestamp;
     expect(result).toEqual({ discovered: { gameId1: { tools: { toolId1: parameters } } } });
   });
   it('affects only the right game', () => {
@@ -180,6 +182,8 @@ describe('addDiscoveredTool', () => {
       workingDirectory: 'C:',
     };
     let result = settingsReducer.reducers.ADD_DISCOVERED_TOOL(input, { gameId: 'gameId1', toolId: 'toolId1',  result: parameters });
+    delete result.discovered.gameId1.tools.toolId1.timestamp;
+    delete result.discovered.gameId2.tools.toolId1.timestamp;
     expect(result).toEqual({ discovered: { gameId1: { tools: { toolId1: parameters } }, gameId2: { tools: { toolId1: oldParameters } }  } });
   });
 });
