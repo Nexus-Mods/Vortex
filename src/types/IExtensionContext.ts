@@ -737,7 +737,14 @@ export interface IExtensionContext {
    * register an installer
    * @param {string} id id for the installer. currently only used for logging
    * @param {number} priority the priority of the installer. The supported installer with the
-   *                          highest priority gets to handle the mod
+   *                          highest priority (smallest number) gets to handle the mod.
+   *                          Note: scripted fomods are handled at prio 20 and there is a fallback
+   *                          installer that will handle practically any archive at prio 100 so
+   *                          you want to place your installer in the range 21-99.
+   *                          If your installer has priority > 100 it will probably never be
+   *                          considered, if it has priority < 20 it will disable fomod installers
+   *                          which only makes sense if you implement a scripted installer system
+   *                          as well that is superior to fomod.
    * @param {TestSupported} testSupported function called to determine if the handler can deal
    *                                      with a mod
    * @param {InstallFunc} install function called to actually install a mod
@@ -918,7 +925,7 @@ export interface IExtensionContext {
    * registers a provider for general information about a game
    * @param {string} id unique id identifying the provider
    * @param {number} priority if two providers provide the same info (same key) the one with the
-   *                          higher priority ends up providing that piece of info
+   *                          higher priority (smaller number) ends up providing that piece of info
    * @param {number} expireMS the time (in milliseconds) before the info "expires". After expiry it
    *                          will be re-requested. You usually want this to be several days, not
    *                          seconds or milliseconds
@@ -939,8 +946,8 @@ export interface IExtensionContext {
    *
    * @param {number} priority determins the order in which the attributes are combined.
    *                          if two extractors produce the same attribute, the one with the higher
-   *                          priority wins. The default attributes retrieved from the meta database
-   *                          have priority 100.
+   *                          priority (smaller number) wins. The default attributes retrieved from
+   *                          the meta database have priority 100.
    * @param {AttributeExtractor} extractor the function producing mod attributes
    */
   registerAttributeExtractor: (priority: number, extractor: AttributeExtractor) => void;
@@ -949,8 +956,9 @@ export interface IExtensionContext {
    * register a mod type
    * @param {string} id internal identifier for this mod type. can't be the empty string ''!
    * @param {number} priority if there is difficulty differentiating between two mod types, the
-   *                          higher priority one wins. Otherwise please use 100 so there is
-   *                          room for other extensions with lower and higher priority
+   *                          higher priority (smaller number) one wins.
+   *                          Otherwise please use 100 so there is room for other extensions
+   *                          with lower and higher priority
    * @param {(gameId) => boolean} isSupported return true if the mod type is supported for this
    *                                          game
    * @param {(game: IGame) => string} getPath given the specified game, return the absolute path to

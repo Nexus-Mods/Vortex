@@ -574,8 +574,7 @@ class InstallManager {
       return Promise.reject(new Error(`Invalid game "${gameId}"`));
     }
     const modTypes: IModType[] = game.modTypes;
-    // sort with priority descending so we can stop as soon as we've hit the first match
-    const sorted = modTypes.sort((lhs, rhs) => rhs.priority - lhs.priority);
+    const sorted = modTypes.sort((lhs, rhs) => lhs.priority - rhs.priority);
     let found = false;
 
     return Promise.mapSeries(sorted, (type: IModType): Promise<string> => {
