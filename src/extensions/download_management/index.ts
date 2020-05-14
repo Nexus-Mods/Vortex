@@ -490,10 +490,12 @@ function move(api: IExtensionApi, source: string, destination: string): Promise<
   return fs.statAsync(destination)
     .catch(() => undefined)
     .then(stats => stats !== undefined ? queryReplace(api, destination) : null)
+    .then(() => fs.copyAsync(source, destination))
     .then(() => {
+      // do this after copy is completed, otherwise code watching for the event may be
+      // trying to access the file already
       store.dispatch(addLocalDownload(dlId, gameMode, path.basename(destination), 0));
     })
-    .then(() => fs.copyAsync(source, destination))
     .then(() => fs.statAsync(destination))
     .then(stats => {
       api.dismissNotification(notiId);

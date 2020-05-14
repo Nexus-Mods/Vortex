@@ -318,7 +318,8 @@ class InstallManager {
             log('info', 'process dependencies', { modId });
             const mod: IMod = state.persistent.mods[installGameId]?.[modId];
 
-            this.installDependencies([].concat(modInfo.rules || [], mod?.rules || []),
+            this.installDependencies(modName(mod),
+                                     [].concat(modInfo.rules || [], mod?.rules || []),
                                      this.mGetInstallPath(installGameId),
                                      currentProfile, installContext, api);
           }
@@ -1099,7 +1100,8 @@ class InstallManager {
       .then(() => undefined);
   }
 
-  private installDependencies(rules: IRule[],
+  private installDependencies(name: string,
+                              rules: IRule[],
                               installPath: string,
                               profile: IProfile,
                               installContext: InstallContext,
