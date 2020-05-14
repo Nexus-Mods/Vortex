@@ -656,6 +656,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         t={t}
         tableId={tableId}
         id={tableRowId}
+        rowClass={sanitizeCSSId(rowId)}
         key={tableRowId}
         data={calculatedValues[rowId]}
         group={groupId}

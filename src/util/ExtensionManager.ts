@@ -1552,9 +1552,10 @@ class ExtensionManager {
       // react, which might re-generate every control.
       if (highlightCSS === null) {
         // fallback if template rules weren't found
-        result += `${selector} { border: 1px solid red }`;
+        result += `${selector} { border: 1px solid var(--brand-danger) !important }\n`;
+        text = 'foobar';
         if (text !== undefined) {
-          result += `${selector}::after { color: red, content: "${text}" }`;
+          result += `${selector}::after { color: var(--brand-danger); content: "${text}" }\n`;
         }
       } else {
         result += highlightCSS.cssText.replace('#highlight-control-dummy', selector);
