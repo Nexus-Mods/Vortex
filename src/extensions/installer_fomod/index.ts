@@ -396,7 +396,7 @@ async function testSupportedScripted(files: string[]): Promise<ISupportedResult>
 
   try {
     return await connection.sendMessage('TestSupported',
-      { files, allowedTypes: ['XmlScript', 'CSharpScript'] })
+      { files, allowedTypes: ['XmlScript', 'CSharpScript'] });
   } catch (err) {
     throw transformError(err);
   }

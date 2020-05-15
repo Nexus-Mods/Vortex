@@ -1553,7 +1553,6 @@ class ExtensionManager {
       if (highlightCSS === null) {
         // fallback if template rules weren't found
         result += `${selector} { border: 1px solid var(--brand-danger) !important }\n`;
-        text = 'foobar';
         if (text !== undefined) {
           result += `${selector}::after { color: var(--brand-danger); content: "${text}" }\n`;
         }

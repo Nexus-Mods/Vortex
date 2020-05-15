@@ -233,7 +233,6 @@ class Steam implements IGameStore {
                 .map(appData => {
                   const { name, manifestData } = appData;
                   try {
-                    log('debug', 'parsing steam manifest', { name });
                     return { obj: parse(manifestData.toString()), name };
                   } catch (err) {
                     log('warn', 'failed to parse steam manifest',
