@@ -11,6 +11,7 @@ import { resolveCategoryName,
          resolveCategoryPath } from '../extensions/category_management/util/retrieveCategoryPath';
 import { readExtensibleDir } from '../extensions/extension_manager/util';
 import { getGame, getGames } from '../extensions/gamemode_management/util/getGame';
+import { getModType } from '../extensions/gamemode_management/util/modTypeExtensions';
 import deriveModInstallName from '../extensions/mod_management/modIdManager';
 import { getManifest } from '../extensions/mod_management/util/activationStore';
 import { getActivator,
@@ -79,6 +80,7 @@ export {
   getGame,
   getGames,
   getManifest,
+  getModType,
   getNormalizeFunc,
   getReduxLog,
   getVisibleWindow,

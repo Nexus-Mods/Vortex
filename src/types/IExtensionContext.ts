@@ -28,7 +28,7 @@ import { DialogType, IDialogResult } from './IDialog';
 import { IGame } from './IGame';
 import { IGameStore } from './IGameStore';
 import { INotification } from './INotification';
-import { IDiscoveryResult, IState } from './IState';
+import { IDiscoveryResult, IMod, IState } from './IState';
 import { ITableAttribute } from './ITableAttribute';
 import { ITestResult } from './ITestResult';
 
@@ -673,7 +673,7 @@ export interface IReducerSpec {
 
 export interface IModTypeOptions {
   // if set, the merge behavior specified here overrides the one specified for the game
-  mergeMods?: boolean;
+  mergeMods?: boolean | ((mod: IMod) => string);
   deploymentEssential?: boolean;
   name?: string;
 }
