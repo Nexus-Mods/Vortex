@@ -186,6 +186,44 @@ interface IAwaitingPromise {
   reject: (err: Error) => void;
 }
 
+function jsonReplace(key: string, value: any) {
+  return (typeof(value) === 'object' && value?.type === 'Buffer')
+    ? { type: 'Buffer', data: Buffer.from(value.data).toString('base64') }
+    : value;
+}
+
+function makeJsonRevive() {
+  let id: string;
+  return (key: string, value: any) => {
+    if (key === 'id') {
+      id = value;
+    }
+    if (truthy(value) && (typeof (value) === 'object')) {
+      if (value.type === 'Buffer') {
+        return Buffer.from(value.data, 'base64');
+      }
+      Object.keys(value).forEach(subKey => {
+        if (truthy(value[subKey])
+          && (typeof (value[subKey]) === 'object')
+          && (value[subKey].__callback !== undefined)) {
+          const callbackId = value[subKey].__callback;
+          value[subKey] = (...args: any[]) => {
+            this.sendMessageInner('Invoke', {
+              requestId: id,
+              callbackId,
+              args,
+            })
+              .catch(err => {
+                log('info', 'process data', err.message);
+              });
+          };
+        }
+      });
+    }
+    return value;
+  };
+}
+
 class ConnectionIPC {
   public static async bind(): Promise<ConnectionIPC> {
     const socket = new Pair();
@@ -304,7 +342,7 @@ class ConnectionIPC {
         ...data,
         command,
       },
-    }));
+    }, jsonReplace));
     return res;
   }
 
@@ -320,28 +358,7 @@ class ConnectionIPC {
   }
 
   private processData(msg: Buffer) {
-    const data = JSON.parse(msg.toString(), (key: string, value: any) => {
-      if (truthy(value) && (typeof (value) === 'object')) {
-        Object.keys(value).forEach(subKey => {
-          if (truthy(value[subKey])
-            && (typeof (value[subKey]) === 'object')
-            && (value[subKey].__callback !== undefined)) {
-            const callbackId = value[subKey].__callback;
-            value[subKey] = (...args: any[]) => {
-              this.sendMessageInner('Invoke', {
-                requestId: data.id,
-                callbackId,
-                args,
-              })
-                .catch(err => {
-                  log('info', 'process data', err.message);
-                });
-            };
-          }
-        });
-      }
-      return value;
-    });
+    const data = JSON.parse(msg.toString(), makeJsonRevive());
     if ((data.callback !== null)
         && (this.mDelegates[data.callback.id] !== undefined)) {
       const func = this.mDelegates[data.callback.id][data.callback.type][data.data.name];

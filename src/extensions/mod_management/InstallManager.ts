@@ -730,6 +730,7 @@ class InstallManager {
     return Promise.each(generatefile, gen => {
       const outputPath = path.join(destinationPath, gen.destination);
       return fs.ensureDirAsync(path.dirname(outputPath))
+        // data buffers are sent to us base64 encoded
         .then(() => fs.writeFileAsync(outputPath, gen.data));
     }).then(() => undefined);
   }
