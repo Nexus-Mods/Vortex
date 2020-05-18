@@ -344,14 +344,22 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
 
     const spread = [ ...en, ...difference ];
 
-    (!!activeGameEntry.preSort)
-      ? activeGameEntry.preSort(spread, this.state.sortType).then(newList =>
-          this.nextState.enabled = (!!newList) ? newList : spread)
-      : this.nextState.enabled = spread;
+    const update = () => {
+      if (updateLO || (this.stringified(spread) !== this.stringified(this.nextState.enabled))) {
+        this.setLoadOrder(this.nextState.enabled);
+        this.mCallbackDebouncer.schedule();
+      }
+    };
 
-    if (updateLO) {
-      this.setLoadOrder(this.nextState.enabled);
-      this.mCallbackDebouncer.schedule();
+    if (!!activeGameEntry.preSort) {
+      activeGameEntry.preSort(spread, this.state.sortType)
+        .then(newList => {
+          this.nextState.enabled = (!!newList) ? newList : spread;
+          update();
+        });
+    } else {
+      this.nextState.enabled = spread;
+      update();
     }
   }
 }
