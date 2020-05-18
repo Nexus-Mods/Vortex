@@ -173,7 +173,7 @@ class EpicGamesLauncher implements IGameStore {
                 return (!!gamePath && !!name && !!appid && !!gameExec)
                   ? fs.statSilentAsync(path.join(gamePath, gameExec))
                       .then(() => Promise.resolve({ appid, name, gamePath, gameStoreId }))
-                      .catch(err => Promise.resolve(undefined))
+                      .catch(() => Promise.resolve(undefined))
                   : Promise.resolve(undefined);
               } catch (err) {
                 log('error', 'Cannot parse Epic Games manifest', err);
