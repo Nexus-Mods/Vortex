@@ -554,6 +554,11 @@ export interface IExtensionApi {
    * before the "style" sheet but after everything else. This allows themes to affect extension
    * styles.
    *
+   * @note Important: As usual with css, rules you add affect the entire application, without
+   *  severely restricting themes and extensions we can not automatically restrict your stylesheets
+   *  to the controls added by your extension. This means it's your responsibility to make sure
+   *  your stylesheet doesn't modify foreign controls.
+   *
    * @param {string} key identify the key to set. If this is an existing sheet, that sheet will be
    *                     replaced
    * @param {string} filePath path of the corresponding stylesheet file

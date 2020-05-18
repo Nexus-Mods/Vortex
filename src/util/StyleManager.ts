@@ -3,6 +3,7 @@ import Debouncer from './Debouncer';
 import * as fs from './fs';
 import getVortexPath from './getVortexPath';
 import {log} from './log';
+import { sanitizeCSSId } from './util';
 
 import Promise from 'bluebird';
 import { app as appIn, ipcMain, ipcRenderer, remote } from 'electron';
@@ -40,7 +41,21 @@ if (ipcMain !== undefined) {
     }
 
     const sassIndex: string =
-      stylesheets.map(name => `@import "${name.replace(/\\/g, '\\\\')}";\n`).join('\n');
+      stylesheets.map(name => {
+        const imp = `@import "${name.replace(/\\/g, '\\\\')}";`;
+        if (path.extname(name) === '.scss') {
+          // nest every extension-provided rule in '*, #added_by_<extname>'
+          // this way it's easier to find out where a rule comes from
+          // that breaks the layout.
+          // the #added_by_ selector should never match anything, * matches
+          // everything without modifying the specificity of the selector, so
+          // this change shouldn't affect how the rule works
+          const extname = sanitizeCSSId(path.basename(name, '.scss'));
+          return `*, #added_by_${extname} { ${imp} }\n`;
+        } else {
+          return imp + '\n';
+        }
+      }).join('\n');
 
     // development builds are always versioned as 0.0.1
     const isDevel: boolean = app.getVersion() === '0.0.1';
