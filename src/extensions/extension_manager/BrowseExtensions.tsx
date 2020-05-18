@@ -15,7 +15,7 @@ import { downloadAndInstallExtension, selectorMatch } from './util';
 
 import { app, remote } from 'electron';
 import * as React from 'react';
-import { Button, ListGroup, ListGroupItem, ModalHeader } from 'react-bootstrap';
+import { Button, FormControl, ListGroup, ListGroupItem, ModalHeader } from 'react-bootstrap';
 import * as semver from 'semver';
 
 const NEXUS_MODS_URL: string = 'http://nexusmods.com/site/mods/';
@@ -30,11 +30,14 @@ export interface IBrowseExtensionsProps {
   onRefreshExtensions: () => void;
 }
 
+type SortOrder = 'name' | 'endorsements' | 'downloads' | 'recent';
+
 interface IBrowseExtensionsState {
   error: Error;
   selected?: ISelector;
   installing: string[];
   searchTerm: string;
+  sort: SortOrder;
 }
 
 function makeSelectorId(ext: IAvailableExtension): string {
@@ -81,6 +84,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
       selected: undefined,
       installing: [],
       searchTerm: '',
+      sort: 'name',
     });
 
     this.mModalRef = React.createRef();
@@ -89,7 +93,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
   public render() {
     const { t, availableExtensions, language, onHide,
             onRefreshExtensions, updateTime, visible } = this.props;
-    const { searchTerm, selected } = this.state;
+    const { searchTerm, selected, sort } = this.state;
 
     const ext = (selected === undefined)
       ? null
@@ -106,25 +110,56 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
           <FlexLayout type='row'>
             <FlexLayout.Fixed className='extension-list'>
               <FlexLayout type='column'>
-                <FormInput
-                  id='browse-extensions-search'
-                  label={t('Search')}
-                  placeholder={t('Search')}
-                  value={searchTerm}
-                  onChange={this.changeSearch}
-                  debounceTimer={200}
-                />
-                <ListGroup>
-                  {availableExtensions
-                    .filter(this.filterSearch)
-                    .sort(this.extensionSort)
-                    .map(this.renderListEntry)}
-                </ListGroup>
-                <div className='extension-list-time'>
-                  {t('Last updated: {{time}}',
-                    { replace: { time: updatedAt.toLocaleString(language) } })}
-                  <IconButton icon='refresh' tooltip={t('Refresh')} onClick={onRefreshExtensions} />
-                </div>
+                <FlexLayout.Fixed>
+                  <FormInput
+                    id='browse-extensions-search'
+                    label={t('Search')}
+                    placeholder={t('Search')}
+                    value={searchTerm}
+                    onChange={this.changeSearch}
+                    debounceTimer={200}
+                  />
+                </FlexLayout.Fixed>
+                <FlexLayout.Fixed>
+                  <FlexLayout type='row' className='extension-sort-container'>
+                    <FlexLayout.Fixed>
+                      {t('Sort by')}
+                    </FlexLayout.Fixed>
+                    <FlexLayout.Flex>
+                      <FormControl
+                        componentClass='select'
+                        onChange={this.changeSort}
+                        value={sort}
+                      >
+                        <option key={'name'} value={'name'}>{t('Name')}</option>
+                        <option key={'endorsements'} value={'endorsements'}>
+                          {t('Endorsements')}
+                        </option>
+                        <option key='downloads' value='downloads'>{t('Downloads')}</option>
+                        <option key='recent' value='recent'>{t('Last update')}</option>
+                      </FormControl>
+                    </FlexLayout.Flex>
+                  </FlexLayout>
+                </FlexLayout.Fixed>
+                <FlexLayout.Flex>
+                  <ListGroup style={{ height: '100%' }}>
+                    {availableExtensions
+                      .filter(this.filterSearch)
+                      .sort(this.extensionSort)
+                      .map(this.renderListEntry)}
+                  </ListGroup>
+                </FlexLayout.Flex>
+                <FlexLayout.Fixed>
+                  <div className='extension-list-time'>
+                    {t('Last updated: {{time}}',
+                      { replace: { time: updatedAt.toLocaleString(language) } })}
+                    <IconButton
+                      icon='refresh'
+                      tooltip={t('Refresh')}
+                      onClick={onRefreshExtensions}
+                    />
+                  </div>
+                </FlexLayout.Fixed>
               </FlexLayout>
             </FlexLayout.Fixed>
             <FlexLayout.Flex fill={true}>
@@ -143,6 +178,11 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
     this.nextState.searchTerm = newValue;
   }
 
+  private changeSort = (evt: React.FormEvent<FormControl>) => {
+    const target: HTMLSelectElement = evt.target as HTMLSelectElement;
+    this.nextState.sort = target.value as SortOrder;
+  }
+
   private filterSearch = (test: IAvailableExtension)  => {
     const { searchTerm } = this.state;
     if (searchTerm.length === 0) {
@@ -156,7 +196,12 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
   }
 
   private extensionSort = (lhs: IAvailableExtension, rhs: IAvailableExtension): number => {
-    return lhs.name.localeCompare(rhs.name);
+    switch (this.state.sort) {
+      case 'downloads': return (rhs.downloads || 0) - (lhs.downloads || 0);
+      case 'endorsements': return (rhs.endorsements || 0) - (lhs.endorsements || 0);
+      case 'recent': return (rhs.timestamp || 0) - (lhs.timestamp || 0);
+      default: return lhs.name.localeCompare(rhs.name);
+    }
   }
 
   private isCompatible(ext: IAvailableExtension): boolean {
