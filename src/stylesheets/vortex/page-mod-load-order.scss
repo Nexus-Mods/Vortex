@@ -26,6 +26,16 @@
       margin-left: auto;
     }
 
+    .entry-checkbox {
+      margin-right: 15px;
+      margin-left: auto;
+
+      label input[type="checkbox"] {
+        margin-left: initial;
+        position: initial;
+      }
+    }
+
     &.dragging {
       opacity: 0;
     }

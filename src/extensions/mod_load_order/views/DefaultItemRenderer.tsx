@@ -1,13 +1,29 @@
 import * as React from 'react';
-import { ListGroupItem } from 'react-bootstrap';
+import { Checkbox, ListGroupItem } from 'react-bootstrap';
 import { withTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
-import { ComponentEx, Icon, selectors, types, util } from 'vortex-api';
-import { ILoadOrder, ILoadOrderDisplayItem } from '../types/types';
+import * as Redux from 'redux';
+import { ThunkDispatch } from 'redux-thunk';
+import { ComponentEx, translate } from '../../../util/ComponentEx';
+
+import {  ILoadOrder, ILoadOrderDisplayItem, ILoadOrderEntry } from '../types/types';
+
+import { Icon } from '../../../controls/api';
+import { IProfile, IState } from '../../../types/api';
+
+import * as selectors from '../../../util/selectors';
+import { getSafe } from '../../../util/storeHelper';
+
+import { setLoadOrderEntry } from '../actions/loadOrder';
 
 interface IConnectedProps {
   modState: any;
   loadOrder: ILoadOrder;
+  profile: IProfile;
+}
+
+interface IActionProps {
+  onSetLoadOrderEntry: (profileId: string, modId: string, entry: ILoadOrderEntry) => void;
 }
 
 interface IBaseProps {
@@ -16,7 +32,7 @@ interface IBaseProps {
   onRef: (element: any) => any;
 }
 
-type IProps = IBaseProps & IConnectedProps;
+type IProps = IBaseProps & IConnectedProps & IActionProps;
 
 class DefaultItemRenderer extends ComponentEx<IProps, {}> {
   constructor(props: IProps) {
@@ -83,8 +99,24 @@ class DefaultItemRenderer extends ComponentEx<IProps, {}> {
           <img src={item.imgUrl} id='mod-img'/>
         </div>
         <p>{item.name}</p>
+        <Checkbox
+          className='entry-checkbox'
+          checked={loadOrder[item.id].enabled}
+          disabled={item.locked}
+          onChange={this.onStatusChange}
+        />
       </ListGroupItem>
     );
+  }
+
+  private onStatusChange = (evt: any) => {
+    const { loadOrder, item, onSetLoadOrderEntry, profile } = this.props;
+    const entry = {
+      pos: loadOrder[item.id].pos,
+      enabled: evt.target.checked,
+    };
+
+    onSetLoadOrderEntry(profile.id, item.id, entry);
   }
 
   private setRef = (ref: any): any => {
@@ -92,16 +124,24 @@ class DefaultItemRenderer extends ComponentEx<IProps, {}> {
   }
 }
 
-function mapStateToProps(state: types.IState, ownProps: IProps): IConnectedProps {
-  const profile: types.IProfile = selectors.activeProfile(state);
+function mapStateToProps(state: IState, ownProps: IProps): IConnectedProps {
+  const profile: IProfile = selectors.activeProfile(state);
   return {
-    loadOrder: util.getSafe(state, ['persistent', 'loadOrder', profile.id], {}),
-    modState: util.getSafe(profile, ['modState'], {}),
+    profile,
+    loadOrder: getSafe(state, ['persistent', 'loadOrder', profile.id], {}),
+    modState: getSafe(profile, ['modState'], {}),
+  };
+}
+
+function mapDispatchToProps(dispatch: any): IActionProps {
+  return {
+    onSetLoadOrderEntry: (profileId, modId, entry) =>
+      dispatch(setLoadOrderEntry(profileId, modId, entry)),
   };
 }
 
 export default withTranslation(['common'])(
-  connect(mapStateToProps)(
+  connect(mapStateToProps, mapDispatchToProps)(
     DefaultItemRenderer) as any) as React.ComponentClass<{
       className?: string,
       item: ILoadOrderDisplayItem,
