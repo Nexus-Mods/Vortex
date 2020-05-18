@@ -1738,6 +1738,14 @@ const countryMap = {
   },
 };
 
+export function languageExists(code: string): boolean {
+  return (code !== undefined) && (languageMap[code] !== undefined);
+}
+
+export function countryExists(code: string): boolean {
+  return (code !== undefined) && (countryMap[code] !== undefined);
+}
+
 export function nativeLanguageName(code: string): string {
   const language = languageMap[code];
   if (language === undefined) {

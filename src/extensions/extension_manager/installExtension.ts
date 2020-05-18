@@ -6,6 +6,8 @@ import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 import { INVALID_FILENAME_RE } from '../../util/util';
 
+import { countryExists, languageExists } from '../settings_interface/languagemap';
+
 import { ExtensionType, IExtension } from './types';
 import { readExtensionInfo } from './util';
 
@@ -147,10 +149,17 @@ function validateTranslation(extPath: string): Promise<void> {
         return Promise.reject(
           new DataInvalid('Expected exactly one language subdirectory'));
       }
+      // the check in isLocaleCode is extremely unreliable because it will fall back to
+      // iso on everything. Was it always like that or was that changed in a recent
+      // node release?
+      const [language, country] = dirNames[0].split('-');
+      if (!languageExists(language) || !countryExists(country)) {
+        return Promise.reject(new DataInvalid('Directory isn\'t a language code'));
+      }
       return fs.readdirAsync(path.join(extPath, dirNames[0]))
         .then(files => {
           if (files.find(fileName => path.extname(fileName) === '.json') === undefined) {
-            return Promise.reject('No translation files');
+            return Promise.reject(new DataInvalid('No translation files'));
           }
 
           return Promise.resolve();
