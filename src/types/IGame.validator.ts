@@ -13,9 +13,6 @@ var validate = (function() {
         "type": "boolean"
       },
       "environment": {
-        "additionalProperties": {
-          "type": "string"
-        },
         "defaultProperties": [],
         "description": "variables to add to the environment when starting this exe. These are in addition to\n(and replacing) existing variables that would be passed automatically.",
         "type": "object"
@@ -172,23 +169,6 @@ var validate = (function() {
                   if ((data1 && typeof data1 === "object" && !Array.isArray(data1))) {
                     var errs__1 = errors;
                     var valid2 = true;
-                    for (var key1 in data1) {
-                      var errs_2 = errors;
-                      if (typeof data1[key1] !== "string") {
-                        validate.errors = [{
-                          keyword: 'type',
-                          dataPath: (dataPath || '') + '.environment[\'' + key1 + '\']',
-                          schemaPath: '#/properties/environment/additionalProperties/type',
-                          params: {
-                            type: 'string'
-                          },
-                          message: 'should be string'
-                        }];
-                        return false;
-                      }
-                      var valid2 = errors === errs_2;
-                      if (!valid2) break;
-                    }
                   } else {
                     validate.errors = [{
                       keyword: 'type',

@@ -429,6 +429,7 @@ function init(context: IExtensionContext): boolean {
   context.registerGame = ((game: IGame, extensionPath: string) => {
     try {
       if (!isIGame(game)) {
+        log('warn', 'invalid game extension', { errors: isIGame.errors });
         throw new Error('Invalid game extension: ' + isIGame.errors.map(err => err.message).join(', '));
       }
       game.extensionPath = extensionPath;
