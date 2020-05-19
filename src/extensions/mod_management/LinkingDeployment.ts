@@ -596,13 +596,15 @@ abstract class LinkingActivator implements IDeploymentMethod {
           // restore backups here
           const files = allEntries.filter(entry =>
             !entry.isDirectory && !LinkingActivator.isTagName(entry.filePath));
-          if ((files.length > 0) && restoreBackups) {
+          if (files.length > 0) {
             empty = false;
-            return Promise.map(
-                files.filter(entry => path.extname(entry.filePath) === BACKUP_TAG),
-                entry => this.restoreBackup(entry.filePath))
-              .catch(UserCanceled, () => undefined)
-              .then(() => undefined);
+            return (restoreBackups)
+              ? Promise.map(
+                  files.filter(entry => path.extname(entry.filePath) === BACKUP_TAG),
+                  entry => this.restoreBackup(entry.filePath))
+                .catch(UserCanceled, () => undefined)
+                .then(() => undefined)
+              : Promise.resolve();
           } else {
             return Promise.resolve();
           }
