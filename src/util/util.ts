@@ -513,3 +513,15 @@ export function toPromise<ResT>(func: (cb) => void): Promise<ResT> {
     func(cb);
   });
 }
+
+export function unique<T, U>(input: T[], keyFunc?: (item: T) => U): T[] {
+  const keys = new Set<U>();
+  return input.reduce((prev: T[], iter: T) => {
+    const key = keyFunc?.(iter);
+    if (keys.has(key)) {
+      return prev;
+    }
+    keys.add(key);
+    return [].concat(prev, iter);
+  }, []);
+}

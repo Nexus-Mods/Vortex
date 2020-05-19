@@ -160,3 +160,10 @@ describe('isMajorUpgrade', () => {
     expect(util.isMajorDowngrade('0.9.0', '1.0.0')).toBe(false);
   });
 });
+
+describe('unique', () => {
+  it('removes duplicates, keeping the first item', () => {
+    expect(util.unique([{ k: 1, v: 1 }, { k: 1, v: 2}, {k: 2, v: 1}], i => i.k))
+      .toEqual([{ k: 1, v: 1 }, { k: 2, v: 1 }]);
+  });
+});
