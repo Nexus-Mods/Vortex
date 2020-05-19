@@ -46,7 +46,7 @@ import relativeTime, { userFriendlyTime } from './relativeTime';
 import StarterInfo from './StarterInfo';
 import steam, { GameNotFound, ISteamEntry } from './Steam';
 import { bytesToString, deBOM, delay, isChildPath, makeQueue, objDiff,
-         pad, sanitizeCSSId, setdefault, toPromise } from './util';
+         pad, sanitizeCSSId, setdefault, toPromise, unique } from './util';
 import walk from './walk';
 
 import SevenZip = require('node-7z');
@@ -121,6 +121,7 @@ export {
   terminate,
   testModReference,
   toPromise,
+  unique,
   UserCanceled,
   userFriendlyTime,
   walk,
