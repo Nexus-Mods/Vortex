@@ -2,48 +2,62 @@ import opn from '../opn';
 
 import { Tag } from 'bbcode-to-react';
 import * as React from 'react';
+import * as url from 'url';
 
 class LinkTag extends Tag {
   public toHTML() {
-    let url = this.renderer.strip(this.params[this.name] || this.getContent(true));
-    if (/javascript:/i.test(url)) {
-      url = '';
+    let linkUrl = this.renderer.strip(this.params[this.name] || this.getContent(true));
+    if (/javascript:/i.test(linkUrl)) {
+      linkUrl = '';
     }
 
-    if (!url || !url.length) {
+    if (!linkUrl || !linkUrl.length) {
       return this.getContent();
     }
 
     return this.renderer.context(
       { linkify: false },
-      () => [`<a href="${url}" target="_blank" title="${url}">`, this.getContent(), '</a>'],
+      () => [`<a href="${linkUrl}" target="_blank" title="${linkUrl}">`, this.getContent(), '</a>'],
     );
   }
 
   public toReact() {
-    let url = this.renderer.strip(this.params[this.name] || this.getContent(true));
-    if (/javascript:/i.test(url)) {
-      url = '';
+    let linkUrl = this.renderer.strip(this.params[this.name] || this.getContent(true));
+    if (/javascript:/i.test(linkUrl)) {
+      linkUrl = '';
     }
 
-    if (!url || !url.length) {
+    if (!linkUrl || !linkUrl.length) {
       return this.getComponents();
     }
 
     if (this.name === 'email') {
-      url = `mailto:${url}`;
+      linkUrl = `mailto:${linkUrl}`;
     }
 
+    const {callbacks} = this.renderer.options;
     return (
-      <a href={url} onClick={this.clicked} title={url}>
+      <a
+        href={linkUrl}
+        // tslint:disable-next-line:jsx-no-lambda
+        onClick={(evt) => this.clicked(evt, callbacks)}
+        title={linkUrl}
+      >
         {this.getComponents()}
       </a>
     );
   }
 
-  private clicked = (evt: React.MouseEvent<any>) => {
+  private clicked = (evt: React.MouseEvent<any>, callbacks) => {
     evt.preventDefault();
-    opn(evt.currentTarget.href).catch(err => undefined);
+    const uri = evt.currentTarget.href;
+    const parsed = url.parse(uri);
+    if ((parsed.protocol === 'cb:') && (callbacks?.[parsed.host] !== undefined)) {
+      const args = parsed.path.slice(1).split('/').map(seg => decodeURIComponent(seg));
+      callbacks[parsed.host](...args);
+    } else if (['http:', 'https:'].includes(parsed.protocol)) {
+      opn(uri).catch(err => undefined);
+    }
   }
 }
 

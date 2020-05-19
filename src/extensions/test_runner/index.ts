@@ -65,6 +65,9 @@ function runCheck(api: IExtensionApi, check: ICheckEntry): Promise<void> {
             action: () => api.store.dispatch(showDialog('info', 'Check failed', {
               bbcode: result.description.long,
               parameters: result.description.replace,
+              options: {
+                bbcodeContext: result.description.context,
+              },
             }, [{ label: 'Close' }])),
           });
         }

@@ -52,12 +52,16 @@ function preProcess(input: string): string {
       .replace(/(&[^;]+;)/g, transformSymbol);
 }
 
-function renderBBCode(input: string): React.ReactChild[] {
+function renderBBCode(input: string, context?: any): React.ReactChild[] {
   if (input === undefined) {
     return [''];
   }
 
-  return fullParser.toReact(preProcess(input));
+  if (context !== undefined) {
+    return fullParser['renderer'].context(context, () => fullParser.toReact(preProcess(input)));
+  } else {
+    return fullParser.toReact(preProcess(input));
+  }
 }
 
 export function stripBBCode(input: string): string {
