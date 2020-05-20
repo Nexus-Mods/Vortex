@@ -348,6 +348,14 @@
       "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "src/**/*.scss"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/mod-report"
+    },
+    {
+      "type": "build-copy",
+      "name": "script-extender-installer",
+      "path": "extensions/script-extender-installer",
+      "removeModules": ["vortex-api"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "src/**/*.scss"],
+      "copyTo": "{BUILD_DIR}/bundledPlugins/script-extender-installer"
     }
   ], [
     {
