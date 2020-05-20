@@ -2,9 +2,10 @@ import { setDownloadPath } from '../../actions';
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
 import { ITestResult } from '../../types/ITestResult';
-import { getNormalizeFunc, Normalize, UserCanceled } from '../../util/api';
+import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import Debouncer from '../../util/Debouncer';
 import * as fs from '../../util/fs';
+import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
 import { log } from '../../util/log';
 import ReduxProp from '../../util/ReduxProp';
 import * as selectors from '../../util/selectors';
@@ -402,6 +403,8 @@ function testDownloadPath(api: IExtensionApi): Promise<void> {
               }, [
                 { label: 'Close' },
               ]);
+              return Promise.reject(new ProcessCanceled(
+                'Failed to reinitialize download directory'));
             })
             .finally(() => {
               api.dismissNotification(id);
@@ -427,6 +430,7 @@ function testDownloadPath(api: IExtensionApi): Promise<void> {
       .then(() => writeDownloadsTag(api, currentDownloadPath));
 
   return ensureDownloadsDirectory()
+    .catch(ProcessCanceled, () => Promise.resolve())
     .catch(UserCanceled, () => Promise.resolve())
     .catch(err => {
       const errTitle = (err.code === 'EPERM')

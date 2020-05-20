@@ -62,7 +62,7 @@ function validateStagingTag(api: IExtensionApi, tagPath: string): Promise<void> 
       if (tag.instance !== state.app.instanceId) {
         return api.showDialog('question', 'Confirm', {
           text: 'This is a staging folder but it appears to belong to a different Vortex '
-              + 'instance. If you\'re using Vortex in shared and "regular" mod, do not use '
+              + 'instance. If you\'re using Vortex in shared and "regular" mode, do not use '
               + 'the same staging folder for both!',
         }, [
           { label: 'Cancel' },

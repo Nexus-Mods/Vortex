@@ -264,7 +264,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                 && ((Date.now() - this.mLastFileUpdate) > 1000)) {
                 this.nextState.progressFile = path.basename(from);
               }
-            });
+            })
+            .catch({ code: 'ENOENT' }, () => Promise.resolve());
           });
       }));
   }
