@@ -360,7 +360,7 @@ function genUpdateModDeployment() {
       api.store.dispatch(updateNotification(notification.id, percent, text));
     };
     const state = api.store.getState();
-    const profile: IProfile = profileId !== undefined
+    let profile: IProfile = profileId !== undefined
       ? getSafe(state, ['persistent', 'profiles', profileId], undefined)
       : activeProfile(state);
 
@@ -468,6 +468,18 @@ function genUpdateModDeployment() {
               .then(deployedFiles => lastDeployment[typeId] = deployedFiles))
           .tap(() => progress(t('Running pre-deployment events'), 2))
           .then(() => api.emitAndAwait('will-deploy', profile.id, lastDeployment))
+          .then(() => {
+            // need to update the profile so that if a will-deploy handler disables a mod, that
+            // actually has an affect on this deployment
+            const updatedState = api.getState();
+            const updatedProfile = updatedState.persistent.profiles[profile.id];
+            if (updatedProfile !== undefined) {
+              profile = updatedProfile;
+            } else {
+              // I don't think this can happen
+              log('warn', 'profile no longer found?', profileId);
+            }
+          })
           .tap(() => progress(t('Checking for external changes'), 5))
           .then(() => dealWithExternalChanges(api, activator, profileId, stagingPath, modPaths,
             lastDeployment))

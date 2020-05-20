@@ -1,4 +1,5 @@
 import { IReducerSpec } from '../../../types/IExtensionContext';
+import { log } from '../../../util/log';
 import {removeValue} from '../../../util/storeHelper';
 import { deleteOrNop, getSafe,
   merge, pushSafe, removeValueIf, setSafe } from '../../../util/storeHelper';
@@ -75,6 +76,7 @@ export const modsReducer: IReducerSpec = {
     [actions.addModRule as any]: (state, payload) => {
       const { gameId, modId, rule } = payload;
       if ((state[gameId] === undefined) || (state[gameId][modId] === undefined)) {
+        log('warn', 'tried to add mod rule to mod that isn\'t installed', { gameId, modId });
         return state;
       }
       const filteredRef = _.omitBy(rule.reference, _.isUndefined);
