@@ -40,10 +40,10 @@ type IItemProps = IItemBaseProps & IDragProps & IDropProps;
 
 class DraggableItem extends React.Component<IItemProps, {}> {
   public render(): JSX.Element {
-    const { isDragging, item } = this.props;
-    const classNames = [].concat(!!item.locked ? 'locked' : undefined,
-                                 !!item.external ? 'external' : undefined,
-                                  isDragging ? 'dragging' : undefined);
+    const { isDragging, item, isLocked } = this.props;
+    const classNames = [].concat(isLocked ? 'locked' : undefined,
+                                !!item.external ? 'external' : undefined,
+                                isDragging ? 'dragging' : undefined);
 
     return (
       <this.props.itemRenderer
@@ -91,6 +91,9 @@ const entrySource: DragSourceSpec<IItemProps, any> = {
   endDrag(props, monitor: DragSourceMonitor) {
     props.apply();
   },
+  canDrag(props, monitor: DragSourceMonitor) {
+    return !props.isLocked;
+  },
 };
 
 const entryTarget: DropTargetSpec<IItemProps> = {
@@ -98,7 +101,7 @@ const entryTarget: DropTargetSpec<IItemProps> = {
     const { containerId, index, item, take, isLocked } = (monitor.getItem() as any);
     const hoverIndex = props.index;
 
-    if (index === hoverIndex || !!isLocked) {
+    if (index === hoverIndex || !!isLocked || !!props.isLocked) {
       return;
     }
 
