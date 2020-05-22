@@ -7,11 +7,12 @@ import { ConnectDragPreview,  ConnectDragSource, ConnectDropTarget, DragSource,
 
 import * as ReactDOM from 'react-dom';
 import { ComponentEx, util } from 'vortex-api';
-import { IDnDConditionResult, ILoadOrderDisplayItem } from '../types/types';
+import { IDnDConditionResult, ILoadOrder, ILoadOrderDisplayItem } from '../types/types';
 
 interface IItemBaseProps {
   index: number;
   item: ILoadOrderDisplayItem;
+  isLocked: boolean;
   itemRenderer: React.ComponentClass<{
     className?: string,
     item: ILoadOrderDisplayItem,
@@ -94,10 +95,10 @@ const entrySource: DragSourceSpec<IItemProps, any> = {
 
 const entryTarget: DropTargetSpec<IItemProps> = {
   hover(props: IItemProps, monitor: DropTargetMonitor, component) {
-    const { containerId, index, item, take } = (monitor.getItem() as any);
+    const { containerId, index, item, take, isLocked } = (monitor.getItem() as any);
     const hoverIndex = props.index;
 
-    if (index === hoverIndex || !!item.locked) {
+    if (index === hoverIndex || !!isLocked) {
       return;
     }
 
@@ -135,6 +136,7 @@ const Draggable = DropTarget(DND_TYPE, entryTarget, collectDrop)(
 interface IBaseProps {
   id: string;
   items: ILoadOrderDisplayItem[];
+  loadOrder: ILoadOrder;
   itemRenderer: React.ComponentClass<{
     className?: string,
     item: ILoadOrderDisplayItem,
@@ -171,7 +173,7 @@ class DraggableList extends ComponentEx<IProps, IState> {
   }
 
   public render(): JSX.Element {
-    const { connectDropTarget, id, itemRenderer } = this.props;
+    const { connectDropTarget, id, itemRenderer, loadOrder } = this.props;
     const { ordered } = this.state;
     return connectDropTarget((
       <div>
@@ -186,6 +188,7 @@ class DraggableList extends ComponentEx<IProps, IState> {
               take={this.take}
               onChangeIndex={this.changeIndex}
               apply={this.apply}
+              isLocked={!!loadOrder[item.id]?.locked || !!item?.locked}
             />
           ))}
         </ListGroup>
@@ -195,15 +198,18 @@ class DraggableList extends ComponentEx<IProps, IState> {
 
   public changeIndex = (oldIndex: number, newIndex: number,
                         take: (list: ILoadOrderDisplayItem[]) => any) => {
+    const { loadOrder } = this.props;
     const { ordered } = this.state;
     if (oldIndex === undefined) {
       return;
     }
 
+    const itemLocked = (idx) => !!ordered[idx]?.locked || !!loadOrder[ordered[idx].id]?.locked;
+
     const currentItem = ordered[oldIndex];
     const replacedItem = ordered[newIndex];
 
-    if (!!currentItem.locked || !!replacedItem.locked) {
+    if (!!itemLocked(oldIndex) || !!itemLocked(newIndex)) {
       return;
     }
 

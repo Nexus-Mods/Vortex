@@ -179,15 +179,64 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
   }
 
   private setLoadOrder(list: ILoadOrderDisplayItem[]) {
-    const { loadOrder, onSetDeploymentNecessary,
+    const { loadOrder,
             onSetOrder, profile, getGameEntry } = this.props;
     const loKeys = Object.keys(loadOrder);
 
+    const hasLOEntry = (modId) => loKeys.includes(modId);
     const setNewOrder = (newList: ILoadOrderDisplayItem[]) => {
-      const newOrder: ILoadOrder = {};
-      newList.forEach((item, idx) => newOrder[item.id] = {
-        pos: idx,
-        enabled: loKeys.includes(item.id) ? loadOrder[item.id].enabled : true });
+      const locked = loKeys.filter(key => !!loadOrder[key]?.locked);
+      const newOrder: ILoadOrder = newList.reduce((accum, entry, idx) => {
+        if (loKeys.length === 0) {
+          // First run
+          accum[entry.id] = {
+            pos: idx,
+            enabled: true,
+            locked: false,
+          };
+          return accum;
+        }
+        if (locked.includes(entry.id)) {
+          accum[entry.id] = {
+            pos: loadOrder[entry.id].pos,
+            enabled: true,
+            locked: true,
+          };
+        } else {
+          const existing = Object.keys(accum);
+          const wantedPos = idx;
+          const posTaken = existing.find(key => accum[key].pos === wantedPos) !== undefined;
+          if (posTaken) {
+            const sorted = existing.sort((a, b) => accum[a].pos - accum[b].pos);
+            let previousPos = 0;
+            for (const element of sorted) {
+              if (accum[element].pos !== previousPos + 1) {
+                accum[entry.id] = {
+                  pos: previousPos + 1,
+                  enabled: hasLOEntry(entry.id) ? loadOrder[entry.id].enabled : true,
+                  locked: false,
+                };
+                return accum;
+              }
+              previousPos = accum[element].pos;
+            }
+
+            accum[entry.id] = {
+              pos: previousPos + 1,
+              enabled: hasLOEntry(entry.id) ? loadOrder[entry.id].enabled : true,
+              locked: false,
+            };
+          } else {
+            accum[entry.id] = {
+              pos: wantedPos,
+              enabled: hasLOEntry(entry.id) ? loadOrder[entry.id].enabled : true,
+              locked: false,
+            };
+          }
+        }
+
+        return accum;
+      }, {});
 
       if (JSON.stringify(newOrder) === JSON.stringify(loadOrder)) {
         // Nothing changed, go home load order page, you're drunk.
@@ -274,6 +323,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
                     <DraggableList
                       id='mod-loadorder-draggable-list'
                       itemRenderer={itemRenderer}
+                      loadOrder={loadOrder}
                       items={sorted}
                       apply={this.onApply}
                     />
