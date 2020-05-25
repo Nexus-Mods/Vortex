@@ -26,7 +26,7 @@ import { IDownloadResult } from './types/IDownloadResult';
 import { ProgressCallback } from './types/ProgressCallback';
 import getDownloadGames from './util/getDownloadGames';
 
-import DownloadManager, { DownloadIsHTML, RedownloadMode } from './DownloadManager';
+import DownloadManager, { DownloadIsHTML, RedownloadMode, AlreadyDownloaded } from './DownloadManager';
 
 import Promise from 'bluebird';
 import {IHashResult} from 'modmeta-db';
@@ -181,6 +181,16 @@ export class DownloadObserver {
                 });
               }
             });
+        })
+        .catch(AlreadyDownloaded, err => {
+          const stateNow = this.mApi.getState();
+          const downloads = stateNow.persistent.downloads.files;
+          const dlId = Object.keys(downloads)
+            .find(iter => downloads[iter].localPath === err.fileName);
+          if (dlId !== undefined) {
+            err.downloadId = dlId;
+          }
+          this.handleDownloadError(err, id, callback);
         })
         .catch((err: any) => {
           this.handleDownloadError(err, id, callback);

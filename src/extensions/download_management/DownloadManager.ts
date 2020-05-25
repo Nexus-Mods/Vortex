@@ -29,6 +29,7 @@ export type RedownloadMode = 'always' | 'never' | 'ask';
 
 export class AlreadyDownloaded extends Error {
   private mFileName: string;
+  private mId: string;
   constructor(fileName: string) {
     super('File already downloaded');
     Error.captureStackTrace(this, this.constructor);
@@ -39,6 +40,14 @@ export class AlreadyDownloaded extends Error {
 
   public get fileName(): string {
     return this.mFileName;
+  }
+
+  public get downloadId() {
+    return this.mId;
+  }
+
+  public set downloadId(id: string) {
+    this.mId = id;
   }
 }
 
