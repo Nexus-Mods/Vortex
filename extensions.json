@@ -603,10 +603,10 @@
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/80/80-1579744631-1635768160.jpeg",
       "name": "Half-Life 2 Support",
       "tags": [],
-      "version": "1.0.0",
+      "version": "1.1.0",
       "type": "game",
       "gameName": "Half-Life 2",
-      "timestamp": 1579744823,
+      "timestamp": 1589819384,
       "uploader": "AtomicTEM"
     },
     {
@@ -828,15 +828,15 @@
       "uploader": "Pickysaurus",
       "description": {
         "short": "Adds a button to the mods page to open the INIs for your current game.",
-        "long": "This is a little extension I cobbled together very quickly, it adds a toolbar button to open the INI(s) for your current Gamebyro game.\n<br />\n<br />Please feel free to improve it and upload your own version. It would be really cool if you could edit your INIs inside Vortex.\n<br />\n<br />[b]Vortex Install\n<br />[/b]\n<br />[list]\n<br />[*]In Vortex, enabled advanced mode in the settings.\n<br />[*]Navigate to the Extensions tab.\n<br />[*]Drop the 7z archive into the \"drop zone\" at the bottom of the page.\n<br />[*]Click the prompt to restart Vortex.\n<br />[/list]\n<br />\n<br />[b]Manual Install\n<br />[/b]\n<br />Extract the 7z archive to %appdata%&#92;Vortex&#92;plugins&#92;Gamebyro Settings Shortcut"
+        "long": "[b]Requires Vortex 1.2.11 or lower. Newer versions have an \"Open Game Settings Folder\" option with does the same thing[/b]\n<br />\n<br />This is a little extension I cobbled together very quickly, it adds a toolbar button to open the INI(s) for your current Gamebyro game.\n<br />\n<br />Please feel free to improve it and upload your own version. It would be really cool if you could edit your INIs inside Vortex.\n<br />\n<br />[b]Vortex Install\n<br />[/b]\n<br />[list]\n<br />[*]In Vortex, enabled advanced mode in the settings.\n<br />[*]Navigate to the Extensions tab.\n<br />[*]Drop the 7z archive into the \"drop zone\" at the bottom of the page.\n<br />[*]Click the prompt to restart Vortex.\n<br />[/list]\n<br />\n<br />[b]Manual Install\n<br />[/b]\n<br />Extract the 7z archive to %appdata%&#92;Vortex&#92;plugins&#92;Gamebyro Settings Shortcut"
       },
       "downloads": 189,
       "endorsements": 30,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/103/103-1586093379-1404057672.png",
       "name": "Gamebyro Settings Shortcut",
-      "timestamp": 1586093785,
+      "timestamp": 1590053929,
       "tags": [],
-      "version": "1.0.1",
+      "version": "1.1.0",
       "type": null
     },
     {
@@ -951,9 +951,9 @@
       "endorsements": 8,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/109/109-1587330104-107684269.jpeg",
       "name": "Portal 2 Support",
-      "timestamp": 1587330218,
+      "timestamp": 1589819917,
       "tags": [],
-      "version": "1.0.0",
+      "version": "1.1.0",
       "type": "game",
       "gameName": "Portal 2"
     },
