@@ -189,10 +189,12 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
       return true;
     }
 
-    return (test.name.indexOf(searchTerm) !== -1)
-        || (test.author.indexOf(searchTerm) !== -1)
-        || (test.description.short.indexOf(searchTerm) !== -1)
-        || (test.description.long.indexOf(searchTerm) !== -1);
+    const searchTermNorm = searchTerm.toUpperCase();
+
+    return (test.name.toUpperCase().indexOf(searchTermNorm) !== -1)
+        || (test.author.toUpperCase().indexOf(searchTermNorm) !== -1)
+        || (test.description.short.toUpperCase().indexOf(searchTermNorm) !== -1)
+        || (test.description.long.toUpperCase().indexOf(searchTermNorm) !== -1);
   }
 
   private extensionSort = (lhs: IAvailableExtension, rhs: IAvailableExtension): number => {
