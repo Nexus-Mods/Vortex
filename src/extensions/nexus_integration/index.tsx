@@ -557,10 +557,15 @@ function once(api: IExtensionApi) {
     }
 
     if (api.registerProtocol('nxm', def !== false, (url: string, install: boolean) => {
-      const nxmUrl = new NXMUrl(url);
-      if ((nxmUrl.gameId === SITE_ID) && install) {
-        return api.emitAndAwait('install-extension',
-              { name: 'Pending', modId: nxmUrl.modId, fileId: nxmUrl.fileId });
+      try {
+        const nxmUrl = new NXMUrl(url);
+        if ((nxmUrl.gameId === SITE_ID) && install) {
+          return api.emitAndAwait('install-extension',
+            { name: 'Pending', modId: nxmUrl.modId, fileId: nxmUrl.fileId });
+        }
+      } catch (err) {
+        api.showErrorNotification('Invalid URL', err, { allowReport: false });
+        return;
       }
 
       ensureLoggedIn(api)
