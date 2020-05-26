@@ -199,7 +199,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
         if (locked.includes(entry.id)) {
           accum[entry.id] = {
             pos: loadOrder[entry.id].pos,
-            enabled: true,
+            enabled: loadOrder[entry.id].enabled,
             locked: true,
           };
         } else {
