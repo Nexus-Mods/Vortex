@@ -755,7 +755,7 @@
       "uploader": "agc93",
       "description": {
         "short": "Adds support for installing and managing Beat Saber mods with Vortex",
-        "long": "BeatVortex adds support for installing and managing Beat Saber mods through Vortex. You can use Vortex to install mods alongside Mod Assistant or any other Beat Saber modding tools.\n<br />\n<br />[size=5]Installation[/size]\n<br />\n<br />First, download the extension from GitHub or Nexus Mods and save the archive.\n<br />\n<br />You will need to have Advanced mode enabled in Vortex to install extensions.\n<br />\n<br />[quote]Advanced mode can be enabled in the Settings window, under Interface &gt; Advanced &gt; Enable Advanced Mode [/quote]\n<br />\n<br />Select Extensions from the sidebar, then drag and drop the archive file into the drop zone at the bottom to install. Click Enable on the extension, then restart Vortex to enable the extension properly.\n<br />\n<br />[size=5]Adding Beat Saber[/size]\n<br />\n<br />Once the extension is installed, Vortex should automatically discover Beat Saber in the \"Discovered\" tab of the Games screen. Click Manage to perform initial setup and add Beat Saber to your games list.\n<br />\n<br />[size=5]Installing Mods[/size]\n<br />\n<br />Just like any other Vortex game, installing mods from archives is pretty simple: download the zip file, drag-and-drop into Vortex, then Install and Enable the mod.\n<br />\n<br />[size=5]BeatMods\n<br />[/size]\n<br />Since v0.2.0, you can quickly browse and install mods from BeatMods without leaving Vortex. Open the new BeatMods page from the left sidebar to see all the currently available mods for your game version."
+        "long": "BeatVortex adds support for installing and managing Beat Saber mods through Vortex. You can use Vortex to install mods alongside Mod Assistant or any other Beat Saber modding tools.\n<br />\n<br />Find full documentation on using Vortex with Beat Saber at [url=https://beatvortex.dev]beatvortex.dev[/url]\n<br />\n<br />[size=5]Installation[/size]\n<br />\n<br />You should be able to automatically install the extension by clicking Manage on Beat Saber in the Games list, just like your other Vortex games. If that doesn't work, you can install the extension directly using the Find More button at the bottom of the Extensions screen: just find Beat Saber Support and Install it.\n<br />\n<br />[size=5]Adding Beat Saber[/size]\n<br />\n<br />Once the extension is installed, Vortex should automatically discover Beat Saber in the \"Discovered\" tab of the Games screen. Click Manage to perform initial setup and add Beat Saber to your games list.\n<br />\n<br />[size=5]Installing Mods[/size]\n<br />\n<br />Just like any other Vortex game, installing mods from archives is pretty simple: download the zip file, drag-and-drop into Vortex, then Install and Enable the mod.\n<br />\n<br />[size=5]BeatMods[/size]\n<br />\n<br />Since v0.2.0, you can quickly browse and install mods from BeatMods without leaving Vortex. Open the new BeatMods page from the left sidebar to see all the currently available mods for your game version.\n<br />\n<br />[size=5]BeatMods[/size]\n<br />\n<br />Since v0.2.0, you can enable our preview support for OneClick installs using Vortex's profile settings. Open the Profiles screen (enable Profile Management from Settings if you don't see the Profiles screen), Edit your Beat Saber profile and enable OneClick installations. Restart Vortex and you should be able to use the OneClick links on BeatSaver, BeastSaber and ModelSaber to install mods with Vortex. See [url=https://beatvortex.dev/docs/usage/mods/]beatvortex.dev[/url] for more information on OneClick installation."
       },
       "downloads": 1935,
       "endorsements": 14,
@@ -951,9 +951,9 @@
       "endorsements": 8,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/109/109-1587330104-107684269.jpeg",
       "name": "Portal 2 Support",
-      "timestamp": 1589819917,
+      "timestamp": 1590416418,
       "tags": [],
-      "version": "1.0.0",
+      "version": "1.1.0",
       "type": "game",
       "gameName": "Portal 2"
     },
@@ -988,9 +988,9 @@
       "endorsements": 0,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/114/114-1587989197-840423380.jpeg",
       "name": "Import from Steam Workshop",
-      "timestamp": 1588764520,
+      "timestamp": 1590441126,
       "tags": [],
-      "version": "1.0.1",
+      "version": "1.0.2",
       "type": null
     }
   ]
