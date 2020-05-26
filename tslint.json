@@ -19,6 +19,7 @@
     "jsx-alignment": true,
     "jsx-no-multiline-js":  false,
     "jsx-boolean-value": false,
+    "jsx-wrap-multiline": false,
     "max-classes-per-file": [
       false, 5
     ],
