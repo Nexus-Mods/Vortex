@@ -1127,8 +1127,8 @@ function init(context: IExtensionContext): boolean {
   context.registerModSource = registerModSource;
   context.registerMerge = registerMerge;
 
-  registerAttributeExtractor(100, attributeExtractor);
-  registerAttributeExtractor(200, upgradeExtractor);
+  registerAttributeExtractor(150, attributeExtractor);
+  registerAttributeExtractor(10, upgradeExtractor);
 
   registerInstaller('fallback', 1000, basicInstaller.testSupported, basicInstaller.install);
 

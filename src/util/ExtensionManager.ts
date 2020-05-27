@@ -1181,9 +1181,10 @@ class ExtensionManager {
          + `_${detail.fileSize}_${detail.gameId}`;
   }
 
-  private lookupModMeta = (detail: ILookupDetails): Promise<ILookupResult[]> => {
+  private lookupModMeta = (detail: ILookupDetails, ignoreCache?: boolean)
+      : Promise<ILookupResult[]> => {
     let lookupId = this.modLookupId(detail);
-    if (this.mModDBCache[lookupId] !== undefined) {
+    if ((this.mModDBCache[lookupId] !== undefined) && (ignoreCache !== true)) {
       return Promise.resolve(this.mModDBCache[lookupId]);
     }
     let fileMD5 = detail.fileMD5;
@@ -1210,7 +1211,7 @@ class ExtensionManager {
       promise = Promise.resolve();
     }
     // lookup id may be updated now
-    if (this.mModDBCache[lookupId] !== undefined) {
+    if ((this.mModDBCache[lookupId] !== undefined) && (ignoreCache !== true)) {
       return Promise.resolve(this.mModDBCache[lookupId]);
     }
     return promise
@@ -1219,9 +1220,56 @@ class ExtensionManager {
         ? modDB.lookup(detail.filePath, fileMD5, fileSize, detail.gameId)
         : [])
       .then((result: ILookupResult[]) => {
-        this.mModDBCache[lookupId] = result;
-        return Promise.resolve(result);
+        const resultSorter = this.makeSorter(detail);
+        this.mModDBCache[lookupId] = result.sort(resultSorter);
+        return Promise.resolve(this.mModDBCache[lookupId]);
       });
+  }
+
+  private makeSorter(detail: ILookupDetails): (lhs: ILookupResult, rhs: ILookupResult) => number {
+    const fileName = detail.filePath !== undefined ? path.basename(detail.filePath) : undefined;
+
+    const hasAttribute = (
+      attribute: string,
+      lhs: IModInfo,
+      rhs: IModInfo,
+      preferredValue?: any,
+    ) => {
+      if (lhs[attribute] === rhs[attribute]) {
+        return 0;
+      }
+
+      if (preferredValue === undefined) {
+        // if no preferred value was set, ensure it can never match
+        preferredValue = Symbol();
+      }
+
+      if (!truthy(lhs[attribute]) || rhs[attribute] === preferredValue) {
+        return 1;
+      } else if (!truthy(rhs[attribute]) || lhs[attribute] === preferredValue) {
+        return -1;
+      } else {
+        return 0;
+      }
+    };
+
+    const numDetails = (result: IModInfo) => {
+      return Object.keys(result.details || {}).length;
+    };
+
+    return (lhs: ILookupResult, rhs: ILookupResult) => {
+      const lhsV = lhs.value;
+      const rhsV = rhs.value;
+      // prefer results where the file name matches, otherwise use the one with
+      // more details
+      return hasAttribute('fileName', lhsV, rhsV, fileName)
+          || hasAttribute('source', lhsV, rhsV, 'nexus')
+          || hasAttribute('sourceURI', lhsV, rhsV)
+          || hasAttribute('gameId', lhsV, rhsV)
+          || hasAttribute('fileVersion', lhsV, rhsV)
+          || hasAttribute('logicalFileName', lhsV, rhsV)
+          || numDetails(lhsV) - numDetails(rhsV);
+    };
   }
 
   private saveModMeta = (modInfo: IModInfo): Promise<void> => {

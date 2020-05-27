@@ -531,7 +531,7 @@ export interface IExtensionApi {
    *
    * @memberOf IExtensionApi
    */
-  lookupModMeta: (details: ILookupDetails) => Promise<ILookupResult[]>;
+  lookupModMeta: (details: ILookupDetails, ignoreCache?: boolean) => Promise<ILookupResult[]>;
 
   /**
    * save meta information about a mod

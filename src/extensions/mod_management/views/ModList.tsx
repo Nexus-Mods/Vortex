@@ -747,7 +747,10 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           newModsWithState[archiveId] = this.state.modsWithState[archiveId];
           return;
         }
-        return filterModInfo({ download: newProps.downloads[archiveId] }, undefined)
+        return filterModInfo({
+          download: newProps.downloads[archiveId],
+          meta: newProps.downloads[archiveId]?.modInfo?.meta,
+        }, undefined)
         .then(info => ({ archiveId, info }));
       } else {
         return Promise.resolve(undefined);

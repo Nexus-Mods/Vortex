@@ -664,7 +664,7 @@ function once(api: IExtensionApi) {
     retrieveCategories(api, isUpdate);
   });
   api.events.on('gamemode-activated', (gameId: string) => { nexus.setGame(gameId); });
-  api.events.on('did-import-downloads', (dlIds: string[]) => { queryInfo(api, dlIds); });
+  api.events.on('did-import-downloads', (dlIds: string[]) => { queryInfo(api, dlIds, false); });
 
   api.onStateChange(['settings', 'nexus', 'associateNXM'],
     eh.onChangeNXMAssociation(registerFunc, api));
@@ -705,7 +705,7 @@ function goBuyPremium() {
   opn(NEXUS_MEMBERSHIP_URL).catch(err => undefined);
 }
 
-function queryInfo(api: IExtensionApi, instanceIds: string[]) {
+function queryInfo(api: IExtensionApi, instanceIds: string[], ignoreCache: boolean) {
   if (instanceIds === undefined) {
     return;
   }
@@ -729,7 +729,7 @@ function queryInfo(api: IExtensionApi, instanceIds: string[]) {
       filePath: path.join(downloadPath, dl.localPath),
       gameId,
       fileSize: dl.size,
-    })
+    }, ignoreCache)
     .then((modInfo: ILookupResult[]) => {
       if (modInfo.length > 0) {
         const info = modInfo[0].value;
@@ -750,16 +750,7 @@ function queryInfo(api: IExtensionApi, instanceIds: string[]) {
           // the meta server wasn't nexus mods this is to be expected
         }
 
-        setInfo('source', info.source);
-        setInfo('version', info.fileVersion);
-        setInfo('game', info.gameId);
-        setInfo('name', info.logicalFileName || info.fileName);
-
-        if (info.details !== undefined) {
-          Object.keys(info.details).forEach((key: string) => {
-            setInfo(`custom.${key}`, info.details[key]);
-          });
-        }
+        setInfo('meta', info);
       }
     })
     .catch(err => {
@@ -860,9 +851,9 @@ function init(context: IExtensionContextExt): boolean {
 
   // TODO: this shouldn't be here, it uses the meta server not the nexus api
   context.registerAction('downloads-action-icons', 100, 'refresh', {}, 'Query Info',
-    (instanceIds: string[]) => queryInfo(context.api, instanceIds), queryCondition);
+    (instanceIds: string[]) => queryInfo(context.api, instanceIds, true), queryCondition);
   context.registerAction('downloads-multirow-actions', 100, 'refresh', {}, 'Query Info',
-    (instanceIds: string[]) => queryInfo(context.api, instanceIds), queryCondition);
+    (instanceIds: string[]) => queryInfo(context.api, instanceIds, true), queryCondition);
 
   // this makes it so the download manager can use nxm urls as download urls
   context.registerDownloadProtocol('nxm', (input: string): Promise<IResolvedURL> => {

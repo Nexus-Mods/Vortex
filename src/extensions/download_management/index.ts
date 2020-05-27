@@ -621,7 +621,7 @@ function init(context: IExtensionContextExt): boolean {
     protocolHandlers[schema] = handler;
   };
 
-  context.registerAttributeExtractor(150, attributeExtractor);
+  context.registerAttributeExtractor(100, attributeExtractor);
   context.registerAttributeExtractor(25, attributeExtractorCustom);
   context.registerActionCheck('SET_DOWNLOAD_FILEPATH', (state, action: any) => {
     if (action.payload === '') {
@@ -689,12 +689,7 @@ function init(context: IExtensionContextExt): boolean {
           .then(result => {
             if (result.length > 0) {
               const info = result[0].value;
-              store.dispatch(setDownloadModInfo(dlId, 'game', info.gameId));
-              store.dispatch(setDownloadModInfo(dlId, 'version', info.fileVersion));
-              if (info.logicalFileName || info.fileName) {
-                store.dispatch(setDownloadModInfo(dlId, 'name',
-                  info.logicalFileName || info.fileName));
-              }
+              store.dispatch(setDownloadModInfo(dlId, 'meta', info));
             }
           })
           .catch(err => {

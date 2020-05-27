@@ -14,8 +14,10 @@ function filterUndefined(input: { [key: string]: any }) {
 }
 
 function filterModInfo(input: any, modPath: string): Promise<any> {
-  return Promise.map(attributeExtractors.sort(), extractor => extractor.extractor(input, modPath))
-  .then(infoBlobs => Object.assign({}, ...infoBlobs.map(filterUndefined)));
+  return Promise.map(
+    attributeExtractors.sort((lhs, rhs) => rhs.priority - lhs.priority),
+    extractor => extractor.extractor(input, modPath),
+  ).then(infoBlobs => Object.assign({}, ...infoBlobs.map(filterUndefined)));
 }
 
 export default filterModInfo;
