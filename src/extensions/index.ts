@@ -9,6 +9,7 @@ import {} from './dashboard';
 import {} from './diagnostics_files';
 import {} from './download_management';
 import {} from './extension_manager';
+import {} from './file_preview';
 import {} from './firststeps_dashlet';
 import {} from './gamemode_management';
 import {} from './hardlink_activator';

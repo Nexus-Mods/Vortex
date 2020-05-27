@@ -1747,6 +1747,7 @@ class ExtensionManager {
       'sticky_mods',
       'browser',
       'recovery',
+      'file_preview',
     ];
 
     require('./extensionRequire').default();
