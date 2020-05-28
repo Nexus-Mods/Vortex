@@ -459,9 +459,16 @@ export function ensureFileAsync(filePath: string): PromiseBB<void> {
     .catch(err => restackErr(err, stackErr));
 }
 
-export function ensureDirAsync(dirPath: string): PromiseBB<void> {
+export function ensureDirAsync(dirPath: string, onDirCreatedCB?:
+  (created: string) => PromiseBB<void>): PromiseBB<void> {
   const stackErr = new Error();
-  return ensureDirInt(dirPath, stackErr, NUM_RETRIES);
+  // If a onDirCreated callback is provided, we can't use fs-extra's
+  //  implementation directly as there's no way for us to reliably determine
+  //  whether the parent folder was empty. We're going to create the
+  //  directories ourselves.
+  return (!!onDirCreatedCB)
+    ? ensureDir(dirPath, onDirCreatedCB)
+    : ensureDirInt(dirPath, stackErr, NUM_RETRIES);
 }
 
 function ensureDirInt(dirPath: string, stackErr: Error, tries: number) {
@@ -476,6 +483,36 @@ function ensureDirInt(dirPath: string, stackErr: Error, tries: number) {
       return simfail(() => errorHandler(err, stackErr, tries, undefined))
         .then(() => ensureDirInt(dirPath, stackErr, tries - 1));
     });
+}
+
+function ensureDir(targetDir: string, onDirCreatedCB: (created: string) => PromiseBB<void>) {
+  // Please note, onDirCreatedCB will be called for _each_ directory
+  //  we create.
+  const dirs: string[] = [];
+  const walkBackwards = (dir: string) => fsBB.statAsync(dir)
+    .then(() => Promise.reject(new ProcessCanceled('finished')))
+    .catch(err => {
+      if (err.code === 'ENOENT') {
+        dirs.push(dir);
+        // recurse upwards until we find a folder that exists.
+        return walkBackwards(path.dirname(dir));
+      } else {
+        return Promise.reject(err);
+      }
+    });
+
+  return walkBackwards(targetDir)
+    .catch(err => (err instanceof ProcessCanceled)
+      ? Promise.resolve(dirs)
+      : Promise.reject(err))
+    .then((uncreated: string[]) => {
+      const sorted: string[] = uncreated.sort((lhs, rhs) => lhs.length - rhs.length);
+      return PromiseBB.mapSeries(sorted, dir => ensureDirAsync(dir)
+        .then((created: any) => onDirCreatedCB(created)));
+    })
+    .then((created) => (created.indexOf(targetDir) !== -1)
+      ? PromiseBB.resolve(targetDir)
+      : PromiseBB.resolve(null));
 }
 
 function selfCopyCheck(src: string, dest: string) {

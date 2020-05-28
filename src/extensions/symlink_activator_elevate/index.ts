@@ -249,23 +249,27 @@ class DeploymentMethod extends LinkingDeployment {
 
   protected linkFile(linkPath: string, sourcePath: string, dirTags?: boolean): Promise<void> {
     const dirName = path.dirname(linkPath);
-    return fs.ensureDirAsync(dirName)
-      .then(created => {
-        if ((dirTags !== false) && (created !== null)) {
-          log('debug', 'created directory', dirName);
-          return fs.writeFileAsync(
-            path.join(dirName, LinkingDeployment.NEW_TAG_NAME),
+    const onDirCreated = (created) => {
+      if ((dirTags !== false) && (created !== null)) {
+        log('debug', 'created directory', created);
+        return fs.writeFileAsync(
+          path.join(created, LinkingDeployment.NEW_TAG_NAME),
             'This directory was created by Vortex deployment and will be removed ' +
             'during purging if it\'s empty');
-        } else {
-          // if the directory did exist there is a chance the destination file already
-          // exists
-          return fs.removeAsync(linkPath)
-            .catch(err => (err.code === 'ENOENT')
-              ? Promise.resolve()
-              : Promise.reject(err));
-        }
-      })
+      } else {
+        return Promise.resolve();
+      }
+    };
+    return fs.ensureDirAsync(dirName, onDirCreated)
+      .then(created => (created === null)
+        // null at this point would signify that the directory has already
+        //  been created and we may potentially have a link deployed -
+        //  attempt to remove the link just in case.
+        ? fs.removeAsync(linkPath)
+          .catch(err => (err.code === 'ENOENT')
+            ? Promise.resolve()
+            : Promise.reject(err))
+        : Promise.resolve())
       .then(() => this.emitOperation('link-file', {
         source: sourcePath, destination: linkPath,
       }));
