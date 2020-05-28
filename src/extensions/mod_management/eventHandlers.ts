@@ -340,7 +340,7 @@ export function onGameModeActivated(
       }
     }
 
-    log('info', 'change activator', { changeActivator, oldActivator });
+    log('info', 'change activator', { changeActivator, oldActivator: oldActivator.id });
 
     if (changeActivator) {
       if (oldActivator !== undefined) {

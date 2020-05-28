@@ -1133,13 +1133,6 @@ class InstallManager {
                   + 'installed, {{dlCount}} of them have to be downloaded first.<br/><br/>';
         }
 
-        if (dependencies.length > 0) {
-          bbcode += '[color=red]'
-            + '{{modName}} has unresolved dependencies that could not be found automatically. '
-            + 'Please install them manually.'
-            + '[/color]';
-        }
-
         const actions = dependencies.length > 0
           ? [
             { label: 'Don\'t install' },
