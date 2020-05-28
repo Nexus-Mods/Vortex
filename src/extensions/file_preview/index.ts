@@ -2,7 +2,7 @@ import Bluebird from 'bluebird';
 import { IExtensionApi, IExtensionContext, IPreviewFile } from '../../types/IExtensionContext';
 import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import { log } from '../../util/log';
-import { util } from '../..';
+import opn from '../../util/opn';
 
 interface IPreviewHandler {
   priority: number;
@@ -31,7 +31,7 @@ async function fallbackHandler(
 
   Object.keys(result.input).forEach(key => {
     if (result.input[key]) {
-      util.opn(key).catch(err => null);
+      opn(key).catch(err => null);
     }
   });
 
@@ -45,7 +45,7 @@ function init(context: IExtensionContext) {
   ) => {
     previewHandlers.push({ priority, handler });
     previewHandlers = previewHandlers.sort(
-      (lhs, rhs) => rhs.priority - lhs.priority,
+      (lhs, rhs) => lhs.priority - rhs.priority,
     );
   };
 

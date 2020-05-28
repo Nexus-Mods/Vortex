@@ -272,6 +272,7 @@
     "source-map-support": "^0.5.16",
     "string-template": "^1.0.0",
     "tmp": "^0.1.0",
+    "ts-node": "^8.10.1",
     "turbowalk": "Nexus-Mods/node-turbowalk",
     "uuid": "^3.3.3",
     "vortex-parse-ini": "Nexus-Mods/vortex-parse-ini",
