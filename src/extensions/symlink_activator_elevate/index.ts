@@ -262,9 +262,8 @@ class DeploymentMethod extends LinkingDeployment {
     };
     return fs.ensureDirAsync(dirName, onDirCreated)
       .then(created => (created === null)
-        // null at this point would signify that the directory has already
-        //  been created and we may potentially have a link deployed -
-        //  attempt to remove the link just in case.
+        // if the directory did exist, there is a chance the destination file already
+        // exists
         ? fs.removeAsync(linkPath)
           .catch(err => (err.code === 'ENOENT')
             ? Promise.resolve()

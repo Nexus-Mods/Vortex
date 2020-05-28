@@ -488,29 +488,32 @@ function ensureDirInt(dirPath: string, stackErr: Error, tries: number) {
 function ensureDir(targetDir: string, onDirCreatedCB: (created: string) => PromiseBB<void>) {
   // Please note, onDirCreatedCB will be called for _each_ directory
   //  we create.
-  const dirs: string[] = [];
-  const walkBackwards = (dir: string) => fsBB.statAsync(dir)
-    .then(() => Promise.reject(new ProcessCanceled('finished')))
+  const created: string[] = [];
+  const mkdirRecursive = (dir: string) => fsBB.mkdirAsync(dir)
+    .then(() => {
+      created.push(dir);
+      return onDirCreatedCB(dir);
+    })
     .catch(err => {
-      if (err.code === 'ENOENT') {
-        dirs.push(dir);
-        // recurse upwards until we find a folder that exists.
-        return walkBackwards(path.dirname(dir));
+      if (err.code === 'EEXIST') {
+        return PromiseBB.resolve();
       } else {
-        return Promise.reject(err);
+        return (['ENOENT'].indexOf(err.code) !== -1)
+          ? mkdirRecursive(path.dirname(dir))
+              .then(() => fsBB.mkdirAsync(dir))
+              .then(() => {
+                created.push(dir);
+                return onDirCreatedCB(dir);
+              })
+              .catch(err2 => (err2.code === 'EEXIST')
+                ? PromiseBB.resolve()
+                : PromiseBB.reject(err2))
+          : PromiseBB.reject(err);
       }
     });
 
-  return walkBackwards(targetDir)
-    .catch(err => (err instanceof ProcessCanceled)
-      ? Promise.resolve(dirs)
-      : Promise.reject(err))
-    .then((uncreated: string[]) => {
-      const sorted: string[] = uncreated.sort((lhs, rhs) => lhs.length - rhs.length);
-      return PromiseBB.mapSeries(sorted, dir => ensureDirAsync(dir)
-        .then((created: any) => onDirCreatedCB(created)));
-    })
-    .then((created) => (created.indexOf(targetDir) !== -1)
+  return mkdirRecursive(targetDir)
+    .then(() => (created.indexOf(targetDir) !== -1)
       ? PromiseBB.resolve(targetDir)
       : PromiseBB.resolve(null));
 }
