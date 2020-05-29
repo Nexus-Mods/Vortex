@@ -51,7 +51,7 @@ function sortMods(gameId: string, mods: IMod[], api: IExtensionApi): Promise<IMo
     return api.lookupModMeta({
                 fileMD5: getSafe(mod.attributes, ['fileMD5'], undefined),
                 fileSize: getSafe(mod.attributes, ['size'], undefined),
-                gameId,
+                gameId: mod.attributes?.downloadGame || gameId,
               })
         .catch(() => [])
         .then((metaInfo: ILookupResult[]) => {
