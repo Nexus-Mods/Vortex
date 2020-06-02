@@ -92,20 +92,31 @@ function lookupFulfills(lookup: ILookupResult, reference: IReference) {
       && ((versionMatch === undefined) || semver.satisfies(value.fileVersion, versionMatch));
 }
 
-function removeDuplicates(input: IDependency[]): Promise<IDependency[]> {
+function tagDuplicates(input: IDependencyNode[]): Promise<IDependencyNode[]> {
   // for all dependencies, figure out which of the other dependencies
   // would be solved by the same lookup result, sorted by the number of
   // collaterals it would fulfill
   const temp = input
     .map(dep => ({
       dep,
-      collateral: input
-        .map((item, idx) => ({ item, idx }))
-        .filter(inner => inner.item !== dep
-                      && lookupFulfills(dep.lookupResults[0], inner.item.reference))
-        .map(inner => inner.idx),
+      collateral: input.filter(
+        inner =>
+          inner !== dep &&
+          lookupFulfills(dep.lookupResults[0], inner.reference),
+      ),
     }))
-    .sort((lhs, rhs) => rhs.collateral.length - lhs.collateral.length);
+    .sort((lhs, rhs) => {
+      if (lhs.collateral.length !== rhs.collateral.length) {
+        return rhs.collateral.length - lhs.collateral.length;
+      } else {
+        // within blocks of equal number of collaterals, consider the newer versions
+        // before the ones with lower version
+        return semver.compare(
+          rhs.dep.lookupResults[0].value.fileVersion,
+          lhs.dep.lookupResults[0].value.fileVersion,
+        );
+      }
+    });
 
   // now starting with the largest set of "collateral" fulfillments filter
   // those from the result
@@ -113,60 +124,105 @@ function removeDuplicates(input: IDependency[]): Promise<IDependency[]> {
   // more collaterals than one large set but in practice I don't think this is going to be
   // relevant.
   // If this turns out to be a real problem, a much more complex recursive algorithm will
-  // be necessary
+  // be necessary but I believe that to be very hypothetical.
 
   // tslint:disable-next-line:prefer-for-of
   for (let i = 0; i < temp.length; ++i) {
-    if (temp[i] !== null) {
-      temp[i].collateral.forEach(idx => temp[idx] = null);
+    if (!temp[i].dep.redundant) {
+      temp[i].collateral.forEach(collateralItem => {
+        // we can't store the index before because the list got sorted in the meantime
+        // so we have to go searching for each collateral again
+        const collateralIdx = temp.findIndex(iter => iter.dep === collateralItem);
+        // tag items as redundant, this way they will get filtered out later, including
+        // their own dependencies
+        temp[collateralIdx].dep.redundant = true;
+      });
     }
   }
 
   return Promise.resolve(temp.filter(iter => iter !== null).map(iter => iter.dep));
 }
 
+interface IDependencyNode extends IDependency {
+  dependencies: IDependencyNode[];
+  redundant: boolean;
+}
+
+function gatherDependenciesGraph(
+  rule: IRule,
+  api: IExtensionApi,
+): Promise<IDependencyNode> {
+  let lookupDetails: ILookupResult[];
+
+  return api
+    .lookupModReference(rule.reference)
+    .then((details: ILookupResult[]) => {
+      lookupDetails = details;
+
+      if (details.length === 0 || details[0].value === undefined) {
+        throw new Error(
+          'reference not found: ' + JSON.stringify(rule.reference),
+        );
+      }
+
+      const { rules } = details[0].value;
+      return Promise.all(
+        (rules || [])
+          .map(subRule => gatherDependenciesGraph(subRule, api)))
+        .then(nodes => {
+          const res: IDependencyNode = {
+            download: findDownloadByRef(rule.reference, api.getState()),
+            reference: rule.reference,
+            lookupResults: details,
+            dependencies: nodes.filter(node => node !== null),
+            redundant: false,
+          };
+          return res;
+        });
+    })
+    .catch(err => {
+      log('error', 'failed to look up', err.message);
+      return null;
+    });
+}
+
+function flatten(nodes: IDependencyNode[]): IDependencyNode[] {
+  return nodes.reduce((agg: IDependencyNode[], node: IDependencyNode) => {
+    if ((node === null) || node.redundant) {
+      return agg;
+    }
+    return [].concat(agg, node, flatten(node.dependencies));
+  }, []);
+}
+
 function gatherDependencies(
-    rules: IRule[], api: IExtensionApi): Promise<IDependency[]> {
+  rules: IRule[],
+  api: IExtensionApi,
+): Promise<IDependency[]> {
   const state = api.store.getState();
   const requirements: IRule[] =
-      rules === undefined ?
-          [] :
-          rules.filter((rule: IRule) => rule.type === 'requires');
+    rules === undefined
+      ? []
+      : rules.filter(
+          (rule: IRule) =>
+            rule.type === 'requires' &&
+            findModByRef(rule.reference, state) === undefined,
+        );
 
   // for each requirement, look up the reference and recursively their dependencies
-  return Promise.reduce(requirements, (total: IDependency[], rule: IRule) => {
-    if (findModByRef(rule.reference, state)) {
-      return total;
-    }
-
-    let lookupDetails: ILookupResult[];
-
-    return api.lookupModReference(rule.reference)
-      .then((details: ILookupResult[]) => {
-        lookupDetails = details;
-
-        if ((details.length === 0) || (details[0].value === undefined)) {
-          throw new Error('reference not found: ' + rule.reference);
-        }
-
-        return gatherDependencies(details[0].value.rules, api);
-      })
-      .then((dependencies: IDependency[]) => {
-        return total.concat(dependencies)
-          .concat([
-            {
-              download: findDownloadByRef(rule.reference, state),
-              reference: rule.reference,
-              lookupResults: lookupDetails,
-            },
-          ]);
-      })
-      .catch((err) => {
-        log('error', 'failed to look up', err.message);
-        return total;
-      });
-  }, [])
-  .then((input: IDependency[]) => removeDuplicates(input));
+  return Promise.all(
+    requirements
+      .map((rule: IRule) => gatherDependenciesGraph(rule, api)),
+  )
+    .then((nodes: IDependencyNode[]) => {
+      // tag duplicates
+      return tagDuplicates(flatten(nodes)).then(() => nodes);
+    })
+    .then((nodes: IDependencyNode[]) =>
+      // this filters out the duplicates including their subtrees,
+      // then converts IDependencyNodes to IDependencies
+      flatten(nodes).map(node => _.omit(node, ['dependencies', 'redundant'])),
+    );
 }
 
 export default gatherDependencies;
