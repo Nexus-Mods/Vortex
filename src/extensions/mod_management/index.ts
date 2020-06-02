@@ -306,10 +306,12 @@ function reportRedundant(api: IExtensionApi, profileId: string, overwritten: IMo
         {
           title: 'Show', action: dismiss => {
             return api.showDialog('info', 'Redundant mods', {
-              text: 'Some of the enabled mods either contain no files or all files '
+              bbcode: 'Some of the enabled mods either contain no files or all files '
                 + 'they do contain are entirely overwritten by another mod. '
                 + 'These redundant mods don\'t do any harm except slow down '
-                + 'deployment a bit.',
+                + 'deployment a bit.\n'
+                + 'If you believe this to be a mistake, please check the file '
+                + 'conflicts [svg]conflict[/svg] for the mod in question.',
               checkboxes: overwritten.map((mod: IMod): ICheckbox => ({
                 id: mod.id,
                 text: renderModName(mod),

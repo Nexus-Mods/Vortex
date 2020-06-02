@@ -561,7 +561,8 @@ class InstallManager {
           }
 
           const {installer, requiredFiles} = supportedInstaller;
-          log('debug', 'invoking installer', installer.id);
+          log('debug', 'invoking installer',
+            { installer: installer.id, enforced: forceInstaller !== undefined });
           return installer.install(
               fileList, tempPath, gameId,
               (perc: number) => log('info', 'progress', perc));

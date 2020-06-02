@@ -416,6 +416,12 @@ async function testSupportedFallback(files: string[]): Promise<ISupportedResult>
   const connection = await ensureConnected();
 
   return connection.sendMessage('TestSupported', { files, allowedTypes: ['Basic'] })
+    .then((result: ISupportedResult) => {
+      if (!result.supported) {
+        log('warn', 'fomod fallback installer not supported, that shouldn\'t happen');
+      }
+      return result;
+    })
     .catch(err => Promise.reject(transformError(err)));
 }
 

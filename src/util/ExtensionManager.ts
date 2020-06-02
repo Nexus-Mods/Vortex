@@ -1514,6 +1514,7 @@ class ExtensionManager {
         }
       });
 
+      log('debug', 'running elevated', { executable, cwd, args });
       runElevated(ipcPath, runElevatedCustomTool, {
         toolPath: executable,
         toolCWD: cwd,
