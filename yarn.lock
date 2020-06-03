@@ -16770,8 +16770,8 @@ tunnel@^0.0.6:
   integrity sha512-1h/Lnq9yajKY2PEbBadPXj3VxsDDu844OnaAo52UVmIzIvwwtBPIuNvkjuzBlTWpfJyUbG3ez0KSBibQkj4ojg==
 
 turbowalk@Nexus-Mods/node-turbowalk:
-  version "2.0.0"
-  resolved "https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/36334f9d5ae1280f8645e6ef27e3379cc6233f54"
+  version "2.0.1"
+  resolved "https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/d76de7379e0074a776b2c99c46d070743056d724"
   dependencies:
     autogypi "^0.2.2"
     fs-extra "^8.1.0"
