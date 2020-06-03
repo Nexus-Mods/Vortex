@@ -316,7 +316,9 @@ class DeploymentMethod extends LinkingDeployment {
   protected isLink(linkPath: string, sourcePath: string): Promise<boolean> {
     return fs.readlinkAsync(linkPath)
     .then(symlinkPath => symlinkPath === sourcePath)
-    // readlink throws an "unknown" error if the file is no link at all. Super helpful
+    // readlink throws an "unknown" error if the file is no link at all. Super helpful...
+    // this doesn't actually seem to be the case any more in electron 8, seems we now get
+    // EINVAL
     .catch(() => false);
   }
 
