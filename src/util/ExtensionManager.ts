@@ -935,7 +935,7 @@ class ExtensionManager {
       // TODO: the fallback to nexus api should somehow be set up in nexus_integration, not here
   }
 
-  private getMetaServerList() {
+  private getMetaServerList(): modmetaT.IServer[] {
     const state = this.mApi.store.getState();
     const servers = getSafe(state, ['settings', 'metaserver', 'servers'], {});
 
@@ -945,7 +945,7 @@ class ExtensionManager {
     );
   }
 
-  private connectMetaDB(gameId: string, apiKey: string) {
+  private connectMetaDB(gameId: string, apiKey: string): Promise<modmetaT.ModDB> {
     const dbPath = path.join(app.getPath('userData'), 'metadb');
     return modmeta.ModDB.create(
       dbPath,
@@ -958,9 +958,13 @@ class ExtensionManager {
           { label: 'Quit' },
           { label: 'Retry' },
         ])
-        .then(result => (result.action === 'Quit')
-          ? app.quit()
-          : this.connectMetaDB(gameId, apiKey));
+          .then(result => {
+            if (result.action === 'Quit') {
+              app.quit();
+              return Promise.reject(new ProcessCanceled('meta db locked'));
+            }
+            return this.connectMetaDB(gameId, apiKey);
+          });
       });
   }
 
@@ -1654,7 +1658,11 @@ class ExtensionManager {
   }
 
   private addMetaServer = (id: string, server: any) => {
-    this.mProgrammaticMetaServers[id] = server;
+    if (server !== undefined) {
+      this.mProgrammaticMetaServers[id] = server;
+    } else {
+      delete this.mProgrammaticMetaServers[id];
+    }
     this.mForceDBReconnect = true;
   }
 
