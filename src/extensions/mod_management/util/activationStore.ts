@@ -399,6 +399,14 @@ export function saveActivation(modType: string, instance: string,
     } catch (err) {
       log('error', 'Failed to write manifest backup', err.message);
     }
+  } else {
+    try {
+      fs.removeSync(tagBackupPath);
+    } catch (err) {
+      if (err.code !== 'ENOENT') {
+        log('error', 'failed to remove manifest backup', err.message);
+      }
+    }
   }
 
   return (activation.length === 0)
