@@ -1046,9 +1046,10 @@ class InstallManager {
   private downloadModAsync(
     requirement: IReference,
     sourceURI: string,
-    api: IExtensionApi): Promise<string> {
+    api: IExtensionApi,
+    meta?: any): Promise<string> {
     return new Promise<string>((resolve, reject) => {
-      if (!api.events.emit('start-download', [sourceURI], {}, undefined,
+      if (!api.events.emit('start-download', [sourceURI], { meta }, undefined,
         (error, id) => {
           if (error === null) {
             resolve(id);
@@ -1073,7 +1074,8 @@ class InstallManager {
           dlPromise = this.downloadModAsync(
             dep.reference,
             dep.lookupResults[0].value.sourceURI,
-            api);
+            api,
+            dep.lookupResults[0].value);
         }
       }
       return dlPromise

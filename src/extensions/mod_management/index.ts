@@ -693,6 +693,7 @@ function attributeExtractor(input: any) {
     version: getSafe(input.meta, ['fileVersion'], undefined),
     logicalFileName: getSafe(input.meta, ['logicalFileName'], undefined),
     rules: getSafe(input.meta, ['rules'], undefined),
+    source: input.meta?.source,
     category: getSafe(input.meta, ['details', 'category'], undefined),
     description: getSafe(input.meta, ['details', 'description'], undefined),
     author: getSafe(input.meta, ['details', 'author'], undefined),
