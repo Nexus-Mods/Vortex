@@ -60,7 +60,6 @@ import * as Redux from 'redux';
 import {} from 'redux-watcher';
 import * as semver from 'semver';
 import { generate as shortid } from 'shortid';
-import TSNodeT from 'ts-node';
 import { dynreq, runElevated } from 'vortex-run';
 
 // tslint:disable-next-line:no-var-requires
@@ -493,8 +492,9 @@ class ExtensionManager {
   private mOnUIStarted: () => void;
   private mUIStartedPromise: Promise<void>;
   private mOutdated: string[] = [];
+  // the idea behind this was that we might want to support things like typescript
+  // or coffescript directly but that would require us shipping the corresponding compilers
   private mExtensionFormats: string[] = ['index.js'];
-
 
   constructor(initStore?: Redux.Store<any>, eventEmitter?: NodeJS.EventEmitter) {
     this.mEventEmitter = eventEmitter;
@@ -579,7 +579,6 @@ class ExtensionManager {
     if (remote !== undefined) {
       this.mStyleManager = new StyleManager(this.mApi);
     }
-    this.registerFormats();
     this.mExtensions = this.loadExtensions();
 
     if (this.mOutdated.length > 0) {
@@ -863,23 +862,6 @@ class ExtensionManager {
   public setUIReady() {
     this.mOnUIStarted();
     ipcRenderer.send('__ui_is_ready');
-  }
-
-  private registerFormats() {
-    try {
-      // should work on linux as well, would just have to identify the correct
-      // path to yarn global
-      if (process.platform === 'win32') {
-        // tslint:disable-next-line:no-var-requires
-        const tsnode: typeof TSNodeT = require('ts-node');
-        const yarnGlobal = path.join(process.env.LOCALAPPDATA, 'yarn', 'Data', 'global');
-        require('ts-node').register({ dir: yarnGlobal });
-        tsnode.register();
-        this.mExtensionFormats.push('index.ts');
-      }
-    } catch {
-      // nop, optional feature
-    }
   }
 
   private getModDB = (): Promise<modmetaT.ModDB> => {
