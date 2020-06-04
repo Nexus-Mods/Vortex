@@ -145,7 +145,6 @@ function gatherDependencies(rules: IModRule[],
                             recommendations: boolean,
                             progressCB?: (percent: number) => void)
                             : Promise<Dependency[]> {
-
   const state = api.store.getState();
   const requirements: IModRule[] =
       rules === undefined ?
@@ -161,13 +160,10 @@ function gatherDependencies(rules: IModRule[],
     }
   };
 
-  // for each requirement, look up the reference and recursively their dependencies
-  return Promise.reduce(requirements, (total: Dependency[], rule: IModRule) => {
+  return Promise.all(requirements.map((rule: IModRule): Promise<Dependency[][]> => {
     const mod: IMod = findModByRef(rule.reference, state);
     if (mod !== undefined) {
-      // save ourself some time: For installed mods we assume the dependencies
-      // have already been checked
-      return total;
+      return Promise.resolve([]);
     }
 
     const download = findDownloadByRef(rule.reference, state);
@@ -184,6 +180,8 @@ function gatherDependencies(rules: IModRule[],
               : lookupDownloadHint(api, rule.downloadHint))
         .then(res => {
           urlFromHint = truthy(res) ? res : undefined;
+          // we may have all the information about the mod in rule.reference already but
+          // for all we know the mod itself has further dependencies that need to be downloaded
           return api.lookupModReference(rule.reference, { requireURL: true });
         })
         .then((details: ILookupResult[]) => {
@@ -217,18 +215,19 @@ function gatherDependencies(rules: IModRule[],
             extra: rule.extra,
             mod,
           };
-          return [].concat(total, dependencies, [res]);
+          return [].concat(dependencies, [res]);
         })
         .catch((err: Error) => {
           if (!(err instanceof ProcessCanceled)) {
             log('warn', 'failed to look up', err.message);
           }
-          return [].concat(total, { error: err.message });
+          return [{ error: err.message }];
         })
         .finally(() => {
           onProgress();
         });
-  }, []);
+  }))
+  .then(dependencyLists => [].concat(...dependencyLists));
 }
 
 export default gatherDependencies;

@@ -782,7 +782,9 @@ class DownloadManager {
                 meta: _.merge(prev.meta, resolved.meta),
                 updatedUrls: [...prev.updatedUrls, resolved.updatedUrl || iter],
               });
-            });
+            })
+            .catch(UserCanceled, () => Promise.resolve(prev))
+            .catch(ProcessCanceled, () => Promise.resolve(prev));
         }, { urls: [], meta: {}, updatedUrls: [] });
       }
       return cache;

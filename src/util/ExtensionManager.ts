@@ -1133,6 +1133,8 @@ class ExtensionManager {
       options = {};
     }
 
+    log('debug', 'lookup mod reference', { reference });
+
     let lookup: { preferOverMD5: boolean, func: (id: IModRepoId) => Promise<IModLookupResult[]> };
     let preMD5: Promise<IModLookupResult[]> = Promise.resolve([]);
     if (reference.repo !== undefined) {

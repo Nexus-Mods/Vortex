@@ -1,8 +1,8 @@
 import * as Promise from 'bluebird';
 import { app as appIn, ipcRenderer, remote } from 'electron';
 import I18next from 'i18next';
-import Nexus, { EndorsedStatus, IEndorsement, IFileInfo, IGameListEntry, IModInfo,
-                IUpdateEntry, NexusError, RateLimitError, TimeoutError, IRevisionDetailed } from 'nexus-api';
+import Nexus, { EndorsedStatus, IEndorsement, IFileInfo, IGameListEntry, IModInfo, IRevision,
+                IUpdateEntry, NexusError, RateLimitError, TimeoutError } from 'nexus-api';
 import * as Redux from 'redux';
 import * as semver from 'semver';
 import * as util from 'util';
@@ -15,7 +15,7 @@ import { log } from '../../util/log';
 import { calcDuration, prettifyNodeErrorMessage, showError } from '../../util/message';
 import { activeGameId } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
-import { truthy, toPromise } from '../../util/util';
+import { toPromise, truthy } from '../../util/util';
 import { SITE_ID } from '../gamemode_management/constants';
 import { gameById, knownGames } from '../gamemode_management/selectors';
 import modName from '../mod_management/util/modName';
@@ -24,6 +24,7 @@ import NXMUrl from './NXMUrl';
 import { checkModVersion, fetchRecentUpdates, ONE_DAY, ONE_MINUTE } from './util/checkModsVersion';
 import { convertGameIdReverse, convertNXMIdReverse, nexusGameId } from './util/convertGameId';
 import sendEndorseMod from './util/endorseMod';
+import { FULL_REVISION_INFO } from './util/graphQueries';
 import transformUserInfo from './util/transformUserInfo';
 
 const UPDATE_CHECK_DELAY = 60 * 60 * 1000;
@@ -53,13 +54,13 @@ function startDownloadCollection(api: IExtensionApi,
   const games = knownGames(state);
   const gameId = convertNXMIdReverse(games, url.gameId);
   const pageId = nexusGameId(gameById(state, gameId), url.gameId);
-  let revisionInfo: IRevisionDetailed;
+  let revisionInfo: Partial<IRevision>;
 
-  return Promise.resolve(nexus.getRevisionInfo(url.collectionId, url.revisionId))
+  return Promise.resolve(nexus.getRevisionGraph(FULL_REVISION_INFO, url.revisionId))
     .then(revision => {
       revisionInfo = revision;
       api.sendNotification({
-        id: revision.revision_id.toString(),
+        id: revision.id.toString(),
         type: 'global',
         message: 'Downloading Collection',
         displayMS: 40000,
@@ -67,7 +68,7 @@ function startDownloadCollection(api: IExtensionApi,
       return toPromise<string>(cb => api.events.emit('start-download', [urlStr], {
         game: gameId,
         source: 'nexus',
-        name: revision.collection.name,
+        name: revision.collection?.name,
         nexus: {
           ids: { gameId: pageId, collectionId: url.collectionId, revisionId: url.revisionId },
           revisionInfo,

@@ -3,6 +3,7 @@ import { IDownload, IModTable, IState, StateChangeCallback } from '../../types/a
 import { IExtensionApi } from '../../types/IExtensionContext';
 import { ArgumentInvalid, DataInvalid, ProcessCanceled } from '../../util/CustomErrors';
 import Debouncer from '../../util/Debouncer';
+import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import opn from '../../util/opn';
@@ -18,13 +19,13 @@ import { setUpdatingMods } from '../mod_management/actions/session';
 import { setUserInfo } from './actions/persistent';
 import { findLatestUpdate, retrieveModInfo } from './util/checkModsVersion';
 import { nexusGameId, toNXMId } from './util/convertGameId';
+import { FULL_COLLECTION_INFO, FULL_REVISION_INFO } from './util/graphQueries';
 import submitFeedback from './util/submitFeedback';
 
 import { checkModVersionsImpl, endorseModImpl, startDownload, updateKey } from './util';
 
 import * as Promise from 'bluebird';
-import Nexus, { ICollection, ICollectionDetailed, IFeedbackResponse, IIssue,
-                IRevision, IRevisionDetailed,
+import Nexus, { ICollection, IFeedbackResponse, IIssue, IRevision,
                 NexusError, RateLimitError, TimeoutError } from 'nexus-api';
 import * as semver from 'semver';
 
@@ -261,9 +262,9 @@ export function onNexusDownload(api: IExtensionApi,
 }
 
 export function onGetNexusCollection(api: IExtensionApi, nexus: Nexus)
-    : (collectionId: number) => Promise<ICollectionDetailed> {
-  return (collectionId: number): Promise<ICollectionDetailed> => {
-    return Promise.resolve(nexus.getCollectionInfo(collectionId))
+    : (collectionId: number) => Promise<ICollection> {
+  return (collectionId: number): Promise<ICollection> => {
+    return Promise.resolve(nexus.getCollectionGraph(FULL_COLLECTION_INFO, collectionId))
       .catch(err => {
         api.showErrorNotification('Failed to get collection info', err);
         return Promise.resolve(undefined);
@@ -281,16 +282,10 @@ export function onGetNexusCollections(api: IExtensionApi, nexus: Nexus)
       });
 }
 
-export function onGetNexusRevisions(api: IExtensionApi, nexus: Nexus)
-    : (collectionId: number) => Promise<IRevision[]> {
-  return (collectionId: number): Promise<IRevision[]> =>
-    Promise.resolve(nexus.getRevisions(collectionId));
-}
-
 export function onGetNexusRevision(api: IExtensionApi, nexus: Nexus)
-    : (collectionId: number, revisionId: number) => Promise<IRevisionDetailed> {
-  return (collectionId: number, revisionId: number): Promise<IRevisionDetailed> =>
-    Promise.resolve(nexus.getRevisionInfo(collectionId, revisionId))
+    : (collectionId: number, revisionId: number) => Promise<IRevision> {
+  return (collectionId: number, revisionId: number): Promise<IRevision> =>
+    Promise.resolve(nexus.getRevisionGraph(FULL_REVISION_INFO, revisionId))
       .catch(err => {
         api.showErrorNotification('Failed to get nexus revision info', err);
         return Promise.resolve(undefined);
@@ -406,7 +401,13 @@ export function onSubmitCollection(nexus: Nexus): (...args: any[]) => void {
   return (collectionInfo: any,
           assetFilePath: string,
           callback: (err: Error, response?: any) => void) => {
-    (nexus as any).sendCollection(collectionInfo, assetFilePath)
+    fs.readFileAsync(assetFilePath)
+      .then((data: Buffer) => (nexus as any).createCollection({
+        adultContent: false,
+        collectionManifest: collectionInfo,
+        assetFile: data.toString('base64'),
+        collectionSchemaId: 1,
+      }))
       .then(response => callback(null, response))
       .catch(err => callback(err));
   };

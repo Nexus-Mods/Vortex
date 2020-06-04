@@ -54,7 +54,7 @@ import * as Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import * as fuzz from 'fuzzball';
 import I18next from 'i18next';
-import NexusT, { ICollectionDownloadLink, IDownloadURL, IFileInfo, IModInfo, NexusError,
+import NexusT, { ICollectionDownloadLink, IDownloadURL, IFileInfo, IModInfo, IRevision, NexusError,
                  RateLimitError, TimeoutError } from 'nexus-api';
 import * as path from 'path';
 import * as React from 'react';
@@ -776,7 +776,6 @@ function once(api: IExtensionApi) {
   api.onAsync('nexus-download', eh.onNexusDownload(api, nexus));
   api.onAsync('get-nexus-collection', eh.onGetNexusCollection(api, nexus));
   api.onAsync('get-nexus-collections', eh.onGetNexusCollections(api, nexus));
-  api.onAsync('get-nexus-collection-revisions', eh.onGetNexusRevisions(api, nexus));
   api.onAsync('get-nexus-collection-revision', eh.onGetNexusRevision(api, nexus));
   api.onAsync('rate-nexus-collection-revision', eh.onRateRevision(api, nexus));
   api.events.on('endorse-mod', eh.onEndorseMod(api, nexus));
@@ -948,6 +947,21 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
       // non-premium user trying to download a file with no id, have to send the user to the
       // corresponding site to generate a proper link
       return new Promise((resolve, reject) => {
+        const res = (result: IResolvedURL) => {
+          if (resolve !== undefined) {
+            resolve(result);
+            reject = undefined;
+            resolve = undefined;
+          }
+          resolve(result);
+        };
+        const rej = (err) => {
+          if (reject !== undefined) {
+            reject(err);
+            reject = undefined;
+            resolve = undefined;
+          }
+        };
         api.showDialog('info', 'About to open Nexus Mods', {
           text: 'Since you\'re not a premium user, every download has to be started from the '
               + 'website. Please click the button below to take you to the '
@@ -958,8 +972,8 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
           links: [{ label: 'Open Site', action: (dismiss) => {
             onAwaitLink(url.gameId, url.modId, url.fileId).then(updatedLink => {
               return resolveFunc(updatedLink, name)
-                .then(resolve)
-                .catch(reject)
+                .then(res)
+                .catch(rej)
                 .finally(dismiss);
             });
             opn(`https://www.${NEXUS_DOMAIN}/${url.gameId}/mods/${url.modId}?`
@@ -967,7 +981,7 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
               .catch(() => null);
           } }],
         }, [
-          { label: 'Cancel' },
+          { label: 'Skip', action: () => rej(new UserCanceled()) },
         ]);
       });
     }
@@ -980,11 +994,10 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
         ? nexus.getDownloadURLs(url.modId, url.fileId, url.key, url.expires, pageId)
           .then((res: IDownloadURL[]) =>
             ({ urls: res.map(u => u.URI), meta: {}, updatedUrl: input }))
-        : nexus.getCollectionDownloadURLs(url.collectionId, url.revisionId,
-                                          url.key, url.expires, pageId)
-          .then((res: ICollectionDownloadLink) =>
+        : nexus.getRevisionGraph({ downloadUri: true }, url.revisionId)
+          .then((res: Partial<IRevision>) =>
             ({
-              urls: [res.download_link],
+              urls: [res.downloadUri],
               updatedUrl: input,
               meta: {
                 nexus: {
