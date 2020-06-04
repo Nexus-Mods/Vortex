@@ -397,17 +397,31 @@ export function onSubmitFeedback(nexus: Nexus): (...args: any[]) => void {
   };
 }
 
-export function onSubmitCollection(nexus: Nexus): (...args: any[]) => void {
-  return (collectionInfo: any,
-          assetFilePath: string,
-          callback: (err: Error, response?: any) => void) => {
-    fs.readFileAsync(assetFilePath)
-      .then((data: Buffer) => (nexus as any).createCollection({
+function sendCollection(nexus: Nexus, collectionInfo: any, collectionId: number, data: Buffer) {
+  if (collectionId === undefined) {
+    return nexus.createCollection({
         adultContent: false,
         collectionManifest: collectionInfo,
         assetFile: data.toString('base64'),
         collectionSchemaId: 1,
-      }))
+      });
+  } else {
+    return nexus.updateCollection({
+        adultContent: false,
+        collectionManifest: collectionInfo,
+        assetFile: data.toString('base64'),
+        collectionSchemaId: 1,
+    }, collectionId);
+  }
+}
+
+export function onSubmitCollection(nexus: Nexus): (...args: any[]) => void {
+  return (collectionInfo: any,
+          assetFilePath: string,
+          collectionId: number,
+          callback: (err: Error, response?: any) => void) => {
+    fs.readFileAsync(assetFilePath)
+      .then((data: Buffer) => sendCollection(nexus, collectionInfo, collectionId, data))
       .then(response => callback(null, response))
       .catch(err => callback(err));
   };
