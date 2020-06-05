@@ -275,7 +275,7 @@ export function onGetNexusCollection(api: IExtensionApi, nexus: Nexus)
 export function onGetNexusCollections(api: IExtensionApi, nexus: Nexus)
     : (gameId: string) => Promise<ICollection[]> {
   return (gameId: string): Promise<ICollection[]> =>
-    Promise.resolve(nexus.getCollectionsByGame(gameId))
+    Promise.resolve(nexus.getCollectionListGraph(FULL_COLLECTION_INFO, gameId))
       .catch(err => {
         api.showErrorNotification('Failed to get list of collections', err);
         return Promise.resolve(undefined);

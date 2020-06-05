@@ -1,23 +1,8 @@
 import { ICollectionQuery, IRevisionQuery } from 'nexus-api';
 
-export const FULL_COLLECTION_INFO: ICollectionQuery = {
+const revisionInfo: IRevisionQuery = {
   id: true,
-  name: true,
-  description: true,
-  category: true,
-  user: {
-    name: true,
-    avatar: {
-      url: true,
-    },
-  },
-  game: {
-    domainName: true,
-  },
-};
-
-export const FULL_REVISION_INFO: IRevisionQuery = {
-  id: true,
+  revision: true,
   adultContent: true,
   createdAt: true,
   updatedAt: true,
@@ -26,7 +11,6 @@ export const FULL_REVISION_INFO: IRevisionQuery = {
   rating: true,
   votes: true,
   status: true,
-  collection: FULL_COLLECTION_INFO,
   modFiles: {
     file: {
       modId: true,
@@ -41,10 +25,28 @@ export const FULL_REVISION_INFO: IRevisionQuery = {
       },
       owner: {
         name: true,
-        avatar: {
-          url: true,
-        },
+        avatar: true,
       },
     },
   },
+};
+
+export const FULL_COLLECTION_INFO: ICollectionQuery = {
+  id: true,
+  name: true,
+  endorsements: true,
+  category: true,
+  user: {
+    name: true,
+    avatar: true,
+  },
+  game: {
+    domainName: true,
+  },
+  currentRevision: revisionInfo,
+};
+
+export const FULL_REVISION_INFO: IRevisionQuery = {
+  ...revisionInfo,
+  collection: FULL_COLLECTION_INFO,
 };
