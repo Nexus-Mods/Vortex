@@ -1,7 +1,10 @@
 import * as Promise from 'bluebird';
 import { types } from 'vortex-api';
+import { IActionDefinitionEx } from '../../../controls/ActionControl';
 
 export type SortType = 'ascending' | 'descending';
+
+export type ListViewType = 'compact' | 'full';
 
 // A set of props forwarded to game extensions which
 //  will allow these to control certain aspects of the
@@ -28,6 +31,18 @@ export interface ILoadOrderEntry {
 
 export interface ILoadOrder {
   [modId: string]: ILoadOrderEntry;
+}
+
+// A set of configurable options which item renderers
+//  can use to customize the user's experience
+export interface IItemRendererOptions {
+  // Used to inform the item renderers whether they should
+  //  display checkboxes to allow users to enable/disable
+  //  mod entries from the LO page.
+  displayCheckboxes: boolean;
+
+  // Customize the way the list is displayed.
+  listViewType: ListViewType;
 }
 
 export interface IDnDConditionResult {
@@ -70,6 +85,10 @@ export interface ILoadOrderDisplayItem {
   //  image.
   message?: string;
 
+  // Give extension developers the ability to define a set of context
+  //  menu actions for this specific item.
+  contextMenuActions?: IActionDefinitionEx[];
+
   // Allow game extensions to provide a condition functor
   //  during the preSort function call. This is useful if
   //  the game extension wants to impose some DnD restrictions
@@ -84,6 +103,16 @@ export interface IGameLoadOrderEntry {
 
   // The path to the game extension's default image.
   gameArtURL: string;
+
+  // Do we want to display checkboxes for this game ?
+  //  This is primarily used by the default item renderer.
+  //  Obviously no point to change this property if your game
+  //  uses a custom one.
+  displayCheckboxes?: boolean;
+
+  // Allows the game entry to define a set of context menus entries
+  //  to be displayed and executed through the LO page.
+  contextActions?: IActionDefinitionEx[];
 
   // Provides game extensions with relevant props that the extension writer
   //  can use to build the information panel. Providing a string here instead

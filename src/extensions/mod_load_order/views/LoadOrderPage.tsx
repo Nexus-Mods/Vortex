@@ -12,7 +12,9 @@ import { ComponentEx } from '../../../util/ComponentEx';
 import * as selectors from '../../../util/selectors';
 import { DNDContainer, MainPage } from '../../../views/api';
 
-import { IGameLoadOrderEntry, ILoadOrder,
+import { setGameLoadOrderOptions } from '../actions/loadOrder';
+
+import { IGameLoadOrderEntry, IItemRendererOptions, ILoadOrder,
   ILoadOrderDisplayItem, SortType } from '../types/types';
 
 import DraggableList from './DraggableList';
@@ -51,9 +53,13 @@ interface IConnectedProps {
 
   // Does the user need to deploy ?
   needToDeploy: boolean;
+
+  // ItemRenderer options.
+  itemRendererOptions: IItemRendererOptions;
 }
 
 interface IActionProps {
+  onSetLoadOrderOptions: (gameId: string, profileId: string, options: IItemRendererOptions) => void;
   onSetDeploymentNecessary: (gameId: string, necessary: boolean) => void;
   onSetOrder: (profileId: string, loadOrder: ILoadOrder) => void;
 }
@@ -139,6 +145,22 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
           };
         },
       },
+      {
+        component: ToolbarIcon,
+        props: () => {
+          return {
+            id: 'btn-select-list-view',
+            key: 'btn-select-list-view',
+            icon: 'layout-list',
+            text: (this.props.itemRendererOptions.listViewType === 'full') ? 'Compact View' : 'Full View',
+            className: 'load-order-list-view',
+            onClick: this.onChangeViewType,
+          };
+        },
+        condition: () => {
+          return this.state.itemRenderer === DefaultItemRenderer;
+        },
+      },
     ];
   }
 
@@ -153,6 +175,11 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
   }
 
   public componentDidMount() {
+    const renderer = this.getItemRenderer();
+    if (renderer !== this.state.itemRenderer) {
+      this.nextState.itemRenderer = renderer;
+    }
+
     this.updateState(this.props);
   }
 
@@ -179,8 +206,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
   }
 
   private setLoadOrder(list: ILoadOrderDisplayItem[]) {
-    const { loadOrder,
-            onSetOrder, profile, getGameEntry } = this.props;
+    const { loadOrder, onSetOrder, profile, getGameEntry } = this.props;
     const loKeys = Object.keys(loadOrder);
 
     const hasLOEntry = (modId) => loKeys.includes(modId);
@@ -258,20 +284,30 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
   // If the itemRenderer hasn't been assigned yet or is different than the
   //  one that the game extension provided - assign the default item renderer.
   private getItemRenderer() {
-    const { getGameEntry, profile } = this.props;
+    const { getGameEntry, profile, onSetLoadOrderOptions, itemRendererOptions } = this.props;
     const { itemRenderer } = this.state;
 
     if (profile === undefined) {
       return undefined;
     }
 
+    const useDefault = (gameEntry: IGameLoadOrderEntry) => {
+      onSetLoadOrderOptions(profile.gameId, profile.id, {
+        displayCheckboxes: (gameEntry?.displayCheckboxes === false) ? false : true,
+        listViewType: (!!itemRendererOptions?.listViewType)
+          ? itemRendererOptions.listViewType
+          : 'full',
+      });
+      return DefaultItemRenderer;
+    };
+
     const activeGameEntry: IGameLoadOrderEntry = getGameEntry(profile.gameId);
     if ((itemRenderer === undefined) && (activeGameEntry.itemRenderer === undefined)) {
-      return DefaultItemRenderer;
+      return useDefault(activeGameEntry);
     }
 
     return (!!activeGameEntry.itemRenderer)
-      ? activeGameEntry.itemRenderer : DefaultItemRenderer;
+      ? activeGameEntry.itemRenderer : useDefault(activeGameEntry);
   }
 
   private renderLoadOrderPage(): JSX.Element {
@@ -345,6 +381,17 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
     this.mCallbackDebouncer.schedule();
   }
 
+  private onChangeViewType = () => {
+    const { onSetLoadOrderOptions, profile, itemRendererOptions } = this.props;
+    const newOpts: IItemRendererOptions = {
+      displayCheckboxes: itemRendererOptions.displayCheckboxes,
+      listViewType: (itemRendererOptions.listViewType === 'full')
+        ? 'compact' : 'full',
+    };
+
+    onSetLoadOrderOptions(profile.gameId, profile.id, newOpts);
+  }
+
   private renderWait() {
     return (
       <Spinner
@@ -364,11 +411,6 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
       //  the generic load order extension. In this case we just
       //  return.
       return;
-    }
-
-    const renderer = this.getItemRenderer();
-    if (renderer !== this.state.itemRenderer) {
-      this.nextState.itemRenderer = renderer;
     }
 
     const mapToDisplay = (mod: types.IMod): ILoadOrderDisplayItem => ({
@@ -416,11 +458,19 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
 
 function mapStateToProps(state: types.IState, ownProps: IProps): IConnectedProps {
   const profile = selectors.activeProfile(state) || undefined;
-  const loadOrder = (!!profile)
-    ? util.getSafe(state, ['persistent', 'loadOrder', profile.id], {})
-    : {};
+  let loadOrder: ILoadOrder = {};
+  const defaultOpts = util.getSafe(state,
+    ['persistent', 'loadOrder', 'defaultItemRendererOptions'], undefined);
+
+  let itemRendererOptions: IItemRendererOptions = defaultOpts;
+  if (!!profile) {
+    loadOrder = util.getSafe(state, ['persistent', 'loadOrder', profile.id], {});
+    itemRendererOptions = util.getSafe(state,
+      ['persistent', 'loadOrder', profile.gameId, profile.id], defaultOpts);
+  }
 
   return {
+    itemRendererOptions,
     loadOrder,
     mods: util.getSafe(state, ['persistent', 'mods', profile.gameId], []),
     profile,
@@ -430,6 +480,8 @@ function mapStateToProps(state: types.IState, ownProps: IProps): IConnectedProps
 
 function mapDispatchToProps(dispatch: any): IActionProps {
   return {
+    onSetLoadOrderOptions: (gameId, profileId, options) =>
+      dispatch(setGameLoadOrderOptions(gameId, profileId, options)),
     onSetDeploymentNecessary: (gameId, necessary) =>
       dispatch(actions.setDeploymentNecessary(gameId, necessary)),
     onSetOrder: (profileId, loadOrder) => {

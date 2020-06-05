@@ -6,7 +6,11 @@ import { ConnectDragPreview,  ConnectDragSource, ConnectDropTarget, DragSource,
   DropTarget, DropTargetConnector, DropTargetMonitor, DropTargetSpec } from 'react-dnd';
 
 import * as ReactDOM from 'react-dom';
-import { ComponentEx, util } from 'vortex-api';
+
+import { ContextMenu } from '../../../controls/api';
+
+import * as util from '../../../util/api';
+import { ComponentEx } from '../../../util/ComponentEx';
 import { IDnDConditionResult, ILoadOrder, ILoadOrderDisplayItem } from '../types/types';
 
 interface IItemBaseProps {
@@ -16,12 +20,14 @@ interface IItemBaseProps {
   itemRenderer: React.ComponentClass<{
     className?: string,
     item: ILoadOrderDisplayItem,
-    onRef: (ref: any) => any }>;
+    onRef: (ref: any) => any,
+    onContextMenu?: (evt: any) => any }>;
   containerId: string;
   take: (item: ILoadOrderDisplayItem, list: ILoadOrderDisplayItem[]) => any;
   onChangeIndex: (oldIndex: number, newIndex: number,
                   take: (list: ILoadOrderDisplayItem[]) => any) => void;
   apply: () => void;
+  onContextMenu?: (evt: any) => any;
 }
 
 interface IDragProps {
@@ -50,6 +56,7 @@ class DraggableItem extends React.Component<IItemProps, {}> {
         className={classNames.filter(name => !!name).join(' ')}
         item={item}
         onRef={this.setRef}
+        onContextMenu={this.props.onContextMenu}
       />
     );
   }
@@ -149,6 +156,12 @@ interface IBaseProps {
 
 interface IState {
   ordered: ILoadOrderDisplayItem[];
+  contextMenuVisible: boolean;
+  offset: { x: number, y: number };
+  contextHistory: {
+    previous: string;
+    current: string;
+  };
 }
 
 type IProps = IBaseProps & { connectDropTarget: ConnectDropTarget };
@@ -160,6 +173,12 @@ class DraggableList extends ComponentEx<IProps, IState> {
 
     this.initState({
       ordered: props.items.slice(0),
+      contextMenuVisible: false,
+      offset: { x: 0, y: 0 },
+      contextHistory: {
+        previous: undefined,
+        current: undefined,
+      },
     });
 
     this.applyDebouncer = new util.Debouncer(() => {
@@ -182,17 +201,20 @@ class DraggableList extends ComponentEx<IProps, IState> {
       <div>
         <ListGroup>
           {ordered.map((item, idx) => (
-            <Draggable
-              containerId={id}
-              key={item.id + idx.toString()}
-              item={item}
-              index={idx}
-              itemRenderer={itemRenderer}
-              take={this.take}
-              onChangeIndex={this.changeIndex}
-              apply={this.apply}
-              isLocked={!!loadOrder[item.id]?.locked || !!item?.locked}
-            />
+            <div key={item.id + idx.toString()}>
+              <Draggable
+                containerId={id}
+                item={item}
+                index={idx}
+                itemRenderer={itemRenderer}
+                take={this.take}
+                onChangeIndex={this.changeIndex}
+                onContextMenu={this.onContextMenu}
+                apply={this.apply}
+                isLocked={!!loadOrder[item.id]?.locked || !!item?.locked}
+              />
+            {this.renderContextMenu(item)}
+            </div>
           ))}
         </ListGroup>
       </div>
@@ -231,6 +253,36 @@ class DraggableList extends ComponentEx<IProps, IState> {
 
     this.nextState.ordered = copy;
     this.applyDebouncer.schedule();
+  }
+
+  private renderContextMenu(item: ILoadOrderDisplayItem): JSX.Element {
+    const { contextMenuVisible, offset } = this.state;
+    return (!!item?.contextMenuActions)
+      ? (
+        <ContextMenu
+          key={'lo-entry-context-menu'}
+          actions={item.contextMenuActions}
+          position={offset}
+          visible={contextMenuVisible}
+          onHide={this.onHide}
+          instanceId={item.id}
+        />
+      )
+    : null;
+  }
+
+  private onHide = () => {
+    this.nextState.contextMenuVisible =
+      (this.state.contextHistory.current === this.state.contextHistory.previous)
+      ? false
+      : true;
+    this.nextState.contextHistory.previous = this.nextState.contextHistory.current;
+  }
+
+  private onContextMenu = (evt: any) => {
+    this.nextState.contextMenuVisible = true;
+    this.nextState.contextHistory.current = evt.target.innerText;
+    this.nextState.offset = { x: evt.clientX, y: evt.clientY };
   }
 
   private take = (item: ILoadOrderDisplayItem, list: ILoadOrderDisplayItem[]) => {
