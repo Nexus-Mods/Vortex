@@ -5,11 +5,12 @@ import {
   IExtensionContext,
 } from '../../types/IExtensionContext';
 import { IGame } from '../../types/IGame';
+import isIGame from '../../types/IGame.validator';
 import { IGameStore } from '../../types/IGameStore';
 import { IProfile, IRunningTool, IState } from '../../types/IState';
 import { IEditChoice, ITableAttribute } from '../../types/ITableAttribute';
-import {ProcessCanceled, SetupError, UserCanceled} from '../../util/CustomErrors';
 import { COMPANY_ID } from '../../util/constants';
+import {ProcessCanceled, SetupError, UserCanceled} from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import LazyComponent from '../../util/LazyComponent';
 import local from '../../util/local';
@@ -51,6 +52,7 @@ import { currentGame, currentGameDiscovery, discoveryByGame } from './selectors'
 
 import Promise from 'bluebird';
 import { remote } from 'electron';
+import * as fsExtra from 'fs-extra';
 import * as path from 'path';
 import * as Redux from 'redux';
 import * as semver from 'semver';
@@ -153,6 +155,30 @@ function verifyGamePath(game: IGame, gamePath: string): Promise<void> {
     .then(() => undefined);
 }
 
+function searchDepth(files: string[]): number {
+  return files.reduce((prev, filePath) => {
+    const len = process.platform === 'win32'
+      ? filePath.split(/[/\\]/).length
+      : filePath.split(path.sep).length;
+    return Math.max(prev, len);
+  }, 0);
+}
+
+// based on a path the user selected, traverse the directory tree upwards because
+// if the game contains a directory hierarchy like Game/Binaries/Win64/foobar.exe, the user
+// may have selected the "Win64" directory instead of "Game"
+function findGamePath(game: IGame, selectedPath: string,
+                      depth: number, maxDepth: number): Promise<string> {
+  if (depth > maxDepth) {
+    return Promise.reject(new ProcessCanceled('not found'));
+  }
+
+  return verifyGamePath(game, selectedPath)
+    .then(() => selectedPath)
+    .catch({ code: 'ENOENT' }, () =>
+      findGamePath(game, path.dirname(selectedPath), depth + 1, maxDepth));
+}
+
 function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
   const state: IState = api.store.getState();
   const game = getGame(gameId);
@@ -172,9 +198,9 @@ function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
       .then(result => {
         const { filePaths } = result;
         if ((filePaths !== undefined) && truthy(filePaths[0])) {
-          verifyGamePath(game, filePaths[0])
-            .then(() => {
-              api.store.dispatch(setGamePath(game.id, filePaths[0]));
+          findGamePath(game, filePaths[0], 0, searchDepth(game.requiredFiles))
+            .then((corrected: string) => {
+              api.store.dispatch(setGamePath(game.id, corrected));
               resolve();
             })
             .catch(err => {
@@ -200,11 +226,11 @@ function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
       .then(result => {
         const { filePaths } = result;
         if ((filePaths !== undefined) && (filePaths.length > 0)) {
-          verifyGamePath(game, filePaths[0])
-            .then(() => {
-              const exe = game.executable(filePaths[0]);
+          findGamePath(game, filePaths[0], 0, searchDepth(game.requiredFiles || []))
+            .then((corrected: string) => {
+              const exe = game.executable(corrected);
               api.store.dispatch(addDiscoveredGame(game.id, {
-                path: filePaths[0],
+                path: corrected,
                 tools: {},
                 hidden: false,
                 environment: game.environment,
@@ -244,9 +270,14 @@ function removeDisappearedGames(api: IExtensionApi): Promise<void> {
       return stored === undefined
         ? Promise.resolve()
         : Promise.map(stored.requiredFiles,
-          file => fs.statAsync(path.join(discovered[gameId].path, file)))
+          file => fsExtra.stat(path.join(discovered[gameId].path, file)))
           .then(() => undefined)
           .catch(err => {
+            if (err.code === 'EPERM') {
+              // ignore permission errors because this is "normal" for games installed
+              // through the microsoft store.
+              return;
+            }
             log('info', 'game no longer found', stored.name);
             api.sendNotification({
               type: 'info',
@@ -320,7 +351,13 @@ function genModTypeAttribute(api: IExtensionApi): ITableAttribute<IModWithState>
     name: 'Mod Type',
     description: 'Type of the mod (decides where it gets deployed to)',
     placement: 'detail',
-    calc: mod => mod.type,
+    calc: mod => {
+      const modType = getModTypeExtensions().find(iter => iter.typeId === mod.type);
+      if (modType === undefined) {
+        return mod.type;
+      }
+      return modType.options.name || mod.type;
+    },
     help: 'The mod type controls where (and maybe even how) a mod gets deployed. '
       + 'Leave empty (default) unless you know what you\'re doing.',
     supportsMultiple: true,
@@ -331,7 +368,7 @@ function genModTypeAttribute(api: IExtensionApi): ITableAttribute<IModWithState>
         return getModTypeExtensions()
           .filter((type: IModType) => type.isSupported(gameMode))
           .map((type: IModType): IEditChoice =>
-            ({ key: type.typeId, text: (type.typeId || 'Default') }));
+            ({ key: type.typeId, text: (type.options.name || type.typeId || 'Default') }));
       },
       onChangeValue: (mods, newValue) => {
         const gameMode = activeGameId(api.store.getState());
@@ -390,8 +427,12 @@ function init(context: IExtensionContext): boolean {
   // TODO: hack, we need the extension path to get at the assets but this parameter
   //   is only added internally and not part of the public api
   context.registerGame = ((game: IGame, extensionPath: string) => {
-    game.extensionPath = extensionPath;
     try {
+      if (!isIGame(game)) {
+        log('warn', 'invalid game extension', { errors: isIGame.errors });
+        throw new Error('Invalid game extension: ' + isIGame.errors.map(err => err.message).join(', '));
+      }
+      game.extensionPath = extensionPath;
       const gameExtInfo = JSON.parse(
         fs.readFileSync(path.join(extensionPath, 'info.json'), { encoding: 'utf8' }));
       game.contributed = (gameExtInfo.author === COMPANY_ID)

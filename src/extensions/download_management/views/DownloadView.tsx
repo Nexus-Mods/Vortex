@@ -104,6 +104,12 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
         },
       },
       {
+        icon: 'start-install',
+        title: 'Unpack (as-is)',
+        action: this.installAsIs,
+        condition: this.installable,
+      },
+      {
         icon: 'pause',
         title: 'Pause',
         action: this.pause,
@@ -391,6 +397,12 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
   private install = (downloadIds: string[]) => {
     downloadIds.forEach((downloadId: string) => {
       this.context.api.events.emit('start-install-download', downloadId);
+    });
+  }
+
+  private installAsIs = (downloadIds: string[]) => {
+    downloadIds.forEach((downloadId: string) => {
+      this.context.api.events.emit('start-install-download', downloadId, undefined, undefined, 'fallback');
     });
   }
 

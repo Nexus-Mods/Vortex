@@ -4,8 +4,13 @@ import { Panel } from 'react-bootstrap';
 import { withTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
 
-import { actions, ComponentEx, DNDContainer, FlexLayout, IconBar, MainPage,
-  selectors, Spinner, ToolbarIcon, types, util } from 'vortex-api';
+import * as actions from '../../../actions/index';
+import { FlexLayout, IconBar, Spinner, ToolbarIcon } from '../../../controls/api';
+import * as types from '../../../types/api';
+import * as util from '../../../util/api';
+import { ComponentEx } from '../../../util/ComponentEx';
+import * as selectors from '../../../util/selectors';
+import { DNDContainer, MainPage } from '../../../views/api';
 
 import { IGameLoadOrderEntry, ILoadOrder,
   ILoadOrderDisplayItem, SortType } from '../types/types';
@@ -79,6 +84,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
     this.mUpdateDebouncer = new util.Debouncer(() => {
       const { enabled } = this.state;
       this.setLoadOrder(enabled);
+      this.mCallbackDebouncer.schedule();
 
       return null;
     }, 500);
@@ -100,7 +106,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
     this.mForceUpdateDebouncer = new util.Debouncer(() => {
       this.updateState(this.props);
       return null;
-    }, 200);
+    }, 200, false, true);
 
     this.mStaticButtons = [
       {
@@ -111,7 +117,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
             key: 'btn-deploy',
             icon: 'deploy',
             text: 'Deploy Mods',
-            className: this.props.needToDeploy ? 'need-to-deploy' : 'no-deploy',
+            className: this.props.needToDeploy ? 'toolbar-flash-button' : undefined,
             onClick: () => this.context.api.events.emit('deploy-mods', () => undefined),
           };
         },
@@ -137,10 +143,12 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
   }
 
   public componentWillReceiveProps(newProps: IProps) {
-    if ((this.props.loadOrder !== newProps.loadOrder)
-        || (this.props.mods !== newProps.mods)
-        || (this.props.profile !== newProps.profile)) {
-      this.updateState(newProps);
+    if ((this.stringified(this.props.loadOrder) !== this.stringified(newProps.loadOrder))
+        || (this.stringified(this.props.mods) !== this.stringified(newProps.mods))
+        || (this.stringified(this.props.profile) !== this.stringified(newProps.profile))) {
+      const updateLO: boolean = ((this.props.profile === newProps.profile)
+        && (this.stringified(this.props.loadOrder) !== this.stringified(newProps.loadOrder)));
+      this.updateState(newProps, updateLO);
     }
   }
 
@@ -159,6 +167,10 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
       : this.renderLoadOrderPage();
   }
 
+  private stringified(obj: object) {
+    return JSON.stringify(obj);
+  }
+
   private resetState() {
     this.nextState.loading = true;
     this.nextState.itemRenderer = undefined;
@@ -167,14 +179,71 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
   }
 
   private setLoadOrder(list: ILoadOrderDisplayItem[]) {
-    const { onSetDeploymentNecessary, onSetOrder, profile, getGameEntry } = this.props;
+    const { loadOrder,
+            onSetOrder, profile, getGameEntry } = this.props;
+    const loKeys = Object.keys(loadOrder);
 
+    const hasLOEntry = (modId) => loKeys.includes(modId);
     const setNewOrder = (newList: ILoadOrderDisplayItem[]) => {
-      const newOrder: ILoadOrder = {};
-      newList.forEach((item, idx) => newOrder[item.id] = { pos: idx, enabled: true });
+      const locked = loKeys.filter(key => !!loadOrder[key]?.locked);
+      const newOrder: ILoadOrder = newList.reduce((accum, entry, idx) => {
+        if (loKeys.length === 0) {
+          // First run
+          accum[entry.id] = {
+            pos: idx,
+            enabled: true,
+            locked: false,
+          };
+          return accum;
+        }
+        if (locked.includes(entry.id)) {
+          accum[entry.id] = {
+            pos: loadOrder[entry.id].pos,
+            enabled: loadOrder[entry.id].enabled,
+            locked: true,
+          };
+        } else {
+          const existing = Object.keys(accum);
+          const wantedPos = idx;
+          const posTaken = existing.find(key => accum[key].pos === wantedPos) !== undefined;
+          if (posTaken) {
+            const sorted = existing.sort((a, b) => accum[a].pos - accum[b].pos);
+            let previousPos = 0;
+            for (const element of sorted) {
+              if (accum[element].pos !== previousPos + 1) {
+                accum[entry.id] = {
+                  pos: previousPos + 1,
+                  enabled: hasLOEntry(entry.id) ? loadOrder[entry.id].enabled : true,
+                  locked: false,
+                };
+                return accum;
+              }
+              previousPos = accum[element].pos;
+            }
+
+            accum[entry.id] = {
+              pos: previousPos + 1,
+              enabled: hasLOEntry(entry.id) ? loadOrder[entry.id].enabled : true,
+              locked: false,
+            };
+          } else {
+            accum[entry.id] = {
+              pos: wantedPos,
+              enabled: hasLOEntry(entry.id) ? loadOrder[entry.id].enabled : true,
+              locked: false,
+            };
+          }
+        }
+
+        return accum;
+      }, {});
+
+      if (JSON.stringify(newOrder) === JSON.stringify(loadOrder)) {
+        // Nothing changed, go home load order page, you're drunk.
+        return;
+      }
+
       onSetOrder(profile.id, newOrder);
-      onSetDeploymentNecessary(profile.gameId, true);
-      this.mCallbackDebouncer.schedule();
     };
 
     const activeGameEntry: IGameLoadOrderEntry = getGameEntry(profile.gameId);
@@ -197,10 +266,12 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
     }
 
     const activeGameEntry: IGameLoadOrderEntry = getGameEntry(profile.gameId);
+    if ((itemRenderer === undefined) && (activeGameEntry.itemRenderer === undefined)) {
+      return DefaultItemRenderer;
+    }
 
-    return ((itemRenderer === undefined) && (activeGameEntry.itemRenderer === undefined))
-      || ((!!activeGameEntry.itemRenderer) && (activeGameEntry.itemRenderer !== itemRenderer))
-          ? DefaultItemRenderer : itemRenderer;
+    return (!!activeGameEntry.itemRenderer)
+      ? activeGameEntry.itemRenderer : DefaultItemRenderer;
   }
 
   private renderLoadOrderPage(): JSX.Element {
@@ -252,6 +323,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
                     <DraggableList
                       id='mod-loadorder-draggable-list'
                       itemRenderer={itemRenderer}
+                      loadOrder={loadOrder}
                       items={sorted}
                       apply={this.onApply}
                     />
@@ -270,6 +342,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
 
   private onApply = (ordered: ILoadOrderDisplayItem[]) => {
     this.setLoadOrder(ordered);
+    this.mCallbackDebouncer.schedule();
   }
 
   private renderWait() {
@@ -283,7 +356,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private updateState(props: IProps) {
+  private updateState(props: IProps, updateLO: boolean = false) {
     const { getGameEntry, mods, profile } = props;
     const activeGameEntry = getGameEntry(profile.gameId);
     if (activeGameEntry === undefined) {
@@ -321,10 +394,23 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
 
     const spread = [ ...en, ...difference ];
 
-    (!!activeGameEntry.preSort)
-      ? activeGameEntry.preSort(spread, this.state.sortType).then(newList =>
-          this.nextState.enabled = (!!newList) ? newList : spread)
-      : this.nextState.enabled = spread;
+    const update = () => {
+      if (updateLO || (this.stringified(spread) !== this.stringified(this.nextState.enabled))) {
+        this.setLoadOrder(this.nextState.enabled);
+        this.mCallbackDebouncer.schedule();
+      }
+    };
+
+    if (!!activeGameEntry.preSort) {
+      activeGameEntry.preSort(spread, this.state.sortType)
+        .then(newList => {
+          this.nextState.enabled = (!!newList) ? newList : spread;
+          update();
+        });
+    } else {
+      this.nextState.enabled = spread;
+      update();
+    }
   }
 }
 

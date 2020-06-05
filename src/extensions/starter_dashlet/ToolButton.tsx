@@ -75,7 +75,7 @@ class ToolButton extends PureComponentEx<IProps, {}> {
     return (
       <div className={classes.join(' ')}>
         <div className='tool-icon-container'>
-          <ToolIcon imageUrl={starter.iconPath} imageId={counter} valid={valid} />
+          <ToolIcon imageUrl={StarterInfo.getIconPath(starter)} imageId={counter} valid={valid} />
         </div>
         <div className='tool-icon-text'>
           <div className='tool-icon-name'>{starter.name}</div>

@@ -46,13 +46,22 @@ function transformSymbol(fullMatch, symbol: string): string {
   return convertDiv.innerText;
 }
 
-function renderBBCode(input: string): React.ReactChild[] {
+function preProcess(input: string): string {
+  return input
+      .replace(/<br *\/?>/g, '[br][/br]')
+      .replace(/(&[^;]+;)/g, transformSymbol);
+}
+
+function renderBBCode(input: string, context?: any): React.ReactChild[] {
   if (input === undefined) {
     return [''];
   }
 
-  return fullParser.toReact(input.replace(/<br *\/?>/g, '[br][/br]')
-      .replace(/(&[^;]+;)/g, transformSymbol));
+  if (context !== undefined) {
+    return fullParser['renderer'].context(context, () => fullParser.toReact(preProcess(input)));
+  } else {
+    return fullParser.toReact(preProcess(input));
+  }
 }
 
 export function stripBBCode(input: string): string {
@@ -64,6 +73,17 @@ export function stripBBCode(input: string): string {
       .replace(/(&[^;]+;)/g, transformSymbol))
       .filter(line => typeof(line) === 'string')
       .join('');
+}
+
+export function bbcodeToHTML(input: string): string {
+  const res: string | string[] = fullParser.toHTML(preProcess(input));
+  // according to the typings toHTML should return an array of strings but
+  // in practice I found it to return just a string
+  if (Array.isArray(res)) {
+    return res.join();
+  } else {
+    return res;
+  }
 }
 
 export default renderBBCode;

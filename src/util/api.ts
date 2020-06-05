@@ -11,6 +11,7 @@ import { resolveCategoryName,
          resolveCategoryPath } from '../extensions/category_management/util/retrieveCategoryPath';
 import { readExtensibleDir } from '../extensions/extension_manager/util';
 import { getGame, getGames } from '../extensions/gamemode_management/util/getGame';
+import { getModType } from '../extensions/gamemode_management/util/modTypeExtensions';
 import deriveModInstallName from '../extensions/mod_management/modIdManager';
 import { getManifest } from '../extensions/mod_management/util/activationStore';
 import { getActivator,
@@ -22,8 +23,9 @@ import sortMods, { CycleError } from '../extensions/mod_management/util/sort';
 import testModReference from '../extensions/mod_management/util/testModReference';
 import GameStoreHelper from '../util/GameStoreHelper';
 import { Archive } from './archives';
-import renderBBCode from './bbcode';
+import bbcodeToReact, { bbcodeToHTML } from './bbcode';
 import { checksum, fileMD5 } from './checksum';
+import ConcurrencyLimiter from './ConcurrencyLimiter';
 import copyRecursive from './copyRecursive';
 import { ArgumentInvalid, DataInvalid, MissingInterpreter, NotFound, NotSupportedError,
          ProcessCanceled, SetupError, UserCanceled } from './CustomErrors';
@@ -46,8 +48,8 @@ import ReduxProp from './ReduxProp';
 import relativeTime, { userFriendlyTime } from './relativeTime';
 import StarterInfo from './StarterInfo';
 import steam, { GameNotFound, ISteamEntry } from './Steam';
-import { bytesToString, deBOM, isChildPath, isFilenameValid, isPathValid, makeQueue, objDiff,
-         pad, sanitizeCSSId, setdefault, toPromise } from './util';
+import { bytesToString, deBOM, delay, isChildPath, isFilenameValid, isPathValid, makeQueue, objDiff,
+         pad, sanitizeCSSId, setdefault, toPromise, unique } from './util';
 import walk from './walk';
 
 import SevenZip = require('node-7z');
@@ -58,14 +60,18 @@ export * from './network';
 export {
   Archive,
   ArgumentInvalid,
+  bbcodeToHTML,
+  bbcodeToReact,
   bytesToString,
   checksum,
   copyFileAtomic,
   copyRecursive,
+  ConcurrencyLimiter,
   CycleError,
   DataInvalid,
   Debouncer,
   deBOM,
+  delay,
   deriveModInstallName as deriveInstallName,
   epicGamesLauncher,
   extend,
@@ -78,6 +84,7 @@ export {
   getGame,
   getGames,
   getManifest,
+  getModType,
   getNormalizeFunc,
   getReduxLog,
   getVisibleWindow,
@@ -106,7 +113,6 @@ export {
   readExtensibleDir,
   relativeTime,
   removeMods,
-  renderBBCode,
   renderModName,
   renderModReference,
   resolveCategoryName,
@@ -124,6 +130,7 @@ export {
   terminate,
   testModReference,
   toPromise,
+  unique,
   UserCanceled,
   userFriendlyTime,
   walk,

@@ -1,6 +1,6 @@
 #page-generic-loadorder {
   .layout-flex {
-    overflow: auto;
+    overflow: overlay;
   }
 
   .load-order-entry {
@@ -26,6 +26,16 @@
       margin-left: auto;
     }
 
+    .entry-checkbox {
+      margin-right: 15px;
+      margin-left: auto;
+
+      label input[type="checkbox"] {
+        margin-left: initial;
+        position: initial;
+      }
+    }
+
     &.dragging {
       opacity: 0;
     }
@@ -33,11 +43,28 @@
     &.locked {
       background-color: $brand-primary;
     }
+
+    &.external {
+      .load-order-unmanaged-banner {
+        display: block;
+        text-align: center;
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: $brand-primary;
+      }
+
+      .external-caution-logo {
+        margin-left: 5px;
+      }
+    }
   }
-  
+
   #loadorderinfo {
     padding: 15px;
     height: 100%;
+    overflow: auto;
   }
   
   #mod-info {
@@ -48,6 +75,6 @@
     width: 150px;
     height: 90px;
     margin: 5px 10px 5px 5px;
-    border: 1px solid #d78f46;
+    border: 1px solid $brand-secondary;
   }
 }

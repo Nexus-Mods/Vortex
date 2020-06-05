@@ -241,6 +241,7 @@ export interface IRowProps {
   t: TFunction;
   id: string;
   tableId: string;
+  rowClass: string;
   data: any;
   rawData: any;
   attributes: ITableAttribute[];
@@ -290,9 +291,11 @@ class TableRow extends React.Component<IRowProps, IRowState> {
 
   public render(): JSX.Element | JSX.Element[] {
     const { data, domRef, inlines, group, grouped, highlighted, id, onClick,
-            selected } = this.props;
+            rowClass, selected } = this.props;
 
-    const classes = [];
+    const classes = [
+      rowClass,
+    ];
 
     if (selected) {
       classes.push('table-selected');
@@ -360,7 +363,7 @@ class TableRow extends React.Component<IRowProps, IRowState> {
       .sort((lhs, rhs) => lhs.position - rhs.position);
 
     if (hasActions) {
-      res.push(
+      res.push((
         <TD
           style={{ textAlign: 'center' }}
           key='action-cell'
@@ -383,7 +386,9 @@ class TableRow extends React.Component<IRowProps, IRowState> {
             className='table-actions'
             staticElements={actions}
           />
-        </TD>);
+        </TD>
+      ),
+      );
     } else {
       res.push(<TD key='no-action' />);
     }

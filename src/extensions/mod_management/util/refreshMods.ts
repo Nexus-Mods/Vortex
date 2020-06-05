@@ -102,8 +102,8 @@ function refreshMods(api: IExtensionApi, gameId: string,
                     { label: 'Ignore' },
                     { label: 'Delete' },
                   ])
-                  .then(dialogRes => {
-                    if (dialogRes.action === 'Delete') {
+                  .then(deleteRes => {
+                    if (deleteRes.action === 'Delete') {
                       return fs.removeAsync(fullPath + '.installing');
                     }
                   })));

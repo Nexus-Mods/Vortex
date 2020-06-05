@@ -30,12 +30,13 @@ import TableTextFilter from './table/TextFilter';
 import Toggle from './Toggle';
 import ToolbarIcon from './ToolbarIcon';
 import * as tooltip from './TooltipControls';
+import TriStateCheckbox from './TriStateCheckbox';
 import Usage from './Usage';
 import Webview from './Webview';
 
 export {
   ActionContextMenu, ActionDropdown, Advanced, Banner, ChangeDataHandler, ContextMenu, Dashlet,
-  DraggableList, Dropdown, Dropzone, EmptyPlaceholder, ErrorBoundary,
+  DraggableList, Dropdown, Dropzone, EmptyPlaceholder, ErrorBoundary, TriStateCheckbox,
   FlexLayout, FormFeedback, FormInput, Icon, IconBar, ITableRowAction, makeGetSelection, Modal,
   More, OptionsFilter, Overlay, OverlayTrigger, ProgressBar,
   SelectUpDown, Spinner, Steps,

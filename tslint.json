@@ -19,6 +19,7 @@
     "jsx-alignment": true,
     "jsx-no-multiline-js":  false,
     "jsx-boolean-value": false,
+    "jsx-wrap-multiline": false,
     "max-classes-per-file": [
       false, 5
     ],
@@ -29,7 +30,7 @@
     "no-duplicate-imports": false,
     "no-implicit-dependencies": false,
     "no-bitwise": false,
-    "no-submodule-imports": [true, "date-fns"]
+    "no-submodule-imports": [true, "date-fns", "uuid"]
   },
   "rulesDirectory": []
 }

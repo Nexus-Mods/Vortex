@@ -27,6 +27,7 @@ import {
 import { checkAssemblies, getNetVersion } from './util/netVersion';
 import InstallerDialog from './views/InstallerDialog';
 
+import Bluebird from 'bluebird';
 import { ChildProcess } from 'child_process';
 import { app as appIn, remote } from 'electron';
 import { createIPC } from 'fomod-installer';
@@ -125,148 +126,9 @@ function transformError(err: any): Error {
   return result;
 }
 
-/*
-function assertEdgeValid() {
-  if (typeof(edge.func) !== 'function') {
-    log('error', 'edge.func isn\'t a function', { type: typeof(edge.func) });
-    throw new SetupError(
-      '.Net interface library not loaded correctly. This usually means your .Net framework '
-      + 'is damaged or outdated. Please report this only if you have further insight into '
-      + 'what might have caused this and how to fix.');
-  }
-}
-
-function tsLib() {
-  if (testSupportedLib === undefined) {
-    try {
-      assertEdgeValid();
-      testSupportedLib = edge.func({
-        assemblyFile: path.join(basePath, 'ModInstaller.dll'),
-        typeName: 'FomodInstaller.ModInstaller.InstallerProxy',
-        methodName: 'TestSupported',
-      });
-    } catch (err) {
-      if (err.message.startsWith('error: 126')) {
-        const newErr = new SetupError(
-          'Failed to load the fomod support library. This is an indication your .Net '
-          + 'installation is invalid or outdated.');
-        newErr.stack = err.stack;
-        throw newErr;
-      }
-      throw err.Data === undefined ? err : transformError(err);
-    }
-  }
-  return testSupportedLib;
-}
-
-function testSupportedScripted(files: string[]): Promise<ISupportedResult> {
-  const testSupported = tsLib();
-  return new Promise<ISupportedResult>((resolve, reject) => {
-    testSupported({files, allowedTypes: ['XmlScript', 'CSharpScript']},
-                  (err: Error, result: ISupportedResult) => {
-      if ((err !== null) && (err !== undefined)) {
-        reject(transformError(err));
-      } else {
-        resolve(result);
-      }
-    });
-  });
-}
-
-function testSupportedFallback(files: string[]): Promise<ISupportedResult> {
-  const testSupported = tsLib();
-  return new Promise<ISupportedResult>((resolve, reject) => {
-    testSupported({files, allowedTypes: ['Basic']},
-                  (err: Error, result: ISupportedResult) => {
-      if ((err !== null) && (err !== undefined)) {
-        reject(transformError(err));
-      } else {
-        resolve(result);
-      }
-    });
-  });
-}
-
-let currentInstallPromise: Promise<any> = Promise.resolve();
-
-function install(api: IExtensionApi,
-                 files: string[],
-                 stopPatterns: string[],
-                 pluginPath: string,
-                 scriptPath: string,
-                 choicesIn: any,
-                 progressDelegate: ProgressDelegate,
-                 coreDelegates: Core): Promise<IInstallResult> {
-  if (installLib === undefined) {
-    try {
-      assertEdgeValid();
-      installLib = edge.func({
-        assemblyFile: path.join(basePath, 'ModInstaller.dll'),
-        typeName: 'FomodInstaller.ModInstaller.InstallerProxy',
-        methodName: 'Install',
-      });
-    } catch (err) {
-      return Promise.reject(err.Data === undefined ? err : transformError(err));
-    }
-  }
-
-  currentInstallPromise = new Promise((resolve, reject) => {
-    installLib({ files, stopPatterns, pluginPath, scriptPath,
-                 choices: choicesIn, progressDelegate, coreDelegates },
-      (err: Error, result: any) => {
-        if ((err !== null) && (err !== undefined)) {
-          reject(transformError(err));
-        } else {
-          try {
-            const state = api.store.getState();
-            const dialogState: IInstallerState = state.session.fomod.installer.dialog.state;
-
-            const choices = (dialogState === undefined)
-              ? undefined
-              : dialogState.installSteps
-                // some fomods may have multiple steps with the same name of which only one will be
-                // visible at a time.
-                .filter(step => step.visible)
-                .map(step => {
-                  const ofg: IGroupList =
-                    step.optionalFileGroups || { group: [], order: 'Explicit' };
-                  return {
-                    name: step.name,
-                    groups: (ofg.group || []).map(group => ({
-                      name: group.name,
-                      choices: group.options
-                        .filter(opt => opt.selected)
-                        .map(opt => ({ name: opt.name, idx: opt.id })),
-                    })),
-                  };
-                });
-
-            resolve({
-              message: result.message,
-              instructions: [].concat(result.instructions, [{
-                type: 'attribute',
-                key: 'installerChoices',
-                value: {
-                  type: 'fomod',
-                  options: choices,
-                },
-              }]),
-            });
-          } catch (err) {
-            reject(err);
-          }
-      }
-    });
-  }).finally(() => {
-    currentInstallPromise = Promise.resolve();
-  });
-  return currentInstallPromise;
-}
-
-*/
-function processAttributes(input: any, modPath: string): Promise<any> {
+function processAttributes(input: any, modPath: string): Bluebird<any> {
   if (modPath === undefined) {
-    return Promise.resolve({});
+    return Bluebird.resolve({});
   }
   return fs.readFileAsync(path.join(modPath, 'fomod', 'info.xml'))
       .then((data: Buffer) => {
@@ -301,12 +163,12 @@ function checkNetInstall() {
       },
       severity: 'error',
     };
-    return Promise.resolve(res);
+    return Bluebird.resolve(res);
   } else {
     return checkAssemblies()
       .then(valid => {
         if (valid) {
-          return Promise.resolve(undefined);
+          return Bluebird.resolve(undefined);
         } else {
           const res: ITestResult = {
             description: {
@@ -317,7 +179,7 @@ function checkNetInstall() {
             },
             severity: 'error',
           };
-          return Promise.resolve(res);
+          return Bluebird.resolve(res);
         }
       });
   }
@@ -328,10 +190,55 @@ interface IAwaitingPromise {
   reject: (err: Error) => void;
 }
 
+function jsonReplace(key: string, value: any) {
+  return (typeof(value) === 'object' && value?.type === 'Buffer')
+    ? { type: 'Buffer', data: Buffer.from(value.data).toString('base64') }
+    : value;
+}
+
+function makeJsonRevive(invoke: (data: any) => Promise<void>, getId: () => string) {
+  return (key: string, value: any) => {
+    if (truthy(value) && (typeof (value) === 'object')) {
+      if (value.type === 'Buffer') {
+        return Buffer.from(value.data, 'base64');
+      }
+      Object.keys(value).forEach(subKey => {
+        if (truthy(value[subKey])
+          && (typeof (value[subKey]) === 'object')
+          && (value[subKey].__callback !== undefined)) {
+          const callbackId = value[subKey].__callback;
+          value[subKey] = (...args: any[]) => {
+            invoke({ requestId: getId(), callbackId, args })
+              .catch(err => {
+                log('info', 'process data', err.message);
+              });
+          };
+        }
+      });
+    }
+    return value;
+  };
+}
+
 class ConnectionIPC {
   public static async bind(): Promise<ConnectionIPC> {
     const socket = new Pair();
     let proc: ChildProcess = null;
+    let onResolve: () => void;
+    let onReject: (err: Error) => void;
+    const connectedPromise = new Promise((resolve, reject) => {
+      onResolve = resolve;
+      onReject = reject;
+    });
+    let wasConnected = false;
+
+    socket.events.on('accept', () => {
+      if (!wasConnected) {
+        onResolve();
+        wasConnected = true;
+      }
+    });
+
     if (false) {
       // for debugging purposes, the user has to run the installer manually
       await socket.bind('tcp://127.0.0.1:12345');
@@ -340,30 +247,19 @@ class ConnectionIPC {
       await socket.bind('tcp://127.0.0.1:*');
       // invoke the c# installer, passing the port
       proc = await createIPC(socket.lastEndpoint.split(':')[2]);
+      proc.stderr.on('data', (dat: Buffer) => {
+        const errorMessage = dat.toString();
+        log('error', 'from installer: ', errorMessage);
+        if (!wasConnected) {
+          onReject(new Error(errorMessage));
+          wasConnected = true;
+        }
+      });
     }
 
     // wait until the child process has actually connected, any error in this phase
     // probably means it's not going to happen...
-    await new Promise((resolve, reject) => {
-      let wasResolved = false;
-      socket.events.on('accept', () => {
-        if (!wasResolved) {
-          resolve();
-          wasResolved = true;
-        }
-      });
-
-      if (proc !== null) {
-        proc.stderr.on('data', (dat: Buffer) => {
-          const errorMessage = dat.toString();
-          log('error', 'from installer: ', errorMessage);
-          if (!wasResolved) {
-            reject(new Error(errorMessage));
-            wasResolved = true;
-          }
-        });
-      }
-    });
+    await connectedPromise;
 
     return new ConnectionIPC(socket, proc);
   }
@@ -442,38 +338,29 @@ class ConnectionIPC {
         ...data,
         command,
       },
-    }));
+    }, jsonReplace));
     return res;
   }
 
+  private copyErr(input: Error): any {
+    if (input === null) {
+      return null;
+    }
+    return {
+      message: input.message,
+      name: input.name,
+      code: input['code'],
+    };
+  }
+
   private processData(msg: Buffer) {
-    const data = JSON.parse(msg.toString(), (key: string, value: any) => {
-      if (truthy(value) && (typeof (value) === 'object')) {
-        Object.keys(value).forEach(subKey => {
-          if (truthy(value[subKey])
-            && (typeof (value[subKey]) === 'object')
-            && (value[subKey].__callback !== undefined)) {
-            const callbackId = value[subKey].__callback;
-            value[subKey] = (...args: any[]) => {
-              this.sendMessageInner('Invoke', {
-                requestId: data.id,
-                callbackId,
-                args,
-              })
-                .catch(err => {
-                  log('info', 'process data', err.message);
-                });
-            };
-          }
-        });
-      }
-      return value;
-    });
+    const data = JSON.parse(msg.toString(), makeJsonRevive((payload) =>
+      this.sendMessageInner('Invoke', payload), () => data.id));
     if ((data.callback !== null)
         && (this.mDelegates[data.callback.id] !== undefined)) {
       const func = this.mDelegates[data.callback.id][data.callback.type][data.data.name];
       func(...data.data.args, (err, response) => {
-        this.sendMessageInner(`Reply`, { request: data, data: response, error: err })
+        this.sendMessageInner(`Reply`, { request: data, data: response, error: this.copyErr(err) })
           .catch(e => {
             log('info', 'process data', e.message);
           });
@@ -521,15 +408,24 @@ const ensureConnected = (() => {
 async function testSupportedScripted(files: string[]): Promise<ISupportedResult> {
   const connection = await ensureConnected();
 
-  return connection.sendMessage('TestSupported',
-                                { files, allowedTypes: ['XmlScript', 'CSharpScript'] })
-    .catch(err => Promise.reject(transformError(err)));
+  try {
+    return await connection.sendMessage('TestSupported',
+      { files, allowedTypes: ['XmlScript', 'CSharpScript'] });
+  } catch (err) {
+    throw transformError(err);
+  }
 }
 
 async function testSupportedFallback(files: string[]): Promise<ISupportedResult> {
   const connection = await ensureConnected();
 
   return connection.sendMessage('TestSupported', { files, allowedTypes: ['Basic'] })
+    .then((result: ISupportedResult) => {
+      if (!result.supported) {
+        log('warn', 'fomod fallback installer not supported, that shouldn\'t happen');
+      }
+      return result;
+    })
     .catch(err => Promise.reject(transformError(err)));
 }
 
@@ -537,13 +433,18 @@ async function install(files: string[],
                        stopPatterns: string[],
                        pluginPath: string,
                        scriptPath: string,
+                       fomodChoices: any,
                        progressDelegate: ProgressDelegate,
                        coreDelegates: Core): Promise<IInstallResult> {
   const connection = await ensureConnected();
 
   return connection.sendMessage('Install',
-                                { files, stopPatterns, pluginPath, scriptPath },
+                                { files, stopPatterns, pluginPath, scriptPath, fomodChoices },
                                 coreDelegates);
+}
+
+function toBlue<T>(func: (...args: any[]) => Promise<T>): (...args: any[]) => Bluebird<T> {
+  return (...args: any[]) => Bluebird.resolve(func(...args));
 }
 
 function init(context: IExtensionContext): boolean {
@@ -569,10 +470,12 @@ function init(context: IExtensionContext): boolean {
     }
   };
 
-  context.registerInstaller('fomod', 20, testSupportedScripted, installWrap);
-  context.registerInstaller('fomod', 100, testSupportedFallback, installWrap);
+  context.registerInstaller('fomod', 20, toBlue(testSupportedScripted), toBlue(installWrap));
+  context.registerInstaller('fomod', 100, toBlue(testSupportedFallback), toBlue(installWrap));
 
-  context.registerTest('net-current', 'startup', checkNetInstall);
+  if (process.platform === 'win32') {
+    context.registerTest('net-current', 'startup', checkNetInstall);
+  }
   context.registerDialog('fomod-installer', InstallerDialog);
   context.registerReducer(['session', 'fomod', 'installer', 'dialog'], installerUIReducer);
 

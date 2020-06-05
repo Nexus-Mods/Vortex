@@ -124,15 +124,15 @@ function mergeMods(api: IExtensionApi,
                    destinationPath: string,
                    mods: IMod[],
                    deployedFiles: IDeployedFile[],
-                   mergers: IResolvedMerger[]): Promise<string[]> {
+                   mergers: IResolvedMerger[]): Promise<{ [relPath: string]: string[] }> {
   if ((mergers.length === 0) && (game.mergeArchive === undefined)) {
-    return Promise.resolve([]);
+    return Promise.resolve({});
   }
 
   const mergeDest = path.join(modBasePath, MERGED_PATH);
 
   const archiveMerges: { [relPath: string]: string[] } = {};
-  const mergedFiles: string[] = [];
+  const mergedFiles: { [relPath: string]: string[] } = {}
 
   const fileExists = (file: string) => fs.statAsync(file)
     .then(() => Promise.resolve(true))
@@ -147,12 +147,12 @@ function mergeMods(api: IExtensionApi,
   return Promise.mapSeries(mods, mod => {
     const modPath = path.join(modBasePath, mod.installationPath);
     return getFileList(modPath)
-      .filter(entry => entry.stats.isFile())
+      .filter((entry: IFileEntry) => entry.stats.isFile())
       .then(fileList =>
       Promise.mapSeries(fileList, fileEntry => {
         if ((game.mergeArchive !== undefined) && game.mergeArchive(fileEntry.filePath)) {
           const relPath = path.relative(modPath, fileEntry.filePath);
-          mergedFiles.push(relPath);
+          setdefault(mergedFiles, relPath, []).push(mod.id);
           setdefault(archiveMerges, relPath, []).push(modPath);
         } else {
           const merger = mergers.find(iter => iter.match.filter(fileEntry.filePath));
@@ -161,10 +161,10 @@ function mergeMods(api: IExtensionApi,
               ? mergeDest + '.' + merger.modType
               : mergeDest;
             const relPath = path.relative(modPath, fileEntry.filePath);
-            mergedFiles.push(relPath);
+            setdefault(mergedFiles, relPath, []).push(mod.id);
             return fs.ensureDirAsync(realDest)
               .then(() => Promise.map(merger.match.baseFiles(deployedFiles), file => {
-                if (mergedFiles.length !== 1) {
+                if (Object.keys(mergedFiles).length !== 1) {
                   // We've already started merging at this point, no reason
                   //  to continue through merge setup.
                   return Promise.resolve();

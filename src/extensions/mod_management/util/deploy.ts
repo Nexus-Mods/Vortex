@@ -10,8 +10,8 @@ import { truthy } from '../../../util/util';
 import { getGame } from '../../gamemode_management/util/getGame';
 import { installPath, installPathForGame } from '../selectors';
 import { IMod } from '../types/IMod';
-import { loadActivation, saveActivation, withActivationLock } from './activationStore';
-import { getCurrentActivator } from './deploymentMethods';
+import { getManifest, loadActivation, saveActivation, withActivationLock } from './activationStore';
+import { getActivator, getCurrentActivator } from './deploymentMethods';
 import { NoDeployment } from './exceptions';
 import { dealWithExternalChanges } from './externalChanges';
 
@@ -54,9 +54,33 @@ export function purgeMods(api: IExtensionApi): Promise<void> {
   const stagingPath = installPath(state);
   const profile = activeProfile(state);
   const gameId = profile.gameId;
+
+  return getManifest(api, '', gameId)
+    .then(manifest => {
+      if (manifest?.deploymentMethod !== undefined) {
+        log('info', 'using deployment method from manifest',
+            { method: manifest?.deploymentMethod });
+        const deployedActivator = getActivator(manifest?.deploymentMethod);
+        return purgeModsImpl(api, deployedActivator);
+      } else {
+        return purgeModsImpl(api, undefined);
+      }
+    });
+}
+
+function purgeModsImpl(api: IExtensionApi, activator: IDeploymentMethod): Promise<void> {
+  const state = api.store.getState();
+  const stagingPath = installPath(state);
+  const profile = activeProfile(state);
+  const gameId = profile.gameId;
   const gameDiscovery = currentGameDiscovery(state);
   const t = api.translate;
-  const activator = getCurrentActivator(state, gameId, false);
+
+  log('info', 'current deployment method is',
+    { method: getCurrentActivator(state, gameId, false).id });
+  if (activator === undefined) {
+    activator = getCurrentActivator(state, gameId, false);
+  }
 
   if (activator === undefined) {
     return Promise.reject(new NoDeployment());

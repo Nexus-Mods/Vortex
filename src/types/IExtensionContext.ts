@@ -29,7 +29,7 @@ import { DialogType, IDialogResult } from './IDialog';
 import { IGame } from './IGame';
 import { IGameStore } from './IGameStore';
 import { INotification } from './INotification';
-import { IDiscoveryResult, IState } from './IState';
+import { IDiscoveryResult, IMod, IState } from './IState';
 import { ITableAttribute } from './ITableAttribute';
 import { ITestResult } from './ITestResult';
 
@@ -347,6 +347,17 @@ export interface IRunParameters {
   options: IRunOptions;
 }
 
+export interface IPreviewFile {
+  /**
+   * label to display to the user if applicable
+   */
+  label: string;
+  /**
+   * full path to the file to preview
+   */
+  filePath: string;
+}
+
 /**
  * interface for convenience functions made available to extensions
  *
@@ -546,7 +557,7 @@ export interface IExtensionApi {
    *
    * @memberOf IExtensionApi
    */
-  lookupModMeta: (details: ILookupDetails) => Promise<IModLookupResult[]>;
+  lookupModMeta: (details: ILookupDetails, ignoreCache?: boolean) => Promise<ILookupResult[]>;
 
   /**
    * save meta information about a mod
@@ -562,6 +573,11 @@ export interface IExtensionApi {
                 extension?: string) => Promise<Archive>;
 
   /**
+   * clear the stylesheet cache to ensure it gets rebuilt even if the list of files hasn't changed
+   */
+  clearStylesheet: () => void;
+
+  /**
    * insert or replace a sass-stylesheet. It gets integrated into the existing sheets based
    * on the key:
    * By default, the sheets "variables", "details" and "style" are intended to customize the
@@ -574,6 +590,11 @@ export interface IExtensionApi {
    * If your extension sets a sheet that didn't exist before then that sheet will be inserted
    * before the "style" sheet but after everything else. This allows themes to affect extension
    * styles.
+   *
+   * @note Important: As usual with css, rules you add affect the entire application, without
+   *  severely restricting themes and extensions we can not automatically restrict your stylesheets
+   *  to the controls added by your extension. This means it's your responsibility to make sure
+   *  your stylesheet doesn't modify foreign controls.
    *
    * @param {string} key identify the key to set. If this is an existing sheet, that sheet will be
    *                     replaced
@@ -694,7 +715,7 @@ export interface IReducerSpec {
 
 export interface IModTypeOptions {
   // if set, the merge behavior specified here overrides the one specified for the game
-  mergeMods?: boolean;
+  mergeMods?: boolean | ((mod: IMod) => string);
   // if set, may be used as a user-readable name for the mod type
   name?: string;
   // if set, the default mechanism to install dependencies for mods of this mod type is disabled.
@@ -764,7 +785,14 @@ export interface IExtensionContext {
    * register an installer
    * @param {string} id id for the installer. currently only used for logging
    * @param {number} priority the priority of the installer. The supported installer with the
-   *                          highest priority gets to handle the mod
+   *                          highest priority (smallest number) gets to handle the mod.
+   *                          Note: scripted fomods are handled at prio 20 and there is a fallback
+   *                          installer that will handle practically any archive at prio 100 so
+   *                          you want to place your installer in the range 21-99.
+   *                          If your installer has priority > 100 it will probably never be
+   *                          considered, if it has priority < 20 it will disable fomod installers
+   *                          which only makes sense if you implement a scripted installer system
+   *                          as well that is superior to fomod.
    * @param {TestSupported} testSupported function called to determine if the handler can deal
    *                                      with a mod
    * @param {InstallFunc} install function called to actually install a mod
@@ -945,7 +973,7 @@ export interface IExtensionContext {
    * registers a provider for general information about a game
    * @param {string} id unique id identifying the provider
    * @param {number} priority if two providers provide the same info (same key) the one with the
-   *                          higher priority ends up providing that piece of info
+   *                          higher priority (smaller number) ends up providing that piece of info
    * @param {number} expireMS the time (in milliseconds) before the info "expires". After expiry it
    *                          will be re-requested. You usually want this to be several days, not
    *                          seconds or milliseconds
@@ -966,8 +994,8 @@ export interface IExtensionContext {
    *
    * @param {number} priority determins the order in which the attributes are combined.
    *                          if two extractors produce the same attribute, the one with the higher
-   *                          priority wins. The default attributes retrieved from the meta database
-   *                          have priority 100.
+   *                          priority (smaller number) wins. The default attributes retrieved from
+   *                          the meta database have priority 100.
    * @param {AttributeExtractor} extractor the function producing mod attributes
    */
   registerAttributeExtractor: (priority: number, extractor: AttributeExtractor) => void;
@@ -976,8 +1004,9 @@ export interface IExtensionContext {
    * register a mod type
    * @param {string} id internal identifier for this mod type. can't be the empty string ''!
    * @param {number} priority if there is difficulty differentiating between two mod types, the
-   *                          higher priority one wins. Otherwise please use 100 so there is
-   *                          room for other extensions with lower and higher priority
+   *                          higher priority (smaller number) one wins.
+   *                          Otherwise please use 100 so there is room for other extensions
+   *                          with lower and higher priority
    * @param {(gameId) => boolean} isSupported return true if the mod type is supported for this
    *                                          game
    * @param {(game: IGame) => string} getPath given the specified game, return the absolute path to
@@ -1089,6 +1118,37 @@ export interface IExtensionContext {
    */
   registerProfileFeature?: (featureId: string, type: string, icon: string, label: string,
                             description: string, supported: () => boolean) => void;
+
+  /**
+   * register a handler that can be used to preview or diff files.
+   * A handler can return a promise rejected with a "ProcessCanceled" exception to indicate
+   * it doesn't support the file type, in which case the next handler is tried.
+   * If no handler supports a file type, an error is displayed.
+   *
+   * Now at the lowest level a preview handler just has to be able to show a single file
+   * of the file type, in which case it should show the first file from the list passed in
+   * as a parameter, or offer the user a choice. More advanced handlers may show a diff between
+   * the files.
+   * If the "allowPick" option is specified the caller would like the user to be
+   * able to pick one of the files and that choice should then be returned but
+   * this is an optional feature the handler doesn't need to support.
+   *
+   * Handlers that support both diffing files and picking choices should have high
+   * priority (0-100), handlers that support diffing but not picking should be
+   * put into the range (100-200), handlers that only support showing a single
+   * file should be in the range (300-infinite).
+   * (Obviously the use case where the handler supports picking files but can only
+   * show a single file doesn't exist because duh.)
+   * This way the most feature rich handler supporting a file type will get picked.
+   *
+   * Note: If the viewer supports picking the Promise shall resolve after the
+   *   choice is made and include the selected entry, if it doesn't it can resolve
+   *   as soon as the handler knows whether it supports the file.
+   */
+  registerPreview?: (
+    priority: number,
+    handler: (files: IPreviewFile[], allowPick: boolean)
+      => Promise<IPreviewFile>) => void;
 
   /**
    * specify that a certain range of versions of vortex is required

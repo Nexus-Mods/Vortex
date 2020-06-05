@@ -178,6 +178,9 @@ class ModList extends ComponentEx<IProps, IComponentState> {
                 .indexOf(this.state.modsWithState[instanceId].state) !== -1)
             : true,
         hotKey: { code: 46 },
+        // remove is usually the default option for the menu, please put stuff above
+        // it only if it really makes more sense as the default
+        position: 5,
       },
       {
         icon: 'refresh',
@@ -196,15 +199,15 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         icon: 'start-install',
         title: 'Install',
         action: this.install,
-        condition: (instanceId: string | string[]) => {
-          const { mods } = this.props;
-          if (typeof(instanceId) === 'string') {
-            return mods[instanceId] === undefined;
-          } else {
-            return instanceId.find(id => mods[id] !== undefined) === undefined;
-          }
-        },
+        condition: this.conditionNotInstalled,
         position: 50,
+      },
+      {
+        icon: 'start-install',
+        title: 'Unpack (as-is)',
+        action: this.installAsIs,
+        condition: this.conditionNotInstalled,
+        position: 55,
       },
       {
         icon: 'start-install',
@@ -220,6 +223,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
             ? true
             : this.props.t('No associated archive.') as string;
         },
+        position: 60,
       },
     ];
 
@@ -746,7 +750,10 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           newModsWithState[archiveId] = this.state.modsWithState[archiveId];
           return;
         }
-        return filterModInfo({ download: newProps.downloads[archiveId] }, undefined)
+        return filterModInfo({
+          download: newProps.downloads[archiveId],
+          meta: newProps.downloads[archiveId]?.modInfo?.meta,
+        }, undefined)
         .then(info => ({ archiveId, info }));
       } else {
         return Promise.resolve(undefined);
@@ -1034,12 +1041,21 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       });
   }
 
-  private install = (archiveIds: string[]) => {
+  private install = (archiveIds: string | string[]) => {
     if (Array.isArray(archiveIds)) {
       archiveIds.forEach(archiveId =>
         this.context.api.events.emit('start-install-download', archiveId));
     } else {
       this.context.api.events.emit('start-install-download', archiveIds);
+    }
+  }
+
+  private installAsIs = (archiveIds: string | string[]) => {
+    if (Array.isArray(archiveIds)) {
+      archiveIds.forEach(archiveId =>
+        this.context.api.events.emit('start-install-download', archiveId, undefined, undefined, 'fallback'));
+    } else {
+      this.context.api.events.emit('start-install-download', archiveIds, undefined, undefined, 'fallback');
     }
   }
 
@@ -1093,6 +1109,15 @@ class ModList extends ComponentEx<IProps, IComponentState> {
 
   private dropMod = (type: DropType, values: string[]) => {
     this.context.api.events.emit('import-downloads', values);
+  }
+
+  private conditionNotInstalled = (instanceId: string | string[]) => {
+    const { mods } = this.props;
+    if (typeof (instanceId) === 'string') {
+      return mods[instanceId] === undefined;
+    } else {
+      return instanceId.find(id => mods[id] !== undefined) === undefined;
+    }
   }
 }
 

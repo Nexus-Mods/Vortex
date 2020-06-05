@@ -18,7 +18,8 @@ export { TFunction } from '../util/i18n';
 export { IDiscoveredTool } from '../types/IDiscoveredTool';
 export { IExecInfo } from '../types/IExecInfo';
 export { IGameStoreEntry } from './IGameStoreEntry';
-export { GameEntryNotFound, GameStoreNotFound, IGameStore } from './IGameStore';
+export { GameEntryNotFound, GameStoreNotFound, ICustomExecutionInfo,
+  IGameStore, GameLaunchType } from './IGameStore';
 export { IStarterInfo } from '../util/StarterInfo';
 
 export { IRegisteredExtension } from '../util/ExtensionManager';

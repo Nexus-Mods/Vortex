@@ -31,9 +31,9 @@ function testPrimaryTool(api: IExtensionApi): Promise<ITestResult> {
         actions: [
           { title: 'More', action: (dismiss) =>
             api.showDialog('info', 'Invalid primary tool', {
-              text: api.translate('The primary tool for {{game}}, {{tool}}, is no longer available.'
+              text: api.translate('The primary tool for {{game}} is no longer available.'
                                 + ' Quick launch has reverted to the game\'s executable.',
-                                    { replace: { tool: primaryToolId, game: gameMode } }),
+                                    { replace: { game: gameMode } }),
             }, [ { label: 'Close', action: () => dismiss() } ]),
           },
         ],

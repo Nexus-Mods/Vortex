@@ -6,6 +6,8 @@ import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 import { INVALID_FILENAME_RE } from '../../util/util';
 
+import { countryExists, languageExists } from '../settings_interface/languagemap';
+
 import { ExtensionType, IExtension } from './types';
 import { readExtensionInfo } from './util';
 
@@ -28,6 +30,10 @@ class ContextProxyHandler implements ProxyHandler<any> {
     if (key === 'requireExtension') {
       return (dependencyId: string) => {
         this.mDependencies.push(dependencyId);
+      };
+    } else if (key === 'api') {
+      return {
+        translate: (input) => input,
       };
     } else {
       return () => undefined;
@@ -78,9 +84,10 @@ function removeOldVersion(api: IExtensionApi, info: IExtension): Promise<void> {
 
   // should never be more than one but let's handle multiple to be safe
   const previousVersions = Object.keys(installed)
-    .filter(key => (info.id !== undefined) && (installed[key].id === info.id)
-                || (info.modId !== undefined) && (installed[key].modId === info.modId)
-                || (installed[key].name === info.name));
+    .filter(key => !installed[key].bundled
+                  && ((info.id !== undefined) && (installed[key].id === info.id)
+                    || (info.modId !== undefined) && (installed[key].modId === info.modId)
+                    || (installed[key].name === info.name)));
   log('info', 'removing previous versions of the extension', previousVersions);
 
   previousVersions.forEach(key => api.store.dispatch(removeExtension(key)));
@@ -94,7 +101,7 @@ function removeOldVersion(api: IExtensionApi, info: IExtension): Promise<void> {
  */
 function validateTheme(extPath: string): Promise<void> {
   return fs.readdirAsync(extPath)
-    .filter(fileName =>
+    .filter((fileName: string) =>
       fs.statAsync(path.join(extPath, fileName))
         .then(stats => stats.isDirectory()))
     .then(dirNames => {
@@ -133,8 +140,8 @@ function isLocaleCode(input: string): boolean {
  */
 function validateTranslation(extPath: string): Promise<void> {
   return fs.readdirAsync(extPath)
-    .filter(fileName => isLocaleCode(fileName))
-    .filter(fileName =>
+    .filter((fileName: string) => isLocaleCode(fileName))
+    .filter((fileName: string) =>
       fs.statAsync(path.join(extPath, fileName))
         .then(stats => stats.isDirectory()))
     .then(dirNames => {
@@ -142,10 +149,17 @@ function validateTranslation(extPath: string): Promise<void> {
         return Promise.reject(
           new DataInvalid('Expected exactly one language subdirectory'));
       }
+      // the check in isLocaleCode is extremely unreliable because it will fall back to
+      // iso on everything. Was it always like that or was that changed in a recent
+      // node release?
+      const [language, country] = dirNames[0].split('-');
+      if (!languageExists(language) || !countryExists(country)) {
+        return Promise.reject(new DataInvalid('Directory isn\'t a language code'));
+      }
       return fs.readdirAsync(path.join(extPath, dirNames[0]))
         .then(files => {
           if (files.find(fileName => path.extname(fileName) === '.json') === undefined) {
-            return Promise.reject('No translation files');
+            return Promise.reject(new DataInvalid('No translation files'));
           }
 
           return Promise.resolve();
@@ -264,7 +278,7 @@ function installExtension(api: IExtensionApi,
       .then(() => {
         if (type === 'translation') {
           return fs.readdirAsync(destPath)
-            .map(entry => fs.statAsync(path.join(destPath, entry))
+            .map((entry: string) => fs.statAsync(path.join(destPath, entry))
               .then(stat => ({ name: entry, stat })))
             .then(() => null);
         } else if (type === 'theme') {

@@ -30,7 +30,7 @@ import { Archive } from './archives';
 import { relaunch } from './commandLine';
 import { COMPANY_ID } from './constants';
 import { MissingDependency, NotSupportedError,
-        ProcessCanceled, UserCanceled } from './CustomErrors';
+        ProcessCanceled, TimeoutError, UserCanceled } from './CustomErrors';
 import { isOutdated } from './errorHandling';
 import getVortexPath from './getVortexPath';
 import { i18n } from './i18n';
@@ -42,11 +42,12 @@ import runElevatedCustomTool from './runElevatedCustomTool';
 import { activeGameId } from './selectors';
 import { getSafe } from './storeHelper';
 import StyleManager from './StyleManager';
-import { setdefault, truthy } from './util';
+import { setdefault, timeout, truthy } from './util';
 
 import Promise from 'bluebird';
 import { spawn, SpawnOptions } from 'child_process';
-import { app as appIn, dialog as dialogIn, ipcMain, ipcRenderer, remote } from 'electron';
+import { app as appIn, dialog as dialogIn, ipcMain, ipcRenderer, OpenDialogOptions,
+         remote, WebContents } from 'electron';
 import { EventEmitter } from 'events';
 import * as fs from 'fs-extra';
 import I18next from 'i18next';
@@ -103,14 +104,26 @@ interface IApiAddition {
 
 class APIProxyHandler implements ProxyHandler<any> {
   private mExtension: IRegisteredExtension;
+  private mEnabled: boolean;
 
-  constructor(extension: IRegisteredExtension) {
+  constructor(extension: IRegisteredExtension, enable: boolean) {
     this.mExtension = extension;
+    this.mEnabled = enable;
+  }
+
+  public enable() {
+    this.mEnabled = true;
   }
 
   public get(target, key: PropertyKey): any {
     if (key === 'extension') {
       return this.mExtension;
+    }
+    if (key === 'translate') {
+      return target[key];
+    }
+    if (!this.mEnabled) {
+      throw new Error('extension uses api in init function');
     }
     return target[key];
   }
@@ -118,16 +131,26 @@ class APIProxyHandler implements ProxyHandler<any> {
 
 class APIProxyCreator implements ProxyHandler<any> {
   private mExtension: IRegisteredExtension;
-  private mProxy: APIProxyHandler;
+  private mProxyHandler: APIProxyHandler;
+  private mProxy: IExtensionApi;
+  private mAPIEnabled: boolean = false;
 
   constructor(extension: IRegisteredExtension) {
     this.mExtension = extension;
   }
 
+  public enableAPI() {
+    this.mAPIEnabled = true;
+    if (this.mProxyHandler !== undefined) {
+      this.mProxyHandler.enable();
+    }
+  }
+
   public get(target, key: PropertyKey): any {
     if (key === 'api') {
       if (this.mProxy === undefined) {
-        this.mProxy = new Proxy(target[key], new APIProxyHandler(this.mExtension));
+        this.mProxyHandler = new APIProxyHandler(this.mExtension, this.mAPIEnabled);
+        this.mProxy = new Proxy(target[key], this.mProxyHandler);
       }
       return this.mProxy;
     } else {
@@ -340,11 +363,11 @@ class ContextProxyHandler implements ProxyHandler<any> {
 }
 
 class EventProxy extends EventEmitter {
-  private mTarget: Electron.WebContents;
+  private mTarget: WebContents;
   private mRemoteCallbacks: { [id: string]: (...args) => void } = {};
   private mRemotePromises: { [id: string]: { resolve: (res) => void, reject: (err) => void } } = {};
 
-  constructor(target: Electron.WebContents) {
+  constructor(target: WebContents) {
     super();
     this.mTarget = target;
     // any listener attached to this proxy will be attached to
@@ -476,6 +499,9 @@ class ExtensionManager {
   private mOnUIStarted: () => void;
   private mUIStartedPromise: Promise<void>;
   private mOutdated: string[] = [];
+  // the idea behind this was that we might want to support things like typescript
+  // or coffescript directly but that would require us shipping the corresponding compilers
+  private mExtensionFormats: string[] = ['index.js'];
 
   constructor(initStore?: Redux.Store<any>, eventEmitter?: NodeJS.EventEmitter) {
     this.mEventEmitter = eventEmitter;
@@ -509,6 +535,7 @@ class ExtensionManager {
       lookupModMeta: this.lookupModMeta,
       saveModMeta: this.saveModMeta,
       openArchive: this.openArchive,
+      clearStylesheet: () => this.mStyleManager.clearCache(),
       setStylesheet: (key, filePath) => this.mStyleManager.setSheet(key, filePath),
       runExecutable: this.runExecutable,
       emitAndAwait: this.emitAndAwait,
@@ -601,6 +628,13 @@ class ExtensionManager {
       if (noti.id === undefined) {
         noti.id = shortid();
       }
+      if (notification.type === 'warning') {
+        log('warn', 'warning notification',
+            { message: notification.message, title: notification.title });
+      } else if (notification.type === 'error') {
+        log('warn', 'error notification',
+            { message: notification.message, title: notification.title });
+      }
       store.dispatch(addNotification(noti));
       return noti.id;
     };
@@ -669,7 +703,7 @@ class ExtensionManager {
    *
    * @memberOf ExtensionManager
    */
-  public setupApiMain<S>(store: Redux.Store<S>, ipc: Electron.WebContents) {
+  public setupApiMain<S>(store: Redux.Store<S>, ipc: WebContents) {
     this.mApi.showErrorNotification =
         (message: string, details: string | Error, options: IErrorOptions) => {
           try {
@@ -781,14 +815,11 @@ class ExtensionManager {
     const reportError = (err: Error, call: IInitCall) => {
       log('warn', 'failed to call once',
         { err: err.message, stack: err.stack });
+      err['extension'] = call.extension;
       this.mApi.showErrorNotification(
         'Extension failed to initialize. If this isn\'t an official extension, ' +
         'please report the error to the respective author.',
-        {
-          extension: call.extension,
-          err: err.message,
-          stack: err.stack,
-        });
+        err);
     };
 
     return Promise.each(calls, (call, idx) => {
@@ -799,9 +830,13 @@ class ExtensionManager {
         });
         const prom = call.arguments[0]() || Promise.resolve();
 
-        return prom.catch(err => {
-          reportError(err, call);
-        });
+        return timeout(prom, 10000, { throw: true })
+          .catch(TimeoutError, () => {
+            reportError(new Error('Initialization didn\'t finish in time.'), call);
+          })
+          .catch(err => {
+            reportError(err, call);
+          });
       } catch (err) {
         reportError(err, call);
       }
@@ -815,6 +850,7 @@ class ExtensionManager {
   }
 
   public renderStyle() {
+    this.mStyleManager.startAutoUpdate();
     return this.mStyleManager.renderNow();
   }
 
@@ -889,7 +925,7 @@ class ExtensionManager {
       // TODO: the fallback to nexus api should somehow be set up in nexus_integration, not here
   }
 
-  private getMetaServerList() {
+  private getMetaServerList(): modmetaT.IServer[] {
     const state = this.mApi.store.getState();
     const servers = getSafe(state, ['settings', 'metaserver', 'servers'], {});
 
@@ -899,7 +935,7 @@ class ExtensionManager {
     );
   }
 
-  private connectMetaDB(gameId: string, apiKey: string) {
+  private connectMetaDB(gameId: string, apiKey: string): Promise<modmetaT.ModDB> {
     const dbPath = path.join(app.getPath('userData'), 'metadb');
     return modmeta.ModDB.create(
       dbPath,
@@ -912,9 +948,13 @@ class ExtensionManager {
           { label: 'Quit' },
           { label: 'Retry' },
         ])
-        .then(result => (result.action === 'Quit')
-          ? app.quit()
-          : this.connectMetaDB(gameId, apiKey));
+          .then(result => {
+            if (result.action === 'Quit') {
+              app.quit();
+              return Promise.reject(new ProcessCanceled('meta db locked'));
+            }
+            return this.connectMetaDB(gameId, apiKey);
+          });
       });
   }
 
@@ -980,8 +1020,10 @@ class ExtensionManager {
       }
       this.mContextProxyHandler.setExtension(ext.name, ext.path);
       try {
-        const extProxy = new Proxy(contextProxy, new APIProxyCreator(ext));
+        const apiProxy = new APIProxyCreator(ext);
+        const extProxy = new Proxy(contextProxy, apiProxy);
         ext.initFunc(extProxy as IExtensionContext);
+        apiProxy.enableAPI();
       } catch (err) {
         this.mLoadFailures[ext.name] = [ { id: 'exception', args: { message: err.message } } ];
         log('warn', 'couldn\'t initialize extension',
@@ -1065,7 +1107,7 @@ class ExtensionManager {
   }
 
   private selectFile(options: IOpenOptions): Promise<string> {
-    const fullOptions: Electron.OpenDialogOptions = {
+    const fullOptions: OpenDialogOptions = {
       ..._.omit(options, ['create']),
       properties: ['openFile'],
     };
@@ -1081,7 +1123,7 @@ class ExtensionManager {
 
   private selectExecutable(options: IOpenOptions) {
     // TODO: make the filter list dynamic based on the list of registered interpreters?
-    const fullOptions: Electron.OpenDialogOptions = {
+    const fullOptions: OpenDialogOptions = {
       ..._.omit(options, ['create']),
       properties: ['openFile'],
       filters: [
@@ -1099,7 +1141,7 @@ class ExtensionManager {
   }
 
   private selectDir(options: IOpenOptions) {
-    const fullOptions: Electron.OpenDialogOptions = {
+    const fullOptions: OpenDialogOptions = {
       ..._.omit(options, ['create']),
       properties: ['openDirectory'],
     };
@@ -1171,14 +1213,14 @@ class ExtensionManager {
       } else {
         return this.getModDB()
           .then(modDB => modDB.getByReference(reference))
-          .filter(mod => {
+          .filter((mod: ILookupResult) => {
             if (options.requireURL === true) {
               return truthy(mod.value.sourceURI);
             } else {
               return true;
             }
           })
-          .map(mod => convertMD5Result(mod));
+          .map((mod: ILookupResult) => convertMD5Result(mod));
       }
     })
     .then((results: IModLookupResult[]) => {
@@ -1205,12 +1247,13 @@ class ExtensionManager {
          + `_${detail.fileSize}_${detail.gameId}`;
   }
 
-  private lookupModMeta = (detail: ILookupDetails): Promise<IModLookupResult[]> => {
+  private lookupModMeta = (detail: ILookupDetails, ignoreCache?: boolean)
+      : Promise<ILookupResult[]> => {
     if ((detail.fileMD5 === undefined) && (detail.filePath === undefined)) {
       return Promise.resolve([]);
     }
     let lookupId = this.modLookupId(detail);
-    if (this.mModDBCache[lookupId] !== undefined) {
+    if ((this.mModDBCache[lookupId] !== undefined) && (ignoreCache !== true)) {
       return Promise.resolve(this.mModDBCache[lookupId]);
     }
     let fileMD5 = detail.fileMD5;
@@ -1240,15 +1283,66 @@ class ExtensionManager {
     } else {
       promise = Promise.resolve();
     }
+    // lookup id may be updated now
+    if ((this.mModDBCache[lookupId] !== undefined) && (ignoreCache !== true)) {
+      return Promise.resolve(this.mModDBCache[lookupId]);
+    }
     return promise
       .then(() => this.getModDB())
       .then(modDB => (fileSize !== 0) && (fileMD5 !== undefined)
         ? modDB.lookup(detail.filePath, fileMD5, fileSize, detail.gameId)
         : [])
       .then((result: ILookupResult[]) => {
-        this.mModDBCache[lookupId] = result;
-        return Promise.resolve(result);
+        const resultSorter = this.makeSorter(detail);
+        this.mModDBCache[lookupId] = result.sort(resultSorter);
+        return Promise.resolve(this.mModDBCache[lookupId]);
       });
+  }
+
+  private makeSorter(detail: ILookupDetails): (lhs: ILookupResult, rhs: ILookupResult) => number {
+    const fileName = detail.filePath !== undefined ? path.basename(detail.filePath) : undefined;
+
+    const hasAttribute = (
+      attribute: string,
+      lhs: IModInfo,
+      rhs: IModInfo,
+      preferredValue?: any,
+    ) => {
+      if (lhs[attribute] === rhs[attribute]) {
+        return 0;
+      }
+
+      if (preferredValue === undefined) {
+        // if no preferred value was set, ensure it can never match
+        preferredValue = Symbol();
+      }
+
+      if (!truthy(lhs[attribute]) || rhs[attribute] === preferredValue) {
+        return 1;
+      } else if (!truthy(rhs[attribute]) || lhs[attribute] === preferredValue) {
+        return -1;
+      } else {
+        return 0;
+      }
+    };
+
+    const numDetails = (result: IModInfo) => {
+      return Object.keys(result.details || {}).length;
+    };
+
+    return (lhs: ILookupResult, rhs: ILookupResult) => {
+      const lhsV = lhs.value;
+      const rhsV = rhs.value;
+      // prefer results where the file name matches, otherwise use the one with
+      // more details
+      return hasAttribute('fileName', lhsV, rhsV, fileName)
+          || hasAttribute('source', lhsV, rhsV, 'nexus')
+          || hasAttribute('sourceURI', lhsV, rhsV)
+          || hasAttribute('gameId', lhsV, rhsV)
+          || hasAttribute('fileVersion', lhsV, rhsV)
+          || hasAttribute('logicalFileName', lhsV, rhsV)
+          || numDetails(lhsV) - numDetails(rhsV);
+    };
   }
 
   private saveModMeta = (modInfo: IModInfo): Promise<void> => {
@@ -1472,6 +1566,7 @@ class ExtensionManager {
         }
       });
 
+      log('debug', 'running elevated', { executable, cwd, args });
       runElevated(ipcPath, runElevatedCustomTool, {
         toolPath: executable,
         toolCWD: cwd,
@@ -1579,9 +1674,9 @@ class ExtensionManager {
       // react, which might re-generate every control.
       if (highlightCSS === null) {
         // fallback if template rules weren't found
-        result += `${selector} { border: 1px solid red }`;
+        result += `${selector} { border: 1px solid var(--brand-danger) !important }\n`;
         if (text !== undefined) {
-          result += `${selector}::after { color: red, content: "${text}" }`;
+          result += `${selector}::after { color: var(--brand-danger); content: "${text}" }\n`;
         }
       } else {
         result += highlightCSS.cssText.replace('#highlight-control-dummy', selector);
@@ -1611,7 +1706,11 @@ class ExtensionManager {
   }
 
   private addMetaServer = (id: string, server: any) => {
-    this.mProgrammaticMetaServers[id] = server;
+    if (server !== undefined) {
+      this.mProgrammaticMetaServers[id] = server;
+    } else {
+      delete this.mProgrammaticMetaServers[id];
+    }
     this.mForceDBReconnect = true;
   }
 
@@ -1651,8 +1750,10 @@ class ExtensionManager {
   private loadDynamicExtension(extensionPath: string,
                                alreadyLoaded: IRegisteredExtension[])
                                : IRegisteredExtension {
-    const indexPath = path.join(extensionPath, 'index.js');
-    if (fs.existsSync(indexPath)) {
+    const indexPath = this.mExtensionFormats
+      .map(format => path.join(extensionPath, format))
+      .find(iter => fs.existsSync(iter));
+    if (indexPath !== undefined) {
       let info: IExtension = { name: '', author: '', description: '', version: '' };
       try {
         info = JSON.parse(fs.readFileSync(path.join(extensionPath, 'info.json'),
@@ -1773,6 +1874,8 @@ class ExtensionManager {
       'news_dashlet',
       'sticky_mods',
       'browser',
+      'recovery',
+      'file_preview',
     ];
 
     require('./extensionRequire').default();

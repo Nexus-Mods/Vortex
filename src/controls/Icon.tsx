@@ -56,12 +56,26 @@ export function installIconSet(set: string, setPath: string): Promise<Set<string
 const loadingIconSets = new Set<string>();
 
 class Icon extends React.Component<IIconProps, { sets: { [setId: string]: Set<string> } }> {
+  private mLoadPromise: Promise<any>;
+  private mMounted: boolean = false;
+
   constructor(props: IIconProps) {
     super(props);
 
     this.state = {
       sets: {},
     };
+  }
+
+  public componentDidMount() {
+    this.mMounted = true;
+  }
+
+  public componentWillUnmount() {
+    this.mMounted = false;
+    if (this.mLoadPromise !== undefined) {
+      this.mLoadPromise.cancel();
+    }
   }
 
   public render(): JSX.Element {
@@ -76,14 +90,14 @@ class Icon extends React.Component<IIconProps, { sets: { [setId: string]: Set<st
         copy[set] = null;
 
         loadingIconSets.add(set);
-        this.setState(update(this.state, { sets: { $set: copy } }));
+        if (this.mMounted) {
+          this.setState(update(this.state, { sets: { $set: copy } }));
+        }
       }
 
       // different extensions don't share the sets global so check in the dom
       // to see if the iconset is already loaded after all
       const existing = document.getElementById('iconset-' + set);
-
-      let loadProm: Promise<Set<string>>;
 
       if (existing !== null) {
         const newSymbols = existing.querySelectorAll('symbol');
@@ -91,20 +105,23 @@ class Icon extends React.Component<IIconProps, { sets: { [setId: string]: Set<st
         newSymbols.forEach(ele => {
           newSet.add(ele.id);
         });
-        loadProm = Promise.resolve(newSet);
+        this.mLoadPromise = Promise.resolve(newSet);
       } else {
         // make sure that no other icon instance tries to render this icon
         const fontPath = path.resolve(remote.app.getAppPath(), 'assets', 'fonts', set + '.svg');
-        loadProm = installIconSet(set, fontPath);
+        this.mLoadPromise = installIconSet(set, fontPath);
       }
 
-      return loadProm.then((newSet: Set<string>) => {
+      return this.mLoadPromise.then((newSet: Set<string>) => {
+        this.mLoadPromise = undefined;
         // need to copy the _current_ sets because for all we know another load might have completed
         // in the meantime
         const copy = { ...this.state.sets };
         copy[set] = newSet;
         loadingIconSets.delete(set);
-        this.setState(update(this.state, { sets: { $set: copy } }));
+        if (this.mMounted) {
+          this.setState(update(this.state, { sets: { $set: copy } }));
+        }
         return newSet;
       });
     } else {

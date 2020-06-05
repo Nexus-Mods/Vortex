@@ -61,6 +61,7 @@ import {} from './util/extensionRequire';
 import './util/monkeyPatching';
 import { truthy } from './util/util';
 
+import Promise from 'bluebird';
 import * as child_processT from 'child_process';
 import { app, dialog } from 'electron';
 import * as path from 'path';
@@ -89,6 +90,8 @@ const handleError = (error: any) => {
 };
 
 function main() {
+  app.allowRendererProcessReuse = false;
+
   const mainArgs = commandLine(process.argv, false);
   if (mainArgs.report) {
     return sendReportFile(mainArgs.report)
@@ -125,8 +128,6 @@ function main() {
     app.quit();
     return;
   }
-
-  app.allowRendererProcessReuse = false;
 
   if (mainArgs.disableGPU) {
     app.disableHardwareAcceleration();

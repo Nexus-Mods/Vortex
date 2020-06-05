@@ -44,18 +44,19 @@ import LoginIcon from './views/LoginIcon';
 import { } from './views/Settings';
 
 import { genEndorsedAttribute, genGameAttribute, genModIdAttribute } from './attributes';
-import { NEXUS_MEMBERSHIP_URL } from './constants';
+import { NEXUS_DOMAIN, NEXUS_MEMBERSHIP_URL } from './constants';
 import * as eh from './eventHandlers';
 import NXMUrl from './NXMUrl';
 import * as sel from './selectors';
 import { endorseModImpl, getInfo, nexusGames, processErrorMessage,
          startDownload, updateKey } from './util';
 
+import NexusT, { IDownloadURL, IFileInfo,
+  IModInfo, IRevision, NexusError, RateLimitError, TimeoutError } from '@nexusmods/nexus-api';
 import Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import * as fuzz from 'fuzzball';
 import { TFunction } from 'i18next';
-import NexusT, { IDownloadURL, NexusError, RateLimitError, TimeoutError } from '@nexusmods/nexus-api';
 import * as path from 'path';
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
@@ -97,8 +98,8 @@ class Disableable {
     } else if (this.mDisabled) {
       return () => Promise.reject(new APIDisabled(prop));
     } else if (prop === 'getFileByMD5') {
-      return (hash: string, gameId: string) => {
-        if (gameId.toLowerCase() === 'skyrimse') {
+      return (hash: string, gameId?: string) => {
+        if (gameId?.toLowerCase() === 'skyrimse') {
           this.mApi.showErrorNotification(
             'Attempt to send invalid API request, please report this (once)',
             new Error(`getFileByMD5 called with game id ${gameId}`),
@@ -615,10 +616,16 @@ const awaitedLinks: IAwaitedLink[] = [];
 
 function makeNXMLinkCallback(api: IExtensionApi) {
   return (url: string, install: boolean) => {
-    const nxmUrl = new NXMUrl(url);
-    if ((nxmUrl.gameId === SITE_ID) && install) {
-      return api.emitAndAwait('install-extension',
-        { name: 'Pending', modId: nxmUrl.modId, fileId: nxmUrl.fileId });
+    let nxmUrl: NXMUrl;
+    try {
+      nxmUrl = new NXMUrl(url);
+      if ((nxmUrl.gameId === SITE_ID) && install) {
+        return api.emitAndAwait('install-extension',
+          { name: 'Pending', modId: nxmUrl.modId, fileId: nxmUrl.fileId });
+      }
+    } catch (err) {
+      api.showErrorNotification('Invalid URL', err, { allowReport: false });
+      return;
     }
 
     // test if we're already awaiting this link
@@ -792,7 +799,7 @@ function once(api: IExtensionApi) {
     retrieveCategories(api, isUpdate);
   });
   api.events.on('gamemode-activated', (gameId: string) => { nexus.setGame(gameId); });
-  api.events.on('did-import-downloads', (dlIds: string[]) => { queryInfo(api, dlIds); });
+  api.events.on('did-import-downloads', (dlIds: string[]) => { queryInfo(api, dlIds, false); });
 
   api.onAsync('start-download-update', eh.onDownloadUpdate(api, nexus));
 
@@ -835,7 +842,7 @@ function goBuyPremium() {
   opn(NEXUS_MEMBERSHIP_URL).catch(err => undefined);
 }
 
-function queryInfo(api: IExtensionApi, instanceIds: string[]) {
+function queryInfo(api: IExtensionApi, instanceIds: string[], ignoreCache: boolean) {
   if (instanceIds === undefined) {
     return;
   }
@@ -859,25 +866,28 @@ function queryInfo(api: IExtensionApi, instanceIds: string[]) {
       filePath: path.join(downloadPath, dl.localPath),
       gameId,
       fileSize: dl.size,
-    })
+    }, ignoreCache)
     .then((modInfo: ILookupResult[]) => {
       if (modInfo.length > 0) {
         const info = modInfo[0].value;
+        const { store } = api;
+
+        const setInfo = (key: string, value: any) => {
+          if (value !== undefined) { store.dispatch(setDownloadModInfo(dlId, key, value)); }
+        };
+
         try {
           const nxmUrl = new NXMUrl(info.sourceURI);
-          api.store.dispatch(setDownloadModInfo(dlId, 'source', 'nexus'));
-          api.store.dispatch(setDownloadModInfo(dlId, 'nexus.ids.gameId', nxmUrl.gameId));
-          api.store.dispatch(setDownloadModInfo(dlId, 'nexus.ids.fileId', nxmUrl.fileId));
-          api.store.dispatch(setDownloadModInfo(dlId, 'nexus.ids.modId', nxmUrl.modId));
-
-          api.store.dispatch(setDownloadModInfo(dlId, 'version', info.fileVersion));
-          api.store.dispatch(setDownloadModInfo(dlId, 'game', info.gameId));
-          api.store.dispatch(setDownloadModInfo(dlId, 'name',
-                                                info.logicalFileName || info.fileName));
+          setInfo('source', 'nexus');
+          setInfo('nexus.ids.gameId', nxmUrl.gameId);
+          setInfo('nexus.ids.fileId', nxmUrl.fileId);
+          setInfo('nexus.ids.modId', nxmUrl.modId);
         } catch (err) {
           // failed to parse the uri as an nxm link - that's not an error in this case, if
           // the meta server wasn't nexus mods this is to be expected
         }
+
+        setInfo('meta', info);
       }
     })
     .catch(err => {
@@ -1032,7 +1042,7 @@ function makeNXMProtocol(api: IExtensionApi, onAwaitLink: AwaitLinkCB) {
 
 function init(context: IExtensionContextExt): boolean {
   context.registerAction('application-icons', 200, LoginIcon, {}, () => ({ nexus }));
-  context.registerAction('mods-action-icons', 999, 'open-ext', {}, 'Open on Nexus Mods',
+  context.registerAction('mods-action-icons', 999, 'nexus', {}, 'Open on Nexus Mods',
                          instanceIds => {
     const state: IState = context.api.store.getState();
     const gameMode = activeGameId(state);
@@ -1080,10 +1090,12 @@ function init(context: IExtensionContextExt): boolean {
       ? true
       : context.api.translate('Can only query finished downloads') as string;
   };
+
+  // TODO: this shouldn't be here, it uses the meta server not the nexus api
   context.registerAction('downloads-action-icons', 100, 'refresh', {}, 'Query Info',
-    (instanceIds: string[]) => queryInfo(context.api, instanceIds), queryCondition);
+    (instanceIds: string[]) => queryInfo(context.api, instanceIds, true), queryCondition);
   context.registerAction('downloads-multirow-actions', 100, 'refresh', {}, 'Query Info',
-    (instanceIds: string[]) => queryInfo(context.api, instanceIds), queryCondition);
+    (instanceIds: string[]) => queryInfo(context.api, instanceIds, true), queryCondition);
 
   // this makes it so the download manager can use nxm urls as download urls
   context.registerDownloadProtocol('nxm',
@@ -1091,6 +1103,8 @@ function init(context: IExtensionContextExt): boolean {
     new Promise(resolve => {
       awaitedLinks.push({ gameId, modId, fileId, resolve });
     })));
+
+
   context.registerSettings('Download', LazyComponent(() => require('./views/Settings')));
   context.registerReducer(['confidential', 'account', 'nexus'], accountReducer);
   context.registerReducer(['settings', 'nexus'], settingsReducer);

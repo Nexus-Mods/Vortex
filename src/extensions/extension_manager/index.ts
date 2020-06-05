@@ -2,7 +2,7 @@ import {IExtensionApi, IExtensionContext} from '../../types/IExtensionContext';
 import { NotificationDismiss } from '../../types/INotification';
 import { IExtensionLoadFailure, IState } from '../../types/IState';
 import { relaunch } from '../../util/commandLine';
-import { DataInvalid } from '../../util/CustomErrors';
+import { DataInvalid, ProcessCanceled } from '../../util/CustomErrors';
 import { log } from '../../util/log';
 import makeReactive from '../../util/makeReactive';
 
@@ -35,11 +35,20 @@ function checkForUpdates(api: IExtensionApi) {
         ? iter.modId === ext.modId
         : iter.name === ext.name);
 
-      if (update === undefined) {
+      if ((update === undefined)
+          || (update.version === undefined)) {
         return prev;
       }
 
-      if (semver.gte(ext.version, update.version)) {
+      const extVer = semver.coerce(ext.version);
+      const updateVer = semver.coerce(update.version);
+
+      if ((extVer === null) || (updateVer === null)) {
+        log('warn', 'invalid version on extension', { local: ext.version, update: update.version });
+        return prev;
+      }
+
+      if (semver.gte(extVer, updateVer)) {
         return prev;
       }
 
@@ -224,6 +233,16 @@ function init(context: IExtensionContext) {
   }));
 
   context.registerReducer(['session', 'extensions'], sessionReducer);
+
+  context.registerInstaller('site-installer', 0,
+    (files: string[], gameId: string) => Promise.resolve({
+      supported: gameId === 'site',
+      requiredFiles: [],
+    }),
+    () => {
+      return Promise.reject(
+        new ProcessCanceled('Extensions have to be installed from the extensions page.'));
+    });
 
   context.once(() => {
     updateExtensions(true)

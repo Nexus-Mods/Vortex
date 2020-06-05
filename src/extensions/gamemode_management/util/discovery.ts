@@ -16,6 +16,7 @@ import Progress from './Progress';
 
 import Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
+import * as fsExtra from 'fs-extra';
 import * as path from 'path';
 import turbowalk from 'turbowalk';
 
@@ -213,9 +214,11 @@ function walk(searchPath: string,
 
 function verifyToolDir(tool: ITool, testPath: string): Promise<void> {
   return Promise.mapSeries(tool.requiredFiles,
-    (fileName: string) => fs.statAsync(path.join(testPath, fileName))
+    // our fs overload would try to acquire access to the directory if it's locked, which
+    // is not something we want at this point because we don't even know yet if the user
+    // wants to manage the game at all.
+    (fileName: string) => fsExtra.stat(path.join(testPath, fileName))
       .catch(err => {
-        log('warn', 'file not found', path.join(testPath, fileName));
         return Promise.reject(err);
       }))
     .then(() => undefined);
@@ -231,6 +234,10 @@ function assertToolDir(tool: ITool, testPath: string): Promise<string> {
     .catch(err => {
       if (err.code === 'ENOENT') {
         log('warn', 'game directory not valid', { game: tool.name, testPath, missing: err.path });
+      } else if (err.code === 'EPERM') {
+        log('warn', 'game directory can\'t be read due to file permissions',
+            { game: tool.name, testPath });
+        return testPath;
       } else {
         log('error', 'failed to verify game directory',
           { testPath, error: err.message });

@@ -1,5 +1,5 @@
 import {setApplicationVersion, setInstanceId, setWarnedAdmin} from '../actions/app';
-import {} from '../reducers/index';
+import { STATE_BACKUP_PATH } from '../reducers/index';
 import { ThunkStore } from '../types/api';
 import {IState} from '../types/IState';
 import commandLine, {IParameters} from '../util/commandLine';
@@ -18,21 +18,21 @@ import {log, setLogPath, setupLogging} from '../util/log';
 import { prettifyNodeErrorMessage, showError } from '../util/message';
 import migrate from '../util/migrate';
 import { StateError } from '../util/reduxSanity';
-import { allHives, createVortexStore, currentStatePath, extendStore,
+import { allHives, createFullStateBackup, createVortexStore, currentStatePath, extendStore,
          importState, insertPersistor, markImported, querySanitize } from '../util/store';
 import {} from '../util/storeHelper';
 import SubPersistor from '../util/SubPersistor';
 import { isMajorDowngrade, spawnSelf, timeout, truthy } from '../util/util';
 
-import { addNotification } from '../actions';
+import { addNotification, setCommandLine } from '../actions';
 
 import MainWindowT from './MainWindow';
 import SplashScreenT from './SplashScreen';
 import TrayIconT from './TrayIcon';
 
 import Promise from 'bluebird';
-import crashDumpX from 'crash-dump';
-import {app, dialog, ipcMain, shell} from 'electron';
+import crashDumpT from 'crash-dump';
+import {app, crashReporter as crashReporterT, dialog, ipcMain, shell} from 'electron';
 import isAdmin = require('is-admin');
 import * as _ from 'lodash';
 import * as msgpackT from 'msgpack';
@@ -43,9 +43,6 @@ import * as semver from 'semver';
 import * as uuidT from 'uuid';
 
 import { RegGetValue } from 'winapi-bindings';
-
-// export is currently a bit messed up
-const crashDump = (crashDumpX as any).default;
 
 const uuid = lazyRequire<typeof uuidT>(() => require('uuid'));
 
@@ -67,7 +64,8 @@ class Application {
   private mExtensions: ExtensionManagerT;
   private mTray: TrayIconT;
   private mFirstStart: boolean = false;
-  private mDeinitCrashDump: () => void = undefined;
+  private mStartupLogPath: string;
+  private mDeinitCrashDump: () => void;
 
   constructor(args: IParameters) {
     this.mArgs = args;
@@ -84,7 +82,28 @@ class Application {
     app.setPath('temp', tempPath);
     fs.ensureDirSync(path.join(tempPath, 'dumps'));
 
-    this.mDeinitCrashDump = crashDump(path.join(tempPath, 'dumps', `crash-main-${Date.now()}.dmp`));
+    this.mStartupLogPath = path.join(tempPath, 'startup.log');
+    try {
+      fs.statSync(this.mStartupLogPath);
+      process.env.CRASH_REPORTING = Math.random() > 0.5 ? 'vortex' : 'electron';
+    } catch (err) {
+      // nop, this is the expected case
+    }
+
+    if (process.env.CRASH_REPORTING === 'electron') {
+      const crashReporter: typeof crashReporterT = require('electron').crashReporter;
+      crashReporter.start({
+        productName: 'Vortex',
+        companyName: 'Black Tree Gaming Ltd.',
+        uploadToServer: false,
+        submitURL: '',
+        crashesDirectory: path.join(tempPath, 'dumps'),
+      });
+    } else if (process.env.CRASH_REPORTING === 'vortex') {
+      const crashDump: typeof crashDumpT = require('crash-dump').default;
+      this.mDeinitCrashDump =
+        crashDump(path.join(tempPath, 'dumps', `crash-main-${Date.now()}.dmp`));
+    }
 
     setupLogging(app.getPath('userData'), process.env.NODE_ENV === 'development');
     this.setupAppEvents(args);
@@ -122,7 +141,9 @@ class Application {
       if (this.mTray !== undefined) {
         this.mTray.close();
       }
-      this.mDeinitCrashDump();
+      if (this.mDeinitCrashDump !== undefined) {
+        this.mDeinitCrashDump();
+      }
       if (process.platform !== 'darwin') {
         app.quit();
       }
@@ -195,6 +216,15 @@ class Application {
         return;
       }
 
+      if (['EACCES', 'EPERM'].includes(error.errno)
+          && (error.path !== undefined)
+          && (error.path.indexOf('vortex-setup') !== -1)) {
+        // It's wonderous how electron-builder finds new ways to be more shit without even being
+        // updated. Probably caused by node update
+        log('warn', 'suppressing error message', { message: error.message, stack: error.stack });
+        return;
+      }
+
       terminate(toError(error), this.mStore.getState());
     };
   }
@@ -202,20 +232,40 @@ class Application {
   private regularStart(args: IParameters): Promise<void> {
     let splash: SplashScreenT;
 
-    return this.testUserEnvironment()
-        .then(() => this.validateFiles())
-        .then(() => {
+    return fs.writeFileAsync(this.mStartupLogPath, (new Date()).toUTCString())
+        .catch(() => null)
+        .tap(() => {
           log('info', '--------------------------');
           log('info', 'Vortex Version', app.getVersion());
           log('info', 'Parameters', process.argv.join(' '));
-          return this.startSplash();
         })
+        .then(() => this.testUserEnvironment())
+        .then(() => this.validateFiles())
+        .then(() => this.startSplash())
         // start initialization
         .tap(() => log('debug', 'showing splash screen'))
         .then(splashIn => {
           splash = splashIn;
           return this.createStore(args.restore)
-            .catch(DataInvalid, () => this.createStore(args.restore, true));
+            .catch(DataInvalid, err => {
+              log('error', 'store data invalid', err.message);
+              dialog.showMessageBox(getVisibleWindow(), {
+                type: 'error',
+                buttons: ['Continue'],
+                title: 'Error',
+                message: 'Data corrupted',
+                detail: 'The application state which contains things like your Vortex '
+                      + 'settings, meta data about mods and other important data is '
+                      + 'corrupted and can\'t be read. This could be a result of '
+                      + 'hard disk corruption, a power outage or something similar. '
+                      + 'Vortex will now try to repair the database, usually this '
+                      + 'should work fine but please check that settings, mod list and so '
+                      + 'on are ok before you deploy anything. '
+                      + 'If not, you can go to settings->workarounds and restore a backup '
+                      + 'which shouldn\'t lose you more than an hour of progress.',
+              })
+              .then(() => this.createStore(args.restore, true));
+            });
         })
         .tap(() => log('debug', 'checking admin rights'))
         .then(() => this.warnAdmin())
@@ -230,6 +280,9 @@ class Application {
           process.removeAllListeners('unhandledRejection');
           process.on('uncaughtException', handleError);
           process.on('unhandledRejection', handleError);
+        })
+        .then(() => {
+          this.mStore.dispatch(setCommandLine(args));
         })
         // .then(() => this.initDevel())
         .tap(() => log('debug', 'starting user interface'))
@@ -296,7 +349,8 @@ class Application {
           } catch (err) {
             // nop
           }
-        });
+        })
+        .finally(() => fs.removeAsync(this.mStartupLogPath).catch(() => null));
   }
 
   private isUACEnabled(): Promise<boolean> {
@@ -573,7 +627,7 @@ class Application {
 
   private createStore(restoreBackup?: string, repair?: boolean): Promise<void> {
     const newStore = createVortexStore(this.sanityCheckCB);
-    const backupPath = path.join(app.getPath('temp'), 'state_backups');
+    const backupPath = path.join(app.getPath('temp'), STATE_BACKUP_PATH);
     let backups: string[];
 
     const updateBackups = () => fs.ensureDirAsync(backupPath)
@@ -623,6 +677,7 @@ class Application {
 
         log('info', `using ${dataPath} as the storage directory`);
         if (multiUser) {
+          log('info', 'all further logging will happen in', path.join(dataPath, 'vortex.log'));
           setLogPath(dataPath);
           log('info', '--------------------------');
           log('info', 'Vortex Version', app.getVersion());
@@ -634,12 +689,18 @@ class Application {
           return Promise.resolve();
         }
       })
-      .then(() => insertPersistor('app', new SubPersistor(last(this.mLevelPersistors), 'app')))
+      .then(() => {
+        log('debug', 'reading app state');
+        return insertPersistor('app', new SubPersistor(last(this.mLevelPersistors), 'app'));
+      })
       .then(() => {
         if (newStore.getState().app.instanceId === undefined) {
           this.mFirstStart = true;
           const newId = uuid.v4();
+          log('debug', 'first startup, generated instance id', { instanceId: newId });
           newStore.dispatch(setInstanceId(newId));
+        } else {
+          log('debug', 'startup instance', { instanceId: newStore.getState().app.instanceId });
         }
         const ExtensionManager = require('../util/ExtensionManager').default;
         this.mExtensions = new ExtensionManager(newStore);
@@ -648,9 +709,12 @@ class Application {
         return Promise.mapSeries(allHives(this.mExtensions), hive =>
           insertPersistor(hive, new SubPersistor(last(this.mLevelPersistors), hive)));
       })
-      .then(() => importState(this.mBasePath))
+      .then(() => {
+        log('debug', 'checking if state db needs to be upgraded');
+        return importState(this.mBasePath);
+      })
       .then(oldState => {
-        // mark as imported first, otherwise we risk importing again overwriting data.
+        // mark as imported first, otherwise we risk importing again, overwriting data.
         // this way we risk not importing but since the old state is still there, that
         // can be repaired
         return oldState !== undefined ?
@@ -663,7 +727,10 @@ class Application {
                        }) :
                    Promise.resolve();
       })
-      .then(() => updateBackups())
+      .then(() => {
+        log('debug', 'updating state backups');
+        return updateBackups();
+      })
       .then(() => {
         if (restoreBackup !== undefined) {
           log('info', 'restoring state backup', restoreBackup);
@@ -708,6 +775,7 @@ class Application {
         };
 
         this.mExtensions.setStore(newStore);
+        log('debug', 'setting up extended store');
         return extendStore(newStore, this.mExtensions);
       })
       .then(() => {
@@ -728,7 +796,11 @@ class Application {
               } },
             ],
           }));
+        } else if (!repair) {
+          // we started without any problems, save this application state
+          return createFullStateBackup('startup', this.mStore);
         }
+        return Promise.resolve();
       })
       .then(() => this.mExtensions.doOnce());
   }

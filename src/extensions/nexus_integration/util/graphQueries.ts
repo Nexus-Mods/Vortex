@@ -1,4 +1,4 @@
-import { ICollectionQuery, IRevisionQuery } from 'nexus-api';
+import { ICollectionQuery, IRevisionQuery } from '@nexusmods/nexus-api';
 
 const revisionInfo: IRevisionQuery = {
   id: true,

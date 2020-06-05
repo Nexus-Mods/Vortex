@@ -1,4 +1,4 @@
-import {IPersistor} from '../types/IExtensionContext';
+import {IPersistor, PersistorKey} from '../types/IExtensionContext';
 import { terminate } from '../util/errorHandling';
 import { log } from '../util/log';
 
@@ -60,9 +60,11 @@ class ReduxPersistor<T> {
   }
 
   private resetData(hive: string, persistor: IPersistor): Promise<void> {
-    const kvProm = (persistor.getAllKVs !== undefined)
+    const kvProm: Promise<Array<{ key: PersistorKey, value: string }>> =
+      (persistor.getAllKVs !== undefined)
       ? persistor.getAllKVs()
-        .map(kv => ({ key: kv.key, value: this.deserialize(kv.value) }))
+        .map((kv: { key: PersistorKey, value: string }) =>
+          ({ key: kv.key, value: this.deserialize(kv.value) }))
       : persistor.getAllKeys()
       .then(keys =>
         Promise.map(keys, key => persistor.getItem(key)

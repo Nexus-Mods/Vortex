@@ -2,15 +2,17 @@ import reducer, { Decision } from '../reducers/index';
 import { IPersistor, PersistingType } from '../types/IExtensionContext';
 import { IState } from '../types/IState';
 
+import { DataInvalid } from './CustomErrors';
 import { getVisibleWindow } from './errorHandling';
 import ExtensionManager from './ExtensionManager';
 import * as fs from './fs';
+import { writeFileAtomic } from './fsAtomic';
 import { log } from './log';
 import ReduxPersistor from './ReduxPersistor';
 import {reduxSanity, StateError} from './reduxSanity';
 
 import Promise from 'bluebird';
-import { dialog } from 'electron';
+import { app as appIn, dialog, remote } from 'electron';
 import { forwardToRenderer, replayActionMain } from 'electron-redux';
 import * as encode from 'encoding-down';
 import * as leveldown from 'leveldown';
@@ -24,7 +26,10 @@ let basePersistor: ReduxPersistor<IState>;
 
 const IMPORTED_TAG = 'imported__do_not_delete.txt';
 
+const app = remote !== undefined ? remote.app : appIn;
+
 export const currentStatePath = 'state.v2';
+export const FULL_BACKUP_PATH = 'state_backups_full';
 
 export function querySanitize(errors: string[]): Decision {
   const response = dialog.showMessageBoxSync(getVisibleWindow(), {
@@ -149,4 +154,25 @@ export function importState(basePath: string): Promise<any> {
     // read and transform data to import
     ? importVer.func(importVer.path)
     : Promise.resolve();
+}
+
+export function createFullStateBackup(backupName: string, store: Redux.Store<any>): Promise<void> {
+  const before = Date.now();
+  const state = store.getState();
+  let serialized;
+  try {
+    serialized = JSON.stringify(state, undefined, 2);
+  } catch (err) {
+    log('error', 'Failed to create state backup', err.message);
+    return Promise.reject(new DataInvalid('Failed to create state backup'));
+  }
+
+  const basePath = path.join(app.getPath('userData'), 'temp', FULL_BACKUP_PATH);
+
+  return fs.ensureDirWritableAsync(basePath, () => Promise.resolve())
+    .then(() => writeFileAtomic(path.join(basePath, backupName + '.json'),
+      serialized))
+    .then(() => {
+      log('info', 'state backup created', { ms: Date.now() - before });
+    });
 }

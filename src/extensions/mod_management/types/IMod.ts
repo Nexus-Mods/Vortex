@@ -58,7 +58,9 @@ export interface IModReference extends IReference {
  * a mod (requires/recommends) rule can provide a list of files to control how the referenced
  * mod is to be installed if it gets installed as a dependency.
  *
- * At this time Vortex does not verify that an already-installed mod contains these files
+ * At this time Vortex does not verify whether an already-installed mod contains these files,
+ * meaning the requires rule will not show red if these files get removed after installation
+ * of the dependency.
  */
 export interface IFileListItem {
   path: string;

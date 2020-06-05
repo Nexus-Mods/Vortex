@@ -8,6 +8,7 @@ import * as _ from 'lodash';
 import * as path from 'path';
 import * as semver from 'semver';
 import * as tmp from 'tmp';
+import { TimeoutError } from './CustomErrors';
 
 /**
  * count the elements in an array for which the predicate matches
@@ -41,7 +42,7 @@ export function sum(container: number[]): number {
  * returns the attribute "key" from "obj". If that attribute doesn't exist
  * on obj, it will be set to the default value and that is returned.
  */
-export function setdefault<T>(obj: any, key: PropertyKey, def: T): T {
+export function setdefault<T, K extends keyof T>(obj: T, key: K, def: T[K]): T[K] {
   if (!obj.hasOwnProperty(key)) {
     obj[key] = def;
   }
@@ -297,25 +298,46 @@ export function escapeRE(input: string): string {
   return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+export interface ITimeoutOptions {
+  cancel?: boolean;
+  throw?: boolean;
+}
+
 /**
  * set a timeout for a promise. When the timeout expires the promise returned by this
- * resolves with a value of undefined.
+ * resolves with a value of undefined (or throws a TimeoutError).
  * @param prom the promise that should be wrapped
- * @param delay the time in milliseconds after which this should return
- * @param cancel if true, the input promise is canceled when the timeout expires. Otherwise
- *               it's allowed to continue and may finish after all.
+ * @param delayMS the time in milliseconds after which this should return
+ * @param options options detailing how this timeout acts
  */
-export function timeout<T>(prom: Promise<T>, delay: number, cancel: boolean = false): Promise<T> {
+export function timeout<T>(prom: Promise<T>,
+                           delayMS: number,
+                           options?: ITimeoutOptions)
+                           : Promise<T> {
   let timedOut: boolean = false;
-  return Promise.any<T>([prom, Promise.delay(delay).then(() => {
+  return Promise.race<T>([prom, Promise.delay(delayMS).then(() => {
     timedOut = true;
-    return undefined;
+    if (options?.throw === true) {
+      return Promise.reject(new TimeoutError());
+    } else {
+      return undefined;
+    }
   })])
-    .tap(() => {
-      if (timedOut && cancel) {
+    .finally(() => {
+      if (timedOut && (options?.cancel === true)) {
         prom.cancel();
       }
     });
+}
+
+/**
+ * wait for the specified number of milliseconds before resolving the promise.
+ * Bluebird has this feature as Promise.delay but when using es6 default promises this can be used
+ */
+export function delay(timeoutMS: number): Promise<void> {
+  return new Promise(resolve => {
+    setTimeout(resolve, timeoutMS);
+  });
 }
 
 /**
@@ -369,6 +391,8 @@ export function isPathValid(input: string, allowRelative: boolean = false): bool
   if ((process.platform === 'win32') && input.startsWith('\\\\')) {
     // UNC path, skip the leading \\ for validation
     input = input.slice(2);
+  } else if ((process.platform !== 'win32') && input.startsWith('/')) {
+    input = input.slice(1);
   }
   let split = input.replace(trimTrailingSep, '').split(path.sep);
   if (allowRelative) {
@@ -453,7 +477,7 @@ function flattenInner(obj: any, key: string[],
 
 export function toPromise<ResT>(func: (cb) => void): Promise<ResT> {
   return new Promise((resolve, reject) => {
-    const cb = (err, res) => {
+    const cb = (err: Error, res: ResT) => {
       if (err !== null) {
         return reject(err);
       } else {
@@ -469,7 +493,7 @@ export function makeUnique<T>(input: T[]): T[] {
 }
 
 export function withTmpDir<T>(cb: (tmpPath: string) => Promise<T>): Promise<T> {
-  return new Promise<void>((resolve, reject) => {
+  return new Promise<T>((resolve, reject) => {
     tmp.dir({ unsafeCleanup: true }, (err, tmpPath, cleanup) => {
       if (err !== null) {
         return reject(err);
@@ -492,4 +516,16 @@ export function withTmpDir<T>(cb: (tmpPath: string) => Promise<T>): Promise<T> {
       }
     });
   });
+}
+
+export function unique<T, U>(input: T[], keyFunc?: (item: T) => U): T[] {
+  const keys = new Set<U>();
+  return input.reduce((prev: T[], iter: T) => {
+    const key = keyFunc?.(iter);
+    if (keys.has(key)) {
+      return prev;
+    }
+    keys.add(key);
+    return [].concat(prev, iter);
+  }, []);
 }

@@ -1,6 +1,6 @@
 {
   "name": "vortex-run",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "description": "Helpers to run code in different modes (elevated, in separate threads)",
   "main": "lib/index.js",
   "scripts": {

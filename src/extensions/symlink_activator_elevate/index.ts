@@ -30,6 +30,7 @@ import JsonSocket from 'json-socket';
 import * as net from 'net';
 import * as os from 'os';
 import * as path from 'path';
+import * as semver from 'semver';
 import { generate as shortid } from 'shortid';
 import { runElevated } from 'vortex-run';
 import * as winapi from 'winapi-bindings';
@@ -141,12 +142,14 @@ class DeploymentMethod extends LinkingDeployment {
       if (report === 'not-supported') {
         api.showErrorNotification('Symlinks not support',
           'It appears symbolic links aren\'t supported between your mod staging folder and game '
-          + 'folder. On Windows, symbolic links only work on NTFS drives', { allowReport: false });
+          + 'folder. On Windows, symbolic links only work on NTFS drives.', { allowReport: false });
       } else {
         api.showErrorNotification('Unknown error', report);
       }
     };
+  }
 
+  public initEvents(api: IExtensionApi) {
     if (api.events !== undefined) {
       api.events.on('force-unblock-elevating', () => {
         try {
@@ -246,23 +249,26 @@ class DeploymentMethod extends LinkingDeployment {
 
   protected linkFile(linkPath: string, sourcePath: string, dirTags?: boolean): Promise<void> {
     const dirName = path.dirname(linkPath);
-    return fs.ensureDirAsync(dirName)
-      .then(created => {
-        if ((dirTags !== false) && (created !== null)) {
-          log('debug', 'created directory', dirName);
-          return fs.writeFileAsync(
-            path.join(dirName, LinkingDeployment.NEW_TAG_NAME),
+    const onDirCreated = (created) => {
+      if ((dirTags !== false) && (created !== null)) {
+        log('debug', 'created directory', created);
+        return fs.writeFileAsync(
+          path.join(created, LinkingDeployment.NEW_TAG_NAME),
             'This directory was created by Vortex deployment and will be removed ' +
             'during purging if it\'s empty');
-        } else {
-          // if the directory did exist there is a chance the destination file already
-          // exists
-          return fs.removeAsync(linkPath)
-            .catch(err => (err.code === 'ENOENT')
-              ? Promise.resolve()
-              : Promise.reject(err));
-        }
-      })
+      } else {
+        return Promise.resolve();
+      }
+    };
+    return fs.ensureDirAsync(dirName, onDirCreated)
+      .then(created => (created === null)
+        // if the directory did exist, there is a chance the destination file already
+        // exists
+        ? fs.removeAsync(linkPath)
+          .catch(err => (err.code === 'ENOENT')
+            ? Promise.resolve()
+            : Promise.reject(err))
+        : Promise.resolve())
       .then(() => this.emitOperation('link-file', {
         source: sourcePath, destination: linkPath,
       }));
@@ -310,7 +316,9 @@ class DeploymentMethod extends LinkingDeployment {
   protected isLink(linkPath: string, sourcePath: string): Promise<boolean> {
     return fs.readlinkAsync(linkPath)
     .then(symlinkPath => symlinkPath === sourcePath)
-    // readlink throws an "unknown" error if the file is no link at all. Super helpful
+    // readlink throws an "unknown" error if the file is no link at all. Super helpful...
+    // this doesn't actually seem to be the case any more in electron 8, seems we now get
+    // EINVAL
     .catch(() => false);
   }
 
@@ -575,7 +583,7 @@ class DeploymentMethod extends LinkingDeployment {
 
   private isUnsupportedGame(gameId: string): boolean {
     const unsupportedGames = (process.platform === 'win32')
-      ? ['nomanssky', 'stateofdecay', 'factorio', 'witcher3']
+      ? ['nomanssky', 'stateofdecay', 'factorio']
       : ['nomanssky', 'stateofdecay'];
 
     return unsupportedGames.indexOf(gameId) !== -1;
@@ -610,14 +618,18 @@ function baseFunc(moduleRoot: string, ipcPath: string,
   client.connect(imp.path.join('\\\\?\\pipe', ipcPath));
 
   client.on('connect', () => {
-    main(client, __req)
-      .catch(error => {
-        client.emit('error', error.message);
-      })
-      .finally(() => {
-        client.end();
-        process.exit(0);
-      });
+    const res = main(client, __req);
+    // bit of a hack but the type "bluebird" isn't known in this context
+    if (res?.['catch'] !== undefined) {
+      (res as any)
+        .catch(error => {
+          client.emit('error', error.message);
+        })
+        .finally(() => {
+          client.end();
+          process.exit(0);
+        });
+    }
   })
     .on('close', () => {
       process.exit(0);
@@ -662,7 +674,7 @@ function ensureTaskEnabled() {
 
   return fs.writeFileAsync(scriptPath, makeScript({ }))
     .then(() => {
-      if (winapi.GetTasks().find(task => task.Name === TASK_NAME) !== undefined) {
+      if (findTask() !== undefined) {
         // not checking if the task is actually set up correctly
         // (proper path and arguments for the action) so if we change any of those we
         // need migration code. If the user changes the task, screw them.
@@ -715,8 +727,30 @@ function ensureTaskEnabled() {
     });
 }
 
-function ensureTaskDeleted() {
-  if (winapi.GetTasks().find(task => task.Name === TASK_NAME) === undefined) {
+function tasksSupported() {
+  try {
+    winapi.GetTasks();
+    return null;
+  } catch (err) {
+    log('info', 'windows tasks api failed', err.message);
+    return err.message;
+  }
+}
+
+function findTask() {
+  if (process.platform !== 'win32') {
+    return undefined;
+  }
+  try {
+    return winapi.GetTasks().find(task => task.Name === TASK_NAME);
+  } catch (err) {
+    log('warn', 'failed to list windows tasks', err.message);
+    return undefined;
+  }
+}
+
+function ensureTaskDeleted(): Promise<void> {
+  if (findTask() === undefined) {
     return Promise.resolve();
   }
 
@@ -755,16 +789,37 @@ function ensureTask(api: IExtensionApi, enabled: boolean): void {
   }
 }
 
+function migrate(api: IExtensionApi, oldVersion: string) {
+  if (process.platform === 'win32'
+      && semver.satisfies(oldVersion, '>=1.2.0  <1.2.10')
+      && (findTask() !== undefined)) {
+    api.sendNotification({
+      type: 'warning',
+      title: 'Due to a bug you have to disable and re-enable the Workaround "Allow Symlinks without elevation"',
+      message: 'I am sorry for the inconvenience',
+      displayMS: null,
+    });
+  }
+  return Promise.resolve();
+}
+
 function init(context: IExtensionContextEx): boolean {
-  context.registerDeploymentMethod(new DeploymentMethod(context.api));
+  const method = new DeploymentMethod(context.api);
+  context.registerDeploymentMethod(method);
 
   context.registerReducer(['settings', 'workarounds'], reducer);
 
   if (process.platform === 'win32') {
-    context.registerSettings('Workarounds', Settings);
+    context.registerSettings('Workarounds', Settings, () => ({
+      supported: tasksSupported(),
+    }));
   }
 
+  context.registerMigration(oldVersion => migrate(context.api, oldVersion));
+
   context.once(() => {
+    method.initEvents(context.api);
+
     if (process.platform === 'win32') {
       const userSymlinksPath = ['settings', 'workarounds', 'userSymlinks'];
       context.api.onStateChange(userSymlinksPath, (prev, current) => {

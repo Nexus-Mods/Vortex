@@ -1,4 +1,5 @@
 import { startActivity, stopActivity } from '../../actions/session';
+import { IDialogResult } from '../../types/IDialog';
 import {IExtensionApi} from '../../types/IExtensionContext';
 import {IModTable, IProfile, IState} from '../../types/IState';
 import { ProcessCanceled, TemporaryError, UserCanceled } from '../../util/CustomErrors';
@@ -17,9 +18,10 @@ import {activeGameId, activeProfile} from '../profile_management/selectors';
 import { setDeploymentNecessary } from './actions/deployment';
 import {addMod, removeMod} from './actions/mods';
 import {setActivator} from './actions/settings';
-import {IDeploymentMethod} from './types/IDeploymentMethod';
+import { IDeploymentManifest } from './types/IDeploymentManifest';
+import {IDeployedFile, IDeploymentMethod} from './types/IDeploymentMethod';
 import {IMod} from './types/IMod';
-import {fallbackPurge, loadActivation, saveActivation} from './util/activationStore';
+import {fallbackPurge, getManifest, loadActivation, purgeDeployedFiles, saveActivation} from './util/activationStore';
 import { getCurrentActivator, getSupportedActivators } from './util/deploymentMethods';
 
 import {getGame} from '../gamemode_management/util/getGame';
@@ -61,7 +63,7 @@ function validateStagingTag(api: IExtensionApi, tagPath: string): Promise<void> 
       if (tag.instance !== state.app.instanceId) {
         return api.showDialog('question', 'Confirm', {
           text: 'This is a staging folder but it appears to belong to a different Vortex '
-              + 'instance. If you\'re using Vortex in shared and "regular" mod, do not use '
+              + 'instance. If you\'re using Vortex in shared and "regular" mode, do not use '
               + 'the same staging folder for both!',
         }, [
           { label: 'Cancel' },
@@ -73,7 +75,10 @@ function validateStagingTag(api: IExtensionApi, tagPath: string): Promise<void> 
       }
       return Promise.resolve();
     })
-    .catch(() => {
+    .catch(err => {
+      if (err instanceof UserCanceled) {
+        return Promise.reject(err);
+      }
       return api.showDialog('question', 'Confirm', {
         text: 'This directory is not marked as a staging folder. '
             + 'Are you *sure* it\'s the right directory?',
@@ -160,12 +165,71 @@ function ensureStagingDirectory(api: IExtensionApi,
     .then(() => instPath);
 }
 
+// check staging folder against deployment manifest
+function checkStagingFolder(api: IExtensionApi, gameId: string,
+                            manifestPath: string, configuredPath: string)
+                            : Promise<boolean> {
+  const t = api.translate;
+
+  return getNormalizeFunc(manifestPath)
+    .then(normalize => {
+      if ((manifestPath !== undefined)
+          && (normalize(manifestPath) !== normalize(configuredPath))) {
+        log('error', 'staging folder stored in manifest differs from configured one', {
+          configured: configuredPath,
+          manifest: manifestPath,
+        });
+        return api.showDialog('error', 'Staging folder changed', {
+          bbcode: 'The staging folder configured in Vortex doesn\'t match what was '
+            + 'previously used to deploy mods. This may be caused by manual tampering '
+            + 'with the application state or some other kind of data corruption '
+            + '(hardware failure, virus, ...).<br/><br/>'
+            + '[color=red]If you continue with the wrong settings all installed mods '
+            + 'may get corrupted![/color].<br/><br/>'
+            + 'Please check the following two folders and pick the one that actually '
+            + 'contains your mods.',
+          choices: [
+            {
+              id: 'configured',
+              text: t('From config: {{path}}', { replace: { path: configuredPath } }),
+              value: true,
+            },
+            {
+              id: 'manifest',
+              text: t('From manifest: {{path}}', { replace: { path: manifestPath } }),
+              value: false,
+            },
+          ],
+        }, [
+          { label: 'Quit Vortex' },
+          { label: 'Use selected' },
+        ])
+          .then((result: IDialogResult) => {
+            if (result.action === 'Quit Vortex') {
+              app.exit();
+              // resolve never
+              return new Promise(() => null);
+            } else if ((result.action === 'Use selected')
+              && (result.input.manifest)) {
+              return true;
+            } else {
+              return false;
+            }
+          });
+      } else {
+        return Promise.resolve(false);
+      }
+    });
+}
+
 export function onGameModeActivated(
     api: IExtensionApi, activators: IDeploymentMethod[], newGame: string) {
+  // TODO: This function is a monster and needs to be refactored desperately, unfortunately
+  //   it's also sensitive code
   const store = api.store;
-  const state: IState = store.getState();
-  const supported = getSupportedActivators(state);
-  const activatorToUse = getCurrentActivator(state, newGame, true);
+  let state: IState = store.getState();
+  let supported = getSupportedActivators(state);
+  let activatorToUse = getCurrentActivator(state, newGame, true);
   const profile: IProfile = activeProfile(state);
   const gameId = profile.gameId;
   if (gameId !== newGame) {
@@ -176,9 +240,7 @@ export function onGameModeActivated(
   const gameDiscovery = state.settings.gameMode.discovered[gameId];
   const game = getGame(gameId);
 
-  if ((gameDiscovery === undefined)
-      || (gameDiscovery.path === undefined)
-      || (game === undefined)) {
+  if ((gameDiscovery?.path === undefined) || (game === undefined)) {
     // TODO: I don't think we should ever get here but if we do, is this a
     //   reasonable way of dealing with it? We're getting this callback because the profile
     //   has been changed, leaving the profile set without activating the game mode properly
@@ -190,8 +252,44 @@ export function onGameModeActivated(
 
   let instPath = installPath(state);
 
-  let initProm = () => ensureStagingDirectory(api, instPath, gameId)
-    .tap(updatedPath => instPath = updatedPath);
+  let changeActivator = false;
+
+  let existingManifest: IDeploymentManifest;
+
+  let initProm: () => Promise<void> = () => getManifest(api, '', gameId)
+    .then((manifest: IDeploymentManifest) => {
+      if (manifest.instance !== state.app.instanceId) {
+        // if the manifest is from a different instance we do nothing with it, there
+        // is other code to deal with that during deployment
+        return Promise.resolve();
+      }
+      existingManifest = manifest;
+
+      return checkStagingFolder(api, gameId, manifest.stagingPath, instPath)
+        .then(useManifest => {
+          if (useManifest) {
+            log('info', 'reverting to staging path used in manifest');
+            instPath = manifest.stagingPath;
+            api.store.dispatch(setInstallPath(gameId, instPath));
+            state = api.store.getState();
+            if (manifest.deploymentMethod !== undefined) {
+              log('info', 'also reverting the deployment method', {
+                method: manifest.deploymentMethod });
+              api.store.dispatch(setActivator(gameId, manifest.deploymentMethod));
+              state = api.store.getState();
+            }
+            supported = getSupportedActivators(state);
+            activatorToUse = getCurrentActivator(state, newGame, true);
+            // cancel out of the activator reset because we have determined to use the
+            // one from the manifest
+            api.dismissNotification('deployment-method-unavailable');
+            changeActivator = false;
+          }
+        });
+    })
+    .then(() => ensureStagingDirectory(api, instPath, gameId))
+    .tap(updatedPath => instPath = updatedPath)
+    .then(() => undefined);
 
   const configuredActivatorId = currentActivator(state);
 
@@ -199,10 +297,13 @@ export function onGameModeActivated(
     // current activator is not valid for this game. This should only occur
     // if compatibility of the activator has changed
 
-    let changeActivator = true;
+    changeActivator = true;
     const oldActivator = activators.find(iter => iter.id === configuredActivatorId);
     const modPaths = game.getModPaths(gameDiscovery.path);
 
+    // TODO: at this point we may also want to take into consideration the deployment
+    //   method stored in the manifest, just in case that doesn't match the configured
+    //   method for some reason
     if (configuredActivatorId !== undefined) {
       if (oldActivator === undefined) {
         api.showErrorNotification(
@@ -216,7 +317,7 @@ export function onGameModeActivated(
               'You should try to restore it, purge deployment and then switch ' +
               'to a different method.',
             method: configuredActivatorId,
-          }, { allowReport: false });
+          }, { allowReport: false, id: 'deployment-method-unavailable' });
       } else {
         const modTypes = Object.keys(modPaths);
 
@@ -234,22 +335,49 @@ export function onGameModeActivated(
                 'change the deployment method.',
               reason: reason.errors[0].description(api.translate),
             },
-            { allowReport: false },
+            { allowReport: false, id: 'deployment-method-unavailable' },
           );
         }
       }
     }
 
+    log('info', 'change activator', { changeActivator, oldActivator: oldActivator.id });
+
     if (changeActivator) {
       if (oldActivator !== undefined) {
         const stagingPath = installPath(state);
-        const deployment = loadAllManifests(api, oldActivator, modPaths, stagingPath);
+        const manifests: { [typeId: string]: IDeploymentManifest } = {};
+        const deployments: { [typeId: string]: IDeployedFile[] } = {};
         const oldInit = initProm;
         initProm = () => oldInit()
-          .then(() => api.emitAndAwait('will-purge', profile.id, deployment))
+          .then(() => Promise.all(Object.keys(modPaths).map((modType) =>
+            getManifest(api, modType, gameId)
+              .then(manifest => {
+                manifests[modType] = manifest;
+                deployments[modType] = manifest.files;
+              })))
+          .then(() => api.emitAndAwait('will-purge', profile.id, deployments))
           .then(() => oldActivator.prePurge(instPath))
-          .then(() => Promise.mapSeries(Object.keys(modPaths),
-            typeId => oldActivator.purge(instPath, modPaths[typeId], profile.gameId))
+          .then(() => Promise.mapSeries(Object.keys(modPaths), typeId => {
+            return getNormalizeFunc(modPaths[typeId])
+              .then(normalize => {
+                // test for the special case where the game has been moved since the deployment
+                // happened. Based on the assumption that this is the reason the deployment method
+                // changed, the regular purge is almost guaranteed to not work correctly and we're
+                // better off using the manifest-based fallback purge.
+                // For example: if the game directory with hard links was moved, those links were
+                // turned into real files, the regular purge op wouldn't clean up anything
+                if ((manifests[typeId].targetPath !== undefined)
+                    && (normalize(modPaths[typeId]) !== normalize(manifests[typeId].targetPath))
+                    && oldActivator.isFallbackPurgeSafe) {
+                  log('warn', 'using manifest-based purge because deployment path changed',
+                      { from: manifests[typeId].targetPath, to: modPaths[typeId] });
+                  return purgeDeployedFiles(modPaths[typeId], deployments[typeId]);
+                } else {
+                  return oldActivator.purge(instPath, modPaths[typeId], profile.gameId);
+                }
+              });
+          }))
             .then(() => undefined)
             .catch(ProcessCanceled, () => Promise.resolve())
             .catch(TemporaryError, err =>
@@ -267,8 +395,11 @@ export function onGameModeActivated(
         const oldInit = initProm;
         initProm = () => oldInit()
           .then(() => {
-            if (supported.length > 0) {
-              api.store.dispatch(setActivator(gameId, supported[0].id));
+            // by this point the flag may have been reset
+            if (changeActivator) {
+              if (supported.length > 0) {
+                api.store.dispatch(setActivator(gameId, supported[0].id));
+              }
             }
           });
       }
@@ -381,8 +512,6 @@ function undeploy(api: IExtensionApi,
   const activator: IDeploymentMethod = activatorId !== undefined
     ? activators.find(act => act.id === activatorId)
     : activators.find(act => allTypesSupported(act, state, gameMode, modTypes).errors.length === 0);
-
-  console.log('activators', activators.map(act => allTypesSupported(act, state, gameMode, modTypes)));
 
   if (activator === undefined) {
     return Promise.reject(new ProcessCanceled('No deployment method active'));
@@ -626,7 +755,7 @@ export function onStartInstallDownload(api: IExtensionApi,
       const { enable } = state.settings.automation;
       installManager.install(downloadId, fullPath, download.game, api,
         { download, choices: options.choices }, true, enable && (options.allowAutoEnable !== false),
-        callback, gameId);
+        callback, gameId, options.fileList, options.unattended, options.forceInstaller);
     })
     .catch(err => {
       if (callback !== undefined) {

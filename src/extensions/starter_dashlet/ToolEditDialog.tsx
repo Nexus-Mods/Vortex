@@ -512,7 +512,10 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
     if (!this.state.tool.name) {
       this.handleChange('name', path.basename(filePath, path.extname(filePath)));
     }
-    this.mUpdateImageDebouncer.schedule(undefined, filePath);
+    // don't replace a logo set through the setup code
+    if (this.props.tool.logoName === undefined) {
+      this.mUpdateImageDebouncer.schedule(undefined, filePath);
+    }
   }
 
   private handleChangeIcon = () => {
@@ -582,7 +585,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
   private toEditStarter(input: IStarterInfo): IEditStarterInfo {
     const temp: any = {
       ...input,
-      iconPath: input.iconPath,
+      iconPath: StarterInfo.getIconPath(input),
     };
     temp.commandLine = temp.commandLine.join(' ');
     temp.environment = { ...input.environment };
@@ -640,7 +643,8 @@ function mapStateToProps(state: any): IConnectedProps {
 
 function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
-    onAddTool: (gameId, toolId, result) => dispatch(addDiscoveredTool(gameId, toolId, result)),
+    onAddTool: (gameId, toolId, result) =>
+      dispatch(addDiscoveredTool(gameId, toolId, result, true)),
     onEditEnv: (itemId: string) => dispatch(displayGroup('envEdit', itemId)),
     onSetGameParameters: (gameId, parameters) => dispatch(setGameParameters(gameId, parameters)),
   };

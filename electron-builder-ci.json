@@ -10,6 +10,7 @@
     "node_modules/bootstrap-sass/assets/stylesheets",
     "node_modules/react-select/scss",
     "node_modules/fomod-installer/dist",
+    "node_modules/opn/xdg-open",
     "node_modules/json-socket",
     "assets/css/**",
     "**/*.node"
@@ -33,6 +34,16 @@
     "runAfterFinish": true,
     "menuCategory": true,
     "uninstallDisplayName": "${productName}"
+  },
+  "linux": {
+    "target": "tar.bz2",
+    "icon": "assets/images/vortex.png",
+    "files": [
+      {
+        "from": "node_modules/fomod-installer/dist",
+        "to": "node_modules/fomod-installer/dist"
+      } 
+    ]
   },
   "extraResources": [
     "locales"
@@ -76,7 +87,9 @@
     "!**/node_modules/fomod-installer/lib",
     "!**/node_modules/fomod-installer/InstallScripting",
     "!**/node_modules/libxmljs/vendor/libxml",
-    "!**/node_modules/native-errors/Detours"
+    "!**/node_modules/native-errors/Detours",
+    "!**/node_modules/zeromq/build/libzmq",
+    "!**/node_modules/zeromq/prebuilds"
   ],
   "buildDependenciesFromSource": false,
   "npmRebuild": false

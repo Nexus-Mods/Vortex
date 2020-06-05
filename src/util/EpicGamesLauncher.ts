@@ -8,7 +8,7 @@ import { getSafe } from './storeHelper';
 
 import opn from './opn';
 
-import { GameEntryNotFound, IGameStore, IGameStoreEntry } from '../types/api';
+import { GameEntryNotFound, IExtensionApi, IGameStore, IGameStoreEntry } from '../types/api';
 
 const ITEM_EXT = '.item';
 const STORE_ID = 'epic';
@@ -21,6 +21,7 @@ const STORE_ID = 'epic';
 class EpicGamesLauncher implements IGameStore {
   public id: string;
   private mDataPath: Promise<string>;
+  private mLauncherExecPath: string;
   private mCache: Promise<IGameStoreEntry[]>;
 
   constructor() {
@@ -42,9 +43,17 @@ class EpicGamesLauncher implements IGameStore {
     }
   }
 
-  public launchGame(appId: string): Promise<void> {
+  public launchGame(appInfo: any, api?: IExtensionApi): Promise<void> {
+    const appId = ((typeof(appInfo) === 'object') && ('appId' in appInfo))
+      ? appInfo.appId : appInfo.toString();
+
     return this.getPosixPath(appId)
       .then(posPath => opn(posPath).catch(err => Promise.resolve()));
+  }
+
+  public launchGameStore(api: IExtensionApi, parameters?: string[]): Promise<void> {
+    const launchCommand = 'com.epicgames.launcher://start';
+    return opn(launchCommand).catch(err => Promise.resolve());
   }
 
   public getPosixPath(name) {
@@ -63,16 +72,21 @@ class EpicGamesLauncher implements IGameStore {
    */
   public isGameInstalled(name: string): Promise<boolean> {
     return this.findByAppId(name)
-      .then(() => Promise.resolve(true))
       .catch(() => this.findByName(name))
+      .then(() => Promise.resolve(true))
       .catch(() => Promise.resolve(false));
   }
 
-  public findByAppId(appId: string): Promise<IGameStoreEntry> {
+  public findByAppId(appId: string | string[]): Promise<IGameStoreEntry> {
+    const matcher = Array.isArray(appId)
+      ? (entry: IGameStoreEntry) => (appId.includes(entry.appid))
+      : (entry: IGameStoreEntry) => (appId === entry.appid);
+
     return this.allGames()
-      .then(entries => entries.find(entry => entry.appid === appId))
-      .then(entry => entry === undefined
-        ? Promise.reject(new GameEntryNotFound(appId, STORE_ID))
+      .then(entries => entries.find(matcher))
+      .then(entry => (entry === undefined)
+        ? Promise.reject(
+            new GameEntryNotFound(Array.isArray(appId) ? appId.join(', ') : appId, STORE_ID))
         : Promise.resolve(entry));
   }
 
@@ -97,6 +111,26 @@ class EpicGamesLauncher implements IGameStore {
     return this.mCache;
   }
 
+  public getGameStorePath(): Promise<string> {
+    const getExecPath = () => {
+      try {
+        const epicLauncher = winapi.RegGetValue('HKEY_LOCAL_MACHINE',
+          'SOFTWARE\\Classes\\com.epicgames.launcher\\DefaultIcon',
+          '(Default)');
+        const val = epicLauncher.value;
+        this.mLauncherExecPath = val.toString().split(',')[0];
+        return Promise.resolve(this.mLauncherExecPath);
+      } catch (err) {
+        log('info', 'Epic games launcher not found', { error: err.message });
+        return Promise.resolve(undefined);
+      }
+    };
+
+    return (!!this.mLauncherExecPath)
+      ? Promise.resolve(this.mLauncherExecPath)
+      : getExecPath();
+  }
+
   private executable() {
     // TODO: This probably won't work on *nix
     //  test and fix.
@@ -109,6 +143,10 @@ class EpicGamesLauncher implements IGameStore {
     let manifestsLocation;
     return this.mDataPath
       .then(dataPath => {
+        if (dataPath === undefined) {
+          return Promise.resolve([]);
+        }
+
         manifestsLocation = path.join(dataPath, 'Manifests');
         return fs.readdirAsync(manifestsLocation);
       })
@@ -124,12 +162,18 @@ class EpicGamesLauncher implements IGameStore {
               try {
                 const parsed = JSON.parse(data);
                 const gameStoreId = STORE_ID;
+                const gameExec = getSafe(parsed, ['LaunchExecutable'], undefined);
                 const gamePath = getSafe(parsed, ['InstallLocation'], undefined);
                 const name = getSafe(parsed, ['DisplayName'], undefined);
                 const appid = getSafe(parsed, ['AppName'], undefined);
 
-                return (!!gamePath && !!name && !!appid)
-                  ? Promise.resolve({ appid, name, gamePath, gameStoreId })
+                // Epic does not seem to clean old manifests. We need
+                //  to stat the executable for each item to ensure that the
+                //  game entry is actually valid.
+                return (!!gamePath && !!name && !!appid && !!gameExec)
+                  ? fs.statSilentAsync(path.join(gamePath, gameExec))
+                      .then(() => Promise.resolve({ appid, name, gamePath, gameStoreId }))
+                      .catch(() => Promise.resolve(undefined))
                   : Promise.resolve(undefined);
               } catch (err) {
                 log('error', 'Cannot parse Epic Games manifest', err);

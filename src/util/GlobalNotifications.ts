@@ -7,8 +7,6 @@ import getVortexPath from './getVortexPath';
 
 import * as path from 'path';
 
-declare var Notification: any;
-
 class GlobalNotifications {
   private mCurrentId: string;
   private mCurrentNotification: any;
@@ -50,7 +48,8 @@ class GlobalNotifications {
             && (this.mCurrentId !== currentNotification.id)
             && (this.mIsEnabled())) {
           log('debug', 'new notification', { id: currentNotification.id });
-          // Notification api broken as of electron 1.7.11
+          // using the js Notification api shows an application id and I'm not sure if I can/how to
+          // get rid of it. The electron api works fine for the moment
           // this.showNotification(currentNotification);
           api.events.emit('show-balloon', currentNotification.title, currentNotification.message);
           this.mCurrentId = currentNotification.id;
@@ -70,6 +69,7 @@ class GlobalNotifications {
         icon: notification.icon || path.resolve(getVortexPath('assets'), 'images', 'vortex.ico'),
         body: notification.message,
         requireInteraction: true,
+        silent: true,
       });
     } catch (err) {
       log('warn', 'failed to show desktop notification', { err: err.message });

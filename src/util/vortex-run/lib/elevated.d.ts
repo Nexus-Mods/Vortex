@@ -1,4 +1,6 @@
 /// <reference types="node" />
+/// <reference types="jest" />
+/// <reference types="webpack-env" />
 import Bluebird from 'bluebird';
 /**
  * run a function as an elevated process (windows only!).
@@ -23,5 +25,5 @@ import Bluebird from 'bluebird';
  *                             the path of the tmpFile we had to create. If the caller can figure
  *                             out when the process is done (using ipc) it should delete it
  */
-declare function runElevated(ipcPath: string, func: (ipc: any, req: NodeRequireFunction) => void | Promise<void> | Bluebird<void>, args?: any): Bluebird<any>;
+declare function runElevated(ipcPath: string, func: (ipc: any, req: NodeRequire) => void | Promise<void> | Bluebird<void>, args?: any): Bluebird<any>;
 export default runElevated;

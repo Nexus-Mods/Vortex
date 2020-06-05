@@ -240,11 +240,11 @@ abstract class LinkingActivator implements IDeploymentMethod {
 
           const state: IState = this.mApi.store.getState();
           const { cleanupOnDeploy } = state.settings.mods;
-          const gameRequiresCleanup = game.requiresCleanup === undefined
+          const gameRequiresCleanup = (game.requiresCleanup === undefined)
             ? (game.mergeMods !== true)
             : game.requiresCleanup;
           if ((removed.length > 0) && (gameRequiresCleanup || cleanupOnDeploy)) {
-            this.postLinkPurge(dataPath, false, directoryCleaning)
+            this.postLinkPurge(dataPath, false, false, directoryCleaning)
               .catch(err => {
                 this.mApi.showErrorNotification('Failed to clean up',
                   err, { message: dataPath });
@@ -336,7 +336,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
     // stat to ensure the target directory exists
     return fs.statAsync(dataPath)
       .then(() => this.purgeLinks(installPath, dataPath))
-      .then(() => this.postLinkPurge(dataPath, false, directoryCleaning))
+      .then(() => this.postLinkPurge(dataPath, false, true, directoryCleaning))
       .then(() => undefined);
   }
 
@@ -563,7 +563,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
     };
   }
 
-  private postLinkPurge(baseDir: string, doRemove: boolean,
+  private postLinkPurge(baseDir: string, doRemove: boolean, restoreBackups: boolean,
                         directoryCleaning: DirectoryCleaningMode): Promise<boolean> {
     // recursively go through directories and remove empty ones !if! we encountered a
     // __delete_if_empty file in the hierarchy so far
@@ -586,10 +586,11 @@ abstract class LinkingActivator implements IDeploymentMethod {
       const dirs = allEntries.filter(entry => entry.isDirectory);
       // recurse into subdirectories
       queue = queue.then(() =>
-        Promise.each(dirs, dir => this.postLinkPurge(dir.filePath, doRemove, directoryCleaning)
-                                    .then(removed => {
-                                      if (!removed) { empty = false; }
-                                    }))
+        Promise.each(dirs, dir =>
+          this.postLinkPurge(dir.filePath, doRemove, restoreBackups, directoryCleaning)
+            .then(removed => {
+              if (!removed) { empty = false; }
+            }))
         .then(() => {
           // then check files. if there are any, this isn't empty. plus we
           // restore backups here
@@ -597,11 +598,13 @@ abstract class LinkingActivator implements IDeploymentMethod {
             !entry.isDirectory && !LinkingActivator.isTagName(entry.filePath));
           if (files.length > 0) {
             empty = false;
-            return Promise.map(
-                files.filter(entry => path.extname(entry.filePath) === BACKUP_TAG),
-                entry => this.restoreBackup(entry.filePath))
-              .catch(UserCanceled, () => undefined)
-              .then(() => undefined);
+            return (restoreBackups)
+              ? Promise.map(
+                  files.filter(entry => path.extname(entry.filePath) === BACKUP_TAG),
+                  entry => this.restoreBackup(entry.filePath))
+                .catch(UserCanceled, () => undefined)
+                .then(() => undefined)
+              : Promise.resolve();
           } else {
             return Promise.resolve();
           }

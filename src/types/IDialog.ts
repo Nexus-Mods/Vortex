@@ -93,6 +93,8 @@ export interface IDialogContent {
     translated?: boolean;
     wrap?: boolean;
     hideMessage?: boolean;
+    // context made available to bbcode tags
+    bbcodeContext?: any;
   };
 
   condition?: Condition;

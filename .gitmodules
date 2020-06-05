@@ -176,3 +176,11 @@
 	path = extensions/test-setup
 	url = https://github.com/Nexus-Mods/extension-test-setup.git
 	branch = master
+[submodule "extensions/mod-report"]
+	path = extensions/mod-report
+	url = https://github.com/Nexus-Mods/extension-mod-report.git
+  branch = master
+[submodule "extensions/script-extender-installer"]
+	path = extensions/script-extender-installer
+	url = https://github.com/Pickysaurus/script-extender-installer
+  branch = master

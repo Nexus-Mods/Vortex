@@ -7,6 +7,7 @@ import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import Debouncer from '../../../util/Debouncer';
 import { truthy } from '../../../util/util';
+import Notification from '../../../views/Notification';
 
 import { closeBrowser } from '../actions';
 
@@ -31,6 +32,7 @@ interface IConnectedProps {
   url: string;
   subscriber: string;
   instructions: string;
+  notifications: INotification[];
 }
 
 interface IActionProps {
@@ -42,11 +44,17 @@ interface IComponentState {
   confirmed: boolean;
   loading: boolean;
   url: string;
+  opened: number;
   history: string[];
   historyIdx: number;
+  filtered: INotification[];
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
+
+function nop() {
+  return null;
+}
 
 class BrowserView extends ComponentEx<IProps, IComponentState> {
   private mRef: Webview = null;
@@ -54,6 +62,8 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
   private mCallbacks: { [event: string]: (...args: any[]) => void };
   private mSessionCallbacks: { [event: string]: (...args: any[]) => void };
   private mLoadingDebouncer: Debouncer;
+  private mUpdateTimer: NodeJS.Timeout = undefined;
+  private mMounted: boolean = false;
 
   constructor(props: IProps) {
     super(props);
@@ -63,6 +73,8 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
       url: props.url,
       history: [props.url],
       historyIdx: 0,
+      opened: 0,
+      filtered: [],
     });
 
     this.mLoadingDebouncer = new Debouncer((loading: boolean) => {
@@ -91,11 +103,30 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
     };
   }
 
+  public componentDidMount() {
+    this.updateFiltered();
+    this.mMounted = true;
+  }
+
+  public componentWillUnmount() {
+    this.mMounted = false;
+    if (this.mUpdateTimer !== undefined) {
+      clearTimeout(this.mUpdateTimer);
+    }
+  }
+
+  public componentDidUpdate(prevProps: IProps) {
+    if (prevProps.notifications !== this.props.notifications) {
+      this.updateFiltered();
+    }
+  }
+
   public UNSAFE_componentWillReceiveProps(newProps: IProps) {
     if (newProps.url !== this.props.url) {
       if ((newProps.url === undefined) || (this.props.url === undefined)
         || (new URL(newProps.url).hostname !== new URL(this.props.url).hostname)) {
         this.nextState.confirmed = false;
+        this.nextState.opened = Date.now();
         if (newProps.url !== undefined) {
           this.nextState.history = [newProps.url];
           this.nextState.historyIdx = 0;
@@ -108,23 +139,26 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
   public shouldComponentUpdate(newProps: IProps, newState: IComponentState) {
     const res = (this.props.url !== newProps.url)
         || (this.props.instructions !== newProps.instructions)
+        || (this.props.notifications !== newProps.notifications)
         || (this.state.url !== newState.url)
         || (this.state.loading !== newState.loading)
         || (this.state.confirmed !== newState.confirmed)
-        || (this.state.history !== newState.history);
+        || (this.state.history !== newState.history)
+        || (this.state.filtered !== newState.filtered);
     return res;
   }
 
   public render(): JSX.Element {
     const { instructions } = this.props;
-    const { confirmed, history, historyIdx, loading, url } = this.state;
+    const { confirmed, filtered, history, historyIdx, loading, url } = this.state;
     const referrer = (history.length > 0)
       ? history[historyIdx - 1]
       : undefined;
+
     return (
       <Modal id='browser-dialog' show={url !== undefined} onHide={this.close}>
         <Modal.Header>
-          {this.renderNav()}{this.renderUrl(url)}
+          {this.renderNav()}{this.renderUrl(history[historyIdx])}
           {loading ? <Spinner /> : null}
         </Modal.Header>
         <Modal.Body>
@@ -141,9 +175,24 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
               />
             )
             : this.renderConfirm()}
+          <div className='browser-notifications'>
+            {filtered.map(this.renderNotification)}
+          </div>
         </Modal.Body>
       </Modal>
     );
+  }
+
+  private renderNotification = (noti: INotification, idx: number): JSX.Element => {
+    const { t } = this.props;
+    return (
+      <Notification
+        key={idx}
+        t={t}
+        collapsed={1}
+        params={noti}
+      />
+);
   }
 
   private renderLoadingOverlay(): JSX.Element {
@@ -204,6 +253,51 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
         <Button onClick={this.confirm}>{t('Continue')}</Button>
       </div>
     );
+  }
+
+  private displayTime = (item: INotification) => {
+    if (item.displayMS !== undefined) {
+      return item.displayMS;
+    }
+
+    return {
+      warning: 10000,
+      error: 10000,
+      success: 5000,
+      info: 5000,
+      activity: null,
+    }[item.type] || 5000;
+  }
+
+  private updateFiltered() {
+    const { notifications } = this.props;
+    const { opened } = this.state;
+
+    this.mUpdateTimer = undefined;
+
+    if (!this.mMounted) {
+      return;
+    }
+
+    const now = Date.now();
+
+    const filtered = notifications.filter(item => {
+      if ((item.type === 'activity') || (item.createdTime < opened)) {
+        return false;
+      }
+      const displayTime = this.displayTime(item);
+      return (displayTime === null) || (item.createdTime + displayTime > now);
+    });
+
+    this.nextState.filtered = filtered;
+
+    if (filtered.length > 0) {
+      if (this.mUpdateTimer !== undefined) {
+        // should never happen
+        clearTimeout(this.mUpdateTimer);
+      }
+      this.mUpdateTimer = setTimeout(() => this.updateFiltered(), 1000);
+    }
   }
 
   private loading = (loading: boolean) => {
@@ -268,13 +362,26 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
     this.nextState.confirmed = true;
   }
 
+  private sanitised(input: string): string {
+    const parsed = nodeUrl.parse(input);
+    parsed.hash = null;
+    parsed.search = null;
+    parsed.query = null;
+    return nodeUrl.format(parsed);
+  }
+
   private navigate(url: string) {
-    this.props.onNavigate(url);
-    this.nextState.url = url;
+    if (this.sanitised(url) === this.sanitised(this.state.url)) {
+      // don't do anything if just the hash changed
+      return;
+    }
+
+    // this.nextState.url = url;
     if (url !== this.nextState.history[this.nextState.historyIdx]) {
       this.nextState.history.splice(this.nextState.historyIdx + 1, 9999, url);
       ++this.nextState.historyIdx;
     }
+    this.props.onNavigate(url);
   }
 
   private close = () => {
@@ -285,11 +392,14 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
   }
 }
 
+const emptyList = [];
+
 function mapStateToProps(state: IState): IConnectedProps {
   return {
     subscriber: state.session.browser.subscriber || undefined,
     instructions: state.session.browser.instructions || undefined,
     url: state.session.browser.url || undefined,
+    notifications: state.session.notifications.notifications || emptyList,
   };
 }
 

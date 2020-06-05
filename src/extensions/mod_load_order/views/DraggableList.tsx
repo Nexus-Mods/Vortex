@@ -1,4 +1,4 @@
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as React from 'react';
 import { ListGroup } from 'react-bootstrap';
 import { ConnectDragPreview,  ConnectDragSource, ConnectDropTarget, DragSource,
@@ -7,11 +7,12 @@ import { ConnectDragPreview,  ConnectDragSource, ConnectDropTarget, DragSource,
 
 import * as ReactDOM from 'react-dom';
 import { ComponentEx, util } from 'vortex-api';
-import { IDnDConditionResult, ILoadOrderDisplayItem } from '../types/types';
+import { IDnDConditionResult, ILoadOrder, ILoadOrderDisplayItem } from '../types/types';
 
 interface IItemBaseProps {
   index: number;
   item: ILoadOrderDisplayItem;
+  isLocked: boolean;
   itemRenderer: React.ComponentClass<{
     className?: string,
     item: ILoadOrderDisplayItem,
@@ -39,9 +40,10 @@ type IItemProps = IItemBaseProps & IDragProps & IDropProps;
 
 class DraggableItem extends React.Component<IItemProps, {}> {
   public render(): JSX.Element {
-    const { isDragging, item } = this.props;
-    const classNames = [].concat(!!item.locked ? 'locked' : undefined,
-                                  isDragging ? 'dragging' : undefined);
+    const { isDragging, item, isLocked } = this.props;
+    const classNames = [].concat(isLocked ? 'locked' : undefined,
+                                !!item.external ? 'external' : undefined,
+                                isDragging ? 'dragging' : undefined);
 
     return (
       <this.props.itemRenderer
@@ -89,14 +91,17 @@ const entrySource: DragSourceSpec<IItemProps, any> = {
   endDrag(props, monitor: DragSourceMonitor) {
     props.apply();
   },
+  canDrag(props, monitor: DragSourceMonitor) {
+    return !props.isLocked;
+  },
 };
 
 const entryTarget: DropTargetSpec<IItemProps> = {
   hover(props: IItemProps, monitor: DropTargetMonitor, component) {
-    const { containerId, index, item, take } = (monitor.getItem() as any);
+    const { containerId, index, item, take, isLocked } = (monitor.getItem() as any);
     const hoverIndex = props.index;
 
-    if (index === hoverIndex || !!item.locked) {
+    if (index === hoverIndex || !!isLocked || !!props.isLocked) {
       return;
     }
 
@@ -134,6 +139,7 @@ const Draggable = DropTarget(DND_TYPE, entryTarget, collectDrop)(
 interface IBaseProps {
   id: string;
   items: ILoadOrderDisplayItem[];
+  loadOrder: ILoadOrder;
   itemRenderer: React.ComponentClass<{
     className?: string,
     item: ILoadOrderDisplayItem,
@@ -158,7 +164,7 @@ class DraggableList extends ComponentEx<IProps, IState> {
 
     this.applyDebouncer = new util.Debouncer(() => {
       this.apply();
-      return Promise.resolve();
+      return Promise.resolve() as any;
     }, 500);
 
   }
@@ -170,10 +176,10 @@ class DraggableList extends ComponentEx<IProps, IState> {
   }
 
   public render(): JSX.Element {
-    const { connectDropTarget, id, itemRenderer } = this.props;
+    const { connectDropTarget, id, itemRenderer, loadOrder } = this.props;
     const { ordered } = this.state;
     return connectDropTarget((
-      <div style={{ height: '100%' }}>
+      <div>
         <ListGroup>
           {ordered.map((item, idx) => (
             <Draggable
@@ -185,6 +191,7 @@ class DraggableList extends ComponentEx<IProps, IState> {
               take={this.take}
               onChangeIndex={this.changeIndex}
               apply={this.apply}
+              isLocked={!!loadOrder[item.id]?.locked || !!item?.locked}
             />
           ))}
         </ListGroup>
@@ -194,15 +201,18 @@ class DraggableList extends ComponentEx<IProps, IState> {
 
   public changeIndex = (oldIndex: number, newIndex: number,
                         take: (list: ILoadOrderDisplayItem[]) => any) => {
+    const { loadOrder } = this.props;
     const { ordered } = this.state;
     if (oldIndex === undefined) {
       return;
     }
 
+    const itemLocked = (idx) => !!ordered[idx]?.locked || !!loadOrder[ordered[idx].id]?.locked;
+
     const currentItem = ordered[oldIndex];
     const replacedItem = ordered[newIndex];
 
-    if (!!currentItem.locked || !!replacedItem.locked) {
+    if (!!itemLocked(oldIndex) || !!itemLocked(newIndex)) {
       return;
     }
 

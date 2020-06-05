@@ -57,17 +57,16 @@ function queryGameId(store: ThunkStore<any>,
           text:
             'The game(s) associated with this download are not managed, '
             + 'Install for the currently managed game?',
+          message: fileName,
         }, options));
     } else {
       store.dispatch(showDialog(
         'question', 'Download is for a different game',
         {
           text:
-            'The download "{{fileName}}" is not marked compatible with the managed game. ' +
+            'The download is not marked compatible with the managed game. ' +
             'Which one do you want to install it for?',
-          parameters: {
-            fileName,
-          },
+          message: fileName,
         },
         options.concat(managed.map(gameId => (
           { label: gameName(store.getState(), gameId), action: () => resolve(gameId) }

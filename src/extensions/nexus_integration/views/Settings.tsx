@@ -16,7 +16,7 @@ import chromeAllowScheme from '../util/chromeAllowScheme';
 import getText from '../texts';
 
 import * as React from 'react';
-import { FormGroup, HelpBlock } from 'react-bootstrap';
+import { FormGroup, HelpBlock, Alert } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 
@@ -75,9 +75,13 @@ class Settings extends ComponentEx<IProps, {}> {
             {t('Handle')}{' '}<DownloadButton/>{t('buttons on')}{' '}
             {<a onClick={this.openNexus}>NexusMods.com</a>}
           </Toggle>
-          {process.platform === 'linux'
-            ? <HelpBlock>{t('Not supported on Linux')}</HelpBlock>
-            : null}
+          {
+            // on linux this is handled by the desktop environment so you'd have to implement
+            // separate solutions for kde, gnome, xfce, ...
+            (process.platform === 'linux')
+            ? <HelpBlock><Alert bsStyle='info'>{t('Not supported on Linux')}</Alert></HelpBlock>
+            : null
+          }
           <div style={{ marginTop: 15 }}>
             {t('Fix Nexus Mods links in Chrome '
               + '(Only required for Chrome. Requires Chrome to be closed)')}

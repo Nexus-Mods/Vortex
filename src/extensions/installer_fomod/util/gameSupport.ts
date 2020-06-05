@@ -74,6 +74,10 @@ function stopPatterns(gameMode: string) {
               'Waves'].map(toWordExp);
     case 'shadowrunreturns':
       return ['data', 'project.cpack.txt', 'project.cpack.bytes'].map(toWordExp);
+    case 'neverwinter':
+      return ['ambient', 'database', 'development', 'dmvault', 'hak',
+              'localvault', 'logs', 'modules', 'movies', 'music', 'nwsync', 'override', 'portraits',
+              'servervault', 'tempclient', 'tlk'].map(toWordExp);
     case 'neverwinter2':
       return ['ambient', 'ambient_X1', 'ambient_X2', 'Campaigns', 'data', 'database', 'dmvault',
               'hak', 'localvault', 'modules', 'movies', 'music', 'music_X1', 'music_X2', 'nwm',
@@ -261,6 +265,12 @@ const gameSupport: { [gameId: string]: IGameSupport } = {
   },
   shadowrunreturns: {
     stopPatterns:  stopPatterns('shadowrunreturns'),
+  },
+  nwn: {
+    stopPatterns: stopPatterns('neverwinter'),
+  },
+  nwnee: {
+    stopPatterns: stopPatterns('neverwinter'),
   },
   neverwinter2: {
     stopPatterns: stopPatterns('neverwinter2'),

@@ -3,6 +3,7 @@ import Debouncer from './Debouncer';
 import * as fs from './fs';
 import getVortexPath from './getVortexPath';
 import {log} from './log';
+import { sanitizeCSSId } from './util';
 
 import Promise from 'bluebird';
 import { app as appIn, ipcMain, ipcRenderer, remote } from 'electron';
@@ -16,10 +17,45 @@ function asarUnpacked(input: string): string {
   return input.replace('app.asar' + path.sep, 'app.asar.unpacked' + path.sep);
 }
 
+function cachePath() {
+  return path.join(getVortexPath('temp'), 'css-cache.json');
+}
+
 if (ipcMain !== undefined) {
   ipcMain.on('__renderSASS', (evt, stylesheets: string[]) => {
+    let cache: { stylesheets: string[], css: string };
+    try {
+      // TODO: evil sync read
+      cache = JSON.parse(fs.readFileSync(cachePath(), { encoding: 'utf8' }));
+      if (_.isEqual(cache.stylesheets, stylesheets)) {
+        evt.sender.send('__renderSASS_result', null, cache.css);
+        log('debug', 'using cached css', { cached: cache.stylesheets, stylesheets });
+        return;
+      }
+      log('debug', 'updating css cache', {
+        cached: cache.stylesheets,
+        current: stylesheets,
+      });
+    } catch (err) {
+      log('debug', 'no css cache', { cachePath: cachePath() });
+    }
+
     const sassIndex: string =
-      stylesheets.map(name => `@import "${name.replace(/\\/g, '\\\\')}";\n`).join('\n');
+      stylesheets.map(name => {
+        const imp = `@import "${name.replace(/\\/g, '\\\\')}";`;
+        if (path.extname(name) === '.scss') {
+          // nest every extension-provided rule in '*, #added_by_<extname>'
+          // this way it's easier to find out where a rule comes from
+          // that breaks the layout.
+          // the #added_by_ selector should never match anything, * matches
+          // everything without modifying the specificity of the selector, so
+          // this change shouldn't affect how the rule works
+          const extname = sanitizeCSSId(path.basename(name, '.scss'));
+          return `*, #added_by_${extname} { ${imp} }\n`;
+        } else {
+          return imp + '\n';
+        }
+      }).join('\n');
 
     // development builds are always versioned as 0.0.1
     const isDevel: boolean = app.getVersion() === '0.0.1';
@@ -46,6 +82,11 @@ if (ipcMain !== undefined) {
             ? output.css.slice(3)
             : output.css;
           evt.sender.send('__renderSASS_result', null, css.toString());
+          fs.writeFileAsync(cachePath(), JSON.stringify({
+            stylesheets,
+            css: css.toString(),
+          }), { encoding: 'utf8' })
+            .catch(() => null);
         }
       });
 
@@ -57,6 +98,8 @@ class StyleManager {
   private mPartials: Array<{ key: string, file: string }>;
   private mRenderDebouncer: Debouncer;
   private mExpectingResult: { resolve: (css: string) => void, reject: (err: Error) => void };
+  private mAutoRefresh: boolean = false;
+  private mSetQueue: Promise<void> = Promise.resolve();
 
   constructor(api: IExtensionApi) {
     this.mPartials = [
@@ -78,7 +121,7 @@ class StyleManager {
             allowReport: false,
           });
         });
-    }, StyleManager.RENDER_DELAY);
+    }, StyleManager.RENDER_DELAY, true);
 
     ipcRenderer.on('__renderSASS_result', (evt, err: Error, css: string) => {
       if (this.mExpectingResult === undefined) {
@@ -93,6 +136,17 @@ class StyleManager {
       }
       this.mExpectingResult = undefined;
     });
+  }
+
+  public startAutoUpdate() {
+    this.mAutoRefresh = true;
+  }
+
+  public clearCache(): void {
+    this.mSetQueue = this.mSetQueue.then(() =>
+      fs.removeAsync(cachePath())
+        .catch({ code: 'ENOENT' }, () => null)
+        .catch(err => log('error', 'failed to remove css cache', {error: err.message})));
   }
 
   /**
@@ -117,13 +171,14 @@ class StyleManager {
   public setSheet(key: string, filePath: string): void {
     log('debug', 'setting stylesheet', { key, filePath });
     try {
-      const statProm = (filePath === undefined)
+      const statProm = () => (filePath === undefined)
         ? Promise.resolve<void>(undefined)
         : (path.extname(filePath) === '')
         ? Promise.any([fs.statAsync(filePath + '.scss'), fs.statAsync(filePath + '.css')])
             .then(() => null)
         : fs.statAsync(filePath).then(() => null);
-      statProm
+      this.mSetQueue = this.mSetQueue
+        .then(() => statProm())
         .then(() => {
           const idx = this.mPartials.findIndex(partial => partial.key === key);
           if (idx !== -1) {
@@ -131,7 +186,9 @@ class StyleManager {
           } else {
             this.mPartials.splice(this.mPartials.length - 2, 0, { key, file: filePath });
           }
-          this.mRenderDebouncer.schedule(undefined);
+          if (this.mAutoRefresh) {
+            this.mRenderDebouncer.schedule(undefined);
+          }
         })
         .catch(err => {
           log('warn', 'stylesheet can\'t be read', err.message);
@@ -142,7 +199,7 @@ class StyleManager {
   }
 
   public renderNow(): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
+    this.mSetQueue = this.mSetQueue.then(() => new Promise<void>((resolve, reject) => {
       this.mRenderDebouncer.runNow(err => {
         if (err !== null) {
           return reject(err);
@@ -150,7 +207,8 @@ class StyleManager {
         log('debug', 'style rendered successfully');
         resolve();
       });
-    });
+    }));
+    return this.mSetQueue;
   }
 
   private render(): Promise<void> {
@@ -160,7 +218,7 @@ class StyleManager {
         ? asarUnpacked(partial.file)
         : partial.file);
 
-    return new Promise<void>((resolve, reject) => {
+    return new Promise<string>((resolve, reject) => {
       this.mExpectingResult = { resolve, reject };
       ipcRenderer.send('__renderSASS', stylesheets);
     })

@@ -154,6 +154,17 @@ function processModule(project, buildType, feedback) {
     .then(() => npm('add', [project.module], options, feedback));
 }
 
+async function updateSourceMap(filePath) {
+  let dat = await fs.promises.readFile(filePath, { encoding: 'utf8' });
+
+  const modPath = path.basename(path.dirname(filePath));
+
+  dat = dat.replace(/\/\/# sourceMappingURL=([a-z\-.]+\.js\.map)/,
+    `//# sourceMappingURL=bundledPlugins/${modPath}/$1`);
+
+  await fs.promises.writeFile(filePath, dat);
+}
+
 function processCustom(project, buildType, feedback, noparallel) {
   const start = Date.now();
   let instArgs = noparallel ? ['--network-concurrency', '1'] : [];
@@ -163,8 +174,10 @@ function processCustom(project, buildType, feedback, noparallel) {
     const source = path.join(project.path, 'dist', '**', '*');
     const output = format(project.copyTo, { BUILD_DIR: buildType });
     feedback.log('copying files', source, output);
-    res =
-        res.then(() => copyfilesAsync([source, output], project.depth || 3));
+    res = res
+      .then(() => copyfilesAsync([source, output], project.depth || 3))
+      .then(() => updateSourceMap(path.join(output, 'index.js')));
+
   }
   res = res.then(() => {
     console.log(project.path, 'took', (Date.now() - start) / 1000, 's');
@@ -199,7 +212,7 @@ function evalCondition(condition, context) {
     return true;
   }
   const script = new vm.Script(condition);
-  return script.runInNewContext(context);
+  return script.runInNewContext({ ... context, process });
 }
 
 function processProject(project, buildType, feedback, noparallel) {

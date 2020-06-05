@@ -18,9 +18,9 @@
 
 import { addNotification, IDialogResult, showDialog } from '../../actions/notifications';
 
-import { setProgress } from '../../actions/session';
+import { clearUIBlocker, setProgress, setUIBlocker } from '../../actions/session';
 import { IExtensionApi, IExtensionContext, ThunkStore } from '../../types/IExtensionContext';
-import { IState } from '../../types/IState';
+import { IGameStored, IState } from '../../types/IState';
 import { relaunch } from '../../util/commandLine';
 import { ProcessCanceled, SetupError, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
@@ -31,6 +31,8 @@ import { installPathForGame, needToDeployForGame } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { truthy } from '../../util/util';
 
+import { IExtension } from '../extension_manager/types';
+import { readExtensions } from '../extension_manager/util';
 import { getGame } from '../gamemode_management/util/getGame';
 
 import { forgetMod, setProfile, setProfileActivated } from './actions/profiles';
@@ -305,6 +307,133 @@ function genOnProfileChange(api: IExtensionApi,
   };
 }
 
+function manageGameDiscovered(api: IExtensionApi, gameId: string) {
+  const profileId = shortid();
+  const instPath = installPathForGame(api.store.getState(), gameId);
+  fs.ensureDirWritableAsync(instPath, () => Promise.resolve())
+    .then(() => {
+      log('info', 'user managing game for the first time', { gameId });
+      api.store.dispatch(setProfile({
+        id: profileId,
+        gameId,
+        name: 'Default',
+        modState: {},
+      }));
+      api.store.dispatch(setNextProfile(profileId));
+    })
+    .catch(err => {
+      api.showErrorNotification('The game location doesn\'t exist or isn\'t writeable',
+        err, {
+        allowReport: false,
+        message: instPath,
+      });
+    });
+}
+
+function manageGameUndiscovered(api: IExtensionApi, gameId: string) {
+  let state: IState = api.store.getState();
+  const knownGames = state.session.gameMode.known;
+  const gameStored = knownGames.find(game => game.id === gameId);
+
+  if (gameStored === undefined) {
+    const extension = state.session.extensions.available.find(ext => ext.name === gameId);
+    if (extension === undefined) {
+      throw new ProcessCanceled(`Invalid game id "${gameId}"`);
+    }
+
+    api.showDialog('question', 'Game support not installed', {
+      text: 'Support for this game is provided through an extension. To use it you have to '
+        + 'download that extension and restart Vortex.',
+    }, [
+      { label: 'Cancel' },
+      {
+        label: 'Download', action: () => {
+          api.store.dispatch(setUIBlocker('installing-game', 'download',
+            'Installing Game, Vortex will restart upon completion.', true));
+
+          api.emitAndAwait('install-extension', extension)
+            .then(() => {
+              relaunch(['--game', gameId]);
+            })
+            .finally(() => {
+              api.store.dispatch(clearUIBlocker('installing-game'));
+            });
+        },
+      },
+    ]);
+    return;
+  }
+
+  api.showDialog('question', 'Game not discovered', {
+    text: 'This game hasn\'t been automatically discovered, you will have to set the game '
+      + 'folder manually.',
+  }, [
+    { label: 'Continue' },
+  ])
+    .then(() => new Promise((resolve, reject) => {
+      api.events.emit('manually-set-game-location', gameId, (err: Error) => {
+        if (err !== null) {
+          return reject(err);
+        }
+        return resolve();
+      });
+    }))
+    .then(() => {
+      state = api.store.getState();
+
+      const discovered = state.settings.gameMode.discovered[gameId];
+      if ((discovered === undefined) || (discovered.path === undefined)) {
+        // this probably means the "manually set location" was canceled
+        return Promise.resolve();
+      }
+
+      const profileId = shortid();
+      const instPath = installPathForGame(state, gameId);
+      return fs.ensureDirWritableAsync(instPath, () => Promise.resolve())
+        .then(() => {
+          log('info', 'user managing game for the first time', { gameId });
+          api.store.dispatch(setProfile({
+            id: profileId,
+            gameId,
+            name: 'Default',
+            modState: {},
+          }));
+          api.store.dispatch(setNextProfile(profileId));
+        })
+        .catch(innerErr => {
+          api.showErrorNotification(
+            'The game location doesn\'t exist or isn\'t writeable',
+            innerErr, {
+            allowReport: false,
+            message: instPath,
+          });
+        });
+    })
+    .catch(err => {
+      if (!(err instanceof UserCanceled)
+          && !(err instanceof ProcessCanceled)) {
+        api.showErrorNotification('Failed to manage game', err);
+      }
+      return;
+    });
+}
+
+function manageGame(api: IExtensionApi, gameId: string) {
+  const state: IState = api.store.getState();
+  const discoveredGames = state.settings.gameMode?.discovered || {};
+  const profiles = state.persistent.profiles || {};
+
+  if (getSafe(discoveredGames, [gameId, 'path'], undefined) !== undefined) {
+    if (Object.values(profiles).find(prof => prof.gameId === gameId) !== undefined) {
+      activateGame(api.store, gameId);
+    } else {
+      manageGameDiscovered(api, gameId);
+    }
+  } else {
+    manageGameUndiscovered(api, gameId);
+  }
+}
+
 function init(context: IExtensionContext): boolean {
   context.registerMainPage('profile', 'Profiles', ProfileView, {
     hotkey: 'P',
@@ -322,120 +451,14 @@ function init(context: IExtensionContext): boolean {
     noCollapse: true,
   }, 'Manage',
     (instanceIds: string[]) => {
-      const profileId = shortid();
-      const gameId = instanceIds[0];
-      const instPath = installPathForGame(context.api.store.getState(), gameId);
-      fs.ensureDirWritableAsync(instPath, () => Promise.resolve())
-        .then(() => {
-          log('info', 'user managing game for the first time', { gameId });
-          context.api.store.dispatch(setProfile({
-            id: profileId,
-            gameId,
-            name: 'Default',
-            modState: {},
-          }));
-          context.api.store.dispatch(setNextProfile(profileId));
-        })
-        .catch(err => {
-          context.api.showErrorNotification('The game location doesn\'t exist or isn\'t writeable',
-            err, {
-              allowReport: false,
-              message: instPath,
-            });
-        });
+      manageGameDiscovered(context.api, instanceIds[0]);
   });
 
   context.registerAction('game-undiscovered-buttons', 50, 'activate', {
     noCollapse: true,
   }, 'Manage', (instanceIds: string[]) => {
     const gameId = instanceIds[0];
-    let state: IState = context.api.store.getState();
-    const knownGames = state.session.gameMode.known;
-    const gameStored = knownGames.find(game => game.id === gameId);
-
-    if (gameStored === undefined) {
-      const extension = state.session.extensions.available.find(ext => ext.name === gameId);
-      if (extension === undefined) {
-        throw new ProcessCanceled(`Invalid game id "${gameId}"`);
-      }
-
-      context.api.showDialog('question', 'Game support not installed', {
-        text: 'Support for this game is provided through an extension. To use it you have to '
-            + 'download that extension and restart Vortex.',
-      }, [
-        { label: 'Cancel' },
-        { label: 'Download', action: () => {
-          context.api.emitAndAwait('install-extension', extension)
-            .then(() => {
-              context.api.sendNotification({
-                type: 'success',
-                message: 'Extension installed, please restart Vortex',
-                actions: [
-                  {
-                    title: 'Restart now', action: () => {
-                      relaunch();
-                    },
-                  },
-                ],
-              });
-            });
-        } },
-      ]);
-      return;
-    }
-
-    context.api.showDialog('question', 'Game not discovered', {
-      text: 'This game hasn\'t been automatically discovered, you will have to set the game '
-        + 'folder manually.',
-    }, [
-      { label: 'Continue' },
-    ])
-      .then(() => new Promise((resolve, reject) => {
-        context.api.events.emit('manually-set-game-location', gameId, (err: Error) => {
-          if (err !== null) {
-            return reject(err);
-          }
-          return resolve();
-        });
-      }))
-      .then(() => {
-        state = context.api.store.getState();
-
-        const discovered = state.settings.gameMode.discovered[gameId];
-        if ((discovered === undefined) || (discovered.path === undefined)) {
-          // this probably means the "manually set location" was canceledd
-          return Promise.resolve();
-        }
-
-        const profileId = shortid();
-        const instPath = installPathForGame(state, gameId);
-        return fs.ensureDirWritableAsync(instPath, () => Promise.resolve())
-          .then(() => {
-            log('info', 'user managing game for the first time', { gameId });
-            context.api.store.dispatch(setProfile({
-              id: profileId,
-              gameId,
-              name: 'Default',
-              modState: {},
-            }));
-            context.api.store.dispatch(setNextProfile(profileId));
-          })
-          .catch(innerErr => {
-            context.api.showErrorNotification(
-              'The game location doesn\'t exist or isn\'t writeable',
-              innerErr, {
-              allowReport: false,
-              message: instPath,
-            });
-          });
-      })
-      .catch(err => {
-        if (!(err instanceof UserCanceled)
-          && !(err instanceof ProcessCanceled)) {
-          context.api.showErrorNotification('Failed to manage game', err);
-        }
-        return;
-      });
+    manageGameUndiscovered(context.api, gameId);
   });
 
   context.registerAction('game-managed-buttons', 50, 'activate', {
@@ -513,6 +536,42 @@ function init(context: IExtensionContext): boolean {
         }
       });
 
+    let first = true;
+    context.api.onStateChange(['session', 'gameMode', 'known'],
+      (prev: IGameStored[], current: IGameStored[]) => {
+        // known games should only be set once but better safe than sorry
+        if (!first) {
+          return;
+        }
+        first = false;
+        const state: IState = store.getState();
+        const { commandLine } = state.session.base;
+        if (commandLine.game !== undefined) {
+          // the game specified on the command line may be a game id or an extension
+          // name, because at the time we download an extension we don't actually know
+          // the game id yet.
+
+          readExtensions(false)
+            .then((extensions: { [extId: string]: IExtension }) => {
+              const extPathLookup = Object.values(extensions)
+                .reduce((prev, ext) => {
+                  if (ext.path !== undefined) {
+                    prev[ext.path] = ext.name;
+                  }
+                  return prev;
+                }, {});
+
+              const game = current.find(iter =>
+                (iter.id === commandLine.game)
+                || (extPathLookup[iter.extensionPath] === commandLine.game));
+
+              if (game !== undefined) {
+                manageGame(context.api, game.id);
+              }
+            });
+        }
+      });
+
     const initProfile = activeProfile(store.getState());
     refreshProfile(store, initProfile, 'import')
         .then(() => {
@@ -562,6 +621,7 @@ function init(context: IExtensionContext): boolean {
         log('warn', 'started with a profile change in progress');
         store.dispatch(setNextProfile(activeProfileId || undefined));
       }
+
       // it's important we stop managing a game if it's no longer discovered
       // because that can cause problems all over the application
       if (truthy(activeProfileId)) {

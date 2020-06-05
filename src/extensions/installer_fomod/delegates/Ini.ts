@@ -26,14 +26,11 @@ class Ini extends DelegateBase {
     this.parser = new IniParser(new WinapiFormat());
   }
 
-  public getIniString =
-      (params: string[], callback: (err, res: string) => void) => {
-        log('debug', 'GetIniString called', inspect(params));
+  public getIniString = (selectedFile: string, iniSection: string, iniKey: string,
+                         callback: (err, res: string) => void) => {
+        log('debug', 'GetIniString called');
 
         let iniValue: string;
-        const selectedFile = params[0];
-        const iniSection = params[1];
-        const iniKey = params[2];
         let baseIniFile = getIniFilePath(this.gameInfo.id);
 
         if (!isNullOrWhitespace(selectedFile)) {
@@ -57,14 +54,11 @@ class Ini extends DelegateBase {
             .then(() => Promise.resolve(callback(null, iniValue)));
       }
 
-  public getIniInt = (params: string[],
+  public getIniInt = (selectedFile: string, iniSection: string, iniKey: string,
                       callback: (err, res: number) => void) => {
-    log('debug', 'GetIniString called', inspect(params));
+    log('debug', 'GetIniString called');
 
     let iniValue: number;
-    const selectedFile = params[0];
-    const iniSection = params[1];
-    const iniKey = params[2];
     let baseIniFile = getIniFilePath(this.gameInfo.id);
 
     if (!isNullOrWhitespace(selectedFile)) {

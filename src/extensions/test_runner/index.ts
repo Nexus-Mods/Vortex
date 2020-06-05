@@ -65,6 +65,9 @@ function runCheck(api: IExtensionApi, check: ICheckEntry): Promise<void> {
             action: () => api.store.dispatch(showDialog('info', 'Check failed', {
               bbcode: result.description.long,
               parameters: result.description.replace,
+              options: {
+                bbcodeContext: result.description.context,
+              },
             }, [{ label: 'Close' }])),
           });
         }
@@ -80,7 +83,12 @@ function runCheck(api: IExtensionApi, check: ICheckEntry): Promise<void> {
         } else {
           actions.push({
             title: 'Check again',
-            action: () => runCheck(api, check),
+            action: () => {
+              const preCheck = (result.onRecheck !== undefined)
+              ? result.onRecheck()
+              : Promise.resolve();
+              return preCheck.then(() => runCheck(api, check));
+            },
           });
         }
         api.sendNotification({
@@ -91,6 +99,7 @@ function runCheck(api: IExtensionApi, check: ICheckEntry): Promise<void> {
           actions,
           noDismiss: true,
           allowSuppress: result.severity !== 'error',
+          localize: { title: result.description.localize, message: result.description.localize },
         });
       }
     })
@@ -123,7 +132,11 @@ function init(context: IExtensionContext): boolean {
   context.registerTest = (id, eventType, check) => {
     log('debug', 'register test', { id, eventType });
     const stackErr = new Error();
-    setdefault(checks, eventType, []).push({ id, check, stack: () => stackErr.stack });
+    setdefault(checks, eventType, []).push({
+      id,
+      check,
+      stack: () => stackErr.stack,
+    });
   };
 
   context.once(() => {

@@ -1,4 +1,4 @@
-import { IPersistor } from '../types/IExtensionContext';
+import { IPersistor, PersistorKey } from '../types/IExtensionContext';
 
 import Promise from 'bluebird';
 
@@ -14,8 +14,9 @@ class SubPersistor implements IPersistor {
 
     if (wrapped.getAllKVs !== undefined) {
       this.getAllKVs = () => this.mWrapped.getAllKVs(hive)
-        .filter(kv => kv.key[0] === hive)
-        .map(kv => ({ key: kv.key.slice(1), value: kv.value }));
+        .filter((kv: { key: PersistorKey, value: string }) => kv.key[0] === hive)
+        .map((kv: { key: PersistorKey, value: string }) =>
+          ({ key: kv.key.slice(1), value: kv.value }));
     }
   }
 

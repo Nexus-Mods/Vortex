@@ -69,7 +69,7 @@ function makeRebuildFunc(orig) {
     // don't go into endless loops
     if (processed.has(request)) {
       log('info', 'already processed', request);
-      return false;
+      return true;
     }
     processed.add(request);
 

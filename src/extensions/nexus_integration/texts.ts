@@ -3,7 +3,7 @@ import chromePath from './util/chromePath';
 import Promise from 'bluebird';
 import { TFunction } from 'i18next';
 
-function getText(id: string, t: TFunction): Promise<string> {
+function getText(id: string, t: TFunction): string {
   switch (id) {
     case 'chrome-fix': return t(
       'Chrome requires a change to a configuration file to allow an external program to handle '

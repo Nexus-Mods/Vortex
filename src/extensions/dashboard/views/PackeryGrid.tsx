@@ -1,3 +1,4 @@
+import * as _ from 'lodash';
 import { PackeryOptions } from 'packery';
 import * as React from 'react';
 
@@ -7,6 +8,7 @@ export interface IProps {
   totalWidth: number;
   onChangeLayout: (items: string[]) => void;
   settings: any;
+  items: string[];
 }
 
 function setEqual(lhs: Set<any>, rhs: Set<any>) {
@@ -63,6 +65,10 @@ class Packery extends React.Component<IProps, {}> {
     }
 
     if (nextProps.settings !== this.props.settings) {
+      this.scheduleLayout();
+    }
+
+    if (!_.isEqual(nextProps.items, this.props.items)) {
       this.scheduleLayout();
     }
   }

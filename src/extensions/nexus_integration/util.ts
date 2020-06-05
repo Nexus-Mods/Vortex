@@ -1,6 +1,6 @@
 import Nexus, {
   EndorsedStatus, IEndorsement, IFileInfo, IGameListEntry, IModInfo,
-  IUpdateEntry, NexusError, RateLimitError, TimeoutError,
+  IRevision, IUpdateEntry, NexusError, RateLimitError, TimeoutError,
 } from '@nexusmods/nexus-api';
 import Promise from 'bluebird';
 import { app as appIn, ipcRenderer, remote } from 'electron';
@@ -323,10 +323,11 @@ function reportEndorseError(api: IExtensionApi, err: Error,
 
 export function endorseDirectImpl(api: IExtensionApi, nexus: Nexus,
                                   gameId: string, nexusId: number, version: string,
-                                  endorsedStatus: string) {
+                                  endorsedStatus: string): Promise<string> {
   return sendEndorseMod(nexus, gameId, nexusId, version, endorsedStatus)
     .catch(err => {
       reportEndorseError(api, err, gameId, nexusId, version);
+      return endorsedStatus as EndorsedStatus;
     });
 }
 
@@ -689,9 +690,17 @@ export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promis
       api.store.dispatch(setUserInfo(undefined));
     })
     .catch(NexusError, err => {
-      showError(api.store.dispatch,
-        'Failed to log in',
-        errorFromNexusError(err), { allowReport: false });
+      api.sendNotification({
+        id: 'nexus-login-failed',
+        type: 'error',
+        title: 'Failed to log in',
+        message: errorFromNexusError(err),
+        actions: [
+          { title: 'Try again', action: dismiss => {
+            updateKey(api, nexus, key);
+          } },
+        ],
+      });
       api.store.dispatch(setUserInfo(undefined));
     })
     .catch(ProcessCanceled, err => {

@@ -44,13 +44,15 @@ export const settingsReducer: IReducerSpec = {
       // easier to fix here
       // delete payload.result.executable;
 
-      const old = getSafe(state, toolPath, undefined);
+      if (!payload.manual) {
+        const old = _.omit(getSafe(state, toolPath, undefined), ['timestamp']);
 
-      if (_.isEqual(old, payload.result)) {
-        return state;
+        if (_.isEqual(old, payload.result)) {
+          return state;
+        }
       }
 
-      return setSafe(state, toolPath, payload.result);
+      return setSafe(state, toolPath, { ...payload.result, timestamp: Date.now() });
     },
     [actions.setToolVisible as any]: (state, payload) =>
       // custom added tools can be deleted so we do that instead of hiding them

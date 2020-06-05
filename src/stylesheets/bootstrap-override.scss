@@ -291,6 +291,11 @@ textarea {
   margin-bottom: 0;
 }
 
+hr {
+  margin-top: 1.5em;
+  margin-bottom: 1.5em;
+}
+
 @media (min-width: $screen-sm-min) {
   .form-horizontal {
     .control-label {

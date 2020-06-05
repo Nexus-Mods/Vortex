@@ -14,6 +14,7 @@ import NexusT, { IFeedbackResponse } from '@nexusmods/nexus-api';
 import Promise from 'bluebird';
 import {
   app as appIn,
+  BrowserWindow,
   dialog as dialogIn,
   ipcRenderer,
   remote,
@@ -216,17 +217,17 @@ export function sendReport(type: string, error: IError, context: IErrorContext,
   }
 }
 
-let defaultWindow: Electron.BrowserWindow = null;
+let defaultWindow: BrowserWindow = null;
 
-export function setWindow(window: Electron.BrowserWindow): void {
+export function setWindow(window: BrowserWindow): void {
   defaultWindow = window;
 }
 
-export function getWindow(): Electron.BrowserWindow {
+export function getWindow(): BrowserWindow {
   return defaultWindow;
 }
 
-export function getVisibleWindow(win?: Electron.BrowserWindow): Electron.BrowserWindow | null {
+export function getVisibleWindow(win?: BrowserWindow): BrowserWindow | null {
   if (!truthy(win)) {
     win = remote !== undefined ? remote.getCurrentWindow() : getWindow();
   }
@@ -256,7 +257,7 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
   if ((allowReport === undefined) && (error.extension !== undefined)) {
     allowReport = error.extension === COMPANY_ID;
   }
-  
+
   const contextNow = { ...globalContext };
 
   log('error', 'unrecoverable error', { error, process: process.type });

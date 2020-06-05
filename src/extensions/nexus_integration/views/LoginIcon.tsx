@@ -59,9 +59,9 @@ class LoginIcon extends ComponentEx<IProps, {}> {
   }
 
   private renderLoginName() {
-    const { t, APIKey, userInfo } = this.props;
+    const { t, userInfo } = this.props;
 
-    if ((APIKey !== undefined) && (userInfo !== undefined) && (userInfo !== null)) {
+    if (this.isLoggedIn()) {
       return (
         <div>
           <div className='username'>
@@ -78,9 +78,9 @@ class LoginIcon extends ComponentEx<IProps, {}> {
   }
 
   private renderAvatar() {
-    const { t, APIKey, userInfo } = this.props;
+    const { t, userInfo } = this.props;
 
-    const loggedIn = (APIKey !== undefined) && (userInfo !== undefined) && (userInfo !== null);
+    const loggedIn = this.isLoggedIn();
 
     const profileIcon = truthy(userInfo) && truthy(userInfo.profileUrl)
       ? `${userInfo.profileUrl}?r_${START_TIME}`
@@ -108,11 +108,16 @@ class LoginIcon extends ComponentEx<IProps, {}> {
 
   private showLoginLayer = () => {
     const { userInfo } = this.props;
-    if ((userInfo === undefined) || (userInfo === null)) {
+    if (!this.isLoggedIn()) {
       this.setDialogVisible(true);
     } else {
       opn(`https://www.nexusmods.com/users/${userInfo.userId}`).catch(err => undefined);
     }
+  }
+
+  private isLoggedIn() {
+    const { APIKey, userInfo } = this.props;
+    return (APIKey !== undefined) && (userInfo !== undefined) && (userInfo !== null);
   }
 
   private hideLoginLayer = () => {

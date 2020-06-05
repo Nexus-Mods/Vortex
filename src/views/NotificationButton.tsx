@@ -1,6 +1,6 @@
 import { dismissNotification, fireNotificationAction } from '../actions/notifications';
 import { suppressNotification } from '../actions/notificationSettings';
-import { INotification, INotificationAction } from '../types/INotification';
+import { INotification, INotificationAction, NotificationType } from '../types/INotification';
 import { IState } from '../types/IState';
 import { ComponentEx, connect, translate } from '../util/ComponentEx';
 
@@ -28,40 +28,50 @@ type IProps = IBaseProps & IActionProps & IConnectedProps;
 
 interface IComponentState {
   expand: string;
+  open: boolean;
+  filtered: INotification[];
 }
 
 class NotificationButton extends ComponentEx<IProps, IComponentState> {
   private mRef: any = null;
+  private mUpdateTimer: NodeJS.Timeout = undefined;
+  private mMounted: boolean = false;
 
   constructor(props: IProps) {
     super(props);
 
-    this.initState({ expand: undefined });
+    this.initState({
+      expand: undefined,
+      open: false,
+      filtered: [],
+    });
   }
 
-  public UNSAFE_componentWillReceiveProps(newProps: IProps) {
-    if ((this.props.notifications !== newProps.notifications)
-        && (this.mRef !== null)) {
-      if (newProps.notifications.length === 0) {
-        // if the last notification was dismissed, hide
-        this.mRef.hide();
-      } else {
-        const oldIds = new Set(this.props.notifications.map(not => not.id));
-        const newId = newProps.notifications.find(not => !oldIds.has(not.id));
-        if (newId !== undefined) {
-          // if a new notification was added, show, to ensure user sees it
-          this.mRef.show();
-        }
-      }
+  public componentDidMount() {
+    this.updateFiltered();
+    this.mMounted = true;
+  }
+
+  public componentWillUnmount() {
+    this.mMounted = false;
+    if (this.mUpdateTimer !== undefined) {
+      clearTimeout(this.mUpdateTimer);
+    }
+  }
+
+  public componentDidUpdate(prevProps: IProps) {
+    if (prevProps.notifications !== this.props.notifications) {
+      this.updateFiltered();
     }
   }
 
   public render(): JSX.Element {
     const { t, hide, notifications } = this.props;
+    const { filtered } = this.state;
 
     const collapsed: { [groupId: string]: number } = {};
 
-    const items = [].concat(notifications)
+    const items = filtered.slice()
       .reduce((prev: INotification[], notification: INotification) =>
             this.groupNotifications(prev, notification, collapsed), [])
       .sort(this.inverseSort)
@@ -89,12 +99,76 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
         shouldUpdatePosition={true}
         onExit={this.unExpand}
       >
-        <Button id='notifications-button'>
+        <Button id='notifications-button' onClick={this.toggle}>
           <Icon name='notifications' />
-          {items.length === 0 ? null : <Badge>{notifications.length}</Badge>}
+          {notifications.length === 0 ? null : <Badge>{notifications.length}</Badge>}
         </Button>
       </MyOverlayTrigger>
     );
+  }
+
+  private displayTime = (item: INotification) => {
+    if (item.displayMS !== undefined) {
+      return item.displayMS;
+    }
+
+    return {
+      warning: 30000,
+      error: 30000,
+      success: 10000,
+      info: 10000,
+      activity: null,
+    }[item.type] || 10000;
+  }
+
+  private updateFiltered() {
+    const { notifications } = this.props;
+    const { open } = this.state;
+
+    this.mUpdateTimer = undefined;
+
+    if (!this.mMounted) {
+      return;
+    }
+
+    let filtered = notifications.slice();
+    if (!open) {
+      const now = Date.now();
+
+      filtered = notifications.filter(item => {
+        if (item.type === 'activity') {
+          return true;
+        }
+        const displayTime = this.displayTime(item);
+        return (displayTime === null) || (item.updatedTime + displayTime > now);
+      });
+    }
+
+    this.nextState.filtered = filtered;
+
+    if (!open) {
+      if (filtered.length > 0) {
+        this.mRef?.show();
+        if (this.mUpdateTimer !== undefined) {
+          // should never happen
+          clearTimeout(this.mUpdateTimer);
+        }
+        this.mUpdateTimer = setTimeout(() => this.updateFiltered(), 1000);
+      } else {
+        this.mRef?.hide();
+      }
+    } else {
+      // if open, make sure it gets displayed, just to be sure
+      this.mRef?.show();
+    }
+  }
+
+  private toggle = () => {
+    if (!this.state.open) {
+      this.mRef?.show();
+      this.nextState.filtered = this.props.notifications.slice();
+    }
+    this.nextState.open = !this.state.open;
   }
 
   private groupNotifications = (previous: INotification[],

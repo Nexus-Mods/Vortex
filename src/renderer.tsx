@@ -69,7 +69,7 @@ import LoadingScreen from './views/LoadingScreen';
 import MainWindow from './views/MainWindow';
 
 import Promise from 'bluebird';
-import { ipcRenderer, remote, webFrame } from 'electron';
+import { crashReporter as crashReporterT, ipcRenderer, remote, webFrame } from 'electron';
 import { forwardToMain, getInitialStateRenderer, replayActionRenderer } from 'electron-redux';
 import { EventEmitter } from 'events';
 import * as fs from 'fs-extra';
@@ -86,7 +86,7 @@ import { applyMiddleware, compose, createStore } from 'redux';
 import thunkMiddleware from 'redux-thunk';
 import { generate as shortid } from 'shortid';
 
-import crashDumpX from 'crash-dump';
+import crashDumpT from 'crash-dump';
 
 import { setLanguage, setNetworkConnected } from './actions';
 import { ThunkStore } from './types/IExtensionContext';
@@ -95,9 +95,7 @@ import { UserCanceled } from './util/CustomErrors';
 import {} from './util/extensionRequire';
 import { reduxLogger } from './util/reduxLogger';
 import { getSafe } from './util/storeHelper';
-import { getAllPropertyNames } from './util/util';
-
-const crashDump = (crashDumpX as any).default;
+import { bytesToString, getAllPropertyNames } from './util/util';
 
 log('debug', 'renderer process started', { pid: process.pid });
 
@@ -142,8 +140,24 @@ function initialState(): any {
 const tempPath = path.join(remote.app.getPath('userData'), 'temp');
 remote.app.setPath('temp', tempPath);
 
-const deinitCrashDump =
-  crashDump(path.join(remote.app.getPath('temp'), 'dumps', `crash-renderer-${Date.now()}.dmp`));
+let deinitCrashDump: () => void;
+
+if (process.env.CRASH_REPORTING === 'electron') {
+  // tslint:disable-next-line:no-var-requires
+  const crashReporter: typeof crashReporterT = require('electron').crashReporter;
+  crashReporter.start({
+    productName: 'Vortex',
+    companyName: 'Black Tree Gaming Ltd.',
+    uploadToServer: false,
+    submitURL: '',
+    crashesDirectory: path.join(tempPath, 'dumps'),
+  });
+} else if (process.env.CRASH_REPORTING === 'vortex') {
+  // tslint:disable-next-line:no-var-requires
+  const crashDump: typeof crashDumpT = require('crash-dump').default;
+  deinitCrashDump =
+    crashDump(path.join(remote.app.getPath('temp'), 'dumps', `crash-renderer-${Date.now()}.dmp`));
+}
 
 // on windows, inject the native error code into "unknown" errors to help track those down
 if (process.platform === 'win32') {
@@ -224,10 +238,12 @@ function errorHandler(evt: any) {
 
   if ((error.stack !== undefined)
       // some exceptions from foreign libraries can't be caught so we have to ignore them
-      // the main offender here is electron-update. Unfortunately newer versions that may
+      // the main offender here is electron-builder. Unfortunately newer versions that may
       // have fixed this have even more significant bugs.
       && (
           (error.message === 'socket hang up')
+          || ((error.message !== undefined)
+              && (error.message.includes('Error invoking remote method')))
           || (error.stack.indexOf('net::ERR_CONNECTION_RESET') !== -1)
           || (error.stack.indexOf('net::ERR_ABORTED') !== -1)
           || (error.stack.indexOf('PackeryItem.proto.positionDropPlaceholder') !== -1)
@@ -255,7 +271,9 @@ window.addEventListener('unhandledrejection', errorHandler);
 window.removeEventListener('error', earlyErrHandler);
 window.removeEventListener('unhandledrejection', earlyErrHandler);
 window.addEventListener('close', () => {
-  deinitCrashDump();
+  if (deinitCrashDump !== undefined) {
+    deinitCrashDump();
+  }
 });
 
 const eventEmitter: NodeJS.EventEmitter = new EventEmitter();
@@ -324,14 +342,17 @@ setInterval(() => {
       id: 'high-memory-usage',
       type: 'warning',
       title: 'Vortex is using a lot of memory and may crash',
-      message: `${Math.floor(stat.totalHeapSize / 1024)} MB`,
+      message: bytesToString(stat.totalHeapSize * 1024),
     });
     log('warn', 'High memory usage', { usage: stat.totalHeapSize, max: stat.heapSizeLimit });
   }
   highUsageReport = heapPerc > 0.75;
   if ((lastHeapSize > 0) && ((stat.totalHeapSize - lastHeapSize) > REPORT_HEAP_INCREASE)) {
-    log('info', 'memory usage growing fast',
-        { usage: stat.totalHeapSize, previous: lastHeapSize, max: stat.heapSizeLimit });
+    log('info', 'memory usage growing fast', {
+      usage: bytesToString(stat.totalHeapSize * 1024),
+      previous: bytesToString(lastHeapSize * 1024),
+      max: bytesToString(stat.heapSizeLimit * 1024),
+    });
   }
   lastHeapSize = stat.totalHeapSize;
 }, 5000);
@@ -457,7 +478,6 @@ function renderer() {
   window.addEventListener('offline', () => {
     store.dispatch(setNetworkConnected(false));
   });
-
 
   getI18n('en', () => {
     const state: IState = store.getState();

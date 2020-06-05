@@ -90,8 +90,8 @@ function readManifest(data: string | Buffer): IDeploymentManifest {
   return repairManifest(parsed);
 }
 
-function doFallbackPurge(basePath: string,
-                         files: IDeployedFile[]): Promise<void> {
+export function purgeDeployedFiles(basePath: string,
+                                   files: IDeployedFile[]): Promise<void> {
   return Promise.map(files, file => {
     const fullPath = path.join(basePath, file.relPath);
     return fs.statAsync(fullPath).then(
@@ -147,7 +147,7 @@ function queryPurge(api: IExtensionApi,
   }, [ { label: 'Cancel' }, { label: 'Purge' } ]))
     .then(result => {
       if (result.action === 'Purge') {
-        return doFallbackPurge(basePath, files)
+        return purgeDeployedFiles(basePath, files)
           .catch(err => {
             api.showErrorNotification('Purging failed', err, {
               allowReport: false,
@@ -245,7 +245,7 @@ function fallbackPurgeType(api: IExtensionApi, activator: IDeploymentMethod,
               safe = false;
             }
           }
-          result = doFallbackPurge(deployPath, tagObject.files)
+          result = purgeDeployedFiles(deployPath, tagObject.files)
               .then(() => saveActivation(modType, state.app.instanceId,
                                          deployPath, stagingPath,
                                          [], activator !== undefined ? activator.id : undefined))
@@ -375,6 +375,9 @@ export function saveActivation(modType: string, instance: string,
     instance,
     version: CURRENT_VERSION,
     deploymentMethod: activatorId,
+    deploymentTime: Date.now(),
+    stagingPath,
+    targetPath: gamePath,
     files: activation,
   };
   const dataJSON = JSON.stringify(dataRaw, undefined, 2);
@@ -395,6 +398,14 @@ export function saveActivation(modType: string, instance: string,
       writeAtomicSync(tagBackupPath, Buffer.from(msgpack.pack(dataRaw)));
     } catch (err) {
       log('error', 'Failed to write manifest backup', err.message);
+    }
+  } else {
+    try {
+      fs.removeSync(tagBackupPath);
+    } catch (err) {
+      if (err.code !== 'ENOENT') {
+        log('error', 'failed to remove manifest backup', err.message);
+      }
     }
   }
 

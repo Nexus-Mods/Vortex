@@ -34,7 +34,7 @@ function elevatedMain(moduleRoot, ipcPath, main) {
     client.on('connect', () => {
         Promise.resolve(main(client, require))
             .catch(error => {
-            client.emit('error', error.message);
+            client.sendError(error);
         })
             .finally(() => {
             client.end();

@@ -1,4 +1,4 @@
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { IExtensionApi } from '../../../types/IExtensionContext';
 import { INotification } from '../../../types/INotification';
 import { IState } from '../../../types/IState';

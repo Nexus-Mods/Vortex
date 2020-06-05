@@ -27,7 +27,6 @@ export interface IStarterInfo {
   id: string;
   gameId: string;
   isGame: boolean;
-  iconPath: string;
   iconOutPath: string;
   name: string;
   exePath: string;
@@ -39,6 +38,9 @@ export interface IStarterInfo {
   onStart?: 'hide' | 'hide_recover' | 'close';
   environment: { [key: string]: string };
   defaultPrimary?: boolean;
+
+  extensionPath: string;
+  logoName: string;
 }
 
 const userDataPath = ((): () => string => {
@@ -120,6 +122,20 @@ class StarterInfo implements IStarterInfo {
         return StarterInfo.runDirectly(info, api, onShowError, onSpawned);
       }
     });
+  }
+
+  public static getIconPath(info: IStarterInfo): string {
+    if (info['__iconCache'] === undefined) {
+      if (info.isGame) {
+        info['__iconCache'] = StarterInfo.gameIcon(
+            info.gameId, info.extensionPath, info.logoName);
+      } else {
+        info['__iconCache'] = StarterInfo.toolIcon(
+            info.gameId, info.extensionPath, info.id, info.logoName);
+      }
+    }
+
+    return info['__iconCache'];
   }
 
   private static runDirectly(info: IStarterInfo,
@@ -269,14 +285,14 @@ class StarterInfo implements IStarterInfo {
   public detach: boolean;
   public onStart?: 'hide' | 'hide_recover' | 'close';
   public defaultPrimary: boolean;
-  private mExtensionPath: string;
-  private mLogoName: string;
-  private mIconPathCache: string;
+  public extensionPath: string;
+  public logoName: string;
+  public timestamp: number;
 
   constructor(game: IGameStored, gameDiscovery: IDiscoveryResult,
               tool?: IToolStored, toolDiscovery?: IDiscoveredTool) {
     this.gameId = gameDiscovery.id || game.id;
-    this.mExtensionPath = gameDiscovery.extensionPath || game.extensionPath;
+    this.extensionPath = gameDiscovery.extensionPath || game.extensionPath;
     this.detach = getSafe(toolDiscovery, ['detach'], getSafe(tool, ['detach'], true));
     this.onStart = getSafe(toolDiscovery, ['onStart'], getSafe(tool, ['onStart'], undefined));
 
@@ -294,20 +310,6 @@ class StarterInfo implements IStarterInfo {
     }
   }
 
-  public get iconPath(): string {
-    if (this.mIconPathCache === undefined) {
-      if (this.isGame) {
-        this.mIconPathCache = StarterInfo.gameIcon(
-            this.gameId, this.mExtensionPath, this.mLogoName);
-      } else {
-        this.mIconPathCache = StarterInfo.toolIcon(
-            this.gameId, this.mExtensionPath, this.id, this.mLogoName);
-      }
-    }
-
-    return this.mIconPathCache;
-  }
-
   private initFromGame(game: IGameStored, gameDiscovery: IDiscoveryResult) {
     this.name = gameDiscovery.name || game.name;
     this.exePath = path.join(gameDiscovery.path, gameDiscovery.executable || game.executable);
@@ -319,7 +321,7 @@ class StarterInfo implements IStarterInfo {
       : this.originalEnvironment;
     this.iconOutPath = StarterInfo.gameIconRW(this.gameId);
     this.shell = gameDiscovery.shell || game.shell;
-    this.mLogoName = gameDiscovery.logo || game.logo;
+    this.logoName = gameDiscovery.logo || game.logo;
     this.details = game.details;
     this.exclusive = true;
   }
@@ -333,12 +335,13 @@ class StarterInfo implements IStarterInfo {
       this.commandLine = getSafe(toolDiscovery, ['parameters'], getSafe(tool, ['parameters'], []));
       this.environment =
         getSafe(toolDiscovery, ['environment'], getSafe(tool, ['environment'], {})) || {};
-      this.mLogoName = getSafe(toolDiscovery, ['logo'], getSafe(tool, ['logo'], undefined));
+      this.logoName = getSafe(toolDiscovery, ['logo'], getSafe(tool, ['logo'], undefined));
       this.workingDirectory = getSafe(toolDiscovery, ['workingDirectory'],
         getSafe(tool, ['workingDirectory'], ''));
       this.shell = getSafe(toolDiscovery, ['shell'], getSafe(tool, ['shell'], undefined));
       this.exclusive = getSafe(tool, ['exclusive'], false) || false;
       this.defaultPrimary = getSafe(tool, ['defaultPrimary'], false);
+      this.timestamp = toolDiscovery.timestamp;
     } else {
       // defaults for undiscovered & unconfigured tools
       this.name = tool.name;
@@ -346,12 +349,11 @@ class StarterInfo implements IStarterInfo {
       this.commandLine = tool.parameters;
       this.workingDirectory = '';
       this.environment = tool.environment || {};
-      this.mLogoName = tool.logo;
+      this.logoName = tool.logo;
       this.shell = tool.shell;
     }
     this.iconOutPath = StarterInfo.toolIconRW(gameId, this.id);
   }
-
 }
 
 export default StarterInfo;

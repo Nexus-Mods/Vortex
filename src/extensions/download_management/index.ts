@@ -2,9 +2,10 @@ import { setDownloadPath } from '../../actions';
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
 import { ITestResult } from '../../types/ITestResult';
-import { getNormalizeFunc, Normalize, UserCanceled } from '../../util/api';
+import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import Debouncer from '../../util/Debouncer';
 import * as fs from '../../util/fs';
+import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
 import { log } from '../../util/log';
 import ReduxProp from '../../util/ReduxProp';
 import * as selectors from '../../util/selectors';
@@ -151,9 +152,7 @@ function attributeExtractor(input: any) {
 }
 
 function attributeExtractorCustom(input: any) {
-  return Promise.resolve({
-    category: getSafe(input, ['download', 'modInfo', 'custom', 'category'], undefined),
-  });
+  return Promise.resolve(input.download?.modInfo?.custom || {});
 }
 
 function genDownloadChangeHandler(api: IExtensionApi,
@@ -401,6 +400,8 @@ function testDownloadPath(api: IExtensionApi): Promise<void> {
               }, [
                 { label: 'Close' },
               ]);
+              return Promise.reject(new ProcessCanceled(
+                'Failed to reinitialize download directory'));
             })
             .finally(() => {
               api.dismissNotification(id);
@@ -426,6 +427,7 @@ function testDownloadPath(api: IExtensionApi): Promise<void> {
       .then(() => writeDownloadsTag(api, currentDownloadPath));
 
   return ensureDownloadsDirectory()
+    .catch(ProcessCanceled, () => Promise.resolve())
     .catch(UserCanceled, () => Promise.resolve())
     .catch(err => {
       const errTitle = (err.code === 'EPERM')
@@ -489,10 +491,12 @@ function move(api: IExtensionApi, source: string, destination: string): Promise<
   return fs.statAsync(destination)
     .catch(() => undefined)
     .then(stats => stats !== undefined ? queryReplace(api, destination) : null)
+    .then(() => fs.copyAsync(source, destination))
     .then(() => {
+      // do this after copy is completed, otherwise code watching for the event may be
+      // trying to access the file already
       store.dispatch(addLocalDownload(dlId, gameMode, path.basename(destination), 0));
     })
-    .then(() => fs.copyAsync(source, destination))
     .then(() => fs.statAsync(destination))
     .then(stats => {
       api.dismissNotification(notiId);
@@ -614,7 +618,7 @@ function init(context: IExtensionContextExt): boolean {
     protocolHandlers[schema] = handler;
   };
 
-  context.registerAttributeExtractor(150, attributeExtractor);
+  context.registerAttributeExtractor(100, attributeExtractor);
   context.registerAttributeExtractor(25, attributeExtractorCustom);
   context.registerActionCheck('SET_DOWNLOAD_FILEPATH', (state, action: any) => {
     if (action.payload === '') {
@@ -682,12 +686,7 @@ function init(context: IExtensionContextExt): boolean {
           .then(result => {
             if (result.length > 0) {
               const info = result[0].value;
-              store.dispatch(setDownloadModInfo(dlId, 'game', info.gameId));
-              store.dispatch(setDownloadModInfo(dlId, 'version', info.fileVersion));
-              if (info.logicalFileName || info.fileName) {
-                store.dispatch(setDownloadModInfo(dlId, 'name',
-                  info.logicalFileName || info.fileName));
-              }
+              store.dispatch(setDownloadModInfo(dlId, 'meta', info));
             }
           })
           .catch(err => {
@@ -739,14 +738,13 @@ function init(context: IExtensionContextExt): boolean {
       let powerTimer: NodeJS.Timeout;
       let powerBlockerId: number;
       const stopTimer = () => {
-        if (remote.powerSaveBlocker.isStarted(powerBlockerId)) {
-          console.log('stop prevent sleep', powerBlockerId);
+        if ((powerBlockerId !== undefined)
+            && remote.powerSaveBlocker.isStarted(powerBlockerId)) {
           remote.powerSaveBlocker.stop(powerBlockerId);
         }
         powerBlockerId = undefined;
         powerTimer = undefined;
-      }
-
+      };
 
       const speedsDebouncer = new Debouncer(() => {
         store.dispatch(setDownloadSpeeds(store.getState().persistent.downloads.speedHistory));
@@ -764,9 +762,8 @@ function init(context: IExtensionContextExt): boolean {
               if (powerTimer !== undefined) {
                 clearTimeout(powerTimer);
               }
-              if (powerBlockerId !== undefined) {
+              if (powerBlockerId === undefined) {
                 powerBlockerId = remote.powerSaveBlocker.start('prevent-app-suspension');
-                console.log('start prevent sleep', powerBlockerId);
               }
               powerTimer = setTimeout(stopTimer, 60000);
             }

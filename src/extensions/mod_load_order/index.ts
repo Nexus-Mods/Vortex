@@ -1,3 +1,4 @@
+import { modLoadOrderReducer } from './reducers/loadOrder';
 import { IGameLoadOrderEntry } from './types/types';
 import LoadOrderPage from './views/LoadOrderPage';
 
@@ -32,6 +33,8 @@ export default function init(context: IExtensionContextExt) {
   context.registerLoadOrderPage = (gameEntry: IGameLoadOrderEntry) => {
     addGameEntry(gameEntry);
   };
+
+  context.registerReducer(['persistent', 'loadOrder'], modLoadOrderReducer);
 
   return true;
 }

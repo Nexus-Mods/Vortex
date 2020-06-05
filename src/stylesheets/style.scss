@@ -741,11 +741,11 @@ $other: (
 }
 
 #highlight-control-dummy {
-  border-width: $border-width;
-  border-style: solid;
-  animation: highlightPulse 1s infinite alternate;
-  padding: 4px;
-  margin: calc((4px + #{$border-width}) * -1);
+  border-width: $border-width !important;
+  border-style: solid !important;
+  animation: highlightPulse 1s infinite alternate !important;
+  padding: 4px !important;
+  margin: calc((4px + #{$border-width}) * -1) ! important;
 }
 
 #highlight-control-dummy::after {

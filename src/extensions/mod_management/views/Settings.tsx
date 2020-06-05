@@ -264,7 +264,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                 && ((Date.now() - this.mLastFileUpdate) > 1000)) {
                 this.nextState.progressFile = path.basename(from);
               }
-            });
+            })
+            .catch({ code: 'ENOENT' }, () => Promise.resolve());
           });
       }));
   }
@@ -655,15 +656,12 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           </FlexLayout.Fixed>
           <FlexLayout.Fixed>
             <InputGroup.Button>
-              {((activators === undefined) || (activators.length === 0)) ? (
-                <Button
-                  onClick={this.suggestPath}
-                  tooltip={t('This will suggest a path that should allow you to '
-                           + 'deploy mods for the current game')}
-                >
-                  {t('Suggest')}
-                </Button>
-              ) : null}
+              <Button
+                onClick={this.suggestPath}
+                tooltip={t('This will suggest a path that puts the mods on the same drive as the game')}
+              >
+                {t('Suggest')}
+              </Button>
               <BSButton
                 disabled={applyDisabled}
                 onClick={this.applyPaths}

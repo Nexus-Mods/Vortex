@@ -1,3 +1,5 @@
+import { getSafe } from '../../../util/storeHelper';
+
 import { IModType } from '../../gamemode_management/types/IModType';
 import { getModType } from '../../gamemode_management/util/modTypeExtensions';
 
@@ -13,10 +15,8 @@ function allTypesSupported(activator: IDeploymentMethod, state: any,
     const reason = activator.isSupported(state, gameId, type);
     if (reason !== undefined) {
       const typeInfo: IModType = getModType(type);
-      if (typeInfo !== undefined) {
-        const { deploymentEssential } = (typeInfo.options || {});
-        prev[(deploymentEssential === false) ? 'warnings' : 'errors'].push(reason);
-      }
+      const { deploymentEssential } = getSafe(typeInfo, ['options'], { deploymentEssential: true });
+      prev[(deploymentEssential === false) ? 'warnings' : 'errors'].push(reason);
     }
     return prev;
   }, { errors: [], warnings: [] });

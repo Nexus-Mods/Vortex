@@ -165,7 +165,7 @@ function deployModType(api: IExtensionApi,
                        stagingPath: string,
                        targetPath: string,
                        overwritten: IMod[],
-                       mergedFileMap: { [modType: string]: string[] },
+                       mergedFileMap: { [modType: string]: { [relPath: string]: string[] } },
                        lastDeployment: IDeployedFile[],
                        onProgress: (text: string, perc: number) => void): Promise<IDeployedFile[]> {
   const filteredModList = sortedModList.filter(mod => (mod.type || '') === typeId);
@@ -176,13 +176,18 @@ function deployModType(api: IExtensionApi,
                     stagingPath, targetPath,
                     filteredModList,
                     activator, lastDeployment,
-                    typeId, new Set(mergedFileMap[typeId]),
+                    typeId, new Set(Object.keys(mergedFileMap[typeId] || {})),
                     genSubDirFunc(game, getModType(typeId)),
                     onProgress)
-    .then(newActivation => {
+    .then((newActivation: IDeployedFile[]) => {
+      const mergedMap = mergedFileMap[typeId] || {};
+      newActivation.forEach(act => {
+        act.merged = mergedMap[act.relPath];
+      });
       overwritten.push(...filteredModList.filter(mod =>
         newActivation.find(entry =>
-          entry.source === mod.installationPath) === undefined));
+          (entry.source === mod.installationPath)
+          || ((entry.merged || []).includes(mod.id))) === undefined));
 
       return doSaveActivation(api, typeId,
         targetPath, stagingPath,
@@ -201,7 +206,7 @@ function deployAllModTypes(api: IExtensionApi,
                            profile: IProfile,
                            sortedModList: IMod[],
                            stagingPath: string,
-                           mergedFileMap: { [modType: string]: string[] },
+                           mergedFileMap: { [modType: string]: { [relPath: string]: string[] } },
                            modPaths: { [typeId: string]: string },
                            lastDeployment: { [typeId: string]: IDeployedFile[] },
                            newDeployment: { [typeId: string]: IDeployedFile[] },
@@ -258,7 +263,7 @@ function doMergeMods(api: IExtensionApi,
                      sortedModList: IMod[],
                      modPaths: { [typeId: string]: string },
                      lastDeployment: { [typeId: string]: IDeployedFile[] }):
-    Promise<{ [typeId: string]: string[] }> {
+    Promise<{ [typeId: string]: { [relPath: string]: string[] } }> {
 
   const fileMergers = mergers.reduce((prev: IResolvedMerger[], merge) => {
     const match = merge.test(game, gameDiscovery);
@@ -272,7 +277,7 @@ function doMergeMods(api: IExtensionApi,
   const mergeModTypes = Object.keys(modPaths)
     .filter(modType => fileMergers.find(merger => merger.modType === modType) !== undefined);
 
-  const result: { [typeId: string]: string[] } = {};
+  const result: { [typeId: string]: { [relPath: string]: string[] } } = {};
 
   // clean up merged mods
   return Promise.mapSeries(mergeModTypes, typeId => {
@@ -303,10 +308,12 @@ function reportRedundant(api: IExtensionApi, profileId: string, overwritten: IMo
         {
           title: 'Show', action: dismiss => {
             return api.showDialog('info', 'Redundant mods', {
-              text: 'Some of the enabled mods either contain no files or all files '
+              bbcode: 'Some of the enabled mods either contain no files or all files '
                 + 'they do contain are entirely overwritten by another mod. '
                 + 'These redundant mods don\'t do any harm except slow down '
-                + 'deployment a bit.',
+                + 'deployment a bit.\n'
+                + 'If you believe this to be a mistake, please check the file '
+                + 'conflicts [svg]conflict[/svg] for the mod in question.',
               checkboxes: overwritten.map((mod: IMod): ICheckbox => ({
                 id: mod.id,
                 text: renderModName(mod),
@@ -357,7 +364,7 @@ function genUpdateModDeployment() {
       api.store.dispatch(updateNotification(notification.id, percent, text));
     };
     const state = api.store.getState();
-    const profile: IProfile = profileId !== undefined
+    let profile: IProfile = profileId !== undefined
       ? getSafe(state, ['persistent', 'profiles', profileId], undefined)
       : activeProfile(state);
 
@@ -412,7 +419,8 @@ function genUpdateModDeployment() {
         } else if (err.warnings.length > 0) {
           api.sendNotification({
             type: 'warning',
-            message: t('Deployment method "{{method}}" does not support all mod types: {{reason}}', {
+            message: t('Deployment method "{{method}}" does not support '
+                        + 'all mod types: {{reason}}', {
               replace: {
                 method: selectedActivator.name,
                 reason: err.warnings[0].description(t),
@@ -447,11 +455,11 @@ function genUpdateModDeployment() {
       .then(() => withActivationLock(() => {
         log('debug', 'deploying mods', {
           game: gameId,
-          profile: profileId,
+          profile: profile?.id,
           method: activator.name,
         });
 
-        let mergedFileMap: { [modType: string]: string[] };
+        let mergedFileMap: { [modType: string]: { [relPath: string]: string[] } };
         const lastDeployment: { [typeId: string]: IDeployedFile[] } = {};
         const mods = state.persistent.mods[profile.gameId] || {};
         notification.message = t('Deploying mods');
@@ -464,6 +472,18 @@ function genUpdateModDeployment() {
               .then(deployedFiles => lastDeployment[typeId] = deployedFiles))
           .tap(() => progress(t('Running pre-deployment events'), 2))
           .then(() => api.emitAndAwait('will-deploy', profile.id, lastDeployment))
+          .then(() => {
+            // need to update the profile so that if a will-deploy handler disables a mod, that
+            // actually has an affect on this deployment
+            const updatedState = api.getState();
+            const updatedProfile = updatedState.persistent.profiles[profile.id];
+            if (updatedProfile !== undefined) {
+              profile = updatedProfile;
+            } else {
+              // I don't think this can happen
+              log('warn', 'profile no longer found?', profileId);
+            }
+          })
           .tap(() => progress(t('Checking for external changes'), 5))
           .then(() => dealWithExternalChanges(api, activator, profileId, stagingPath, modPaths,
             lastDeployment))
@@ -642,7 +662,7 @@ function genValidActivatorCheck(api: IExtensionApi) {
 
     const reasons: IUnavailableReasonEx[] = getAllActivators().map(activator => {
       const problems = allTypesSupported(activator, state, gameId, Object.keys(modPaths));
-      return problems.errors[0];
+      return { activator: activator.id, ...problems.errors[0] };
     });
 
     if (reasons.indexOf(undefined) !== -1) {
@@ -675,6 +695,7 @@ function attributeExtractor(input: any) {
     version: getSafe(input.meta, ['fileVersion'], undefined),
     logicalFileName: getSafe(input.meta, ['logicalFileName'], undefined),
     rules: getSafe(input.meta, ['rules'], undefined),
+    source: input.meta?.source,
     category: getSafe(input.meta, ['details', 'category'], undefined),
     description: getSafe(input.meta, ['details', 'description'], undefined),
     author: getSafe(input.meta, ['details', 'author'], undefined),
@@ -855,7 +876,7 @@ function once(api: IExtensionApi) {
     installManager = new InstallManager(
         (gameId: string) => installPathForGame(store.getState(), gameId));
     installers.forEach((installer: IInstaller) => {
-      installManager.addInstaller(installer.priority, installer.testSupported,
+      installManager.addInstaller(installer.id, installer.priority, installer.testSupported,
                                   installer.install);
     });
   }
@@ -1154,8 +1175,8 @@ function init(context: IExtensionContext): boolean {
   context.registerModSource = registerModSource;
   context.registerMerge = registerMerge;
 
-  registerAttributeExtractor(100, attributeExtractor);
-  registerAttributeExtractor(200, upgradeExtractor);
+  registerAttributeExtractor(150, attributeExtractor);
+  registerAttributeExtractor(10, upgradeExtractor);
 
   registerInstaller('fallback', 1000, basicInstaller.testSupported, basicInstaller.install);
 

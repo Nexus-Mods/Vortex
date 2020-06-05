@@ -343,7 +343,7 @@ const languageMap = {
   },
   ko: {
     name: 'Korean',
-    nativeName: '한국어 (韓國語), 조선말 (朝鮮語)',
+    nativeName: '한국어',
   },
   ku: {
     name: 'Kurdish',
@@ -1737,6 +1737,14 @@ const countryMap = {
     nativeName: 'Zimbabwe',
   },
 };
+
+export function languageExists(code: string): boolean {
+  return (code !== undefined) && (languageMap[code] !== undefined);
+}
+
+export function countryExists(code: string): boolean {
+  return (code !== undefined) && (countryMap[code] !== undefined);
+}
 
 export function nativeLanguageName(code: string): string {
   const language = languageMap[code];

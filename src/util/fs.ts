@@ -63,7 +63,7 @@ export interface IRemoveFileOptions {
 
 const NUM_RETRIES = 5;
 const RETRY_DELAY_MS = 100;
-const RETRY_ERRORS = new Set(['EPERM', 'EBUSY', 'EIO', 'EBADF', 'ENOTEMPTY', 'UNKNOWN']);
+const RETRY_ERRORS = new Set(['EPERM', 'EBUSY', 'EIO', 'EBADF', 'ENOTEMPTY', 'EMFILE', 'UNKNOWN']);
 
 const simfail = (process.env.SIMULATE_FS_ERRORS === 'true')
   ? (func: () => PromiseBB<any>): PromiseBB<any> => {
@@ -162,21 +162,20 @@ function unknownErrorRetry(filePath: string, err: Error, stackErr: Error): Promi
       + 'Please diagonse your environment and then retry',
     detail: 'Possible error causes:\n'
       + `1. "${filePath}" is a removable, possibly network drive which has been disconnected.\n`
-      + '2. An External application has interferred with file operations'
+      + '2. An External application has interferred with file operations '
       + '(Anti-virus, Disk Management Utility, Virus)\n',
-    buttons: [
-      'Cancel',
-      'Retry',
-    ],
     type: 'warning',
     noLink: true,
   };
+
+  let rethrowAs: string;
 
   if (truthy(err['nativeCode'])) {
     if (err['nativeCode'] === 225) {
       options.title = 'Anti Virus denied access';
       options.message = `Your Anti-Virus Software has blocked access to "${filePath}".`;
       options.detail = undefined;
+      rethrowAs = 'EBUSY';
     } else if ([21, 59, 67, 483, 793, 1005, 1006,
                 1127, 1392, 1920, 6800].includes(err['nativeCode'])) {
       options.title = `I/O Error (${err['nativeCode']})`;
@@ -186,12 +185,14 @@ function unknownErrorRetry(filePath: string, err: Error, stackErr: Error): Promi
                       + 'temporary network or server problems. '
                       + 'Please do not report this to us, this is not a bug in Vortex '
                       + 'and we can not provide remote assistance with hardware problems.';
+      rethrowAs = 'ENOENT';
     } else if ([1336].includes(err['nativeCode'])) {
       options.title = `I/O Error (${err['nativeCode']})`;
       options.message = `Accessing "${filePath}" failed with an error that indicates `
                       + 'file system corruption. If this isn\'t a temporary problem '
                       + 'you may want to run chkdsk or similar software to check for problems. '
                       + 'It may also help to reinstall the software that this file belongs to.';
+      rethrowAs = 'EIO';
     } else if ([362, 383, 390, 395, 396, 404].indexOf(err['nativeCode']) !== -1) {
       options.title = `OneDrive error (${err['nativeCode']})`;
       options.message = `The file "${filePath}" is stored on a cloud storage drive `
@@ -199,6 +200,7 @@ function unknownErrorRetry(filePath: string, err: Error, stackErr: Error): Promi
                       + 'check your internet connection and verify the service is running, '
                       + 'then retry.';
       options.detail = undefined;
+      rethrowAs = 'ENOENT';
     } else if ([4390, 4393, 4394].indexOf(err['nativeCode']) !== -1) {
       options.title = `Incompatible folder (${err['nativeCode']})`;
       options.message = `Windows reported an error message regarding "${filePath}" that indicates `
@@ -206,34 +208,54 @@ function unknownErrorRetry(filePath: string, err: Error, stackErr: Error): Promi
                       + 'it\'s being used. '
                       + 'A common example of this is if you try to put the staging folder on a '
                       + 'OneDrive folder because OneDrive can\'t deal with hardlinks.';
+      rethrowAs = 'EIO';
     } else if ([433, 1920].indexOf(err['nativeCode']) !== -1) {
       options.title = `Drive unavailable (${err['nativeCode']})`;
       options.message = `The file "${filePath}" is currently not accessible. If this is a `
                       + 'network drive, please make sure it\'s connected. Otherwise make sure '
                       + 'the drive letter hasn\'t changed and if necessary, update the path '
                       + 'within Vortex.';
+      rethrowAs = 'ENOENT';
     } else if ([53, 55, 4350].indexOf(err['nativeCode']) !== -1) {
       options.title = `Network drive unavailable (${err['nativeCode']})`;
       options.message = `The file "${filePath}" is currently not accessible, very possibly the `
                       + 'network share as a whole is inaccesible due to a network problem '
                       + 'or the server being offline.';
+      rethrowAs = 'ENOENT';
     } else if (err['nativeCode'] === 1816) {
       options.title = 'Not enough quota';
       options.message = `Windows reported insufficient quota writing to "${filePath}".`;
+      rethrowAs = 'EIO';
     } else if (err['nativeCode'] === 6851) {
       options.title = 'Volume dirty';
       options.message = 'The operation could not be completed because the volume is dirty. '
                       + 'Please run chkdsk and try again.';
+      rethrowAs = 'EIO';
     } else if (err['nativeCode'] === 1359) {
       options.title = 'Internal error';
       options.message = 'The operation failed with an internal (internal to windows) error. '
                       + 'No further error information is available to us.';
+      rethrowAs = 'EIO';
     } else {
       options.title = `${err.message} (${err['nativeCode']})`;
-      // no longer offering the report option because for month we got no report that we could actually do anything about,
-      // it's always setup problems
+      // no longer offering the report option because for month we got no report that we could
+      // actually do anything about, it's always setup problems
       // options.buttons.unshift('Cancel and Report');
     }
+  }
+
+  if (rethrowAs === undefined) {
+    options.buttons = [
+      'Cancel',
+      'Retry',
+    ];
+  } else {
+    options.message += '\n\nYou can try continuing but you do so at your own risk.';
+    options.buttons = [
+      'Cancel',
+      'Ignore',
+      'Retry',
+    ];
   }
 
   const choice = dialog.showMessageBoxSync(getVisibleWindow(), options);
@@ -250,9 +272,14 @@ function unknownErrorRetry(filePath: string, err: Error, stackErr: Error): Promi
     return PromiseBB.reject(new UserCanceled());
   }
 
-  return (options.buttons[choice] === 'Retry')
-    ? PromiseBB.resolve(true)
-    : PromiseBB.reject(new UserCanceled());
+  switch (options.buttons[choice]) {
+    case 'Retry': return PromiseBB.resolve(true);
+    case 'Ignore': {
+      err['code'] = rethrowAs;
+      return PromiseBB.reject(err);
+    }
+    case 'Cancel': PromiseBB.reject(new UserCanceled());
+  }
 }
 
 function busyRetry(filePath: string): PromiseBB<boolean> {
@@ -307,7 +334,7 @@ function errorRepeat(error: NodeJS.ErrnoException, filePath: string, retries: nu
       .then(doUnlock => {
         if (doUnlock) {
           const userId = getUserId();
-          return elevated((ipcPath, req: NodeRequireFunction) => {
+          return elevated((ipcPath, req: NodeRequire) => {
             const { allow }: { allow: typeof allowT } = req('permissions');
             return allow(filePath, userId as any, 'rwx');
           }, { filePath, userId })
@@ -383,12 +410,13 @@ const openAsync: (path: string, flags: string | number, mode?: number) => Promis
 const readdirAsync: (path: string) => PromiseBB<string[]> = genWrapperAsync(fsBB.readdirAsync);
 const readFileAsync: (...args: any[]) => PromiseBB<any> = genWrapperAsync(fsBB.readFileAsync);
 const statAsync: (path: string) => PromiseBB<fs.Stats> = genWrapperAsync(fsBB.statAsync);
+const statSilentAsync: (path: string) => PromiseBB<fs.Stats> = (statPath: string) => fsBB.statAsync(statPath);
 const symlinkAsync: (srcpath: string, dstpath: string, type?: string) => PromiseBB<void> = genWrapperAsync(fsBB.symlinkAsync);
 const utimesAsync: (path: string, atime: number, mtime: number) => PromiseBB<void> = genWrapperAsync(fsBB.utimesAsync);
 // fs.write and fs.read don't promisify correctly because it has two return values. fs-extra already works around this in their
 // promisified api so no reason to reinvent the wheel (also we want the api to be compatible)
-const writeAsync: (...args: any[]) => PromiseBB<void> = genWrapperAsync(fs.write);
-const readAsync: (...args: any[]) => PromiseBB<void> = genWrapperAsync(fs.read);
+const writeAsync: (...args: any[]) => PromiseBB<fs.WriteResult> = genWrapperAsync(fs.write) as any;
+const readAsync: (...args: any[]) => PromiseBB<fs.ReadResult> = genWrapperAsync(fs.read) as any;
 const writeFileAsync: (file: string, data: any, options?: fs.WriteFileOptions) => PromiseBB<void> = genWrapperAsync(fsBB.writeFileAsync);
 // tslint:enable:max-line-length
 
@@ -405,6 +433,7 @@ export {
   readAsync,
   readFileAsync,
   statAsync,
+  statSilentAsync,
   symlinkAsync,
   utimesAsync,
   writeAsync,
@@ -430,9 +459,16 @@ export function ensureFileAsync(filePath: string): PromiseBB<void> {
     .catch(err => restackErr(err, stackErr));
 }
 
-export function ensureDirAsync(dirPath: string): PromiseBB<void> {
+export function ensureDirAsync(dirPath: string, onDirCreatedCB?:
+  (created: string) => PromiseBB<void>): PromiseBB<void> {
   const stackErr = new Error();
-  return ensureDirInt(dirPath, stackErr, NUM_RETRIES);
+  // If a onDirCreated callback is provided, we can't use fs-extra's
+  //  implementation directly as there's no way for us to reliably determine
+  //  whether the parent folder was empty. We're going to create the
+  //  directories ourselves.
+  return (!!onDirCreatedCB)
+    ? ensureDir(dirPath, onDirCreatedCB)
+    : ensureDirInt(dirPath, stackErr, NUM_RETRIES);
 }
 
 function ensureDirInt(dirPath: string, stackErr: Error, tries: number) {
@@ -447,6 +483,39 @@ function ensureDirInt(dirPath: string, stackErr: Error, tries: number) {
       return simfail(() => errorHandler(err, stackErr, tries, undefined))
         .then(() => ensureDirInt(dirPath, stackErr, tries - 1));
     });
+}
+
+function ensureDir(targetDir: string, onDirCreatedCB: (created: string) => PromiseBB<void>) {
+  // Please note, onDirCreatedCB will be called for _each_ directory
+  //  we create.
+  const created: string[] = [];
+  const mkdirRecursive = (dir: string) => fsBB.mkdirAsync(dir)
+    .then(() => {
+      created.push(dir);
+      return onDirCreatedCB(dir);
+    })
+    .catch(err => {
+      if (err.code === 'EEXIST') {
+        return PromiseBB.resolve();
+      } else {
+        return (['ENOENT'].indexOf(err.code) !== -1)
+          ? mkdirRecursive(path.dirname(dir))
+              .then(() => fsBB.mkdirAsync(dir))
+              .then(() => {
+                created.push(dir);
+                return onDirCreatedCB(dir);
+              })
+              .catch(err2 => (err2.code === 'EEXIST')
+                ? PromiseBB.resolve()
+                : PromiseBB.reject(err2))
+          : PromiseBB.reject(err);
+      }
+    });
+
+  return mkdirRecursive(targetDir)
+    .then(() => (created.indexOf(targetDir) !== -1)
+      ? PromiseBB.resolve(targetDir)
+      : PromiseBB.resolve(null));
 }
 
 function selfCopyCheck(src: string, dest: string) {
@@ -662,19 +731,23 @@ function elevated(func: (ipc, req: NodeRequireFunction) => Promise<void>,
 
       conn
         .on('message', data => {
+          if (data.error !== undefined) {
+            log('error', 'elevated process failed', data.error);
+          } else {
           log('warn', 'got unexpected ipc message', JSON.stringify(data));
+          }
         })
         .on('end', () => {
           if (!resolved) {
             resolved = true;
-            resolve(null);
+            resolve();
           }
         })
         .on('error', err => {
           log('error', 'elevated code reported error', err);
           if (!resolved) {
             resolved = true;
-            resolve(err);
+            reject(err);
           }
         });
     })
@@ -704,7 +777,7 @@ export function ensureDirWritableAsync(dirPath: string,
     confirm = () => PromiseBB.resolve();
   }
   const stackErr = new Error();
-  return ensureDirAsync(dirPath)
+  return PromiseBB.resolve(fs.ensureDir(dirPath))
     .then(() => {
       const canary = path.join(dirPath, '__vortex_canary');
       return ensureFileAsync(canary)
@@ -718,12 +791,36 @@ export function ensureDirWritableAsync(dirPath: string,
         return PromiseBB.resolve(confirm())
           .then(() => {
             const userId = getUserId();
-            return elevated((ipcPath, req: NodeRequireFunction) => {
+            return elevated((ipcPath, req: NodeRequire) => {
               // tslint:disable-next-line:no-shadowed-variable
-              const fs = req('fs-extra-promise');
+              const fs = req('fs-extra');
+              // tslint:disable-next-line:no-shadowed-variable
+              const path = req('path');
               const { allow } = req('permissions');
-              return fs.ensureDirAsync(dirPath)
-                .then(() => allow(dirPath, userId, 'rwx'));
+              // recurse upwards in the directory tree if necessary
+              const ensureAndAllow = (targetPath, allowRecurse) => {
+                return fs.ensureDir(targetPath)
+                .catch(elevatedErr => {
+                  const parentPath = path.dirname(targetPath);
+                  if (['EPERM', 'ENOENT'].includes(elevatedErr.code)
+                      && (parentPath !== targetPath)
+                      && allowRecurse) {
+                    return ensureAndAllow(parentPath, true)
+                      .then(() => ensureAndAllow(targetPath, false));
+                  } else {
+                    return Promise.reject(elevatedErr);
+                  }
+                })
+                .then(() => {
+                  try {
+                    allow(targetPath, userId, 'rwx');
+                    return Promise.resolve();
+                  } catch (err) {
+                    return Promise.reject(err);
+                  }
+                });
+              };
+              return ensureAndAllow(dirPath, true);
             }, { dirPath, userId })
             // if elevation fails, rethrow the original error, not the failure to elevate
             .catch(elevatedErr => {
@@ -835,7 +932,7 @@ function raiseUACDialog<T>(t: TFunction,
         }
         return PromiseBB.resolve();
       })
-      .then(() => elevated((ipcPath, req: NodeRequireFunction) => {
+      .then(() => elevated((ipcPath, req: NodeRequire) => {
         // tslint:disable-next-line:no-shadowed-variable
         const { allow } = req('permissions');
         return allow(fileToAccess, userId, 'rwx');

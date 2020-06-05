@@ -323,6 +323,9 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
   }
 
   private updateJumpList(starters: IStarterInfo[]) {
+    if (process.platform !== 'win32') {
+      return;
+    }
     const userTasks: Electron.Task[] = starters
       .filter(starter =>
         (truthy(starter.exePath))
@@ -332,7 +335,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
           arguments: starter.commandLine.join(' '),
           description: starter.name,
           iconIndex: 0,
-          iconPath: starter.iconPath,
+          iconPath: StarterInfo.getIconPath(starter),
           program: starter.exePath,
           title: starter.name,
           workingDirectory: starter.workingDirectory,
@@ -452,7 +455,7 @@ function mapStateToProps(state: any): IConnectedProps {
 function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): IActionProps {
   return {
     onAddDiscoveredTool: (gameId: string, toolId: string, result: IDiscoveredTool) => {
-      dispatch(addDiscoveredTool(gameId, toolId, result));
+      dispatch(addDiscoveredTool(gameId, toolId, result, true));
     },
     onSetToolVisible: (gameId: string, toolId: string, visible: boolean) => {
       dispatch(setToolVisible(gameId, toolId, visible));
