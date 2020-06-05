@@ -8,7 +8,7 @@ import { setModAttribute } from '../../mod_management/actions/mods';
 
 import { guessFromFileName } from '../util/guessModID';
 
-import I18next from 'i18next';
+import { TFunction } from 'i18next';
 import * as React from 'react';
 import { Button, ControlLabel, FormGroup, InputGroup } from 'react-bootstrap';
 import * as Redux from 'redux';
@@ -21,7 +21,7 @@ export interface IProps {
   isDownload: boolean;
   nexusModId: string;
   fileName: string;
-  t: I18next.TFunction;
+  t: TFunction;
   store: Redux.Store<any>;
 }
 

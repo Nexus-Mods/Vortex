@@ -1,4 +1,5 @@
 import { dismissNotification, fireNotificationAction } from '../actions/notifications';
+import { suppressNotification } from '../actions/notificationSettings';
 import { INotification, INotificationAction } from '../types/INotification';
 import { IState } from '../types/IState';
 import { ComponentEx, connect, translate } from '../util/ComponentEx';
@@ -19,7 +20,8 @@ interface IConnectedProps {
 }
 
 interface IActionProps {
-  onDismiss: (id) => void;
+  onDismiss: (id: string) => void;
+  onSuppress: (id: string) => void;
 }
 
 type IProps = IBaseProps & IActionProps & IConnectedProps;
@@ -37,7 +39,7 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
     this.initState({ expand: undefined });
   }
 
-  public componentWillReceiveProps(newProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(newProps: IProps) {
     if ((this.props.notifications !== newProps.notifications)
         && (this.mRef !== null)) {
       if (newProps.notifications.length === 0) {
@@ -161,6 +163,7 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
         onExpand={this.expand}
         onTriggerAction={this.triggerAction}
         onDismiss={this.dismissAll}
+        onSuppress={this.suppress}
       />
     );
   }
@@ -209,6 +212,11 @@ class NotificationButton extends ComponentEx<IProps, IComponentState> {
       });
     }
   }
+
+  private suppress = (notificationId: string) => {
+    this.props.onDismiss(notificationId);
+    this.props.onSuppress(notificationId);
+  }
 }
 
 function mapStateToProps(state: IState): IConnectedProps {
@@ -220,6 +228,7 @@ function mapStateToProps(state: IState): IConnectedProps {
 function mapDispatchToProps(dispatch): IActionProps {
   return {
     onDismiss: (id: string) => dispatch(dismissNotification(id)),
+    onSuppress: (id: string) => dispatch(suppressNotification(id, true)),
   };
 }
 

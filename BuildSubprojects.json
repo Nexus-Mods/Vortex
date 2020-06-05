@@ -226,6 +226,14 @@
     },
     {
       "type": "build-copy",
+      "name": "modtype-harmony-patcher",
+      "path": "extensions/modtype-harmony-patcher",
+      "removeModules": ["vortex-api"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
+      "copyTo": "{BUILD_DIR}/bundledPlugins/modtype-harmony-patcher"
+    },
+    {
+      "type": "build-copy",
       "name": "open-directory",
       "path": "extensions/open-directory",
       "removeModules": ["vortex-api"],
@@ -303,6 +311,30 @@
       "removeModules": ["vortex-api"],
       "sources": ["src/**/*.ts", "src/**/*.tsx", "**/*.scss", "*.json", "webpack.config.js"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/modpack"
+    },
+    {
+      "type": "build-copy",
+      "name": "new-file-monitor",
+      "path": "extensions/new-file-monitor",
+      "removeModules": ["vortex-api"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "src/**/*.scss"],
+      "copyTo": "{BUILD_DIR}/bundledPlugins/new-file-monitor"
+    },
+    {
+      "type": "build-copy",
+      "name": "extension-dashlet",
+      "path": "extensions/extension-dashlet",
+      "removeModules": ["vortex-api"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "src/**/*.scss"],
+      "copyTo": "{BUILD_DIR}/bundledPlugins/extension-dashlet"
+    },
+    {
+      "type": "build-copy",
+      "name": "test-setup",
+      "path": "extensions/test-setup",
+      "removeModules": ["vortex-api"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "src/**/*.scss"],
+      "copyTo": "{BUILD_DIR}/bundledPlugins/test-setup"
     },
     {
       "type": "build-copy",

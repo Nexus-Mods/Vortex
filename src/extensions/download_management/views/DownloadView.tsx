@@ -28,8 +28,8 @@ import { DownloadIsHTML } from '../DownloadManager';
 
 import DownloadGraph from './DownloadGraph';
 
-import * as Promise from 'bluebird';
-import I18next from 'i18next';
+import Promise from 'bluebird';
+import { TFunction } from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
 import { Button, Panel } from 'react-bootstrap';
@@ -63,7 +63,7 @@ interface IActionProps {
 }
 
 export type IDownloadViewProps =
-  IDownloadViewBaseProps & IConnectedProps & IActionProps & { t: I18next.TFunction };
+  IDownloadViewBaseProps & IConnectedProps & IActionProps & { t: TFunction };
 
 interface IComponentState {
   viewAll: boolean;
@@ -74,7 +74,7 @@ const nop = () => null;
 class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
   public context: IComponentContext;
   private actions: ITableRowAction[];
-  private mColumns: Array<ITableAttribute<IDownload>> = [];
+  private mColumns: Array<ITableAttribute<IDownload>>;
 
   constructor(props: IDownloadViewProps) {
     super(props);
@@ -138,12 +138,6 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
     ];
   }
 
-  public componentWillMount() {
-    this.nextState.viewAll = false;
-
-    this.mColumns = createColumns(this.context.api, () => this.props);
-  }
-
   public shouldComponentUpdate(nextProps: IDownloadViewProps, nextState: IComponentState) {
     return this.props.downloads !== nextProps.downloads
       || this.props.downloadPath !== nextProps.downloadPath
@@ -159,6 +153,10 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
   public render(): JSX.Element {
     const { t, downloads, gameMode, secondary, showGraph } = this.props;
     const { viewAll } = this.state;
+
+    if (this.mColumns === undefined) {
+      this.mColumns = createColumns(this.context.api, () => this.props);
+    }
 
     let content = null;
 

@@ -1,4 +1,4 @@
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { GameEntryNotFound, GameStoreNotFound,
   IGameStore, IGameStoreEntry } from '../types/api';
 import { log } from '../util/log';

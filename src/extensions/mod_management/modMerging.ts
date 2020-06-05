@@ -10,7 +10,7 @@ import {IResolvedMerger} from './types/IResolvedMerger';
 
 import {BACKUP_TAG} from './LinkingDeployment';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as crypto from 'crypto';
 import * as path from 'path';
 
@@ -163,7 +163,7 @@ function mergeMods(api: IExtensionApi,
             const relPath = path.relative(modPath, fileEntry.filePath);
             mergedFiles.push(relPath);
             return fs.ensureDirAsync(realDest)
-              .then(() => Promise.map(merger.match.baseFiles(), file => {
+              .then(() => Promise.map(merger.match.baseFiles(deployedFiles), file => {
                 if (mergedFiles.length !== 1) {
                   // We've already started merging at this point, no reason
                   //  to continue through merge setup.

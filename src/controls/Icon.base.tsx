@@ -1,4 +1,4 @@
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as React from 'react';
 
 const debugMissingIcons = process.env.NODE_ENV === 'development';
@@ -43,6 +43,8 @@ export interface IIconProps {
    * on demand
    */
   getSet: (set: string) => Promise<Set<string>>;
+
+  onContextMenu?: React.MouseEventHandler<any>;
 }
 
 /**
@@ -52,11 +54,11 @@ class Icon extends React.Component<IIconProps, {}> {
   private static sCache: { [id: string]: { width: number, height: number } } = {};
   private mCurrentSize: { width: number, height: number };
 
-  public componentWillMount() {
+  public componentDidMount() {
     this.setIcon(this.props);
   }
 
-  public componentWillReceiveProps(newProps: IIconProps) {
+  public UNSAFE_componentWillReceiveProps(newProps: IIconProps) {
     this.setIcon(newProps);
   }
 
@@ -116,6 +118,7 @@ class Icon extends React.Component<IIconProps, {}> {
         className={classes.join(' ')}
         style={style}
         ref={this.props.rotate && (this.mCurrentSize === undefined) ? this.setRef : undefined}
+        onContextMenu={this.props.onContextMenu}
       >
         {svgStyle !== undefined ? <style type='text/css'>{svgStyle}</style> : null}
         <use className='svg-use' xlinkHref={`#icon-${name}`} transform={transforms.join(' ')} />

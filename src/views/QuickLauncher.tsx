@@ -18,16 +18,16 @@ import StarterInfo from '../util/StarterInfo';
 import { getSafe } from '../util/storeHelper';
 import { truthy } from '../util/util';
 
-import * as Promise from 'bluebird';
-import I18next from 'i18next';
+import Promise from 'bluebird';
 import * as React from 'react';
 import { DropdownButton, MenuItem } from 'react-bootstrap';
 import { WithTranslation } from 'react-i18next';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
+import { TFunction } from '../util/i18n';
 
 export interface IBaseProps {
-  t: I18next.TFunction;
+  t: TFunction;
 }
 
 interface IConnectedProps {
@@ -77,7 +77,7 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
     this.context.api.events.removeListener('quick-launch', this.start);
   }
 
-  public componentWillReceiveProps(nextProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(nextProps: IProps) {
     if ((nextProps.discoveredTools !== this.props.discoveredTools)
         || (nextProps.game !== this.props.game)
         || (nextProps.gameDiscovery !== this.props.primaryTool)) {
@@ -249,7 +249,7 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
     }
 
     try {
-      if ((primaryTool === undefined)
+      if (!truthy(primaryTool)
         || ((game.supportedTools[primaryTool] === undefined)
           && (discoveredTools[primaryTool] === undefined))) {
         return new StarterInfo(game, gameDiscovery);

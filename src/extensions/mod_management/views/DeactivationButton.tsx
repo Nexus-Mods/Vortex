@@ -13,7 +13,7 @@ import { getSafe } from '../../../util/storeHelper';
 import { IDeploymentMethod } from '../types/IDeploymentMethod';
 import { NoDeployment } from '../util/exceptions';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as React from 'react';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
@@ -52,7 +52,8 @@ class DeactivationButton extends ComponentEx<IProps, {}> {
         icon='purge'
         text={t('Purge Mods')}
         onClick={activator !== undefined ? this.activate : this.noMethod}
-      />);
+      />
+    );
   }
 
   private activate = () => {

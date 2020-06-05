@@ -1,7 +1,10 @@
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as React from 'react';
 import { ListGroup } from 'react-bootstrap';
-import { DropTarget, ConnectDropTarget, DropTargetConnector, DropTargetMonitor, DropTargetSpec } from 'react-dnd';
+import {
+  ConnectDropTarget, DropTarget, DropTargetConnector, DropTargetMonitor,
+  DropTargetSpec,
+} from 'react-dnd';
 import { ComponentEx } from '../util/ComponentEx';
 import makeDraggable, { IDraggableListItemProps } from './DraggableListItem';
 
@@ -41,7 +44,7 @@ class DraggableList extends ComponentEx<IProps, IDraggableListState> {
     this.mDraggableClass = makeDraggable(props.itemTypeId);
   }
 
-  public componentWillReceiveProps(newProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(newProps: IProps) {
     if (this.props.items !== newProps.items) {
       this.nextState.ordered = newProps.items.slice(0);
     }
@@ -135,7 +138,7 @@ function DraggableListWrapper(props: IDraggableListProps) {
   const Clss = classCache[props.itemTypeId];
   return (
     <Clss {...props} />
-  )
+  );
 }
 
 export default DraggableListWrapper;

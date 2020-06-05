@@ -1,7 +1,7 @@
 import {ProgressDelegate} from '../types/InstallFunc';
 import {ISupportedResult} from '../types/TestSupported';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 
 export function testSupported(files: string[]): Promise<ISupportedResult> {
   const result: ISupportedResult = { supported: true, requiredFiles: [] };

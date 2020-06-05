@@ -166,6 +166,15 @@
   // border-top: 1px solid $gray;
   border-top: 0px;
   padding-left: 10px !important;
+
+  font-weight: bold;
+  font-size: larger;
+  text-transform: uppercase;
+
+  hr {
+    height: 1px;
+    width: 100%;
+  }
 }
 
 // text label that shows only ~2 lines of text
@@ -440,6 +449,7 @@ div:hover > .hover-expand {
 @import "vortex/page-download";
 @import "vortex/page-game";
 @import "vortex/page-mod";
+@import "vortex/page-mod-load-order";
 @import "vortex/page-settings";
 
 @import "vortex/dialog-about";

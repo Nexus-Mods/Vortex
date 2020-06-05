@@ -1,5 +1,5 @@
 /// <reference types="node" />
-import * as Bluebird from 'bluebird';
+import Bluebird from 'bluebird';
 /**
  * run a function as an elevated process (windows only!).
  * This is quite a hack because obviously windows doesn't allow us to elevate a

@@ -1,11 +1,12 @@
+import { TFunction } from '../i18n';
+
 import { Tag } from 'bbcode-to-react';
-import I18next from 'i18next';
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
 import { withTranslation } from 'react-i18next';
 
 interface ISpoilerProps {
-  t: I18next.TFunction;
+  t: TFunction;
   content: any;
 }
 

@@ -4,9 +4,11 @@ import { IStarterInfo } from '../util/StarterInfo';
 import { IDiscoveryResult, IMod } from './IState';
 import { ITool } from './ITool';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 
 export { IModType };
+
+export type DirectoryCleaningMode = 'tag' | 'all';
 
 /**
  * interface for game extensions
@@ -136,10 +138,23 @@ export interface IGame extends ITool {
   version?: string;
 
   /**
-   * should be set to true only if the game in question needs its mod folders
-   *  cleaned up on each deploy event.
+   * if true, empty directories are cleaned up during deployment.
+   * Right now this defaults to false if mergeMods is true, this defaults to true if mergeMods
+   * is false or a function.
+   * The reason being that otherwise we would be leaving empty directories every time a mod gets
+   * disabled or the deployment name changes.
+   * Users can also manually force the cleanup for all games.
    */
   requiresCleanup?: boolean;
+
+  /**
+   * decides how Vortex decides which empty directories to clean.
+   * With 'tag' (default) we put a dummy file into each directory created by Vortex and only
+   *   those get removed during purge (or after deployment if requiresCleanup is enabled)
+   * With 'all' Vortex will simply clean up all empty directories, whether Vortex created them
+   *   or not. In some (unusual) cases this may break mods
+   */
+  directoryCleaning?: DirectoryCleaningMode;
 
   /**
    * if set this function is always called before automatic deployment and it will be delayed

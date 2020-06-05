@@ -26,7 +26,45 @@ class ExtensionGate extends React.Component<{ id: string }, {}> {
   private mWrappers: { [key: string]: any } = {};
   private mValid: boolean;
 
-  public componentWillMount() {
+  public componentWillUnmount() {
+    if (this.mValid) {
+      const props = (React.Children.only(this.props.children) as React.ReactElement<any>).props;
+      Object.keys(props).forEach(key => {
+        if (truthy(props[key])
+          && (props[key].attach !== undefined)
+          && (props[key].detach !== undefined)) {
+          props[key].detach(this);
+        }
+      });
+      this.mWrappers = {};
+    }
+  }
+
+  public render(): JSX.Element {
+    if (React.Children.count(this.props.children) === 0) {
+      return null;
+    }
+
+    if (this.mValid === undefined) {
+      this.initialize();
+    }
+
+    if (!this.mValid) {
+      return (
+        <Icon
+          id={this.props.id}
+          tooltip='Extension failed to render'
+          name='extension-render-failed'
+        />
+      );
+    }
+    this.updateWrappers(
+      (React.Children.only(this.props.children) as React.ReactElement<any>).props);
+    return React.cloneElement(React.Children.only(this.props.children) as React.ReactElement<any>,
+                              this.mWrappers);
+  }
+
+  private initialize() {
     if (React.Children.count(this.props.children) === 0) {
       return;
     }
@@ -48,37 +86,6 @@ class ExtensionGate extends React.Component<{ id: string }, {}> {
       log('warn', 'failed to mount extension control', { err });
       this.mValid = false;
     }
-  }
-
-  public componentWillUnmount() {
-    if (this.mValid) {
-      const props = (React.Children.only(this.props.children) as React.ReactElement<any>).props;
-      Object.keys(props).forEach(key => {
-        if (truthy(props[key])
-          && (props[key].attach !== undefined)
-          && (props[key].detach !== undefined)) {
-          props[key].detach(this);
-        }
-      });
-      this.mWrappers = {};
-    }
-  }
-
-  public render(): JSX.Element {
-    if (React.Children.count(this.props.children) === 0) {
-      return null;
-    }
-    if (!this.mValid) {
-      return (
-        <Icon
-          id={this.props.id}
-          tooltip='Extension failed to render'
-          name='exclamation-triangle'
-        />);
-    }
-    this.updateWrappers((React.Children.only(this.props.children) as React.ReactElement<any>).props);
-    return React.cloneElement(React.Children.only(this.props.children) as React.ReactElement<any>,
-                              this.mWrappers);
   }
 
   private updateWrappers(props: { [key: string]: any }) {

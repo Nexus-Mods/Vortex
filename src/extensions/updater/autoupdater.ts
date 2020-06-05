@@ -3,13 +3,29 @@ import { IExtensionApi } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
 import { UserCanceled } from '../../util/api';
 import { log } from '../../util/log';
+import opn from '../../util/opn';
 import { truthy } from '../../util/util';
 
 import {app as appIn, ipcMain, remote} from 'electron';
 import {autoUpdater as AUType, UpdateInfo} from 'electron-updater';
 import * as semver from 'semver';
+import uuidv5 from 'uuid/v5';
+import { RegGetValue } from 'winapi-bindings';
 
 const app = remote !== undefined ? remote.app : appIn;
+
+const appName = 'com.nexusmods.vortex';
+const ELECTRON_BUILDER_NS_UUID = '50e065bc-3134-11e6-9bab-38c9862bdaf3';
+
+const myguid = (() => {
+  let cached: string;
+  return () => {
+    if (cached === undefined) {
+      cached = uuidv5(appName, ELECTRON_BUILDER_NS_UUID);
+    }
+    return cached;
+  };
+})();
 
 interface IProgressInfo {
   bps: number;
@@ -18,10 +34,18 @@ interface IProgressInfo {
   transferred: number;
 }
 
+function openStable() {
+  opn('https://www.nexusmods.com/site/mods/1').catch(() => null);
+}
+
+function openTesting() {
+  opn('https://www.github.com/Nexus-Mods/Vortex#release').catch(() => null);
+}
+
 function setupAutoUpdate(api: IExtensionApi) {
   const autoUpdater: typeof AUType = require('electron-updater').autoUpdater;
 
-  const state: IState = api.store.getState();
+  const state: () => IState = () => api.store.getState();
   let notified: boolean = false;
 
   const queryUpdate = (version: string): Promise<void> => {
@@ -85,10 +109,45 @@ function setupAutoUpdate(api: IExtensionApi) {
   });
 
   autoUpdater.on('update-available', (info: UpdateInfo) => {
+    let instPath: string;
+    if (process.platform === 'win32') {
+      try {
+        instPath = RegGetValue('HKEY_LOCAL_MACHINE',
+                               `SOFTWARE\\${myguid()}`,
+                               'InstallLocation').value as string;
+      } catch (err) {
+        api.sendNotification({
+          type: 'warning',
+          message: 'Update can\'t be installed automatically',
+          actions: [
+            { title: 'More', action: dismiss => {
+              api.showDialog('info', 'Update can\'t be installed automatically', {
+                text: 'An update for Vortex is available but it can\'t be installed automatically because '
+                  + 'a necessary registry key has been removed. Please install the latest version of Vortex manually.',
+              }, [
+                { label: 'Close' },
+                { label: 'Open Page', action: () => {
+                  const { channel } = state().settings.update;
+                  if (channel === 'beta') {
+                    openTesting();
+                  } else {
+                    openStable();
+                  }
+                  dismiss();
+                } },
+              ]);
+            } },
+          ],
+        });
+        return;
+      }
+    }
     log('info', 'update available', {
       current: app.getVersion(),
       update: info.version,
+      instPath,
     });
+
     queryUpdate(info.version)
       .then(() => autoUpdater.downloadUpdate()
         .catch(err => {
@@ -141,6 +200,9 @@ function setupAutoUpdate(api: IExtensionApi) {
     });
 
   const checkNow = (channel: string) => {
+    if (!state().session.base.networkConnected) {
+      log('info', 'Not checking for updates because network is offline');
+    }
     autoUpdater.allowPrerelease = channel === 'beta';
     autoUpdater.allowDowngrade = true;
     autoUpdater.autoDownload = false;
@@ -157,7 +219,7 @@ function setupAutoUpdate(api: IExtensionApi) {
       });
   };
 
-  ipcMain.on('check-for-updates', (channel: string) => {
+  ipcMain.on('check-for-updates', (event, channel: string) => {
     checkNow(channel);
   });
 

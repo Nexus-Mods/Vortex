@@ -9,12 +9,12 @@ import makeCI from '../util/makeCaseInsensitive';
 import { UserCanceled } from './CustomErrors';
 import { log } from './log';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { BrowserWindow, dialog } from 'electron';
 import * as path from 'path';
 import * as Redux from 'redux';
 import * as semver from 'semver';
-import * as format from 'string-template';
+import format from 'string-template';
 
 interface IMigration {
   id: string;
@@ -28,32 +28,30 @@ interface IMigration {
 function selectDirectory(window: BrowserWindow, defaultPathPattern: string): Promise<string> {
   const defaultPath = getDownloadPath(defaultPathPattern, undefined);
   return fs.ensureDirWritableAsync(defaultPath, () => Promise.resolve())
-    .then(() => new Promise((resolve, reject) => {
-      dialog.showOpenDialog(window, {
+    .then(() => dialog.showOpenDialog(window, {
         title: 'Select empty directory to store downloads',
         properties: [ 'openDirectory', 'createDirectory', 'promptToCreate' ],
         defaultPath,
-      }, (filePaths: string[]) => {
-        if ((filePaths === undefined) || (filePaths.length === 0)) {
-          return reject(new UserCanceled());
-        }
-        return fs.readdirAsync(filePaths[0])
-          .catch(err => err.code === 'ENOENT'
-            ? fs.ensureDirWritableAsync(filePaths[0], () => Promise.resolve()).then(() => [])
-            : Promise.reject(err))
-          .then(files => {
-            if (files.length > 0) {
-              dialog.showErrorBox('Invalid path selected',
-                'The directory needs to be empty');
-              selectDirectory(window, defaultPathPattern)
-                .then(resolve)
-                .catch(reject);
-            } else {
-              resolve(filePaths[0]);
-            }
-          });
-      });
-    }));
+      }))
+    .then(result => {
+      const { filePaths } = result;
+      if ((filePaths === undefined) || (filePaths.length === 0)) {
+        return Promise.reject(new UserCanceled());
+      }
+      return fs.readdirAsync(filePaths[0])
+        .catch(err => err.code === 'ENOENT'
+          ? fs.ensureDirWritableAsync(filePaths[0], () => Promise.resolve()).then(() => [])
+          : Promise.reject(err))
+        .then(files => {
+          if (files.length > 0) {
+            dialog.showErrorBox('Invalid path selected',
+              'The directory needs to be empty');
+            return selectDirectory(window, defaultPathPattern);
+          } else {
+            return Promise.resolve(filePaths[0]);
+          }
+        });
+    });
 }
 
 function transferPath(from: string, to: string): Promise<void> {
@@ -61,7 +59,7 @@ function transferPath(from: string, to: string): Promise<void> {
       (statOld: fs.Stats, statNew: fs.Stats) => Promise.resolve(statOld.dev === statNew.dev))
     .then((sameVolume: boolean) => {
       const func = sameVolume ? fs.renameAsync : fs.copyAsync;
-      return fs.readdirAsync(from)
+      return Promise.resolve(fs.readdirAsync(from))
         .map((fileName: string) =>
           func(path.join(from, fileName), path.join(to, fileName))
           .catch(err => (err.code === 'EXDEV')
@@ -79,18 +77,13 @@ function transferPath(from: string, to: string): Promise<void> {
 
 function dialogProm(window: BrowserWindow, type: string, title: string,
                     message: string, options: string[]): Promise<string> {
-  return new Promise((resolve, reject) => {
-    dialog.showMessageBox(window, {
+  return Promise.resolve(dialog.showMessageBox(window, {
       type,
       buttons: options,
       title,
       message,
       noLink: true,
-    }, (response: number) => {
-      return resolve(options[response]);
-    });
-  });
-
+    })).then(result => options[result.response]);
 }
 
 function moveDownloads_0_16(window: BrowserWindow, store: Redux.Store<IState>): Promise<void> {
@@ -168,11 +161,11 @@ function queryMigration(window: BrowserWindow, migration: IMigration): Promise<b
       title: 'Migration neccessary',
       message: migration.description,
       noLink: true,
-    }, (response: number) => {
-      if (buttons[response] === 'Cancel') {
+    }).then(result => {
+      if (buttons[result.response] === 'Cancel') {
         return reject(new UserCanceled());
       }
-      return resolve(buttons[response] === 'Continue');
+      return resolve(buttons[result.response] === 'Continue');
     });
   });
 }

@@ -17,7 +17,7 @@ import { IExtensionApi } from '../types/IExtensionContext';
 import { MissingDependency, MissingInterpreter,
          ProcessCanceled, UserCanceled } from './CustomErrors';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { remote } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -35,7 +35,10 @@ export interface IStarterInfo {
   workingDirectory: string;
   exclusive: boolean;
   detach: boolean;
+  shell: boolean;
+  onStart?: 'hide' | 'hide_recover' | 'close';
   environment: { [key: string]: string };
+  defaultPrimary?: boolean;
 }
 
 const userDataPath = ((): () => string => {
@@ -52,7 +55,9 @@ type OnShowErrorFunc =
   (message: string, details?: string | Error | any, allowReport?: boolean) => void;
 
 /**
- * holds info about an executable to start
+ * wrapper for information about a game or tool, combining static and runtime/discovery information
+ * for the purpose of actually starting them in a uniform way.
+ * This implements things like running the game through a launcher (steam/epic/...) if necessary
  *
  * @class StarterInfo
  */
@@ -67,7 +72,7 @@ class StarterInfo implements IStarterInfo {
     return path.join(userDataPath(), gameId, 'icons', toolId + '.png');
   }
 
-  public static run(info: StarterInfo, api: IExtensionApi, onShowError: OnShowErrorFunc) {
+  public static run(info: IStarterInfo, api: IExtensionApi, onShowError: OnShowErrorFunc) {
     const game: IGame = getGame(info.gameId);
     const launcherPromise: Promise<{ launcher: string, addInfo?: any }> =
       (game.requiresLauncher !== undefined) && info.isGame
@@ -105,24 +110,23 @@ class StarterInfo implements IStarterInfo {
             const errorMsg = [err.message, err.storeName, err.existingGames].join(' - ');
             log('error', errorMsg);
             onShowError('Failed to start game through launcher', err, true);
-            return StarterInfo.runGameExecutable(info, api, onShowError, onSpawned);
+            return StarterInfo.runDirectly(info, api, onShowError, onSpawned);
           })
           .catch(err => {
             onShowError('Failed to start game through launcher', err, true);
-            return StarterInfo.runGameExecutable(info, api, onShowError, onSpawned);
+            return StarterInfo.runDirectly(info, api, onShowError, onSpawned);
           });
       } else {
-        return StarterInfo.runGameExecutable(info, api, onShowError, onSpawned);
+        return StarterInfo.runDirectly(info, api, onShowError, onSpawned);
       }
     });
   }
 
-  private static runGameExecutable(info: StarterInfo,
-                                   api: IExtensionApi,
-                                   onShowError: OnShowErrorFunc,
-                                   onSpawned: () => void,
-                                   ): Promise<void> {
-
+  private static runDirectly(info: IStarterInfo,
+                             api: IExtensionApi,
+                             onShowError: OnShowErrorFunc,
+                             onSpawned: () => void,
+                             ): Promise<void> {
     const spawned = () => {
       onSpawned();
       if (['hide', 'hide_recover'].includes(info.onStart)) {
@@ -201,7 +205,7 @@ class StarterInfo implements IStarterInfo {
   }
 
   private static runThroughLauncher(launcher: string,
-                                    info: StarterInfo,
+                                    info: IStarterInfo,
                                     api: IExtensionApi,
                                     addInfo: any): Promise<void> {
     const gameLauncher = GameStoreHelper.getGameStore(launcher);
@@ -264,6 +268,7 @@ class StarterInfo implements IStarterInfo {
   public exclusive: boolean;
   public detach: boolean;
   public onStart?: 'hide' | 'hide_recover' | 'close';
+  public defaultPrimary: boolean;
   private mExtensionPath: string;
   private mLogoName: string;
   private mIconPathCache: string;
@@ -333,6 +338,7 @@ class StarterInfo implements IStarterInfo {
         getSafe(tool, ['workingDirectory'], ''));
       this.shell = getSafe(toolDiscovery, ['shell'], getSafe(tool, ['shell'], undefined));
       this.exclusive = getSafe(tool, ['exclusive'], false) || false;
+      this.defaultPrimary = getSafe(tool, ['defaultPrimary'], false);
     } else {
       // defaults for undiscovered & unconfigured tools
       this.name = tool.name;

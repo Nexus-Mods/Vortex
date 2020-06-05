@@ -61,5 +61,4 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
   };
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(
-  HideGameIcon) as React.ComponentClass<IBaseProps>;
+export default connect(mapStateToProps, mapDispatchToProps)(HideGameIcon);

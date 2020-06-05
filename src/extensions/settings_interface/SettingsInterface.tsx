@@ -1,4 +1,5 @@
 import { showDialog } from '../../actions/notifications';
+import { resetSuppression } from '../../actions/notificationSettings';
 import { setCustomTitlebar } from '../../actions/window';
 
 import More from '../../controls/More';
@@ -22,7 +23,7 @@ import { setAdvancedMode, setDesktopNotifications, setHideTopLevelCategory,
 import { nativeCountryName, nativeLanguageName } from './languagemap';
 import getText from './texts';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { remote } from 'electron';
 import update from 'immutability-helper';
 import * as path from 'path';
@@ -36,7 +37,7 @@ interface ILanguage {
   key: string;
   language: string;
   country?: string;
-  ext: IExtensionDownloadInfo | {};
+  ext: IExtensionDownloadInfo[];
 }
 
 interface IBaseProps {
@@ -56,6 +57,7 @@ interface IConnectedProps {
   hideTopLevelCategory: boolean;
   relativeTimes: boolean;
   extensions: IAvailableExtension[];
+  suppressedNotifications: { [id: string]: boolean };
 }
 
 interface IActionProps {
@@ -70,6 +72,7 @@ interface IActionProps {
   onSetDesktopNotifications: (enabled: boolean) => void;
   onSetHideTopLevelCategory: (hide: boolean) => void;
   onSetRelativeTimes: (enabled: boolean) => void;
+  onResetNotificationSuppression: () => void;
 }
 
 interface IComponentState {
@@ -95,13 +98,13 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
     this.readLocales(this.props);
   }
 
-  public componentWillReceiveProps(newProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(newProps: IProps) {
     if (this.state.languages.find(lang => lang.key === newProps.currentLanguage) === undefined) {
       this.setState(update(this.state, {
         languages: { $push: [{
           key: newProps.currentLanguage,
           language: nativeLanguageName(newProps.currentLanguage),
-          ext: {},
+          ext: [],
         }] },
       }));
     }
@@ -114,7 +117,8 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
   public render(): JSX.Element {
     const { t, advanced, autoDeployment, autoEnable, currentLanguage,
             customTitlebar, desktopNotifications, profilesVisible,
-            hideTopLevelCategory, relativeTimes, startup } = this.props;
+            hideTopLevelCategory, relativeTimes, startup,
+            suppressedNotifications } = this.props;
 
     const needRestart = (customTitlebar !== this.mInitialTitlebar);
 
@@ -127,6 +131,8 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
       </HelpBlock>
     ) : null;
 
+    const numSuppressed = Object.values(suppressedNotifications).filter(val => val === true).length;
+
     return (
       <form>
         <FormGroup controlId='languageSelect'>
@@ -136,8 +142,18 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
             onChange={this.selectLanguage}
             value={currentLanguage}
           >
-            {this.state.languages.map(language => this.renderLanguage(language))}
+            {this.state.languages.reduce((prev, language) => {
+              if (language.ext.length < 2) {
+                prev.push(this.renderLanguage(language));
+              } else {
+                language.ext.forEach(ext => prev.push(this.renderLanguage(language, ext)));
+              }
+              return prev;
+            }, [])}
           </FormControl>
+          <ControlLabel>
+            {t('When you select a language for the first time you may have to restart Vortex.')}
+          </ControlLabel>
         </FormGroup>
         <FormGroup controlId='customization'>
           <ControlLabel>{t('Customisation')}</ControlLabel>
@@ -182,6 +198,7 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
         <FormGroup controlId='advanced'>
           <ControlLabel>{t('Advanced')}</ControlLabel>
           <div>
+            {/*
             <div>
               <Toggle
                 checked={advanced}
@@ -193,6 +210,7 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
                 </More>
               </Toggle>
             </div>
+            */}
             <div>
               <Toggle
                 checked={profilesVisible}
@@ -232,6 +250,15 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
             >
               {t('Enable Mods when installed (in current profile)')}
             </Toggle>
+          </div>
+        </FormGroup>
+        <FormGroup controlId='notifications'>
+          <ControlLabel>{t('Notifications')}</ControlLabel>
+          <div>
+            <Button onClick={this.resetSuppression}>{t('Reset suppressed notifications')}</Button>
+            {' '}
+            {t('({{count}} notification is being suppressed)',
+              { replace: { count: numSuppressed } })}
           </div>
         </FormGroup>
         {restartNotification}
@@ -283,16 +310,21 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
       : `${language.language} (${language.country})`;
   }
 
-  private renderLanguage(language: ILanguage): JSX.Element {
+  private renderLanguage(language: ILanguage, ext?: IExtensionDownloadInfo): JSX.Element {
     const { t } = this.props;
+    if (ext === undefined) {
+      ext = language.ext.length > 0 ? language.ext[0] : { name: undefined };
+    }
     return (
       <option
-        key={language.key}
+        key={`${language.key}-${ext['author'] || 'local'}`}
         value={language.key}
-        data-ext={(language.ext as IExtensionDownloadInfo).name}
+        data-ext={ext.name}
       >
       {this.languageName(language)}
-      {(language.ext['modId'] !== undefined) ? ` (${t('Extension')})` : null}
+      {(ext.modId !== undefined)
+        ? ` (${t('Extension')} by ${ext['author'] || 'unknown author'})`
+        : null}
       </option>
     );
   }
@@ -305,6 +337,11 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
   private toggleAutoEnable = () => {
     const { autoEnable, onSetAutoEnable } = this.props;
     onSetAutoEnable(!autoEnable);
+  }
+
+  private resetSuppression = () => {
+    const { onResetNotificationSuppression } = this.props;
+    onResetNotificationSuppression();
   }
 
   private toggleDesktopNotifications = () => {
@@ -361,6 +398,8 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
       .then(fileLists => Array.from(new Set([].concat(...fileLists))))
       .filter(langId => this.isValidLanguageCode(langId))
       .then(files => {
+        // files contains just the unique languages being supported, but there
+        // may be multiple extensions providing the same language
         const loc = new Set(local);
         const locales = files.map(key => {
           let language;
@@ -372,9 +411,9 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
             country = nativeCountryName(countryKey);
           }
 
-          const ext: Partial<IAvailableExtension> = loc.has(key)
-            ? {}
-            : translationExts.find(iter => iter.language === key);
+          const ext: Array<Partial<IAvailableExtension>> = loc.has(key)
+            ? []
+            : translationExts.filter(iter => iter.language === key);
           return { key, language, country, ext };
         });
 
@@ -405,6 +444,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     minimizeToTray: state.settings.window.minimizeToTray,
     extensions: state.session.extensions.available,
     relativeTimes: state.settings.interface.relativeTimes,
+    suppressedNotifications: state.settings.notifications.suppress,
   };
 }
 
@@ -437,6 +477,9 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
     },
     onSetRelativeTimes: (enabled: boolean) => {
       dispatch(setRelativeTimes(enabled));
+    },
+    onResetNotificationSuppression: () => {
+      dispatch(resetSuppression(null));
     },
   };
 }

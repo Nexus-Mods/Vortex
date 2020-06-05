@@ -1,10 +1,20 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-const Bluebird = require("bluebird");
-const fs = require("fs");
-const path = require("path");
-const tmp = require("tmp");
-const winapi = require("winapi-bindings");
+const bluebird_1 = __importDefault(require("bluebird"));
+const fs = __importStar(require("fs"));
+const path = __importStar(require("path"));
+const tmp = __importStar(require("tmp"));
+const winapi = __importStar(require("winapi-bindings"));
 function elevatedMain(moduleRoot, ipcPath, main) {
     const handleError = (error) => {
         // tslint:disable-next-line:no-console
@@ -66,7 +76,7 @@ function elevatedMain(moduleRoot, ipcPath, main) {
  *                             out when the process is done (using ipc) it should delete it
  */
 function runElevated(ipcPath, func, args) {
-    return new Bluebird((resolve, reject) => {
+    return new bluebird_1.default((resolve, reject) => {
         tmp.file((err, tmpPath, fd, cleanup) => {
             if (err) {
                 return reject(err);

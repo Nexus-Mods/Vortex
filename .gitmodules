@@ -160,3 +160,19 @@
 	path = extensions/gamestore-xbox
 	url = https://github.com/nexus-mods/extension-gamestore-xbox
 	branch = master
+[submodule "extensions/new-file-monitor"]
+	path = extensions/new-file-monitor
+	url = https://github.com/Nexus-Mods/extension-new-file-monitor.git
+	branch = master
+[submodule "extensions/modtype-harmony-patcher"]
+	path = extensions/modtype-harmony-patcher
+	url = https://github.com/nexus-mods/extension-modtype-harmony-patcher
+	branch = master
+[submodule "extensions/extension-dashlet"]
+	path = extensions/extension-dashlet
+	url = https://github.com/Nexus-Mods/extension-extension-dashlet.git
+	branch = master
+[submodule "extensions/test-setup"]
+	path = extensions/test-setup
+	url = https://github.com/Nexus-Mods/extension-test-setup.git
+	branch = master

@@ -13,7 +13,7 @@ class Dashlet extends React.Component<IDashletProps, {}> {
     const classes = ['dashlet'].concat(className.split(' '));
     return (
       <div className={classes.join(' ')}>
-        {truthy(title) ? <h2>{title}</h2> : null}
+        {truthy(title) ? <div className='dashlet-title'>{title}</div> : null}
         {this.props.children}
       </div>
     );

@@ -22,11 +22,11 @@ import { nexusGameId, toNXMId } from './util/convertGameId';
 import { FULL_COLLECTION_INFO, FULL_REVISION_INFO } from './util/graphQueries';
 import submitFeedback from './util/submitFeedback';
 
-import { checkModVersionsImpl, endorseModImpl, startDownload, updateKey } from './util';
+import { checkModVersionsImpl, endorseDirectImpl, endorseModImpl, startDownload, updateKey } from './util';
 
-import * as Promise from 'bluebird';
-import Nexus, { ICollection, IFeedbackResponse, IIssue, IRevision,
-                NexusError, RateLimitError, TimeoutError } from 'nexus-api';
+import Nexus, { ICollection, EndorsedStatus, IFeedbackResponse, IIssue, IRevision, NexusError,
+                RateLimitError, TimeoutError } from '@nexusmods/nexus-api';
+import Promise from 'bluebird';
 import * as semver from 'semver';
 
 export function onChangeDownloads(api: IExtensionApi, nexus: Nexus) {
@@ -224,9 +224,12 @@ export function onModUpdate(api: IExtensionApi, nexus: Nexus): (...args: any[]) 
         const url = `nxm://${toNXMId(game, gameId)}/mods/${modId}/files/${fileId}`;
         api.showErrorNotification('Invalid URL', url, { allowReport: false });
       })
-      .catch(ProcessCanceled, () =>
-        opn(['https://www.nexusmods.com', nexusGameId(game), 'mods', modId].join('/'))
-          .catch(() => undefined))
+      .catch(ProcessCanceled, () => {
+        const url = ['https://www.nexusmods.com', nexusGameId(game), 'mods', modId].join('/');
+        const params = `?tab=files&file_id=${fileId}&nmm=1`;
+        return opn(url + params)
+          .catch(() => undefined);
+      })
       .catch(err => {
         api.showErrorNotification('failed to start download', err);
       });
@@ -438,6 +441,13 @@ export function onEndorseMod(api: IExtensionApi, nexus: Nexus): (...args: any[])
     } else {
       endorseModImpl(api, nexus, gameId, modId, endorsedStatus);
     }
+  };
+}
+
+export function onEndorseDirect(api: IExtensionApi, nexus: Nexus) {
+  return (gameId: string, nexusId: number, version: string,
+          endorsedStatus: EndorsedStatus): Promise<EndorsedStatus> => {
+    return endorseDirectImpl(api, nexus, gameId, nexusId, version, endorsedStatus);
   };
 }
 

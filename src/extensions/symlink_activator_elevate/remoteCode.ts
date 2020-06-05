@@ -16,12 +16,7 @@ export function remoteCode(ipcClient, req) {
   };
 
   return new Promise<void>((resolve, reject) => {
-    const TAG_NAME = process.platform === 'win32'
-      ? '__folder_managed_by_vortex'
-      : '.__folder_managed_by_vortex';
-
-    const fs = req('fs-extra-promise');
-    const path = req('path');
+    const fs = req('fs').promises;
 
     const emit = (message, payload) => {
       ipcClient.sendMessage({ message, payload });
@@ -30,32 +25,11 @@ export function remoteCode(ipcClient, req) {
     const handlers = {
       'link-file': (payload) => {
         const { source, destination, num } = payload;
-        fs.ensureDirAsync(path.dirname(destination))
-          .then(created => {
-            if (created !== null) {
-              emit('log', {
-                level: 'debug',
-                message: 'created directory',
-                meta: { dirName: path.dirname(destination) },
-              });
-              return doFS(() => fs.writeFileAsync(
-                path.join(created, TAG_NAME),
-                  'This directory was created by Vortex deployment and will be removed ' +
-                  'during purging if it\'s empty'));
-            } else {
-              // if the directory did exist there is a chance the destination file already
-              // exists
-              return doFS(() => fs.removeAsync(destination))
-                .catch(err => (err.code === 'ENOENT')
-                  ? Promise.resolve()
-                  : Promise.reject(err));
-            }
-          })
-          .then(() => doFS(() => fs.symlinkAsync(source, destination))
+        return doFS(() => fs.symlink(source, destination))
             .catch(err => (err.code !== 'EEXIST')
               ? Promise.reject(err)
-              : doFS(() => fs.removeAsync(destination))
-                .then(() => doFS(() => fs.symlinkAsync(source, destination)))))
+              : doFS(() => fs.unlink(destination))
+                .then(() => doFS(() => fs.symlink(source, destination))))
           .then(() => {
             emit('log', {
               level: 'debug',
@@ -85,10 +59,10 @@ export function remoteCode(ipcClient, req) {
       },
       'remove-link': (payload) => {
         const { destination, num } = payload;
-        doFS(() => fs.lstatAsync(destination))
+        doFS(() => fs.lstat(destination))
           .then(stats => {
             if (stats.isSymbolicLink()) {
-              return doFS(() => fs.removeAsync(destination));
+              return doFS(() => fs.unlink(destination));
             }
           })
           .then(() => {

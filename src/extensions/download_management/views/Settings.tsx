@@ -27,7 +27,7 @@ import writeDownloadsTag from '../util/writeDownloadsTag';
 import getTextMod from '../../mod_management/texts';
 import getText from '../texts';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { remote } from 'electron';
 import * as path from 'path';
 import * as process from 'process';
@@ -36,6 +36,8 @@ import { Button as BSButton, ControlLabel, FormControl, FormGroup, HelpBlock, In
          Jumbotron, Modal, ProgressBar } from 'react-bootstrap';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
+
+const NEXUS_MEMBERSHIP_URL = 'https://users.nexusmods.com/register/memberships';
 
 interface IConnectedProps {
   parallelDownloads: number;
@@ -61,7 +63,6 @@ interface IComponentState {
   busy: string;
   progress: number;
   progressFile: string;
-  currentPlatform: string;
 }
 
 const nop = () => null;
@@ -76,15 +77,10 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       busy: undefined,
       progress: 0,
       progressFile: undefined,
-      currentPlatform: '',
     });
   }
 
-  public componentWillMount() {
-    this.nextState.currentPlatform = process.platform;
-  }
-
-  public componentWillReceiveProps(newProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(newProps: IProps) {
     if (this.props.downloadPath !== newProps.downloadPath) {
       this.nextState.downloadPath = newProps.downloadPath;
     }
@@ -223,8 +219,6 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private validateDownloadPath(input: string): { state: ValidationState, reason?: string } {
-    const { currentPlatform } = this.state;
-
     let vortexPath = remote.app.getAppPath();
     if (path.basename(vortexPath) === 'app.asar') {
       // in asar builds getAppPath returns the path of the asar so need to go up 2 levels
@@ -289,7 +283,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private goBuyPremium = () => {
-    opn('https://www.nexusmods.com/register/premium').catch(err => undefined);
+    opn(NEXUS_MEMBERSHIP_URL).catch(err => undefined);
   }
 
   private setDownloadPath = (newPath: string) => {

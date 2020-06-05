@@ -5,9 +5,9 @@ import { ICategory } from '../types/ICategoryDictionary';
 import { ICategoriesTree } from '../types/ITrees';
 import generateSubtitle from './generateSubtitle';
 
-import I18next from 'i18next';
+import { TFunction } from 'i18next';
 
-function searchChildren(t: I18next.TFunction,
+function searchChildren(t: TFunction,
                         categories: { [categoryId: string]: ICategory },
                         rootId: string,
                         mods: { [categoryId: string]: IMod[] }) {
@@ -50,7 +50,7 @@ function searchChildren(t: I18next.TFunction,
  *
  */
 
-function createTreeDataObject(t: I18next.TFunction,
+function createTreeDataObject(t: TFunction,
                               categories: { [categoryId: string]: ICategory },
                               mods: {[modId: string]: IMod}): ICategoriesTree[] {
   const categoryList: ICategoriesTree[] = [];

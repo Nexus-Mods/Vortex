@@ -1,4 +1,4 @@
-import * as Bluebird from 'bluebird';
+import Bluebird from 'bluebird';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as tmp from 'tmp';

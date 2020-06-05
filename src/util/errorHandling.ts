@@ -1,6 +1,7 @@
 import { IErrorOptions, IExtensionApi } from '../types/api';
 import { IError } from '../types/IError';
 
+import { COMPANY_ID } from './constants';
 import { UserCanceled } from './CustomErrors';
 import { genHash } from './genHash';
 import { fallbackTFunc } from './i18n';
@@ -9,16 +10,16 @@ import opn from './opn';
 import { getSafe } from './storeHelper';
 import { flatten, getAllPropertyNames, spawnSelf, truthy } from './util';
 
-import * as Promise from 'bluebird';
+import NexusT, { IFeedbackResponse } from '@nexusmods/nexus-api';
+import Promise from 'bluebird';
 import {
   app as appIn,
   dialog as dialogIn,
   ipcRenderer,
   remote,
 } from 'electron';
-import * as fs from 'fs-extra-promise';
-import i18next from 'i18next';
-import NexusT, { IFeedbackResponse } from 'nexus-api';
+import * as fs from 'fs-extra';
+import I18next from 'i18next';
 import * as os from 'os';
 import * as path from 'path';
 import * as semver from 'semver';
@@ -120,7 +121,7 @@ function nexusReport(hash: string, type: string, error: IError, labels: string[]
                      context: IErrorContext, apiKey: string, reporterProcess: string,
                      sourceProcess: string, attachment: string): Promise<IFeedbackResponse> {
   const app = appIn || remote.app;
-  const Nexus: typeof NexusT = require('nexus-api').default;
+  const Nexus: typeof NexusT = require('@nexusmods/nexus-api').default;
 
   const referenceId = require('uuid').v4();
   return Promise.resolve(Nexus.create(apiKey, 'Vortex', app.getVersion(), undefined))
@@ -186,7 +187,7 @@ if (ipcRenderer !== undefined) {
 }
 
 export function sendReportFile(fileName: string): Promise<IFeedbackResponse> {
-  return fs.readFileAsync(fileName)
+  return Promise.resolve(fs.readFile(fileName, { encoding: 'utf8' }))
     .then(reportData => {
       const {type, error, labels, reporterId, reportProcess, sourceProcess, context} =
         JSON.parse(reportData.toString());
@@ -252,6 +253,10 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
     win = null;
   }
 
+  if ((allowReport === undefined) && (error.extension !== undefined)) {
+    allowReport = error.extension === COMPANY_ID;
+  }
+  
   const contextNow = { ...globalContext };
 
   log('error', 'unrecoverable error', { error, process: process.type });
@@ -268,7 +273,7 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
     if ((allowReport !== false) && !outdated && !errorIgnored) {
       buttons.push('Report and Quit');
     }
-    let action = dialog.showMessageBox(getVisibleWindow(), {
+    let action = dialog.showMessageBoxSync(getVisibleWindow(), {
       type: 'error',
       buttons,
       defaultId: buttons.length - 1,
@@ -283,7 +288,7 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
       createErrorReport('Crash', error, contextNow, ['bug', 'crash'], state, source);
     } else if (action === 0) {
       // Ignore
-      action = dialog.showMessageBox(getVisibleWindow(), {
+      action = dialog.showMessageBoxSync(getVisibleWindow(), {
         type: 'error',
         buttons: ['Quit', 'I won\'t whine'],
         title: 'Are you sure?',
@@ -300,7 +305,7 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
       }
     }
     if (error.extension !== undefined) {
-      action = dialog.showMessageBox(getVisibleWindow(), {
+      action = dialog.showMessageBoxSync(getVisibleWindow(), {
         type: 'error',
         buttons: ['Disable', 'Keep'],
         title: 'Extension crashed',
@@ -333,7 +338,7 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
  */
 export function toError(input: any, title?: string,
                         options?: IErrorOptions, sourceStack?: string): IError {
-  let ten = i18next.getFixedT('en');
+  let ten = I18next.getFixedT('en');
   try {
     ten('dummy');
   } catch (err) {

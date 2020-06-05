@@ -10,7 +10,7 @@ import { confirmExternalChanges, setExternalChangeAction } from '../actions/sess
 
 import { FileAction, IFileEntry } from '../types/IFileEntry';
 
-import I18next from 'i18next';
+import { TFunction } from 'i18next';
 import update from 'immutability-helper';
 import * as React from 'react';
 import * as Redux from 'redux';
@@ -298,7 +298,7 @@ class ExternalChangeDialog extends ComponentEx<IProps, IComponentState> {
         id: 'file_count',
         name: 'File Count',
         description: 'Number of files in this mod that were changed',
-        calc: (source: ISourceEntry, t: I18next.TFunction) =>
+        calc: (source: ISourceEntry, t: TFunction) =>
           t('{{count}} file', {
             count: source.filePaths !== undefined ? source.filePaths.length : 0 }),
         placement: 'table',

@@ -1,6 +1,8 @@
+import ContextMenu from '../../../controls/ContextMenu';
 import Icon from '../../../controls/Icon';
 
 import {} from 'draggabilly';
+import update from 'immutability-helper';
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
 
@@ -14,12 +16,29 @@ export interface IProps {
   packery?: any;
   fixed: boolean;
   onDismiss?: (id: string) => void;
+  onSetWidth?: (id: string, width: number) => void;
+  onSetHeight?: (id: string, height: number) => void;
 }
 
-class PackeryItem extends React.Component<IProps, {}> {
+interface IPackeryItemState {
+  context: {
+    x: number;
+    y: number;
+  };
+}
+
+class PackeryItem extends React.Component<IProps, IPackeryItemState> {
   private mRef: Element = null;
 
-  public componentWillReceiveProps(newProps: IProps) {
+  constructor(props: IProps) {
+    super(props);
+
+    this.state = {
+      context: undefined,
+    };
+  }
+
+  public UNSAFE_componentWillReceiveProps(newProps: IProps) {
     if (!newProps.fixed && (newProps.packery !== this.props.packery)) {
       this.makeDraggable(newProps);
     }
@@ -45,24 +64,114 @@ class PackeryItem extends React.Component<IProps, {}> {
         ref={this.setRef}
         style={{ width: `${widthPerc}%` }}
         className={classes.join(' ')}
+        onContextMenu={this.onContext}
       >
         {this.props.children}
         <div className='packery-buttons'>
-          {!fixed ? <Icon name='drag-handle' className='drag-handle' /> : null}
-          {(onDismiss !== undefined) ? (
+          {!fixed ? this.renderDragHandle() : null}
+          {/*(onDismiss !== undefined) ? (
             <Button
               className='btn-embed'
               onClick={this.dismissWidget}
             >
               <Icon name='close-slim' />
             </Button>
-          ) : null}
+          ) : null*/}
         </div>
-      </div>);
+        <ContextMenu
+          key='drag-context'
+          position={this.state.context}
+          visible={this.state.context !== undefined}
+          onHide={this.hideContext}
+          instanceId='42'
+          actions={[
+            { title: 'Width', icon: null, show: true },
+            { title: '33%', show: width !== 1, action: this.setWidth1 },
+            { title: '66%', show: width !== 2, action: this.setWidth2 },
+            { title: '100%', show: width !== 3, action: this.setWidth3 },
+            { title: 'Height', icon: null, show: true },
+            { title: '1', show: height !== 2, action: this.setHeight2 },
+            { title: '2', show: height !== 3, action: this.setHeight3 },
+            { title: '3', show: height !== 4, action: this.setHeight4 },
+            { title: '4', show: height !== 5, action: this.setHeight5 },
+            { title: '5', show: height !== 6, action: this.setHeight6 },
+            { title: 'Fit Content', show: height !== 0, action: this.setHeight0 },
+            { icon: null, show: true },
+            { title: 'Close',
+              show: onDismiss !== undefined,
+              action: this.dismissWidget,
+            },
+          ]}
+        />
+      </div>
+    );
+  }
+
+  private renderDragHandle() {
+    return (
+      <Icon
+        key='drag-icon'
+        name='drag-handle'
+        className='drag-handle'
+      />
+    );
+  }
+
+  private setWidth1 = () => {
+    this.props.onSetWidth(this.props.id, 1);
+  }
+
+  private setWidth2 = () => {
+    this.props.onSetWidth(this.props.id, 2);
+  }
+
+  private setWidth3 = () => {
+    this.props.onSetWidth(this.props.id, 3);
+  }
+
+  private setHeight0 = () => {
+    this.props.onSetHeight(this.props.id, 0);
+  }
+
+  private setHeight1 = () => {
+    this.props.onSetHeight(this.props.id, 1);
+  }
+
+  private setHeight2 = () => {
+    this.props.onSetHeight(this.props.id, 2);
+  }
+
+  private setHeight3 = () => {
+    this.props.onSetHeight(this.props.id, 3);
+  }
+
+  private setHeight4 = () => {
+    this.props.onSetHeight(this.props.id, 4);
+  }
+
+  private setHeight5 = () => {
+    this.props.onSetHeight(this.props.id, 5);
+  }
+
+  private setHeight6 = () => {
+    this.props.onSetHeight(this.props.id, 6);
+  }
+
+  private onContext = (event: React.MouseEvent<any>) => {
+    this.setState(update(this.state, {
+      context: { $set: {
+        x: event.clientX, y: event.clientY,
+      } } }));
+  }
+
+  private hideContext = () => {
+    this.setState({ context: undefined });
   }
 
   private dismissWidget = () => {
-    return this.props.onDismiss(this.props.id);
+    if (this.props.onDismiss !== undefined) {
+      return this.props.onDismiss(this.props.id);
+    }
   }
 
   private setRef = (ref) => {

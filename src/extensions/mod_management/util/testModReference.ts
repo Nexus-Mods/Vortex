@@ -3,7 +3,7 @@ import { truthy } from '../../../util/util';
 import { IMod, IModReference } from '../types/IMod';
 
 import * as _ from 'lodash';
-import * as minimatch from 'minimatch';
+import minimatch from 'minimatch';
 import * as path from 'path';
 import * as semver from 'semver';
 

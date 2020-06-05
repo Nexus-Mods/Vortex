@@ -10,7 +10,7 @@ import opn from '../util/opn';
 import * as storeHelperT from '../util/storeHelper';
 import { truthy } from '../util/util';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { ipcMain, screen } from 'electron';
 import * as Redux from 'redux';
 import TrayIcon from './TrayIcon';
@@ -245,6 +245,7 @@ class MainWindow {
       webPreferences: {
         nodeIntegration: true,
         nodeIntegrationInWorker: true,
+        webviewTag: true,
       },
     };
   }

@@ -2,7 +2,7 @@ import makeCI from '../../../util/makeCaseInsensitive';
 
 import { app as appIn, remote } from 'electron';
 import * as path from 'path';
-import * as format from 'string-template';
+import format from 'string-template';
 
 const app = remote !== undefined ? remote.app : appIn;
 

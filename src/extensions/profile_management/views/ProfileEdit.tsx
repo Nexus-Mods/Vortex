@@ -52,7 +52,7 @@ class ProfileEdit extends ComponentEx<IEditProps, IEditState> {
       };
   }
 
-  public componentWillReceiveProps(newProps: IEditProps) {
+  public UNSAFE_componentWillReceiveProps(newProps: IEditProps) {
     if (this.props.gameId !== newProps.gameId) {
       this.setState(update(this.state, {
         features: { $set: newProps.features.filter(feature => feature.supported()) },

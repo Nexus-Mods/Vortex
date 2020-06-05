@@ -1,6 +1,6 @@
 import { log } from './log';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as path from 'path';
 import * as winapi from 'winapi-bindings';
 import * as fs from './fs';
@@ -62,9 +62,10 @@ class EpicGamesLauncher implements IGameStore {
    * @param name
    */
   public isGameInstalled(name: string): Promise<boolean> {
-    return this.findByName(name)
+    return this.findByAppId(name)
       .then(() => Promise.resolve(true))
-      .catch(err => Promise.resolve(false));
+      .catch(() => this.findByName(name))
+      .catch(() => Promise.resolve(false));
   }
 
   public findByAppId(appId: string): Promise<IGameStoreEntry> {

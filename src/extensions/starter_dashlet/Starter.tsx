@@ -34,7 +34,7 @@ import ToolButton from './ToolButton';
 import ToolEditDialogT from './ToolEditDialog';
 let ToolEditDialog: typeof ToolEditDialogT;
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { remote } from 'electron';
 import * as React from 'react';
 import { Media, MenuItem } from 'react-bootstrap';
@@ -98,7 +98,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
     this.mIsMounted = false;
   }
 
-  public componentWillReceiveProps(nextProps: IStarterProps) {
+  public UNSAFE_componentWillReceiveProps(nextProps: IStarterProps) {
     if ((nextProps.discoveredGames !== this.props.discoveredGames)
        || (nextProps.discoveredTools !== this.props.discoveredTools)
        || (nextProps.gameMode !== this.props.gameMode)
@@ -327,14 +327,18 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
       .filter(starter =>
         (truthy(starter.exePath))
         && (Object.keys(starter.environment || {}).length === 0))
-      .map(starter => ({
-        arguments: starter.commandLine.join(' '),
-        description: starter.name,
-        iconIndex: 0,
-        iconPath: starter.iconPath,
-        program: starter.exePath,
-        title: starter.name,
-      }));
+      .map(starter => {
+        const task: Electron.Task = {
+          arguments: starter.commandLine.join(' '),
+          description: starter.name,
+          iconIndex: 0,
+          iconPath: starter.iconPath,
+          program: starter.exePath,
+          title: starter.name,
+          workingDirectory: starter.workingDirectory,
+        };
+        return task;
+      });
     remote.app.setUserTasks(userTasks);
   }
 
@@ -342,7 +346,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
     const { primaryTool } = this.props;
     const { tools } = this.state;
 
-    if (primaryTool === undefined) {
+    if (!truthy(primaryTool)) {
       this.startTool(tools[0]);
     } else {
       const info = tools.find(iter => iter.id === primaryTool);
@@ -425,7 +429,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
   }
 
   private makePrimary = (starter: StarterInfo) => {
-    this.props.onMakePrimary(starter.gameId, starter.isGame ? undefined : starter.id);
+    this.props.onMakePrimary(starter.gameId, starter.isGame ? null : starter.id);
   }
 }
 
@@ -461,5 +465,4 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
   };
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(
-  Starter) as React.ComponentClass<{}>;
+export default connect(mapStateToProps, mapDispatchToProps)(Starter);

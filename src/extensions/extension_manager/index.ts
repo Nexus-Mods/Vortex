@@ -13,8 +13,9 @@ import sessionReducer from './reducers';
 import { IAvailableExtension, IExtension, IExtensionDownloadInfo } from './types';
 import { downloadAndInstallExtension, fetchAvailableExtensions, readExtensions } from './util';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as _ from 'lodash';
+import * as semver from 'semver';
 
 interface ILocalState {
   reloadNecessary: boolean;
@@ -30,16 +31,15 @@ function checkForUpdates(api: IExtensionApi) {
 
   const updateable: Array<{ update: IAvailableExtension, current: IExtension}> =
     Object.values(installed).reduce((prev, ext) => {
-      if (ext.modId === undefined) {
-        return prev;
-      }
+      const update = available.find(iter => (iter.modId !== undefined)
+        ? iter.modId === ext.modId
+        : iter.name === ext.name);
 
-      const update = available.find(iter => iter.modId === ext.modId);
       if (update === undefined) {
         return prev;
       }
 
-      if (update.version === ext.version) {
+      if (semver.gte(ext.version, update.version)) {
         return prev;
       }
 
@@ -64,24 +64,30 @@ function checkForUpdates(api: IExtensionApi) {
                                   + `-> ${ext.update.name} v${ext.update.version}`) });
 
   return Promise.map(updateable, update => downloadAndInstallExtension(api, update.update))
-    .then(() => {
+    .then((success: boolean[]) => {
       localState.reloadNecessary = true;
-      api.sendNotification({
-        id: 'extension-updates',
-        type: 'success',
-        message: 'Extensions updated, please restart to apply them',
-        actions: [
-          {
-            title: 'Restart now', action: () => {
-              relaunch();
+      if (success.find(iter => iter === true)) {
+        api.sendNotification({
+          id: 'extension-updates',
+          type: 'success',
+          message: 'Extensions updated, please restart to apply them',
+          actions: [
+            {
+              title: 'Restart now', action: () => {
+                relaunch();
+              },
             },
-          },
-        ],
-      });
+          ],
+        });
+      }
     });
 }
 
 function updateAvailableExtensions(api: IExtensionApi, force: boolean = false) {
+  const state: IState = api.store.getState();
+  if (!state.session.base.networkConnected) {
+    return Promise.resolve();
+  }
   return fetchAvailableExtensions(true, force)
     .catch(DataInvalid, err => {
       api.showErrorNotification('Failed to fetch available extensions', err,
@@ -93,9 +99,13 @@ function updateAvailableExtensions(api: IExtensionApi, force: boolean = false) {
       return { time: null, extensions: [] };
     })
     .then(({ time, extensions }: { time: Date, extensions: IAvailableExtension[] }) => {
-      api.store.dispatch(setExtensionsUpdate(time.getTime()));
-      api.store.dispatch(setAvailableExtensions(extensions));
-      return checkForUpdates(api);
+      if (time !== null) {
+        api.store.dispatch(setExtensionsUpdate(time.getTime()));
+        api.store.dispatch(setAvailableExtensions(extensions));
+        return checkForUpdates(api);
+      } else {
+        return Promise.resolve();
+      }
     });
 }
 
@@ -110,8 +120,12 @@ function installDependency(api: IExtensionApi,
 
   if (ext !== undefined) {
     return downloadAndInstallExtension(api, ext)
-      .then(() => updateInstalled(false))
-      .then(() => true);
+      .then(success => {
+        if (success) {
+          updateInstalled(false);
+        }
+        return success;
+      });
   } else {
     return Promise.resolve(false);
   }
@@ -192,7 +206,7 @@ function init(context: IExtensionContext) {
   context.registerMainPage('extensions', 'Extensions', ExtensionManager, {
     hotkey: 'X',
     group: 'global',
-    visible: () => context.api.store.getState().settings.interface.advanced,
+    // visible: () => context.api.store.getState().settings.interface.advanced,
     props: () => ({
       localState,
       updateExtensions,
@@ -212,11 +226,17 @@ function init(context: IExtensionContext) {
   context.registerReducer(['session', 'extensions'], sessionReducer);
 
   context.once(() => {
-    updateExtensions(true);
-    updateAvailableExtensions(context.api);
+    updateExtensions(true)
+    .then(() => {
+      updateAvailableExtensions(context.api);
+    });
     context.api.onAsync('install-extension', (ext: IExtensionDownloadInfo) =>
       downloadAndInstallExtension(context.api, ext)
-        .then(() => updateExtensions(false)));
+        .tap(success => {
+          if (success) {
+            updateExtensions(false);
+          }
+        }));
 
     context.api.onStateChange(['session', 'base', 'extLoadFailures'], (prev, current) => {
       checkMissingDependencies(context.api, current);

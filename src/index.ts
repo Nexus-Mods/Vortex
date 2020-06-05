@@ -8,7 +8,9 @@ import * as fs from './util/fs';
 import { log } from './util/log';
 import * as selectors from './util/selectors';
 
+import Promise from 'bluebird';
+
 export * from './controls/api';
 export * from './views/api';
-export { actions, fs, log, selectors, types, util };
+export { actions, Promise, fs, log, selectors, types, util };
 export { ComponentEx, PureComponentEx } from './util/ComponentEx';

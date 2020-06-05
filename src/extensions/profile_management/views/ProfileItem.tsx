@@ -14,12 +14,12 @@ import { IProfileFeature } from '../types/IProfileFeature';
 import TransferIcon from './TransferIcon';
 
 import { nativeImage, remote } from 'electron';
-import I18next from 'i18next';
+import { TFunction } from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
 
 export interface IProps {
-  t: I18next.TFunction;
+  t: TFunction;
   active: boolean;
   available: boolean;
   profile: IProfile;
@@ -60,7 +60,7 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
     this.mUserData = remote.app.getPath('userData');
   }
 
-  public componentWillMount() {
+  public componentDidMount() {
     if (this.props.profile === undefined) {
       this.setHasProfileImage(false);
     } else {
@@ -72,9 +72,6 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
         this.setHasProfileImage(false);
       }
     }
-  }
-
-  public componentDidMount() {
     this.mMounted = true;
   }
 

@@ -23,10 +23,10 @@ import { remoteCode } from './remoteCode';
 import Settings from './Settings';
 import walk from './walk';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
-import I18next from 'i18next';
-import * as JsonSocket from 'json-socket';
+import { TFunction } from 'i18next';
+import JsonSocket from 'json-socket';
 import * as net from 'net';
 import * as os from 'os';
 import * as path from 'path';
@@ -161,7 +161,7 @@ class DeploymentMethod extends LinkingDeployment {
     }
   }
 
-  public detailedDescription(t: I18next.TFunction): string {
+  public detailedDescription(t: TFunction): string {
     return t(
       'Symbolic links are special files containing a reference to another file. '
       + 'They are supported directly by the low-level API of the operating system '
@@ -181,7 +181,11 @@ class DeploymentMethod extends LinkingDeployment {
   }
 
   public userGate(): Promise<void> {
-    return this.mWaitForUser();
+    const state: IState = this.api.store.getState();
+
+    return state.settings.workarounds.userSymlinks
+      ? Promise.resolve()
+      : this.mWaitForUser();
   }
 
   public prepare(dataPath: string, clean: boolean, lastActivation: IDeployedFile[],
@@ -205,8 +209,6 @@ class DeploymentMethod extends LinkingDeployment {
   }
 
   public isSupported(state: any, gameId?: string): IUnavailableReason {
-    return undefined;
-
     if (process.platform !== 'win32') {
       return { description: t => t('Elevation not required on non-windows systems') };
     }
@@ -229,7 +231,7 @@ class DeploymentMethod extends LinkingDeployment {
         }),
       };
     }
-    if (this.ensureAdmin()) {
+    if (this.ensureAdmin() && (process.env['FORCE_ALLOW_ELEVATED_SYMLINKING'] !== 'yes')) {
       return {
         description: t =>
           t('No need to use the elevated variant, use the regular symlink deployment'),
@@ -242,10 +244,28 @@ class DeploymentMethod extends LinkingDeployment {
     return undefined;
   }
 
-  protected linkFile(linkPath: string, sourcePath: string): Promise<void> {
-    return this.emitOperation('link-file', {
-      source: sourcePath, destination: linkPath,
-    });
+  protected linkFile(linkPath: string, sourcePath: string, dirTags?: boolean): Promise<void> {
+    const dirName = path.dirname(linkPath);
+    return fs.ensureDirAsync(dirName)
+      .then(created => {
+        if ((dirTags !== false) && (created !== null)) {
+          log('debug', 'created directory', dirName);
+          return fs.writeFileAsync(
+            path.join(dirName, LinkingDeployment.NEW_TAG_NAME),
+            'This directory was created by Vortex deployment and will be removed ' +
+            'during purging if it\'s empty');
+        } else {
+          // if the directory did exist there is a chance the destination file already
+          // exists
+          return fs.removeAsync(linkPath)
+            .catch(err => (err.code === 'ENOENT')
+              ? Promise.resolve()
+              : Promise.reject(err));
+        }
+      })
+      .then(() => this.emitOperation('link-file', {
+        source: sourcePath, destination: linkPath,
+      }));
   }
 
   protected unlinkFile(linkPath: string): Promise<void> {
@@ -566,6 +586,9 @@ export interface IExtensionContextEx extends IExtensionContext {
   registerDeploymentMethod: (deployment: IDeploymentMethod) => void;
 }
 
+// tslint:disable-next-line:variable-name
+const __req = undefined; // dummy
+
 // copy&pasted from elevatedMain
 function baseFunc(moduleRoot: string, ipcPath: string,
                   main: (ipc, req: NodeRequireFunction) => void | Promise<void>) {
@@ -577,18 +600,17 @@ function baseFunc(moduleRoot: string, ipcPath: string,
   process.on('unhandledRejection', handleError);
   // tslint:disable-next-line:no-shadowed-variable
   (module as any).paths.push(moduleRoot);
-  // tslint:disable-next-line:no-shadowed-variable
   const imp = {
-    net: require('net'),
-    JsonSocket: require('json-socket'),
-    path: require('path'),
+    net: __req('net'),
+    JsonSocket: __req('json-socket'),
+    path: __req('path'),
   };
 
   const client = new imp.JsonSocket(new imp.net.Socket());
   client.connect(imp.path.join('\\\\?\\pipe', ipcPath));
 
   client.on('connect', () => {
-    Promise.resolve(main(client, require))
+    main(client, __req)
       .catch(error => {
         client.emit('error', error.message);
       })
@@ -613,7 +635,8 @@ function makeScript(args: any): string {
   const projectRoot = getVortexPath('modules_unpacked').split('\\').join('/');
 
   let funcBody = baseFunc.toString();
-  funcBody = funcBody.slice(funcBody.indexOf('{') + 1, funcBody.lastIndexOf('}'));
+  funcBody = 'const __req = require;'
+    + funcBody.slice(funcBody.indexOf('{') + 1, funcBody.lastIndexOf('}'));
   let prog: string = `
         let moduleRoot = '${projectRoot}';\n
         let ipcPath = '${IPC_ID}';\n

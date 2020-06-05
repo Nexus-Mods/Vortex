@@ -9,8 +9,11 @@ import { getNormalizeFunc } from '../../util/api';
 import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
-import { activeProfile } from '../../util/selectors';
+import { activeProfile, discoveryByGame } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
+import { truthy } from '../../util/util';
+
+import { setPrimaryTool } from '../starter_dashlet/actions';
 
 import {
   discoveryFinished,
@@ -24,7 +27,8 @@ import { IGameStored } from './types/IGameStored';
 import { IToolStored } from './types/IToolStored';
 import { discoverRelativeTools, quickDiscovery, searchDiscovery } from './util/discovery';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
+import * as _ from 'lodash';
 import * as path from 'path';
 import * as Redux from 'redux';
 
@@ -104,10 +108,23 @@ class GameModeManager {
         discoverRelativeTools(game, gameDiscovery.path, discoveredGames,
                               this.onDiscoveredTool, normalize))
       .then(() => {
-        const currentProfile = activeProfile(this.mStore.getState());
+        const state = this.mStore.getState();
+        const currentProfile = activeProfile(state);
         if ((currentProfile !== undefined) && (profileId === currentProfile.id)) {
           log('info', 'changed game mode', {oldMode, newMode});
           this.mOnGameModeActivated(newMode);
+          const { gameId } = currentProfile;
+          if (getSafe(state, ['settings', 'interface', 'primaryTool', gameId],
+                      undefined) === undefined) {
+            const discovery = discoveryByGame(state, gameId);
+            if (truthy(discovery.tools)) {
+              const defaultPrimary = Object.keys(discovery.tools)
+                .find(toolId => discovery.tools[toolId].defaultPrimary === true);
+              if (defaultPrimary !== undefined) {
+                this.mStore.dispatch(setPrimaryTool(gameId, defaultPrimary));
+              }
+            }
+          }
         } else {
           log('info', 'game prepared but it\'s no longer active');
         }
@@ -258,15 +275,20 @@ class GameModeManager {
   }
 
   private storeTool(tool: ITool): IToolStored {
+    const SKIPPED_TOOL_ATTRIBUTES = [
+      'id', 'name', 'logo',
+      'executable', 'queryPath', 'parameters', 'requiredFiles',
+      'relative',
+    ];
+
     return {
-      id: tool.id,
-      name: tool.name,
-      shortName: tool.shortName,
-      logo: tool.logo,
-      executable: tool.executable(),
+      ..._.omit(tool, SKIPPED_TOOL_ATTRIBUTES),
+      id: tool.id || 'MISSING_ID',
+      name: tool.name || 'MISSING_NAME',
+      logo: tool.logo || 'MISSING_LOGO',
       parameters: tool.parameters || [],
-      environment: tool.environment,
-      exclusive: tool.exclusive,
+      environment: tool.environment || {},
+      executable: tool.executable(),
     };
   }
 
@@ -276,6 +298,7 @@ class GameModeManager {
                              undefined);
     // don't overwrite customised tools
     if ((existing === undefined) || !existing.custom) {
+      delete result.executable;
       this.mStore.dispatch(addDiscoveredTool(gameId, result.id, result));
     }
   }

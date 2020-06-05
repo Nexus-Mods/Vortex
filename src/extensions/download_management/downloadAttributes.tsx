@@ -18,7 +18,7 @@ import DownloadGameList from './views/DownloadGameList';
 import DownloadProgressFilter from './views/DownloadProgressFilter';
 import FileTime from './views/FileTime';
 
-import I18next from 'i18next';
+import { TFunction } from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
 import * as url from 'url';
@@ -133,7 +133,7 @@ function createColumns(api: IExtensionApi, props: () => IDownloadViewProps)
           + 'when managing those games as well.',
       icon: 'game',
       customRenderer: (download: IDownload, detailCell: boolean,
-                       t: I18next.TFunction) => {
+                       t: TFunction) => {
         const { downloads, knownGames } = props();
         const { store } = api;
         // TODO: awkward!
@@ -146,7 +146,8 @@ function createColumns(api: IExtensionApi, props: () => IDownloadViewProps)
               currentGames={getDownloadGames(download)}
               games={knownGames}
               fileName={download.localPath}
-            />);
+            />
+          );
         } else {
           const games = getDownloadGames(download);
           const name = gameName(store.getState(), games[0]);
@@ -222,7 +223,7 @@ function createColumns(api: IExtensionApi, props: () => IDownloadViewProps)
       name: 'File Size',
       description: 'Total size of the file',
       icon: 'chart-bars',
-      customRenderer: (download: IDownload, detailCell: boolean, t: I18next.TFunction) =>
+      customRenderer: (download: IDownload, detailCell: boolean, t: TFunction) =>
         <span>{download.size !== undefined ? bytesToString(download.size) : '???'}</span>,
       calc: (download: IDownload) => download.size,
       placement: 'table',
@@ -234,14 +235,14 @@ function createColumns(api: IExtensionApi, props: () => IDownloadViewProps)
       name: 'Progress',
       description: 'Download progress',
       icon: 'clock-o',
-      customRenderer: (download: IDownload, detailCell: boolean, t: I18next.TFunction) =>
+      customRenderer: (download: IDownload, detailCell: boolean, t: TFunction) =>
         progress({ download, t }),
-      calc: (download: IDownload, t: I18next.TFunction) => calc({ download, t }),
+      calc: (download: IDownload, t: TFunction) => calc({ download, t }),
       placement: 'table',
       isToggleable: true,
       edit: {},
       isSortable: true,
-      isGroupable: (download: IDownload, t: I18next.TFunction) => t(capitalize(download.state)),
+      isGroupable: (download: IDownload, t: TFunction) => t(capitalize(download.state)),
       filter: new DownloadProgressFilter(),
     },
   ];

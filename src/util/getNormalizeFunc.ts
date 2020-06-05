@@ -1,8 +1,6 @@
-import { log } from '../util/log';
 import * as fs from './fs';
-import { getSafe } from './storeHelper';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as path from 'path';
 
 export type Normalize = (input: string) => string;
@@ -39,7 +37,6 @@ function isCaseSensitiveFailed(testPath: string, reason: string): Promise<boolea
   }
   const parentPath = path.dirname(testPath);
   if (parentPath === testPath) {
-    log('warn', 'failed to determine case sensitivity', {testPath, reason});
     // on windows, assume case insensitive, everywhere else: case sensitive
     return Promise.resolve(process.platform !== 'win32');
   } else {
@@ -95,19 +92,22 @@ function isCaseSensitive(testPath: string): Promise<boolean> {
  * @returns {Promise<Normalize>}
  */
 function getNormalizeFunc(testPath: string, parameters?: INormalizeParameters): Promise<Normalize> {
+  if (parameters === undefined) {
+    parameters = {};
+  }
   return isCaseSensitive(testPath)
     .then(caseSensitive => {
       let funcOut = caseSensitive
         ? (input: string) => input
         : genNormalizeCase();
 
-      if (getSafe(parameters, ['separators'], true) && (process.platform === 'win32')) {
+      if ((parameters['separators'] !== false) && (process.platform === 'win32')) {
         funcOut = genNormalizeSeparator(funcOut);
       }
-      if (getSafe(parameters, ['unicode'], true)) {
+      if (parameters['unicode'] !== false) {
         funcOut = genNormalizeUnicode(funcOut);
       }
-      if (getSafe(parameters, ['relative'], true)) {
+      if (parameters['relative'] !== false) {
         funcOut = genNormalizeRelative(funcOut);
       }
       return funcOut;
@@ -122,6 +122,71 @@ function getNormalizeFunc(testPath: string, parameters?: INormalizeParameters): 
         return Promise.reject(err);
       }
     });
+}
+
+class NormalizationHandler<T extends object> {
+  private keymap: { [key: string]: string };
+  private normalize: Normalize;
+
+  constructor(init: T, normalize: Normalize) {
+    this.normalize = normalize;
+
+    this.keymap = Object.keys(init).reduce((prev, origKey) => {
+      prev[normalize(origKey)] = origKey;
+      return prev;
+    }, {});
+  }
+
+  public get(target: T, key: PropertyKey) {
+    let res;
+    if (typeof (key) === 'string') {
+      const remapKey = this.keymap[this.normalize(key)];
+      res = target[remapKey];
+    } else {
+      res = target[key];
+    }
+
+    if ((res instanceof Object)
+        && !Array.isArray(res)
+        && !(res instanceof Set)) {
+      return new Proxy(res, new NormalizationHandler(res, this.normalize));
+    } else {
+      return res;
+    }
+  }
+
+  public deleteProperty(target: T, key: PropertyKey) {
+    if (typeof (key) === 'string') {
+      const remapKey = this.keymap[this.normalize(key)];
+      delete target[remapKey];
+    } else {
+      delete target[key];
+    }
+    return true;
+  }
+  public has(target: T, key: PropertyKey) {
+    if (typeof (key) === 'string') {
+      const remapKey = this.keymap[this.normalize(key)];
+      return remapKey in target;
+    } else {
+      return (key as any) in target;
+    }
+  }
+  public set(target: T, key: PropertyKey, value: any) {
+    if (typeof (key) === 'string') {
+      this.keymap[this.normalize(key)] = key;
+    }
+    target[key] = value;
+    return true;
+  }
+}
+
+/**
+ * creates a proxy for a dictionary that makes all key access normalized with the specified
+ * normalization function
+ */
+export function makeNormalizingDict<T extends object>(input: T, normalize: Normalize): T {
+  return new Proxy(input, new NormalizationHandler(input, normalize));
 }
 
 export default getNormalizeFunc;

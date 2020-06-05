@@ -26,7 +26,7 @@ import GameRow from './GameRow';
 import GameThumbnail from './GameThumbnail';
 import ShowHiddenButton from './ShowHiddenButton';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import update from 'immutability-helper';
 import * as React from 'react';
 import { FormControl, InputGroup, ListGroup,
@@ -119,10 +119,11 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
     const { showHidden, currentFilterValue, expandManaged, expandUnmanaged } = this.state;
 
     const installedExtIds = new Set(Object.values(extensionsInstalled).map(ext => ext.modId));
+    const installedNames = new Set(Object.values(extensionsInstalled).map(ext => ext.name));
 
     const gameExts = extensions
       .filter(ext => ext.type === 'game')
-      .filter(ext => !installedExtIds.has(ext.modId));
+      .filter(ext => !installedExtIds.has(ext.modId) && !installedNames.has(ext.name));
 
     // TODO: lots of computation and it doesn't actually change except through discovery
     //   or when adding a profile
@@ -426,7 +427,8 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
             active={game.id === gameMode}
             onRefreshGameInfo={onRefreshGameInfo}
             onBrowseGameLocation={this.props.onBrowseGameLocation}
-          />))
+          />
+        ))
         }
       </ListGroup>
     );
@@ -452,7 +454,8 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
               getBounds={this.getBounds}
               container={this.mScrollRef}
               discovered={isDiscovered(game.id)}
-            />))
+            />
+          ))
           }
         </div>
       </div>

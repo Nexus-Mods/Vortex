@@ -564,6 +564,14 @@
     "incompatible": {
       "path": "{nucleo}/ui/{nucleo_simple}_alert",
       "rmFill": true
+    },
+    "extension-render-failed": {
+      "path": "{nucleo}/user interface/{nucleo_simple}_t-warning",
+      "rmFill": true
+    },
+    "disconnected": {
+      "path": "{nucleo}/technology/{nucleo_simple}_wifi-off",
+      "rmFill": true
     }
   }
 }

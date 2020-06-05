@@ -50,7 +50,7 @@ class FixDeploymentDialog extends ComponentEx<IProps, IFixDeploymentDialogState>
     this.deploymentMethods = getAllActivators();
   }
 
-  public componentWillReceiveProps(newProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(newProps: IProps) {
     if (this.props.problems !== newProps.problems) {
       this.nextState.step = -1;
     }
@@ -153,16 +153,15 @@ class FixDeploymentDialog extends ComponentEx<IProps, IFixDeploymentDialogState>
       // the actual fix function (since we can't put functions into the store)
       // However, it's technically possible that we find a different fail reason this time around
       // and that may not have a fix callback
-      const reason: IUnavailableReason =
-        allTypesSupported(method, state, gameId, Object.keys(modPaths));
-      if (reason === undefined) {
+      const reason = allTypesSupported(method, state, gameId, Object.keys(modPaths));
+      if (reason.errors.length === 0) {
         // the failure no longer applies? Hrmm...
         log('warn', 'The reason the deployment method was unavailable was apparently temporary',
           { reason: method.description });
         onClear();
-      } else if (reason.fixCallback !== undefined) {
+      } else if (reason.errors[0].fixCallback !== undefined) {
         onClear();
-        return reason.fixCallback(this.context.api);
+        return reason.errors[0].fixCallback(this.context.api);
       } else {
         onClear();
         this.context.api.sendNotification({
@@ -172,7 +171,7 @@ class FixDeploymentDialog extends ComponentEx<IProps, IFixDeploymentDialogState>
                  + 'affecting it.',
         });
         log('warn', 'The reason the deployment method is unavailable changed',
-          { before: method.description, after: reason.description(t) });
+          { before: method.description, after: reason.errors[0].description(t) });
       }
     } else {
       const discovery = currentGameDiscovery(state);

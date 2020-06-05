@@ -4,7 +4,8 @@ import * as path from 'path';
 const app = remote !== undefined ? remote.app : appIn;
 
 export type AppPath = 'base' | 'assets' | 'assets_unpacked' | 'modules' | 'modules_unpacked'
-                    | 'bundledPlugins' | 'locales' | 'package';
+                    | 'bundledPlugins' | 'locales' | 'package'
+                    | 'userData' | 'appData' | 'temp' | 'home' | 'documents';
 
 /**
  * app.getAppPath() returns the path to the app.asar,
@@ -65,6 +66,16 @@ function getPackagePath(): string {
     : basePath;
 }
 
+const cachedAppPath = (() => {
+  const cache: { [id: string]: string } = {};
+  return (id: string) => {
+    if (cache[id] === undefined) {
+      cache[id] = app.getPath(id as any);
+    }
+    return cache[id];
+  };
+})();
+
 /**
  * the electron getAppPath function and globals like __dirname
  * or process.resourcesPath don't do a great job of abstracting away
@@ -75,6 +86,11 @@ function getPackagePath(): string {
  */
 function getVortexPath(id: AppPath): string {
   switch (id) {
+    case 'userData': return cachedAppPath('userData');
+    case 'temp': return cachedAppPath('temp');
+    case 'appData': return cachedAppPath('appData');
+    case 'home': return cachedAppPath('home');
+    case 'documents': return cachedAppPath('documents');
     case 'base': return basePath;
     case 'package': return getPackagePath();
     case 'assets': return getAssets(false);

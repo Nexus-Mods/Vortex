@@ -1,1 +1,1 @@
-export const REPLACEABLE_GAMEID = '__gameid__';
+export const GAMEID_PLACEHOLDER = '__gameid__';

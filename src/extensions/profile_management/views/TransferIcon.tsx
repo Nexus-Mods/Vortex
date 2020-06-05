@@ -5,7 +5,7 @@ import { setCreateTransfer, setSource, setTarget } from '../actions/transferSetu
 import * as selectors from '../selectors';
 import { IProfile } from '../types/IProfile';
 
-import I18next from 'i18next';
+import { TFunction } from 'i18next';
 import * as React from 'react';
 import { Overlay, Popover } from 'react-bootstrap';
 import { ConnectDragPreview, ConnectDragSource, ConnectDropTarget,
@@ -17,7 +17,7 @@ import { connect } from 'react-redux';
 
 export interface IBaseProps {
   profile: IProfile;
-  t: I18next.TFunction;
+  t: TFunction;
   onSetHighlightGameId: (gameId: string) => void;
   disabled: boolean;
 }
@@ -165,7 +165,7 @@ class TransferIcon extends ComponentEx<IProps, IComponentState> {
     this.mIsMounted = false;
   }
 
-  public componentWillReceiveProps(nextProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(nextProps: IProps) {
     if (this.props.isDragging !== nextProps.isDragging) {
       let pos;
       if (nextProps.isDragging) {
@@ -203,7 +203,7 @@ class TransferIcon extends ComponentEx<IProps, IComponentState> {
     </Popover>
     );
 
-    const connectorIcon = connectDragSource(
+    const connectorIcon = connectDragSource((
         <div style={{ display: 'inline-block' }}>
           <tooltip.IconButton
             id={`btn-meta-data-${profile.id}`}
@@ -224,12 +224,14 @@ class TransferIcon extends ComponentEx<IProps, IComponentState> {
           >
             {popover}
           </Overlay>
-        </div>);
+        </div>
+        ));
 
-    return connectDropTarget(
+    return connectDropTarget((
       <div style={{ textAlign: 'center', display: 'inline-block' }}>
         {connectorIcon}
-      </div>);
+      </div>
+    ));
   }
 
   private setRef = (ref) => {
@@ -270,4 +272,4 @@ function mapDispatchToProps(dispatch): IActionProps {
 
 export default
   connect<IConnectedProps, IActionProps, IBaseProps>(mapStateToProps, mapDispatchToProps)(
-      TransferIconDrag) as React.ComponentClass<IBaseProps>;
+      TransferIconDrag);

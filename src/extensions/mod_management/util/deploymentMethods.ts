@@ -43,7 +43,7 @@ export function getSupportedActivators(state: IState): IDeploymentMethod[] {
   const modTypes = Object.keys(modPaths)
     .filter(typeId => truthy(modPaths[typeId]));
   return activators.filter(
-    act => allTypesSupported(act, state, gameId, modTypes) === undefined);
+    act => allTypesSupported(act, state, gameId, modTypes).errors.length === 0);
 }
 
 export function getSelectedActivator(state: IState, gameId: string) {
@@ -85,7 +85,7 @@ export function getCurrentActivator(state: IState,
     return undefined;
   }
 
-  if (allTypesSupported(activator, state, gameId, types) !== undefined) {
+  if (allTypesSupported(activator, state, gameId, types).errors.length !== 0) {
     // if the selected activator is no longer supported, don't use it
     return undefined;
   }

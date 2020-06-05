@@ -1,4 +1,4 @@
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 
 import * as fs from './fs';
 import { log } from './log';
@@ -151,6 +151,7 @@ class Steam implements IGameStore {
 
   private parseManifests(): Promise<ISteamEntry[]> {
     log('debug', 'parsing steam manifest');
+    const start = Date.now();
     const steamPaths: string[] = [];
     return this.mBaseFolder
       .then((basePath: string) => {
@@ -172,7 +173,7 @@ class Steam implements IGameStore {
           return Promise.resolve([]);
         }
 
-        log('debug', 'steam config parsed');
+        log('debug', 'steam config parsed', { seconds: (Date.now() - start) / 1000 });
 
         let counter = 1;
         const steamObj: any =
@@ -210,8 +211,14 @@ class Steam implements IGameStore {
                   }
                 })
                 .map(res => {
+                  if (res === undefined) {
+                    return undefined;
+                  }
                   const { obj, name } = res;
-                  if (obj === undefined) {
+                  if ((obj === undefined)
+                      || (obj['AppState'] === undefined)
+                      || (obj['AppState']['installdir'] === undefined)) {
+                    log('debug', 'invalid appmanifest', name);
                     return undefined;
                   }
                   try {

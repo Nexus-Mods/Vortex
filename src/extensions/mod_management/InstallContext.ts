@@ -24,7 +24,7 @@ import { IInstallContext, InstallOutcome } from './types/IInstallContext';
 import { IMod, ModState } from './types/IMod';
 import getModName from './util/modName';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as path from 'path';
 
 class InstallContext implements IInstallContext {

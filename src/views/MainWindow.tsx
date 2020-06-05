@@ -1,6 +1,7 @@
 import { clearUIBlocker, setDialogVisible, setOpenMainPage } from '../actions/session';
 import { setTabsMinimized } from '../actions/window';
 import Banner from '../controls/Banner';
+import DynDiv from '../controls/DynDiv';
 import FlexLayout from '../controls/FlexLayout';
 import Icon from '../controls/Icon';
 import IconBar from '../controls/IconBar';
@@ -16,6 +17,7 @@ import { IModifiers } from '../types/IModifiers';
 import { INotification } from '../types/INotification';
 import { IProgress, IState, IUIBlocker } from '../types/IState';
 import { connect, extend } from '../util/ComponentEx';
+import { TFunction } from '../util/i18n';
 import { log } from '../util/log';
 import { getSafe } from '../util/storeHelper';
 import { truthy } from '../util/util';
@@ -30,7 +32,6 @@ import QuickLauncher from './QuickLauncher';
 import Settings from './Settings';
 import WindowControls from './WindowControls';
 
-import I18next from 'i18next';
 import update from 'immutability-helper';
 import * as _ from 'lodash';
 import * as PropTypes from 'prop-types';
@@ -48,7 +49,7 @@ addStyle(ReactButton, 'link');
 addStyle(ReactButton, 'inverted');
 
 export interface IBaseProps {
-  t: I18next.TFunction;
+  t: TFunction;
   className: string;
   api: IExtensionApi;
 }
@@ -88,6 +89,8 @@ export interface IActionProps {
 }
 
 export type IProps = IBaseProps & IConnectedProps & IExtendedProps & IActionProps & II18NProps;
+
+export const MainContext = React.createContext({});
 
 export class MainWindow extends React.Component<IProps, IMainWindowState> {
   // tslint:disable-next-line:no-unused-variable
@@ -153,7 +156,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     return { api, menuLayer: this.menuLayer, getModifiers: this.getModifiers };
   }
 
-  public componentWillMount() {
+  public componentDidMount() {
     if (this.props.objects.length > 0) {
       const def = this.props.objects.sort((lhs, rhs) => lhs.priority - rhs.priority)[0];
       this.setMainPage(def.title, false);
@@ -164,9 +167,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
     }
 
     this.updateSize();
-  }
 
-  public componentDidMount() {
     window.addEventListener('resize', this.updateSize);
     window.addEventListener('keydown', this.updateModifiers);
     window.addEventListener('keyup', this.updateModifiers);
@@ -199,7 +200,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       ;
   }
 
-  public componentWillReceiveProps(newProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(newProps: IProps) {
     const page = newProps.objects.find(iter => iter.id === newProps.mainPage);
     if ((page !== undefined) && !page.visible()) {
       this.setMainPage('Dashboard', false);
@@ -230,8 +231,11 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       ? Object.keys(uiBlockers).find(() => true)
       : undefined;
 
+    const contextValue = this.getChildContext();
+
     return (
       <React.Suspense fallback={<Spinner className='suspense-spinner' />}>
+        <MainContext.Provider value={contextValue}>
           <div
             key='main'
             className={classes.join(' ')}
@@ -247,7 +251,9 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
             {customTitlebar ? <WindowControls /> : null}
           </div>
           {(uiBlocker !== undefined) ? this.renderBlocker(uiBlocker, uiBlockers[uiBlocker]) : null}
-      </React.Suspense>);
+        </MainContext.Provider>
+      </React.Suspense>
+    );
   }
 
   private getModifiers = () => {
@@ -275,10 +281,13 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       <div className='ui-blocker'>
         <Icon name={blocker.icon}/>
         <div className='blocker-text'>{blocker.description}</div>
-        {blocker.mayCancel ? (<ReactButton data-id={id} onClick={this.unblock}>
-          {t('Cancel')}
-        </ReactButton>
-        ) : null}
+        {blocker.mayCancel
+          ? (
+            <ReactButton data-id={id} onClick={this.unblock}>
+              {t('Cancel')}
+            </ReactButton>
+          )
+          : null}
       </div>
     );
   }
@@ -315,6 +324,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
       <FlexLayout.Fixed id='main-toolbar' className={className}>
         <QuickLauncher t={t} />
         <Banner group='main-toolbar' />
+        <DynDiv group='main-toolbar' />
         <div className='flex-fill' />
         <div className='main-toolbar-right'>
           <NotificationButton id='notification-button' hide={switchingProfile} />

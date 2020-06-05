@@ -75,6 +75,7 @@ import {} from './views/ExternalChangeDialog';
 import {} from './views/FixDeploymentDialog';
 import {} from './views/ModList';
 import {} from './views/Settings';
+import Workarounds from './views/Workarounds';
 
 import { onAddMod, onGameModeActivated, onModsChanged, onPathsChanged,
          onRemoveMod, onStartInstallDownload } from './eventHandlers';
@@ -84,7 +85,7 @@ import mergeMods, { MERGED_PATH } from './modMerging';
 import preStartDeployHook from './preStartDeployHook';
 import getText from './texts';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as path from 'path';
 import * as Redux from 'redux';
 import shortid = require('shortid');
@@ -396,17 +397,30 @@ function genUpdateModDeployment() {
       const types = deployableModTypes(modPaths);
 
       const err = allTypesSupported(selectedActivator, state, gameId, types);
-      if ((selectedActivator !== undefined) && (err !== undefined)) {
-        api.showErrorNotification('Deployment not possible',
-          t('Deployment method "{{method}}" not available because: {{reason}}', {
-            replace: {
-              method: selectedActivator.name,
-              reason: err.description(t),
-            },
-          }), {
-          id: 'deployment-not-possible',
-          allowReport: false,
-        });
+      if (selectedActivator !== undefined) {
+        if (err.errors.length > 0) {
+          api.showErrorNotification('Deployment not possible',
+            t('Deployment method "{{method}}" not available because: {{reason}}', {
+              replace: {
+                method: selectedActivator.name,
+                reason: err.errors[0].description(t),
+              },
+            }), {
+            id: 'deployment-not-possible',
+            allowReport: false,
+          });
+        } else if (err.warnings.length > 0) {
+          api.sendNotification({
+            type: 'warning',
+            message: t('Deployment method "{{method}}" does not support all mod types: {{reason}}', {
+              replace: {
+                method: selectedActivator.name,
+                reason: err.warnings[0].description(t),
+              },
+            }),
+            allowSuppress: true,
+          });
+        }
       } // otherwise there should already be a notification
       return Promise.resolve();
     }
@@ -627,12 +641,8 @@ function genValidActivatorCheck(api: IExtensionApi) {
     type IUnavailableReasonEx = IUnavailableReason & { activator?: string };
 
     const reasons: IUnavailableReasonEx[] = getAllActivators().map(activator => {
-      const reason: IUnavailableReasonEx =
-        allTypesSupported(activator, state, gameId, Object.keys(modPaths));
-      if (reason !== undefined) {
-        reason.activator = activator.id;
-      }
-      return reason;
+      const problems = allTypesSupported(activator, state, gameId, Object.keys(modPaths));
+      return problems.errors[0];
     });
 
     if (reasons.indexOf(undefined) !== -1) {
@@ -1113,7 +1123,8 @@ function init(context: IExtensionContext): boolean {
   context.registerTest('valid-activator', 'settings-changed', validActivatorCheck);
 
   context.registerSettings('Mods', LazyComponent(() => require('./views/Settings')),
-                           () => ({activators: getAllActivators()}));
+                           () => ({activators: getAllActivators()}), undefined, 75);
+  context.registerSettings('Workarounds', Workarounds, undefined, undefined, 1000);
 
   context.registerDialog('external-changes',
                          LazyComponent(() => require('./views/ExternalChangeDialog')));

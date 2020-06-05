@@ -10,8 +10,8 @@ import LinkingDeployment from '../mod_management/LinkingDeployment';
 import { IDeployedFile, IDeploymentMethod,
          IUnavailableReason } from '../mod_management/types/IDeploymentMethod';
 
-import * as Promise from 'bluebird';
-import I18next from 'i18next';
+import Promise from 'bluebird';
+import { TFunction } from 'i18next';
 import * as path from 'path';
 import turbowalk from 'turbowalk';
 import * as util from 'util';
@@ -39,7 +39,7 @@ class DeploymentMethod extends LinkingDeployment {
         api);
   }
 
-  public detailedDescription(t: I18next.TFunction): string {
+  public detailedDescription(t: TFunction): string {
     return t(
       'File Systems store files in two parts: \n'
       + ' - an index entry that contains the file name, '
@@ -244,15 +244,15 @@ class DeploymentMethod extends LinkingDeployment {
     });
   }
 
-  protected linkFile(linkPath: string, sourcePath: string): Promise<void> {
+  protected linkFile(linkPath: string, sourcePath: string, dirTags?: boolean): Promise<void> {
     return this.ensureDir(path.dirname(linkPath))
       .then((created: any) => {
         let tagDir: Promise<void>;
-        if (created !== null) {
+        if ((dirTags !== false) && (created !== null)) {
           const tagPath = path.join(created, LinkingDeployment.NEW_TAG_NAME);
           tagDir = fs.writeFileAsync(tagPath,
               'This directory was created by Vortex deployment and will be removed '
-              + 'during purging if it\'s empty');
+              + 'during purging if it\'s empty') as any;
         } else {
           tagDir = Promise.resolve();
         }

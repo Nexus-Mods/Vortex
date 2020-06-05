@@ -10,7 +10,7 @@ import renderModName from './util/modName';
 
 import { MERGED_PATH } from './modMerging';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as path from 'path';
 import { UserCanceled } from '../../util/api';
 

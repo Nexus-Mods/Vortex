@@ -1,6 +1,6 @@
-import I18next from 'i18next';
+import { TFunction } from '../../util/i18n';
 
-function getText(id: string, t: I18next.TFunction) {
+function getText(id: string, t: TFunction) {
   switch (id) {
     case 'update-channel': return t(
       'You can choose to either receive automatic updates only after they went through some '

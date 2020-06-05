@@ -1,0 +1,53 @@
+#page-generic-loadorder {
+  .layout-flex {
+    overflow: auto;
+  }
+
+  .load-order-entry {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    background-color: $brand-bg;
+    margin: 0px;
+
+    height: 100%;
+    overflow: auto;
+    border-width: 1px;
+    border-style: solid;
+    border-color: $gray;
+  
+    .load-order-index {
+      padding: 2px 2px;
+      margin-right: 15px;
+    }
+
+    .locked-entry-logo {
+      margin-right: 15px;
+      margin-left: auto;
+    }
+
+    &.dragging {
+      opacity: 0;
+    }
+
+    &.locked {
+      background-color: $brand-primary;
+    }
+  }
+  
+  #loadorderinfo {
+    padding: 15px;
+    height: 100%;
+  }
+  
+  #mod-info {
+    font-size: 1.2em;
+  }
+  
+  #mod-img {
+    width: 150px;
+    height: 90px;
+    margin: 5px 10px 5px 5px;
+    border: 1px solid #d78f46;
+  }
+}

@@ -1,4 +1,6 @@
 import DNDContainer from './DNDContainer';
 import MainPage from './MainPage';
 
-export {DNDContainer, MainPage};
+import { MainContext } from './MainWindow';
+
+export {DNDContainer, MainContext, MainPage};

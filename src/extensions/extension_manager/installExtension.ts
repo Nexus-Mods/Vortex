@@ -9,12 +9,12 @@ import { INVALID_FILENAME_RE } from '../../util/util';
 import { ExtensionType, IExtension } from './types';
 import { readExtensionInfo } from './util';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import * as _ from 'lodash';
 import ZipT = require('node-7z');
 import * as path from 'path';
-import * as rimraf from 'rimraf';
+import rimraf from 'rimraf';
 import { dynreq } from 'vortex-run';
 
 const app = appIn || remote.app;
@@ -44,8 +44,9 @@ function installExtensionDependencies(api: IExtensionApi, extPath: string): Prom
   const context = new Proxy({}, handler);
 
   try {
+    // TODO: this breaks if the extension is already loaded if the extension creates any actions
+    //   because redux-act throws on duplicate action names
     const extension = dynreq(path.join(extPath, 'index.js'));
-
     extension.default(context);
 
     const state: IState = api.store.getState();
@@ -67,7 +68,8 @@ function installExtensionDependencies(api: IExtensionApi, extPath: string): Prom
 }
 
 function sanitize(input: string): string {
-  return input.replace(INVALID_FILENAME_RE, '_');
+  const temp = input.replace(INVALID_FILENAME_RE, '_');
+  return path.basename(temp, path.extname(temp));
 }
 
 function removeOldVersion(api: IExtensionApi, info: IExtension): Promise<void> {
@@ -159,10 +161,11 @@ function validateExtension(extPath: string): Promise<void> {
     fs.statAsync(path.join(extPath, 'index.js')),
     fs.statAsync(path.join(extPath, 'info.json')),
   ])
-  .then(() => null)
-  .catch({ code: 'ENOENT' }, err =>
-    Promise.reject(
-      new DataInvalid('Extension needs to include index.js and info.json on top-level')));
+    .then(() => null)
+    .catch({ code: 'ENOENT' }, () => {
+      return Promise.reject(
+        new DataInvalid('Extension needs to include index.js and info.json on top-level'));
+    });
 }
 
 function validateInstall(extPath: string, info?: IExtension): Promise<ExtensionType> {
@@ -216,21 +219,21 @@ function installExtension(api: IExtensionApi,
   const Zip: typeof ZipT = require('node-7z');
   const extractor = new Zip();
 
+  let fullInfo: any = info || {};
+
   let type: ExtensionType;
 
-  return extractor.extractFull(archivePath, tempPath, {ssc: false}, () => undefined,
-                        () => undefined)
+  return extractor.extractFull(archivePath, tempPath, {ssc: false},
+                               () => undefined, () => undefined)
       .then(() => validateInstall(tempPath, info).then(guessedType => type = guessedType))
       .then(() => readExtensionInfo(tempPath, false, info))
       // merge the caller-provided info with the stuff parsed from the info.json file because there
       // is data we may only know at runtime (e.g. the modId)
       .then(manifestInfo => {
+        fullInfo = { ...(manifestInfo.info || {}), ...fullInfo };
         const res: { id: string, info: Partial<IExtension> } = {
           id: manifestInfo.id,
-          info: {
-            ...(manifestInfo.info || {}),
-            ...(info || {}),
-          },
+          info: fullInfo,
         };
 
         if (res.info.type === undefined) {
@@ -267,7 +270,13 @@ function installExtension(api: IExtensionApi,
         } else if (type === 'theme') {
           return Promise.resolve();
         } else {
-          return installExtensionDependencies(api, destPath);
+          // don't install dependencies for extensions that are already loaded because
+          // doing so could cause an exception
+          if (api.getLoadedExtensions().find(ext => ext.name === fullInfo.id) === undefined) {
+            return installExtensionDependencies(api, destPath);
+          } else {
+            return Promise.resolve();
+          }
         }
       })
       .catch(DataInvalid, err => {

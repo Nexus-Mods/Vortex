@@ -1,4 +1,5 @@
 import FlexLayout from '../../controls/FlexLayout';
+import FormInput from '../../controls/FormInput';
 import Icon from '../../controls/Icon';
 import Modal from '../../controls/Modal';
 import Spinner from '../../controls/Spinner';
@@ -9,11 +10,13 @@ import bbcode from '../../util/bbcode';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import opn from '../../util/opn';
 
-import { IAvailableExtension, IExtension } from './types';
-import { downloadAndInstallExtension } from './util';
+import { IAvailableExtension, IExtension, ISelector } from './types';
+import { downloadAndInstallExtension, selectorMatch } from './util';
 
+import { app, remote } from 'electron';
 import * as React from 'react';
 import { Button, ListGroup, ListGroupItem, ModalHeader } from 'react-bootstrap';
+import * as semver from 'semver';
 
 const NEXUS_MODS_URL: string = 'http://nexusmods.com/site/mods/';
 
@@ -29,8 +32,17 @@ export interface IBrowseExtensionsProps {
 
 interface IBrowseExtensionsState {
   error: Error;
-  selected: number;
+  selected?: ISelector;
   installing: string[];
+  searchTerm: string;
+}
+
+function makeSelectorId(ext: IAvailableExtension): string {
+  if (ext.modId !== undefined) {
+    return `${ext.modId}`;
+  } else {
+    return `${ext.github}/${ext.githubRawPath}`;
+  }
 }
 
 interface IConnectedProps {
@@ -41,6 +53,19 @@ interface IConnectedProps {
 }
 
 type IProps = IBrowseExtensionsProps & IConnectedProps;
+
+const version = (() => {
+  let result: string;
+
+  return () => {
+    if (result === undefined) {
+      const electronApp = remote !== undefined ? remote.app : app;
+      result = electronApp.getVersion();
+    }
+
+    return result;
+  };
+})();
 
 function nop() {
   // nop
@@ -53,8 +78,9 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
 
     this.initState({
       error: undefined,
-      selected: -1,
+      selected: undefined,
       installing: [],
+      searchTerm: '',
     });
 
     this.mModalRef = React.createRef();
@@ -63,9 +89,11 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
   public render() {
     const { t, availableExtensions, language, onHide,
             onRefreshExtensions, updateTime, visible } = this.props;
-    const { selected } = this.state;
+    const { searchTerm, selected } = this.state;
 
-    const ext = selected === -1 ? null : availableExtensions.find(iter => iter.modId === selected);
+    const ext = (selected === undefined)
+      ? null
+      : availableExtensions.find(iter => selectorMatch(iter, selected));
 
     const updatedAt = new Date(updateTime);
 
@@ -78,37 +106,74 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
           <FlexLayout type='row'>
             <FlexLayout.Fixed className='extension-list'>
               <FlexLayout type='column'>
+                <FormInput
+                  id='browse-extensions-search'
+                  label={t('Search')}
+                  value={searchTerm}
+                  onChange={this.changeSearch}
+                  debounceTimer={200}
+                />
                 <ListGroup>
-                  {availableExtensions.slice(0).sort(this.extensionSort).map(this.renderListEntry)}
+                  {availableExtensions
+                    .filter(this.filterSearch)
+                    .sort(this.extensionSort)
+                    .map(this.renderListEntry)}
                 </ListGroup>
                 <div className='extension-list-time'>
                   {t('Last updated: {{time}}',
-                     { replace: { time: updatedAt.toLocaleString(language) } })}
+                    { replace: { time: updatedAt.toLocaleString(language) } })}
                   <IconButton icon='refresh' tooltip={t('Refresh')} onClick={onRefreshExtensions} />
                 </div>
               </FlexLayout>
             </FlexLayout.Fixed>
             <FlexLayout.Flex fill={true}>
-              {(selected === -1) ? null : this.renderDescription(ext, selected)}
+              {(selected === undefined) ? null : this.renderDescription(ext)}
             </FlexLayout.Flex>
           </FlexLayout>
         </Modal.Body>
         <Modal.Footer>
           <Button onClick={onHide}>{t('Close')}</Button>
         </Modal.Footer>
-      </Modal>);
+      </Modal>
+    );
+  }
+
+  private changeSearch = (newValue: string) => {
+    this.nextState.searchTerm = newValue;
+  }
+
+  private filterSearch = (test: IAvailableExtension)  => {
+    const { searchTerm } = this.state;
+    if (searchTerm.length === 0) {
+      return true;
+    }
+
+    return (test.name.indexOf(searchTerm) !== -1)
+        || (test.author.indexOf(searchTerm) !== -1)
+        || (test.description.short.indexOf(searchTerm) !== -1)
+        || (test.description.long.indexOf(searchTerm) !== -1);
   }
 
   private extensionSort = (lhs: IAvailableExtension, rhs: IAvailableExtension): number => {
     return lhs.name.localeCompare(rhs.name);
   }
 
+  private isCompatible(ext: IAvailableExtension): boolean {
+    if ((ext.dependencies === undefined)
+        || (ext.dependencies['vortex'] === undefined)
+        || (process.env.NODE_ENV === 'development')) {
+      return true;
+    }
+
+    return semver.satisfies(version(), ext.dependencies['vortex']);
+  }
+
   private isInstalled(ext: IAvailableExtension): boolean {
     const { extensions } = this.props;
 
     return Object.values(extensions)
-      .find(iter => iter.modId === ext.modId
-                 || iter.name === ext.name) !== undefined;
+      .find(iter => ((ext.modId !== undefined) && (iter.modId === ext.modId))
+                 || (iter.name === ext.name)) !== undefined;
   }
 
   private renderListEntry = (ext: IAvailableExtension, idx: number) => {
@@ -117,20 +182,25 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
 
     const classes = ['extension-item'];
 
-    if (ext.modId === selected) {
+    if (selectorMatch(ext, selected)) {
       classes.push('selected');
     }
 
     const installed = this.isInstalled(ext);
+    const incompatible = !this.isCompatible(ext);
 
     const action = (installing.indexOf(ext.name) !== -1)
       ? <Spinner />
       : installed
         ? <div>{t('Installed')}</div>
+        : incompatible
+        ? <div>{t('Incompatible')}</div>
         : (
           <a
             className='extension-subscribe'
             data-modid={ext.modId}
+            data-github={ext.github}
+            data-githubrawpath={ext.githubRawPath}
             onClick={this.install}
           >
             {t('Install')}
@@ -140,10 +210,12 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
     return (
       <ListGroupItem
         className={classes.join(' ')}
-        key={ext.modId}
+        key={makeSelectorId(ext)}
         data-modid={ext.modId}
+        data-github={ext.github}
+        data-githubrawpath={ext.githubRawPath}
         onClick={this.select}
-        disabled={installed}
+        disabled={installed || incompatible}
       >
         <div className='extension-header'>
           <div>
@@ -151,14 +223,22 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
             <span className='extension-version'>{ext.version}</span>
           </div>
           <div className='extension-stats'>
-            <div className='extension-downloads'>
-              <Icon name='download' />
-              {' '}{ext.downloads}
-            </div>
-            <div className='extension-endorsements'>
-              <Icon name='endorse-yes' />
-              {' '}{ext.endorsements}
-            </div>
+            {ext.downloads !== undefined
+              ? (
+                <div className='extension-downloads'>
+                  <Icon name='download' />
+                  {' '}{ext.downloads}
+                </div>
+              ) : null
+            }
+            {ext.endorsements !== undefined
+              ? (
+                <div className='extension-endorsements'>
+                  <Icon name='endorse-yes' />
+                  {' '}{ext.endorsements}
+                </div>
+              ) : null
+            }
           </div>
         </div>
         <div className='extension-description'>{ext.description.short}</div>
@@ -170,8 +250,8 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
     );
   }
 
-  private renderDescription = (ext: IAvailableExtension, idx: number) => {
-    const { t, extensions } = this.props;
+  private renderDescription = (ext: IAvailableExtension) => {
+    const { t } = this.props;
     const { installing } = this.state;
     if (ext === undefined) {
       return null;
@@ -187,6 +267,8 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
           <a
             className='extension-subscribe'
             data-modid={ext.modId}
+            data-github={ext.github}
+            data-githubrawpath={ext.githubRawPath}
             onClick={this.install}
           >
             {t('Install')}
@@ -220,6 +302,8 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
                   <a
                     className='extension-browse'
                     data-modid={ext.modId}
+                    data-github={ext.github}
+                    data-githubrawpath={ext.githubRawPath}
                     onClick={this.openPage}
                   >
                     <Icon name='open-in-browser' />
@@ -242,8 +326,13 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
   private install = (evt: React.MouseEvent<any>) => {
     const { availableExtensions } = this.props;
 
-    const modId = parseInt(evt.currentTarget.getAttribute('data-modid'), 10);
-    const ext = availableExtensions.find(iter => iter.modId === modId);
+    const modIdStr = evt.currentTarget.getAttribute('data-modid');
+    const modId = modIdStr !== null ? parseInt(modIdStr, 10) : undefined;
+    const github = evt.currentTarget.getAttribute('data-github');
+    const githubRawPath = evt.currentTarget.getAttribute('data-githubrawpath');
+
+    const ext = availableExtensions.find(iter =>
+      selectorMatch(iter, { modId, github, githubRawPath }));
 
     this.nextState.installing.push(ext.name);
 
@@ -262,16 +351,23 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
   }
 
   private select = (evt: React.MouseEvent<any>) => {
-    const modId = parseInt(evt.currentTarget.getAttribute('data-modid'), 10);
-    this.nextState.selected = modId;
+    const modIdStr = evt.currentTarget.getAttribute('data-modid');
+    const modId = modIdStr !== null ? parseInt(modIdStr, 10) : undefined;
+    const github = evt.currentTarget.getAttribute('data-github');
+    const githubRawPath = evt.currentTarget.getAttribute('data-githubrawpath');
+    this.nextState.selected = { modId, github, githubRawPath };
   }
 
   private openPage = (evt: React.MouseEvent<any>) => {
     const { availableExtensions } = this.props;
 
-    const modId = parseInt(evt.currentTarget.getAttribute('data-modid'), 10);
+    const modIdStr = evt.currentTarget.getAttribute('data-modid');
+    const modId = modIdStr !== null ? parseInt(modIdStr, 10) : undefined;
+    const github = evt.currentTarget.getAttribute('data-github');
+    const githubRawPath = evt.currentTarget.getAttribute('data-githubrawpath');
 
-    const ext = availableExtensions.find(iter => iter.modId === modId);
+    const ext = availableExtensions.find(iter =>
+      selectorMatch(iter, { modId, github, githubRawPath }));
     opn(NEXUS_MODS_URL + ext.modId);
   }
 }

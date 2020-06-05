@@ -6,7 +6,7 @@ import { IToDo } from './IToDo';
 import settingsReducer from './reducers';
 import todos from './todos';
 
-import I18next from 'i18next';
+import { TFunction } from 'i18next';
 
 const extTodos: IToDo[] = [];
 
@@ -15,10 +15,10 @@ function init(context: IExtensionContext): boolean {
                           type: ToDoType,
                           props: (state: any) => any,
                           icon: (props: any) => JSX.Element,
-                          text: (t: I18next.TFunction, props: any) => JSX.Element,
+                          text: (t: TFunction, props: any) => JSX.Element,
                           action?: (props: any) => void,
                           condition?: (props: any) => boolean,
-                          value?: (t: I18next.TFunction, props: any) => JSX.Element,
+                          value?: (t: TFunction, props: any) => JSX.Element,
                           priority?: number) => {
     extTodos.push({ id, icon, type, props, condition, text, value, action, priority });
   };

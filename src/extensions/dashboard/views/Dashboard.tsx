@@ -4,7 +4,7 @@ import Debouncer from '../../../util/Debouncer';
 import { getSafe } from '../../../util/storeHelper';
 import MainPage from '../../../views/MainPage';
 
-import { setDashletEnabled, setLayout } from '../actions';
+import { setDashletEnabled, setDashletHeight, setDashletWidth, setLayout } from '../actions';
 import { IDashletProps } from '../types/IDashletProps';
 
 import PackeryGrid from './PackeryGrid';
@@ -31,6 +31,8 @@ interface IConnectedProps {
 interface IActionProps {
   onSetLayout: (items: string[]) => void;
   onSetDashletEnabled: (dashletId: string, enabled: boolean) => void;
+  onSetDashletWidth: (dashletId: string, width: number) => void;
+  onSetDashletHeight: (dashletId: string, height: number) => void;
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
@@ -83,7 +85,7 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
     win.removeListener('blur', this.onBlur);
   }
 
-  public componentWillReceiveProps(nextProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(nextProps: IProps) {
     if (this.props.active !== nextProps.active) {
       if (nextProps.active && (this.mUpdateTimer === undefined)) {
         this.startUpdateCycle();
@@ -112,8 +114,11 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
         (layoutMap[lhs.title] || lhs.position) - (layoutMap[rhs.title] || rhs.position))
       ;
 
-    const fixed = sorted.filter(dash => dash.fixed);
-    const dynamic = sorted.filter(dash => !dash.fixed);
+    const { fixed, dynamic } = sorted.reduce((prev, dash) => {
+      const isFixed = getSafe(dashletSettings, [dash.title, 'fixed'], dash.fixed);
+      prev[isFixed ? 'fixed' : 'dynamic'].push(dash);
+      return prev;
+    }, { fixed: [], dynamic: [] });
 
     return (
       <MainPage id='page-dashboard' className='page-dashboard'>
@@ -124,7 +129,11 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
             {fixed.map(this.renderFixedItem)}
           </div>
           <div className='dynamic-dashlets'>
-            <PackeryGrid totalWidth={3} onChangeLayout={this.onChangeLayout}>
+            <PackeryGrid
+              totalWidth={3}
+              onChangeLayout={this.onChangeLayout}
+              settings={dashletSettings}
+            >
               {dynamic.map(this.renderItem)}
             </PackeryGrid>
           </div>
@@ -167,20 +176,31 @@ class Dashboard extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderItem = (dash: IDashletProps) => {
+    const { dashletSettings } = this.props;
     const { counter } = this.state;
     const componentProps = dash.props !== undefined ? dash.props() : {};
     return (
       <PackeryItem
         id={dash.title}
         key={dash.title}
-        width={dash.width}
-        height={dash.height}
+        width={getSafe(dashletSettings, [dash.title, 'width'], dash.width)}
+        height={getSafe(dashletSettings, [dash.title, 'height'], dash.height)}
+        onSetWidth={this.setWidth}
+        onSetHeight={this.setHeight}
         onDismiss={dash.closable ? this.dismissDashlet : undefined}
         fixed={dash.fixed}
       >
         <dash.component t={this.props.t} {...componentProps} counter={counter} />
       </PackeryItem>
     );
+  }
+
+  private setWidth = (id: string, width: number) => {
+    this.props.onSetDashletWidth(id, width);
+  }
+
+  private setHeight = (id: string, height: number) => {
+    this.props.onSetDashletHeight(id, height);
   }
 
   private dismissDashlet = (dashletId: string) => {
@@ -200,6 +220,10 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
     onSetLayout: (items: string[]) => dispatch(setLayout(items)),
     onSetDashletEnabled: (dashletId: string, enabled: boolean) =>
       dispatch(setDashletEnabled(dashletId, enabled)),
+    onSetDashletWidth: (dashletId: string, width: number) =>
+      dispatch(setDashletWidth(dashletId, width)),
+    onSetDashletHeight: (dashletId: string, height: number) =>
+      dispatch(setDashletHeight(dashletId, height)),
   };
 }
 

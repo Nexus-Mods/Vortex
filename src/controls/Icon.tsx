@@ -1,8 +1,7 @@
 import { log } from '../util/log';
-
 import IconBase from './Icon.base';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 // using fs directly because the svg may be bundled inside the asar so
 // we need the electron-fs hook here
 import { remote } from 'electron';
@@ -27,6 +26,7 @@ export interface IIconProps {
   rotateId?: string;
   // avoid using this! These styles may affect other instances of this icon
   svgStyle?: string;
+  onContextMenu?: React.MouseEventHandler<Icon>;
 }
 
 export function installIconSet(set: string, setPath: string): Promise<Set<string>> {
@@ -53,6 +53,8 @@ export function installIconSet(set: string, setPath: string): Promise<Set<string
     });
 }
 
+const loadingIconSets = new Set<string>();
+
 class Icon extends React.Component<IIconProps, { sets: { [setId: string]: Set<string> } }> {
   constructor(props: IIconProps) {
     super(props);
@@ -68,11 +70,12 @@ class Icon extends React.Component<IIconProps, { sets: { [setId: string]: Set<st
 
   private loadSet = (set: string): Promise<Set<string>> => {
     const { sets } = this.state;
-    if (sets[set] === undefined) {
+    if ((sets[set] === undefined) && !loadingIconSets.has(set)) {
       { // mark the set as being loaded
         const copy = { ...sets };
         copy[set] = null;
 
+        loadingIconSets.add(set);
         this.setState(update(this.state, { sets: { $set: copy } }));
       }
 
@@ -100,11 +103,12 @@ class Icon extends React.Component<IIconProps, { sets: { [setId: string]: Set<st
         // in the meantime
         const copy = { ...this.state.sets };
         copy[set] = newSet;
+        loadingIconSets.delete(set);
         this.setState(update(this.state, { sets: { $set: copy } }));
         return newSet;
       });
     } else {
-      return Promise.resolve(sets[set]);
+      return Promise.resolve(sets[set] || null);
     }
   }
 }

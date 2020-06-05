@@ -53,4 +53,4 @@ function mapStateToProps(state: IState): IConnectedProps {
 }
 
 export default connect(mapStateToProps)(
-  MainPageHeader) as React.ComponentClass<{}>;
+  MainPageHeader);

@@ -2,16 +2,17 @@ const Promise = require('bluebird');
 const { spawn } = require('child_process');
 const copyfiles = require('copyfiles');
 const rebuild = require('electron-rebuild').default;
-const fs = require('fs-extra-promise');
+const fs = require('fs');
+const fsP = require('fs').promises;
 const glob = require('glob');
 const minimist = require('minimist');
 const path = require('path');
 const rimraf = require('rimraf');
 const vm = require('vm');
 
-const projectGroups = fs.readJSONSync('./BuildSubprojects.json');
+const projectGroups = JSON.parse(fs.readFileSync('./BuildSubprojects.json'));
 
-const packageJSON = fs.readJSONSync('./package.json');
+const packageJSON = JSON.parse(fs.readFileSync('./package.json'));
 
 const npmcli = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 
@@ -122,7 +123,7 @@ function changes(basePath, patterns, force) {
                             globAsync(path.join(basePath, pattern), globOptions)
                                 .then((files) => [].concat(total, files)),
                         [])
-      .map((filePath) => fs.statAsync(filePath).then((stat) => stat.mtime.getTime()))
+      .map((filePath) => fsP.stat(filePath).then((stat) => stat.mtime.getTime()))
       .then((fileTimes) => Math.max(...fileTimes));
 }
 
@@ -223,7 +224,7 @@ function main(args) {
     console.error('No command line parameters specified');
     return Promise.reject(1);
   }
-  
+
   const globalFeedback = new ProcessFeedback('global');
 
   const buildType = args._[0];
@@ -235,7 +236,7 @@ function main(args) {
   let buildState;
 
   try {
-    buildState = fs.readJSONSync(buildStateName);
+    buildState = JSON.parse(fs.readFileSync(buildStateName));
   } catch (err) {
     buildState = {};
   }
@@ -255,7 +256,7 @@ function main(args) {
         })
         .then(() => {
           buildState[project.name] = Date.now();
-          return fs.writeJSONAsync(buildStateName, buildState);
+          return fsP.writeFile(buildStateName, JSON.stringify(buildState, undefined, 2));
         })
         .catch((err) => {
           if (err instanceof Unchanged) {

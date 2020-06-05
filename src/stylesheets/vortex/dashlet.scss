@@ -3,11 +3,6 @@
   background-color: $brand-menu;
   padding: $half-gutter;
   height: 100%;
-  h2 {
-    margin-top: 0;
-    text-transform: uppercase;
-    font-family: $font-family-headings;
-  }
   li {
     border: 0px;
     background-color: lighten($brand-menu, 5%);
@@ -226,21 +221,18 @@
 }
 
 .lodpi, .hidpi {
-  .packery-height-1 {
-    height: 120px;
+  @for $i from 1 through 8 {
+    .packery-height-#{$i} {
+      height: $dashlet-height * $i
+    }
   }
-  .packery-height-2 {
-    height: 240px;
-  }
-  .packery-height-3 {
-    height: 360px;
-  }
-  .packery-height-4 {
-    height: 480px;
-  }
-  .packery-height-5 {
-    height: 600px;
-  }
+}
+
+.dashlet-title {
+  font-size: 2rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  font-family: $font-family-headings;
 }
 
 .dashlet-game-title {
@@ -265,6 +257,10 @@
   .placeholder {
     flex: 1 1 0;
   }
+}
+
+.list-announcements-container {
+  overflow-y: auto;
 }
 
 .dashlet-game-more {

@@ -8,7 +8,7 @@ import { IMod } from '../types/IMod';
 
 import testModReference from './testModReference';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { alg, Graph } from 'graphlib';
 import * as _ from 'lodash';
 import { ILookupResult, IReference, IRule } from 'modmeta-db';

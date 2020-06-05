@@ -2,27 +2,34 @@ import { remote } from 'electron';
 import * as React from 'react';
 import { IconButton } from '../controls/TooltipControls';
 
-const app = remote.app;
-const window = remote.getCurrentWindow();
+const window = (() => {
+  let res: Electron.BrowserWindow;
+  return () => {
+    if (res === undefined) {
+      res = remote.getCurrentWindow();
+    }
+    return res;
+  };
+})();
 
 class WindowControls extends React.Component<{}, {}> {
-  public componentWillMount() {
-    window.on('maximize', this.onMaximize);
-    window.on('unmaximize', this.onMaximize);
+  public componentDidMount() {
+    window().on('maximize', this.onMaximize);
+    window().on('unmaximize', this.onMaximize);
   }
 
   public componentWillUnmount() {
-    window.removeListener('maximize', this.onMaximize);
-    window.removeListener('unmaximize', this.onMaximize);
+    window().removeListener('maximize', this.onMaximize);
+    window().removeListener('unmaximize', this.onMaximize);
   }
 
   public render(): JSX.Element {
-    if (window.isDestroyed()) {
+    if (window().isDestroyed()) {
       return null;
     }
     return (
       <div id='window-controls'>
-        { window.isMinimizable()
+        { window().minimizable
           ? (
             <IconButton
               id='window-minimize'
@@ -33,18 +40,18 @@ class WindowControls extends React.Component<{}, {}> {
             />
           ) : null
         }
-        { window.isMaximizable()
+        { window().maximizable
           ? (
             <IconButton
               id='window-maximize'
               className='window-control'
               tooltip=''
-              icon={window.isMaximized() ? 'window-restore' : 'window-maximize'}
+              icon={window().isMaximized() ? 'window-restore' : 'window-maximize'}
               onClick={this.toggleMaximize}
             />
           ) : null
         }
-        { window.isClosable()
+        { window().closable
           ? (
             <IconButton
               id='window-close'
@@ -60,7 +67,7 @@ class WindowControls extends React.Component<{}, {}> {
   }
 
   private minimize = () => {
-    window.minimize();
+    window().minimize();
   }
 
   private onMaximize = () => {
@@ -68,11 +75,11 @@ class WindowControls extends React.Component<{}, {}> {
   }
 
   private toggleMaximize = () => {
-    window.isMaximized() ? window.unmaximize() : window.maximize();
+    window().isMaximized() ? window().unmaximize() : window().maximize();
   }
 
   private close = () => {
-    window.close();
+    window().close();
   }
 }
 

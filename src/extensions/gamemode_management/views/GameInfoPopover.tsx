@@ -6,12 +6,12 @@ import { bytesToString } from '../../../util/util';
 import { IDiscoveryResult } from '../types/IDiscoveryResult';
 import { IGameStored } from '../types/IGameStored';
 
-import * as Promise from 'bluebird';
-import I18next from 'i18next';
+import Promise from 'bluebird';
+import { TFunction } from 'i18next';
 import * as React from 'react';
 
 export interface IBaseProps {
-  t: I18next.TFunction;
+  t: TFunction;
   game: IGameStored;
   onRefreshGameInfo: (gameId: string) => Promise<void>;
   onChange: () => void;
@@ -34,7 +34,7 @@ class GameInfoPopover extends ComponentEx<IProps, { loading: boolean }> {
     this.state = { loading: false };
   }
 
-  public componentWillMount() {
+  public componentDidMount() {
     const { game, onRefreshGameInfo } = this.props;
     this.mMounted = true;
     if (onRefreshGameInfo !== undefined) {
@@ -52,7 +52,7 @@ class GameInfoPopover extends ComponentEx<IProps, { loading: boolean }> {
     this.mMounted = false;
   }
 
-  public componentWillReceiveProps(nextProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(nextProps: IProps) {
     if ((this.props.discoveredGames !== nextProps.discoveredGames)
       && (nextProps.onRefreshGameInfo !== undefined)) {
       // A change in discovered games would suggest that the player has
@@ -119,4 +119,4 @@ function mapStateToProps(state: IState, ownProps: IBaseProps): IConnectedProps {
   };
 }
 
-export default connect(mapStateToProps)(GameInfoPopover) as React.ComponentClass<IBaseProps>;
+export default connect(mapStateToProps)(GameInfoPopover);

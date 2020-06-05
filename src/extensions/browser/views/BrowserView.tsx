@@ -10,7 +10,7 @@ import { truthy } from '../../../util/util';
 
 import { closeBrowser } from '../actions';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import {  WebviewTag } from 'electron';
 import * as React from 'react';
 import { Breadcrumb, Button, Modal } from 'react-bootstrap';
@@ -91,7 +91,7 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
     };
   }
 
-  public componentWillReceiveProps(newProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(newProps: IProps) {
     if (newProps.url !== this.props.url) {
       if ((newProps.url === undefined) || (this.props.url === undefined)
         || (new URL(newProps.url).hostname !== new URL(this.props.url).hostname)) {
@@ -195,7 +195,7 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
         <h3>{t('Attention')}</h3>
         <p>{t('Vortex is about to open an external web page:')}</p>
         <a href='#'>{url}</a>
-        <p>{t('Please be aware that Vortex is based on electron which in turn is based on '
+        <p>{t('Please be aware that Vortex is based on Electron which in turn is based on '
            + 'Chrome, but it will not always be the newest version. Also, we can\'t rule out '
            + 'that electron might contain it\'s own security issues pertaining to website '
            + 'access.')}</p>

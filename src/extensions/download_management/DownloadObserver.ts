@@ -27,9 +27,9 @@ import { IDownloadResult } from './types/IDownloadResult';
 import { ProgressCallback } from './types/ProgressCallback';
 import getDownloadGames from './util/getDownloadGames';
 
-import DownloadManager, { DownloadIsHTML } from './DownloadManager';
+import DownloadManager, { DownloadIsHTML, RedownloadMode } from './DownloadManager';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import {IHashResult} from 'modmeta-db';
 import * as path from 'path';
 import * as Redux from 'redux';
@@ -73,8 +73,8 @@ export class DownloadObserver {
     events.on('resume-download',
               (downloadId, callback?) => this.handleResumeDownload(downloadId, callback));
     events.on('start-download',
-              (urls, modInfo, fileName?, callback?) =>
-                  this.handleStartDownload(urls, modInfo, fileName, events, callback));
+              (urls, modInfo, fileName?, callback?, redownload?) =>
+                  this.handleStartDownload(urls, modInfo, fileName, events, callback, redownload));
   }
 
   private translateError(err: any): string {
@@ -89,7 +89,8 @@ export class DownloadObserver {
                               modInfo: any,
                               fileName: string,
                               events: NodeJS.EventEmitter,
-                              callback?: (error: Error, id?: string) => void) {
+                              callback?: (error: Error, id?: string) => void,
+                              redownload?: RedownloadMode) {
     const id = shortid();
     if (typeof(urls) !== 'function') {
       if (!Array.isArray(urls)) {
@@ -128,10 +129,11 @@ export class DownloadObserver {
 
     const processCB = this.genProgressCB(id);
 
-    const extraInfo = this.getExtraDlOptions(modInfo);
+    const extraInfo = this.getExtraDlOptions(modInfo, redownload);
 
-    return withContext(`Downloading "${fileName || urls[0]}"`, urls[0],
-      () => this.mManager.enqueue(id, urls, fileName, processCB, downloadPath, extraInfo)
+    return withContext(`Downloading "${fileName || urlIn}"`, urlIn,
+                       () => this.mManager.enqueue(id, urls, fileName,
+                                                   processCB, downloadPath, extraInfo)
         .then((res: IDownloadResult) => {
           log('debug', 'download finished', { file: res.filePath });
           this.handleDownloadFinished(id, callback, res);
@@ -332,7 +334,7 @@ export class DownloadObserver {
         const fullPath = path.join(downloadPath, download.localPath);
         this.mApi.store.dispatch(pauseDownload(downloadId, false, undefined));
 
-        const extraInfo = this.getExtraDlOptions(download.modInfo);
+        const extraInfo = this.getExtraDlOptions(download.modInfo, 'always');
 
         withContext(`Resuming "${download.localPath}"`, download.urls[0], () =>
           this.mManager.resume(downloadId, fullPath, download.urls,
@@ -384,9 +386,10 @@ export class DownloadObserver {
     }
   }
 
-  private getExtraDlOptions(modInfo: any): IDownloadOptions {
+  private getExtraDlOptions(modInfo: any, redownload: RedownloadMode): IDownloadOptions {
     return {
       referer: modInfo.referer,
+      redownload,
     };
   }
 }

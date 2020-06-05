@@ -1,34 +1,49 @@
 import { IExtensionApi } from '../../types/IExtensionContext';
 import { IDownload, IState } from '../../types/IState';
-import { DataInvalid, ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
+import { DataInvalid, ProcessCanceled, ServiceTemporarilyUnavailable, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import getVortexPath from '../../util/getVortexPath';
-import { jsonRequest } from '../../util/network';
+import { log } from '../../util/log';
+import { jsonRequest, rawRequest } from '../../util/network';
 import { getSafe } from '../../util/storeHelper';
-import { INVALID_FILENAME_RE } from '../../util/util';
+import { INVALID_FILENAME_RE, truthy, withTmpDir } from '../../util/util';
 
+import { addLocalDownload } from '../download_management/actions/state';
+import { AlreadyDownloaded } from '../download_management/DownloadManager';
 import { downloadPathForGame } from '../download_management/selectors';
 import { SITE_ID } from '../gamemode_management/constants';
 
 import installExtension from './installExtension';
+import { ExtensionType, IAvailableExtension, IExtension,
+         IExtensionDownloadInfo, IExtensionManifest, ISelector } from './types';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { remote } from 'electron';
 import * as _ from 'lodash';
+import SevenZip from 'node-7z';
 import * as path from 'path';
-import { ExtensionType, IAvailableExtension, IExtension,
-         IExtensionDownloadInfo, IExtensionManifest } from './types';
+import { SemVer } from 'semver';
+import { generate as shortid } from 'shortid';
 
 const caches: {
   __availableExtensions?: Promise<{ time: Date, extensions: IAvailableExtension[] }>,
   __installedExtensions?: Promise<{ [extId: string]: IExtension }>,
 } = {};
 
-const EXTENSIONS_URL =
-  'https://raw.githubusercontent.com/Nexus-Mods/Vortex/announcements/extensions.json';
-
 // don't fetch more than once per hour
 const UPDATE_FREQUENCY = 60 * 60 * 1000;
+
+function githubApiUrl(repo: string, api: string, args: string) {
+  return `https://api.github.com/repos/${repo}/${api}/${args}`;
+}
+
+function githubRawUrl(repo: string, branch: string, repoPath: string) {
+  return `https://raw.githubusercontent.com/${repo}/${branch}/${repoPath}`;
+}
+
+const EXTENSION_FORMAT = '1_2';
+
+const EXTENSION_URL = githubRawUrl('Nexus-Mods/Vortex', 'announcements', `extensions_${EXTENSION_FORMAT}.json`);
 
 function getAllDirectories(searchPath: string): Promise<string[]> {
   return fs.readdirAsync(searchPath)
@@ -62,6 +77,18 @@ function applyExtensionInfo(id: string, bundled: boolean, values: any, fallback:
   return res;
 }
 
+export function selectorMatch(ext: IAvailableExtension, selector: ISelector): boolean {
+  if (selector === undefined) {
+    return false;
+  } else if (truthy(selector.modId)) {
+    return ext.modId === selector.modId;
+  } else if (truthy(selector.githubRawPath)) {
+    return (ext.github === selector.github) && (ext.githubRawPath === selector.githubRawPath);
+  } else {
+    return (ext.github === selector.github);
+  }
+}
+
 export function sanitize(input: string): string {
   return input.replace(INVALID_FILENAME_RE, '_');
 }
@@ -73,7 +100,7 @@ export function readExtensionInfo(extensionPath: string,
     .then(info => {
       const data: IExtension = JSON.parse(info);
       data.path = extensionPath;
-      const id = path.basename(extensionPath, '.installing');
+      const id = data.id || path.basename(extensionPath, '.installing');
       return {
         id,
         info: applyExtensionInfo(id, bundled, data, fallback),
@@ -113,7 +140,8 @@ function doReadExtensions(): Promise<{ [extId: string]: IExtension }> {
     .reduce((prev, value: { id: string, info: IExtension }) => {
       prev[value.id] = value.info;
       return prev;
-    }, {});
+    }, {})
+    ;
 }
 
 export function fetchAvailableExtensions(forceCache: boolean, forceDownload: boolean = false)
@@ -125,7 +153,7 @@ export function fetchAvailableExtensions(forceCache: boolean, forceDownload: boo
 }
 
 function downloadExtensionList(cachePath: string): Promise<IAvailableExtension[]> {
-  return Promise.resolve(jsonRequest<IExtensionManifest>(EXTENSIONS_URL))
+  return Promise.resolve(jsonRequest<IExtensionManifest>(EXTENSION_URL))
     .then(manifest => manifest.extensions.filter(ext => ext.name !== undefined))
     .tap(extensions =>
       fs.writeFileAsync(cachePath,
@@ -138,7 +166,7 @@ function doFetchAvailableExtensions(forceDownload: boolean)
   const cachePath = path.join(remote.app.getPath('temp'), 'extensions.json');
   let time = new Date();
 
-  const checkChache = forceDownload
+  const checkCache = forceDownload
     ? Promise.resolve(true)
     : fs.statAsync(cachePath).then(stat => {
       if ((Date.now() - stat.mtimeMs) > UPDATE_FREQUENCY) {
@@ -149,7 +177,7 @@ function doFetchAvailableExtensions(forceDownload: boolean)
       }
     });
 
-  return checkChache
+  return checkCache
     .then(needsDownload => needsDownload
         ? downloadExtensionList(cachePath)
         : fs.readFileAsync(cachePath, { encoding: 'utf8' })
@@ -162,6 +190,10 @@ function doFetchAvailableExtensions(forceDownload: boolean)
             }
           }))
     .catch({ code: 'ENOENT' }, () => downloadExtensionList(cachePath))
+    .catch(err => {
+      log('error', 'failed to fetch list of extensions', err);
+      return Promise.resolve([]);
+    })
     .filter((ext: IAvailableExtension) => ext.description !== undefined)
     .then(extensions => ({ time, extensions }));
 }
@@ -171,7 +203,19 @@ export function downloadAndInstallExtension(api: IExtensionApi,
                                             : Promise<boolean> {
   let download: IDownload;
 
-  return api.emitAndAwait('nexus-download', SITE_ID, ext.modId, ext.fileId)
+  let dlPromise: Promise<string[]>;
+
+  if (truthy(ext.modId)) {
+    dlPromise = downloadFromNexus(api, ext);
+  } else if (truthy(ext.githubRawPath)) {
+    dlPromise = downloadGithubRaw(api, ext);
+  } else if (truthy(ext.githubRelease)) {
+    dlPromise = downloadGithubRelease(api, ext);
+  } else {
+    dlPromise = Promise.reject(new ProcessCanceled('Failed to download'));
+  }
+
+  return dlPromise
     .then((dlIds: string[]) => {
       const state: IState = api.store.getState();
 
@@ -185,13 +229,15 @@ export function downloadAndInstallExtension(api: IExtensionApi,
 
       return fetchAvailableExtensions(false);
     })
-    .then(availableExtensions => {
+    .then((availableExtensions: { time: Date, extensions: IAvailableExtension[] }) => {
       const extDetail = availableExtensions.extensions
-        .find(iter => (iter.modId === ext.modId) && (iter.fileId === ext.fileId));
+        .find(iter => ((ext.modId === undefined) || (iter.modId === ext.modId))
+                   && ((ext.fileId === undefined) || (iter.fileId === ext.fileId))
+                   && (ext.name === iter.name));
 
       const info: IExtension = (extDetail !== undefined)
         ? {
-          ..._.pick(extDetail, ['name', 'author', 'version', 'type']),
+          ..._.pick(extDetail, ['id', 'name', 'author', 'version', 'type']),
           bundled: false,
           description: extDetail.description.short,
           modId: ext.modId,
@@ -208,8 +254,12 @@ export function downloadAndInstallExtension(api: IExtensionApi,
       api.showDialog('error', 'Installation failed', {
         text: 'Failed to install the extension, please check the notifications.',
       }, [
-          { label: 'Close' },
-        ]);
+        { label: 'Close' },
+      ]);
+      return Promise.resolve(false);
+    })
+    .catch(ServiceTemporarilyUnavailable, err => {
+      log('warn', 'Failed to download from github', { message: err.message });
       return Promise.resolve(false);
     })
     .catch(err => {
@@ -217,10 +267,108 @@ export function downloadAndInstallExtension(api: IExtensionApi,
         text: 'Failed to install the extension',
         message: err.stack,
       }, [
-          { label: 'Close' },
-        ]);
+        { label: 'Close' },
+      ]);
       return Promise.resolve(false);
     });
+}
+
+export function downloadFromNexus(api: IExtensionApi,
+                                  ext: IExtensionDownloadInfo)
+                                  : Promise<string[]> {
+  return api.emitAndAwait('nexus-download', SITE_ID, ext.modId, ext.fileId);
+}
+
+export function downloadGithubRelease(api: IExtensionApi,
+                                      ext: IExtensionDownloadInfo)
+                                  : Promise<string[]> {
+  return new Promise((resolve, reject) => {
+    api.events.emit('start-download', [ext.githubRelease], { game: SITE_ID }, undefined,
+                    (err: Error, dlId: string) => {
+      if (err !== null) {
+        if (err instanceof AlreadyDownloaded) {
+          const state = api.getState();
+          const downloads = state.persistent.downloads.files;
+          const existingId = Object.keys(downloads).find(iter =>
+            downloads[iter].localPath === err.fileName);
+
+          return (existingId !== undefined)
+            ? resolve([existingId])
+            : reject(err);
+        }
+        return reject(err);
+      } else {
+        return resolve([dlId]);
+      }
+    }, 'never');
+  })
+  .catch(AlreadyDownloaded, (err: AlreadyDownloaded) => {
+    const state = api.getState();
+    const downloads = state.persistent.downloads.files;
+    const dlId = Object.keys(downloads).find(iter => downloads[iter].localPath === err.fileName);
+    return [dlId];
+  });
+}
+
+export function downloadFile(url: string, outputPath: string): Promise<void> {
+  return rawRequest(url).then((data: Buffer) => fs.writeFileAsync(outputPath, data));
+}
+
+export function downloadGithubRaw(api: IExtensionApi,
+                                  ext: IExtensionDownloadInfo)
+                                  : Promise<string[]> {
+  const archiveName = ext['version'] !== undefined
+    ? `${ext.githubRawPath}_${ext['version']}.7z`
+    : `${ext.githubRawPath}.7z`;
+
+  const state: IState = api.store.getState();
+  const downloadPath = downloadPathForGame(state, SITE_ID);
+
+  const { files } = state.persistent.downloads;
+  const existing = Object.keys(files).find(dlId =>
+    files[dlId].game.includes(SITE_ID) && files[dlId].localPath === archiveName);
+
+  // the only plausible reason the file could already exist is if a previous install failed
+  // or if we don't know the version. We could create a new new, numbered, download, but considering
+  // these are small files I think that is more likely to frustrate the user
+  const cleanProm = existing !== undefined
+    ? fs.removeAsync(path.join(downloadPath, archiveName))
+      .then(() => api.events.emit('remove-download', existing))
+    : Promise.resolve();
+
+  return cleanProm.then(() => withTmpDir(tmpPath => {
+    const archivePath = path.join(tmpPath, archiveName);
+
+    return rawRequest(githubApiUrl(ext.github, 'contents', ext.githubRawPath), { encoding: 'utf8' })
+      .then((content: string) => {
+        const data = JSON.parse(content);
+        if (!Array.isArray(data)) {
+          if ((typeof(data) === 'object') && (data.message !== undefined)) {
+            return Promise.reject(new ServiceTemporarilyUnavailable(data.message));
+          } else {
+            log('info', 'unexpected response from github', content);
+            return Promise.reject(new Error('Unexpected response from github (see log file)'));
+          }
+        }
+
+        const repoFiles: string[] =
+          data.filter(iter => iter.type === 'file').map(iter => iter.name);
+
+        return Promise.map(repoFiles, fileName => downloadFile(
+          githubRawUrl(ext.github, 'master', `${ext.githubRawPath}/${fileName}`),
+          path.join(tmpPath, fileName)))
+          .then(() => {
+            const pack = new SevenZip();
+            return pack.add(archivePath, repoFiles.map(fileName => path.join(tmpPath, fileName)));
+          })
+          .then(() => fs.moveAsync(archivePath, path.join(downloadPath, archiveName)))
+          .then(() => {
+            const archiveId = shortid();
+            api.store.dispatch(addLocalDownload(archiveId, SITE_ID, archiveName, 0));
+            return [archiveId];
+          });
+      });
+  }));
 }
 
 export function readExtensibleDir(extType: ExtensionType, bundledPath: string, customPath: string) {

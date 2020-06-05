@@ -1,4 +1,5 @@
 import { ComponentEx } from '../../util/ComponentEx';
+import { TFunction } from '../../util/i18n';
 import { IActionDefinitionEx } from '../ActionControl';
 import ContextMenu from '../ContextMenu';
 import Icon from '../Icon';
@@ -12,7 +13,7 @@ import * as Redux from 'redux';
 export const EMPTY_ID = '<Unspecified>';
 
 export interface IGroupingRowProps {
-  t: i18next.TFunction;
+  t: TFunction;
   groupId: string;
   groupName: string;
   count: number;

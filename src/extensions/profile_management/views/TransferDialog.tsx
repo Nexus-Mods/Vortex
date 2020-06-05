@@ -53,7 +53,7 @@ class Editor extends ComponentEx<IProps, IComponentState> {
     });
   }
 
-  public componentWillReceiveProps(nextProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(nextProps: IProps) {
     if (nextProps.dialog !== this.props.dialog) {
       this.nextState.dialog = nextProps.dialog;
     }
@@ -88,13 +88,14 @@ class Editor extends ComponentEx<IProps, IComponentState> {
             >
               {t('Transfer Enabled Mods')}
             </Checkbox>
-          </Modal.Body>)
-          : null}
+          </Modal.Body>
+          ) : null}
         <Modal.Footer>
           <Button onClick={this.close}>{t('Cancel')}</Button>
           <Button onClick={this.apply}>{t('Transfer')}</Button>
         </Modal.Footer>
-      </Modal>);
+      </Modal>
+      );
   }
 
   private swapProfiles = () => {

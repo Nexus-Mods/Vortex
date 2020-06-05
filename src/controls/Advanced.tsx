@@ -45,8 +45,10 @@ class Advanced extends ComponentEx<IProps, {}> {
 
 function mapStateToProps(state: IState): IConnectedProps {
   return {
-    advancedMode: state.settings.interface.advanced,
+    // disabled for now. We make practically no use of the advanced mode so it's just confusing
+    // advancedMode: state.settings.interface.advanced,
+    advancedMode: true,
   };
 }
 
-export default connect(mapStateToProps)(Advanced) as React.ComponentClass<{}>;
+export default connect(mapStateToProps)(Advanced);

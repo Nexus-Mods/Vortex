@@ -20,6 +20,8 @@ export const settingsReducer: IReducerSpec = {
       setSafe(state, ['showDropzone'], payload),
     [actions.setConfirmPurge as any]: (state, payload) =>
       setSafe(state, ['confirmPurge'], payload),
+    [actions.setCleanupOnDeploy as any]: (state, payload) =>
+      setSafe(state, ['cleanupOnDeploy'], payload),
   },
   defaults: {
     installPath: {},
@@ -27,6 +29,7 @@ export const settingsReducer: IReducerSpec = {
     activator: {},
     showDropzone: true,
     confirmPurge: true,
+    cleanupOnDeploy: false,
   },
   verifiers: {
     installPath: {

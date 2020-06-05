@@ -1,5 +1,6 @@
 export * from './app';
 export * from './notifications';
+export * from './notificationSettings';
 export * from './session';
 export * from './tables';
 export * from './window';

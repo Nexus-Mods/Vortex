@@ -2,14 +2,14 @@ import { ButtonType } from '../../../controls/IconBar';
 import ToolbarIcon from '../../../controls/ToolbarIcon';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 
-import I18next from 'i18next';
+import { TFunction } from 'i18next';
 import * as React from 'react';
 
 export interface IBaseProps {
   buttonType: ButtonType;
   toggleHidden: () => void;
   showHidden: boolean;
-  t: I18next.TFunction;
+  t: TFunction;
 }
 
 class ShowHiddenButton extends ComponentEx<IBaseProps, {}> {

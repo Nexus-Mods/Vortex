@@ -293,8 +293,13 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
   private onRemoveProfile = (profileId: string) => {
     const { currentProfile, onRemoveProfile, onWillRemoveProfile, onSetNextProfile,
             onShowDialog, profiles } = this.props;
+    const confirmText = (profileId === currentProfile)
+      ? 'You are trying to remove your currently active profile, "{{profileName}}". '
+        + 'This will result in Vortex exiting to the dashboard screen, with no active profile set. '
+        + 'Remove this profile? Note: the removed profile cannot be restored!'
+      : 'Remove the profile "{{profileName}}"? This can\'t be undone!';
     onShowDialog('question', 'Confirm', {
-      text: 'Remove the profile "{{profileName}}"? This can\'t be undone!',
+      text: confirmText,
       parameters: { profileName: profiles[profileId].name },
     }, [
         { label: 'Cancel', default: true },

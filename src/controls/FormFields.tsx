@@ -2,14 +2,14 @@ import FormFeedback from './FormFeedback';
 import { IconButton } from './TooltipControls';
 
 import { remote } from 'electron';
-import I18next from 'i18next';
+import { TFunction } from 'i18next';
 import * as React from 'react';
 import { Checkbox, Col, ControlLabel,
          FormControl, FormGroup,
          InputGroup } from 'react-bootstrap';
 
 export interface IFormItemProps {
-  t: I18next.TFunction;
+  t: TFunction;
   controlId: string;
   label: string;
   placeholder?: string;
@@ -155,12 +155,11 @@ export class FormPathItem extends React.Component<IFormPathProps, {}> {
       filters: extensions !== undefined ? [
         { name: 'Files', extensions },
       ] : [],
-    }, (fileNames: string[]) => {
-      if (fileNames === undefined) {
-        return;
+    }).then(result => {
+      const { filePaths } = result;
+      if ((filePaths !== undefined) && (filePaths.length > 0)) {
+        onChangeValue(stateKey, filePaths[0]);
       }
-
-      onChangeValue(stateKey, fileNames[0]);
     });
   }
 }

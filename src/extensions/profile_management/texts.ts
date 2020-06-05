@@ -1,6 +1,6 @@
-import I18next from 'i18next';
+import { TFunction } from 'i18next';
 
-function getText(id: string, t: I18next.TFunction) {
+function getText(id: string, t: TFunction) {
   switch (id) {
     case 'profiles':
       return t(

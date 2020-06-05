@@ -1,9 +1,12 @@
 import {addNotification} from '../../actions/notifications';
 import {IExtensionApi} from '../../types/IExtensionContext';
+import { DirectoryCleaningMode, IGame } from '../../types/IGame';
+import { IState } from '../../types/IState';
 import { getGame, UserCanceled } from '../../util/api';
 import * as fs from '../../util/fs';
 import {Normalize} from '../../util/getNormalizeFunc';
 import {log} from '../../util/log';
+import { activeGameId } from '../../util/selectors';
 import { truthy } from '../../util/util';
 
 import {
@@ -13,11 +16,11 @@ import {
   IUnavailableReason,
 } from './types/IDeploymentMethod';
 
-import * as Promise from 'bluebird';
-import I18next from 'i18next';
+import Promise from 'bluebird';
+import { TFunction } from 'i18next';
 import * as _ from 'lodash';
 import * as path from 'path';
-import turbowalk from 'turbowalk';
+import turbowalk, { IEntry } from 'turbowalk';
 
 export interface IDeployment {
   [relPath: string]: IDeployedFile;
@@ -42,6 +45,11 @@ abstract class LinkingActivator implements IDeploymentMethod {
   public static NEW_TAG_NAME = process.platform === 'win32'
     ? '__folder_managed_by_vortex'
     : '.__folder_managed_by_vortex';
+
+  private static isTagName(name: string) {
+    return (path.basename(name) === LinkingActivator.OLD_TAG_NAME)
+      || (path.basename(name) === LinkingActivator.NEW_TAG_NAME);
+  }
 
   public id: string;
   public name: string;
@@ -79,7 +87,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
     return Promise.resolve();
   }
 
-  public detailedDescription(t: I18next.TFunction): string {
+  public detailedDescription(t: TFunction): string {
     return t(this.description);
   }
 
@@ -149,6 +157,10 @@ abstract class LinkingActivator implements IDeploymentMethod {
       }
     };
 
+    const game: IGame = getGame(gameId);
+    const directoryCleaning = game.directoryCleaning || 'tag';
+    const dirTags = directoryCleaning === 'tag';
+
     const initialDeployment = {...this.mContext.previousDeployment};
 
     return Promise.map(removed, key =>
@@ -183,7 +195,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
         // then, (re-)link all files that were added
         .then(() => Promise.map(
                   added,
-                  key => this.deployFile(key, installationPath, dataPath, false)
+                  key => this.deployFile(key, installationPath, dataPath, false, dirTags)
                     .catch(err => {
                       log('warn', 'failed to link', {
                         link: this.mContext.newDeployment[key].relPath,
@@ -201,7 +213,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
         .then(() => Promise.map(
                   [].concat(sourceChanged, contentChanged),
                   (key: string) =>
-                      this.deployFile(key, installationPath, dataPath, true)
+                      this.deployFile(key, installationPath, dataPath, true, dirTags)
                           .catch(err => {
                             log('warn', 'failed to link', {
                               link: this.mContext.newDeployment[key].relPath,
@@ -226,8 +238,13 @@ abstract class LinkingActivator implements IDeploymentMethod {
             }));
           }
 
-          if ((removed.length > 0) && getGame(gameId).requiresCleanup) {
-            this.postLinkPurge(dataPath, false)
+          const state: IState = this.mApi.store.getState();
+          const { cleanupOnDeploy } = state.settings.mods;
+          const gameRequiresCleanup = game.requiresCleanup === undefined
+            ? (game.mergeMods !== true)
+            : game.requiresCleanup;
+          if ((removed.length > 0) && (gameRequiresCleanup || cleanupOnDeploy)) {
+            this.postLinkPurge(dataPath, false, directoryCleaning)
               .catch(err => {
                 this.mApi.showErrorNotification('Failed to clean up',
                   err, { message: dataPath });
@@ -304,16 +321,22 @@ abstract class LinkingActivator implements IDeploymentMethod {
     return Promise.resolve();
   }
 
-  public purge(installPath: string, dataPath: string): Promise<void> {
+  public purge(installPath: string, dataPath: string, gameId?: string): Promise<void> {
     if (!truthy(dataPath)) {
       // previously we reported an issue here, but we want the ability to have mod types
       // that don't actually deploy
       return Promise.resolve();
     }
+    if (gameId === undefined) {
+      gameId = activeGameId(this.mApi.store.getState());
+    }
+    const game = getGame(gameId);
+    const directoryCleaning = game.directoryCleaning || 'tag';
+
     // stat to ensure the target directory exists
     return fs.statAsync(dataPath)
       .then(() => this.purgeLinks(installPath, dataPath))
-      .then(() => this.postLinkPurge(dataPath, false))
+      .then(() => this.postLinkPurge(dataPath, false, directoryCleaning))
       .then(() => undefined);
   }
 
@@ -417,7 +440,8 @@ abstract class LinkingActivator implements IDeploymentMethod {
    * create file link
    * Note: This function is expected to replace the target file if it exists
    */
-  protected abstract linkFile(linkPath: string, sourcePath: string): Promise<void>;
+  protected abstract linkFile(linkPath: string, sourcePath: string,
+                              dirTags?: boolean): Promise<void>;
   protected abstract unlinkFile(linkPath: string, sourcePath: string): Promise<void>;
   protected abstract purgeLinks(installPath: string, dataPath: string): Promise<void>;
   /**
@@ -452,11 +476,11 @@ abstract class LinkingActivator implements IDeploymentMethod {
   }
 
   protected stat(filePath: string): Promise<fs.Stats> {
-    return fs.statAsync(filePath);
+    return fs.statAsync(filePath) as any;
   }
 
   protected statLink(filePath: string): Promise<fs.Stats> {
-    return fs.lstatAsync(filePath);
+    return fs.lstatAsync(filePath) as any;
   }
 
   private removeDeployedFile(installationPath: string,
@@ -497,7 +521,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
   }
 
   private deployFile(key: string, installPathStr: string, dataPath: string,
-                     replace: boolean): Promise<IDeployedFile> {
+                     replace: boolean, dirTags: boolean): Promise<IDeployedFile> {
     const fullPath =
       [installPathStr, this.mContext.newDeployment[key].source,
         this.mContext.newDeployment[key].relPath].join(path.sep);
@@ -519,7 +543,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
           : Promise.reject(err));
 
     return backupProm
-      .then(() => this.linkFile(fullOutputPath, fullPath))
+      .then(() => this.linkFile(fullOutputPath, fullPath, dirTags))
       .then(() => {
         this.mContext.previousDeployment[key] = this.mContext.newDeployment[key];
         return this.mContext.newDeployment[key];
@@ -539,32 +563,38 @@ abstract class LinkingActivator implements IDeploymentMethod {
     };
   }
 
-  private postLinkPurge(baseDir: string, doRemove: boolean): Promise<boolean> {
+  private postLinkPurge(baseDir: string, doRemove: boolean,
+                        directoryCleaning: DirectoryCleaningMode): Promise<boolean> {
     // recursively go through directories and remove empty ones !if! we encountered a
     // __delete_if_empty file in the hierarchy so far
     let empty = true;
     let queue = Promise.resolve();
+
+    let allEntries: IEntry[] = [];
+
+    const taggedForRemoval = (directoryCleaning === 'all')
+      ? () => true
+      : (entries: IEntry[]) => entries.find(entry =>
+        !entry.isDirectory && LinkingActivator.isTagName(entry.filePath)) !== undefined;
+
     return turbowalk(baseDir, entries => {
-      doRemove = doRemove ||
-        (entries.find(entry =>
-          !entry.isDirectory
-          && ((path.basename(entry.filePath) === LinkingActivator.OLD_TAG_NAME)
-              || (path.basename(entry.filePath) === LinkingActivator.NEW_TAG_NAME)))
-         !== undefined);
-      const dirs = entries.filter(entry => entry.isDirectory);
+      allEntries = allEntries.concat(entries);
+    }, { recurse: false, skipHidden: false, skipLinks: false })
+    .then(() => {
+      doRemove = doRemove || taggedForRemoval(allEntries);
+
+      const dirs = allEntries.filter(entry => entry.isDirectory);
       // recurse into subdirectories
       queue = queue.then(() =>
-        Promise.each(dirs, dir => this.postLinkPurge(dir.filePath, doRemove)
+        Promise.each(dirs, dir => this.postLinkPurge(dir.filePath, doRemove, directoryCleaning)
                                     .then(removed => {
                                       if (!removed) { empty = false; }
                                     }))
         .then(() => {
           // then check files. if there are any, this isn't empty. plus we
           // restore backups here
-          const files = entries.filter(entry =>
-            !entry.isDirectory
-            && (path.basename(entry.filePath) !== LinkingActivator.OLD_TAG_NAME)
-            && (path.basename(entry.filePath) !== LinkingActivator.NEW_TAG_NAME));
+          const files = allEntries.filter(entry =>
+            !entry.isDirectory && !LinkingActivator.isTagName(entry.filePath));
           if (files.length > 0) {
             empty = false;
             return Promise.map(
@@ -576,7 +606,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
             return Promise.resolve();
           }
         }));
-    }, { recurse: false, skipHidden: false, skipLinks: false })
+    })
       .catch({ code: 'ENOTFOUND' }, err => {
         // was only able to reproduce this by removing directory manually while purge was happening
         // still, if the directory doesn't exist, there is nothing to clean up, so - job done?

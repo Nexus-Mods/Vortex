@@ -1,4 +1,4 @@
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 
 function step(startTime: number, endTime: number, time: number) {
   if (time <= startTime) {

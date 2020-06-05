@@ -1,5 +1,6 @@
 import {IExtensionContext} from '../../types/IExtensionContext';
 import {IState} from '../../types/IState';
+import { TFunction } from '../../util/i18n';
 import {log} from '../../util/log';
 import { showError } from '../../util/message';
 import { activeGameId } from '../../util/selectors';
@@ -99,7 +100,7 @@ function init(context: IExtensionContext): boolean {
     isToggleable: true,
     edit: {},
     isSortable: true,
-    isGroupable: (mod: IModWithState, t: i18next.TFunction) =>
+    isGroupable: (mod: IModWithState, t: TFunction) =>
       resolveCategoryName(getModCategory(mod), context.api.store.getState()) || t('<No category>'),
     filter: new CategoryFilter(),
     sortFuncRaw: (lhs: IModWithState, rhs: IModWithState, locale: string): number =>

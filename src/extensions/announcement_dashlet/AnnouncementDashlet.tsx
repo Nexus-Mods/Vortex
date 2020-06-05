@@ -1,6 +1,6 @@
 import { remote } from 'electron';
-import I18next from 'i18next';
-import * as minimatch from 'minimatch';
+import { TFunction } from 'i18next';
+import minimatch from 'minimatch';
 import * as React from 'react';
 import { WithTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
@@ -41,8 +41,11 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
 
     return (
       <Dashlet className='dashlet-announcement' title={t('Announcements')}>
-        {filtered.length > 0 ? this.renderContent(filtered) : this.renderPlaceholder()}
-      </Dashlet>);
+        <div className='list-announcements-container'>
+          {filtered.length > 0 ? this.renderContent(filtered) : this.renderPlaceholder()}
+        </div>
+      </Dashlet>
+    );
   }
 
   private matchesGameMode(announcement: IAnnouncement): boolean {
@@ -115,7 +118,7 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
     return undefined;
   }
 
-  private severityToTooltip(t: typeof I18next.t, severity: AnnouncementSeverity): string {
+  private severityToTooltip(t: TFunction, severity: AnnouncementSeverity): string {
     switch (severity) {
       case 'warning': return t('Warning');
       case 'critical': return t('Critical');

@@ -37,7 +37,7 @@ import SpeedOMeter from './views/SpeedOMeter';
 import DownloadManager from './DownloadManager';
 import observe, { DownloadObserver } from './DownloadObserver';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import * as _ from 'lodash';
 import * as path from 'path';
@@ -602,7 +602,7 @@ function init(context: IExtensionContextExt): boolean {
                              badge: downloadCount,
                            });
 
-  context.registerSettings('Download', Settings);
+  context.registerSettings('Download', Settings, undefined, undefined, 75);
 
   context.registerFooter('speed-o-meter', SpeedOMeter);
 
@@ -691,7 +691,7 @@ function init(context: IExtensionContextExt): boolean {
             }
           })
           .catch(err => {
-            log('warn', 'failed to look up mod info', err.message);
+            log('warn', 'failed to look up mod info', err);
           });
       });
     });
@@ -736,6 +736,18 @@ function init(context: IExtensionContextExt): boolean {
     }, 1000);
 
     {
+      let powerTimer: NodeJS.Timeout;
+      let powerBlockerId: number;
+      const stopTimer = () => {
+        if (remote.powerSaveBlocker.isStarted(powerBlockerId)) {
+          console.log('stop prevent sleep', powerBlockerId);
+          remote.powerSaveBlocker.stop(powerBlockerId);
+        }
+        powerBlockerId = undefined;
+        powerTimer = undefined;
+      }
+
+
       const speedsDebouncer = new Debouncer(() => {
         store.dispatch(setDownloadSpeeds(store.getState().persistent.downloads.speedHistory));
         return null;
@@ -749,6 +761,14 @@ function init(context: IExtensionContextExt): boolean {
               store.dispatch(setDownloadSpeed(speed));
               // this schedules the main progress to be updated
               speedsDebouncer.schedule();
+              if (powerTimer !== undefined) {
+                clearTimeout(powerTimer);
+              }
+              if (powerBlockerId !== undefined) {
+                powerBlockerId = remote.powerSaveBlocker.start('prevent-app-suspension');
+                console.log('start prevent sleep', powerBlockerId);
+              }
+              powerTimer = setTimeout(stopTimer, 60000);
             }
           }, `Nexus Client v2.${app.getVersion()}`, protocolHandlers);
       manager.setFileExistsCB(fileName => {

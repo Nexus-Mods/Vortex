@@ -9,6 +9,7 @@ import { IGameStore } from '../../types/IGameStore';
 import { IProfile, IRunningTool, IState } from '../../types/IState';
 import { IEditChoice, ITableAttribute } from '../../types/ITableAttribute';
 import {ProcessCanceled, SetupError, UserCanceled} from '../../util/CustomErrors';
+import { COMPANY_ID } from '../../util/constants';
 import * as fs from '../../util/fs';
 import LazyComponent from '../../util/LazyComponent';
 import local from '../../util/local';
@@ -48,7 +49,7 @@ import {} from './views/Settings';
 import GameModeManager from './GameModeManager';
 import { currentGame, currentGameDiscovery, discoveryByGame } from './selectors';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { remote } from 'electron';
 import * as path from 'path';
 import * as Redux from 'redux';
@@ -167,11 +168,13 @@ function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
       remote.dialog.showOpenDialog(remote.getCurrentWindow(), {
         properties: ['openDirectory'],
         defaultPath: discovery.path,
-      }, (fileNames: string[]) => {
-        if ((fileNames !== undefined) && truthy(fileNames[0])) {
-          verifyGamePath(game, fileNames[0])
+      })
+      .then(result => {
+        const { filePaths } = result;
+        if ((filePaths !== undefined) && truthy(filePaths[0])) {
+          verifyGamePath(game, filePaths[0])
             .then(() => {
-              api.store.dispatch(setGamePath(game.id, fileNames[0]));
+              api.store.dispatch(setGamePath(game.id, filePaths[0]));
               resolve();
             })
             .catch(err => {
@@ -193,13 +196,15 @@ function browseGameLocation(api: IExtensionApi, gameId: string): Promise<void> {
     } else {
       remote.dialog.showOpenDialog(remote.getCurrentWindow(), {
         properties: ['openDirectory'],
-      }, (fileNames: string[]) => {
-        if (fileNames !== undefined) {
-          verifyGamePath(game, fileNames[0])
+      })
+      .then(result => {
+        const { filePaths } = result;
+        if ((filePaths !== undefined) && (filePaths.length > 0)) {
+          verifyGamePath(game, filePaths[0])
             .then(() => {
-              const exe = game.executable(fileNames[0]);
+              const exe = game.executable(filePaths[0]);
               api.store.dispatch(addDiscoveredGame(game.id, {
-                path: fileNames[0],
+                path: filePaths[0],
                 tools: {},
                 hidden: false,
                 environment: game.environment,
@@ -362,7 +367,7 @@ function init(context: IExtensionContext): boolean {
   });
   context.registerSettings('Games', LazyComponent(() => require('./views/Settings')), () => ({
     onResetSearchPaths: () => resetSearchPaths(context.api),
-  }));
+  }), undefined, 90);
   context.registerReducer(['session', 'discovery'], discoveryReducer);
   context.registerReducer(['session', 'gameMode'], sessionReducer);
   context.registerReducer(['settings', 'gameMode'], settingsReducer);
@@ -389,7 +394,7 @@ function init(context: IExtensionContext): boolean {
     try {
       const gameExtInfo = JSON.parse(
         fs.readFileSync(path.join(extensionPath, 'info.json'), { encoding: 'utf8' }));
-      game.contributed = (gameExtInfo.author === 'Black Tree Gaming Ltd.')
+      game.contributed = (gameExtInfo.author === COMPANY_ID)
         ? undefined
         : gameExtInfo.author;
       game.final = semver.gte(gameExtInfo.version, '1.0.0');
@@ -591,6 +596,9 @@ function init(context: IExtensionContext): boolean {
           // only calling to check if it works, some game extensions might discover
           // a setup-error when trying to resolve the mod path
           const discovery = discoveryByGame(store.getState(), newGameId);
+          if ((discovery === undefined) || (discovery.path === undefined)) {
+            return Promise.reject(new ProcessCanceled('The game is no longer discovered'));
+          }
           getGame(newGameId).getModPaths(discovery.path);
         })
         .then(() => $.gameModeManager.setGameMode(oldGameId, newGameId, currentProfileId))

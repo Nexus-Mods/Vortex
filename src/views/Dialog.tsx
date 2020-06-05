@@ -10,9 +10,9 @@ import {
 import { IState } from '../types/IState';
 import bbcode from '../util/bbcode';
 import { ComponentEx, connect, translate } from '../util/ComponentEx';
+import { TFunction } from '../util/i18n';
 
 import { remote } from 'electron';
-import I18next from 'i18next';
 import update from 'immutability-helper';
 import * as React from 'react';
 import {
@@ -88,7 +88,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     };
   }
 
-  public componentWillReceiveProps(newProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(newProps: IProps) {
     if ((newProps.dialogs.length > 0) &&
       (newProps.dialogs[0].id !== this.state.currentDialogId)) {
       let newState = update(this.state, {
@@ -113,7 +113,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     }
   }
 
-  public componentWillMount() {
+  public componentDidMount() {
     if (this.props.dialogs.length > 0) {
       this.setState(update(this.state, {
         currentDialogId: { $set: this.props.dialogs[0].id },
@@ -159,7 +159,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private translateParts(message: string, t: I18next.TFunction, parameters?: any) {
+  private translateParts(message: string, t: TFunction, parameters?: any) {
     // split by linebreak, then by tab, apply translation function, then join
     // again (replacing tabs with spaces)
     return message
@@ -214,7 +214,8 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
             hideText={t('Hide Details')}
           >
             {ctrl}
-          </Collapse>));
+          </Collapse>
+          ));
       } else {
         controls.push(ctrl);
       }
@@ -476,7 +477,8 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         isDefault={isDefault}
         onDismiss={this.dismiss}
         isDisabled={isDisabled}
-      />);
+      />
+      );
   }
 
   private iconForType(type: DialogType) {

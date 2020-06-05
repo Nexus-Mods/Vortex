@@ -142,7 +142,7 @@ export function initApplicationMenu(extensions: ExtensionManager) {
     let profiling: boolean = false;
     const stopProfiling = () => {
       const outPath = path.join(app.getPath('temp'), 'profile.dat');
-      contentTracing.stopRecording(outPath, path => {
+      contentTracing.stopRecording(outPath).then(() => {
         extensions.getApi().sendNotification({
           id: 'profiling',
           message: 'Profiling done',
@@ -150,29 +150,28 @@ export function initApplicationMenu(extensions: ExtensionManager) {
         });
         profiling = false;
       });
-    }
+    };
 
     const performanceMenu: Electron.MenuItemConstructorOptions[] = [{
       label: 'Start/Stop Profiling',
       accelerator: 'CmdOrCtrl+Shift+P',
       click() {
         if (!profiling) {
-          const defaultTraceCategories: Readonly<Array<string>> = [
+          const defaultTraceCategories: Readonly<string[]> = [
             '-*', 'devtools.timeline', 'disabled-by-default-devtools.timeline',
             'disabled-by-default-devtools.timeline.frame', 'toplevel', 'blink.console',
             'disabled-by-default-devtools.timeline.stack',
             'disabled-by-default-v8.cpu_profile', 'disabled-by-default-v8.cpu_profiler',
-            'disabled-by-default-v8.cpu_profiler.hires'
+            'disabled-by-default-v8.cpu_profiler.hires',
           ];
-        
 
           const options = {
             categoryFilter: defaultTraceCategories.join(','),
             traceOptions: 'record-until-full,enable-sampling',
-            options: 'sampling-frequency=10000'
+            options: 'sampling-frequency=10000',
           }
 
-          contentTracing.startRecording(options, () => {
+          contentTracing.startRecording(options).then(() => {
             console.log('Tracing started');
             extensions.getApi().sendNotification({
               id: 'profiling',
@@ -184,14 +183,14 @@ export function initApplicationMenu(extensions: ExtensionManager) {
                 action: () => {
                   stopProfiling();
                 },
-              }]
+              }],
             });
             profiling = true;
-          })
+          });
         } else {
           stopProfiling();
         }
-      }
+      },
     }];
 
     const menu = Menu.buildFromTemplate([

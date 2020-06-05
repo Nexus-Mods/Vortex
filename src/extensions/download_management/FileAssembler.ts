@@ -2,9 +2,9 @@ import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import { getVisibleWindow } from '../../util/errorHandling';
 import * as fs from '../../util/fs';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { dialog as dialogIn, remote } from 'electron';
-import * as fsFast from 'fs-extra-promise';
+import * as fsFast from 'fs-extra';
 import * as path from 'path';
 
 const dialog = remote !== undefined ? remote.dialog : dialogIn;
@@ -90,7 +90,7 @@ class FileAssembler {
             // works on windows and linux.
             // I'll assume it means it will work on MacOS too...
             : this.writeAsync(data, offset))
-        .then((bytesWritten: any) => {
+        .then(({ bytesWritten, buffer }) => {
           this.mWritten += bytesWritten;
           const now = Date.now();
           if ((this.mWritten - this.mLastFlushedSize > FileAssembler.MIN_FLUSH_SIZE)
@@ -107,7 +107,7 @@ class FileAssembler {
             ? reject(new Error(`incomplete write ${bytesWritten}/${data.length}`))
             : resolve(synced))
         .catch({ code: 'ENOSPC' }, () => {
-          (dialog.showMessageBox(getVisibleWindow(), {
+          (dialog.showMessageBoxSync(getVisibleWindow(), {
             type: 'warning',
             title: 'Disk is full',
             message: 'Download can\'t continue because disk is full, '
@@ -143,7 +143,7 @@ class FileAssembler {
   private writeAsync(data: Buffer, offset: number) {
     // try to write with the lower-overhead function first. If it fails, retry with
     // our own wrapper that will retry on some errors and provide better backtraces
-    return fsFast.writeAsync(this.mFD, data, 0, data.length, offset)
+    return fsFast.write(this.mFD, data, 0, data.length, offset)
       .catch(() => fs.writeAsync(this.mFD, data, 0, data.length, offset));
   }
 }

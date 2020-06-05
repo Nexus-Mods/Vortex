@@ -1,9 +1,19 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-const Promise = require("bluebird");
-const fs = require("fs");
-const path = require("path");
-const tmp = require("tmp");
+const bluebird_1 = __importDefault(require("bluebird"));
+const fs = __importStar(require("fs"));
+const path = __importStar(require("path"));
+const tmp = __importStar(require("tmp"));
 function trampoline(baseDir, moduleRoot, main) {
     const innerPath = require('path');
     const requireOrig = require;
@@ -53,7 +63,7 @@ function writeProgram(func, moduleBase, args) {
     return prog;
 }
 function runThreaded(func, moduleBase, ...args) {
-    return new Promise((resolve, reject) => {
+    return new bluebird_1.default((resolve, reject) => {
         tmp.file((err, tmpPath, fd, cleanup) => {
             if (err) {
                 return reject(err);

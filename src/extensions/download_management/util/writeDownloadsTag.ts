@@ -1,6 +1,6 @@
 import { IExtensionApi, IState } from '../../../types/api';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as path from 'path';
 import * as fs from '../../../util/fs';
 
@@ -11,6 +11,6 @@ export default function writeDownloadsTag(api: IExtensionApi, tagPath: string): 
   const data = {
     instance: state.app.instanceId,
   };
-  return fs.writeFileAsync(path.join(tagPath, DOWNLOADS_DIR_TAG),
-    JSON.stringify(data), {  encoding: 'utf8' });
+  return Promise.resolve(fs.writeFileAsync(path.join(tagPath, DOWNLOADS_DIR_TAG),
+    JSON.stringify(data), {  encoding: 'utf8' }));
 }

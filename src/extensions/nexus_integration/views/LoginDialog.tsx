@@ -16,7 +16,7 @@ import { IValidateKeyData } from '../types/IValidateKeyData';
 import { getPageURL } from '../util/sso';
 
 import { clipboard } from 'electron';
-import I18next from 'i18next';
+import { TFunction } from 'i18next';
 import * as React from 'react';
 import { Alert, ControlLabel, FormControl, FormGroup,
          InputGroup,
@@ -48,7 +48,7 @@ interface IActionProps {
 }
 
 interface ILoginInProgressProps {
-  t: I18next.TFunction;
+  t: TFunction;
   loginId: string;
   onCopyToClipboard: () => void;
 }
@@ -110,7 +110,7 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
     });
   }
 
-  public componentWillReceiveProps(newProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(newProps: IProps) {
     if (newProps.visible && !this.props.visible) {
       this.nextState.troubleshoot = false;
       this.nextState.apiKeyInput = '';

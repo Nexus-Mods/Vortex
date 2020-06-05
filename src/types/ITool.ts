@@ -1,4 +1,4 @@
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 
 /**
  * static information about a tool associated with a game.
@@ -139,6 +139,14 @@ export interface ITool {
    * process hierarchy
    */
   detach?: boolean;
+
+  /**
+   * if this tool is installed, use it as the primary tool (unless the user has manually set a
+   * primary of course)
+   * If multiple tools with this flag are installed it's effectively random which one gets picked,
+   * we make no promises on any kind of consistency
+   */
+  defaultPrimary?: boolean;
 
   /**
    * what to do with Vortex when starting the tool. Default is to do nothing. 'hide' will minimize

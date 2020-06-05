@@ -69,7 +69,7 @@ function mapStateToProps(state: IState): IConnectedProps {
 }
 
 const FilterConn = connect(mapStateToProps)(
-  GameFilterComponent) as React.ComponentClass<IFilterProps>;
+  GameFilterComponent) as unknown as React.ComponentClass<IFilterProps>;
 
 class GameFilter implements ITableFilter {
   public component = FilterConn;

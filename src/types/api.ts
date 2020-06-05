@@ -13,11 +13,17 @@ export * from './IState';
 export * from './ITestResult';
 export * from './ITableAttribute';
 export * from './SortDirection';
+
+export { TFunction } from '../util/i18n';
 export { IDiscoveredTool } from '../types/IDiscoveredTool';
 export { IExecInfo } from '../types/IExecInfo';
 export { IGameStoreEntry } from './IGameStoreEntry';
 export { GameEntryNotFound, GameStoreNotFound, IGameStore } from './IGameStore';
+export { IStarterInfo } from '../util/StarterInfo';
 
+export { IRegisteredExtension } from '../util/ExtensionManager';
+
+export { IAvailableExtension, IExtension } from '../extensions/extension_manager/types';
 export {
   IDeploymentMethod,
   IUnavailableReason,

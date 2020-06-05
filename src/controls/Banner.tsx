@@ -37,7 +37,7 @@ class Banner extends React.Component<IProps, {}> {
   private mBanners: IBannerDefinition[];
   private mCurrentBanner: number = 0;
 
-  public componentWillMount() {
+  public componentDidMount() {
     setInterval(this.cycle, this.props.cycleTime || 15000);
   }
 
@@ -119,4 +119,4 @@ function mapStateToProps(state: any, ownProps: IProps): IConnectedProps {
 export default
   extend(registerBanner, 'group')(
     connect(mapStateToProps)(
-      Banner as any)) as React.ComponentClass<ExportType>;
+      Banner) as any) as React.ComponentClass<ExportType>;

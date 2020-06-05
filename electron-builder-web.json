@@ -13,6 +13,7 @@
     "node_modules/bootstrap-sass/assets/stylesheets",
     "node_modules/react-select/scss",
     "node_modules/fomod-installer/dist",
+    "node_modules/json-socket",
     "assets/css/**"
   ],
   "appId": "com.nexusmods.vortex",

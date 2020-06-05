@@ -1,13 +1,15 @@
 import { setDialogVisible } from '../../../actions/session';
 import Icon from '../../../controls/Icon';
-import { Button } from '../../../controls/TooltipControls';
+import * as tooltip from '../../../controls/TooltipControls';
+import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import opn from '../../../util/opn';
+import { truthy } from '../../../util/util';
 
 import { setUserAPIKey } from '../actions/account';
 import { IValidateKeyData } from '../types/IValidateKeyData';
 
-import NexusT from 'nexus-api';
+import NexusT from '@nexusmods/nexus-api';
 import * as React from 'react';
 import { Image } from 'react-bootstrap';
 import { WithTranslation } from 'react-i18next';
@@ -21,6 +23,7 @@ export interface IBaseProps extends WithTranslation {
 interface IConnectedProps {
   APIKey: string;
   userInfo: IValidateKeyData;
+  networkConnected: boolean;
 }
 
 interface IActionProps {
@@ -30,8 +33,18 @@ interface IActionProps {
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
 
+const START_TIME = Date.now();
+
 class LoginIcon extends ComponentEx<IProps, {}> {
   public render(): JSX.Element {
+    const { t, networkConnected } = this.props;
+    if (!networkConnected) {
+      return (
+        <span id='login-control'>
+          <tooltip.Icon name='disconnected' tooltip={t('Network is offline')} />
+        </span>
+      );
+    }
     return (
       <span id='login-control'>
         {this.renderLoginName()}
@@ -69,15 +82,19 @@ class LoginIcon extends ComponentEx<IProps, {}> {
 
     const loggedIn = (APIKey !== undefined) && (userInfo !== undefined) && (userInfo !== null);
 
+    const profileIcon = truthy(userInfo) && truthy(userInfo.profileUrl)
+      ? `${userInfo.profileUrl}?r_${START_TIME}`
+      : 'assets/images/noavatar.png';
+
     return (
-      <Button
+      <tooltip.Button
         id='btn-login'
         tooltip={loggedIn ? t('Show Details') : t('Log in')}
         onClick={this.showLoginLayer}
       >
         {loggedIn ? (
           <Image
-            src={userInfo.profileUrl  || 'assets/images/noavatar.png'}
+            src={profileIcon}
             circle
             style={{ height: 32, width: 32 }}
           />
@@ -85,7 +102,7 @@ class LoginIcon extends ComponentEx<IProps, {}> {
             <Icon name='user' className='logout-avatar' />
           )
         }
-      </Button>
+      </tooltip.Button>
     );
   }
 
@@ -107,10 +124,11 @@ class LoginIcon extends ComponentEx<IProps, {}> {
   }
 }
 
-function mapStateToProps(state: any): IConnectedProps {
+function mapStateToProps(state: IState): IConnectedProps {
   return {
-    APIKey: state.confidential.account.nexus.APIKey,
-    userInfo: state.persistent.nexus.userInfo,
+    APIKey: (state.confidential.account as any).nexus.APIKey,
+    userInfo: (state.persistent as any).nexus.userInfo,
+    networkConnected: state.session.base.networkConnected,
   };
 }
 

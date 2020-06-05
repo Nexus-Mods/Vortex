@@ -16,6 +16,9 @@ export const setExtensionEnabled = safeCreateAction('SET_EXTENSION_ENABLED',
 export const setExtensionVersion = safeCreateAction('SET_EXTENSION_VERSION',
   (extensionId: string, version: string) => ({ extensionId, version }));
 
+export const setExtensionEndorsed = safeCreateAction('SET_EXTENSION_ENDORSED',
+  (extensionId: string, endorsed: string) => ({ extensionId, endorsed }));
+
 export const removeExtension = safeCreateAction('REMOVE_EXTENSION', id);
 
 export const forgetExtension = safeCreateAction('FORGET_EXTENSION', id);

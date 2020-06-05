@@ -133,4 +133,4 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
 export default
   connect(mapStateToProps, mapDispatchToProps)(
     translate(['common'])(
-      DashboardBanner)) as React.ComponentClass<{}>;
+      DashboardBanner));

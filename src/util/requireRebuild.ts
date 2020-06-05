@@ -111,7 +111,7 @@ function makeRebuildFunc(orig) {
       }
     }
 
-    log('info', 'rebuilding ', moduleName);
+    log('info', 'rebuilding ', { moduleName, process: process.type });
 
     const gypArgs: string[] = [
       'rebuild',

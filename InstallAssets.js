@@ -1,7 +1,7 @@
 'use strict';
 
 const Promise = require('bluebird');
-const fs = require('fs-extra-promise');
+const fs = require('fs-extra');
 const path = require('path');
 const glob = require('glob');
 const exec = require('child_process').exec;
@@ -89,8 +89,8 @@ Promise.mapSeries(data.copy, file => {
       }
       const targetFile = path.join(tgt, file.outPath, globTarget);
 
-      return fs.ensureDirAsync(path.dirname(targetFile))
-        .then(() => fs.copyAsync(globResult, targetFile))
+      return fs.ensureDir(path.dirname(targetFile))
+        .then(() => fs.copy(globResult, targetFile))
         .then(() => {
           console.log('copied', globResult, targetFile);
         })

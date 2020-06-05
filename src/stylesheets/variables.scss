@@ -4,25 +4,15 @@
 // (so gray-dark actually becomes light). This way we
 // get reasonable contrast without changing every
 // single reference to a gray color
-$dark-theme: true;
+// $dark-theme: true;
 
 $white:                  #ffffff;
 $black:                  #000000;
-$gray-lighter:           #DEE2E6;
-$gray-light:             #DDDDDD;
+$gray-darker:            #DEE2E6;
+$gray-dark:              #DDDDDD;
 $gray:                   #a9a9a9;
-$gray-dark:              #4C4C4C;
-$gray-darker:            #2A2C2B;
-
-@if $dark-theme {
-  $temp: $gray-darker;
-  $gray-darker: $gray-lighter;
-  $gray-lighter: $temp;
-
-  $temp: $gray-dark;
-  $gray-dark: $gray-light;
-  $gray-light: $temp;
-}
+$gray-light:             #4C4C4C;
+$gray-lighter:           #2A2C2B;
 
 $brand-primary:         #D78F46;
 $brand-highlight:       #00c1FF;
@@ -118,3 +108,5 @@ $scrollbar-width:        8px;
 // For most users, disabling this is probably fine but I guess we should
 // make it a configuration or theme option
 $touch-action: none;
+
+$dashlet-height: 120px;

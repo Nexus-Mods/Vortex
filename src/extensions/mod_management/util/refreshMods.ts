@@ -7,7 +7,7 @@ import { getSafe } from '../../../util/storeHelper';
 import { setModArchiveId } from '../actions/mods';
 import {IMod} from '../types/IMod';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import * as path from 'path';
 
@@ -25,7 +25,7 @@ function refreshMods(api: IExtensionApi, gameId: string,
   const knownModNames: string[] = Object.keys(knownMods);
   return fs.ensureDirAsync(installPath)
     .then(() => fs.readdirAsync(installPath))
-    .filter(modName => fs.statAsync(path.join(installPath, modName))
+    .filter((modName: string) => fs.statAsync(path.join(installPath, modName))
       .then(stats => stats.isDirectory())
       .catch(() => Promise.resolve(false)))
     .then((modNames: string[]) => {

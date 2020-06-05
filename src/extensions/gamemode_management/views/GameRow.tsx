@@ -12,14 +12,15 @@ import { IGameStored } from '../types/IGameStored';
 
 import GameInfoPopover from './GameInfoPopover';
 
-import * as Promise from 'bluebird';
-import I18next from 'i18next';
+import Promise from 'bluebird';
+import { TFunction } from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
 import { ListGroupItem, Media, Popover } from 'react-bootstrap';
+import { Provider } from 'react-redux';
 
 export interface IProps {
-  t: I18next.TFunction;
+  t: TFunction;
   game: IGameStored;
   discovery?: IDiscoveryResult;
   mods?: { [modId: string]: IMod };
@@ -71,24 +72,26 @@ class GameRow extends ComponentEx<IProps, {}> {
 
     const gameInfoPopover = (
       <Popover id={`popover-info-${game.id}`} className='popover-game-info' >
-        <IconBar
-          id={`game-thumbnail-${game.id}`}
-          className='buttons'
-          group={`game-${groupType}-buttons`}
-          instanceId={game.id}
-          staticElements={[]}
-          collapse={false}
-          buttonType='text'
-          orientation='vertical'
-          filter={this.lowPriorityButtons}
-          t={t}
-        />
-        <GameInfoPopover
-          t={t}
-          game={game}
-          onChange={this.redraw}
-          onRefreshGameInfo={onRefreshGameInfo}
-        />
+        <Provider store={this.context.api.store}>
+          <IconBar
+            id={`game-thumbnail-${game.id}`}
+            className='buttons'
+            group={`game-${groupType}-buttons`}
+            instanceId={game.id}
+            staticElements={[]}
+            collapse={false}
+            buttonType='text'
+            orientation='vertical'
+            filter={this.lowPriorityButtons}
+            t={t}
+          />
+          <GameInfoPopover
+            t={t}
+            game={game}
+            onChange={this.redraw}
+            onRefreshGameInfo={onRefreshGameInfo}
+          />
+        </Provider>
       </Popover>
     );
 

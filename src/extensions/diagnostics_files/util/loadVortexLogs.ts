@@ -3,7 +3,7 @@ import {LogLevel} from '../../../util/log';
 
 import { ILog, ISession } from '../types/ISession';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { remote } from 'electron';
 import * as path from 'path';
 
@@ -26,7 +26,7 @@ function parseLine(line: string, idx: number): ILog {
 export function loadVortexLogs(): Promise<ISession[]> {
   const logPath = remote.app.getPath('userData');
 
-  return fs.readdirAsync(logPath)
+  return Promise.resolve(fs.readdirAsync(logPath))
     .filter((fileName: string) => fileName.match(/vortex[0-9]?\.log/) !== null)
     .then((logFileNames: string[]) => {
       logFileNames = logFileNames.sort((lhs: string, rhs: string) => rhs.localeCompare(lhs));

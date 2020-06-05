@@ -89,7 +89,7 @@ const handleError = (error: any) => {
 };
 
 function main() {
-  const mainArgs = commandLine(process.argv);
+  const mainArgs = commandLine(process.argv, false);
   if (mainArgs.report) {
     return sendReportFile(mainArgs.report)
     .then(() => {
@@ -126,6 +126,8 @@ function main() {
     return;
   }
 
+  app.allowRendererProcessReuse = false;
+
   if (mainArgs.disableGPU) {
     app.disableHardwareAcceleration();
     app.commandLine.appendSwitch('--disable-software-rasterizer');
@@ -134,8 +136,6 @@ function main() {
 
   process.on('uncaughtException', handleError);
   process.on('unhandledRejection', handleError);
-
-  application = new Application(mainArgs);
 
   if (process.env.NODE_ENV === 'development') {
     app.commandLine.appendSwitch('remote-debugging-port', '9222');
@@ -147,6 +147,7 @@ function main() {
     app.commandLine.appendSwitch('force-device-scale-factor', '1');
   }
   */
+  application = new Application(mainArgs);
 }
 
 main();

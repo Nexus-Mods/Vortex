@@ -9,7 +9,7 @@ import EndorsementFilter from './views/EndorsementFilter';
 import EndorseModButton from './views/EndorseModButton';
 import NexusModIdDetail from './views/NexusModIdDetail';
 
-import I18next from 'i18next';
+import { TFunction } from 'i18next';
 import * as React from 'react';
 import * as Redux from 'redux';
 
@@ -17,7 +17,7 @@ import * as Redux from 'redux';
 function renderNexusModIdDetail(
   store: Redux.Store<any>,
   mod: IModWithState,
-  t: I18next.TFunction) {
+  t: TFunction) {
   const nexusModId: string = getSafe(mod.attributes, ['modId'], undefined);
   const fileName: string =
     getSafe(mod.attributes, ['fileName'],
@@ -44,7 +44,7 @@ export type EndorseMod = (gameId: string, modId: string, endorsedStatus: string)
 function createEndorsedIcon(store: Redux.Store<any>,
                             mod: IMod,
                             onEndorse: EndorseMod,
-                            t: I18next.TFunction) {
+                            t: TFunction) {
   const nexusModId: string = getSafe(mod.attributes, ['modId'], undefined);
   const version: string = getSafe(mod.attributes, ['version'], undefined);
   const state: string = getSafe(mod, ['state'], undefined);
@@ -100,7 +100,7 @@ export function genEndorsedAttribute(api: IExtensionApi,
     name: 'Endorsed',
     description: 'Endorsement state on Nexus',
     icon: 'star',
-    customRenderer: (mod: IMod, detail: boolean, t: I18next.TFunction) =>
+    customRenderer: (mod: IMod, detail: boolean, t: TFunction) =>
       getSafe(mod.attributes, ['source'], undefined) === 'nexus'
         ? createEndorsedIcon(api.store, mod, onEndorseMod, t)
         : null,
@@ -122,7 +122,7 @@ export function genModIdAttribute(api: IExtensionApi): ITableAttribute {
     name: 'Nexus Mod ID',
     description: 'Internal ID used by www.nexusmods.com',
     icon: 'external-link',
-    customRenderer: (mod: IModWithState, detail: boolean, t: I18next.TFunction) => {
+    customRenderer: (mod: IModWithState, detail: boolean, t: TFunction) => {
       const res = getSafe(mod.attributes, ['source'], undefined) === 'nexus'
         ? renderNexusModIdDetail(api.store, mod, t)
         : null;

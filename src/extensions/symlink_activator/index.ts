@@ -2,6 +2,7 @@ import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext'
 import { IGame } from '../../types/IGame';
 import { UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
+import { TFunction } from '../../util/i18n';
 import { log } from '../../util/log';
 import { activeGameId, gameName } from '../../util/selectors';
 import walk from '../../util/walk';
@@ -11,9 +12,8 @@ import { getGame } from '../gamemode_management/util/getGame';
 import LinkingDeployment from '../mod_management/LinkingDeployment';
 import { IDeploymentMethod, IUnavailableReason } from '../mod_management/types/IDeploymentMethod';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
-import I18next from 'i18next';
 import * as path from 'path';
 
 const app = appIn || remote.app;
@@ -33,7 +33,7 @@ class DeploymendMethod extends LinkingDeployment {
         api);
   }
 
-  public detailedDescription(t: I18next.TFunction): string {
+  public detailedDescription(t: TFunction): string {
     return t(
       'Symbolic links are special files containing a reference to another file. '
       + 'They are supported directly by the low-level API of the operating system '
@@ -138,15 +138,15 @@ class DeploymendMethod extends LinkingDeployment {
     return res;
   }
 
-  protected linkFile(linkPath: string, sourcePath: string): Promise<void> {
+  protected linkFile(linkPath: string, sourcePath: string, dirTags?: boolean): Promise<void> {
     return fs.ensureDirAsync(path.dirname(linkPath))
         .then((created: any) => {
           let tagDir: Promise<void>;
-          if (created !== null) {
+          if ((dirTags !== false) && (created !== null)) {
             const tagPath = path.join(created, LinkingDeployment.NEW_TAG_NAME);
-            tagDir = fs.writeFileAsync(tagPath,
+            tagDir = Promise.resolve(fs.writeFileAsync(tagPath,
                 'This directory was created by Vortex deployment and will be removed '
-                + 'during purging if it\'s empty');
+                + 'during purging if it\'s empty'));
           } else {
             tagDir = Promise.resolve();
           }

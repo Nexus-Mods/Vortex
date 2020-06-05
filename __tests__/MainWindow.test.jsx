@@ -17,12 +17,6 @@ function renderMainWindow() {
   return shallow(<MainWindow objects={[]} t={ dummyT } api={api}/>);
 }
 
-it('returns a div', () => {
-  let win = renderMainWindow();
-  // actually returns a "Fragment" containing the div
-  expect(win.childAt(0).type()).toBe('div');
-});
-
 it('has no modals', () => {
   let win = renderMainWindow();
   let modals = findAll(win, (ele) => (ele !== null) && (ele.type === Modal));

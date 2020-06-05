@@ -102,6 +102,7 @@ export interface ISession {
   extLoadFailures: { [extId: string]: IExtensionLoadFailure[] };
   toolsRunning: { [exeId: string]: IRunningTool };
   uiBlockers: { [id: string]: IUIBlocker };
+  networkConnected: boolean;
 }
 
 export interface IRowState {
@@ -118,6 +119,7 @@ export interface IExtensionState {
   enabled: boolean | 'failed';
   version: string;
   remove: boolean;
+  endorsed: string;
 }
 
 /**
@@ -207,6 +209,11 @@ export interface ISettingsMods {
   activator: { [gameId: string]: string };
   showDropzone: boolean;
   confirmPurge: boolean;
+  cleanupOnDeploy: boolean;
+}
+
+export interface ISettingsNotification {
+  suppress: { [notificationId: string]: boolean };
 }
 
 export interface ISettingsUpdate {
@@ -225,6 +232,7 @@ export interface ISettings {
   window: IWindow;
   downloads: ISettingsDownloads;
   mods: ISettingsMods;
+  notifications: ISettingsNotification;
   tables: ITableStates;
   update: ISettingsUpdate;
   workarounds: ISettingsWorkarounds;

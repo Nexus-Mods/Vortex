@@ -3,7 +3,8 @@ import {} from '../reducers/index';
 import { ThunkStore } from '../types/api';
 import {IState} from '../types/IState';
 import commandLine, {IParameters} from '../util/commandLine';
-import { DocumentsPathMissing, ProcessCanceled, UserCanceled } from '../util/CustomErrors';
+import { DataInvalid, DocumentsPathMissing, ProcessCanceled,
+         UserCanceled } from '../util/CustomErrors';
 import * as develT from '../util/devel';
 import { didIgnoreError, disableErrorReport, getVisibleWindow, setOutdated, setWindow,
          terminate, toError } from '../util/errorHandling';
@@ -29,10 +30,10 @@ import MainWindowT from './MainWindow';
 import SplashScreenT from './SplashScreen';
 import TrayIconT from './TrayIcon';
 
-import * as Promise from 'bluebird';
-import crashDump from 'crash-dump';
+import Promise from 'bluebird';
+import crashDumpX from 'crash-dump';
 import {app, dialog, ipcMain, shell} from 'electron';
-import * as isAdmin from 'is-admin';
+import isAdmin = require('is-admin');
 import * as _ from 'lodash';
 import * as msgpackT from 'msgpack';
 import * as os from 'os';
@@ -42,6 +43,9 @@ import * as semver from 'semver';
 import * as uuidT from 'uuid';
 
 import { RegGetValue } from 'winapi-bindings';
+
+// export is currently a bit messed up
+const crashDump = (crashDumpX as any).default;
 
 const uuid = lazyRequire<typeof uuidT>(() => require('uuid'));
 
@@ -140,7 +144,7 @@ class Application {
 
     app.on('second-instance', (event: Event, secondaryArgv: string[]) => {
       log('debug', 'getting arguments from second instance', secondaryArgv);
-      this.applyArguments(commandLine(secondaryArgv));
+      this.applyArguments(commandLine(secondaryArgv, true));
     });
 
     app.on('ready', () => {
@@ -169,6 +173,7 @@ class Application {
     delete webPreferences.preloadURL;
 
     webPreferences.nodeIntegration = false;
+    webPreferences.enableRemoteModule = false;
   }
 
   private genHandleError() {
@@ -209,7 +214,8 @@ class Application {
         .tap(() => log('debug', 'showing splash screen'))
         .then(splashIn => {
           splash = splashIn;
-          return this.createStore(args.restore);
+          return this.createStore(args.restore)
+            .catch(DataInvalid, () => this.createStore(args.restore, true));
         })
         .tap(() => log('debug', 'checking admin rights'))
         .then(() => this.warnAdmin())
@@ -225,7 +231,7 @@ class Application {
           process.on('uncaughtException', handleError);
           process.on('unhandledRejection', handleError);
         })
-        .then(() => this.initDevel())
+        // .then(() => this.initDevel())
         .tap(() => log('debug', 'starting user interface'))
         .then(() => this.startUi())
         .tap(() => log('debug', 'setting up tray icon'))
@@ -241,7 +247,7 @@ class Application {
         .catch(ProcessCanceled, () => {
           app.quit();
         })
-        .catch(DocumentsPathMissing, () => {
+        .catch(DocumentsPathMissing, () =>
           dialog.showMessageBox(getVisibleWindow(), {
             type: 'error',
             buttons: ['Close', 'More info'],
@@ -251,14 +257,13 @@ class Application {
             detail: 'Your "My Documents" folder is missing or is '
               + 'misconfigured. Please ensure that the folder is properly '
               + 'configured and accessible, then try again.',
-          }, response => {
-            if (response === 1) {
+          }).then(response => {
+            if (response.response === 1) {
               shell.openExternal(
                 'https://wiki.nexusmods.com/index.php/Misconfigured_Documents_Folder');
             }
             app.quit();
-          });
-        })
+          }))
         .catch(DatabaseLocked, () => {
           dialog.showErrorBox('Startup failed', 'Vortex seems to be running already. '
             + 'If you can\'t see it, please check the task manager.');
@@ -320,7 +325,7 @@ class Application {
 
   private warnAdmin(): Promise<void> {
     const state: IState = this.mStore.getState();
-    return timeout(isAdmin(), 1000)
+    return timeout(Promise.resolve(isAdmin()), 1000)
       .then(admin => {
         if ((admin === undefined) || !admin) {
           return Promise.resolve();
@@ -329,8 +334,7 @@ class Application {
         if (state.app.warnedAdmin > 0) {
           return Promise.resolve();
         }
-        return this.isUACEnabled().then(uacEnabled => new Promise((resolve, reject) => {
-          dialog.showMessageBox(getVisibleWindow(), {
+        return this.isUACEnabled().then(uacEnabled => dialog.showMessageBox(getVisibleWindow(), {
             title: 'Admin rights detected',
             message:
               'Vortex is not intended to be run as administrator!\n'
@@ -352,15 +356,14 @@ class Application {
               'Ignore',
             ],
             noLink: true,
-          }, (response: number) => {
-            if (response === 0) {
+          }).then(result => {
+            if (result.response === 0) {
               app.quit();
             } else {
               this.mStore.dispatch(setWarnedAdmin(1));
-              resolve();
+              return Promise.resolve();
             }
-          });
-        }));
+          }));
       });
   }
 
@@ -381,7 +384,7 @@ class Application {
       return Promise.resolve();
     }
     if (isMajorDowngrade(lastVersion, currentVersion)) {
-      if (dialog.showMessageBox(getVisibleWindow(), {
+      if (dialog.showMessageBoxSync(getVisibleWindow(), {
         type: 'warning',
         title: 'Downgrade detected',
         message: `The version of Vortex you\'re running (${currentVersion}) `
@@ -568,7 +571,7 @@ class Application {
     }
   }
 
-  private createStore(restoreBackup?: string): Promise<void> {
+  private createStore(restoreBackup?: string, repair?: boolean): Promise<void> {
     const newStore = createVortexStore(this.sanityCheckCB);
     const backupPath = path.join(app.getPath('temp'), 'state_backups');
     let backups: string[];
@@ -587,11 +590,18 @@ class Application {
     // 1. load only user settings to determine if we're in multi-user mode
     // 2. load app settings to determine which extensions to load
     // 3. load extensions, then load all settings, including extensions
-    return LevelPersist.create(path.join(this.mBasePath, currentStatePath))
+    return LevelPersist.create(path.join(this.mBasePath, currentStatePath),
+                               undefined,
+                               repair || false)
       .then(levelPersistor => {
         this.mLevelPersistors.push(levelPersistor);
         return insertPersistor(
           'user', new SubPersistor(levelPersistor, 'user'));
+      })
+      .catch(DataInvalid, err => {
+        const failedPersistor = this.mLevelPersistors.pop();
+        return failedPersistor.close()
+          .then(() => Promise.reject(err));
       })
       .then(() => {
         const multiUser = newStore.getState().user.multiUser;
@@ -773,31 +783,33 @@ class Application {
   private validateFiles(): Promise<void> {
     disableErrorReport();
     return Promise.resolve(validateFiles(getVortexPath('assets_unpacked')))
-      .then(validation => new Promise(resolve => {
+      .then(validation => {
         if ((validation.changed.length > 0)
             || (validation.missing.length > 0)) {
           log('info', 'Files were manipulated', validation);
-          dialog.showMessageBox(null, {
+          return dialog.showMessageBox(null, {
             type: 'error',
             title: 'Installation corrupted',
             message: 'Your Vortex installation has been corrupted. '
-                   + 'This could be the result of a virus or manual manipulation. '
-                   + 'Vortex might still appear to work (partially) but we suggest '
-                   + 'you reinstall it.',
+              + 'This could be the result of a virus or manual manipulation. '
+              + 'Vortex might still appear to work (partially) but we suggest '
+              + 'you reinstall it.',
             noLink: true,
             buttons: ['Quit', 'Ignore'],
-          }, (response => {
+          })
+          .then(dialogReturn => {
+            const { response } = dialogReturn;
             if (response === 0) {
               app.quit();
             } else {
               disableErrorReport();
-              return resolve();
+              return Promise.resolve();
             }
-          }));
+          });
         } else {
-          return resolve();
+          return Promise.resolve();
         }
-      }));
+      });
   }
 
   private applyArguments(args: IParameters) {

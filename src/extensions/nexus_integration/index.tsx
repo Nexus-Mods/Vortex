@@ -44,25 +44,23 @@ import LoginIcon from './views/LoginIcon';
 import { } from './views/Settings';
 
 import { genEndorsedAttribute, genGameAttribute, genModIdAttribute } from './attributes';
+import { NEXUS_MEMBERSHIP_URL } from './constants';
 import * as eh from './eventHandlers';
 import NXMUrl from './NXMUrl';
 import * as sel from './selectors';
 import { endorseModImpl, getInfo, nexusGames, processErrorMessage,
          startDownload, updateKey } from './util';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import * as fuzz from 'fuzzball';
-import I18next from 'i18next';
-import NexusT, { ICollectionDownloadLink, IDownloadURL, IFileInfo, IModInfo, IRevision, NexusError,
-                 RateLimitError, TimeoutError } from 'nexus-api';
+import { TFunction } from 'i18next';
+import NexusT, { IDownloadURL, NexusError, RateLimitError, TimeoutError } from '@nexusmods/nexus-api';
 import * as path from 'path';
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
 import {} from 'uuid';
-import * as WebSocket from 'ws';
-
-const NEXUS_DOMAIN = process.env['NEXUS_DOMAIN'] || 'nexusmods.com';
+import WebSocket from 'ws';
 
 const app = remote !== undefined ? remote.app : appIn;
 
@@ -88,26 +86,29 @@ class Disableable {
   }
 
   public get(obj, prop) {
+    const state: IState = this.mApi.store.getState();
+    const { networkConnected } = state.session.base;
     if (prop === 'disable') {
       return () => this.mDisabled = true;
-    } else if ((!this.mDisabled)
-               || mgmtFuncs.has(prop)
-               || (typeof obj[prop] !== 'function')) {
-      if (prop === 'getFileByMD5') {
-        return (hash: string, gameId: string) => {
-          if (gameId.toLowerCase() === 'skyrimse') {
-            this.mApi.showErrorNotification(
-              'Attempt to send invalid API request, please report this (once)',
-              new Error(`getFileByMD5 called with game id ${gameId}`),
-                        { id: 'api-invalid-gameid' });
-            gameId = 'skyrimspecialedition';
-          }
-          return obj[prop](hash, gameId);
-        };
-      }
+    } else if (mgmtFuncs.has(prop) || (typeof obj[prop] !== 'function')) {
       return obj[prop];
-    } else {
+    } else if (!networkConnected) {
+      return () => Promise.reject(new ProcessCanceled('network disconnected'));
+    } else if (this.mDisabled) {
       return () => Promise.reject(new APIDisabled(prop));
+    } else if (prop === 'getFileByMD5') {
+      return (hash: string, gameId: string) => {
+        if (gameId.toLowerCase() === 'skyrimse') {
+          this.mApi.showErrorNotification(
+            'Attempt to send invalid API request, please report this (once)',
+            new Error(`getFileByMD5 called with game id ${gameId}`),
+            { id: 'api-invalid-gameid' });
+          gameId = 'skyrimspecialedition';
+        }
+        return obj[prop](hash, gameId);
+      };
+    } else {
+      return obj[prop];
     }
   }
 }
@@ -142,7 +143,8 @@ const requestLog = {
     // TODO: why does "this" not point to the right object here?
     const reqs = requestLog.requests;
     requestLog.requests = [];
-    return fs.writeFileAsync(requestLog.logPath, reqs.join('\n') + '\n', { flag: 'a' });
+    return fs.writeFileAsync(requestLog.logPath, reqs.join('\n') + '\n', { flag: 'a' })
+      .then(() => null);
   }, 500),
   log(prop: string, args: any[], caller: string) {
     this.requests.push(`success - (${Date.now()}) ${prop} (${args.join(', ')}) from ${caller}`);
@@ -755,7 +757,7 @@ function once(api: IExtensionApi) {
   { // limit lifetime of state
     const state = api.store.getState();
 
-    const Nexus: typeof NexusT = require('nexus-api').default;
+    const Nexus: typeof NexusT = require('@nexusmods/nexus-api').default;
     const apiKey = getSafe(state, ['confidential', 'account', 'nexus', 'APIKey'], undefined);
     const gameMode = activeGameId(state);
 
@@ -778,6 +780,7 @@ function once(api: IExtensionApi) {
   api.onAsync('get-nexus-collections', eh.onGetNexusCollections(api, nexus));
   api.onAsync('get-nexus-collection-revision', eh.onGetNexusRevision(api, nexus));
   api.onAsync('rate-nexus-collection-revision', eh.onRateRevision(api, nexus));
+  api.onAsync('endorse-nexus-mod', eh.onEndorseDirect(api, nexus));
   api.events.on('endorse-mod', eh.onEndorseMod(api, nexus));
   api.events.on('submit-feedback', eh.onSubmitFeedback(nexus));
   api.events.on('submit-collection', eh.onSubmitCollection(nexus));
@@ -813,7 +816,7 @@ function once(api: IExtensionApi) {
     });
 }
 
-function toolbarBanner(t: I18next.TFunction): React.StatelessComponent<any> {
+function toolbarBanner(t: TFunction): React.StatelessComponent<any> {
   return () => {
     return (
       <div className='nexus-main-banner' style={{ background: 'url(assets/images/ad-banner.png)' }}>
@@ -823,12 +826,13 @@ function toolbarBanner(t: I18next.TFunction): React.StatelessComponent<any> {
         <div className='right-center'>
           <Button bsStyle='ad' onClick={goBuyPremium}>{t('Go Premium')}</Button>
         </div>
-      </div>);
+      </div>
+    );
   };
 }
 
 function goBuyPremium() {
-  opn(`https://www.${NEXUS_DOMAIN}/register/premium`).catch(err => undefined);
+  opn(NEXUS_MEMBERSHIP_URL).catch(err => undefined);
 }
 
 function queryInfo(api: IExtensionApi, instanceIds: string[]) {
@@ -840,6 +844,10 @@ function queryInfo(api: IExtensionApi, instanceIds: string[]) {
 
   Promise.map(instanceIds, dlId => {
     const dl = state.persistent.downloads.files[dlId];
+    if (dl === undefined) {
+      log('warn', 'download no longer exists', dlId);
+      return;
+    }
     const gameId = Array.isArray(dl.game) ? dl.game[0] : dl.game;
     const downloadPath = downloadPathForGame(state, gameId);
     if ((downloadPath === undefined) || (dl.localPath === undefined) || (dl.state !== 'finished')) {
@@ -1109,7 +1117,8 @@ function init(context: IExtensionContextExt): boolean {
         {t('Nexus downloads are capped at 1-2MB/s - '
           + 'Go Premium for uncapped download speeds')}
         <Button bsStyle='ad' onClick={goBuyPremium}>{t('Go Premium')}</Button>
-      </div>);
+      </div>
+    );
   }, {
     props: {
       isPremium: state => getSafe(state, ['persistent', 'nexus', 'userInfo', 'isPremium'], false),

@@ -8,9 +8,9 @@ import * as selectors from '../../../util/selectors';
 
 import { setCompatibleGames } from '../actions/state';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as fuzz from 'fuzzball';
-import I18next from 'i18next';
+import { TFunction } from 'i18next';
 import * as path from 'path';
 import * as React from 'react';
 import { DropdownButton, ListGroup, ListGroupItem, MenuItem } from 'react-bootstrap';
@@ -18,7 +18,7 @@ import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 
 export interface IBaseProps {
-  t: I18next.TFunction;
+  t: TFunction;
   id: string;
   currentGames: string[];
   games: IGameStored[];

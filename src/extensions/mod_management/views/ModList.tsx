@@ -47,8 +47,8 @@ import getText from '../texts';
 import CheckModVersionsButton from './CheckModVersionsButton';
 import InstallArchiveButton from './InstallArchiveButton';
 
-import * as Promise from 'bluebird';
-import I18next from 'i18next';
+import Promise from 'bluebird';
+import { TFunction } from 'i18next';
 import * as _ from 'lodash';
 import * as React from 'react';
 import { Button, ButtonGroup, MenuItem, Panel } from 'react-bootstrap';
@@ -60,7 +60,7 @@ import * as semver from 'semver';
 type IModWithState = IMod & IProfileMod;
 
 interface IVersionOptionProps {
-  t: I18next.TFunction;
+  t: TFunction;
   modId: string;
   altId: string;
   mod: IModWithState;
@@ -260,7 +260,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     });
   }
 
-  public componentWillMount() {
+  public componentDidMount() {
     this.mIsMounted = true;
     this.updateModsWithState(this.props)
     .then(() => this.forceUpdate());
@@ -277,7 +277,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     this.mIsMounted = false;
   }
 
-  public componentWillReceiveProps(newProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(newProps: IProps) {
     if ((this.props.gameMode !== newProps.gameMode)
         || (this.props.mods !== newProps.mods)
         || (this.props.modState !== newProps.modState)
@@ -662,7 +662,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       isVolatile: true,
       edit: {},
       isSortable: false,
-      isGroupable: (mod: IModWithState, t: I18next.TFunction) => {
+      isGroupable: (mod: IModWithState, t: TFunction) => {
         if (mod === undefined) {
           return '';
         }

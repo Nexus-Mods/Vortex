@@ -18,6 +18,7 @@ import {
   TestSupported,
 } from '../extensions/mod_management/types/TestSupported';
 import { Archive } from '../util/archives';
+import { i18n, TFunction } from '../util/i18n';
 import ReduxProp from '../util/ReduxProp';
 import { SanityCheck } from '../util/reduxSanity';
 
@@ -28,17 +29,18 @@ import { DialogType, IDialogResult } from './IDialog';
 import { IGame } from './IGame';
 import { IGameStore } from './IGameStore';
 import { INotification } from './INotification';
-import { IDiscoveryResult } from './IState';
+import { IDiscoveryResult, IState } from './IState';
 import { ITableAttribute } from './ITableAttribute';
 import { ITestResult } from './ITestResult';
 
-import * as Promise from 'bluebird';
-import I18next from 'i18next';
+import Promise from 'bluebird';
 import { ILookupResult, IModInfo, IReference } from 'modmeta-db';
 import * as React from 'react';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
-import { IModLookupResult, ILookupOptions } from './IModLookupResult';
+
+import { IRegisteredExtension } from '../util/ExtensionManager';
+import { ILookupOptions, IModLookupResult } from './IModLookupResult';
 
 export { TestSupported, IInstallResult, IInstruction, IDeployedFile, IDeploymentMethod,
          IFileChange, ILookupResult, IModInfo, InstructionType, IReference, InstallFunc,
@@ -125,8 +127,12 @@ export interface IDashletOptions {
   closable?: boolean;
 }
 
+/**
+ * @param height Height of the dashlet in rows. Please note that 1 row is very slim, it's not
+ *               commonly used in practice
+ */
 export type RegisterDashlet =
-  (title: string, width: 1 | 2 | 3, height: 1 | 2 | 3 | 4 | 5, position: number,
+  (title: string, width: 1 | 2 | 3, height: 1 | 2 | 3 | 4 | 5 | 6, position: number,
    component: React.ComponentClass<any> | React.FunctionComponent<any>,
    isVisible: (state) => boolean,
    props: PropsCallback, options: IDashletOptions) => void;
@@ -149,10 +155,10 @@ export type RegisterToDo =
      type: ToDoType,
      props: (state: any) => any,
      icon: ((props: any) => JSX.Element) | string,
-     text: ((t: I18next.TFunction, props: any) => JSX.Element) | string,
+     text: ((t: TFunction, props: any) => JSX.Element) | string,
      action: (props: any) => void,
      condition: (props: any) => boolean,
-     value: ((t: I18next.TFunction, props: any) => JSX.Element) | string,
+     value: ((t: TFunction, props: any) => JSX.Element) | string,
      priority: number) => void;
 
 export interface IRegisterProtocol {
@@ -277,6 +283,7 @@ export interface IErrorOptions {
   isBBCode?: boolean;
   isHTML?: boolean;
   allowReport?: boolean;
+  allowSuppress?: boolean;
   hideDetails?: boolean;
   replace?: { [key: string]: string };
   attachments?: IAttachment[];
@@ -296,15 +303,15 @@ export type GameInfoQuery = (game: any) => Promise<{ [key: string]: IGameDetail 
 export interface IMergeFilter {
   // files to use as basis for merge, will be copied to the merge
   // directory during deployment (from in (absolute) to out (relative to working directory)
-  baseFiles: () => Array<{ in: string, out: string }>;
+  baseFiles: (deployedFiles: IDeployedFile[]) => Array<{ in: string, out: string }>;
   // filter function, needs to match all files (relative paths) in the mod to consider
   // for merging
   filter: (fileName: string) => boolean;
 }
 
 /**
- * callback to determine if a merge function applies to a game. If true, return an
- * object that describes what files to merge
+ * callback to determine if a merge function applies to a game. If so, return an
+ * object that describes what files to merge, otherwise return undefined
  */
 export type MergeTest = (game: IGame, gameDiscovery: IDiscoveryResult) => IMergeFilter;
 /**
@@ -392,6 +399,13 @@ export interface IExtensionApi {
   dismissNotification?: (id: string) => void;
 
   /**
+   * hides a notification and don't show it again
+   * if this is called with the second parameter set to false, it re-enables the notification
+   * instead
+   */
+  suppressNotification?: (id: string, suppress?: boolean) => void;
+
+  /**
    * show a system dialog to open a single file
    *
    * @memberOf IExtensionApi
@@ -438,7 +452,7 @@ export interface IExtensionApi {
   /**
    * translation function
    */
-  translate: I18next.TFunction;
+  translate: TFunction;
 
   /**
    * active locale
@@ -450,7 +464,7 @@ export interface IExtensionApi {
    * This is only needed to influence how localisation works in general,
    * to just translate a text, use "translate"
    */
-  getI18n: () => I18next.i18n;
+  getI18n: () => i18n;
 
   /**
    * retrieve path for a known directory location.
@@ -590,7 +604,7 @@ export interface IExtensionApi {
    * Note that listeners should report all errors themselves, it is considered a bug if the listener
    * returns a rejected promise.
    */
-  onAsync: (eventName: string, listener: (...args: any[]) => Promise<any>) => void;
+  onAsync: (eventName: string, listener: (...args: any[]) => PromiseLike<any>) => void;
 
   /**
    * returns true if the running version of Vortex is considered outdated. This is mostly used
@@ -612,6 +626,16 @@ export interface IExtensionApi {
    * Specifically events can only be sent once this event has been triggered
    */
   awaitUI: () => Promise<void>;
+
+  /**
+   * wrapper for api.store.getState() with the benefit that it automatically assigns a type
+   */
+  getState: <T extends IState = IState>() => T;
+
+  /**
+   * get a list of extensions currently loaded into Vortex
+   */
+  getLoadedExtensions: () => IRegisteredExtension[];
 }
 
 export interface IStateVerifier {
@@ -678,6 +702,7 @@ export interface IModTypeOptions {
   // I have to admit this is fairly specific to collections, not sure if this flag is useful in
   // any other context
   customDependencyManagement?: boolean;
+  deploymentEssential?: boolean;
 }
 
 /**
@@ -1029,10 +1054,13 @@ export interface IExtensionContext {
    * it can be done from there. The version that was previously run is being passed to the migration
    * function so the extension can determine if the upgrade is actually necessary and if so, which
    * (if there are multiple).
+   * IMPORTANT: Use the old version only to save time, your migration must not cause break anything
+   *   if this version is inaccurate. E.g. if state was manipulated/damaged, Vortex may send 0.0.0
+   *   for the old version even when the current version was run before.
    * If the extension was never loaded before, the version "0.0.0" is passed in.
    * Please note: Vortex will continue running, with the extension loaded, after migrate is called,
    *   it is not currently possible to delay loading an extension until the migration is complete.
-   *   This means one of these to be true:
+   *   This means one of these must be true:
    *     - the extension is functional without the migration, at least so much so that it doesn't
    *       cause "damage"
    *     - the extension disables/blocks itself until the migration is done

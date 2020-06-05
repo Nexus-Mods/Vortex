@@ -9,6 +9,7 @@ import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import Debouncer from '../../util/Debouncer';
 import * as fs from '../../util/fs';
+import { TFunction } from '../../util/i18n';
 import StarterInfo, { IStarterInfo } from '../../util/StarterInfo';
 import { getSafe } from '../../util/storeHelper';
 
@@ -16,9 +17,8 @@ import { addDiscoveredTool, setGameParameters } from '../gamemode_management/act
 
 import ToolIcon from './ToolIcon';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { remote } from 'electron';
-import I18next from 'i18next';
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as PropTypes from 'prop-types';
@@ -31,7 +31,7 @@ import { ThunkDispatch } from 'redux-thunk';
 const {app} = remote;
 
 interface IEnvButtonProps {
-  t: I18next.TFunction;
+  t: TFunction;
   variable?: { key: string, value: string };
   open: boolean;
   onOpen: (itemId: string) => void;
@@ -49,7 +49,7 @@ class EnvButton extends ComponentEx<IEnvButtonProps, IEnvButtonState> {
     this.initState({ varCopy: { ...props.variable } });
   }
 
-  public componentWillReceiveProps(newProps: IEnvButtonProps) {
+  public UNSAFE_componentWillReceiveProps(newProps: IEnvButtonProps) {
     this.nextState.varCopy = { ...newProps.variable };
   }
 
@@ -182,6 +182,8 @@ interface IEditStarterInfo {
   shell: boolean;
   detach: boolean;
   onStart?: 'hide' | 'hide_recover' | 'close';
+  defaultPrimary?: boolean;
+  exclusive?: boolean;
 }
 
 interface IToolEditState {
@@ -434,7 +436,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
     const editEnv = (itemId: string) => onEditEnv(itemId);
 
     return (
-    <ListGroup>
+      <ListGroup>
         {envList.map(env => (
           <ListGroupItem key={env.key}>
             <EnvButton
@@ -447,17 +449,18 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
             />
           </ListGroupItem>
         ))
-      }
-      <ListGroupItem key='__add'>
-        <EnvButton
-          t={t}
-          open={group === '__add'}
-          onAdd={this.addEnv}
-          onRemove={this.removeEnv}
-          onOpen={editEnv}
-        />
-      </ListGroupItem>
-    </ListGroup>);
+        }
+        <ListGroupItem key='__add'>
+          <EnvButton
+            t={t}
+            open={group === '__add'}
+            onAdd={this.addEnv}
+            onRemove={this.removeEnv}
+            onOpen={editEnv}
+          />
+        </ListGroupItem>
+      </ListGroup>
+    );
   }
 
   private addEnv = (key: string, value: string) => {
@@ -561,13 +564,8 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
           : Promise.resolve())
       .then(() => fs.ensureDirAsync(path.dirname(destPath)))
       .then(() => (path.extname(filePath) === '.exe')
-        ? new Promise<Electron.NativeImage>((resolve, reject) => {
-          app.getFileIcon(filePath, { size: 'normal' }, (err: Error, icon: Electron.NativeImage) =>
-            (err !== null)
-              ? reject(err)
-              : resolve(icon));
-        })
-        .then(icon => fs.writeFileAsync(destPath, icon.toPNG()))
+        ? app.getFileIcon(filePath, { size: 'normal' })
+          .then(icon => fs.writeFileAsync(destPath, icon.toPNG()))
         : fs.copyAsync(filePath, destPath))
       .then(() => {
         this.clearCache();
@@ -607,6 +605,8 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
       shell: tool.shell,
       detach: tool.detach,
       onStart: tool.onStart,
+      defaultPrimary: tool.defaultPrimary,
+      exclusive: tool.exclusive,
     };
   }
 

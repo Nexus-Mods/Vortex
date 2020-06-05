@@ -1,11 +1,13 @@
 import { Normalize } from './getNormalizeFunc';
 import getVortexPath from './getVortexPath';
+import { log } from './log';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { spawn } from 'child_process';
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as semver from 'semver';
+import * as tmp from 'tmp';
 
 /**
  * count the elements in an array for which the predicate matches
@@ -99,7 +101,7 @@ export function objDiff(lhs: any, rhs: any, skip?: string[]): any {
       if ((skip !== undefined) && (skip.indexOf(key) !== -1)) {
         return;
       }
-      if ((rhs[key] === undefined) && (lhs[key] !== undefined)) {
+      if (!rhs.hasOwnProperty(key) && lhs.hasOwnProperty(key)) {
         res['-' + key] = lhs[key];
       } else {
         const sub = objDiff(lhs[key], rhs[key]);
@@ -112,7 +114,7 @@ export function objDiff(lhs: any, rhs: any, skip?: string[]): any {
       }
     });
     Object.keys(rhs || {}).forEach(key => {
-      if ((lhs[key] === undefined) && (rhs[key] !== undefined)) {
+      if (!lhs.hasOwnProperty(key) && rhs.hasOwnProperty(key)) {
         res['+' + key] = rhs[key];
       }
     });
@@ -464,4 +466,30 @@ export function toPromise<ResT>(func: (cb) => void): Promise<ResT> {
 
 export function makeUnique<T>(input: T[]): T[] {
   return Array.from(new Set(input));
+}
+
+export function withTmpDir<T>(cb: (tmpPath: string) => Promise<T>): Promise<T> {
+  return new Promise<void>((resolve, reject) => {
+    tmp.dir({ unsafeCleanup: true }, (err, tmpPath, cleanup) => {
+      if (err !== null) {
+        return reject(err);
+      } else {
+        cb(tmpPath)
+          .then((out: T) => {
+            resolve(out);
+          })
+          .catch(tmpErr => {
+            reject(tmpErr);
+          })
+          .finally(() => {
+            try {
+              cleanup();
+            } catch (err) {
+              // cleanup failed
+              log('warn', 'Failed to clean up temp file', { tmpPath });
+            }
+          });
+      }
+    });
+  });
 }

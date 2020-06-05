@@ -9,7 +9,7 @@ import { closeBrowser, showURL } from './actions';
 import { sessionReducer } from './reducers';
 import { IBrowserResult } from './types';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { ipcRenderer } from 'electron';
 import { generate as shortid } from 'shortid';
 import { IState } from '../../types/IState';
@@ -95,7 +95,11 @@ function init(context: IExtensionContext): boolean {
       });
     });
 
-    ipcRenderer.on('received-url', (evt: string, dlUrl: string, fileName: string) => {
+    ipcRenderer.on('received-url',
+        (evt: Electron.IpcRendererEvent, dlUrl: string, fileName?: string) => {
+      if (lastURL !== undefined) {
+        dlUrl += '<' + lastURL;
+      }
       const state: IState = context.api.store.getState();
       const { subscriber } = state.session.browser;
       if (subscriber !== undefined) {

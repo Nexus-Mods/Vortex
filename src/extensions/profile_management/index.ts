@@ -48,7 +48,7 @@ import TransferDialog from './views/TransferDialog';
 import { activeGameId, activeProfile, lastActiveProfileForGame, profileById } from './selectors';
 import { syncFromProfile, syncToProfile } from './sync';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { app as appIn, remote } from 'electron';
 import * as path from 'path';
 import * as Redux from 'redux';

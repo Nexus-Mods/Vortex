@@ -37,9 +37,11 @@ class InstallButton extends ComponentEx<IProps, {}> {
       properties: ['openFile'],
     };
 
-    dialog.showOpenDialog(remote.getCurrentWindow(), options, (fileNames: string[]) => {
-      if ((fileNames !== undefined) && (fileNames.length > 0)) {
-        this.context.api.events.emit('start-install', fileNames[0]);
+    dialog.showOpenDialog(remote.getCurrentWindow(), options)
+    .then(result => {
+      const { filePaths } = result;
+      if ((filePaths !== undefined) && (filePaths.length > 0)) {
+        this.context.api.events.emit('start-install', filePaths[0]);
       }
     });
   }

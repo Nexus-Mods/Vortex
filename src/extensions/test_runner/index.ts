@@ -35,7 +35,7 @@ import { activeGameId, activeProfile } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { setdefault } from '../../util/util';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as _ from 'lodash';
 
 interface ICheckEntry {
@@ -90,6 +90,7 @@ function runCheck(api: IExtensionApi, check: ICheckEntry): Promise<void> {
           replace: result.description.replace,
           actions,
           noDismiss: true,
+          allowSuppress: result.severity !== 'error',
         });
       }
     })

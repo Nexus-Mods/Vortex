@@ -13,7 +13,7 @@ import { IProtocolHandlers, IResolvedURL, IResolvedURLs } from './types/Protocol
 import FileAssembler from './FileAssembler';
 import SpeedCalculator from './SpeedCalculator';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as contentDisposition from 'content-disposition';
 import * as contentType from 'content-type';
 import { remote } from 'electron';
@@ -30,6 +30,23 @@ const MAX_REDIRECT_FOLLOW = 2;
 // if we receive no data for this amount of time, reset the connection
 const STALL_TIMEOUT = 15 * 1000;
 const MAX_STALL_RESETS = 2;
+
+export type RedownloadMode = 'always' | 'never' | 'ask';
+
+export class AlreadyDownloaded extends Error {
+  private mFileName: string;
+  constructor(fileName: string) {
+    super('File already downloaded');
+    Error.captureStackTrace(this, this.constructor);
+
+    this.name = this.constructor.name;
+    this.mFileName = fileName;
+  }
+
+  public get fileName(): string {
+    return this.mFileName;
+  }
+}
 
 export class DownloadIsHTML extends Error {
   private mUrl: string;
@@ -141,13 +158,14 @@ class DownloadWorker {
     }
 
     try {
-      const { cookies } = remote.getCurrentWebContents().session;
-      cookies.get({ url: jobUrl }, (cookieErr, pageCookies) => {
-        if (truthy(cookieErr)) {
-          log('error', 'failed to retrieve cookies', cookieErr.message);
-        }
-        this.startDownload(job, jobUrl, pageCookies);
-      });
+      remote.getCurrentWebContents().session.cookies.get({ url: jobUrl })
+        .then(cookies => {
+          this.startDownload(job, jobUrl, cookies);
+
+        })
+        .catch(err => {
+          log('error', 'failed to retrieve cookies', err.message);
+        });
     } catch (err) {
       log('error', 'failed to retrieve cookies', err.message);
       this.startDownload(job, jobUrl, []);
@@ -590,7 +608,7 @@ class DownloadManager {
     const destPath = destinationPath || this.mDownloadPath;
     let download: IRunningDownload;
     return fs.ensureDirAsync(destPath)
-      .then(() => this.unusedName(destPath, nameTemplate || 'deferred'))
+      .then(() => this.unusedName(destPath, nameTemplate || 'deferred', options.redownload))
       .then((filePath: string) =>
         new Promise<IDownloadResult>((resolve, reject) => {
           download = {
@@ -643,6 +661,8 @@ class DownloadManager {
         options,
         lastProgressSent: 0,
         received,
+        // we don't know what this was set to initially but going to assume that it was always
+        // or the user said yes, otherwise why is this resumable and not canceled?
         size,
         started: new Date(started),
         chunks: [],
@@ -957,7 +977,8 @@ class DownloadManager {
   private updateDownload(download: IRunningDownload, size: number,
                          fileName: string, chunkable: boolean) {
     if ((fileName !== undefined) && (fileName !== download.origName)) {
-      const newName = this.unusedName(path.dirname(download.tempName), fileName);
+      const newName = this.unusedName(
+        path.dirname(download.tempName), fileName, download.options.redownload);
       download.finalName = newName;
       newName.then(resolvedName => {
         if (!download.assembler.isClosed()) {
@@ -1129,7 +1150,9 @@ class DownloadManager {
    * @param {string} fileName
    * @returns {Promise<string>}
    */
-  private unusedName(destination: string, fileName: string): Promise<string> {
+  private unusedName(destination: string,
+                     fileName: string,
+                     redownload: RedownloadMode): Promise<string> {
     fileName = this.sanitizeFilename(fileName);
     if (fileName === '') {
       fileName = 'unnamed';
@@ -1151,19 +1174,26 @@ class DownloadManager {
             resolve(fullPath);
           }).catch((err) => {
             ++counter;
-            fullPath = path.join(destination, `${base} (${counter})${ext}`);
+            const tryName = `${base}.${counter}${ext}`;
+            fullPath = path.join(destination, tryName);
             if (err.code === 'EEXIST') {
               if (first && this.mFileExistsCB !== undefined) {
                 first = false;
-                this.mFileExistsCB(fileName)
-                  .then((cont: boolean) => {
-                    if (cont) {
-                      loop();
-                    } else {
-                      return reject(new UserCanceled());
-                    }
-                  })
-                  .catch(reject);
+                if (redownload === 'always') {
+                  loop();
+                } else if (redownload === 'never') {
+                  return reject(new AlreadyDownloaded(fileName));
+                } else { // redownload is "ask" or undefined
+                  this.mFileExistsCB(fileName)
+                    .then((cont: boolean) => {
+                      if (cont) {
+                        loop();
+                      } else {
+                        return reject(new UserCanceled());
+                      }
+                    })
+                    .catch(reject);
+                }
               } else {
                 loop();
               }

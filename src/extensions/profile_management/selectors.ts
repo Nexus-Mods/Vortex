@@ -2,8 +2,10 @@ import {getSafe} from '../../util/storeHelper';
 
 import { IProfile } from './types/IProfile';
 
+import createCachedSelector, {
+  ICacheObject, OutputParametricSelector, ParametricSelector,
+} from 're-reselect';
 import { createSelector, OutputSelector } from 'reselect';
-import createCachedSelector, { ICacheObject, ParametricSelector, OutputParametricSelector } from 're-reselect';
 import { IState } from '../../types/IState';
 
 const profilesBase = (state: IState) => state.persistent.profiles;
@@ -27,8 +29,14 @@ export const activeProfile = (state): IProfile => {
   return getSafe(state, ['persistent', 'profiles', profileId], undefined);
 };
 
-export const profileById = createCachedSelector(profilesBase, (state: IState, profileId: string) => profileId,
-  (profilesBase: { [profileId: string]: IProfile }, profileId: string) => profilesBase[profileId])((state, profileId) => profileId);
+export const profileById = createCachedSelector(
+  profilesBase,
+  (state: IState, profileId: string) => profileId,
+  (profilesBaseIn: { [profileId: string]: IProfile }, profileId: string) =>
+    profilesBaseIn[profileId])((state, profileId) => profileId);
 
-export const lastActiveProfileForGame = createCachedSelector(lastActiveProfiles, (state: IState, gameId: string) => gameId,
-  (lastActiveProfiles: { [gameId: string]: string }, gameId: string) => lastActiveProfiles[gameId])((state, gameId) => gameId);
+export const lastActiveProfileForGame = createCachedSelector(
+  lastActiveProfiles,
+  (state: IState, gameId: string) => gameId,
+  (lastActiveProfilesIn: { [gameId: string]: string }, gameId: string) =>
+    lastActiveProfilesIn[gameId])((state, gameId) => gameId);

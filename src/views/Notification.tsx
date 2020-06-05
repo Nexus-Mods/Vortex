@@ -1,14 +1,17 @@
+import Dropdown from '../controls/Dropdown';
 import Icon from '../controls/Icon';
+import PortalMenu from '../controls/PortalMenu';
 import Spinner from '../controls/Spinner';
 import { INotification, NotificationType } from '../types/INotification';
 import { ComponentEx } from '../util/ComponentEx';
 
-import I18next from 'i18next';
+import { TFunction } from '../util/i18n';
+
 import * as React from 'react';
-import { Button } from 'react-bootstrap';
+import { Button, MenuItem } from 'react-bootstrap';
 
 interface IActionProps {
-  t: I18next.TFunction;
+  t: TFunction;
   title: string;
   count: number;
   onTrigger: (actionTitle: string) => void;
@@ -27,18 +30,29 @@ class Action extends React.Component<IActionProps, {}> {
 }
 
 export interface IProps {
-  t: I18next.TFunction;
+  t: TFunction;
   collapsed: number;
   params: INotification & { process?: string };
   onExpand: (groupId: string) => void;
   onTriggerAction: (notificationId: string, actionTitle: string) => void;
   onDismiss: (id: string) => void;
+  onSuppress: (id: string) => void;
 }
 
-class Notification extends ComponentEx<IProps, {}> {
+class Notification extends ComponentEx<IProps, { open: boolean }> {
+  private menuRef: React.RefObject<any>;
+
+  constructor(props: IProps) {
+    super(props);
+
+    this.menuRef = React.createRef<any>();
+
+    this.initState({ open: false });
+  }
+
   public render(): JSX.Element {
     const { t, collapsed } = this.props;
-    const { actions, message, noDismiss, progress, title, type } = this.props.params;
+    const { actions, id, message, noDismiss, progress, title, type } = this.props.params;
 
     if ((message === undefined) && (title === undefined)) {
       return null;
@@ -74,9 +88,62 @@ class Notification extends ComponentEx<IProps, {}> {
               {t('{{ count }} More', { count: collapsed - 1 })}
             </Button>
            ) : null}
+          {id !== undefined
+            ? this.renderExtraOptions()
+            : null}
         </div>
       </div>
     );
+  }
+
+  private renderExtraOptions() {
+    const { t, params } = this.props;
+    const { open } = this.state;
+
+    // currently that's the only extra option
+    const hasExtraOptions = params.allowSuppress === true;
+    if (!hasExtraOptions) {
+      return null;
+    }
+
+    return (
+      <Dropdown id='notification-extra-options' ref={this.menuRef}>
+        <Dropdown.Toggle onClick={this.open}>
+          <Icon name='settings'/>
+        </Dropdown.Toggle>
+        <PortalMenu
+          open={open}
+          onClick={this.close}
+          onClose={this.close}
+          target={this.menuRef.current}
+          bsRole='menu'
+        >
+          {
+            params.allowSuppress ? (
+              <MenuItem
+                onClick={this.suppressNotification}
+                eventKey='suppress'
+              >
+                {t('Never show again')}
+              </MenuItem>
+            ) : null
+          }
+        </PortalMenu>
+      </Dropdown>
+    );
+  }
+
+  private open = () => {
+    this.nextState.open = true;
+  }
+
+  private close = () => {
+    this.nextState.open = false;
+  }
+
+  private suppressNotification = () => {
+    const { onSuppress, params } = this.props;
+    onSuppress(params.id);
   }
 
   private renderAction = (action, count) => {

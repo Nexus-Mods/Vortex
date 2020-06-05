@@ -1,4 +1,4 @@
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as https from 'https';
 import * as _ from 'lodash';
 import * as Redux from 'redux';
@@ -17,7 +17,10 @@ import { AnnouncementParseError, IAnnouncement } from './types';
 const ANNOUNCEMENT_LINK =
   'https://raw.githubusercontent.com/Nexus-Mods/Vortex/announcements/announcements.json';
 
-function updateAnnouncements(store: Redux.Store<any>): Promise<void> {
+function updateAnnouncements(store: Redux.Store<IState>): Promise<void> {
+  if (!store.getState().session.base.networkConnected) {
+    return Promise.resolve();
+  }
   const getHTTPData = (link: string): Promise<IAnnouncement[]> => {
     const sanitizedURL = url.parse(link);
     return new Promise((resolve, reject) => {

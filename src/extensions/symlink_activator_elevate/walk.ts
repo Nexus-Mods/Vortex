@@ -1,20 +1,20 @@
 // IMPORTANT: This file is included from elevated code, it can't include electron stuff
 
-import * as fs from 'fs-extra-promise';
+import * as fs from 'fs-extra';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as path from 'path';
 
 function walk(target: string,
               callback: (iterPath: string, stats: fs.Stats) => Promise<any>): Promise<any> {
   let allFileNames: string[];
 
-  return fs.readdirAsync(target)
+  return Promise.resolve(fs.readdir(target))
     .then((fileNames: string[]) => {
       allFileNames = fileNames;
       return Promise.mapSeries(fileNames, (statPath: string) => {
         const fullPath: string = path.join(target, statPath);
-        return fs.lstatAsync(fullPath).reflect();
+        return Promise.resolve(fs.lstat(fullPath)).reflect();
       });
     }).then((res: Array<Promise.Inspection<fs.Stats>>) => {
       // use the stats results to generate a list of paths of the directories

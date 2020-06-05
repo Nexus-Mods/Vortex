@@ -1,3 +1,4 @@
+import { RedownloadMode } from '../DownloadManager';
 import { IChunk } from './IChunk';
 
 export type DownloadState = 'init' | 'started' | 'paused' | 'finished' | 'failed' | 'redirect';
@@ -9,6 +10,7 @@ export interface IDownloadFailCause {
 
 export interface IDownloadOptions {
   referer?: string;
+  redownload?: RedownloadMode;
 }
 
 /**

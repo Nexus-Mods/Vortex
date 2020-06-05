@@ -3,6 +3,7 @@ import InputButton from '../../controls/InputButton';
 import More from '../../controls/More';
 import { Button } from '../../controls/TooltipControls';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
+import { TFunction } from '../../util/i18n';
 import { log } from '../../util/log';
 import { setSafe } from '../../util/storeHelper';
 import DNDContainer from '../../views/DNDContainer';
@@ -10,7 +11,6 @@ import DNDContainer from '../../views/DNDContainer';
 import { addMetaserver, removeMetaserver, setPriorities } from './actions';
 import getText from './texts';
 
-import I18next from 'i18next';
 import * as _ from 'lodash';
 import * as React from 'react';
 import { ControlLabel, FormGroup, HelpBlock,
@@ -97,7 +97,7 @@ function collectDrop(connector: DropTargetConnector,
 }
 
 interface IRowProps {
-  t: I18next.TFunction;
+  t: TFunction;
   server: IServerEntry;
   serverId: string;
   onRemoveMetaserver: (id: string) => void;
@@ -122,7 +122,7 @@ class ServerRow extends React.Component<RowProps, {}> {
   public render(): JSX.Element {
     const {t, connectDragSource, connectDropTarget, isDragging, server} = this.props;
     return connectDropTarget(
-      connectDragSource(
+      connectDragSource((
         <div>
           <ListGroupItem
             active={isDragging}
@@ -138,7 +138,8 @@ class ServerRow extends React.Component<RowProps, {}> {
               <Icon name='remove' />
             </Button>
           </ListGroupItem>
-        </div>));
+        </div>
+        )));
   }
   private removeServer = () => {
     const {serverId, onRemoveMetaserver} = this.props;
@@ -154,7 +155,7 @@ const ServerRowDrag =
       ServerRow)) as any;
 
 interface IListProps {
-  t: I18next.TFunction;
+  t: TFunction;
   metaservers: { [id: string]: IServerEntry };
   onAddMetaserver: (url: string) => void;
   onRemoveMetaserver: (id: string) => void;
@@ -177,7 +178,7 @@ class ServerList extends React.Component<IListProps, IListState> {
     };
   }
 
-  public componentWillMount() {
+  public componentDidMount() {
     this.pullServerState();
   }
 

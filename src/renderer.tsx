@@ -51,20 +51,15 @@ if (SetProcessPreferredUILanguages !== undefined) {
   SetProcessPreferredUILanguages(['en-US']);
 }
 
-import getVortexPath from './util/getVortexPath';
-
 import * as path from 'path';
 
-process.env.SASS_BINARY_PATH = path.resolve(getVortexPath('modules'), 'node-sass', 'bin',
-  `${process.platform}-${process.arch}-${process.versions.modules}`, 'node-sass.node');
-
-import { addNotification } from './actions/notifications';
+import { addNotification, setupNotificationSuppression } from './actions/notifications';
 import reducer, { Decision } from './reducers/index';
 import { setOutdated, terminate, toError } from './util/errorHandling';
 import ExtensionManager from './util/ExtensionManager';
-import { ExtensionProvider } from './util/ExtensionProvider';
+import { ExtensionContext } from './util/ExtensionProvider';
 import GlobalNotifications from './util/GlobalNotifications';
-import getI18n, { fallbackTFunc } from './util/i18n';
+import getI18n, { fallbackTFunc, TFunction } from './util/i18n';
 import { log } from './util/log';
 import { initApplicationMenu } from './util/menu';
 import { showError } from './util/message';
@@ -73,16 +68,16 @@ import { reduxSanity, StateError } from './util/reduxSanity';
 import LoadingScreen from './views/LoadingScreen';
 import MainWindow from './views/MainWindow';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { ipcRenderer, remote, webFrame } from 'electron';
 import { forwardToMain, getInitialStateRenderer, replayActionRenderer } from 'electron-redux';
 import { EventEmitter } from 'events';
-import * as fs from 'fs-extra-promise';
-import I18next from 'i18next';
+import * as fs from 'fs-extra';
+import * as I18next from 'i18next';
 import * as msgpackT from 'msgpack';
 import * as nativeErr from 'native-errors';
 import * as React from 'react';
-import { DragDropContextProvider } from 'react-dnd';
+import { DndProvider } from 'react-dnd';
 import HTML5Backend from 'react-dnd-html5-backend';
 import * as ReactDOM from 'react-dom';
 import { I18nextProvider } from 'react-i18next';
@@ -91,9 +86,9 @@ import { applyMiddleware, compose, createStore } from 'redux';
 import thunkMiddleware from 'redux-thunk';
 import { generate as shortid } from 'shortid';
 
-import crashDump from 'crash-dump';
+import crashDumpX from 'crash-dump';
 
-import { setLanguage } from './actions';
+import { setLanguage, setNetworkConnected } from './actions';
 import { ThunkStore } from './types/IExtensionContext';
 import { IState } from './types/IState';
 import { UserCanceled } from './util/CustomErrors';
@@ -101,6 +96,8 @@ import {} from './util/extensionRequire';
 import { reduxLogger } from './util/reduxLogger';
 import { getSafe } from './util/storeHelper';
 import { getAllPropertyNames } from './util/util';
+
+const crashDump = (crashDumpX as any).default;
 
 log('debug', 'renderer process started', { pid: process.pid });
 
@@ -226,15 +223,16 @@ function errorHandler(evt: any) {
   }
 
   if ((error.stack !== undefined)
-      // TODO: socket hang up should trigger another error that we catch,
-      //  unfortunately I don't know yet if this is caused by mod download
-      //  or vortex update check or api requests and why it's unhandled but
-      //  reports indicate it's probably the api
+      // some exceptions from foreign libraries can't be caught so we have to ignore them
+      // the main offender here is electron-update. Unfortunately newer versions that may
+      // have fixed this have even more significant bugs.
       && (
           (error.message === 'socket hang up')
           || (error.stack.indexOf('net::ERR_CONNECTION_RESET') !== -1)
           || (error.stack.indexOf('net::ERR_ABORTED') !== -1)
           || (error.stack.indexOf('PackeryItem.proto.positionDropPlaceholder') !== -1)
+          || ((error.syscall === 'getaddrinfo') && (error.code === 'ENOTFOUND'))
+          || (error.code === 'ETIMEDOUT')
          )
       ) {
     log('warn', 'suppressing error message', { message: error.message, stack: error.stack });
@@ -264,11 +262,15 @@ const eventEmitter: NodeJS.EventEmitter = new EventEmitter();
 
 let enhancer = null;
 
-if (process.env.NODE_ENV === 'development') {
+if (process.env.NODE_ENV === 'development' && false) {
   // tslint:disable-next-line:no-var-requires
   const freeze = require('redux-freeze');
   const devtool = (window as any).__REDUX_DEVTOOLS_EXTENSION__
-                && (window as any).__REDUX_DEVTOOLS_EXTENSION__();
+    && (window as any).__REDUX_DEVTOOLS_EXTENSION__({
+      shouldRecordChanges: false,
+      autoPause: true,
+      shouldHotReload: false,
+    });
   enhancer = compose(
     applyMiddleware(
       forwardToMain,
@@ -289,7 +291,7 @@ if (process.env.NODE_ENV === 'development') {
 // extensions are to be loaded has to be retrieved from the main process
 const extensions: ExtensionManager = new ExtensionManager(undefined, eventEmitter);
 const extReducers = extensions.getReducers();
-let tFunc: I18next.TFunction = fallbackTFunc;
+let tFunc: TFunction = fallbackTFunc;
 
 // I only want to add reducers, but redux-electron-store seems to break
 // when calling replaceReducer in the renderer
@@ -305,6 +307,11 @@ extensions.setStore(store);
 setOutdated(extensions.getApi());
 extensions.applyExtensionsOfExtensions();
 log('debug', 'renderer connected to store');
+
+setupNotificationSuppression(id => {
+  const state: IState = store.getState();
+  return getSafe(state.settings.notifications, ['suppress', id], false);
+});
 
 let lastHeapSize = 0;
 const REPORT_HEAP_INCREASE = 100 * 1024;
@@ -415,7 +422,7 @@ store.subscribe(() => {
       return;
     }
     currentLanguage = newLanguage;
-    I18next.changeLanguage(newLanguage, (err, t) => {
+    I18next.default.changeLanguage(newLanguage, (err, t) => {
       if (err !== undefined) {
         if (Array.isArray(err)) {
           // don't show ENOENT errors because it shouldn't really matter
@@ -442,6 +449,16 @@ function renderer() {
     document.getElementById('content'),
   );
   ipcRenderer.send('show-window');
+
+  store.dispatch(setNetworkConnected(navigator.onLine));
+  window.addEventListener('online', () => {
+    store.dispatch(setNetworkConnected(true));
+  });
+  window.addEventListener('offline', () => {
+    store.dispatch(setNetworkConnected(false));
+  });
+
+
   getI18n('en', () => {
     const state: IState = store.getState();
     return Object.values(state.session.extensions.installed)
@@ -456,7 +473,7 @@ function renderer() {
 
       return Promise.map(dynamicExts, ext => {
         const filePath = path.join(ext.path, 'language.json');
-        return fs.readFileAsync(filePath, { encoding: 'utf-8' })
+        return fs.readFile(filePath, { encoding: 'utf-8' })
           .then((fileData: string) => {
             i18n.addResources('en', ext.name, JSON.parse(fileData));
           })
@@ -496,16 +513,17 @@ function renderer() {
       startupFinished();
       eventEmitter.emit('startup');
       // render the page content
-      ReactDOM.render(
+      ReactDOM.render((
         <Provider store={store}>
-          <DragDropContextProvider backend={HTML5Backend}>
+          <DndProvider backend={HTML5Backend}>
             <I18nextProvider i18n={i18n}>
-              <ExtensionProvider extensions={extensions}>
+              <ExtensionContext.Provider value={extensions}>
                 <MainWindow className='full-height' api={extensions.getApi()} t={tFunc} />
-              </ExtensionProvider>
+              </ExtensionContext.Provider>
             </I18nextProvider>
-          </DragDropContextProvider>
-        </Provider>,
+          </DndProvider>
+        </Provider>
+      ),
         document.getElementById('content'),
       );
       // ipcRenderer.send('show-window');

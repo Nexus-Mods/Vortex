@@ -4,10 +4,10 @@ import * as fs from './fs';
 import getVortexPath from './getVortexPath';
 import {log} from './log';
 
-import * as Promise from 'bluebird';
-import { app as appIn, remote } from 'electron';
+import Promise from 'bluebird';
+import { app as appIn, ipcMain, ipcRenderer, remote } from 'electron';
 import * as _ from 'lodash';
-import * as sass from 'node-sass';
+import {} from 'node-sass';
 import * as path from 'path';
 
 const app = appIn || remote.app;
@@ -16,10 +16,47 @@ function asarUnpacked(input: string): string {
   return input.replace('app.asar' + path.sep, 'app.asar.unpacked' + path.sep);
 }
 
+if (ipcMain !== undefined) {
+  ipcMain.on('__renderSASS', (evt, stylesheets: string[]) => {
+    const sassIndex: string =
+      stylesheets.map(name => `@import "${name.replace(/\\/g, '\\\\')}";\n`).join('\n');
+
+    // development builds are always versioned as 0.0.1
+    const isDevel: boolean = app.getVersion() === '0.0.1';
+
+    const assetsPath = path.join(getVortexPath('assets_unpacked'), 'css');
+    const modulesPath = getVortexPath('modules_unpacked');
+
+    process.env.SASS_BINARY_PATH = path.resolve(getVortexPath('modules'), 'node-sass', 'bin',
+      `${process.platform}-${process.arch}-${process.versions.modules}`, 'node-sass.node');
+    const sass = require('node-sass');
+    sass.render({
+      outFile: path.join(assetsPath, 'theme.css'),
+      includePaths: [assetsPath, modulesPath],
+      data: sassIndex,
+      outputStyle: isDevel ? 'expanded' : 'compressed',
+    },
+      (err, output) => {
+        if (err !== null) {
+          // the error has its own class and its message is missing relevant information
+          evt.sender.send('__renderSASS_result', new Error(err.formatted));
+        } else {
+          // remove utf8-bom if it's there
+          const css = _.isEqual(Array.from(output.css.slice(0, 3)), [0xEF, 0xBB, 0xBF])
+            ? output.css.slice(3)
+            : output.css;
+          evt.sender.send('__renderSASS_result', null, css.toString());
+        }
+      });
+
+  });
+}
+
 class StyleManager {
   private static RENDER_DELAY = 200;
   private mPartials: Array<{ key: string, file: string }>;
   private mRenderDebouncer: Debouncer;
+  private mExpectingResult: { resolve: (css: string) => void, reject: (err: Error) => void };
 
   constructor(api: IExtensionApi) {
     this.mPartials = [
@@ -42,6 +79,20 @@ class StyleManager {
           });
         });
     }, StyleManager.RENDER_DELAY);
+
+    ipcRenderer.on('__renderSASS_result', (evt, err: Error, css: string) => {
+      if (this.mExpectingResult === undefined) {
+        log('warn', 'unexpected sass render result');
+        return;
+      }
+
+      if (err !== null) {
+        this.mExpectingResult.reject(err);
+      } else {
+        this.mExpectingResult.resolve(css);
+      }
+      this.mExpectingResult = undefined;
+    });
   }
 
   /**
@@ -67,10 +118,11 @@ class StyleManager {
     log('debug', 'setting stylesheet', { key, filePath });
     try {
       const statProm = (filePath === undefined)
-        ? Promise.resolve(undefined)
+        ? Promise.resolve<void>(undefined)
         : (path.extname(filePath) === '')
         ? Promise.any([fs.statAsync(filePath + '.scss'), fs.statAsync(filePath + '.css')])
-        : fs.statAsync(filePath);
+            .then(() => null)
+        : fs.statAsync(filePath).then(() => null);
       statProm
         .then(() => {
           const idx = this.mPartials.findIndex(partial => partial.key === key);
@@ -108,50 +160,27 @@ class StyleManager {
         ? asarUnpacked(partial.file)
         : partial.file);
 
-    const sassIndex: string =
-      stylesheets.map(name => `@import "${name.replace(/\\/g, '\\\\')}";\n`).join('\n');
-
-    // development builds are always versioned as 0.0.1
-    const isDevel: boolean = app.getVersion() === '0.0.1';
-
-    const assetsPath = path.join(getVortexPath('assets_unpacked'), 'css');
-    const modulesPath = getVortexPath('modules_unpacked');
-
     return new Promise<void>((resolve, reject) => {
-      sass.render({
-        outFile: path.join(assetsPath, 'theme.css'),
-        includePaths: [assetsPath, modulesPath],
-        data: sassIndex,
-        outputStyle: isDevel ? 'expanded' : 'compressed',
-      },
-        (err, output) => {
-          if (err !== null) {
-            // the error has its own class and its message is missing relevant information
-            reject(new Error(err.formatted));
-          } else {
-            // remove utf8-bom if it's there
-            const css = _.isEqual(Array.from(output.css.slice(0, 3)), [0xEF, 0xBB, 0xBF])
-               ? output.css.slice(3)
-               : output.css;
-            const style = document.createElement('style');
-            style.id = 'theme';
-            style.type = 'text/css';
-            style.innerHTML = css.toString();
-            const head = document.getElementsByTagName('head')[0];
-            let found = false;
-            for (let i = 0; i < head.children.length && !found; ++i) {
-              if (head.children.item(i).id === 'theme') {
-                head.replaceChild(style, head.children.item(i));
-                found = true;
-              }
-            }
-            if (!found) {
-              head.appendChild(style);
-            }
-            resolve();
+      this.mExpectingResult = { resolve, reject };
+      ipcRenderer.send('__renderSASS', stylesheets);
+    })
+      .then((css: string) => {
+        const style = document.createElement('style');
+        style.id = 'theme';
+        style.type = 'text/css';
+        style.innerHTML = css;
+        const head = document.getElementsByTagName('head')[0];
+        let found = false;
+        for (let i = 0; i < head.children.length && !found; ++i) {
+          if (head.children.item(i).id === 'theme') {
+            head.replaceChild(style, head.children.item(i));
+            found = true;
           }
-        });
-    });
+        }
+        if (!found) {
+          head.appendChild(style);
+        }
+      });
   }
 }
 

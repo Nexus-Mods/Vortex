@@ -12,8 +12,8 @@ import { installPathForGame } from '../mod_management/selectors';
 import { IDeployedFile, IDeploymentMethod,
          IUnavailableReason } from '../mod_management/types/IDeploymentMethod';
 
-import * as Promise from 'bluebird';
-import I18next from 'i18next';
+import Promise from 'bluebird';
+import { TFunction } from 'i18next';
 import * as path from 'path';
 import turbowalk, { IEntry } from 'turbowalk';
 import * as util from 'util';
@@ -46,7 +46,7 @@ class DeploymentMethod extends LinkingDeployment {
         api);
   }
 
-  public detailedDescription(t: I18next.TFunction): string {
+  public detailedDescription(t: TFunction): string {
     return t(
       'This deployment method doesn\'t use links but actually moves files to the destination '
       + 'directory.\nFor every deployed file it creates a lnk file in the source location to '
@@ -214,7 +214,7 @@ class DeploymentMethod extends LinkingDeployment {
       .then(() => Promise.map(links, entry => this.restoreLink(entry.filePath)));
   }
 
-  protected linkFile(linkPath: string, sourcePath: string): Promise<void> {
+  protected linkFile(linkPath: string, sourcePath: string, dirTags?: boolean): Promise<void> {
     if (path.extname(sourcePath) === LNK_EXT) {
       // sanity check, don't link the links
       return Promise.resolve();
@@ -223,7 +223,7 @@ class DeploymentMethod extends LinkingDeployment {
     return this.ensureDir(basePath)
         .then((created: any) => {
           let tagDir;
-          if (created !== null) {
+          if ((dirTags !== false) && (created !== null)) {
             const tagPath = path.join(created, LinkingDeployment.NEW_TAG_NAME);
             tagDir = fs.writeFileAsync(tagPath,
                 'This directory was created by Vortex deployment and will be removed '
@@ -267,7 +267,7 @@ class DeploymentMethod extends LinkingDeployment {
   }
 
   protected statLink(filePath: string): Promise<fs.Stats> {
-    return fs.lstatAsync(filePath);
+    return Promise.resolve(fs.lstatAsync(filePath));
   }
 
   private readLink(filePath: string): Promise<ILinkData> {

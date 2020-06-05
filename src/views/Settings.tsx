@@ -26,6 +26,7 @@ interface ISettingsPage {
 }
 
 interface ICombinedSettingsPage {
+  priority: number;
   title: string;
   elements: ISettingsPage[];
 }
@@ -52,10 +53,12 @@ type IProps = ISettingsProps & IConnectedProps & IActionProps;
  */
 class Settings extends ComponentEx<IProps, {}> {
   private mStartupPath = path.join(remote.app.getPath('appData'),
-                                   remote.app.getName(),
+                                   remote.app.name,
                                    'startup.json');
   private mStartupSettings = makeReactive({});
-  public componentWillMount() {
+
+  constructor(props: IProps) {
+    super(props);
     try {
       this.mStartupSettings =
         makeReactive(JSON.parse(fs.readFileSync(this.mStartupPath, { encoding: 'utf-8' })));
@@ -71,9 +74,12 @@ class Settings extends ComponentEx<IProps, {}> {
       const result = prev.slice();
       const existingPage = prev.find((ele: ICombinedSettingsPage) => ele.title === current.title);
       if (existingPage === undefined) {
-        result.push({ title: current.title, elements: [ current ] });
+        result.push({ title: current.title, elements: [ current ], priority: current.priority });
       } else {
         existingPage.elements.push(current);
+        if ((existingPage.priority === undefined) || (current.priority < existingPage.priority)) {
+          existingPage.priority = current.priority;
+        }
       }
       return result;
     }, []);
@@ -85,7 +91,7 @@ class Settings extends ComponentEx<IProps, {}> {
       <MainPage>
         <MainPage.Body>
           <Tabs id='settings-tab' activeKey={page} onSelect={this.setCurrentPage}>
-            {combined.map(this.renderTab)}
+            {combined.sort(this.sortByPriority).map(this.renderTab)}
           </Tabs>
         </MainPage.Body>
       </MainPage>
@@ -138,13 +144,21 @@ class Settings extends ComponentEx<IProps, {}> {
     );
   }
 
+  private sortByPriority = (lhs: ICombinedSettingsPage, rhs: ICombinedSettingsPage) => {
+    return lhs.priority - rhs.priority;
+  }
+
   private setCurrentPage = (page) => {
     this.props.onSetPage(page);
   }
 
   private changeStartup = (key: string, value: any) => {
-    this.mStartupSettings[key] = value;
+    this.mStartupSettings = {
+      ...this.mStartupSettings,
+      [key]: value,
+    };
     writeFileAtomic(this.mStartupPath, JSON.stringify(this.mStartupSettings))
+      .then(() => this.forceUpdate())
       .catch(err => {
         log('error', 'failed to write startup.json', { error: err.message });
       });

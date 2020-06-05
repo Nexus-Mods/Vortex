@@ -1,11 +1,11 @@
 import bbcode from '../../../util/bbcode';
 
-import I18next from 'i18next';
+import { TFunction } from 'i18next';
 import * as React from 'react';
 import { Overlay, Popover } from 'react-bootstrap';
 
 interface IBaseProps {
-  t: I18next.TFunction;
+  t: TFunction;
   short: string;
   long: string;
 }
@@ -29,12 +29,12 @@ class Description extends React.Component<IProps, IComponentState> {
     };
   }
 
-  public componentWillMount() {
-    const { long, short } = this.props;
+  public componentDidMount() {
+    const { short } = this.props;
     this.mShortBB = bbcode(short);
   }
 
-  public componentWillReceiveProps(newProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(newProps: IProps) {
     if (this.props.short !== newProps.short) {
       this.mShortBB = bbcode(newProps.short);
     }

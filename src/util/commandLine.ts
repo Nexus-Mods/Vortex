@@ -1,4 +1,4 @@
-import * as program from 'commander';
+import program from 'commander';
 import { app, ipcMain, ipcRenderer } from 'electron';
 import * as fs from 'fs-extra';
 import * as path from 'path';
@@ -23,9 +23,67 @@ function assign(input: string): string[] {
   return input.split('=');
 }
 
-function parseCommandline(argv: string[]): IParameters {
+const ARG_COUNTS = {
+  '-d': 1,
+  '-i': 1,
+  '-g': 1,
+  '-s': 1,
+  '--download': 1,
+  '--install': 1,
+  '--get': 1,
+  '--set': 1,
+  '--del': 1,
+  '--run': 1,
+  '--report': 1,
+  '--restore': 1,
+  '--max-memory': 1,
+};
+
+// Chrome rearranges the command line parameters it passes to processes it spawns internally
+// by putting switches (--foo) first, arguments (bar) after.
+// Which is fine in chrome because it's internal processes.
+// The <insert insult here>s developing electron make this internal chrome behaviour part of
+// their api, basically breaking all sensible user-facing clis:
+// https://github.com/electron/electron/issues/20322
+//
+// Fortunately, looking at the code, at least chrome seems to keep the order of switches and
+// arguments so since we don't have positional arguments and as long as we know which
+// switches expect an argument and as long as the
+// command line passed in is valid, we should be able to reconstruct it.
+function electronIsShitArgumentSort(argv: string[]): string[] {
+  const firstArgumentIdx = argv.findIndex((arg, idx) => (idx > 1) && !arg.startsWith('-'));
+  const switches = argv.slice(1, firstArgumentIdx - 1);
+  const args = argv.slice(firstArgumentIdx);
+  let nextArg = 0;
+
+  const res = [argv[0]];
+  if (argv[0].includes('electron.exe')) {
+    // did I say we have no positional arguments? Well, electron does...
+    res.push(args[nextArg]);
+    nextArg++;
+  }
+
+  switches.forEach(sw => {
+    res.push(sw);
+    const argCount = ARG_COUNTS[sw] || 0;
+    res.push(...args.slice(nextArg, nextArg + argCount));
+    nextArg += argCount;
+  });
+
+  // append all remaining arguments. This way if we do have positional arguments
+  // after all, as long as they're at the end they will still work
+  res.push(...args.slice(nextArg));
+
+  return res;
+}
+
+function parseCommandline(argv: string[], electronIsShitHack: boolean): IParameters {
   if (!argv[0].includes('electron.exe')) {
     argv = ['dummy'].concat(argv);
+  }
+
+  if (electronIsShitHack) {
+    argv = electronIsShitArgumentSort(argv);
   }
 
   let cfgFile: IParameters = {};
@@ -39,9 +97,17 @@ function parseCommandline(argv: string[]): IParameters {
     }
   }
 
+  let version: string = '1.0.0';
+  try {
+    // won't happen in regular operation but lets us test this function outside vortex
+    version = app.getVersion();
+  } catch (err) {
+    // nop
+  }
+
   const commandLine = program
     .command('Vortex')
-    .version(app.getVersion())
+    .version(version)
     .option('-d, --download [url]', 'Start downloadling the specified url '
                                   + '(any supported protocol like nxm:, https:, ...).')
     .option('-i, --install [url]', 'Start downloadling & installing the specified url '
@@ -69,6 +135,7 @@ function parseCommandline(argv: string[]): IParameters {
   };
 }
 
+// arguments that should be dropped when restarting the application
 const SKIP_ARGS = {
   '-d': 1,
   '--download': 1,

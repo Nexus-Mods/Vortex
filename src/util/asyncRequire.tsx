@@ -1,4 +1,4 @@
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as React from 'react';

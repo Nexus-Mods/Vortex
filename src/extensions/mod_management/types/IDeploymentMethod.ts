@@ -1,9 +1,8 @@
 import { IExtensionApi } from '../../../types/IExtensionContext';
 import { Normalize } from '../../../util/getNormalizeFunc';
-import { IMod } from './IMod';
+import { TFunction } from '../../../util/i18n';
 
-import * as Promise from 'bluebird';
-import I18next from 'i18next';
+import Promise from 'bluebird';
 
 /**
  * details about a file change
@@ -72,11 +71,11 @@ export interface IUnavailableReason {
   /**
    * description (english) why the deployment method is unavailable
    */
-  description: (t: I18next.TFunction) => string;
+  description: (t: TFunction) => string;
   /**
    * describes the solution to make this
    */
-  solution?: (t: I18next.TFunction) => string;
+  solution?: (t: TFunction) => string;
   /**
    * if the problem can be fixed automatically, this can be set to a function that takes care
    * of it
@@ -136,7 +135,7 @@ export interface IDeploymentMethod {
    * @type {string}
    * @memberOf IDeploymentMethod
    */
-  detailedDescription: (t: I18next.TFunction) => string;
+  detailedDescription: (t: TFunction) => string;
 
   /**
    * determine if this activator is supported in the current environment
@@ -255,7 +254,7 @@ export interface IDeploymentMethod {
    *
    * @memberOf IDeploymentMethod
    */
-  purge: (installPath: string, dataPath: string) => Promise<void>;
+  purge: (installPath: string, dataPath: string, gameId?: string) => Promise<void>;
 
   /**
    * called after mods were purged. If multiple mod types wer purged, this is only called

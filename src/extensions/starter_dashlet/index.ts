@@ -1,4 +1,4 @@
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 
 import { IExtensionApi, IExtensionContext, ITestResult } from '../../types/api';
 import { activeGameId } from '../../util/selectors';
@@ -19,7 +19,7 @@ function testPrimaryTool(api: IExtensionApi): Promise<ITestResult> {
   const primaryToolId = getSafe(state,
     ['settings', 'interface', 'primaryTool', gameMode], undefined);
 
-  if (primaryToolId !== undefined) {
+  if (truthy(primaryToolId)) {
     // We have a primary tool defined - ensure it's still valid.
     const primaryTool = getSafe(state,
       [ 'settings', 'gameMode', 'discovered', gameMode, 'tools', primaryToolId ], undefined);

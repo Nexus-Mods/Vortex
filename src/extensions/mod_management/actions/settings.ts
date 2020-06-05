@@ -19,3 +19,6 @@ export const setShowModDropzone = safeCreateAction('SET_SHOW_MOD_DROPZONE',
 
 export const setConfirmPurge = safeCreateAction('SET_CONFIRM_PURGE',
   (confirm: boolean) => confirm);
+
+export const setCleanupOnDeploy = safeCreateAction('SET_CLEANUP_ON_DEPLOY',
+  (cleanup: boolean) => cleanup);

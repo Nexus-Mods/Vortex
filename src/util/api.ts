@@ -32,10 +32,10 @@ import epicGamesLauncher from './EpicGamesLauncher';
 import { getVisibleWindow, terminate } from './errorHandling';
 import { extend } from './ExtensionProvider';
 import { copyFileAtomic } from './fsAtomic';
-import getNormalizeFunc, { Normalize } from './getNormalizeFunc';
+import getNormalizeFunc, { makeNormalizingDict, Normalize } from './getNormalizeFunc';
 import getVortexPath from './getVortexPath';
 import github from './github';
-import { getCurrentLanguage } from './i18n';
+import { getCurrentLanguage, TFunction } from './i18n';
 import LazyComponent from './LazyComponent';
 import lazyRequire from './lazyRequire';
 import makeReactive from './makeReactive';
@@ -44,6 +44,7 @@ import opn from './opn';
 import { getReduxLog } from './reduxLogger';
 import ReduxProp from './ReduxProp';
 import relativeTime, { userFriendlyTime } from './relativeTime';
+import StarterInfo from './StarterInfo';
 import steam, { GameNotFound, ISteamEntry } from './Steam';
 import { bytesToString, deBOM, isChildPath, isFilenameValid, isPathValid, makeQueue, objDiff,
          pad, sanitizeCSSId, setdefault, toPromise } from './util';
@@ -51,6 +52,8 @@ import walk from './walk';
 
 import SevenZip = require('node-7z');
 import { runElevated, runThreaded } from 'vortex-run';
+
+export * from './network';
 
 export {
   Archive,
@@ -87,6 +90,7 @@ export {
   LazyComponent,
   lazyRequire,
   makeModReference,
+  makeNormalizingDict,
   makeQueue,
   makeReactive,
   MissingInterpreter,
@@ -114,6 +118,7 @@ export {
   SetupError,
   SevenZip,
   sortMods,
+  StarterInfo,
   steam,
   ISteamEntry,
   terminate,
@@ -128,9 +133,7 @@ export {
 export type TextGroup = 'mod';
 import getTextModManagement from '../extensions/mod_management/texts';
 
-import I18next from 'i18next';
-
-export function getText(group: TextGroup, textId: string, t: I18next.TFunction) {
+export function getText(group: TextGroup, textId: string, t: TFunction) {
   if (group === 'mod') {
     return getTextModManagement(textId, t);
   }

@@ -1,5 +1,6 @@
 import FlexLayout from '../../../controls/FlexLayout';
 import Modal from '../../../controls/Modal';
+import Spinner from '../../../controls/Spinner';
 import { IconButton } from '../../../controls/TooltipControls';
 import ZoomableImage from '../../../controls/ZoomableImage';
 import { connect, PureComponentEx, translate } from '../../../util/ComponentEx';
@@ -11,7 +12,7 @@ import {
   IPlugin, OrderType,
 } from '../types/interface';
 
-import I18next from 'i18next';
+import { TFunction } from 'i18next';
 import update from 'immutability-helper';
 import * as _ from 'lodash';
 import * as path from 'path';
@@ -22,7 +23,7 @@ import {
 } from 'react-bootstrap';
 
 interface IGroupProps {
-  t: I18next.TFunction;
+  t: TFunction;
   stepId: number;
   group: IGroup;
   onSelect: (groupId: number, plugins: number[], valid: boolean) => void;
@@ -53,14 +54,14 @@ class Group extends React.PureComponent<IGroupProps, IGroupState> {
     }
   }
 
-  public componentWillReceiveProps(newProps: IGroupProps) {
+  public UNSAFE_componentWillReceiveProps(newProps: IGroupProps) {
     if (!_.isEqual(this.props.group, newProps.group)) {
       this.setState({ selectedPlugins: this.getSelectedPlugins(newProps) });
       this.mValidate = this.validateFunc(newProps.group.type);
     }
   }
 
-  public componentWillMount() {
+  public UNSAFE_componentWillMount() {
     const { group, onSelect } = this.props;
     const { selectedPlugins } = this.state;
     this.mValidate = this.validateFunc(group.type);
@@ -236,7 +237,7 @@ function getGroupSortFunc(order: OrderType) {
 }
 
 interface IStepProps {
-  t: I18next.TFunction;
+  t: TFunction;
   step: IInstallStep;
   onSelect: (groupId: number, plugins: number[], valid: boolean) => void;
   onShowDescription: (image: string, description: string) => void;
@@ -264,7 +265,8 @@ function Step(props: IStepProps) {
           group={group}
           onSelect={props.onSelect}
           onShowDescription={props.onShowDescription}
-        />))}
+        />
+      ))}
     </Form>
   );
 }
@@ -287,6 +289,7 @@ interface IDialogState {
   invalidGroups: string[];
   currentImage: string;
   currentDescription: string;
+  waiting: boolean;
 }
 
 type IProps = IBaseProps & IConnectedProps;
@@ -296,7 +299,7 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
     super(props);
     this.state = this.initDescription(props);
   }
-  public componentWillReceiveProps(nextProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(nextProps: IProps) {
     if (
       ((this.props.installerState === undefined) && (nextProps.installerState !== undefined))
       || ((this.props.installerState !== undefined)
@@ -307,7 +310,7 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
   }
   public render(): JSX.Element {
     const { t, installerInfo, installerState } = this.props;
-    const { currentDescription } = this.state;
+    const { currentDescription, waiting } = this.state;
     if (!truthy(installerInfo) || !truthy(installerState)) {
       return null;
     }
@@ -367,8 +370,8 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
             <div>{
               lastVisible !== undefined
                 ? (
-                  <Button onClick={this.prev}>
-                   {lastVisible.name || t('Previous')}
+                  <Button onClick={this.prev} disabled={waiting}>
+                    {waiting ? <Spinner /> : lastVisible.name || t('Previous')}
                   </Button>
                 ) : null
             }</div>
@@ -378,11 +381,11 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
             <div>{
               nextVisible !== undefined
                 ? (
-                  <Button disabled={nextDisabled} onClick={this.next}>
-                    {nextVisible.name || t('Next')}
+                  <Button disabled={nextDisabled || waiting} onClick={this.next}>
+                    {waiting ? <Spinner /> : (nextVisible.name || t('Next'))}
                   </Button>
                 ) : (
-                  <Button disabled={nextDisabled} onClick={this.next}>
+                  <Button disabled={nextDisabled || waiting} onClick={this.next}>
                     {t('Finish')}
                   </Button>
                 )
@@ -431,6 +434,7 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
       invalidGroups: [],
       currentImage: option.image,
       currentDescription: option.description,
+      waiting: false,
     });
 
     if (!truthy(props.installerState)) {
@@ -448,8 +452,20 @@ class InstallerDialog extends PureComponentEx<IProps, IDialogState> {
       currentImage: { $set: image },
     }));
   }
-  private prev = () => this.context.api.events.emit('fomod-installer-continue', 'back');
-  private next = () => this.context.api.events.emit('fomod-installer-continue', 'forward');
+  private prev = () => {
+    const { events } = this.context.api;
+    this.setState(update(this.state, {
+      waiting: { $set: true },
+    }));
+    events.emit('fomod-installer-continue', 'back', this.props.installerState.currentStep);
+  }
+  private next = () => {
+    const { events } = this.context.api;
+    this.setState(update(this.state, {
+      waiting: { $set: true },
+    }));
+    events.emit('fomod-installer-continue', 'forward', this.props.installerState.currentStep);
+  }
   private cancel = () => this.context.api.events.emit('fomod-installer-cancel');
 }
 

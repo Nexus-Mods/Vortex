@@ -1,9 +1,9 @@
 import chromePath from './util/chromePath';
 
-import * as Promise from 'bluebird';
-import I18next from 'i18next';
+import Promise from 'bluebird';
+import { TFunction } from 'i18next';
 
-function getText(id: string, t: I18next.TFunction): string {
+function getText(id: string, t: TFunction): Promise<string> {
   switch (id) {
     case 'chrome-fix': return t(
       'Chrome requires a change to a configuration file to allow an external program to handle '

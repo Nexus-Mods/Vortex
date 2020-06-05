@@ -5,7 +5,7 @@ import { deBOM } from '../../../util/util';
 
 import chromePath from './chromePath';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 
 /**
  * changes the chrome config file to allow for handling of the specified url scheme.

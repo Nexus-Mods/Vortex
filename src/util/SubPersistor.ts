@@ -1,6 +1,6 @@
 import { IPersistor } from '../types/IExtensionContext';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 
 class SubPersistor implements IPersistor {
   public getAllKVs: () => Promise<Array<{ key: string[], value: string }>> = undefined;

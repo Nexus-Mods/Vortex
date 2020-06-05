@@ -9,7 +9,7 @@ import { showError } from '../../../util/message';
 import { ILog, ISession } from '../types/ISession';
 import { loadVortexLogs } from '../util/loadVortexLogs';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { remote } from 'electron';
 import update from 'immutability-helper';
 import * as os from 'os';
@@ -63,7 +63,7 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
     };
   }
 
-  public componentWillReceiveProps(nextProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(nextProps: IProps) {
     if (!this.props.visible && nextProps.visible) {
       this.setState(update(this.state, {
         sessionIdx: { $set: -1 },
@@ -164,9 +164,11 @@ class DiagnosticsFilesDialog extends ComponentEx<IProps, IComponentState> {
         <span className='session-from'>{from.toLocaleString(language)}</span>
         <span>{' ' + t('to') + ' '}</span>
         <span className='session-to'>{to.toLocaleString(language)}</span>
-        {errors.length > 0 ? <span>
-          {' - ' + t('{{ count }} error', { count: errors.length })}
-        </span> : null}
+        {errors.length > 0 ? (
+          <span>
+            {' - ' + t('{{ count }} error', { count: errors.length })}
+          </span>
+        ) : null}
         <span className='session-crashed'>{isCrashed}</span>
       </div>
     );

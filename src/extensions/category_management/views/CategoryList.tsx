@@ -21,7 +21,7 @@ import { ICategory, ICategoryDictionary } from '../types/ICategoryDictionary';
 import { ICategoriesTree } from '../types/ITrees';
 import createTreeDataObject from '../util/createTreeDataObject';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import * as React from 'react';
 import { FormControl } from 'react-bootstrap';
 import * as SortableTreeT from 'react-sortable-tree';
@@ -110,11 +110,11 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
     ];
   }
 
-  public componentWillMount() {
+  public componentDidMount() {
     this.refreshTree(this.props);
   }
 
-  public componentWillReceiveProps(newProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(newProps: IProps) {
     if (this.props.categories !== newProps.categories) {
       this.refreshTree(newProps);
     }

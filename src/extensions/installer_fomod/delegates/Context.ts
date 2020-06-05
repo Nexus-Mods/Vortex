@@ -11,7 +11,7 @@ import {getGame} from '../../gamemode_management/util/getGame';
 
 import DelegateBase from './DelegateBase';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { app as appIn, remote} from 'electron';
 import getVersion from 'exe-version';
 import * as path from 'path';

@@ -39,7 +39,7 @@ export function reduxLogger() {
 }
 
 export interface ILog {
-  action: { id: string, payload: any };
+  action: { type: string, payload: any };
   delta: any;
 }
 

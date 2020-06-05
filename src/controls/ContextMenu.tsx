@@ -83,7 +83,7 @@ class ContextMenu extends ComponentEx<IProps, IComponentState> {
     this.initState({});
   }
 
-  public componentWillReceiveProps(newProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(newProps: IProps) {
     if ((this.props.visible !== newProps.visible)
         && newProps.visible) {
       this.updatePlacement(newProps.position);
@@ -142,7 +142,7 @@ class ContextMenu extends ComponentEx<IProps, IComponentState> {
     if ((action.icon === null) && (action.component === undefined)) {
       return (
         <MenuItem className='menu-separator-line' key={id} disabled={true}>
-          {action.title}
+          {action.title !== undefined ? action.title : <hr />}
         </MenuItem>
       );
     }

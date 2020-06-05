@@ -110,3 +110,18 @@
     }
   }
 }
+
+#notification-extra-options {
+  margin-left: 1em;
+  margin-right: 0;
+  line-height: 0;
+
+  @extend .btn-embed;
+  svg {
+    width: 1em;
+    height: 1em;
+  }
+  .caret {
+    display: none;
+  }
+}

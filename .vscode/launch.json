@@ -6,7 +6,7 @@
       "type": "node",
       "request": "launch",
       "protocol": "inspector",
-      "program": "${workspaceRoot}/out/main.js",
+      "program": "${workspaceFolder}/out/main.js",
       "stopOnEntry": false,
       "args": [],
       "cwd": "${workspaceRoot}",
@@ -17,7 +17,8 @@
       "env": {
         "NODE_ENV": "development",
         "SIMULATE_FS_ERRORS": "false",
-        "BLUEBIRD_DEBUG": "0"
+        "BLUEBIRD_DEBUG": "0",
+        "FORCE_ALLOW_ELEVATED_SYMLINKING": "yes"
       },
       "console": "integratedTerminal",
       "sourceMaps": true,

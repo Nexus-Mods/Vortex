@@ -7,14 +7,14 @@ import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import { dismissStep } from './actions';
 import { IToDo } from './IToDo';
 
-import I18next from 'i18next';
+import { TFunction } from 'i18next';
 import * as _ from 'lodash';
 import * as React from 'react';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 
 interface ITodoProps {
-  t: I18next.TFunction;
+  t: TFunction;
   todo: IToDo;
   extensionProps: any;
   dismiss: (id: string) => void;
@@ -59,7 +59,7 @@ class Todo extends React.PureComponent<ITodoProps, {}> {
     this.props.dismiss(this.props.todo.id);
   }
 
-  private resolveElement(input: string | ((t: I18next.TFunction, props: any) => JSX.Element),
+  private resolveElement(input: string | ((t: TFunction, props: any) => JSX.Element),
                          className: string): JSX.Element {
     const { t, extensionProps } = this.props;
     return input === undefined

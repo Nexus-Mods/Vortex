@@ -10,10 +10,10 @@ describe('terminate', () => {
   logger.level = 'crit';
 
   it('terminate opens an error message box', () => {
-    dialog.showMessageBox.mockClear();
+    dialog.showMessageBoxSync.mockClear();
     expect(() => terminate('test')).toThrowError(new UserCanceled());
-    expect(dialog.showMessageBox.mock.calls.length).toEqual(1);
-    expect(dialog.showMessageBox.mock.calls[0][1].type).toEqual('error');
+    expect(dialog.showMessageBoxSync.mock.calls.length).toEqual(1);
+    expect(dialog.showMessageBoxSync.mock.calls[0][1].type).toEqual('error');
   });
 
   it('terminate exits the application with a status code', () => {

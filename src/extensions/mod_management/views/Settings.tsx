@@ -35,7 +35,7 @@ import getInstallPath, { getInstallPathPattern } from '../util/getInstallPath';
 import { modPathsForGame } from '../selectors';
 import getText from '../texts';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 import { remote } from 'electron';
 import * as path from 'path';
 import * as React from 'react';
@@ -104,7 +104,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     });
   }
 
-  public componentWillMount() {
+  public componentDidMount() {
     const activators = this.supportedActivators();
     this.nextState.supportedActivators = activators;
     if (activators.find(act => act.id === this.state.currentActivator) === undefined) {
@@ -117,7 +117,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     }
   }
 
-  public componentWillReceiveProps(newProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(newProps: IProps) {
     if (this.props.installPath !== newProps.installPath) {
       this.nextState.installPath = newProps.installPath;
     }

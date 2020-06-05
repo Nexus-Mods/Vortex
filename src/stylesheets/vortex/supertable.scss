@@ -233,12 +233,8 @@
 .table-pinned {
   height: 3em;
   > div, td {
-    position: absolute;
-    width: 100%;
     height: 3em;
     background-color: $brand-warning;
-    display: flex;
-    align-items: center;
     padding: 8px;
     > .btn {
       margin-left: 8px;

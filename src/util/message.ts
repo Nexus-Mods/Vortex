@@ -15,8 +15,8 @@ import * as fs from './fs';
 import { log } from './log';
 import { flatten, truthy } from './util';
 
-import * as Promise from 'bluebird';
-import { IFeedbackResponse } from 'nexus-api';
+import { IFeedbackResponse } from '@nexusmods/nexus-api';
+import Promise from 'bluebird';
 import ZipT = require('node-7z');
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
@@ -309,6 +309,7 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
     type: 'error',
     title: haveMessage ? title : undefined,
     message: haveMessage ? options.message : title,
+    allowSuppress: options.allowSuppress,
     replace: options.replace,
     actions: details !== undefined ? [{
       title: 'More',

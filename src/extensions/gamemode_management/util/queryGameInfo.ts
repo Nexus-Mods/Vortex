@@ -6,7 +6,7 @@ import walk from '../../../util/walk';
 
 import {IDiscoveryResult} from '../types/IDiscoveryResult';
 
-import * as Promise from 'bluebird';
+import Promise from 'bluebird';
 
 function queryGameInfo(game: IGame & IDiscoveryResult): Promise<{ [key: string]: IGameDetail }> {
   if (game.path === undefined) {
