@@ -302,6 +302,11 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
     };
 
     const activeGameEntry: IGameLoadOrderEntry = getGameEntry(profile.gameId);
+    if (activeGameEntry === undefined) {
+      // There's no game entry for this game; that's expected for games
+      //  which do not use the LO page.
+      return undefined;
+    }
     if ((itemRenderer === undefined) && (activeGameEntry.itemRenderer === undefined)) {
       return useDefault(activeGameEntry);
     }
