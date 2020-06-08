@@ -178,11 +178,13 @@ export function didIgnoreError(): boolean {
 }
 
 export function disableErrorReport() {
+  log('info', 'user ignored error, disabling reporting');
   errorIgnored = true;
 }
 
 if (ipcRenderer !== undefined) {
   ipcRenderer.on('did-ignore-error', () => {
+    log('info', 'user ignored error, disabling reporting');
     errorIgnored = true;
   });
 }
@@ -301,6 +303,7 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
         noLink: true,
       });
       if (action === 1) {
+        log('info', 'user ignored error, disabling reporting');
         errorIgnored = true;
         return;
       }
