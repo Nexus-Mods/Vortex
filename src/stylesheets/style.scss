@@ -701,7 +701,7 @@ $other: (
   .color {
     @each $id,
     $col in $colors {
-      .#{$id} {
+      .#{"" + $id} {
         color: $col;
       }
     }
@@ -714,12 +714,12 @@ $other: (
 :root {
   @each $id,
   $col in $colors {
-    --#{$id}: #{$col};
+    --#{"" + $id}: #{$col};
   }
 
   @each $id,
   $val in $other {
-    --#{$id}: #{$val};
+    --#{"" + $id}: #{$val};
   }
 }
 

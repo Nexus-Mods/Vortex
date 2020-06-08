@@ -57,7 +57,8 @@ const nativeLibs = [
   'windump',
 ];
 
-const headerURL = 'https://atom.io/download/electron';
+// const headerURL = 'https://atom.io/download/electron';
+const headerURL = 'https://www.electronjs.org/headers';
 
 // based on https://github.com/juliangruber/require-rebuild
 function makeRebuildFunc(orig) {

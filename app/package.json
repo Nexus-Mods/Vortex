@@ -1,6 +1,6 @@
 {
   "name": "vortex",
-  "version": "1.2.13",
+  "version": "1.2.14",
   "productName": "Vortex",
   "description": "Vortex",
   "author": "Black Tree Gaming Ltd.",
@@ -11,7 +11,7 @@
     "url": "https://github.com/Nexus-Mods/Vortex"
   },
   "vortex": {
-    "electron": "8.3.0"
+    "electron": "8.3.1"
   },
   "dependencies": {
     "@nexusmods/nexus-api": "^1.0.5",
@@ -57,7 +57,7 @@
     "native-errors": "Nexus-Mods/node-native-errors",
     "nbind": "TanninOne/nbind",
     "node-7z": "Nexus-Mods/node-7z",
-    "node-sass": "^4.13.0",
+    "sass": "^1.26.8",
     "opn": "TanninOne/opn",
     "packery": "^2.1.2",
     "permissions": "Nexus-Mods/node-permissions",

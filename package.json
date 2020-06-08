@@ -12,8 +12,8 @@
     "electron": "8.3.1"
   },
   "scripts": {
-    "_assets_out": "node InstallAssets.js out && node-sass --output-style compressed src/stylesheets/loadingScreen.scss > out/assets/css/loadingScreen.css",
-    "_assets_app": "node InstallAssets.js app && node-sass --output-style compressed src/stylesheets/loadingScreen.scss > app/assets/css/loadingScreen.css",
+    "_assets_out": "node InstallAssets.js out && sass --style compressed src/stylesheets/loadingScreen.scss > out/assets/css/loadingScreen.css",
+    "_assets_app": "node InstallAssets.js app && sass --style compressed src/stylesheets/loadingScreen.scss > app/assets/css/loadingScreen.css",
     "_install_app": "cd app && rm-local-modules && yarn install --non-interactive --check-files",
     "subprojects": "node BuildSubprojects.js out",
     "subprojects_app": "node BuildSubprojects.js app",
@@ -237,7 +237,7 @@
     "native-errors": "Nexus-Mods/node-native-errors",
     "nbind": "TanninOne/nbind",
     "node-7z": "Nexus-Mods/node-7z",
-    "node-sass": "^4.13.0",
+    "sass": "^1.26.8",
     "opn": "TanninOne/opn",
     "packery": "^2.1.2",
     "permissions": "Nexus-Mods/node-permissions",
