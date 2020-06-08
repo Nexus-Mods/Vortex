@@ -30,7 +30,7 @@ import Debouncer from './Debouncer';
 import epicGamesLauncher from './EpicGamesLauncher';
 import { getVisibleWindow, terminate } from './errorHandling';
 import { extend } from './ExtensionProvider';
-import { copyFileAtomic, fileMD5 } from './fsAtomic';
+import { copyFileAtomic, fileMD5, writeFileAtomic } from './fsAtomic';
 import getNormalizeFunc, { makeNormalizingDict, Normalize } from './getNormalizeFunc';
 import getVortexPath from './getVortexPath';
 import github from './github';
@@ -125,6 +125,7 @@ export {
   UserCanceled,
   userFriendlyTime,
   walk,
+  writeFileAtomic,
 };
 
 // getText functions are rolled up into one function
