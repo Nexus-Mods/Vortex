@@ -853,7 +853,6 @@ class Application {
   }
 
   private validateFiles(): Promise<void> {
-    disableErrorReport();
     return Promise.resolve(validateFiles(getVortexPath('assets_unpacked')))
       .then(validation => {
         if ((validation.changed.length > 0)
