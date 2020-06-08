@@ -245,6 +245,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
             : game.requiresCleanup;
           if ((removed.length > 0) && (gameRequiresCleanup || cleanupOnDeploy)) {
             this.postLinkPurge(dataPath, false, false, directoryCleaning)
+              .catch(UserCanceled, () => null)
               .catch(err => {
                 this.mApi.showErrorNotification('Failed to clean up',
                   err, { message: dataPath });
