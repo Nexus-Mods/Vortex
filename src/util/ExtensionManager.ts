@@ -348,6 +348,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
       registerInterpreter: undefined,
       registerStartHook: undefined,
       registerMigration: undefined,
+      registerAPI: undefined,
       requireVersion: undefined,
       requireExtension: undefined,
       api: undefined,
@@ -538,6 +539,7 @@ class ExtensionManager {
       getLoadedExtensions: () => this.extensions,
       awaitUI: () => this.mUIStartedPromise,
       getState: () => undefined,
+      ext: {},
     };
     if (initStore !== undefined) {
       // apologies for the sync operation but this needs to happen before extensions are loaded
@@ -1041,6 +1043,13 @@ class ExtensionManager {
           return prev;
         }, [])),
     };
+
+    // apply api extensions immediately after all extensions are loaded so they
+    // become available asap
+    this.apply('registerAPI',
+               (key: string, func: (...args: any[]) => any, options: IApiAddition) => {
+      this.mApi.ext[key] = func;
+    });
 
     if (remote !== undefined) {
       // renderer process

@@ -342,6 +342,13 @@ export interface IPreviewFile {
   filePath: string;
 }
 
+export interface IApiFuncOptions {
+  /**
+   * minimum number of arguments the caller has to pass to a api extension function
+   */
+  minArguments?: number;
+}
+
 /**
  * interface for convenience functions made available to extensions
  *
@@ -631,6 +638,12 @@ export interface IExtensionApi {
    * get a list of extensions currently loaded into Vortex
    */
   getLoadedExtensions: () => IRegisteredExtension[];
+
+  /**
+   * functions made available from extension to extension. Callers have to make
+   * sure they handle gracefully the case where a function doesn't exist
+   */
+  ext: { [key: string]: (...args: any[]) => any };
 }
 
 export interface IStateVerifier {
@@ -1117,6 +1130,12 @@ export interface IExtensionContext {
     priority: number,
     handler: (files: IPreviewFile[], allowPick: boolean)
       => Promise<IPreviewFile>) => void;
+
+  /**
+   * add a function to the IExtensionApi object that is made available to all other extensions
+   * in the api.ext object.
+   */
+  registerAPI: (name: string, func: (...args: any[]) => any, options: IApiFuncOptions) => void;
 
   /**
    * specify that a certain range of versions of vortex is required
