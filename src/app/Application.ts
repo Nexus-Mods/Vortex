@@ -331,9 +331,11 @@ class Application {
           try {
             if (err instanceof Error) {
               const pretty = prettifyNodeErrorMessage(err);
+              const details = pretty.message
+                .replace(/{{ *([a-zA-Z]+) *}}/g, (m, key) => pretty.replace?.[key] || key);
               terminate({
                 message: 'Startup failed',
-                details: pretty.message,
+                details,
                 stack: err.stack,
               }, this.mStore !== undefined ? this.mStore.getState() : {},
                 pretty.allowReport);
