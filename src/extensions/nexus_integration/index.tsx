@@ -47,7 +47,8 @@ import { NEXUS_MEMBERSHIP_URL } from './constants';
 import * as eh from './eventHandlers';
 import NXMUrl from './NXMUrl';
 import * as sel from './selectors';
-import { endorseModImpl, nexusGames, processErrorMessage, startDownload, updateKey } from './util';
+import { endorseModImpl, nexusGames, nexusGamesProm, processErrorMessage,
+         startDownload, updateKey } from './util';
 
 import NexusT, { IDownloadURL, NexusError,
   RateLimitError, TimeoutError } from '@nexusmods/nexus-api';
@@ -989,6 +990,8 @@ function init(context: IExtensionContextExt): boolean {
   context.registerAction('game-undiscovered-buttons', 120, 'nexus', {},
                          context.api.translate('Open Nexus Page'),
                          (games: string[]) => openNexusPage(context.api.store.getState(), games));
+
+  context.registerAPI('getNexusGames', () => nexusGamesProm(), {});
 
   context.once(() => once(context.api));
   context.onceMain(() => onceMain(context.api));

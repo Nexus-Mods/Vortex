@@ -674,14 +674,22 @@ export function updateKey(api: IExtensionApi, nexus: Nexus, key: string): Promis
 
 let nexusGamesCache: IGameListEntry[] = [];
 
+let onCacheLoaded: () => void;
+const cachePromise = new Promise(resolve => onCacheLoaded = resolve);
+
 export function retrieveNexusGames(nexus: Nexus) {
   nexus.getGames()
     .then(games => {
       nexusGamesCache = games.sort((lhs, rhs) => lhs.name.localeCompare(rhs.name));
+      onCacheLoaded();
     })
     .catch(err => null);
 }
 
 export function nexusGames(): IGameListEntry[] {
   return nexusGamesCache;
+}
+
+export function nexusGamesProm(): Promise<IGameListEntry[]> {
+  return cachePromise.then(() => nexusGamesCache);
 }
