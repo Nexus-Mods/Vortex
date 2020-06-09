@@ -301,6 +301,7 @@ export function escapeRE(input: string): string {
 export interface ITimeoutOptions {
   cancel?: boolean;
   throw?: boolean;
+  queryContinue?: () => Promise<boolean>;
 }
 
 /**
@@ -315,15 +316,39 @@ export function timeout<T>(prom: Promise<T>,
                            options?: ITimeoutOptions)
                            : Promise<T> {
   let timedOut: boolean = false;
-  return Promise.race<T>([prom, Promise.delay(delayMS).then(() => {
+  let resolved: boolean = false;
+
+  const doTimeout = () => {
     timedOut = true;
     if (options?.throw === true) {
       return Promise.reject(new TimeoutError());
     } else {
       return undefined;
     }
-  })])
+  };
+
+  const onTimeExpired = () => {
+    if (resolved) {
+      return Promise.resolve();
+    }
+    if (options.queryContinue !== undefined) {
+      return options.queryContinue()
+        .then(requestContinue => {
+          if (requestContinue) {
+            delayMS *= 2;
+            return Promise.delay(delayMS).then(onTimeExpired);
+          } else {
+            return doTimeout();
+          }
+        });
+    } else {
+      return doTimeout();
+    }
+  };
+
+  return Promise.race<T>([prom, Promise.delay(delayMS).then(onTimeExpired)])
     .finally(() => {
+      resolved = true;
       if (timedOut && (options?.cancel === true)) {
         prom.cancel();
       }
