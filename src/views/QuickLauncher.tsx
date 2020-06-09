@@ -235,6 +235,8 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
     const { onShowError } = this.props;
     const { starter } = this.state;
     if (starter?.exePath === undefined) {
+      onShowError('Tool missing/misconfigured',
+        'Please ensure that the tool/game is configured correctly and try again', false);
       return;
     }
     StarterInfo.run(starter, this.context.api, onShowError);
