@@ -189,6 +189,10 @@ class InstallManager {
           return Promise.reject(
             new ProcessCanceled('You need to select a game before installing this mod'));
         }
+        if (installGameId === 'site') {
+          return Promise.reject(
+            new ProcessCanceled('Please install extensions through the extension browser'));
+        }
         installContext = new InstallContext(gameId, api);
         installContext.startIndicator(baseName);
         return api.lookupModMeta({
