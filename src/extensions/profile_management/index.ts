@@ -27,7 +27,7 @@ import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import onceCB from '../../util/onceCB';
-import { installPathForGame, needToDeployForGame } from '../../util/selectors';
+import { discoveryByGame, installPathForGame, needToDeployForGame } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { truthy } from '../../util/util';
 
@@ -619,7 +619,21 @@ function init(context: IExtensionContext): boolean {
       const { activeProfileId, nextProfileId } = state.settings.profiles;
       if (nextProfileId !== activeProfileId) {
         log('warn', 'started with a profile change in progress');
-        store.dispatch(setNextProfile(activeProfileId || undefined));
+
+        // ensure the new profile is valid and the corresponding game is
+        // discovered
+        if (truthy(activeProfileId)
+          && (state.persistent.profiles[activeProfileId] !== undefined)) {
+          const profile = state.persistent.profiles[activeProfileId];
+          const discovery = discoveryByGame(state, profile.gameId);
+          if (discovery?.path !== undefined) {
+            store.dispatch(setNextProfile(activeProfileId));
+          } else {
+            store.dispatch(setNextProfile(undefined));
+          }
+        } else {
+          store.dispatch(setNextProfile(undefined));
+        }
       }
 
       // it's important we stop managing a game if it's no longer discovered
