@@ -360,6 +360,8 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
   private startTool = (info: StarterInfo) => {
     const { onShowError } = this.props;
     if (info?.exePath === undefined) {
+      onShowError('Tool missing/misconfigured',
+        'Please ensure that the tool/game is configured correctly and try again', false);
       return;
     }
     StarterInfo.run(info, this.context.api, onShowError);
