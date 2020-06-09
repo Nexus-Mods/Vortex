@@ -1,6 +1,7 @@
 import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import { getVisibleWindow } from '../../util/errorHandling';
 import * as fs from '../../util/fs';
+import { log } from '../../util/log';
 
 import Promise from 'bluebird';
 import { dialog as dialogIn, remote } from 'electron';
@@ -130,9 +131,12 @@ class FileAssembler {
         const fd = this.mFD;
         this.mFD = undefined;
         return fs.fsyncAsync(fd)
-          .catch({ code: 'EBADF' }, () => Promise.resolve())
-          .catch({ code: 'ENOENT' }, () => Promise.resolve())
-          .then(() => fs.closeAsync(fd));
+          .then(() => fs.closeAsync(fd))
+          .catch({ code: 'EBADF' }, () => {
+            log('warn', 'failed to sync or close file', this.mFileName);
+            return Promise.resolve();
+          })
+          .catch({ code: 'ENOENT' }, () => Promise.resolve());
       } else {
         return Promise.resolve();
       }
