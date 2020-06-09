@@ -31,7 +31,7 @@ import * as path from 'path';
 import * as semver from 'semver';
 import { generate as shortid } from 'shortid';
 import * as util from 'util';
-import { Pair } from 'zeromq';
+import * as zeromqT from 'zeromq';
 
 const app = appIn !== undefined ? appIn : remote.app;
 
@@ -218,7 +218,8 @@ function makeJsonRevive(invoke: (data: any) => Promise<void>, getId: () => strin
 
 class ConnectionIPC {
   public static async bind(): Promise<ConnectionIPC> {
-    const socket = new Pair();
+    const zeromq = await import('zeromq');
+    const socket = new zeromq.Pair();
     let proc: ChildProcess = null;
     let onResolve: () => void;
     let onReject: (err: Error) => void;
@@ -260,13 +261,13 @@ class ConnectionIPC {
     return new ConnectionIPC(socket, proc);
   }
 
-  private mSocket: Pair;
+  private mSocket: zeromqT.Pair;
   private mProcess: ChildProcess;
   private mAwaitedReplies: { [id: string]: IAwaitingPromise } = {};
   private mDelegates: { [id: string]: Core } = {};
   private mOnInterrupted: (err: Error) => void;
 
-  constructor(socket: Pair, proc: ChildProcess) {
+  constructor(socket: zeromqT.Pair, proc: ChildProcess) {
     this.mSocket = socket;
     this.mProcess = proc;
 
