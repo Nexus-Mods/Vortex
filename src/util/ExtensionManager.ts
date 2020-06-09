@@ -29,7 +29,7 @@ import { relaunch } from './commandLine';
 import { COMPANY_ID } from './constants';
 import { MissingDependency, NotSupportedError,
         ProcessCanceled, TimeoutError, UserCanceled } from './CustomErrors';
-import { isOutdated } from './errorHandling';
+import { getVisibleWindow, isOutdated } from './errorHandling';
 import getVortexPath from './getVortexPath';
 import { i18n } from './i18n';
 import lazyRequire from './lazyRequire';
@@ -816,7 +816,7 @@ class ExtensionManager {
         err);
     };
 
-    return Promise.each(calls, (call, idx) => {
+    return Promise.mapSeries(calls, (call, idx) => {
       log('debug', 'once', { extension: call.extension });
       try {
         this.mLoadingCallbacks.forEach(cb => {
@@ -824,7 +824,10 @@ class ExtensionManager {
         });
         const prom = call.arguments[0]() || Promise.resolve();
 
-        return timeout(prom, 10000, { throw: true })
+        return timeout(prom, 30000, {
+          throw: true,
+          queryContinue: () => this.queryLoadTimeout(call.extension),
+        })
           .catch(TimeoutError, () => {
             reportError(new Error('Initialization didn\'t finish in time.'), call);
           })
@@ -864,6 +867,18 @@ class ExtensionManager {
   public setUIReady() {
     this.mOnUIStarted();
     ipcRenderer.send('__ui_is_ready');
+  }
+
+  private queryLoadTimeout(extension: string): Promise<boolean> {
+    return Promise.resolve(dialog.showMessageBox(getVisibleWindow(), {
+      type: 'warning',
+      title: 'Extension slow',
+      message: `An extension (${extension}) is taking unusually long to load. `
+        + 'This is very likely a bug. Do you want to continue to wait for it?',
+      noLink: true,
+      buttons: [ 'Cancel', 'Wait' ],
+    }))
+    .then(result => result.response === 1);
   }
 
   private getModDB = (): Promise<modmetaT.ModDB> => {
