@@ -359,7 +359,7 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
 
   private startTool = (info: StarterInfo) => {
     const { onShowError } = this.props;
-    if (info === undefined) {
+    if (info?.exePath === undefined) {
       return;
     }
     StarterInfo.run(info, this.context.api, onShowError);

@@ -234,7 +234,7 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
   private start = () => {
     const { onShowError } = this.props;
     const { starter } = this.state;
-    if (starter === undefined) {
+    if (starter?.exePath === undefined) {
       return;
     }
     StarterInfo.run(starter, this.context.api, onShowError);
