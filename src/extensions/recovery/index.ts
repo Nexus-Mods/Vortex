@@ -84,7 +84,7 @@ async function resetToManifest(api: IExtensionApi) {
       return;
     }
 
-    const mods = state.persistent.mods[profile.gameId];
+    const mods = getSafe(state, ['persistent', 'mods', profile.gameId], {});
     const isEnabled = modId => getSafe(profile, ['modState', modId, 'enabled'], false);
     Object.keys(mods)
       .forEach(modId => {
