@@ -206,10 +206,20 @@ class StarterInfo implements IStarterInfo {
         }
         onShowError('Failed to run tool', par, false);
       } else {
+        // Many C# tools which crash will generally do so because of
+        //  some unhandled exception - if we did not provide any commandline
+        //  arguments and we confirm that the error message starts with
+        //  "unhandled exception" we don't want to allow users to report
+        //  this to us! example of this use case:
+        //  https://github.com/Nexus-Mods/Vortex/issues/6380
+        const allowReport = (info.commandLine.length > 0)
+          ? true
+          : err.message.startsWith('Unhandled Exception:')
+            ? false : true;
         onShowError('Failed to run tool', {
           executable: info.exePath,
           error: err,
-        });
+        }, allowReport);
       }
     })
     .then(() => {
