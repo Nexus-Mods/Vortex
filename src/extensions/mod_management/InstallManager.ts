@@ -413,6 +413,20 @@ class InstallManager {
                   });
               }
             });
+        } else if (err['code'] === 'MODULE_NOT_FOUND') {
+          const location = err['requireStack'] !== undefined
+            ? ` (at ${err['requireStack'][0]})`
+            : '';
+          installContext.reportError('Installation failed',
+            'Module failed to load:\n{{message}}{{location}}\n\n'
+            + 'This usually indicates that the Vortex installation has been '
+            + 'corrupted or an external application (like an Anti-Virus) has interfered with '
+            + 'the loading of the module. '
+            + 'Please check whether your AV reported something and try reinstalling Vortex.',
+            false, {
+              location,
+              message: err.message.split('\n')[0],
+            });
         } else {
           const { genHash } = require('modmeta-db');
 
