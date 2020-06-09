@@ -552,16 +552,20 @@ export function copyAsync(src: string, dest: string,
     .catch(err => PromiseBB.reject(restackErr(err, stackErr)));
 }
 
+type CopyOptionsEx = fs.CopyOptions & {
+  noSelfCopy?: boolean,
+  showDialogCallback?: () => boolean,
+};
+
 function copyInt(
-    src: string, dest: string,
-    options: fs.CopyOptions & { noSelfCopy?: boolean,
-                                showDialogCallback?: () => boolean },
+    src: string,
+    dest: string,
+    options: CopyOptionsEx,
     stackErr: Error,
     tries: number) {
   return simfail(() => fsBB.copyAsync(src, dest, options))
     .catch((err: NodeJS.ErrnoException) =>
-      errorHandler(err, stackErr, tries,
-                  (options !== undefined) ? options.showDialogCallback : undefined)
+      errorHandler(err, stackErr, tries, options?.showDialogCallback)
         .then(() => copyInt(src, dest, options, stackErr, tries - 1)));
 }
 
