@@ -6,7 +6,7 @@ import Debouncer from '../../util/Debouncer';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import opn from '../../util/opn';
-import { activeGameId, gameById } from '../../util/selectors';
+import { activeGameId, currentGame, gameById } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 
 import { DownloadIsHTML } from '../download_management/DownloadManager';
@@ -202,7 +202,12 @@ function downloadFile(api: IExtensionApi, nexus: Nexus,
 
 export function onModUpdate(api: IExtensionApi, nexus: Nexus): (...args: any[]) => void {
   return (gameId, modId, fileId) => {
-    const game = gameId === SITE_ID ? null : gameById(api.store.getState(), gameId);
+    let game = gameId === SITE_ID ? null : gameById(api.store.getState(), gameId);
+
+    if (game === undefined) {
+      log('warn', 'mod update requested for unknown game id', gameId);
+      game = currentGame(api.getState());
+    }
 
     downloadFile(api, nexus, game, modId, fileId)
       .then(downloadId => {
