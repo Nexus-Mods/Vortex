@@ -77,7 +77,7 @@ function purgeModsImpl(api: IExtensionApi, activator: IDeploymentMethod): Promis
   const t = api.translate;
 
   log('info', 'current deployment method is',
-    { method: getCurrentActivator(state, gameId, false).id });
+    { method: getCurrentActivator(state, gameId, false)?.id });
   if (activator === undefined) {
     activator = getCurrentActivator(state, gameId, false);
   }
