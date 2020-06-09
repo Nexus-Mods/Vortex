@@ -278,8 +278,9 @@ function unknownErrorRetry(filePath: string, err: Error, stackErr: Error): Promi
       err['code'] = rethrowAs;
       return PromiseBB.reject(err);
     }
-    case 'Cancel': PromiseBB.reject(new UserCanceled());
   }
+
+  return PromiseBB.reject(new UserCanceled());
 }
 
 function busyRetry(filePath: string): PromiseBB<boolean> {
@@ -376,8 +377,18 @@ function restackErr(error: Error, stackErr: Error): Error {
 function errorHandler(error: NodeJS.ErrnoException,
                       stackErr: Error, tries: number,
                       showDialogCallback?: () => boolean): PromiseBB<void> {
-  return errorRepeat(error, (error as any).dest || error.path, tries,
-                     stackErr, showDialogCallback)
+  const repProm = errorRepeat(error, (error as any).dest || error.path, tries,
+                     stackErr, showDialogCallback);
+
+  // trying to narrow down #6404
+  if (repProm === undefined) {
+    const err = new Error(
+      `Failed to handle filesystem error "${error.code}": ${error.message}.`);
+    err.stack = error.stack;
+    throw PromiseBB.reject(err);
+  }
+
+  return repProm
     .then(repeat => repeat
       ? PromiseBB.resolve()
       : PromiseBB.reject(restackErr(error, stackErr)))
