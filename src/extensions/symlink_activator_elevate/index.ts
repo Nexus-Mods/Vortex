@@ -332,8 +332,9 @@ class DeploymentMethod extends LinkingDeployment {
       return Promise.resolve();
     }
     return new Promise((resolve,  reject) => {
-      this.mIPCServer.close((err: Error) => {
-        if ((err !== null) && !err.message.includes('ERR_SERVER_NOT_RUNNING')) {
+      this.mIPCServer.close((err?: Error) => {
+        // note: err may be undefined instead of null
+        if (!!err && !err.message.includes('ERR_SERVER_NOT_RUNNING')) {
           return reject(err);
         } else {
           this.mIPCServer = undefined;
