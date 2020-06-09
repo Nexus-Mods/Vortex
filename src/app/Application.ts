@@ -363,7 +363,7 @@ class Application {
         const res = RegGetValue('HKEY_LOCAL_MACHINE',
           'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System',
           'ConsentPromptBehaviorAdmin');
-        log('debug', 'UAC settings found', JSON.stringify(res, undefined, 2));
+        log('debug', 'UAC settings found', `ConsentBehaviour: ${res.value}`);
         return ((res.type === 'REG_DWORD') && (res.value === 0))
           ? resolve(false)
           : resolve(true);
