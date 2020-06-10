@@ -99,7 +99,11 @@ class FileAssembler {
             this.mLastFlushedSize = this.mWritten;
             this.mLastFlushedTime = now;
             synced = true;
-            return fs.fsyncAsync(this.mFD).then(() => bytesWritten);
+            return fs.fsyncAsync(this.mFD)
+              .catch({ code: 'EBADF' }, () => {
+                // if we log this we may be generating thousands of log messages
+              })
+              .then(() => bytesWritten);
           } else {
             return Promise.resolve(bytesWritten);
           }

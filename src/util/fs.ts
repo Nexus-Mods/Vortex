@@ -320,7 +320,8 @@ function errorRepeat(error: NodeJS.ErrnoException, filePath: string, retries: nu
                      stackErr: Error, showDialogCallback?: () => boolean): PromiseBB<boolean> {
   if ((retries > 0) && RETRY_ERRORS.has(error.code)) {
     // retry these errors without query for a few times
-    return PromiseBB.delay(100).then(() => PromiseBB.resolve(true));
+    return PromiseBB.delay(retries === 1 ? 1000 : 100)
+      .then(() => PromiseBB.resolve(true));
   }
   if ((showDialogCallback !== undefined) && !showDialogCallback()) {
     return PromiseBB.resolve(false);
