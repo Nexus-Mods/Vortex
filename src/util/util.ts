@@ -331,8 +331,8 @@ export function timeout<T>(prom: Promise<T>,
     if (resolved) {
       return Promise.resolve();
     }
-    if (options.queryContinue !== undefined) {
-      return options.queryContinue()
+    if (options?.queryContinue !== undefined) {
+      return options?.queryContinue()
         .then(requestContinue => {
           if (requestContinue) {
             delayMS *= 2;
