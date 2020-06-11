@@ -65,9 +65,17 @@ function transformError(err: any): Error {
                                   + 'was externally modified between extraction and now. '
                                   + `"${err.Message}"`);
   } else if (err.name === 'System.IO.FileLoadException') {
-    if (err.FileName.indexOf('node_modules\\fomod-installer') !== -1) {
-      const fileName = err.FileName.replace(/^file:\/*/, '');
-      result = new SetupError(`Windows prevented Vortex from loading "${fileName}". `
+    if (err?.FileName) {
+      if (err.FileName.indexOf('node_modules\\fomod-installer') !== -1) {
+        const fileName = err.FileName.replace(/^file:\/*/, '');
+        result = new SetupError(`Windows prevented Vortex from loading "${fileName}". `
+          + 'This is usually caused if you don\'t install Vortex but only extracted it because '
+          + 'Windows will then block all executable files. '
+          + 'Please install Vortex or unblock all .dll and .exe files manually.');
+      }
+    } else {
+      result = new SetupError('Windows prevented Vortex from loading the files necessary '
+        + 'to complete installation operations. '
         + 'This is usually caused if you don\'t install Vortex but only extracted it because '
         + 'Windows will then block all executable files. '
         + 'Please install Vortex or unblock all .dll and .exe files manually.');
