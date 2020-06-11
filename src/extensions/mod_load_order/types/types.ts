@@ -110,10 +110,6 @@ export interface IGameLoadOrderEntry {
   //  uses a custom one.
   displayCheckboxes?: boolean;
 
-  // Allows the game entry to define a set of context menus entries
-  //  to be displayed and executed through the LO page.
-  contextActions?: IActionDefinitionEx[];
-
   // Provides game extensions with relevant props that the extension writer
   //  can use to build the information panel. Providing a string here instead
   //  of a react component will create a default component instead.
