@@ -28,7 +28,7 @@ import { Archive } from './archives';
 import { relaunch } from './commandLine';
 import { COMPANY_ID } from './constants';
 import { MissingDependency, NotSupportedError,
-        ProcessCanceled, TimeoutError, UserCanceled } from './CustomErrors';
+        ProcessCanceled, ThirdPartyError, TimeoutError, UserCanceled } from './CustomErrors';
 import { getVisibleWindow, isOutdated } from './errorHandling';
 import getVortexPath from './getVortexPath';
 import { i18n } from './i18n';
@@ -1432,9 +1432,9 @@ class ExtensionManager {
                 log('warn', '.Net error', { stdOut, errOut });
                 if (game === 'stardewvalley') {
                   // In the case of SDV the interesting information seems to get printed to stdout
-                  return reject(new Error(stdOut || errOut));
+                  return reject(new ThirdPartyError(stdOut || errOut));
                 } else if (errOut) {
-                  return reject(new Error(errOut));
+                  return reject(new ThirdPartyError(errOut));
                 } else {
                   return reject(new ProcessCanceled('.Net error'));
                 }
