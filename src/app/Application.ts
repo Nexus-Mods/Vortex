@@ -358,23 +358,36 @@ class Application {
       return Promise.resolve(true);
     }
 
-    return new Promise((resolve) => {
+    const getSystemPolicyValue = (key: string) => {
       try {
         const res = RegGetValue('HKEY_LOCAL_MACHINE',
           'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System',
-          'ConsentPromptBehaviorAdmin');
-        log('debug', 'UAC settings found', `ConsentBehaviour: ${res.value}`);
-        return ((res.type === 'REG_DWORD') && (res.value === 0))
-          ? resolve(false)
-          : resolve(true);
+          key);
+        return Promise.resolve({ key, type: res.type, value: res.value});
       } catch (err) {
         // We couldn't retrieve the value, log this and resolve positively
         //  as the user might have a version of Windows that does not use
         //  the key we're looking for.
-        log('warn', 'failed to check UAC settings', err);
-        return resolve(true);
+        log('debug', 'failed to check UAC settings', err);
+        return Promise.resolve(undefined);
       }
-    });
+    };
+
+    return Promise.all([getSystemPolicyValue('ConsentPromptBehaviorAdmin'),
+                        getSystemPolicyValue('ConsentPromptBehaviorUser')])
+      .then(res => {
+        res.forEach(value => {
+          if (value !== undefined) {
+            log('debug', 'UAC settings found', `${value.key}: ${value.value}`);
+          }
+        });
+        const adminConsent = res[0];
+        return ((adminConsent.type === 'REG_DWORD') && (adminConsent.value === 0))
+          ? Promise.resolve(false)
+          : Promise.resolve(true);
+      })
+      // Perfectly ok not to have the registry keys.
+      .catch(err => Promise.resolve(true));
   }
 
   private warnAdmin(): Promise<void> {
