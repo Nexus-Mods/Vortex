@@ -153,7 +153,8 @@ function validateTranslation(extPath: string): Promise<void> {
       // iso on everything. Was it always like that or was that changed in a recent
       // node release?
       const [language, country] = dirNames[0].split('-');
-      if (!languageExists(language) || !countryExists(country)) {
+      if (!languageExists(language)
+          || (country !== undefined) && !countryExists(country)) {
         return Promise.reject(new DataInvalid('Directory isn\'t a language code'));
       }
       return fs.readdirAsync(path.join(extPath, dirNames[0]))
