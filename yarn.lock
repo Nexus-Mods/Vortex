@@ -8646,8 +8646,8 @@ focus-lock@^0.6.6:
   integrity sha512-Dx69IXGCq1qsUExWuG+5wkiMqVM/zGx/reXSJSLogECwp3x6KeNQZ+NAetgxEFpnC41rD8U3+jRCW68+LNzdtw==
 
 fomod-installer@Nexus-Mods/fomod-installer:
-  version "0.4.1"
-  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/9b8c91523e01483ffd5a6dfebf450aa2a49aa617"
+  version "0.4.2"
+  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/72b3c3391280bc0e8881c0b47d63e09ee0cd944f"
   dependencies:
     async "^2.6.2"
     copyfiles "*"
@@ -12792,17 +12792,10 @@ p-limit@^1.1.0:
   dependencies:
     p-try "^1.0.0"
 
-p-limit@^2.0.0:
+p-limit@^2.0.0, p-limit@^2.2.0:
   version "2.3.0"
   resolved "https://registry.yarnpkg.com/p-limit/-/p-limit-2.3.0.tgz#3dd33c647a214fdfffd835933eb086da0dc21db1"
   integrity sha512-//88mFWSJx8lxCzwdAABTJL2MyWB12+eIY7MDL2SqLmAkeKU9qxRvWuSyTjm3FUmpBEMuFfckAIqEaVGUDxb6w==
-  dependencies:
-    p-try "^2.0.0"
-
-p-limit@^2.2.0:
-  version "2.2.2"
-  resolved "https://registry.yarnpkg.com/p-limit/-/p-limit-2.2.2.tgz#61279b67721f5287aa1c13a9a7fbbc48c9291b1e"
-  integrity sha512-WGR+xHecKTr7EbUEhyLSh5Dube9JtdiG78ufaeLxTgpudf/20KqyMioIUZJAezlTIi6evxuoUs9YXc11cU+yzQ==
   dependencies:
     p-try "^2.0.0"
 
