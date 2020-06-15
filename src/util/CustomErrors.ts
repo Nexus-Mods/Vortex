@@ -148,3 +148,13 @@ export class TimeoutError extends Error {
     this.name = this.constructor.name;
   }
 }
+
+/**
+ * these errors we report but don't allow to be reported to us
+ */
+export class ThirdPartyError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = this.constructor.name;
+  }
+}

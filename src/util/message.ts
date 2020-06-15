@@ -8,7 +8,7 @@ import { IAttachment, IErrorOptions } from '../types/IExtensionContext';
 import { IState } from '../types/IState';
 import { jsonRequest } from '../util/network';
 
-import { HTTPError } from './CustomErrors';
+import { HTTPError, ThirdPartyError } from './CustomErrors';
 import { didIgnoreError, getErrorContext, isOutdated,
          sendReport, toError } from './errorHandling';
 import * as fs from './fs';
@@ -142,6 +142,10 @@ function shouldAllowReport(err: string | Error | any, options?: IErrorOptions): 
   if ((options !== undefined) && (options.allowReport !== undefined)) {
     return options.allowReport;
   }
+  if (err instanceof ThirdPartyError) {
+    return false;
+  }
+
   if ((err === undefined) || (err.code === undefined)) {
     return true;
   }
@@ -341,6 +345,11 @@ export function prettifyNodeErrorMessage(err: any): IPrettifiedError {
       replace: {
         path: err.path || err.filename,
       },
+      allowReport: false,
+    };
+  } else if (err instanceof ThirdPartyError) {
+    return {
+      message: err.message,
       allowReport: false,
     };
   } else if (err.code === undefined) {
