@@ -336,6 +336,11 @@ export function onCheckModsVersion(api: IExtensionApi,
             allowReport: false,
           });
         })
+        .catch(ProcessCanceled, err => {
+          showError(api.store.dispatch, 'An error occurred checking for mod updates', err, {
+            allowReport: false,
+          });
+        })
         .catch(err => {
           showError(api.store.dispatch, 'An error occurred checking for mod updates', err);
         })
