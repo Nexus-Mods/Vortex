@@ -436,10 +436,9 @@ class InstallManager {
             .then(() => genHash(archivePath).catch(() => ({})))
             .then((hashResult: IHashResult) => {
               const id = `${path.basename(archivePath)} (md5: ${hashResult.md5sum})`;
-              let message = err;
               let replace = {};
               if (typeof err === 'string') {
-                message = 'The installer "{{ id }}" failed: {{ message }}';
+                err = 'The installer "{{ id }}" failed: {{ message }}';
                 replace = {
                       id,
                       message: err,
@@ -453,7 +452,7 @@ class InstallManager {
                   + 'To use Vortex, please uninstall "Browser Assistant".';
                 const errorMessage = (typeof err === 'string') ? err : err.message;
                 (!this.isBrowserAssistantError(errorMessage))
-                  ? installContext.reportError('Installation failed', message, undefined, replace)
+                  ? installContext.reportError('Installation failed', err, undefined, replace)
                   : installContext.reportError('Installation failed', browserAssistantMsg, false);
               }
               if (callback !== undefined) {
@@ -495,7 +494,6 @@ class InstallManager {
         installContext.setProgress(percent);
       }
     };
-    // process.noAsar = true;
     log('debug', 'extracting mod archive', { archivePath, tempPath });
     return this.mTask.extractFull(archivePath, tempPath, {ssc: false},
                                   progress,
