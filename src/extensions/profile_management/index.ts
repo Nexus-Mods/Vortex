@@ -310,7 +310,7 @@ function genOnProfileChange(api: IExtensionApi,
 function manageGameDiscovered(api: IExtensionApi, gameId: string) {
   const profileId = shortid();
   const instPath = installPathForGame(api.store.getState(), gameId);
-  fs.ensureDirWritableAsync(instPath, () => Promise.resolve())
+  return fs.ensureDirWritableAsync(instPath, () => Promise.resolve())
     .then(() => {
       log('info', 'user managing game for the first time', { gameId });
       api.store.dispatch(setProfile({
@@ -387,27 +387,7 @@ function manageGameUndiscovered(api: IExtensionApi, gameId: string) {
         return Promise.resolve();
       }
 
-      const profileId = shortid();
-      const instPath = installPathForGame(state, gameId);
-      return fs.ensureDirWritableAsync(instPath, () => Promise.resolve())
-        .then(() => {
-          log('info', 'user managing game for the first time', { gameId });
-          api.store.dispatch(setProfile({
-            id: profileId,
-            gameId,
-            name: 'Default',
-            modState: {},
-          }));
-          api.store.dispatch(setNextProfile(profileId));
-        })
-        .catch(innerErr => {
-          api.showErrorNotification(
-            'The game location doesn\'t exist or isn\'t writeable',
-            innerErr, {
-            allowReport: false,
-            message: instPath,
-          });
-        });
+      return manageGameDiscovered(api, gameId);
     })
     .catch(err => {
       if (!(err instanceof UserCanceled)
@@ -451,7 +431,16 @@ function init(context: IExtensionContext): boolean {
     noCollapse: true,
   }, 'Manage',
     (instanceIds: string[]) => {
-      manageGameDiscovered(context.api, instanceIds[0]);
+      const gameId = instanceIds[0];
+      const state = context.api.getState();
+
+      // double check, calling manageGameDiscovered for a game that isn't
+      // actually discovered would be invalid
+      if (state.settings.gameMode.discovered[gameId]?.path !== undefined) {
+        manageGameDiscovered(context.api, gameId);
+      } else {
+        manageGameUndiscovered(context.api, gameId);
+      }
   });
 
   context.registerAction('game-undiscovered-buttons', 50, 'activate', {
