@@ -11,6 +11,7 @@ import { sessionReducer } from './reducers';
 import Promise from 'bluebird';
 import { ipcRenderer } from 'electron';
 import { generate as shortid } from 'shortid';
+import * as url from 'url';
 import { IState } from '../../types/IState';
 
 type SubscriptionFunction = (eventId: string, value: any) => SubscriptionResult;
@@ -46,7 +47,7 @@ function init(context: IExtensionContext): boolean {
   let lastURL: string;
   context.registerDialog('browser', BrowserView, () => ({
     onEvent: triggerEvent,
-    onNavigate: (url: string) => { lastURL = url; },
+    onNavigate: (navUrl: string) => { lastURL = navUrl; },
   }));
   context.registerReducer(['session', 'browser'], sessionReducer);
 
@@ -54,7 +55,7 @@ function init(context: IExtensionContext): boolean {
     // open a browser to an url, displaying instructions if provided.
     // the browser closes as soon as a downloadable link was clicked and returns that
     // url
-    context.api.onAsync('browse-for-download', (url: string, instructions: string) => {
+    context.api.onAsync('browse-for-download', (navUrl: string, instructions: string) => {
       const subscriptionId = shortid();
 
       return new Promise<string>((resolve, reject) => {
@@ -71,7 +72,7 @@ function init(context: IExtensionContext): boolean {
           return 'close';
         });
 
-        context.api.store.dispatch(showURL(url, instructions, subscriptionId));
+        context.api.store.dispatch(showURL(navUrl, instructions, subscriptionId));
       })
       .catch(UserCanceled, () => null)
       .catch(err => {
@@ -84,6 +85,10 @@ function init(context: IExtensionContext): boolean {
 
     ipcRenderer.on('received-url',
         (evt: Electron.IpcRendererEvent, dlUrl: string, fileName?: string) => {
+      if (url.parse(dlUrl).pathname === null) {
+        // invalid url, not touching this
+        return;
+      }
       if (lastURL !== undefined) {
         dlUrl += '<' + lastURL;
       }
