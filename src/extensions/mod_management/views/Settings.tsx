@@ -16,6 +16,7 @@ import getVortexPath from '../../../util/getVortexPath';
 import { log } from '../../../util/log';
 import { showError } from '../../../util/message';
 import opn from '../../../util/opn';
+import * as selectors from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import { testPathTransfer, transferPath } from '../../../util/transferPath';
 import { isChildPath, isPathValid } from '../../../util/util';
@@ -56,6 +57,7 @@ interface IConnectedProps {
   discovery: IDiscoveryResult;
   gameMode: string;
   installPath: string;
+  downloadsPath: string;
   currentActivator: string;
   modActivity: string[];
   modPaths: { [modType: string]: string };
@@ -566,12 +568,25 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private validateModPath(input: string): { state: ValidationState, reason?: string } {
+    const { downloadsPath } = this.props;
     let vortexPath = remote.app.getAppPath();
     if (path.basename(vortexPath) === 'app.asar') {
       // in asar builds getAppPath returns the path of the asar so need to go up 2 levels
       // (resources/app.asar)
       vortexPath = path.dirname(path.dirname(vortexPath));
     }
+    if (downloadsPath !== undefined) {
+      const downPath = path.dirname(downloadsPath);
+      const normalizedDownloadsPath = path.normalize(downPath.toLowerCase());
+      const normalizedInput = path.normalize(input.toLowerCase());
+      if ((normalizedInput === normalizedDownloadsPath) || isChildPath(input, downPath)) {
+        return {
+          state: 'error',
+          reason: 'Staging folder can\'t be a subdirectory of the Vortex downloads folder.',
+        };
+      }
+    }
+
     if (isChildPath(input, vortexPath)) {
       return {
         state: 'error',
@@ -806,12 +821,14 @@ function mapStateToProps(state: any): IConnectedProps {
   const game = currentGame(state);
 
   const gameMode = getSafe(discovery, ['id'], getSafe(game, ['id'], undefined));
+  const downloadsPath = selectors.downloadPath(state);
 
   return {
     discovery,
     game,
     gameMode,
     installPath: state.settings.mods.installPath[gameMode],
+    downloadsPath,
     currentActivator: getSafe(state, ['settings', 'mods', 'activator', gameMode], undefined),
     modActivity: getSafe(state, ['session', 'base', 'activity', 'mods'], emptyArray),
     modPaths: modPathsForGame(state, gameMode),
