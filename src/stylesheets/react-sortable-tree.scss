@@ -12,6 +12,18 @@
   background-color: initial;
   border: 0;
   box-shadow: initial;
+  flex: 1 1 0;
+
+  .rst__rowLabel {
+    overflow: hidden;
+    flex: 1 1 0;
+    .rst__rowTitle {
+      text-overflow: ellipsis;
+      overflow: hidden;
+      height: initial;
+      margin-bottom: -0.3em;
+    }
+  }
 }
 
 .rst__moveHandle {
