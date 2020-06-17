@@ -13,6 +13,7 @@ import { closeBrowser } from '../actions';
 
 import Promise from 'bluebird';
 import {  WebviewTag } from 'electron';
+import * as _ from 'lodash';
 import * as React from 'react';
 import { Breadcrumb, Button, Modal } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
@@ -135,6 +136,7 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
         || (this.state.loading !== newState.loading)
         || (this.state.confirmed !== newState.confirmed)
         || (this.state.history !== newState.history)
+        || (this.state.historyIdx !== newState.historyIdx)
         || (this.state.filtered !== newState.filtered);
     return res;
   }
@@ -280,7 +282,9 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
       return (displayTime === null) || (item.createdTime + displayTime > now);
     });
 
-    this.nextState.filtered = filtered;
+    if (!_.isEqual(this.state.filtered, filtered)) {
+      this.nextState.filtered = filtered;
+    }
 
     if (filtered.length > 0) {
       if (this.mUpdateTimer !== undefined) {
@@ -330,14 +334,20 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
     const { history, historyIdx } = this.state;
     const newPos = Math.max(0, historyIdx - 1);
     this.nextState.historyIdx = newPos;
-    this.nextState.url = history[newPos];
+    // this.nextState.url = history[newPos];
+    if (this.mWebView !== null) {
+      this.mWebView.loadURL(history[newPos]);
+    }
   }
 
   private navForward = () => {
     const { history, historyIdx } = this.state;
     const newPos = Math.max(history.length - 1, historyIdx + 1);
     this.nextState.historyIdx = newPos;
-    this.nextState.url = history[newPos];
+    // this.nextState.url = history[newPos];
+    if (this.mWebView !== null) {
+      this.mWebView.loadURL(history[newPos]);
+    }
   }
 
   private navCrumb = (evt) => {
@@ -346,7 +356,10 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
     parsed.pathname = parsed.pathname.split('/').slice(0, idx + 2).join('/');
     parsed.path = undefined;
     parsed.href = undefined;
-    this.nextState.url = nodeUrl.format(parsed);
+    // this.nextState.url = nodeUrl.format(parsed);
+    if (this.mWebView !== null) {
+      this.mWebView.loadURL(nodeUrl.format(parsed));
+    }
   }
 
   private confirm = () => {
