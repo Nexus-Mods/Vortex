@@ -88,10 +88,10 @@ class VersionIconButton extends ComponentEx<IProps, {}> {
 
     if ((state === 'update') || (state === 'bug-update')) {
       this.context.api.events.emit('mod-update',
-        downloadGame, getSafe(mod.attributes, ['modId'], undefined), newestFileId);
+        downloadGame, mod.attributes?.modId, newestFileId, mod.attributes?.source);
     } else if ((state === 'update-site') || (state === 'bug-update-site')) {
       this.context.api.events.emit('open-mod-page',
-        downloadGame, getSafe(mod.attributes, ['modId'], undefined));
+        downloadGame, mod.attributes?.modId, mod.attributes?.source);
     }
   }
 }

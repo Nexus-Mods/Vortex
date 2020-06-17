@@ -140,7 +140,10 @@ export function onChangeMods(api: IExtensionApi, nexus: Nexus) {
 }
 
 export function onOpenModPage(api: IExtensionApi) {
-  return (gameId: string, modId: string) => {
+  return (gameId: string, modId: string, source: string) => {
+    if (source !== 'nexus') {
+      return;
+    }
     const game = gameById(api.store.getState(), gameId);
     opn(['https://www.nexusmods.com',
       nexusGameId(game) || gameId, 'mods', modId,
@@ -201,12 +204,17 @@ function downloadFile(api: IExtensionApi, nexus: Nexus,
 }
 
 export function onModUpdate(api: IExtensionApi, nexus: Nexus): (...args: any[]) => void {
-  return (gameId, modId, fileId) => {
+  return (gameId: string, modId, fileId, source: string) => {
     let game = gameId === SITE_ID ? null : gameById(api.store.getState(), gameId);
 
     if (game === undefined) {
       log('warn', 'mod update requested for unknown game id', gameId);
       game = currentGame(api.getState());
+    }
+
+    if (source !== 'nexus') {
+      // not a mod from nexus mods
+      return;
     }
 
     downloadFile(api, nexus, game, modId, fileId)
