@@ -15,6 +15,7 @@ import * as fs from '../../../util/fs';
 import { log } from '../../../util/log';
 import { showError } from '../../../util/message';
 import opn from '../../../util/opn';
+import * as selectors from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import { testPathTransfer, transferPath } from '../../../util/transferPath';
 import { isChildPath, isPathValid } from '../../../util/util';
@@ -43,6 +44,7 @@ interface IConnectedProps {
   parallelDownloads: number;
   isPremium: boolean;
   downloadPath: string;
+  modsInstallPath: string;
   downloads: { [downloadId: string]: IDownload };
 }
 
@@ -219,11 +221,24 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private validateDownloadPath(input: string): { state: ValidationState, reason?: string } {
+    const { modsInstallPath } = this.props;
     let vortexPath = remote.app.getAppPath();
     if (path.basename(vortexPath) === 'app.asar') {
       // in asar builds getAppPath returns the path of the asar so need to go up 2 levels
       // (resources/app.asar)
       vortexPath = path.dirname(path.dirname(vortexPath));
+    }
+
+    if (modsInstallPath !== undefined) {
+      const normalizedInstallPath = path.normalize(modsInstallPath.toLowerCase());
+      const normalizedInput = path.normalize(input.toLowerCase());
+      if ((normalizedInstallPath === normalizedInput)
+        || isChildPath(input, modsInstallPath)) {
+        return {
+          state: 'error',
+          reason: 'Download folder can\'t be a subdirectory of the mods staging folder',
+        };
+      }
     }
 
     if (isChildPath(input, vortexPath)) {
@@ -559,12 +574,14 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 }
 
 function mapStateToProps(state: IState): IConnectedProps {
+  const modsInstallPath = selectors.installPath(state);
   return {
     parallelDownloads: state.settings.downloads.maxParallelDownloads,
     // TODO: this breaks encapsulation
     isPremium: getSafe(state, ['persistent', 'nexus', 'userInfo', 'isPremium'], false),
     downloadPath: state.settings.downloads.path,
     downloads: state.persistent.downloads.files,
+    modsInstallPath,
   };
 }
 
