@@ -90,7 +90,7 @@ class NexusModIdDetail extends ComponentEx<IProps, {}> {
 
   private openPage = () => {
     const { fileGameId, nexusModId } = this.props;
-    this.context.api.events.emit('open-mod-page', fileGameId, nexusModId);
+    this.context.api.events.emit('open-mod-page', fileGameId, nexusModId, 'nexus');
   }
 }
 
