@@ -266,7 +266,7 @@ export function isChildPath(child: string, parent: string, normalize?: Normalize
 
   const childNorm = normalize(child);
   const parentNorm = normalize(parent);
-  if (child === parent) {
+  if (childNorm === parentNorm) {
     return false;
   }
 
