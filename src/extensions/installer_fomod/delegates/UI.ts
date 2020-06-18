@@ -73,18 +73,20 @@ class UI extends DelegateBase {
     }
   }
 
-  public reportError = (parameters: IReportError) => {
+  public reportError = (parameters: IReportError, callback: (err) => void) => {
     log('debug', 'reportError', inspect(parameters, null));
     try {
       let msg = parameters.message;
       if (truthy(parameters.details)) {
         msg += '\n' + parameters.details;
       }
-      this.api.showErrorNotification(parameters.title, msg,
-        { isHTML: true, allowReport: false });
+      this.api.showErrorNotification(parameters.title, parameters.details,
+        { isHTML: true, allowReport: false, message: parameters.message });
+      callback(null);
     } catch (err) {
       showError(this.api.store.dispatch,
         'Failed to display error message from installer', err);
+      callback(err);
     }
   }
 

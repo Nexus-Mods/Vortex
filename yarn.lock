@@ -8635,8 +8635,8 @@ focus-lock@^0.6.6:
   integrity sha512-Dx69IXGCq1qsUExWuG+5wkiMqVM/zGx/reXSJSLogECwp3x6KeNQZ+NAetgxEFpnC41rD8U3+jRCW68+LNzdtw==
 
 fomod-installer@Nexus-Mods/fomod-installer:
-  version "0.4.2"
-  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/72b3c3391280bc0e8881c0b47d63e09ee0cd944f"
+  version "0.4.3"
+  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/5484c11ab103d0b8abe960e3127ac837d27723b1"
   dependencies:
     async "^2.6.2"
     copyfiles "*"
