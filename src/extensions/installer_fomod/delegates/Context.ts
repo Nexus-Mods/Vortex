@@ -14,8 +14,9 @@ import DelegateBase from './DelegateBase';
 import Promise from 'bluebird';
 import { app as appIn, remote} from 'electron';
 import getVersion from 'exe-version';
+import minimatch from 'minimatch';
 import * as path from 'path';
-import turbowalk from 'turbowalk';
+import turbowalk, { IEntry } from 'turbowalk';
 import * as util from 'util';
 
 const app = appIn || remote.app;
@@ -108,19 +109,18 @@ export class Context extends DelegateBase {
       }
 
   public getExistingDataFileList =
-    (searchOptions: any[], callback: (err, res: string[]) => void) => {
-      log('debug', 'getExistingDataFileList called', util.inspect(searchOptions[0]));
-      const fullPath = this.resolveFilePath(searchOptions[0]);
+    (basePath: string, pattern: string, recursive: boolean,
+     callback: (err, res: string[]) => void) => {
+      log('debug', 'getExistingDataFileList called', util.inspect(basePath));
+      const fullPath = this.resolveFilePath(basePath);
 
-      if (searchOptions[2] === true) {
-        this.readDirRecursive(fullPath, searchOptions[1])
-          .then((fileList) => callback(null, fileList))
-          .catch(err => callback(err, null));
-      } else {
-        fs.readdirAsync(fullPath)
-          .then(fileList => callback(null, fileList.map(iter => path.join(fullPath, iter))))
-          .catch(err => callback(err, null));
-      }
+      const filterFunc = isNullOrWhitespace(pattern)
+        ? () => true
+        : (input: IEntry) => minimatch(path.basename(input.filePath), pattern);
+
+      this.readDir(fullPath, recursive, filterFunc)
+        .then((fileList) => callback(null, fileList))
+        .catch(err => callback(err, null));
   }
 
   private resolveFilePath(filePath: string): string {
@@ -131,21 +131,22 @@ export class Context extends DelegateBase {
     return path.join(modPath, filePath);
   }
 
-  private readDirRecursive = (rootPath: string,
-                              filter: string): Promise<string[]> => {
+  private readDir = (rootPath: string,
+                     recurse: boolean,
+                     filterFunc: (entry: IEntry) => boolean)
+                     : Promise<string[]> => {
     let fileList: string[] = [];
-
-    const filterFunc = isNullOrWhitespace(filter)
-      ? () => true
-      : input => path.basename(input).indexOf(filter) !== -1;
 
     return turbowalk(rootPath, entries => {
       fileList = fileList.concat(
         entries
           .filter(iter => !iter.isDirectory)
           .filter(filterFunc)
-          .map(iter => path.relative(rootPath, iter.filePath)));
-    })
+          // in the past this mapped to a path relative to rootPath but NMM
+          // clearly returns absolute paths. Obviously there is no documentation
+          // for the _expected_ behavior
+          .map(iter => iter.filePath));
+    }, { recurse })
     .then(() => fileList);
   }
 }
