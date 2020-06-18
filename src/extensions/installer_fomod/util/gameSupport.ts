@@ -192,6 +192,13 @@ const gameSupport: { [gameId: string]: IGameSupport } = {
       'oblivion.esm',
     ],
   },
+  nehrim: {
+    stopPatterns: stopPatterns('oblivion'),
+    pluginPath: 'Data',
+    nativePlugins: [
+      'nehrim.esm',
+    ],
+  },
   skyrim: {
     iniPath: () => bethIni('Skyrim', 'Skyrim'),
     stopPatterns: stopPatterns('skyrim'),
