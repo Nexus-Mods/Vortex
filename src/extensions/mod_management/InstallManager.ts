@@ -94,6 +94,11 @@ const archiveExtLookup = new Set<string>([
   '.xz', '.z',
 ]);
 
+// file types supported by 7z but we don't want to extract
+// I was tempted to put .exe in here but there may actually be cases where the
+// exe is a self-extracting archive and we would be able to handle it
+const FILETYPES_AVOID = ['.dll'];
+
 /**
  * central class for the installation process
  *
@@ -495,12 +500,19 @@ class InstallManager {
       }
     };
     log('debug', 'extracting mod archive', { archivePath, tempPath });
-    return this.mTask.extractFull(archivePath, tempPath, {ssc: false},
-                                  progress,
-                                  () => this.queryPassword(api.store) as any)
-        .catch((err: Error) => this.isCritical(err.message)
-          ? Promise.reject(new ArchiveBrokenError(err.message))
-          : Promise.reject(err))
+    let extractProm: Promise<any>;
+    if (FILETYPES_AVOID.includes(path.extname(archivePath).toLowerCase())) {
+      extractProm = Promise.reject(new ArchiveBrokenError('file type on avoidlist'));
+    } else {
+      extractProm = this.mTask.extractFull(archivePath, tempPath, {ssc: false},
+                                    progress,
+                                    () => this.queryPassword(api.store) as any)
+          .catch((err: Error) => this.isCritical(err.message)
+            ? Promise.reject(new ArchiveBrokenError(err.message))
+            : Promise.reject(err));
+    }
+
+    return extractProm
         .then(({ code, errors }: {code: number, errors: string[] }) => {
           log('debug', 'extraction completed', { code, errors });
           if (installContext !== undefined) {
@@ -519,6 +531,7 @@ class InstallManager {
         })
         .catch(ArchiveBrokenError, err => {
           if (archiveExtLookup.has(path.extname(archivePath).toLowerCase())) {
+            // hmm, it was supposed to support the file type though...
             return Promise.reject(err);
           }
 
