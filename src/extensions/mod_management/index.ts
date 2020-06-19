@@ -827,8 +827,10 @@ function onDeploySingleMod(api: IExtensionApi) {
       .then(newActivation =>
         doSaveActivation(api, mod.type, dataPath, stagingPath, newActivation, activator.id))
       .catch(err => {
+        const userCanceled = err instanceof UserCanceled;
         api.showErrorNotification('Failed to deploy mod', err, {
           message: modId,
+          allowReport: !userCanceled,
         });
       })).then(() => null);
   };
