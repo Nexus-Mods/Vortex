@@ -867,7 +867,10 @@ class InstallManager {
     const invalidInstructions = this.validateInstructions(result.instructions);
     if (invalidInstructions.length > 0) {
       const game = getGame(gameId);
-      const allowReport = (game.contributed === undefined);
+      // we can also get here with invalid instructions from scripted installers
+      // so even if the game is not contributed, this is still probably not a bug
+      // const allowReport = (game.contributed === undefined);
+      const allowReport = false;
       const error = (allowReport)
         ? 'Invalid installer instructions found for "{{ modId }}".'
         : 'Invalid installer instructions found for "{{ modId }}". Please inform '
