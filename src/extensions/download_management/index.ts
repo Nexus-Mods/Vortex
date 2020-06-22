@@ -59,6 +59,8 @@ const archiveExtLookup = new Set<string>([
   '.fomod',
 ]);
 
+const addLocalInProgress = new Set<string>();
+
 function validateDownloadsTag(api: IExtensionApi, tagPath: string): Promise<void> {
   return fs.readFileAsync(tagPath, { encoding: 'utf8' })
     .then(data => {
@@ -195,6 +197,9 @@ function genDownloadChangeHandler(api: IExtensionApi,
         }, 5000);
       }
     } else if (evt === 'rename') {
+      if (addLocalInProgress.has(fileName)) {
+        return;
+      }
       // this delay is intended to prevent this from picking up files that Vortex added itself.
       // It is not enough however to prevent this from getting the wrong file size if the file
       // copy/write takes more than this one second.
@@ -204,6 +209,7 @@ function genDownloadChangeHandler(api: IExtensionApi,
           let dlId = findDownload(fileName);
           if (dlId === undefined) {
             dlId = shortid();
+            log('debug', 'file added to download directory at runtime', fileName);
             store.dispatch(addLocalDownload(dlId, gameId, fileName, stats.size));
             api.events.emit('did-import-downloads', [dlId]);
           }
@@ -293,6 +299,7 @@ function updateDownloadPath(api: IExtensionApi, gameId?: string) {
             fs.statAsync(path.join(currentDownloadPath, fileName))
               .then((stats: fs.Stats) => {
                 const dlId = shortid();
+                log('debug', 'registering previously unknown archive', fileName);
                 store.dispatch(addLocalDownload(dlId, gameId, fileName, stats.size));
                 nameIdMap[normalize(fileName)] = dlId;
               }),
@@ -491,14 +498,23 @@ function move(api: IExtensionApi, source: string, destination: string): Promise<
     message: path.basename(destination),
   });
   const dlId = shortid();
+  let fileSize: number;
+  const fileName = path.basename(destination);
+  addLocalInProgress.add(fileName);
   return fs.statAsync(destination)
     .catch(() => undefined)
-    .then(stats => stats !== undefined ? queryReplace(api, destination) : null)
+    .then((stats: fs.Stats) => {
+      if (stats !== undefined) {
+        fileSize = stats.size;
+      }
+      return stats !== undefined ? queryReplace(api, destination) : null;
+    })
     .then(() => fs.copyAsync(source, destination))
     .then(() => {
+      log('debug', 'import local download', destination);
       // do this after copy is completed, otherwise code watching for the event may be
       // trying to access the file already
-      store.dispatch(addLocalDownload(dlId, gameMode, path.basename(destination), 0));
+      store.dispatch(addLocalDownload(dlId, gameMode, fileName, fileSize));
     })
     .then(() => fs.statAsync(destination))
     .then(stats => {
@@ -510,11 +526,15 @@ function move(api: IExtensionApi, source: string, destination: string): Promise<
       api.dismissNotification(notiId);
       store.dispatch(removeDownload(dlId));
       log('info', 'failed to copy', {error: err.message});
+    })
+    .finally(() => {
+      addLocalInProgress.delete(fileName);
     });
 }
 
 function genImportDownloadsHandler(api: IExtensionApi) {
   return (downloadPaths: string[]) => {
+    log('debug', 'importing download(s)', downloadPaths);
     const downloadPath = selectors.downloadPath(api.store.getState());
     let hadDirs = false;
     Promise.map(downloadPaths, dlPath => {
