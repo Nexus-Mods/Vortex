@@ -817,7 +817,7 @@ function init(context: IExtensionContextExt): boolean {
                           undefined);
       if (ids !== undefined) {
         context.api.events.emit('open-mod-page',
-                                ids.gameId || gameMode, ids.modId, mod.attributes?.source);
+                                ids.gameId || gameMode, ids.modId, 'nexus');
       }
     }
   }, instanceIds => {
