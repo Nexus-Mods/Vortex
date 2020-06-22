@@ -18,7 +18,7 @@ export const MERGED_PATH = '__merged';
 
 type FileLists = Array<{modId: string, basePath: string, files: IFileEntry[]}>;
 
-function calcHash(filePath: string): Promise<string> {
+function calcHashImpl(filePath: string): Promise<string> {
   return new Promise<string>((resolve, reject) => {
     const hash = crypto.createHash('md5');
     const stream = fs.createReadStream(filePath);
@@ -31,6 +31,17 @@ function calcHash(filePath: string): Promise<string> {
     stream.on('end', () => resolve(hash.digest('hex')));
     stream.on('error', reject);
   });
+}
+
+function calcHash(filePath: string, tries: number = 3): Promise<string> {
+  return calcHashImpl(filePath)
+    .catch(err => {
+      if (['EMFILE', 'EBADF'].includes(err['code']) && (tries > 0)) {
+        return calcHash(filePath, tries - 1);
+      } else {
+        return Promise.reject(err);
+      }
+    });
 }
 
 function genArchiveMergeSet(
@@ -132,7 +143,7 @@ function mergeMods(api: IExtensionApi,
   const mergeDest = path.join(modBasePath, MERGED_PATH);
 
   const archiveMerges: { [relPath: string]: string[] } = {};
-  const mergedFiles: { [relPath: string]: string[] } = {}
+  const mergedFiles: { [relPath: string]: string[] } = {};
 
   const fileExists = (file: string) => fs.statAsync(file)
     .then(() => Promise.resolve(true))
