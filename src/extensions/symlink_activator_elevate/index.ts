@@ -513,7 +513,25 @@ class DeploymentMethod extends LinkingDeployment {
         });
 
       if (useTask) {
-        winapi.RunTask(TASK_NAME);
+        try {
+          winapi.RunTask(TASK_NAME);
+        } catch (err) {
+          this.api.showErrorNotification('Failed to deploy using symlinks',
+            'You have enabled the workaround for symlink deployment without elevation '
+            + '(see Settings->Workarounds) and for unknown reasons it doesn\'t work.\n'
+            + 'You may be able to fix this by disabling and re-enabling the feature '
+            + 'but if that doesn\'t help there is probably some Windows setting '
+            + 'in your system or external software interfering with it that we\'re not aware of, '
+            + 'you will have to disable the workaround.\n'
+            + 'Unless you have an idea why your system may prevent Vortex from creating or running '
+            + 'scheduler tasks, please don\'t report this. We are aware of the problem '
+            + 'but we have no lead to investigate.\n'
+            + 'The error message was: {{error}}', {
+              allowReport: false,
+              replace: { error: err.message },
+            });
+          return reject(new ProcessCanceled(err.message));
+        }
       }
 
       return remoteProm
