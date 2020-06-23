@@ -1109,7 +1109,14 @@ class DownloadManager {
         fs.openAsync(fullPath, 'wx')
           .then((newFd) => {
             fd = newFd;
-            return fs.closeAsync(newFd);
+            return fs.closeAsync(newFd)
+              .catch((err) => {
+                // EBADF may be a non-issue. If it isn't we will notice when
+                // we try to write to the file
+                if (err.code !== 'EBADF') {
+                  return Promise.reject(err);
+                }
+              });
           }).then(() => {
             resolve(fullPath);
           }).catch((err) => {
