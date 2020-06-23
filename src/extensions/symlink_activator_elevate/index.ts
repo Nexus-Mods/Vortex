@@ -742,7 +742,10 @@ function ensureTaskEnabled() {
             level: 'error', message: 'Failed to create task', meta: err } });
         }
         ipc.sendMessage({ message: 'quit' });
-      }, { scriptPath, taskName, exePath, exeArgs });
+      }, { scriptPath, taskName, exePath, exeArgs })
+        .catch(err => (err['nativeCode'] === 1223)
+          ? Promise.reject(new UserCanceled())
+          : Promise.reject(err));
     });
 }
 
@@ -798,15 +801,18 @@ function ensureTask(api: IExtensionApi, enabled: boolean): void {
   if (enabled) {
     ensureTaskEnabled()
       .catch(err => {
-        api.showErrorNotification('Failed to create task', err);
+        if (!(err instanceof UserCanceled)) {
+          api.showErrorNotification('Failed to create task', err);
+        }
         api.store.dispatch(enableUserSymlinks(false));
       })
       .then(() => null);
   } else {
     ensureTaskDeleted()
-      .catch(UserCanceled, () => null)
       .catch(err => {
-        api.showErrorNotification('Failed to remove task', err);
+        if (!(err instanceof UserCanceled)) {
+          api.showErrorNotification('Failed to remove task', err);
+        }
       })
       .then(() => null);
   }
