@@ -788,7 +788,10 @@ function ensureTaskDeleted(): Promise<void> {
     const winapiRemote: typeof winapi = req('winapi-bindings');
     winapiRemote.DeleteTask(taskName);
     ipc.sendMessage({ message: 'quit' });
-  }, { taskName });
+  }, { taskName })
+  .catch(err => (err['nativeCode'] === 1223)
+      ? Promise.reject(new UserCanceled())
+      : Promise.reject(err));
 }
 
 function ensureTask(api: IExtensionApi, enabled: boolean): void {
@@ -801,6 +804,7 @@ function ensureTask(api: IExtensionApi, enabled: boolean): void {
       .then(() => null);
   } else {
     ensureTaskDeleted()
+      .catch(UserCanceled, () => null)
       .catch(err => {
         api.showErrorNotification('Failed to remove task', err);
       })
