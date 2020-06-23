@@ -804,14 +804,14 @@ class ExtensionManager {
   public doOnce(): Promise<void> {
     const calls = this.mContextProxyHandler.getCalls(remote !== undefined ? 'once' : 'onceMain');
 
-    const reportError = (err: Error, call: IInitCall) => {
+    const reportError = (err: Error, call: IInitCall, allowReport: boolean = true) => {
       log('warn', 'failed to call once',
         { err: err.message, stack: err.stack });
       err['extension'] = call.extension;
       this.mApi.showErrorNotification(
         'Extension failed to initialize. If this isn\'t an official extension, ' +
         'please report the error to the respective author.',
-        err);
+        err, { allowReport });
     };
 
     return Promise.mapSeries(calls, (call, idx) => {
@@ -827,7 +827,7 @@ class ExtensionManager {
           queryContinue: () => this.queryLoadTimeout(call.extension),
         })
           .catch(TimeoutError, () => {
-            reportError(new Error('Initialization didn\'t finish in time.'), call);
+            reportError(new Error('Initialization didn\'t finish in time.'), call, false);
           })
           .catch(err => {
             reportError(err, call);
