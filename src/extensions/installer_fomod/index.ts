@@ -5,7 +5,7 @@ import {
   ProgressDelegate,
 } from '../../types/IExtensionContext';
 import { ITestResult } from '../../types/ITestResult';
-import { DataInvalid, SetupError, UserCanceled } from '../../util/CustomErrors';
+import { DataInvalid, ProcessCanceled, SetupError, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 import {truthy} from '../../util/util';
@@ -251,7 +251,11 @@ class ConnectionIPC {
       // connect to random free port
       await socket.bind('tcp://127.0.0.1:*');
       // invoke the c# installer, passing the port
-      proc = await createIPC(socket.lastEndpoint.split(':')[2]);
+      try {
+        proc = await createIPC(socket.lastEndpoint.split(':')[2]);
+      } catch (err) {
+        return Promise.reject(new ProcessCanceled(err.message));
+      }
       proc.stderr.on('data', (dat: Buffer) => {
         const errorMessage = dat.toString();
         log('error', 'from installer: ', errorMessage);
