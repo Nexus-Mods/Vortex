@@ -59,7 +59,7 @@ function nop() {
 
 class BrowserView extends ComponentEx<IProps, IComponentState> {
   private mRef: Webview = null;
-  private mWebView: WebviewTag;
+  private mWebView: WebviewTag = null;
   private mCallbacks: { [event: string]: (...args: any[]) => void };
   private mSessionCallbacks: { [event: string]: (...args: any[]) => void };
   private mLoadingDebouncer: Debouncer;
@@ -224,8 +224,15 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
       <Breadcrumb>
         <Item data-idx={-1} onClick={this.navCrumb}>{parsed.protocol}//{parsed.hostname}</Item>
         {segments.map((seg, idx) =>
-          <Item data-idx={idx} key={seg} onClick={this.navCrumb}>{seg}</Item>)}
-        <Item active={false}>{parsed.search}</Item>
+          <Item
+            data-idx={idx}
+            key={seg}
+            onClick={this.navCrumb}
+            active={idx === segments.length - 1}
+          >
+            {seg}
+          </Item>)}
+        <Item  active>{parsed.search}</Item>
       </Breadcrumb>
     );
   }
@@ -320,13 +327,17 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
     this.mRef = ref;
     if (ref !== null) {
       this.mWebView = ReactDOM.findDOMNode(this.mRef) as any;
-      Object.keys(this.mCallbacks).forEach(event => {
-        this.mWebView.addEventListener(event, this.mCallbacks[event]);
-      });
+      if (truthy(this.mWebView)) {
+        Object.keys(this.mCallbacks).forEach(event => {
+          this.mWebView.addEventListener(event, this.mCallbacks[event]);
+        });
+      }
     } else {
-      Object.keys(this.mCallbacks).forEach(event => {
-        this.mWebView.removeEventListener(event, this.mCallbacks[event]);
-      });
+      if (truthy(this.mWebView)) {
+        Object.keys(this.mCallbacks).forEach(event => {
+          this.mWebView.removeEventListener(event, this.mCallbacks[event]);
+        });
+      }
     }
   }
 
@@ -335,30 +346,33 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
     const newPos = Math.max(0, historyIdx - 1);
     this.nextState.historyIdx = newPos;
     // this.nextState.url = history[newPos];
-    if (this.mWebView !== null) {
+    if (truthy(this.mWebView)) {
       this.mWebView.loadURL(history[newPos]);
     }
   }
 
   private navForward = () => {
     const { history, historyIdx } = this.state;
-    const newPos = Math.max(history.length - 1, historyIdx + 1);
+    const newPos = Math.min(history.length - 1, historyIdx + 1);
     this.nextState.historyIdx = newPos;
     // this.nextState.url = history[newPos];
-    if (this.mWebView !== null) {
+    if (truthy(this.mWebView)) {
       this.mWebView.loadURL(history[newPos]);
     }
   }
 
   private navCrumb = (evt) => {
     const idx = parseInt(evt.currentTarget.getAttribute('data-idx'), 10);
-    const parsed = nodeUrl.parse(this.state.url);
+    const parsed = nodeUrl.parse(this.mWebView.getURL());
     parsed.pathname = parsed.pathname.split('/').slice(0, idx + 2).join('/');
     parsed.path = undefined;
     parsed.href = undefined;
-    // this.nextState.url = nodeUrl.format(parsed);
-    if (this.mWebView !== null) {
-      this.mWebView.loadURL(nodeUrl.format(parsed));
+    parsed.search = undefined;
+
+    const nextUrl = nodeUrl.format(parsed);
+    this.addToHistory(nextUrl);
+    if (truthy(this.mWebView)) {
+      this.mWebView.loadURL(nextUrl);
     }
   }
 
@@ -374,6 +388,14 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
     return nodeUrl.format(parsed);
   }
 
+  private addToHistory(url: string) {
+    url = url.replace(/[\/]*$/, '');
+    if (url !== this.nextState.history[this.nextState.historyIdx]) {
+      this.nextState.history.splice(this.nextState.historyIdx + 1, 9999, url);
+      ++this.nextState.historyIdx;
+    }
+  }
+
   private navigate(url: string) {
     if (this.sanitised(url) === this.sanitised(this.state.url)) {
       // don't do anything if just the hash changed
@@ -381,10 +403,7 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
     }
 
     // this.nextState.url = url;
-    if (url !== this.nextState.history[this.nextState.historyIdx]) {
-      this.nextState.history.splice(this.nextState.historyIdx + 1, 9999, url);
-      ++this.nextState.historyIdx;
-    }
+    this.addToHistory(url);
     this.props.onNavigate(url);
   }
 
