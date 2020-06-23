@@ -313,7 +313,7 @@ export function getManifest(api: IExtensionApi,
 
   const game = getGame(gameId);
   const discovery = getSafe(state, ['settings', 'gameMode', 'discovered', gameId], undefined);
-  if (discovery === undefined) {
+  if (discovery?.path === undefined) {
     return Promise.resolve(undefined);
   }
 
