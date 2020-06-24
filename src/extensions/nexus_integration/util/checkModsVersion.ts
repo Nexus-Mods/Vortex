@@ -182,6 +182,23 @@ function updateFileAttributes(dispatch: Redux.Dispatch<any>,
   const fileId = getSafe(mod.attributes, ['fileId'], undefined);
   const latestFileId = fileId;
   let fileUpdates: IFileUpdate[] = findLatestUpdate(files.file_updates, [], latestFileId);
+  // at this point there is the possibility that the latest file in the update
+  // chain has been deleted, so we have to travers _back_ through the chain to
+  // the latest file that actually exists
+
+  const isFileDeleted = (candidateId: number) => {
+    const fileInfo = files.files.find(info => info.file_id === candidateId);
+    return (fileInfo === undefined) || (fileInfo.category_id === 6);
+  };
+
+  while ((fileUpdates.length > 0)
+         && isFileDeleted(fileUpdates[fileUpdates.length - 1].new_file_id)) {
+    log('debug', 'update discarded because new version was deleted', {
+      update: JSON.stringify(fileUpdates[fileUpdates.length - 1]),
+    });
+    fileUpdates.pop();
+  }
+
   if (fileUpdates.length === 0) {
     // update not found through update-chain. If there is only a single file that
     // isn't marked as old we assume that is the right update.
