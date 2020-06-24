@@ -9,7 +9,6 @@ import Promise from 'bluebird';
 import { app as appIn, ipcMain, ipcRenderer, remote } from 'electron';
 import * as _ from 'lodash';
 import * as path from 'path';
-import * as sass from 'sass';
 
 const app = appIn || remote.app;
 
@@ -77,11 +76,10 @@ if (ipcMain !== undefined) {
       ? '__renderSASS_result'
       : '__renderSASS_update';
 
-    /*
     process.env.SASS_BINARY_PATH = path.resolve(getVortexPath('modules'), 'node-sass', 'bin',
       `${process.platform}-${process.arch}-${process.versions.modules}`, 'node-sass.node');
     const sass = require('node-sass');
-    */
+
     const started = Date.now();
     sass.render({
       outFile: path.join(assetsPath, 'theme.css'),
