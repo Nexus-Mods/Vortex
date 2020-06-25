@@ -1,3 +1,4 @@
+import TableTextFilter from '../../controls/table/TextFilter';
 import { IExtensionLoadFailure } from '../../types/IState';
 import { ITableAttribute } from '../../types/ITableAttribute';
 import { getSafe } from '../../util/storeHelper';
@@ -83,6 +84,7 @@ function getTableAttributes(context: IAttributesContext):
       isToggleable: false,
       edit: {},
       isSortable: true,
+      filter: new TableTextFilter(true),
     }, {
       id: 'endorsed',
       name: 'Endorsed',
