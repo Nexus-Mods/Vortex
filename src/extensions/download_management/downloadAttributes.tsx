@@ -242,7 +242,7 @@ function createColumns(api: IExtensionApi, props: () => IDownloadViewProps)
       isToggleable: true,
       edit: {},
       isSortable: true,
-      isGroupable: (download: IDownload, t: TFunction) => t(capitalize(download.state)),
+      isGroupable: (download: IDownload, t: TFunction) => t(capitalize(download.state ?? 'init')),
       filter: new DownloadProgressFilter(),
     },
   ];
