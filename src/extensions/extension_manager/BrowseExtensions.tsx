@@ -175,7 +175,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
   }
 
   private changeSearch = (newValue: string) => {
-    this.nextState.searchTerm = newValue;
+    this.nextState.searchTerm = newValue ?? '';
   }
 
   private changeSort = (evt: React.FormEvent<FormControl>) => {
@@ -185,7 +185,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
 
   private filterSearch = (test: IAvailableExtension)  => {
     const { searchTerm } = this.state;
-    if (searchTerm.length === 0) {
+    if (!searchTerm) {
       return true;
     }
 
