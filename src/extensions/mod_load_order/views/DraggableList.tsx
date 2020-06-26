@@ -229,7 +229,8 @@ class DraggableList extends ComponentEx<IProps, IState> {
       return;
     }
 
-    const itemLocked = (idx) => !!ordered[idx]?.locked || !!loadOrder[ordered[idx].id]?.locked;
+    const itemLocked = (idx) => !!(ordered[idx]?.locked)
+                             || !!(loadOrder[ordered[idx]?.id]?.locked);
 
     const currentItem = ordered[oldIndex];
     const replacedItem = ordered[newIndex];
