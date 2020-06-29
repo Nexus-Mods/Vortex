@@ -165,7 +165,7 @@ export function spawnSelf(args: string[]) {
   });
 }
 
-const labels = [ 'B', 'KB', 'MB', 'GB', 'TB' ];
+const BYTE_LABELS = [ 'B', 'KB', 'MB', 'GB', 'TB' ];
 
 export function bytesToString(bytes: number): string {
   let labelIdx = 0;
@@ -174,7 +174,22 @@ export function bytesToString(bytes: number): string {
     bytes /= 1024;
   }
   try {
-    return bytes.toFixed(Math.max(0, labelIdx - 1)) + ' ' + labels[labelIdx];
+    return bytes.toFixed(Math.max(0, labelIdx - 1)) + ' ' + BYTE_LABELS[labelIdx];
+  } catch (err) {
+    return '???';
+  }
+}
+
+const NUM_LABELS = [ '', 'K', 'M' ];
+
+export function largeNumToString(num: number): string {
+  let labelIdx = 0;
+  while ((num >= 1000) && (labelIdx < (NUM_LABELS.length - 1))) {
+    ++labelIdx;
+    num /= 1000;
+  }
+  try {
+    return num.toFixed(Math.max(0, labelIdx - 1)) + ' ' + NUM_LABELS[labelIdx];
   } catch (err) {
     return '???';
   }
