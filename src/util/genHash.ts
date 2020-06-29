@@ -23,6 +23,7 @@ function sanitizeKnownMessages(input: string): string {
     .replace(/.*(contains invalid WIN32 path characters.)/, '... $1')
     .replace(/(Error: Cannot get property '[^']*' on missing remote object) [0-9]+/, '$1')
     .replace(/.*(Cipher functions:OPENSSL_internal).*/, '$1')
+    .replace(/\\\\?\\.*(\\Vortex\\resources)/, '$1')
     ;
 }
 
@@ -57,9 +58,11 @@ export function extractToken(error: IError): string {
 
   let hashStack = error.stack.split('\n');
 
+  const messageLineCount = hashStack.findIndex(line => line.startsWith(' '));
+
   hashStack = [
-    removeQuoted(sanitizeKnownMessages(hashStack[0])),
-    ...hashStack.slice(1).map(sanitizeStackLine),
+    removeQuoted(sanitizeKnownMessages(hashStack.slice(0, messageLineCount).join(' '))),
+    ...hashStack.slice(messageLineCount).map(sanitizeStackLine),
   ];
 
   const idx = hashStack.findIndex(
