@@ -9,6 +9,7 @@ import { IState } from '../../types/IState';
 import bbcode from '../../util/bbcode';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import opn from '../../util/opn';
+import { largeNumToString } from '../../util/util';
 
 import { IAvailableExtension, IExtension, ISelector } from './types';
 import { downloadAndInstallExtension, selectorMatch } from './util';
@@ -266,7 +267,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
         disabled={installed || incompatible}
       >
         <div className='extension-header'>
-          <div>
+          <div className='extension-title'>
             <span className='extension-name'>{ext.name}</span>
             <span className='extension-version'>{ext.version}</span>
           </div>
@@ -275,7 +276,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
               ? (
                 <div className='extension-downloads'>
                   <Icon name='download' />
-                  {' '}{ext.downloads}
+                  {' '}{largeNumToString(ext.downloads)}
                 </div>
               ) : null
             }
@@ -283,7 +284,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
               ? (
                 <div className='extension-endorsements'>
                   <Icon name='endorse-yes' />
-                  {' '}{ext.endorsements}
+                  {' '}{largeNumToString(ext.endorsements)}
                 </div>
               ) : null
             }
@@ -343,6 +344,24 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
                 </div>
                 <div className='description-short'>
                   {ext.description.short}
+                </div>
+                <div className='description-stats'>
+                  {ext.downloads !== undefined
+                    ? (
+                      <div className='extension-downloads'>
+                        <Icon name='download' />
+                        {' '}{ext.downloads}
+                      </div>
+                    ) : null
+                  }
+                  {ext.endorsements !== undefined
+                    ? (
+                      <div className='extension-endorsements'>
+                        <Icon name='endorse-yes' />
+                        {' '}{ext.endorsements}
+                      </div>
+                    ) : null
+                  }
                 </div>
                 <div className='description-actions'>
                   {action}
