@@ -12,8 +12,8 @@
     "electron": "8.3.1"
   },
   "scripts": {
-    "_assets_out": "node InstallAssets.js out && node-sass --style compressed src/stylesheets/loadingScreen.scss > out/assets/css/loadingScreen.css",
-    "_assets_app": "node InstallAssets.js app && node-sass --style compressed src/stylesheets/loadingScreen.scss > app/assets/css/loadingScreen.css",
+    "_assets_out": "node InstallAssets.js out && sass --style compressed src/stylesheets/loadingScreen.scss > out/assets/css/loadingScreen.css",
+    "_assets_app": "node InstallAssets.js app && sass --style compressed src/stylesheets/loadingScreen.scss > app/assets/css/loadingScreen.css",
     "_install_app": "cd app && rm-local-modules && yarn install --non-interactive --check-files",
     "subprojects": "node BuildSubprojects.js out",
     "subprojects_app": "node BuildSubprojects.js app",
@@ -265,7 +265,7 @@
     "reselect": "^4.0.0",
     "resolve": "^1.12.0",
     "rimraf": "TanninOne/rimraf",
-    "node-sass": "ext/node-sass",
+    "sass": "^1.26.9",
     "semver": "^6.3.0",
     "shortid": "^2.2.15",
     "simple-vdf": "Nexus-Mods/vdf-parser",
