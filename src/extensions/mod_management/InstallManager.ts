@@ -17,6 +17,8 @@ import walk from '../../util/walk';
 
 import { IDownload } from '../download_management/types/IDownload';
 import getDownloadGames from '../download_management/util/getDownloadGames';
+import { DOWNLOADS_DIR_TAG } from '../download_management/util/writeDownloadsTag';
+
 import { IModType } from '../gamemode_management/types/IModType';
 import { getGame } from '../gamemode_management/util/getGame';
 import modName from '../mod_management/util/modName';
@@ -34,6 +36,7 @@ import gatherDependencies from './util/dependencies';
 import filterModInfo from './util/filterModInfo';
 import queryGameId from './util/queryGameId';
 
+import { STAGING_DIR_TAG } from './eventHandlers';
 import InstallContext from './InstallContext';
 import deriveModInstallName from './modIdManager';
 
@@ -533,6 +536,19 @@ class InstallManager {
           if (archiveExtLookup.has(path.extname(archivePath).toLowerCase())) {
             // hmm, it was supposed to support the file type though...
             return Promise.reject(err);
+          }
+
+          if ([STAGING_DIR_TAG, DOWNLOADS_DIR_TAG].indexOf(path.basename(archivePath)) !== -1) {
+            // User just tried to install the staging/downloads folder tag file as a mod...
+            //  this actually happens too often. https://github.com/Nexus-Mods/Vortex/issues/6727
+            return api.showDialog('question', 'Not a mod', {
+              text: 'You are attempting to install one of Vortex\'s directory tags as a mod. '
+                + 'This file is generated and used by Vortex internally and should not be installed '
+                + 'in this way.',
+              message: archivePath,
+            }, [
+                { label: 'Ok' },
+              ]).then(() => Promise.reject(new ProcessCanceled('Not a mod')));
           }
 
           // this is really a completely separate process from the "regular" mod installation
