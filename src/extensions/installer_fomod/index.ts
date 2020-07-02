@@ -6,9 +6,10 @@ import {
 } from '../../types/IExtensionContext';
 import { ITestResult } from '../../types/ITestResult';
 import { DataInvalid, ProcessCanceled, SetupError, UserCanceled } from '../../util/CustomErrors';
+import Debouncer from '../../util/Debouncer';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
-import {truthy} from '../../util/util';
+import {toPromise, truthy} from '../../util/util';
 
 import { getGame } from '../gamemode_management/util/getGame';
 import { ArchiveBrokenError } from '../mod_management/InstallManager';
@@ -27,11 +28,11 @@ import Bluebird from 'bluebird';
 import { ChildProcess } from 'child_process';
 import { app as appIn, remote } from 'electron';
 import { createIPC } from 'fomod-installer';
+import * as net from 'net';
 import * as path from 'path';
 import * as semver from 'semver';
 import { generate as shortid } from 'shortid';
 import * as util from 'util';
-import * as zeromqT from 'zeromq';
 
 const app = appIn !== undefined ? appIn : remote.app;
 
@@ -237,10 +238,46 @@ function makeJsonRevive(invoke: (data: any) => Promise<void>, getId: () => strin
   };
 }
 
+interface ICreateSocketOptions {
+  // if true, use a pipe. windows only
+  pipe: boolean;
+  // if true, use a fixed id/port for the connection
+  debug: boolean;
+}
+
+/**
+ * create a socket that will be used to communicate with the installer process
+ * @param options options that control how the socket is created
+ */
+function createSocket(options: ICreateSocketOptions)
+    : Promise<{ ipcId: string, server: net.Server }> {
+  return new Promise((resolve, reject) => {
+    try {
+      const server = new net.Server();
+      server.on('error', err => {
+        reject(err);
+      });
+      if (options.pipe) {
+        // on windows, using a socket is a pita because firewalls and AVs...
+        const ipcId = options.debug ? 'debug' : shortid();
+        server.listen(`\\\\?\\pipe\\${ipcId}`, () => {
+          resolve({ ipcId, server });
+        });
+      } else {
+        const port = options.debug ? 12345 : 0;
+        server.listen(port, 'localhost', () => {
+          const ipcId = (server.address() as net.AddressInfo).port.toString();
+          resolve({ ipcId, server });
+        });
+      }
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
+
 class ConnectionIPC {
   public static async bind(): Promise<ConnectionIPC> {
-    const zeromq: typeof zeromqT = await persistentImport('zeromq');
-    const socket = new zeromq.Pair();
     let proc: ChildProcess = null;
     let onResolve: () => void;
     let onReject: (err: Error) => void;
@@ -249,23 +286,37 @@ class ConnectionIPC {
       onReject = reject;
     });
     let wasConnected = false;
+    let servSocket: net.Socket;
+    let cliSocket: net.Socket;
 
-    socket.events.on('accept', () => {
+    const pipe = process.platform === 'win32';
+    const debug = true;
+    const { ipcId, server } = await createSocket({
+      pipe,
+      debug,
+    });
+
+    server.on('connection', sock => {
+      sock.setEncoding('utf8');
       if (!wasConnected) {
-        onResolve();
         wasConnected = true;
+        servSocket = sock;
+        if (pipe) {
+          cliSocket = net.createConnection(`\\\\?\\pipe\\${ipcId}_reply`, () => {
+            onResolve();
+          });
+        } else {
+          cliSocket = servSocket;
+          onResolve();
+        }
       }
     });
 
-    if (false) {
+    if (!debug) {
       // for debugging purposes, the user has to run the installer manually
-      await socket.bind('tcp://127.0.0.1:12345');
-    } else {
-      // connect to random free port
-      await socket.bind('tcp://127.0.0.1:*');
-      // invoke the c# installer, passing the port
+      // invoke the c# installer, passing the id/port
       try {
-        proc = await createIPC(socket.lastEndpoint.split(':')[2]);
+        proc = await (createIPC as any)(pipe, ipcId);
       } catch (err) {
         return Promise.reject(new ProcessCanceled(err.message));
       }
@@ -283,24 +334,37 @@ class ConnectionIPC {
     // probably means it's not going to happen...
     await connectedPromise;
 
-    return new ConnectionIPC(socket, proc);
+    return new ConnectionIPC({ in: cliSocket, out: servSocket }, proc);
   }
 
-  private mSocket: zeromqT.Pair;
+  private mSocket: { in: net.Socket, out: net.Socket };
   private mProcess: ChildProcess;
   private mAwaitedReplies: { [id: string]: IAwaitingPromise } = {};
   private mDelegates: { [id: string]: Core } = {};
   private mOnInterrupted: (err: Error) => void;
+  private mReceivedBuffer: string;
+  private mReceiveDebouncer: Debouncer;
 
-  constructor(socket: zeromqT.Pair, proc: ChildProcess) {
+  constructor(socket: { in: net.Socket, out: net.Socket }, proc: ChildProcess) {
     this.mSocket = socket;
     this.mProcess = proc;
+
+    this.mReceiveDebouncer = new Debouncer(() => {
+      try {
+        this.processData(this.mReceivedBuffer);
+        this.mReceivedBuffer = undefined;
+      } catch (err) {
+        log('error', 'failed to parse data from remote process', err.message);
+        this.mReceivedBuffer = undefined;
+      }
+      return Bluebird.resolve();
+    }, 100);
 
     if (proc !== null) {
       proc.on('exit', async (code, signal) => {
         log(code === 0 ? 'info' : 'error', 'remote process exited', { code, signal });
         try {
-          await socket.unbind(socket.lastEndpoint);
+          await toPromise(cb => socket.out.end(cb));
           this.interrupt(new Error(`Installer process quit unexpectedly (Code ${code})`));
         } catch (err) {
           log('warn', 'failed to close connection to fomod installer process', err.message);
@@ -308,7 +372,8 @@ class ConnectionIPC {
       });
     }
 
-    socket.events.on('disconnect', async () => {
+    socket.in.on('close', async () => {
+      socket.out.destroy();
       log('info', 'remote was disconnected');
       try {
         // just making sure, the remote is probably closing anyway
@@ -322,7 +387,19 @@ class ConnectionIPC {
   }
 
   public handleMessages() {
-    this.receiveNext();
+    this.mSocket.in.on('data', (data: string) => {
+      if (data.length > 0) {
+        this.mReceivedBuffer = (this.mReceivedBuffer === undefined)
+          ? data
+          : this.mReceivedBuffer + data;
+        if (this.mReceivedBuffer.endsWith('\uffff')) {
+          this.mReceiveDebouncer.schedule();
+        }
+      }
+    })
+    .on('error', (err) => {
+      log('error', 'ipc socket error', err.message);
+    });
   }
 
   public isActive(): boolean {
@@ -354,13 +431,13 @@ class ConnectionIPC {
       }
     });
 
-    this.mSocket.send(JSON.stringify({
+    this.mSocket.out.write(JSON.stringify({
       id,
       payload: {
         ...data,
         command,
       },
-    }, jsonReplace));
+    }, jsonReplace) + '\uFFFF');
     return res;
   }
 
@@ -375,9 +452,20 @@ class ConnectionIPC {
     };
   }
 
-  private processData(msg: Buffer) {
-    const data = JSON.parse(msg.toString(), makeJsonRevive((payload) =>
+  private processData(data: string) {
+    // there may be multiple messages sent at once
+    const messages = data.split('\uFFFF');
+    messages.forEach(msg => {
+      if (msg.length > 0) {
+        this.processDataImpl(msg);
+      }
+    });
+  }
+
+  private processDataImpl(msg: string) {
+    const data: any = JSON.parse(msg, makeJsonRevive((payload) =>
       this.sendMessageInner('Invoke', payload), () => data.id));
+
     if ((data.callback !== null)
         && (this.mDelegates[data.callback.id] !== undefined)) {
       const func = this.mDelegates[data.callback.id][data.callback.type][data.data.name];
@@ -407,12 +495,6 @@ class ConnectionIPC {
       this.mOnInterrupted(err);
       this.mOnInterrupted = undefined;
     }
-  }
-
-  private async receiveNext(): Promise<void> {
-    const data = await this.mSocket.receive();
-    data.forEach(dat => this.processData(dat));
-    return this.receiveNext();
   }
 }
 

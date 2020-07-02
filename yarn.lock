@@ -7712,10 +7712,10 @@ electron-updater@^4.2.0:
     pako "^1.0.10"
     semver "^6.3.0"
 
-electron@~8.3.1:
-  version "8.3.1"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-8.3.1.tgz#79e98c4d5b8e7c09a8a811f1aa78903f0c692721"
-  integrity sha512-VZpgLVFyD2SwFDkO9rwUcNgrAMah+g38FEtALGxli8bRVTbcHl8bt21szfa0YUWpc6hWcaf6JdZjqDS5q73Bsg==
+electron@~8.3.4:
+  version "8.3.4"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-8.3.4.tgz#d9c5441f34462a022480f3ebe2cf39ea5dd37b96"
+  integrity sha512-aSYXBV0PxYHmXhjGFpR0x38zbO7UTDex2JrT5tcqJpUZTY+sKdfo9PA1TpiyrHNjA5+Q8UseRUsydRedOTeZQA==
   dependencies:
     "@electron/get" "^1.0.1"
     "@types/node" "^12.0.12"
@@ -8635,8 +8635,8 @@ focus-lock@^0.6.6:
   integrity sha512-Dx69IXGCq1qsUExWuG+5wkiMqVM/zGx/reXSJSLogECwp3x6KeNQZ+NAetgxEFpnC41rD8U3+jRCW68+LNzdtw==
 
 fomod-installer@Nexus-Mods/fomod-installer:
-  version "0.4.3"
-  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/5484c11ab103d0b8abe960e3127ac837d27723b1"
+  version "0.5.0"
+  resolved "https://codeload.github.com/Nexus-Mods/fomod-installer/tar.gz/6f9b09a429d033d83d259f11bcfa7e8f3ee6d70b"
   dependencies:
     async "^2.6.2"
     copyfiles "*"
