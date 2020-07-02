@@ -36,19 +36,6 @@ import * as util from 'util';
 
 const app = appIn !== undefined ? appIn : remote.app;
 
-async function persistentImport<T>(module: string, tries: number = 3): Promise<T> {
-  try {
-    return await import(module);
-  } catch (err) {
-    if (tries > 1) {
-      await Bluebird.delay(100);
-      return persistentImport(module, tries - 1);
-    } else {
-      throw err;
-    }
-  }
-}
-
 function transformError(err: any): Error {
   let result: Error;
   if (typeof(err) === 'string') {
@@ -290,7 +277,7 @@ class ConnectionIPC {
     let cliSocket: net.Socket;
 
     const pipe = process.platform === 'win32';
-    const debug = true;
+    const debug = false;
     const { ipcId, server } = await createSocket({
       pipe,
       debug,
@@ -303,6 +290,7 @@ class ConnectionIPC {
         servSocket = sock;
         if (pipe) {
           cliSocket = net.createConnection(`\\\\?\\pipe\\${ipcId}_reply`, () => {
+            cliSocket.setEncoding('utf-8');
             onResolve();
           });
         } else {
@@ -320,9 +308,12 @@ class ConnectionIPC {
       } catch (err) {
         return Promise.reject(new ProcessCanceled(err.message));
       }
+      proc.stdout.on('data', (dat: Buffer) => {
+        log('debug', 'from installer:', dat.toString());
+      });
       proc.stderr.on('data', (dat: Buffer) => {
         const errorMessage = dat.toString();
-        log('error', 'from installer: ', errorMessage);
+        log('error', 'from installer:', errorMessage);
         if (!wasConnected) {
           onReject(new Error(errorMessage));
           wasConnected = true;
@@ -343,22 +334,10 @@ class ConnectionIPC {
   private mDelegates: { [id: string]: Core } = {};
   private mOnInterrupted: (err: Error) => void;
   private mReceivedBuffer: string;
-  private mReceiveDebouncer: Debouncer;
 
   constructor(socket: { in: net.Socket, out: net.Socket }, proc: ChildProcess) {
     this.mSocket = socket;
     this.mProcess = proc;
-
-    this.mReceiveDebouncer = new Debouncer(() => {
-      try {
-        this.processData(this.mReceivedBuffer);
-        this.mReceivedBuffer = undefined;
-      } catch (err) {
-        log('error', 'failed to parse data from remote process', err.message);
-        this.mReceivedBuffer = undefined;
-      }
-      return Bluebird.resolve();
-    }, 100);
 
     if (proc !== null) {
       proc.on('exit', async (code, signal) => {
@@ -393,7 +372,13 @@ class ConnectionIPC {
           ? data
           : this.mReceivedBuffer + data;
         if (this.mReceivedBuffer.endsWith('\uffff')) {
-          this.mReceiveDebouncer.schedule();
+          try {
+            this.processData(this.mReceivedBuffer);
+            this.mReceivedBuffer = undefined;
+          } catch (err) {
+            log('error', 'failed to parse data from remote process', err.message);
+            this.mReceivedBuffer = undefined;
+          }
         }
       }
     })
@@ -457,7 +442,11 @@ class ConnectionIPC {
     const messages = data.split('\uFFFF');
     messages.forEach(msg => {
       if (msg.length > 0) {
-        this.processDataImpl(msg);
+        try {
+          this.processDataImpl(msg);
+        } catch (err) {
+          log('error', 'failed to parse', { input: msg, error: err.message });
+        }
       }
     });
   }
