@@ -35,13 +35,13 @@ import * as zeromqT from 'zeromq';
 
 const app = appIn !== undefined ? appIn : remote.app;
 
-async function persistentImport<T>(module: string, tries: number = 3): Promise<T> {
+async function persistentImport<T>(tries: number = 3): Promise<T> {
   try {
-    return await import(module);
+    return await import('zeromq');
   } catch (err) {
     if (tries > 1) {
       await Bluebird.delay(100);
-      return persistentImport(module, tries - 1);
+      return persistentImport(tries - 1);
     } else {
       throw err;
     }
@@ -239,7 +239,7 @@ function makeJsonRevive(invoke: (data: any) => Promise<void>, getId: () => strin
 
 class ConnectionIPC {
   public static async bind(): Promise<ConnectionIPC> {
-    const zeromq: typeof zeromqT = await persistentImport('zeromq');
+    const zeromq: typeof zeromqT = await persistentImport();
     const socket = new zeromq.Pair();
     let proc: ChildProcess = null;
     let onResolve: () => void;
