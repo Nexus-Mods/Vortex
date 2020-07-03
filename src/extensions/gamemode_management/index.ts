@@ -1,4 +1,5 @@
-import { IDialogResult, showDialog } from '../../actions/notifications';
+import { showDialog } from '../../actions/notifications';
+import { setDialogVisible } from '../../actions/session';
 import {
   GameInfoQuery,
   IExtensionApi,
@@ -27,7 +28,7 @@ import { IModWithState } from '../mod_management/views/CheckModVersionsButton';
 import { setNextProfile } from '../profile_management/actions/settings';
 
 import { setGameInfo } from './actions/persistent';
-import { addDiscoveredGame, setGamePath } from './actions/settings';
+import { addDiscoveredGame, setGamePath, setGameSearchPaths } from './actions/settings';
 import { discoveryReducer } from './reducers/discovery';
 import { persistentReducer } from './reducers/persistent';
 import { sessionReducer } from './reducers/session';
@@ -42,6 +43,7 @@ import ProcessMonitor from './util/ProcessMonitor';
 import queryGameInfo from './util/queryGameInfo';
 import {} from './views/GamePicker';
 import HideGameIcon from './views/HideGameIcon';
+import PathSelectionDialog from './views/PathSelection';
 import ProgressFooter from './views/ProgressFooter';
 import RecentlyManagedDashlet from './views/RecentlyManagedDashlet';
 
@@ -500,6 +502,19 @@ function init(context: IExtensionContext): boolean {
   context.registerDashlet('Recently Managed', 2, 2, 175, RecentlyManagedDashlet,
                           undefined, undefined, undefined);
 
+  context.registerDialog('game-search-paths', PathSelectionDialog, () => ({
+    onScan: (paths: string[]) => {
+      $.gameModeManager.startSearchDiscovery(paths);
+    },
+    onSelectPath: (basePath: string): Promise<string> => {
+      return Promise.resolve(remote.dialog.showOpenDialog(remote.getCurrentWindow(), {
+        properties: ['openDirectory'],
+        defaultPath: basePath,
+      })
+      .then(result => result.filePaths[0]));
+    },
+  }));
+
   context.once(() => {
     const store: Redux.Store<IState> = context.api.store;
     const events = context.api.events;
@@ -529,19 +544,16 @@ function init(context: IExtensionContext): boolean {
         }));
     events.on('start-discovery', () => {
       try {
-        getDriveList(context.api)
-          .then(drives => context.api.showDialog('question', 'Select Drives to scan', {
-            text: 'Please select any drive that should be scanned for games.',
-            checkboxes: drives.sort().map(drive => ({ id: drive, text: drive, value: true })),
-          }, [
-            { label: 'Cancel' },
-            { label: 'Scan' },
-          ]))
-          .then((result: IDialogResult) => {
-            if (result.action === 'Scan') {
-              const selected = Object.keys(result.input).filter(patch => result.input[patch]);
-              $.gameModeManager.startSearchDiscovery(selected);
-            }
+        const state = context.api.getState();
+        const initPromise: Promise<void> = state.settings.gameMode.searchPaths.length > 0
+          ? Promise.resolve()
+          : Promise.resolve(getDriveList(context.api))
+              .catch(() => ([]))
+              .then(drives => { context.api.store.dispatch(setGameSearchPaths(drives)); });
+
+        initPromise
+          .then(() => {
+            context.api.store.dispatch(setDialogVisible('game-search-paths'));
           });
       } catch (err) {
         context.api.showErrorNotification('Failed to search for games', err);

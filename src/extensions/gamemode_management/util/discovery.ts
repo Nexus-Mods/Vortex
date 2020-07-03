@@ -153,13 +153,13 @@ export function quickDiscovery(knownGames: IGame[],
  *                    it will upper-case the input. the entries of
  *                    matchList and blackList will be normalized within
  *                    the same function.
- * @returns
+ * @returns number of directories read
  */
 function walk(searchPath: string,
               matchList: Set<string>,
               resultCB: (path: string) => void,
               progress: Progress,
-              normalize: Normalize): Promise<void> {
+              normalize: Normalize): Promise<number> {
   // we can't actually know the progress percentage because for
   // that we'd need to search the disk twice, first to know the number of directories
   // just so we can show progress for the second run.
@@ -219,7 +219,8 @@ function walk(searchPath: string,
         }
         progress.completed(lastCompleted, doneCount);
       }
-    }, { terminators: true });
+    }, { terminators: true })
+    .then(() => seenDirectories);
 }
 
 function verifyToolDir(tool: ITool, testPath: string): Promise<void> {
@@ -288,7 +289,7 @@ export function discoverRelativeTools(game: IGame, gamePath: string,
 
   const onFileCB =
     filePath => onFile(filePath, files, normalize, discoveredGames, nop, onDiscoveredTool);
-  return walk(gamePath, matchList, onFileCB, undefined, normalize);
+  return walk(gamePath, matchList, onFileCB, undefined, normalize).then(() =>  null);
 }
 
 function autoGenIcon(application: ITool, exePath: string, gameId: string): Promise<void> {
@@ -394,6 +395,8 @@ export function searchDiscovery(
     onError: (title: string, message: string) => void,
     progressCB: (idx: number, percent: number, label: string) => void): Promise<any> {
 
+  let totalRead = 0;
+
   return Promise.map(
     // windows has separate cwds per drive. If we used c: as the search path it would not actually
     // search in the root of drive c but in whatever is currently the working directory on c, so
@@ -413,7 +416,7 @@ export function searchDiscovery(
           knownGames.forEach((knownGame: IGame) => {
             const discoveredGame = discoveredGames[knownGame.id];
             // the game itself
-            if (discoveredGame === undefined) {
+            if (discoveredGame?.path === undefined) {
               for (const required of knownGame.requiredFiles) {
                 files.push({
                   fileName: normalize(required),
@@ -432,7 +435,10 @@ export function searchDiscovery(
           const matchList: Set<string> = new Set(files.map(entry => path.basename(entry.fileName)));
           const onFileCB = (filePath: string) =>
             onFile(filePath, files, normalize, discoveredGames, onDiscoveredGame, onDiscoveredTool);
-          return walk(searchPath, matchList, onFileCB, progressObj, normalize);
+          return walk(searchPath, matchList, onFileCB, progressObj, normalize)
+            .then(numRead => {
+              totalRead += numRead;
+            });
         })
         .then(() => {
           log('info', 'finished game search', { searchPath });
@@ -448,5 +454,6 @@ export function searchDiscovery(
           progressObj.completed(searchPath);
           return null;
         });
-    });
+    })
+    .then(() => totalRead);
 }

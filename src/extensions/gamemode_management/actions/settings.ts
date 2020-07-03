@@ -47,5 +47,8 @@ export const setGameParameters = safeCreateAction('SET_GAME_PARAMETERS',
 export const setGameHidden = safeCreateAction('SET_GAME_HIDDEN',
 (gameId: string, hidden: boolean) => ({ gameId, hidden }));
 
+export const setGameSearchPaths = safeCreateAction('SET_GAME_SEARCH_PATHS',
+  (paths: string[]) => paths);
+
 export const setPickerLayout = safeCreateAction('SET_GAMEPICKER_LAYOUT',
   (layout: 'list' | 'small' | 'large') => ({ layout }));

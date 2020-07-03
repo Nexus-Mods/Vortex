@@ -41,7 +41,7 @@ class GameModeManager {
   private mStore: ThunkStore<IState>;
   private mKnownGames: IGame[];
   private mKnownGameStores: IGameStore[];
-  private mActiveSearch: Promise<any[]>;
+  private mActiveSearch: Promise<void>;
   private mOnGameModeActivated: (mode: string) => void;
 
   constructor(extensionGames: IGame[],
@@ -197,7 +197,7 @@ class GameModeManager {
    */
   public startSearchDiscovery(searchPaths: string[]): void {
     const progressCallback = (idx: number, percent: number, label: string) =>
-            this.mStore.dispatch(discoveryProgress(idx, percent, label));
+            this.mStore.dispatch(discoveryProgress(idx, percent || 0, label));
 
     const state: IState = this.mStore.getState();
 
@@ -212,14 +212,33 @@ class GameModeManager {
 
     this.mStore.dispatch(setPhaseCount(searchPaths.length));
 
+    let numDiscovered = 0;
+    const onDiscoveredGame = (gameId: string, result: IDiscoveryResult) => {
+      ++numDiscovered;
+      this.onDiscoveredGame(gameId, result);
+    };
+
     this.mActiveSearch = searchDiscovery(
       this.mKnownGames,
       state.settings.gameMode.discovered,
       searchPaths.slice().sort(),
-      this.onDiscoveredGame,
+      onDiscoveredGame,
       this.onDiscoveredTool,
       this.onError,
       progressCallback)
+    .then((directoriesRead: number) => {
+      this.mStore.dispatch(addNotification({
+        type: 'success',
+        title: 'Search finished',
+        message: '{{searched}} directories were searched, {{numDiscovered}} new games found',
+        replace: {
+          searched: directoriesRead,
+          numDiscovered,
+        },
+        displayMS: 10000,
+      }));
+
+    })
     .finally(() => {
       this.mStore.dispatch(discoveryFinished());
       this.mActiveSearch = null;
