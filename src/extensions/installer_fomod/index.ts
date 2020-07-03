@@ -37,7 +37,7 @@ const app = appIn !== undefined ? appIn : remote.app;
 
 async function persistentImport<T>(tries: number = 3): Promise<T> {
   try {
-    return await import('zeromq');
+    return (await import('zeromq')) as any;
   } catch (err) {
     if (tries > 1) {
       await Bluebird.delay(100);
