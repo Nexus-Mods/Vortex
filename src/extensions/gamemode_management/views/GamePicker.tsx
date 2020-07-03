@@ -378,7 +378,8 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
   }
 
   private startDiscovery = () => {
-    this.context.api.events.emit('start-discovery');
+    const { api } = this.context;
+    api.events.emit('start-discovery');
   }
 
   private stopDiscovery = () => {

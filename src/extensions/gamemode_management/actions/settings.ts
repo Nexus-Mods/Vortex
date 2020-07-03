@@ -47,18 +47,5 @@ export const setGameParameters = safeCreateAction('SET_GAME_PARAMETERS',
 export const setGameHidden = safeCreateAction('SET_GAME_HIDDEN',
 (gameId: string, hidden: boolean) => ({ gameId, hidden }));
 
-/**
- * add a search path (path that is searched for game installations)
- */
-export const addSearchPath = safeCreateAction('ADD_SEARCH_PATH',
-  identity);
-
-export const clearSearchPaths = safeCreateAction('CLEAR_SEARCH_PATHS');
-
-/**
- * remove a search path
- */
-export const removeSearchPath = safeCreateAction('REMOVE_SEARCH_PATH', identity);
-
 export const setPickerLayout = safeCreateAction('SET_GAMEPICKER_LAYOUT',
   (layout: 'list' | 'small' | 'large') => ({ layout }));

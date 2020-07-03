@@ -1,4 +1,4 @@
-import { showDialog } from '../../actions/notifications';
+import { IDialogResult, showDialog } from '../../actions/notifications';
 import {
   GameInfoQuery,
   IExtensionApi,
@@ -27,9 +27,7 @@ import { IModWithState } from '../mod_management/views/CheckModVersionsButton';
 import { setNextProfile } from '../profile_management/actions/settings';
 
 import { setGameInfo } from './actions/persistent';
-import { addDiscoveredGame, addSearchPath,
-         clearSearchPaths,
-         setGamePath } from './actions/settings';
+import { addDiscoveredGame, setGamePath } from './actions/settings';
 import { discoveryReducer } from './reducers/discovery';
 import { persistentReducer } from './reducers/persistent';
 import { sessionReducer } from './reducers/session';
@@ -37,6 +35,7 @@ import { settingsReducer } from './reducers/settings';
 import { IDiscoveryResult } from './types/IDiscoveryResult';
 import { IGameStored } from './types/IGameStored';
 import { IModType } from './types/IModType';
+import getDriveList from './util/getDriveList';
 import { getGame } from './util/getGame';
 import { getModTypeExtensions, registerModType } from './util/modTypeExtensions';
 import ProcessMonitor from './util/ProcessMonitor';
@@ -45,7 +44,6 @@ import {} from './views/GamePicker';
 import HideGameIcon from './views/HideGameIcon';
 import ProgressFooter from './views/ProgressFooter';
 import RecentlyManagedDashlet from './views/RecentlyManagedDashlet';
-import {} from './views/Settings';
 
 import GameModeManager from './GameModeManager';
 import { currentGame, currentGameDiscovery, discoveryByGame } from './selectors';
@@ -300,51 +298,6 @@ function removeDisappearedGames(api: IExtensionApi): Promise<void> {
     });
 }
 
-function resetSearchPaths(api: IExtensionApi) {
-  const store = api.store;
-
-  store.dispatch(clearSearchPaths());
-
-  let list;
-  try {
-    list = require('drivelist').list;
-    if (typeof(list) !== 'function') {
-      throw new Error('Failed to load "drivelist" module');
-    }
-  } catch (err) {
-    api.showErrorNotification('Failed to query list of system drives',
-      {
-        message: 'Vortex was not able to query the operating system for the list of system drives. '
-            + 'If this error persists, please configure the list manually.',
-        error: err,
-      }, { allowReport: false });
-    return;
-  }
-  list()
-    .then(disks => {
-      for (const disk of disks.sort()) {
-        // note: isRemovable is set correctly on windows, on MacOS (and presumably linux)
-        // it will, as of this writing, be null. The isSystem flag should suffice as a
-        // filter though.
-        if (disk.isSystem && !disk.isRemovable) {
-          if (disk.mountpoints) {
-            disk.mountpoints.forEach(
-                mp => { store.dispatch(addSearchPath(mp.path)); });
-          } else {
-            store.dispatch(addSearchPath(disk.mountpoint));
-          }
-        }
-      }
-    })
-    .catch(err => {
-      api.showErrorNotification(
-          'Failed to determine list of disk drives. ' +
-              'Please review the settings before scanning for games.',
-          err, { allowReport: false });
-      store.dispatch(addSearchPath('C:'));
-    });
-}
-
 function genModTypeAttribute(api: IExtensionApi): ITableAttribute<IModWithState> {
   return {
     id: 'modType',
@@ -402,9 +355,6 @@ function init(context: IExtensionContext): boolean {
     }),
     activity,
   });
-  context.registerSettings('Games', LazyComponent(() => require('./views/Settings')), () => ({
-    onResetSearchPaths: () => resetSearchPaths(context.api),
-  }), undefined, 90);
   context.registerReducer(['session', 'discovery'], discoveryReducer);
   context.registerReducer(['session', 'gameMode'], sessionReducer);
   context.registerReducer(['settings', 'gameMode'], settingsReducer);
@@ -513,7 +463,7 @@ function init(context: IExtensionContext): boolean {
   context.registerAction('game-icons', 110, 'refresh', {}, 'Scan: Full', () => {
     if (($.gameModeManager !== undefined) && !$.gameModeManager.isSearching()) {
       try {
-        $.gameModeManager.startSearchDiscovery();
+        context.api.events.emit('start-discovery');
       } catch (err) {
         context.api.showErrorNotification('Failed to search for games', err);
       }
@@ -579,7 +529,20 @@ function init(context: IExtensionContext): boolean {
         }));
     events.on('start-discovery', () => {
       try {
-        $.gameModeManager.startSearchDiscovery();
+        getDriveList(context.api)
+          .then(drives => context.api.showDialog('question', 'Select Drives to scan', {
+            text: 'Please select any drive that should be scanned for games.',
+            checkboxes: drives.sort().map(drive => ({ id: drive, text: drive, value: true })),
+          }, [
+            { label: 'Cancel' },
+            { label: 'Scan' },
+          ]))
+          .then((result: IDialogResult) => {
+            if (result.action === 'Scan') {
+              const selected = Object.keys(result.input).filter(patch => result.input[patch]);
+              $.gameModeManager.startSearchDiscovery(selected);
+            }
+          });
       } catch (err) {
         context.api.showErrorNotification('Failed to search for games', err);
       }
@@ -600,17 +563,6 @@ function init(context: IExtensionContext): boolean {
         .then(() => callback(null))
         .catch(err => callback(err));
     });
-
-    let { searchPaths } = store.getState().settings.gameMode;
-
-    if ((searchPaths !== undefined) && Array.isArray(searchPaths[0])) {
-      store.dispatch(clearSearchPaths());
-      searchPaths = undefined;
-    }
-
-    if (searchPaths === undefined) {
-      resetSearchPaths(context.api);
-    }
 
     const changeGameMode = (oldGameId: string, newGameId: string,
                             currentProfileId: string): Promise<void> => {

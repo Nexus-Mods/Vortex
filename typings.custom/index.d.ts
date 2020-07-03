@@ -1,5 +1,4 @@
 /// <reference path="bbcode-to-react.d.ts" />
-/// <reference path="drivelist.d.ts" />
 /// <reference path="electron-edge.d.ts" />
 /// <reference path="node-rest-client.d.ts" />
 /// <reference path="redux-devtools-dispatch.d.ts" />

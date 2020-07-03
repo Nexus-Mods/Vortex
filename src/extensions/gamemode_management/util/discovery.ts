@@ -180,10 +180,17 @@ function walk(searchPath: string,
             // 80% of previous estimate plus a bit more than 20% of new estimate.
             // this will estimate a bit more than it mathematically should,
             // so the progress doesn't hang at 100%
+            const estPerTL = seenDirectories / processedTL;
             estimatedDirectories = (
-              estimatedDirectories * 0.8 +
-              seenDirectories * (seenTL.size / processedTL) * 0.202
+              Math.max(estimatedDirectories, seenDirectories) * 0.8 +
+              estPerTL * seenTL.size * 0.202
             );
+            log('debug', 'updated estimate',
+                { searchPath, estimatedDirectories, seenDirectories,
+                  topLevelTotal: seenTL.size, processedTL });
+            if (progress) {
+              progress.setStepCount(estimatedDirectories);
+            }
           }
           ++doneCount;
           lastCompleted = entry.filePath;
@@ -206,7 +213,10 @@ function walk(searchPath: string,
       });
       if (progress) {
         // count number of directories to be used as the step counter in the progress bar
-        progress.setStepCount(estimatedDirectories);
+        if (estimatedDirectories < seenDirectories) {
+          estimatedDirectories = seenDirectories * ((seenTL.size + 1) / Math.max(processedTL, 1));
+          progress.setStepCount(estimatedDirectories);
+        }
         progress.completed(lastCompleted, doneCount);
       }
     }, { terminators: true });

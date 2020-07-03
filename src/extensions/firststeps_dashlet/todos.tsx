@@ -117,7 +117,6 @@ function todos(api: IExtensionApi): IToDo[] {
       type: 'search' as ToDoType,
       priority: 40,
       props: state => ({
-        searchPaths: state.settings.gameMode.searchPaths,
         discoveryRunning: state.session.discovery.running,
       }),
       condition: props => props.searchPaths !== undefined,

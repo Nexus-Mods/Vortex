@@ -195,12 +195,11 @@ class GameModeManager {
    *
    * @memberOf GameModeManager
    */
-  public startSearchDiscovery(): void {
+  public startSearchDiscovery(searchPaths: string[]): void {
     const progressCallback = (idx: number, percent: number, label: string) =>
             this.mStore.dispatch(discoveryProgress(idx, percent, label));
 
     const state: IState = this.mStore.getState();
-    const { searchPaths } = state.settings.gameMode;
 
     if (!Array.isArray(searchPaths)) {
       throw new Error('invalid search paths: ' + require('util').inspect(searchPaths));
