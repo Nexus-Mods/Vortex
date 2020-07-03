@@ -311,11 +311,6 @@ class Starter extends ComponentEx<IStarterProps, IWelcomeScreenState> {
     // finally, add those tools that were added manually
     Object.keys(discoveredTools)
       .filter(toolId => !preConfTools.has(toolId))
-      .sort((lhs, rhs) => {
-        const tlhs = discoveredTools[lhs]?.timestamp || 0;
-        const trhs = discoveredTools[rhs]?.timestamp || 0;
-        return tlhs - trhs;
-      })
       .forEach(toolId => {
         try {
           starters.push(new StarterInfo(game, discoveredGame, undefined, discoveredTools[toolId]));
