@@ -34,6 +34,43 @@ export const PICTURE: ITableAttribute<IModWithState> = {
   edit: {},
 };
 
+export const ENABLED_TIME = (locale: () => string): ITableAttribute<IModWithState> => {
+  return {
+    id: 'enabledTime',
+    name: 'Enabled Time',
+    description: 'Time when this mod was enabled (in this profile)',
+    icon: 'calendar-plus-o',
+    customRenderer: (mod: IModWithState, detail: boolean, t) => {
+      const timeStamp = mod.enabledTime;
+      if (detail) {
+        const lang = getCurrentLanguage();
+        return (
+          <span>
+            {
+              timeStamp !== undefined
+                ? new Date(timeStamp).toLocaleString(lang)
+                : t('Never enabled')
+            }
+          </span>
+        );
+      } else {
+        if (timeStamp === undefined) {
+          return <span>{t('Never')}</span>;
+        }
+        return <span>{userFriendlyTime(new Date(timeStamp), t, locale())}</span>;
+      }
+    },
+    calc: (mod: IModWithState) => new Date(mod.enabledTime),
+    placement: 'both',
+    isToggleable: true,
+    isDefaultVisible: false,
+    edit: {},
+    isSortable: true,
+    sortFunc: (lhs: Date, rhs: Date) => (lhs.getTime() || 0) - (rhs.getTime() || 0),
+    filter: new DateTimeFilter(),
+  };
+};
+
 export const INSTALL_TIME = (locale: () => string): ITableAttribute<IModWithState> => {
   return {
     id: 'installTime',
