@@ -120,6 +120,9 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
 
     const extensionsWithState = this.mergeExt(extensions, extensionConfig);
 
+    const configId = (conf: { [id: string]: IExtensionState }) =>
+      Object.keys(conf).map(id => `${id}_${conf[id].version}`);
+
     return (
       <MainPage>
         <MainPage.Body>
@@ -128,7 +131,8 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
               <FlexLayout type='column'>
                 <FlexLayout.Fixed>
                   {
-                    localState.reloadNecessary || !_.isEqual(extensionConfig, oldExtensionConfig)
+                    localState.reloadNecessary
+                    || !_.isEqual(configId(extensionConfig), configId(oldExtensionConfig))
                       ? this.renderReload()
                       : null
                   }
