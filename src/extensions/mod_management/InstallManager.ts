@@ -1035,7 +1035,9 @@ class InstallManager {
           if (result.action === 'Cancel') {
             reject(new UserCanceled());
           } else if (result.action === VARIANT_ACTION) {
-            api.store.dispatch(setModEnabled(currentProfile.id, modId, false));
+            if (currentProfile !== undefined) {
+              api.store.dispatch(setModEnabled(currentProfile.id, modId, false));
+            }
             resolve({
               id: modId + '+' + result.input.variant,
               variant: result.input.variant,
