@@ -24,7 +24,7 @@
     "@types/redux-thunk": "^2.1.0",
     "7z-bin": "Nexus-Mods/7z-bin",
     "bluebird": "^3.5.5",
-    "electron": "4.2.4",
+    "electron": "9.1.0",
     "i18next": "^17.0.4",
     "react": "^16.8.6",
     "react-bootstrap": "^0.32.4",
