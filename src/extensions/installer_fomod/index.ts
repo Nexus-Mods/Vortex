@@ -6,7 +6,6 @@ import {
 } from '../../types/IExtensionContext';
 import { ITestResult } from '../../types/ITestResult';
 import { DataInvalid, ProcessCanceled, SetupError, UserCanceled } from '../../util/CustomErrors';
-import Debouncer from '../../util/Debouncer';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 import {toPromise, truthy} from '../../util/util';
@@ -282,14 +281,18 @@ class ConnectionIPC {
       pipe,
       debug,
     });
+    log('debug', '[installer] waiting for peer process to connect');
 
     server.on('connection', sock => {
+      log('debug', '[installer] peer connected');
       sock.setEncoding('utf8');
       if (!wasConnected) {
         wasConnected = true;
         servSocket = sock;
         if (pipe) {
+          log('debug', '[installer] connecting to reply pipe');
           cliSocket = net.createConnection(`\\\\?\\pipe\\${ipcId}_reply`, () => {
+            log('debug', '[installer] reply pipe connected');
             cliSocket.setEncoding('utf-8');
             onResolve();
           });
@@ -492,6 +495,7 @@ const ensureConnected = (() => {
   return async (): Promise<ConnectionIPC> => {
     if ((conn === undefined) || !conn.isActive()) {
       conn = await ConnectionIPC.bind();
+      log('debug', '[installer] connection bound');
       conn.handleMessages();
     }
     return Promise.resolve(conn);
@@ -502,8 +506,11 @@ async function testSupportedScripted(files: string[]): Promise<ISupportedResult>
   const connection = await ensureConnected();
 
   try {
-    return await connection.sendMessage('TestSupported',
+    log('debug', '[installer] test supported');
+    const res = await connection.sendMessage('TestSupported',
       { files, allowedTypes: ['XmlScript', 'CSharpScript'] });
+    log('debug', '[installer] test supported result', JSON.stringify(res));
+    return res;
   } catch (err) {
     throw transformError(err);
   }
