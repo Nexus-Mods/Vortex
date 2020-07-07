@@ -446,7 +446,7 @@ class GamePicker extends ComponentEx<IProps, IComponentState> {
           {games.map(game => (
             <GameThumbnail
               t={t}
-              key={game.id}
+              key={game.id + '_' + (game.contributed ?? 'official')}
               game={game}
               type={type}
               active={game.id === gameMode}
