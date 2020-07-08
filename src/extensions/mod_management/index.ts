@@ -219,7 +219,13 @@ function deployAllModTypes(api: IExtensionApi,
       stagingPath, modPaths[typeId], overwritten, mergedFileMap,
       lastDeployment[typeId], onProgress)
       .then(deployment => newDeployment[typeId] = deployment))
-    .then(() => reportRedundant(api, profile.id, overwritten));
+    .then(() => {
+      if (activator.noRedundancy !== true) {
+        return reportRedundant(api, profile.id, overwritten);
+      } else {
+        return Promise.resolve();
+      }
+    });
 }
 
 function validateDeploymentTarget(api: IExtensionApi, undiscovered: string[]) {

@@ -21,6 +21,7 @@ import {} from './mod_management';
 import {} from './move_activator';
 import {} from './news_dashlet';
 import {} from './nexus_integration';
+import {} from './null_activator';
 import {} from './profile_management';
 import {} from './recovery';
 import {} from './settings_application';
