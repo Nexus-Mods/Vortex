@@ -25,6 +25,8 @@ class DeploymendMethod extends LinkingDeployment {
 
   public priority: number = 10;
 
+  private mDidLogElevation: boolean = false;
+
   constructor(api: IExtensionApi) {
     super(
         'symlink_activator', 'Symlink Deployment',
@@ -237,7 +239,10 @@ class DeploymendMethod extends LinkingDeployment {
       fs.removeSync(destFile);
       return true;
     } catch (err) {
-      log('debug', 'assuming user needs elevation to create symlinks', { error: err.message });
+      if (!this.mDidLogElevation) {
+        log('debug', 'assuming user needs elevation to create symlinks', { error: err.message });
+        this.mDidLogElevation = true;
+      }
       return false;
     }
   }
