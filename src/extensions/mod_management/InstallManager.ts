@@ -84,6 +84,7 @@ class InstructionGroups {
   public setmodtype: IInstruction[] = [];
   public error: IInstruction[] = [];
   public rule: IInstruction[] = [];
+  public enableallplugins: IInstruction[] = [];
 }
 
 export const INI_TWEAKS_PATH = 'Ini Tweaks';
@@ -812,6 +813,14 @@ class InstallManager {
     return Promise.resolve();
   }
 
+  private processEnableAllPlugins(api: IExtensionApi, enableAll: IInstruction[],
+                                  gameId: string, modId: string): Promise<void> {
+    if (enableAll.length > 0) {
+      api.store.dispatch(setModAttribute(gameId, modId, 'enableallplugins', true));
+    }
+    return Promise.resolve();
+  }
+
   private processSetModType(api: IExtensionApi, types: IInstruction[],
                             gameId: string, modId: string): Promise<void> {
     if (types.length > 0) {
@@ -944,6 +953,8 @@ class InstallManager {
       .then(() => this.processSubmodule(api, instructionGroups.submodule,
                                         destinationPath, gameId, modId))
       .then(() => this.processAttribute(api, instructionGroups.attribute, gameId, modId))
+      .then(() => this.processEnableAllPlugins(api, instructionGroups.enableallplugins,
+                                               gameId, modId))
       .then(() => this.processSetModType(api, instructionGroups.setmodtype, gameId, modId))
       .then(() => this.processRule(api, instructionGroups.rule, gameId, modId))
       ;
