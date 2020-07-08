@@ -4,7 +4,7 @@ import * as path from 'path';
 const app = remote !== undefined ? remote.app : appIn;
 
 export type AppPath = 'base' | 'assets' | 'assets_unpacked' | 'modules' | 'modules_unpacked'
-                    | 'bundledPlugins' | 'locales' | 'package'
+                    | 'bundledPlugins' | 'locales' | 'package' | 'application'
                     | 'userData' | 'appData' | 'temp' | 'home' | 'documents';
 
 /**
@@ -92,6 +92,7 @@ function getVortexPath(id: AppPath): string {
     case 'home': return cachedAppPath('home');
     case 'documents': return cachedAppPath('documents');
     case 'base': return basePath;
+    case 'application': return applicationPath;
     case 'package': return getPackagePath();
     case 'assets': return getAssets(false);
     case 'assets_unpacked': return getAssets(true);

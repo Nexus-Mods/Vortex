@@ -1025,20 +1025,24 @@ function checkStagingFolder(api: IExtensionApi): Promise<ITestResult> {
   const state = api.store.getState();
 
   const gameMode = activeGameId(state);
+
+  log('debug', '[checking staging folder]', { gameMode });
   if (gameMode === undefined) {
     return Promise.resolve(result);
   }
 
   const discovery = currentGameDiscovery(state);
   const instPath = installPath(state);
-  const basePath = getVortexPath('base');
+  const basePath = getVortexPath('application');
+  log('debug', '[checking staging folder]',
+    { stagingPath: instPath, vortexPath: basePath, gamePath: discovery?.path });
   if (isChildPath(instPath, basePath)) {
     result = {
       severity: 'warning',
       description: {
         short: 'Invalid staging folder',
         long: 'Your mod staging folder is inside the Vortex application directory. '
-          + 'This is a very bad idea beckaue that folder gets removed during updates so you would '
+          + 'This is a very bad idea because that folder gets removed during updates so you would '
           + 'lose all your files on the next update.',
       },
     };

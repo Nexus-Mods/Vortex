@@ -287,7 +287,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     const oldInstallPath: string = getInstallPath(this.props.installPath, gameMode);
     log('info', 'changing staging directory', { from: oldInstallPath, to: newInstallPath });
 
-    const vortexPath = getVortexPath('base');
+    const vortexPath = getVortexPath('application');
 
     if (isChildPath(newInstallPath, vortexPath)) {
       return onShowDialog('error', 'Invalid path selected', {
