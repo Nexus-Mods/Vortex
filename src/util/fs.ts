@@ -799,7 +799,11 @@ export function ensureDirWritableAsync(dirPath: string,
       // weirdly we get EBADF from ensureFile sometimes when the
       // directory isn't writeable instead of EPERM. More weirdly, this seems to happen
       // only on startup.
-      if (['EPERM', 'EBADF', 'UNKNOWN'].indexOf(err.code) !== -1) {
+      // Additionally, users may occasionally get EEXIST (OneDrive specific?)
+      //  as far as I understand fs-extra that is not supposed to happen! but I suppose
+      //  it doesn't hurt to add some code to handle that use case.
+      //  https://github.com/Nexus-Mods/Vortex/issues/6856
+      if (['EPERM', 'EBADF', 'UNKNOWN', 'EEXIST'].indexOf(err.code) !== -1) {
         return PromiseBB.resolve(confirm())
           .then(() => {
             const userId = getUserId();
@@ -809,6 +813,14 @@ export function ensureDirWritableAsync(dirPath: string,
               // tslint:disable-next-line:no-shadowed-variable
               const path = req('path');
               const { allow } = req('permissions');
+              const allowDir = (targetPath) => {
+                try {
+                  allow(targetPath, userId, 'rwx');
+                  return Promise.resolve();
+                } catch (err) {
+                  return Promise.reject(err);
+                }
+              };
               // recurse upwards in the directory tree if necessary
               const ensureAndAllow = (targetPath, allowRecurse) => {
                 return fs.ensureDir(targetPath)
@@ -823,16 +835,12 @@ export function ensureDirWritableAsync(dirPath: string,
                     return Promise.reject(elevatedErr);
                   }
                 })
-                .then(() => {
-                  try {
-                    allow(targetPath, userId, 'rwx');
-                    return Promise.resolve();
-                  } catch (err) {
-                    return Promise.reject(err);
-                  }
-                });
+                .then(() => allowDir(targetPath));
               };
-              return ensureAndAllow(dirPath, true);
+              return (err.code !== 'EEXIST')
+                ? ensureAndAllow(dirPath, true)
+                // Directory exists - lets make sure it's writable.
+                : allowDir(dirPath);
             }, { dirPath, userId })
             // if elevation fails, rethrow the original error, not the failure to elevate
             .catch(elevatedErr => {
