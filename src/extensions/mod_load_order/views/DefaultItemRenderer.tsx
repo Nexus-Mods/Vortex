@@ -57,6 +57,15 @@ class DefaultItemRenderer extends ComponentEx<IProps, {}> {
       : null;
   }
 
+  private renderExternalBanner(): JSX.Element {
+    return (
+    <div className='load-order-unmanaged-banner'>
+      <span>Not managed by Vortex</span>
+      <Icon className='external-caution-logo' name='dialog-info'/>
+    </div>
+    );
+  }
+
   private renderLocked(item: ILoadOrderDisplayItem): JSX.Element {
     const { loadOrder, className } = this.props;
     const position = (item.prefix !== undefined)
@@ -79,6 +88,7 @@ class DefaultItemRenderer extends ComponentEx<IProps, {}> {
         <p className='load-order-index'>{position}</p>
         {this.renderModImg()}
         <p>{item.name}</p>
+        {(!!item?.external) && this.renderExternalBanner()}
         <Icon className='locked-entry-logo' name='locked'/>
       </ListGroupItem>
     );
@@ -108,15 +118,6 @@ class DefaultItemRenderer extends ComponentEx<IProps, {}> {
       )
       : null;
 
-    const unmanagedBanner = () => (!!item?.external)
-      ? (
-          <div className='load-order-unmanaged-banner'>
-            <span>Not managed by Vortex</span>
-            <Icon className='external-caution-logo' name='dialog-info'/>
-          </div>
-        )
-      : null;
-
     return (
       <ListGroupItem
         ref={this.setRef}
@@ -126,7 +127,7 @@ class DefaultItemRenderer extends ComponentEx<IProps, {}> {
       >
         <p className='load-order-index'>{position}</p>
         <div>
-          {unmanagedBanner()}
+          {(!!item?.external) && this.renderExternalBanner()}
           {this.renderModImg()}
         </div>
         <p>{item.name}</p>
