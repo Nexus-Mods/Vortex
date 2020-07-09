@@ -159,7 +159,7 @@ function mapStateToProps(state: IState, ownProps: IProps): IConnectedProps {
     loadOrder: getSafe(state, ['persistent', 'loadOrder', profile.id], empty),
     modState: getSafe(profile, ['modState'], empty),
     itemRendererOptions: getSafe(state,
-      ['persistent', 'loadOrder', profile.gameId, profile.id], defaultRendererOpts),
+      ['settings', 'loadOrder', 'rendererOptions', profile.gameId], defaultRendererOpts),
   };
 }
 

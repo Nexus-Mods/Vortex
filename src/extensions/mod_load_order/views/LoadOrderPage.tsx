@@ -12,7 +12,7 @@ import { ComponentEx } from '../../../util/ComponentEx';
 import * as selectors from '../../../util/selectors';
 import { DNDContainer, MainPage } from '../../../views/api';
 
-import { setGameLoadOrderOptions } from '../actions/loadOrder';
+import { setGameLoadOrderRendererOptions } from '../actions/settings';
 
 import { IGameLoadOrderEntry, IItemRendererOptions, ILoadOrder,
   ILoadOrderDisplayItem, SortType } from '../types/types';
@@ -59,7 +59,7 @@ interface IConnectedProps {
 }
 
 interface IActionProps {
-  onSetLoadOrderOptions: (gameId: string, profileId: string, options: IItemRendererOptions) => void;
+  onSetLoadOrderRendererOptions: (gameId: string, options: IItemRendererOptions) => void;
   onSetDeploymentNecessary: (gameId: string, necessary: boolean) => void;
   onSetOrder: (profileId: string, loadOrder: ILoadOrder) => void;
 }
@@ -272,19 +272,14 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
       onSetOrder(profile.id, newOrder);
     };
 
-    const activeGameEntry: IGameLoadOrderEntry = getGameEntry(profile.gameId);
-    if (!!activeGameEntry.preSort) {
-      activeGameEntry.preSort(list, this.state.sortType).then(newList =>
-        !!newList ? setNewOrder(newList) : setNewOrder(list));
-    } else {
-      setNewOrder(list);
-    }
+    setNewOrder(list);
   }
 
   // If the itemRenderer hasn't been assigned yet or is different than the
   //  one that the game extension provided - assign the default item renderer.
   private getItemRenderer() {
-    const { getGameEntry, profile, onSetLoadOrderOptions, itemRendererOptions } = this.props;
+    const { getGameEntry, profile, onSetLoadOrderRendererOptions,
+            itemRendererOptions } = this.props;
     const { itemRenderer } = this.state;
 
     if (profile === undefined) {
@@ -292,7 +287,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
     }
 
     const useDefault = (gameEntry: IGameLoadOrderEntry) => {
-      onSetLoadOrderOptions(profile.gameId, profile.id, {
+      onSetLoadOrderRendererOptions(profile.gameId, {
         displayCheckboxes: (gameEntry?.displayCheckboxes === false) ? false : true,
         listViewType: (!!itemRendererOptions?.listViewType)
           ? itemRendererOptions.listViewType
@@ -387,14 +382,14 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
   }
 
   private onChangeViewType = () => {
-    const { onSetLoadOrderOptions, profile, itemRendererOptions } = this.props;
+    const { onSetLoadOrderRendererOptions, profile, itemRendererOptions } = this.props;
     const newOpts: IItemRendererOptions = {
       displayCheckboxes: itemRendererOptions.displayCheckboxes,
       listViewType: (itemRendererOptions.listViewType === 'full')
         ? 'compact' : 'full',
     };
 
-    onSetLoadOrderOptions(profile.gameId, profile.id, newOpts);
+    onSetLoadOrderRendererOptions(profile.gameId, newOpts);
   }
 
   private renderWait() {
@@ -461,17 +456,17 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
   }
 }
 
+const empty = {};
+const defaultOpts: IItemRendererOptions = { listViewType: 'full', displayCheckboxes: true };
 function mapStateToProps(state: types.IState, ownProps: IProps): IConnectedProps {
   const profile = selectors.activeProfile(state) || undefined;
   let loadOrder: ILoadOrder = {};
-  const defaultOpts = util.getSafe(state,
-    ['persistent', 'loadOrder', 'defaultItemRendererOptions'], undefined);
 
   let itemRendererOptions: IItemRendererOptions = defaultOpts;
-  if (!!profile) {
-    loadOrder = util.getSafe(state, ['persistent', 'loadOrder', profile.id], {});
+  if (!!profile?.gameId) {
+    loadOrder = util.getSafe(state, ['persistent', 'loadOrder', profile.id], empty);
     itemRendererOptions = util.getSafe(state,
-      ['persistent', 'loadOrder', profile.gameId, profile.id], defaultOpts);
+      ['settings', 'loadOrder', 'rendererOptions', profile.gameId], defaultOpts);
   }
 
   return {
@@ -485,8 +480,8 @@ function mapStateToProps(state: types.IState, ownProps: IProps): IConnectedProps
 
 function mapDispatchToProps(dispatch: any): IActionProps {
   return {
-    onSetLoadOrderOptions: (gameId, profileId, options) =>
-      dispatch(setGameLoadOrderOptions(gameId, profileId, options)),
+    onSetLoadOrderRendererOptions: (gameId, options) =>
+      dispatch(setGameLoadOrderRendererOptions(gameId, options)),
     onSetDeploymentNecessary: (gameId, necessary) =>
       dispatch(actions.setDeploymentNecessary(gameId, necessary)),
     onSetOrder: (profileId, loadOrder) => {

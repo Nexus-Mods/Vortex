@@ -9,15 +9,6 @@ export const modLoadOrderReducer: IReducerSpec = {
       const { profileId, modId, loEntry } = payload;
       return setSafe(state, [profileId, modId], loEntry);
     },
-    [actions.setGameLoadOrderOptions as any]: (state, payload) => {
-      const { gameId, profileId, itemRendererOptions } = payload;
-      return setSafe(state, [gameId, profileId], itemRendererOptions);
-    },
   },
-  defaults: {
-    defaultItemRendererOptions: {
-      displayCheckboxes: true,
-      listViewType: 'full',
-    },
-  },
+  defaults: {},
 };
