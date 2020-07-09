@@ -834,7 +834,11 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           });
         })
         .catch(err => {
-          this.context.api.showErrorNotification('Failed to set mod to uninstalled', err);
+          // Activation store can potentially provide an err.allowReport value
+          //  if/when the manifest is corrupted - we're going to suppress the
+          //  report button for that use case.
+          this.context.api.showErrorNotification('Failed to set mod to uninstalled', err,
+            { allowReport: (err?.allowReport !== false) });
         });
       }
     } else if (modsWithState[modId].state === 'downloaded') {
