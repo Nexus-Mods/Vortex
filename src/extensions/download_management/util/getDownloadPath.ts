@@ -31,7 +31,7 @@ function getDownloadPath(pattern: string, gameId?: string): string {
       || ((process.platform === 'win32')
           && ((result[0] === '\\') && (result[1] !== '\\'))
               || (result[0] === '/') && (result[1] !== '/'))) {
-    result = path.resolve(app.getAppPath(), result);
+    result = path.resolve(app.getPath('userData'), result);
   }
 
   return result;
