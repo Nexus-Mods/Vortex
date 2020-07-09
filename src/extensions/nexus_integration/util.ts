@@ -248,7 +248,8 @@ function reportEndorseError(api: IExtensionApi, err: Error,
       message,
       displayMS: calcDuration(message.length),
     });
-  } else if (['ENOENT', 'ECONNRESET', 'ESOCKETTIMEDOUT'].indexOf((err as any).code) !== -1) {
+  } else if ((['ENOENT', 'ECONNRESET', 'ESOCKETTIMEDOUT'].indexOf((err as any).code) !== -1)
+      || (err.message.includes('network disconnected'))) {
     api.showErrorNotification('Endorsing mod failed, please try again later', err, {
       allowReport: false,
     });
