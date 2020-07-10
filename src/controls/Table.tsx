@@ -579,17 +579,18 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
     const result: ITableRowAction[] = [];
 
-    const { columns, inlines } = objects.reduce((prev, attr) => {
+    const { columns, inlines, disabled } = objects.reduce((prev, attr) => {
       if (attr.isToggleable) {
+        const visible = attr.condition?.() ?? true;
         const attributeState = this.getAttributeState(attr, props.attributeState);
-        prev[attr.placement === 'inline' ? 'inlines' : 'columns'].push({
+        prev[attr.placement === 'inline' ? 'inlines' : visible ? 'columns' : 'disabled'].push({
           icon: attributeState.enabled ? 'checkbox-checked' : 'checkbox-unchecked',
           title: attr.name,
           action: (arg) => this.setAttributeVisible(attr.id, !attributeState.enabled),
         });
       }
       return prev;
-    }, { columns: [], inlines: [] });
+    }, { columns: [], inlines: [], disabled: [] });
 
     if (columns.length > 0) {
       result.push({
@@ -603,6 +604,15 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         title: t('Toggle Inlines'),
       }, ...inlines);
     }
+    /* currently not showing disabled columns at all, that's probably the more
+       intuitive solution
+    if (disabled.length > 0) {
+      result.push({
+        icon: null,
+        title: t('Toggle Disabled Columns'),
+      }, ...disabled);
+    }
+    */
 
     return result.map((res, idx) => ({ ...res, position: idx }));
   }

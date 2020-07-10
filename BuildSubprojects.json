@@ -360,14 +360,6 @@
   ], [
     {
       "type": "electron-rebuild",
-      "condition": "buildType !== 'out'",
-      "name": "zeromq-rebuild",
-      "module": "zeromq",
-      "sources": ["node_modules/zeromq/build/Release/binding.node"]
-    }
-  ], [
-    {
-      "type": "electron-rebuild",
       "condition": "false",
       "name": "edge-rebuild",
       "module": "edge",
