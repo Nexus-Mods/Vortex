@@ -272,7 +272,13 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
       onSetOrder(profile.id, newOrder);
     };
 
-    setNewOrder(list);
+    const activeGameEntry: IGameLoadOrderEntry = getGameEntry(profile.gameId);
+    if (!!activeGameEntry.preSort) {
+      activeGameEntry.preSort(list, this.state.sortType).then(newList =>
+        !!newList ? setNewOrder(newList) : setNewOrder(list));
+    } else {
+      setNewOrder(list);
+    }
   }
 
   // If the itemRenderer hasn't been assigned yet or is different than the
