@@ -1,5 +1,6 @@
 import { setDialogVisible } from '../../../actions/session';
 import Icon from '../../../controls/Icon';
+import Image from '../../../controls/Image';
 import * as tooltip from '../../../controls/TooltipControls';
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
@@ -9,9 +10,10 @@ import { truthy } from '../../../util/util';
 import { setUserAPIKey } from '../actions/account';
 import { IValidateKeyData } from '../types/IValidateKeyData';
 
+import { FALLBACK_AVATAR } from '../constants';
+
 import NexusT from '@nexusmods/nexus-api';
 import * as React from 'react';
-import { Image } from 'react-bootstrap';
 import { WithTranslation } from 'react-i18next';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
@@ -84,7 +86,7 @@ class LoginIcon extends ComponentEx<IProps, {}> {
 
     const profileIcon = truthy(userInfo) && truthy(userInfo.profileUrl)
       ? `${userInfo.profileUrl}?r_${START_TIME}`
-      : 'assets/images/noavatar.png';
+      : FALLBACK_AVATAR;
 
     return (
       <tooltip.Button
@@ -94,7 +96,7 @@ class LoginIcon extends ComponentEx<IProps, {}> {
       >
         {loggedIn ? (
           <Image
-            src={profileIcon}
+            srcs={[profileIcon, FALLBACK_AVATAR]}
             circle
             style={{ height: 32, width: 32 }}
           />

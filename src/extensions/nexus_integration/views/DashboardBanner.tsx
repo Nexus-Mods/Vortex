@@ -1,4 +1,5 @@
 import { setDialogVisible } from '../../../actions/session';
+import Image from '../../../controls/Image';
 import Spinner from '../../../controls/Spinner';
 import { IconButton } from '../../../controls/TooltipControls';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
@@ -7,8 +8,10 @@ import opn from '../../../util/opn';
 import { setUserAPIKey } from '../actions/account';
 import { IValidateKeyData } from '../types/IValidateKeyData';
 
+import { FALLBACK_AVATAR } from '../constants';
+
 import * as React from 'react';
-import { Button, Image } from 'react-bootstrap';
+import { Button } from 'react-bootstrap';
 import { WithTranslation } from 'react-i18next';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
@@ -64,7 +67,7 @@ class DashboardBanner extends ComponentEx<IProps, { requested: boolean }> {
     return (
       <div className='dashlet-nexus-account'>
         <Image
-          src={userInfo.profileUrl  || 'assets/images/noavatar.png'}
+          srcs={[userInfo.profileUrl || FALLBACK_AVATAR, FALLBACK_AVATAR]}
           circle
           style={{ height: 64, width: 64, marginRight: 32 }}
         />
