@@ -77,9 +77,10 @@ if (remote !== undefined) {
 
 export interface IRegisteredExtension {
   name: string;
+  namespace: string;
   path: string;
   dynamic: boolean;
-  initFunc: ExtensionInit;
+  initFunc: () => ExtensionInit;
   info?: IExtension;
 }
 
@@ -116,9 +117,10 @@ class APIProxyHandler implements ProxyHandler<any> {
   public get(target, key: PropertyKey): any {
     if (key === 'extension') {
       return this.mExtension;
-    }
-    if (key === 'translate') {
+    } else if (key === 'translate') {
       return target[key];
+    } else if (key === 'NAMESPACE') {
+      return this.mExtension.namespace;
     }
     if (!this.mEnabled) {
       throw new Error('extension uses api in init function');
@@ -457,12 +459,12 @@ class ExtensionManager {
     ExtensionManager.sUIAPIs.add(name);
   }
 
-  public static getExtensionPaths(): string[] {
+  public static getExtensionPaths(): Array<{ path: string, bundled: boolean }> {
     // only the first extension with a specific name is loaded, so
     // load the bundled ones last so a user can replace them
     return [
-      path.join(app.getPath('userData'), 'plugins'),
-      getVortexPath('bundledPlugins'),
+      { path: path.join(app.getPath('userData'), 'plugins'), bundled: false },
+      { path: getVortexPath('bundledPlugins'), bundled: true },
     ];
   }
 
@@ -581,7 +583,7 @@ class ExtensionManager {
     if (remote !== undefined) {
       this.mStyleManager = new StyleManager(this.mApi);
     }
-    this.mExtensions = this.loadExtensions();
+    this.mExtensions = this.prepareExtensions();
 
     if (this.mOutdated.length > 0) {
       this.mOutdated.forEach(ext => {
@@ -1031,7 +1033,7 @@ class ExtensionManager {
       try {
         const apiProxy = new APIProxyCreator(ext);
         const extProxy = new Proxy(contextProxy, apiProxy);
-        ext.initFunc(extProxy as IExtensionContext);
+        ext.initFunc()(extProxy as IExtensionContext);
         apiProxy.enableAPI();
       } catch (err) {
         this.mLoadFailures[ext.name] = [ { id: 'exception', args: { message: err.message } } ];
@@ -1705,8 +1707,21 @@ class ExtensionManager {
     .listen(path.join('\\\\?\\pipe', ipcPath));
   }
 
+  private idify(name: string, pathName: string) {
+    const transform = (input: string) =>
+      input.toLowerCase().replace(/[:']/g, '').replace(/[ _]/g, '-').trim();
+    if (name !== undefined) {
+      return transform(name);
+    } else {
+      // assuming the path is based on a nexus archive name, there should be a
+      // -<modid>- tag after the actual mod name
+      return pathName.split(/-\w+-/)[0];
+    }
+  }
+
   private loadDynamicExtension(extensionPath: string,
-                               alreadyLoaded: IRegisteredExtension[])
+                               alreadyLoaded: IRegisteredExtension[],
+                               bundled: boolean)
                                : IRegisteredExtension {
     const indexPath = this.mExtensionFormats
       .map(format => path.join(extensionPath, format))
@@ -1723,7 +1738,11 @@ class ExtensionManager {
         log('warn', errMessage, { extensionPath, error: error.message });
       }
 
-      const name = info.id || path.basename(extensionPath);
+      const pathName = path.basename(extensionPath);
+      const name = info.id || pathName;
+      const namespace = info.namespace ?? info.id ?? (bundled
+            ? pathName
+            : this.idify(info.name, pathName));
 
       const existing = alreadyLoaded.find(reg => reg.name === name);
 
@@ -1737,10 +1756,14 @@ class ExtensionManager {
 
       return {
         name,
-        initFunc: dynreq(indexPath).default,
+        namespace,
+        initFunc: () => dynreq(indexPath).default,
         path: extensionPath,
         dynamic: true,
-        info,
+        info: {
+          ...info,
+          bundled,
+        },
       };
     } else {
       // this is not necessarily a problem, translation extensions for example
@@ -1750,22 +1773,22 @@ class ExtensionManager {
     }
   }
 
-  private loadDynamicExtensions(extensionsPath: string,
+  private loadDynamicExtensions(extension: { path: string, bundled: boolean },
                                 loadedExtensions: Set<string>,
                                 alreadyLoaded: IRegisteredExtension[]): IRegisteredExtension[] {
-    if (!fs.existsSync(extensionsPath)) {
-      log('info', 'failed to load dynamic extensions, path doesn\'t exist', extensionsPath);
+    if (!fs.existsSync(extension.path)) {
+      log('info', 'failed to load dynamic extensions, path doesn\'t exist', extension.path);
       try {
-        fs.mkdirSync(extensionsPath);
+        fs.mkdirSync(extension.path);
       } catch (err) {
         log('warn', 'extension path missing and can\'t be created',
-            { path: extensionsPath, error: err.message});
+            { path: extension.path, error: err.message});
       }
       return [];
     }
 
-    const res = fs.readdirSync(extensionsPath)
-      .filter(name => fs.statSync(path.join(extensionsPath, name)).isDirectory())
+    const res = fs.readdirSync(extension.path)
+      .filter(name => fs.statSync(path.join(extension.path, name)).isDirectory())
       .map(name => {
         if (!getSafe(this.mExtensionState, [name, 'enabled'], true)) {
           log('debug', 'extension disabled', { name });
@@ -1777,11 +1800,12 @@ class ExtensionManager {
           // bundled one if this one fails to load which could be convenient but also massively
           // confusing.
           const before = Date.now();
-          const ext = this.loadDynamicExtension(path.join(extensionsPath, name), alreadyLoaded);
+          const ext = this.loadDynamicExtension(
+            path.join(extension.path, name), alreadyLoaded, extension.bundled);
           if (ext !== undefined) {
             loadedExtensions.add(ext.name);
             const loadTime = Date.now() - before;
-            log('debug', 'loaded extension', { name, loadTime, location: extensionsPath });
+            log('debug', 'loaded extension', { name, loadTime, location: extension.path });
           }
           return ext;
         } catch (err) {
@@ -1801,7 +1825,7 @@ class ExtensionManager {
    *
    * @returns {ExtensionInit[]}
    */
-  private loadExtensions(): IRegisteredExtension[] {
+  private prepareExtensions(): IRegisteredExtension[] {
     const staticExtensions = [
       'settings_interface',
       'settings_application',
@@ -1837,7 +1861,7 @@ class ExtensionManager {
       'file_preview',
     ];
 
-    require('./extensionRequire').default();
+    require('./extensionRequire').default(() => this.extensions);
 
     const extensionPaths = ExtensionManager.getExtensionPaths();
     const loadedExtensions = new Set<string>();
@@ -1846,12 +1870,14 @@ class ExtensionManager {
       .filter(ext => getSafe(this.mExtensionState, [ext, 'enabled'], true))
       .map((name: string) => ({
           name,
-          path: path.join(extensionPaths[0], name),
-          initFunc: require(`../extensions/${name}/index`).default,
+          namespace: name,
+          path: path.resolve(__dirname, '..', 'extensions', name),
+          initFunc: () => require(`../extensions/${name}/index`).default,
           dynamic: false,
         }))
-      .concat(...extensionPaths.map(ext => {
-        const newExtensions = this.loadDynamicExtensions(ext, loadedExtensions, dynamicallyLoaded);
+      .concat(...extensionPaths.map(extSpec => {
+        const newExtensions =
+          this.loadDynamicExtensions(extSpec, loadedExtensions, dynamicallyLoaded);
         dynamicallyLoaded = dynamicallyLoaded.concat(newExtensions);
         return newExtensions;
       }));

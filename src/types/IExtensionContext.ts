@@ -644,6 +644,9 @@ export interface IExtensionApi {
    * sure they handle gracefully the case where a function doesn't exist
    */
   ext: { [key: string]: (...args: any[]) => any };
+
+  // namespace to be used for localization of this extension
+  NAMESPACE: string;
 }
 
 export interface IStateVerifier {

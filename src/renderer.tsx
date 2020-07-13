@@ -489,7 +489,10 @@ function renderer() {
 
       const dynamicExts: Array<{ name: string, path: string }> = extensions.extensions
         .filter(ext => ext.dynamic)
-        .map(ext => ({ name: ext.name, path: ext.path }));
+        .map(ext => ({
+          name: ext.namespace,
+          path: ext.path,
+        }));
 
       return Promise.map(dynamicExts, ext => {
         const filePath = path.join(ext.path, 'language.json');

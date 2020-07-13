@@ -32,7 +32,7 @@ function Image(props: IImageProps): JSX.Element {
 
   return (
     <img
-      {..._.omit(props, ['srcs'])}
+      {..._.omit(props, ['srcs', 'circle'])}
       className={classes.join(' ')}
       src={srcs[srcIdx]}
       onError={errorCB}

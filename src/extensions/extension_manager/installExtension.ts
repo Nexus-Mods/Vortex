@@ -238,6 +238,7 @@ function installExtension(api: IExtensionApi,
 
   let type: ExtensionType;
 
+  let extName: string;
   return extractor.extractFull(archivePath, tempPath, {ssc: false},
                                () => undefined, () => undefined)
       .then(() => validateInstall(tempPath, info).then(guessedType => type = guessedType))
@@ -258,7 +259,10 @@ function installExtension(api: IExtensionApi,
         return res;
       })
       .catch({ code: 'ENOENT' }, () => (info !== undefined)
-        ? Promise.resolve({ id: path.basename(tempPath, '.installing'), info })
+        ? Promise.resolve({
+            id: path.basename(archivePath, path.extname(archivePath)),
+            info,
+          })
         : Promise.reject(new Error('not an extension, info.json missing')))
       .then(manifestInfo =>
         // update the manifest on disc, in case we had new info from the caller
@@ -266,6 +270,8 @@ function installExtension(api: IExtensionApi,
                           JSON.stringify(manifestInfo.info, undefined, 2))
           .then(() => manifestInfo))
       .then((manifestInfo: { id: string, info: IExtension }) => {
+        extName = manifestInfo.id;
+
         const dirName = sanitize(manifestInfo.id);
         destPath = path.join(extensionsPath, dirName);
         if (manifestInfo.info.type !== undefined) {
@@ -287,7 +293,7 @@ function installExtension(api: IExtensionApi,
         } else {
           // don't install dependencies for extensions that are already loaded because
           // doing so could cause an exception
-          if (api.getLoadedExtensions().find(ext => ext.name === fullInfo.id) === undefined) {
+          if (api.getLoadedExtensions().find(ext => ext.name === extName) === undefined) {
             return installExtensionDependencies(api, destPath);
           } else {
             return Promise.resolve();

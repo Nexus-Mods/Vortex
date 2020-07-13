@@ -97,18 +97,20 @@ export function sanitize(input: string): string {
 export function readExtensionInfo(extensionPath: string,
                                   bundled: boolean,
                                   fallback: any = {}): Promise<{ id: string, info: IExtension }> {
+  const finalPath = extensionPath.replace(/\.installing$/, '');
+
   return fs.readFileAsync(path.join(extensionPath, 'info.json'), { encoding: 'utf-8' })
     .then(info => {
       const data: IExtension = JSON.parse(info);
-      data.path = extensionPath;
-      const id = data.id || path.basename(extensionPath, '.installing');
+      data.path = finalPath;
+      const id = data.id || path.basename(finalPath, path.extname(finalPath));
       return {
         id,
         info: applyExtensionInfo(id, bundled, data, fallback),
       };
     })
     .catch(() => {
-      const id = path.basename(extensionPath, '.installing');
+      const id = path.basename(finalPath);
       return {
         id,
         info: applyExtensionInfo(id, bundled, {}, fallback),
