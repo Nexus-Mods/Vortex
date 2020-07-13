@@ -542,6 +542,7 @@ class ExtensionManager {
       awaitUI: () => this.mUIStartedPromise,
       getState: () => undefined,
       ext: {},
+      NAMESPACE: 'common',
     };
     if (initStore !== undefined) {
       // apologies for the sync operation but this needs to happen before extensions are loaded
