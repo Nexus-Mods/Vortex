@@ -826,6 +826,13 @@ function onDeploySingleMod(api: IExtensionApi) {
       .then(() => activator.finalize(gameId, dataPath, stagingPath))
       .then(newActivation =>
         doSaveActivation(api, mod.type, dataPath, stagingPath, newActivation, activator.id))
+      .catch(ProcessCanceled, err => {
+        api.sendNotification({
+          type: 'warning',
+          title: 'Deployment interrupted',
+          message: err.message,
+        });
+      })
       .catch(err => {
         const userCanceled = err instanceof UserCanceled;
         api.showErrorNotification('Failed to deploy mod', err, {
