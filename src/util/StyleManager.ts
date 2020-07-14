@@ -92,6 +92,9 @@ if (ipcMain !== undefined) {
     },
       (err, output) => {
         log('info', 'sass compiled in', `${Date.now() - started}ms`);
+        if (evt.sender?.isDestroyed()) {
+          return;
+        }
         if (err !== null) {
           // the error has its own class and its message is missing relevant information
           evt.sender.send(replyEvent, new Error(err.formatted));
