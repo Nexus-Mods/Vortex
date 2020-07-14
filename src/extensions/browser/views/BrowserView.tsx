@@ -364,7 +364,7 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
   private navCrumb = (evt) => {
     const idx = parseInt(evt.currentTarget.getAttribute('data-idx'), 10);
     const parsed = nodeUrl.parse(this.mWebView.getURL());
-    parsed.pathname = parsed.pathname.split('/').slice(0, idx + 2).join('/');
+    parsed.pathname = (parsed.pathname ?? '').split('/').slice(0, idx + 2).join('/');
     parsed.path = undefined;
     parsed.href = undefined;
     parsed.search = undefined;
