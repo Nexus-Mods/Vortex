@@ -20,6 +20,7 @@ import {
   IRunParameters,
   StateChangeCallback,
   ThunkStore,
+  ToolParameterCB,
 } from '../types/IExtensionContext';
 import { INotification } from '../types/INotification';
 import { IExtensionLoadFailure, IExtensionState, IState } from '../types/IState';
@@ -60,6 +61,7 @@ import * as Redux from 'redux';
 import {} from 'redux-watcher';
 import * as semver from 'semver';
 import { generate as shortid } from 'shortid';
+import stringFormat from 'string-template';
 import { dynreq, runElevated } from 'vortex-run';
 
 // tslint:disable-next-line:no-var-requires
@@ -99,6 +101,10 @@ interface IInitCall {
 interface IApiAddition {
   key: string;
   callback: (...args: any[]) => void;
+}
+
+function applyVariables(arg: string, variables: { [key: string]: string }) {
+  return stringFormat(arg, variables);
 }
 
 class APIProxyHandler implements ProxyHandler<any> {
@@ -350,6 +356,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
       registerInterpreter: undefined,
       registerStartHook: undefined,
       registerMigration: undefined,
+      registerToolVariables: undefined,
       registerAPI: undefined,
       requireVersion: undefined,
       requireExtension: undefined,
@@ -489,6 +496,7 @@ class ExtensionManager {
   private mLoadFailures: { [extId: string]: IExtensionLoadFailure[] } = {};
   private mInterpreters: { [ext: string]: (input: IRunParameters) => IRunParameters };
   private mStartHooks: IStartHook[];
+  private mToolParameterCBs: ToolParameterCB[];
   private mLoadingCallbacks: Array<(name: string, idx: number) => void> = [];
   private mProgrammaticMetaServers: { [id: string]: any } = {};
   private mForceDBReconnect: boolean = false;
@@ -511,6 +519,7 @@ class ExtensionManager {
 
     this.mInterpreters = {};
     this.mStartHooks = [];
+    this.mToolParameterCBs = [];
     this.mApi = {
       showErrorNotification: this.showErrorBox,
       selectFile: this.selectFile,
@@ -761,6 +770,9 @@ class ExtensionManager {
                                      hook: (input: IRunParameters) => Promise<IRunParameters>) => {
       this.mStartHooks.push({ priority, id, hook });
     });
+    this.apply('registerToolVariables', (func: ToolParameterCB) => {
+      this.mToolParameterCBs.push(func);
+    });
 
     this.mStartHooks.sort((lhs, rhs) => lhs.priority - rhs.priority);
 
@@ -785,7 +797,7 @@ class ExtensionManager {
    *
    * @memberOf ExtensionManager
    */
-  public apply(funcName: string, func: (...args: any[]) => void) {
+  public apply(funcName: keyof IExtensionContext, func: (...args: any[]) => void) {
     this.mContextProxyHandler.getCalls(funcName).forEach(call => {
       try {
         func(...call.arguments);
@@ -1410,6 +1422,14 @@ class ExtensionManager {
             detached: options.detach !== undefined ? options.detach : true,
             shell: options.shell,
           };
+
+          const runParams = { executable, args, options: { ...options, env } };
+          const vars = this.mToolParameterCBs.reduce((prev, cb) => {
+            return { ...prev, ...cb(runParams) };
+          }, {});
+
+          args = args.map(arg => applyVariables(arg, vars));
+
           const child = spawn(runExe, options.shell ? args : args.map(arg => arg.replace(/"/g, '')),
                               spawnOptions);
           if (truthy(child['exitCode'])) {
@@ -1860,6 +1880,7 @@ class ExtensionManager {
       'browser',
       'recovery',
       'file_preview',
+      'tool_variables_base',
     ];
 
     require('./extensionRequire').default(() => this.extensions);

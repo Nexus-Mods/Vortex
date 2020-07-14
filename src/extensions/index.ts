@@ -32,4 +32,5 @@ import {} from './sticky_mods';
 import {} from './symlink_activator';
 import {} from './symlink_activator_elevate';
 import {} from './test_runner';
+import {} from './tool_variables_base';
 import {} from './updater';

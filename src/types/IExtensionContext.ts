@@ -331,6 +331,11 @@ export interface IRunParameters {
   options: IRunOptions;
 }
 
+/**
+ * callback to be used to determine list of variables for the tool command line
+ */
+export type ToolParameterCB = (options: IRunParameters) => { [key: string]: string };
+
 export interface IPreviewFile {
   /**
    * label to display to the user if applicable
@@ -1133,6 +1138,21 @@ export interface IExtensionContext {
     priority: number,
     handler: (files: IPreviewFile[], allowPick: boolean)
       => Promise<IPreviewFile>) => void;
+
+  /**
+   * register a callback that will introduce additional variables that can be used as part of
+   * tool command lines. The callback you provide here gets called every time a tool gets started
+   * from vortex, the returned object gets merged with all other parameter object and then used
+   * when resolving the final command line.
+   * Please use keys that are all upper case and consist only of latin characters and underscores.
+   * While this is not necessary from a technical standpoint it's more consistent and predictable
+   * for users.
+   * Also make sure the keys you return are sufficiently unique to avoid collisions
+   * @param callback the function that gets called to generate variables. the argument
+   *                 passed to this contains details about the tool being started, usually
+   *                 you will probably not need this
+   */
+  registerToolVariables: (callback: ToolParameterCB) => void;
 
   /**
    * add a function to the IExtensionApi object that is made available to all other extensions
