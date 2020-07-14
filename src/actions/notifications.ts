@@ -64,7 +64,7 @@ export function fireNotificationAction(notiId: string, notiProcess: string,
       // the callbacks are no longer available.
       return;
     }
-    const func = notificationActions[notiId][action];
+    const func = notificationActions[notiId]?.[action];
     if (func !== undefined) {
       func(dismiss);
     }
@@ -81,7 +81,7 @@ export function fireNotificationAction(notiId: string, notiProcess: string,
 if (ipcMain !== undefined) {
   ipcMain.on('fire-notification-action',
              (event: Electron.Event, notiId: string, action: number) => {
-    const func = notificationActions[notiId][action];
+    const func = notificationActions[notiId]?.[action];
     let res = false;
     if (func !== undefined) {
       func(() => {
