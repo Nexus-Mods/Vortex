@@ -507,7 +507,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       }, []))).sort((lhs: string, rhs: string) => {
         if ((sortAttribute !== undefined)
           && (sortAttribute.id === groupAttribute.id)
-          && (attributeState[sortAttribute.id].sortDirection === 'desc')) {
+          && (attributeState[sortAttribute.id]?.sortDirection === 'desc')) {
           return rhs.toLowerCase().localeCompare(lhs.toLowerCase());
         } else {
           return lhs.toLowerCase().localeCompare(rhs.toLowerCase());
