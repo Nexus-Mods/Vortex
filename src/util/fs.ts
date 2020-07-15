@@ -150,8 +150,13 @@ function unlockConfirm(filePath: string): PromiseBB<boolean> {
 }
 
 function unknownErrorRetry(filePath: string, err: Error, stackErr: Error): PromiseBB<boolean> {
-  if ((dialog === undefined) || !truthy(filePath)) {
+  if (dialog === undefined) {
     return PromiseBB.resolve(false);
+  }
+
+  if (filePath === undefined) {
+    // unfortunately these error message don't necessarily contain the filename
+    filePath = '<filename unknown>';
   }
 
   const options: Electron.MessageBoxOptions = {
@@ -284,8 +289,12 @@ function unknownErrorRetry(filePath: string, err: Error, stackErr: Error): Promi
 }
 
 function busyRetry(filePath: string): PromiseBB<boolean> {
-  if ((dialog === undefined) || !truthy(filePath)) {
+  if (dialog === undefined) {
     return PromiseBB.resolve(false);
+  }
+
+  if (filePath === undefined) {
+    filePath = '<filename unknown>';
   }
 
   let processes = [];
