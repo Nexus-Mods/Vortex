@@ -182,7 +182,7 @@ class InstallManager {
 
     api.dismissNotification(`ready-to-install-${archiveId}`);
 
-    const baseName = path.basename(archivePath, path.extname(archivePath));
+    const baseName = path.basename(archivePath, path.extname(archivePath)).trim() || 'EMPTY_NAME';
     const currentProfile = activeProfile(api.store.getState());
     let modId = baseName;
     let installGameId: string;
