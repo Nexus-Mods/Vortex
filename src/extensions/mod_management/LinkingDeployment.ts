@@ -378,8 +378,17 @@ abstract class LinkingActivator implements IDeploymentMethod {
 
       return this.stat(fileModPath)
         .catch(err => {
-          // can't stat source, probably the file was deleted
-          sourceDeleted = true;
+          // can't stat source, probably the file was deleted.
+          // change: we no longer automatically assume the file is deleted because
+          // otherwise the dialog will offer the user to delete the file permanently
+          // which - if the user isn't careful - would break the mod.
+          // The problem is that we now likely can't determine if the link is intact so the
+          // entire process may fail but I assume that's still preferrable.
+          if (['ENOENT', 'ENOTFOUND'].includes(err.code)) {
+            sourceDeleted = true;
+          } else {
+            log('info', 'source file can\'t be accessed', { fileModPath, error: err.message });
+          }
           return Promise.resolve(undefined);
         })
         .then(sourceStatsIn => {
@@ -389,9 +398,13 @@ abstract class LinkingActivator implements IDeploymentMethod {
           }
           return this.statLink(fileDataPath);
         })
-        .catch(() => {
+        .catch(err => {
           // can't stat destination, probably the file was deleted
-          destDeleted = true;
+          if (['ENOENT', 'ENOTFOUND'].includes(err.code)) {
+            destDeleted = true;
+          } else {
+            log('info', 'link can\'t be accessed', { fileModPath, error: err.message });
+          }
           return Promise.resolve(undefined);
         })
         .then(destStats => {
@@ -477,11 +490,11 @@ abstract class LinkingActivator implements IDeploymentMethod {
   }
 
   protected stat(filePath: string): Promise<fs.Stats> {
-    return fs.statAsync(filePath) as any;
+    return fs.statAsync(filePath);
   }
 
   protected statLink(filePath: string): Promise<fs.Stats> {
-    return fs.lstatAsync(filePath) as any;
+    return fs.lstatAsync(filePath);
   }
 
   private removeDeployedFile(installationPath: string,
