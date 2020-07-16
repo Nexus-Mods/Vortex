@@ -7732,10 +7732,10 @@ electron-updater@^4.2.0:
     pako "^1.0.10"
     semver "^6.3.0"
 
-electron@~8.3.4:
-  version "8.3.4"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-8.3.4.tgz#d9c5441f34462a022480f3ebe2cf39ea5dd37b96"
-  integrity sha512-aSYXBV0PxYHmXhjGFpR0x38zbO7UTDex2JrT5tcqJpUZTY+sKdfo9PA1TpiyrHNjA5+Q8UseRUsydRedOTeZQA==
+electron@~8.4.0:
+  version "8.4.0"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-8.4.0.tgz#30692166dc8b2a511b3c01c70960d467efe2b8e6"
+  integrity sha512-SpgyccM5rjDJSGcpQjiviUBT44fZlSyhcjy8RpKSnAad+co4xY1vYj6T25U1CfSk0PH/dhvcp63P2sdXHCwq/Q==
   dependencies:
     "@electron/get" "^1.0.1"
     "@types/node" "^12.0.12"
