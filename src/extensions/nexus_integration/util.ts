@@ -249,7 +249,7 @@ function reportEndorseError(api: IExtensionApi, err: Error,
       displayMS: calcDuration(message.length),
     });
   } else if ((['ENOENT', 'ECONNRESET', 'ESOCKETTIMEDOUT'].indexOf((err as any).code) !== -1)
-      || (err.message.includes('network disconnected'))) {
+      || (err instanceof ProcessCanceled)) {
     api.showErrorNotification('Endorsing mod failed, please try again later', err, {
       allowReport: false,
     });
