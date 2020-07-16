@@ -1,7 +1,7 @@
-import { setSafe } from '../../util/storeHelper';
-import { IReducerSpec } from '../../types/IExtensionContext';
+import { IReducerSpec } from '../../../types/IExtensionContext';
+import { setSafe } from '../../../util/storeHelper';
 
-import * as actions from './actions';
+import * as actions from '../actions';
 
 const sessionReducer: IReducerSpec = {
   reducers: {
