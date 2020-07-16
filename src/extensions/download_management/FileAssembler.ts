@@ -68,7 +68,9 @@ class FileAssembler {
     this.mWork = this.mWork.then(() => Promise.resolve(newName))
     .then(nameResolved => {
       resolved = nameResolved;
-      return fs.closeAsync(this.mFD);
+      return (this.mFD !== undefined)
+        ? fs.closeAsync(this.mFD)
+        : Promise.resolve();
     })
     .then(() => fs.renameAsync(this.mFileName, resolved))
     .then(() => {
