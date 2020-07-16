@@ -122,6 +122,17 @@ export interface IGame extends ITool {
   details?: { [key: string]: any };
 
   /**
+   * declares this game compatible or incompatible with a certain feature. If not specified, a
+   * sensible default will be assumed for each game.
+   * So for example if you know the game won't support symbolic links but Vortex offers it by
+   * default, you can set "{ compatible: { symlinks: false } }" so Vortex won't offer the feature.
+   * You will have to investigate or ask for the possible ids though. Since we will be introducing
+   * new "gates" over time and so may extensions, it's not practical (at least at this time) to
+   * maintain a list.
+   */
+  compatible?: { [key: string]: boolean };
+
+  /**
    * set to name of the contributor that added support for this game. For officialy supported
    * games this is undefined
    */

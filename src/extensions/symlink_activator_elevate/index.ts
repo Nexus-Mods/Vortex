@@ -220,7 +220,9 @@ class DeploymentMethod extends LinkingDeployment {
     }
 
     const game: IGame = getGame(gameId);
-    if ((game.details !== undefined) && (game.details.supportsSymlinks === false)) {
+
+    if ((game.details?.supportsSymlinks === false)
+        || (game.compatible?.symlinks === false)) {
       return { description: t => t('Game doesn\'t support symlinks') };
     }
 

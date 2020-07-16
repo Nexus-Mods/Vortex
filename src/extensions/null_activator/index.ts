@@ -22,7 +22,7 @@ class DeploymentMethod implements IDeploymentMethod {
   }
   public isSupported(state, gameId, modTypeId) {
     const game: IGame = getGame(gameId);
-    return (game.details?.allowNullDeployment === true)
+    return (game.compatible?.nulldeployment === true)
       ? undefined
       : {
         description: t => t('Only supported for games that can use mods directly from the staging folder'),

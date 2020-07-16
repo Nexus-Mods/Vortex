@@ -58,6 +58,7 @@ class DeploymendMethod extends LinkingDeployment {
     if (gameId === undefined) {
       gameId = activeGameId(state);
     }
+
     if (this.isGamebryoGame(gameId) || this.isUnsupportedGame(gameId)) {
       // Mods for this games use some file types that have issues working with symbolic links
       return {
@@ -78,7 +79,8 @@ class DeploymendMethod extends LinkingDeployment {
     const game: IGame = getGame(gameId);
     const modPaths = game.getModPaths(discovery.path);
 
-    if ((game.details !== undefined) && (game.details.supportsSymlinks === false)) {
+    if ((game.details?.supportsSymlinks === false)
+        || (game.compatible?.symlinks === false)) {
       return { description: t => t('Game doesn\'t support symlinks') };
     }
 
