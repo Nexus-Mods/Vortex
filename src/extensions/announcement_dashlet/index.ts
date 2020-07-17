@@ -26,7 +26,7 @@ const SURVEYS_LINK =
   'https://raw.githubusercontent.com/Nexus-Mods/Vortex/announcements/surveys.json';
 
 // Can be used for debugging.
-const DEBUG_MODE: boolean = true;
+const DEBUG_MODE: boolean = false;
 const SURVEYS_LOCAL_PATH = path.join(__dirname, 'surveys.json');
 function readLocalSurveysFile() {
   return fs.readFileAsync(SURVEYS_LOCAL_PATH)
