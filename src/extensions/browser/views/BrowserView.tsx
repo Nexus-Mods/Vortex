@@ -362,6 +362,10 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
   }
 
   private navCrumb = (evt) => {
+    if (!truthy(this.mWebView)) {
+      return;
+    }
+
     const idx = parseInt(evt.currentTarget.getAttribute('data-idx'), 10);
     const parsed = nodeUrl.parse(this.mWebView.getURL());
     parsed.pathname = (parsed.pathname ?? '').split('/').slice(0, idx + 2).join('/');
@@ -371,9 +375,7 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
 
     const nextUrl = nodeUrl.format(parsed);
     this.addToHistory(nextUrl);
-    if (truthy(this.mWebView)) {
-      this.mWebView.loadURL(nextUrl);
-    }
+    this.mWebView.loadURL(nextUrl);
   }
 
   private confirm = () => {
