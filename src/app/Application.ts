@@ -163,6 +163,10 @@ class Application {
 
     app.on('second-instance', (event: Event, secondaryArgv: string[]) => {
       log('debug', 'getting arguments from second instance', secondaryArgv);
+      if (this.mMainWindow) {
+        // User just tried to start another instance of Vortex; show our window.
+        this.showMainWindow();
+      }
       this.applyArguments(commandLine(secondaryArgv, true));
     });
 
