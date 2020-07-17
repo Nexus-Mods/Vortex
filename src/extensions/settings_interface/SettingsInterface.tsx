@@ -17,7 +17,7 @@ import { readExtensibleDir } from '../extension_manager/util';
 import getTextModManagement from '../mod_management/texts';
 import getTextProfiles from '../profile_management/texts';
 
-import { setAutoDeployment, setAutoEnable } from './actions/automation';
+import { setAutoDeployment, setAutoEnable, setAutoStart, setStartHidden } from './actions/automation';
 import { setAdvancedMode, setDesktopNotifications, setHideTopLevelCategory,
          setLanguage, setProfilesVisible, setRelativeTimes } from './actions/interface';
 import { nativeCountryName, nativeLanguageName } from './languagemap';
@@ -50,6 +50,8 @@ interface IConnectedProps {
   profilesVisible: boolean;
   autoDeployment: boolean;
   autoEnable: boolean;
+  autoStart: boolean;
+  startHidden: boolean;
   advanced: boolean;
   customTitlebar: boolean;
   minimizeToTray: boolean;
@@ -64,6 +66,8 @@ interface IActionProps {
   onSetLanguage: (language: string) => void;
   onSetAutoDeployment: (enabled: boolean) => void;
   onSetAutoEnable: (enabled: boolean) => void;
+  onSetAutoStart: (start: boolean) => void;
+  onSetStartHidden: (hide: boolean) => void;
   onSetProfilesVisible: (visible: boolean) => void;
   onSetAdvancedMode: (advanced: boolean) => void;
   onShowDialog: (type: DialogType, title: string,
@@ -115,12 +119,21 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, advanced, autoDeployment, autoEnable, currentLanguage,
+    const { t, advanced, autoDeployment, autoEnable, autoStart, currentLanguage,
             customTitlebar, desktopNotifications, profilesVisible,
-            hideTopLevelCategory, relativeTimes, startup,
+            hideTopLevelCategory, relativeTimes, startup, startHidden,
             suppressedNotifications } = this.props;
 
     const needRestart = (customTitlebar !== this.mInitialTitlebar);
+
+    const startMinimizedToggle = autoStart ? (
+      <Toggle
+        checked={startHidden}
+        onToggle={this.toggleStartHidden}
+      >
+        {t('Start Vortex in the background (Minimized)')}
+      </Toggle>
+    ) : null;
 
     const restartNotification = needRestart ? (
       <HelpBlock>
@@ -250,6 +263,13 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
             >
               {t('Enable Mods when installed (in current profile)')}
             </Toggle>
+            <Toggle
+              checked={autoStart}
+              onToggle={this.toggleAutoStart}
+            >
+              {t('Run Vortex when my computer starts')}
+            </Toggle>
+            {startMinimizedToggle}
           </div>
         </FormGroup>
         <FormGroup controlId='notifications'>
@@ -337,6 +357,22 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
   private toggleAutoEnable = () => {
     const { autoEnable, onSetAutoEnable } = this.props;
     onSetAutoEnable(!autoEnable);
+  }
+
+  private toggleAutoStart = () => {
+    const { autoStart, onSetAutoStart } = this.props;
+    onSetAutoStart(!autoStart);
+    remote.app.setLoginItemSettings({
+      openAtLogin: !autoStart,
+    });
+  }
+
+  private toggleStartHidden = () => {
+    const { startHidden, onSetStartHidden } = this.props;
+    onSetStartHidden(!startHidden);
+    remote.app.setLoginItemSettings({
+      openAsHidden: !startHidden,
+    });
   }
 
   private resetSuppression = () => {
@@ -440,6 +476,8 @@ function mapStateToProps(state: IState): IConnectedProps {
     desktopNotifications: state.settings.interface.desktopNotifications,
     autoDeployment: state.settings.automation.deploy,
     autoEnable: state.settings.automation.enable,
+    autoStart: state.settings.automation.start,
+    startHidden: state.settings.automation.hide,
     customTitlebar: state.settings.window.customTitlebar,
     minimizeToTray: state.settings.window.minimizeToTray,
     extensions: state.session.extensions.available,
@@ -458,6 +496,12 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
     },
     onSetAutoEnable: (enabled: boolean) => {
       dispatch(setAutoEnable(enabled));
+    },
+    onSetAutoStart: (start: boolean) => {
+      dispatch(setAutoStart(start));
+    },
+    onSetStartHidden: (hide: boolean) => {
+      dispatch(setStartHidden(hide));
     },
     onSetProfilesVisible: (visible: boolean) => {
       dispatch(setProfilesVisible(visible));

@@ -13,10 +13,16 @@ const automationReducer: IReducerSpec = {
       update(state, { deploy: { $set: payload } }),
     [actions.setAutoEnable as any]: (state, payload) =>
       update(state, { enable: { $set: payload } }),
+    [actions.setAutoStart as any]: (state, payload) =>
+      update(state, { start: { $set: payload } }),
+    [actions.setStartHidden as any]: (state, payload) =>
+      update(state, { hide: { $set: payload } }),
   },
   defaults: {
     deploy: true,
     enable: false,
+    start: false,
+    hide: false,
   },
 };
 
