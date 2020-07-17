@@ -32,4 +32,4 @@ export interface IMainPage extends React.ComponentClass<IBaseProps> {
   Header: typeof Header;
 }
 
-export default MainPage as IMainPage;
+export default MainPage;

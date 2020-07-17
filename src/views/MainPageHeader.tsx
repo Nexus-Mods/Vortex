@@ -52,5 +52,4 @@ function mapStateToProps(state: IState): IConnectedProps {
   };
 }
 
-export default connect(mapStateToProps)(
-  MainPageHeader);
+export default connect(mapStateToProps)(MainPageHeader) as any;

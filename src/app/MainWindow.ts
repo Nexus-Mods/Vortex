@@ -246,10 +246,12 @@ class MainWindow {
       frame: !getSafe(windowMetrics, ['customTitlebar'], true),
       show: false,
       title: 'Vortex',
+      titleBarStyle: windowMetrics?.customTitlebar === true ? 'hidden' : 'default',
       webPreferences: {
         nodeIntegration: true,
         nodeIntegrationInWorker: true,
         webviewTag: true,
+        enableWebSQL: false,
       },
     };
   }
