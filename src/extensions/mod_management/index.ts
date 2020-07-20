@@ -59,7 +59,7 @@ import { fallbackPurge, loadActivation,
         saveActivation, withActivationLock } from './util/activationStore';
 import allTypesSupported from './util/allTypesSupported';
 import * as basicInstaller from './util/basicInstaller';
-import { purgeMods, purgeModsInPath } from './util/deploy';
+import { genSubDirFunc, purgeMods, purgeModsInPath } from './util/deploy';
 import { getAllActivators, getCurrentActivator, getSelectedActivator,
          getSupportedActivators, registerDeploymentMethod } from './util/deploymentMethods';
 import { NoDeployment } from './util/exceptions';
@@ -121,20 +121,6 @@ function registerMerge(test: MergeTest, merge: MergeFunc, modType: string) {
 
 function bakeSettings(api: IExtensionApi, profile: IProfile, sortedModList: IMod[]) {
   return api.emitAndAwait('bake-settings', profile.gameId, sortedModList, profile);
-}
-
-function genSubDirFunc(game: IGame, modType: IModType): (mod: IMod) => string {
-  const mergeModsOpt = (modType !== undefined) && (modType.options.mergeMods !== undefined)
-    ? modType.options.mergeMods
-    : game.mergeMods;
-
-  if (typeof(mergeModsOpt) === 'boolean') {
-    return mergeModsOpt
-      ? () => ''
-      : (mod: IMod) => mod.id;
-  } else {
-    return mergeModsOpt;
-  }
 }
 
 function showCycles(api: IExtensionApi, cycles: string[][], gameId: string) {

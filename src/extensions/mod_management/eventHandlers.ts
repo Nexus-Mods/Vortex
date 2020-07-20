@@ -25,6 +25,7 @@ import {fallbackPurge, getManifest, loadActivation, purgeDeployedFiles, saveActi
 import { getCurrentActivator, getSupportedActivators } from './util/deploymentMethods';
 
 import {getGame} from '../gamemode_management/util/getGame';
+import { getModType } from '../gamemode_management/util/modTypeExtensions';
 import {setModEnabled} from '../profile_management/actions/profiles';
 
 import { setInstallPath } from './actions/settings';
@@ -518,7 +519,7 @@ function undeploy(api: IExtensionApi,
 
   const stagingPath = installPathForGame(state, gameMode);
 
-  const subdir = genSubDirFunc(game);
+  const subdir = genSubDirFunc(game, getModType(mod.type));
   const deployPath = modPaths[mod.type || ''];
   if (deployPath === undefined) {
     return Promise.resolve();
