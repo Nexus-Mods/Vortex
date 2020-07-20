@@ -143,12 +143,27 @@ class GameStoreHelper {
     const entryInfo = (entry: IGameStoreEntry): string =>
       (searchType === 'id') ? entry.appid : entry.name;
 
+    const wrapNamePattern = (gameName) => {
+      if (searchType !== 'name') {
+        // Not a name searchType.
+        return gameName;
+      }
+      // We need to match the game name _exactly_ otherwise
+      //  false positives could occur, for example:
+      //  The Elder Scrolls V: Skyrim could potentially match
+      //  The Elder Scrolls V: Skyrim Special Edition, in which
+      //  case the game extension will look for TESV.exe and be unable
+      //  to find it, failing discovery completely even though the user
+      //  has Oldrim installed in a different location.
+      return '^' + gameName + '$';
+    };
+
     // For obvious reasons, this should only be used for
     //  name searchTypes; using this for id's would potentially
     // cause false positives.
     const rgxMatcher = (Array.isArray(pattern))
-      ? new RegExp(pattern.join('|'))
-      : new RegExp(pattern);
+      ? new RegExp(pattern.map(wrapNamePattern).join('|'))
+      : new RegExp(wrapNamePattern(pattern));
 
     const matcher = Array.isArray(pattern)
       ? entry => pattern.indexOf(entryInfo(entry)) !== -1
