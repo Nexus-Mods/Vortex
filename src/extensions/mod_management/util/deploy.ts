@@ -7,6 +7,7 @@ import { log } from '../../../util/log';
 import { activeProfile, currentGameDiscovery, lastActiveProfileForGame, profileById } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
+import { IModType } from '../../gamemode_management/types/IModType';
 import { getGame } from '../../gamemode_management/util/getGame';
 import { installPath, installPathForGame } from '../selectors';
 import { IMod } from '../types/IMod';
@@ -17,13 +18,17 @@ import { dealWithExternalChanges } from './externalChanges';
 
 import Promise from 'bluebird';
 
-export function genSubDirFunc(game: IGame): (mod: IMod) => string {
-  if (typeof(game.mergeMods) === 'boolean') {
-    return game.mergeMods
+export function genSubDirFunc(game: IGame, modType: IModType): (mod: IMod) => string {
+  const mergeModsOpt = (modType !== undefined) && (modType.options.mergeMods !== undefined)
+    ? modType.options.mergeMods
+    : game.mergeMods;
+
+  if (typeof(mergeModsOpt) === 'boolean') {
+    return mergeModsOpt
       ? () => ''
       : (mod: IMod) => mod.id;
   } else {
-    return game.mergeMods;
+    return mergeModsOpt;
   }
 }
 
