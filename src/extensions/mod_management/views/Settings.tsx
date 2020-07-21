@@ -6,6 +6,7 @@ import More from '../../../controls/More';
 import Spinner from '../../../controls/Spinner';
 import { Button } from '../../../controls/TooltipControls';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
+import { IState } from '../../../types/IState';
 import { ValidationState } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { CleanupFailedException, InsufficientDiskSpace, NotFound, TemporaryError,
@@ -47,6 +48,7 @@ import {
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import * as winapi from 'winapi-bindings';
+import { STAGING_DIR_TAG } from '../eventHandlers';
 
 interface IBaseProps {
   activators: IDeploymentMethod[];
@@ -61,6 +63,7 @@ interface IConnectedProps {
   currentActivator: string;
   modActivity: string[];
   modPaths: { [modType: string]: string };
+  instanceId: string;
 }
 
 interface IActionProps {
@@ -341,31 +344,11 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     this.nextState.busy = t('Calculating required disk space');
     let deleteOldDestination = true;
     return testPathTransfer(oldInstallPath, newInstallPath)
+      .then(() => fs.ensureDirAsync(newInstallPath))
+      .then(() => this.checkTargetEmpty(oldInstallPath, newInstallPath))
       .then(() => {
         this.nextState.busy = t('Purging previous deployment');
         return doPurge();
-      })
-      .then(() => fs.ensureDirAsync(newInstallPath))
-      .then(() => {
-        let queue = Promise.resolve();
-        let fileCount = 0;
-        if (oldInstallPath !== newInstallPath) {
-          queue = queue
-            .then(() => fs.readdirAsync(newInstallPath))
-            .then(files => {
-              fileCount += files.length;
-            });
-        }
-        // ensure the destination directories are empty
-        return queue.then(() => new Promise((resolve, reject) => {
-         if (fileCount > 0) {
-            this.props.onShowDialog('info', 'Invalid Destination', {
-              text: 'The destination folder has to be empty',
-            }, [{ label: 'Ok', action: () => reject(null), default: true }]);
-          } else {
-            resolve();
-          }
-        }));
       })
       .then(() => {
         if (oldInstallPath !== newInstallPath) {
@@ -472,6 +455,63 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           this.nextState.busy = undefined;
         }
       });
+  }
+
+  private checkTargetEmpty(oldInstallPath: string, newInstallPath: string) {
+    let queue = Promise.resolve();
+    let fileCount = 0;
+    let hasStagingTag: boolean = false;
+    let tagInstance: string;
+    if (oldInstallPath !== newInstallPath) {
+      queue = queue
+        .then(() => fs.readdirAsync(newInstallPath))
+        .then(files => {
+          fileCount += files.length;
+          if (!hasStagingTag && files.includes(STAGING_DIR_TAG)) {
+            hasStagingTag = true;
+          }
+        })
+        .then(() => {
+          if (hasStagingTag) {
+            const stagingTagPath = path.join(newInstallPath, STAGING_DIR_TAG);
+            return fs.readFileAsync(stagingTagPath)
+              .then(tagData => {
+                try {
+                  tagInstance = JSON.parse(tagData).instance;
+                } catch (err) {
+                  log('warn', 'failed to parse staging tag file',
+                      { stagingTagPath, error: err.message });
+                }
+              });
+          }
+        })
+        ;
+    }
+    // ensure the destination directories are empty
+    return queue.then(() => new Promise((resolve, reject) => {
+      if ((fileCount > 0) && (tagInstance !== this.props.instanceId)) {
+        if (tagInstance !== undefined) {
+          return this.props.onShowDialog('question', 'Confirm', {
+            text: 'This is an existing staging folder for a different Vortex '
+                + 'instance. If you\'re using Vortex in "shared" and "regular" mode, do not use '
+                + 'the same staging folder for both!\n'
+                + 'If you continue, your current mods will be merged into that staging folder and '
+                + 'this Vortex instance will take over the staging folder.\n'
+                + 'There is no "undo" for this! '
+                + 'Please continue only if you\'re absolutely certain.',
+          }, [
+            { label: 'Cancel', action: () => reject(new UserCanceled()), default: true },
+            { label: 'Continue', action: () => resolve() },
+          ]);
+        } else {
+          this.props.onShowDialog('info', 'Invalid Destination', {
+            text: 'The destination folder has to be empty',
+          }, [{ label: 'Ok', action: () => reject(new UserCanceled()), default: true }]);
+        }
+      } else {
+        resolve();
+      }
+    }));
   }
 
   private purgeActivation(): Promise<void> {
@@ -816,7 +856,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
 const emptyArray = [];
 
-function mapStateToProps(state: any): IConnectedProps {
+function mapStateToProps(state: IState): IConnectedProps {
   const discovery = currentGameDiscovery(state);
   const game = currentGame(state);
 
@@ -832,6 +872,7 @@ function mapStateToProps(state: any): IConnectedProps {
     currentActivator: getSafe(state, ['settings', 'mods', 'activator', gameMode], undefined),
     modActivity: getSafe(state, ['session', 'base', 'activity', 'mods'], emptyArray),
     modPaths: modPathsForGame(state, gameMode),
+    instanceId: state.app.instanceId,
   };
 }
 

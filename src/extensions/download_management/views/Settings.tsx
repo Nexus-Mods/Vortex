@@ -23,7 +23,7 @@ import { setDownloadPath, setMaxDownloads } from '../actions/settings';
 import { setTransferDownloads } from '../actions/transactions';
 
 import getDownloadPath, {getDownloadPathPattern} from '../util/getDownloadPath';
-import writeDownloadsTag from '../util/writeDownloadsTag';
+import writeDownloadsTag, { DOWNLOADS_DIR_TAG } from '../util/writeDownloadsTag';
 
 import getTextMod from '../../mod_management/texts';
 import getText from '../texts';
@@ -46,6 +46,7 @@ interface IConnectedProps {
   downloadPath: string;
   modsInstallPath: string;
   downloads: { [downloadId: string]: IDownload };
+  instanceId: string;
 }
 
 interface IActionProps {
@@ -366,25 +367,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     return withContext('Transferring Downloads', `from ${oldPath} to ${newPath}`,
       () => testPathTransfer(oldPath, newPath)
       .then(() => fs.ensureDirWritableAsync(newPath, this.confirmElevate))
-      .then(() => {
-        let queue = Promise.resolve();
-        let fileCount = 0;
-        if (oldPath !== newPath) {
-          queue = queue
-            .then(() => fs.readdirAsync(newPath))
-            .then(files => { fileCount += files.length; });
-        }
-        // ensure the destination directories are empty
-        return queue.then(() => new Promise((resolve, reject) => {
-          if (fileCount > 0) {
-            this.props.onShowDialog('info', 'Invalid Destination', {
-              text: 'The destination folder has to be empty',
-            }, [{ label: 'Ok', action: () => reject(null), default: true }]);
-          } else {
-            resolve();
-          }
-        }));
-      })
+      .then(() => this.checkTargetEmpty(oldPath, newPath))
       .then(() => {
         if (oldPath !== newPath) {
           this.nextState.busy = t('Moving download folder');
@@ -504,6 +487,63 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       : Promise.resolve());
   }
 
+  private checkTargetEmpty(oldDownloadPath: string, newDownloadPath: string) {
+    let queue = Promise.resolve();
+    let fileCount = 0;
+    let hasDownloadTag: boolean = false;
+    let tagInstance: string;
+    if (oldDownloadPath !== newDownloadPath) {
+      queue = queue
+        .then(() => fs.readdirAsync(newDownloadPath))
+        .then(files => {
+          fileCount += files.length;
+          if (!hasDownloadTag && files.includes(DOWNLOADS_DIR_TAG)) {
+            hasDownloadTag = true;
+          }
+        })
+        .then(() => {
+          if (hasDownloadTag) {
+            const downloadTagPath = path.join(newDownloadPath, DOWNLOADS_DIR_TAG);
+            return fs.readFileAsync(downloadTagPath)
+              .then(tagData => {
+                try {
+                  tagInstance = JSON.parse(tagData).instance;
+                } catch (err) {
+                  log('warn', 'failed to parse download tag file',
+                      { downloadTagPath, error: err.message });
+                }
+              });
+          }
+        })
+        ;
+    }
+    // ensure the destination directories are empty
+    return queue.then(() => new Promise((resolve, reject) => {
+      if ((fileCount > 0) && (tagInstance !== this.props.instanceId)) {
+        if (tagInstance !== undefined) {
+          return this.props.onShowDialog('question', 'Confirm', {
+            text: 'This is an existing download folder for a different Vortex '
+                + 'instance. If you\'re using Vortex in "shared" and "regular" mode, do not use '
+                + 'the same download folder for both!\n'
+                + 'If you continue, your current downloads will be merged into that folder and '
+                + 'this Vortex instance will take over the download folder.\n'
+                + 'There is no "undo" for this! '
+                + 'Please continue only if you\'re absolutely certain.',
+          }, [
+            { label: 'Cancel', action: () => reject(new UserCanceled()), default: true },
+            { label: 'Continue', action: () => resolve() },
+          ]);
+        } else {
+          this.props.onShowDialog('info', 'Invalid Destination', {
+            text: 'The destination folder has to be empty',
+          }, [{ label: 'Ok', action: () => reject(new UserCanceled()), default: true }]);
+        }
+      } else {
+        resolve();
+      }
+    }));
+  }
+
   private transferPath() {
     const { t, onSetTransfer, onShowDialog } = this.props;
     const oldPath = getDownloadPath(this.props.downloadPath);
@@ -582,6 +622,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     downloadPath: state.settings.downloads.path,
     downloads: state.persistent.downloads.files,
     modsInstallPath,
+    instanceId: state.app.instanceId,
   };
 }
 

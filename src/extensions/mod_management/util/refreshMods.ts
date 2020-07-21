@@ -37,24 +37,33 @@ function refreshMods(api: IExtensionApi, installPath: string, knownMods: string[
 
       const renderMod = modId => `  - "${modId}"`;
 
+      const t = api.translate;
+
       let message: string[] = [];
       if (removedMods.length > 0) {
-        message = message.concat([api.translate('Removed:')], removedMods.map(renderMod));
+        message = message.concat([t('Removed:')], removedMods.map(renderMod));
       }
       if (addedMods.length > 0) {
-        message = message.concat([api.translate('Added:')], addedMods.map(renderMod));
+        message = message.concat([t('Added:')], addedMods.map(renderMod));
       }
 
-      return api.showDialog('question', 'Mods changed on disk', {
-        bbcode: 'Mods have been changed on disk. This means that mods that were managed by Vortex '
+      let bbcode = t('Mods have been changed on disk. This means that mods that were managed by Vortex '
             + 'disappeared and/or mods that Vortex previously didn\'t know about '
             + 'appeared in the staging folder since the last time it checked.<br/>'
             + 'It is highly discouraged to modify the staging folder outside Vortex in any '
-            + 'way!<br/>'
-            + 'If you continue now, Vortex will lose all meta information about the deleted '
-            + 'mods [b]irreversibly[/b] and the added mods are added with minimal '
-            + 'meta information.',
+            + 'way!<br/>');
+
+      if (removedMods.length > 0) {
+        bbcode += t('If you continue now, Vortex will lose all meta information about the deleted '
+            + 'mods [b]irreversibly[/b]');
+      }
+
+      return api.showDialog('question', t('Mods changed on disk'), {
+        bbcode,
         message: message.join('\n'),
+        options: {
+          translated : true,
+        },
       }, [
         { label: 'Quit Vortex' },
         { label: 'Apply Changes' },
