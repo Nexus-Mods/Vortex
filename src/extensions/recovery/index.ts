@@ -11,16 +11,18 @@ import { createFullStateBackup } from '../../util/store';
 import { setModEnabled } from '../../actions';
 import { IDeploymentManifest } from '../../types/api';
 import { UserCanceled } from '../../util/CustomErrors';
+import * as fs from '../../util/fs';
 import { getSafe } from '../../util/storeHelper';
 import { getManifest } from '../mod_management/util/activationStore';
 import Workarounds from './Workarounds';
 
+import Bluebird from 'bluebird';
+
 const ONE_HOUR = 60 * 60 * 1000;
 
-function createBackup(api: IExtensionApi, name: string) {
+function createBackup(api: IExtensionApi, name: string): Bluebird<string> {
   return createFullStateBackup(name, api.store)
-    .catch(() => {
-      api.sendNotification({
+    .catch(() => api.sendNotification({
         type: 'error',
         message: 'Failed to create state backup.',
         actions: [
@@ -39,8 +41,7 @@ function createBackup(api: IExtensionApi, name: string) {
             },
           },
         ],
-      });
-    });
+      }));
 }
 
 async function resetToManifest(api: IExtensionApi) {
@@ -103,10 +104,26 @@ function init(context: IExtensionContext): boolean {
   context.registerSettings('Workarounds', Workarounds, () => ({
     onCreateManualBackup: () => {
       createBackup(context.api, 'manual')
-        .then(() => context.api.sendNotification({
+        .then(backupPath => context.api.sendNotification({
           type: 'success',
           message: 'Backup created',
           displayMS: 4000,
+          actions: [
+            {
+              title: 'Save copy', action: () => {
+                context.api.selectFile({
+                  create: true,
+                  filters: [{ extensions: ['json'], name: 'State backup' }],
+                  title: 'Select file location',
+                })
+                  .then(filePath => {
+                    if (filePath !== undefined) {
+                      return fs.copyAsync(backupPath, filePath);
+                    }
+                  });
+              },
+            },
+          ],
         }));
     },
   }), undefined, 5000);

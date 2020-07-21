@@ -156,7 +156,9 @@ export function importState(basePath: string): Promise<any> {
     : Promise.resolve();
 }
 
-export function createFullStateBackup(backupName: string, store: Redux.Store<any>): Promise<void> {
+export function createFullStateBackup(backupName: string,
+                                      store: Redux.Store<any>)
+                                      : Promise<string> {
   const before = Date.now();
   const state = store.getState();
   let serialized;
@@ -169,10 +171,13 @@ export function createFullStateBackup(backupName: string, store: Redux.Store<any
 
   const basePath = path.join(app.getPath('userData'), 'temp', FULL_BACKUP_PATH);
 
+  const backupFilePath = path.join(basePath, backupName + '.json');
+
   return fs.ensureDirWritableAsync(basePath, () => Promise.resolve())
-    .then(() => writeFileAtomic(path.join(basePath, backupName + '.json'),
+    .then(() => writeFileAtomic(backupFilePath,
       serialized))
     .then(() => {
       log('info', 'state backup created', { ms: Date.now() - before });
+      return backupFilePath;
     });
 }

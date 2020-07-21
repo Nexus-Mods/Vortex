@@ -769,9 +769,8 @@ class Application {
                 details: (err.code !== 'ENOENT')
                   ? err.message
                   : 'Specified backup file doesn\'t exist',
-                stack: err.stack,
                 path: restoreBackup,
-              }, {}, err.code !== 'ENOENT');
+              }, {}, false);
             });
         } else {
           return Promise.resolve();
@@ -815,7 +814,8 @@ class Application {
           }));
         } else if (!repair) {
           // we started without any problems, save this application state
-          return createFullStateBackup('startup', this.mStore);
+          return createFullStateBackup('startup', this.mStore)
+            .then(() => Promise.resolve());
         }
         return Promise.resolve();
       })
