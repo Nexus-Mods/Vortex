@@ -36,7 +36,7 @@ class SplashScreen {
         });
   }
 
-  public create(): Promise<void> {
+  public create(disableGPU: boolean): Promise<void> {
     const BrowserWindow: typeof Electron.BrowserWindow = require('electron').BrowserWindow;
 
     return new Promise<void>((resolve, reject) => {
@@ -47,9 +47,9 @@ class SplashScreen {
 
       this.mWindow = new BrowserWindow({
         frame: false,
-        width: 700,
-        height: 232,
-        transparent: true,
+        width: 687,
+        height: 227,
+        transparent: !disableGPU,
         show: false,
         resizable: false,
         movable: false,
@@ -59,14 +59,15 @@ class SplashScreen {
 
         skipTaskbar: true,
         webPreferences: {
-          javascript: false,
+          javascript: true,
           webgl: false,
           backgroundThrottling: false,
           sandbox: false,
           nodeIntegration: true,
         },
       });
-      this.mWindow.loadURL(`file://${getVortexPath('base')}/splash.html`);
+      this.mWindow.loadURL(`file://${getVortexPath('base')}/splash.html?disableGPU=${disableGPU ? 1 : 0}`);
+      // this.mWindow.webContents.openDevTools();
       this.mWindow.once('ready-to-show', onReady);
     });
   }

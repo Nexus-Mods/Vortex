@@ -126,7 +126,7 @@ class Application {
   private startSplash(): Promise<SplashScreenT> {
     const SplashScreen = require('./SplashScreen').default;
     const splash: SplashScreenT = new SplashScreen();
-    return splash.create()
+    return splash.create(this.mArgs.disableGPU)
       .then(() => {
         setWindow(splash.getHandle());
         return splash;
