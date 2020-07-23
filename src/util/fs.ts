@@ -540,7 +540,8 @@ function ensureDir(targetDir: string, onDirCreatedCB: (created: string) => Promi
 }
 
 function selfCopyCheck(src: string, dest: string) {
-  return PromiseBB.join(fsBB.statAsync(src), fsBB.statAsync(dest)
+  return PromiseBB.join(fsBB.statAsync(src, { bigint: true }),
+                        fsBB.statAsync(dest, { bigint: true })
                 .catch({ code: 'ENOENT' }, err => PromiseBB.resolve({})))
     .then((stats: fs.Stats[]) => (stats[0].ino === stats[1].ino)
         ? PromiseBB.reject(new Error(
