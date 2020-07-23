@@ -1,4 +1,4 @@
-import { setDownloadPath } from '../../actions';
+import { IDialogResult, setDownloadPath } from '../../actions';
 import { IExtensionApi, IExtensionContext } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
 import { ITestResult } from '../../types/ITestResult';
@@ -345,6 +345,48 @@ function removeDownloadsMetadata(api: IExtensionApi): Promise<void> {
   }).then(() => Promise.resolve());
 }
 
+function queryDownloadFolderInvalid(api: IExtensionApi,
+                                    err: Error,
+                                    dirExists: boolean,
+                                    currentDownloadPath: string)
+                                    : Promise<IDialogResult> {
+  if (dirExists) {
+    // dir exists but not tagged
+    return api.showDialog('error', 'Downloads Folder invalid', {
+      bbcode: 'Your downloads folder "{{path}}" is not marked correctly. This may be ok '
+          + 'if you\'ve updated from a very old version of Vortex and you can ignore this.<br/>'
+          + '[b]However[/b], if you use a removable medium (network or USB drive) and that path '
+          + 'does not actually point to your real Vortex download folder, you [b]have[/b] '
+          + 'to make sure the actual folder is available and tell Vortex where it is.',
+      message: err.message,
+      parameters: {
+        path: currentDownloadPath,
+      },
+    }, [
+      { label: 'Quit Vortex' },
+      { label: 'Ignore' },
+      { label: 'Browse...' },
+    ]);
+  }
+  return api.showDialog('error', ' Downloads Folder missing!', {
+        text: 'Your downloads folder "{{path}}" is missing. This might happen because you '
+            + 'deleted it or - if you have it on a removable drive - it is not currently '
+            + 'connected.\nIf you continue now, a new downloads folder will be created but all '
+            + 'your previous mod archives will be lost.\n\n'
+            + 'If you have moved the folder or the drive letter changed, you can browse '
+            + 'for the new location manually, but please be extra careful to select the right '
+            + 'folder!',
+        message: err.message,
+        parameters: {
+          path: currentDownloadPath,
+        },
+      }, [
+        { label: 'Quit Vortex' },
+        { label: 'Reinitialize' },
+        { label: 'Browse...' },
+      ]);
+}
+
 function testDownloadPath(api: IExtensionApi): Promise<void> {
   const state: IState = api.store.getState();
   const gameId = selectors.activeGameId(state);
@@ -373,22 +415,16 @@ function testDownloadPath(api: IExtensionApi): Promise<void> {
   }
 
   let currentDownloadPath = selectors.downloadPathForGame(state, gameId).replace(gameId, '');
+  let dirExists = false;
   const ensureDownloadsDirectory = (): Promise<void> => fs.statAsync(currentDownloadPath)
-    .catch(err =>
-      api.showDialog('error', ' Downloads Folder missing!', {
-        text: 'Your downloads folder (see below) is missing. This might happen because you '
-            + 'deleted it or - if you have it on a removable drive - it is not currently '
-            + 'connected.\nIf you continue now, a new downloads folder will be created but all '
-            + 'your previous mod archives will be lost.\n\n'
-            + 'If you have moved the folder or the drive letter changed, you can browse '
-            + 'for the new location manually, but please be extra careful to select the right '
-            + 'folder!',
-        message: currentDownloadPath,
-      }, [
-        { label: 'Quit Vortex' },
-        { label: 'Reinitialize' },
-        { label: 'Browse...' },
-      ]).then(result => {
+    .then(() => {
+      dirExists = true;
+      // download dir exists, does the tag exist?
+      return fs.statAsync(path.join(currentDownloadPath, DOWNLOADS_DIR_TAG));
+    })
+    .catch(err => {
+      return queryDownloadFolderInvalid(api, err, dirExists, currentDownloadPath)
+        .then(result => {
         if (result.action === 'Quit Vortex') {
           app.exit(0);
           return Promise.reject(new UserCanceled());
@@ -416,6 +452,8 @@ function testDownloadPath(api: IExtensionApi): Promise<void> {
             .finally(() => {
               api.dismissNotification(id);
             });
+        } else if (result.action === 'Ignore') {
+          return Promise.resolve();
         } else { // Browse...
           return api.selectDir({
             defaultPath: currentDownloadPath,
@@ -433,7 +471,8 @@ function testDownloadPath(api: IExtensionApi): Promise<void> {
           })
           .catch(() => ensureDownloadsDirectory());
         }
-      }))
+      });
+    })
       .then(() => writeDownloadsTag(api, currentDownloadPath));
 
   return ensureDownloadsDirectory()

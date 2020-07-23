@@ -92,26 +92,62 @@ function validateStagingTag(api: IExtensionApi, tagPath: string): Promise<void> 
     });
 }
 
+function queryStagingFolderInvalid(api: IExtensionApi,
+                                   err: Error,
+                                   dirExists: boolean,
+                                   instPath: string)
+                                   : Promise<IDialogResult> {
+  if (dirExists) {
+    // dir exists but not tagged
+    return api.showDialog('error', 'Mod Staging Folder invalid', {
+      bbcode: 'Your mod staging folder "{{path}}" is not marked correctly. This may be ok '
+          + 'if you\'ve updated from a very old version of Vortex and you can ignore this.<br/>'
+          + '[b]However[/b], if you use a removable medium (network or USB drive) and that path '
+          + 'does not actually point to your real staging folder, you [b]have[/b] '
+          + 'to make sure the actual folder is available and tell Vortex where it is.',
+      message: err.message,
+      parameters: {
+        path: instPath,
+      },
+    }, [
+      { label: 'Quit Vortex' },
+      { label: 'Ignore' },
+      { label: 'Browse...' },
+    ]);
+  }
+  return api.showDialog('error', 'Mod Staging Folder missing!', {
+      text: 'Your mod staging folder "{{path}}" is missing. This might happen because you '
+        + 'deleted it or - if you have it on a removable drive - it is not currently '
+        + 'connected.\nIf you continue now, a new staging folder will be created but all '
+        + 'your previously managed mods will be lost.\n\n'
+        + 'If you have moved the folder or the drive letter changed, you can browse '
+        + 'for the new location manually, but please be extra careful to select the right '
+        + 'folder!',
+      message: instPath,
+      parameters: {
+        path: instPath,
+      },
+    }, [
+      { label: 'Quit Vortex' },
+      { label: 'Reinitialize' },
+      { label: 'Browse...' },
+    ]);
+}
+
 function ensureStagingDirectory(api: IExtensionApi,
                                 instPath: string,
                                 gameId: string)
                                 : Promise<string> {
+
+  let dirExists = false;
   return fs.statAsync(instPath)
-    .catch(err =>
-      api.showDialog('error', 'Mod Staging Folder missing!', {
-        text: 'Your mod staging folder (see below) is missing. This might happen because you '
-          + 'deleted it or - if you have it on a removable drive - it is not currently '
-          + 'connected.\nIf you continue now, a new staging folder will be created but all '
-          + 'your previously managed mods will be lost.\n\n'
-          + 'If you have moved the folder or the drive letter changed, you can browse '
-          + 'for the new location manually, but please be extra careful to select the right '
-          + 'folder!',
-        message: instPath,
-      }, [
-        { label: 'Quit Vortex' },
-        { label: 'Reinitialize' },
-        { label: 'Browse...' },
-      ])
+    .then(() => {
+      dirExists = true;
+      // staging dir exists, does the tag exist?
+      return fs.statAsync(path.join(instPath, STAGING_DIR_TAG));
+    })
+    .catch(err => {
+      return queryStagingFolderInvalid(api, err, dirExists, instPath)
         .then(dialogResult => {
           if (dialogResult.action === 'Quit Vortex') {
             app.exit(0);
@@ -143,6 +179,8 @@ function ensureStagingDirectory(api: IExtensionApi,
               .finally(() => {
                 api.dismissNotification(id);
               });
+          } else if (dialogResult.action === 'Ignore') {
+            return Promise.resolve();
           } else { // Browse...
             return api.selectDir({
               defaultPath: instPath,
@@ -160,7 +198,8 @@ function ensureStagingDirectory(api: IExtensionApi,
               })
               .catch(() => ensureStagingDirectory(api, instPath, gameId));
           }
-        }))
+        });
+      })
     .then(() => writeStagingTag(api, path.join(instPath, STAGING_DIR_TAG), gameId))
     .then(() => instPath);
 }
