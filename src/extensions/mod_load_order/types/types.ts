@@ -21,6 +21,11 @@ export interface ILoadOrderEntry {
   // Is this entry enabled ?
   enabled: boolean;
 
+  // The position of the entry is usually sufficient when displaying
+  //  index/priority of most mods but in some cases it is more advantageous
+  //  to use prefixes, particularly when a game loads mods alphabetically.
+  prefix?: string;
+
   // If the load order entry is locked to its current position/index/priority.
   locked?: boolean;
 
@@ -94,7 +99,8 @@ export interface ILoadOrderDisplayItem {
   //  the game extension wants to impose some DnD restrictions
   //  e.g. Disallow ESP's or ESL's from being positioned above an ESM
   condition?: (lhs: ILoadOrderDisplayItem,
-               rhs: ILoadOrderDisplayItem) => IDnDConditionResult;
+               rhs: ILoadOrderDisplayItem,
+               predictedResult: ILoadOrderDisplayItem[]) => IDnDConditionResult;
 }
 
 export interface IGameLoadOrderEntry {

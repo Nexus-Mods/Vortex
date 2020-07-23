@@ -189,7 +189,7 @@ class DraggableList extends ComponentEx<IProps, IState> {
   }
 
   public UNSAFE_componentWillReceiveProps(newProps: IProps) {
-    if (this.props.items !== newProps.items) {
+    if (this.state.ordered !== newProps.items) {
       this.nextState.ordered = newProps.items.slice(0);
     }
   }
@@ -232,25 +232,35 @@ class DraggableList extends ComponentEx<IProps, IState> {
     const itemLocked = (idx) => !!(ordered[idx]?.locked)
                              || !!(loadOrder[ordered[idx]?.id]?.locked);
 
-    const currentItem = ordered[oldIndex];
+    if (itemLocked(newIndex) === true) {
+      return;
+    }
+
+    const copy = ordered.slice();
+    const currentItem = take(copy);
     const replacedItem = ordered[newIndex];
+    copy.splice(newIndex, 0, currentItem);
 
-    if (!!itemLocked(oldIndex) || !!itemLocked(newIndex)) {
+    const conditions = [currentItem?.condition, replacedItem?.condition].filter(cond => !!cond);
+    const failedConditions: IDnDConditionResult[] = conditions.reduce((accum, cond) => {
+      const condRes: IDnDConditionResult = cond(currentItem, replacedItem, copy);
+      if (condRes !== undefined && !condRes.success) {
+        accum.push(condRes);
+      }
+      return accum;
+    }, []);
+
+    if (failedConditions.length > 0) {
+      // TODO: need to write a custom drag layer to display
+      //  some sort of feedback to the user explaining why he's
+      //  unable to change the index of the dragged item (preferably on hover).
+      //  for now, we will have to rely on the extensions themselves to
+      //  display this information to the user... ugh..
+      // currentItem.message = failedConditions.map(failed => failed.errMessage || '').join(' - ');
       return;
     }
 
-    const condFunc = currentItem.condition || replacedItem.condition;
-    const condRes: IDnDConditionResult = !!condFunc
-      ? condFunc(currentItem, replacedItem)
-      : undefined;
-    if (!!condRes && !condRes.success) {
-      currentItem.message = condRes.errMessage;
-      return;
-    }
-
-    const copy = this.state.ordered.slice();
-    const item = take(copy);
-    copy.splice(newIndex, 0, item);
+    // currentItem.message = undefined;
 
     this.nextState.ordered = copy;
     this.applyDebouncer.schedule();

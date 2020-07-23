@@ -29,6 +29,7 @@ const NAMESPACE: string = 'generic-load-order-extension';
 interface IBaseState {
   i18nNamespace: string;
   loading: boolean;
+  updating: boolean;
   sortType: SortType;
   itemRenderer: React.ComponentClass<{
     className?: string,
@@ -82,7 +83,8 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
     this.initState({
       enabled: [],
       sortType: 'ascending',
-      loading: false,
+      loading: true,
+      updating: false,
       itemRenderer: undefined,
       i18nNamespace: undefined,
     });
@@ -165,6 +167,10 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
   }
 
   public componentWillReceiveProps(newProps: IProps) {
+    if (this.state.updating === true) {
+      return;
+    }
+
     if ((this.stringified(this.props.loadOrder) !== this.stringified(newProps.loadOrder))
         || (this.stringified(this.props.mods) !== this.stringified(newProps.mods))
         || (this.stringified(this.props.profile) !== this.stringified(newProps.profile))) {
@@ -181,6 +187,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
     }
 
     this.updateState(this.props);
+    this.nextState.loading = false;
   }
 
   public componentWillUnmount() {
@@ -200,12 +207,14 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
 
   private resetState() {
     this.nextState.loading = true;
+    this.nextState.updating = false;
     this.nextState.itemRenderer = undefined;
     this.nextState.i18nNamespace = undefined;
     this.nextState.enabled = [];
   }
 
   private setLoadOrder(list: ILoadOrderDisplayItem[]) {
+    this.nextState.updating = true;
     const { loadOrder, onSetOrder, profile, getGameEntry } = this.props;
     const loKeys = Object.keys(loadOrder);
 
@@ -219,6 +228,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
             pos: idx,
             enabled: true,
             locked: false,
+            prefix: entry.prefix,
           };
           return accum;
         }
@@ -227,6 +237,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
             pos: loadOrder[entry.id].pos,
             enabled: loadOrder[entry.id].enabled,
             locked: true,
+            prefix: entry.prefix,
           };
         } else {
           const existing = Object.keys(accum);
@@ -241,6 +252,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
                   pos: previousPos + 1,
                   enabled: hasLOEntry(entry.id) ? loadOrder[entry.id].enabled : true,
                   locked: false,
+                  prefix: entry.prefix,
                 };
                 return accum;
               }
@@ -251,12 +263,14 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
               pos: previousPos + 1,
               enabled: hasLOEntry(entry.id) ? loadOrder[entry.id].enabled : true,
               locked: false,
+              prefix: entry.prefix,
             };
           } else {
             accum[entry.id] = {
               pos: wantedPos,
               enabled: hasLOEntry(entry.id) ? loadOrder[entry.id].enabled : true,
               locked: false,
+              prefix: entry.prefix,
             };
           }
         }
@@ -269,6 +283,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
         return;
       }
 
+      this.nextState.enabled = newList.sort((a, b) => newOrder[a.id].pos - newOrder[b.id].pos);
       onSetOrder(profile.id, newOrder);
     };
 
@@ -446,6 +461,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
       if (updateLO || (this.stringified(spread) !== this.stringified(this.nextState.enabled))) {
         this.setLoadOrder(this.nextState.enabled);
         this.mCallbackDebouncer.schedule();
+        this.nextState.updating = false;
       }
     };
 
