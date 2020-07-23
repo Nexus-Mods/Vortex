@@ -360,11 +360,22 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
   }
 
   private toggleAutoStart = () => {
-    const { autoStart, onSetAutoStart } = this.props;
+    const { autoStart, onSetAutoStart, onSetStartHidden } = this.props;
     onSetAutoStart(!autoStart);
     remote.app.setLoginItemSettings({
       openAtLogin: !autoStart,
     });
+
+    // I want to trust remote.app.getLoginItemSettings().openAtLogin
+    //  at this point to give me the updated value... but I don't..
+    //  https://github.com/electron/electron/issues/10880
+    if ((!autoStart) === false) {
+      // We need to ensure the openAsHidden flag is reset to false.
+      remote.app.setLoginItemSettings({
+        openAsHidden: false,
+      });
+      onSetStartHidden(false);
+    }
   }
 
   private toggleStartHidden = () => {
