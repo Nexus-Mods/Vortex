@@ -234,6 +234,13 @@ function init(context: IExtensionContext) {
 
   context.registerReducer(['session', 'extensions'], sessionReducer);
 
+  context.registerActionCheck('SET_EXTENSION_ENABLED', (state, action: any) => {
+    if (process.type === 'browser') {
+      log('info', 'changing extension enabled', action.payload);
+    }
+    return undefined;
+  });
+
   context.registerInstaller('site-installer', 0,
     (files: string[], gameId: string) => Promise.resolve({
       supported: gameId === 'site',

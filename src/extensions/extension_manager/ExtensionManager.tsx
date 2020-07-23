@@ -62,8 +62,6 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
   constructor(props: IProps) {
     super(props);
 
-    const { extensions, extensionConfig, onSetExtensionEnabled } = props;
-
     this.initState({
       oldExtensionConfig: props.extensionConfig,
     });
@@ -73,7 +71,7 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
         icon: 'delete',
         title: 'Remove',
         action: this.removeExtension,
-        condition: (instanceId: string) => !extensions[instanceId].bundled,
+        condition: (instanceId: string) => !this.props.extensions[instanceId].bundled,
         singleRowAction: true,
       },
     ];
@@ -81,18 +79,21 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
     this.staticColumns = getTableAttributes({
       onSetExtensionEnabled:
         (extName: string, enabled: boolean) => {
+          const { extensions, onSetExtensionEnabled } = this.props;
           const extId = Object.keys(extensions)
             .find(iter => extensions[iter].name === extName);
           onSetExtensionEnabled(extId, enabled);
         },
       onToggleExtensionEnabled:
         (extName: string) => {
+          const { extensionConfig, extensions, onSetExtensionEnabled } = this.props;
           const extId = Object.keys(extensions)
             .find(iter => extensions[iter].name === extName);
           onSetExtensionEnabled(extId, !getSafe(extensionConfig, [extId, 'enabled'], true));
         },
       onEndorseMod:
         (gameId: string, modIdStr: string, endorseState: EndorsedStatus) => {
+          const { extensions } = this.props;
           const { api } = this.context;
           const modId: number = parseInt(modIdStr, 10);
           const extId = Object.keys(extensions)
