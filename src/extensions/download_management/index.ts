@@ -594,6 +594,15 @@ function checkPendingTransfer(api: IExtensionApi): Promise<ITestResult> {
           + 'Vortex clean up now, otherwise you may be left with unnecessary copies of files.',
     },
     automaticFix: () => new Promise<void>((fixResolve, fixReject) => {
+      api.sendNotification({
+        id: 'transfer-cleanup',
+        message: 'Cleaning up interrupted transfer',
+        type: 'activity',
+      });
+      // the transfer works by either copying the files or creating hard links
+      // and only deleting the source when everything is transferred successfully,
+      // so in case of an interrupted transfer we can always just delete the
+      // incomplete target because the source is still there
       return fs.removeAsync(transferDestination)
         .then(() => {
           api.store.dispatch(setTransferDownloads(undefined));
@@ -607,7 +616,11 @@ function checkPendingTransfer(api: IExtensionApi): Promise<ITestResult> {
           } else {
             fixReject();
           }
-        });
+        })
+        .finally(() => {
+          api.dismissNotification('transfer-cleanup');
+        })
+        ;
     }),
   };
 
