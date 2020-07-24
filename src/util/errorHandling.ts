@@ -256,6 +256,10 @@ export function terminate(error: IError, state: any, allowReport?: boolean, sour
     win = null;
   }
 
+  if ((allowReport === undefined) && (error.allowReport === false)) {
+    allowReport = false;
+  }
+
   if ((allowReport === undefined) && (error.extension !== undefined)) {
     allowReport = error.extension === COMPANY_ID;
   }
@@ -367,7 +371,11 @@ export function toError(input: any, title?: string,
       title,
       subtitle: (options || {}).message,
       stack,
-      details: Object.keys(flatErr).map(key => `${key}: ${flatErr[key]}`).join('\n'),
+      allowReport: input['allowReport'],
+      details: Object.keys(flatErr)
+        .filter(key => key !== 'allowReport')
+        .map(key => `${key}: ${flatErr[key]}`)
+        .join('\n'),
     };
   }
 

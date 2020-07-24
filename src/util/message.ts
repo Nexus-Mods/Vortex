@@ -353,7 +353,7 @@ export function prettifyNodeErrorMessage(err: any): IPrettifiedError {
       allowReport: false,
     };
   } else if (err.code === undefined) {
-    return { message: err.message, replace: {} };
+    return { message: err.message, replace: {}, allowReport: err['allowReport'] };
   } else if (err.syscall === 'getaddrinfo') {
     return {
       message: 'Network address "{{host}}" could not be resolved. This is often a temporary error, '
@@ -474,6 +474,7 @@ export function prettifyNodeErrorMessage(err: any): IPrettifiedError {
 
   return {
     message: err.message,
+    allowReport: err['allowReport'],
   };
 }
 
@@ -576,6 +577,7 @@ export function renderError(err: string | Error | any):
     const errMessage = prettifyNodeErrorMessage(err);
 
     const flatErr = flatten(err || {}, { maxLength: 5 });
+    delete flatErr['allowReport'];
 
     let attributes = Object.keys(flatErr || {})
         .filter(key => key[0].toUpperCase() === key[0]);
