@@ -163,10 +163,6 @@ class Application {
 
     app.on('second-instance', (event: Event, secondaryArgv: string[]) => {
       log('debug', 'getting arguments from second instance', secondaryArgv);
-      if (this.mMainWindow) {
-        // User just tried to start another instance of Vortex; show our window.
-        this.showMainWindow();
-      }
       this.applyArguments(commandLine(secondaryArgv, true));
     });
 
@@ -928,6 +924,14 @@ class Application {
             'Vortex appears to be frozen, please close Vortex and try again');
         }
       });
+    } else {
+      if (this.mMainWindow !== undefined) {
+        // Vortex's executable has been run without download/install arguments;
+        //  this is potentially down to the user not realizing that Vortex is minimized
+        //  leading him to try to start up Vortex again - we just display the main
+        //  window in this case.
+        this.showMainWindow();
+      }
     }
   }
 }
