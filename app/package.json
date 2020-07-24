@@ -1,6 +1,6 @@
 {
   "name": "vortex",
-  "version": "1.2.19",
+  "version": "1.2.20",
   "productName": "Vortex",
   "description": "Vortex",
   "author": "Black Tree Gaming Ltd.",
@@ -11,7 +11,7 @@
     "url": "https://github.com/Nexus-Mods/Vortex"
   },
   "vortex": {
-    "electron": "8.3.0"
+    "electron": "8.4.1"
   },
   "dependencies": {
     "@nexusmods/nexus-api": "^1.0.5",
