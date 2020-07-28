@@ -192,10 +192,10 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
 
     const searchTermNorm = searchTerm.toUpperCase();
 
-    return (test.name.toUpperCase().indexOf(searchTermNorm) !== -1)
-        || (test.author.toUpperCase().indexOf(searchTermNorm) !== -1)
-        || (test.description.short.toUpperCase().indexOf(searchTermNorm) !== -1)
-        || (test.description.long.toUpperCase().indexOf(searchTermNorm) !== -1);
+    return (test.name?.toUpperCase?.().indexOf?.(searchTermNorm) !== -1)
+        || (test.author?.toUpperCase?.().indexOf?.(searchTermNorm) !== -1)
+        || (test.description?.short?.toUpperCase?.().indexOf?.(searchTermNorm) !== -1)
+        || (test.description?.long?.toUpperCase?.().indexOf?.(searchTermNorm) !== -1);
   }
 
   private extensionSort = (lhs: IAvailableExtension, rhs: IAvailableExtension): number => {
