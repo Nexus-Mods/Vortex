@@ -904,7 +904,11 @@ export interface IExtensionContext {
   registerSettingsHive: (type: PersistingType, hive: string) => void;
 
   /**
-   * register a new persistor that will hook a data file into the application store.
+   * register a new persistor that will hook a data file into the application store,
+   * meaning any part of the application can access that data like any other data in the application
+   * state and the UI will automatically refresh if it's tied to that data.
+   * This way you can unify the access to foreign data files
+   *
    * @param {string} hive the top-level key inside the state that this persistor will add
    *                      it's data to. We can't add persistors inside an existing node (
    *                      technical reasons) but you can implement an aggregator-persistor

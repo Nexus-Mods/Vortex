@@ -310,9 +310,16 @@ export function merge<T extends object>(state: T, path: Array<(string | number)>
   return setSafe(state, path, newVal);
 }
 
-export function rehydrate<T extends object>(state: T, inbound: any, path: string[]): T {
+export function rehydrate<T extends object>(
+  state: T,
+  inbound: any,
+  path: string[],
+  replace: boolean,
+  ): T {
   const inState = getSafe(inbound, path, undefined);
-  return inState !== undefined
+  return replace
+    ? (inState ?? state)
+    : (inState !== undefined)
     ? merge(state, [], inState)
     : state;
 }

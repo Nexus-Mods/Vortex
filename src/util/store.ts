@@ -17,6 +17,7 @@ import { forwardToRenderer, replayActionMain } from 'electron-redux';
 import * as encode from 'encoding-down';
 import * as leveldown from 'leveldown';
 import * as levelup from 'levelup';
+import * as _ from 'lodash';
 import * as path from 'path';
 import * as Redux from 'redux';
 import { applyMiddleware, compose, createStore } from 'redux';
@@ -160,7 +161,8 @@ export function createFullStateBackup(backupName: string,
                                       store: Redux.Store<any>)
                                       : Promise<string> {
   const before = Date.now();
-  const state = store.getState();
+  // not backing up confidential, session or extension persistors
+  const state = _.pick(store.getState(), ['settings', 'persistent', 'app', 'user']);
   let serialized;
   try {
     serialized = JSON.stringify(state, undefined, 2);

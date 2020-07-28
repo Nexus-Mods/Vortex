@@ -136,6 +136,59 @@ export enum Decision {
 
 let backupTime: number;
 
+function hydrateRed(
+  state: any,
+  payload: any,
+  ele: any,
+  statePath: string,
+  replace: boolean,
+  querySanitize: (errors: string[]) => Decision,
+  ) {
+  const pathArray = statePath.split('.').slice(1);
+
+  if (ele.verifiers !== undefined) {
+    const input = getSafe(payload, pathArray, undefined);
+    const errors: string[] = [];
+    let moreCount = 0;
+    const sanitized = verify(statePath, ele.verifiers, input, ele.defaults,
+                              (error: string) => {
+      if (errors.length < 10) {
+        errors.push(error);
+      } else {
+        ++moreCount;
+      }
+    });
+    if (sanitized !== input) {
+      if (moreCount > 0) {
+        errors.push(`... ${moreCount} more errors ...`);
+      }
+      const decision = querySanitize(errors);
+      if (decision === Decision.SANITIZE) {
+        const backupPath = path.join(app.getPath('temp'), STATE_BACKUP_PATH);
+        log('info', 'sanitizing application state');
+        let backupData;
+        if (backupTime !== undefined) {
+          const oldBackup = fs.readFileSync(
+            path.join(backupPath, `backup_${backupTime}.json`),
+            { encoding: 'utf-8' });
+          backupData = { ...JSON.parse(oldBackup), ...payload };
+        } else {
+          backupData = payload;
+          backupTime = Date.now();
+        }
+        fs.ensureDirSync(backupPath);
+        fs.writeFileSync(path.join(backupPath, `backup_${backupTime}.json`),
+                          JSON.stringify(backupData, undefined, 2));
+        payload = setSafe(payload, pathArray, sanitized);
+      } else if (decision === Decision.QUIT) {
+        app.exit();
+        throw new UserCanceled();
+      } // in case of ignore we just continue with the original payload
+    }
+  }
+  return rehydrate(state, payload, pathArray, replace);
+}
+
 function deriveReducer(statePath: string,
                        ele: any,
                        querySanitize: (errors: string[]) => Decision): Reducer<any> {
@@ -144,53 +197,13 @@ function deriveReducer(statePath: string,
   if ((attributes.indexOf('reducers') !== -1)
       && (attributes.indexOf('defaults') !== -1)) {
     let red = ele.reducers;
-    const pathArray = statePath.split('.').slice(1);
     if (red['__hydrate'] === undefined) {
       red = {
         ...ele.reducers,
-        ['__hydrate']: (state, payload) => {
-          if (ele.verifiers !== undefined) {
-            const input = getSafe(payload, pathArray, undefined);
-            const errors: string[] = [];
-            let moreCount = 0;
-            const sanitized = verify(statePath, ele.verifiers, input, ele.defaults,
-                                     (error: string) => {
-              if (errors.length < 10) {
-                errors.push(error);
-              } else {
-                ++moreCount;
-              }
-            });
-            if (sanitized !== input) {
-              if (moreCount > 0) {
-                errors.push(`... ${moreCount} more errors ...`);
-              }
-              const decision = querySanitize(errors);
-              if (decision === Decision.SANITIZE) {
-                const backupPath = path.join(app.getPath('temp'), STATE_BACKUP_PATH);
-                log('info', 'sanitizing application state');
-                let backupData;
-                if (backupTime !== undefined) {
-                  const oldBackup = fs.readFileSync(
-                    path.join(backupPath, `backup_${backupTime}.json`),
-                    { encoding: 'utf-8' });
-                  backupData = { ...JSON.parse(oldBackup), ...payload };
-                } else {
-                  backupData = payload;
-                  backupTime = Date.now();
-                }
-                fs.ensureDirSync(backupPath);
-                fs.writeFileSync(path.join(backupPath, `backup_${backupTime}.json`),
-                                 JSON.stringify(backupData, undefined, 2));
-                payload = setSafe(payload, pathArray, sanitized);
-              } else if (decision === Decision.QUIT) {
-                app.exit();
-                throw new UserCanceled();
-              } // in case of ignore we just continue with the original payload
-            }
-          }
-          return rehydrate(state, payload, pathArray);
-        },
+        ['__hydrate']: (state, payload) =>
+          hydrateRed(state, payload, ele, statePath, false, querySanitize),
+        ['__hydrate_replace']: (state, payload) =>
+          hydrateRed(state, payload, ele, statePath, true, querySanitize),
       };
     }
     return createReducer(red, ele.defaults);

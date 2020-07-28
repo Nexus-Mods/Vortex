@@ -760,7 +760,7 @@ class Application {
           return fs.readFileAsync(restoreBackup, { encoding: 'utf-8' })
             .then(backupState => {
               newStore.dispatch({
-                type: '__hydrate',
+                type: '__hydrate_replace',
                 payload: JSON.parse(backupState),
               });
             })
