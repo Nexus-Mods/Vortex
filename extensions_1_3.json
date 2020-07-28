@@ -54,25 +54,8 @@
       "uploader": "Tannin42"
     },
     {
-      "name": "Fully Virtual Deployment",
-      "description": {
-        "short": "Fully Virtual Deployment for Vortex using the usvfs library.",
-        "long": "[size=4][b]Introduction\n<br />[/b][/size]\n<br />This is an extension for Vortex that adds a new deployment method to Vortex.\n<br />[b][size=4][color=#ff0000]This is highly experimental and currently not officially supported. Please do NOT report bugs for this through the Vortex feedback system, report them here.[/color]\n<br />[/size][/b]\n<br />[size=4]Features[/size]\n<br />\n<br />[list]\n<br />[*][size=2]Deploying with this gets no real files placed in the game directory[/size]\n<br />[*][size=2]Deployment is quite a bit faster than using links[/size]\n<br />[*][size=2]It works with any filesystem[/size]\n<br />[*][size=2]The staging folder doesn't have to be on the same drive as the game[/size]\n<br />[/list]\n<br />[size=4]Limitations (can't be fixed)[/size]\n<br />\n<br />[list]\n<br />[*][color=#ff0000][size=3]Requires Vortex 0.17.0 or newer![/size][/color]\n<br />[*][size=2]Games &amp; Tools always have to be started from inside Vortex, otherwise the mods aren't working[/size]\n<br />[*][size=2]Supports only games that get started directly (some games, e.g. Sims 4, Dark Souls, Kotor always get started through Origin/Steam)[/size]\n<br />[*][size=2]Errors caused by an incompatibility with the game can be quite hard to decipher[/size]\n<br />[/list]\n<br />[size=4][b]Known Bugs\n<br />[/b][/size]\n<br />[list]\n<br />[*]Many games aren't currently compatible (need testing to produce a list)\n<br />[*]External Changes will currently not be detected\n<br />[*]Vortex will show plugins as not-deployed - they can still be sorted and everything should work functionally\n<br />[/list]\n<br />[size=4][b]How to install\n<br />[/b][/size]\n<br />Open the extensions tab in vortex (requires advanced mode) and drag the 7z file onto the drop zone at the bottom.\n<br />\n<br />[size=4][b]Usage[/b]\n<br />[/size]\n<br />In Settings-&gt;Mods switch the deployment method to \"USVFS Deployment\""
-      },
-      "image": "https://staticdelivery.nexusmods.com/mods/2295/images/37/37-1548351418-434824795.jpeg",
-      "tags": [],
-      "downloads": 1057,
-      "endorsements": 110,
-      "author": "Tannin",
-      "version": "0.1.3",
       "modId": 37,
-      "fileId": 490,
-      "type": null,
-      "timestamp": 1588234192,
-      "uploader": "Tannin42",
-      "dependencies": {
-        "vortex": "~1.2.0"
-      }
+      "fileId": 490
     },
     {
       "modId": 9,
@@ -1868,25 +1851,7 @@
     },
     {
       "modId": 96,
-      "fileId": 631,
-      "author": "agc93",
-      "uploader": "agc93",
-      "description": {
-        "short": "Adds support for installing and managing Beat Saber mods with Vortex",
-        "long": "BeatVortex adds support for installing and managing Beat Saber mods through Vortex. You can use Vortex to install mods alongside Mod Assistant or any other Beat Saber modding tools.\n<br />\n<br />Find full documentation on using Vortex with Beat Saber at [url=https://beatvortex.dev]beatvortex.dev[/url]\n<br />\n<br />[size=5]Installation[/size]\n<br />\n<br />You should be able to automatically install the extension by clicking Manage on Beat Saber in the Games list, just like your other Vortex games. If that doesn't work, you can install the extension directly using the Find More button at the bottom of the Extensions screen: just find Beat Saber Support and Install it.\n<br />\n<br />[size=5]Adding Beat Saber[/size]\n<br />\n<br />Once the extension is installed, Vortex should automatically discover Beat Saber in the \"Discovered\" tab of the Games screen. Click Manage to perform initial setup and add Beat Saber to your games list.\n<br />\n<br />[size=5]Installing Mods[/size]\n<br />\n<br />Just like any other Vortex game, installing mods from archives is pretty simple: download the zip file, drag-and-drop into Vortex, then Install and Enable the mod.\n<br />\n<br />[size=5]BeatMods[/size]\n<br />\n<br />Since v0.2.0, you can quickly browse and install mods from BeatMods without leaving Vortex. Open the new BeatMods page from the left sidebar to see all the currently available mods for your game version.\n<br />\n<br />[size=5]OneClick[/size]\n<br />\n<br />Since v0.2.0, you can enable our preview support for OneClick installs from your Vortex settings. Open the Download tab in Settings, scroll down to \"Enable OneClick Installations\" and you can individually enable OneClick link handling for maps, models or playlists. You can then use the OneClick links on BeatSaver, BeastSaber and ModelSaber to install mods with Vortex. See [url=https://beatvortex.dev/docs/usage/mods/]beatvortex.dev[/url] for more information on OneClick installation."
-      },
-      "downloads": 6835,
-      "endorsements": 122,
-      "image": "https://staticdelivery.nexusmods.com/mods/2295/images/96/96-1585722074-59618986.png",
-      "name": "Beat Saber Support",
-      "timestamp": 1594570998,
-      "tags": [],
-      "version": "0.3.9",
-      "type": "game",
-      "gameName": "Beat Saber",
-      "dependencies": {
-        "vortex": "~ 1.2.0"
-      }
+      "fileId": 631
     },
     {
       "modId": 97,
