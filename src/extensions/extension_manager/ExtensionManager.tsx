@@ -121,8 +121,14 @@ class ExtensionManager extends ComponentEx<IProps, IComponentState> {
 
     const extensionsWithState = this.mergeExt(extensions, extensionConfig);
 
+    // normalize extension config so they differ only if the effective configuration actually
+    // differs, leaving out the endorsement state
     const configId = (conf: { [id: string]: IExtensionState }) =>
-      Object.keys(conf).map(id => `${id}_${conf[id].version}`);
+      Object.values(conf).map(ext => ({
+        enabled: ext.enabled ?? true,
+        version: ext.version ?? '',
+        remove: ext.remove ?? false,
+      }));
 
     return (
       <MainPage>
