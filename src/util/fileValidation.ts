@@ -49,9 +49,11 @@ export async function validateFiles(basePath: string)
       try {
         const hash = await hashFile(path.join(exePath, fileName));
         if (hash !== fileList[fileName]) {
+          log('info', 'file manipulated', { fileName, hash, expected: fileList[fileName] });
           result.changed.push(fileName);
         }
       } catch (err) {
+        log('info', 'file missing', { fileName, error: err.message });
         result.missing.push(fileName);
       }
     }))
