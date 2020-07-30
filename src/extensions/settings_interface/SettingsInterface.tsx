@@ -24,7 +24,7 @@ import { nativeCountryName, nativeLanguageName } from './languagemap';
 import getText from './texts';
 
 import Promise from 'bluebird';
-import { remote } from 'electron';
+import { app, remote } from 'electron';
 import update from 'immutability-helper';
 import * as path from 'path';
 import * as React from 'react';
@@ -356,17 +356,20 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
   }
 
   private toggleAutoStart = () => {
-    const { autoStart, onSetAutoStart, onSetStartHidden } = this.props;
+    const { autoStart, onSetAutoStart } = this.props;
     onSetAutoStart(!autoStart);
-    remote.app.setLoginItemSettings({
+    const uniApp = app || remote.app;
+    uniApp.setLoginItemSettings({
       openAtLogin: !autoStart,
+      path: process.execPath,
     });
   }
 
   private toggleStartHidden = () => {
     const { startHidden, onSetStartHidden } = this.props;
     onSetStartHidden(!startHidden);
-    remote.app.setLoginItemSettings({
+    const uniApp = app || remote.app;
+    uniApp.setLoginItemSettings({
       openAsHidden: !startHidden,
     });
   }
