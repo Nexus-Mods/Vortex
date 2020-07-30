@@ -17,7 +17,7 @@ import { readExtensibleDir } from '../extension_manager/util';
 import getTextModManagement from '../mod_management/texts';
 import getTextProfiles from '../profile_management/texts';
 
-import { setAutoDeployment, setAutoEnable, setAutoStart, setStartHidden } from './actions/automation';
+import { setAutoDeployment, setAutoEnable, setAutoStart } from './actions/automation';
 import { setAdvancedMode, setDesktopNotifications, setHideTopLevelCategory,
          setLanguage, setProfilesVisible, setRelativeTimes } from './actions/interface';
 import { nativeCountryName, nativeLanguageName } from './languagemap';
@@ -51,7 +51,6 @@ interface IConnectedProps {
   autoDeployment: boolean;
   autoEnable: boolean;
   autoStart: boolean;
-  startHidden: boolean;
   advanced: boolean;
   customTitlebar: boolean;
   minimizeToTray: boolean;
@@ -67,7 +66,6 @@ interface IActionProps {
   onSetAutoDeployment: (enabled: boolean) => void;
   onSetAutoEnable: (enabled: boolean) => void;
   onSetAutoStart: (start: boolean) => void;
-  onSetStartHidden: (hide: boolean) => void;
   onSetProfilesVisible: (visible: boolean) => void;
   onSetAdvancedMode: (advanced: boolean) => void;
   onShowDialog: (type: DialogType, title: string,
@@ -121,7 +119,7 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
   public render(): JSX.Element {
     const { t, advanced, autoDeployment, autoEnable, autoStart, currentLanguage,
             customTitlebar, desktopNotifications, profilesVisible,
-            hideTopLevelCategory, relativeTimes, startup, startHidden,
+            hideTopLevelCategory, relativeTimes, startup,
             suppressedNotifications } = this.props;
 
     const needRestart = (customTitlebar !== this.mInitialTitlebar);
@@ -260,12 +258,6 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
             >
               {t('Run Vortex when my computer starts')}
             </Toggle>
-            <Toggle
-              checked={startHidden}
-              onToggle={this.toggleStartHidden}
-            >
-              {t('Start Vortex in the background (Minimized)')}
-            </Toggle>
           </div>
         </FormGroup>
         <FormGroup controlId='notifications'>
@@ -362,15 +354,6 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
     uniApp.setLoginItemSettings({
       openAtLogin: !autoStart,
       path: process.execPath,
-    });
-  }
-
-  private toggleStartHidden = () => {
-    const { startHidden, onSetStartHidden } = this.props;
-    onSetStartHidden(!startHidden);
-    const uniApp = app || remote.app;
-    uniApp.setLoginItemSettings({
-      openAsHidden: !startHidden,
     });
   }
 
@@ -476,7 +459,6 @@ function mapStateToProps(state: IState): IConnectedProps {
     autoDeployment: state.settings.automation.deploy,
     autoEnable: state.settings.automation.enable,
     autoStart: state.settings.automation.start,
-    startHidden: state.settings.automation.hide,
     customTitlebar: state.settings.window.customTitlebar,
     minimizeToTray: state.settings.window.minimizeToTray,
     extensions: state.session.extensions.available,
@@ -498,9 +480,6 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
     },
     onSetAutoStart: (start: boolean) => {
       dispatch(setAutoStart(start));
-    },
-    onSetStartHidden: (hide: boolean) => {
-      dispatch(setStartHidden(hide));
     },
     onSetProfilesVisible: (visible: boolean) => {
       dispatch(setProfilesVisible(visible));

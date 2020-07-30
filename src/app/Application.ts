@@ -239,9 +239,7 @@ class Application {
         })
         .then(() => this.testUserEnvironment())
         .then(() => this.validateFiles())
-        .then(() => (app.getLoginItemSettings().openAsHidden)
-          ? Promise.resolve(undefined)
-          : this.startSplash())
+        .then(() => this.startSplash())
         // start initialization
         .tap(splashIn => (splashIn !== undefined)
           ? log('debug', 'showing splash screen')
@@ -292,16 +290,10 @@ class Application {
         .tap(() => log('debug', 'setting up tray icon'))
         .then(() => this.createTray())
         // end initialization
-        .tap(() => {
-          if (splash !== undefined) {
-            log('debug', 'removing splash screen');
-          }
-        })
+        .tap(() => log('debug', 'removing splash screen'))
         .then(() => {
           this.connectTrayAndWindow();
-          return (splash !== undefined)
-            ? splash.fadeOut()
-            : Promise.resolve();
+          return splash.fadeOut();
         })
         .tapCatch((err) => log('debug', 'quitting with exception', err.message))
         .catch(UserCanceled, () => app.exit())
