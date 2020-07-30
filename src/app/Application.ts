@@ -69,7 +69,7 @@ class Application {
   constructor(args: IParameters) {
     this.mArgs = args;
 
-    ipcMain.on('show-window', () => this.showMainWindow());
+    ipcMain.on('show-window', () => this.showMainWindow(args?.startMinimized));
 
     app.commandLine.appendSwitch('js-flags', `--max-old-space-size=${args.maxMemory || 4096}`);
 
@@ -229,7 +229,6 @@ class Application {
 
   private regularStart(args: IParameters): Promise<void> {
     let splash: SplashScreenT;
-
     return fs.writeFileAsync(this.mStartupLogPath, (new Date()).toUTCString())
         .catch(() => null)
         .tap(() => {
@@ -239,7 +238,9 @@ class Application {
         })
         .then(() => this.testUserEnvironment())
         .then(() => this.validateFiles())
-        .then(() => this.startSplash())
+        .then(() => (args?.startMinimized === true)
+          ? Promise.resolve(undefined)
+          : this.startSplash())
         // start initialization
         .tap(splashIn => (splashIn !== undefined)
           ? log('debug', 'showing splash screen')
@@ -290,10 +291,16 @@ class Application {
         .tap(() => log('debug', 'setting up tray icon'))
         .then(() => this.createTray())
         // end initialization
-        .tap(() => log('debug', 'removing splash screen'))
+        .tap(() => {
+          if (splash !== undefined) {
+            log('debug', 'removing splash screen');
+          }
+        })
         .then(() => {
           this.connectTrayAndWindow();
-          return splash.fadeOut();
+          return (splash !== undefined)
+            ? splash.fadeOut()
+            : Promise.resolve();
         })
         .tapCatch((err) => log('debug', 'quitting with exception', err.message))
         .catch(UserCanceled, () => app.exit())
@@ -834,7 +841,7 @@ class Application {
     }
   }
 
-  private showMainWindow() {
+  private showMainWindow(startMinimized: boolean) {
     if (this.mMainWindow === null) {
       // ??? renderer has signaled it's done loading before we even started it?
       // that can't be right...
@@ -843,7 +850,7 @@ class Application {
     }
     const windowMetrics = this.mStore.getState().settings.window;
     const maximized: boolean = windowMetrics.maximized || false;
-    this.mMainWindow.show(maximized);
+    this.mMainWindow.show(maximized, startMinimized);
     setWindow(this.mMainWindow.getHandle());
   }
 
@@ -922,7 +929,7 @@ class Application {
         //  this is potentially down to the user not realizing that Vortex is minimized
         //  leading him to try to start up Vortex again - we just display the main
         //  window in this case.
-        this.showMainWindow();
+        this.showMainWindow(args?.startMinimized);
       }
     }
   }

@@ -10,6 +10,7 @@ export interface IParameters {
   install?: string;
   report?: string;
   restore?: string;
+  startMinimized?: boolean;
   game?: string;
   get?: string;
   set?: string[];
@@ -31,6 +32,7 @@ const ARG_COUNTS = {
   '-s': 1,
   '--download': 1,
   '--install': 1,
+  '--start-minimized': 1,
   '--game': 1,
   '--get': 1,
   '--set': 1,
@@ -119,7 +121,8 @@ function parseCommandline(argv: string[], electronIsShitHack: boolean): IParamet
     .option('-s, --set [path]=[value]', 'Change a value in the state. Please be very careful '
                                       + 'with this, incorrect use will break Vortex and you may '
                                       + 'lose data', assign)
-    .option('--game [game id]', 'Starts Vortex with a different enabled')
+    .option('--start-minimized', 'Starts Vortex in the task bar')
+    .option('--game [game id]', 'Starts Vortex with a different game enabled')
     .option('--del [path]', 'Remove a value in state')
     .option('--run [path]', 'Execute the js program instead of Vortex itself.')
     .option('--report [path]', 'Send an error report. For internal use')
@@ -143,6 +146,7 @@ const SKIP_ARGS = {
   '-d': 1,
   '--download': 1,
   '-i': 1,
+  '--start-minimized': 1,
   '--game': 1,
   '--install': 1,
   '--restore': 1,

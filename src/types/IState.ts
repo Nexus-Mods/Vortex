@@ -177,7 +177,7 @@ export interface ISettingsAutomation {
   deploy: boolean;
   enable: boolean;
   start: boolean;
-  hide: boolean;
+  minimized: boolean;
 }
 
 export interface ISettingsProfiles {

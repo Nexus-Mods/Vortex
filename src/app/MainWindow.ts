@@ -187,12 +187,22 @@ class MainWindow {
     tray.setMainWindow(this.mWindow);
   }
 
-  public show(maximized: boolean) {
+  public show(maximized: boolean, startMinimized: boolean) {
     this.mShown = true;
     if (truthy(this.mWindow)) {
       this.mWindow.show();
       if (maximized) {
         this.mWindow.maximize();
+      }
+
+      if (startMinimized === true) {
+        // Technically the window could be displayed for a split second
+        //  before we manage to hide it but then the only alternative would
+        //  be to pass this function as a functor to the tray so it can
+        //  run the bounds check and maximize (if needed) on its own.
+        //  (which we may have to do if people start complaining about
+        //  flickering - cross that bridge when we get to it)
+        this.mWindow.hide();
       }
 
       let overlap = 0;

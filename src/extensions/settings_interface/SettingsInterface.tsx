@@ -17,7 +17,7 @@ import { readExtensibleDir } from '../extension_manager/util';
 import getTextModManagement from '../mod_management/texts';
 import getTextProfiles from '../profile_management/texts';
 
-import { setAutoDeployment, setAutoEnable, setAutoStart } from './actions/automation';
+import { setAutoDeployment, setAutoEnable, setAutoStart, setStartMinimized } from './actions/automation';
 import { setAdvancedMode, setDesktopNotifications, setHideTopLevelCategory,
          setLanguage, setProfilesVisible, setRelativeTimes } from './actions/interface';
 import { nativeCountryName, nativeLanguageName } from './languagemap';
@@ -51,6 +51,7 @@ interface IConnectedProps {
   autoDeployment: boolean;
   autoEnable: boolean;
   autoStart: boolean;
+  startMinimized: boolean;
   advanced: boolean;
   customTitlebar: boolean;
   minimizeToTray: boolean;
@@ -66,6 +67,7 @@ interface IActionProps {
   onSetAutoDeployment: (enabled: boolean) => void;
   onSetAutoEnable: (enabled: boolean) => void;
   onSetAutoStart: (start: boolean) => void;
+  onSetStartMinimized: (minimized: boolean) => void;
   onSetProfilesVisible: (visible: boolean) => void;
   onSetAdvancedMode: (advanced: boolean) => void;
   onShowDialog: (type: DialogType, title: string,
@@ -119,10 +121,19 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
   public render(): JSX.Element {
     const { t, advanced, autoDeployment, autoEnable, autoStart, currentLanguage,
             customTitlebar, desktopNotifications, profilesVisible,
-            hideTopLevelCategory, relativeTimes, startup,
+            hideTopLevelCategory, relativeTimes, startup, startMinimized,
             suppressedNotifications } = this.props;
 
     const needRestart = (customTitlebar !== this.mInitialTitlebar);
+
+    const startMinimizedToggle = (autoStart) ? (
+      <Toggle
+        checked={startMinimized}
+        onToggle={this.toggleMinimized}
+      >
+        {t('Start Vortex in the background (Minimized)')}
+      </Toggle>
+    ) : null;
 
     const restartNotification = needRestart ? (
       <HelpBlock>
@@ -258,6 +269,7 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
             >
               {t('Run Vortex when my computer starts')}
             </Toggle>
+            {startMinimizedToggle}
           </div>
         </FormGroup>
         <FormGroup controlId='notifications'>
@@ -348,12 +360,33 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
   }
 
   private toggleAutoStart = () => {
-    const { autoStart, onSetAutoStart } = this.props;
-    onSetAutoStart(!autoStart);
+    const { autoStart, startMinimized, onSetAutoStart, onSetStartMinimized } = this.props;
+    const startOnBoot = ((!autoStart) === true);
+    onSetAutoStart(startOnBoot);
+    if (!startOnBoot) {
+      // We only want to allow the user to start Vortex minimized
+      //  if auto start is enabled - easier this way and less chances
+      //  for users to forget about this setting and start sending
+      //  bug reports.
+      onSetStartMinimized(false);
+    }
     const uniApp = app || remote.app;
     uniApp.setLoginItemSettings({
-      openAtLogin: !autoStart,
-      path: process.execPath,
+      openAtLogin: startOnBoot,
+      path: process.execPath, // Yes this is currently needed - thanks Electron
+      args: (startOnBoot) ? (startMinimized) ? ['--start-minimized'] : [] : [],
+    });
+  }
+
+  private toggleMinimized = () => {
+    const { autoStart, startMinimized, onSetStartMinimized } = this.props;
+    const isMinimized = ((!startMinimized) === true);
+    onSetStartMinimized(isMinimized);
+    const uniApp = app || remote.app;
+    uniApp.setLoginItemSettings({
+      openAtLogin: autoStart,
+      path: process.execPath, // Yes this is currently needed - thanks Electron
+      args: (isMinimized) ? ['--start-minimized'] : [],
     });
   }
 
@@ -459,6 +492,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     autoDeployment: state.settings.automation.deploy,
     autoEnable: state.settings.automation.enable,
     autoStart: state.settings.automation.start,
+    startMinimized: state.settings.automation.minimized,
     customTitlebar: state.settings.window.customTitlebar,
     minimizeToTray: state.settings.window.minimizeToTray,
     extensions: state.session.extensions.available,
@@ -480,6 +514,9 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
     },
     onSetAutoStart: (start: boolean) => {
       dispatch(setAutoStart(start));
+    },
+    onSetStartMinimized: (minimized: boolean) => {
+      dispatch(setStartMinimized(minimized));
     },
     onSetProfilesVisible: (visible: boolean) => {
       dispatch(setProfilesVisible(visible));

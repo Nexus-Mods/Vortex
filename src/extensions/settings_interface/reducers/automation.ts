@@ -15,11 +15,14 @@ const automationReducer: IReducerSpec = {
       update(state, { enable: { $set: payload } }),
     [actions.setAutoStart as any]: (state, payload) =>
       update(state, { start: { $set: payload } }),
+    [actions.setStartMinimized as any]: (state, payload) =>
+      update(state, { minimized: { $set: payload } }),
   },
   defaults: {
     deploy: true,
     enable: false,
     start: false,
+    minimized: false,
   },
 };
 
