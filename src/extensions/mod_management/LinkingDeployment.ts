@@ -259,9 +259,15 @@ abstract class LinkingActivator implements IDeploymentMethod {
               .map(key => context.previousDeployment[key]);
         })
         .tapCatch(() => {
-          const context = this.mContext;
-          this.mContext = undefined;
-          context.onComplete();
+          if (this.mContext !== undefined) {
+            // Not sure how we would manage to get here with an undefined
+            //  deployment context but it _can_ happen, and it is masking
+            //  the actual problem.
+            //  https://github.com/Nexus-Mods/Vortex/issues/7069
+            const context = this.mContext;
+            this.mContext = undefined;
+            context.onComplete();
+          }
         });
   }
 
