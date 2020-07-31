@@ -181,15 +181,15 @@ class DraggableList extends ComponentEx<IProps, IState> {
       },
     });
 
-    this.applyDebouncer = new util.Debouncer(() => {
-      this.apply();
+    this.applyDebouncer = new util.Debouncer((list: ILoadOrderDisplayItem[]) => {
+      this.props.apply(list);
       return Promise.resolve() as any;
-    }, 500);
+    }, 300, false, true);
 
   }
 
   public UNSAFE_componentWillReceiveProps(newProps: IProps) {
-    if (this.state.ordered !== newProps.items) {
+    if (this.nextState.ordered !== newProps.items) {
       this.nextState.ordered = newProps.items.slice(0);
     }
   }
@@ -263,7 +263,7 @@ class DraggableList extends ComponentEx<IProps, IState> {
     // currentItem.message = undefined;
 
     this.nextState.ordered = copy;
-    this.applyDebouncer.schedule();
+    this.applyDebouncer.schedule(undefined, copy);
   }
 
   private renderContextMenu(item: ILoadOrderDisplayItem): JSX.Element {
@@ -313,7 +313,7 @@ class DraggableList extends ComponentEx<IProps, IState> {
   }
 
   private apply = () => {
-    this.props.apply(this.state.ordered);
+    this.props.apply(this.nextState.ordered);
   }
 }
 
