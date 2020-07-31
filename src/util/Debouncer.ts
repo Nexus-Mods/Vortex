@@ -55,6 +55,10 @@ class Debouncer {
    *             parameters will be used
    */
   public schedule(callback?: (err: Error) => void, ...args: any[]) {
+    if ((callback !== undefined) && (callback !== null)) {
+      this.mCallbacks.push(callback);
+    }
+    this.mArgs = args;
     if (this.mTriggerImmediately && (this.mTimer === undefined)) {
       this.run();
     } else {
@@ -62,12 +66,6 @@ class Debouncer {
       if (doReset) {
         this.clear();
       }
-
-      if ((callback !== undefined) && (callback !== null)) {
-        this.mCallbacks.push(callback);
-      }
-
-      this.mArgs = args;
 
       if (this.mTriggerImmediately) {
         this.mRetrigger = true;
