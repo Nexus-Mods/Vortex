@@ -420,8 +420,12 @@ function init(context: IExtensionContext): boolean {
 
   const openGameFolder = (instanceIds: string[]) => {
     const discoveredGames = context.api.store.getState().settings.gameMode.discovered;
-    const gamePath = getSafe(discoveredGames, [instanceIds[0], 'path'], undefined);
+    let gamePath = getSafe(discoveredGames, [instanceIds[0], 'path'], undefined);
+
     if (gamePath !== undefined) {
+      if (!gamePath.endsWith(path.sep)) {
+        gamePath += path.sep;
+      }
       opn(gamePath).catch(() => undefined);
     }
   };
@@ -431,8 +435,11 @@ function init(context: IExtensionContext): boolean {
     const discovered = getSafe(discoveredGames, [instanceIds[0]], undefined);
     if (discovered !== undefined) {
       try {
-        opn(getGame(instanceIds[0]).getModPaths(discovered.path)[''])
-          .catch(() => undefined);
+        let targetPath = getGame(instanceIds[0]).getModPaths(discovered.path)[''];
+        if (!targetPath.endsWith(path.sep)) {
+          targetPath += path.sep;
+        }
+        opn(targetPath).catch(() => undefined);
       } catch (err) {
         log('warn', 'failed to open mod directory', err.message);
       }
