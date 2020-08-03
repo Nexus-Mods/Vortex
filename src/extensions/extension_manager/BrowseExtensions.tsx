@@ -308,6 +308,19 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
 
     const installed = this.isInstalled(ext);
 
+    const openInBrowser = (!!ext.modId) ? (
+      <a
+        className='extension-browse'
+        data-modid={ext.modId}
+        data-github={ext.github}
+        data-githubrawpath={ext.githubRawPath}
+        onClick={this.openPage}
+      >
+        <Icon name='open-in-browser' />
+        {t('Open in Browser')}
+      </a>
+    ) : null;
+
     const action = (installing.indexOf(ext.name) !== -1)
       ? <Spinner />
       : installed
@@ -366,16 +379,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
                 <div className='description-actions'>
                   {action}
                   {' '}
-                  <a
-                    className='extension-browse'
-                    data-modid={ext.modId}
-                    data-github={ext.github}
-                    data-githubrawpath={ext.githubRawPath}
-                    onClick={this.openPage}
-                  >
-                    <Icon name='open-in-browser' />
-                    {t('Open in Browser')}
-                  </a>
+                  {openInBrowser}
                 </div>
               </FlexLayout>
             </FlexLayout.Flex>
