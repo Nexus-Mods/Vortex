@@ -10,7 +10,7 @@ import FormFeedback from './FormFeedback';
 export interface IProps {
   className?: string;
   value: string;
-  onChange: (newValue: string) => void;
+  onChange: (newValue: string, id: string) => void;
   onFocus?: (focused: boolean) => void;
   id?: string;
   label?: string;
@@ -47,7 +47,7 @@ class FormInput extends React.PureComponent<IProps, IComponentState> {
       this.mLastCommitted = newValue;
       if ((validate === undefined)
     || (validate(newValue) !== 'error')) {
-        this.props.onChange(newValue);
+        this.props.onChange(newValue, props.id);
       }
       return null;
     }, this.props.debounceTimer || 1000);
