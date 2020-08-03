@@ -64,6 +64,11 @@ export interface ITableAttribute<T = any> {
    */
   description?: string;
   /**
+   * position of the attribute within the table (at some point we may allow users to override
+   * this at which point this will be the default)
+   */
+  position?: number;
+  /**
    * optional help text regarding this field. This will only show up in the details pane, if there
    * is no custom renderer and only if a name is set (as otherwise the space for the help icon
    * doesn't exist)

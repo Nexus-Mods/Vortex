@@ -1517,8 +1517,10 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
                             : { table: ITableAttribute[],
                                 detail: ITableAttribute[],
                                 inline: ITableAttribute[] } {
-    const filtered = attributes.filter(attribute =>
-      ((attribute.condition === undefined) || attribute.condition()));
+    const filtered = attributes
+      .filter(attribute => ((attribute.condition === undefined) || attribute.condition()))
+      .sort((lhs, rhs) => ((lhs.position ?? 100) - (rhs.position ?? 100)))
+      ;
 
     const enabled = filtered.filter(attribute =>
       this.getAttributeState(attribute, attributeStates).enabled);
