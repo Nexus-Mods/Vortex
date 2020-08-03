@@ -20,6 +20,7 @@ import { Button, FormControl, ListGroup, ListGroupItem, ModalHeader } from 'reac
 import * as semver from 'semver';
 
 const NEXUS_MODS_URL: string = 'http://nexusmods.com/site/mods/';
+const GITHUB_BASE_URL: string = 'https://www.github.com';
 
 export interface IBrowseExtensionsProps {
   visible: boolean;
@@ -308,7 +309,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
 
     const installed = this.isInstalled(ext);
 
-    const openInBrowser = (!!ext.modId) ? (
+    const openInBrowser = (
       <a
         className='extension-browse'
         data-modid={ext.modId}
@@ -319,7 +320,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
         <Icon name='open-in-browser' />
         {t('Open in Browser')}
       </a>
-    ) : null;
+    );
 
     const action = (installing.indexOf(ext.name) !== -1)
       ? <Spinner />
@@ -439,7 +440,11 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
 
     const ext = availableExtensions.find(iter =>
       selectorMatch(iter, { modId, github, githubRawPath }));
-    opn(NEXUS_MODS_URL + ext.modId);
+    if (ext.modId !== undefined) {
+      opn(NEXUS_MODS_URL + ext.modId).catch(() => null);
+    } else if (github !== undefined) {
+      opn(GITHUB_BASE_URL + '/' + github).catch(() => null);
+    }
   }
 }
 
