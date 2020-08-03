@@ -32,5 +32,9 @@
     "severity": "warning",
     "gamemode": "mountandblade2bannerlord",
     "version": "~1.2.7"
-  }
+  }, {
+  "date": "2020-08-03T16:43:00",
+  "description": "If Vortex claims it updated extensions and requests a restart every time you start it, please close Vortex, open the Vortex extensions folder (press Windows Key + R and type \"%appdata%/vortex/plugins\") and if you find two directories named game-subnautica and two for game-subnauticabelowzero, delete all four directories. Then restart Vortex. It should now request to update only once more.",
+  "severity": "warning"
+}
 ]
