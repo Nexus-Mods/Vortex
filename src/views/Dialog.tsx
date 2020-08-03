@@ -359,6 +359,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         key={checkbox.id}
         checked={checkbox.value}
         onChange={this.toggleCheckbox}
+        disabled={checkbox.disabled}
       >
         {t(checkbox.text)}
       </Checkbox>
@@ -374,6 +375,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
         name='dialog-radio'
         checked={checkbox.value}
         onChange={this.toggleRadio}
+        disabled={checkbox.disabled}
       >
         {t(checkbox.text)}
       </Radio>

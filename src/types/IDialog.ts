@@ -43,6 +43,7 @@ export interface IControlBase {
 export interface ICheckbox extends IControlBase {
   text: string;
   value: boolean;
+  disabled?: boolean;
 }
 
 export interface IInput extends IControlBase {
