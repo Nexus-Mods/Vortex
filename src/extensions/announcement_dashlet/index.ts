@@ -1,4 +1,5 @@
 import Promise from 'bluebird';
+import { remote } from 'electron';
 import * as https from 'https';
 import * as _ from 'lodash';
 import * as path from 'path';
@@ -9,15 +10,20 @@ import { IExtensionContext } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
+import opn from '../../util/opn';
+import { activeGameId } from '../../util/selectors';
+import { getSafe } from '../../util/storeHelper';
 
 import sessionReducer from './reducers/announcements';
 import persistentReducer from './reducers/persistent';
 import surveySessionReducer from './reducers/surveys';
 
-import { setAnnouncements, setAvailableSurveys } from './actions';
+import { setAnnouncements, setAvailableSurveys, setSuppressSurvey } from './actions';
 import AnnouncementDashlet from './AnnouncementDashlet';
 import { IAnnouncement, ISurveyInstance,
   ParserError } from './types';
+
+import { matchesGameMode, matchesVersion } from './util';
 
 const ANNOUNCEMENT_LINK =
   'https://raw.githubusercontent.com/Nexus-Mods/Vortex/announcements/announcements.json';
@@ -92,12 +98,65 @@ function init(context: IExtensionContext): boolean {
   context.once(() => {
     const store = context.api.store;
     if (store.getState().session.base.networkConnected) {
-      updateSurveys(store);
+      updateSurveys(store).then(() => showSurveyNotification(context));
       updateAnnouncements(store);
     }
   });
 
   return true;
+}
+
+function showSurveyNotification(context) {
+  const t = context.api.translate;
+  const state = context.api.store.getState();
+  const now = new Date().getTime();
+  const surveys = getSafe(state, ['session', 'surveys', 'available'], []);
+  const suppressed = getSafe(state, ['persistent', 'surveys', 'suppressed'], {});
+  const gameMode = activeGameId(state);
+  const suppressedIds = Object.keys(suppressed);
+  const isOutdated = (survey: ISurveyInstance) => {
+    const surveyCutoffDateMS = new Date(survey.endDate).getTime();
+    return surveyCutoffDateMS <= now;
+  };
+
+  const appVersion = remote.app.getVersion();
+
+  const filtered = surveys.filter(survey => {
+    const isSuppressed = (suppressedIds.includes(survey.id) && (suppressed[survey.id] === true));
+    return !isSuppressed
+        && !isOutdated(survey)
+        && matchesGameMode(survey, gameMode, (survey?.gamemode === undefined))
+        && matchesVersion(survey, appVersion);
+  });
+
+  if (filtered.length > 0) {
+      context.api.sendNotification({
+      id: 'survey-notification',
+      type: 'info',
+      message: t('We could use your opinion on something...'),
+      noDismiss: true,
+      actions: [
+        {
+          title: 'Go to Survey',
+          action: (dismiss) => {
+            const survey = filtered[0];
+            opn(survey.link)
+              .then(() => context.api.store.dispatch(setSuppressSurvey(survey.id, true)))
+              .catch(() => null);
+            dismiss();
+          },
+        },
+        {
+          title: 'No thanks',
+          action: (dismiss) => {
+            const survey = filtered[0];
+            context.api.store.dispatch(setSuppressSurvey(survey.id, true));
+            dismiss();
+          },
+        },
+      ],
+    });
+  }
 }
 
 export default init;

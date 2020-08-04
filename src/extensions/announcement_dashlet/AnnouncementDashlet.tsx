@@ -1,10 +1,10 @@
 import { remote } from 'electron';
 import { TFunction } from 'i18next';
-import minimatch from 'minimatch';
 import * as React from 'react';
 import { WithTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
-import * as semver from 'semver';
+
+import { matchesGameMode, matchesVersion } from './util';
 
 import Dashlet from '../../controls/Dashlet';
 import { Icon, IconButton } from '../../controls/TooltipControls';
@@ -12,25 +12,15 @@ import { ComponentEx, translate } from '../../util/ComponentEx';
 import opn from '../../util/opn';
 import * as selectors from '../../util/selectors';
 
-import { setSuppressSurvey } from './actions';
-
 import { EmptyPlaceholder, FlexLayout } from '../../controls/api';
-import { AnnouncementSeverity, IAnnouncement, ISurveyInstance } from './types';
-
-import { getSafe } from '../../util/storeHelper';
+import { AnnouncementSeverity, IAnnouncement } from './types';
 
 interface IConnectedProps {
   gameMode: string;
   announcements: IAnnouncement[];
-  surveys: ISurveyInstance[];
-  suppressed: { [id: string]: boolean };
 }
 
-interface IActionProps {
-  OnSuppressSurvey: (id: string, suppress: boolean) => void;
-}
-
-type IProps = WithTranslation & IConnectedProps & IActionProps;
+type IProps = WithTranslation & IConnectedProps;
 
 class AnnouncementDashlet extends ComponentEx<IProps, {}> {
   private mAppVersion: string;
@@ -39,59 +29,12 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
     this.mAppVersion = remote.app.getVersion();
   }
 
-  public componentDidMount() {
-    const { t, surveys, suppressed, OnSuppressSurvey } = this.props;
-    const now = new Date().getTime();
-    const suppressedIds = Object.keys(suppressed);
-    const isOutdated = (survey: ISurveyInstance) => {
-      const surveyCutoffDateMS = new Date(survey.endDate).getTime();
-      return surveyCutoffDateMS <= now;
-    };
-
-    const filtered = surveys.filter(survey => {
-      const isSuppressed = (suppressedIds.includes(survey.id) && (suppressed[survey.id] === true));
-      return !isSuppressed
-          && !isOutdated(survey)
-          && this.matchesGameMode(survey, (survey?.gamemode === undefined))
-          && this.matchesVersion(survey);
-    });
-
-    if (filtered.length > 0) {
-      this.context.api.sendNotification({
-        id: 'survey-notification',
-        type: 'info',
-        message: t('We could use your opinion on something...'),
-        noDismiss: true,
-        actions: [
-          {
-            title: 'Go to Survey',
-            action: (dismiss) => {
-              const survey = filtered[0];
-              opn(survey.link)
-                .then(() => OnSuppressSurvey(survey.id, true))
-                .catch(() => null);
-              dismiss();
-            },
-          },
-          {
-            title: 'No thanks',
-            action: (dismiss) => {
-              const survey = filtered[0];
-              OnSuppressSurvey(survey.id, true);
-              dismiss();
-            },
-          },
-        ],
-      });
-    }
-  }
-
   public render(): JSX.Element {
-    const { t, announcements } = this.props;
+    const { t, announcements, gameMode } = this.props;
 
     // Filter announcements by gamemode and version.
-    const filtered = announcements.filter(announce => this.matchesGameMode(announce)
-                                                   && this.matchesVersion(announce));
+    const filtered = announcements.filter(announce => matchesGameMode(announce, gameMode)
+                                                   && matchesVersion(announce, this.mAppVersion));
 
     return (
       <Dashlet className='dashlet-announcement' title={t('Announcements')}>
@@ -100,38 +43,6 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
         </div>
       </Dashlet>
     );
-  }
-
-  private matchesGameMode<T>(entry: T, forceMatch: boolean = false): boolean {
-    const { gameMode } = this.props;
-    const entryGameMode = getSafe(entry, ['gamemode'], undefined);
-    if ((gameMode === undefined)
-      && ((entryGameMode === undefined) || (entryGameMode === '*'))) {
-      return true;
-    }
-
-    return ((entryGameMode !== undefined) && (gameMode !== undefined))
-    // Only compare gameModes when the entry is game specific and
-    //  we have an active game mode. We use forceMatch at this point as
-    //  we don't want to display announcements if the predicate fails, but
-    //  we _do_ want to display surveys, so this allows us to keep the same
-    //  predicate for both use cases. (bit hacky I admit..)
-      ? minimatch(gameMode, entryGameMode)
-      : forceMatch;
-  }
-
-  private matchesVersion<T>(entry: T): boolean {
-    if (this.mAppVersion === undefined) {
-      // TODO: should never happen. This check was added when mAppVersion was assigned during
-      // componentDidMount and this got called before that. Now it's only here because
-      // I'm too scared to remove it.
-      return false;
-    }
-
-    const entryVersion = getSafe(entry, ['version'], undefined);
-    return (entryVersion !== undefined)
-      ? semver.satisfies(this.mAppVersion, entryVersion)
-      : true;
   }
 
   private renderPlaceholder(): JSX.Element {
@@ -247,19 +158,10 @@ function mapStateToProps(state: any): IConnectedProps {
   return {
     gameMode: selectors.activeGameId(state) || undefined,
     announcements: state.session.announcements.announcements,
-    surveys: getSafe(state, ['session', 'surveys', 'available'], []),
-    suppressed: getSafe(state, ['persistent', 'surveys', 'suppressed'], empty),
-  };
-}
-
-function mapDispatchToProps(dispatch: any): IActionProps {
-  return {
-    OnSuppressSurvey: (id: string, suppress: boolean) =>
-      dispatch(setSuppressSurvey(id, suppress)),
   };
 }
 
 export default
-connect(mapStateToProps, mapDispatchToProps)(
+connect(mapStateToProps)(
     translate(['common'])(
       AnnouncementDashlet));
