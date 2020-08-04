@@ -8,7 +8,7 @@ import { ITestResult } from '../../types/ITestResult';
 import { DataInvalid, ProcessCanceled, SetupError, UserCanceled } from '../../util/CustomErrors';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
-import {toPromise, truthy} from '../../util/util';
+import {delayed, toPromise, truthy} from '../../util/util';
 
 import { getGame } from '../gamemode_management/util/getGame';
 import { ArchiveBrokenError } from '../mod_management/InstallManager';
@@ -262,6 +262,27 @@ function createSocket(options: ICreateSocketOptions)
   });
 }
 
+function createConnection(ipcPath: string, tries: number = 5): Promise<net.Socket> {
+  return new Promise((resolve, reject) => {
+    const errCB = err => {
+      if ((err['code'] === 'ENOENT') && (tries > 0)) {
+        delayed(1000)
+          .then(() => createConnection(ipcPath, tries - 1))
+          .then(resolve)
+          .catch(reject);
+      } else {
+        reject(err);
+      }
+    };
+
+    const sock = net.createConnection(ipcPath, () => {
+      sock.off('error', errCB);
+      resolve(sock);
+    });
+    sock.on('error', errCB);
+  });
+}
+
 class ConnectionIPC {
   public static async bind(): Promise<ConnectionIPC> {
     let proc: ChildProcess = null;
@@ -291,10 +312,18 @@ class ConnectionIPC {
         servSocket = sock;
         if (pipe) {
           log('debug', '[installer] connecting to reply pipe');
-          cliSocket = net.createConnection(`\\\\?\\pipe\\${ipcId}_reply`, () => {
+          createConnection(`\\\\?\\pipe\\${ipcId}_reply`)
+          .then(sockIn => {
             log('debug', '[installer] reply pipe connected');
-            cliSocket.setEncoding('utf-8');
+            sockIn.setEncoding('utf-8');
+            sockIn.on('error', err => {
+              log('error', '[installer] socket error', err.message);
+            });
+            cliSocket = sockIn;
             onResolve();
+          })
+          .catch(err => {
+            onReject(err);
           });
         } else {
           cliSocket = servSocket;

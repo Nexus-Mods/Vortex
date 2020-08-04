@@ -2,7 +2,7 @@ import { Normalize } from './getNormalizeFunc';
 import getVortexPath from './getVortexPath';
 import { log } from './log';
 
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import { spawn } from 'child_process';
 import * as _ from 'lodash';
 import * as path from 'path';
@@ -133,10 +133,10 @@ export function objDiff(lhs: any, rhs: any, skip?: string[]): any {
  * and with the promise that nothing else in the queue is run in parallel.
  */
 export function makeQueue() {
-  let queue = Promise.resolve();
+  let queue = Bluebird.resolve();
   let atEnd = true;
-  return (func: () => Promise<any>, tryOnly: boolean) =>
-    new Promise((resolve, reject) => {
+  return (func: () => Bluebird<any>, tryOnly: boolean) =>
+    new Bluebird((resolve, reject) => {
       if (tryOnly && !atEnd) {
         return resolve();
       }
@@ -316,7 +316,7 @@ export function escapeRE(input: string): string {
 export interface ITimeoutOptions {
   cancel?: boolean;
   throw?: boolean;
-  queryContinue?: () => Promise<boolean>;
+  queryContinue?: () => Bluebird<boolean>;
 }
 
 /**
@@ -326,17 +326,17 @@ export interface ITimeoutOptions {
  * @param delayMS the time in milliseconds after which this should return
  * @param options options detailing how this timeout acts
  */
-export function timeout<T>(prom: Promise<T>,
+export function timeout<T>(prom: Bluebird<T>,
                            delayMS: number,
                            options?: ITimeoutOptions)
-                           : Promise<T> {
+                           : Bluebird<T> {
   let timedOut: boolean = false;
   let resolved: boolean = false;
 
   const doTimeout = () => {
     timedOut = true;
     if (options?.throw === true) {
-      return Promise.reject(new TimeoutError());
+      return Bluebird.reject(new TimeoutError());
     } else {
       return undefined;
     }
@@ -344,14 +344,14 @@ export function timeout<T>(prom: Promise<T>,
 
   const onTimeExpired = () => {
     if (resolved) {
-      return Promise.resolve();
+      return Bluebird.resolve();
     }
     if (options?.queryContinue !== undefined) {
       return options?.queryContinue()
         .then(requestContinue => {
           if (requestContinue) {
             delayMS *= 2;
-            return Promise.delay(delayMS).then(onTimeExpired);
+            return Bluebird.delay(delayMS).then(onTimeExpired);
           } else {
             return doTimeout();
           }
@@ -361,7 +361,7 @@ export function timeout<T>(prom: Promise<T>,
     }
   };
 
-  return Promise.race<T>([prom, Promise.delay(delayMS).then(onTimeExpired)])
+  return Bluebird.race<T>([prom, Bluebird.delay(delayMS).then(onTimeExpired)])
     .finally(() => {
       resolved = true;
       if (timedOut && (options?.cancel === true)) {
@@ -374,8 +374,8 @@ export function timeout<T>(prom: Promise<T>,
  * wait for the specified number of milliseconds before resolving the promise.
  * Bluebird has this feature as Promise.delay but when using es6 default promises this can be used
  */
-export function delay(timeoutMS: number): Promise<void> {
-  return new Promise(resolve => {
+export function delay(timeoutMS: number): Bluebird<void> {
+  return new Bluebird(resolve => {
     setTimeout(resolve, timeoutMS);
   });
 }
@@ -515,8 +515,8 @@ function flattenInner(obj: any, key: string[],
   }, {});
 }
 
-export function withTmpDir<T>(cb: (tmpPath: string) => Promise<T>): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
+export function withTmpDir<T>(cb: (tmpPath: string) => Bluebird<T>): Bluebird<T> {
+  return new Bluebird<T>((resolve, reject) => {
     tmp.dir({ unsafeCleanup: true }, (err, tmpPath, cleanup) => {
       if (err !== null) {
         return reject(err);
@@ -541,10 +541,10 @@ export function withTmpDir<T>(cb: (tmpPath: string) => Promise<T>): Promise<T> {
   });
 }
 
-export function toPromise<ResT>(func: (cb) => void): Promise<ResT> {
-  return new Promise((resolve, reject) => {
+export function toPromise<ResT>(func: (cb) => void): Bluebird<ResT> {
+  return new Bluebird((resolve, reject) => {
     const cb = (err: Error, res: ResT) => {
-      if (err !== null) {
+      if ((err !== null) && (err !== undefined)) {
         return reject(err);
       } else {
         return resolve(res);
@@ -564,4 +564,10 @@ export function unique<T, U>(input: T[], keyFunc?: (item: T) => U): T[] {
     keys.add(key);
     return [].concat(prev, iter);
   }, []);
+}
+
+export function delayed(delayMS: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, delayMS);
+  });
 }
