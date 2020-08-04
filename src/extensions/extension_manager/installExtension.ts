@@ -75,7 +75,12 @@ function installExtensionDependencies(api: IExtensionApi, extPath: string): Prom
 
 function sanitize(input: string): string {
   const temp = input.replace(INVALID_FILENAME_RE, '_');
-  return path.basename(temp, path.extname(temp));
+  const ext = path.extname(temp);
+  if (['.7z', '.zip', '.rar'].includes(ext.toLowerCase())) {
+    return path.basename(temp, path.extname(temp));
+  } else {
+    return path.basename(temp);
+  }
 }
 
 function removeOldVersion(api: IExtensionApi, info: IExtension): Promise<void> {

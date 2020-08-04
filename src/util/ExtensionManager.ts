@@ -1040,7 +1040,7 @@ class ExtensionManager {
     this.mExtensions.forEach(ext => {
       if (remote !== undefined) {
         // log this only once so we don't spam the log file with this
-        log('info', 'init extension', {name: ext.name});
+        log('info', 'init extension', {name: ext.name, path: ext.path});
       }
       this.mContextProxyHandler.setExtension(ext.name, ext.path);
       try {
@@ -1810,10 +1810,10 @@ class ExtensionManager {
 
     const res = fs.readdirSync(extension.path)
       .filter(name => fs.statSync(path.join(extension.path, name)).isDirectory())
-      .map(name => {
+      .reduce((prev: { [id: string]: IRegisteredExtension }, name: string) => {
         if (!getSafe(this.mExtensionState, [name, 'enabled'], true)) {
           log('debug', 'extension disabled', { name });
-          return undefined;
+          return prev;
         }
         try {
           // first, mark this extension as loaded. If this is a user extension and there is an
@@ -1827,16 +1827,36 @@ class ExtensionManager {
             loadedExtensions.add(ext.name);
             const loadTime = Date.now() - before;
             log('debug', 'loaded extension', { name, loadTime, location: extension.path });
+            if (prev[ext.name] !== undefined) {
+              // loadDynamicExtension already handles the case where the same extension was found
+              // in a different directory, but if the same directory contains multiple copies
+              // of the same extension, we have to deal with that slightly differently
+              log('warn', 'multiple copies of the same extension installed',
+                  { first: ext.path, second: prev[ext.name].path });
+
+              if ((ext.info === undefined)
+                  || semver.gt(prev[ext.name].info?.version, ext.info?.version)) {
+                // the copy we loaded previously is newer so mark this one for removal and not
+                // load it
+                this.mOutdated.push(path.basename(ext.path));
+              } else {
+                // this copy is actually the newer one so replace the one previously found and
+                // mark that for deletion
+                this.mOutdated.push(path.basename(prev[ext.name].path));
+                prev[ext.name] = ext;
+              }
+            } else {
+              prev[ext.name] = ext;
+            }
           }
-          return ext;
         } catch (err) {
           log('warn', 'failed to load dynamic extension',
               { name, error: err.message, stack: err.stack });
           this.mLoadFailures[name] = [{ id: 'exception', args: { message: err.message } }];
-          return undefined;
         }
-      });
-    return res.filter((reg: IRegisteredExtension) => reg !== undefined);
+        return prev;
+      }, {});
+    return Object.values(res);
   }
 
   /**
