@@ -336,7 +336,7 @@ class ConnectionIPC {
       // for debugging purposes, the user has to run the installer manually
       // invoke the c# installer, passing the id/port
       try {
-        proc = await (createIPC as any)(pipe, ipcId);
+        proc = await createIPC(pipe, ipcId);
       } catch (err) {
         return Promise.reject(new ProcessCanceled(err.message));
       }
