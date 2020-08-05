@@ -670,7 +670,7 @@ function init(context: IExtensionContextExt): boolean {
   const downloadCount = new ReduxProp(context.api, [
     ['persistent', 'downloads', 'files'],
     ], (downloads: { [dlId: string]: IDownload }) => {
-      const count = Object.keys(downloads).filter(
+      const count = Object.keys(downloads ?? {}).filter(
         id => ['init', 'started', 'paused'].indexOf(downloads[id].state) !== -1).length;
       return count > 0 ? count : undefined;
     });
