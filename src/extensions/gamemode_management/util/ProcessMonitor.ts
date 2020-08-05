@@ -90,12 +90,16 @@ class ProcessMonitor {
 
     const vortexPid = process.pid;
 
-    const isChildProcess = (proc: winapi.ProcessEntry): boolean => {
+    const isChildProcess = (proc: winapi.ProcessEntry, visited: Set<number>): boolean => {
       if ((proc === undefined) || (proc.parentProcessID === 0)) {
         return false;
+      } else if (visited.has(proc.parentProcessID)) {
+        // a loop in process hierarchy? Apparently that is possible, see #6508
+        return false;
       } else {
+        visited.add(proc.parentProcessID);
         return (proc.parentProcessID === vortexPid)
-            || isChildProcess(byPid[proc.parentProcessID]);
+            || isChildProcess(byPid[proc.parentProcessID], visited);
       }
     };
 
@@ -134,7 +138,7 @@ class ProcessMonitor {
 
       const candidates = considerDetached
         ? exeRunning
-        : exeRunning.filter(isChildProcess);
+        : exeRunning.filter(proc => isChildProcess(proc, new Set()));
       const match = candidates.find(exe => {
         const modules = winapi.GetModuleList(exe.processID);
 
