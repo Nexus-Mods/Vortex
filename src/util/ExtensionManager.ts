@@ -37,6 +37,7 @@ import lazyRequire from './lazyRequire';
 import { log } from './log';
 import { showError } from './message';
 import { registerSanityCheck, SanityCheck } from './reduxSanity';
+import ReduxWatcher from './ReduxWatcher';
 import runElevatedCustomTool from './runElevatedCustomTool';
 import { activeGameId } from './selectors';
 import { getSafe } from './storeHelper';
@@ -49,7 +50,6 @@ import { app as appIn, dialog as dialogIn, ipcMain, ipcRenderer, OpenDialogOptio
          remote, WebContents } from 'electron';
 import { EventEmitter } from 'events';
 import * as fs from 'fs-extra';
-import I18next from 'i18next';
 import JsonSocket from 'json-socket';
 import * as _ from 'lodash';
 import { IHashResult, ILookupResult, IModInfo, IReference } from 'modmeta-db';
@@ -58,14 +58,10 @@ const modmeta = lazyRequire<typeof modmetaT>(() => require('modmeta-db'));
 import * as net from 'net';
 import * as path from 'path';
 import * as Redux from 'redux';
-import {} from 'redux-watcher';
 import * as semver from 'semver';
 import { generate as shortid } from 'shortid';
 import stringFormat from 'string-template';
 import { dynreq, runElevated } from 'vortex-run';
-
-// tslint:disable-next-line:no-var-requires
-const ReduxWatcher = require('redux-watcher');
 
 const ERROR_OUTPUT_CUTOFF = 3;
 
@@ -482,7 +478,7 @@ class ExtensionManager {
   private mTranslator: i18n;
   private mEventEmitter: NodeJS.EventEmitter;
   private mStyleManager: StyleManager;
-  private mReduxWatcher: any;
+  private mReduxWatcher: ReduxWatcher<IState>;
   private mWatches: IWatcherRegistry = {};
   private mProtocolHandlers: { [protocol: string]: (url: string, install: boolean) => void } = {};
   private mArchiveHandlers: { [extension: string]: ArchiveHandlerCreator };
@@ -625,7 +621,7 @@ class ExtensionManager {
    * @memberOf ExtensionManager
    */
   public setStore<S extends IState>(store: ThunkStore<S>) {
-    this.mReduxWatcher = new ReduxWatcher(store);
+    this.mReduxWatcher = new ReduxWatcher(store, this.watcherError);
 
     this.mExtensionState = getSafe(store.getState(), ['app', 'extensions'], {});
 
@@ -884,6 +880,13 @@ class ExtensionManager {
     ipcRenderer.send('__ui_is_ready');
   }
 
+  private watcherError = (err: Error, selector: string[]) => {
+    log('warn', 'Failed to trigger state listener', {
+      error: err.message,
+      selector: JSON.stringify(selector),
+    });
+  }
+
   private queryLoadTimeout(extension: string): Promise<boolean> {
     return Promise.resolve(dialog.showMessageBox(getVisibleWindow(), {
       type: 'warning',
@@ -990,8 +993,10 @@ class ExtensionManager {
 
     const key = watchPath.join('.');
 
-    const changeHandler = ({cbStore, selector, prevState, currentState,
-                            prevValue, currentValue}) => {
+    // TODO: this code makes using the ReduxWatcher pointless and looking at the
+    //   code I would now disagree with the assessment that it may retrigger
+    //   without an actual change. otoh I didn't add this for no reason...
+    const changeHandler = ({prevValue, currentValue}) => {
       // redux-watch may trigger even if no change occurred so we have to
       // do our own check, otherwise we could end up in an endless loop
       // if the callback causes redux-watch to trigger again without change
@@ -1014,7 +1019,7 @@ class ExtensionManager {
 
     if (this.mWatches[key] === undefined) {
       this.mWatches[key] = [];
-      this.mReduxWatcher.watch(watchPath, changeHandler);
+      this.mReduxWatcher.on<any>(watchPath, changeHandler);
     }
     this.mWatches[key].push(callback);
   }

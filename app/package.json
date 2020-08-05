@@ -80,7 +80,6 @@
     "redux": "^4.0.4",
     "redux-act": "^1.7.7",
     "redux-thunk": "^2.3.0",
-    "redux-watcher": "^1.0.1",
     "relaxed-json": "^1.0.3",
     "reselect": "^4.0.0",
     "resolve": "^1.12.0",
