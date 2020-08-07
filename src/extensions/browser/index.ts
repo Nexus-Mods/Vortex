@@ -59,6 +59,7 @@ function init(context: IExtensionContext): boolean {
       const subscriptionId = shortid();
 
       return new Promise<string>((resolve, reject) => {
+        lastURL = navUrl;
         subscribe(subscriptionId, 'close', () => {
           reject(new UserCanceled());
           return 'continue';
