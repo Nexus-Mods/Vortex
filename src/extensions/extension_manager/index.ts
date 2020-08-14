@@ -177,6 +177,17 @@ function checkMissingDependencies(api: IExtensionApi,
                       replace: { name: depId },
                     });
                   } else {
+                    api.sendNotification({
+                      type: 'success',
+                      message: 'Missing dependencies were installed - please restart Vortex',
+                      actions: [
+                        {
+                          title: 'Restart now', action: () => {
+                            relaunch();
+                          },
+                        },
+                      ],
+                    });
                     dismiss();
                   }
                 })
