@@ -1,5 +1,5 @@
 {
-  "last_updated": 1597395767805,
+  "last_updated": 1597661685312,
   "extensions": [
     {
       "name": "Archive binding fix",
@@ -9,8 +9,8 @@
       },
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/25/25-1537361925-1967621763.png",
       "tags": [],
-      "downloads": 1509,
-      "endorsements": 123,
+      "downloads": 1512,
+      "endorsements": 124,
       "author": "Nexus Mods",
       "version": "0.1.0",
       "modId": 25,
@@ -26,7 +26,7 @@
       },
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/12/12-1532000024-863882280.png",
       "tags": [],
-      "downloads": 757,
+      "downloads": 762,
       "endorsements": 64,
       "author": "Nexus Mods",
       "version": "1.0.0",
@@ -43,7 +43,7 @@
       },
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/28/28-1539868577-821975985.png",
       "tags": [],
-      "downloads": 427,
+      "downloads": 429,
       "endorsements": 35,
       "author": "Nexus Mods",
       "version": "0.0.9",
@@ -65,8 +65,8 @@
         "short": "A Vortex mod manager magyarítása.",
         "long": "Ez a Vortex nevű mod manager program magyarítása. A Vortex béta állapotban van, még folyamatban van a fejlesztése, új funkciók hozzáadása, ezért időnként megváltozhatnak benne a korábban lefordított szövegek. Illetve tudni kell, hogy néhány üzenetet sajnos nem lehet lefordítani ebben a programban.\n<br />\n<br />Elder Scrolls játékoknál a modok \"bevetéséhez\" rögzített hivatkozás ajánlott (hardlink deployment, ismertetőt lásd a programban az i ikonra kattintva), de az erről szóló hibaüzenetet sem lehetett lefordítani. Annyi a teendő, hogy telepítési könyvtárnak olyat adj meg a Beállítások-Modok lapon, ami ugyanazon a partíción van, mint a játék. (Ha pl. a Skyrim a D:&#92;SteamLibrary&#92;common&#92;Skyrim könyvtárban van, akkor a Skyrim modok telepítési útvonala valami ilyesmi legyen: D:&#92;Vortex_mods&#92;Skyrim)\n<br />\n<br />[size=3][b]TELEPÍTÉS\n<br />[/b][/size]\n<br />A magyarítás telepítése annyiból áll, hogy letöltés után ki kell csomagolni a C:&#92;Users&#92;[felhasználói neved]&#92;AppData&#92;Roaming&#92;Vortex&#92;locales mappába. Használni pedig úgy lehet, hogy a Settings-Interface lapon a Language lenyíló menüben kiválasztod a magyar nyelvet. Vagy rakhatod a C:&#92;Program Files&#92;Black Tree Gaming Ltd&#92;Vortex&#92;resources&#92;locales alapértelmezett könyvtárba is, de így program frissítés után elveszik a magyarítás.\n<br />\n<br />Ha el akarnád távolítani, le kell törölnöd a Vortex&#92;locales&#92;hu vagy Vortex&#92;resources&#92;locales&#92;hu könyvtárat.\n<br />\n<br />[size=3][b]IMPORTÁLÁS NMM-BŐL, MO-BÓL[/b]\n<br />\n<br />[/size]A Vortex egy külön telepített programként kerül a számítógépedre. Nincs hatása a már létező Nexus Mod Manager illetve Mod Organizer telepítésedre. Az egyetlen dolog, amit befolyásolhatsz ezekkel kapcsolatban, a \"Download with Manager\" gombok működése a Nexusmods oldalon. Ha akarod, beállíthatod, hogy ezekre a gombokra kattintva a Vortex induljon el és töltse le a kiválasztott modot.\n<br />\n<br />A Modok menü tetején található egy \"Import From...\" ikon, abban pedig \"Import from NMM\" és \"Import from MO\" (régebben magyarítható, újabban már nem) menüpontok vannak. Ezekre kattintva, az útmutatót követve lemásolhatod az adott programban (Nexus Mod Manger vagy Mod Organizer) található mod beállításaidat. Ez nem befolyásolja az adott programok működését. Légy türelemmel, amíg tart a folyamat, nagyobb méretű mod csomagok esetén eltarthat egy darabig, amíg végez. Ha sikeres volt az importálás, akkor célszerű bezárni a Vortexet, és Nexus Mod Manager esetén átváltani egy üres profilra/kikapcsolni az összes modot. Erre azért van szükség, mert a NMM elavult módon próbálja nyomon követni, hogy milyen modokat használsz vele, ami összeakadhat a Vortex dolgaival. Ha később vissza akarnál térni a NMM-hez, akkor egyszerűen ki kell kapcsolnod a modokat a Vortexben/üres profilra kell váltanod, majd a Nexus Mod Managerben vissza kell váltanod az eredeti profilodra.\n<br />\n<br />[b]VÉGÜL NÉHÁNY JÓ TANÁCS\n<br />[/b]\n<br />Ha mondjuk a Skyrim indításánál azonnal összeomlik a játék még a főmenü előtt, és magyarítást használsz, nézz utána, hogy megvannak-e még a Skyrim&#92;Data&#92;Strings mappában a szükséges dolgok. Nálam előfordult, hogy bizonyos modok kikapcsolása miatt törölte őket a Vortex (hiszen ezek hozzá tartoznak), nélkülük viszont nem működik a magyarítással a játék. De olyan eset is előfordult, hogy meg kellett szüntetni az internet kapcsolatot a Skyrim indítása előtt, csak úgy indult el.\n<br />\n<br />[color=#00ff00]Ez úgy tűnik, hogy már elavult, de egyelőre itt hagyom.[/color]\n<br />A Vortex nem támogatja a beépülő fordításokat. Vagyis, ha bekapcsolsz egy modot, majd a magyarítását, akkor ugyan figyelmeztetést kapsz, hogy ezek ütköznek egymással, de hiába adod meg a helyes sorrendet, a magyarítást tartalmazó .esp nem fog működni, meg sem jelenik a Skyrim&#92;Data könyvtárban. Jelentettem a hibát, állítólag így működik jól. Több megoldása is van ennek a helyzetnek.\n<br />\n<br />a)\n<br />1. kikapcsolod az eredeti beépülőt még a magyarítás bevetése előtt (a modot nem, csak a hozzá tartozó .esp-t a beépülőknél)\n<br />2. a magyarítást tartalmazó mod bevetése után bekapcsolod a magyar szövegeket tartalmazó .esp-t\n<br />\n<br />b)\n<br />1. újra csomagolod a modot tartalmazó archívumot, és kicseréled benne az eredeti .esp-t a magyarításra\n<br />2. bekapcsolod a magyarítást tartalmazó teljes modot\n<br />\n<br />c)\n<br />Csak olyan magyarítást használsz, ami tartalmazza a teljes modot (ugyanaz, mint a b) pont, csak ilyenkor a magyarítás készítője végzi el az újra csomagolást)\n<br />\n<br />d)\n<br />Átnevezed a magyarítást tartalmazó .esp-t, és úgy aktiválod a Vortexben. Elvileg így is jó lesz, de ezt még nem teszteltem."
       },
-      "downloads": 8279,
-      "endorsements": 81,
+      "downloads": 8309,
+      "endorsements": 82,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/9/9-1529662049-893434642.jpeg",
       "name": "Hungarian translation for Vortex",
       "tags": [],
@@ -84,8 +84,8 @@
         "short": "A selection of themes for Vortex, based on the colour schemes of your favourite Nexus Mods game sites.",
         "long": "A selection of themes for Vortex, based on the colour schemes of your favourite Nexus Mods game sites.\n<br />\n<br />[size=6][font=bebas_neuebook]Included Themes[/font][/size]\n<br />\n<br />Burgundy - Used on the Witcher 2 and Witcher 3 mod sites\n<br />Deep Blue - Used on the Skyrim Special Edition mod site\n<br />Deep Orange - Used on the Fallout: New Vegas mod site\n<br />Fallout Green - Used on the Fallout 3 and Fallout 4 mod sites\n<br />Gold - Used on the Elder Scrolls Online mod site\n<br />Pale Brown - Used on the Morrowind mod site\n<br />Sepia - Used on the Dark Souls, Dark Souls 2 and Mount &amp; Blade mod sites\n<br />Skyrim Blue - Used on the Skyrim mod site\n<br />Teal - Used on the No Man's Sky and XCOM 2 mod sites\n<br />Violet Blue - Used on the Neverwinter Nights and Neverwinter Nights 2 mod sites\n<br />\n<br />\n<br />[size=6][font=bebas_neuebook]Installation[/font][/size]\n<br />\n<br />Close Vortex before installing.\n<br />\n<br />Open up \"AppData&#92;Roaming&#92;Vortex&#92;Themes\".\n<br />\n<br />[b][i]Note: If you used Shared mode under Settings -&gt; Vortex your themes folder will be C:&#92;ProgramData&#92;vortex&#92;themes[/i][/b]\n<br />\n<br />Copy the folders of the colours you want into this directory.\n<br />\n<br />Open Vortex and navigate to Settings -&gt; Themes and select the colour you want to use.\n<br />\n<br />\n<br />[size=6][font=bebas_neuebook]Uninstallation[/font][/size]\n<br />\n<br />Ensure you change to a different theme than the one you wish to remove.\n<br />\n<br />Close Vortex.\n<br />\n<br />Open the themes folder.\n<br />\n<br />Delete the folder of the theme you no longer want. \n<br />\n<br />Start Vortex."
       },
-      "downloads": 2084,
-      "endorsements": 159,
+      "downloads": 2099,
+      "endorsements": 161,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/27/27-1537957490-1950043495.jpeg",
       "name": "Nexus Mods Site Themes for Vortex",
       "tags": [],
@@ -102,7 +102,7 @@
         "short": "Just a simple re-skin of Vortex to my own tastes.",
         "long": "[size=6]Installation[/size]\n<br />\n<br />Close Vortex before installing.\n<br />\n<br />Open up \"AppData&#92;Roaming&#92;Vortex&#92;Themes\".\n<br />\n<br />[i]Note: If you used Shared mode under Settings -&gt; Vortex your themes folder will be C:&#92;ProgramData&#92;vortex&#92;themes[/i]\n<br />\n<br />Extract the .zip into this directory.\n<br />\n<br />Open Vortex and navigate to Settings -&gt; Themes and select 'vuix'.\n<br />\n<br />\n<br />[size=6]Uninstallation[/size]\n<br />\n<br />Ensure you change to a different theme than the one you wish to remove.\n<br />\n<br />Close Vortex.\n<br />\n<br />Open the themes folder.\n<br />\n<br />Delete the 'vuix' folder. \n<br />\n<br />Start Vortex."
       },
-      "downloads": 468,
+      "downloads": 469,
       "endorsements": 42,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/46/46-1559493626-1662276282.png",
       "name": "VUIX",
@@ -124,8 +124,8 @@
         "short": "Russian translation for Vortex",
         "long": "[quote][color=#93c47d][b][size=6]◆ ОПИСАНИЕ[/size][/b][/color][/quote]\n<br />[size=4][color=#999999]Russian translation for Vortex[/color]\n<br />Русский перевод&#92;локализация для приложения[color=#f1c232][b] [color=#f1c232][url=https://www.nexusmods.com/site/mods/1]Vortex[/url][/color][/b][/color][color=#999999] (Ещё не всё переведено, но переводится&#92;корректируется)[/color]\n<br />Постараюсь впредь продолжать допиливать&#92;допереводить&#92;поддерживать.\n<br />Прошу и дальше писать что вы думаете о том или ином грамматическом подходе![/size]\n<br />\n<br />[size=5][color=#ffff00]⯍⯍⯍⯍⯍⯍⯍⯍⯍⯍⯍⯍⯍⯍⯍⯍⯍⯍⯍⯍⯍⯍⯍⯍⯍⯍⯍⯍⯍⯍⯍⯍[/color][/size]\n<br />[color=#ffff00][size=5]⯍ [/size][/color][b]СОВЕТУЮ:[/b]\n<br />[color=#ffff00][size=5]⯍ [/size][/color][size=4]—[/size] Устанавливать русский язык из настроек Vortex, там происходит автоустановка.\n<br />[color=#ffff00][size=5]⯍ [/size][/color][size=4]—[/size] Установить основной шрифт на [color=#f6b26b][i]Roboto[/i][/color].\n<br />[color=#ffff00][size=5]⯍ [/size][/color][size=4]—[/size] Установить шрифт заголовков на [color=#f6b26b][i]Roboto Bold[/i][/color] или [color=#f6b26b][i]Roboto Medium[/i][/color].\n<br />[color=#ffff00][size=5]⯍⯍⯍⯍⯍⯍⯍⯍⯍⯍⯍⯍⯍⯍⯍⯍⯍⯍⯍⯍⯍⯍⯍⯍⯍⯍⯍⯍⯍⯍⯍⯍[/size][/color]\n<br />\n<br />[quote][b][color=#f6b26b][size=6]◆ АВТОУСТАНОВКА[/size][/color][/b][/quote]\n<br />[size=4]∘⪧ Запустите приложение Vortex\n<br />∘⪧ Перейдите в [b][color=#6fa8dc]Настройки -&gt; Интерфейс[/color][/b]\n<br />∘⪧ Смените язык [b][color=#6fa8dc]English[/color][/b] на [b][color=#6fa8dc]русский язык (Extension)[/color][/b]\n<br />   ~ [color=#cfe2f3]Скачивание и установка языка произойдёт автоматически[/color]\n<br />∘⪧ Перезапустите Vortex[/size]\n<br />\n<br />[quote][color=#f6b26b][b][size=6]◆ РУЧНАЯ УСТАНОВКА. ВНИМАНИЕ![/size][/b]\n<br />[b]Скачивая и устанавливая вручную в папку приложения, после обновления приложения язык удаляется из папки приложения\n<br />советую устанавливать язык по инструкции АВТОУСТАНОВКА![/b][/color][/quote]\n<br />[size=4]∘⪧ Скачайте архив[color=#a4c2f4]¹[/color] и извлеките[color=#a4c2f4]²[/color] папку в удобное вам место.\n<br />∘⪧ Переместите папку [b]ru[/b] в один из каталогов:\n<br />    ~ [color=#cfe2f3]C:&#92;Program Files&#92;Black Tree Gaming Ltd&#92;Vortex&#92;resources&#92;locales[/color] \n<br />        ИЛИ\n<br />    ~ [color=#cfe2f3]%appdata%&#92;Vortex&#92;locales[/color] (если папки locales нет, создайте)\n<br />        ИЛИ\n<br />    ~ [color=#cfe2f3]C:&#92;ProgramData&#92;Vortex&#92;locales[/color]\n<br />∘⪧ Не забудьте сменить язык приложения Vortex на русский язык[/size]\n<br />\n<br />[color=#a4c2f4][size=4]¹[/size][/color] [font=Courier New][size=2]Надеюсь скачивать с сайта вы умеете![/size][/font]\n<br />[color=#a4c2f4][size=4]²[/size][/color] [font=Courier New][size=2]Извлекать файлы надеюсь вы тоже умеете![/size][/font]\n<br />[color=#a4c2f4][size=4]³[/size][/color] [font=Courier New][size=2]Просто пошутил, не будьте на столько серьёзными![/size][/font] \n<br />\n<br />[size=6]?[/size]"
       },
-      "downloads": 61263,
-      "endorsements": 2017,
+      "downloads": 61770,
+      "endorsements": 2067,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/23/23-1579699355-1936786846.png",
       "name": "Vortex (Russian translation)",
       "tags": [],
@@ -143,8 +143,8 @@
         "short": "Русская локализация для \"Vortex\" создана для пользователей которым тяжело разобраться в английской версии программы.",
         "long": "[font=Verdana][size=6][center]Установка локализации очень проста:[/center][/size][/font]\n<br />[center][youtube]FPld_W_D6x0[/youtube]﻿\n<br />\n<br />О не доработках локализации пишите в ВКонтакте: https://vk.com/gasterkriper[/center]"
       },
-      "downloads": 10093,
-      "endorsements": 210,
+      "downloads": 10252,
+      "endorsements": 211,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/49/49-1563680920-832231383.png",
       "name": "Russian localization for Vortex",
       "tags": [],
@@ -162,8 +162,8 @@
         "short": "This is a Spanish translation for Vortex.<br />I strongly encourage you to find any grammatical errors and point them out.",
         "long": "English:\n<br />This is a Spanish translation for Vortex.\n<br />I strongly encourage you to find any grammatical errors and point them out.\n<br />\n<br />Translations should go in C:&#92;Users&#92;YourUserName&#92;AppData&#92;Roaming&#92;Vortex&#92;locales\n<br />\n<br />I have tried to adapt to spanish the best i could,  there are words for things that while have a lot of sense in english and there exist an actual direct translation for that word, in spanish that word does not have all the meanings, or worse, there are no single words that can have that meaning, soo in that cases i was forced to change it to a small phrase, like in the case of deployement, in spanish is \"desplegar\" and while is a very direct translation, the meaning in vortex was no good in spanish and was a very alien way of saying it, so i changes it for \"Agregar al Juego\" in english \"Add it to the game\", is not that \"desplegar\" was not correct, but it was a confusing way of saying it, please tell me suggestions to improve the translations. There are parts that i cannot translate even whit the plugin because it simply doesnt detect it, and even when i try to manually add it to the file, it doesnt work.\n<br />\n<br />\n<br />Spanish:\n<br />Esta es una traduccion al español de Vortex.\n<br />Por favor, ruego ser informado de errores de ortografia y gramaticales, sobretodo encontrareis una gran ausencia de tildes.\n<br />\n<br />Las traducciones se instalan en C:&#92;Users&#92;TuNombreDeUsuario&#92;AppData&#92;Roaming&#92;Vortex&#92;locales\n<br />\n<br />He intentado adaptarlo al español lo mejor que he podido, pero siempre hay palabras que mientras que tienen varios sentidos en ingles, no tienen todos los sentidos en español e incluso peor, puede no haber ninguna sola palabra que pueda sustituir uno de esos sentidos en español de forma clara en algunos casos, como en el caso de desplegar, esta palabra se usa dentro de vortex para referirse a lo que pasa cuando despues de instalar un juego, vortex añade los archivos al juego, si bien no es que desplegar este mal, es una forma un tanto alien de decirlo y no es nada clara, por lo que la he cambiado por Agregar al Juego, Agregando al juego, etc, que dentro de la interfaz es lo que tiene mas sentido, por favor aparte de los errores, agradeceria sugerencias para mejorar la traduccion. Aparte es tan completa como he podido, hay cosas que no he conseguido que me acepte la traduccion o partes que quizas podrian estar mejor expresadas."
       },
-      "downloads": 32038,
-      "endorsements": 1255,
+      "downloads": 32296,
+      "endorsements": 1266,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/5/5-1524948099-197418350.png",
       "name": "Spanish Translation for Vortex",
       "tags": [],
@@ -181,8 +181,8 @@
         "short": "This is a Swedish translation for Vortex.<br />I strongly encourage you to find any grammatical errors and point them out.",
         "long": "This is a Swedish translation for Vortex.\n<br />I strongly encourage you to find any grammatical errors and point them out.\n<br />\n<br />UPDATE: Translations should go in C:&#92;Users&#92;YourUserName&#92;AppData&#92;Roaming&#92;Vortex&#92;locales\n<br />\n<br />I have tried to have the intent of the English as provided by Tannin to reflect in the Swedish language. As sometimes a English word can mean several things. \n<br />UPDATE: You can discover missing translations using the translation extension. See more here:\n<br />\n<br />https://forums.nexusmods.com/index.php?/topic/6539436-translating-vortex/\n<br />\n<br />It's also impossible to choose translation as type of file as Nexus Mods claims that the Vortex mod could not be found. (For the time being). And there is no Translations category currently. Sorry.\n<br />\n<br />Read comments for any news regarding the translation."
       },
-      "downloads": 1679,
-      "endorsements": 16,
+      "downloads": 1685,
+      "endorsements": 17,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/2/2-1524275167-1456170233.png",
       "name": "Swedish Translation for Vortex",
       "tags": [],
@@ -200,8 +200,8 @@
         "short": "French Translation for Vortex.",
         "long": "[center][size=5][b]ATTENTION. CETTE TRADUCTION EST OBSOLETE ET NE SERA PLUS MISE A JOUR. POUR OBTENIR LA VERSION MISE A JOUR,[/b][/size]\n<br />[size=5][url=https://www.nexusmods.com/site/mods/48]CLIQUEZ ICI[/url]﻿[/size]\n<br />\n<br />[b][size=4]Un grand merci à aogara d'avoir repris le flambeau pour cette traduction.\n<br />Dorénavant, c'est sur sa page que vous trouverez la dernière version.[/size][/b][/center]\n<br />\n<br />[center]﻿[/center][center]﻿[/center][center][b]IMPORTANT :\n<br />\n<br />Cette traduction a été effectuée à l'aide d'un plug-in bien pratique permettant d'ajouter les lignes à traduire directement en les survolant avec la souris. Cependant certaines lignes ne se rajoutent pas et je ne suis pas parvenu à les ajouter manuellement non plus (notamment certaines listes dropdown)[/b][/center]\n<br />[center][b]En tenant compte de ce qui a été écrit plus haut, je tiens à préciser que n'importe quel conseil avisé sur où trouver les lignes manquantes pour les traduire est plus que bienvenu, tout comme les habituelles remarques sur les fautes ou erreurs de n'importe quel type (mais toujours en lien avec la traduction).\n<br />\n<br />\n<br />\n<br />[/b][/center]\n<br />[center][b]INSTALLATION :[/b][/center]\n<br />\n<br />NOTE: A partir de la version 0.17.11, l'installeur n'est plus utilisé (pour plusieurs raisons). Pour installer manuellement la traduction, voici les étapes:\n<br />\n<br />Extrayez l'archive où bon vous semble puis placez le dossier \"fr\" dans:\n<br />[i]C:&#92;Utilisateurs&#92;&lt;VotreNom&gt;&#92;AppData&#92;Roaming&#92;vortex&#92;locales[/i]\n<br />Pensez bien à placer le [b]DOSSIER[/b] \"fr\" dans le dossier \"locales\" pas juste son contenu. Celui-ci contient toutes les traductions.\n<br />\n<br />Après l'installation, pour activer la langue, il vous suffit de lancer Vortex puis de vous rendre dans l'onglet \"Settings\" à gauche et de sélectionner la langue française dans la liste déroulante."
       },
-      "downloads": 28558,
-      "endorsements": 477,
+      "downloads": 28762,
+      "endorsements": 479,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/13/13-1532360243-927790668.jpeg",
       "name": "French Translation for Vortex",
       "tags": [],
@@ -231,8 +231,8 @@
         "short": "Traduzione italiana di Vortex, il nuovo gestore di mod di Nexus Mods.",
         "long": "[img]https://staticdelivery.nexusmods.com/mods/2295/images/26/26-1537874238-1564287998.png[/img]\n<br />\n<br />\n<br />[b][size=6]INSTALLAZIONE\n<br />[/size][/b]\n<br />Non è necessario scaricare e installare manualmente questo pacchetto. L'intero processo verrà automatizzato da Vortex seguendo la procedura sottostante. Vi invito comunque a effettuare il download una prima volta per lasciare un \"endorsement\".\n<br />\n<br />[list]\n<br />[*]Installa [url=https://www.nexusmods.com/site/mods/1]Vortex[/url]﻿.\n<br />[*]Avvia Vortex e scegli la lingua italiana dalle impostazioni.\n<br />[*]Riavvia Vortex.\n<br />[/list]\n<br />[i]Attenzione: la traduzione fa affidamento a strumenti creati dalla community per estrarre i testi originali. Alcune parti del programma potrebbero non essere tradotte.[/i]\n<br />\n<br />\n<br />[size=6][b]CHE COS'È VORTEX?[/b][/size]\n<br />\n<br />Vortex è il nuovo gestore di mod all'avanguardia di Nexus Mods. È progettato per consentire ai nuovi utenti di modificare facilmente i loro giochi, dando al contempo abbastanza controllo ai veterani della scena del modding. Sotto la guida di Tannin, il creatore di Mod Manager, Vortex fa tesoro degli insegnamenti appresi durante lo sviluppo di MO e Nexus Mod Manager per offrire la più potente e intuitiva esperienza di modding di sempre. \n<br />Il nostro approccio con Vortex è concentrato allo sviluppo di funzioni complesse, ad esempio cambiare l'ordine di caricamento o gestire le mod, automatizzando il più possibile il processo, con l'obiettivo di arrivare col minimo sforzo a una versione modificata del gioco. Vogliamo aiutarti a passare meno tempo a modificare giochi e più tempo a giocarli. \n<br />\n<br />\n<br />[b][size=6]PERCHÉ VORTEX?[/size][/b]\n<br />\n<br />[size=4][b]SUPPORTO PER GIOCHI MULTIPLI[/b][/size]\n<br />Supporto a mod per oltre 30 giochi diversi, in costante aumento. Da Dark Souls, Fallout e Skyrim fino alla saga di The Witcher e Stardew Valley. Vortex è il più versatile gestore di mod esistente.\n<br />[size=4]\n<br />[b]STRETTA INTEGRAZIONE CON NEXUS MODS[/b][/size]\n<br />Vortex è progettato per interagire perfettamente con Nexus Mods, consentendoti di trovare, installare e giocare facilmente mod dal nostro sito, scoprendo nuovi contenuti e le ultime notizie.\n<br />\n<br />[size=4][b]GESTIONE SEMPLIFICATA DELLE MOD[/b][/size]\n<br />Il sistema di ordinamento automatico integrato gestisce il tuo ordine di caricamento e ti aiuta a risolvere i conflitti tra mod con funzioni di gestione dei plugin potenti ma facili da usare.\n<br />\n<br />[size=4][b]PROFILI DI MOD[/b][/size]\n<br />L'organizzazione, la gestione individuale e il passaggio da un profilo di mod all'altro ti permette di usare l'esatta combinazione di mod che desideri per una particolare partita.\n<br />\n<br />[size=4][b]INTERFACCIA MODERNA E INTUITIVA[/b][/size]\n<br />Vortex dispone di un'interfaccia completamente personalizzabile, permettendoti di accedere facilmente e rapidamente agli strumenti, alla gestione dei tuoi \n<br />giochi, dei plugin, dei download e dei salvataggi.\n<br />[size=4]\n<br />[b]ESTENSIONI E PLUGIN[/b][/size]\n<br />Vortex viene rilasciato sotto licenza GPL-3, dando alla community la possibilità di scrivere estensioni e framework che possono interagire con Vortex, accrescendo le sue funzionalità.\n<br />\n<br />\n<br />[size=6][b]GIOCHI SUPPORTATI[/b][/size]\n<br />\n<br />Attualmente Vortex supporta numerosi titoli, più altri che vengono aggiunti dai nostri sviluppatori e dalla community di Nexus Mods. Laddove vedi il pulsante \"Mod Manager Download\" sul nostro sito, vuol dire che Vortex può gestire quella mod. \n<br />\n<br />[img]https://staticdelivery.nexusmods.com/images/2295/31179975-1537873128.jpg[/img]\n<br />\n<br />\n<br />[size=6][b]VORTEX SOSTITUISCE NEXUS MOD MANAGER, MOD ORGANIZER, O ALTRI GESTORI DI MOD?[/b][/size]\n<br />\n<br />Non ci aspettiamo che tutti passino subito a Vortex, ma sentiamo che è pronto per essere provato. Se al momento hai una configurazione di mod stabile con un gestore di mod alternativo puoi usare quello, ma potresti trovare in Vortex una valida alternativa per la tua prossima configurazione.\n<br />\n<br />Molti utenti hanno eseguito il passaggio completo durante l'alfa tra febbraio e ottobre 2018. Ci sarà una lieve curva di apprendimento per abituarsi alla modalità d'uso di Vortex, ma speriamo che il sistema di aiuto e assistenza integrato ti aiuterà ad adattarti facilmente. Vortex dispone di tutte le funzioni di cui hai bisogno per modificare i giochi. Se manca qualcosa di importante, faccelo sapere nei forum così da poterlo migliorare. \n<br />\n<br />Tenendo conto di tutto questo, abbiamo sostituito ufficialmente NMM sul sito, inclusi il pulsante di download e il link nell'intestazione del sito. Puoi scaricare Vortex e le sue traduzioni o estensioni dalla nostra pagina dei giochi di [url=https://www.nexusmods.com/site]Nexus Mods[/url].\n<br />\n<br />\n<br />[size=6][b]AIUTO E ASSISTENZA[/b][/size]\n<br />\n<br />Vortex è ora il gestore di mod principale di Nexus Mods e intendiamo fornire assistenza ai nostri utenti. Puoi vedere la nostra [url=https://wiki.nexusmods.com/index.php/Category:Vortex]sezione dedicata all'assistenza[/url] per Vortex, visitare i [url=https://forums.nexusmods.com/index.php?/forum/4301-vortex/]forum di Vortex[/url] o dare un'occhiata a uno dei nostri topic d'assistenza qui sotto in primo piano.\n<br />\n<br />[list]\n<br />[*][url=https://wiki.nexusmods.com/index.php/Frequently_Asked_Questions]Domande frequenti su Vortex[/url]\n<br />[*][url=https://wiki.nexusmods.com/index.php/Migrating_to_Vortex_from_another_Mod_Manager]Come passare da un altro gestore di mod a Vortex[/url]﻿\n<br />[*][url=https://wiki.nexusmods.com/index.php?title=User-Interface-Overview]Interfaccia utente: panoramica[/url]﻿\n<br />[/list]\n<br />\n<br />[size=6][b]FEEDBACK[/b][/size]\n<br />\n<br />Vortex integra nel software un sistema di raccolta feedback e di segnalazione degli errori, accessibile mediante il menu nell'angolo in alto a destra. In caso Vortex si blocchi, avrai un'opzione di segnalazione simile. Se noti problemi con l'uso del software, segnalacelo usando queste modalità, fornendoci informazioni dettagliate su ciò che stavi facendo quando si è verificato il problema. È il modo più immediato per comunicare con Tannin e per trovare e correggere gli errori.\n<br />\n<br />\n<br />[size=6][b]PER GLI SVILUPPATORI[/b][/size]\n<br />\n<br />Il codice sorgente è disponibile su [url=https://github.com/Nexus-Mods/Vortex]GitHub[/url]﻿.\n<br />Ulteriori informazioni sulla struttura del codice, sulla sua estensione e altro si trovano sui [url=https://forums.nexusmods.com/index.php?/forum/4311-vortex-code-development/]forum di sviluppo del codice di Vortex[/url]."
       },
-      "downloads": 9979,
-      "endorsements": 279,
+      "downloads": 10069,
+      "endorsements": 282,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/19/19-1587964072-1559902886.png",
       "name": "Italian Translation for Vortex",
       "tags": [],
@@ -250,8 +250,8 @@
         "short": "This file is Japanese translation for Vortex. This file contains locales/ja/*.json files.",
         "long": "[b][color=#f1c232][size=5][u]Japanese Translation for Vortex (Vortex日本語化ファイル)[/u][/size][/color][/b]\n<br />\n<br />バージョン: 1.2.15 (1.2.16～1.2.20でも利用可能)\n<br />　※Conan Exiles拡張機能については次回メジャーアップデート時に対応予定\n<br />最終更新日: 2020/06/09\n<br />制作: BowmoreLover\n<br />\n<br />[size=3][color=#f1c232][u][b]お知らせ[/b][/u][/color][/size]\n<br />\n<br />[color=#ffff00][b]2020/06/22:[/b][/color]\n<br />Vortex 1.2.15以降で日本語拡張機能をインストールしようとすると、\"Invalid Extension\"という赤い通知メッセージが出てインストールできない問題が発生していましたが、6/22にリリースされた Vortex 1.2.17にて対策されました。。\n<br />暫定対策版 \"Japanese Translation for Vortex 1.2.15-r2\" を導入済みで、Vortex 1.2.17にアップデートした場合、次の手順でアンインストールしてください。\n<br />(1) 拡張機能ページで \"Japanese Translation for Vortex 1.2.15-r2\" の Remove ボタンを押し、Vortexを再起動する\n<br />(2) Settingsページを開き、Languageを \"日本語(にほんご/にっぽんご)(日本)\" に変更する。\n<br />(3) 以上で正式版に切り替わり、以降は自動更新されます。\n<br />\n<br />\n<br />[size=3][color=#f1c232][u][b]このファイルについて[/b][/u][/color][/size]\n<br />\n<br />Vortexの日本語化ファイルです。\n<br />Nexus Modsのページにアップロードされた日本語化ファイルは、Nexus Modsのスタッフによって精査された後、Vortexの拡張機能として公開される流れとなっていますので、基本的にVortexの画面からインストールしてください。すでに日本語化拡張機能を導入済みの場合、自動的に更新されますので、特に作業は必要ありません。\n<br />なお、本ページの更新から拡張機能としての公開までに数日かかる場合があります。\n<br />\n<br />ご注意:\n<br />[list]\n<br />[*]現在のバージョンではVortex本体側のローカライズが不完全なため、UI/メッセージの一部が英語のままとなります。\n<br />[*]有志によって作成/公開されているVortexの拡張機能は、今のところ日本語化の対象外となります。\n<br />[*]ローカライズ対象文字列は専用のツールを開発して出来る限り抽出したつもりですが、まだ漏れがあるかもしれません。\n<br />[*]翻訳内容については随時変更/改善していく予定です(提案/指摘歓迎)。\n<br />[/list]\n<br />\n<br />\n<br />[size=3][b][color=#f1c232][u]前提プログラム[/u][/color][/b][/size]\n<br />\n<br />[url=https://www.nexusmods.com/site/mods/1]Vortex[/url] Version 1.2.15以降\n<br />\n<br />※事前リリース版は[url=https://github.com/Nexus-Mods/Vortex/releases]Nexus ModsのGitHub[/url]からダウンロードできます。\n<br />\n<br />\n<br />[size=3][color=#f1c232][u][b]インストール方法[/b][/u][/color][/size]\n<br />\n<br />(1) 新規インストールの場合\n<br />\n<br />VortexのSettingsページを開き、InterfaceタブのLanguageから「日本語 (にほんご／にっぽんご)」を選択した後、Vortexを再起動します。\n<br />これで日本語化拡張機能がインストールされ、以降は自動アップデートされます。\n<br />\n<br />\n<br />(2) 日本語化拡張機能をアップデートする場合\n<br />\n<br />Vortexの起動時に更新された拡張機能が自動的にアップデートされます。\n<br />\n<br />\n<br />(3) 古いバッチ形式の日本語化をインストールしている場合\n<br />\n<br />拡張機能をサポートする前の古い日本語化ファイルを、ファイルコピーまたはバッチコマンドを実行してインストールしている場合、古い日本語化ファイルを削除しないと、日本語化拡張機能をインストールしても正しく適用されません。\n<br />VortexのSettingsページから言語をEnglishに戻した後、次のフォルダーを削除してからVortexを再起動してください。\n<br />・C:&#92;Users&#92;ユーザー名&#92;AppData&#92;Roaming&#92;Vortex&#92;locales&#92;ja\n<br />・C:&#92;ProgramData&#92;Vortex&#92;locales&#92;ja\n<br />※ドライブ名とパスはOS環境/ユーザアカウント名によって異なります。\n<br />その後、(1)の方法で新規インストールを行ってください。\n<br />\n<br />\n<br />[size=3][color=#f1c232][u][b]問題解決のヒント[/b][/u][/color][/size]\n<br />\n<br />[list]\n<br />[*]Vortexで\"missing .node module\"エラーが出る場合、Visual C++のランタイムパッケージのインストールが必要です。こちらのページからvc_redist.x64.exeをインストールしてください（バージョンは明記されていませんが、最新のものでいいはず）→ [url=https://support.microsoft.com/ja-jp/help/2977003/the-latest-supported-visual-c-downloads]最新のサポートされる Visual C++ のダウンロード（マイクロソフト）[/url]\n<br />[*]NMMからのインポート時に「すべてのMODを無効にしてください」エラーとなってインポートできない場合、ゲームフォルダーに残っているプラグインを手動で削除してください。\n<br />[/list]\n<br />\n<br />\n<br />[size=3][color=#f1c232][u][b]訳文の改善について[/b][/u][/color][/size]\n<br />\n<br />0.18.2にて、ルール定義画面や依存関係/警告アイコンのツールチップに表示される文章を改善し、前後関係をわかりやすくしました(ご指摘いただいたmrredpizza氏に感謝)。\n<br />誤訳の指摘や改善提案があれば、私の[url=http://thinkingskeever.hatenablog.com/entry/2018/10/21/140000]ブログ記事のコメント[/url]、Nexusのプライベートメッセージ(漢字使用不可、ローマ字で書くこと)、Discordアカウント「[color=#6fa8dc][b]BowmoreLover#6259[/b][/color]」のいずれかまでお願いします。\n<br />\n<br />\n<br />[size=3][b][color=#f1c232][u]Vortexの日本語ドキュメントについて[/u][/color][/b][/size]\n<br />\n<br />以下のページでVortexのドキュメント/Wikiの和訳を公開中です。\n<br />\n<br />[url=http://thinkingskeever.hatenablog.com/entry/2018/10/15/182000]Vortex紹介ページの和訳 (Thinking Skeever)[/url]\n<br />\n<br />[url=http://thinkingskeever.hatenablog.com/entry/2018/10/17/183000]Nexus Mods: Vortexヘルプセンターの和訳 (Thinking Skeever)[/url]\n<br />\n<br />[url=http://thinkingskeever.hatenablog.com/entry/2018/10/21/140000]Nexus Wiki: Vortexページの和訳 (Thinking Skeever)[/url]\n<br />\n<br />\n<br />[size=3][b][color=#f1c232][u]変更履歴[/u][/color][/b][/size]\n<br />[spoiler]\n<br />2018/11/02 (0.16.10) : 初回リリース\n<br />2018/11/02 (0.16.11) : 最新の事前リリース版に対応\n<br />2018/11/06 (0.16.12) : 最新版に対応\n<br />2018/12/07 (0.16.15) : 最新版に対応\n<br />2019/02/12 (0.17.3)  : 最新版に対応\n<br />2019/03/01 (0.17.5)  : 最新版に対応\n<br />2019/03/07 (0.17.7)  : 最新版に対応\n<br />2019/03/21 (0.17.8)  : 最新版に対応、一部用語の訳文変更\n<br />2019/04/11 (0.17.11) : 最新版に対応\n<br />2019/05/28 (0.18.5)  : 最新版に対応\n<br />2019/05/30 (0.18.6)  : 最新版に対応\n<br />2019/06/13 (0.18.8)  : 最新版に対応\n<br />2019/06/27 (0.18.11) : 最新版に対応 (0.18.12でも利用可能)\n<br />2019/06/30 (0.18.12) : 訳文の改善(ルール定義/ツールチップで依存関係をわかりやすく)。ご指摘いただいたmrredpizza氏に感謝します。\n<br />2019/07/16 (0.18.14) : 最新版に対応\n<br />2019/07/17 (0.18.16) : 最新版に対応\n<br />2019/07/24 (0.19.1)  : 最新版に対応\n<br />2019/07/31 (1.0.0)   : 最新版に対応\n<br />2019/10/16 (1.0.5)   : 最新版に対応、次のゲーム拡張の和訳を追加: 7daystodie, codevein, residentevil22019, spyroreignitedtrilogy\n<br />2019/11/28 (1.1.3)   : 最新版に対応、拡張機能化のためにインストーラーファイルの構成を変更、一部訳文の改善/訂正、Vortex拡張機能対応\n<br />2019/11/29 (1.1.4)   : 最新版に対応 (訳文2行追加) (1.1.5でも利用可能)\n<br />2020/01/23 (1.1.10)  : 最新版に対応、一部文字化けの訂正 (1.1.12～1.1.15でも利用可能)\n<br />2020/04/24 (1.2.9)   : 最新版に対応、バッチインストーラーの廃止\n<br />2020/06/09 (1.2.15)  : 最新版に対応 (1.2.16～1.2.18でも利用可能)\n<br />2020/06/12 (1.2.15-r2) : 日本語化拡張機能がインストールできない問題の暫定対策版\n<br />[/spoiler]\n<br />\n<br />[size=3][b][color=#f1c232][u]Credits[/u][/color][/b][/size]\n<br />\n<br />Vortex by Nexus Mods\n<br />The license of this file conforms to the license of Vortex (GPL-3 License).\n<br />\n<br />使用ツール:\n<br />[url=https://www.nexusmods.com/skyrimspecialedition/mods/134]xTranslater[/url] by McGuffin\n<br />[url=https://www.nexusmods.com/site/mods/33]Unofficial Vortex Translation Tool[/url] by BowmoreLover\n<br />\n<br />以上"
       },
-      "downloads": 54967,
-      "endorsements": 1235,
+      "downloads": 55343,
+      "endorsements": 1244,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/32/32-1541090883-928894847.jpeg",
       "name": "Japanese Translation for Vortex",
       "tags": [],
@@ -269,8 +269,8 @@
         "short": "German translation for Vortex",
         "long": "Description / Beschreibung\n<br />\n<br />This file contains the german translation for Vortex which is bundled in Vortex versions before 1.1.0.\n<br />\n<br />Diese Datei enthält die Deutsche Übersetzung für Vortex die vor Version 1.1.0 mitgeliefert wurde.\n<br />\n<br />\n<br />Installation\n<br />\n<br />No installation necessary. Vortex up to 1.0.x includes this translation, from 1.1.0 forward the language drop-down in Settings-&gt;Interface includes third-party languages like this one.\n<br />\n<br />Eine Installation ist nicht nötig. Vortex bis einschließlich 1.0.x wird mit dieser Übersetzung ausgeliefert, ab 1.1.0 werden alle Übersetzungen von Dritten unter Settings-&gt;Interface aufgelistet.\n<br />\n<br />Contributing / Unterstützung\n<br />\n<br />This translation was mostly created by \"dertrutinator\" and me (Tannin) but all contributions are welcome. Also I'd very much welcome someone taking up maintenance of this page.\n<br />\n<br />Diese Übersetzung wurde hauptsächlich von \"dertrutinator\" und mir (Tannin) erstellt aber alle Beiträge sind herzlich willkommen. Ich würde mich auch freuen wenn jemand die Verwaltung dieser Seite übernimmt."
       },
-      "downloads": 30580,
-      "endorsements": 514,
+      "downloads": 30856,
+      "endorsements": 523,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/60/60-1572509321-568437082.jpeg",
       "name": "German translation for Vortex",
       "tags": [],
@@ -288,8 +288,8 @@
         "short": "This extension adds Final Fantasy XII: The Zodiac Age support to the Vortex mod manager.",
         "long": "[center]﻿[/center][center][color=#ea9999][b][size=5]Vortex support for Final Fantasy XII: The Zodiac Age[/size][/b][/color][/center]\n<br />\n<br />Simple as that. Extension adds support for FF12. It's still an early version, but it should work just fine. Extension searches for ff12data directory and auto-installs it. Of course FOMOD installer is supported if you need it.\n<br />\n<br />[b]Big changes in version 0.8.0[/b]\n<br />[list]\n<br />[*] Added support for FF12 External File Loader, which allows to load unpacked files from folders instead of VBF archive. This means no more patching huge 30GB file and filesize tables.\n<br />[*] Added support for FF12 LUA Loader.\n<br />[*] Added support for new mod types: modules and LUA scripts.\n<br />[*] Added support for old, Vortex incompatible mods with multiple choices/versions. This feature is experimental and might fail in some cases, but all old mods tested so far worked just fine.\n<br />[*] Disabled VBF tools auto updates (since new, better method is available, I'm not planning any updates to these; support for VBF patching will be removed from the extension in future versions).\n<br />[/list]\n<br />[i]All previously installed mods are compatible with the FF12 External File Loader.[/i]\n<br />\n<br />[b]Current features:[/b]\n<br />[list]\n<br />[*]installation/uninstallation/enabling/disabling/purging\n<br />[*]automatic VBF archive patching via external tools (modified specifically to work with Vortex)\n<br />[*]automatic FileSizeTable_XX.fst patching for all supported languages\n<br />[*]any mod can be uninstalled at any time without breaking anything\n<br />[*]conflict resolution via Vortex tools\n<br />[/list]\n<br />If you want to get back to vanilla game, either disable all mods or simply purge them all (this should save you redownloading 30GB file again).\n<br />\n<br />[s]For advanced users there is a possibility to switch the extension into non-merge mode (installing mods into separate directories, which is faster, but mods can be uninstalled only in reverse order of installation, just as in case of Draklab). In this mode conflict detection doesn't work. [b]Switch only if you know exactly what you're doing[/b].[/s]\n<br />\n<br />[center]﻿[/center][center][color=#ea9999][b][size=5]Vortex support for Final Fantasy XII: The Zodiac Age[/size][/b][/color][/center]\n<br />\n<br />[center]Before installation, make sure that [b]64bit Visual C++ Runtime is installed[/b]. You can download the newest one here:\n<br />[url=https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads]https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads[/url]\n<br />or directly here:\n<br />[url=https://aka.ms/vs/16/release/vc_redist.x64.exe]https://aka.ms/vs/16/release/vc_redist.x64.exe[/url][/center]\n<br />\n<br />[center]﻿[/center][center][color=#ea9999][b][size=5]Installation[/size][/b][/color][/center]\n<br />\n<br />[size=3][b]Automatic install.[/b][/size]\n<br />\n<br />Since Vortex 1.1.0 the easiest method is just to go to [b]\"games\"[/b] then select \"[b]Final Fantasy XII\"[/b] and click [b]\"manage\"[/b]. This extension will be downloaded automatically. From now on it will also [b]update automatically[/b]."
       },
-      "downloads": 7153,
-      "endorsements": 187,
+      "downloads": 7210,
+      "endorsements": 192,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/59/59-1594717884-1358408488.jpeg",
       "name": "Final Fantasy XII The Zodiac Age Vortex support",
       "tags": [],
@@ -301,20 +301,20 @@
     },
     {
       "modId": 61,
-      "fileId": 323,
+      "fileId": 689,
       "author": "Pickysaurus",
       "description": {
         "short": "A useful extension for Vortex which allows you to use xEdit's \"Quick Auto Clean\" function on any GameBryo plugins in your load order.",
         "long": "Integrates an automated plugin cleaning function into Vortex for Gamebyro plugins.\n<br />\n<br />[b]This extension requires [url=https://github.com/TES5Edit/TES5Edit/releases]xEdit by ElminsterAU[/url] to be installed on your PC and defined in the dashboard of your chosen game inside Vortex.\n<br />[/b]\n<br />In v0.0.1 a new button has been added to the info pane for Gamebyro plugins which will launch xEdit and perform a \"quick auto clean\" operation on the selected plugin.\n<br />\n<br />A future update may allow the user to right-click a plugin to activate the cleaning function from the context menu, however, this is currently not possible.\n<br />[list]\n<br />[*]The cleaning option will not appear if the plugin is the primary master file (e.g. Skyrim.esm).\n<br />[*]The cleaning option will be disabled if either the plugin has missing masters or there is a LOOT message informing the user not to clean it. In the latter case, you are free to clean it manually, this just disables the automation.\n<br />[/list]\n<br />Once xEdit has closed, Vortex will show a confirmation of the plugin we attempted to clean.\n<br />\n<br />[img]https://staticdelivery.nexusmods.com/mods/2295/images/61/61-1572538680-559194572.png[/img]\n<br />\n<br />Currently supports:\n<br />[list]\n<br />[*]Skyrim\n<br />[*]Skyrim SE\n<br />[*]Skyrim VR\n<br />[*]Fallout 4\n<br />[*]Fallout 4 VR\n<br />[*]Fallout New Vegas\n<br />[*]Oblivion\n<br />[*]Fallout 3\n<br />[*]Enderal\n<br />[*]Fallout 76\n<br />[/list]\n<br />[img]https://staticdelivery.nexusmods.com/mods/2295/images/61/61-1573584841-371036160.png[/img]\n<br />\n<br />[b]Vortex Install\n<br />\n<br />[/b][list]\n<br />[*]In Vortex, enabled advanced mode in the settings.\n<br />[*]Navigate to the extensions tab.\n<br />[*]Drop the 7z archive into the \"drop zone\" at the bottom of the page.\n<br />[*]Click the prompt to restart Vortex.\n<br />[/list]\n<br />\n<br />[b]Manual Install[/b]\n<br />\n<br />Extract the 7z archive to %appdata%&#92;Vortex&#92;plugins."
       },
-      "downloads": 1430,
-      "endorsements": 201,
+      "downloads": 1447,
+      "endorsements": 206,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/61/61-1573584841-371036160.png",
       "name": "xEdit Cleaning Extension",
       "tags": [],
-      "version": "1.0.5",
+      "version": "1.0.6",
       "type": null,
-      "timestamp": 1575743725,
+      "timestamp": 1597419033,
       "uploader": "Pickysaurus"
     },
     {
@@ -325,8 +325,8 @@
         "short": "Adds support for GTA V",
         "long": "[size=4]Description\n<br />[/size]\n<br />This extension adds support for GTA V to Vortex.\n<br />You can use it to install plugins for script hook, asset replacers as well as addons.\n<br />\n<br />Script Hook V and OpenIV are required, the extension will guide you through the correct installation once you start managing the game inside Vortex.\n<br />\n<br />[size=4]How to install\n<br />[/size]\n<br />This requires Vortex 1.1.0! To install, go to Extensions-&gt;Find More. Find this extension and click install.\n<br />\n<br />[size=4]How to install mods[/size]\n<br />\n<br />Please be aware that, since the game has been around for a while, a lot of mods may be packaged in a way that doesn't install correctly out of the box, if a mod doesn't work, please check in the staging folder whether it's been installed correctly.\n<br />\n<br />The extension will try to install all mods automatically but if a mod doesn't work you may want to check if it was installed correctly.\n<br />\n<br />There are effectively three kind of mods: replacers, addons, script hook plugins\n<br />Within Vortex these should be assigned a mod type accordingly, replacers will have the \"default\" mod type, addons will be \"gta5dlc\", plugins will be \"gta5asi\". This is the first thing to check, determine which kind of mod you have and whether it has the right mod type.\n<br />\n<br />After that check the staging folder for the mod.\n<br />For addons you should find a \"dlc.rpf\" in the root of the mod folder, for plugins there should be a &lt;something something&gt;.asi file - again at the root.\n<br />All other files, stuff like screenshots, don't really matter.\n<br />\n<br />Replacers are a bit more complex, they should have the same directory structure as the game directory, with rpfs being directories.\n<br />So if you have a mod with installation instructions like this:\n<br />[quote]\n<br />   ﻿1. Go to mods/update/update.rpf/x64/patch/data/cdimages/scaleform_minimap.rpf\n<br />   ﻿2. Click on \"Add new file\" and import the 'minimap.ytd' file provided by this mod.[/quote]\n<br />What you expect is a directory structure like this:\n<br />update\n<br />|-&gt; update.rpf\n<br />   ﻿|-&gt; x64\n<br />   ﻿   ﻿|-&gt; patch\n<br />   ﻿   ﻿   ﻿|-&gt; data\n<br />   ﻿   ﻿   ﻿   ﻿|-&gt; cdimages\n<br />   ﻿   ﻿   ﻿   ﻿   ﻿|-&gt; scaleform_minimap.rpf\n<br />   ﻿   ﻿   ﻿   ﻿   ﻿   ﻿|-&gt; minimap.ytd\n<br />\n<br />Both \"update.rpf\" and \"scaleform_minimap.rpf\" are regular directories here!\n<br />\n<br />If you have a mod that contains different kinds of mods (e.g. a plugin *and* replacers) you have to split them up into multiple mods.\n<br />\n<br />[size=4]How to deploy mods\n<br />\n<br />[/size]Unlike with most games supported by Vortex, deployment for GTA V is a bit more involved. We strongly advice you don't do this after every mod you install but instead only do it once before actually want to start playing the game.\n<br />\n<br />The deployment will work as usual but at the end a dialog will tell you openiv needs to be started. Do the installation and follow the instructions given, there is very little room to actually make a mistake.\n<br />The only thing you have to look out for: when asked, select you want to install to the \"mods\" directory. Do *not* install to the base game directory. If the \"mods\" option is unavailable for some reason: Cancel, check that you installed openiv.asi, ask for help if necessary. [b]Never [/b]install to the base game directory.\n<br />\n<br />[size=4]Finally[/size]\n<br />\n<br />We do not support using mods in multiplayer. We do not condone using mods in multiplayer.\n<br />Your account may be banned for using any mods in public multiplayer and there is nothing we can do about that.\n<br />\n<br />If you do want to switch between modded singleplayer and unmodded multiplayer, do be careful that you deactivate mods before you start multiplayer.\n<br />Vortex will help you in two ways\n<br />a) When Vortex has modded your game, you should see the word \"Modded\" and a Vortex icon added to the game icon (in the lower left). If you see this, you still have mods installed. But: If you don't see it, you may still be running mods you installed outside Vortex!\n<br />b) Use Vortex to install scripthook. That way when you \"Purge\" mods within Vortex it will remove script hook from the game, thereby disabling openiv.asi thereby the game won't use the modified files from the \"mods\" directory and you should be running a vanilla game. If you don't know: \"Purge\" is not a destructive operation, nothing is irreversibly lost. It just temporarily removes mods from the game. The next time you \"deploy\" all mods will be restored."
       },
-      "downloads": 33268,
-      "endorsements": 845,
+      "downloads": 33592,
+      "endorsements": 856,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/62/62-1573042371-804708962.png",
       "name": "GTA V support",
       "tags": [],
@@ -344,7 +344,7 @@
         "short": "A Vortex extension that adds support for Source Filmmaker (SFM). This allows for managing SFM mods, assets and scripts using the Vortex mod manager, simplifying management of SFM mods from external sources using Vortex's familiar tools and interface.",
         "long": "[code]vortex-sfm[/code] is a Vortex extension that adds support for Source Filmmaker. This allows for managing (non-Workshop) mods and assets using the Vortex mod manager.\n<br />\n<br />This simplifies installing SFM “mods” from external sources (SFMLab, other users, forums, DA etc) by automatically installing any mod from an archive file. It also means you can quickly and easily enable/disable or uninstall mods without affecting your other installed mods, all from Vortex’s convenient UI.\n<br />\n<br />[quote]If you already use Vortex for games, this extension will not interfere with them and SFM will simply be available as a discovered game you can manage.[/quote]\n<br />For information on downloads and installing, check out the [url=https://github.com/silveredgold/vortex-sfm]GitHub repo[/url] or the [url=https://vortex-sfm.silveredgold.vip/]full online docs[/url]."
       },
-      "downloads": 293,
+      "downloads": 298,
       "endorsements": 20,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/64/64-1595852472-1277900346.png",
       "name": "Source Filmmaker (SFM) Support",
@@ -363,8 +363,8 @@
         "short": "Adds support for PAYDAY 2 to Vortex",
         "long": "[size=4]Description\n<br />[/size]\n<br />This extension adds support for PAYDAY 2 to Vortex.\n<br />You can use it to install SuperBLT mods.\n<br />\n<br />SuperBLT is required, the extension will check and give you a download link once you start managing the game inside Vortex.\n<br />\n<br />[size=4]How to install\n<br />[/size]\n<br />This method requires at least Vortex 1.1.0! \n<br />To install, you should be able to find this under your games list, no special steps necessary.\n<br />\n<br />This method works for all versions!\n<br />If special steps are necessary:\n<br />1. Download the main file of this extension.\n<br />2. Enable Advanced mode in Vortex to reveal the Extensions tab.\n<br />3. Drop the main file .7z onto the box at the bottom of the Extensions tab.\n<br />4. Restart Vortex and you should find PAYDAY 2 support under Games!\n<br />\n<br />[size=4]How to install mods[/size]\n<br />\n<br />90% of PAYDAY2 mods are BLT-style mods, so installation will be drag and drop!\n<br />The other 10% are \"mod_overrides\"-style mods, and are not yet supported. Vortex will inform you it cannot be installed and you will need to install them manually based on what the mod says (for now.) \n<br />\n<br />[size=4]How to deploy mods\n<br />\n<br />[/size]Deployment should run without a hitch unless BLT's built-in auto-updater has updated a mod.\n<br />\n<br />The deployment will work as usual, but at the end a dialog will tell you files have been changed on disk. Select the option to \"Choose newest file\" as is default and continue for your mods to update and work as expected.\n<br />\n<br />[size=4]Planned Features\n<br />[/size]\n<br />1. Support for \"mod_overrides\"-style mods\n<br />2. Get mod metadata from mod.txt, especially for mods from outside sources that don't follow naming conventions.\n<br />3. Mod conflict detection? (Overlapping hooks or replacements, based on BLT mod.txt metadata)\n<br />3.1. Automatic conflict alerts in Vortex? (Preventing them may be extreme, warnings only?)\n<br />4. Crash logs management?\n<br />4.1. Detecting which mod caused the most recent crash?\n<br />5. Detect multiple mods in an archive and add them individually (and include them as a category?)\n<br />\n<br />[size=4]Known Issues\n<br />[/size]\n<br />1. Do not start the game via Vortex or you will get a \"Game already running\" error.\n<br />2. \"mod_overrides\"-style mods are not supported yet, these are commonly reskins or retextures.\n<br />3. Since many mods for this game are old and discontinued, expect some to cause crashes. Luckily, Vortex makes disabling mods a breeze. :)\n<br />\n<br />[size=4]Finally[/size]\n<br />\n<br />Some mods for PAYDAY 2 change the damage/balancing of guns or give the player extreme unfair stat advantages. These types of mods are considered cheats by the community and I personally recommend you only use them in offline lobbies. \n<br />Note that you will never be banned from the game itself, only from certain users who block cheaters."
       },
-      "downloads": 4478,
-      "endorsements": 116,
+      "downloads": 4560,
+      "endorsements": 120,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/65/65-1573235826-1772745169.jpeg",
       "name": "PAYDAY 2 Support",
       "gameName": "PAYDAY 2",
@@ -372,7 +372,7 @@
       "version": "0.1.1",
       "type": "game",
       "timestamp": 1573236132,
-      "uploader": "Evanito007"
+      "uploader": "Evanitro"
     },
     {
       "modId": 68,
@@ -382,8 +382,8 @@
         "short": "Adds support for Red Dead Redemption 2 to Vortex.",
         "long": "[size=4]Description\n<br />[/size]\n<br />This extension adds support for Red Dead Redemption 2 to Vortex.\n<br />You can use it to install plugins for script hook.\n<br />Asset mods and addons will be added as soon as the relevant tools (OpenIV) have been updated to support RDR2.\n<br />\n<br />Script Hook RDR2 (by Alexander Blade) is required, the extension will guide you through the correct installation once you start managing the game inside Vortex.\n<br />\n<br />[size=4]How to install\n<br />[/size]\n<br />This requires Vortex 1.1.0 or newer! To install, go to Extensions-&gt;Find More. Find this extension and click install.\n<br />\n<br />[size=4]Finally[/size]\n<br />\n<br />We do not support using mods in multiplayer. We do not condone using mods in multiplayer.\n<br />Your account may be banned for using any mods in public multiplayer and there is nothing we can do about that.\n<br />\n<br />If you do want to switch between modded singleplayer and unmodded multiplayer, do be careful that you deactivate mods before you start multiplayer.\n<br />Vortex will help you in two ways\n<br />a) When Vortex has modded your game, you should see the word \"Modded\" and a Vortex icon added to the game icon (in the lower left). If you see this, you still have mods installed. But: If you don't see it, you may still be running mods you installed outside Vortex!\n<br />b) Use Vortex to install scripthook. That way when you \"Purge\" mods within Vortex it will remove script hook from the game and in turn all scripts that depend on it."
       },
-      "downloads": 20630,
-      "endorsements": 438,
+      "downloads": 20845,
+      "endorsements": 449,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/68/68-1574772288-544584281.jpeg",
       "name": "Red Dead Redemption 2 Support",
       "tags": [],
@@ -401,8 +401,8 @@
         "short": "This is a very simple extension that takes the list of mods that Vortex currently has and writes them to a file. It then allows you to take that file and Restore your list of mods, making Vortex download them again as if you'd downloaded them from the Nexus Website.",
         "long": "[b]How do I use this?[/b]\n<br />Go to your mods tab and you should see a \"Modlist\" button in the top menu. If you click on that, you'll see three options: \"Modlist Backup: Restore\", \"Modlist Backup All Games\" and \"Modlist Backup Only This Game\". To back up your mods, click either the \"Modlist Backup All Games\" or \"Modlist backup Only This Game\". This will open up a save file window that asks you to open a file, but instead of opening an existing file you want to save to one that doesn't exist yet. Do this by going to the bottom bar where there's a text box for \"File name:\" and enter a new name. This should be the name of a file that doesn't already exist, and it's where your mod list will be saved. For example, type in \"Modlist.txt\" or \"Mods.json\". Then click open. A popup should then ask you if you want to create this file, select yes.\n<br />\n<br />To restore, select \"Modlist Backup: Restore\", navigate to that file that you saved previously and open it. It will only restore the mods for the currently active game, even if the modlist you created has multiple games in it\n<br />\n<br />[b]Important Note\n<br />[/b]A recent version of Vortex fixes a bug that in turn stopped this mod from being able to Restore modlists. If you're unable to restore your modlist, please update this mod to Version 0.3.0 or newer and try again\n<br />\n<br />[b]What does this do?[/b]\n<br />This is a very simple extension that takes the list of mods that Vortex currently has and writes them to a file. It then allows you to take that file and Restore your list of mods, making Vortex download them again as if you'd downloaded them from the Nexus Website.\n<br />\n<br />[b]Does this backup Mod Configs, Load Order, Dependencies Etc.\n<br />[/b]No, this is a simple and rather dumb extension that [i]just[/i] backs up the list of mods\n<br />\n<br />[b]Does it back up the mod files\n<br />[/b]No, this only stores list of mods. When you Restore the list, Vortex will download every mod on the list\n<br />\n<br />[b]Are there any requirements\n<br />[/b]You need to be a premium member on the Nexus site to Restore the list, since the Vortex client won't let you download the mods automatically unless you're a premium member, since you need to see the ads."
       },
-      "downloads": 1659,
-      "endorsements": 164,
+      "downloads": 1678,
+      "endorsements": 165,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/67/67-1574711459-1788149758.png",
       "name": "Modlist Backup",
       "tags": [],
@@ -427,8 +427,8 @@
         "short": "This extension adds support for Outer Wilds to Vortex.",
         "long": "[size=4]Installation[/size]\n<br />\n<br />[list=1]\n<br />[*]Install [url=https://www.nexusmods.com/outerwilds/mods/1]Outer Wilds Mod Loader (OWML)[/url].\n<br />[*]In Vortex, go to Extensions and click Find more.\n<br />[*]Find \"Outer Wilds Support\" and Install it.\n<br />[/list]"
       },
-      "downloads": 1126,
-      "endorsements": 46,
+      "downloads": 1142,
+      "endorsements": 48,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/73/73-1578331437-147871436.jpeg",
       "name": "Outer Wilds Support",
       "gameName": "Outer Wilds",
@@ -446,7 +446,7 @@
         "short": "Clean and modern theme for Vortex with usability improvements",
         "long": "[b]VortexNeue [/b]is a clean and modern theme designed for Vortex. Additionally, it includes some usability improvements that makes Vortex more user-friendly.\n<br />\n<br />All the settings on the theme tabs are customizable in this theme.\n<br />It is also compatible with color scheme from other themes on Nexus, simply replace the [code]variables.scss[/code] in VortexNeue with the one from the other theme.\n<br />\n<br />Here's a list of theme that works well with VortexNeue:\n<br />[list]\n<br />[*][url=https://www.nexusmods.com/site/mods/27]Nexus Mods Site Themes for Vortex[/url]\n<br />[*][url=https://www.nexusmods.com/site/mods/79]Voidem[/url]﻿\n<br />[*][url=https://www.nexusmods.com/site/mods/113]VortexCovid[/url]﻿\n<br />[/list]\n<br />Please feel free to leave suggestions or feedbacks on the comment section!\n<br />\n<br />\n<br />[b][size=4]Installation[/size][/b]\n<br />\n<br />[b]Vortex Install (Easy)[/b]\n<br />\n<br />[list=1]\n<br />[*]In Vortex, press the Find more button at the bottom in the Extension tab.\n<br />[*]Type [code]vortexneue[/code] in the search box and press enter.\n<br />[*]Click the install button.\n<br />[*]Open Vortex and navigate to Settings -&gt; Themes and select [code]vortexneue[/code].\n<br />[*]Check the Dark Theme toggle\n<br />[*]Adjust the font-size to 12 (optional)\n<br />[*]Set dashlets to fit-content (optional)\n<br />[*]Adjust the color to your liking (optional)\n<br />[/list]\n<br />\n<br />[b]Vortex Install (Advanced)[/b]\n<br />\n<br />[list=1]\n<br />[*]Close Vortex before installing.\n<br />[*]Open the skin directory of Vortex: [code]%APPDATA%&#92;Vortex&#92;Themes[/code]. [i]Note: If you used Shared mode under Settings -&gt; Vortex your themes folder will be [code]C:&#92;ProgramData&#92;vortex&#92;themes[/code][/i]\n<br />[*]Extract the .zip into this directory.\n<br />[*]Open Vortex and navigate to Settings -&gt; Themes and select [code]vortexneue[/code].\n<br />[*]Check the Dark Theme toggle\n<br />[*]Adjust the font-size to 12 (optional)\n<br />[*]Set dashlets to fit-content (optional)\n<br />[*]Adjust the color to your liking (optional)\n<br />[/list]"
       },
-      "downloads": 1100,
+      "downloads": 1105,
       "endorsements": 166,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/72/72-1587765752-1436183934.png",
       "name": "VortexNeue",
@@ -464,8 +464,8 @@
         "short": "Extension that adds unofficial support for S.T.A.L.K.E.R. Call of Chernobyl to Vortex.",
         "long": "[b][font=Verdana]Description[/font]\n<br />\n<br />[/b][font=Comic Sans MS]This extension will add [i][b]\"S.T.A.L.K.E.R. Call of Chernobyl\"[/b][/i] to list of games supported by [i][b]\"Vortex\"[/b][/i]. There is no difference what version you using. Be that version latest [b][i]\"1.5 R6\"[/i][/b] or [i][b]\"1.4.22\"[/b][/i] or any other, doesn't matter. [/font]\n<br />[font=Comic Sans MS]\n<br />[/font][font=Verdana][b][center][font=Comic Sans MS][color=#ff7700]Also be sure to have full folder structure in [font=Georgia]\"gamedata/configs\"[/font], as game/mod, always check entire folder for files. Even any not game/mod related files. As Vortex, will create file [font=Georgia]\"__folder_managed_by_vortex\"[/font] in folder it creates, you will have infinity loading bug. As i'm mentioned above, game/mod will try read any file that located in [font=Georgia]\"configs\"[/font] folder include [font=Georgia]\"__folder_managed_by_vortex\"[/font] file. (This happen only with [font=Georgia]\"configs\"[/font] folder) I  will also add, this fix, if you can't do this manually![/color][/font][/center][/b][/font]\n<br />[font=Verdana][b]How to install[/b][/font]\n<br />\n<br />[font=Comic Sans MS]Require [i][b]\"Vortex\"[/b][/i] for this extension to work. There is 2 ways to install.\n<br />1. In [i][b]\"Vortex\"[/b][/i] go to [b]\"Extensions\"[/b], click [b]\"Find more\"[/b] button, search for this extension.\n<br />2. Download manually from site and extract to [b]\"C:/UserName/AppData/Roaming/Vortex/plugins\"[/b]. Also you need \"[b]Show hidden files and folders[/b]\" set to on, before install this extension this way.\n<br />[b]\n<br />[font=Verdana]How this works\n<br />\n<br />[/font][/b]Similar as [i][b]\"Vortex\"[/b][/i] supported mods, just add archive of any mod, then install it. Also, first folder in archive must be [b]\"gamedata\"[/b]([b]\"database\"[/b] for some mods) not [b]\"ModName/gamedata\"[/b][/font].\n<br />\n<br />[b]Additional[/b] \n<br />\n<br />This also can work, with original [i][b]\"GSC Game World\"[/b][/i] games. Like  [i][b]\"[/b][/i][i][b]S.T.A.L.K.E.R.: Clear Sky\"[/b][/i] and[i] [b]\"S.T.A.L.K.E.R.: [/b][b]Call of Pripyat\". [/b][/i]But not tested.([i][b][i][b][url=https://www.nexusmods.com/site/mods/78]\"[i][b][i][b]S.T.A.L.K.E.R.: Shadow of Chernobyl\"[/b][/i][/b][/i][/url][/b][/i] [/b][/i]already have it own [i][b]\"Vortex\" [/b][/i]extension.)"
       },
-      "downloads": 2147,
-      "endorsements": 113,
+      "downloads": 2176,
+      "endorsements": 116,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/74/74-1578799409-917988387.png",
       "name": "Support for  S.T.A.L.K.E.R. Call of Chernobyl",
       "tags": [],
@@ -483,8 +483,8 @@
         "short": "A Vortex extension for Star Wars Jedi: Fallen Order featuring mod management and load order support.",
         "long": "This extension adds Star Wars Jedi: Fallen Order as a game supported in Vortex. Current the extension only supports PAK files, installing a non-PAK mod will result in a warning appearing. \n<br />\n<br />\n<br />[b]Vortex Install (Easy)\n<br />[/b]\n<br />[list]\n<br />[*]In Vortex, locate Star Wars Jedi: Fallen Order in the Games tab.\n<br />[*]Click on the game tile to manage it, install the extension as prompted.\n<br />[*]Click the prompt to restart Vortex.\n<br />[/list]\n<br />[b]\n<br />Vortex Install (Advanced)\n<br />[/b]\n<br />[list]\n<br />[*]In Vortex, enabled advanced mode in the settings.\n<br />[*]Navigate to the Extensions tab.\n<br />[*]Drop the 7z archive into the \"drop zone\" at the bottom of the page.\n<br />[*]Click the prompt to restart Vortex.\n<br />[/list]\n<br />\n<br />[b]Manual Install\n<br />[/b]\n<br />Extract the 7z archive to %appdata%&#92;Vortex&#92;plugins."
       },
-      "downloads": 12657,
-      "endorsements": 399,
+      "downloads": 12777,
+      "endorsements": 417,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/77/77-1579017830-30873432.jpeg",
       "name": "Star Wars Jedi Fallen Order Support",
       "tags": [],
@@ -502,7 +502,7 @@
         "short": "A basic recolor theme based on the default compact option. It's easy on the eyes, and not too dull due to purple being a great color in general.",
         "long": "[font=Trebuchet MS][size=3]Voidem, short for void theme. It sounds cool. It looks cool. It feels good, too. And that's about it. Not sure what wall of text I can type in here about a basic recolor, but I'll spare you all, and leave you to navigate to the download section so you can get this, apply it, and have your peace of mind.[/size][/font]\n<br />[font=Trebuchet MS][size=3]\n<br />To install it simply drop the folder found in RAR file in your Vortex themes folder. By default this path is in [b][u]C:&#92;Users&#92;YourUsername&#92;AppData&#92;Roaming&#92;Vortex&#92;themes[/u][/b].\n<br />\n<br />Now launch Vortex, and go to the themes tab under settings and select \"Voidem\". New looks should be applied. If not, apply the built in Vortex \"compact\" theme, then reapply \"Voidem\" afterwards.\n<br />\n<br />If you don't want to go through with this, you can check the image section and click on the image called \"Settings\" which will have all settings for you to copy manually if you wish so.[/size]\n<br />\n<br />\n<br />\n<br />[center][size=3]﻿[/size][/center][/font][left]﻿[code]﻿[/code][/left]"
       },
-      "downloads": 310,
+      "downloads": 314,
       "endorsements": 24,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/79/79-1579267992-2050181380.png",
       "name": "Voidem",
@@ -520,8 +520,8 @@
         "short": "Extension that adds unofficial support for S.T.A.L.K.E.R.: Shadow of Chernobyl to Vortex.",
         "long": "[b][font=Verdana]Description[/font]\n<br />\n<br />[/b][font=Comic Sans MS]This extension will add [i][b]\"S.T.A.L.K.E.R.: Shadow of Chernobyl\"[/b][/i] to list of games supported by [i][b]\"Vortex\"[/b][/i].[/font]\n<br />[font=Comic Sans MS]\n<br />[/font][center][font=Verdana][b][font=Comic Sans MS][color=#ff7700][font=Verdana][b][font=Comic Sans MS][color=#ff7700]Also be sure to have full folder structure in [font=Georgia]\"gamedata/configs\"[/font], as game, always check entire folder for files. Even any not game related files. As Vortex, will create file [font=Georgia]\"__folder_managed_by_vortex\"[/font] in folder it creates, you will have infinity loading bug. As i'm \n<br />mentioned above, game will try read any file that located in [font=Georgia]\"configs\"[/font] folder include [font=Georgia]\"__folder_managed_by_vortex\"[/font] file. (This happen only with [font=Georgia]\"configs\"[/font] folder) I  will also add, this fix, if you can't do this manually![/color][/font][/b][/font][/color][/font][/b][/font][/center]\n<br />[font=Verdana][b]\n<br />How to install[/b][/font]\n<br />\n<br />[font=Comic Sans MS]Require [i][b]\"Vortex\"[/b][/i] for this extension to work. There is 2 ways to install.\n<br />1. In [i][b]\"Vortex\"[/b][/i] go to [b]\"Extensions\"[/b], click [b]\"Find more\"[/b] button, search for this extension.\n<br />2. Download manually from site and extract to [b]\"C:/UserName/AppData/Roaming/Vortex/plugins\"[/b]. Also you need \"[b]Show hidden files and folders[/b]\" set to on, before install this extension this way.\n<br />[b]\n<br />[font=Verdana]How this works\n<br />\n<br />[/font][/b]Similar as [i][b]\"Vortex\"[/b][/i] supported mods, just add archive of any mod, then install it. Also, root folder in archive must be [b]\"gamedata\"[/b]([b]\"database\"[/b] for some mods) not [b]\"ModName/gamedata\"[/b][/font]."
       },
-      "downloads": 2401,
-      "endorsements": 99,
+      "downloads": 2438,
+      "endorsements": 100,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/78/78-1579064238-538265477.png",
       "name": "Support for S.T.A.L.K.E.R. Shadow of Chernobyl",
       "tags": [],
@@ -539,8 +539,8 @@
         "short": "Adds support for Black Mesa.",
         "long": "Adds support for Black Mesa."
       },
-      "downloads": 2518,
-      "endorsements": 75,
+      "downloads": 2550,
+      "endorsements": 77,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/81/81-1579744967-1158650952.jpeg",
       "name": "Black Mesa Support",
       "tags": [],
@@ -558,8 +558,8 @@
         "short": "Adds support to Vortex for Half-Life 2 and its episodes.",
         "long": "Adds mod support Half-Life 2 and its episodes."
       },
-      "downloads": 3874,
-      "endorsements": 148,
+      "downloads": 3918,
+      "endorsements": 149,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/80/80-1579744631-1635768160.jpeg",
       "name": "Half-Life 2 Support",
       "tags": [],
@@ -577,8 +577,8 @@
         "short": "Adds Vortex support for the game UnderMine by Thorium Entertainment.",
         "long": "Adds Vortex support for the game UnderMine by Thorium Entertainment.\n<br />License: GPL V3\n<br />Source Code: https://github.com/bwdymods/game-undermine"
       },
-      "downloads": 1931,
-      "endorsements": 62,
+      "downloads": 1964,
+      "endorsements": 63,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/83/83-1580086844-1547179678.png",
       "name": "UnderMine Support",
       "tags": [],
@@ -1707,8 +1707,8 @@
         "short": "WIP Extension for vortex to enable support for Fable Anniversary",
         "long": "Unzip \"game-fableanniversary\" into \"C:&#92;Users&#92;xonem&#92;AppData&#92;Roaming&#92;Vortex&#92;plugins\" when your done there should be a folder called \"game-fableanniversary\" in the plugins folder and inside \"game-fableanniversary\" should be the files from the zip\n<br />\n<br />WIP Extension for vortex to enable support for Fable Anniversary\n<br />\n<br />Because of the wide assortment of mod file locations for fable anniversary you'll need to package your mods like so\n<br />\n<br />Mod tool install locations:\n<br />\"Binaries&#92;Win32\"\n<br />\n<br />Cosmetic Changes:\n<br />\"WellingtonGame&#92;Content&#92;*\"\n<br />\n<br />World Edit + Cosmetic World Edits:\n<br />\"WellingtonGame&#92;Content&#92;Maps&#92;*\"\n<br />\"WellingtonGame&#92;FableData&#92;Build&#92;Data&#92;Levels\"\n<br />\n<br />Some mods will be in other folders surrounding these so please start your zip by packaging the sub folder inside of fable anniversary"
       },
-      "downloads": 2384,
-      "endorsements": 103,
+      "downloads": 2438,
+      "endorsements": 106,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/84/84-1581054396-895803063.png",
       "name": "Fable Anniversary Vortex Extension",
       "tags": [],
@@ -1746,8 +1746,8 @@
         "short": "Quite simply, it adds a \"Browse\" section containing an embedded Nexus Mods browser.<br />This allows you to browse and download mods from inside Vortex itself.",
         "long": "Quite simply, it adds a \"Browse\" section containing an embedded Nexus Mods browser.\n<br />This allows you to browse and download mods from inside Vortex itself.\n<br />\n<br />[b]Current features:[/b]\n<br />[list]\n<br />[*]Back, forward and refresh buttons.\n<br />[*]Visible url, mainly for copying mod-links etc.\n<br />[*]Downloads mods in Vortex, just like your normal browser.\n<br />[/list]Note: You may have to initially login to Nexus Mods inside Vortex, but it should remember your session as normal after that.\n<br />More features may be added later, as I see fit.\n<br />\n<br />[b]Installation:[/b]\n<br />(Thank you [url=https://www.nexusmods.com/users/1265]Zanderat[/url])\n<br />First, enable \"Advanced Mode\" in the Vortex settings, and drag-and-drop the archive as shown below.\n<br />[img]https://staticdelivery.nexusmods.com/mods/2295/images/88/88-1587382716-1145834175.jpeg[/img]\n<br />\n<br />This extension is Open Source under GPL-3.0. The code is available at [url=https://github.com/MaverickMartyn/builtin-mod-browser]https://github.com/MaverickMartyn/builtin-mod-browser[/url]."
       },
-      "downloads": 1385,
-      "endorsements": 104,
+      "downloads": 1398,
+      "endorsements": 106,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/88/88-1583717307-623556944.png",
       "name": "Builtin Mod Browser",
       "timestamp": 1583802330,
@@ -1768,8 +1768,8 @@
         "short": "Adds support for World of Warcraft and World of Warcraft Classic to Vortex.",
         "long": "[img]https://i.imgur.com/oTMyfWZ.png[/img]\n<br />\n<br />\n<br />[size=4][b]Current features:[/b][/size]\n<br />[list]\n<br />[*]Supports World of Warcraft and World of Warcraft Classic as separate games.\n<br />[*]Curseforge can be opened inside Vortex at the bottom of the mods table.\n<br />[*]Compatible with all CurseForge Addons that include a TOC file and are structured as expected.\n<br />[/list]\n<br />[img]https://i.imgur.com/niLOo3E.png[/img]\n<br />\n<br />[img]https://i.imgur.com/sg46PdR.png[/img]\n<br />\n<br />\n<br />[size=4][b]Current issues:[/b][/size]\n<br />[list]\n<br />[*]Detection of WoW and WoW Classic are based on guesswork for registry keys. At least one of the two detections will not work properly.\n<br />[*]The installer function currently produces an error, so it is commented out.\n<br />[*]No support for mods that are not AddOns.\n<br />[/list]\n<br />\n<br />[size=4][b]Possible Enhancements:[/b][/size]\n<br />[list]\n<br />[*]Pull addon meta-information about mod from CurseForge or the TOC file (this could be confusing if there are several TOC files though).\n<br />[*]A \"load order\" tab allowing you to toggle addons on/off per character but editing the AddOns.txt found at [code]E:&#92;World of Warcraft&#92;_classic_&#92;WTF&#92;Account&#92;&lt;account_name&gt;&#92;&lt;realm_name&gt;&#92;&lt;character_name&gt;&#92;AddOns.txt.[/code]\n<br />[*]The limits are your imagination.\n<br />[/list]\n<br />Please feel free to clone this repo or create a PR if you'd like to improve it.\n<br />\n<br />\n<br />[size=4][b]How to install[/b][/size]\n<br />Download the contents of this repo and copy the files to %AppData%/Vortex/Plugins/game-worldofwarcraft (you will need to create the folders)."
       },
-      "downloads": 2209,
-      "endorsements": 73,
+      "downloads": 2258,
+      "endorsements": 75,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/91/91-1584540879-543743461.jpeg",
       "name": "World of Warcraft Support",
       "timestamp": 1594978829,
@@ -1802,8 +1802,8 @@
         "short": "Enables Discord Rich Presence support for Vortex. Shows your currently managed game and number of active mods.",
         "long": "Enables Discord Rich Presence support for Vortex. Shows your currently managed game and number of active mods. \n<br />\n<br />Game artwork will appear for some games. You can request additional game art in the comments.\n<br />\n<br />[b]Vortex Install\n<br />[/b]\n<br />[list]\n<br />[*]In Vortex, enabled advanced mode in the settings.\n<br />[*]Navigate to the Extensions tab.\n<br />[*]Drop the 7z archive into the \"drop zone\" at the bottom of the page.\n<br />[*]Click the prompt to restart Vortex.\n<br />[/list]\n<br />\n<br />[b]Manual Install\n<br />[/b]\n<br />Extract the 7z archive to %appdata%&#92;Vortex&#92;plugins&#92;discord-rpc."
       },
-      "downloads": 1435,
-      "endorsements": 182,
+      "downloads": 1471,
+      "endorsements": 196,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/92/92-1584658998-1080649166.png",
       "name": "Discord Rich Presence for Vortex",
       "timestamp": 1597131962,
@@ -1820,8 +1820,8 @@
         "short": "Traduction Française pour Vortex | French Translation",
         "long": "[center][img]https://forums.nexusmods.com/flags/fr.gif[/img] [size=3]Translation [FR] / Traduction française de[/size]\n<br />[size=5][url=https://www.nexusmods.com/site/mods/1][img]https://staticdelivery.nexusmods.com/mods/2295/images/48/48-1585009525-1473542554.png[/img][/url][/size]\n<br />par [b]Nexus Mods[/b][/center]\n<br />[color=#FFA53F]\n<br />[/color][color=#ffd966]== DESCRIPTION\n<br />=================================[/color]\n<br />VORTEX est un gestionnaire  de mod, il succède et remplace Nexus Mod Manager (NMM).\n<br />\n<br />[color=#b6b6b6]Notez Bien :  \n<br />* Cette version contient les dernières traductions française à jour (en collaboration avec Ozzydarkfmw)\n<br />* Plusieurs éléments de Vortex contiennent des valeurs en dur, la traduction ne s'applique donc pas partout (pas encore)[/color]\n<br />\n<br />    \n<br />[color=#ffd966]== INSTALLATION\n<br />=================================[/color]\n<br />\n<br />[color=#FFA53F]A) Déployer automatiquement avec Vortex [color=#B45F06][i](compatible v1.2+)[/i][/color][/color]\n<br />Dans le menu [color=#6d9eeb]SETTINGS[/color], onglet [color=#6d9eeb]INTERFACE[/color], ouvrir la liste déroulante et sélectionner : [[color=#6d9eeb]  français, langue française (Extension by Ozzydarkfmw - Aogara)  [/color]][color=#e06666]\n<br />[/color]\n<br />[color=#FFA53F]B) Déployer manuellement avec Vortex [color=#B45F06][i](compatible v1.1+)[/i][/color][/color]\n<br />1) Activer le mode avancé\n<br />    ouvrir Vortex et se rendre dans le menu  [color=#6d9eeb]SETTINGS[/color] (PARAMÈTRES)  situé à gauche, puis activer l'option  [color=#6d9eeb]Enable Advanced Mode[/color].\n<br />    Cela va vous afficher le menu  [color=#6d9eeb]EXTENSIONS[/color]   sur la gauche.\n<br />\n<br />2) Déployer le dictionnaire\n<br />     Télécharger la traduction (pas besoin d'extraire le contenu de l'archive zip,7z)\n<br />     ouvrir Vortex et se rendre dans le menu  [color=#6d9eeb]EXTENSIONS[/color]  situé à gauche, \n<br />     prendre l'archive et la glisser dans la zone  [color=#6d9eeb]Drop File(s)[/color]  tout en bas à droite, un message en jaune apparaît tout en haut, cliquer sur  [color=#6d9eeb]Restart[/color].\n<br />\n<br />3) Activer la traduction \n<br />    Une fois Vortex redémarré, se rendre dans le menu [color=#6d9eeb]SETTINGS[/color] (PARAMÈTRES) situé à gauche, \n<br />    dans l'onglet  [color=#6d9eeb]INTERFACE [/color], ouvrir la liste déroulante et sélectionner : [[color=#6d9eeb]  français, langue française (France)  [/color]]\n<br />\n<br />[color=#93c47d]Lorsqu'une nouvelle version du dictionnaire sera disponible, Vortex déclenchera automatiquement sa mise à jour en arrière plan et vous invitera à redémarrer pour appliquer les changements.[/color]\n<br />[color=#e06666]\n<br />[/color][color=#e06666][b]IMPORTANT :\n<br />Quelle que soit la méthode choisie, après tout changement de langue ou mise à jour de dictionnaire, un redémarrage de Vortex est nécessaire. \n<br />Sans cela, des parties de l'interface peuvent rester affichées avec les libellés du dictionnaire précédent. Le redémarrage force la propagation à toute l'application.[/b]\n<br />[/color]\n<br />\n<br />[color=#ffd966]== DÉSINSTALLATION / NETTOYAGE\n<br />=================================[/color]\n<br />\n<br />[color=#FFA53F]A) Si vous aviez installé des dictionnaires avec Vortex :[/color]\n<br />Se rendre dans le menu \"EXTENSIONS\", et supprimer tous les dictionnaires [color=#e69138]\"&lt;langue&gt; translation for Vortex\"[/color] devenus inutiles.\n<br />\n<br />[color=#FFA53F]B) Si vous aviez installé des dictionnaires avec une autre méthode :[/color]\n<br />Se rendre dans [color=#b6b6b6]%APPDATA%&#92;[/color][color=#ffd966]Vortex&#92;locales[/color] et supprimer touts les répertoires de langue devenus inutiles. \n<br />[color=#e06666][b]S'il y a un répertoire fr&#92;[/b] : supprimez le, il est devenu inutile et empêche le déploiement des dictionnaires déployés par Vortex.[/color]\n<br />\n<br />[color=#b6b6b6]Valeurs connues de [b]%APPDATA%&#92;Vortex[/b]  pour Windows :\n<br />    C:&#92;Utilisateurs&#92;&lt;VotreNom&gt;&#92;AppData&#92;Roaming&#92;Vortex\n<br />    C:&#92;Users&#92;&lt;VotreNom&gt;&#92;AppData&#92;Roaming&#92;Vortex\n<br />    C:&#92;ProgramData[/color][color=#b6b6b6]&#92;Vortex\n<br />[/color]\n<br />\n<br />[color=#ffd966]== RECOMMANDATIONS\n<br />=================================[/color]\n<br />* Le thème [url=https://www.nexusmods.com/site/mods/97]Subtle[/url]﻿  (que vous pouvez déployer depuis le menu extensions de Vortex)\n<br />\n<br />\n<br />[color=#ffd966]== OUTILS UTILISÉS\n<br />=================================[/color]\n<br />* Gestion des dictionnaires : [url=https://www.nexusmods.com/site/mods/33]Unofficial Vortex Translation Tool[/url] +  [url=https://www.nexusmods.com/site/mods/28]Translation Helper[/url]\n<br />* Traduction : [url=https://www.nexusmods.com/skyrimspecialedition/mods/134]xTranslator[/url]\n<br />* [url=http://winmerge.org/?lang=fr]WinMerge\n<br />[/url]\n<br />\n<br />[color=#ffd966]== CRÉDITS / SHOUTOUT\n<br />=================================[/color]\n<br />* Nexus Mods et Black Tree Gaming Ltd  pour Vortex\n<br />* Ozzydarkfmw pour son travail depuis les premières heures de Vortex\n<br />* Tous les moddeurs qui produisent/maintiennent les outils mentionnés ci-dessus"
       },
-      "downloads": 4340,
-      "endorsements": 174,
+      "downloads": 4390,
+      "endorsements": 177,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/48/48-1585008071-273996874.png",
       "name": "French translation for Vortex - Traduction FR",
       "timestamp": 1594415836,
@@ -1839,7 +1839,7 @@
         "short": "Enables Phoenix Point support for Vortex.",
         "long": "# Phoenix Point Vortex Extension\n<br />\n<br />This repository houses a basic extension for the [Vortex mod manager](https://www.nexusmods.com/about/vortex/) which allows for management of mods via Vortex.\n<br />\n<br />## What does this extension do?\n<br />\n<br />* Allow for management of Phoenix Point mods within Vortex.\n<br />* Ensures the existence of the `Mods` folder which all current mod loaders adhere to.\n<br />\n<br />## What **doesn't** this extension do?\n<br />\n<br />* Install PPML or Modnix. It is assumed you already have one of these installed.\n<br />\n<br />## To-Do\n<br />\n<br />- [ ] Automated install of supported mod loaders. (Modnix, PPML)\n<br />- [ ] Get approved by Nexus as a proper game extension. (Enables direct installs from the nexus mods website.)"
       },
-      "downloads": 613,
+      "downloads": 623,
       "endorsements": 30,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/94/94-1585191375-2041827549.jpeg",
       "name": "Phoenix Point Vortex Integration",
@@ -1858,8 +1858,8 @@
         "short": "Adds support for installing and managing Beat Saber mods with Vortex",
         "long": "BeatVortex adds support for installing and managing Beat Saber mods through Vortex. You can use Vortex to install mods alongside Mod Assistant or any other Beat Saber modding tools.\n<br />\n<br />Find full documentation on using Vortex with Beat Saber at [url=https://beatvortex.dev]beatvortex.dev[/url]\n<br />\n<br />[size=5]Installation[/size]\n<br />\n<br />You should be able to automatically install the extension by clicking Manage on Beat Saber in the Games list, just like your other Vortex games. If that doesn't work, you can install the extension directly using the Find More button at the bottom of the Extensions screen: just find Beat Saber Support and Install it.\n<br />\n<br />[size=5]Adding Beat Saber[/size]\n<br />\n<br />Once the extension is installed, Vortex should automatically discover Beat Saber in the \"Discovered\" tab of the Games screen. Click Manage to perform initial setup and add Beat Saber to your games list.\n<br />\n<br />[size=5]Installing Mods[/size]\n<br />\n<br />Just like any other Vortex game, installing mods from archives is pretty simple: download the zip file, drag-and-drop into Vortex, then Install and Enable the mod.\n<br />\n<br />[size=5]BeatMods[/size]\n<br />\n<br />Since v0.2.0, you can quickly browse and install mods from BeatMods without leaving Vortex. Open the new BeatMods page from the left sidebar to see all the currently available mods for your game version.\n<br />\n<br />[size=5]OneClick[/size]\n<br />\n<br />Since v0.2.0, you can enable our preview support for OneClick installs from your Vortex settings. Open the Download tab in Settings, scroll down to \"Enable OneClick Installations\" and you can individually enable OneClick link handling for maps, models or playlists. You can then use the OneClick links on BeatSaver, BeastSaber and ModelSaber to install mods with Vortex. See [url=https://beatvortex.dev/docs/usage/mods/]beatvortex.dev[/url] for more information on OneClick installation."
       },
-      "downloads": 7527,
-      "endorsements": 148,
+      "downloads": 7634,
+      "endorsements": 150,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/96/96-1585722074-59618986.png",
       "name": "Beat Saber Support",
       "timestamp": 1597042248,
@@ -1880,8 +1880,8 @@
         "short": "Vortex theme subtle variations",
         "long": "[img]https://forums.nexusmods.com/flags/gb.gif[/img] / [img]https://forums.nexusmods.com/flags/us.gif[/img]\n<br />[color=#ffd966]A subtle variations of Vortex default theme[/color]\n<br />\n<br />[b]Features :[/b]\n<br />- Embossed toggle buttons\n<br />- Upscaled menu icons\n<br />- Few pannel \"fixes\"\n<br />- A language icon for external resources in english (Tutorials &amp; Knowledge Base)  for friendliness to non-english natives\n<br />- Improved notifications visibility : message counter &amp; deployment button\n<br />- Color variations\n<br />  * Default  (Vortex default colors)\n<br />  * Dimmed\n<br />\n<br />\n<br />[img]https://forums.nexusmods.com/flags/fr.gif[/img] \n<br />[color=#ffd966]Une variation subtile du thème par défaut de Vortex[/color]\n<br />\n<br />[b]Caractéristiques :[/b]\n<br />- boutons \"bascule\" en reliefs\n<br />- Agrandissement des icônes des menu\n<br />- Quelques ajustements sur les écrans\n<br />- Une icône de langue pour le contenu en anglais (Tutoriels &amp; Base de connaissance)\n<br />- Amélioration de la visibilité des notifications : compteur de messages &amp; bouton de déploiement\n<br />- Variation de couleurs\n<br />  * Default    (couleurs par défaut de Vortex)\n<br />  * Dimmed  (légèrement plus sombre)"
       },
-      "downloads": 418,
-      "endorsements": 59,
+      "downloads": 421,
+      "endorsements": 60,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/97/97-1585789475-643209580.png",
       "name": "Subtle",
       "timestamp": 1587837000,
@@ -1898,7 +1898,7 @@
         "short": "A simpler look for Vortex.",
         "long": "[size=4]Description[/size]\n<br />\n<br />A lot of people are very nostalgic for the good old times (tm) and prefer a simpler look for their applications, so here is a theme inspired by the most simple UIs there are."
       },
-      "downloads": 162,
+      "downloads": 164,
       "endorsements": 15,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/98/98-1585728870-1972023612.png",
       "name": "Simpler times",
@@ -1916,7 +1916,7 @@
         "short": "Gives you an extra two themes to choose from. Whether you're feeling the blues and need some warmth or need something fresh because it's a hot day, <br /><br />Or else you just need to wake up, or rest your eyes without sleeping due to an overly dull dark theme.",
         "long": "These are my personal modifications for Vortex."
       },
-      "downloads": 342,
+      "downloads": 344,
       "endorsements": 28,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/99/99-1585738456-1905405975.png",
       "name": "BlueEagle94's Vortex Mod Manager Themes",
@@ -1934,8 +1934,8 @@
         "short": "Adds a button to the mods page to open the INIs for your current game.",
         "long": "[b]Requires Vortex 1.2.11 or lower. Newer versions have an \"Open Game Settings Folder\" option with does the same thing[/b]\n<br />\n<br />This is a little extension I cobbled together very quickly, it adds a toolbar button to open the INI(s) for your current Gamebyro game.\n<br />\n<br />Please feel free to improve it and upload your own version. It would be really cool if you could edit your INIs inside Vortex.\n<br />\n<br />[b]Vortex Install\n<br />[/b]\n<br />[list]\n<br />[*]In Vortex, enabled advanced mode in the settings.\n<br />[*]Navigate to the Extensions tab.\n<br />[*]Drop the 7z archive into the \"drop zone\" at the bottom of the page.\n<br />[*]Click the prompt to restart Vortex.\n<br />[/list]\n<br />\n<br />[b]Manual Install\n<br />[/b]\n<br />Extract the 7z archive to %appdata%&#92;Vortex&#92;plugins&#92;Gamebyro Settings Shortcut"
       },
-      "downloads": 576,
-      "endorsements": 86,
+      "downloads": 579,
+      "endorsements": 87,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/103/103-1586093379-1404057672.png",
       "name": "Gamebyro Settings Shortcut",
       "timestamp": 1590053929,
@@ -1952,8 +1952,8 @@
         "short": "Polish translation for Vortex mod manager.",
         "long": "[size=4]About\n<br />[/size]\n<br />This mod is a WIP Polish translation for Vortex mod manager made with Unofficial Vortex Translation Tool. It is not finished yet but probably won't cover every string in the application as Vortex code is a very big pile of crap that has many lines hardcoded in it.\n<br />\n<br />[size=4]Installation\n<br />\n<br />[/size]Download the archive, unzip it in any folder and run the .cmd file to place the JSON files inside the Vortex folder. Then open your Vortex, go to Settings -&gt; Interface and change language to [i]polski[/i]. No need to restart the app. [b]If lacking of polish letters in headings bothers you, go to[i] Settings -&gt; Theme -&gt; Clone[/i] your theme and change [i]headings font family[/i] to e.g. Roboto Black. For Polish language it'll be [i]Ustawienia -&gt; Motyw -&gt; Klonuj[/i] and \"[i]krój czcionki (nagłówki)[/i]\".[/b]\n<br />\n<br />[size=4]Uninstallation\n<br />\n<br />[/size]Just delete all the [i]pl[/i] folders (with everything that's inside of them) in localization folders of your Vortex directory."
       },
-      "downloads": 6193,
-      "endorsements": 228,
+      "downloads": 6300,
+      "endorsements": 229,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/101/101-1586045647-1066687117.jpeg",
       "name": "Polish translation for Vortex",
       "timestamp": 1586085369,
@@ -1971,7 +1971,7 @@
         "short": "Adds support for Warhammer 40K Gladius Relics Of War to Vortex",
         "long": "Adds support for Warhammer 40K Gladius Relics Of War to Vortex\n<br />Use the Install Extension method. Enable manage downloads with link."
       },
-      "downloads": 492,
+      "downloads": 504,
       "endorsements": 25,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/106/106-1595728909-531097649.jpeg",
       "name": "Warhammer40K Gladius RelicsOfWar Vortex Manager Extension",
@@ -1994,7 +1994,7 @@
         "short": "This extension adds support for Fell Seal: Arbiter's Mark mods to the Vortex mod manager.",
         "long": "&gt; This extension is still in preview, please report any issue syou find! \n<br />\n<br />[size=4]What is it?[/size]\n<br />\n<br />This is a simple Vortex extension that adds support for Fell Seal: Arbiter's Mark mods so that you can install game mods using the Vortex mod manager.\n<br />\n<br />Using Vortex, you can install, manage, track and uninstall mods for Fell Seal just like you install mod archives for any of the other Vortex-supported games.\n<br />\n<br />[size=4]A word of warning[/size]\n<br />\n<br />Because of how Fell Seal mods work, you will almost certainly hit incompatibilities! Vortex will warn you when mods try to overwrite each other, such as edits to `Encounters.txt` or `Jobs.xml`, but you should be aware that these errors are very likely to get in your way.\n<br />\n<br />[size=4]How to use it?[/size]\n<br />\n<br />You can install the extension either from the CI builds (click the Actions tab above), or by installing it directly from Vortex's Extensions pane. Restart Vortex and you should be good to go.\n<br />\n<br />[quote]Most of the installation steps shown will require Advanced Mode to be enabled in Vortex! Enable it in the Settings window, under Interface &gt; Advanced &gt; Enable Advanced Mode.[/quote]\n<br />\n<br />Please report any bugs or issues you find as I have only been able to complete some basic (and limited) testing with this extension."
       },
-      "downloads": 627,
+      "downloads": 641,
       "endorsements": 28,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/108/108-1586936861-314959780.jpeg",
       "name": "Fell Seal Arbiter's Mark Support",
@@ -2013,8 +2013,8 @@
         "short": "A Vortex extension for Star Wars: Battlefront II (2017) featuring mod management.",
         "long": "Adds support for managing Star Wars: Battlefront II (2017) mod files in Vortex.\n<br />You will need [url=https://frostytoolsuite.com/downloads.html]Frosty Mod Manager[/url]﻿ to load the mods into the game.\n<br />\n<br />[b][size=4]Installation[/size]\n<br />[/b]\n<br />[b]Installing Frosty Mod Manager\n<br />[/b]\n<br />[list=1]\n<br />[*][url=https://frostytoolsuite.com/downloads.html]Download[/url]﻿ Frosty Mod Manager from the website.\n<br />[*]Create a new folder called [code]FrostyModManager[/code] in the root of your game directory (aka [code]STAR WARS Battlefront II[/code] folder).\n<br />[*]Extract the content of the zip archive ([code]FrostyModManager....zip[/code]) you downloaded into the folder.\n<br />[/list]\n<br />[b]Vortex Install (Easy)\n<br />[/b]\n<br />[list=1]\n<br />[*]In Vortex, locate Star Wars: Battlefront II (2017) in the Games tab.\n<br />[*]Click on the game tile to manage it, install the extension as prompted.\n<br />[*]Click the prompt to restart Vortex.\n<br />[/list]\n<br />[b]Vortex Install (Advanced)\n<br />[/b]\n<br />[list=1]\n<br />[*]In Vortex, enabled advanced mode in the settings.\n<br />[*]Navigate to the Extensions tab.\n<br />[*]Drop the zip archive into the \"drop zone\" at the bottom of the page.\n<br />[*]Click the prompt to restart Vortex.\n<br />[/list]\n<br />\n<br />[size=4][b]Future plans\n<br />[/b][/size]\n<br />I am new to both Vortex and Battlefront II modding so feel free to give suggestions or improve upon the extension!\n<br />You can also submit patches on the [url=https://github.com/alistair3149/game-starwarsbattlefront22017]Github page[/url]!\n<br />\n<br />[list]\n<br />[*]Auto install Frosty Mod Manager or at least auto configure it\n<br />[*]Integrate load order support from Frosty to Vortex\n<br />[*]Integrate profile support from Frosty to Vortex\n<br />[/list]"
       },
-      "downloads": 6803,
-      "endorsements": 260,
+      "downloads": 6876,
+      "endorsements": 263,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/112/112-1587346395-1584050399.png",
       "name": "Star Wars Battlefront II 2017 Support",
       "timestamp": 1587454676,
@@ -2032,8 +2032,8 @@
         "short": "An extension for Vortex, enabling support for Fallout 76 mod management through Vortex.",
         "long": "An extension for Vortex, enabling support for Fallout 76 mod management through Vortex.\n<br />\n<br />Vortex Install (Easy)\n<br />[list]\n<br />[*]In Vortex, locate Fallout 76 in the Games tab.\n<br />[*]Click on the game tile to manage it, install the extension as prompted.\n<br />[*]Click the prompt to restart Vortex.\n<br />[/list]\n<br />Vortex Install (Advanced)\n<br />[list]\n<br />[*]In Vortex, enabled advanced mode in the settings.\n<br />[*]Navigate to the Extensions tab.\n<br />[*]Drop the 7z archive into the \"drop zone\" at the bottom of the page.\n<br />[*]Click the prompt to restart Vortex.\n<br />[/list]\n<br />Manual Install\n<br />Extract the 7z archive to %appdata%&#92;Vortex&#92;plugins&#92;game-fallout76.\n<br />\n<br />Credits\n<br />Used imagery belongs in parts to Bethesda Softworks LLC and Blacktree Gaming LTD respectively.\n<br />Description has been copied from Nagev's Mount and Blade II Bannerlord extension.\n<br />The extension itself is based on the official Fallout 4 extension adapted for Fallout 76.\n<br />As such this plugin falls under the GPL-v3 license."
       },
-      "downloads": 10616,
-      "endorsements": 604,
+      "downloads": 10788,
+      "endorsements": 618,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/110/110-1587343642-175184037.jpeg",
       "name": "Fallout 76 Support (Wastelanders)",
       "timestamp": 1587343999,
@@ -2051,8 +2051,8 @@
         "short": "Adds mod support to Portal 2.",
         "long": "Adds mod support to Portal 2."
       },
-      "downloads": 1567,
-      "endorsements": 93,
+      "downloads": 1595,
+      "endorsements": 94,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/109/109-1587330104-107684269.jpeg",
       "name": "Portal 2 Support",
       "timestamp": 1590416418,
@@ -2085,7 +2085,7 @@
         "short": "Recolour of the VortexNeue theme by alistair3149  using the Covid-19 scheme colour",
         "long": "This is a simple recolour of the VortexNeue plugin using the Covid-19 scheme colours. Starting with Dark Copper as it's base it fits nicely with the aesthetic created by VortexNeue which removes the border colours."
       },
-      "downloads": 478,
+      "downloads": 480,
       "endorsements": 53,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/113/113-1587633353-1151960725.png",
       "name": "VortexNeue Covid",
@@ -2118,8 +2118,8 @@
         "short": "Import mods installed via Steam Workshop into Vortex",
         "long": "This extension is currently in beta and may include bugs. Please report any problems you encounter. I have only tested this with Steam Workshop for Skyrim 2011. \n<br />\n<br />You can select which mods to import, then you will be prompted to unsubscribe from the workshop versions before the process completes. Vortex will offer you handy buttons to open each workshop page. If for some reason Steam falls out of whack and doesn't uninstall the mods properly you will need to manually delete the files from your workshop folder. \n<br />\n<br />Once mods have been import to Vortex they will no longer be updated when the Steam Workshop entry updates. You also cannot reinstall the mods as no archive is created (possible improvement).\n<br />\n<br />I've gone all in with games, just to see how robust it is. Remember, this is very much a beta extension. Currently supports importing from:\n<br />[code]﻿['skyrim', 'ahatintime', 'enderal', 'darkestdungeon', 'dawnofman', 'divinityoriginalsin2', 'divinityoriginalsin2definitiveedition', 'faleanniversary', 'galacticcivilisations3', 'kenshi', 'kerbalspaceprogram', 'legendofgrimrock', 'mbwarband', 'neverwinternightsenhancededition', 'oxygennotincluded', 'payday2', 'pillarsofeternity2deadfire', 'portal2', 'prisonarchitect', 'rimworld', 'x4foundations', 'xcom2' ];\n<br />[/code]\n<br />\n<br />[b]Vortex Install\n<br />[/b]\n<br />[list]\n<br />[*]In Vortex, enabled advanced mode in the settings.\n<br />[*]Navigate to the Extensions tab.\n<br />[*]Drop the 7z archive into the \"drop zone\" at the bottom of the page.\n<br />[*]Click the prompt to restart Vortex.\n<br />[/list]\n<br />\n<br />[b]Manual Install\n<br />[/b]\n<br />Extract the 7z archive to %appdata%&#92;Vortex&#92;plugins&#92;steam-import"
       },
-      "downloads": 4127,
-      "endorsements": 468,
+      "downloads": 4146,
+      "endorsements": 473,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/114/114-1587989197-840423380.jpeg",
       "name": "Import from Steam Workshop",
       "timestamp": 1594196689,
@@ -2136,7 +2136,7 @@
         "short": "Vortex theme using the Covid-19 scheme colours",
         "long": "Simple Vortex theme making use of the Covid-19 scheme colours. Starting with Dark Copper as it's base it fits nicely with the dark mode of Vortex."
       },
-      "downloads": 617,
+      "downloads": 618,
       "endorsements": 68,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/117/117-1588579904-1360565947.png",
       "name": "Vortex Covid",
@@ -2158,8 +2158,8 @@
         "short": "Import mods installed via Bethesda.net into Vortex.",
         "long": "Are there some mods on Bethesda.net you wish you could manage using Vortex? Well now you can! \n<br />\n<br />[b]Features[/b]\n<br />[list]\n<br />[*]Install any mod downloaded from Bethesda.net into Vortex.\n<br />[*]Get mod metadata from the Bethesda.net mod database (internet connection required).\n<br />[*]Automatically unsubscribe from Bethesda.net when you import the mod. \n<br />[*]Create an archive backup of the mod so you can reinstall it without going back into the game. \n<br />[*]Optionally, import Creation Club content as a mod.\n<br />[/list]\n<br />Note: After importing your mods they will no longer be managed by Bethesda.net and cannot be updated.\n<br />\n<br />[b]Vortex Install\n<br />[/b]\n<br />[list]\n<br />[*]Navigate to the Extensions tab.\n<br />[*]Drop the 7z archive into the \"drop zone\" at the bottom of the page.\n<br />[*]Click the prompt to restart Vortex.\n<br />[/list]\n<br />\n<br />[b]Manual Install\n<br />[/b]\n<br />Extract the 7z archive to %appdata%&#92;Vortex&#92;plugins&#92;bethesda-import"
       },
-      "downloads": 2889,
-      "endorsements": 345,
+      "downloads": 2927,
+      "endorsements": 356,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/120/120-1589137601-815689657.png",
       "name": "Import from Bethesda.net",
       "timestamp": 1597090389,
@@ -2176,8 +2176,8 @@
         "short": "A Korean translation for Vortex.",
         "long": "A Korean translation for Vortex.\n<br />\n<br />This translation is Open Source in [url=https://github.com/alexkoala/vortex-l10n/]GitHub[/url]﻿."
       },
-      "downloads": 2469,
-      "endorsements": 109,
+      "downloads": 2614,
+      "endorsements": 120,
       "image": null,
       "name": "Korean translation for Vortex",
       "timestamp": 1593422967,
@@ -2195,8 +2195,8 @@
         "short": "This extension adds support for Ace Combat 7: Skies Unknown mods to the Vortex mod manager.",
         "long": "&gt; This extension is still in preview, please report any issues you find! \n<br />\n<br />[size=4]What is it?[/size]\n<br />\n<br />This is a simple Vortex extension that adds support for Ace Combat 7: Skies Unknown mods so that you can install game mods using the Vortex mod manager.\n<br />\n<br />Using Vortex, you can install, manage, track and uninstall mods for Ace Combat just like you install mod archives for any of the other Vortex-supported games.\n<br />\n<br />[size=4]A word of warning[/size]\n<br />\n<br />Because of how AC7 mods work, you will almost certainly hit incompatibilities! With the latest versions of the extension, Vortex will warn you when mods seem to be changing the same skin slot, or model, but this isn't perfect and will sometimes miss conflicting mods. You can easily enable/disable conflicting mods though!\n<br />\n<br />[size=4]How to use it?[/size]\n<br />\n<br />You can install the extension either from the CI builds on GitHub, or by installing it directly from Vortex's Extensions pane. Restart Vortex and you should be good to go.\n<br />\n<br />Please report any bugs or issues you find as I have only been able to complete some basic (and limited) testing with this extension."
       },
-      "downloads": 1404,
-      "endorsements": 75,
+      "downloads": 1440,
+      "endorsements": 76,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/125/125-1590211794-673711753.png",
       "name": "Ace Combat 7 Skies Unknown Support",
       "timestamp": 1595338747,
@@ -2214,8 +2214,8 @@
         "short": "This extension will check the BSA/BA2 files loaded by the game after the LOOT sort completes.",
         "long": "A problem I've been seeing a lot is users installing mods for Skyrim (2011) into their Skyrim Special Edition games. If these older mods include BSA files in the older v104 format, this will crash the game instantly. \n<br />\n<br />This extension will run a quick check of all BSAs that will be loaded - based on your load order - to see if there are any incompatible ones. The check runs after the auto sort operation has completed or when a new mod is installed that contains a plugin file. \n<br />\n<br />[i]Note: In v1.0.0 the check will not re-run when you enable/disable plugins, this is because Vortex doesn't update the plugin data internally until the auto sort is run.[/i]"
       },
-      "downloads": 740,
-      "endorsements": 108,
+      "downloads": 755,
+      "endorsements": 111,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/126/126-1590311491-1756258137.png",
       "name": "Bethesda Archive Check",
       "timestamp": 1590311735,
@@ -2232,7 +2232,7 @@
         "short": "Extension that adds basic support for Hacknet to Vortex.",
         "long": "[size=3]This extension adds support for managing [/size][i]Hacknet Extensions[/i][size=3] and [/size][i]Hacknet: Pathfinder Mods[/i][size=3] in Vortex Mod Manager. Currently recognizes Steam and GOG versions of the game. (Humble &amp; Origin versions not detected.)[/size]\n<br />\n<br />[size=5][b]How to Install[/b][/size]\n<br />\n<br />[list=1]\n<br />[*][size=3]Download the latest archive from the downloads page.[/size]\n<br />[*][size=3]Navigate to the Vortex plugins directory (%appdata%/Vortex/plugins).[/size]\n<br />[*][size=3]Extract to a new subfolder.[/size]\n<br />[/list]\n<br />[b][size=5]Note to Developers[/size][/b]\n<br />\n<br />[size=3]I'm not a programmer so this extension is pretty messy and lacks many features that should be simple to implement. If you're interested in fleshing this out more, DM me on Discord at Stryder#0440 so I can update it and/or give you edit permissions.[/size]"
       },
-      "downloads": 262,
+      "downloads": 267,
       "endorsements": 16,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/124/124-1589986318-1119924492.jpeg",
       "name": "Hacknet Support",
@@ -2251,7 +2251,7 @@
         "short": "Adds mod installation support for Synergy to Vortex.",
         "long": "Adds mod installation support for Synergy to Vortex."
       },
-      "downloads": 173,
+      "downloads": 174,
       "endorsements": 11,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/127/127-1590774922-1616260607.jpeg",
       "name": "Synergy Support",
@@ -2270,7 +2270,7 @@
         "short": "Adds vortex support for the Half-Life 2 mod Half-Life Update and the Half-Life 2 Episodes.",
         "long": "Adds vortex support for the Half-Life 2 mod Half-Life Update and the Half-Life 2 Episodes."
       },
-      "downloads": 413,
+      "downloads": 428,
       "endorsements": 31,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/128/128-1591212519-1277491986.jpeg",
       "name": "Half-Life 2 Update Support",
@@ -2289,8 +2289,8 @@
         "short": "This theme is a recolor based on the Contrast Theme. It contains both large and small font sizes in a lovely purple, using dark mode for ease of view.",
         "long": "Purple is The Color of Happiness, so we might as well have a bit of it here as well. I based it on the High Contrast theme on Dark Mode to make it easy on the eyes and for the sake of color balance and flow.. I made the larger edition for larger monitors (32\" x 1080p and above) and for those of us with older eyes.\n<br />\n<br />\n<br />[size=6]Included Themes[/size]\n<br />\n<br />\n<br />[color=#f1f1f1]Perfect Purple Contrast - Small : Uses 12pt Font Size\n<br />[/color]Perfect Purple Contrast - Large : Uses 16pt Font Size\n<br />\n<br />\n<br />[size=6]Installation[/size]\n<br />\n<br />\n<br />1. Close Vortex before installing.\n<br />\n<br />2. Open \"This PC\" and navigate to the following path&gt; \"C:&#92;Users&#92;{Your Username Here}&#92;AppData&#92;Roaming&#92;Vortex&#92;Themes\".\n<br />\n<br />[b][Note 1: If you use Shared mode under \"Settings&gt; Vortex\" your themes folder will be under  \"C:&#92;ProgramData&#92;vortex&#92;themes\"][/b]\n<br />\n<br />[b][Note 2: You may also go tot he folder more directly by pressing the Windows Key on the keyboard and tapping R once - Win+R[/b]\n<br />[b]  Paste the following in the run box.[/b]\n<br />\n<br />[color=#00ff00]%appdata%[/color]\n<br />\n<br />[b]Press OK or hit Enter and then navigate to the above path][/b]\n<br />\n<br />3. Copy the folders of the theme into this directory.\n<br />\n<br />4. Close This PC\n<br />\n<br />[color=#f1f1f1]5. Open Vortex and navigate to Settings&gt; Themes and select the version you want to use from the Theme drop box.\n<br />\n<br />[/color]Enjoy...\n<br />\n<br />\n<br />[size=6]Uninstallation[/size]\n<br />\n<br />\n<br />[color=#f1f1f1]1. Make sure to go to \"Settings&gt; Theme\" Change to any other theme before making removing.\n<br />     [b][Note: You may also use the \"Remove\" button from within Vortex]\n<br />\n<br />[/b]     [b][Continue with Step 2 if you want to do it manually][/b]\n<br />\n<br />[/color]2. Close Vortex.\n<br />\n<br />3. Reopen the themes folder in AppData or Program Data depending on your setup.\n<br />\n<br />4. Delete the folders of the themes you no longer want.\n<br />\n<br />5. Reopen Vortex and gain satisfaction of a job completed."
       },
-      "downloads": 296,
-      "endorsements": 49,
+      "downloads": 299,
+      "endorsements": 50,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/129/129-1591564710-1142205203.jpeg",
       "name": "Perfect Purple",
       "timestamp": 1591566045,
@@ -2307,7 +2307,7 @@
         "short": "Adds support to FakeFactory's Half-Life 2 Cinematic Mod 2013.",
         "long": "Adds support to FakeFactory's Half-Life 2 Cinematic Mod 2013.\n<br />\n<br />If detection fails, manually set location to the mods the folder usually named CM2013."
       },
-      "downloads": 121,
+      "downloads": 123,
       "endorsements": 7,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/130/130-1591636336-1112369675.png",
       "name": "Half-Life 2 Cinematic Mod 2013 Support",
@@ -2326,7 +2326,7 @@
         "short": "Adds support for Left 4 Dead 2 to Vortex.",
         "long": "Adds support for Left 4 Dead 2 to Vortex."
       },
-      "downloads": 1145,
+      "downloads": 1176,
       "endorsements": 57,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/131/131-1591676606-965437968.jpeg",
       "name": "Left 4 Dead 2 Support",
@@ -2345,8 +2345,8 @@
         "short": "Twitch Purples",
         "long": "Twitch Purples - UI Based off of Twitch.tv\n<br />And I love purple.\n<br />To get the font to work, you'll need to download the Roobert font."
       },
-      "downloads": 240,
-      "endorsements": 50,
+      "downloads": 247,
+      "endorsements": 51,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/132/132-1591755291-1948292996.png",
       "name": "Twitch Purple",
       "timestamp": 1591756679,
@@ -2363,7 +2363,7 @@
         "short": "Adds support for Half-Life 2 Deathmatch to Vortex.",
         "long": "Adds support for Half-Life 2 Deathmatch to Vortex."
       },
-      "downloads": 117,
+      "downloads": 119,
       "endorsements": 8,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/136/136-1591810093-1360639199.jpeg",
       "name": "Half-Life 2 Deathmatch Support",
@@ -2386,8 +2386,8 @@
         "short": "Adds support for installing and managing Command and Conquer Remastered Collection mods with Vortex.",
         "long": "&gt; This extension is still in [b]very early preview[/b], please report any issues you find! \n<br />\n<br />[size=4]What is it?[/size]\n<br />\n<br />This is a simple Vortex extension that adds support for Command &amp; Conquer Remastered Collection mods so that you can install game mods using the Vortex mod manager.\n<br />\n<br />Using Vortex, you can install, manage, track and uninstall mods for C&amp;C Remastered just like you install mod archives for any of the other Vortex-supported games.\n<br />\n<br />[size=4]How to use it?[/size]\n<br />\n<br />You can install the extension either from the CI builds on GitHub, or by installing it directly from Vortex's Extensions pane. Restart Vortex and you should be good to go.\n<br />\n<br />You can then install mods from the Mods screen and Vortex should handle the rest. The extension will try and auto-detect which game the mod is for, but you can override this using the \"Mod Type\" dropdown from the mod details panel. Mods are automatically installed into their own folder under `~/Documents/CnCRemastered/Mods/&lt;game&gt;`. Remember that you still have to [b]enable mods in-game[/b] from the Options menu before they will take effect.\n<br />\n<br />Please report any bugs or issues you find as I have only been able to complete some basic (and limited) testing with this extension.\n<br />\n<br />[size=4]A word of warning\n<br />[/size]\n<br />The extension can't merge INI tweak mods together, so if you install multiple [code]rules.ini[/code] tweaks, you will need to choose which one takes precedence over the others. You can easily enable/disable conflicting mods though!"
       },
-      "downloads": 800,
-      "endorsements": 52,
+      "downloads": 820,
+      "endorsements": 53,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/133/133-1591808944-704345838.jpeg",
       "name": "Command and Conquer Remastered Support",
       "timestamp": 1593735076,
@@ -2405,7 +2405,7 @@
         "short": "Adds support for Counter-Strike Source to Vortex.",
         "long": "Adds support for Counter-Strike Source to Vortex."
       },
-      "downloads": 306,
+      "downloads": 315,
       "endorsements": 14,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/135/135-1591809674-940519704.jpeg",
       "name": "Counter-Strike Source Support",
@@ -2424,7 +2424,7 @@
         "short": "Adds support for Day of Defeat Source to Vortex.",
         "long": "Adds support for Day of Defeat Source to Vortex."
       },
-      "downloads": 109,
+      "downloads": 114,
       "endorsements": 6,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/134/134-1591809412-1173702336.jpeg",
       "name": "Day of Defeat Source Support",
@@ -2443,8 +2443,8 @@
         "short": "This game extension will put mod files with file extension \"txt\" in the Binaries folder.  Unfortunately, mod designers do not always use the \"txt\" extension for their mod files.",
         "long": "This game extension will put mod files with file extension \"txt\" in the Binaries folder.  Unfortunately, mod designers do not always use the \"txt\" extension for their mod files.  For mods that do not have the \"txt\" file extension, there will usually be a readme file included with the mod that will tell you how to install the mod.\n<br />This game extension was tested with the Epic Games version of the game, but should also work with the Steam version of the game.\n<br />\n<br />This game extension will allow you to start the game inside of Vortex; however, the Epic Games version of the game requires you to first start the Epic Games Launcher.  I did not add the Epic Games Launcher to the extension so that it will be more compatible with the Steam version, which does not require a separate launcher."
       },
-      "downloads": 4161,
-      "endorsements": 186,
+      "downloads": 4363,
+      "endorsements": 195,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/138/138-1592173008-984416768.jpeg",
       "name": "Borderlands 2 User Extension",
       "timestamp": 1592172832,
@@ -2462,8 +2462,8 @@
         "short": "Český překlad pro Vortex.<br /><br />-aktuálně v alfa verzi-",
         "long": "Instalace: vložte do &#92;AppData&#92;Roaming&#92;Vortex&#92;locales"
       },
-      "downloads": 493,
-      "endorsements": 26,
+      "downloads": 520,
+      "endorsements": 28,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/139/139-1592585829-233660176.png",
       "name": "Czech translation for Vortex",
       "timestamp": 1594233778,
@@ -2485,8 +2485,8 @@
         "short": "Share your modding setups and build shareable mod lists directly from Vortex. <br /><br />This simple extension lets you create \"showcases\" to share mod lists using your whole mod list, or just individual mods to share with your fellow modders.",
         "long": "[quote]Find the full documentation at [url=https://showcase.vortex.support/]showcase.vortex.support[/url]﻿[/quote]\n<br />This extension is still in preview, please report any issues you find! \n<br />\n<br />[size=4]What is it?[/size]\n<br />\n<br />This is a simple extension that lets you create \"showcases\" to share mod lists. You can create a showcase from your entire behemoth of a mod list, or just select individual mods to share with your fellow modders.\n<br />\n<br />There's plenty more information on what is and isn't available in [url=https://showcase.vortex.support/]the docs[/url], especially [url=https://showcase.vortex.support/docs/introduction/faq]the FAQ[/url].\n<br />\n<br />[size=4]How to use it?[/size]\n<br />\n<br />You can install the extension directly from Vortex's Extensions pane, or from the CI builds on GitHub. Restart Vortex and you should be good to go.\n<br />\n<br />You can then create showcases based on either all of your enabled mods (from the top bar), or only a selection directly from your Mods list (select your mods and choose the button from the bottom action bar).\n<br />\n<br />Please report any bugs or issues you find as I have only been able to complete some basic (and limited) testing with this extension so far.\n<br />\n<br />---\n<br />\n<br />[i]Disclaimer[/i]: This project is not associated with Nexus Mods"
       },
-      "downloads": 607,
-      "endorsements": 63,
+      "downloads": 620,
+      "endorsements": 64,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/145/145-1594048990-1029659374.png",
       "name": "Vortex Showcase",
       "timestamp": 1597284813,
@@ -2510,8 +2510,8 @@
         "short": "User Extension to support the game \"Trials of Mana\"",
         "long": "[font=Verdana][b][size=5]Trials of Mana Vortex Support - 0.2.2[/size][/b]\n<br />\n<br />\n<br />[size=3][quote]It is implemented in Vortex now thanks to @Pickysaurus but it might still be buggy as it is still in beta.[/quote][/size]\n<br />\n<br />[b][size=4]:: REQUIREMENTS ::[/size][/b]\n<br />• Having the game \"Trials of Mana\", thanks Captain\n<br />• Having Vortex\n<br />\n<br />\n<br />[b][size=4]:: FEATURES ::[/size][/b]\n<br />• Support extension for the game \"Trials of Mana\"\n<br />• Import directly from Nexus Mods or an archive containing \".pak\" file/mod and let you select which version if multiple \".pak\" exist\n<br />• Migration in case of the wrong mod folder is used to create a proper \"~mod\" folder\n<br />• Support Load Order\n<br />\n<br />\n<br />[size=4][b]:: GENERAL ::[/b][/size]\n<br />• I suggest you to backup your ~mod folder before using it for the first time as it is still in beta\n<br />• Feedbacks are welcomed\n<br />\n<br />\n<br />[b][size=4]::  KNOWN ISSUES ::[/size][/b]\n<br />• Game won't launch from Vortex if Steam is launched as admin\n<br />• Let me know any bugs\n<br />\n<br />\n<br />[b][size=4]::  CREDITS ::[/size][/b]\n<br />♦ Vortex / Nexus Mods Wiki &amp; Discord\n<br />♦ @Pickysaurus - Community Manager[/font]"
       },
-      "downloads": 180,
-      "endorsements": 9,
+      "downloads": 209,
+      "endorsements": 12,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/146/146-1595774144-1615722291.jpeg",
       "name": "Trials of Mana Support",
       "timestamp": 1596916856,
@@ -2559,8 +2559,8 @@
         "short": "Quickly compare which mods you have enabled between two profiles.",
         "long": "Description\n<br />\n<br />With this extension you can select a \"reference profile\" from the \"Profiles\" screen. Then on the Mods table you should have a second column that shows the status of each mod in the reference profile so you can compare them side by side.\n<br />Please note that the buttons in that new column are functional, you can enable/disable in the reference profile.\n<br />\n<br />Installation\n<br />\n<br />This extension requires Vortex 1.3.x. You can install it by going to Extensions-&gt;Find more and there look for \"Compare Profiles\""
       },
-      "downloads": 25,
-      "endorsements": 1,
+      "downloads": 26,
+      "endorsements": 2,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/148/148-1596783332-265028837.png",
       "name": "Compare Profiles",
       "timestamp": 1596783567,
@@ -2577,8 +2577,8 @@
         "short": "Easily build and upload your modlists to Modwatch directly from Vortex. Powered by Vortex Showcase.",
         "long": "[quote]Find the full documentation at [url=https://modwatch.vortex.support]modwatch.vortex.support[/url]﻿[/quote]\n<br />This extension is still in preview, please report any issues you find! \n<br />\n<br />[size=4]What is it?[/size]\n<br />\n<br />This is a simple extension that adds support for building and uploading modlists based on your installed mods directly to Modwatch from Vortex. You can easily create and upload modlists for any supported game directly from the Vortex mods page without any external uploader.\n<br />\n<br />There's plenty more information on what is and isn't available in [url=https://modwatch.vortex.support/]the docs[/url], especially [url=https://modwatch.vortex.support/docs/introduction/faq]the FAQ[/url].\n<br />\n<br />[size=4]How to use it?[/size]\n<br />\n<br />You can install the extension directly from Vortex's Extensions pane, or from the CI builds on GitHub. Restart Vortex and you should be good to go. If you don't have Showcase installed, Vortex will prompt you to install it.\n<br />\n<br />You can then create and upload mod lists based on your enabled mods (from the top bar) of the mods page. You can also use the normal \"Create Showcase\" buttons to create a modlist for only a selection of mods (check [url=https://modwatch.vortex.support/docs/usage/]the docs [/url]for more details).\n<br />\n<br />Please report any bugs or issues you find as I have only been able to complete some basic (and limited) testing with this extension so far.\n<br />\n<br />---\n<br />\n<br />[i]Disclaimer[/i]: This project is not associated with Nexus Mods, nor with Modwatch."
       },
-      "downloads": 10,
-      "endorsements": 0,
+      "downloads": 13,
+      "endorsements": 1,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/152/152-1597291731-1862535100.jpeg",
       "name": "Modwatch for Vortex",
       "timestamp": 1597331096,
@@ -2598,8 +2598,8 @@
         "short": "Vortex extensions for file previews using WinMerge (and similar diff tools.)",
         "long": "[b][size=3]Description[/size][/b]\n<br />\n<br />With this extension installed, when you click \"Preview\" on a file conflict, it will open the two files in WinMerge to give you a direct comparison between the two.\n<br />WinMerge ([url=https://winmerge.org/]https://winmerge.org/[/url]) has to be installed (duh!).\n<br />If WinMerge is installed in a non-default location you have to set the correct path in Settings-&gt;Tools.\n<br />You can also use other visual diff tools as long as they support the same command line parameters (listing the files to compare as the only parameters), Beyond Compare ([url=https://scootersoftware.com/]https://scootersoftware.com/[/url]) works great as well.\n<br />\n<br />[b][size=3]Installation[/size][/b]\n<br />\n<br />This extension requires Vortex &gt;1.2.13. You can install it by going to Extensions-&gt;Find more and there look for \"Preview WinMerge\""
       },
-      "downloads": 59,
-      "endorsements": 3,
+      "downloads": 76,
+      "endorsements": 8,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/151/151-1597230973-684297237.png",
       "name": "File Preview with WinMerge",
       "timestamp": 1597230500,
@@ -2614,10 +2614,10 @@
       "uploader": "Pickysaurus",
       "description": {
         "short": "A generic installer for Unreal Engine games. Configurable using the details pane of your game extension.",
-        "long": "A generic installer for Unreal Engine games. Configurable using the details pane of your game extension.\n<br />\n<br />Additional documentation to follow."
+        "long": "A generic installer for Unreal Engine games. Configurable using the details pane of your game extension.\n<br />\n<br />[size=4]For users\n<br />[/size]This extension will be a requirement for certain other game extensions that utilise it. Vortex will automatically install this extension as required.\n<br />\n<br />[size=4]For developers\n<br />[/size]If you're looking into creating a Vortex extension for a game which uses Unreal Engine 4, this extension may cut down on the workload required to get everything working. \n<br />\n<br />Unreal Engine games [i]generally[/i] follow a simple modding pattern. PAK files can be placed in a ~mods or ~mod folder (usually located at {root}&#92;{gamename}&#92;Content&#92;Paks) and be loaded in alphabetical order. Subfolders within these directories are also loaded alphabetically. \n<br />\n<br />[b]What this extension does:\n<br />[/b][list]\n<br />[*]Adds two Mod Types, one for standard UE4 mods and another for UE4 mods including Load Order support. \n<br />[*]Adds a general installer which will detect the mods by the PAK files (or another extension you provide) and assign them the appropriate mod type.\n<br />[*]If a mod archive is installed with more than one PAK file, Vortex will show a dialogue where the user can choose which of the PAKs to install. \n<br />[/list]\n<br />[b]How to use it: [/b][list]\n<br />[*]Add this line to your extension's main function to tell Vortex you need this library installed 'context.requireExtension('Unreal Engine Game Library');'\n<br />[*]Inside your game object used in context.registerGame(), make sure to include a 'compatible' property. Inside the object passed there, you need to add 'unrealEngine: true', this tells the extension that you wish to use this library, \n<br />[*]You also need to add an unrealEngine key to the 'details' section including the following values:\n<br />[list]\n<br />[*]modsPath - the path to install mods, relative to the install folder of the game. e.g. /Soulcaliburvi/Content/Paks/~mods\n<br />[*]fileExt - Optional, if you want to check for something other than a PAK file.\n<br />[*]loadOrder - Optional, if true this implies you plan to include a Load Order page. Setting this to true without a load order page will have a minor performance impact. \n<br />[/list][/list]\n<br />\n<br />[url=https://github.com/Pickysaurus/vortex-unreal-engine-library/tree/master/example/game-example]You can view a template extension here, which should only require you to change the variables at the top of the index.js file and add some appropriate game artwork.[/url]"
       },
-      "downloads": 9,
-      "endorsements": 1,
+      "downloads": 122,
+      "endorsements": 5,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/153/153-1597353416-769425421.png",
       "name": "Unreal Engine Mod Installer",
       "timestamp": 1597357549,
@@ -2634,7 +2634,7 @@
         "short": "Adds mod management and load order support for Soul Calibur VI to Vortex",
         "long": "This extension adds Soul Calibur VI as a game supported in Vortex, for mod management and load ordering. This extension is an example for use of the \"Unreal Engine Installer\" library which simplifies creating game extensions for UE4 games. \n<br />\n<br />\n<br />[b]Vortex Install (Easy)\n<br />[/b]\n<br />[list]\n<br />[*]In Vortex, locate Soul Calibur VI in the Games tab.\n<br />[*]Click on the game tile to manage it, install the extension as prompted.\n<br />[*]Click the prompt to restart Vortex.\n<br />[*]If prompted to install \"Unreal Engine Installer\" click \"Fix\" and restart Vortex again. \n<br />[/list]\n<br />[b]\n<br />Vortex Install (Advanced)\n<br />[/b]\n<br />[list]\n<br />[*]In Vortex, enabled advanced mode in the settings.\n<br />[*]Navigate to the Extensions tab.\n<br />[*]Drop the 7z archive into the \"drop zone\" at the bottom of the page.\n<br />[*]Click the prompt to restart Vortex.\n<br />[*]If prompted to install \"Unreal Engine Installer\" click \"Fix\" and restart Vortex again. \n<br />[/list]\n<br />[b]Manual Install\n<br />[/b]\n<br />Extract the 7z archive to %appdata%&#92;Vortex&#92;plugins&#92;soulcalibur6."
       },
-      "downloads": 1,
+      "downloads": 92,
       "endorsements": 0,
       "image": "https://staticdelivery.nexusmods.com/mods/2295/images/154/154-1597393927-191717459.jpeg",
       "name": "Soul Calibur VI Support",
@@ -2643,6 +2643,42 @@
       "version": "0.1.1",
       "type": "game",
       "gameName": "Soul Calibur VI"
+    },
+    {
+      "modId": 155,
+      "fileId": 691,
+      "author": "Tannin",
+      "uploader": "Tannin42",
+      "description": {
+        "short": "Vortex extension to simplify adding new games to Vortex.",
+        "long": "[b][size=3]Description[/size][/b]\n<br />\n<br />This extension adds a button to the \"Games\" page that starts a wizard to add games that aren't currently supported by Vortex.\n<br />Please note that while you can add any game to Vortex this way, only games that are trivial to mod (as in: modded files get dumped into a specific game directory) will actually work correctly.\n<br />For anything more complex programming will be necessary but the code generated by this extension can still serve as a starting point.\n<br />\n<br />You are welcome to release the game extensions you generate with this wizard, the generated code is free of any license restrictions.\n<br />\n<br />[b][size=3]Installation[/size]\n<br />[/b]\n<br />This extension requires Vortex &gt;1.3.0. You can install it by going to Extensions-&gt;Find more and there look for \"Add Game Wizard\""
+      },
+      "downloads": 12,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/mods/2295/images/155/155-1597490607-1555638952.png",
+      "name": "Add Game Wizard",
+      "timestamp": 1597490912,
+      "tags": [],
+      "version": "1.0.0",
+      "type": null
+    },
+    {
+      "modId": 156,
+      "fileId": 692,
+      "author": "Tannin",
+      "uploader": "Tannin42",
+      "description": {
+        "short": "Record a video of the Vortex window with the press of a hotkey.",
+        "long": "[size=3][b]Description[/b][/size]\n<br />\n<br />With this extension installed you can press ctrl+r to start recording a video of the Vortex window, pressing ctrl+r again will stop the recording and save the video to file.\n<br />\n<br />This is intended to help create tutorials or create a recording of a problem you encounter.\n<br />\n<br />Please note that this extension isn't particularly smart, it will not automatically stop recording before running out of memory or anything, if you forget to stop the recording it may continue eating memory until you run out.\n<br />\n<br />Further note: The recording quality is set fairly low so that files don't get too big. If this is a problem for you, please let me know.\n<br />\n<br />[size=3][b]Installation\n<br />[/b][/size]\n<br />Go to Extensions-&gt;Find more and look for \"Screen Recorder\"."
+      },
+      "downloads": 3,
+      "endorsements": 0,
+      "image": "https://staticdelivery.nexusmods.com/mods/2295/images/156/156-1597491579-242528687.png",
+      "name": "Vortex Screen Recorder",
+      "timestamp": 1597491653,
+      "tags": [],
+      "version": "1.0.0",
+      "type": null
     }
   ]
 }
