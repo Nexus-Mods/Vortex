@@ -34,7 +34,7 @@ class GameStoreHelper {
     return ((storeId !== undefined)
       ? this.findGameEntry('id', id, storeId)
       : this.findGameEntry('id', id))
-      .then(entry => entry.gameStoreId)
+      .then(entry => Promise.resolve(entry?.gameStoreId))
       .catch(err => Promise.resolve(undefined));
   }
 
@@ -175,24 +175,31 @@ class GameStoreHelper {
 
     if ((gameStores === undefined) || (gameStores.length === 0)) {
       const errMsg = (!!storeId) ? storeId : 'Gamestores unavailable';
-      return Promise.reject(new GameStoreNotFound(errMsg));
+      // Rejecting at this point will cause Vortex to crash... badly...
+      //  We don't actually have a reference to the api in some of the routes
+      //  where this is called - well done Adrian...
+      //  lets just log it and return undefined as that's a valid return
+      //  value for findGame.
+      log('error', errMsg);
+      return Promise.resolve(undefined);
+      //return Promise.reject(new GameStoreNotFound(errMsg));
     }
 
     return Promise.reduce(gameStores, (accum: IGameStoreEntry[], store) =>
       store.allGames()
-      .then(entries => {
-        const entry = (searchType === 'id')
-          ? entries.find(matcher)
-          : entries.find(ent => rgxMatcher.test(ent.name));
+        .then(entries => {
+          const entry = (searchType === 'id')
+            ? entries.find(matcher)
+            : entries.find(ent => rgxMatcher.test(ent.name));
 
-        if (!!entry) {
-          accum.push(entry);
-        }
+          if (!!entry) {
+            accum.push(entry);
+          }
 
-        return Promise.resolve(accum);
-      })
-      .catch(GameEntryNotFound, () => Promise.resolve([]))
-      .catch(GameNotFound, () => Promise.resolve([])), [])
+          return Promise.resolve(accum);
+        })
+        .catch(GameEntryNotFound, () => Promise.resolve([]))
+        .catch(GameNotFound, () => Promise.resolve([])), [])
       .then(foundEntries => {
         // TODO: A cool future feature here would be to allow the user to select
         //  the gamestore he wants to use. But for now, we just return the
@@ -205,7 +212,11 @@ class GameStoreHelper {
             : pattern;
 
           const stores = this.mStores.map(store => store.id).join(', ');
-          return Promise.reject(new GameEntryNotFound(name, stores));
+          // Again - rejecting here will crash Vortex just like if we encounter
+          //  a missing game store. Log and resolve undefined.
+          log('error', 'Game entry not found', { pattern: name, availableStores: stores });
+          return Promise.resolve(undefined);
+          //return Promise.reject(new GameEntryNotFound(name, stores));
         }
       });
   }
