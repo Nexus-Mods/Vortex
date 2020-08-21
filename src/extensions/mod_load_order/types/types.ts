@@ -6,6 +6,20 @@ export type SortType = 'ascending' | 'descending';
 
 export type ListViewType = 'compact' | 'full';
 
+// Adds the ability to discern why the LO callback or presort has been
+//  called. At the time of writing there were only 2 potential
+//  reasons for them to be called:
+//
+//  drag-n-drop: has been applied by the user by drag-and-dropping.
+//
+//  props-update: the presort/filter functors have changed the load order
+//    and caused the presort/callback functors to be called again.
+//
+//  refresh: a refresh event has been called by the user OR by the
+//    render call when a difference between display items and managed
+//    mods is detected.
+export type UpdateType = 'drag-n-drop' | 'props-update' | 'refresh';
+
 // A set of props forwarded to game extensions which
 //  will allow these to control certain aspects of the
 //  load order extension from within the info panel.
@@ -124,7 +138,8 @@ export interface IGameLoadOrderEntry {
   // Give the game extension the opportunity to modify the load order
   //  before we start sorting the mods.
   preSort?: (items: ILoadOrderDisplayItem[],
-             sortDir: SortType) => Promise<ILoadOrderDisplayItem[]>;
+             sortDir: SortType,
+             updateType?: UpdateType) => Promise<ILoadOrderDisplayItem[]>;
 
   // Allow game extensions to run custom filtering logic
   //  and display only mods which need to be sorted.
@@ -132,7 +147,7 @@ export interface IGameLoadOrderEntry {
 
   // Allow game extensions to react whenever the load order
   //  changes.
-  callback?: (loadOrder: ILoadOrder) => void;
+  callback?: (loadOrder: ILoadOrder, updateType?: UpdateType) => void;
 
   // Add option to provide a custom item renderer if wanted.
   //  Default item renderer will be used if left undefined.
