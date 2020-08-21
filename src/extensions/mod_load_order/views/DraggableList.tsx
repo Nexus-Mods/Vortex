@@ -266,9 +266,12 @@ class DraggableList extends ComponentEx<IProps, IState> {
     this.applyDebouncer.schedule(undefined, copy);
   }
 
-  private renderContextMenu(item: ILoadOrderDisplayItem): JSX.Element {
-    const { contextMenuVisible, offset } = this.state;
-    return (!!item?.contextMenuActions)
+  private renderContextMenu = (item: ILoadOrderDisplayItem): JSX.Element => {
+    const { contextMenuVisible, offset, contextHistory } = this.state;
+    const isTargetItem = (contextHistory?.current !== undefined)
+      ? contextHistory.current.indexOf(item.name) !== -1
+      : false;
+    return (isTargetItem && !!item?.contextMenuActions)
       ? (
         <ContextMenu
           key={'lo-entry-context-menu'}
@@ -285,8 +288,8 @@ class DraggableList extends ComponentEx<IProps, IState> {
   private onHide = () => {
     this.nextState.contextMenuVisible =
       (this.state.contextHistory.current === this.state.contextHistory.previous)
-      ? false
-      : true;
+        ? false
+        : true;
     this.nextState.contextHistory.previous = this.nextState.contextHistory.current;
   }
 
