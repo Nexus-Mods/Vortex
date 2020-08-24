@@ -43,13 +43,13 @@ class VersionChangelogButton extends ComponentEx<IProps, {}> {
         >
         <FormGroup>
           <ControlLabel>{t('Current Version')}</ControlLabel>
-          <div key='dialog-form-changelog'>
+          <div key='dialog-form-changelog' className='mod-changelog'>
             {this.renderChangelog(changelog)}
           </div>
         </FormGroup>
         <FormGroup>
           <ControlLabel>{t('Newest Version')}</ControlLabel>
-          <div key='dialog-form-newestChangelog'>
+          <div key='dialog-form-newestChangelog' className='mod-changelog'>
             {this.renderChangelog(newestChangelog)}
           </div>
         </FormGroup>
