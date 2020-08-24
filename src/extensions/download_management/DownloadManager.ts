@@ -18,7 +18,9 @@ import { remote } from 'electron';
 import * as http from 'http';
 import * as https from 'https';
 import * as path from 'path';
+import * as stream from 'stream';
 import * as url from 'url';
+import * as zlib from 'zlib';
 
 // assume urls are valid for at least 5 minutes
 const URL_RESOLVE_EXPIRE_MS = 1000 * 60 * 5;
@@ -226,7 +228,16 @@ class DownloadWorker {
           { address: `${res.connection.remoteAddress}:${res.connection.remotePort}` });
         this.mResponse = res;
         this.handleResponse(res, encodeURI(decodeURI(jobUrl)));
-        res
+        let str: stream.Readable = res;
+        switch (res.headers['content-encoding']) {
+          case 'gzip':
+            str = str.pipe(zlib.createGunzip());
+            break;
+          case 'deflate':
+            str = str.pipe(zlib.createInflate());
+            break;
+        }
+        str
           .on('data', (data: Buffer) => {
             this.handleData(data);
           })
@@ -359,7 +370,10 @@ class DownloadWorker {
     log('debug', 'retrieving range',
         { id: this.mJob.workerId, range: response.headers['content-range'] || 'full' });
     if (this.mJob.responseCB !== undefined) {
-      let size: number = parseInt(response.headers['content-length'] as string, 10);
+      let size: number = response.headers['content-length'] !== undefined
+        ? parseInt(response.headers['content-length'] as string, 10)
+        : -1;
+
       if (chunkable) {
         const rangeExp: RegExp = /bytes (\d)*-(\d*)\/(\d*)/i;
         const sizeMatch: string[] = (response.headers['content-range'] as string).match(rangeExp);
@@ -373,7 +387,9 @@ class DownloadWorker {
       if (size < this.mJob.size + this.mJob.offset) {
         // on the first request it's possible we requested more than the file size if
         // the file is smaller than the minimum size for chunking. offset should always be 0 here
-        this.mJob.size = size - this.mJob.offset;
+        this.mJob.size = (size !== -1)
+          ? size - this.mJob.offset
+          : - 1;
       }
 
       let fileName;
