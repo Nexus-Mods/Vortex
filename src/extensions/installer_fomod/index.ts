@@ -37,7 +37,9 @@ const app = appIn !== undefined ? appIn : remote.app;
 
 function transformError(err: any): Error {
   let result: Error;
-  if (typeof(err) === 'string') {
+  if (err === undefined) {
+    result = new Error('unknown error');
+  } else if (typeof(err) === 'string') {
     // I hope these errors aren't localised or something...
     result = ((err === 'The operation was cancelled.')
               || (err === 'A task was canceled'))
@@ -100,7 +102,7 @@ function transformError(err: any): Error {
              && ((err.stack.indexOf('System.Xml.XmlTextReaderImpl.ParseText') !== -1)
                  || (err.message.indexOf('does not match the end tag') !== -1))) {
     result = new DataInvalid('Invalid installer script: ' + err.message);
-  } else if (err.name === 'System.AggregateException') {
+  } else if ((err.name === 'System.AggregateException') && (err.InnerException !== undefined)) {
     return transformError(err.InnerException);
   } else if (err.Message === 'task timeout') {
     result = new SetupError('A task in the script didn\'t complete in time. The timeouts are set '
