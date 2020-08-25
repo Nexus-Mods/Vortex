@@ -366,10 +366,12 @@ class ConnectionIPC {
   private mDelegates: { [id: string]: Core } = {};
   private mOnInterrupted: (err: Error) => void;
   private mReceivedBuffer: string;
+  private mActionLog: string[];
 
   constructor(socket: { in: net.Socket, out: net.Socket }, proc: ChildProcess) {
     this.mSocket = socket;
     this.mProcess = proc;
+    this.mActionLog = [];
 
     if (proc !== null) {
       proc.on('exit', async (code, signal) => {
@@ -399,11 +401,13 @@ class ConnectionIPC {
 
   public handleMessages() {
     this.mSocket.in.on('data', (data: string) => {
+      this.logAction(`receiving ${data.length} bytes`);
       if (data.length > 0) {
         this.mReceivedBuffer = (this.mReceivedBuffer === undefined)
           ? data
           : this.mReceivedBuffer + data;
         if (this.mReceivedBuffer.endsWith('\uffff')) {
+          this.logAction(`processing ${this.mReceivedBuffer.length} bytes`);
           try {
             this.processData(this.mReceivedBuffer);
             this.mReceivedBuffer = undefined;
@@ -426,10 +430,16 @@ class ConnectionIPC {
   }
 
   public async sendMessage(command: string, data: any, delegate?: Core): Promise<any> {
+    // reset action log because we're starting a new exchange
+    this.mActionLog = [];
     return Promise.race([
       this.interruptible(),
       this.sendMessageInner(command, data, delegate),
     ]);
+  }
+
+  private logAction(message: string) {
+    this.mActionLog.push(message);
   }
 
   private async interruptible() {
@@ -447,6 +457,8 @@ class ConnectionIPC {
         this.mDelegates[id] = delegate;
       }
     });
+
+    this.logAction(`sending cmd ${command}: ${JSON.stringify(data)}`);
 
     this.mSocket.out.write(JSON.stringify({
       id,
@@ -475,6 +487,7 @@ class ConnectionIPC {
     messages.forEach(msg => {
       if (msg.length > 0) {
         try {
+          this.logAction(`processing message "${this.mReceivedBuffer}"`);
           this.processDataImpl(msg);
         } catch (err) {
           log('error', 'failed to parse', { input: msg, error: err.message });
@@ -512,6 +525,7 @@ class ConnectionIPC {
   }
 
   private interrupt(err: Error) {
+    log('warn', 'interrupted, recent actions', JSON.stringify(this.mActionLog, undefined, 2));
     if (this.mOnInterrupted !== undefined) {
       this.mOnInterrupted(err);
       this.mOnInterrupted = undefined;
