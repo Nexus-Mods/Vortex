@@ -78,7 +78,7 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
               if (thisRelease !== undefined) {
                 this.nextState.releaseDate = new Date(thisRelease.published_at);
                 this.nextState.changelog = thisRelease.body;
-                this.nextState.tag = thisRelease.prerelease ? 'Testing' : undefined;
+                this.nextState.tag = thisRelease.prerelease ? 'Beta' : undefined;
               } else {
                 this.nextState.tag = 'Unknown';
               }
