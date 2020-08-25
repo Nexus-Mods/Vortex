@@ -220,7 +220,7 @@ function errorHandler(evt: any) {
 
   if (error.name === 'Invariant Violation') {
     // these may not get caught, even when we have an ErrorBoundary, if the exception happens
-    // in some callback. Onfortunately this also makes these errors almost impossible to find,
+    // in some callback. Unfortunately this also makes these errors almost impossible to find,
     // the code-stack is pointless (it's only react interna) and the component-stack gets
     // stripped in production builds.
     log('error', 'react invariant violation', { error: error.message, stack: error.stack });
@@ -233,6 +233,15 @@ function errorHandler(evt: any) {
              + 'This only happens if both your physical and virtual memory have run out',
       stack: error.stack,
     }, false);
+    return;
+  }
+
+  if (error.message === 'Cannot read property \'0\' of null') {
+    // This is caused by cytoscape in their mouse-move/dragging handler if the user manages
+    // to get a mouse-down event in before the cytoscape graph is shown because then the initial
+    // location is unset.
+    // I don't see how we could do anything about that but it also shouldn't be a biggy if we
+    // ignore this
     return;
   }
 
