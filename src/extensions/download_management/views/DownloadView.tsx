@@ -10,7 +10,7 @@ import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../
 import { IState } from '../../../types/IState';
 import { ITableAttribute } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { ProcessCanceled, UserCanceled } from '../../../util/CustomErrors';
+import { ProcessCanceled, TemporaryError, UserCanceled } from '../../../util/CustomErrors';
 import { showError } from '../../../util/message';
 import opn from '../../../util/opn';
 import * as selectors from '../../../util/selectors';
@@ -120,6 +120,12 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
         title: 'Resume',
         action: this.resume,
         condition: this.resumable,
+      },
+      {
+        icon: 'resume',
+        title: 'Retry',
+        action: this.resume,
+        condition: this.retryable,
       },
       {
         icon: 'delete',
@@ -325,6 +331,12 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
                                    'Sorry, the download link is no longer valid. '
                                    + 'Please restart the download.',
               undefined, false);
+          } else if (err instanceof TemporaryError) {
+            this.props.onShowError('Failed to resume download',
+                                   'Downloading failed due to an I/O error (either '
+                                   + 'network or disk access). This is very likely a '
+                                   + 'temporary problem, please try resuming at a later time.',
+                                   undefined, false);
           } else if (err.code === 'ECONNRESET') {
             this.props.onShowError('Failed to resume download',
                                    'Server closed the connection, please '
@@ -337,6 +349,12 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
               undefined, false);
           } else if (err.code === 'ENOSPC') {
             this.props.onShowError('Failed to resume download', 'The disk is full',
+              undefined, false);
+          } else if (err.code === 'EBADF') {
+            this.props.onShowError('Failed to resume download',
+                                   'Failed to write to disk. If you use a removable media or '
+                                   + 'a network drive, the connection may be unstable. '
+                                   + 'Please try resuming once you checked.',
               undefined, false);
           } else if (err.message.indexOf('DECRYPTION_FAILED_OR_BAD_RECORD_MAC') !== -1) {
             this.props.onShowError('Failed to resume download',
@@ -354,6 +372,12 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
   private resumable = (downloadIds: string[]) => {
     return downloadIds.find((downloadId: string) => (
       this.getDownload(downloadId).state === 'paused'
+    )) !== undefined;
+  }
+
+  private retryable = (downloadIds: string[]) => {
+    return downloadIds.find((downloadId: string) => (
+      this.getDownload(downloadId).state === 'failed'
     )) !== undefined;
   }
 

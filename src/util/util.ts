@@ -126,29 +126,43 @@ export function objDiff(lhs: any, rhs: any, skip?: string[]): any {
   return res;
 }
 
+function restackErr(error: Error, stackErr: Error): Error {
+  // resolve the stack at the last possible moment because stack is actually a getter
+  // that will apply expensive source mapping when called
+  Object.defineProperty(error, 'stack', {
+    get: () => error.message + '\n' + stackErr.stack,
+    set: () => null,
+  });
+  return error;
+}
+
 /**
  * create a "queue".
  * Returns an enqueue function such that that the callback passed to it
  * will be called only after everything before it in the queue is finished
  * and with the promise that nothing else in the queue is run in parallel.
  */
-export function makeQueue() {
+export function makeQueue<T>() {
   let queue = Bluebird.resolve();
   let atEnd = true;
-  return (func: () => Bluebird<any>, tryOnly: boolean) =>
-    new Bluebird((resolve, reject) => {
+  return (func: () => Bluebird<T>, tryOnly: boolean) => {
+    const stackErr = new Error();
+    return new Bluebird<T>((resolve, reject) => {
       if (tryOnly && !atEnd) {
         return resolve();
       }
       queue = queue
         .then(() => {
           atEnd = false;
-          return func().then(resolve).catch(reject);
+          return func().then(resolve).catch(err => {
+            reject(restackErr(err, stackErr));
+          });
         })
         .finally(() => {
           atEnd = true;
         });
     });
+  };
 }
 
 /**

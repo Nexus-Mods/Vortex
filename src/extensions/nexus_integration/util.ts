@@ -10,7 +10,7 @@ import * as semver from 'semver';
 import * as util from 'util';
 import { addNotification, dismissNotification, setExtensionEndorsed, setModAttribute } from '../../actions';
 import { IExtensionApi, IMod, IState, ThunkStore } from '../../types/api';
-import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
+import { ProcessCanceled, TemporaryError, UserCanceled } from '../../util/CustomErrors';
 import { contextify, setApiKey } from '../../util/errorHandling';
 import github, { RateLimitExceeded } from '../../util/github';
 import { log } from '../../util/log';
@@ -146,6 +146,11 @@ export function startDownload(api: IExtensionApi, nexus: Nexus, nxmurl: string):
         }, { allowReport: false });
       } else if ((err.message.indexOf('DECRYPTION_FAILED_OR_BAD_RECORD_MAC') !== -1)
               || (err.message.indexOf('WRONG_VERSION_NUMBER') !== -1)) {
+        api.showErrorNotification('Download failed', {
+          error: err,
+          message: 'This may be a temporary issue, please try again later',
+        }, { allowReport: false });
+      } else if (err instanceof TemporaryError) {
         api.showErrorNotification('Download failed', {
           error: err,
           message: 'This may be a temporary issue, please try again later',

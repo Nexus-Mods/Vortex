@@ -17,6 +17,7 @@ import * as contentType from 'content-type';
 import { remote } from 'electron';
 import * as http from 'http';
 import * as https from 'https';
+import * as _ from 'lodash';
 import * as path from 'path';
 import * as stream from 'stream';
 import * as url from 'url';
@@ -27,7 +28,7 @@ const URL_RESOLVE_EXPIRE_MS = 1000 * 60 * 5;
 // don't follow redirects arbitrarily long
 const MAX_REDIRECT_FOLLOW = 2;
 
-export type RedownloadMode = 'always' | 'never' | 'ask';
+export type RedownloadMode = 'always' | 'never' | 'ask' | 'replace';
 
 export class AlreadyDownloaded extends Error {
   private mFileName: string;
@@ -347,7 +348,12 @@ class DownloadWorker {
           this.mRedirected = false;
           // any data we may have gotten with the old reply is useless
           this.mJob.size += this.mJob.received;
-          this.mJob.received = this.mJob.offset = 0;
+          this.mJob.confirmedSize = this.mJob.size;
+          this.mJob.received
+            = this.mJob.offset
+            = this.mJob.confirmedReceived
+            = this.mJob.confirmedOffset
+            = 0;
           this.mJob.state = 'running';
           this.mEnded = false;
           this.assignJob(this.mJob, newUrl);
@@ -440,8 +446,13 @@ class DownloadWorker {
     } catch (err) {
       return Promise.reject(err);
     }
+
     const res = this.mJob.dataCB(this.mJob.offset, merged)
-      .then(() => null);
+      .then(() => {
+        this.mJob.confirmedReceived += merged.length;
+        this.mJob.confirmedOffset += merged.length;
+        this.mJob.confirmedSize -= merged.length;
+      });
 
     // need to update immediately, otherwise chunks might overwrite each other
     this.mJob.received += merged.length;
@@ -671,7 +682,7 @@ class DownloadManager {
     }
     log('info', 'stopping download', { id });
 
-    // first, make sure not-yet-started chungs are paused, otherwise
+    // first, make sure not-yet-started chunks are paused, otherwise
     // they might get started as we stop running chunks as that frees
     // space in the queue
     download.chunks.forEach((chunk: IDownloadJob) => {
@@ -696,6 +707,8 @@ class DownloadManager {
     const download: IRunningDownload = this.mQueue.find(
       (value: IRunningDownload) => value.id === id);
     if (download === undefined) {
+      // this indicates the download isn't queued, so effectively it's already
+      // paused
       log('warn', 'failed to pause download, not found', { id });
       return undefined;
     }
@@ -714,11 +727,11 @@ class DownloadManager {
 
     // stop running workers
     download.chunks.forEach((chunk: IDownloadJob) => {
-      if ((chunk.state === 'running') && (chunk.size > 0)) {
+      if (['running', 'paused'].includes(chunk.state) && (chunk.size > 0)) {
         unfinishedChunks.push({
-          received: chunk.received,
-          offset: chunk.offset,
-          size: chunk.size,
+          received: chunk.confirmedReceived,
+          offset: chunk.confirmedOffset,
+          size: chunk.confirmedSize,
           url: chunk.url,
         });
         if (this.mBusyWorkers[chunk.workerId] !== undefined) {
@@ -786,6 +799,9 @@ class DownloadManager {
           }
           return urls[0];
         }),
+      confirmedOffset: 0,
+      confirmedSize: this.mMinChunkSize,
+      confirmedReceived: 0,
       offset: 0,
       state: 'init',
       received: 0,
@@ -973,10 +989,14 @@ class DownloadManager {
 
       let offset = this.mMinChunkSize + 1;
       while (offset < size) {
+        const minSize = Math.min(chunkSize, size - offset);
         download.chunks.push({
+          confirmedReceived: 0,
+          confirmedOffset: offset,
+          confirmedSize: minSize,
           received: 0,
           offset,
-          size: Math.min(chunkSize, size - offset),
+          size: minSize,
           state: 'init',
           url: () => download.resolvedUrls().then(urls => urls[0]),
         });
@@ -994,9 +1014,9 @@ class DownloadManager {
   private toStoredChunk = (job: IDownloadJob): IChunk => {
     return {
       url: job.url,
-      size: job.size,
-      offset: job.offset,
-      received: job.received,
+      size: job.confirmedSize,
+      offset: job.confirmedOffset,
+      received: job.confirmedReceived,
     };
   }
 
@@ -1010,6 +1030,9 @@ class DownloadManager {
 
         return urls[0];
       }),
+      confirmedOffset: chunk.offset,
+      confirmedSize: chunk.size,
+      confirmedReceived: chunk.received,
       offset: chunk.offset,
       state: 'init',
       size: chunk.size,
@@ -1146,6 +1169,8 @@ class DownloadManager {
                   loop();
                 } else if (redownload === 'never') {
                   return reject(new AlreadyDownloaded(fileName));
+                } else if (redownload === 'replace') {
+                  return resolve(fullPath);
                 } else {
                   this.mFileExistsCB(fileName)
                     .then((cont: boolean) => {
