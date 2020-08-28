@@ -217,7 +217,10 @@ function checkStagingFolder(api: IExtensionApi, gameId: string,
                             : Promise<boolean> {
   const t = api.translate;
 
-  return getNormalizeFunc(manifestPath)
+  // manifestPath can be undefined if the manifest is older
+  return ((manifestPath !== undefined)
+          ? getNormalizeFunc(manifestPath)
+          : Promise.resolve(undefined))
     .then(normalize => {
       if ((manifestPath !== undefined)
           && (normalize(manifestPath) !== normalize(configuredPath))) {
