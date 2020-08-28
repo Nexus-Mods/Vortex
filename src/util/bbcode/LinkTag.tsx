@@ -35,12 +35,12 @@ class LinkTag extends Tag {
       linkUrl = `mailto:${linkUrl}`;
     }
 
-    const {callbacks} = this.renderer.options;
+    const {callbacks, allowLocal} = this.renderer.options;
     return (
       <a
         href={linkUrl}
         // tslint:disable-next-line:jsx-no-lambda
-        onClick={(evt) => this.clicked(evt, callbacks)}
+        onClick={(evt) => this.clicked(evt, callbacks, allowLocal)}
         title={linkUrl}
       >
         {this.getComponents()}
@@ -48,14 +48,18 @@ class LinkTag extends Tag {
     );
   }
 
-  private clicked = (evt: React.MouseEvent<any>, callbacks) => {
+  private clicked = (evt: React.MouseEvent<any>, callbacks, allowLocal: boolean) => {
     evt.preventDefault();
     const uri = evt.currentTarget.href;
     const parsed = url.parse(uri);
+    const protocols = allowLocal
+      ? ['http:', 'https:', 'file:']
+      : ['http:', 'https:'];
+
     if ((parsed.protocol === 'cb:') && (callbacks?.[parsed.host] !== undefined)) {
       const args = parsed.path.slice(1).split('/').map(seg => decodeURIComponent(seg));
       callbacks[parsed.host](...args);
-    } else if (['http:', 'https:'].includes(parsed.protocol)) {
+    } else if (protocols.includes(parsed.protocol)) {
       opn(uri).catch(err => undefined);
     }
   }

@@ -1,3 +1,5 @@
+import { IBBCodeContext } from '../util/bbcode';
+
 export type DialogType =
   'success' | 'info' | 'error' | 'question';
 
@@ -95,7 +97,7 @@ export interface IDialogContent {
     wrap?: boolean;
     hideMessage?: boolean;
     // context made available to bbcode tags
-    bbcodeContext?: any;
+    bbcodeContext?: IBBCodeContext;
   };
 
   condition?: Condition;

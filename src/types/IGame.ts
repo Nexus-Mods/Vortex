@@ -47,6 +47,21 @@ export interface IGame extends ITool {
    * Determine whether the game needs to be executed via a launcher, like Steam or EpicGamesLauncher
    *
    * If this returns a value, Vortex will use appropriate code for that launcher
+   * "launcher" in the returned object is the id of the store to use to launch the game, whether
+   * addInfo is required and what it needs to contain depends on the store.
+   * For steam you can leave addInfo undefined, for the epic game store it has to be a string with
+   * the application id (same id used to discover the game)
+   *
+   * For the windows store it has to be an object with this structure:
+   * {
+   *   appId: <application id>,
+   *   parameters: [
+   *     { appExecName: <starter id> },
+   *   ],
+   * }
+   * The starter id can be found by looking at the appxmanifest.xml file found in
+   * the game directory. Look for the Id attribute in the <Application> tag.
+   * If there are multiple <Application> tags, pick the one you actually want Vortex to start.
    *
    * @param gamePath path where the game is installed.
    */
