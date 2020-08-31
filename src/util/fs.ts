@@ -281,6 +281,7 @@ function unknownErrorRetry(filePath: string, err: Error, stackErr: Error): Promi
     case 'Retry': return PromiseBB.resolve(true);
     case 'Ignore': {
       err['code'] = rethrowAs;
+      err['allowReport'] = false;
       return PromiseBB.reject(err);
     }
   }
