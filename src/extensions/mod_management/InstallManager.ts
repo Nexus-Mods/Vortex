@@ -47,6 +47,7 @@ import Zip = require('node-7z');
 import * as os from 'os';
 import * as path from 'path';
 import * as Redux from 'redux';
+import { generate as shortid } from 'shortid';
 
 export class ArchiveBrokenError extends Error {
   constructor(message: string) {
@@ -310,8 +311,14 @@ class InstallManager {
       })
       .then(result => this.processInstructions(api, archivePath, tempPath, destinationPath,
                                                installGameId, modId, result))
-      .finally(() => (tempPath !== undefined)
-        ? fs.removeAsync(tempPath) : Promise.resolve())
+      .finally(() => {
+        if (tempPath !== undefined) {
+          log('debug', 'removing temporary path', tempPath);
+          return fs.removeAsync(tempPath);
+        } else {
+          return Promise.resolve();
+        }
+      })
       .then(() => filterModInfo(fullInfo, destinationPath))
       .then(modInfo => {
         const state = api.getState();
@@ -789,7 +796,8 @@ class InstallManager {
                            gameId: string, modId: string): Promise<void> {
     return Promise.each(submodule,
       mod => {
-        const tempPath = destinationPath + '.' + mod.key + '.installing';
+        const tempPath = destinationPath + '.' + shortid() + '.installing';
+        log('debug', 'install submodule', { modPath: mod.path, tempPath, destinationPath });
         return this.installInner(api, mod.path, tempPath, destinationPath,
                                  gameId, undefined, undefined)
           .then((resultInner) => this.processInstructions(
@@ -800,7 +808,10 @@ class InstallManager {
               api.store.dispatch(setModType(gameId, modId, mod.submoduleType));
             }
           })
-          .finally(() => fs.removeAsync(tempPath));
+          .finally(() => {
+            log('debug', 'removing submodule', tempPath);
+            fs.removeAsync(tempPath);
+          });
       })
         .then(() => undefined);
   }
