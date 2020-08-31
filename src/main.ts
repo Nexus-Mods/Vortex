@@ -86,6 +86,12 @@ const handleError = (error: any) => {
     return;
   }
 
+  // this error message appears to happen as the result of some other problem crashing the
+  // renderer process, so all this may do is obfuscate what's actually going on.
+  if (error.message.includes('Error processing argument at index 0, conversion failure from')) {
+    return;
+  }
+
   terminate(toError(error), {});
 };
 
