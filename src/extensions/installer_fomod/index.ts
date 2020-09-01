@@ -502,7 +502,17 @@ class ConnectionIPC {
     const data: any = JSON.parse(msg, makeJsonRevive((payload) =>
       this.sendMessageInner('Invoke', payload), () => data.id));
 
-    if ((data.callback !== null)
+    if (data.id === 'parseerror') {
+      const err = new Error(data.error.message);
+      err.stack = data.error.stack;
+      if (truthy(data.error.name)) {
+        err.name = data.error.name;
+      }
+      Object.keys(this.mAwaitedReplies).forEach(replyId => {
+        this.mAwaitedReplies[replyId].reject(err);
+        delete this.mAwaitedReplies[replyId];
+      });
+    } else if ((data.callback !== null)
         && (this.mDelegates[data.callback.id] !== undefined)) {
       const func = this.mDelegates[data.callback.id][data.callback.type][data.data.name];
       func(...data.data.args, (err, response) => {
