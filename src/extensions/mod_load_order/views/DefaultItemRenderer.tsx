@@ -58,9 +58,10 @@ class DefaultItemRenderer extends ComponentEx<IProps, {}> {
   }
 
   private renderExternalBanner(): JSX.Element {
+    const { t } = this.props;
     return (
     <div className='load-order-unmanaged-banner'>
-      <span>Not managed by Vortex</span>
+      <span>{t('Not managed by Vortex')}</span>
       <Icon className='external-caution-logo' name='dialog-info'/>
     </div>
     );

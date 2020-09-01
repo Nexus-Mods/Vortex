@@ -304,7 +304,7 @@ class ConnectionIPC {
       pipe,
       debug,
     });
-    log('debug', '[installer] waiting for peer process to connect');
+    log('debug', '[installer] waiting for peer process to connect', { pipe, ipcId });
 
     server.on('connection', sock => {
       log('debug', '[installer] peer connected');
