@@ -198,7 +198,7 @@ function unknownErrorRetry(filePath: string, err: Error, stackErr: Error): Promi
                       + 'you may want to run chkdsk or similar software to check for problems. '
                       + 'It may also help to reinstall the software that this file belongs to.';
       rethrowAs = 'EIO';
-    } else if ([362, 383, 390, 395, 396, 404].indexOf(err['nativeCode']) !== -1) {
+    } else if ([362, 383, 388, 390, 395, 396, 404].indexOf(err['nativeCode']) !== -1) {
       options.title = `OneDrive error (${err['nativeCode']})`;
       options.message = `The file "${filePath}" is stored on a cloud storage drive `
                       + '(Microsoft OneDrive) which is currently unavailable. Please '
