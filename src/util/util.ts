@@ -127,10 +127,11 @@ export function objDiff(lhs: any, rhs: any, skip?: string[]): any {
 }
 
 function restackErr(error: Error, stackErr: Error): Error {
+  const oldGetStack = error.stack;
   // resolve the stack at the last possible moment because stack is actually a getter
   // that will apply expensive source mapping when called
   Object.defineProperty(error, 'stack', {
-    get: () => error.message + '\n' + stackErr.stack,
+    get: () => error.message + '\n' + oldGetStack + '\n' + stackErr.stack,
     set: () => null,
   });
   return error;
