@@ -229,12 +229,12 @@ export interface IDeploymentMethod {
    * @param {string} sourcePath source where the mod is installed
    * @param {string} sourceName name to be stored as the source of files. usually the path of the
    *                            mod subdirectory
-   * @param {string} dataPath relative path within the data path where mods are installed to
+   * @param {string} deployPath relative path within the data path where mods are installed to
    * @param {Set<string>} blacklist list of files to skip
    *
    * @memberOf IDeploymentMethod
    */
-  activate: (sourcePath: string, sourceName: string, dataPath: string,
+  activate: (sourcePath: string, sourceName: string, deployPath: string,
              blackList: Set<string>) => Promise<void>;
 
   /**

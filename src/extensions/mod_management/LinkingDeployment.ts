@@ -280,7 +280,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
     return Promise.resolve();
   }
 
-  public activate(sourcePath: string, sourceName: string, dataPath: string,
+  public activate(sourcePath: string, sourceName: string, deployPath: string,
                   blackList: Set<string>): Promise<void> {
     return fs.statAsync(sourcePath)
       .then(() => turbowalk(sourcePath, entries => {
@@ -289,14 +289,14 @@ abstract class LinkingActivator implements IDeploymentMethod {
         }
         entries.forEach(entry => {
           const relPath: string = path.relative(sourcePath, entry.filePath);
-          const relPathNorm = this.mNormalize(path.join(dataPath, relPath));
+          const relPathNorm = this.mNormalize(path.join(deployPath, relPath));
           if (!entry.isDirectory && !blackList.has(relPathNorm)) {
             // mods are activated in order of ascending priority so
             // overwriting is fine here
             this.mContext.newDeployment[relPathNorm] = {
               relPath,
               source: sourceName,
-              target: dataPath,
+              target: deployPath,
               time: entry.mtime * 1000,
             };
           }

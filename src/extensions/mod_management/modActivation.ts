@@ -85,8 +85,9 @@ function deployMods(api: IExtensionApi,
       const mergePath = truthy(typeId)
         ? MERGED_PATH + '.' + typeId
         : MERGED_PATH;
+
       return method.activate(path.join(installationPath, mergePath),
-                             mergePath, '', new Set<string>());
+                             mergePath, subDir(null), new Set<string>());
     })
     .tapCatch(() => {
       if (method.cancel !== undefined) {

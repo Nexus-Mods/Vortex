@@ -18,6 +18,8 @@ import { dealWithExternalChanges } from './externalChanges';
 
 import Promise from 'bluebird';
 
+const MERGE_SUBDIR = 'zzz_merge';
+
 export function genSubDirFunc(game: IGame, modType: IModType): (mod: IMod) => string {
   const mergeModsOpt = (modType !== undefined) && (modType.options.mergeMods !== undefined)
     ? modType.options.mergeMods
@@ -26,9 +28,21 @@ export function genSubDirFunc(game: IGame, modType: IModType): (mod: IMod) => st
   if (typeof(mergeModsOpt) === 'boolean') {
     return mergeModsOpt
       ? () => ''
-      : (mod: IMod) => mod.id;
+      : (mod: IMod) => mod !== null ? mod.id : MERGE_SUBDIR;
   } else {
-    return mergeModsOpt;
+    return (mod: IMod) => {
+      try {
+        return mergeModsOpt(mod);
+      } catch (err) {
+        // if the game doesn't implement generating a output path for the merge,
+        // use the default
+        if (mod === null) {
+          return MERGE_SUBDIR;
+        } else {
+          throw err;
+        }
+      }
+    };
   }
 }
 

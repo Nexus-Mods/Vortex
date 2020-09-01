@@ -166,6 +166,8 @@ function mergeMods(api: IExtensionApi,
           setdefault(mergedFiles, relPath, []).push(mod.id);
           setdefault(archiveMerges, relPath, []).push(modPath);
         } else {
+          // for every file merger (registerMerger) that applies to this file, initialize
+          // the merge if necessary
           const merger = mergers.find(iter => iter.match.filter(fileEntry.filePath));
           if (merger !== undefined) {
             const realDest = truthy(merger.modType)
@@ -174,10 +176,9 @@ function mergeMods(api: IExtensionApi,
             const relPath = path.relative(modPath, fileEntry.filePath);
             setdefault(mergedFiles, relPath, []).push(mod.id);
             return fs.ensureDirAsync(realDest)
-              .then(() => Promise.map(merger.match.baseFiles(deployedFiles), file => {
-                if (Object.keys(mergedFiles).length !== 1) {
-                  // We've already started merging at this point, no reason
-                  //  to continue through merge setup.
+              .then(() => Promise.mapSeries(merger.match.baseFiles(deployedFiles), file => {
+                if (mergedFiles[relPath].length !== 1) {
+                  // This isn't the first merge for this file, don't re-initialize the merge
                   return Promise.resolve();
                 }
 
@@ -214,7 +215,10 @@ function mergeMods(api: IExtensionApi,
                       // The input file exists and is not part of the deployment so it's an actual
                       // source file to build upon. This should be the default case for a first
                       // deployment.
-                      return fs.copyAsync(file.in, path.join(realDest, file.out));
+                      const outPath = path.join(realDest, file.out);
+                      return fs.removeAsync(outPath)
+                        .catch(() => null)
+                        .then(() => fs.copyAsync(file.in, outPath));
                     }
                   }
                 });
