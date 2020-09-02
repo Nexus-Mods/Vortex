@@ -330,7 +330,7 @@ export function downloadGithubRaw(api: IExtensionApi,
 
   const { files } = state.persistent.downloads;
   const existing = Object.keys(files).find(dlId =>
-    files[dlId].game.includes(SITE_ID) && files[dlId].localPath === archiveName);
+    (files[dlId].game ?? []).includes(SITE_ID) && files[dlId].localPath === archiveName);
 
   // the only plausible reason the file could already exist is if a previous install failed
   // or if we don't know the version. We could create a new new, numbered, download, but considering
