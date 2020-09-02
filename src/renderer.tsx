@@ -245,6 +245,12 @@ function errorHandler(evt: any) {
     return;
   }
 
+  if (error.message === 'Cannot read property \'focus\' of null') {
+    // Caused by the react-overlays Modal.restoreLastFocus function but it's unclear how this can
+    // happen because the function contains a check specifically to prevent this error.
+    return;
+  }
+
   if ((error.stack !== undefined)
       // some exceptions from foreign libraries can't be caught so we have to ignore them
       // the main offender here is electron-builder. Unfortunately newer versions that may
