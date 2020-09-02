@@ -202,8 +202,8 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
       : this.renderLoadOrderPage();
   }
 
-  private stringified(obj: object) {
-    return JSON.stringify(obj);
+  private stringified(obj: any) {
+    return (!!obj) ? JSON.stringify(obj) : obj;
   }
 
   private resetState() {
@@ -462,9 +462,9 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
     const spread = [ ...en, ...difference ];
 
     updateType = (updateType !== null) ? updateType : 'props-update';
-    const update = () => {
-      if (updateLO || (this.stringified(spread) !== this.stringified(this.nextState.enabled))) {
-        this.setLoadOrder(this.nextState.enabled, updateType);
+    const update = (newDisplayItems: ILoadOrderDisplayItem[]) => {
+      if (updateLO || (this.stringified(spread) !== this.stringified(newDisplayItems))) {
+        this.setLoadOrder(newDisplayItems, updateType);
         this.mCallbackDebouncer.schedule(undefined, updateType);
         this.nextState.updating = false;
       }
@@ -473,12 +473,13 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
     if (!!activeGameEntry.preSort) {
       activeGameEntry.preSort(spread, this.state.sortType, updateType)
         .then(newList => {
-          this.nextState.enabled = (!!newList) ? newList : spread;
-          update();
+          const wantedList = (!!newList) ? newList : spread;
+          this.nextState.enabled = wantedList;
+          update(wantedList);
         });
     } else {
       this.nextState.enabled = spread;
-      update();
+      update(spread);
     }
   }
 }
