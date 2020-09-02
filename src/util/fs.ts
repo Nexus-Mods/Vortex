@@ -310,8 +310,10 @@ function busyRetry(filePath: string): PromiseBB<boolean> {
     title: 'File busy',
     message: `Vortex needs to access "${filePath}" but it\'s open in another application. `
       + 'Please close the file in all other applications and then retry.',
-    detail: 'Please close the following applications and retry:\n'
-          + processes.map(proc => `${proc.appName} (${proc.pid})`).join('\n'),
+    detail: (processes.length > 0)
+      ? 'Please close the following applications and retry:\n'
+          + processes.map(proc => `${proc.appName} (${proc.pid})`).join('\n')
+      : undefined,
     buttons: [
       'Cancel',
       'Retry',
@@ -327,7 +329,8 @@ function busyRetry(filePath: string): PromiseBB<boolean> {
 }
 
 function errorRepeat(error: NodeJS.ErrnoException, filePath: string, retries: number,
-                     stackErr: Error, showDialogCallback?: () => boolean): PromiseBB<boolean> {
+                     stackErr: Error, showDialogCallback?: () => boolean,
+                     options?: IErrorHandlerOptions): PromiseBB<boolean> {
   if ((retries > 0) && RETRY_ERRORS.has(error.code)) {
     // retry these errors without query for a few times
     return PromiseBB.delay(retries === 1 ? 1000 : 100)
@@ -337,7 +340,9 @@ function errorRepeat(error: NodeJS.ErrnoException, filePath: string, retries: nu
     return PromiseBB.resolve(false);
   }
   // system error code 1224 means there is a user-mapped section open in the file
-  if ((error.code === 'EBUSY') || (error['nativeCode'] === 1224)) {
+  if ((error.code === 'EBUSY')
+      || (error['nativeCode'] === 1224)
+      || ((error.code ===  'ENOTEMPTY') && options?.enotempty)) {
     return busyRetry(filePath);
   } else if (error.code === 'ENOSPC') {
     return nospcQuery();
@@ -385,11 +390,16 @@ function restackErr(error: Error, stackErr: Error): Error {
   return error;
 }
 
+interface IErrorHandlerOptions {
+  enotempty?: boolean;
+}
+
 function errorHandler(error: NodeJS.ErrnoException,
                       stackErr: Error, tries: number,
-                      showDialogCallback?: () => boolean): PromiseBB<void> {
+                      showDialogCallback?: () => boolean,
+                      options?: IErrorHandlerOptions): PromiseBB<void> {
   const repProm = errorRepeat(error, (error as any).dest || error.path, tries,
-                     stackErr, showDialogCallback);
+                     stackErr, showDialogCallback, options);
 
   // trying to narrow down #6404
   if (repProm === undefined) {
@@ -698,7 +708,8 @@ export function removeAsync(remPath: string, options?: IRemoveFileOptions): Prom
 function removeInt(remPath: string, stackErr: Error, tries: number,
                    options: IRemoveFileOptions): PromiseBB<void> {
   return simfail(() => rimrafAsync(remPath))
-    .catch(err => errorHandler(err, stackErr, tries, options.showDialogCallback)
+    .catch(err => errorHandler(err, stackErr, tries, options.showDialogCallback,
+                               { enotempty: true })
       .then(() => removeInt(remPath, stackErr, tries - 1, options)));
 }
 
