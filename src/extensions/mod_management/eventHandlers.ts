@@ -152,7 +152,8 @@ function ensureStagingDirectory(api: IExtensionApi,
       if ((dirExists === false) && (mods === undefined)) {
         // If the mods state branch for this game is undefined - this must be the
         //  first time we manage this game - just create the staging path.
-        return fs.ensureDirWritableAsync(instPath, () => Promise.resolve());
+        return fs.ensureDirWritableAsync(instPath, () => Promise.resolve())
+          .then(() => writeStagingTag(api, path.join(instPath, STAGING_DIR_TAG), gameId));
       }
       return queryStagingFolderInvalid(api, err, dirExists, instPath)
         .then(dialogResult => {
