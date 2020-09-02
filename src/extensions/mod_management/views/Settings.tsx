@@ -35,6 +35,7 @@ import { NoDeployment } from '../util/exceptions';
 import getInstallPath, { getInstallPathPattern } from '../util/getInstallPath';
 
 import { modPathsForGame } from '../selectors';
+import { STAGING_DIR_TAG } from '../stagingDirectory';
 import getText from '../texts';
 
 import Promise from 'bluebird';
@@ -48,7 +49,6 @@ import {
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import * as winapi from 'winapi-bindings';
-import { STAGING_DIR_TAG } from '../eventHandlers';
 
 interface IBaseProps {
   activators: IDeploymentMethod[];

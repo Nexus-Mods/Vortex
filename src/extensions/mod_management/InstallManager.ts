@@ -36,9 +36,9 @@ import gatherDependencies from './util/dependencies';
 import filterModInfo from './util/filterModInfo';
 import queryGameId from './util/queryGameId';
 
-import { STAGING_DIR_TAG } from './eventHandlers';
 import InstallContext from './InstallContext';
 import deriveModInstallName from './modIdManager';
+import { STAGING_DIR_TAG } from './stagingDirectory';
 
 import Promise from 'bluebird';
 import * as _ from 'lodash';

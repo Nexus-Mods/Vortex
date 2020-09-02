@@ -34,6 +34,7 @@ import { truthy } from '../../util/util';
 import { IExtension } from '../extension_manager/types';
 import { readExtensions } from '../extension_manager/util';
 import { getGame } from '../gamemode_management/util/getGame';
+import { ensureStagingDirectory } from '../mod_management/stagingDirectory';
 
 import { forgetMod, setProfile, setProfileActivated } from './actions/profiles';
 import { setCurrentProfile, setNextProfile } from './actions/settings';
@@ -310,7 +311,12 @@ function genOnProfileChange(api: IExtensionApi,
 function manageGameDiscovered(api: IExtensionApi, gameId: string) {
   const profileId = shortid();
   const instPath = installPathForGame(api.store.getState(), gameId);
-  return fs.ensureDirWritableAsync(instPath, () => Promise.resolve())
+  // initialize the staging directory.
+  // It's not great that this is here, the code would better fit into mod_management
+  // but I'm not entirely sure what could happen if it's not initialized right away.
+  // Since the dir has to be tagged we can't just sprinkle "ensureDir" anywhere we want
+  // to access it.
+  return ensureStagingDirectory(api, instPath, gameId)
     .then(() => {
       log('info', 'user managing game for the first time', { gameId });
       api.store.dispatch(setProfile({
