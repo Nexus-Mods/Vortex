@@ -143,15 +143,20 @@ class Debouncer {
   }
 
   private run() {
-    this.mRunning = true;
     const callbacks = this.mCallbacks;
     this.mCallbacks = [];
     const args = this.mArgs;
     this.mArgs = [];
     this.mTimer = undefined;
 
-    const prom: Error | Promise<void> = this.mFunc(...args);
+    let prom: Error | Promise<void>;
+    try {
+      prom = this.mFunc(...args);
+    } catch (err) {
+      prom = err;
+    }
     if (prom instanceof Promise) {
+      this.mRunning = true;
       prom.then(() => this.invokeCallbacks(callbacks, null))
           .catch((err: Error) => this.invokeCallbacks(callbacks, err))
           .finally(() => {
@@ -165,7 +170,6 @@ class Debouncer {
             }
           });
     } else {
-      this.mRunning = false;
       this.invokeCallbacks(callbacks, prom as Error);
     }
 
