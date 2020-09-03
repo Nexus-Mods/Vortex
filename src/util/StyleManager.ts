@@ -83,34 +83,36 @@ if (ipcMain !== undefined) {
     */
     const sass: typeof sassT = require('sass');
 
-    const started = Date.now();
-    sass.render({
-      outFile: path.join(assetsPath, 'theme.css'),
-      includePaths: [assetsPath, modulesPath],
-      data: sassIndex,
-      outputStyle: isDevel ? 'expanded' : 'compressed',
-    },
-      (err, output) => {
-        log('info', 'sass compiled in', `${Date.now() - started}ms`);
-        if (evt.sender?.isDestroyed()) {
-          return;
-        }
-        if (err !== null) {
-          // the error has its own class and its message is missing relevant information
-          evt.sender.send(replyEvent, new Error(err.formatted));
-        } else {
-          // remove utf8-bom if it's there
-          const css = _.isEqual(Array.from(output.css.slice(0, 3)), [0xEF, 0xBB, 0xBF])
-            ? output.css.slice(3)
-            : output.css;
-          evt.sender.send(replyEvent, null, css.toString());
-          fs.writeFileAsync(cachePath(), JSON.stringify({
-            stylesheets,
-            css: css.toString(),
-          }), { encoding: 'utf8' })
-            .catch(() => null);
-        }
-      });
+    setTimeout(() => {
+      const started = Date.now();
+      sass.render({
+        outFile: path.join(assetsPath, 'theme.css'),
+        includePaths: [assetsPath, modulesPath],
+        data: sassIndex,
+        outputStyle: isDevel ? 'expanded' : 'compressed',
+      },
+        (err, output) => {
+          log('info', 'sass compiled in', `${Date.now() - started}ms`);
+          if (evt.sender?.isDestroyed()) {
+            return;
+          }
+          if (err !== null) {
+            // the error has its own class and its message is missing relevant information
+            evt.sender.send(replyEvent, new Error(err.formatted));
+          } else {
+            // remove utf8-bom if it's there
+            const css = _.isEqual(Array.from(output.css.slice(0, 3)), [0xEF, 0xBB, 0xBF])
+              ? output.css.slice(3)
+              : output.css;
+            evt.sender.send(replyEvent, null, css.toString());
+            fs.writeFileAsync(cachePath(), JSON.stringify({
+              stylesheets,
+              css: css.toString(),
+            }), { encoding: 'utf8' })
+              .catch(() => null);
+          }
+        });
+    }, requested ? 0 : 2000);
   };
 
   ipcMain.on('__renderSASS', (evt, stylesheets: string[]) =>
@@ -148,6 +150,7 @@ class StyleManager {
     }, StyleManager.RENDER_DELAY, true);
 
     ipcRenderer.on('__renderSASS_result', (evt, err: Error, css: string) => {
+      log('info', 'css result', { err: err?.message });
       if (this.mExpectingResult === undefined) {
         log('warn', 'unexpected sass render result');
         return;
@@ -162,6 +165,7 @@ class StyleManager {
     });
 
     ipcRenderer.on('__renderSASS_update', (evt, err: Error, css: string) => {
+      log('info', 'css updated', { err: err?.message });
       if (err !== null) {
         // logging as warning because we don't know if this will be a problem
         // but it may lead to a messed up look
