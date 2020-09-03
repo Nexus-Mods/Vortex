@@ -92,7 +92,7 @@ function writeFileAtomicImpl(filePath: string,
       }
     })
     .catch(err => {
-      err.stack = err.message + '\n' + stackErr.stack;
+      err.stack = err.stack + '\n' + stackErr.stack;
       return Promise.reject(err);
     })
     .finally(() => {
