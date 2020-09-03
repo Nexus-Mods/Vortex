@@ -214,7 +214,7 @@ class GameStoreHelper {
           const stores = this.mStores.map(store => store.id).join(', ');
           // Again - rejecting here will crash Vortex just like if we encounter
           //  a missing game store. Log and resolve undefined.
-          log('error', 'Game entry not found', { pattern: name, availableStores: stores });
+          log('debug', 'Game entry not found', { pattern: name, availableStores: stores });
           return Promise.resolve(undefined);
           //return Promise.reject(new GameEntryNotFound(name, stores));
         }
