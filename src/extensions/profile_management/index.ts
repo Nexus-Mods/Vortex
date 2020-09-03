@@ -199,12 +199,49 @@ function deploy(api: IExtensionApi, profileId: string): Promise<void> {
   });
 }
 
+/* generates a profile change handler.
+ * that is: it reacts to the "next profile" being changed, which triggers the
+ * "active profile" being updated. "onFinishProfileSwitch" registers a callback
+ * which will signal when the active profile has been updated, only then will the
+ * next profile switch be allowed.
+ */
 function genOnProfileChange(api: IExtensionApi,
                             onFinishProfileSwitch: (callback: () => void) => void) {
   let finishProfileSwitchPromise: Promise<void> = Promise.resolve();
   const { store } = api;
 
+  let cancelPromise: () => void;
+
+  const invokeCancel = () => {
+    if (cancelPromise !== undefined) {
+      onFinishProfileSwitch(undefined);
+      cancelPromise();
+      cancelPromise = undefined;
+    }
+  };
+
+  const cancelSwitch = () => {
+    invokeCancel();
+    store.dispatch(setCurrentProfile(undefined, undefined));
+    store.dispatch(setNextProfile(undefined));
+  };
+
+  const confirmProfile = (gameId: string, current: string) => {
+    store.dispatch(setCurrentProfile(gameId, current));
+    if (current !== undefined) {
+      store.dispatch(setProfileActivated(current));
+    }
+    const confirmPromise = cancelPromise;
+    setTimeout(() => {
+      if ((confirmPromise === cancelPromise) && (cancelPromise !== undefined)) {
+        log('warn', 'active profile switch didn\'t get confirmed?');
+        invokeCancel();
+      }
+    }, 2000);
+  };
+
   return (prev: string, current: string) => {
+    log('debug', 'profile change', { from: prev, to: current });
     finishProfileSwitchPromise.then(() => {
       const state: IState = store.getState();
       if (state.settings.profiles.nextProfileId !== current) {
@@ -216,13 +253,6 @@ function genOnProfileChange(api: IExtensionApi,
         // also do nothing if we're actually resetting the nextprofile
         return null;
       }
-
-      finishProfileSwitchPromise = new Promise<void>((resolve, reject) => {
-        onFinishProfileSwitch(resolve);
-      }).catch(err => {
-        showError(store.dispatch, 'Profile switch failed', err);
-        return Promise.resolve();
-      });
 
       const profile = state.persistent.profiles[current];
       if ((profile === undefined) && (current !== undefined)) {
@@ -249,6 +279,23 @@ function genOnProfileChange(api: IExtensionApi,
         }
       }
 
+      finishProfileSwitchPromise = new Promise<void>((resolve, reject) => {
+        cancelPromise = resolve;
+        onFinishProfileSwitch(() => {
+          cancelPromise = undefined;
+          resolve();
+        });
+      }).catch(err => {
+        showError(store.dispatch, 'Profile switch failed', err);
+        return Promise.resolve();
+      })
+      ;
+
+      // IMPORTANT: After this point we expect an external signal to tell
+      //   us when the active profile has been updated, otherwise we will not
+      //   allow the next profile switch
+      //   any error handler *has* to cancel this confirmation!
+
       let queue: Promise<void> = Promise.resolve();
       // emit an event notifying about the impending profile change.
       // every listener can return a cb returning a promise which will be
@@ -257,7 +304,10 @@ function genOnProfileChange(api: IExtensionApi,
       // these promises is rejected but that would only work if we could roll back
       // changes that happened.
       const enqueue = (cb: () => Promise<void>) => {
-        queue = queue.then(cb).catch(err => Promise.resolve());
+        queue = queue.then(cb).catch(err => {
+          log('error', 'error in profile-will-change handler', err.message);
+          Promise.resolve();
+        });
       };
 
       // changes to profile files are only saved back to the profile at this point
@@ -268,42 +318,42 @@ function genOnProfileChange(api: IExtensionApi,
 
       if (current === undefined) {
         log('info', 'switched to no profile');
-        store.dispatch(setCurrentProfile(undefined, undefined));
+        confirmProfile(undefined, undefined);
         return queue;
       }
 
       sanitizeProfile(store, profile);
+
       return queue.then(() => refreshProfile(store, profile, 'export'))
         // ensure the old profile is synchronised before we switch, otherwise me might
         // revert some changes
+        .tap(() => log('info', 'will deploy previously active profile', prev))
         .then(() => deploy(api, prev))
+        .tap(() => log('info', 'will deploy next active profile', current))
         .then(() => deploy(api, current))
+        .tap(() => log('info', 'did deploy next active profile', current))
         .then(() => {
           api.store.dispatch(
             setProgress('profile', 'deploying', undefined, undefined));
           const gameId = profile !== undefined ? profile.gameId : undefined;
           log('info', 'switched to profile', { gameId, current });
-          store.dispatch(setCurrentProfile(gameId, current));
-          store.dispatch(setProfileActivated(current));
+          confirmProfile(gameId, current);
           return null;
         });
     })
+      .tapCatch(() => {
+        cancelSwitch();
+      })
       .catch(ProcessCanceled, err => {
         showError(store.dispatch, 'Failed to set profile', err.message,
           { allowReport: false });
-        store.dispatch(setCurrentProfile(undefined, undefined));
-        store.dispatch(setNextProfile(undefined));
       })
       .catch(SetupError, err => {
         showError(store.dispatch, 'Failed to set profile', err.message,
           { allowReport: false });
-        store.dispatch(setCurrentProfile(undefined, undefined));
-        store.dispatch(setNextProfile(undefined));
       })
       .catch(err => {
         showError(store.dispatch, 'Failed to set profile', err);
-        store.dispatch(setCurrentProfile(undefined, undefined));
-        store.dispatch(setNextProfile(undefined));
       });
   };
 }
@@ -524,8 +574,7 @@ function init(context: IExtensionContext): boolean {
 
     context.api.onStateChange(['settings', 'profiles', 'activeProfileId'],
       (prev: string, current: string) => {
-        context.api.events.emit('profile-did-change',
-          current);
+        context.api.events.emit('profile-did-change', current);
         if (finishProfileSwitch !== undefined) {
           finishProfileSwitch();
         }
