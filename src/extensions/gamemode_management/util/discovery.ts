@@ -132,7 +132,8 @@ export function quickDiscovery(knownGames: IGame[],
           resolve();
         });
     } catch (err) {
-      log('error', 'failed to use game support plugin', { id: game.id, err: err.message });
+      log('error', 'failed to use game support plugin',
+          { id: game.id, err: err.message, stack: err.stack });
       // don't escalate exception because a single game shouldn't break everything
       return resolve();
     }
