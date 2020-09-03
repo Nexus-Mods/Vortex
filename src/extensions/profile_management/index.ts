@@ -168,7 +168,15 @@ function activateGame(store: ThunkStore<IState>, gameId: string) {
       });
   } else {
     log('info', 'using last active profile', { profileId });
-    store.dispatch(setNextProfile(profileId));
+    // actually, we have to verify that game is still discovered, otherwise we can't
+    // activate it
+    const fbProfile = state.persistent.profiles?.[profileId];
+    const discovery = state.settings.gameMode.discovered?.[fbProfile?.gameId];
+    if (discovery?.path !== undefined) {
+      store.dispatch(setNextProfile(profileId));
+    } else {
+      store.dispatch(setNextProfile(undefined));
+    }
   }
 }
 

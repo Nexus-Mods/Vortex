@@ -285,7 +285,7 @@ class Application {
         .then(() => {
           this.mStore.dispatch(setCommandLine(args));
         })
-        // .then(() => this.initDevel())
+        .then(() => this.initDevel())
         .tap(() => log('debug', 'starting user interface'))
         .then(() => this.startUi())
         .tap(() => log('debug', 'setting up tray icon'))
