@@ -316,7 +316,7 @@ class DraggableList extends ComponentEx<IProps, IState> {
   }
 
   private apply = () => {
-    this.props.apply(this.nextState.ordered);
+    this.props.apply(this.state.ordered);
   }
 }
 
