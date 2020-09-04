@@ -456,13 +456,27 @@ export function prettifyNodeErrorMessage(err: any): IPrettifiedError {
     };
   } else if (err.code === 'UNKNOWN') {
     if (truthy(err['nativeCode'])) {
-      return {
-        message: 'An unrecognized error occurred. The error may contain information '
-               + 'useful for handling it better in the future so please do report it (once): \n'
-               + `${err['nativeCode'].message} (${err['nativeCode'].code})`,
+      // the if block is the original code from when native error codes were introduced
+      // but nativeCode is supposed to be only the numerical code, not an object with both
+      // message and code.
+      // To be safe I'm keeping both variants but I'm fairly sure the first block is never hit
+      if (err['nativeCode'].code !== undefined) {
+        return {
+          message: 'An unrecognized error occurred. The error may contain information '
+                + 'useful for handling it better in the future so please do report it (once): \n'
+                + `${err['nativeCode'].message} (${err['nativeCode'].code})`,
 
-        allowReport: true,
-      };
+          allowReport: true,
+        };
+      } else {
+        return {
+          message: 'An unrecognized error occurred. The error may contain information '
+                + 'useful for handling it better in the future so please do report it (once): \n'
+                + `${err.message} (${err['nativeCode']})`,
+
+          allowReport: true,
+        };
+      }
     } else {
       return {
         message: 'An unknown error occurred. What this means is that Windows or the framework '

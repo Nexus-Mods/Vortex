@@ -1,5 +1,6 @@
 import * as fs from './fs';
 import { log } from './log';
+import { withTmpFile } from './util';
 
 import Promise from 'bluebird';
 import { createHash } from 'crypto';
@@ -54,21 +55,16 @@ function writeFileAtomicImpl(filePath: string,
 
   const hash = checksum(buf);
   let fd = -1;
-  return new Promise<number>((resolve, reject) => {
-    file({ template: `${filePath}.XXXXXX.tmp` },
-      (err: any, genPath: string, fdIn: number, cleanupCB: () => void) => {
-        if (err) {
-          return reject(err);
-        }
-        cleanup = cleanupCB;
-        tmpPath = genPath;
-        fd = fdIn;
-        resolve();
-      });
-  })
-    .then(() => fs.writeAsync(fd, buf, 0, buf.byteLength, 0)
+  return withTmpFile((fdIn: number, pathIn: string) => {
+    fd = fdIn;
+    tmpPath = pathIn;
+    return fs.writeAsync(fd, buf, 0, buf.byteLength, 0)
       .then(() => fs.fsyncAsync(fd).catch(() => Promise.resolve()))
-      .then(() => fs.closeAsync(fd).catch(() => Promise.resolve())))
+      .then(() => fs.closeAsync(fd).catch(() => Promise.resolve()));
+  }, {
+    cleanup: false,
+    template: `${filePath}.XXXXXX.tmp`,
+  })
     .then(() => fs.readFileAsync(tmpPath))
     .catch({ code: 'EBADF' }, () => {
       log('warn', 'failed to access temporary file', {

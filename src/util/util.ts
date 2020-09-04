@@ -1,3 +1,5 @@
+import { TimeoutError } from './CustomErrors';
+import { genFSWrapperAsync } from './fs';
 import { Normalize } from './getNormalizeFunc';
 import getVortexPath from './getVortexPath';
 import { log } from './log';
@@ -8,7 +10,6 @@ import * as _ from 'lodash';
 import * as path from 'path';
 import * as semver from 'semver';
 import * as tmp from 'tmp';
-import { TimeoutError } from './CustomErrors';
 
 /**
  * count the elements in an array for which the predicate matches
@@ -530,7 +531,7 @@ function flattenInner(obj: any, key: string[],
   }, {});
 }
 
-export function withTmpDir<T>(cb: (tmpPath: string) => Bluebird<T>): Bluebird<T> {
+export function withTmpDirImpl<T>(cb: (tmpPath: string) => Bluebird<T>): Bluebird<T> {
   return new Bluebird<T>((resolve, reject) => {
     tmp.dir({ unsafeCleanup: true }, (err, tmpPath, cleanup) => {
       if (err !== null) {
@@ -548,13 +549,49 @@ export function withTmpDir<T>(cb: (tmpPath: string) => Bluebird<T>): Bluebird<T>
               cleanup();
             } catch (err) {
               // cleanup failed
-              log('warn', 'Failed to clean up temp file', { tmpPath });
+              log('warn', 'Failed to clean up temporary directory', { tmpPath });
             }
           });
       }
     });
   });
 }
+
+export interface ITmpOptions {
+  cleanup?: boolean;
+}
+
+function withTmpFileImpl<T>(cb: (fd: number, name: string) => Bluebird<T>,
+                            options?: ITmpOptions & tmp.FileOptions): Bluebird<T> {
+  return new Bluebird<T>((resolve, reject) => {
+    tmp.file(_.omit(options ?? {}, ['cleanup']), (err, name, fd, cleanup) => {
+      if (err !== null) {
+        return reject(err);
+      } else {
+        cb(fd, name)
+          .then(resolve)
+          .catch(reject)
+          .finally(() => {
+            if (options?.cleanup !== false) {
+              try {
+                cleanup();
+              } catch (err) {
+                log('warn', 'Failed to clean up temporary file', { name });
+              }
+            }
+          });
+      }
+    });
+  });
+}
+
+const withTmpDir = genFSWrapperAsync(withTmpDirImpl);
+const withTmpFile = genFSWrapperAsync(withTmpFileImpl);
+
+export {
+  withTmpDir,
+  withTmpFile,
+};
 
 export function toPromise<ResT>(func: (cb) => void): Bluebird<ResT> {
   return new Bluebird((resolve, reject) => {

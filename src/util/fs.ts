@@ -416,7 +416,7 @@ function errorHandler(error: NodeJS.ErrnoException,
     .catch(err => PromiseBB.reject(restackErr(err, stackErr)));
 }
 
-function genWrapperAsync<T extends (...args) => any>(func: T): T {
+export function genFSWrapperAsync<T extends (...args) => any>(func: T): T {
   const wrapper = (stackErr: Error, tries: number, ...args) =>
     simfail(() => PromiseBB.resolve(func(...args)))
       .catch(err => errorHandler(err, stackErr, tries)
@@ -431,25 +431,25 @@ function genWrapperAsync<T extends (...args) => any>(func: T): T {
 const fsBB: any = PromiseBB.promisifyAll(fs);
 
 // tslint:disable:max-line-length
-const chmodAsync: (path: string, mode: string | number) => PromiseBB<void> = genWrapperAsync(fsBB.chmodAsync);
-const closeAsync: (fd: number) => PromiseBB<void> = genWrapperAsync(fsBB.closeAsync);
-const fsyncAsync: (fd: number) => PromiseBB<void> = genWrapperAsync(fsBB.fsyncAsync);
-const lstatAsync: (path: string) => PromiseBB<fs.Stats> = genWrapperAsync(fsBB.lstatAsync);
-const mkdirAsync: (path: string) => PromiseBB<void> = genWrapperAsync(fsBB.mkdirAsync);
-const mkdirsAsync: (path: string) => PromiseBB<void> = genWrapperAsync(fsBB.mkdirsAsync);
-const moveAsync: (src: string, dest: string, options?: fs.MoveOptions) => PromiseBB<void> = genWrapperAsync(fsBB.moveAsync);
-const openAsync: (path: string, flags: string | number, mode?: number) => PromiseBB<number> = genWrapperAsync(fsBB.openAsync);
-const readdirAsync: (path: string) => PromiseBB<string[]> = genWrapperAsync(fsBB.readdirAsync);
-const readFileAsync: (...args: any[]) => PromiseBB<any> = genWrapperAsync(fsBB.readFileAsync);
-const statAsync: (path: string) => PromiseBB<fs.Stats> = genWrapperAsync(fsBB.statAsync);
+const chmodAsync: (path: string, mode: string | number) => PromiseBB<void> = genFSWrapperAsync(fsBB.chmodAsync);
+const closeAsync: (fd: number) => PromiseBB<void> = genFSWrapperAsync(fsBB.closeAsync);
+const fsyncAsync: (fd: number) => PromiseBB<void> = genFSWrapperAsync(fsBB.fsyncAsync);
+const lstatAsync: (path: string) => PromiseBB<fs.Stats> = genFSWrapperAsync(fsBB.lstatAsync);
+const mkdirAsync: (path: string) => PromiseBB<void> = genFSWrapperAsync(fsBB.mkdirAsync);
+const mkdirsAsync: (path: string) => PromiseBB<void> = genFSWrapperAsync(fsBB.mkdirsAsync);
+const moveAsync: (src: string, dest: string, options?: fs.MoveOptions) => PromiseBB<void> = genFSWrapperAsync(fsBB.moveAsync);
+const openAsync: (path: string, flags: string | number, mode?: number) => PromiseBB<number> = genFSWrapperAsync(fsBB.openAsync);
+const readdirAsync: (path: string) => PromiseBB<string[]> = genFSWrapperAsync(fsBB.readdirAsync);
+const readFileAsync: (...args: any[]) => PromiseBB<any> = genFSWrapperAsync(fsBB.readFileAsync);
+const statAsync: (path: string) => PromiseBB<fs.Stats> = genFSWrapperAsync(fsBB.statAsync);
 const statSilentAsync: (path: string) => PromiseBB<fs.Stats> = (statPath: string) => fsBB.statAsync(statPath);
-const symlinkAsync: (srcpath: string, dstpath: string, type?: string) => PromiseBB<void> = genWrapperAsync(fsBB.symlinkAsync);
-const utimesAsync: (path: string, atime: number, mtime: number) => PromiseBB<void> = genWrapperAsync(fsBB.utimesAsync);
+const symlinkAsync: (srcpath: string, dstpath: string, type?: string) => PromiseBB<void> = genFSWrapperAsync(fsBB.symlinkAsync);
+const utimesAsync: (path: string, atime: number, mtime: number) => PromiseBB<void> = genFSWrapperAsync(fsBB.utimesAsync);
 // fs.write and fs.read don't promisify correctly because it has two return values. fs-extra already works around this in their
 // promisified api so no reason to reinvent the wheel (also we want the api to be compatible)
-const writeAsync: (...args: any[]) => PromiseBB<fs.WriteResult> = genWrapperAsync(fs.write) as any;
-const readAsync: (...args: any[]) => PromiseBB<fs.ReadResult> = genWrapperAsync(fs.read) as any;
-const writeFileAsync: (file: string, data: any, options?: fs.WriteFileOptions) => PromiseBB<void> = genWrapperAsync(fsBB.writeFileAsync);
+const writeAsync: (...args: any[]) => PromiseBB<fs.WriteResult> = genFSWrapperAsync(fs.write) as any;
+const readAsync: (...args: any[]) => PromiseBB<fs.ReadResult> = genFSWrapperAsync(fs.read) as any;
+const writeFileAsync: (file: string, data: any, options?: fs.WriteFileOptions) => PromiseBB<void> = genFSWrapperAsync(fsBB.writeFileAsync);
 // tslint:enable:max-line-length
 
 export {
