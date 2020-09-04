@@ -1,6 +1,7 @@
 import { ILink, triggerDialogLink } from '../actions';
 import { closeDialog } from '../actions/notifications';
 import Collapse from '../controls/Collapse';
+import ErrorBoundary, { ErrorContext } from '../controls/ErrorBoundary';
 import Icon from '../controls/Icon';
 import Webview from '../controls/Webview';
 import {
@@ -78,6 +79,8 @@ interface IComponentState {
 type IProps = IDialogConnectedProps & IDialogActionProps;
 
 class Dialog extends ComponentEx<IProps, IComponentState> {
+  public static contextType = ErrorContext;
+
   constructor(props: IProps) {
     super(props);
 
@@ -146,7 +149,9 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
           <Modal.Title>{this.iconForType(dialog.type)}{' '}{t(dialog.title)}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {this.renderContent(dialogState)}
+          <ErrorBoundary visible={true}>
+            {this.renderContent(dialogState)}
+          </ErrorBoundary>
         </Modal.Body>
         <Modal.Footer>
           {

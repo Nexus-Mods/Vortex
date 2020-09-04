@@ -3,7 +3,6 @@ import ExtensionManager from './ExtensionManager';
 import { IExtendedProps, IExtensibleProps } from '../types/IExtensionProvider';
 
 import * as _ from 'lodash';
-import * as PropTypes from 'prop-types';
 import * as React from 'react';
 
 type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
