@@ -172,19 +172,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
 
     let content = null;
 
-    if (gameMode === undefined) {
-      content = (
-        <Panel className='placeholder-container'>
-          <Panel.Body>
-            <EmptyPlaceholder
-              icon='folder-download'
-              text={t('Please select a game to manage first')}
-              fill={true}
-            />
-          </Panel.Body>
-        </Panel>
-      );
-    } else if (Object.keys(this.props.downloads).length === 0) {
+    if (Object.keys(this.props.downloads).length === 0) {
       content = this.renderDropzone();
     } else {
       const filtered = viewAll
