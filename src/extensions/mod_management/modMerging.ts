@@ -2,6 +2,7 @@ import {IDeployedFile, IExtensionApi} from '../../types/IExtensionContext';
 import {IGame} from '../../types/IGame';
 import * as fs from '../../util/fs';
 import getFileList, { IFileEntry } from '../../util/getFileList';
+import { log } from '../../util/log';
 import {setdefault, truthy} from '../../util/util';
 import walk from '../../util/walk';
 
@@ -218,7 +219,18 @@ function mergeMods(api: IExtensionApi,
                       const outPath = path.join(realDest, file.out);
                       return fs.removeAsync(outPath)
                         .catch(() => null)
-                        .then(() => fs.copyAsync(file.in, outPath));
+                        .then(() => fs.ensureDirAsync(path.dirname(outPath)))
+                        .then(() => fs.copyAsync(file.in, outPath)
+                          .catch({ code: 'ENOENT' }, err => {
+                            // not entirely sure whether "ENOENT" refers to the source file
+                            // or the directory we're trying to copy into, the error object
+                            // contains only one of those paths
+                            log('error', 'file not found upon copying merge base file', {
+                              source: file.in,
+                              destination: outPath,
+                            });
+                            return Promise.reject(err);
+                          }));
                     }
                   }
                 });
