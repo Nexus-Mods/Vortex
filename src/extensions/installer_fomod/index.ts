@@ -112,17 +112,17 @@ function transformError(err: any): Error {
   }
 
   if (result === undefined) {
-    result = new Error(
-      (err.Message !== undefined)
-        ? err.Message
-        : 'unknown error: ' + util.inspect(err));
+    result = new Error(err.name ?? err.Message ?? 'unknown error: ' + util.inspect(err));
   }
   [
     { in: 'StackTrace', out: 'stack' },
+    { in: 'stack', out: 'stack' },
     { in: 'FileName', out: 'path' },
+    { in: 'message', out: 'message' },
     { in: 'HResult', out: 'code' },
     { in: 'name', out: 'Name' },
     { in: 'Source', out: 'Module' },
+    { in: 'data', out: 'data' },
   ].forEach(transform => {
     if (err[transform.in] !== undefined) {
       result[transform.out] = err[transform.in];
@@ -527,6 +527,9 @@ class ConnectionIPC {
         err.stack = data.error.stack;
         if (truthy(data.error.name)) {
           err.name = data.error.name;
+        }
+        if (truthy(data.error.data)) {
+          err['data'] = data.error.data;
         }
         this.mAwaitedReplies[data.id].reject(err);
       } else {
