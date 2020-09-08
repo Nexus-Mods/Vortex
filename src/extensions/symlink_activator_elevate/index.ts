@@ -572,7 +572,7 @@ class DeploymentMethod extends LinkingDeployment {
     this.mQuitTimer = setTimeout(() => {
       try {
         this.emit('quit', {});
-        this.mIPCServer.close();
+        this.mIPCServer?.close();
         this.mIPCServer = undefined;
       } catch (err) {
         // the most likely reason here is that it's already closed
