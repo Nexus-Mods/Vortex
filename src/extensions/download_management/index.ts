@@ -756,17 +756,22 @@ function init(context: IExtensionContextExt): boolean {
       const state: IState = context.api.store.getState();
 
       Promise.map(filtered, dlId => {
-        const downloadPath = selectors.downloadPathForGame(state, getDownloadGames(cur[dlId])[0]);
-        context.api.lookupModMeta({ filePath: path.join(downloadPath, cur[dlId].localPath) })
-          .then(result => {
-            if (result.length > 0) {
-              const info = result[0].value;
-              store.dispatch(setDownloadModInfo(dlId, 'meta', info));
-            }
-          })
-          .catch(err => {
-            log('warn', 'failed to look up mod info', err);
-          });
+        const gameId = getDownloadGames(cur[dlId])[0];
+        const downloadPath = selectors.downloadPathForGame(state, gameId);
+        const lookupDetails = (cur[dlId].localPath !== undefined)
+          ? { filePath: path.join(downloadPath, cur[dlId].localPath) }
+          : { gameId, fileSize: cur[dlId].size };
+
+        context.api.lookupModMeta(lookupDetails)
+        .then(result => {
+          if (result.length > 0) {
+            const info = result[0].value;
+            store.dispatch(setDownloadModInfo(dlId, 'meta', info));
+          }
+        })
+        .catch(err => {
+          log('warn', 'failed to look up mod info', err);
+        });
       });
     });
 
