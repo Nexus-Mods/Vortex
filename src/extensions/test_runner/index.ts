@@ -48,7 +48,16 @@ const checks: { [type: string]: ICheckEntry[] } = {};
 const triggerDelays: { [type: string]: NodeJS.Timer } = {};
 
 function runCheck(api: IExtensionApi, check: ICheckEntry): Promise<void> {
-  let res = check.check();
+  let res;
+  try {
+    res = check.check();
+  } catch (err) {
+    log('warn', 'check failed to run', {
+      id: check.id,
+      err: err.message,
+      stack: check.stack(),
+    });
+  }
   if ((res === undefined) || (res.then === undefined)) {
     res = Promise.resolve(undefined);
   }
@@ -106,7 +115,6 @@ function runCheck(api: IExtensionApi, check: ICheckEntry): Promise<void> {
     .catch((err) => {
       log('warn', 'check failed to run', {
         id: check.id,
-        event,
         err: err.message,
         stack: check.stack(),
       });

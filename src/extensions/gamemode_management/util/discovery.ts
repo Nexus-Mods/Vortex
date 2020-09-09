@@ -41,42 +41,46 @@ function quickDiscoveryTools(gameId: string, tools: ITool[], onDiscoveredTool: D
       continue;
     }
 
-    const toolPath = tool.queryPath();
-    if (typeof(toolPath) === 'string') {
-      if (toolPath) {
-        autoGenIcon(tool, toolPath, gameId)
-          .then(() => {
-            onDiscoveredTool(gameId, {
-              ...tool,
-              path: path.join(toolPath, tool.executable(toolPath)),
-              hidden: false,
-              parameters: tool.parameters || [],
-              custom: false,
+    try {
+      const toolPath = tool.queryPath();
+      if (typeof(toolPath) === 'string') {
+        if (toolPath) {
+          autoGenIcon(tool, toolPath, gameId)
+            .then(() => {
+              onDiscoveredTool(gameId, {
+                ...tool,
+                path: path.join(toolPath, tool.executable(toolPath)),
+                hidden: false,
+                parameters: tool.parameters || [],
+                custom: false,
+              });
             });
-          });
+        } else {
+          log('debug', 'tool not found', tool.id);
+        }
       } else {
-        log('debug', 'tool not found', tool.id);
-      }
-    } else {
-      (toolPath as Promise<string>)
-          .then((resolvedPath) => {
-            if (resolvedPath) {
-              autoGenIcon(tool, resolvedPath, gameId)
-                .then(() => {
-                  onDiscoveredTool(gameId, {
-                    ...tool,
-                    path: path.join(resolvedPath, tool.executable(resolvedPath)),
-                    hidden: false,
-                    parameters: tool.parameters || [],
-                    custom: false,
+        (toolPath as Promise<string>)
+            .then((resolvedPath) => {
+              if (resolvedPath) {
+                autoGenIcon(tool, resolvedPath, gameId)
+                  .then(() => {
+                    onDiscoveredTool(gameId, {
+                      ...tool,
+                      path: path.join(resolvedPath, tool.executable(resolvedPath)),
+                      hidden: false,
+                      parameters: tool.parameters || [],
+                      custom: false,
+                    });
                   });
-                });
-            }
-            return null;
-          })
-          .catch((err) => {
-            log('debug', 'tool not found', {id: tool.id, err: err.message});
-          });
+              }
+              return null;
+            })
+            .catch((err) => {
+              log('debug', 'tool not found', {id: tool.id, err: err.message});
+            });
+      }
+    } catch (err) {
+      log('error', 'failed to determine tool setup', err);
     }
   }
 }
