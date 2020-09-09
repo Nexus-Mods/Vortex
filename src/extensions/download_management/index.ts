@@ -756,22 +756,23 @@ function init(context: IExtensionContextExt): boolean {
       const state: IState = context.api.store.getState();
 
       Promise.map(filtered, dlId => {
-        const gameId = getDownloadGames(cur[dlId])[0];
-        const downloadPath = selectors.downloadPathForGame(state, gameId);
-        const lookupDetails = (cur[dlId].localPath !== undefined)
-          ? { filePath: path.join(downloadPath, cur[dlId].localPath) }
-          : { gameId, fileSize: cur[dlId].size };
-
-        context.api.lookupModMeta(lookupDetails)
-        .then(result => {
-          if (result.length > 0) {
-            const info = result[0].value;
-            store.dispatch(setDownloadModInfo(dlId, 'meta', info));
-          }
-        })
-        .catch(err => {
-          log('warn', 'failed to look up mod info', err);
-        });
+        const downloadPath = selectors.downloadPathForGame(state, getDownloadGames(cur[dlId])[0]);
+        if (cur[dlId].localPath === undefined) {
+          // No point looking up metadata if we don't know the file's name.
+          //  https://github.com/Nexus-Mods/Vortex/issues/7362
+          log('warn', 'failed to look up mod info', { id: dlId, reason: 'Filename is unknown' });
+          return Promise.resolve();
+        }
+        context.api.lookupModMeta({ filePath: path.join(downloadPath, cur[dlId].localPath) })
+          .then(result => {
+            if (result.length > 0) {
+              const info = result[0].value;
+              store.dispatch(setDownloadModInfo(dlId, 'meta', info));
+            }
+          })
+          .catch(err => {
+            log('warn', 'failed to look up mod info', err);
+          });
       });
     });
 
