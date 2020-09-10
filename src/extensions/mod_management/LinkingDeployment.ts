@@ -329,6 +329,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
   }
 
   public purge(installPath: string, dataPath: string, gameId?: string): Promise<void> {
+    log('debug', 'purging', { installPath, dataPath });
     if (!truthy(dataPath)) {
       // previously we reported an issue here, but we want the ability to have mod types
       // that don't actually deploy
