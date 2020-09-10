@@ -227,7 +227,7 @@ class DeploymentMethod extends LinkingDeployment {
     // as a file in the mods directory
     return installEntryProm.then(inos => {
       let queue = Promise.resolve();
-      if (inos.size === 0) {
+      if (inos === undefined || inos.size === 0) {
         return Promise.resolve();
       }
       return turbowalk(dataPath, entries => {
