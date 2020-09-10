@@ -5,12 +5,15 @@ import Dropzone, { DropType } from '../../../controls/Dropzone';
 import EmptyPlaceholder from '../../../controls/EmptyPlaceholder';
 import FlexLayout from '../../../controls/FlexLayout';
 import SuperTable, { ITableRowAction } from '../../../controls/Table';
+import { IAttachment } from '../../../types/api';
 import { IComponentContext } from '../../../types/IComponentContext';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
 import { IState } from '../../../types/IState';
 import { ITableAttribute } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { ProcessCanceled, TemporaryError, UserCanceled } from '../../../util/CustomErrors';
+import getVortexPath from '../../../util/getVortexPath';
+import { log } from '../../../util/log';
 import { showError } from '../../../util/message';
 import opn from '../../../util/opn';
 import * as selectors from '../../../util/selectors';
@@ -57,7 +60,8 @@ interface IActionProps {
   onShowDialog: (type: DialogType, title: string, content: IDialogContent,
                  actions: DialogActions) => Promise<IDialogResult>;
   onShowError: (message: string, details?: string | Error,
-                notificationId?: string, allowReport?: boolean) => void;
+                notificationId?: string, allowReport?: boolean,
+                attachments?: IAttachment[]) => void;
   onShowDropzone: (show: boolean) => void;
   onShowGraph: (show: boolean) => void;
 }
@@ -426,10 +430,30 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
   private open = (downloadId: string) => {
     const { downloadPathForGame, downloads } = this.props;
     const download: IDownload = downloads[downloadId];
-    if ((download !== undefined) && (download.localPath !== undefined)) {
+    if (download?.localPath !== undefined) {
       const downloadGame = Array.isArray(download.game)
         ? download.game[0]
         : download.game;
+
+      if (downloadPathForGame(downloadGame) === undefined) {
+        // Not sure under what circumstances we would fail to retrieve a game's
+        //  download path. https://github.com/Nexus-Mods/Vortex/issues/7372
+        const downloadData = JSON.stringify(download, undefined, 2);
+        log('error', 'Failed to open archive', downloadData);
+        const attachments: IAttachment[] = [
+          {
+            id: 'logfile',
+            type: 'file',
+            data: path.join(getVortexPath('userData'), 'vortex.log'),
+            description: 'Vortex Log',
+          },
+        ];
+        this.props.onShowError('Failed to open archive',
+          `Cannot find download path for ${downloadGame}`,
+          undefined, true, attachments);
+        return;
+      }
+
       opn(path.join(downloadPathForGame(downloadGame), download.localPath))
         .catch(err => {
           this.props.onShowError('Failed to open archive', err, undefined, false);
