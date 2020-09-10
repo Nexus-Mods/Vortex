@@ -15,7 +15,7 @@ export interface IInstruction {
   key?: string;
   value?: string;
   submoduleType?: string;
-  data?: string;
+  data?: string | Buffer;
   rule?: IRule;
 }
 
