@@ -17,7 +17,7 @@ function allTypesSupported(activator: IDeploymentMethod, state: any,
   return types.reduce((prev, type) => {
     const reason = activator.isSupported(state, gameId, type);
     if (reason !== undefined) {
-      if (!_.isFunction(reason.description) || true) {
+      if (!_.isFunction(reason.description)) {
         log('error', 'deployment unavailable with no description', {
           gameId, method: activator.id, reason: JSON.stringify(reason),
         });
