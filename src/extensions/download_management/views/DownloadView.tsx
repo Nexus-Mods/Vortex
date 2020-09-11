@@ -448,8 +448,9 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
             description: 'Vortex Log',
           },
         ];
-        this.props.onShowError('Failed to open archive',
-          `Cannot find download path for ${downloadGame}`,
+        const err = new Error(`Cannot find download path for ${downloadGame}`);
+        err['download'] = download;
+        this.props.onShowError('Failed to open archive', err,
           undefined, true, attachments);
         return;
       }
