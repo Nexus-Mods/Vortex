@@ -756,14 +756,7 @@ function init(context: IExtensionContextExt): boolean {
       const state: IState = context.api.store.getState();
 
       Promise.map(filtered, dlId => {
-        let downloadPath = selectors.downloadPathForGame(state, getDownloadGames(cur[dlId])[0]);
-        if (downloadPath === undefined) {
-          // Valid situation as the downloads page has been made available to
-          //  the users even when no gameMode is active and the user has manually
-          //  added a file. In this case, we use the non game specific downloads
-          //  path instead.
-          downloadPath = selectors.downloadPath(state);
-        }
+        const downloadPath = selectors.downloadPathForGame(state, getDownloadGames(cur[dlId])[0]);
         if (cur[dlId].localPath === undefined) {
           // No point looking up metadata if we don't know the file's name.
           //  https://github.com/Nexus-Mods/Vortex/issues/7362
