@@ -270,8 +270,10 @@ export class DownloadObserver {
       this.mManager.stop(downloadId);
     }
     if (truthy(download.localPath) && truthy(download.game)) {
-      const dlPath = selectors.downloadPathForGame(this.mApi.store.getState(),
-                                                   getDownloadGames(download)[0]);
+      const gameId = getDownloadGames(download)[0];
+      const dlPath = truthy(gameId)
+        ? selectors.downloadPathForGame(this.mApi.store.getState(), gameId)
+        : selectors.downloadPath(this.mApi.store.getState());
       fs.removeAsync(path.join(dlPath, download.localPath))
           .then(() => { this.mApi.store.dispatch(removeDownload(downloadId)); })
           .catch(UserCanceled, () => undefined)

@@ -78,8 +78,21 @@ class DownloadGameList extends PureComponentEx<IProps, {}> {
   }
 
   private addGame = (gameId: any) => {
-    const { currentGames, onSetCompatibleGames } = this.props;
-    onSetCompatibleGames([].concat(currentGames, [gameId]));
+    const { currentGames, onSetCompatibleGames, fileName } = this.props;
+    const validGameEntries = currentGames.filter(game => !!game);
+    if ((validGameEntries.length === 0)
+     || (currentGames[0] !== validGameEntries[0])) {
+      return this.moveDownload(gameId)
+        .tap(() =>
+          this.context.api.sendNotification({
+            type: 'success',
+            title: 'Download moved',
+            message: fileName,
+        }))
+        .then(() => onSetCompatibleGames([].concat(validGameEntries, [gameId])));
+    } else {
+      onSetCompatibleGames([].concat(validGameEntries, [gameId]));
+    }
   }
 
   private moveDownload(gameId: string): Promise<void> {
@@ -90,7 +103,9 @@ class DownloadGameList extends PureComponentEx<IProps, {}> {
     }
     // removing the main game, have to move the download then
     const state = this.context.api.store.getState();
-    const oldPath = selectors.downloadPathForGame(state, currentGames[0]);
+    const oldPath = (!!currentGames[0])
+      ? selectors.downloadPathForGame(state, currentGames[0])
+      : selectors.downloadPath(state);
     const newPath = selectors.downloadPathForGame(state, gameId);
     const source = path.join(oldPath, fileName);
     const dest = path.join(newPath, fileName);
