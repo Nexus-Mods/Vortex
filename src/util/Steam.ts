@@ -190,7 +190,17 @@ class Steam implements IGameStore {
           return Promise.resolve(undefined);
         }
         steamPaths.push(basePath);
-        return fs.readFileAsync(path.resolve(basePath, 'config', 'config.vdf'));
+        return fs.readFileAsync(path.resolve(basePath, 'config', 'config.vdf'))
+          .catch(err => {
+            // If we can't read the configuration file, we can't resolve
+            //  the location of the games. This might be a valid case
+            //  if Steam isn't installed but the registry still has
+            //  some entries for it.
+            log('warn', '[steam] failed to read steam config file', err);
+            return (['EPERM', 'ENOENT'].indexOf(err.code) !== -1)
+              ? Promise.resolve(undefined)
+              : Promise.reject(err);
+          });
       })
       .then((data: Buffer) => {
         if (data === undefined) {
