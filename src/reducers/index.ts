@@ -64,6 +64,13 @@ function verifyElement(verifier: IStateVerifier, value: any) {
       && (value === null)) {
     return false;
   }
+  if ((verifier.noEmpty === true)) {
+    if ((verifier.type === 'array') && (value.length === 0)) {
+      return false;
+    } else if ((verifier.type === 'object') && (Object.keys(value).length === 0)) {
+      return false;
+    }
+  }
   return true;
 }
 

@@ -5,6 +5,7 @@ import { connect, PureComponentEx } from '../../../util/ComponentEx';
 import * as fs from '../../../util/fs';
 import { log } from '../../../util/log';
 import * as selectors from '../../../util/selectors';
+import { truthy } from '../../../util/util';
 
 import { setCompatibleGames } from '../actions/state';
 
@@ -72,14 +73,33 @@ class DownloadGameList extends PureComponentEx<IProps, {}> {
     return (
       <ListGroupItem key={gameId} className={idx === 0 ? 'primary-game' : undefined}>
         {selectors.gameName(this.context.api.store.getState(), gameId)}
-        <IconButton icon='remove' tooltip={t('Remove')} className='btn-embed' data-gameid={gameId} onClick={this.removeGame} />
+        <IconButton
+          icon='remove'
+          tooltip={t('Remove')}
+          className='btn-embed'
+          data-gameid={gameId}
+          onClick={this.removeGame}
+        />
       </ListGroupItem>
     );
   }
 
   private addGame = (gameId: any) => {
-    const { currentGames, onSetCompatibleGames } = this.props;
-    onSetCompatibleGames([].concat(currentGames, [gameId]));
+    const { currentGames, onSetCompatibleGames, fileName } = this.props;
+    const validGameEntries = currentGames.filter(game => !!game);
+    if ((validGameEntries.length === 0)
+     || (currentGames[0] !== validGameEntries[0])) {
+      return this.moveDownload(gameId)
+        .tap(() =>
+          this.context.api.sendNotification({
+            type: 'success',
+            title: 'Download moved',
+            message: fileName,
+        }))
+        .then(() => onSetCompatibleGames([].concat(validGameEntries, [gameId])));
+    } else {
+      onSetCompatibleGames([].concat(validGameEntries, [gameId]));
+    }
   }
 
   private moveDownload(gameId: string): Promise<void> {
@@ -90,7 +110,9 @@ class DownloadGameList extends PureComponentEx<IProps, {}> {
     }
     // removing the main game, have to move the download then
     const state = this.context.api.store.getState();
-    const oldPath = selectors.downloadPathForGame(state, currentGames[0]);
+    const oldPath = truthy(currentGames[0])
+      ? selectors.downloadPathForGame(state, currentGames[0])
+      : selectors.downloadPath(state);
     const newPath = selectors.downloadPathForGame(state, gameId);
     const source = path.join(oldPath, fileName);
     const dest = path.join(newPath, fileName);
@@ -101,11 +123,10 @@ class DownloadGameList extends PureComponentEx<IProps, {}> {
         } else {
           // We can use the "modified time" to assert whether we're dealing with
           //  identical files and remove the source if this is the case - if not - raise error.
-          return Promise.all([fs.statAsync(source), fs.statAsync(dest)]).then(res => 
+          return Promise.all([fs.statAsync(source), fs.statAsync(dest)]).then(res =>
             res[0].mtimeMs === res[1].mtimeMs
               ? fs.removeAsync(source)
-              : Promise.reject(err)
-          );
+              : Promise.reject(err));
         }
       });
   }
@@ -127,10 +148,14 @@ class DownloadGameList extends PureComponentEx<IProps, {}> {
         })
         : Promise.resolve();
       prom.then(() => {
-        let newGames = [].concat(currentGames);
+        const newGames = [].concat(currentGames);
         newGames.splice(idx, 1);
         onSetCompatibleGames(newGames);
-      }).catch(err => this.context.api.showErrorNotification(`Unable to remove game ${gameId}`, err, { allowReport: ['EPERM','ENOSPC','EEXIST'].indexOf(err.code) === -1 }));
+      })
+      .catch(err => this.context.api.showErrorNotification(
+        `Unable to remove game ${gameId}`,
+        err,
+        { allowReport: ['EPERM', 'ENOSPC', 'EEXIST'].indexOf(err.code) === -1 }));
     }
   }
 }
@@ -139,7 +164,8 @@ function mapStateToProps(): {} {
   return {};
 }
 
-function mapDispatchToProps(dispatch: ThunkDispatch<IState, null, Redux.Action>, ownProps: IBaseProps): IActionProps {
+function mapDispatchToProps(dispatch: ThunkDispatch<IState, null, Redux.Action>,
+                            ownProps: IBaseProps): IActionProps {
   return {
     onSetCompatibleGames: (games: string[]) => dispatch(setCompatibleGames(ownProps.id, games)),
   };

@@ -1289,10 +1289,10 @@ installed, ${requiredDownloads} of them have to be downloaded first.`;
     return new Promise<string>((resolve, reject) => {
       const state = api.store.getState();
       const download: IDownload = state.persistent.downloads.files[downloadId];
-      const downloadGame: string = Array.isArray(download.game) ? download.game[0] : download.game;
+      const downloadGame: string[] = getDownloadGames(download);
       const fullPath: string =
-        path.join(downloadPathForGame(state, downloadGame), download.localPath);
-      this.install(downloadId, fullPath, getDownloadGames(download),
+        path.join(downloadPathForGame(state, downloadGame[0]), download.localPath);
+      this.install(downloadId, fullPath, downloadGame,
         api, { download }, false, false, (error, id) => {
           if (error === null) {
             resolve(id);

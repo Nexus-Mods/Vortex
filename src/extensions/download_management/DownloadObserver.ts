@@ -270,8 +270,15 @@ export class DownloadObserver {
       this.mManager.stop(downloadId);
     }
     if (truthy(download.localPath) && truthy(download.game)) {
-      const dlPath = selectors.downloadPathForGame(this.mApi.store.getState(),
-                                                   getDownloadGames(download)[0]);
+      // this is a workaround required as of 1.3.5. Previous versions (1.3.4 and 1.35 in particular)
+      // would put manually added downloads into the download root if no game was being managed.
+      // Newer versions won't do this anymore (hopefully) but we still need to enable users to
+      // clean up these broken downloads
+      const gameId = getDownloadGames(download)[0];
+      const dlPath = truthy(gameId)
+        ? selectors.downloadPathForGame(this.mApi.store.getState(), gameId)
+        : selectors.downloadPath(this.mApi.store.getState());
+
       fs.removeAsync(path.join(dlPath, download.localPath))
           .then(() => { this.mApi.store.dispatch(removeDownload(downloadId)); })
           .catch(UserCanceled, () => undefined)

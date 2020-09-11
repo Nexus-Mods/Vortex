@@ -24,6 +24,7 @@ import {IMod} from './types/IMod';
 import {getManifest, loadActivation, purgeDeployedFiles, saveActivation} from './util/activationStore';
 import { getCurrentActivator, getSupportedActivators } from './util/deploymentMethods';
 
+import getDownloadGames from '../download_management/util/getDownloadGames';
 import {getGame} from '../gamemode_management/util/getGame';
 import { getModType } from '../gamemode_management/util/modTypeExtensions';
 import {setModEnabled} from '../profile_management/actions/profiles';
@@ -625,8 +626,8 @@ export function onStartInstallDownload(api: IExtensionApi,
         return Promise.resolve();
       }
 
-      const downloadGame: string = Array.isArray(download.game) ? download.game[0] : download.game;
-      const downloadPath: string = downloadPathForGame(state, downloadGame);
+      const downloadGame: string[] = getDownloadGames(download);
+      const downloadPath: string = downloadPathForGame(state, downloadGame[0]);
       if (downloadPath === undefined) {
         api.showErrorNotification('Unknown Game',
           'Failed to determine installation directory. This shouldn\'t have happened', {
@@ -636,7 +637,7 @@ export function onStartInstallDownload(api: IExtensionApi,
       }
       const fullPath: string = path.join(downloadPath, download.localPath);
       const { enable } = state.settings.automation;
-      installManager.install(downloadId, fullPath, download.game, api,
+      installManager.install(downloadId, fullPath, downloadGame, api,
         { download }, true, enable && (allowAutoEnable !== false), callback, gameId,
         forceInstaller);
     })

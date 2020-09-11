@@ -531,6 +531,10 @@ function move(api: IExtensionApi, source: string, destination: string): Promise<
   const store = api.store;
   const gameMode = selectors.activeGameId(store.getState());
 
+  if (gameMode === undefined) {
+    return Promise.reject(new Error('can\'t import archives when no game is active'));
+  }
+
   const notiId = api.sendNotification({
     type: 'activity',
     title: 'Importing file',
@@ -573,8 +577,16 @@ function move(api: IExtensionApi, source: string, destination: string): Promise<
 
 function genImportDownloadsHandler(api: IExtensionApi) {
   return (downloadPaths: string[]) => {
+    const state = api.getState();
+    const gameMode = selectors.activeGameId(state);
+
+    if (gameMode === undefined) {
+      log('warn', 'can\'t import download(s) when no game is active', downloadPaths);
+      return;
+    }
+
     log('debug', 'importing download(s)', downloadPaths);
-    const downloadPath = selectors.downloadPath(api.store.getState());
+    const downloadPath = selectors.downloadPathForGame(state, gameMode);
     let hadDirs = false;
     Promise.map(downloadPaths, dlPath => {
       const fileName = path.basename(dlPath);
@@ -698,6 +710,30 @@ function init(context: IExtensionContextExt): boolean {
   context.registerActionCheck('SET_DOWNLOAD_FILEPATH', (state, action: any) => {
     if (action.payload === '') {
       return 'Attempt to set invalid file name for a download';
+    }
+    return undefined;
+  });
+
+  context.registerActionCheck('INIT_DOWNLOAD', (state: IState, action: any) => {
+    const { game } = action.payload;
+    if (!truthy(game) || (typeof(game) !== 'string')) {
+      return 'No game associated with download';
+    }
+    return undefined;
+  });
+
+  context.registerActionCheck('ADD_LOCAL_DOWNLOAD', (state: IState, action: any) => {
+    const { game } = action.payload;
+    if (!truthy(game) || (typeof(game) !== 'string')) {
+      return 'No game associated with download';
+    }
+    return undefined;
+  });
+
+  context.registerActionCheck('SET_COMPATIBLE_GAMES', (state, action: any) => {
+    const { games } = action.payload;
+    if (!truthy(games) || !Array.isArray(games) || (games.length === 0)) {
+      return 'Invalid set of compatible games';
     }
     return undefined;
   });

@@ -178,6 +178,19 @@ export const stateReducer: IReducerSpec = {
               type: 'array',
               noNull: true,
               noUndefined: true,
+              /* Would be nice if we could check the game assignment for validity here, but
+               * right now (as of 1.3.5), the main issue we're facing is downloads that have been
+               * placed in the download base directory and those wouldn't be added again and thus
+               * left orphaned, with no in-application way of removing them
+              elements: {
+                _:  {
+                  description: () => 'Download to game assignment stored incorrectly will be repaired.',
+                  noNull: true,
+                  noUndefined: true,
+                  deleteBroken: 'parent',
+                },
+              },
+              */
               repair: input => {
                 if (input !== undefined) {
                   return [input];

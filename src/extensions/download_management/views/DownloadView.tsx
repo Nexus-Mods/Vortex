@@ -25,6 +25,7 @@ import { IGameStored } from '../../gamemode_management/types/IGameStored';
 import { setShowDLDropzone, setShowDLGraph } from '../actions/settings';
 import { setDownloadTime } from '../actions/state';
 import { IDownload } from '../types/IDownload';
+import getDownloadGames from '../util/getDownloadGames';
 
 import createColumns from '../downloadAttributes';
 import { DownloadIsHTML } from '../DownloadManager';
@@ -228,7 +229,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
             </Panel>
           </FlexLayout.Flex>
           <FlexLayout.Fixed>
-            {secondary ? null : this.renderDropzone()}
+            {secondary || (gameMode === undefined) ? null : this.renderDropzone()}
           </FlexLayout.Fixed>
         </FlexLayout>
       );
@@ -431,11 +432,9 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
     const { downloadPathForGame, downloads } = this.props;
     const download: IDownload = downloads[downloadId];
     if (download?.localPath !== undefined) {
-      const downloadGame = Array.isArray(download.game)
-        ? download.game[0]
-        : download.game;
+      const downloadGame = getDownloadGames(download);
 
-      if (downloadPathForGame(downloadGame) === undefined) {
+      if (downloadPathForGame(downloadGame[0]) === undefined) {
         // Not sure under what circumstances we would fail to retrieve a game's
         //  download path. https://github.com/Nexus-Mods/Vortex/issues/7372
         const downloadData = JSON.stringify(download, undefined, 2);
@@ -448,14 +447,14 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
             description: 'Vortex Log',
           },
         ];
-        const err = new Error(`Cannot find download path for ${downloadGame}`);
+        const err = new Error(`Cannot find download path for ${downloadGame[0]}`);
         err['download'] = download;
         this.props.onShowError('Failed to open archive', err,
           undefined, true, attachments);
         return;
       }
 
-      opn(path.join(downloadPathForGame(downloadGame), download.localPath))
+      opn(path.join(downloadPathForGame(downloadGame[0]), download.localPath))
         .catch(err => {
           this.props.onShowError('Failed to open archive', err, undefined, false);
         });
