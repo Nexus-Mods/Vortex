@@ -9,7 +9,7 @@ import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../
 import { IState } from '../../../types/IState';
 import { ValidationState } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { CleanupFailedException, InsufficientDiskSpace, NotFound, TemporaryError,
+import { CleanupFailedException, InsufficientDiskSpace, NotFound, ProcessCanceled, TemporaryError,
          UnsupportedOperatingSystem, UserCanceled } from '../../../util/CustomErrors';
 import { withContext } from '../../../util/errorHandling';
 import * as fs from '../../../util/fs';
@@ -20,7 +20,7 @@ import opn from '../../../util/opn';
 import * as selectors from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import { testPathTransfer, transferPath } from '../../../util/transferPath';
-import { isChildPath, isPathValid } from '../../../util/util';
+import { ciEqual, isChildPath, isPathValid } from '../../../util/util';
 import { currentGame, currentGameDiscovery } from '../../gamemode_management/selectors';
 import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../../gamemode_management/types/IGameStored';
@@ -49,6 +49,7 @@ import {
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import * as winapi from 'winapi-bindings';
+import { getNormalizeFunc } from '../../../util/api';
 
 interface IBaseProps {
   activators: IDeploymentMethod[];
@@ -208,7 +209,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private pathsChanged() {
-    return this.props.installPath !== this.state.installPath;
+    return !ciEqual(this.props.installPath, this.state.installPath);
   }
 
   private transferPath() {
@@ -275,7 +276,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       }));
   }
 
-  private applyPaths = () => {
+  private applyPaths = (normalize: (input: string) => string) => {
     const { t, discovery, gameMode, onSetInstallPath,
             onShowDialog, onShowError, onSetTransfer } = this.props;
 
@@ -292,7 +293,19 @@ class Settings extends ComponentEx<IProps, IComponentState> {
 
     const vortexPath = getVortexPath('application');
 
-    if (isChildPath(newInstallPath, vortexPath)) {
+    try {
+      const statNew = fs.statSync(newInstallPath, { bigint: true });
+      const statOld = fs.statSync(oldInstallPath, { bigint: true });
+      if (statNew.ino === statOld.ino) {
+        return onShowDialog('error', 'Invalid path selected', {
+          text: 'The path you selected refers to the same directory on disk as the existing one.',
+        }, [ { label: 'Close' } ]);
+      }
+    } catch (err) {
+      // new directory doesn't exist. good
+    }
+
+    if (isChildPath(newInstallPath, vortexPath, normalize)) {
       return onShowDialog('error', 'Invalid path selected', {
                 text: 'You can not put mods into the vortex application directory. '
                   + 'This directory gets removed during updates so you would lose all your '
@@ -300,7 +313,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       }, [ { label: 'Close' } ]);
     }
 
-    if (isChildPath(newInstallPath, discovery.path)) {
+    if (isChildPath(newInstallPath, discovery.path, normalize)) {
       return onShowDialog('error', 'Invalid path selected', {
                 text: 'You can not put mods into the game directory. '
                   + 'This directory is under the control of the game '
@@ -312,7 +325,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       }, [ { label: 'Close' } ]);
     }
 
-    if (isChildPath(oldInstallPath, newInstallPath)) {
+    if (isChildPath(oldInstallPath, newInstallPath, normalize)) {
       return onShowDialog('error', 'Invalid path selected', {
                 text: 'You can\'t change the staging folder to be the parent of the old folder. '
                     + 'This is because the new staging folder has to be empty and it isn\'t '
@@ -418,7 +431,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             + 'Please test your environment and try again once you\'ve confirmed it\'s fixed.',
             false, true);
           } else {
-            onShowError('Failed to move directories', err, true);
+            onShowError('Failed to move directories', err, !(err instanceof ProcessCanceled));
           }
         }
       })
@@ -430,7 +443,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         //  we need to cleanup.
         const pendingTransfer: string[] = ['persistent', 'transactions', 'transfer', gameMode];
         if ((getSafe(state, pendingTransfer, undefined) !== undefined)
-        && deleteOldDestination) {
+            && deleteOldDestination) {
           return fs.removeAsync(newInstallPath)
             .then(() => {
               onSetTransfer(gameMode, undefined);
@@ -719,7 +732,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
               </Button>
               <BSButton
                 disabled={applyDisabled}
-                onClick={this.applyPaths}
+                onClick={this.onApply}
               >
                 {hasModActivity ? <Spinner /> : t('Apply')}
               </BSButton>
@@ -735,8 +748,13 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   private keyPressEvt = (evt) => {
     if (evt.which === 13) {
       evt.preventDefault();
-      this.applyPaths();
+      this.onApply();
     }
+  }
+
+  private onApply = () => {
+    getNormalizeFunc(getInstallPath(this.state.installPath, this.props.gameMode))
+      .then(normalize => this.applyPaths(normalize));
   }
 
   private suggestPath = () => {

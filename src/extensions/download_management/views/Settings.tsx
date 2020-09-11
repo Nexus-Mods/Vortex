@@ -12,13 +12,14 @@ import { CleanupFailedException, InsufficientDiskSpace, NotFound, UnsupportedOpe
          UserCanceled } from '../../../util/CustomErrors';
 import { withContext } from '../../../util/errorHandling';
 import * as fs from '../../../util/fs';
+import getNormalizeFunc from '../../../util/getNormalizeFunc';
 import { log } from '../../../util/log';
 import { showError } from '../../../util/message';
 import opn from '../../../util/opn';
 import * as selectors from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import { testPathTransfer, transferPath } from '../../../util/transferPath';
-import { isChildPath, isPathValid } from '../../../util/util';
+import { ciEqual, isChildPath, isPathValid } from '../../../util/util';
 import { setDownloadPath, setMaxDownloads } from '../actions/settings';
 import { setTransferDownloads } from '../actions/transactions';
 
@@ -93,7 +94,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     const { t, downloads, isPremium, parallelDownloads } = this.props;
     const { downloadPath, progress, progressFile } = this.state;
 
-    const changed = this.props.downloadPath !== downloadPath;
+    const changed = !ciEqual(this.props.downloadPath, downloadPath);
     const pathPreview = getDownloadPath(downloadPath, undefined);
     const validationState = this.validateDownloadPath(pathPreview);
 
@@ -137,7 +138,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
                 <InputGroup.Button>
                   <BSButton
                     disabled={!changed || (validationState.state === 'error') || hasActivity}
-                    onClick={this.apply}
+                    onClick={this.onApply}
                   >
                     {hasActivity ? <Spinner /> : t('Apply')}
                   </BSButton>
@@ -289,8 +290,13 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   private keyPressEvt = (evt) => {
     if (evt.which === 13) {
       evt.preventDefault();
-      this.apply();
+      this.onApply();
     }
+  }
+
+  private onApply = () => {
+    getNormalizeFunc(getDownloadPath(this.state.downloadPath))
+      .then(normalize => this.apply(normalize));
   }
 
   private openUrl = (evt) => {
@@ -324,7 +330,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     onSetMaxDownloads(evt.currentTarget.value);
   }
 
-  private apply = () => {
+  private apply = (normalize: (input: string) => string) => {
     const { t, onSetDownloadPath, onShowDialog, onShowError, onSetTransfer } = this.props;
     const newPath: string = getDownloadPath(this.state.downloadPath);
     const oldPath: string = getDownloadPath(this.props.downloadPath);
@@ -336,8 +342,20 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       vortexPath = path.dirname(path.dirname(vortexPath));
     }
 
+    try {
+      const statNew = fs.statSync(newPath, { bigint: true });
+      const statOld = fs.statSync(oldPath, { bigint: true });
+      if (statNew.ino === statOld.ino) {
+        return onShowDialog('error', 'Invalid path selected', {
+          text: 'The path you selected refers to the same directory on disk as the existing one.',
+        }, [ { label: 'Close' } ]);
+      }
+    } catch (err) {
+      // new directory doesn't exist. good
+    }
+
     if (!path.isAbsolute(newPath)
-        || isChildPath(newPath, vortexPath)) {
+        || isChildPath(newPath, vortexPath, normalize)) {
       return onShowDialog('error', 'Invalid paths selected', {
                   text: 'You can not put mods into the vortex application directory. '
                   + 'This directory gets removed during updates so you would lose all your '
@@ -345,7 +363,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       }, [ { label: 'Close' } ]);
     }
 
-    if (isChildPath(oldPath, newPath)) {
+    if (isChildPath(oldPath, newPath, normalize)) {
       return onShowDialog('error', 'Invalid path selected', {
                 text: 'You can\'t change the download folder to be the parent of the old folder. '
                     + 'This is because the new download folder has to be empty and it isn\'t '

@@ -128,6 +128,9 @@ export function transferPath(source: string,
   return getNormalizeFunc(dest)
     .then(norm => {
       normalize = norm;
+      if (norm(dest) === norm(source)) {
+        return Promise.reject(new ProcessCanceled('Source and Destination are the same'));
+      }
       moveDown = isChildPath(dest, source, norm);
     })
     .then(() => Promise.join(fs.statAsync(source), fs.statAsync(dest),

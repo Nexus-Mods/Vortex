@@ -630,7 +630,7 @@ export function onStartInstallDownload(api: IExtensionApi,
       const downloadPath: string = downloadPathForGame(state, downloadGame[0]);
       if (downloadPath === undefined) {
         api.showErrorNotification('Unknown Game',
-          'Failed to determine installation directory. This shouldn\'t have happened', {
+          'Failed to determine download directory. This shouldn\'t have happened', {
             allowReport: true,
           });
         return;

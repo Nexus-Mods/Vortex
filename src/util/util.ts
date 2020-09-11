@@ -291,7 +291,7 @@ export function getAllPropertyNames(obj: object) {
 export function isChildPath(child: string, parent: string, normalize?: Normalize): boolean {
   if (normalize === undefined) {
     normalize = (input) => process.platform === 'win32'
-      ? path.normalize(input.toLowerCase())
+      ? path.normalize(input.toUpperCase())
       : path.normalize(input);
   }
 
@@ -305,6 +305,10 @@ export function isChildPath(child: string, parent: string, normalize?: Normalize
   const childTokens = childNorm.split(path.sep).filter(token => token.length > 0);
 
   return tokens.every((token: string, idx: number) => childTokens[idx] === token);
+}
+
+export function ciEqual(lhs: string, rhs: string, locale?: string): boolean {
+  return lhs.localeCompare(rhs, locale, { sensitivity: 'accent' }) === 0;
 }
 
 /**
