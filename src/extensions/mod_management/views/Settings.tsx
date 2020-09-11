@@ -209,7 +209,9 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   private pathsChanged() {
-    return !ciEqual(this.props.installPath, this.state.installPath);
+    const { gameMode } = this.props;
+    return !ciEqual(getInstallPath(this.props.installPath, gameMode),
+                    getInstallPath(this.state.installPath, gameMode));
   }
 
   private transferPath() {

@@ -94,8 +94,8 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     const { t, downloads, isPremium, parallelDownloads } = this.props;
     const { downloadPath, progress, progressFile } = this.state;
 
-    const changed = !ciEqual(this.props.downloadPath, downloadPath);
-    const pathPreview = getDownloadPath(downloadPath, undefined);
+    const pathPreview = getDownloadPath(downloadPath);
+    const changed = !ciEqual(getDownloadPath(this.props.downloadPath), pathPreview);
     const validationState = this.validateDownloadPath(pathPreview);
 
     const pathValid = validationState.state !== 'error';

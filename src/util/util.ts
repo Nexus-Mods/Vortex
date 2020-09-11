@@ -308,7 +308,7 @@ export function isChildPath(child: string, parent: string, normalize?: Normalize
 }
 
 export function ciEqual(lhs: string, rhs: string, locale?: string): boolean {
-  return lhs.localeCompare(rhs, locale, { sensitivity: 'accent' }) === 0;
+  return (lhs ?? '').localeCompare((rhs ?? ''), locale, { sensitivity: 'accent' }) === 0;
 }
 
 /**
