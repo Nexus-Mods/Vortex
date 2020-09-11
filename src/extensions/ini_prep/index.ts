@@ -114,6 +114,15 @@ function discoverSettingsChanges(api: IExtensionApi, gameMode: string,
                 allowReport: false,
               });
             })
+            .catch({ errno: 1359 }, err => {
+              // AFAIK error 1359 is only raised when the OneDrive
+              //  service is involved and it usually means that it crashed
+              //  and Windows was unable to restart it - nothing we can do
+              //  about that.
+              api.showErrorNotification('Failed to write ini file', err, {
+                allowReport: false,
+              });
+            })
             .catch({ code: 'ENOENT' }, err => {
               api.showErrorNotification('Failed to write ini file', err, {
                 allowReport: true,
