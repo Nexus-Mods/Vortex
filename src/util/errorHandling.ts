@@ -156,7 +156,7 @@ export function setOutdated(api: IExtensionApi) {
   const state = api.store.getState();
   const app = appIn || remote.app;
   const version = app.getVersion();
-  if (state.persistent.nexus.newestVersion !== undefined) {
+  if (state.persistent.nexus?.newestVersion !== undefined) {
     try {
       outdated = semver.lt(version, state.persistent.nexus.newestVersion);
     } catch (err) {
