@@ -22,7 +22,7 @@ class SpeedOMeter extends PureComponentEx<IProps, {}> {
   public render(): JSX.Element {
     const { t, downloads, slim, speed } = this.props;
 
-    const activeDownloads = Object.keys(downloads)
+    const activeDownloads = Object.keys(downloads ?? {})
       .filter(id => downloads[id].state === 'started' || downloads[id].state === 'paused')
       .map(id => downloads[id]);
 
