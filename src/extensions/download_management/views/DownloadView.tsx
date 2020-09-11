@@ -177,7 +177,8 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
 
     let content = null;
 
-    if (Object.keys(this.props.downloads).length === 0) {
+    if ((Object.keys(this.props.downloads).length === 0)
+        && (gameMode !== undefined)) {
       content = this.renderDropzone();
     } else {
       const filtered = viewAll
