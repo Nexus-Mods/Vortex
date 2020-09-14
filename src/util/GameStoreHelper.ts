@@ -20,7 +20,15 @@ class GameStoreHelper {
 
   // Search for a specific game store.
   public getGameStore(storeId: string): IGameStore {
-    return this.getstores().find(store => store.id === storeId);
+    const gameStores = this.getstores();
+    const gameStore = gameStores.find(store => store.id === storeId);
+    if ((gameStores.length) > 0 && (gameStore === undefined)) {
+      // The game stores are guaranteed to have loaded at this point,
+      //  yet the store Id we're looking for is not in the store array.
+      throw new GameStoreNotFound(storeId);
+    }
+
+    return gameStore;
   }
 
   // Returns the id of the first game store that has
@@ -174,15 +182,11 @@ class GameStoreHelper {
       : this.getstores()).filter(store => !!store);
 
     if ((gameStores === undefined) || (gameStores.length === 0)) {
-      const errMsg = (!!storeId) ? storeId : 'Gamestores unavailable';
-      // Rejecting at this point will cause Vortex to crash... badly...
-      //  We don't actually have a reference to the api in some of the routes
-      //  where this is called - well done Adrian...
-      //  lets just log it and return undefined as that's a valid return
-      //  value for findGame.
-      log('error', errMsg);
-      return Promise.resolve(undefined);
-      //return Promise.reject(new GameStoreNotFound(errMsg));
+      const stores = (gameStores !== undefined)
+        ? gameStores.map(store => store.id).join(', ')
+        : '';
+      log('debug', 'Game entry not found', { pattern: name, availableStores: stores });
+      return Promise.reject(new GameEntryNotFound(name, stores));
     }
 
     return Promise.reduce(gameStores, (accum: IGameStoreEntry[], store) =>
@@ -212,11 +216,8 @@ class GameStoreHelper {
             : pattern;
 
           const stores = this.mStores.map(store => store.id).join(', ');
-          // Again - rejecting here will crash Vortex just like if we encounter
-          //  a missing game store. Log and resolve undefined.
           log('debug', 'Game entry not found', { pattern: name, availableStores: stores });
-          return Promise.resolve(undefined);
-          //return Promise.reject(new GameEntryNotFound(name, stores));
+          return Promise.reject(new GameEntryNotFound(name, stores));
         }
       });
   }
