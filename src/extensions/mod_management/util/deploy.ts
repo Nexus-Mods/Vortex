@@ -1,3 +1,4 @@
+import { startActivity, stopActivity } from '../../../actions/session';
 import { IDeployedFile, IDeploymentMethod, IExtensionApi } from '../../../types/IExtensionContext';
 import { IGame } from '../../../types/IGame';
 import { INotification } from '../../../types/INotification';
@@ -134,6 +135,7 @@ function purgeModsImpl(api: IExtensionApi, activator: IDeploymentMethod): Promis
     api.sendNotification(notification);
 
     let lastDeployment: { [typeId: string]: IDeployedFile[] };
+    api.store.dispatch(startActivity('mods', 'purging'));
 
     // TODO: we really should be using the deployment specified in the manifest,
     //   not the current one! This only works because we force a purge when switching
@@ -174,6 +176,7 @@ function purgeModsImpl(api: IExtensionApi, activator: IDeploymentMethod): Promis
     .then(() => null)
     .finally(() => {
       api.dismissNotification(notification.id);
+      api.store.dispatch(stopActivity('mods', 'purging'));
     });
 }
 

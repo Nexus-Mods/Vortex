@@ -98,7 +98,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
     const currentGameProfilesSorted = this.sortProfiles(currentGameProfiles, language);
     const otherProfilesSorted = this.sortProfiles(otherProfiles, language);
 
-    const isDeploying = activity.indexOf('deployment') !== -1;
+    const isDeploying = activity.includes('deployment') || activity.includes('purging');
 
     // const sortedProfiles: string[] = this.sortProfiles(profiles, language);
 
@@ -291,7 +291,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
   }
 
   private onRemoveProfile = (profileId: string) => {
-    const { currentProfile, onRemoveProfile, onWillRemoveProfile, onSetNextProfile,
+    const { activity, currentProfile, onRemoveProfile, onWillRemoveProfile, onSetNextProfile,
             onShowDialog, profiles } = this.props;
     const confirmText = (profileId === currentProfile)
       ? 'You are trying to remove your currently active profile, "{{profileName}}". '
@@ -307,6 +307,11 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
           label: 'Remove', action:
             () => {
               log('info', 'user removing profile', { id: profileId });
+              if (activity.includes('deployment')) {
+                log('info', 'refusing to remove profile during deployment');
+                return;
+              }
+
               onWillRemoveProfile(profileId);
               if (profileId === currentProfile) {
                 onSetNextProfile(undefined);

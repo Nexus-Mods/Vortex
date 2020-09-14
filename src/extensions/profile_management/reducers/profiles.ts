@@ -33,8 +33,12 @@ export const profilesReducer: IReducerSpec = {
         [profileId, 'modState', modId, 'enabled'],
         enable);
     },
-    [actions.setProfileActivated as any]: (state, payload) =>
-      setSafe(state, [payload, 'lastActivated'], Date.now()),
+    [actions.setProfileActivated as any]: (state, payload) => {
+      if (state[payload] === undefined) {
+        return state;
+      }
+      return setSafe(state, [payload, 'lastActivated'], Date.now());
+    },
     [actions.forgetMod as any]: (state, payload) =>
       deleteOrNop(state, [payload.profileId, 'modState', payload.modId]),
     [actions.setFeature as any]: (state, payload) => {

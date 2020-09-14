@@ -341,6 +341,13 @@ function genOnProfileChange(api: IExtensionApi,
         .then(() => deploy(api, current))
         .tap(() => log('info', 'did deploy next active profile', current))
         .then(() => {
+          const prof = profileById(api.store.getState(), current);
+          if (prof === undefined) {
+            return Promise.reject(
+              new ProcessCanceled('Profile was deleted during deployment. '
+                                  + 'Why would you do something like that???'));
+          }
+
           api.store.dispatch(
             setProgress('profile', 'deploying', undefined, undefined));
           const gameId = profile !== undefined ? profile.gameId : undefined;

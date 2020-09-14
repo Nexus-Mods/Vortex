@@ -157,7 +157,7 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderGameOption = (gameId: string) => {
-    const { discoveredGames, lastActiveProfile, profiles, profilesVisible } = this.props;
+    const { t, discoveredGames, lastActiveProfile, profiles, profilesVisible } = this.props;
     const { gameIconCache } = this.state;
 
     if ((gameIconCache === undefined) || (gameIconCache[gameId] === undefined)) {
@@ -173,9 +173,6 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
     const game = gameIconCache[gameId].game;
 
     const profile = profiles[lastActiveProfile[gameId]];
-    if (profile === undefined) {
-      return null;
-    }
 
     let displayName =
       getSafe(discovered, ['shortName'], getSafe(game, ['shortName'], undefined))
@@ -195,7 +192,7 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
           {profilesVisible
             ? (
               <div className='quicklaunch-profile'>
-                Profile: {profile.name}
+                {t('Profile')} : {profile?.name ?? t('<None>')}
               </div>
             ) : null}
         </div>
