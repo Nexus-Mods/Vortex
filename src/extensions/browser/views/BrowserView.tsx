@@ -6,6 +6,7 @@ import { INotification } from '../../../types/INotification';
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import Debouncer from '../../../util/Debouncer';
+import { log } from '../../../util/log';
 import { truthy } from '../../../util/util';
 import Notification from '../../../views/Notification';
 
@@ -347,7 +348,11 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
     this.nextState.historyIdx = newPos;
     // this.nextState.url = history[newPos];
     if (truthy(this.mWebView)) {
-      this.mWebView.loadURL(history[newPos]);
+      try {
+        this.mWebView.loadURL(history[newPos]);
+      } catch (err) {
+        log('warn', 'failed to navigate', { url: history[newPos], error: err.message });
+      }
     }
   }
 
@@ -357,7 +362,11 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
     this.nextState.historyIdx = newPos;
     // this.nextState.url = history[newPos];
     if (truthy(this.mWebView)) {
-      this.mWebView.loadURL(history[newPos]);
+      try {
+        this.mWebView.loadURL(history[newPos]);
+      } catch (err) {
+        log('warn', 'failed to navigate', { url: history[newPos], error: err.message });
+      }
     }
   }
 
@@ -375,7 +384,11 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
 
     const nextUrl = nodeUrl.format(parsed);
     this.addToHistory(nextUrl);
-    this.mWebView.loadURL(nextUrl);
+    try {
+      this.mWebView.loadURL(nextUrl);
+    } catch (err) {
+      log('warn', 'failed to navigate', { url: nextUrl, error: err.message });
+    }
   }
 
   private confirm = () => {
