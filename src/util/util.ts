@@ -627,3 +627,7 @@ export function delayed(delayMS: number): Promise<void> {
     setTimeout(resolve, delayMS);
   });
 }
+
+export function toBlue<T>(func: (...args: any[]) => Promise<T>): (...args: any[]) => Bluebird<T> {
+  return (...args: any[]) => Bluebird.resolve(func(...args));
+}

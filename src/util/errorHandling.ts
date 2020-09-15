@@ -211,6 +211,7 @@ export function sendReport(type: string, error: IError, context: IErrorContext,
       : error.message;
     dialog.showErrorBox(fullMessage, JSON.stringify({
       type, error, labels, context, reporterId, reporterProcess, sourceProcess,
+      attachment,
     }, undefined, 2));
     return Promise.resolve(undefined);
   } else {

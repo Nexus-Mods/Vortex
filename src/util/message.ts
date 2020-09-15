@@ -13,16 +13,18 @@ import { didIgnoreError, getErrorContext, isOutdated,
          sendReport, toError } from './errorHandling';
 import * as fs from './fs';
 import { log } from './log';
-import { flatten, truthy } from './util';
+import { flatten, setdefault, truthy } from './util';
 
 import { IFeedbackResponse } from '@nexusmods/nexus-api';
 import Promise from 'bluebird';
 import ZipT = require('node-7z');
+import * as path from 'path';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { file as tmpFile, tmpName } from 'tmp';
 
 import * as _ from 'lodash';
+import getVortexPath from './getVortexPath';
 
 const GITHUB_PROJ = 'Nexus-Mods/Vortex';
 
@@ -259,6 +261,16 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
       ...(err.parameters || {}),
     },
   };
+
+  if ((details?.['attachLogOnReport'] === true)
+      && (((options.attachments ?? []).find(iter => iter.id === 'log') === undefined))) {
+    setdefault(options, 'attachments', []).push({
+      id: 'log',
+      type: 'file',
+      data: path.join(getVortexPath('userData'), 'vortex.log'),
+      description: 'Vortex Log',
+    });
+  }
 
   if ((options.attachments !== undefined)
       && (options.attachments.length > 0)) {
@@ -572,7 +584,7 @@ function prettifyHTTPError(err: HTTPError) {
 }
 
 const HIDE_ATTRIBUTES = new Set(
-  ['message', 'error', 'context', 'errno', 'syscall', 'isOperational']);
+  ['message', 'error', 'context', 'errno', 'syscall', 'isOperational', 'attachLogOnReport']);
 
 /**
  * render error message for display to the user
