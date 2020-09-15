@@ -245,7 +245,7 @@ function createSocket(options: ICreateSocketOptions)
       server.on('error', err => {
         reject(err);
       });
-      if (options.pipe) {
+      if (options.pipe && !options.debug) {
         // on windows, using a socket is a pita because firewalls and AVs...
         const ipcId = options.debug ? 'debug' : shortid();
         server.listen(`\\\\?\\pipe\\${ipcId}`, () => {
@@ -300,10 +300,20 @@ class ConnectionIPC {
 
     const pipe = process.platform === 'win32';
     const debug = false;
-    const { ipcId, server } = await createSocket({
-      pipe,
-      debug,
-    });
+
+    if (ConnectionIPC.sListen === undefined) {
+      // only set up the listening server once, otherwise we might end
+      // up creating orphaned connections if a connection later dies
+      ConnectionIPC.sListen = await createSocket({
+        pipe,
+        debug,
+      });
+    } else {
+      ConnectionIPC.sListen.server.removeAllListeners('connection');
+    }
+
+    const { server, ipcId } = ConnectionIPC.sListen;
+
     log('debug', '[installer] waiting for peer process to connect', { pipe, ipcId });
 
     server.on('connection', sock => {
@@ -312,7 +322,7 @@ class ConnectionIPC {
       if (!wasConnected) {
         wasConnected = true;
         servSocket = sock;
-        if (pipe) {
+        if (pipe && !debug) {
           log('debug', '[installer] connecting to reply pipe');
           createConnection(`\\\\?\\pipe\\${ipcId}_reply`)
           .then(sockIn => {
@@ -362,6 +372,8 @@ class ConnectionIPC {
     return new ConnectionIPC({ in: cliSocket, out: servSocket }, proc);
   }
 
+  private static sListen: { ipcId: string, server: net.Server };
+
   private mSocket: { in: net.Socket, out: net.Socket };
   private mProcess: ChildProcess;
   private mAwaitedReplies: { [id: string]: IAwaitingPromise } = {};
@@ -393,7 +405,7 @@ class ConnectionIPC {
       try {
         // just making sure, the remote is probably closing anyway
         await new Promise((resolve) => setTimeout(resolve, 1000));
-        this.mProcess.kill();
+        this.mProcess?.kill();
         this.interrupt(new Error(`Installer process disconnected unexpectedly`));
       } catch (err) {
         // nop
@@ -540,6 +552,11 @@ class ConnectionIPC {
   }
 
   private interrupt(err: Error) {
+    if (this.mSocket?.out !== this.mSocket?.in) {
+      this.mSocket?.out?.end();
+    }
+    this.mSocket?.in?.end();
+
     log('warn', 'interrupted, recent actions', JSON.stringify(this.mActionLog, undefined, 2));
     if (this.mOnInterrupted !== undefined) {
       this.mOnInterrupted(err);
