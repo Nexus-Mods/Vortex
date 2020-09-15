@@ -152,14 +152,7 @@ class DeploymentMethod extends LinkingDeployment {
   public initEvents(api: IExtensionApi) {
     if (api.events !== undefined) {
       api.events.on('force-unblock-elevating', () => {
-        try {
-          if (this.mIPCServer !== undefined) {
-            this.mIPCServer.close();
-            this.mIPCServer = undefined;
-          }
-        } catch (err) {
-          log('warn', 'Failed to close ipc server', err.message);
-        }
+        this.endIPC('user canceled block');
       });
     }
   }
@@ -206,7 +199,10 @@ class DeploymentMethod extends LinkingDeployment {
     this.mOpenRequests = {};
     return this.closeServer()
         .then(() => this.startElevated())
-        .tapCatch(() => this.context.onComplete())
+        .tapCatch((err) => {
+          log('info', 'elevated process failed', { error: err.message });
+          this.context.onComplete();
+        })
         .then(() => super.finalize(gameId, dataPath, installationPath))
         .then(result => this.stopElevated().then(() => result));
   }
@@ -307,8 +303,9 @@ class DeploymentMethod extends LinkingDeployment {
       .then(() => this.stopElevated())
       .then(() => {
         if (hadErrors) {
-          return Promise.reject(
-            new Error('Some files could not be purged, please check the log file'));
+          const err = new Error('Some files could not be purged, please check the log file');
+          err['attachLogOnReport'] = true;
+          return Promise.reject(err);
         } else {
           return Promise.resolve();
         }
@@ -394,16 +391,17 @@ class DeploymentMethod extends LinkingDeployment {
     const ipcPath: string = useTask
       ? IPC_ID
       : `${IPC_ID}vortex_elevate_symlink_${shortid()}`;
-    let pongTimer: NodeJS.Timer;
 
     return new Promise<void>((resolve, reject) => {
-      let connected: boolean = false;
-      let ponged: boolean = true;
+      let elevating = false;
+
       if (this.mQuitTimer !== undefined) {
+        log('debug', 'reusing symlink process');
         // if there is already an elevated process, just keep it around a bit longer
         clearTimeout(this.mQuitTimer);
         return resolve();
       }
+      log('debug', 'starting symlink process', ipcPath);
 
       this.mIPCServer = startIPCServer(ipcPath,
                                        (conn: JsonSocket, message: string, payload: any) => {
@@ -411,10 +409,7 @@ class DeploymentMethod extends LinkingDeployment {
           log('debug', 'ipc connected');
           this.mElevatedClient = conn;
           this.api.store.dispatch(clearUIBlocker('elevating'));
-          if (cancelConsentMonitor !== undefined) {
-            cancelConsentMonitor();
-          }
-          connected = true;
+          elevating = false;
           resolve();
         } else if (message === 'completed') {
           const { err, num } = payload;
@@ -437,61 +432,36 @@ class DeploymentMethod extends LinkingDeployment {
           log(level, message, meta);
         } else if (message === 'report') {
           this.mOnReport(payload);
-        } else if (message === 'pong') {
-          ponged = true;
         } else {
           log('error', 'Got unexpected message', { message, payload });
         }
       });
 
-      pongTimer = setInterval(() => {
-        if (!ponged || !connected) {
-          try {
-            if (this.mIPCServer !== undefined) {
-              this.mIPCServer.close();
-              this.mIPCServer = undefined;
-            }
-          } catch (err) {
-            log('warn', 'Failed to close ipc server', err.message);
-          }
-          return reject(
-            new TemporaryError('deployment helper didn\'t respond, please check your log'));
-        }
-        ponged = false;
-        this.emit('ping', {});
-      }, 15000);
-
       if (!useTask) {
+        elevating = true;
         this.api.store.dispatch(setUIBlocker(
           'elevating', 'open-ext', 'Please confirm the "User Access Control" dialog', true));
+        monitorConsent(() => {
+          if (elevating) {
+            // this is called if consent.exe disappeared but none of our "regular" code paths ran
+            // which would have cancelled this timeout
+            this.api.store.dispatch(clearUIBlocker('elevating'));
+            this.endIPC('no init');
+            /*
+            this.api.showErrorNotification('Failed to run elevated process',
+              'Symlinks on your system can only be created by an elevated process and your system '
+              + 'just refused/failed to run the process elevated with no error message. '
+              + 'Please check your system settings regarding User Access Control or use a '
+              + 'different deployment method.', { allowReport: false });
+              */
+            reject(new ProcessCanceled(
+              'Symlinks on your system can only be created by an elevated process and your system '
+              + 'just refused/failed to run the process elevated with no error message. '
+              + 'Please check your system settings regarding User Access Control or use a '
+              + 'different deployment method.'));
+          }
+        });
       }
-
-      const cancelConsentMonitor = useTask ? undefined : monitorConsent(() => {
-        // this is called if consent.exe disappeared but none of our "regular" code paths ran
-        // which would have cancelled this timeout
-        this.api.store.dispatch(clearUIBlocker('elevating'));
-        try {
-          this.mIPCServer.close();
-          this.mIPCServer = undefined;
-        } catch (err) {
-          log('warn', 'Failed to close ipc server', err.message);
-        }
-        if (pongTimer !== undefined) {
-          clearInterval(pongTimer);
-        }
-        /*
-        this.api.showErrorNotification('Failed to run elevated process',
-          'Symlinks on your system can only be created by an elevated process and your system '
-          + 'just refused/failed to run the process elevated with no error message. '
-          + 'Please check your system settings regarding User Access Control or use a '
-          + 'different deployment method.', { allowReport: false });
-          */
-        reject(new ProcessCanceled(
-          'Symlinks on your system can only be created by an elevated process and your system '
-          + 'just refused/failed to run the process elevated with no error message. '
-          + 'Please check your system settings regarding User Access Control or use a '
-          + 'different deployment method.'));
-      });
 
       const remoteProm = useTask
         ? Promise.resolve()
@@ -502,16 +472,9 @@ class DeploymentMethod extends LinkingDeployment {
         })
         .tapCatch(() => {
           this.api.store.dispatch(clearUIBlocker('elevating'));
-          if (cancelConsentMonitor !== undefined) {
-            cancelConsentMonitor();
-          }
+          elevating = false;
           log('error', 'failed to run remote process');
-          try {
-            this.mIPCServer.close();
-            this.mIPCServer = undefined;
-          } catch (err) {
-            log('warn', 'Failed to close ipc server', err.message);
-          }
+          this.endIPC('starting remote process failed');
         });
 
       if (useTask) {
@@ -546,12 +509,17 @@ class DeploymentMethod extends LinkingDeployment {
             ? reject(new UserCanceled())
             : reject(err))
         .catch(reject);
-    })
-    .finally(() => {
-      if (pongTimer !== undefined) {
-        clearInterval(pongTimer);
-      }
     });
+  }
+
+  private endIPC(reason: string) {
+    log('debug', 'terminating ipc connection', reason);
+    try {
+      this.mIPCServer?.close();
+      this.mIPCServer = undefined;
+    } catch (err) {
+      log('warn', 'Failed to close ipc server', { error: err.message, reason });
+    }
   }
 
   private stopElevated() {
@@ -566,22 +534,18 @@ class DeploymentMethod extends LinkingDeployment {
   }
 
   private finish() {
+    log('debug', 'finished');
     if (this.mQuitTimer !== undefined) {
       clearTimeout(this.mQuitTimer);
     }
     this.mQuitTimer = setTimeout(() => {
-      try {
-        this.emit('quit', {});
-        this.mIPCServer?.close();
-        this.mIPCServer = undefined;
-      } catch (err) {
-        // the most likely reason here is that it's already closed
-        // and cleaned up
-        log('warn', 'Failed to close ipc server', err.message);
-      }
+      log('debug', 'closing symlink process');
+      this.emit('quit', {});
+      this.endIPC('already closed');
+
       this.mElevatedClient = null;
       this.mQuitTimer = undefined;
-    }, 1000);
+    }, 5000);
 
     if (this.mTmpFilePath !== undefined) {
       try {
