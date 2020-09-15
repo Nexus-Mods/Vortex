@@ -1,4 +1,4 @@
-import Promise from 'bluebird';
+import Bluebird from 'bluebird';
 import { remote } from 'electron';
 import * as https from 'https';
 import * as _ from 'lodash';
@@ -6,9 +6,11 @@ import * as path from 'path';
 import * as Redux from 'redux';
 import * as url from 'url';
 
-import { IExtensionContext } from '../../types/IExtensionContext';
+import { addNotification } from '../../actions/notifications';
+import { IExtensionContext, ThunkStore } from '../../types/IExtensionContext';
 import { IState } from '../../types/IState';
 import * as fs from '../../util/fs';
+import getVortexPath from '../../util/getVortexPath';
 import { log } from '../../util/log';
 import opn from '../../util/opn';
 import { activeGameId } from '../../util/selectors';
@@ -39,16 +41,16 @@ function readLocalSurveysFile() {
     .then(data => {
       try {
         const parsed: ISurveyInstance[] = JSON.parse(data);
-        return Promise.resolve(parsed);
+        return Bluebird.resolve(parsed);
       } catch (err) {
-        return Promise.reject(err);
+        return Bluebird.reject(err);
       }
     });
 }
 
-function getHTTPData<T>(link: string): Promise<T[]> {
+function getHTTPData<T>(link: string): Bluebird<T[]> {
   const sanitizedURL = url.parse(link);
-  return new Promise((resolve, reject) => {
+  return new Bluebird((resolve, reject) => {
     https.get(sanitizedURL.href, res => {
       res.setEncoding('utf-8');
       let output = '';
@@ -68,12 +70,30 @@ function getHTTPData<T>(link: string): Promise<T[]> {
   });
 }
 
-function updateAnnouncements(store: Redux.Store<IState>): Promise<void> {
-  return getHTTPData<IAnnouncement>(ANNOUNCEMENT_LINK).then((res) => {
+async function updateAnnouncements(store: ThunkStore<IState>) {
+  try {
+    let res: IAnnouncement[];
+    if (process.env.NODE_ENV === 'development') {
+      try {
+        res = JSON.parse(await fs.readFileAsync(
+          path.join(getVortexPath('temp'), 'announcements.json'),
+          { encoding: 'utf8' }));
+        store.dispatch(addNotification({
+          type: 'info',
+          message: 'Using announcements from file.',
+        }));
+      } catch (err) {
+        // nop
+      }
+    }
+    if (res === undefined) {
+      res = await getHTTPData<IAnnouncement>(ANNOUNCEMENT_LINK);
+    }
     store.dispatch(setAnnouncements(res));
-    return Promise.resolve();
-  })
-  .catch(err => log('warn', 'failed to retrieve list of announcements', err));
+  } catch (err) {
+    log('warn', 'failed to retrieve list of announcements', err);
+  }
+  return Bluebird.resolve();
 }
 
 function updateSurveys(store: Redux.Store<IState>) {
@@ -81,7 +101,7 @@ function updateSurveys(store: Redux.Store<IState>) {
     ? readLocalSurveysFile()
     : getHTTPData<ISurveyInstance>(SURVEYS_LINK)).then((res) => {
       store.dispatch(setAvailableSurveys(res));
-      return Promise.resolve();
+      return Bluebird.resolve();
   })
   .catch(err => log('warn', 'failed to retrieve list of surveys', err));
 }
