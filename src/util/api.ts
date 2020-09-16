@@ -45,7 +45,7 @@ import ReduxProp from './ReduxProp';
 import relativeTime, { userFriendlyTime } from './relativeTime';
 import StarterInfo from './StarterInfo';
 import steam, { GameNotFound, ISteamEntry } from './Steam';
-import { bytesToString, deBOM, delay, isChildPath, makeQueue, objDiff,
+import { bytesToString, deBOM, delay, isChildPath, isFilenameValid, isPathValid, makeQueue, objDiff,
          pad, sanitizeCSSId, setdefault, toPromise, unique } from './util';
 import walk from './walk';
 
@@ -88,6 +88,8 @@ export {
   github,
   installIconSet,
   isChildPath,
+  isFilenameValid,
+  isPathValid,
   LazyComponent,
   lazyRequire,
   makeNormalizingDict,
