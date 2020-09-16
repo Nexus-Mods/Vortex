@@ -221,9 +221,17 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
   private isInstalled(ext: IAvailableExtension): boolean {
     const { extensions } = this.props;
 
-    return Object.values(extensions)
-      .find(iter => ((ext.modId !== undefined) && (iter.modId === ext.modId))
-                 || (iter.name === ext.name)) !== undefined;
+    return Object.keys(extensions)
+      // looking at modid for mods hosted on nexus and the id for games in vortex-games.
+      // In the past we used the name for games from the repo but that meant that the games
+      // couldn't be renamed without causing issues for this list, not sure why that was
+      // done in the first place.
+      .find(key => {
+        const iter = extensions[key];
+        return ((ext.modId !== undefined) && (iter.modId === ext.modId))
+                 || ((ext.id !== undefined) && ((iter.id || key) === ext.id));
+      })
+        !== undefined;
   }
 
   private renderListEntry = (ext: IAvailableExtension, idx: number) => {
