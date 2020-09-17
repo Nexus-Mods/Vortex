@@ -33,9 +33,11 @@ class AnnouncementDashlet extends ComponentEx<IProps, {}> {
     const { t, announcements, gameMode } = this.props;
 
     // Filter announcements by gamemode and version.
-    const filtered = announcements.filter(announce => matchesGameMode(announce, gameMode)
-                                                   && matchesVersion(announce, this.mAppVersion));
-
+    const filtered = announcements
+      .filter(announce => matchesGameMode(announce, gameMode)
+                       && matchesVersion(announce, this.mAppVersion))
+      .sort((lhs, rhs) => new Date(rhs.date).getTime()
+                        - new Date(lhs.date).getTime());
     return (
       <Dashlet className='dashlet-announcement' title={t('Announcements')}>
         <div className='list-announcements-container'>
