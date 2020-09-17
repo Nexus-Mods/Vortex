@@ -663,7 +663,7 @@ export interface IStateVerifier {
   noUndefined?: boolean;
   // if set, can't be null
   noNull?: boolean;
-  // if set, the array or object can't be empty
+  // if set, the array or object can't be empty - if it's a string, that can't be empty either
   noEmpty?: boolean;
   // if set, look at the object elements inside
   elements?: { [key: string]: IStateVerifier };

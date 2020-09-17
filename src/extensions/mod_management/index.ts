@@ -1140,6 +1140,24 @@ function init(context: IExtensionContext): boolean {
   context.registerModSource = registerModSource;
   context.registerMerge = registerMerge;
 
+  context.registerActionCheck('ADD_MOD', (state, action: any) => {
+    const { mod }: { mod: IMod } = action.payload;
+    if (!truthy(mod.installationPath)) {
+      return 'Can\'t create mod without installation path';
+    }
+
+    return undefined;
+  });
+
+  context.registerActionCheck('ADD_MODS', (state, action: any) => {
+    const { mods }: { mods: IMod[] } = action.payload;
+    if (mods.find(iter => !truthy(iter.installationPath)) !== undefined) {
+      return 'Can\'t create mod without installation path';
+    }
+
+    return undefined;
+  });
+
   registerAttributeExtractor(150, attributeExtractor);
   registerAttributeExtractor(10, upgradeExtractor);
 

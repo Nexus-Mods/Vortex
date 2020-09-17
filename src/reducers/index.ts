@@ -69,6 +69,8 @@ function verifyElement(verifier: IStateVerifier, value: any) {
       return false;
     } else if ((verifier.type === 'object') && (Object.keys(value).length === 0)) {
       return false;
+    } else if ((verifier.type === 'string') && (value.length === 0)) {
+      return false;
     }
   }
   return true;
