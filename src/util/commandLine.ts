@@ -19,6 +19,7 @@ export interface IParameters {
   shared?: boolean;
   maxMemory?: string;
   disableGPU?: boolean;
+  userData?: string;
 }
 
 function assign(input: string): string[] {
@@ -41,6 +42,7 @@ const ARG_COUNTS = {
   '--report': 1,
   '--restore': 1,
   '--max-memory': 1,
+  '--user-data': 1,
 };
 
 // Chrome rearranges the command line parameters it passes to processes it spawns internally
@@ -121,6 +123,8 @@ function parseCommandline(argv: string[], electronIsShitHack: boolean): IParamet
     .option('-s, --set [path]=[value]', 'Change a value in the state. Please be very careful '
                                       + 'with this, incorrect use will break Vortex and you may '
                                       + 'lose data', assign)
+    .option('--user-data [path]', 'Starts Vortex with a custom directory for the user data. '
+                                  + 'Only use if you know what you\'re doing.')
     .option('--start-minimized', 'Starts Vortex in the task bar')
     .option('--game [game id]', 'Starts Vortex with a different game enabled')
     .option('--del [path]', 'Remove a value in state')
