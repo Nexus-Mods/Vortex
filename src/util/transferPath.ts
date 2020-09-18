@@ -1,3 +1,6 @@
+import { DOWNLOADS_DIR_TAG } from '../extensions/download_management/util/downloadDirectory';
+import { STAGING_DIR_TAG } from '../extensions/mod_management/stagingDirectory';
+
 import { CleanupFailedException, InsufficientDiskSpace, NotFound, ProcessCanceled,
          UnsupportedOperatingSystem, UserCanceled } from './CustomErrors';
 import * as fs from './fs';
@@ -10,8 +13,6 @@ import * as diskusage from 'diskusage';
 import * as path from 'path';
 import turbowalk, { IEntry } from 'turbowalk';
 import * as winapi from 'winapi-bindings';
-import { DOWNLOADS_DIR_TAG } from '../extensions/download_management/util/writeDownloadsTag';
-import { STAGING_DIR_TAG } from '../extensions/mod_management/stagingDirectory';
 
 const MIN_DISK_SPACE_OFFSET = 512 * 1024 * 1024;
 

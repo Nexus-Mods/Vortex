@@ -24,6 +24,7 @@ import {IChunk} from './types/IChunk';
 import {IDownload} from './types/IDownload';
 import { IDownloadResult } from './types/IDownloadResult';
 import { ProgressCallback } from './types/ProgressCallback';
+import { ensureDownloadsDirectory } from './util/downloadDirectory';
 import getDownloadGames from './util/getDownloadGames';
 
 import DownloadManager, { AlreadyDownloaded, DownloadIsHTML, RedownloadMode } from './DownloadManager';
@@ -188,9 +189,9 @@ export class DownloadObserver {
 
     const urlIn = urls[0].split('<')[0];
 
-    return withContext(`Downloading "${fileName || urlIn}"`, urlIn,
-                       () => this.mManager.enqueue(id, urls, fileName,
-                                                   processCB, downloadPath, redownload)
+    return withContext(`Downloading "${fileName || urlIn}"`, urlIn, () =>
+      ensureDownloadsDirectory(this.mApi)
+        .then(() => this.mManager.enqueue(id, urls, fileName, processCB, downloadPath, redownload))
         .then((res: IDownloadResult) => {
           log('debug', 'download finished', { file: res.filePath });
           this.handleDownloadFinished(id, callback, res);
@@ -323,14 +324,16 @@ export class DownloadObserver {
 
         withContext(`Resuming "${download.localPath}"`, download.urls[0], () => {
           if (download.state === 'failed') {
-            return this.mManager.enqueue(downloadId, download.urls,
+            return ensureDownloadsDirectory(this.mApi)
+              .then(() => this.mManager.enqueue(downloadId, download.urls,
                                          path.basename(fullPath), this.genProgressCB(downloadId),
-                                         undefined, 'replace')
+                                         undefined, 'replace'))
               .catch(err => this.handleDownloadError(err, downloadId, downloadPath, callback));
           } else {
-            return this.mManager.resume(downloadId, fullPath, download.urls,
-              download.received, download.size, download.startTime, download.chunks,
-              this.genProgressCB(downloadId))
+            return ensureDownloadsDirectory(this.mApi)
+              .then(() => this.mManager.resume(downloadId, fullPath, download.urls, 
+                download.received, download.size, download.startTime, download.chunks,
+                this.genProgressCB(downloadId)))
               .then(res => {
                 log('debug', 'download finished (resumed)', { file: res.filePath });
                 this.handleDownloadFinished(downloadId, callback, res);

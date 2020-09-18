@@ -1126,7 +1126,8 @@ class ExtensionManager {
                   this.mApi.showErrorNotification('Extension failed to migrate', err, {
                     allowReport: ext.info.author === COMPANY_ID,
                   });
-                });
+                })
+                .then(() => null);
             }
           }
         } catch (err) {

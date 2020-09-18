@@ -13,6 +13,7 @@ import { CleanupFailedException, InsufficientDiskSpace, NotFound, ProcessCancele
          UnsupportedOperatingSystem, UserCanceled } from '../../../util/CustomErrors';
 import { withContext } from '../../../util/errorHandling';
 import * as fs from '../../../util/fs';
+import getNormalizeFunc from '../../../util/getNormalizeFunc';
 import getVortexPath from '../../../util/getVortexPath';
 import { log } from '../../../util/log';
 import { showError } from '../../../util/message';
@@ -49,7 +50,6 @@ import {
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
 import * as winapi from 'winapi-bindings';
-import { getNormalizeFunc } from '../../../util/api';
 
 interface IBaseProps {
   activators: IDeploymentMethod[];

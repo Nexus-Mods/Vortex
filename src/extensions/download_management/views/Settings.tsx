@@ -20,13 +20,13 @@ import * as selectors from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import { testPathTransfer, transferPath } from '../../../util/transferPath';
 import { ciEqual, isChildPath, isPathValid } from '../../../util/util';
+import getTextMod from '../../mod_management/texts';
 import { setDownloadPath, setMaxDownloads } from '../actions/settings';
 import { setTransferDownloads } from '../actions/transactions';
 
+import { DOWNLOADS_DIR_TAG, writeDownloadsTag } from '../util/downloadDirectory';
 import getDownloadPath, {getDownloadPathPattern} from '../util/getDownloadPath';
-import writeDownloadsTag, { DOWNLOADS_DIR_TAG } from '../util/writeDownloadsTag';
 
-import getTextMod from '../../mod_management/texts';
 import getText from '../texts';
 
 import Promise from 'bluebird';

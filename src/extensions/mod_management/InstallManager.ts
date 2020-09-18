@@ -16,8 +16,8 @@ import { isPathValid, setdefault, truthy } from '../../util/util';
 import walk from '../../util/walk';
 
 import { IDownload } from '../download_management/types/IDownload';
+import { DOWNLOADS_DIR_TAG } from '../download_management/util/downloadDirectory';
 import getDownloadGames from '../download_management/util/getDownloadGames';
-import { DOWNLOADS_DIR_TAG } from '../download_management/util/writeDownloadsTag';
 
 import { IModType } from '../gamemode_management/types/IModType';
 import { getGame } from '../gamemode_management/util/getGame';
