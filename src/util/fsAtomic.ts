@@ -1,6 +1,5 @@
 import * as fs from './fs';
 import { log } from './log';
-import { withTmpFile } from './util';
 
 import Promise from 'bluebird';
 import { createHash } from 'crypto';
@@ -55,7 +54,7 @@ function writeFileAtomicImpl(filePath: string,
 
   const hash = checksum(buf);
   let fd = -1;
-  return withTmpFile((fdIn: number, pathIn: string) => {
+  return fs.withTmpFile((fdIn: number, pathIn: string) => {
     fd = fdIn;
     tmpPath = pathIn;
     return fs.writeAsync(fd, buf, 0, buf.byteLength, 0)

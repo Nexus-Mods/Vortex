@@ -6,7 +6,7 @@ import getVortexPath from '../../util/getVortexPath';
 import { log } from '../../util/log';
 import { jsonRequest, rawRequest } from '../../util/network';
 import { getSafe } from '../../util/storeHelper';
-import { INVALID_FILENAME_RE, truthy, withTmpDir } from '../../util/util';
+import { INVALID_FILENAME_RE, truthy } from '../../util/util';
 
 import { addLocalDownload } from '../download_management/actions/state';
 import { AlreadyDownloaded } from '../download_management/DownloadManager';
@@ -340,7 +340,7 @@ export function downloadGithubRaw(api: IExtensionApi,
       .then(() => { api.events.emit('remove-download', existing); })
     : Promise.resolve();
 
-  return cleanProm.then(() => withTmpDir((tmpPath: string) => {
+  return cleanProm.then(() => fs.withTmpDir((tmpPath: string) => {
     const archivePath = path.join(tmpPath, archiveName);
 
     const apiUrl = githubApiUrl(ext.github, 'contents', ext.githubRawPath);

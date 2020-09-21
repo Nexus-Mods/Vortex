@@ -21,11 +21,13 @@ import PromiseBB from 'bluebird';
 import { dialog as dialogIn, remote } from 'electron';
 import * as fs from 'fs-extra';
 import JsonSocket from 'json-socket';
+import * as _ from 'lodash';
 import * as net from 'net';
 import * as path from 'path';
 import { allow as allowT, getUserId } from 'permissions';
 import rimraf from 'rimraf';
 import { generate as shortid } from 'shortid';
+import * as tmp from 'tmp';
 import { runElevated } from 'vortex-run';
 import wholocks from 'wholocks';
 
@@ -1027,3 +1029,65 @@ export function forcePerm<T>(t: TFunction,
       }
     });
 }
+
+export function withTmpDirImpl<T>(cb: (tmpPath: string) => PromiseBB<T>): PromiseBB<T> {
+  return new PromiseBB<T>((resolve, reject) => {
+    tmp.dir({ unsafeCleanup: true }, (err, tmpPath, cleanup) => {
+      if (err !== null) {
+        return reject(err);
+      } else {
+        cb(tmpPath)
+          .then((out: T) => {
+            resolve(out);
+          })
+          .catch(tmpErr => {
+            reject(tmpErr);
+          })
+          .finally(() => {
+            try {
+              cleanup();
+            } catch (err) {
+              // cleanup failed
+              log('warn', 'Failed to clean up temporary directory', { tmpPath });
+            }
+          });
+      }
+    });
+  });
+}
+
+export interface ITmpOptions {
+  cleanup?: boolean;
+}
+
+function withTmpFileImpl<T>(cb: (fd: number, name: string) => PromiseBB<T>,
+                            options?: ITmpOptions & tmp.FileOptions): PromiseBB<T> {
+  return new PromiseBB<T>((resolve, reject) => {
+    tmp.file(_.omit(options ?? {}, ['cleanup']), (err, name, fd, cleanup) => {
+      if (err !== null) {
+        return reject(err);
+      } else {
+        cb(fd, name)
+          .then(resolve)
+          .catch(reject)
+          .finally(() => {
+            if (options?.cleanup !== false) {
+              try {
+                cleanup();
+              } catch (err) {
+                log('warn', 'Failed to clean up temporary file', { name });
+              }
+            }
+          });
+      }
+    });
+  });
+}
+
+const withTmpDir = genFSWrapperAsync(withTmpDirImpl);
+const withTmpFile = genFSWrapperAsync(withTmpFileImpl);
+
+export {
+  withTmpDir,
+  withTmpFile,
+};
