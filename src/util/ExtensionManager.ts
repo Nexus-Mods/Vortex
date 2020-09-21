@@ -595,7 +595,9 @@ class ExtensionManager {
       this.mOutdated.forEach(ext => {
         log('info', 'extension older than bundled version, will be removed',
           { name: ext });
-        initStore.dispatch(removeExtension(ext));
+        // if we get here in the renderer process, initStore is not defined.
+        // This should happen in the main process only
+        initStore?.dispatch(removeExtension(ext));
       });
 
       relaunch();
