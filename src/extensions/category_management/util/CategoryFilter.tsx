@@ -142,7 +142,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     gameId,
     categories: state.persistent.categories[gameId] || emptyDict,
     mods: state.persistent.mods[gameId],
-    downloads: state.persistent.downloads.files,
+    downloads: state.persistent.downloads.files || emptyDict,
   };
 }
 
