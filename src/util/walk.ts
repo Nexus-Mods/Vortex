@@ -1,6 +1,7 @@
 import * as fs from './fs';
 
 import Promise from 'bluebird';
+import * as fsOrig from 'fs-extra';
 import * as path from 'path';
 
 export interface IWalkOptions {
@@ -30,7 +31,7 @@ function walk(target: string,
     .then((fileNames: string[]) => {
       allFileNames = fileNames;
       return Promise.map(fileNames, (statPath: string) =>
-        fs.lstatAsync([target, statPath].join(path.sep)).reflect());
+        Promise.resolve(fsOrig.lstat([target, statPath].join(path.sep))).reflect());
     }).then((res: Array<Promise.Inspection<fs.Stats>>) => {
       // use the stats results to generate a list of paths of the directories
       // in the searched directory

@@ -151,8 +151,18 @@ function refreshGameInfo(store: Redux.Store<IState>, gameId: string): Promise<vo
 
 function verifyGamePath(game: IGame, gamePath: string): Promise<void> {
   return Promise.map(game.requiredFiles || [], file =>
-    fs.statAsync(path.join(gamePath, file)))
-    .then(() => undefined);
+    Promise.resolve(fsExtra.stat(path.join(gamePath, file))))
+    .then(() => undefined)
+    .catch(err => {
+      // if the error is anything other than "the file doesn't exist" we assume
+      // the file is there and can't be accessed because of permissions or something.
+      // If the game gets started through the launcher, that may be completely valid
+      // so this isn't the place to report an error.
+      if (err.code !== 'ENOENT') {
+        return undefined;
+      }
+      return Promise.reject(err);
+    });
 }
 
 function searchDepth(files: string[]): number {
