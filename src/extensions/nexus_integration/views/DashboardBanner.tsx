@@ -28,6 +28,7 @@ interface IActionProps {
 
 type IProps = WithTranslation & IConnectedProps & IActionProps;
 
+const START_TIME = Date.now();
 class DashboardBanner extends ComponentEx<IProps, { requested: boolean }> {
   constructor(props: IProps) {
     super(props);
@@ -67,7 +68,7 @@ class DashboardBanner extends ComponentEx<IProps, { requested: boolean }> {
     return (
       <div className='dashlet-nexus-account'>
         <Image
-          srcs={[userInfo.profileUrl || FALLBACK_AVATAR, FALLBACK_AVATAR]}
+          srcs={[`${userInfo.profileUrl}?r_${START_TIME}` || FALLBACK_AVATAR, FALLBACK_AVATAR]}
           circle
           style={{ height: 64, width: 64, marginRight: 32 }}
         />
