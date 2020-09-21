@@ -330,7 +330,7 @@ class TableRow extends React.Component<IRowProps, IRowState> {
   }
 
   private renderRow = (): React.ReactNode => {
-    const { actions, attributes, data, hasActions, tableId } = this.props;
+    const { t, actions, attributes, data, hasActions, tableId } = this.props;
 
     const res = attributes.map(this.renderAttribute);
     const sorted = actions
@@ -362,6 +362,7 @@ class TableRow extends React.Component<IRowProps, IRowState> {
             onHide={this.onHideContext}
           />
           <ActionDropdown
+            t={t}
             id={`${tableId}-${data.__id}-action-icons`}
             group={`${tableId}-action-icons`}
             instanceId={data.__id}

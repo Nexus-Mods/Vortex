@@ -163,6 +163,7 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
         </div>
         <div className='profile-actions'>
           <ActionDropdown
+            t={t}
             group='profile-actions'
             orientation='vertical'
             className='menubar'

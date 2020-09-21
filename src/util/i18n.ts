@@ -106,6 +106,20 @@ class MultiBackend {
   }
 }
 
+class HighlightPP {
+  public name: string;
+  public type: 'postProcessor';
+
+  constructor() {
+    this.type = 'postProcessor';
+    this.name = 'HighlightPP';
+  }
+
+  public process(value, key, options, translator) {
+    return 'TT:' + value.toUpperCase();
+  }
+}
+
 /**
  * initialize the internationalization library
  *
@@ -123,9 +137,13 @@ function init(language: string, translationExts: () => IExtension[]): Promise<II
 
   currentLanguage = language;
 
-  const i18nObj = I18next
-    .use(MultiBackend as any)
-    .use(initReactI18next);
+  const i18nObj = I18next;
+  if (process.env.HIGHLIGHT_I18N === 'true') {
+    i18nObj.use(new HighlightPP());
+  }
+  i18nObj.use(MultiBackend as any)
+    .use(initReactI18next)
+    ;
 
   return Promise.resolve(i18nObj.init(
     {
@@ -140,6 +158,7 @@ function init(language: string, translationExts: () => IExtension[]): Promise<II
       keySeparator: '::',
 
       debug: false,
+      postProcess: (process.env.HIGHLIGHT_I18N === 'true') ? 'HighlightPP' : false,
 
       react: {
         // afaict this is simply broken at this time. With this enabled the React.Suspense will

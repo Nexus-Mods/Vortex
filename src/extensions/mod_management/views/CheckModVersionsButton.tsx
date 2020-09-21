@@ -44,6 +44,7 @@ class CheckVersionsButton extends ComponentEx<IProps, {}> {
 
       return (
         <ToolbarDropdown
+          t={t}
           key={id}
           id={id}
           instanceId={[]}

@@ -253,6 +253,7 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
 
     return (
       <ToolbarDropdown
+        t={t}
         key={id}
         id={id}
         instanceId={instanceIds}

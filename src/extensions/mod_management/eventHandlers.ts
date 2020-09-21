@@ -631,6 +631,7 @@ export function onStartInstallDownload(api: IExtensionApi,
       if (downloadPath === undefined) {
         api.showErrorNotification('Unknown Game',
           'Failed to determine download directory. This shouldn\'t have happened', {
+            message: downloadGame[0],
             allowReport: true,
           });
         return;

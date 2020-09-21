@@ -458,6 +458,7 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
             className='category-buttons'
             group='category-icons'
             staticElements={actions}
+            t={t}
             instanceId={rowInfo.node.categoryId}
           />
         ),
