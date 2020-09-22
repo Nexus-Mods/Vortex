@@ -15,6 +15,7 @@ install:
     (New-Object Net.WebClient).DownloadFile("https://yarnpkg.com/latest.msi", "$env:temp\yarn.msi")
     cmd /c start /wait msiexec.exe /i $env:temp\yarn.msi /quiet /qn /norestart
     yarn --version
+    yarn install
 branches:
   except:
     - announcements
