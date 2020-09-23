@@ -206,8 +206,9 @@ class DeploymendMethod extends LinkingDeployment {
     })
       .then(() => {
         if (hadErrors) {
-          return Promise.reject(
-            new Error('Some files could not be purged, please check the log file'));
+          const err = new Error('Some files could not be purged, please check the log file');
+          err['attachLogOnReport'] = true;
+          return Promise.reject(err);
         } else {
           return Promise.resolve();
         }

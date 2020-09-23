@@ -381,6 +381,7 @@ class ConnectionIPC {
   private mOnInterrupted: (err: Error) => void;
   private mReceivedBuffer: string;
   private mActionLog: string[];
+  private mOnDrained: Array<() => void> = [];
 
   constructor(socket: { in: net.Socket, out: net.Socket }, proc: ChildProcess) {
     this.mSocket = socket;
@@ -398,6 +399,11 @@ class ConnectionIPC {
         }
       });
     }
+
+    socket.out.on('drain', (hadError) => {
+      this.mOnDrained.forEach(cb => cb());
+      this.mOnDrained = [];
+    });
 
     socket.in.on('close', async () => {
       socket.out.destroy();
@@ -474,13 +480,21 @@ class ConnectionIPC {
 
     this.logAction(`sending cmd ${command}: ${JSON.stringify(data)}`);
 
-    this.mSocket.out.write(JSON.stringify({
+    const outData = JSON.stringify({
       id,
       payload: {
         ...data,
         command,
       },
-    }, jsonReplace) + '\uFFFF');
+    }, jsonReplace);
+
+    const written = this.mSocket.out.write(outData + '\uFFFF');
+    if (!written) {
+      await new Promise(resolve => {
+        this.mOnDrained.push(resolve);
+      });
+    }
+
     return res;
   }
 

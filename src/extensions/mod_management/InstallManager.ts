@@ -1092,7 +1092,7 @@ class InstallManager {
     if (offset >= this.mInstallers.length) {
       return Promise.resolve(undefined);
     }
-    return this.mInstallers[offset].testSupported(fileList, gameId)
+    return Promise.resolve(this.mInstallers[offset].testSupported(fileList, gameId))
       .then((testResult: ISupportedResult) => (testResult.supported === true)
           ? Promise.resolve({
               installer: this.mInstallers[offset],
