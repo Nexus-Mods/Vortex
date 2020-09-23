@@ -115,7 +115,10 @@ class HighlightPP {
     this.name = 'HighlightPP';
   }
 
-  public process(value, key, options, translator) {
+  public process(value: string, key, options, translator) {
+    if (value.startsWith('TT:')) {
+      console.trace('duplicate translation', key, value);
+    }
     return 'TT:' + value.toUpperCase();
   }
 }

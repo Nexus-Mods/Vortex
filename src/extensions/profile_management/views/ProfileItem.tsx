@@ -142,19 +142,19 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
             <TBody>
               {this.renderFeatureWithValue({
                 id: profile.id + 'mods',
-                label: t('Mods Enabled'),
+                label: 'Mods Enabled',
                 icon: 'mods',
                 type: 'number',
                 supported: () => true,
-                description: t('Number of Mods enabled'),
+                description: 'Number of Mods enabled',
               }, enabledMods)}
               {this.renderFeatureWithValue({
                 id: profile.id + 'id',
-                label: t('ID'),
+                label: 'ID',
                 icon: '',
                 type: 'string',
                 supported: () => true,
-                description: t('Internal ID of this profile'),
+                description: 'Internal ID of this profile',
               }, profile.id)}
 
               {features.map(this.renderFeature)}
@@ -204,12 +204,18 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderFeatureWithValue(feature: IProfileFeature, value: any): JSX.Element {
-    const { profile } = this.props;
+    const { t, profile } = this.props;
     const id = `icon-profilefeature-${profile.id}-${feature.id}`;
     return (
       <TR key={id}>
         <TD>
-          <a className='fake-link' title={feature.description} onClick={nop}>{feature.label}</a>
+          <a
+            className='fake-link'
+            title={t(feature.description)}
+            onClick={nop}
+          >
+            {t(feature.label)}
+          </a>
         </TD>
         <TD>
           {this.renderFeatureValue(feature.type, value)}
