@@ -94,7 +94,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
       const updateType: UpdateType = 'refresh';
       this.setLoadOrder(enabled, updateType);
       this.mCallbackDebouncer.schedule(undefined, updateType);
-
+      this.nextState.updating = false;
       return null;
     }, 500);
 
@@ -130,8 +130,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
             onClick: () => this.context.api.events.emit('deploy-mods', () => undefined),
           };
         },
-      },
-      {
+      }, {
         component: ToolbarIcon,
         props: () => {
           return {
@@ -147,8 +146,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
             },
           };
         },
-      },
-      {
+      }, {
         component: ToolbarIcon,
         props: () => {
           return {
@@ -163,11 +161,23 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
         condition: () => {
           return this.state.itemRenderer === DefaultItemRenderer;
         },
+      }, {
+        component: ToolbarIcon,
+        props: () => {
+          return {
+            id: 'btn-refresh-list',
+            key: 'btn-refresh-list',
+            icon: 'refresh',
+            text: 'Refresh List',
+            className: 'load-order-refresh-list',
+            onClick: this.onRefreshList,
+          };
+        },
       },
     ];
   }
 
-  public componentWillReceiveProps(newProps: IProps) {
+  public UNSAFE_componentWillReceiveProps(newProps: IProps) {
     if (this.state.updating === true) {
       return;
     }
@@ -402,6 +412,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
     const updateType: UpdateType = 'drag-n-drop';
     this.setLoadOrder(ordered, updateType);
     this.mCallbackDebouncer.schedule(undefined, updateType);
+    this.nextState.updating = false;
   }
 
   private onChangeViewType = () => {
@@ -413,6 +424,10 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
     };
 
     onSetLoadOrderRendererOptions(profile.gameId, newOpts);
+  }
+
+  private onRefreshList = () => {
+    this.mForceUpdateDebouncer.schedule();
   }
 
   private renderWait() {
