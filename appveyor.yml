@@ -13,8 +13,9 @@ install:
 - ps: |
     Write-Host "Installing newest Yarn!"
     (New-Object Net.WebClient).DownloadFile("https://yarnpkg.com/latest.msi", "$env:temp\yarn.msi")
-    cmd /c start /wait msiexec.exe /i $env:temp\yarn.msi /quiet /qn /norestart
-    yarn --version
+- cmd: |
+    msiexec.exe /i $env:temp\yarn.msi /quiet /qn /norestart
+- cmd: |
     yarn install
 branches:
   except:
