@@ -322,9 +322,11 @@ div:hover > .hover-expand {
   height: 100%;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   .panel-body {
     background-color: $brand-menu;
     flex: 1 1 0;
+    max-height: 100%;
   }
 }
 
