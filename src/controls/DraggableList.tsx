@@ -8,12 +8,11 @@ import {
 import { ComponentEx } from '../util/ComponentEx';
 import makeDraggable, { IDraggableListItemProps } from './DraggableListItem';
 
-// const DND_TYPE = 'morrowind-plugin-entry';
-
 export interface IDraggableListProps {
   id: string;
   itemTypeId: string;
   items: any[];
+  idFunc?: (item: any) => string;
   itemRenderer: React.ComponentClass<{ item: any }>;
   apply: (ordered: any[]) => void;
   style?: React.CSSProperties;
@@ -30,6 +29,9 @@ type IProps = IDraggableListProps & { connectDropTarget: ConnectDropTarget };
  * A list component that allows the user to manually re-order the items
  * in it.
  * It also allows items to be dragged into another list.
+ *
+ * Important: items has to either be a string, a number, an object with an "id" field or you have
+ *   to specify idFunc through props
  */
 class DraggableList extends ComponentEx<IProps, IDraggableListState> {
   private mDraggableClass: React.ComponentClass<IDraggableListItemProps>;
@@ -52,6 +54,7 @@ class DraggableList extends ComponentEx<IProps, IDraggableListState> {
 
   public render(): JSX.Element {
     const { connectDropTarget, id, itemRenderer, style, className } = this.props;
+
     const { ordered } = this.state;
     return connectDropTarget(
       <div style={style} className={className}>
@@ -59,7 +62,7 @@ class DraggableList extends ComponentEx<IProps, IDraggableListState> {
           {ordered.map((item, idx) => (
               <this.mDraggableClass
                 containerId={id}
-                key={item}
+                key={this.itemId(item)}
                 item={item}
                 index={idx}
                 itemRenderer={itemRenderer}
@@ -85,10 +88,21 @@ class DraggableList extends ComponentEx<IProps, IDraggableListState> {
     this.nextState.ordered = copy;
   }
 
+  private itemId(item: any) {
+    if (this.props.idFunc !== undefined) {
+      return this.props.idFunc(item);
+    } else if (item.id !== undefined) {
+      return item.id;
+    } else {
+      return item;
+    }
+  }
+
   private take = (item: any, list: any[]) => {
     const { ordered } = this.nextState;
     let res = item;
-    const index = ordered.indexOf(item);
+    const itemId = this.itemId(item);
+    const index = ordered.findIndex(iter => this.itemId(iter) === itemId);
     if (index !== -1) {
       if (list !== undefined) {
         res = list.splice(index, 1)[0];
