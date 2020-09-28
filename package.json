@@ -33,8 +33,7 @@
     "test": "jest --no-cache",
     "lint": "tslint --project . -t verbose || echo 0",
     "build": "yarn run build_rest && tsc -p .",
-    "buildwatch": "yarn run build_rest && tsc -p . -w",
-    "storybook": "start-storybook"
+    "buildwatch": "yarn run build_rest && tsc -p . -w"
   },
   "jest": {
     "transform": {
@@ -85,12 +84,6 @@
     "@babel/preset-stage-0": "^7.0.0",
     "@babel/preset-typescript": "^7.7.2",
     "@babel/register": "7.7.4",
-    "@storybook/addon-a11y": "^5.2.8",
-    "@storybook/addon-docs": "^5.2.8",
-    "@storybook/addon-info": "^5.2.8",
-    "@storybook/addon-knobs": "^5.2.8",
-    "@storybook/addon-viewport": "^5.2.8",
-    "@storybook/react": "^5.2.8",
     "@types/babel-core": "^6.25.6",
     "@types/babel-template": "^6.25.2",
     "@types/babel-traverse": "^6.25.5",
@@ -174,7 +167,7 @@
     "react-docgen-typescript-loader": "^3.6.0",
     "react-shallow-testutils": "^3.0.1",
     "react-test-renderer": "^16.12.0",
-    "redux-devtools": "^3.5.0",
+    "redux-devtools": "^3.7.0",
     "redux-devtools-dispatch": "^2.2.1",
     "redux-devtools-log-monitor": "^1.4.0",
     "redux-freeze": "^0.1.7",

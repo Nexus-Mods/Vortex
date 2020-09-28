@@ -320,9 +320,11 @@ div:hover > .hover-expand {
 .panel {
   border: $border-width solid $border-color;
   height: 100%;
+  display: flex;
+  flex-direction: column;
   .panel-body {
     background-color: $brand-menu;
-    height: 100%;
+    flex: 1 1 0;
   }
 }
 
