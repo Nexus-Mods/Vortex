@@ -72,6 +72,7 @@ class FileAssembler {
     // then open it again
     this.mQueue(() =>
       fs.closeAsync(this.mFD)
+      .catch({ code: 'EBADF' }, () => null)
       .then(() => Promise.resolve(newName).then(nameResolved => resolved = nameResolved))
       .then(() => fs.renameAsync(this.mFileName, resolved))
       .then(() => fs.openAsync(resolved, 'r+'))
