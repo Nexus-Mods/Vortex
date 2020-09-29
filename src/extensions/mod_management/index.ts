@@ -149,25 +149,36 @@ function deployModType(api: IExtensionApi,
                        stagingPath: string,
                        targetPath: string,
                        overwritten: IMod[],
-                       mergedFileMap: { [modType: string]: { [relPath: string]: string[] } },
+                       mergeResult: { [modType: string]: IMergeResultByType },
                        lastDeployment: IDeployedFile[],
                        onProgress: (text: string, perc: number) => void): Promise<IDeployedFile[]> {
   const filteredModList = sortedModList.filter(mod => (mod.type || '') === typeId);
   log('debug', 'Deploying mod type',
     { typeId, path: targetPath, count: lastDeployment.length });
-  return deployMods(api,
-                    game.id,
-                    stagingPath, targetPath,
-                    filteredModList,
-                    activator, lastDeployment,
-                    typeId, new Set(Object.keys(mergedFileMap[typeId] || {})),
-                    genSubDirFunc(game, getModType(typeId)),
-                    onProgress)
+  let normalize: Normalize;
+
+  return getNormalizeFunc(targetPath)
+    .then(normalizeIn => {
+      normalize = normalizeIn;
+      return deployMods(api,
+                        game.id,
+                        stagingPath, targetPath,
+                        filteredModList,
+                        activator, lastDeployment,
+                        typeId, new Set(mergeResult[typeId]?.usedInMerge ?? []),
+                        genSubDirFunc(game, getModType(typeId)),
+                        onProgress);
+      })
     .then((newActivation: IDeployedFile[]) => {
-      const mergedMap = mergedFileMap[typeId] || {};
-      newActivation.forEach(act => {
-        act.merged = mergedMap[act.relPath];
-      });
+      const mergedMap = mergeResult[typeId]?.mergeInfluences;
+      if (!!mergedMap && (Object.keys(mergedMap).length > 0)) {
+        newActivation.forEach(act => {
+          const merged = Array.from(new Set(mergedMap[normalize(act.relPath)]));
+          if (merged.length > 0) {
+            act.merged = merged;
+          }
+        });
+      }
       overwritten.push(...filteredModList.filter(mod =>
         newActivation.find(entry =>
           (entry.source === mod.installationPath)
@@ -190,7 +201,7 @@ function deployAllModTypes(api: IExtensionApi,
                            profile: IProfile,
                            sortedModList: IMod[],
                            stagingPath: string,
-                           mergedFileMap: { [modType: string]: { [relPath: string]: string[] } },
+                           mergeResult: { [modType: string]: IMergeResultByType },
                            modPaths: { [typeId: string]: string },
                            lastDeployment: { [typeId: string]: IDeployedFile[] },
                            newDeployment: { [typeId: string]: IDeployedFile[] },
@@ -202,7 +213,7 @@ function deployAllModTypes(api: IExtensionApi,
 
   return Promise.each(deployableModTypes(modPaths),
     typeId => deployModType(api, activator, game, sortedModList, typeId,
-      stagingPath, modPaths[typeId], overwritten, mergedFileMap,
+      stagingPath, modPaths[typeId], overwritten, mergeResult,
       lastDeployment[typeId], onProgress)
       .then(deployment => newDeployment[typeId] = deployment))
     .then(() => {
@@ -246,6 +257,11 @@ function doSortMods(api: IExtensionApi, profile: IProfile, mods: { [modId: strin
                           + err.message)));
 }
 
+interface IMergeResultByType {
+  usedInMerge: string[];
+  mergeInfluences: { [outPath: string]: string[] };
+}
+
 function doMergeMods(api: IExtensionApi,
                      game: IGame,
                      gameDiscovery: IDiscoveryResult,
@@ -253,7 +269,7 @@ function doMergeMods(api: IExtensionApi,
                      sortedModList: IMod[],
                      modPaths: { [typeId: string]: string },
                      lastDeployment: { [typeId: string]: IDeployedFile[] }):
-    Promise<{ [typeId: string]: { [relPath: string]: string[] } }> {
+    Promise<{ [typeId: string]: IMergeResultByType }> {
 
   const fileMergers = mergers.reduce((prev: IResolvedMerger[], merge) => {
     const match = merge.test(game, gameDiscovery);
@@ -267,7 +283,11 @@ function doMergeMods(api: IExtensionApi,
   const mergeModTypes = Object.keys(modPaths)
     .filter(modType => fileMergers.find(merger => merger.modType === modType) !== undefined);
 
-  const result: { [typeId: string]: { [relPath: string]: string[] } } = {};
+  const result: { [typeId: string]: IMergeResultByType } = Object.keys(modPaths)
+    .reduce((prev, modType) => {
+      prev[modType] = { usedInMerge: [], mergeInfluences: { } };
+      return prev;
+    }, {});
 
   // clean up merged mods
   return Promise.mapSeries(mergeModTypes, typeId => {
@@ -282,8 +302,23 @@ function doMergeMods(api: IExtensionApi,
         sortedModList.filter(mod => (mod.type || '') === typeId),
         lastDeployment[typeId],
         fileMergers)
-        .then(mergedFiles => {
-          result[typeId] = mergedFiles;
+        .then(mergeResult => {
+          // some transformation required because in a merge we may use files from one modtype
+          // to generate a file for another. usedInMerge is used to skip files already applied to
+          // a merge so we need that information when processing the mod type where the merge source
+          // came from.
+          // However the list of sources used to generate a merge we need in the modtype used to
+          // deploy the merge
+
+          const { usedInMerge, mergeInfluences } = mergeResult;
+          result[typeId].usedInMerge = usedInMerge;
+          Object.keys(mergeInfluences)
+            .forEach(outPath => {
+              result[mergeInfluences[outPath].modType].mergeInfluences[outPath] = [
+                ...(result[mergeInfluences[outPath].modType].mergeInfluences[outPath] ?? []),
+                ...mergeInfluences[outPath].sources,
+              ];
+            });
         })))
     .then(() => result);
 }
@@ -449,7 +484,7 @@ function genUpdateModDeployment() {
           method: activator.name,
         });
 
-        let mergedFileMap: { [modType: string]: { [relPath: string]: string[] } };
+        let mergeResult: { [modType: string]: IMergeResultByType };
         const lastDeployment: { [typeId: string]: IDeployedFile[] } = {};
         const mods = state.persistent.mods[profile.gameId] || {};
         notification.message = t('Deploying mods');
@@ -485,7 +520,7 @@ function genUpdateModDeployment() {
           .tap(() => progress(t('Merging mods'), 35))
           .then(() => doMergeMods(api, game, gameDiscovery, stagingPath, sortedModList,
                                   modPaths, lastDeployment)
-            .then(mergedFileMapIn => mergedFileMap = mergedFileMapIn))
+            .then(mergeResultIn => mergeResult = mergeResultIn))
           .tap(() => progress(t('Starting deployment'), 35))
           .then(() => {
             const deployProgress = (name, percent) =>
@@ -495,7 +530,7 @@ function genUpdateModDeployment() {
               .filter(typeId => !truthy(modPaths[typeId]));
             return validateDeploymentTarget(api, undiscovered)
               .then(() => deployAllModTypes(api, activator, profile, sortedModList,
-                                            stagingPath, mergedFileMap,
+                                            stagingPath, mergeResult,
                                             modPaths, lastDeployment,
                                             newDeployment, deployProgress));
           });

@@ -494,7 +494,7 @@ export interface IExtensionApi {
    * register a callback for changes to the state
    *
    * @param {string[]} path path in the state-tree to watch for changes,
-   *                   i.e. [ 'settings', 'interface', 'language' ] would call the callback
+   *                   i.e. ['settings', 'interface', 'language'] would call the callback
    *                   for all changes to the interface language
    *
    * @memberOf IExtensionApi
