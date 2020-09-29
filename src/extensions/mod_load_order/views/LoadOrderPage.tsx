@@ -113,7 +113,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
     }, 500);
 
     this.mForceUpdateDebouncer = new util.Debouncer(() => {
-      this.updateState(this.props, false, 'refresh');
+      this.updateState(this.props, true, 'refresh');
       return null;
     }, 200, false, true);
 
