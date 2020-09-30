@@ -220,6 +220,9 @@ class DeploymentMethod extends LinkingDeployment {
           details: true,
           skipHidden: false,
         })
+        .catch(err => (err.code === 'ENOTFOUND')
+          ? Promise.resolve()
+          : Promise.reject(err))
         .then(() => Promise.resolve(this.mInstallationFiles));
     }
 
