@@ -21,8 +21,33 @@ export function writeDownloadsTag(api: IExtensionApi, tagPath: string): Promise<
   const data = {
     instance: state.app.instanceId,
   };
-  return Promise.resolve(fs.writeFileAsync(path.join(tagPath, DOWNLOADS_DIR_TAG),
-    JSON.stringify(data), {  encoding: 'utf8' }));
+
+  const writeTag = () => fs.writeFileAsync(path.join(tagPath, DOWNLOADS_DIR_TAG),
+    JSON.stringify(data), {  encoding: 'utf8' });
+
+  return writeTag()
+    .catch({ code: 'EISDIR' }, err => {
+      // __vortex_downloads_folder exists inside the tag path. (as a folder!)
+      //  It's possible the user tried to create it manually in an attempt
+      //  to fix some other error, but it's also possible that this is actually
+      //  a bug somewhere in the application. We're going to try to re-create the
+      //  tag.
+      return api.showDialog('question', 'Reinitialize Tag', {
+        text: 'Vortex expected the below filepath to lead to a file but found '
+            + 'a directory instead - Vortex can try to re-initialize this file for you, '
+            + 'but we suggest you manually ensure it doesn\'t contain any files you may '
+            + 'need before proceeding.',
+        message: path.join(tagPath, DOWNLOADS_DIR_TAG),
+      }, [
+        { label: 'Cancel' },
+        { label: 'Proceed' },
+      ]).then(res => (res.action === 'Proceed')
+          ? fs.removeAsync(path.join(tagPath, DOWNLOADS_DIR_TAG))
+          : Promise.reject(err))
+        .catch({ code: 'ENOENT' }, remErr => Promise.resolve())
+        .then(() => writeTag())
+        .catch(innerErr => Promise.reject(err));
+    });
 }
 
 function removeDownloadsMetadata(api: IExtensionApi): Promise<void> {
