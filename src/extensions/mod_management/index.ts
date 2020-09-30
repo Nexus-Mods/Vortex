@@ -1140,6 +1140,14 @@ function init(context: IExtensionContext): boolean {
 
   const validActivatorCheck = genValidActivatorCheck(context.api);
 
+  context.registerActionCheck('SET_MOD_INSTALLATION_PATH', (state, action: any) => {
+    if (!truthy(action.payload.installPath)) {
+      return `Attempt to set an invalid mod installation path`;
+    }
+
+    return undefined;
+  });
+
   context.registerTest('valid-activator', 'gamemode-activated', validActivatorCheck);
   context.registerTest('valid-activator', 'settings-changed', validActivatorCheck);
 
