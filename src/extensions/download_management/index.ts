@@ -575,7 +575,7 @@ function init(context: IExtensionContextExt): boolean {
 
     const store = context.api.store;
 
-    ensureDownloadsDirectory(context.api);
+    testDownloadPath(context.api);
 
     // undo an earlier bug where vortex registered itself as the default http/https handler
     // (fortunately few applications actually rely on that setting, unfortunately this meant
