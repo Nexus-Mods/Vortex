@@ -273,6 +273,7 @@ function createConnection(ipcPath: string, tries: number = 5): Promise<net.Socke
           .then(resolve)
           .catch(reject);
       } else {
+        err.message = err.message.replace(ipcPath, '<ipc path>');
         reject(err);
       }
     };
