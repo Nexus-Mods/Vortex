@@ -171,9 +171,14 @@ class Application {
           ? 'vortex_devel'
           : 'vortex';
 
-      let userData = args.userData ?? (args.shared
-          ? path.join(process.env.ProgramData, 'vortex')
-          : path.join(process.env['APPDATA'], vortexPath));
+      // if userData specified, use it
+      let userData = args.userData
+          // (only on windows) use ProgramData from environtment
+          ?? ((args.shared && process.platform === 'win32')
+            ? path.join(process.env.ProgramData, 'vortex')
+            // this allows the development build to access data from the
+            // production version and vice versa
+            : path.resolve(app.getPath('userData'), '..', vortexPath));
       userData = path.join(userData, currentStatePath);
 
       if (args.get) {
