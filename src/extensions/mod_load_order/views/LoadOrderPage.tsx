@@ -289,12 +289,18 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
         return accum;
       }, {});
 
+      const sortedList = newList.sort((a, b) => newOrder[a.id].pos - newOrder[b.id].pos);
+      if (JSON.stringify(sortedList) !== JSON.stringify(this.state.enabled)) {
+        // Just in case the component's state is out of sync for some
+        //  reason - this will trigger a re-render unfortunately.
+        this.nextState.enabled = sortedList;
+      }
+
       if (JSON.stringify(newOrder) === JSON.stringify(loadOrder)) {
         // Nothing changed, go home load order page, you're drunk.
         return;
       }
 
-      this.nextState.enabled = newList.sort((a, b) => newOrder[a.id].pos - newOrder[b.id].pos);
       onSetOrder(profile.id, newOrder);
     };
 
