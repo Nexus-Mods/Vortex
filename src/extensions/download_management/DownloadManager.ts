@@ -633,7 +633,7 @@ class DownloadManager {
     return new Promise<IDownloadResult>((resolve, reject) => {
       const download: IRunningDownload = {
         id,
-        origName: filePath,
+        origName: path.basename(filePath),
         tempName: filePath,
         error: false,
         urls,
@@ -955,11 +955,23 @@ class DownloadManager {
     if ((fileName !== undefined) && (fileName !== download.origName)) {
       const newName = this.unusedName(
         path.dirname(download.tempName), fileName, download.redownload);
-      download.finalName = newName;
       newName.then(resolvedName => {
         if (!download.assembler.isClosed()) {
+          const oldTempName = download.tempName;
           download.tempName = resolvedName;
-          download.assembler.rename(resolvedName);
+          return download.assembler.rename(resolvedName)
+            .then(() => {
+              download.finalName = newName;
+            })
+            .catch(err => {
+              // if we failed to rename we will try to continue writing to the original file
+              // so reset to the original name and remove the temporary one that got reserved
+              // for the rename
+              download.tempName = oldTempName;
+              return fs.removeAsync(resolvedName)
+                .catch(() => null)
+                .then(() => Promise.reject(err));
+            });
         }
       })
       .catch(err => {

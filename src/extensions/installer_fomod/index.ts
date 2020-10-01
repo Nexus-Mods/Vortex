@@ -354,10 +354,10 @@ class ConnectionIPC {
         return Promise.reject(new ProcessCanceled(err.message));
       }
       proc.stdout.on('data', (dat: Buffer) => {
-        log('debug', 'from installer:', dat.toString());
+        log('debug', 'from installer:', dat.toString().trim());
       });
       proc.stderr.on('data', (dat: Buffer) => {
-        const errorMessage = dat.toString();
+        const errorMessage = dat.toString().trim();
         log('error', 'from installer:', errorMessage);
         if (!wasConnected) {
           onReject(new Error(errorMessage));

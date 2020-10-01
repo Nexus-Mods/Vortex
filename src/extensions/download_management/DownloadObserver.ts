@@ -43,6 +43,9 @@ function progressUpdate(store: Redux.Store<any>, dlId: string, received: number,
     return;
   }
   if (((total !== 0) && !smallUpdate) || (chunks !== undefined)) {
+    if (received < 0)  {
+      log('warn', 'invalid download progress', { received, total });
+    }
     store.dispatch(downloadProgress(dlId, received, total, chunks, urls));
   }
   if ((filePath !== undefined) &&

@@ -70,7 +70,7 @@ class FileAssembler {
     let resolved: string;
     // to rename the file we have to close the file descriptor, rename,
     // then open it again
-    this.mQueue(() =>
+    return this.mQueue(() =>
       fs.closeAsync(this.mFD)
       .catch({ code: 'EBADF' }, () => null)
       .then(() => Promise.resolve(newName).then(nameResolved => resolved = nameResolved))
@@ -80,6 +80,15 @@ class FileAssembler {
         this.mFD = fd;
         this.mFileName = resolved;
         return Promise.resolve();
+      })
+      .catch(err => {
+        // in case of error, re-open the original file name so we can continue writing,
+        // only  then rethrow the exception
+        return fs.openAsync(this.mFileName, 'r+')
+          .then(fd => {
+            this.mFD = fd;
+          })
+          .then(() => Promise.reject(err));
       }),
       false);
   }

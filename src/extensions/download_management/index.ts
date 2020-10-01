@@ -182,10 +182,17 @@ function genDownloadChangeHandler(api: IExtensionApi,
           nameIdMap[normalize(fileName)] = dlId;
         })
         .catch(err => {
-          if ((err.code === 'ENOENT') && (nameIdMap[normalize(fileName)] !== undefined)) {
+          const normName = normalize(fileName);
+          // in the past we used the nameIdMap to resolve the download id but that is
+          // probably an unnecessary optimization that may just lead to errors
+          if (err.code === 'ENOENT') {
             // if the file was deleted, remove it from state. This does nothing if
             // the download was already removed so that's fine
-            store.dispatch(removeDownload(nameIdMap[normalize(fileName)]));
+            const dlId = findDownload(fileName);
+            if (dlId !== undefined) {
+              store.dispatch(removeDownload(dlId));
+            }
+            delete nameIdMap[normName];
           }
         });
     }
