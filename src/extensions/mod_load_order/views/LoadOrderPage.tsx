@@ -113,6 +113,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
     }, 500);
 
     this.mForceUpdateDebouncer = new util.Debouncer(() => {
+      this.nextState.updating = true;
       this.updateState(this.props, true, 'refresh');
       return null;
     }, 200, false, true);
@@ -167,7 +168,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
           return {
             id: 'btn-refresh-list',
             key: 'btn-refresh-list',
-            icon: 'refresh',
+            icon: this.nextState.updating ? 'spinner' : 'refresh',
             text: 'Refresh List',
             className: 'load-order-refresh-list',
             onClick: this.onRefreshList,
