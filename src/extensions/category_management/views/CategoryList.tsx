@@ -91,19 +91,19 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
 
     this.mButtons = [
       {
-        title: t('Expand All'),
+        title: 'Expand All',
         icon: 'expand-all',
         action: this.expandAll,
       }, {
-        title: t('Collapse All'),
+        title: 'Collapse All',
         icon: 'collapse-all',
         action: this.collapseAll,
       }, {
-        title: t('Add Root'),
+        title: 'Add Root',
         icon: 'folder-add',
         action: this.addRootCategory,
       }, {
-        title: t('Show/Hide Empty'),
+        title: 'Show/Hide Empty',
         icon: 'hide',
         action: this.toggleShowEmpty,
       },
@@ -437,17 +437,17 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
     const actions: IActionDefinition[] = [
       {
         icon: 'edit',
-        title: t('Rename'),
+        title: 'Rename',
         action: this.renameCategory,
       },
       {
         icon: 'folder-add',
-        title: t('Add Child'),
+        title: 'Add Child',
         action: this.addCategory,
       },
       {
         icon: 'remove',
-        title: t('Remove'),
+        title: 'Remove',
         action: this.removeCategory,
       },
     ];

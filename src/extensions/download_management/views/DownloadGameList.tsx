@@ -1,3 +1,4 @@
+import { SITE_GAME_NAME } from '../../../controls/constants';
 import FlexLayout from '../../../controls/FlexLayout';
 import { IconButton } from '../../../controls/TooltipControls';
 import { IGameStored, IState } from '../../../types/IState';
@@ -6,6 +7,8 @@ import * as fs from '../../../util/fs';
 import { log } from '../../../util/log';
 import * as selectors from '../../../util/selectors';
 import { truthy } from '../../../util/util';
+
+import { SITE_ID } from '../../gamemode_management/constants';
 
 import { setCompatibleGames } from '../actions/state';
 
@@ -70,9 +73,12 @@ class DownloadGameList extends PureComponentEx<IProps, {}> {
 
   private renderSelectedGame = (gameId: string, idx: number) => {
     const { t } = this.props;
+    const gameName = gameId === SITE_ID
+      ? t(SITE_GAME_NAME)
+      : selectors.gameName(this.context.api.store.getState(), gameId);
     return (
       <ListGroupItem key={gameId} className={idx === 0 ? 'primary-game' : undefined}>
-        {selectors.gameName(this.context.api.store.getState(), gameId)}
+        {gameName}
         <IconButton
           icon='remove'
           tooltip={t('Remove')}

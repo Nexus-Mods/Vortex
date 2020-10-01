@@ -187,13 +187,13 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
 
     const res: IActionDefinition[] = [];
     if (!active && available) {
-      res.push({ icon: 'activate', title: t('Enable'), action: this.activate });
+      res.push({ icon: 'activate', title: 'Enable', action: this.activate });
     }
     if (available) {
-      res.push({ icon: 'edit', title: t('Edit'), action: this.startEditing });
-      res.push({ icon: 'clone', title: t('Clone'), action: this.cloneProfile });
+      res.push({ icon: 'edit', title: 'Edit', action: this.startEditing });
+      res.push({ icon: 'clone', title: 'Clone', action: this.cloneProfile });
     }
-    res.push({ icon: 'remove', title: t('Remove'), action: this.removeProfile });
+    res.push({ icon: 'remove', title: 'Remove', action: this.removeProfile });
     return res;
   }
 

@@ -595,13 +595,13 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     if (columns.length > 0) {
       result.push({
         icon: null,
-        title: t('Toggle Columns'),
+        title: 'Toggle Columns',
       }, ...columns);
     }
     if (inlines.length > 0) {
       result.push({
         icon: null,
-        title: t('Toggle Inlines'),
+        title: 'Toggle Inlines',
       }, ...inlines);
     }
     /* currently not showing disabled columns at all, that's probably the more

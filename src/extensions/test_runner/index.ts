@@ -29,6 +29,7 @@
 import {showDialog} from '../../actions/notifications';
 import {CheckFunction, IExtensionApi, IExtensionContext} from '../../types/IExtensionContext';
 import {INotificationAction} from '../../types/INotification';
+import { ITestResult } from '../../types/ITestResult';
 import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import { log } from '../../util/log';
 import { activeGameId, activeProfile } from '../../util/selectors';
@@ -48,7 +49,7 @@ const checks: { [type: string]: ICheckEntry[] } = {};
 const triggerDelays: { [type: string]: NodeJS.Timer } = {};
 
 function runCheck(api: IExtensionApi, check: ICheckEntry): Promise<void> {
-  let res;
+  let res: Promise<ITestResult>;
   try {
     res = check.check();
   } catch (err) {
@@ -76,6 +77,7 @@ function runCheck(api: IExtensionApi, check: ICheckEntry): Promise<void> {
               parameters: result.description.replace,
               options: {
                 bbcodeContext: result.description.context,
+                translated: result.description.localize === false,
               },
             }, [{ label: 'Close' }])),
           });

@@ -6,8 +6,10 @@ import * as React from 'react';
 import { MenuItem } from 'react-bootstrap';
 import { Portal } from 'react-overlays';
 import { ComponentEx } from '../util/ComponentEx';
+import { TFunction } from '../util/i18n';
 
 export interface IMenuActionProps {
+  t: TFunction;
   id: string;
   action: IActionDefinitionEx;
   instanceId: string | string[];
@@ -15,16 +17,16 @@ export interface IMenuActionProps {
 
 class MenuAction extends React.PureComponent<IMenuActionProps, {}> {
   public render(): JSX.Element {
-    const { action, id } = this.props;
+    const { t, action, id } = this.props;
     return (
       <MenuItem
         eventKey={id}
         onSelect={this.trigger}
         disabled={action.show !== true}
-        title={typeof(action.show) === 'string' ? action.show : undefined}
+        title={typeof(action.show) === 'string' ? t(action.show) : undefined}
       >
         {action.icon !== undefined ? <Icon name={action.icon} /> : null}
-        <div className='button-text'>{action.title}</div>
+        <div className='button-text'>{t(action.title)}</div>
       </MenuItem>
     );
   }
@@ -60,6 +62,7 @@ export interface IContextPosition {
 }
 
 export interface IContextMenuProps {
+  t?: TFunction;
   position?: IContextPosition;
   visible: boolean;
   onHide: () => void;
@@ -135,19 +138,21 @@ class ContextMenu extends ComponentEx<IProps, IComponentState> {
   }
 
   private renderMenuItem = (action: IActionDefinitionEx, index: number) => {
-    const { instanceId } = this.props;
+    const { t, instanceId } = this.props;
 
     const id = `${instanceId || '1'}_${index}`;
+
+    const tf = t ?? (input => input);
 
     if ((action.icon === null) && (action.component === undefined)) {
       return (
         <MenuItem className='menu-separator-line' key={id} disabled={true}>
-          {action.title !== undefined ? action.title : <hr />}
+          {action.title !== undefined ? tf(action.title) : <hr />}
         </MenuItem>
       );
     }
 
-    return <MenuAction key={id} id={id} action={action} instanceId={instanceId} />;
+    return <MenuAction t={tf} key={id} id={id} action={action} instanceId={instanceId} />;
   }
 
   private setMenuRef = (ref: HTMLDivElement) => {

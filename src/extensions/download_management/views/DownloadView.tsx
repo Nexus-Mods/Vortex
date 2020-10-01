@@ -388,13 +388,16 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
       this.getDownload(downloadId).localPath
     ));
 
-    onShowDialog('question', 'Confirm Removal', {
+    onShowDialog('question', 'Confirm Deletion', {
       text: t('Do you really want to delete this archive?',
         { count: downloadIds.length, replace: { count: downloadIds.length } }),
       message: downloadNames.join('\n'),
+      options: {
+        translated: true,
+      }
     }, [
         { label: 'Cancel' },
-        { label: 'Remove', action: () => downloadIds.forEach(removeId) },
+        { label: 'Delete', action: () => downloadIds.forEach(removeId) },
     ]);
   }
 

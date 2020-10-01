@@ -1,14 +1,15 @@
 import ContextMenu from '../../../controls/ContextMenu';
 import Icon from '../../../controls/Icon';
+import { TFunction } from '../../../util/i18n';
 
 import {} from 'draggabilly';
 import update from 'immutability-helper';
 import * as React from 'react';
-import { Button } from 'react-bootstrap';
 
 let Draggabilly: any;
 
 export interface IProps {
+  t: TFunction;
   id: string;
   width: number;
   height: number;
@@ -45,7 +46,7 @@ class PackeryItem extends React.Component<IProps, IPackeryItemState> {
   }
 
   public render(): JSX.Element {
-    const { onDismiss, fixed, height, id, totalWidth, width } = this.props;
+    const { t, onDismiss, fixed, height, id, totalWidth, width } = this.props;
     // round to 2 positions after decimal point. It's fairly noticable if
     // widgets don't align even by a few pixels
     const widthPerc = Math.round(((width * 10000) / totalWidth)) / 100;
@@ -85,19 +86,19 @@ class PackeryItem extends React.Component<IProps, IPackeryItemState> {
           onHide={this.hideContext}
           instanceId='42'
           actions={[
-            { title: 'Width', icon: null, show: true },
+            { title: t('Width'), icon: null, show: true },
             { title: '33%', show: width !== 1, action: this.setWidth1 },
             { title: '66%', show: width !== 2, action: this.setWidth2 },
             { title: '100%', show: width !== 3, action: this.setWidth3 },
-            { title: 'Height', icon: null, show: true },
+            { title: t('Height'), icon: null, show: true },
             { title: '1', show: height !== 2, action: this.setHeight2 },
             { title: '2', show: height !== 3, action: this.setHeight3 },
             { title: '3', show: height !== 4, action: this.setHeight4 },
             { title: '4', show: height !== 5, action: this.setHeight5 },
             { title: '5', show: height !== 6, action: this.setHeight6 },
-            { title: 'Fit Content', show: height !== 0, action: this.setHeight0 },
+            { title: t('Fit Content'), show: height !== 0, action: this.setHeight0 },
             { icon: null, show: true },
-            { title: 'Close',
+            { title: t('Close'),
               show: onDismiss !== undefined,
               action: this.dismissWidget,
             },

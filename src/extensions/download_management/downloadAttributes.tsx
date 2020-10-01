@@ -1,3 +1,4 @@
+import { SITE_GAME_NAME } from '../../controls/constants';
 import ProgressBar from '../../controls/ProgressBar';
 import DateTimeFilter from '../../controls/table/DateTimeFilter';
 import GameFilter from '../../controls/table/GameFilter';
@@ -10,6 +11,7 @@ import { getCurrentLanguage } from '../../util/i18n';
 import { getSafe } from '../../util/storeHelper';
 import { bytesToString, truthy } from '../../util/util';
 
+import { SITE_ID } from '../gamemode_management/constants';
 import { gameName } from '../gamemode_management/selectors';
 
 import { IDownload } from './types/IDownload';
@@ -150,7 +152,9 @@ function createColumns(api: IExtensionApi, props: () => IDownloadViewProps)
           );
         } else {
           const games = getDownloadGames(download);
-          const name = gameName(store.getState(), games[0]);
+          const name = games[0] === SITE_ID
+            ? t(SITE_GAME_NAME)
+            : gameName(store.getState(), games[0]);
           const more = games.length > 1 ? '...' : '';
           return (
             <div>

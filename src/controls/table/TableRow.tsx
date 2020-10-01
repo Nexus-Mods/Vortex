@@ -352,6 +352,7 @@ class TableRow extends React.Component<IRowProps, IRowState> {
           className={`table-${tableId} cell-actions`}
         >
           <ContextMenu
+            t={t}
             id={`${tableId}-${data.__id}-action-context`}
             group={`${tableId}-action-icons`}
             instanceId={data.__id}

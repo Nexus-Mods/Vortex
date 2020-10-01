@@ -409,7 +409,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
   }
 
   private renderPageGroup = ({ title, key }: { title: string, key: string }): JSX.Element => {
-    const { mainPage, objects, tabsMinimized } = this.props;
+    const { t, mainPage, objects, tabsMinimized } = this.props;
     const pages = objects.filter(page => {
       try {
         return (page.group === key) && page.visible();
@@ -430,7 +430,7 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
 
     return (
       <div key={key}>
-        {showTitle ? <p className='main-nav-group-title'>{title}</p> : null}
+        {showTitle ? <p className='main-nav-group-title'>{t(title)}</p> : null}
         <Nav
           bsStyle='pills'
           stacked
