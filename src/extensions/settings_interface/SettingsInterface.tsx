@@ -310,7 +310,11 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
   private selectLanguage = (evt) => {
     const { extensions } = this.props;
     const target: HTMLSelectElement = evt.target as HTMLSelectElement;
-    const extName: string = target.selectedOptions[0].getAttribute('data-ext');
+    const extName: string = target.selectedOptions[0]?.getAttribute('data-ext');
+    if (extName === undefined) {
+      // no language selected? How did this happen?
+      return;
+    }
     const ext: { modId?: number } = extensions.find(iter => iter.name === extName) || {};
     const { value } = target;
     const dlProm: Promise<boolean[]> = ext.modId !== undefined
