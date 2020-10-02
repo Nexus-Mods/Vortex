@@ -314,13 +314,13 @@ export function getManifest(api: IExtensionApi,
   const game = getGame(gameId);
   const discovery = getSafe(state, ['settings', 'gameMode', 'discovered', gameId], undefined);
   if (discovery?.path === undefined) {
-    return Promise.resolve(undefined);
+    return Promise.resolve(emptyManifest(instanceId));
   }
 
   const stagingPath: string = installPathForGame(state, gameId);
   const deployPath: string = game.getModPaths(discovery.path)[modType];
   if ((stagingPath === undefined) || (deployPath === undefined)) {
-    return Promise.resolve(undefined);
+    return Promise.resolve(emptyManifest(instanceId));
   }
 
   const typeTag = (modType !== undefined) && (modType.length > 0) ? modType + '.' : '';
