@@ -1149,7 +1149,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   private checkForUpdate = (modIds: string[]) => {
     const { gameMode, mods } = this.props;
 
-    this.context.api.emitAndAwait('check-mods-version', gameMode, _.pick(mods, modIds), true)
+    this.context.api.emitAndAwait('check-mods-version', gameMode, _.pick(mods, modIds), 'silent')
       .then(() => {
         this.context.api.sendNotification({
           type: 'success',

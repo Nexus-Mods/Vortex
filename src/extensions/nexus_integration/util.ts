@@ -444,7 +444,7 @@ export function checkModVersionsImpl(
   nexus: Nexus,
   gameId: string,
   mods: { [modId: string]: IMod },
-  forceFull: boolean): Promise<string[]> {
+  forceFull: boolean | 'silent'): Promise<string[]> {
 
   const now = Date.now();
 
@@ -512,7 +512,7 @@ export function checkModVersionsImpl(
                              || (newestFileIdChanged && fileIdChanged);
 
             if (updateFound) {
-              if (forceFull && !filtered.has(mod.id)) {
+              if (truthy(forceFull) && !filtered.has(mod.id)) {
                 log('warn', '[update check] Mod update would have been missed with regular check', {
                   modId: mod.id,
                   lastUpdateTime: getSafe(mod, ['attributes', 'lastUpdateTime'], 0),
@@ -565,7 +565,8 @@ export function checkModVersionsImpl(
       .finally(() => {
         log('info', '[update check] done');
         tStore.dispatch(dismissNotification('check-update-progress'));
-        if (forceFull) {
+        // if forceFull is 'silent' we show no notifications
+        if (forceFull === true) {
           if (updatesMissed.length === 0) {
             tStore.dispatch(addNotification({
               id: 'check-update-progress',
