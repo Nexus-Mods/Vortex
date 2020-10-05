@@ -94,7 +94,7 @@ function refreshGameInfo(store: Redux.Store<IState>, gameId: string): Promise<vo
     return prev;
   }, {});
 
-  const gameInfo = store.getState().persistent.gameMode.gameInfo[gameId] || {};
+  const gameInfo = store.getState().persistent.gameMode.gameInfo?.[gameId] || {};
 
   const now = Date.now();
 
