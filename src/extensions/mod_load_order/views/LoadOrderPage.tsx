@@ -168,7 +168,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
           return {
             id: 'btn-refresh-list',
             key: 'btn-refresh-list',
-            icon: this.nextState.updating ? 'spinner' : 'refresh',
+            icon: this.state.updating ? 'spinner' : 'refresh',
             text: 'Refresh List',
             className: 'load-order-refresh-list',
             onClick: this.onRefreshList,
