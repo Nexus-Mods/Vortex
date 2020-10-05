@@ -285,7 +285,7 @@ function doMergeMods(api: IExtensionApi,
 
   const result: { [typeId: string]: IMergeResultByType } = Object.keys(modPaths)
     .reduce((prev, modType) => {
-      prev[modType] = { usedInMerge: [], mergeInfluences: { } };
+      prev[modType] = { usedInMerge: [], mergeInfluences: {} };
       return prev;
     }, {});
 
@@ -314,6 +314,9 @@ function doMergeMods(api: IExtensionApi,
           result[typeId].usedInMerge = usedInMerge;
           Object.keys(mergeInfluences)
             .forEach(outPath => {
+              if (result[mergeInfluences[outPath].modType] === undefined) {
+                result[mergeInfluences[outPath].modType] = { usedInMerge: [], mergeInfluences: {} };
+              }
               result[mergeInfluences[outPath].modType].mergeInfluences[outPath] = [
                 ...(result[mergeInfluences[outPath].modType].mergeInfluences[outPath] ?? []),
                 ...mergeInfluences[outPath].sources,
