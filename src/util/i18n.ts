@@ -20,6 +20,8 @@ let currentLanguage = 'en';
 const fallbackTFunc: TFunction =
   str => (Array.isArray(str) ? str[0].toString() : str.toString()) as any;
 
+let actualT: TFunction = fallbackTFunc;
+
 export { fallbackTFunc, i18n, TFunction };
 
 let missingKeys = { common: {} };
@@ -194,6 +196,7 @@ function init(language: string, translationExts: () => IExtension[]): Promise<II
         translationExts,
       },
     }))
+    .tap(tFunc => { actualT = tFunc; })
     .then(tFunc => Promise.resolve({
       i18n: i18nObj,
       tFunc,
@@ -210,7 +213,7 @@ export function getCurrentLanguage() {
 }
 
 export function globalT(key: string | string[], options: TOptions) {
-  return fallbackTFunc(key, options);
+  return actualT(key, options);
 }
 
 export function debugTranslations(enable?: boolean) {
@@ -223,6 +226,75 @@ export function debugTranslations(enable?: boolean) {
 
 export function getMissingTranslations() {
   return missingKeys;
+}
+
+export interface ITString {
+  key: string;
+  options?: TOptions;
+  toString(): string;
+}
+
+export class TString implements ITString {
+  private mKey: string;
+  private mOptions: TOptions;
+
+  constructor(key: string, options: TOptions, namespace: string) {
+    this.mKey = key;
+    this.mOptions = options ?? {};
+    if (this.mOptions.ns === undefined) {
+      this.mOptions.ns = namespace;
+    }
+  }
+
+  public get key(): string {
+    return this.mKey;
+  }
+
+  public get options(): TOptions {
+    return this.mOptions;
+  }
+
+  public toString(): string {
+    return this.mKey;
+  }
+}
+
+export const laterT: TFunction =
+  (key: string, optionsOrDefault?: TOptions | string, options?: TOptions): ITString => {
+    if (typeof(optionsOrDefault) === 'string') {
+      return new TString(key, options, 'common');
+    } else {
+      return new TString(key, optionsOrDefault, 'common');
+    }
+  };
+
+/**
+ * translate an input string. If key is a string or string array, this just
+ * forwards the parameters to the t function.
+ * If it is an ITString object, will translate using with the parameters stored
+ * within
+ * @param t the actual translation function to invok
+ * @param key translation key, keys or ITString object
+ * @param options translations options. this will take precedence over those specified at
+ *                the time the ITString was created
+ * @param onlyTString if set to true and the key is a string, assume it's already the translated
+ *                    string and don't translate again. This is mostly for backwards compatibility
+ */
+export function preT(t: TFunction,
+                     key: string | string[] | ITString,
+                     options?: TOptions,
+                     onlyTString?: boolean) {
+  if (typeof(key) === 'string') {
+    if (onlyTString === true) {
+      return key;
+    } else {
+      return t(key, options);
+    }
+  } else if (Array.isArray(key)) {
+    return t(key, options);
+  } else {
+    return t(key.key, { ...key.options, ...(options ?? {}) });
+  }
 }
 
 export default init;

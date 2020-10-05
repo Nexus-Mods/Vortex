@@ -394,7 +394,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
       message: downloadNames.join('\n'),
       options: {
         translated: true,
-      }
+      },
     }, [
         { label: 'Cancel' },
         { label: 'Delete', action: () => downloadIds.forEach(removeId) },

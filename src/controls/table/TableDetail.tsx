@@ -1,6 +1,6 @@
 import {IEditChoice, ITableAttribute, ValidationState} from '../../types/ITableAttribute';
 import {ComponentEx} from '../../util/ComponentEx';
-import { TFunction } from '../../util/i18n';
+import { preT, TFunction } from '../../util/i18n';
 import { log } from '../../util/log';
 import { getSafe } from '../../util/storeHelper';
 
@@ -115,16 +115,19 @@ class DetailCell extends React.Component<ICellProps, {}> {
 
     const helpIcon = attribute.help !== undefined
       ? (
-        <More id={`more-tableattribute-${attribute.id}`} name={attribute.name}>
-          {attribute.help}
+        <More
+          id={`more-tableattribute-${attribute.id}`}
+          name={preT(t, attribute.name, undefined, true)}
+        >
+          {preT(t, attribute.help, undefined, true)}
         </More>
       ) : null;
 
     return content !== null ? (
       <FormGroup key={key}>
         { attribute.name !== undefined ? (
-          <ControlLabel title={t(attribute.description)}>
-            {t(attribute.name)}{helpIcon}
+          <ControlLabel title={preT(t, attribute.description)}>
+            {preT(t, attribute.name)}{helpIcon}
           </ControlLabel>
          ) : null }
         {content}
@@ -179,7 +182,7 @@ class DetailCell extends React.Component<ICellProps, {}> {
     return (
       <FormInput
         id={attribute.id}
-        label={t(attribute.name)}
+        label={preT(t, attribute.name)}
         value={various ? t('Various') : this.renderCell(values[0])}
         onChange={this.changeCell}
         readOnly={readOnly}
@@ -198,7 +201,7 @@ class DetailCell extends React.Component<ICellProps, {}> {
     return (
       <FormInput
         id={attribute.id}
-        label={t(attribute.name)}
+        label={preT(t, attribute.name)}
         readOnly={readOnly}
         value={various ? '' : this.renderCell(values[0])}
         onChange={this.changeCell}
@@ -226,7 +229,7 @@ class DetailCell extends React.Component<ICellProps, {}> {
         <FormControl
           id={attribute.id}
           type='text'
-          label={t(attribute.name)}
+          label={preT(t, attribute.name)}
           readOnly={true}
           value={this.renderCell(value)}
         />

@@ -17,6 +17,7 @@ import Debouncer from '../../util/Debouncer';
 import * as fs from '../../util/fs';
 import getNormalizeFunc, { Normalize } from '../../util/getNormalizeFunc';
 import getVortexPath from '../../util/getVortexPath';
+import { laterT } from '../../util/i18n';
 import LazyComponent from '../../util/LazyComponent';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
@@ -626,7 +627,7 @@ function genModsSourceAttribute(api: IExtensionApi): ITableAttribute<IMod> {
   return {
     id: 'modSource',
     name: 'Source',
-    help: getText('source', api.translate),
+    help: getText('source', laterT),
     description: 'Source the mod was downloaded from',
     icon: 'database',
     placement: 'both',

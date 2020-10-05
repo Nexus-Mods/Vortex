@@ -188,7 +188,7 @@ class QuickLauncher extends ComponentEx<IProps, IComponentState> {
         style={{ background: `url('${iconPath}')` }}
       >
         <div className='quicklaunch-item'>
-          <div className='quicklaunch-name'>{displayName}</div>
+          <div className='quicklaunch-name'>{t(displayName)}</div>
           {profilesVisible
             ? (
               <div className='quicklaunch-profile'>

@@ -32,7 +32,7 @@ import { MissingDependency, NotSupportedError,
         ProcessCanceled, ThirdPartyError, TimeoutError, UserCanceled } from './CustomErrors';
 import { getVisibleWindow, isOutdated } from './errorHandling';
 import getVortexPath from './getVortexPath';
-import { i18n } from './i18n';
+import { i18n, TString } from './i18n';
 import lazyRequire from './lazyRequire';
 import { log } from './log';
 import { showError } from './message';
@@ -121,6 +121,8 @@ class APIProxyHandler implements ProxyHandler<any> {
       return this.mExtension;
     } else if (key === 'translate') {
       return target[key];
+    } else if (key === 'laterT') {
+      return (input, options?) => new TString(input, options, this.mExtension.namespace);
     } else if (key === 'NAMESPACE') {
       return this.mExtension.namespace;
     }
@@ -528,6 +530,7 @@ class ExtensionManager {
       translate: (input, options?) => this.mTranslator !== undefined
           ? this.mTranslator.t(input, options)
           : (Array.isArray(input) ? input[0].toString() : input.toString()) as any,
+      laterT: (input, options?) => new TString(input, options, 'common'),
       locale: () => this.mTranslator.language,
       getI18n: () => this.mTranslator,
       getPath: this.getPath,

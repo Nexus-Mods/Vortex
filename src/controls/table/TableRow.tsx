@@ -1,5 +1,5 @@
 import { IEditChoice, ITableAttribute } from '../../types/ITableAttribute';
-import { TFunction } from '../../util/i18n';
+import { preT, TFunction } from '../../util/i18n';
 
 import ContextMenu from '../ActionContextMenu';
 import ActionDropdown from '../ActionDropdown';
@@ -87,7 +87,7 @@ class TableCell extends React.Component<ICellProps, { isOpen: boolean }> {
           <IconButton
             className='btn-embed'
             id={`toggle-${rowId}-${attribute.id}`}
-            tooltip={attribute.name}
+            tooltip={preT(t, attribute.name, undefined, true)}
             icon={data ? 'checkbox-checked' : 'square-remove'}
             onClick={this.toggle}
           />
@@ -131,7 +131,7 @@ class TableCell extends React.Component<ICellProps, { isOpen: boolean }> {
           key={key}
           onClick={this.cycle}
           onSelect={this.changeCell}
-          tooltip={attribute.description}
+          tooltip={preT(t, attribute.description, undefined, true)}
         >
           {((currentChoice !== undefined) && (currentChoice.icon !== undefined))
             ? <Icon name={currentChoice.icon} /> : null}

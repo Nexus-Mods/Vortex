@@ -462,6 +462,11 @@ export interface IExtensionApi {
   translate: TFunction;
 
   /**
+   * prepare a string to be translated further down the line.
+   */
+  laterT: TFunction;
+
+  /**
    * active locale
    */
   locale: () => string;
@@ -930,7 +935,9 @@ export interface IExtensionContext {
    * add an attribute to a table. An attribute can appear as a column inside the table or as a
    * detail field in the side panel.
    * The tableId identifies, obviously, the table to which the attribute should be added. Please
-   * find the right id in the documentation of the corresponding extension
+   * find the right id in the documentation of the corresponding extension.
+   * Please prefer specifying the attribute as a function returning the ITableAttribute instead of
+   * the attribute directly
    */
   registerTableAttribute: (tableId: string, attribute: ITableAttribute) => void;
 
