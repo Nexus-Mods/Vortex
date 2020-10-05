@@ -67,11 +67,15 @@ class FileAssembler {
   }
 
   public rename(newName: string | Promise<string>) {
+    const closeFD = () => this.isClosed()
+      ? Promise.resolve()
+      : fs.closeAsync(this.mFD);
+
     let resolved: string;
     // to rename the file we have to close the file descriptor, rename,
     // then open it again
     return this.mQueue(() =>
-      fs.closeAsync(this.mFD)
+      closeFD()
       .catch({ code: 'EBADF' }, () => null)
       .then(() => Promise.resolve(newName).then(nameResolved => resolved = nameResolved))
       .then(() => fs.renameAsync(this.mFileName, resolved))
