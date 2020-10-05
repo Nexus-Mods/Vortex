@@ -117,6 +117,24 @@ class GameStoreHelper {
     return startStore();
   }
 
+  public reloadGames(): Promise<void> {
+    const stores = this.getstores().filter(store => !!store);
+    log('info', 'reloading game store games', stores.map(store => store.id)
+                                                    .join(', '));
+    return Promise.each(stores, (store: IGameStore) =>
+      (store?.reloadGames !== undefined)
+        ? store.reloadGames()
+            .catch(err => {
+              // Game store was unable to reload its games
+              //  we log this and jump to the next store.
+              err['gameStore'] = store.id;
+              log('error', 'gamestore failed to reload its games', err);
+              return Promise.resolve();
+            })
+        : Promise.resolve())
+      .then(() => Promise.resolve());
+  }
+
   private isStoreRunning(storeExecPath: string) {
     const runningProcesses = winapi.GetProcessList();
     const exeId = makeExeId(storeExecPath);

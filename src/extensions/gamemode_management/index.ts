@@ -376,6 +376,14 @@ function init(context: IExtensionContext): boolean {
   context.registerTableAttribute('mods', genModTypeAttribute(context.api));
 
   context.registerGameStore = ((gameStore: IGameStore) => {
+    if (gameStore === undefined) {
+      context.api.showErrorNotification('Invalid game store extension not loaded', undefined, {
+        allowReport: false,
+        message: 'A game store extension failed to initialize',
+      });
+      return;
+    }
+
     try {
       gameStoreLaunchers.push(gameStore);
     } catch (err) {

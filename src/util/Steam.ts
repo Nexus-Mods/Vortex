@@ -173,6 +173,13 @@ class Steam implements IGameStore {
     return this.mBaseFolder.then(baseFolder => path.join(baseFolder, STEAM_EXEC));
   }
 
+  public reloadGames(): Promise<void> {
+    return new Promise((resolve) => {
+      this.mCache = this.parseManifests();
+      return resolve();
+    });
+  }
+
   private isCustomExecObject(object: any): object is ICustomExecutionInfo {
     if (typeof(object) !== 'object') {
       return false;

@@ -111,6 +111,13 @@ class EpicGamesLauncher implements IGameStore {
     return this.mCache;
   }
 
+  public reloadGames(): Promise<void> {
+    return new Promise((resolve) => {
+      this.mCache = this.parseManifests();
+      return resolve();
+    });
+  }
+
   public getGameStorePath(): Promise<string> {
     const getExecPath = () => {
       try {
