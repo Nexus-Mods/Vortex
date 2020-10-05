@@ -525,12 +525,12 @@ class InstallManager {
 
     return extractProm
         .then(({ code, errors }: {code: number, errors: string[] }) => {
-          log('debug', 'extraction completed', { code, errors });
+          log('debug', 'extraction completed');
           if (installContext !== undefined) {
             installContext.setProgress();
           }
           if (code !== 0) {
-            log('warn', 'extraction reported error', { code, errors });
+            log('warn', 'extraction reported error', { code, errors: errors.join('; ') });
             const critical = errors.find(this.isCritical);
             if (critical !== undefined) {
               return Promise.reject(new ArchiveBrokenError(critical));

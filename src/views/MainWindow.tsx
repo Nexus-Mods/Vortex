@@ -17,6 +17,7 @@ import { IModifiers } from '../types/IModifiers';
 import { INotification } from '../types/INotification';
 import { IProgress, IState, IUIBlocker } from '../types/IState';
 import { connect, extend } from '../util/ComponentEx';
+import { IRegisteredExtension } from '../util/ExtensionManager';
 import { TFunction } from '../util/i18n';
 import { log } from '../util/log';
 import { getSafe } from '../util/storeHelper';
@@ -459,12 +460,13 @@ export class MainWindow extends React.Component<IProps, IMainWindowState> {
         className={secondaryPage === page.id ? 'secondary' : undefined}
         key={page.id}
         eventKey={page.id}
-        tooltip={t(page.title)}
+        tooltip={t(page.title, { ns: page.namespace })}
         placement='right'
         onClick={this.handleClickPage}
       >
         <PageButton
           t={this.props.t}
+          namespace={page.namespace}
           page={page}
         />
       </NavItem>
@@ -598,6 +600,7 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
 
 function registerMainPage(
   instanceGroup: undefined,
+  extInfo: Partial<IRegisteredExtension>,
   icon: string,
   title: string,
   component: React.ComponentClass<any> | React.StatelessComponent<any>,
@@ -613,11 +616,12 @@ function registerMainPage(
     badge: options.badge,
     activity: options.activity,
     priority: options.priority !== undefined ? options.priority : 100,
+    namespace: extInfo.namespace,
   };
 }
 
 export default
-  extend(registerMainPage)(
+  extend(registerMainPage, undefined, true)(
     connect(mapStateToProps, mapDispatchToProps)(
       MainWindow),
   ) as React.ComponentClass<IBaseProps>;

@@ -5,4 +5,5 @@ export interface IProfileFeature {
   type: string;
   description: string;
   supported: () => boolean;
+  namespace?: string;
 }

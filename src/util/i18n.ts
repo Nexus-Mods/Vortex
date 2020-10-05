@@ -73,6 +73,8 @@ class MultiBackend {
       jsonIndent: 2,
     });
 
+    this.mBackendType = type;
+
     return res;
   }
 

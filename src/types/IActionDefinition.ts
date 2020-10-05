@@ -2,6 +2,7 @@ import * as React from 'react';
 
 export interface IActionOptions {
   noCollapse?: boolean;
+  namespace?: string;
 }
 
 /**

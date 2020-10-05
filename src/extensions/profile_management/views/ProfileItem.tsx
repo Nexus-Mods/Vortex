@@ -214,7 +214,7 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
             title={t(feature.description)}
             onClick={nop}
           >
-            {t(feature.label)}
+            {t(feature.label, { ns: feature.namespace })}
           </a>
         </TD>
         <TD>

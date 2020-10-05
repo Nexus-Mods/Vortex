@@ -213,10 +213,13 @@ class ContextProxyHandler implements ProxyHandler<any> {
       call.key === name);
   }
 
-  public invokeAdditions() {
+  public invokeAdditions(extensions: IRegisteredExtension[]) {
     this.mApiAdditions.forEach((addition: IApiAddition) => {
       this.getCalls(addition.key).forEach(call => {
-        addition.callback(...call.arguments, call.extensionPath);
+        const ext = extensions.find(iter => iter.name === call.extension);
+        const extInfo = _.pick(ext, ['name', 'namespace', 'path']);
+
+        addition.callback(...call.arguments, call.extensionPath, extInfo);
       });
     });
   }
@@ -783,7 +786,7 @@ class ExtensionManager {
    * @memberOf ExtensionManager
    */
   public applyExtensionsOfExtensions() {
-    this.mContextProxyHandler.invokeAdditions();
+    this.mContextProxyHandler.invokeAdditions(this.mExtensions);
   }
 
   /**
@@ -795,10 +798,18 @@ class ExtensionManager {
    *
    * @memberOf ExtensionManager
    */
-  public apply(funcName: keyof IExtensionContext, func: (...args: any[]) => void) {
+  public apply(funcName: keyof IExtensionContext,
+               func: (...args: any[]) => void,
+               addExtInfo?: boolean) {
     this.mContextProxyHandler.getCalls(funcName).forEach(call => {
       try {
-        func(...call.arguments);
+        if (addExtInfo === true) {
+          const ext = this.mExtensions.find(iter => iter.name === call.extension);
+          const extInfo = _.pick(ext, ['name', 'namespace', 'path']);
+          func(extInfo, ...call.arguments);
+        } else {
+          func(...call.arguments);
+        }
       } catch (err) {
         this.mApi.showErrorNotification(
           'Extension failed to initialize. If this isn\'t an official extension, ' +

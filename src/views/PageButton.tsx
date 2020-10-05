@@ -9,6 +9,7 @@ import { Badge } from 'react-bootstrap';
 interface IPageButtonProps {
   t: TFunction;
   page: IMainPage;
+  namespace: string;
 }
 
 class PageButton extends React.Component<IPageButtonProps, {}> {
@@ -33,12 +34,12 @@ class PageButton extends React.Component<IPageButtonProps, {}> {
   }
 
   public render() {
-    const { t, page } = this.props;
+    const { t, namespace, page } = this.props;
     return (
       <div>
         <Icon name={page.icon} />
         <span className='menu-label'>
-          {t(page.title)}
+          {t(page.title, { ns: namespace })}
         </span>
         {this.renderBadge()}
         {this.renderActivity()}

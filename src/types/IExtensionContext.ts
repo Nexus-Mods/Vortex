@@ -136,7 +136,7 @@ export type RegisterDashlet =
 
 export type RegisterDialog =
   (id: string,
-   element: React.ComponentClass<any> | React.StatelessComponent<any>,
+   element: React.ComponentType<any>,
    props?: PropsCallback) => void;
 
 export type ToDoType = 'settings' | 'search' | 'workaround' | 'more';
@@ -735,7 +735,8 @@ export interface IModTypeOptions {
  *    An extension can add new register functions by simply assigning to the context object.
  *    There is one limitation though: Due to the way those functions are called you can't have
  *    optional parameters in register functions, the caller always have to provide the exact number
- *    of arguments to get the function to be called correctly.
+ *    of arguments to get the function to be called correctly. Vortex will pass additional
+ *    parameters to the function that help identify the extension that called the function.
  *    These functions are then available to all other extensions, the order in which extensions
  *    are loaded is irrelevant (and can't be controlled).
  *    If an extension uses a register function from another extension it becomes implicitly

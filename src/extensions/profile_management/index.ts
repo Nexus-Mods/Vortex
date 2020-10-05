@@ -23,6 +23,7 @@ import { IExtensionApi, IExtensionContext, ThunkStore } from '../../types/IExten
 import { IGameStored, IState } from '../../types/IState';
 import { relaunch } from '../../util/commandLine';
 import { ProcessCanceled, SetupError, UserCanceled } from '../../util/CustomErrors';
+import { IRegisteredExtension } from '../../util/ExtensionManager';
 import * as fs from '../../util/fs';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
@@ -538,7 +539,7 @@ function init(context: IExtensionContext): boolean {
 
   context.registerProfileFeature =
       (featureId: string, type: string, icon: string, label: string, description: string,
-       supported: () => boolean) => {
+       supported: () => boolean, extPath?: string, extInfo?: Partial<IRegisteredExtension>) => {
         profileFeatures.push({
           id: featureId,
           type,
@@ -546,6 +547,7 @@ function init(context: IExtensionContext): boolean {
           label,
           description,
           supported,
+          namespace: extInfo?.namespace,
         });
       };
 
