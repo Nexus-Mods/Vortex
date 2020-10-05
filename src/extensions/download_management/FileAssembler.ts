@@ -68,7 +68,7 @@ class FileAssembler {
 
   public rename(newName: string | Promise<string>) {
     const closeFD = () => this.isClosed()
-      ? Promise.resolve()
+      ? Promise.reject(new ProcessCanceled('File is closed'))
       : fs.closeAsync(this.mFD);
 
     let resolved: string;
@@ -86,6 +86,13 @@ class FileAssembler {
         return Promise.resolve();
       })
       .catch(err => {
+        if (err instanceof ProcessCanceled) {
+          // This would only happen if we have closed the
+          //  file in one of the queue's previous iterations.
+          log('warn', 'attempt to rename closed file', this.mFileName);
+          return Promise.reject(err);
+        }
+
         // in case of error, re-open the original file name so we can continue writing,
         // only  then rethrow the exception
         return fs.openAsync(this.mFileName, 'r+')
