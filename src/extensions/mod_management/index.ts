@@ -421,7 +421,9 @@ function genUpdateModDeployment() {
     if ((game === undefined)
         || (gameDiscovery === undefined)
         || (gameDiscovery.path === undefined)) {
-      return Promise.reject(new Error('Game no longer available'));
+      const err = new Error('Game no longer available');
+      err['attachLogOnReport'] = true;
+      return Promise.reject(err);
     }
     const stagingPath = installPathForGame(state, gameId);
 
