@@ -302,7 +302,7 @@ function doMergeMods(api: IExtensionApi,
       typeId => mergeMods(api, game, stagingPath, modPaths[typeId],
         sortedModList.filter(mod => (mod.type || '') === typeId),
         lastDeployment[typeId],
-        fileMergers)
+        fileMergers.filter(merger => merger.modType === typeId))
         .then(mergeResult => {
           // some transformation required because in a merge we may use files from one modtype
           // to generate a file for another. usedInMerge is used to skip files already applied to

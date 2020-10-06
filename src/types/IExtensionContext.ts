@@ -1054,9 +1054,8 @@ export interface IExtensionContext {
 
   /**
    * register a file merge that needs to happen during deployment.
-   * modType is the type with which the merged file(s) should be deployed. This needs to be an
-   * existing mod type (see registerModType), otherwise the merged file won't be used. Use an empty
-   * string for the default mod type
+   * modType is the mod type this applies to, so only mods from this mod type are merged
+   * and the output merge is of that type as well.
    *
    * This api is - complex - as it tries to cover multiple related use cases. Please
    * make sure you understand how it works becauses trial&error might drive you mad.
