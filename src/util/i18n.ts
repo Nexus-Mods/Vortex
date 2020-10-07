@@ -284,6 +284,9 @@ export function preT(t: TFunction,
                      key: string | string[] | ITString,
                      options?: TOptions,
                      onlyTString?: boolean) {
+  if ([undefined, null].includes(key)) {
+    return '';
+  }
   if (typeof(key) === 'string') {
     if (onlyTString === true) {
       return key;
