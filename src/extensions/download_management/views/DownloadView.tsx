@@ -302,63 +302,71 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
     )) !== undefined;
   }
 
+  private reportDownloadError(err: any, resume: boolean) {
+    const urlInvalid = ['moved permanently', 'forbidden', 'gone'];
+    const title = resume ? 'Failed to resume download' : 'Failed to start download';
+    if (err instanceof ProcessCanceled) {
+      this.props.onShowError(title, err, undefined, false);
+    } else if (err instanceof UserCanceled) {
+      // nop
+    } else if (err instanceof DownloadIsHTML) {
+      if (resume) {
+        this.props.onShowError(title,
+          'Sorry, the download link is no longer valid. '
+          + 'Please restart the download.',
+          undefined, false);
+      } // else nop
+    } else if ((err.HTTPStatus !== undefined)
+      && (urlInvalid.indexOf(err.HTTPStatus.toLowerCase()) !== -1)) {
+      this.props.onShowError(title,
+        'Sorry, the download link is no longer valid. '
+        + 'Please restart the download.',
+        undefined, false);
+    } else if (err instanceof TemporaryError) {
+      this.props.onShowError(title,
+        'Downloading failed due to an I/O error (either '
+        + 'network or disk access). This is very likely a '
+        + 'temporary problem, please try resuming at a later time.',
+        undefined, false);
+    } else if (err.message.match(/Protocol .* not supported/) !== null) {
+      this.context.api.showErrorNotification(title,
+        err.message, {
+        allowReport: false,
+      });
+    } else if (err.code === 'ECONNRESET') {
+      this.props.onShowError(title,
+        'Server closed the connection, please '
+        + 'check your internet connection',
+        undefined, false);
+    } else if (err.code === 'ETIMEDOUT') {
+      this.props.onShowError(title,
+        'Connection timed out, please check '
+        + 'your internet connection',
+        undefined, false);
+    } else if (err.code === 'ENOSPC') {
+      this.props.onShowError(title, 'The disk is full', undefined, false);
+    } else if (err.code === 'EBADF') {
+      this.props.onShowError(title,
+        'Failed to write to disk. If you use a removable media or '
+        + 'a network drive, the connection may be unstable. '
+        + 'Please try resuming once you checked.',
+        undefined, false);
+    } else if (err.message.indexOf('DECRYPTION_FAILED_OR_BAD_RECORD_MAC') !== -1) {
+      this.props.onShowError(title,
+        'Network communication error (SSL payload corrupted). '
+        + 'This is likely a temporary issue, please try again later.',
+        undefined, false);
+    } else {
+      err['attachLogOnReport'] = true;
+      this.props.onShowError(title, err);
+    }
+  }
+
   private resume = (downloadIds: string[]) => {
     downloadIds.forEach((downloadId: string) => {
       this.context.api.events.emit('resume-download', downloadId, (err) => {
         if (err !== null) {
-          const urlInvalid = ['moved permanently', 'forbidden', 'gone'];
-          if (err instanceof ProcessCanceled) {
-            this.props.onShowError('Failed to resume download',
-                                   'Sorry, this download is missing info necessary to resume. '
-                                   + 'Please try restarting it.',
-                                   undefined, false);
-          } else if (err instanceof UserCanceled) {
-            // nop
-          } else if (err instanceof DownloadIsHTML) {
-            this.props.onShowError('Failed to resume download',
-                                   'Sorry, the download link is no longer valid. '
-                                   + 'Please restart the download.',
-              undefined, false);
-          } else if ((err.HTTPStatus !== undefined)
-                     && (urlInvalid.indexOf(err.HTTPStatus.toLowerCase()) !== -1)) {
-            this.props.onShowError('Failed to resume download',
-                                   'Sorry, the download link is no longer valid. '
-                                   + 'Please restart the download.',
-              undefined, false);
-          } else if (err instanceof TemporaryError) {
-            this.props.onShowError('Failed to resume download',
-                                   'Downloading failed due to an I/O error (either '
-                                   + 'network or disk access). This is very likely a '
-                                   + 'temporary problem, please try resuming at a later time.',
-                                   undefined, false);
-          } else if (err.code === 'ECONNRESET') {
-            this.props.onShowError('Failed to resume download',
-                                   'Server closed the connection, please '
-                                   + 'check your internet connection',
-              undefined, false);
-          } else if (err.code === 'ETIMEDOUT') {
-            this.props.onShowError('Failed to resume download',
-                                   'Connection timed out, please check '
-                                   + 'your internet connection',
-              undefined, false);
-          } else if (err.code === 'ENOSPC') {
-            this.props.onShowError('Failed to resume download', 'The disk is full',
-              undefined, false);
-          } else if (err.code === 'EBADF') {
-            this.props.onShowError('Failed to resume download',
-                                   'Failed to write to disk. If you use a removable media or '
-                                   + 'a network drive, the connection may be unstable. '
-                                   + 'Please try resuming once you checked.',
-              undefined, false);
-          } else if (err.message.indexOf('DECRYPTION_FAILED_OR_BAD_RECORD_MAC') !== -1) {
-            this.props.onShowError('Failed to resume download',
-                                   'Network communication error (SSL payload corrupted). '
-                                   + 'This is likely a temporary issue, please try again later.',
-                                   undefined, false);
-          } else {
-            err['attachLogOnReport'] = true;
-            this.props.onShowError('Failed to resume download', err);
-          }
+          this.reportDownloadError(err, true);
         }
       });
     });
@@ -512,27 +520,9 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
   private dropDownload = (type: DropType, dlPaths: string[]) => {
     if (type === 'urls') {
       dlPaths.forEach(url => this.context.api.events.emit('start-download', [url], {}, undefined,
-        (error: Error) => {
-        if ((error !== null)
-            && !(error instanceof DownloadIsHTML)
-            && !(error instanceof UserCanceled)) {
-          if (error instanceof ProcessCanceled) {
-            this.context.api.showErrorNotification('Failed to start download',
-              error.message, {
-              allowReport: false,
-            });
-          } else if (error.message.match(/Protocol .* not supported/) !== null) {
-            this.context.api.showErrorNotification('Failed to start download',
-              error.message, {
-              allowReport: false,
-            });
-          } else {
-            this.context.api.showErrorNotification('Failed to start download', error, {
-              allowReport: false,
-            });
-          }
-        }
-      }));
+        (err: Error) => {
+          this.reportDownloadError(err, false);
+        }));
     } else {
       this.context.api.events.emit('import-downloads', dlPaths);
     }

@@ -317,6 +317,14 @@ export class DownloadObserver {
         log('warn', 'failed to resume download: unknown', { downloadId });
         return;
       }
+
+      if (download.localPath === undefined) {
+        this.mApi.sendNotification({
+          type: 'warning',
+          message: 'This download can\'t be resumed',
+        });
+      }
+
       // if (download.state === 'paused') {
       if (['paused', 'failed'].includes(download.state)) {
         const gameMode = getDownloadGames(download)[0];
@@ -334,7 +342,7 @@ export class DownloadObserver {
               .catch(err => this.handleDownloadError(err, downloadId, downloadPath, callback));
           } else {
             return ensureDownloadsDirectory(this.mApi)
-              .then(() => this.mManager.resume(downloadId, fullPath, download.urls, 
+              .then(() => this.mManager.resume(downloadId, fullPath, download.urls,
                 download.received, download.size, download.startTime, download.chunks,
                 this.genProgressCB(downloadId)))
               .then(res => {
