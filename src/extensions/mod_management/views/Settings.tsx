@@ -389,7 +389,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           bbcode: t('The mods staging folder has been copied [b]successfully[/b] to '
             + 'your chosen destination!<br />'
             + 'Clean-up of the old staging folder has been cancelled.<br /><br />'
-            + `Old staging folder: [url]{{thePath}}[/url]`,
+            + 'Old staging folder: [url]{{thePath}}[/url]',
             { replace: { thePath: oldInstallPath } }),
         }, [ { label: 'Close', action: () => Promise.resolve() } ]);
 
@@ -432,6 +432,14 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             + '4. A faulty HDD/Removable drive.<br /><br />'
             + 'Please test your environment and try again once you\'ve confirmed it\'s fixed.',
             false, true);
+          } else if ((err.code === 'UNKNOWN') && (err?.['nativeCode'] === 1392)) {
+            // The file or directory is corrupted and unreadable.
+            onShowError('Failed to move directories',
+              t('Vortex has encountered a corrupted and unreadable file/directory '
+              + 'and is unable to complete the transfer. Vortex was attempting '
+              + 'to move the following file/directory: "{{culprit}}" when your operating system '
+              + 'raised the error. Please test your environment and try again once you\'ve confirmed it\'s fixed.',
+            { replace: { culprit: err.path } }), false);
           } else {
             onShowError('Failed to move directories', err, !(err instanceof ProcessCanceled));
           }
