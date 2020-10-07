@@ -192,7 +192,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
       content = (
         <FlexLayout type='column'>
           {secondary ? null : <Banner group='downloads' />}
-          <FlexLayout.Flex>
+          <FlexLayout.Flex className='download-list-container'>
             <Panel className='download-panel' >
               {secondary ? null : (
                 <Panel
@@ -229,7 +229,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
               </Panel.Body>
             </Panel>
           </FlexLayout.Flex>
-          <FlexLayout.Fixed>
+          <FlexLayout.Fixed className='download-drop-container'>
             {secondary || (gameMode === undefined) ? null : this.renderDropzone()}
           </FlexLayout.Fixed>
         </FlexLayout>

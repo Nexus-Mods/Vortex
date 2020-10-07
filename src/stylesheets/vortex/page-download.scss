@@ -18,16 +18,18 @@
   position: relative;
   border-width: 0 0 1px 0;
   height: auto;
+  // necessary so that the button to un-hide the panel remains visible
+  overflow: visible;
+}
+
+.download-drop-container {
+  margin-top: $half-gutter;
 }
 
 #table-downloads {
   .header-game {
     min-width: 80px;
   }
-}
-
-.download-drop-panel {
-  margin-top: $half-gutter;
 }
 
 .active-downloads-slim {

@@ -354,10 +354,10 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         </MainPage.Header>
         <MainPage.Body>
           <FlexLayout type='column'>
-            <FlexLayout.Flex>
+            <FlexLayout.Flex className='mod-list-container'>
               {content}
             </FlexLayout.Flex>
-            <FlexLayout.Fixed>
+            <FlexLayout.Fixed className='mod-drop-container'>
               <Panel
                 className='mod-drop-panel'
                 expanded={showDropzone}
