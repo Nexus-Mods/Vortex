@@ -356,6 +356,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
                                    + 'This is likely a temporary issue, please try again later.',
                                    undefined, false);
           } else {
+            err['attachLogOnReport'] = true;
             this.props.onShowError('Failed to resume download', err);
           }
         }
