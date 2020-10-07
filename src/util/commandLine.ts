@@ -20,6 +20,7 @@ export interface IParameters {
   maxMemory?: string;
   disableGPU?: boolean;
   userData?: string;
+  inspector?: boolean;
 }
 
 function assign(input: string): string[] {
@@ -135,6 +136,7 @@ function parseCommandline(argv: string[], electronIsShitHack: boolean): IParamet
                                        + 'in the shared location instead of the per-user one')
     .option('--max-memory [size in MB]', 'Maximum amount of memory Vortex may use in MB '
                                        + '(defaults to 4096)')
+    .option('--inspector', 'Start Vortex with the chrome inspector opened')
     // allow unknown options since they may be interpreted by electron/node
     .allowUnknownOption()
     .parse(argv || []).opts() as IParameters;

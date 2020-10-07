@@ -58,8 +58,10 @@ class MainWindow {
   private mResizeDebouncer: Debouncer;
   private mMoveDebouncer: Debouncer;
   private mShown: boolean;
+  private mInspector: boolean;
 
-  constructor(store: Redux.Store<IState>) {
+  constructor(store: Redux.Store<IState>, inspector: boolean) {
+    this.mInspector = inspector === true;
     this.mResizeDebouncer = new Debouncer(() => {
       if ((this.mWindow !== null) && !this.mWindow.isMaximized()) {
         const size: number[] = this.mWindow.getSize();
@@ -93,7 +95,9 @@ class MainWindow {
 
     // opening the devtools automatically can be very useful if the renderer has
     // trouble loading the page
-    // this.mWindow.webContents.openDevTools();
+    if (this.mInspector) {
+      this.mWindow.webContents.openDevTools();
+    }
     this.mWindow.webContents.on('console-message' as any,
       (evt: Electron.Event, level: number, message: string) => {
         if (level !== 2) {
