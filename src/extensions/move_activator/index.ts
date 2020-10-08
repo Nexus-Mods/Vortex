@@ -323,6 +323,11 @@ class DeploymentMethod extends LinkingDeployment {
             .catch(err => (err.code === 'ENOENT')
               // file was deleted. Well, the user is the boss...
               ? Promise.resolve()
+              // how did we successfully deploy if this is on a different drive?
+              // if the game was moved the links shouldn't point to a valid location,
+              // if the staging folder was moved we should have purged
+              : (err.code === 'EXDEV')
+              ? fs.moveAsync(dat.target, outPath)
               : Promise.reject(err))
             .then(() => fs.removeAsync(linkPath));
         } catch (err) {
