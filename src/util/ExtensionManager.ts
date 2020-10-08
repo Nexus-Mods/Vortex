@@ -851,10 +851,17 @@ class ExtensionManager {
         });
         const prom = call.arguments[0]() || Promise.resolve();
 
+        const start = Date.now();
         return timeout(prom, 30000, {
           throw: true,
           queryContinue: () => this.queryLoadTimeout(call.extension),
         })
+          .then(() => {
+            const elapsed = Date.now() - start;
+            if (elapsed > 1000) {
+              log('debug', 'slow initialization', { extension: call.extension, elapsed });
+            }
+          })
           .catch(TimeoutError, () => {
             reportError(new Error('Initialization didn\'t finish in time.'), call, false);
           })
