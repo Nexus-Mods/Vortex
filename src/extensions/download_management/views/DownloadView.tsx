@@ -529,11 +529,12 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
   }
 }
 
+const emptyObj = {};
 function mapStateToProps(state: IState): IConnectedProps {
   return {
     gameMode: selectors.activeGameId(state),
     knownGames: state.session.gameMode.known,
-    downloads: state.persistent.downloads.files,
+    downloads: state.persistent.downloads.files || emptyObj,
     downloadPath: selectors.downloadPath(state),
     downloadPathForGame: (game: string) => selectors.downloadPathForGame(state, game),
     showDropzone: state.settings.downloads.showDropzone,
