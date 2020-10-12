@@ -75,6 +75,9 @@ function applyDelta(data: any, delta: any) {
   });
 }
 
+/**
+ * updates the .base ini file to reflect changes the user made manually
+ */
 function discoverSettingsChanges(api: IExtensionApi, gameMode: string,
                                  discovery: IDiscoveryResult): Promise<void> {
   const format = iniFormat(gameMode);
@@ -109,20 +112,10 @@ function discoverSettingsChanges(api: IExtensionApi, gameMode: string,
           fs.openAsync(iniFileName + '.base', 'a')
             .then(fd => fs.closeAsync(fd))
             .then(() => parser.write(iniFileName + '.base', ini))
-            .catch({ errno: 362 }, err => {
-              api.showErrorNotification('Failed to write ini file', err, {
-                allowReport: false,
-              });
-            })
-            .catch({ errno: 1359 }, err => {
-              // AFAIK error 1359 is only raised when the OneDrive
-              //  service is involved and it usually means that it crashed
-              //  and Windows was unable to restart it - nothing we can do
-              //  about that.
-              api.showErrorNotification('Failed to write ini file', err, {
-                allowReport: false,
-              });
-            })
+            // Important: Catching errors here means we go on to write the new ini file based
+            //   on the old base data, reverting user changes. We should do this only if we know
+            //   there are no user changes to keep (e.g. if the ini file had been removed for
+            //   some reason). All other errors should be allowed to fail the bake process
             .catch({ code: 'ENOENT' }, err => {
               api.showErrorNotification('Failed to write ini file', err, {
                 allowReport: true,
@@ -362,8 +355,11 @@ function main(context: IExtensionContext) {
           log('info', 'user canceled baking game settings');
         })
         .catch(err => {
-          const allowReport = ((err.stack.indexOf('not enough space on the disk') === -1)
-                            && (err.stack.indexOf('The cloud operation was unsuccessful') === -1));
+          const allowReport = !(
+            err.stack.includes('not enough space on the disk')
+            || err.stack.includes('The cloud operation was unsuccessful')
+            || [362, 1359].includes(err.errno)
+            );
           context.api.showErrorNotification('Failed to bake settings files', err,
             { allowReport });
         });
