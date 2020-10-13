@@ -218,6 +218,14 @@ function errorHandler(evt: any) {
     return;
   }
 
+  if ((typeof(error) === 'string') && (error === 'Script error.')) {
+    // this is bad. It happens within electron/chrome when an exception is thrown in javascript.
+    // unfortunately it's impossible based on this error to figure out what the cause was, though
+    // it's almost certainly some callback invoked from a native library
+    log('error', 'script error');
+    return;
+  }
+
   if (error.name === 'Invariant Violation') {
     // these may not get caught, even when we have an ErrorBoundary, if the exception happens
     // in some callback. Unfortunately this also makes these errors almost impossible to find,
