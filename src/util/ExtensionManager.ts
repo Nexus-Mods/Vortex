@@ -504,6 +504,7 @@ class ExtensionManager {
   private mOnUIStarted: () => void;
   private mUIStartedPromise: Promise<void>;
   private mOutdated: string[] = [];
+  private mFailedWatchers: Set<string> = new Set();
   // the idea behind this was that we might want to support things like typescript
   // or coffescript directly but that would require us shipping the corresponding compilers
   private mExtensionFormats: string[] = ['index.js'];
@@ -904,10 +905,14 @@ class ExtensionManager {
   }
 
   private watcherError = (err: Error, selector: string[]) => {
-    log('warn', 'Failed to trigger state listener', {
-      error: err.message,
-      selector: JSON.stringify(selector),
-    });
+    const id = selector.join('.');
+    if (!this.mFailedWatchers.has(id)) {
+      log('warn', 'Failed to trigger state listener', {
+        error: err.message,
+        selector: JSON.stringify(selector),
+      });
+      this.mFailedWatchers.add(id);
+    }
   }
 
   private queryLoadTimeout(extension: string): Promise<boolean> {
