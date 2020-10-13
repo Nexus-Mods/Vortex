@@ -303,6 +303,9 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
   }
 
   private reportDownloadError(err: any, resume: boolean) {
+    if (err === null) {
+      return;
+    }
     const urlInvalid = ['moved permanently', 'forbidden', 'gone'];
     const title = resume ? 'Failed to resume download' : 'Failed to start download';
     if (err instanceof ProcessCanceled) {
