@@ -654,7 +654,59 @@ function makeScript(args: any): string {
   return prog;
 }
 
-function ensureTaskEnabled() {
+function installTask(scriptPath: string) {
+  const taskName = TASK_NAME;
+
+  const ipcPath = `ipc_${shortid()}`;
+
+  const ipcServer: net.Server = startIPCServer(ipcPath, (conn, message: string, payload) => {
+    if (message === 'log') {
+      log(payload.level, payload.message, payload.meta);
+    } else if (message === 'quit') {
+      ipcServer.close();
+    }
+  });
+
+  const exePath = process.execPath;
+  const exeArgs = exePath.endsWith('electron.exe')
+    ? getVortexPath('package')
+    : '';
+
+  return runElevated(ipcPath, (ipc, req) => {
+    const winapiRemote: typeof winapi = req('winapi-bindings');
+    const osRemote: typeof os = req('os');
+    try {
+      winapiRemote.CreateTask(taskName, {
+        registrationInfo: {
+          Author: 'Vortex',
+          Description: 'This task is required for Vortex to create symlinks without elevation.'
+            + 'Do not change anything unless you really know what you\'re doing.',
+        },
+        user: `${osRemote.hostname()}\\${osRemote.userInfo().username}`,
+        taskSettings: { AllowDemandStart: true },
+        principal: { RunLevel: 'highest' } as any,
+        actions: [
+          {
+            Path: exePath,
+            Arguments: `${exeArgs} --run ${scriptPath}`,
+          },
+        ],
+      });
+    } catch (err) {
+      ipc.sendMessage({
+        message: 'log', payload: {
+          level: 'error', message: 'Failed to create task', meta: err,
+        },
+      });
+    }
+    ipc.sendMessage({ message: 'quit' });
+  }, { scriptPath, taskName, exePath, exeArgs })
+    .catch(err => (err['nativeCode'] === 1223)
+      ? Promise.reject(new UserCanceled())
+      : Promise.reject(err));
+}
+
+function ensureTaskEnabled(api: IExtensionApi, delayed: boolean) {
   const scriptPath = path.join(app.getPath('userData'), SCRIPT_NAME);
 
   return fs.writeFileAsync(scriptPath, makeScript({ }))
@@ -666,52 +718,25 @@ function ensureTaskEnabled() {
         return Promise.resolve();
       }
 
-      const taskName = TASK_NAME;
-
-      const ipcPath = `ipc_${shortid()}`;
-
-      const ipcServer: net.Server = startIPCServer(ipcPath, (conn, message: string, payload) => {
-        if (message === 'log') {
-          log(payload.level, payload.message, payload.meta);
-        } else if (message === 'quit') {
-          ipcServer.close();
-        }
-      });
-
-      const exePath = process.execPath;
-      const exeArgs = exePath.endsWith('electron.exe')
-        ? getVortexPath('package')
-        : '';
-
-      return runElevated(ipcPath, (ipc, req) => {
-        const winapiRemote: typeof winapi = req('winapi-bindings');
-        const osRemote: typeof os = req('os');
-        try {
-          winapiRemote.CreateTask(taskName, {
-            registrationInfo: {
-              Author: 'Vortex',
-              Description: 'This task is required for Vortex to create symlinks without elevation.'
-                + 'Do not change anything unless you really know what you\'re doing.',
-            },
-            user: `${osRemote.hostname()}\\${osRemote.userInfo().username}`,
-            taskSettings: { AllowDemandStart: true },
-            principal: { RunLevel: 'highest' } as any,
-            actions: [
-              {
-                Path: exePath,
-                Arguments: `${exeArgs} --run ${scriptPath}`,
-              },
-            ],
-          });
-        } catch (err) {
-          ipc.sendMessage({ message: 'log', payload: {
-            level: 'error', message: 'Failed to create task', meta: err } });
-        }
-        ipc.sendMessage({ message: 'quit' });
-      }, { scriptPath, taskName, exePath, exeArgs })
-        .catch(err => (err['nativeCode'] === 1223)
-          ? Promise.reject(new UserCanceled())
-          : Promise.reject(err));
+      if (delayed) {
+        api.sendNotification({
+          type: 'info',
+          message: 'Symlink elevation workaround disabled',
+          noDismiss: true,
+          actions: [
+            { title: 'Disable Workaround', action: dismiss => {
+              api.store.dispatch(enableUserSymlinks(false));
+              dismiss();
+            } },
+            { title: 'Repair', action: dismiss => {
+              installTask(scriptPath);
+              dismiss();
+            } },
+          ],
+        });
+      } else {
+        installTask(scriptPath);
+      }
     });
 }
 
@@ -737,11 +762,7 @@ function findTask() {
   }
 }
 
-function ensureTaskDeleted(): Promise<void> {
-  if (findTask() === undefined) {
-    return Promise.resolve();
-  }
-
+function removeTask(): Promise<void> {
   const ipcPath = `ipc_${shortid()}`;
   const ipcServer: net.Server = startIPCServer(ipcPath, (conn, message: string, payload) => {
     if (message === 'log') {
@@ -763,9 +784,33 @@ function ensureTaskDeleted(): Promise<void> {
       : Promise.reject(err));
 }
 
-function ensureTask(api: IExtensionApi, enabled: boolean): void {
+function ensureTaskDeleted(api: IExtensionApi, delayed: boolean): Promise<void> {
+  if (findTask() === undefined) {
+    return Promise.resolve();
+  }
+
+  if (delayed) {
+    api.sendNotification({
+      type: 'info',
+      message: 'Symlink elevation workaround not fully disabled',
+      noDismiss: true,
+      actions: [
+        {
+          title: 'Clean up', action: dismiss => {
+            removeTask();
+            dismiss();
+          },
+        },
+      ],
+    });
+  } else {
+    return removeTask();
+  }
+}
+
+function ensureTask(api: IExtensionApi, enabled: boolean, delayed: boolean): Promise<void> {
   if (enabled) {
-    ensureTaskEnabled()
+    return ensureTaskEnabled(api, delayed)
       .catch(err => {
         if (!(err instanceof UserCanceled)) {
           api.showErrorNotification('Failed to create task', err);
@@ -774,7 +819,7 @@ function ensureTask(api: IExtensionApi, enabled: boolean): void {
       })
       .then(() => null);
   } else {
-    ensureTaskDeleted()
+    return ensureTaskDeleted(api, delayed)
       .catch(err => {
         if (!(err instanceof UserCanceled)) {
           api.showErrorNotification('Failed to remove task', err);
@@ -818,11 +863,11 @@ function init(context: IExtensionContextEx): boolean {
     if (process.platform === 'win32') {
       const userSymlinksPath = ['settings', 'workarounds', 'userSymlinks'];
       context.api.onStateChange(userSymlinksPath, (prev, current) => {
-        ensureTask(context.api, current);
+        ensureTask(context.api, current, false);
       });
       const state = context.api.store.getState();
       const userSymlinks = getSafe(state, userSymlinksPath, false);
-      ensureTask(context.api, userSymlinks);
+      return ensureTask(context.api, userSymlinks, true);
     }
   });
 
