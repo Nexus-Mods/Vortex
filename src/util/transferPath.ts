@@ -238,6 +238,29 @@ export function transferPath(source: string,
     });
 }
 
+/**
+ * Will sort all detected file paths in respect to length (longest first)
+ *  and will remove every file and directory one at a time.
+ *  Yet again rimraf can't be trusted to deal with a basic piece of
+ *  functionality like deleting a directory recursively.
+ *  https://github.com/Nexus-Mods/Vortex/issues/6769
+ * @param dirPath
+ */
+export function cleanFailedTransfer(dirPath: string): Promise<void> {
+  let files: IEntry[] = [];
+  return turbowalk(dirPath, entries => {
+    files = files.concat(entries);
+  }, { skipHidden: false, skipLinks: false, recurse: true })
+  .catch(err => (['ENOENT', 'ENOTFOUND'].includes(err.code))
+    ? Promise.resolve()
+    : Promise.reject(err))
+  .then(() => {
+    files = files.sort((lhs, rhs) => rhs.filePath.length - lhs.filePath.length);
+    return Promise.each(files, file => fs.removeAsync(file.filePath));
+  })
+  .then(() => fs.removeAsync(dirPath));
+}
+
 function removeFolderTags(sourceDir: string) {
   // Attempt to remove the folder tag. (either staging folder or downloads tag)
   //  This should only be called when the folder is moved down a layer.

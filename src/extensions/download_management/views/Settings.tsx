@@ -18,7 +18,7 @@ import { showError } from '../../../util/message';
 import opn from '../../../util/opn';
 import * as selectors from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
-import { testPathTransfer, transferPath } from '../../../util/transferPath';
+import { cleanFailedTransfer, testPathTransfer, transferPath } from '../../../util/transferPath';
 import { ciEqual, isChildPath, isPathValid } from '../../../util/util';
 import getTextMod from '../../mod_management/texts';
 import { setDownloadPath, setMaxDownloads } from '../actions/settings';
@@ -472,7 +472,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         const pendingTransfer: string[] = ['persistent', 'transactions', 'transfer', 'downloads'];
         if ((getSafe(state, pendingTransfer, undefined) !== undefined)
           && deleteOldDestination) {
-          return fs.removeAsync(newPath)
+          return cleanFailedTransfer(newPath)
             .then(() => {
               onSetTransfer(undefined);
               this.nextState.busy = undefined;

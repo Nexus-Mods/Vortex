@@ -20,7 +20,7 @@ import { showError } from '../../../util/message';
 import opn from '../../../util/opn';
 import * as selectors from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
-import { testPathTransfer, transferPath } from '../../../util/transferPath';
+import { cleanFailedTransfer, testPathTransfer, transferPath } from '../../../util/transferPath';
 import { ciEqual, isChildPath, isPathValid } from '../../../util/util';
 import { currentGame, currentGameDiscovery } from '../../gamemode_management/selectors';
 import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResult';
@@ -454,7 +454,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         const pendingTransfer: string[] = ['persistent', 'transactions', 'transfer', gameMode];
         if ((getSafe(state, pendingTransfer, undefined) !== undefined)
             && deleteOldDestination) {
-          return fs.removeAsync(newInstallPath)
+          return cleanFailedTransfer(newInstallPath)
             .then(() => {
               onSetTransfer(gameMode, undefined);
               this.nextState.busy = undefined;
