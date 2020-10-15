@@ -97,6 +97,12 @@ export const stateReducer: IReducerSpec = {
         chunks: [],
       });
     },
+    [action.finalizingDownload as any]: (state, payload) => {
+      if (state.files[payload.id] === undefined) {
+        return state;
+      }
+      return setSafe(state, ['files', payload.id, 'state'], 'finalizing');
+    },
     [action.setDownloadTime as any]: (state, payload) => merge(state, ['files', payload.id], {
       fileTime: payload.time,
     }),

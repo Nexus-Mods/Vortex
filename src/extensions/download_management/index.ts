@@ -518,7 +518,7 @@ function init(context: IExtensionContextExt): boolean {
     ['persistent', 'downloads', 'files'],
     ], (downloads: { [dlId: string]: IDownload }) => {
       const count = Object.keys(downloads ?? {}).filter(
-        id => ['init', 'started', 'paused'].indexOf(downloads[id].state) !== -1).length;
+        id => ['init', 'started', 'paused'].includes(downloads[id].state)).length;
       return count > 0 ? count : undefined;
     });
 
@@ -740,7 +740,7 @@ function init(context: IExtensionContextExt): boolean {
 
       const downloads = (store.getState() as IState).persistent.downloads.files;
       const interruptedDownloads = Object.keys(downloads)
-        .filter(id => ['init', 'started', 'pending'].indexOf(downloads[id].state) !== -1);
+        .filter(id => ['init', 'started', 'pending'].includes(downloads[id].state));
       interruptedDownloads.forEach(id => {
         if (!truthy(downloads[id].urls)) {
           // download was interrupted before receiving urls, has to be canceled

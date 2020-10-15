@@ -416,14 +416,14 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
   private removable = (downloadIds: string[]) => {
     const match = ['finished', 'failed', undefined];
     return downloadIds.find((downloadId: string) => (
-      match.indexOf(this.getDownload(downloadId).state) >= 0
+      match.includes(this.getDownload(downloadId).state)
     )) !== undefined;
   }
 
   private cancelable = (downloadIds: string[]) => {
     const match = ['init', 'started', 'paused', 'redirect'];
     return downloadIds.find((downloadId: string) => (
-      match.indexOf(this.getDownload(downloadId).state) >= 0
+      match.includes(this.getDownload(downloadId).state)
     )) !== undefined;
   }
 
@@ -517,7 +517,7 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
 
   private inspectable = (downloadId: string) => {
     const download = this.getDownload(downloadId);
-    return [ 'failed', 'redirect' ].indexOf(download.state) >= 0;
+    return ['failed', 'redirect'].includes(download.state);
   }
 
   private dropDownload = (type: DropType, dlPaths: string[]) => {

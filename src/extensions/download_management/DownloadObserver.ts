@@ -13,6 +13,7 @@ import { showURL } from '../browser/actions';
 
 import {
   downloadProgress,
+  finalizingDownload,
   finishDownload,
   initDownload,
   pauseDownload,
@@ -196,7 +197,7 @@ export class DownloadObserver {
       ensureDownloadsDirectory(this.mApi)
         .then(() => this.mManager.enqueue(id, urls, fileName, processCB, downloadPath, redownload))
         .then((res: IDownloadResult) => {
-          log('debug', 'download finished', { file: res.filePath });
+          log('debug', 'download finished', { id, file: res.filePath });
           this.handleDownloadFinished(id, callback, res);
         })
         .catch(err => this.handleDownloadError(err, id, downloadPath, callback)));
@@ -223,6 +224,7 @@ export class DownloadObserver {
         callback(new Error('html result'), id);
       }
     } else {
+      this.mApi.store.dispatch(finalizingDownload(id));
       const {genHash} = require('modmeta-db');
       genHash(res.filePath)
           .then((md5Hash: IHashResult) => {
@@ -269,7 +271,7 @@ export class DownloadObserver {
       log('warn', 'failed to remove download: unknown', {downloadId});
       return;
     }
-    if (['init', 'started'].indexOf(download.state) >= 0) {
+    if (['init', 'started'].includes(download.state)) {
       // need to cancel the download
       this.mManager.stop(downloadId);
     }
@@ -302,7 +304,9 @@ export class DownloadObserver {
       log('warn', 'failed to pause download: unknown', {downloadId});
       return;
     }
-    if (['init', 'started'].indexOf(download.state) >= 0) {
+
+    if (['init', 'started'].includes(download.state)) {
+      log('debug', 'pausing download', { id: download.id, oldState: download.state });
       const unfinishedChunks = this.mManager.pause(downloadId);
       this.mApi.store.dispatch(pauseDownload(downloadId, true, unfinishedChunks));
     }
@@ -325,7 +329,6 @@ export class DownloadObserver {
         });
       }
 
-      // if (download.state === 'paused') {
       if (['paused', 'failed'].includes(download.state)) {
         const gameMode = getDownloadGames(download)[0];
         const downloadPath = selectors.downloadPathForGame(this.mApi.store.getState(), gameMode);

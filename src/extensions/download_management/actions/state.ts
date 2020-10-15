@@ -35,6 +35,13 @@ export const startDownload = safeCreateAction('START_DOWNLOAD',
   (id: string) => ({ id }));
 
 /**
+ * mark download as finalizing, meaning the file has been downloaded fully,
+ * during this phase checksums are calculated for example
+ */
+export const finalizingDownload = safeCreateAction('FINALIZING_DOWNLOAD',
+  (id: string) => ({ id }));
+
+/**
  * mark download as finished
  */
 export const finishDownload = safeCreateAction('FINISH_DOWNLOAD',

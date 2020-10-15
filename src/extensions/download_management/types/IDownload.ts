@@ -1,6 +1,6 @@
 import { IChunk } from './IChunk';
 
-export type DownloadState = 'init' | 'started' | 'paused' | 'finished' | 'failed' | 'redirect';
+export type DownloadState = 'init' | 'started' | 'paused' | 'finalizing' | 'finished' | 'failed' | 'redirect';
 
 export interface IDownloadFailCause {
   htmlFile?: string;

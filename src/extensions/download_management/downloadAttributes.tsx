@@ -1,5 +1,6 @@
 import { SITE_GAME_NAME } from '../../controls/constants';
 import ProgressBar from '../../controls/ProgressBar';
+import Spinner from '../../controls/Spinner';
 import DateTimeFilter from '../../controls/table/DateTimeFilter';
 import GameFilter from '../../controls/table/GameFilter';
 import TextFilter from '../../controls/table/TextFilter';
@@ -36,6 +37,7 @@ function progress(props) {
     case 'init': return <span>{t('Pending')}</span>;
     case 'finished': return <span>{t('Finished')}</span>;
     case 'failed': return <span>{t('Failed')}</span>;
+    case 'finalizing': return <span><Spinner /> {t('Finalizing')}</span>;
     case 'redirect': return <span>{t('Redirected')}</span>;
     case 'paused': return <span>{t('Paused')}</span>;
     default: return (
