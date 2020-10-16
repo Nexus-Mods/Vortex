@@ -396,10 +396,17 @@ interface IErrorHandlerOptions {
   enotempty?: boolean;
 }
 
+function augmentError(error: NodeJS.ErrnoException) {
+  if (error.message === 'dest already exists.') {
+    error.code = 'EEXIST';
+  }
+}
+
 function errorHandler(error: NodeJS.ErrnoException,
                       stackErr: Error, tries: number,
                       showDialogCallback?: () => boolean,
                       options?: IErrorHandlerOptions): PromiseBB<void> {
+  augmentError(error);
   const repProm = errorRepeat(error, (error as any).dest || error.path, tries,
                      stackErr, showDialogCallback, options);
 
@@ -560,6 +567,23 @@ function selfCopyCheck(src: string, dest: string) {
         ? PromiseBB.reject(new Error(
           `Source "${src}" and destination "${dest}" are the same file (id "${stats[0].ino}").`))
         : PromiseBB.resolve());
+}
+
+function nextName(input: string): string {
+  const ext = path.extname(input);
+  const base = path.basename(input, ext);
+  const count = parseInt(path.extname(base).slice(1), 10) || 1;
+  return path.join(path.dirname(input), `${base}.${count}${ext}`);
+}
+
+/**
+ * move a file. If the destination exists, will generate a new name with an
+ * increasing counter until an unused name is found
+ */
+export function moveRenameAsync(src: string, dest: string): PromiseBB<string> {
+  return moveAsync(src, dest, { overwrite: false })
+    .then(() => dest)
+    .catch({ code: 'EEXIST' }, () => moveRenameAsync(src, nextName(dest)));
 }
 
 /**

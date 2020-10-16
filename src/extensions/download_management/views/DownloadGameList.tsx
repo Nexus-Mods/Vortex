@@ -10,7 +10,7 @@ import { truthy } from '../../../util/util';
 
 import { SITE_ID } from '../../gamemode_management/constants';
 
-import { setCompatibleGames } from '../actions/state';
+import { setCompatibleGames, setDownloadFilePath } from '../actions/state';
 
 import Promise from 'bluebird';
 import * as fuzz from 'fuzzball';
@@ -31,6 +31,7 @@ export interface IBaseProps {
 
 interface IActionProps {
   onSetCompatibleGames: (games: string[]) => void;
+  onSetDownloadName: (id: string, name: string) => void;
 }
 
 type IProps = IBaseProps & IActionProps;
@@ -108,11 +109,11 @@ class DownloadGameList extends PureComponentEx<IProps, {}> {
     }
   }
 
-  private moveDownload(gameId: string): Promise<void> {
+  private moveDownload(gameId: string): Promise<string> {
     const { currentGames, fileName } = this.props;
     if (fileName === undefined) {
       log('warn', 'Failed to move download, filename is undefined', { gameId });
-      return Promise.resolve();
+      return Promise.resolve(undefined);
     }
     // removing the main game, have to move the download then
     const state = this.context.api.store.getState();
@@ -122,23 +123,11 @@ class DownloadGameList extends PureComponentEx<IProps, {}> {
     const newPath = selectors.downloadPathForGame(state, gameId);
     const source = path.join(oldPath, fileName);
     const dest = path.join(newPath, fileName);
-    return fs.moveAsync(source, dest)
-      .catch(err => {
-        if (err.code !== 'EEXIST') {
-          return Promise.reject(err);
-        } else {
-          // We can use the "modified time" to assert whether we're dealing with
-          //  identical files and remove the source if this is the case - if not - raise error.
-          return Promise.all([fs.statAsync(source), fs.statAsync(dest)]).then(res =>
-            res[0].mtimeMs === res[1].mtimeMs
-              ? fs.removeAsync(source)
-              : Promise.reject(err));
-        }
-      });
+    return fs.moveRenameAsync(source, dest);
   }
 
   private removeGame = (evt: React.MouseEvent<any>) => {
-    const { currentGames, onSetCompatibleGames, fileName } = this.props;
+    const { currentGames, id, onSetCompatibleGames, onSetDownloadName, fileName } = this.props;
     const gameId = evt.currentTarget.getAttribute('data-gameid');
     const idx = currentGames.indexOf(gameId);
     if ((idx !== -1) && (currentGames.length > 1)) {
@@ -152,11 +141,14 @@ class DownloadGameList extends PureComponentEx<IProps, {}> {
 
             return Promise.resolve();
         })
-        : Promise.resolve();
-      prom.then(() => {
-        const newGames = [].concat(currentGames);
-        newGames.splice(idx, 1);
-        onSetCompatibleGames(newGames);
+        : Promise.resolve(undefined);
+      prom.then((newName: string) => {
+        if (newName !== undefined) {
+          const newGames = currentGames.slice(0);
+          newGames.splice(idx, 1);
+          onSetCompatibleGames(newGames);
+          onSetDownloadName(id, path.basename(newName));
+        }
       })
       .catch(err => this.context.api.showErrorNotification(
         `Unable to remove game ${gameId}`,
@@ -174,6 +166,7 @@ function mapDispatchToProps(dispatch: ThunkDispatch<IState, null, Redux.Action>,
                             ownProps: IBaseProps): IActionProps {
   return {
     onSetCompatibleGames: (games: string[]) => dispatch(setCompatibleGames(ownProps.id, games)),
+    onSetDownloadName: (id: string, name: string) => dispatch(setDownloadFilePath(id, name)),
   };
 }
 
