@@ -196,7 +196,12 @@ class DownloadWorker {
     let referer: string;
     try {
       const [urlIn, refererIn] = jobUrl.split('<');
-      parsed = url.parse(decodeURI(urlIn));
+      // at some point in the past we'd encode the uri here which apparently led to double-encoded
+      // uris. Then we'd decode it which led to the request failing if there were characters in
+      // the url that required encoding.
+      // Since all that was tested at some point I'm getting the feeling it's inconsistent in
+      // the callers whether the url is encoded or not
+      parsed = url.parse(urlIn);
       referer = refererIn;
       jobUrl = urlIn;
     } catch (err) {
