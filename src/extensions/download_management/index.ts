@@ -738,7 +738,9 @@ function init(context: IExtensionContextExt): boolean {
       observer =
           observeImpl(context.api, manager);
 
-      const downloads = (store.getState() as IState).persistent.downloads.files;
+      const downloads = getSafe((store.getState() as IState),
+        ['persistent', 'downloads', 'files'], {});
+
       const interruptedDownloads = Object.keys(downloads)
         .filter(id => ['init', 'started', 'pending'].includes(downloads[id].state));
       interruptedDownloads.forEach(id => {
