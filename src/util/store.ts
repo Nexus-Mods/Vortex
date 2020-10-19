@@ -6,13 +6,13 @@ import { DataInvalid } from './CustomErrors';
 import { getVisibleWindow } from './errorHandling';
 import ExtensionManager from './ExtensionManager';
 import * as fs from './fs';
-import { writeFileAtomic } from './fsAtomic';
+import { checksum, writeFileAtomic } from './fsAtomic';
 import { log } from './log';
 import ReduxPersistor from './ReduxPersistor';
 import {reduxSanity, StateError} from './reduxSanity';
 
 import Promise from 'bluebird';
-import { app as appIn, dialog, remote } from 'electron';
+import { app as appIn, dialog, ipcMain, remote } from 'electron';
 import { forwardToRenderer, replayActionMain } from 'electron-redux';
 import * as encode from 'encoding-down';
 import * as leveldown from 'leveldown';
@@ -58,6 +58,11 @@ export function createVortexStore(sanityCallback: (err: StateError) => void): Re
   const store = createStore<IState, Redux.Action, any, any>(reducer([], querySanitize), enhancer);
   basePersistor = new ReduxPersistor(store);
   replayActionMain(store);
+  ipcMain.on('get-redux-state', (evt: Electron.IpcMainEvent) => {
+    const dat = JSON.stringify(store.getState());
+    const md5 = checksum(Buffer.from(dat));
+    evt.returnValue = md5 + dat;
+  });
   return store;
 }
 

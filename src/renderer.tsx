@@ -93,15 +93,34 @@ import { ThunkStore } from './types/IExtensionContext';
 import { IState } from './types/IState';
 import { UserCanceled } from './util/CustomErrors';
 import {} from './util/extensionRequire';
+import { checksum } from './util/fsAtomic';
 import { reduxLogger } from './util/reduxLogger';
 import { getSafe } from './util/storeHelper';
 import { bytesToString, getAllPropertyNames } from './util/util';
 
 log('debug', 'renderer process started', { pid: process.pid });
 
+function fetchReduxState(tries: number = 5) {
+  const msg: string = ipcRenderer.sendSync('get-redux-state');
+
+  const expectedMD5 = msg.slice(0, 32);
+  const dat = msg.slice(32);
+  const actualMD5 = checksum(Buffer.from(dat));
+  if (actualMD5 === expectedMD5) {
+    log('info', 'parsing state', dat.length);
+    return JSON.parse(dat.toString());
+  } else if (tries <= 0) {
+    throw new SyntaxError('failed to transfer state from main process');
+  } else {
+    log('warn', 'failed to transfer redux state',
+        { tries, expectedMD5, actualMD5, length: dat.length });
+    return fetchReduxState(tries - 1);
+  }
+}
+
 function initialState(): any {
   try {
-    return getInitialStateRenderer();
+    return fetchReduxState();
   } catch (err) {
     if (err instanceof SyntaxError) {
       const dumpPath = path.join(remote.app.getPath('temp'), 'invalid_state.json');
