@@ -327,6 +327,7 @@ export class DownloadObserver {
           type: 'warning',
           message: 'This download can\'t be resumed',
         });
+        return;
       }
 
       if (['paused', 'failed'].includes(download.state)) {
