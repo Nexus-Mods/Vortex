@@ -568,3 +568,22 @@ export function delayed(delayMS: number): Promise<void> {
 export function toBlue<T>(func: (...args: any[]) => Promise<T>): (...args: any[]) => Bluebird<T> {
   return (...args: any[]) => Bluebird.resolve(func(...args));
 }
+
+export function replaceRecursive(input: any, from: any, to: any) {
+  if ((input === undefined)
+      || (input === null)
+      || Array.isArray(input)) {
+    return input;
+  }
+  return Object.keys(input)
+    .reduce((prev: any, key: string) => {
+      if (input[key] === from) {
+        prev[key] = to;
+      } else if (typeof(input[key]) === 'object') {
+        prev[key] = replaceRecursive(input[key], from, to);
+      } else {
+        prev[key] = input[key];
+      }
+      return prev;
+    }, {});
+}

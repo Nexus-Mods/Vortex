@@ -22,7 +22,7 @@ import { allHives, createFullStateBackup, createVortexStore, currentStatePath, e
          importState, insertPersistor, markImported, querySanitize } from '../util/store';
 import {} from '../util/storeHelper';
 import SubPersistor from '../util/SubPersistor';
-import { isMajorDowngrade, spawnSelf, timeout, truthy } from '../util/util';
+import { isMajorDowngrade, replaceRecursive, spawnSelf, timeout, truthy } from '../util/util';
 
 import { addNotification, setCommandLine } from '../actions';
 
@@ -785,7 +785,7 @@ class Application {
         (global as any).getReduxStateMsgpack = (idx: number) => {
           const msgpack: typeof msgpackT = require('msgpack');
           if ((sendState === undefined) || (idx === 0)) {
-            sendState = msgpack.pack(this.mStore.getState());
+            sendState = msgpack.pack(replaceRecursive(this.mStore.getState(), undefined, '__UNDEFINED__'));
           }
           const res = sendState.slice(idx * STATE_CHUNK_SIZE, (idx + 1) * STATE_CHUNK_SIZE);
           return res.toString('base64');

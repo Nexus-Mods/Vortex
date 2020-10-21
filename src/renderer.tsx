@@ -96,7 +96,7 @@ import {} from './util/extensionRequire';
 import { checksum } from './util/fsAtomic';
 import { reduxLogger } from './util/reduxLogger';
 import { getSafe } from './util/storeHelper';
-import { bytesToString, getAllPropertyNames } from './util/util';
+import { bytesToString, getAllPropertyNames, replaceRecursive } from './util/util';
 
 log('debug', 'renderer process started', { pid: process.pid });
 
@@ -134,8 +134,8 @@ function initialState(): any {
       // NOTE: This uses msgpack for serialization to rule out json as the problem. However this
       //   msgpack library converts undefined to null whereas JSON encoding just drops all undefined
       //   values so going this route may cause new issues where code isn't capable of handling
-      //   null. This is only an issue for the "session" hive because everything that had been
-      //   serialized had the undefined values dropped anyway.
+      //   null. This is only an issue for the "session" hive or on the very first start because
+      //   everything that had been serialized had the undefined values dropped anyway.
       let stateSerialized: Buffer = Buffer.alloc(0);
 
       const getReduxStateMsgpack = remote.getGlobal('getReduxStateMsgpack');
@@ -151,7 +151,7 @@ function initialState(): any {
 
       const msgpack: typeof msgpackT = require('msgpack');
 
-      return msgpack.unpack(stateSerialized);
+      return replaceRecursive(msgpack.unpack(stateSerialized), '__UNDEFINED__', undefined);
     }
   }
 }
