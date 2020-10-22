@@ -847,6 +847,8 @@ class ExtensionManager {
 
     return Promise.mapSeries(calls, (call, idx) => {
       log('debug', 'once', { extension: call.extension });
+      const ext = this.mExtensions.find(iter => iter.name === call.extension);
+      this.mContextProxyHandler.setExtension(ext.name, ext.path);
       try {
         this.mLoadingCallbacks.forEach(cb => {
           cb(call.extension, idx);
