@@ -43,6 +43,7 @@ export {
   createWriteStream,
   linkSync,
   openSync,
+  readdirSync,
   readFileSync,
   statSync,
   symlinkSync,
