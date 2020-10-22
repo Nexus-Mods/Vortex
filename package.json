@@ -12,8 +12,8 @@
     "electron": "8.5.1"
   },
   "scripts": {
-    "_assets_out": "node InstallAssets.js out && sass --style compressed src/stylesheets/loadingScreen.scss > out/assets/css/loadingScreen.css",
-    "_assets_app": "node InstallAssets.js app && sass --style compressed src/stylesheets/loadingScreen.scss > app/assets/css/loadingScreen.css",
+    "_assets_out": "tsc -p extensions/games && node InstallAssets.js out && sass --style compressed src/stylesheets/loadingScreen.scss > out/assets/css/loadingScreen.css",
+    "_assets_app": "tsc -p extensions/games && node InstallAssets.js app && sass --style compressed src/stylesheets/loadingScreen.scss > app/assets/css/loadingScreen.css",
     "_install_app": "cd app && rm-local-modules && yarn install --non-interactive --check-files",
     "subprojects": "node BuildSubprojects.js out",
     "subprojects_app": "node BuildSubprojects.js app",
@@ -29,11 +29,11 @@
     "ci": "node checkPackages.js && yarn run prepareci && yarn run build_dist && electron-builder --config electron-builder-ci.json --publish never",
     "start": "cross-env NODE_ENV=development electron .",
     "clean": "yarn add rm-local-modules && rm-local-modules && yarn install --check-files",
-    "preinstall": "git submodule update --init --recursive",
+    "_preinstall": "git submodule update --init --recursive",
     "test": "jest --no-cache",
     "lint": "tslint --project . -t verbose || echo 0",
     "build": "yarn run build_rest && tsc -p .",
-    "buildwatch": "yarn run build_rest && tsc -p . -w"
+    "buildwatch": "yarn run build_rest && tsc -p . --watch"
   },
   "jest": {
     "transform": {
@@ -139,6 +139,7 @@
     "@types/winston": "^2.4.4",
     "@types/write-file-atomic": "^2.1.2",
     "@types/ws": "^6.0.3",
+    "@types/xml2js": "^0.4.5",
     "@yarnpkg/lockfile": "*",
     "babel-core": "^6.26.3",
     "babel-jest": "^24.9.0",
