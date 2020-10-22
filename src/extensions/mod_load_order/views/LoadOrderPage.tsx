@@ -241,6 +241,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
             enabled: true,
             locked: false,
             prefix: entry.prefix,
+            data: entry.data,
           };
           return accum;
         }
@@ -250,6 +251,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
             enabled: loadOrder[entry.id].enabled,
             locked: true,
             prefix: entry.prefix,
+            data: entry.data,
           };
         } else {
           const existing = Object.keys(accum);
@@ -265,6 +267,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
                   enabled: hasLOEntry(entry.id) ? loadOrder[entry.id].enabled : true,
                   locked: false,
                   prefix: entry.prefix,
+                  data: entry.data,
                 };
                 return accum;
               }
@@ -276,6 +279,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
               enabled: hasLOEntry(entry.id) ? loadOrder[entry.id].enabled : true,
               locked: false,
               prefix: entry.prefix,
+              data: entry.data,
             };
           } else {
             accum[entry.id] = {
@@ -283,6 +287,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
               enabled: hasLOEntry(entry.id) ? loadOrder[entry.id].enabled : true,
               locked: false,
               prefix: entry.prefix,
+              data: entry.data,
             };
           }
         }

@@ -28,7 +28,7 @@ export interface IInfoPanelProps {
   refresh: () => void;
 }
 
-export interface ILoadOrderEntry {
+export interface ILoadOrderEntry<T = any> {
   // The position/index/priority for this entry.
   pos: number;
 
@@ -39,6 +39,9 @@ export interface ILoadOrderEntry {
   //  index/priority of most mods but in some cases it is more advantageous
   //  to use prefixes, particularly when a game loads mods alphabetically.
   prefix?: string;
+
+  // custom data passed along with the load order entry
+  data?: T;
 
   // If the load order entry is locked to its current position/index/priority.
   locked?: boolean;
@@ -73,8 +76,13 @@ export interface IDnDConditionResult {
   errMessage?: string;
 }
 
+/**
+ * describes an item in the load order control.
+ * This isn't just used for "display", the id is what gets stored to internally
+ * save the load order
+ */
 export interface ILoadOrderDisplayItem {
-  // mod Id as stored in Vortex
+  // an arbitrary unique id for the load order item
   id: string;
 
   // mod display name.
@@ -86,6 +94,9 @@ export interface ILoadOrderDisplayItem {
   // Some game mod patterns require a prefix to be set.
   //  (e.g. 7dtd, etc)
   prefix?: string;
+
+  // custom data to attach to the load order item
+  data?: string;
 
   // Is this mod locked - locked mods are not draggable.
   locked?: boolean;

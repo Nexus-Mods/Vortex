@@ -1,4 +1,5 @@
 import { IExtension } from '../extensions/extension_manager/types';
+import { IGameLoadOrderEntry } from '../extensions/mod_load_order/types/types';
 import {
   IDeployedFile,
   IDeploymentMethod,
@@ -17,6 +18,7 @@ import {
   TestSupported,
 } from '../extensions/mod_management/types/TestSupported';
 import { Archive } from '../util/archives';
+import { IRegisteredExtension } from '../util/ExtensionManager';
 import { i18n, TFunction } from '../util/i18n';
 import ReduxProp from '../util/ReduxProp';
 import { SanityCheck } from '../util/reduxSanity';
@@ -37,7 +39,6 @@ import { ILookupResult, IModInfo, IReference } from 'modmeta-db';
 import * as React from 'react';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
-import { IRegisteredExtension } from '../util/ExtensionManager';
 
 export { TestSupported, IInstallResult, IInstruction, IDeployedFile, IDeploymentMethod,
          IFileChange, ILookupResult, IModInfo, IReference, InstallFunc, ISupportedResult,
@@ -1193,6 +1194,10 @@ export interface IExtensionContext {
    *                 you will probably not need this
    */
   registerToolVariables: (callback: ToolParameterCB) => void;
+
+  // Provides game extensions with an easy way to add a load order page
+  //  if they require it.
+  registerLoadOrderPage: (gameEntry: IGameLoadOrderEntry) => void;
 
   /**
    * add a function to the IExtensionApi object that is made available to all other extensions

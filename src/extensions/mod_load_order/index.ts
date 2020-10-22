@@ -1,3 +1,4 @@
+import { IExtensionContext } from '../../types/IExtensionContext';
 import { modLoadOrderReducer } from './reducers/loadOrder';
 import { loadOrderSettingsReducer } from './reducers/settings';
 import { IGameLoadOrderEntry } from './types/types';
@@ -7,13 +8,7 @@ import { log, selectors, types } from 'vortex-api';
 
 const SUPPORTED_GAMES: IGameLoadOrderEntry[] = [];
 
-export interface IExtensionContextExt extends types.IExtensionContext {
-  // Provides game extensions with an easy way to add a load order page
-  //  if they require it.
-  registerLoadOrderPage: (gameEntry: IGameLoadOrderEntry) => void;
-}
-
-export default function init(context: IExtensionContextExt) {
+export default function init(context: IExtensionContext) {
   context.registerMainPage('sort-none', 'Load Order', LoadOrderPage, {
     id: 'generic-loadorder',
     hotkey: 'E',

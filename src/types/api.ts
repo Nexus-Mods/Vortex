@@ -36,3 +36,4 @@ export { IMod, IModReference, IModRule} from '../extensions/mod_management/types
 export { IToolStored } from '../extensions/gamemode_management/types/IToolStored';
 export { IProfile, IProfileMod } from '../extensions/profile_management/types/IProfile';
 export { IValidateKeyData } from '../extensions/nexus_integration/types/IValidateKeyData';
+export { ILoadOrderDisplayItem, SortType, UpdateType } from '../extensions/mod_load_order/types/types';
