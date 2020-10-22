@@ -307,6 +307,20 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       // new directory doesn't exist. good
     }
 
+    const vortexAppData = remote.app.getPath('userData');
+    if (normalize(newInstallPath.toLowerCase()) === normalize(vortexAppData.toLowerCase())) {
+      // Theoretically this shouldn't be needed as our AppData is not empty
+      //  and therefore the transfer should be blocked by checkTargetEmpty()
+      //  call; _unless_ the user took extra steps and manually placed a downloads
+      //  tag file in there with a different instance id.
+      return onShowDialog('error', 'Invalid path selected', {
+                  text: 'You can not put mods into the vortex AppData directory. '
+                  + 'It would become impossible for Vortex to move your staging folder '
+                  + 'anywhere else without attempting to move the entire contents of the '
+                  + 'AppData directory alongside it.',
+      }, [ { label: 'Close' } ]);
+    }
+
     if (isChildPath(newInstallPath, vortexPath, normalize)) {
       return onShowDialog('error', 'Invalid path selected', {
                 text: 'You can not put mods into the vortex application directory. '
@@ -648,6 +662,14 @@ class Settings extends ComponentEx<IProps, IComponentState> {
           reason: 'Staging folder can\'t be a subdirectory of the Vortex downloads folder.',
         };
       }
+    }
+
+    const vortexAppData = remote.app.getPath('userData');
+    if (path.normalize(input.toLowerCase()) === path.normalize(vortexAppData.toLowerCase())) {
+      return {
+        state: 'error',
+        reason: 'Staging folder can\'t be the Vortex AppData folder.',
+      };
     }
 
     if (isChildPath(input, vortexPath)) {

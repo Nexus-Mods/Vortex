@@ -243,6 +243,14 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       }
     }
 
+    const vortexAppData = remote.app.getPath('userData');
+    if (path.normalize(input.toLowerCase()) === path.normalize(vortexAppData.toLowerCase())) {
+      return {
+        state: 'error',
+        reason: 'Download folder can\'t be the Vortex AppData folder.',
+      };
+    }
+
     if (isChildPath(input, vortexPath)) {
       return {
         state: 'error',
@@ -354,10 +362,24 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       // new directory doesn't exist. good
     }
 
+    const vortexAppData = remote.app.getPath('userData');
+    if (normalize(newPath.toLowerCase()) === normalize(vortexAppData.toLowerCase())) {
+      // Theoretically this shouldn't be needed as our AppData is not empty
+      //  and therefore the transfer should be blocked by checkTargetEmpty()
+      //  call; _unless_ the user took extra steps and manually placed a downloads
+      //  tag file in there with a different instance id.
+      return onShowDialog('error', 'Invalid path selected', {
+                  text: 'You can not put downloads into the vortex AppData directory. '
+                  + 'It would become impossible for Vortex to move your downloads folder '
+                  + 'anywhere else without attempting to move the entire contents of the '
+                  + 'AppData directory alongside it.',
+      }, [ { label: 'Close' } ]);
+    }
+
     if (!path.isAbsolute(newPath)
         || isChildPath(newPath, vortexPath, normalize)) {
-      return onShowDialog('error', 'Invalid paths selected', {
-                  text: 'You can not put mods into the vortex application directory. '
+      return onShowDialog('error', 'Invalid path selected', {
+                  text: 'You can not put downloads into the vortex application directory. '
                   + 'This directory gets removed during updates so you would lose all your '
                   + 'files on the next update.',
       }, [ { label: 'Close' } ]);
