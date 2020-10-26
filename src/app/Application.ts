@@ -32,7 +32,7 @@ import TrayIconT from './TrayIcon';
 
 import Promise from 'bluebird';
 import crashDumpT from 'crash-dump';
-import {app, crashReporter as crashReporterT, dialog, ipcMain, shell} from 'electron';
+import {app, crashReporter as crashReporterT, dialog, ipcMain, shell, protocol} from 'electron';
 import isAdmin = require('is-admin');
 import * as _ from 'lodash';
 import * as msgpackT from 'msgpack';
@@ -180,6 +180,12 @@ class Application {
             // production version and vice versa
             : path.resolve(app.getPath('userData'), '..', vortexPath));
       userData = path.join(userData, currentStatePath);
+
+      // handle nxm:// internally
+      protocol.registerHttpProtocol('nxm', (request, callback) => {
+        const cfgFile: IParameters = {download: request.url};
+        this.applyArguments(cfgFile);
+      });
 
       if (args.get) {
         this.handleGet(args.get, userData);
