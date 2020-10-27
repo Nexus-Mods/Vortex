@@ -273,7 +273,8 @@ export function showError(dispatch: ThunkDispatch<IState, null, Redux.Action>,
   }
 
   if ((options.attachments !== undefined)
-      && (options.attachments.length > 0)) {
+      && (options.attachments.length > 0)
+      && allowReport) {
     content.text = (content.text !== undefined ? (content.text + '\n\n') : '')
       + 'Note: If you report this error, the following data will be added to the report:\n'
       + options.attachments.map(attach => ` - ${attach.description}`).join('\n');
