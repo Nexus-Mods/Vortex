@@ -528,7 +528,8 @@ export function onRemoveMod(api: IExtensionApi,
 
   store.dispatch(startActivity('mods', `removing_${modId}`));
 
-  undeployMod()
+  api.emitAndAwait('will-remove-mod', gameMode, mod.id)
+  .then(() => undeployMod())
   .then(() => {
     if (truthy(mod) && truthy(mod.installationPath)) {
       const fullModPath = path.join(installationPath, mod.installationPath);
@@ -545,6 +546,7 @@ export function onRemoveMod(api: IExtensionApi,
     if (callback !== undefined) {
       callback(null);
     }
+    return api.emitAndAwait('did-remove-mod', gameMode, mod.id);
   })
   .catch(TemporaryError, (err) => {
     if (callback !== undefined) {
