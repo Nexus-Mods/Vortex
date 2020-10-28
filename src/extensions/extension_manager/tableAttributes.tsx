@@ -143,6 +143,13 @@ function getTableAttributes(context: IAttributesContext):
       placement: 'detail',
       calc: (extension, t) =>
         extension.loadFailures.map(fail => renderLoadFailure(t, fail)).join('\n'),
+      customRenderer: (extension: IExtensionWithState, detailCell: boolean, t: TFunction) => (
+        <textarea
+          className='textarea-details'
+          value={extension.loadFailures.map(fail => renderLoadFailure(t, fail)).join('\n')}
+          readOnly={true}
+        />
+      ),
       edit: {},
     },
   ];
