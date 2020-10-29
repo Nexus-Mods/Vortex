@@ -29,7 +29,7 @@
     "ci": "node checkPackages.js && yarn run prepareci && yarn run build_dist && electron-builder --config electron-builder-ci.json --publish never",
     "start": "cross-env NODE_ENV=development electron .",
     "clean": "yarn add rm-local-modules && rm-local-modules && yarn install --check-files",
-    "_preinstall": "git submodule update --init --recursive",
+    "preinstall": "git submodule update --init --recursive",
     "test": "jest --no-cache",
     "lint": "tslint --project . -t verbose || echo 0",
     "build": "yarn run build_rest && tsc -p .",
