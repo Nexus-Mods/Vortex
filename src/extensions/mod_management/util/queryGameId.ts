@@ -2,7 +2,7 @@ import { showDialog } from '../../../actions';
 import { ThunkStore } from '../../../types/IExtensionContext';
 import { IState } from '../../../types/IState';
 import { UserCanceled } from '../../../util/CustomErrors';
-import { activeGameId, gameName } from '../../../util/selectors';
+import { activeGameId, discoveryByGame, gameName } from '../../../util/selectors';
 import { SITE_ID } from '../../gamemode_management/constants';
 
 import Promise from 'bluebird';
@@ -36,7 +36,8 @@ function queryGameId(store: ThunkStore<any>,
 
   // we only offer to install for games that are managed because for others the user
   // doesn't have a direct way to configure the install directory
-  const managed = downloadGameIds.filter(gameId => profileGames.has(gameId));
+  const managed = downloadGameIds.filter(gameId =>
+    profileGames.has(gameId) && (discoveryByGame(state, gameId)?.path !== undefined));
 
   // ask the user
   return new Promise<string>((resolve, reject) => {
