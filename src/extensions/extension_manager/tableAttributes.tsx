@@ -49,7 +49,7 @@ function getTableAttributes(context: IAttributesContext):
   return [{
       id: 'enabled',
       name: 'Status',
-      description: 'Is mod enabled in current profile',
+      description: 'Is the extension enabled',
       icon: 'check-o',
       calc: extension => {
         switch (extension.enabled) {

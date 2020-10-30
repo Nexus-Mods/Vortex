@@ -103,7 +103,7 @@ export function readExtensionInfo(extensionPath: string,
     .then(info => {
       const data: IExtension = JSON.parse(info);
       data.path = finalPath;
-      const id = data.id || path.basename(finalPath, path.extname(finalPath));
+      const id = data.id || path.basename(finalPath);
       return {
         id,
         info: applyExtensionInfo(id, bundled, data, fallback),
