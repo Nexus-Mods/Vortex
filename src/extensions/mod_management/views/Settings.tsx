@@ -21,7 +21,7 @@ import opn from '../../../util/opn';
 import * as selectors from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import { cleanFailedTransfer, testPathTransfer, transferPath } from '../../../util/transferPath';
-import { ciEqual, isChildPath, isPathValid } from '../../../util/util';
+import { ciEqual, isChildPath, isPathValid, isReservedDirectory } from '../../../util/util';
 import { currentGame, currentGameDiscovery } from '../../gamemode_management/selectors';
 import { IDiscoveryResult } from '../../gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../../gamemode_management/types/IGameStored';
@@ -307,17 +307,12 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       // new directory doesn't exist. good
     }
 
-    const vortexAppData = remote.app.getPath('userData');
-    if (normalize(newInstallPath.toLowerCase()) === normalize(vortexAppData.toLowerCase())) {
-      // Theoretically this shouldn't be needed as our AppData is not empty
-      //  and therefore the transfer should be blocked by checkTargetEmpty()
-      //  call; _unless_ the user took extra steps and manually placed a downloads
-      //  tag file in there with a different instance id.
+    if (isReservedDirectory(newInstallPath)) {
       return onShowDialog('error', 'Invalid path selected', {
-                  text: 'You can not put mods into the vortex AppData directory. '
+                  text: 'You have selected an invalid location for your staging folder '
                   + 'It would become impossible for Vortex to move your staging folder '
                   + 'anywhere else without attempting to move the entire contents of the '
-                  + 'AppData directory alongside it.',
+                  + 'selected directory alongside it.',
       }, [ { label: 'Close' } ]);
     }
 
@@ -664,11 +659,10 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       }
     }
 
-    const vortexAppData = remote.app.getPath('userData');
-    if (path.normalize(input.toLowerCase()) === path.normalize(vortexAppData.toLowerCase())) {
+    if (isReservedDirectory(input)) {
       return {
         state: 'error',
-        reason: 'Staging folder can\'t be the Vortex AppData folder.',
+        reason: 'Invalid staging folder, please choose a different directory',
       };
     }
 

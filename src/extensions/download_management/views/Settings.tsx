@@ -19,7 +19,7 @@ import opn from '../../../util/opn';
 import * as selectors from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import { cleanFailedTransfer, testPathTransfer, transferPath } from '../../../util/transferPath';
-import { ciEqual, isChildPath, isPathValid } from '../../../util/util';
+import { ciEqual, isChildPath, isPathValid, isReservedDirectory } from '../../../util/util';
 import getTextMod from '../../mod_management/texts';
 import { setDownloadPath, setMaxDownloads } from '../actions/settings';
 import { setTransferDownloads } from '../actions/transactions';
@@ -243,11 +243,10 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       }
     }
 
-    const vortexAppData = remote.app.getPath('userData');
-    if (path.normalize(input.toLowerCase()) === path.normalize(vortexAppData.toLowerCase())) {
+    if (isReservedDirectory(input)) {
       return {
         state: 'error',
-        reason: 'Download folder can\'t be the Vortex AppData folder.',
+        reason: 'Invalid downloads folder, please choose a different directory',
       };
     }
 
@@ -362,17 +361,12 @@ class Settings extends ComponentEx<IProps, IComponentState> {
       // new directory doesn't exist. good
     }
 
-    const vortexAppData = remote.app.getPath('userData');
-    if (normalize(newPath.toLowerCase()) === normalize(vortexAppData.toLowerCase())) {
-      // Theoretically this shouldn't be needed as our AppData is not empty
-      //  and therefore the transfer should be blocked by checkTargetEmpty()
-      //  call; _unless_ the user took extra steps and manually placed a downloads
-      //  tag file in there with a different instance id.
+    if (isReservedDirectory(newPath)) {
       return onShowDialog('error', 'Invalid path selected', {
-                  text: 'You can not put downloads into the vortex AppData directory. '
+                  text: 'You have selected an invalid path for your downloads folder. '
                   + 'It would become impossible for Vortex to move your downloads folder '
                   + 'anywhere else without attempting to move the entire contents of the '
-                  + 'AppData directory alongside it.',
+                  + 'selected directory alongside it.',
       }, [ { label: 'Close' } ]);
     }
 

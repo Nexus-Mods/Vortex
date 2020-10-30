@@ -6,6 +6,7 @@ import { log } from './log';
 
 import Bluebird from 'bluebird';
 import { spawn } from 'child_process';
+import { remote } from 'electron';
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as semver from 'semver';
@@ -304,6 +305,28 @@ export function isChildPath(child: string, parent: string, normalize?: Normalize
   const childTokens = childNorm.split(path.sep).filter(token => token.length > 0);
 
   return tokens.every((token: string, idx: number) => childTokens[idx] === token);
+}
+
+export function isReservedDirectory(dirPath: string, normalize?: Normalize): boolean {
+  if (normalize === undefined) {
+    normalize = (input) => process.platform === 'win32'
+      ? path.normalize(input.toUpperCase())
+      : path.normalize(input);
+  }
+
+  const normalized = normalize(dirPath);
+  const trimmed = normalized.endsWith(path.sep)
+    ? normalized.slice(0, -1)
+    : normalized;
+
+  const vortexAppData = remote.app.getPath('userData');
+  const invalidDirs = ['blob_storage', 'Cache', 'Code Cache', 'Dictionaries',
+    'extensions', 'GPUCache', 'metadb', 'Partitions', 'plugins', 'Session Storage',
+    'shared_proto_db', 'state.v2', 'temp', 'VideoDecodeStats']
+    .map(inv => normalize(path.join(vortexAppData, inv)));
+  invalidDirs.push(normalize(vortexAppData));
+
+  return (invalidDirs.includes(trimmed));
 }
 
 export function ciEqual(lhs: string, rhs: string, locale?: string): boolean {
