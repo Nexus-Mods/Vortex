@@ -3,7 +3,7 @@ import { IPersistor, PersistingType } from '../types/IExtensionContext';
 import { IState } from '../types/IState';
 
 import { DataInvalid } from './CustomErrors';
-import { getVisibleWindow } from './errorHandling';
+import { getVisibleWindow, terminate } from './errorHandling';
 import ExtensionManager from './ExtensionManager';
 import * as fs from './fs';
 import { checksum, writeFileAtomic } from './fsAtomic';
@@ -57,7 +57,24 @@ export function createVortexStore(sanityCallback: (err: StateError) => void): Re
 
   const store = createStore<IState, Redux.Action, any, any>(reducer([], querySanitize), enhancer);
   basePersistor = new ReduxPersistor(store);
-  replayActionMain(store);
+  // replayActionMain(store);
+  global['getReduxState'] = () => {
+    return JSON.stringify(store.getState());
+  };
+
+  ipcMain.on('redux-action', (event, payload) => {
+    try {
+      store.dispatch(JSON.parse(payload));
+    } catch (err) {
+      log('error', 'failed to forward redux action', payload);
+      terminate({
+        message: 'Failed to store state change',
+        allowReport: true,
+        attachLog: true,
+      }, store.getState(), true);
+    }
+  });
+
   ipcMain.on('get-redux-state', (evt: Electron.IpcMainEvent) => {
     const dat = JSON.stringify(store.getState());
     const md5 = checksum(Buffer.from(dat));

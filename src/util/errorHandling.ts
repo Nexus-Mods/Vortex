@@ -26,6 +26,8 @@ import * as path from 'path';
 import * as semver from 'semver';
 import { inspect } from 'util';
 import {} from 'uuid';
+import getVortexPath from './getVortexPath';
+import { bundleAttachment } from './message';
 
 function createTitle(type: string, error: IError, hash: string) {
   return `${type}: ${error.message}`;
@@ -190,13 +192,28 @@ if (ipcRenderer !== undefined) {
 }
 
 export function sendReportFile(fileName: string): Promise<IFeedbackResponse> {
+  let reportInfo: any;
   return Promise.resolve(fs.readFile(fileName, { encoding: 'utf8' }))
     .then(reportData => {
-      const {type, error, labels, reporterId, reportProcess, sourceProcess, context} =
-        JSON.parse(reportData.toString());
+      reportInfo = JSON.parse(reportData.toString());
+      if (reportInfo.error.attachLog) {
+        return bundleAttachment({
+          attachments: [{
+            id: 'logfile',
+            type: 'file',
+            data: path.join(getVortexPath('userData'), 'vortex.log'),
+            description: 'Vortex Log',
+          }],
+        });
+      } else {
+        return undefined;
+      }
+    })
+    .then(attachment => {
+      const { type, error, labels, reporterId, reportProcess, sourceProcess, context } = reportInfo;
       return sendReport(type, error, context, labels, reporterId,
-                        reportProcess, sourceProcess, undefined);
-  });
+        reportProcess, sourceProcess, attachment);
+    });
 }
 
 export function sendReport(type: string, error: IError, context: IErrorContext,

@@ -201,7 +201,7 @@ function serializeAttachments(input: IAttachment): Promise<string> {
   }
 }
 
-function bundleAttachment(options?: IErrorOptions): Promise<string> {
+export function bundleAttachment(options?: IErrorOptions): Promise<string> {
   if ((options === undefined)
       || (options.attachments === undefined)
       || (options.attachments.length === 0)) {

@@ -7,4 +7,5 @@ export interface IError {
   extension?: string;
   path?: string;
   allowReport?: boolean;
+  attachLog?: boolean;
 }
