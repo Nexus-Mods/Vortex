@@ -268,6 +268,7 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
                      + 'please try again later.',
               replace: { host: err.host || err.hostname },
             });
+            return;
           } else if (['ENOTFOUND', 'ENOENT'].includes(err.code)) {
             api.sendNotification({
               type: 'warning',
