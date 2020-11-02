@@ -5,7 +5,7 @@ const app = remote !== undefined ? remote.app : appIn;
 
 export type AppPath = 'base' | 'assets' | 'assets_unpacked' | 'modules' | 'modules_unpacked'
                     | 'bundledPlugins' | 'locales' | 'package' | 'application'
-                    | 'userData' | 'appData' | 'temp' | 'home' | 'documents';
+                    | 'userData' | 'appData' | 'localAppData' | 'temp' | 'home' | 'documents';
 
 /**
  * app.getAppPath() returns the path to the app.asar,
@@ -76,6 +76,17 @@ const cachedAppPath = (() => {
   };
 })();
 
+const localAppData = (() => {
+  let cached;
+  return () => {
+    if (cached === undefined) {
+      cached = process.env.LOCALAPPDATA
+        || path.resolve(cachedAppPath('appData'), '..', 'Local');
+    }
+    return cached;
+  };
+})();
+
 /**
  * the electron getAppPath function and globals like __dirname
  * or process.resourcesPath don't do a great job of abstracting away
@@ -89,6 +100,7 @@ function getVortexPath(id: AppPath): string {
     case 'userData': return cachedAppPath('userData');
     case 'temp': return cachedAppPath('temp');
     case 'appData': return cachedAppPath('appData');
+    case 'localAppData': return localAppData();
     case 'home': return cachedAppPath('home');
     case 'documents': return cachedAppPath('documents');
     case 'base': return basePath;
