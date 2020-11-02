@@ -245,6 +245,13 @@ function errorHandler(evt: any) {
     return;
   }
 
+  if ((error.name === 'TypeError')
+      && (error.message === 'Cannot read property \'forEach\' of undefined')) {
+    // seems to be a completely electron-internal error where the webview receives an event
+    // that it's not equipped to handle.
+    return;
+  }
+
   if (error.name === 'Invariant Violation') {
     // these may not get caught, even when we have an ErrorBoundary, if the exception happens
     // in some callback. Unfortunately this also makes these errors almost impossible to find,
