@@ -1507,6 +1507,8 @@ class ExtensionManager {
                 } else {
                   return reject(new ProcessCanceled('.Net error'));
                 }
+              } else if (code === 0xC000026B) {
+                return reject(new ProcessCanceled('Windows shutting down'));
               } else if (code !== 0) {
                 // TODO: the child process returns an exit code of 53 for SSE and
                 // FO4, and an exit code of 1 for Skyrim. We don't know why but it

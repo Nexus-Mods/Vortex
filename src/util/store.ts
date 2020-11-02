@@ -184,7 +184,7 @@ export function createFullStateBackup(backupName: string,
     .then(() => writeFileAtomic(backupFilePath,
       serialized))
     .then(() => {
-      log('info', 'state backup created', { ms: Date.now() - before });
+      log('info', 'state backup created', { ms: Date.now() - before, size: serialized.length });
       return backupFilePath;
     });
 }
