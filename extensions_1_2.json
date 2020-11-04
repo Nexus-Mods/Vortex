@@ -2963,21 +2963,6 @@
       "version": "0.0.5",
       "type": "game",
       "gameName": "S.T.A.L.K.E.R. Call of Pripyat"
-    },
-    {
-      "image": "https://raw.githubusercontent.com/Nexus-Mods/vortex-games/release/game-baldursgate3/gameart.jpg",
-      "name": "Game: Baldur's Gate 3",
-      "type": "game",
-      "github": "Nexus-Mods/vortex-games",
-      "githubRawPath": "game-baldursgate3",
-      "id": "game-baldursgate3",
-      "author": "Black Tree Gaming Ltd.",
-      "gameName": "Baldur's Gate 3",
-      "description": {
-        "short": "Support for Baldur's Gate 3 (Early Access)",
-        "long": "Support for Baldur's Gate 3 (Early Access)"
-      },
-      "version": "1.0.1"
     }
   ]
 }
