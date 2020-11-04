@@ -39,6 +39,7 @@ class MultiBackend {
   private mOptions: any;
   private mServices: any;
   private mCurrentBackend: FSBackend;
+  private mLastReadLanguage: string;
   private mBackendType: BackendType;
 
   constructor(services, options) {
@@ -52,9 +53,13 @@ class MultiBackend {
 
   public read(language: string, namespace: string, callback) {
     const {backendType, extPath} = this.backendType(language);
-    if (backendType !== this.mBackendType) {
+    if ((backendType !== this.mBackendType)
+        || ((backendType === 'extension')
+            && (language !== this.mLastReadLanguage))) {
       this.mCurrentBackend = this.initBackend(backendType, extPath);
     }
+
+    this.mLastReadLanguage = language;
     this.mCurrentBackend.read(language, namespace, callback);
   }
 
@@ -137,7 +142,7 @@ class HighlightPP {
 function init(language: string, translationExts: () => IExtension[]): Promise<IInitResult> {
   // reset to english if the language isn't valid
   try {
-    new Date().toLocaleString(language);
+    (new Date()).toLocaleString(language);
   } catch (err) {
     language = 'en';
   }
