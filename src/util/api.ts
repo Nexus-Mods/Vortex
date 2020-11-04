@@ -28,7 +28,7 @@ import { ArgumentInvalid, DataInvalid, MissingInterpreter, NotFound, NotSupporte
          ProcessCanceled, SetupError, UserCanceled } from './CustomErrors';
 import Debouncer from './Debouncer';
 import epicGamesLauncher from './EpicGamesLauncher';
-import { getVisibleWindow, terminate } from './errorHandling';
+import { getVisibleWindow, terminate, withContext as withErrorContext } from './errorHandling';
 import { extend } from './ExtensionProvider';
 import { copyFileAtomic, fileMD5, writeFileAtomic } from './fsAtomic';
 import getNormalizeFunc, { makeNormalizingDict, Normalize } from './getNormalizeFunc';
@@ -127,6 +127,7 @@ export {
   UserCanceled,
   userFriendlyTime,
   walk,
+  withErrorContext,
   writeFileAtomic,
 };
 
