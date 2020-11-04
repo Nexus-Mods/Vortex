@@ -50,8 +50,6 @@ function installExtensionDependencies(api: IExtensionApi, extPath: string): Prom
   const context = new Proxy({}, handler);
 
   try {
-    // TODO: this breaks if the extension is already loaded if the extension creates any actions
-    //   because redux-act throws on duplicate action names
     const extension = dynreq(path.join(extPath, 'index.js'));
     extension.default(context);
 
@@ -69,6 +67,12 @@ function installExtensionDependencies(api: IExtensionApi, extPath: string): Prom
     })
     .then(() => null);
   } catch (err) {
+    // TODO: can't check for dependencies if the extension is already loaded
+    //   and registers actions
+    if ((err.name === 'TypeError')
+        && (err.message.startsWith('Duplicate action type'))) {
+      return Promise.resolve();
+    }
     return Promise.reject(err);
   }
 }
