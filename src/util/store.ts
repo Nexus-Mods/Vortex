@@ -69,6 +69,7 @@ export function createVortexStore(sanityCallback: (err: StateError) => void): Re
       log('error', 'failed to forward redux action', payload);
       terminate({
         message: 'Failed to store state change',
+        details: err.message,
         allowReport: true,
         attachLog: true,
       }, store.getState(), true);

@@ -797,12 +797,17 @@ function ensureTaskDeleted(api: IExtensionApi, delayed: boolean): Promise<void> 
       actions: [
         {
           title: 'Clean up', action: dismiss => {
-            removeTask();
+            removeTask()
+              .catch(err => {
+                api.showErrorNotification('Failed to disable task', err);
+              });
             dismiss();
           },
         },
       ],
     });
+    // ensureTaskDeleted returns immediately even though nothing has been done yet
+    return Promise.resolve();
   } else {
     return removeTask();
   }
