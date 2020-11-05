@@ -359,7 +359,7 @@ export function onModsChanged(api: IExtensionApi, previous: IModTable, current: 
 
   const rulesOrOverridesChanged = modId =>
     (getSafe(previous, [gameMode, modId], undefined) !== undefined)
-    && (changed(modId, 'rules') || changed(modId, 'fileOverrides'));
+    && (changed(modId, 'rules') || changed(modId, 'fileOverrides') || changed(modId, 'type'));
 
   if ((previous[gameMode] !== current[gameMode])
       && !state.persistent.deployment.needToDeploy[gameMode]) {

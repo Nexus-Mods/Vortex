@@ -23,7 +23,6 @@ import { activeGameId, activeProfile } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { truthy } from '../../util/util';
 
-import { setDeploymentNecessary } from '../mod_management/actions/deployment';
 import { setModType } from '../mod_management/actions/mods';
 import { IModWithState } from '../mod_management/views/CheckModVersionsButton';
 import { setNextProfile } from '../profile_management/actions/settings';
@@ -337,21 +336,14 @@ function genModTypeAttribute(api: IExtensionApi): ITableAttribute<IModWithState>
             ({ key: type.typeId, text: (type.options.name || type.typeId || 'Default') }));
       },
       onChangeValue: (mods, newValue) => {
-        let deploymentNecessary = false;
         const gameMode = activeGameId(api.store.getState());
         const setModId = (mod: IModWithState) => {
-          if (mod.type !== (newValue || '')) {
-            deploymentNecessary = true;
-          }
           api.store.dispatch(setModType(gameMode, mod.id, newValue || ''));
         };
         if (Array.isArray(mods)) {
           mods.forEach(setModId);
         } else {
           setModId(mods);
-        }
-        if (deploymentNecessary) {
-          api.store.dispatch(setDeploymentNecessary(gameMode, true));
         }
       },
     },
