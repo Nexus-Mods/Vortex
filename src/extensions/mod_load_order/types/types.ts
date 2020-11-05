@@ -107,10 +107,6 @@ export interface ILoadOrderDisplayItem {
   // Is this an official module/dlc item?
   official?: boolean;
 
-  // Is this mod invalid - the 'message' paramater can be used to
-  //  specify what went wrong.
-  invalid?: boolean;
-
   // An optional message which can be displayed beneath the mod's
   //  image.
   message?: string;
