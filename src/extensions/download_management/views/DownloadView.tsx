@@ -336,6 +336,12 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
         err.message, {
         allowReport: false,
       });
+    } else if (err['code'] === 'ERR_UNESCAPED_CHARACTERS') {
+      this.context.api.showErrorNotification(title,
+        err.message, {
+        allowReport: false,
+        message: 'Invalid URL',
+      });
     } else if (err.code === 'ECONNRESET') {
       this.props.onShowError(title,
         'Server closed the connection, please '
