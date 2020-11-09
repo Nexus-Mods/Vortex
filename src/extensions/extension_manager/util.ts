@@ -276,17 +276,24 @@ export function downloadAndInstallExtension(api: IExtensionApi,
     });
 }
 
+function archiveFileName(ext: IExtensionDownloadInfo): string {
+  const name = ext.name.replace('Game:', 'Vortex Extension Update -');
+  return (ext['version'] !== undefined)
+    ? `${sanitize(name)} v${ext['version']}.7z`
+    : `${sanitize(name)}.7z`;
+}
+
 export function downloadFromNexus(api: IExtensionApi,
                                   ext: IExtensionDownloadInfo)
                                   : Promise<string[]> {
-  return api.emitAndAwait('nexus-download', SITE_ID, ext.modId, ext.fileId);
+  return api.emitAndAwait('nexus-download', SITE_ID, ext.modId, ext.fileId, archiveFileName(ext));
 }
 
 export function downloadGithubRelease(api: IExtensionApi,
                                       ext: IExtensionDownloadInfo)
                                   : Promise<string[]> {
   return new Promise<string[]>((resolve, reject) => {
-    api.events.emit('start-download', [ext.githubRelease], { game: SITE_ID }, undefined,
+    api.events.emit('start-download', [ext.githubRelease], { game: SITE_ID }, archiveFileName(ext),
                     (err: Error, dlId: string) => {
       if (err !== null) {
         if (err instanceof AlreadyDownloaded) {
@@ -318,15 +325,46 @@ export function downloadFile(url: string, outputPath: string): Promise<void> {
     .then((data: Buffer) => fs.writeFileAsync(outputPath, data));
 }
 
+function downloadGithubRawRecursive(repo: string, source: string, destination: string) {
+  const apiUrl = githubApiUrl(repo, 'contents', source);
+
+  return Promise.resolve(rawRequest(apiUrl, { encoding: 'utf8' }))
+    .then((content: string) => {
+      const data = JSON.parse(content);
+      if (!Array.isArray(data)) {
+        if ((typeof (data) === 'object') && (data.message !== undefined)) {
+          return Promise.reject(new ServiceTemporarilyUnavailable(data.message));
+        } else {
+          log('info', 'unexpected response from github', content);
+          return Promise.reject(new Error('Unexpected response from github (see log file)'));
+        }
+      }
+
+      const repoFiles: string[] =
+        data.filter(iter => iter.type === 'file').map(iter => iter.name);
+
+      const repoDirs: string[] =
+        data.filter(iter => iter.type === 'dir').map(iter => iter.name);
+
+      return Promise.map(repoFiles, fileName => downloadFile(
+        githubRawUrl(repo, GAMES_BRANCH, `${source}/${fileName}`),
+                     path.join(destination, fileName)))
+        .then(() => Promise.map(repoDirs, fileName => {
+          const sourcePath = `${source}/${fileName}`;
+          const outPath = path.join(destination, fileName);
+          return fs.mkdirAsync(outPath)
+            .then(() => downloadGithubRawRecursive(repo, sourcePath, outPath));
+        }));
+    });
+}
+
 export function downloadGithubRaw(api: IExtensionApi,
                                   ext: IExtensionDownloadInfo)
                                   : Promise<string[]> {
-  const archiveName = ext['version'] !== undefined
-    ? `${ext.githubRawPath}_${ext['version']}.7z`
-    : `${ext.githubRawPath}.7z`;
-
   const state: IState = api.store.getState();
   const downloadPath = downloadPathForGame(state, SITE_ID);
+
+  const archiveName = archiveFileName(ext);
 
   const { files } = state.persistent.downloads;
   const existing = Object.keys(files).find(dlId =>
@@ -343,36 +381,19 @@ export function downloadGithubRaw(api: IExtensionApi,
   return cleanProm.then(() => fs.withTmpDir((tmpPath: string) => {
     const archivePath = path.join(tmpPath, archiveName);
 
-    const apiUrl = githubApiUrl(ext.github, 'contents', ext.githubRawPath);
-
-    return Promise.resolve(rawRequest(apiUrl, { encoding: 'utf8' }))
-      .then((content: string) => {
-        const data = JSON.parse(content);
-        if (!Array.isArray(data)) {
-          if ((typeof(data) === 'object') && (data.message !== undefined)) {
-            return Promise.reject(new ServiceTemporarilyUnavailable(data.message));
-          } else {
-            log('info', 'unexpected response from github', content);
-            return Promise.reject(new Error('Unexpected response from github (see log file)'));
-          }
-        }
-
-        const repoFiles: string[] =
-          data.filter(iter => iter.type === 'file').map(iter => iter.name);
-
-        return Promise.map(repoFiles, fileName => downloadFile(
-          githubRawUrl(ext.github, GAMES_BRANCH, `${ext.githubRawPath}/${fileName}`),
-          path.join(tmpPath, fileName)))
-          .then(() => {
-            const pack = new SevenZip();
-            return pack.add(archivePath, repoFiles.map(fileName => path.join(tmpPath, fileName)));
-          })
-          .then(() => fs.moveAsync(archivePath, path.join(downloadPath, archiveName)))
-          .then(() => {
-            const archiveId = shortid();
-            api.store.dispatch(addLocalDownload(archiveId, SITE_ID, archiveName, 0));
-            return [archiveId];
-          });
+    return downloadGithubRawRecursive(ext.github, ext.githubRawPath, tmpPath)
+      .then(() => {
+        return fs.readdirAsync(tmpPath);
+      })
+      .then((repoFiles: string[]) => {
+        const pack = new SevenZip();
+        return pack.add(archivePath, repoFiles.map(fileName => path.join(tmpPath, fileName)));
+      })
+      .then(() => fs.moveAsync(archivePath, path.join(downloadPath, archiveName)))
+      .then(() => {
+        const archiveId = shortid();
+        api.store.dispatch(addLocalDownload(archiveId, SITE_ID, archiveName, 0));
+        return [archiveId];
       });
   }));
 }
