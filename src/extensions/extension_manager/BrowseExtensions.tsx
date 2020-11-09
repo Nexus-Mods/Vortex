@@ -27,6 +27,7 @@ export interface IBrowseExtensionsProps {
   onHide: () => void;
   localState: {
     reloadNecessary: boolean,
+    preselectModId: number,
   };
   updateExtensions: () => void;
   onRefreshExtensions: () => void;
@@ -90,6 +91,17 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
     });
 
     this.mModalRef = React.createRef();
+  }
+
+  public UNSAFE_componentWillReceiveProps(nextProps: IProps) {
+    if ((nextProps.localState.preselectModId !== this.props.localState.preselectModId)
+        ?? (nextProps.localState.preselectModId !== undefined)) {
+      this.nextState.selected = {
+        modId: nextProps.localState.preselectModId,
+        github: undefined,
+        githubRawPath: undefined,
+      };
+    }
   }
 
   public render() {
@@ -165,7 +177,7 @@ class BrowseExtensions extends ComponentEx<IProps, IBrowseExtensionsState> {
               </FlexLayout>
             </FlexLayout.Fixed>
             <FlexLayout.Flex fill={true}>
-              {(selected === undefined) ? null : this.renderDescription(ext)}
+              {(ext === null) ? null : this.renderDescription(ext)}
             </FlexLayout.Flex>
           </FlexLayout>
         </Modal.Body>

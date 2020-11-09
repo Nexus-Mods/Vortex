@@ -18,6 +18,7 @@ import { calcDuration, prettifyNodeErrorMessage, showError } from '../../util/me
 import { activeGameId } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { truthy } from '../../util/util';
+import { DownloadIsHTML } from '../download_management/DownloadManager';
 import { SITE_ID } from '../gamemode_management/constants';
 import { gameById, knownGames } from '../gamemode_management/selectors';
 import modName from '../mod_management/util/modName';
@@ -39,6 +40,11 @@ export function startDownload(api: IExtensionApi, nexus: Nexus, nxmurl: string):
     url = new NXMUrl(nxmurl);
   } catch (err) {
     return Promise.reject(err);
+  }
+
+  if ((['vortex', 'site'].includes(url.gameId)) && url.view) {
+    api.events.emit('show-extension-page', url.modId);
+    return Promise.reject(new DownloadIsHTML(nxmurl));
   }
 
   let nexusModInfo: IModInfo;

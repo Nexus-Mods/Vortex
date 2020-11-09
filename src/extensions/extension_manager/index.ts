@@ -16,13 +16,16 @@ import { downloadAndInstallExtension, fetchAvailableExtensions, readExtensions }
 import Promise from 'bluebird';
 import * as _ from 'lodash';
 import * as semver from 'semver';
+import { setDialogVisible } from '../../actions';
 
 interface ILocalState {
   reloadNecessary: boolean;
+  preselectModId: number;
 }
 
 const localState: ILocalState = makeReactive({
   reloadNecessary: false,
+  preselectModId: undefined,
 });
 
 function checkForUpdates(api: IExtensionApi) {
@@ -274,6 +277,11 @@ function init(context: IExtensionContext) {
             updateExtensions(false);
           }
         }));
+
+    context.api.events.on('show-extension-page', (modId: number) => {
+      localState.preselectModId = modId;
+      context.api.store.dispatch(setDialogVisible('browse-extensions'));
+    });
 
     context.api.onStateChange(['session', 'base', 'extLoadFailures'], (prev, current) => {
       checkMissingDependencies(context.api, current);
