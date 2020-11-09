@@ -56,13 +56,11 @@ function deployMods(api: IExtensionApi,
 
   log('info', 'deploying', { gameId, typeId, installationPath, destinationPath });
 
-  let skipFilesNormalized: Set<string>;
   let normalize: Normalize;
   return ensureWritable(api, destinationPath)
     .then(() => getNormalizeFunc(destinationPath))
     .then(norm => {
       normalize = norm;
-      skipFilesNormalized = new Set(Array.from(skipFiles).map(norm));
       return method.prepare(destinationPath, true, lastActivation, norm);
     })
     .then(() => Promise.each(mods, (mod, idx, length) => {
@@ -71,10 +69,10 @@ function deployMods(api: IExtensionApi,
           progressCB(renderModName(mod), Math.round((idx * 50) / length));
         }
         return method.activate(path.join(installationPath, mod.installationPath),
-                               mod.installationPath, subDir(mod), skipFilesNormalized)
+                               mod.installationPath, subDir(mod), skipFiles)
           .then(() => {
             if (mod.fileOverrides !== undefined) {
-              mod.fileOverrides.forEach(file => skipFilesNormalized.add(normalize(file)));
+              mod.fileOverrides.forEach(file => skipFiles.add(normalize(file)));
             }
           });
       } catch (err) {

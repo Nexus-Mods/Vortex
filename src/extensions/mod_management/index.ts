@@ -76,6 +76,7 @@ import {} from './views/ModList';
 import {} from './views/Settings';
 import Workarounds from './views/Workarounds';
 
+import { DEPLOY_BLACKLIST } from './constants';
 import { onAddMod, onGameModeActivated, onModsChanged, onPathsChanged,
          onRemoveMod, onStartInstallDownload } from './eventHandlers';
 import InstallManager from './InstallManager';
@@ -85,6 +86,7 @@ import preStartDeployHook from './preStartDeployHook';
 import getText from './texts';
 
 import Promise from 'bluebird';
+import minimatch from 'minimatch';
 import * as path from 'path';
 import * as Redux from 'redux';
 import shortid = require('shortid');
@@ -103,6 +105,19 @@ const installers: IInstaller[] = [];
 const modSources: IModSource[] = [];
 
 const mergers: IFileMerge[] = [];
+
+class BlacklistSet extends Set<string> {
+  private mPatterns: string[];
+  constructor(blacklist: string[], game: IGame, normalize: Normalize) {
+    super(blacklist.map(iter => normalize(iter)));
+    this.mPatterns = [].concat(DEPLOY_BLACKLIST, game.details?.ignoreDeploy ?? []);
+  }
+
+  public has(value: string): boolean {
+    return super.has(value)
+      || (this.mPatterns.find(pat => minimatch(value, pat, { nocase: true })) !== undefined);
+  }
+}
 
 function registerInstaller(id: string, priority: number,
                            testSupported: TestSupported, install: InstallFunc) {
@@ -166,7 +181,8 @@ function deployModType(api: IExtensionApi,
                         stagingPath, targetPath,
                         filteredModList,
                         activator, lastDeployment,
-                        typeId, new Set(mergeResult[typeId]?.usedInMerge ?? []),
+                        typeId,
+                        new BlacklistSet(mergeResult[typeId]?.usedInMerge ?? [], game, normalize),
                         genSubDirFunc(game, getModType(typeId)),
                         onProgress);
       })
@@ -848,7 +864,8 @@ function onDeploySingleMod(api: IExtensionApi) {
       .then(lastActivation => activator.prepare(dataPath, false, lastActivation, normalize))
       .then(() => (mod !== undefined)
         ? (enable !== false)
-          ? activator.activate(modPath, mod.installationPath, subdir(mod), new Set())
+          ? activator.activate(modPath, mod.installationPath, subdir(mod),
+                               new BlacklistSet([], game, normalize))
           : activator.deactivate(modPath, subdir(mod), mod.installationPath)
         : Promise.resolve())
       .tapCatch(() => {
