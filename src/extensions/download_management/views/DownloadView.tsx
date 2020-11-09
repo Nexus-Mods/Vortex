@@ -177,18 +177,20 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
 
     let content = null;
 
-    if ((Object.keys(this.props.downloads).length === 0)
-        && (gameMode !== undefined)) {
+    let filteredIds = Object.keys(downloads);
+    // TODO: proposed but ultimately rejected, that may change in the future
+    // .filter(dlId => downloads[dlId].modInfo?.internal !== true);
+
+    if ((filteredIds.length === 0) && (gameMode !== undefined)) {
       content = this.renderDropzone();
     } else {
-      const filtered = viewAll
-        ? downloads
-        : Object.keys(downloads)
-            .filter(dlId => downloads[dlId].installed === undefined)
-            .reduce((prev, dlId) => {
-              prev[dlId] = downloads[dlId];
-              return prev;
-            }, {});
+      if (!viewAll) {
+        filteredIds = filteredIds.filter(dlId => downloads[dlId].installed === undefined);
+      }
+      const filtered = filteredIds.reduce((prev, dlId) => {
+        prev[dlId] = downloads[dlId];
+        return prev;
+      }, {});
       content = (
         <FlexLayout type='column'>
           {secondary ? null : <Banner group='downloads' />}

@@ -8,7 +8,7 @@ import { jsonRequest, rawRequest } from '../../util/network';
 import { getSafe } from '../../util/storeHelper';
 import { INVALID_FILENAME_RE, truthy } from '../../util/util';
 
-import { addLocalDownload } from '../download_management/actions/state';
+import { addLocalDownload, setDownloadModInfo } from '../download_management/actions/state';
 import { AlreadyDownloaded } from '../download_management/DownloadManager';
 import { downloadPathForGame } from '../download_management/selectors';
 import { SITE_ID } from '../gamemode_management/constants';
@@ -225,6 +225,7 @@ export function downloadAndInstallExtension(api: IExtensionApi,
       if ((dlIds === undefined) || (dlIds.length !== 1)) {
         return Promise.reject(new ProcessCanceled('No download found'));
       }
+      api.store.dispatch(setDownloadModInfo(dlIds[0], 'internal', true));
       download = getSafe(state, ['persistent', 'downloads', 'files', dlIds[0]], undefined);
       if (download === undefined) {
         return Promise.reject(new Error('Download not found'));
