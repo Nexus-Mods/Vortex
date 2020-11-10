@@ -95,6 +95,7 @@ function transformError(err: any): Error {
   } else if ((err.stack.indexOf('XNodeValidator.ValidationCallback') !== -1)
              || (err.stack.indexOf('XmlTextReaderImpl.ParseXmlDeclaration') !== -1)
              || (err.stack.indexOf('XmlTextReaderImpl.ParseAttributes') !== -1)
+             || (err.stack.indexOf('XmlTextReaderImpl.ParseDocumentContent') !== -1)
              || (err.stack.indexOf('XmlScriptType.GetXmlScriptVersion') !== -1)
              ) {
     result = new DataInvalid('Invalid installer script: ' + err.message);
