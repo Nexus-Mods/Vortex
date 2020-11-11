@@ -92,11 +92,12 @@ function transformError(err: any): Error {
                           + 'You need to clean up that directory. Files in that directory '
                           + 'should be safe to delete (they are temporary after all) but '
                           + 'some will be inaccessible, just ignore those.');
-  } else if ((err.stack.indexOf('XNodeValidator.ValidationCallback') !== -1)
+  } else if ((err.stack !== null)
+             && ((err.stack.indexOf('XNodeValidator.ValidationCallback') !== -1)
              || (err.stack.indexOf('XmlTextReaderImpl.ParseXmlDeclaration') !== -1)
              || (err.stack.indexOf('XmlTextReaderImpl.ParseAttributes') !== -1)
              || (err.stack.indexOf('XmlTextReaderImpl.ParseDocumentContent') !== -1)
-             || (err.stack.indexOf('XmlScriptType.GetXmlScriptVersion') !== -1)
+             || (err.stack.indexOf('XmlScriptType.GetXmlScriptVersion') !== -1))
              ) {
     result = new DataInvalid('Invalid installer script: ' + err.message);
   } else if ((err.name === 'System.Xml.XmlException')
