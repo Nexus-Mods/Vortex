@@ -204,7 +204,7 @@ class Steam implements IGameStore {
             //  if Steam isn't installed but the registry still has
             //  some entries for it.
             log('warn', '[steam] failed to read steam config file', err);
-            return (['EPERM', 'ENOENT'].indexOf(err.code) !== -1)
+            return ['EPERM', 'ENOENT'].includes(err.code)
               ? Promise.resolve(undefined)
               : Promise.reject(err);
           });

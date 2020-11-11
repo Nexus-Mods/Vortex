@@ -334,7 +334,9 @@ function busyRetry(filePath: string): PromiseBB<boolean> {
 function errorRepeat(error: NodeJS.ErrnoException, filePath: string, retries: number,
                      stackErr: Error, showDialogCallback?: () => boolean,
                      options?: IErrorHandlerOptions): PromiseBB<boolean> {
-  if ((retries > 0) && RETRY_ERRORS.has(error.code)) {
+  if ((retries > 0)
+      && (RETRY_ERRORS.has(error.code)
+          || ((options?.extraRetryErrors || []).includes(error.code)))) {
     // retry these errors without query for a few times
     return PromiseBB.delay(retries === 1 ? 1000 : 100)
       .then(() => PromiseBB.resolve(true));
@@ -395,6 +397,7 @@ function restackErr(error: Error, stackErr: Error): Error {
 
 interface IErrorHandlerOptions {
   enotempty?: boolean;
+  extraRetryErrors?: string[];
 }
 
 function augmentError(error: NodeJS.ErrnoException) {
@@ -625,7 +628,8 @@ function copyInt(
     tries: number) {
   return simfail(() => fsBB.copyAsync(src, dest, options))
     .catch((err: NodeJS.ErrnoException) =>
-      errorHandler(err, stackErr, tries, options?.showDialogCallback)
+      errorHandler(err, stackErr, tries, options?.showDialogCallback,
+                   { extraRetryErrors: ['EEXIST'] })
         .then(() => copyInt(src, dest, options, stackErr, tries - 1)));
 }
 

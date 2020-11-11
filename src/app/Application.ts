@@ -32,7 +32,7 @@ import TrayIconT from './TrayIcon';
 
 import Promise from 'bluebird';
 import crashDumpT from 'crash-dump';
-import {app, crashReporter as crashReporterT, dialog, ipcMain, shell, protocol} from 'electron';
+import {app, crashReporter as crashReporterT, dialog, ipcMain, protocol, shell} from 'electron';
 import isAdmin = require('is-admin');
 import * as _ from 'lodash';
 import * as msgpackT from 'msgpack';
@@ -655,7 +655,11 @@ class Application {
       .then(() => fs.readdirAsync(backupPath))
       .filter((fileName: string) =>
         fileName.startsWith('backup') && path.extname(fileName) === '.json')
-      .then(backupsIn => { backups = backupsIn; });
+      .then(backupsIn => { backups = backupsIn; })
+      .catch(err => {
+        log('error', 'failed to read backups', err.message);
+        backups = [];
+      });
 
     const deleteBackups = () => Promise.map(backups, backupName =>
           fs.removeAsync(path.join(backupPath, backupName))
@@ -822,7 +826,8 @@ class Application {
         } else if (!repair) {
           // we started without any problems, save this application state
           return createFullStateBackup('startup', this.mStore)
-            .then(() => Promise.resolve());
+            .then(() => Promise.resolve())
+            .catch(err => log('error', 'Failed to create startup state backup', err.message));
         }
         return Promise.resolve();
       })
