@@ -258,7 +258,7 @@
       "name": "issue-tracker",
       "path": "extensions/issue-tracker",
       "removeModules": ["vortex-api"],
-      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "src/**/*.scss"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/issue-tracker"
     },
     {
