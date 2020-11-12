@@ -1,5 +1,6 @@
 export function remoteCode(ipcClient, req) {
   const RETRY_ERRORS = new Set(['EPERM', 'EBUSY', 'EIO', 'EBADF', 'UNKNOWN']);
+  process.noAsar = true;
 
   const delayed = (delay: number) => new Promise(resolve => {
     setTimeout(resolve, delay);
