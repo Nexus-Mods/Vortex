@@ -6,4 +6,5 @@ export const DEPLOY_BLACKLIST: string[] = [
   path.join('**', '.hgignore'),
   path.join('**', '.gitattributes'),
   path.join('**', 'meta.ini'),
+  path.join('**', '_macosx', '**', '*'),
 ];
