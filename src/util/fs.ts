@@ -106,6 +106,28 @@ function nospcQuery(): PromiseBB<boolean> {
     : PromiseBB.resolve(true);
 }
 
+function ioQuery(): PromiseBB<boolean> {
+  if (dialog === undefined) {
+    return PromiseBB.resolve(false);
+  }
+
+  const options: Electron.MessageBoxOptions = {
+    title: 'I/O Error',
+    message: 'Disk access failed repeatedly. '
+           + 'If this is a removable disk (like a network or external drive), please ensure '
+           + 'it\'s connected. Otherwise this may indicate filesystem corruption, you may '
+           + 'want to run chkdsk or similar software to scan for problems.',
+    buttons: ['Cancel', 'Retry'],
+    type: 'warning',
+    noLink: true,
+  };
+
+  const choice = dialog.showMessageBoxSync(getVisibleWindow(), options);
+  return (choice === 0)
+    ? PromiseBB.reject(new UserCanceled())
+    : PromiseBB.resolve(true);
+}
+
 function unlockConfirm(filePath: string): PromiseBB<boolean> {
   if ((dialog === undefined) || !truthy(filePath)) {
     return PromiseBB.resolve(false);
@@ -351,6 +373,8 @@ function errorRepeat(error: NodeJS.ErrnoException, filePath: string, retries: nu
     return busyRetry(filePath);
   } else if (error.code === 'ENOSPC') {
     return nospcQuery();
+  } else if (['EBADF', 'EIO'].includes(error.code)) {
+    return ioQuery();
   } else if (error.code === 'EPERM') {
     return unlockConfirm(filePath)
       .then(doUnlock => {
