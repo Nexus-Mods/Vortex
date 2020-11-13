@@ -9,7 +9,7 @@
     "url": "https://github.com/Nexus-Mods/Vortex"
   },
   "vortex": {
-    "electron": "8.5.3"
+    "electron": "11.0.0"
   },
   "scripts": {
     "_assets_out": "tsc -p extensions/games && node InstallAssets.js out && sass --style compressed src/stylesheets/loadingScreen.scss > out/assets/css/loadingScreen.css",
@@ -29,7 +29,7 @@
     "ci": "node checkPackages.js && yarn run prepareci && yarn run build_dist && electron-builder --config electron-builder-ci.json --publish never",
     "start": "cross-env NODE_ENV=development electron .",
     "clean": "yarn add rm-local-modules && rm-local-modules && yarn install --check-files",
-    "preinstall": "git submodule update --init --recursive",
+    "_preinstall": "git submodule update --init --recursive",
     "test": "jest --no-cache",
     "lint": "tslint --project . -t verbose || echo 0",
     "build": "yarn run build_rest && tsc -p .",
@@ -151,9 +151,9 @@
     "copyfiles": "^2.3.0",
     "cross-env": "^6.0.3",
     "devtron": "^1.4.0",
-    "electron": "~8.5.3",
+    "electron": "^11.0.0-beta.20",
     "electron-builder": "20.15.0",
-    "electron-devtools-installer": "^2.2.4",
+    "electron-devtools-installer": "^3.1.1",
     "electron-download-tf": "^4.3.4",
     "electron-rebuild": "^1.8.8",
     "enzyme": "^3.10.0",
@@ -203,7 +203,7 @@
     "diskusage": "^1.1.3",
     "dnd-core": "^9.4.0",
     "draggabilly": "^2.2.0",
-    "drivelist": "TanninOne/drivelist",
+    "drivelist": "^9.1.0",
     "electron-redux": "TanninOne/electron-redux",
     "electron-updater": "^4.2.0",
     "encoding-down": "^6.3.0",

@@ -169,7 +169,6 @@ if (process.env.CRASH_REPORTING === 'electron') {
     companyName: 'Black Tree Gaming Ltd.',
     uploadToServer: false,
     submitURL: '',
-    crashesDirectory: path.join(tempPath, 'dumps'),
   });
 } else if (process.env.CRASH_REPORTING === 'vortex') {
   // tslint:disable-next-line:no-var-requires
@@ -329,7 +328,7 @@ const eventEmitter: NodeJS.EventEmitter = new EventEmitter();
 
 let enhancer = null;
 
-if (process.env.NODE_ENV === 'development' && false) {
+if (process.env.NODE_ENV === 'development') {
   // tslint:disable-next-line:no-var-requires
   const freeze = require('redux-freeze');
   const devtool = (window as any).__REDUX_DEVTOOLS_EXTENSION__

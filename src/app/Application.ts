@@ -95,8 +95,8 @@ class Application {
         companyName: 'Black Tree Gaming Ltd.',
         uploadToServer: false,
         submitURL: '',
-        crashesDirectory: path.join(tempPath, 'dumps'),
       });
+      app.setPath('crashDumps', path.join(tempPath, 'dumps'));
     } else if (process.env.CRASH_REPORTING === 'vortex') {
       const crashDump: typeof crashDumpT = require('crash-dump').default;
       this.mDeinitCrashDump =

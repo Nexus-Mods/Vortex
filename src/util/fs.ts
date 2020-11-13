@@ -453,7 +453,7 @@ function errorHandler(error: NodeJS.ErrnoException,
     .catch(err => PromiseBB.reject(restackErr(err, stackErr)));
 }
 
-export function genFSWrapperAsync<T extends (...args) => any>(func: T): T {
+export function genFSWrapperAsync<T extends (...args) => any>(func: T) {
   const wrapper = (stackErr: Error, tries: number, ...args) =>
     simfail(() => PromiseBB.resolve(func(...args)))
       .catch(err => errorHandler(err, stackErr, tries)
@@ -462,31 +462,32 @@ export function genFSWrapperAsync<T extends (...args) => any>(func: T): T {
   const res = (...args) => {
     return wrapper(new Error(), NUM_RETRIES, ...args);
   };
-  return res as T;
+  return res;
 }
 
-const fsBB: any = PromiseBB.promisifyAll(fs);
+// const fsBB: any = PromiseBB.promisifyAll(fs, { suffix: 'Async' });
+const fsBB: any = fs;
 
 // tslint:disable:max-line-length
-const chmodAsync: (path: string, mode: string | number) => PromiseBB<void> = genFSWrapperAsync(fsBB.chmodAsync);
-const closeAsync: (fd: number) => PromiseBB<void> = genFSWrapperAsync(fsBB.closeAsync);
-const fsyncAsync: (fd: number) => PromiseBB<void> = genFSWrapperAsync(fsBB.fsyncAsync);
-const lstatAsync: (path: string) => PromiseBB<fs.Stats> = genFSWrapperAsync(fsBB.lstatAsync);
-const mkdirAsync: (path: string) => PromiseBB<void> = genFSWrapperAsync(fsBB.mkdirAsync);
-const mkdirsAsync: (path: string) => PromiseBB<void> = genFSWrapperAsync(fsBB.mkdirsAsync);
-const moveAsync: (src: string, dest: string, options?: fs.MoveOptions) => PromiseBB<void> = genFSWrapperAsync(fsBB.moveAsync);
-const openAsync: (path: string, flags: string | number, mode?: number) => PromiseBB<number> = genFSWrapperAsync(fsBB.openAsync);
-const readdirAsync: (path: string) => PromiseBB<string[]> = genFSWrapperAsync(fsBB.readdirAsync);
-const readFileAsync: (...args: any[]) => PromiseBB<any> = genFSWrapperAsync(fsBB.readFileAsync);
-const statAsync: (path: string) => PromiseBB<fs.Stats> = genFSWrapperAsync(fsBB.statAsync);
-const statSilentAsync: (path: string) => PromiseBB<fs.Stats> = (statPath: string) => fsBB.statAsync(statPath);
-const symlinkAsync: (srcpath: string, dstpath: string, type?: string) => PromiseBB<void> = genFSWrapperAsync(fsBB.symlinkAsync);
-const utimesAsync: (path: string, atime: number, mtime: number) => PromiseBB<void> = genFSWrapperAsync(fsBB.utimesAsync);
+const chmodAsync: (path: string, mode: string | number) => PromiseBB<void> = genFSWrapperAsync(fs.chmod);
+const closeAsync: (fd: number) => PromiseBB<void> = genFSWrapperAsync(fs.close);
+const fsyncAsync: (fd: number) => PromiseBB<void> = genFSWrapperAsync(fs.fsync);
+const lstatAsync: (path: string) => PromiseBB<fs.Stats> = genFSWrapperAsync(fs.lstat);
+const mkdirAsync: (path: string) => PromiseBB<void> = genFSWrapperAsync(fs.mkdir);
+const mkdirsAsync: (path: string) => PromiseBB<void> = genFSWrapperAsync(fs.mkdirs);
+const moveAsync: (src: string, dest: string, options?: fs.MoveOptions) => PromiseBB<void> = genFSWrapperAsync(fs.move);
+const openAsync: (path: string, flags: string | number, mode?: number) => PromiseBB<number> = genFSWrapperAsync(fs.open);
+const readdirAsync: (path: string) => PromiseBB<string[]> = genFSWrapperAsync(fs.readdir);
+const readFileAsync: (...args: any[]) => PromiseBB<any> = genFSWrapperAsync(fs.readFile);
+const statAsync: (path: string) => PromiseBB<fs.Stats> = genFSWrapperAsync(fs.stat);
+const statSilentAsync: (path: string) => PromiseBB<fs.Stats> = (statPath: string) => PromiseBB.resolve(fs.stat(statPath));
+const symlinkAsync: (srcpath: string, dstpath: string, type?: string) => PromiseBB<void> = genFSWrapperAsync(fs.symlink);
+const utimesAsync: (path: string, atime: number, mtime: number) => PromiseBB<void> = genFSWrapperAsync(fs.utimes);
 // fs.write and fs.read don't promisify correctly because it has two return values. fs-extra already works around this in their
 // promisified api so no reason to reinvent the wheel (also we want the api to be compatible)
 const writeAsync: (...args: any[]) => PromiseBB<fs.WriteResult> = genFSWrapperAsync(fs.write) as any;
 const readAsync: (...args: any[]) => PromiseBB<fs.ReadResult> = genFSWrapperAsync(fs.read) as any;
-const writeFileAsync: (file: string, data: any, options?: fs.WriteFileOptions) => PromiseBB<void> = genFSWrapperAsync(fsBB.writeFileAsync);
+const writeFileAsync: (file: string, data: any, options?: fs.WriteFileOptions) => PromiseBB<void> = genFSWrapperAsync(fs.writeFile);
 // tslint:enable:max-line-length
 
 export {
@@ -524,8 +525,10 @@ export function ensureDirSync(dirPath: string) {
 
 export function ensureFileAsync(filePath: string): PromiseBB<void> {
   const stackErr = new Error();
-  return (fs as any).ensureFileAsync(filePath)
-    .catch(err => restackErr(err, stackErr));
+  return PromiseBB.resolve(fs.ensureFile(filePath))
+    .catch(err => {
+      throw restackErr(err, stackErr);
+    });
 }
 
 export function ensureDirAsync(dirPath: string, onDirCreatedCB?:
@@ -540,8 +543,8 @@ export function ensureDirAsync(dirPath: string, onDirCreatedCB?:
     : ensureDirInt(dirPath, stackErr, NUM_RETRIES);
 }
 
-function ensureDirInt(dirPath: string, stackErr: Error, tries: number) {
-  return fsBB.ensureDirAsync(dirPath)
+function ensureDirInt(dirPath: string, stackErr: Error, tries: number): PromiseBB<void> {
+  return PromiseBB.resolve(fs.ensureDir(dirPath))
     .catch(err => {
       // ensureDir isn't supposed to cause EEXIST errors as far as I understood
       // it but on windows, when targeting a OneDrive path (and similar?)
@@ -558,7 +561,7 @@ function ensureDir(targetDir: string, onDirCreatedCB: (created: string) => Promi
   // Please note, onDirCreatedCB will be called for _each_ directory
   //  we create.
   const created: string[] = [];
-  const mkdirRecursive = (dir: string) => fsBB.mkdirAsync(dir)
+  const mkdirRecursive = (dir: string) => fsBB.mkdir(dir)
     .then(() => {
       created.push(dir);
       return onDirCreatedCB(dir);
@@ -569,7 +572,7 @@ function ensureDir(targetDir: string, onDirCreatedCB: (created: string) => Promi
       } else {
         return (['ENOENT'].indexOf(err.code) !== -1)
           ? mkdirRecursive(path.dirname(dir))
-              .then(() => fsBB.mkdirAsync(dir))
+              .then(() => fsBB.mkdir(dir))
               .then(() => {
                 created.push(dir);
                 return onDirCreatedCB(dir);
@@ -588,8 +591,8 @@ function ensureDir(targetDir: string, onDirCreatedCB: (created: string) => Promi
 }
 
 function selfCopyCheck(src: string, dest: string) {
-  return PromiseBB.join(fsBB.statAsync(src, { bigint: true }),
-                        fsBB.statAsync(dest, { bigint: true })
+  return PromiseBB.join(fsBB.stat(src, { bigint: true }),
+                        fsBB.stat(dest, { bigint: true })
                 .catch({ code: 'ENOENT' }, err => PromiseBB.resolve({})))
     .then((stats: fs.Stats[]) => (stats[0].ino === stats[1].ino)
         ? PromiseBB.reject(new Error(
@@ -650,7 +653,7 @@ function copyInt(
     options: CopyOptionsEx,
     stackErr: Error,
     tries: number) {
-  return simfail(() => fsBB.copyAsync(src, dest, options))
+  return simfail(() => PromiseBB.resolve(fsBB.copy(src, dest, options)))
     .catch((err: NodeJS.ErrnoException) =>
       errorHandler(err, stackErr, tries, options?.showDialogCallback,
                    { extraRetryErrors: ['EEXIST'] })
@@ -669,7 +672,7 @@ function linkInt(
     src: string, dest: string,
     stackErr: Error, tries: number,
     options?: ILinkFileOptions): PromiseBB<void> {
-  return simfail(() => fsBB.linkAsync(src, dest))
+  return simfail(() => PromiseBB.resolve(fsBB.link(src, dest)))
     .catch((err: NodeJS.ErrnoException) =>
       errorHandler(err, stackErr, tries,
                   (options !== undefined) ? options.showDialogCallback : undefined)
@@ -686,7 +689,7 @@ export function unlinkAsync(filePath: string, options?: IRemoveFileOptions): Pro
 
 function unlinkInt(filePath: string, stackErr: Error, tries: number,
                    options: IRemoveFileOptions): PromiseBB<void> {
-  return simfail(() => fsBB.unlinkAsync(filePath))
+  return simfail(() => PromiseBB.resolve(fsBB.unlink(filePath)))
     .catch((err: NodeJS.ErrnoException) => {
       const handle = () => errorHandler(err, stackErr, tries, options.showDialogCallback)
           .then(() => unlinkInt(filePath, stackErr, tries - 1, options));
@@ -697,7 +700,7 @@ function unlinkInt(filePath: string, stackErr: Error, tries: number,
       } else if (err.code === 'EPERM') {
         // this could be caused by the path actually pointing to a directory,
         // unlink can only handle files
-        return fsBB.statAsync(filePath)
+        return fsBB.stat(filePath)
           .then((stats) => {
             if (stats.isDirectory()) {
               err.code = 'EISDIR';
