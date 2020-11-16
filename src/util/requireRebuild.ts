@@ -45,7 +45,6 @@ const nativeLibs = [
   'libxmljs',
   'msgpack',
   'native-errors',
-  'nbind',
   'permissions',
   'windump',
 ];
