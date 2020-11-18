@@ -43,11 +43,6 @@ export function remoteCode(ipcClient, req) {
             if (err.code === 'EISDIR') {
               emit('report', 'not-supported');
             }
-            emit('log', {
-              level: 'error',
-              message: 'failed to install symlink',
-              meta: { err: err.message },
-            });
             emit('completed', {
               err: {
                 // in case message is a getter

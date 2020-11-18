@@ -368,15 +368,33 @@ class DeploymentMethod extends LinkingDeployment {
       this.mElevatedClient.sendMessage({message, payload});
     }
   }
-  private emitOperation(command: string, args: any): Promise<void> {
-    const requestNum = this.mCounter++;
+
+  private emitAsync(command: string, args: any, requestNum: number) {
     return new Promise<void>((resolve, reject) => {
       this.emit(command, { ...args, num: requestNum });
       this.mOpenRequests[requestNum] = { resolve, reject };
-    })
+    });
+  }
+
+  private emitOperation(command: string, args: any, tries: number = 3): Promise<void> {
+    const requestNum = this.mCounter++;
+    return this.emitAsync(command, args, requestNum)
     .timeout(5000)
-    .tapCatch(Promise.TimeoutError, () => {
+    .catch(Promise.TimeoutError, (err) => {
+      if (this.mOpenRequests[requestNum] === undefined) {
+        // this makes no sense, why would the timeout expire if the request
+        // was resolved?
+        log('warn', 'request timed out after being fulfilled?');
+        return Promise.resolve();
+      }
+
       delete this.mOpenRequests[requestNum];
+      if (tries > 0) {
+        log('debug', 'retrying fs op', { command, args, tries });
+        return this.emitOperation(command, args, tries - 1);
+      } else {
+        return Promise.reject(err);
+      }
     });
   }
 
@@ -421,6 +439,8 @@ class DeploymentMethod extends LinkingDeployment {
               task.resolve();
             }
             delete this.mOpenRequests[num];
+          } else {
+            log('debug', 'unexpected operation completed');
           }
           if ((Object.keys(this.mOpenRequests).length === 0)
             && (this.mDone !== null)) {
