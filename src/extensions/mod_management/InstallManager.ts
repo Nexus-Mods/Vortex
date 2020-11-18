@@ -359,7 +359,7 @@ class InstallManager {
                          || (err instanceof ProcessCanceled)
                          || (err === null)
                          || (err.message === 'Canceled')
-                         || ((err.stack !== undefined)
+                         || (truthy(err.stack)
                              && err.stack.startsWith('UserCanceled: canceled by user'));
         let prom = destinationPath !== undefined
           ? fs.removeAsync(destinationPath)
