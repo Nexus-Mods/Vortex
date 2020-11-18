@@ -16,7 +16,8 @@ class Plugins extends DelegateBase {
         try {
           const state = this.api.store.getState();
 
-          const plugins = Object.keys(getSafe(state, ['session', 'plugins', 'pluginList'], {}));
+          const plugins = Object.keys(
+            getSafe(state, ['session', 'plugins', 'pluginList'], undefined) ?? {});
           // the installer may use a different case than we have on disk
           const localName = plugins.find(plugin =>
             plugin.toLowerCase() === pluginName.toLowerCase());
@@ -38,7 +39,8 @@ class Plugins extends DelegateBase {
         try {
           const state = this.api.store.getState();
 
-          const plugins = Object.keys(getSafe(state, ['session', 'plugins', 'pluginList'], {}));
+          const plugins = Object.keys(
+            getSafe(state, ['session', 'plugins', 'pluginList'], undefined) ?? {});
           const localName = plugins.find(plugin =>
             plugin.toLowerCase() === pluginName.toLowerCase());
 
@@ -51,7 +53,8 @@ class Plugins extends DelegateBase {
   public getAll = (isActiveOnly: boolean, callback: (err, res: string[]) => void) => {
     try {
       const state = this.api.store.getState();
-      let plugins = Object.keys(getSafe(state, ['session', 'plugins', 'pluginList'], {}));
+      let plugins = Object.keys(
+        getSafe(state, ['session', 'plugins', 'pluginList'], undefined) ?? {});
 
       if (isActiveOnly === true) {
         plugins =
