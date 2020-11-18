@@ -9,7 +9,7 @@ import * as ReactDOM from 'react-dom';
 export interface IDraggableListItemProps {
   index: number;
   item: any;
-  itemRenderer: React.ComponentClass<{ className?: string, item: any }>;
+  itemRenderer: React.ComponentClass<{ className?: string, item: any, forwardRef?: any }>;
   containerId: string;
   take: (item: any, list: any[]) => any;
   onChangeIndex: (oldIndex: number, newIndex: number, changeContainer: boolean, take: (list: any[]) => any) => void;
@@ -28,16 +28,24 @@ interface IDropProps {
   canDrop: boolean;
 }
 
+const newLO = 'mod-loadorder-draggable-list';
+
 type IProps = IDraggableListItemProps & IDragProps & IDropProps;
 
 class DraggableItem extends React.Component<IProps, {}> {
   public render(): JSX.Element {
     const { isDragging, item } = this.props;
-    return (
+    return this.props.containerId !== newLO ? (
       <this.props.itemRenderer
         className={isDragging ? 'dragging' : undefined}
         item={item}
         ref={this.setRef}
+      />
+    ) : (
+      <this.props.itemRenderer
+        className={isDragging ? 'dragging' : undefined}
+        item={item}
+        forwardRef={this.setRef}
       />
     );
   }

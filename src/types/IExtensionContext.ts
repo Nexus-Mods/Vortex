@@ -1,5 +1,7 @@
 import { IExtension } from '../extensions/extension_manager/types';
+import { ILoadOrderGameInfo } from '../extensions/file_based_loadorder/types/types';
 import { IGameLoadOrderEntry } from '../extensions/mod_load_order/types/types';
+
 import {
   IDeployedFile,
   IDeploymentMethod,
@@ -1196,8 +1198,14 @@ export interface IExtensionContext {
   registerToolVariables: (callback: ToolParameterCB) => void;
 
   // Provides game extensions with an easy way to add a load order page
-  //  if they require it.
+  //  if they require it. (DEPRECATED - please use registerLoadOrder instead)
   registerLoadOrderPage: (gameEntry: IGameLoadOrderEntry) => void;
+
+  /**
+   * Add file based load ordering functionality to the specified game.
+   *  Please use this instead of registerLoadOrderPage
+   */
+  registerLoadOrder: (gameInfo: ILoadOrderGameInfo) => void;
 
   /**
    * add a function to the IExtensionApi object that is made available to all other extensions

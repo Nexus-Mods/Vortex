@@ -1,0 +1,246 @@
+import * as _ from 'lodash';
+import * as React from 'react';
+import { Panel } from 'react-bootstrap';
+import { withTranslation } from 'react-i18next';
+import { connect } from 'react-redux';
+
+import * as actions from '../../../actions/index';
+import { DraggableList, EmptyPlaceholder, FlexLayout, IconBar, Spinner, ToolbarIcon } from '../../../controls/api';
+import * as types from '../../../types/api';
+import * as util from '../../../util/api';
+import { ComponentEx } from '../../../util/ComponentEx';
+import * as selectors from '../../../util/selectors';
+import { DNDContainer, MainPage } from '../../../views/api';
+
+import { setNewLoadOrder } from '../actions/loadOrder';
+import { ILoadOrderEntry, LoadOrder, LoadOrderValidationError } from '../types/types';
+import InfoPanel from './InfoPanel';
+import ItemRenderer from './ItemRenderer';
+
+const PanelX: any = Panel;
+
+interface IBaseState {
+  loading: boolean;
+  updating: boolean;
+  usageInstructions: string;
+  validationError: LoadOrderValidationError;
+}
+
+export interface IBaseProps {
+  applyLoadOrder: (gameId: string, prev: LoadOrder, newLO: LoadOrder) => Promise<void>;
+  onStartUp: (gameMode: string) => Promise<LoadOrder>;
+}
+
+interface IConnectedProps {
+  // The current loadorder
+  loadOrder: LoadOrder;
+
+  // The profile we're managing this load order for.
+  profile: types.IProfile;
+
+  // Does the user need to deploy ?
+  needToDeploy: boolean;
+}
+
+interface IActionProps {
+  onSetDeploymentNecessary: (gameId: string, necessary: boolean) => void;
+  onSetOrder: (profileId: string, loadOrder: LoadOrder) => void;
+}
+
+type IProps = IActionProps & IBaseProps & IConnectedProps;
+type IComponentState = IBaseState;
+
+class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
+  private mStaticButtons: types.IActionDefinition[];
+
+  constructor(props: IProps) {
+    super(props);
+    this.initState({
+      loading: true,
+      updating: false,
+      usageInstructions: 'Drag and drop your mods around to modify the order in which the game loads your mods.',
+      validationError: undefined,
+    });
+
+    this.mStaticButtons = [
+      {
+        component: ToolbarIcon,
+        props: () => {
+          return {
+            id: 'btn-deploy',
+            key: 'btn-deploy',
+            icon: 'deploy',
+            text: 'Deploy Mods',
+            className: this.props.needToDeploy ? 'toolbar-flash-button' : undefined,
+            onClick: () => this.context.api.events.emit('deploy-mods', () => undefined),
+          };
+        },
+      }, {
+        component: ToolbarIcon,
+        props: () => {
+          return {
+            id: 'btn-purge-list',
+            key: 'btn-purge-list',
+            icon: 'purge',
+            text: 'Purge Mods',
+            className: 'load-order-purge-list',
+            onClick: () => this.context.api.events.emit('purge-mods', false, () => undefined),
+          };
+        },
+      }, {
+        component: ToolbarIcon,
+        props: () => {
+          return {
+            id: 'btn-refresh-list',
+            key: 'btn-refresh-list',
+            icon: this.state.updating ? 'spinner' : 'refresh',
+            text: 'Refresh List',
+            className: 'load-order-refresh-list',
+            onClick: this.onRefreshList,
+          };
+        },
+      },
+    ];
+  }
+
+  public componentDidMount() {
+    const { onSetOrder, onStartUp, profile } = this.props;
+    onStartUp(profile?.gameId)
+      .then(lo => {
+        if (lo !== undefined) {
+          onSetOrder(profile.id, lo);
+        }
+      })
+      .catch(err => {
+        this.nextState.validationError = err as LoadOrderValidationError;
+      })
+      .finally(() => this.nextState.loading = false);
+  }
+
+  public componentWillUnmount() {
+    this.resetState();
+  }
+
+  public render(): JSX.Element {
+    const { t, loadOrder } = this.props;
+    const { usageInstructions, validationError } = this.state;
+    const enabled = Object.keys(loadOrder).map(key => loadOrder[key]);
+
+    const infoPanel = () =>
+      <InfoPanel validationError={validationError} infoText={usageInstructions} />;
+
+    const draggableList = () => (this.nextState.loading)
+      ? this.renderWait()
+      : (enabled.length > 0)
+        ? <DraggableList
+            itemTypeId='file-based-lo-draggable-entry'
+            id='mod-loadorder-draggable-list'
+            items={enabled}
+            itemRenderer={ItemRenderer}
+            apply={this.onApply}
+            idFunc={this.getItemId}
+        />
+        : <EmptyPlaceholder
+            icon='folder-download'
+            fill={true}
+            text={t('You don\'t have any orderable mods')}
+            subtext={t('Did you forget to deploy ?')}
+        />;
+
+    return (
+      <MainPage>
+        <MainPage.Header>
+          <IconBar
+            group='generic-load-order-icons'
+            staticElements={this.mStaticButtons}
+            className='menubar'
+            t={t}
+          />
+        </MainPage.Header>
+        <MainPage.Body>
+          <Panel>
+            <PanelX.Body>
+              <DNDContainer style={{ height: '100%' }}>
+                <FlexLayout type='row'>
+                  <FlexLayout.Flex className={'file-based-load-order-list'}>
+                    {draggableList()}
+                  </FlexLayout.Flex>
+                  <FlexLayout.Flex>
+                    {infoPanel()}
+                  </FlexLayout.Flex>
+                </FlexLayout>
+              </DNDContainer>
+            </PanelX.Body>
+          </Panel>
+        </MainPage.Body>
+      </MainPage>
+    );
+  }
+
+  private resetState() {
+    this.nextState.loading = true;
+    this.nextState.usageInstructions = 'Drag and drop your mods around to modify the order in which the game loads your mods.';
+    this.nextState.validationError = undefined;
+  }
+
+  private renderWait() {
+    return (
+      <Spinner
+        style={{
+          width: '64px',
+          height: '64px',
+        }}
+      />
+    );
+  }
+
+  private getItemId = (item: ILoadOrderEntry): string => item.id;
+
+  private onApply = (ordered: ILoadOrderEntry[]) => {
+    const { applyLoadOrder, loadOrder, profile } = this.props;
+    applyLoadOrder(profile.gameId, loadOrder, ordered)
+      .then(() => this.nextState.validationError = undefined)
+      .catch(err => {
+        const valError = err as LoadOrderValidationError;
+        this.nextState.validationError = valError;
+      });
+  }
+
+  private onRefreshList = () => {
+    const { onStartUp, onSetOrder, profile } = this.props;
+    this.nextState.updating = true;
+    onStartUp(profile?.gameId)
+      .then(lo => {
+        if (lo !== undefined) {
+          onSetOrder(profile.id, lo);
+        }
+      })
+      .catch(err => {
+        this.nextState.validationError = err as LoadOrderValidationError;
+      })
+      .finally(() => this.nextState.updating = false);
+  }
+}
+
+function mapStateToProps(state: types.IState, ownProps: IProps): IConnectedProps {
+  const profile = selectors.activeProfile(state) || undefined;
+  return {
+    loadOrder: util.getSafe(state, ['persistent', 'loadOrder', profile?.id], []),
+    profile,
+    needToDeploy: selectors.needToDeploy(state),
+  };
+}
+
+function mapDispatchToProps(dispatch: any): IActionProps {
+  return {
+    onSetDeploymentNecessary: (gameId, necessary) =>
+      dispatch(actions.setDeploymentNecessary(gameId, necessary)),
+    onSetOrder: (profileId, loadOrder) => {
+      dispatch(setNewLoadOrder(profileId, (loadOrder as any)));
+    },
+  };
+}
+
+export default withTranslation(['common'])(
+  connect(mapStateToProps, mapDispatchToProps)(
+    FileBasedLoadOrderPage) as any) as React.ComponentClass<{}>;
