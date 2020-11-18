@@ -5,7 +5,6 @@ import { ILoadOrderGameInfo, IValidationResult, LoadOrder,
 import FileBasedLoadOrderPage from './views/FileBasedLoadOrderPage';
 
 import { modLoadOrderReducer } from './reducers/loadOrder';
-import { loadOrderSettingsReducer } from './reducers/settings';
 
 import * as types from '../../types/api';
 import * as util from '../../util/api';
@@ -13,7 +12,6 @@ import * as selectors from '../../util/selectors';
 
 import { log } from '../../util/log';
 import { setNewLoadOrder } from './actions/loadOrder';
-import { setGameLoadOrderDisplayCheckboxes } from './actions/settings';
 
 const SUPPORTED_GAMES: ILoadOrderGameInfo[] = [];
 
@@ -40,7 +38,7 @@ async function errorHandler(api: types.IExtensionApi,
     api.showErrorNotification(errorMessage, details, { allowReport });
   } else if (err instanceof LoadOrderSerializationError) {
     const serErr = err as LoadOrderSerializationError;
-    const errMess = 'failed to serialize load order';
+    const errMess = 'Failed to serialize load order';
     const details = {
       loadOrder: serErr.loadOrder,
     };
@@ -202,7 +200,7 @@ async function applyNewLoadOrder(api: types.IExtensionApi,
     await gameEntry.serializeLoadOrder(newLO);
     api.store.dispatch(setNewLoadOrder(profile.id, newLO));
   } catch (err) {
-    return Promise.reject(err);
+    return errorHandler(api, gameEntry.gameId, err);
   }
 
   return;
@@ -240,20 +238,8 @@ export default function init(context: IExtensionContext) {
   });
 
   context.registerReducer(['persistent', 'loadOrder'], modLoadOrderReducer);
-  context.registerReducer(['settings', 'loadOrder'], loadOrderSettingsReducer);
 
   context.registerLoadOrder = (gameInfo: ILoadOrderGameInfo) => {
-    const state = context.api.store.getState();
-    const displayCheckboxes = util.getSafe(state,
-      ['settings', 'loadOrder', 'rendererOptions', gameInfo.gameId, 'displayCheckboxes'], false);
-
-    if ((gameInfo?.toggleableEntries !== null)
-     && (gameInfo?.toggleableEntries !== undefined)
-     && (gameInfo?.toggleableEntries !== displayCheckboxes)) {
-      context.api.store.dispatch(
-        setGameLoadOrderDisplayCheckboxes(gameInfo.gameId, gameInfo.toggleableEntries));
-    }
-
     addGameEntry(gameInfo);
   };
 
@@ -280,7 +266,7 @@ async function onStartUp(api: types.IExtensionApi, gameId: string): Promise<Load
   const gameEntry: ILoadOrderGameInfo = findGameEntry(gameId);
   if ((gameEntry === undefined) || (profileId === undefined)) {
     const details = (gameEntry === undefined) ? { gameId } : { profileId };
-    log('debug', '[NLO]: invalid game entry or invalid profile', details);
+    log('debug', 'invalid game entry or invalid profile', details);
     return Promise.resolve(undefined);
   }
 

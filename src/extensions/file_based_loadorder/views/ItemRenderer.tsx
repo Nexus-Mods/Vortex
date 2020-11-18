@@ -4,7 +4,7 @@ import { withTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
 import { ComponentEx } from '../../../util/ComponentEx';
 
-import { ILoadOrderEntry, LoadOrder } from '../types/types';
+import { IItemRendererProps, ILoadOrderEntry, LoadOrder } from '../types/types';
 
 import { Icon } from '../../../controls/api';
 import { IProfile, IState } from '../../../types/api';
@@ -18,7 +18,6 @@ interface IConnectedProps {
   modState: any;
   loadOrder: LoadOrder;
   profile: IProfile;
-  displayCheckboxes: boolean;
 }
 
 interface IActionProps {
@@ -27,28 +26,18 @@ interface IActionProps {
 
 interface IBaseProps {
   className?: string;
-  item: ILoadOrderEntry;
-  forwardRef: (ref: any) => void;
+  item: IItemRendererProps;
 }
 
 type IProps = IBaseProps & IConnectedProps & IActionProps;
 
 class ItemRenderer extends ComponentEx<IProps, {}> {
   public render() {
-    const item = this.props.item;
-    return (this.isLocked(item))
-      ? null
-      : this.renderDraggable(item);
-  }
-
-  public componentDidMount() {
-    const { forwardRef } = this.props;
-    forwardRef(this);
-  }
-
-  public componentWillUnmount() {
-    const { forwardRef } = this.props;
-    forwardRef(undefined);
+    const item = this.props.item.loEntry;
+    const displayCheckboxes = this.props.item.displayCheckboxes;
+    return (!this.isLocked(item))
+      ? this.renderDraggable(item, displayCheckboxes)
+      : null;
   }
 
   private renderExternalBanner(): JSX.Element {
@@ -61,11 +50,11 @@ class ItemRenderer extends ComponentEx<IProps, {}> {
     );
   }
 
-  private renderDraggable(item: ILoadOrderEntry): JSX.Element {
-    const { displayCheckboxes, loadOrder, className } = this.props;
+  private renderDraggable(item: ILoadOrderEntry, displayCheckboxes: boolean): JSX.Element {
+    const { loadOrder, className } = this.props;
     const key = !!item.name ? `${item.name}` : `${item.id}`;
 
-    const position = loadOrder.findIndex(entry => entry.id === item.id);
+    const position = loadOrder.findIndex(entry => entry.id === item.id) + 1;
 
     let classes = ['load-order-entry'];
     if (className !== undefined) {
@@ -76,7 +65,7 @@ class ItemRenderer extends ComponentEx<IProps, {}> {
       ? (
         <Checkbox
           className='entry-checkbox'
-          checked={loadOrder[position].enabled}
+          checked={item.enabled}
           disabled={this.isLocked(item)}
           onChange={this.onStatusChange}
         />
@@ -92,6 +81,7 @@ class ItemRenderer extends ComponentEx<IProps, {}> {
       <ListGroupItem
         key={key}
         className={classes.join(' ')}
+        ref={this.props.item.setRef}
       >
         <p className='load-order-index'>{position}</p>
         {this.isExternal(item) && this.renderExternalBanner()}
@@ -113,7 +103,7 @@ class ItemRenderer extends ComponentEx<IProps, {}> {
   private onStatusChange = (evt: any) => {
     const { item, onSetLoadOrderEntry, profile } = this.props;
     const entry = {
-      ...item,
+      ...item.loEntry,
       enabled: evt.target.checked,
     };
 
@@ -126,8 +116,6 @@ function mapStateToProps(state: IState, ownProps: IProps): IConnectedProps {
   const profile: IProfile = selectors.activeProfile(state);
   return {
     profile,
-    displayCheckboxes: getSafe(state,
-      ['settings', 'loadOrder', 'rendererOptions', profile?.gameId, 'displayCheckboxes'], false),
     loadOrder: getSafe(state, ['persistent', 'loadOrder', profile.id], []),
     modState: getSafe(profile, ['modState'], empty),
   };
@@ -144,5 +132,5 @@ export default withTranslation(['common'])(
   connect(mapStateToProps, mapDispatchToProps)(
     ItemRenderer) as any) as React.ComponentClass<{
       className?: string,
-      item: ILoadOrderEntry,
+      item: IItemRendererProps,
     }>;

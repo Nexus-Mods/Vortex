@@ -13,14 +13,22 @@ interface IProps {
 }
 
 class InfoPanel extends ComponentEx<IProps, {}> {
+  private mDefaultInfo: string;
+  constructor(props: IProps) {
+    super(props);
+    this.mDefaultInfo = 'Drag and drop your load order entries around to modify the order in which the game loads your mods.';
+  }
   public render() {
     const { t, infoText } = this.props;
+    const text = (infoText !== undefined)
+      ? infoText
+      : this.mDefaultInfo;
     return (
       <div id='loadorderinfo'>
         <FlexLayout type='column'>
           <FlexLayout.Flex>
             <h2>{t('Changing your load order')}</h2>
-            <p>{infoText}</p>
+            <p>{bbcode(t(text))}</p>
           </FlexLayout.Flex>
           <FlexLayout.Flex>
             {this.renderErrorBox()}

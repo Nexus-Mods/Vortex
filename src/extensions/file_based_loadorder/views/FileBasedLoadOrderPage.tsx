@@ -13,7 +13,8 @@ import * as selectors from '../../../util/selectors';
 import { DNDContainer, MainPage } from '../../../views/api';
 
 import { setNewLoadOrder } from '../actions/loadOrder';
-import { ILoadOrderEntry, LoadOrder, LoadOrderValidationError } from '../types/types';
+import { IItemRendererProps, ILoadOrderEntry, ILoadOrderGameInfo, LoadOrder,
+  LoadOrderValidationError } from '../types/types';
 import InfoPanel from './InfoPanel';
 import ItemRenderer from './ItemRenderer';
 
@@ -22,11 +23,11 @@ const PanelX: any = Panel;
 interface IBaseState {
   loading: boolean;
   updating: boolean;
-  usageInstructions: string;
   validationError: LoadOrderValidationError;
 }
 
 export interface IBaseProps {
+  getGameEntry: (gameId: string) => ILoadOrderGameInfo;
   applyLoadOrder: (gameId: string, prev: LoadOrder, newLO: LoadOrder) => Promise<void>;
   onStartUp: (gameMode: string) => Promise<LoadOrder>;
 }
@@ -58,7 +59,6 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
     this.initState({
       loading: true,
       updating: false,
-      usageInstructions: 'Drag and drop your mods around to modify the order in which the game loads your mods.',
       validationError: undefined,
     });
 
@@ -122,12 +122,25 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, loadOrder } = this.props;
-    const { usageInstructions, validationError } = this.state;
-    const enabled = Object.keys(loadOrder).map(key => loadOrder[key]);
+    const { t, loadOrder, getGameEntry, profile } = this.props;
+    const { validationError } = this.state;
+    const gameEntry = getGameEntry(profile?.gameId);
+    const enabled = (gameEntry !== undefined)
+      ? loadOrder.reduce((accum, loEntry) => {
+          const rendOps: IItemRendererProps = {
+            loEntry,
+            displayCheckboxes: gameEntry.toggleableEntries || false,
+          };
+          accum.push(rendOps);
+          return accum;
+        }, [])
+      : [];
 
     const infoPanel = () =>
-      <InfoPanel validationError={validationError} infoText={usageInstructions} />;
+      <InfoPanel
+        validationError={validationError}
+        infoText={gameEntry?.usageInstructions}
+      />;
 
     const draggableList = () => (this.nextState.loading)
       ? this.renderWait()
@@ -143,7 +156,7 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
         : <EmptyPlaceholder
             icon='folder-download'
             fill={true}
-            text={t('You don\'t have any orderable mods')}
+            text={t('You don\'t have any orderable entries')}
             subtext={t('Did you forget to deploy ?')}
         />;
 
@@ -179,7 +192,6 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
 
   private resetState() {
     this.nextState.loading = true;
-    this.nextState.usageInstructions = 'Drag and drop your mods around to modify the order in which the game loads your mods.';
     this.nextState.validationError = undefined;
   }
 
@@ -194,11 +206,12 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private getItemId = (item: ILoadOrderEntry): string => item.id;
+  private getItemId = (item: IItemRendererProps): string => item.loEntry.id;
 
-  private onApply = (ordered: ILoadOrderEntry[]) => {
+  private onApply = (ordered: IItemRendererProps[]) => {
     const { applyLoadOrder, loadOrder, profile } = this.props;
-    applyLoadOrder(profile.gameId, loadOrder, ordered)
+    const newLO = ordered.map(item => item.loEntry);
+    applyLoadOrder(profile.gameId, loadOrder, newLO)
       .then(() => this.nextState.validationError = undefined)
       .catch(err => {
         const valError = err as LoadOrderValidationError;

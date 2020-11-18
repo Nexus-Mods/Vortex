@@ -3,6 +3,19 @@ import * as Promise from 'bluebird';
 export type LockedState = 'true' | 'false' | 'always' | 'never';
 export type LoadOrder = ILoadOrderEntry[];
 
+export interface IItemRendererProps {
+  // The actual item we want to render.
+  loEntry: ILoadOrderEntry;
+
+  // Tells the item renderer whether to display checkboxes or not.
+  displayCheckboxes: boolean;
+
+  // Function components cannot be given refs, which means that DnD
+  //  will not work when using the Vortex API's DraggableItem without
+  //  forwarding the ref to the itemRenderer.
+  setRef?: (ref: any) => void;
+}
+
 export interface ILoadOrderEntry<T = any> {
   // An arbitrary unique id for the load order item
   id: string;
