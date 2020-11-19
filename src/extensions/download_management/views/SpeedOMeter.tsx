@@ -5,7 +5,7 @@ import { bytesToString } from '../../../util/util';
 
 import * as React from 'react';
 import { IState } from '../../../types/IState';
-import { IDownload } from '../types/IDownload';
+import { DownloadState, IDownload } from '../types/IDownload';
 
 export interface IBaseProps {
   slim: boolean;
@@ -18,13 +18,22 @@ interface IConnectedProps {
 
 type IProps = IBaseProps & IConnectedProps;
 
+const STATES: DownloadState[] = ['finalizing', 'started', 'paused'];
+
 class SpeedOMeter extends PureComponentEx<IProps, {}> {
   public render(): JSX.Element {
     const { t, downloads, slim, speed } = this.props;
 
     const activeDownloads = Object.keys(downloads ?? {})
-      .filter(id => downloads[id].state === 'started' || downloads[id].state === 'paused')
-      .map(id => downloads[id]);
+      .filter(id => STATES.includes(downloads[id].state))
+      .map(id => downloads[id])
+      .sort((lhs, rhs) => {
+        if (lhs.state !== rhs.state) {
+          return STATES.indexOf(lhs.state) - STATES.indexOf(rhs.state);
+        } else {
+          return lhs.startTime - rhs.startTime;
+        }
+      });
 
     if (activeDownloads.length === 0) {
       return null;
