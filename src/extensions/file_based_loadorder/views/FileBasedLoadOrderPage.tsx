@@ -28,7 +28,7 @@ interface IBaseState {
 
 export interface IBaseProps {
   getGameEntry: (gameId: string) => ILoadOrderGameInfo;
-  applyLoadOrder: (gameId: string, prev: LoadOrder, newLO: LoadOrder) => Promise<void>;
+  applyLoadOrder: (profile: types.IProfile, prev: LoadOrder, newLO: LoadOrder) => Promise<void>;
   onStartUp: (gameMode: string) => Promise<LoadOrder>;
 }
 
@@ -211,7 +211,7 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
   private onApply = (ordered: IItemRendererProps[]) => {
     const { applyLoadOrder, loadOrder, profile } = this.props;
     const newLO = ordered.map(item => item.loEntry);
-    applyLoadOrder(profile.gameId, loadOrder, newLO)
+    applyLoadOrder(profile, loadOrder, newLO)
       .then(() => this.nextState.validationError = undefined)
       .catch(err => {
         const valError = err as LoadOrderValidationError;

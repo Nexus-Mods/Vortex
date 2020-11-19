@@ -72,7 +72,7 @@ async function genToolsRunning(api: types.IExtensionApi, prev: any, current: any
     try {
       const prevLO: LoadOrder = util.getSafe(state, ['persistent', 'loadOrder', profile.id], []);
       const currentLO: LoadOrder = await gameEntry.deserializeLoadOrder();
-      await applyNewLoadOrder(api, profile.gameId, prevLO, currentLO);
+      await applyNewLoadOrder(api, profile, prevLO, currentLO);
     } catch (err) {
       // nop - any errors would've been reported by applyNewLoadOrder.
     }
@@ -102,11 +102,13 @@ async function genLoadOrderChange(api: types.IExtensionApi, oldState: any, newSt
     return;
   }
 
+  const prevLO: LoadOrder = (oldState[profile.id] !== undefined)
+    ? oldState[profile.id] : [];
+
   if (JSON.stringify(oldState[profile.id]) !== JSON.stringify(newState[profile.id])) {
-    const prevLO: LoadOrder = oldState[profile.id];
     const loadOrder: LoadOrder = newState[profile.id];
     try {
-      await applyNewLoadOrder(api, profile.gameId, prevLO, loadOrder);
+      await applyNewLoadOrder(api, profile, prevLO, loadOrder);
     } catch (err) {
       // nop - any errors would've been reported by applyNewLoadOrder.
     }
@@ -139,14 +141,14 @@ async function genProfilesChange(api: types.IExtensionApi,
   const prevLO = util.getSafe(state, ['persistent', 'loadOrder', profile.id], []);
   try {
     const loadOrder: LoadOrder = await gameEntry.deserializeLoadOrder();
-    await applyNewLoadOrder(api, profile.gameId, prevLO, loadOrder);
+    await applyNewLoadOrder(api, profile, prevLO, loadOrder);
   } catch (err) {
     // nop - any errors would've been reported by applyNewLoadOrder.
   }
 }
 
 async function genDeploymentEvent(api: types.IExtensionApi, profileId: string) {
-  // Yes - this gets executed on purge too.
+  // Yes - this gets executed on purge too (at least for now).
   const state = api.store.getState();
   const profile = selectors.profileById(state, profileId);
   if (profile?.gameId === undefined) {
@@ -167,26 +169,23 @@ async function genDeploymentEvent(api: types.IExtensionApi, profileId: string) {
   const prevLO = util.getSafe(state, ['persistent', 'loadOrder', profile.id], []);
   try {
     deserializedLO = await gameEntry.deserializeLoadOrder();
-    await applyNewLoadOrder(api, profile.gameId, prevLO, deserializedLO);
+    await applyNewLoadOrder(api, profile, prevLO, deserializedLO);
   } catch (err) {
     // nop - any errors would've been reported by applyNewLoadOrder.
   }
 }
 
 async function applyNewLoadOrder(api: types.IExtensionApi,
-                                 gameId: string,
+                                 profile: types.IProfile,
                                  prev: LoadOrder,
                                  newLO: LoadOrder): Promise<void> {
-  const state = api.store.getState();
-  const lastActiveId = selectors.lastActiveProfileForGame(state, gameId);
-  const profile = selectors.profileById(state, lastActiveId);
-  const gameEntry = findGameEntry(gameId);
+  const gameEntry = findGameEntry(profile.gameId);
   if (gameEntry === undefined || profile === undefined) {
     // How ?
     if (gameEntry === undefined) {
-      log('warn', 'unable to apply new load order', `${gameId} is not registered with LoadOrder component`);
+      log('warn', 'unable to apply new load order', `${profile.gameId} is not registered with LoadOrder component`);
     } else {
-      log('warn', 'unable to apply new load order', `profile ${lastActiveId} does not exist`);
+      log('warn', 'unable to apply new load order', `profile ${profile.id} does not exist`);
     }
     return;
   }
@@ -194,7 +193,7 @@ async function applyNewLoadOrder(api: types.IExtensionApi,
   try {
     const validRes: IValidationResult = await gameEntry.validate(prev, newLO);
     if (validRes !== undefined) {
-      return Promise.reject(new LoadOrderValidationError(validRes, newLO));
+      throw new LoadOrderValidationError(validRes, newLO);
     }
 
     await gameEntry.serializeLoadOrder(newLO);
@@ -230,8 +229,8 @@ export default function init(context: IExtensionContext) {
     props: () => {
       return {
         getGameEntry: findGameEntry,
-        applyLoadOrder: (gameId: string, prev: LoadOrder, newLO: LoadOrder) =>
-          applyNewLoadOrder(context.api, gameId, prev, newLO),
+        applyLoadOrder: (profile: types.IProfile, prev: LoadOrder, newLO: LoadOrder) =>
+          applyNewLoadOrder(context.api, profile, prev, newLO),
         onStartUp: (gameId: string) => onStartUp(context.api, gameId),
       };
     },
