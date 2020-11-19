@@ -43,6 +43,7 @@ import VersionIconButton from '../views/VersionIconButton';
 import { ENABLED_TIME, INSTALL_TIME, PICTURE } from '../modAttributes';
 import getText from '../texts';
 
+import Author from './Author';
 import CheckModVersionsButton from './CheckModVersionsButton';
 import InstallArchiveButton from './InstallArchiveButton';
 
@@ -700,7 +701,19 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       name: 'Author',
       description: 'Author of the mod',
       icon: 'author',
-      calc: mod => getSafe(mod.attributes, ['author'], ''),
+      calc: mod => {
+        const authors = [];
+        if (mod.attributes?.author !== undefined) {
+          authors.push(mod.attributes.author);
+        }
+        if (mod.attributes?.uploader !== undefined) {
+          authors.push(mod.attributes.uploader);
+        }
+        return authors.join(' & ');
+      },
+      customRenderer: (mod: IModWithState, detailCell: boolean, t: TFunction) => detailCell ? (
+        <Author t={t} gameId={this.props.gameMode} mod={mod} />
+      ) : (mod.attributes?.author || ''),
       placement: 'both',
       isToggleable: true,
       isGroupable: true,
