@@ -157,7 +157,7 @@ class FileBasedLoadOrderPage extends ComponentEx<IProps, IComponentState> {
             icon='folder-download'
             fill={true}
             text={t('You don\'t have any orderable entries')}
-            subtext={t('Did you forget to deploy ?')}
+            subtext={t('Please make sure to deploy')}
         />;
 
     return (
