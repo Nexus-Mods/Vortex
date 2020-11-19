@@ -206,12 +206,12 @@ async function applyNewLoadOrder(api: types.IExtensionApi,
   return;
 }
 
-function onDidDeploy(api: types.IExtensionApi) {
+function genDidDeploy(api: types.IExtensionApi) {
   return async (profileId: string, deployment: IDeployment) =>
     genDeploymentEvent(api, profileId);
 }
 
-function onDidPurge(api: types.IExtensionApi) {
+function genDidPurge(api: types.IExtensionApi) {
   return async (profileId: string, deployment: IDeployment) =>
     genDeploymentEvent(api, profileId);
 }
@@ -253,8 +253,8 @@ export default function init(context: IExtensionContext) {
     context.api.onStateChange(['persistent', 'profiles'],
       (prev, current) => genProfilesChange(context.api, prev, current));
 
-    context.api.onAsync('did-deploy', onDidDeploy(context.api));
-    context.api.onAsync('did-purge', onDidPurge(context.api));
+    context.api.onAsync('did-deploy', genDidDeploy(context.api));
+    context.api.onAsync('did-purge', genDidPurge(context.api));
   });
 
   return true;
