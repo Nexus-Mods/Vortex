@@ -467,16 +467,33 @@ function init(context: IExtensionContext): boolean {
   context.registerAction('game-icons', 100, 'refresh', {}, 'Scan: Quick', () => {
     if ($.gameModeManager !== undefined) {
       // we need the state from before the discovery so can determine which games were discovered
-      const oldState: IState = context.api.store.getState();
+      const oldState: IState = context.api.getState();
       $.gameModeManager.startQuickDiscovery()
         .then((gameIds: string[]) => {
           const discoveredGames = oldState.settings.gameMode.discovered;
           const knownGames = oldState.session.gameMode.known;
           const newGames = gameIds.filter(id =>
             (discoveredGames[id] === undefined) || (discoveredGames[id].path === undefined));
-          const message = newGames.length === 0
-            ? 'No new games found'
-            : newGames.map(id => '- ' + knownGames.find(iter => iter.id === id).name).join('\n');
+
+          const newState = context.api.getState();
+          const numDiscovered =
+            Object.values(newState.settings.gameMode.discovered)
+              .filter(iter => iter.path !== undefined).length;
+
+          let message =
+            context.api.translate('{{numTotal}} games discovered ({{numNew}} new)', {
+            replace: {
+              numNew: newGames.length,
+              numTotal: numDiscovered,
+            },
+          });
+
+          if (newGames.length > 0) {
+            message += newGames
+              .map(id => '- ' + knownGames.find(iter => iter.id === id).name)
+              .join('\n');
+          }
+
           removeDisappearedGames(context.api);
           context.api.sendNotification({
             type: 'success',

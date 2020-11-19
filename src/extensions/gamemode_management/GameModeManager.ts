@@ -221,9 +221,11 @@ class GameModeManager {
       this.onDiscoveredGame(gameId, result);
     };
 
+    const { discovered } = state.settings.gameMode;
+
     this.mActiveSearch = searchDiscovery(
       this.mKnownGames,
-      state.settings.gameMode.discovered,
+      discovered,
       searchPaths.slice().sort(),
       onDiscoveredGame,
       this.onDiscoveredTool,
@@ -233,10 +235,11 @@ class GameModeManager {
       this.mStore.dispatch(addNotification({
         type: 'success',
         title: 'Search finished',
-        message: '{{searched}} directories were searched, {{numDiscovered}} new games found',
+        message: '{{searched}} directories were searched, {{numTotal}} games found ({{numDiscovered}} new)',
         replace: {
           searched: directoriesRead,
           numDiscovered,
+          numTotal: Object.values(discovered).filter(iter => iter.path !== undefined).length,
         },
         displayMS: 10000,
       }));
