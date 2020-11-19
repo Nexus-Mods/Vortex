@@ -1990,13 +1990,6 @@
   resolved "https://registry.yarnpkg.com/@types/node/-/node-12.12.35.tgz#1e61b226c14380f4384f70cfe49a65c2c553ad2b"
   integrity sha512-ASYsaKecA7TUsDrqIGPNk3JeEox0z/0XR/WsJJ8BIX/9+SkMSImQXKWfU/yBrSyc7ZSE/NPqLu36Nur0miCFfQ==
 
-"@types/opn@^5.5.0":
-  version "5.5.0"
-  resolved "https://registry.yarnpkg.com/@types/opn/-/opn-5.5.0.tgz#f7b80ae1269b76d621290befb568c87e7511e3ac"
-  integrity sha512-rfEmrSa/x0vArY1aFnVTBAmy6b2I0oNHONL59qR+vnsHfD5xacM40O4PSiVisERq/GmROjmS3Xo/ptp8fx823g==
-  dependencies:
-    opn "*"
-
 "@types/prop-types@*", "@types/prop-types@^15.7.3":
   version "15.7.3"
   resolved "https://registry.yarnpkg.com/@types/prop-types/-/prop-types-15.7.3.tgz#2ab0d5da2e5815f94b0b9d4b95d1e5f243ab2ca7"
@@ -5280,8 +5273,8 @@ electron-rebuild@^1.8.8:
     yargs "^14.2.0"
 
 electron-redux@TanninOne/electron-redux:
-  version "1.4.4-sync"
-  resolved "https://codeload.github.com/TanninOne/electron-redux/tar.gz/6cca4126f8040f47be25b62c207fa2c80702b545"
+  version "1.4.5-sync"
+  resolved "https://codeload.github.com/TanninOne/electron-redux/tar.gz/4d3da0af6123c119ed161d5fcf5be6756d25ec33"
   dependencies:
     debug "^3.0.0"
     flux-standard-action "^2.0.0"
@@ -5305,10 +5298,10 @@ electron-updater@^4.2.0:
     lodash.isequal "^4.5.0"
     semver "^7.3.2"
 
-electron@^11.0.0-beta.20:
-  version "11.0.0-beta.20"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-11.0.0-beta.20.tgz#0a76687c409fe209235cf1f06bc5b5888d4fbdac"
-  integrity sha512-BzUFkhl+UW5qiaBcdCCoTgsYFjyZFSruPvpq1JACFzrXmrC6/vVb/mszqPT0KB9I55Elgnch/iAqvS62oRk72Q==
+electron@^11.0.1:
+  version "11.0.1"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-11.0.1.tgz#e71195ff9abfbcfa0f4bf49ec9064e5e0f3f928c"
+  integrity sha512-UefDvxeyTREL1FpC0BcXwzLjcYiQICFSZONbwarpoqTXQU5rzEguIegHPqg5AqwYH4FVYfEuigj/Vm94rtZOzg==
   dependencies:
     "@electron/get" "^1.0.1"
     "@types/node" "^12.0.12"
@@ -9246,19 +9239,6 @@ onetime@^2.0.0:
   dependencies:
     mimic-fn "^1.0.0"
 
-opn@*:
-  version "6.0.0"
-  resolved "https://registry.yarnpkg.com/opn/-/opn-6.0.0.tgz#3c5b0db676d5f97da1233d1ed42d182bc5a27d2d"
-  integrity sha512-I9PKfIZC+e4RXZ/qr1RhgyCnGgYX0UEIlXgWnCOVACIvFgaC9rz6Won7xbdhoHrd8IIhV7YEpHjreNUNkqCGkQ==
-  dependencies:
-    is-wsl "^1.1.0"
-
-opn@TanninOne/opn:
-  version "5.1.0"
-  resolved "https://codeload.github.com/TanninOne/opn/tar.gz/d9bdc2febc9d0fe22c58713c93424fb6d0d409c1"
-  dependencies:
-    is-wsl "^1.1.0"
-
 optionator@^0.8.1:
   version "0.8.3"
   resolved "https://registry.yarnpkg.com/optionator/-/optionator-0.8.3.tgz#84fa1d036fe9d3c7e21d99884b601167ec8fb495"
@@ -9602,12 +9582,10 @@ performance-now@^2.1.0:
   integrity sha1-Ywn04OX6kT7BxpMHrjZLSzd8nns=
 
 permissions@Nexus-Mods/node-permissions:
-  version "1.3.1"
-  resolved "https://codeload.github.com/Nexus-Mods/node-permissions/tar.gz/6f3119489f34a72570934d3315c1bb4bd0e4f08a"
+  version "2.0.0"
+  resolved "https://codeload.github.com/Nexus-Mods/node-permissions/tar.gz/045fcfde72c3878765139b37fee68adbf326bf78"
   dependencies:
-    autogypi "^0.2.2"
-    nan "^2.14.0"
-    node-gyp "^6.0.0"
+    winapi-bindings Nexus-Mods/node-winapi-bindings
 
 picomatch@^2.0.4, picomatch@^2.0.5, picomatch@^2.2.1:
   version "2.2.2"
@@ -12896,8 +12874,8 @@ widest-line@^2.0.0:
     string-width "^2.1.1"
 
 winapi-bindings@Nexus-Mods/node-winapi-bindings:
-  version "2.0.4"
-  resolved "https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/36c4c459626899c114840bb3b01ecb5a29906bbe"
+  version "2.1.2"
+  resolved "https://codeload.github.com/Nexus-Mods/node-winapi-bindings/tar.gz/dc70cd962ee2563102aaab0e1fbbae0e1025cbe4"
   dependencies:
     autogypi "^0.2.2"
     node-addon-api "*"

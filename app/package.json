@@ -11,7 +11,7 @@
     "url": "https://github.com/Nexus-Mods/Vortex"
   },
   "vortex": {
-    "electron": "11.0.0-beta.20"
+    "electron": "11.0.1"
   },
   "dependencies": {
     "@nexusmods/nexus-api": "^1.0.5",
@@ -57,7 +57,6 @@
     "native-errors": "Nexus-Mods/node-native-errors",
     "nbind": "TanninOne/nbind",
     "node-7z": "Nexus-Mods/node-7z",
-    "opn": "TanninOne/opn",
     "packery": "^2.1.2",
     "permissions": "Nexus-Mods/node-permissions",
     "prop-types": "^15.7.2",
