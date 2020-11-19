@@ -13,7 +13,7 @@ import * as selectors from '../../util/selectors';
 import { log } from '../../util/log';
 import { setNewLoadOrder } from './actions/loadOrder';
 
-const SUPPORTED_GAMES: ILoadOrderGameInfo[] = [];
+const gameSupport: ILoadOrderGameInfo[] = [];
 
 interface IDeployment {
   [modType: string]: types.IDeployedFile[];
@@ -50,7 +50,7 @@ async function errorHandler(api: types.IExtensionApi,
   return Promise.resolve();
 }
 
-async function onToolsRunning(api: types.IExtensionApi, prev: any, current: any) {
+async function genToolsRunning(api: types.IExtensionApi, prev: any, current: any) {
   if (Object.keys(current).length === 0) {
     // User has finished using a tool/game ensure we refresh our load order
     //  just in case he changed the LO inside that tool/game.
@@ -81,7 +81,7 @@ async function onToolsRunning(api: types.IExtensionApi, prev: any, current: any)
   return;
 }
 
-async function onLoadOrderChange(api: types.IExtensionApi, oldState: any, newState: any) {
+async function genLoadOrderChange(api: types.IExtensionApi, oldState: any, newState: any) {
   const state = api.store.getState();
   const profile = selectors.activeProfile(state);
   if (profile?.gameId === undefined) {
@@ -113,9 +113,9 @@ async function onLoadOrderChange(api: types.IExtensionApi, oldState: any, newSta
   }
 }
 
-async function onProfilesChange(api: types.IExtensionApi,
-                                oldState: IProfileState,
-                                newState: IProfileState) {
+async function genProfilesChange(api: types.IExtensionApi,
+                                 oldState: IProfileState,
+                                 newState: IProfileState) {
   const state = api.store.getState();
   const profile = selectors.activeProfile(state);
   if (profile?.gameId === undefined) {
@@ -145,7 +145,7 @@ async function onProfilesChange(api: types.IExtensionApi,
   }
 }
 
-async function onDeploymentEvent(api: types.IExtensionApi, profileId: string) {
+async function genDeploymentEvent(api: types.IExtensionApi, profileId: string) {
   // Yes - this gets executed on purge too.
   const state = api.store.getState();
   const profile = selectors.profileById(state, profileId);
@@ -208,12 +208,12 @@ async function applyNewLoadOrder(api: types.IExtensionApi,
 
 function onDidDeploy(api: types.IExtensionApi) {
   return async (profileId: string, deployment: IDeployment) =>
-    onDeploymentEvent(api, profileId);
+    genDeploymentEvent(api, profileId);
 }
 
 function onDidPurge(api: types.IExtensionApi) {
   return async (profileId: string, deployment: IDeployment) =>
-    onDeploymentEvent(api, profileId);
+    genDeploymentEvent(api, profileId);
 }
 
 export default function init(context: IExtensionContext) {
@@ -245,13 +245,13 @@ export default function init(context: IExtensionContext) {
 
   context.once(() =>  {
     context.api.onStateChange(['session', 'base', 'toolsRunning'],
-      (prev, current) => onToolsRunning(context.api, prev, current));
+      (prev, current) => genToolsRunning(context.api, prev, current));
 
     context.api.onStateChange(['persistent', 'loadOrder'],
-      (prev, current) => onLoadOrderChange(context.api, prev, current));
+      (prev, current) => genLoadOrderChange(context.api, prev, current));
 
     context.api.onStateChange(['persistent', 'profiles'],
-      (prev, current) => onProfilesChange(context.api, prev, current));
+      (prev, current) => genProfilesChange(context.api, prev, current));
 
     context.api.onAsync('did-deploy', onDidDeploy(context.api));
     context.api.onAsync('did-purge', onDidPurge(context.api));
@@ -292,7 +292,7 @@ function addGameEntry(gameEntry: ILoadOrderGameInfo) {
     return;
   }
 
-  const isDuplicate: boolean = SUPPORTED_GAMES.find(game =>
+  const isDuplicate: boolean = gameSupport.find(game =>
     game.gameId === gameEntry.gameId) !== undefined;
 
   if (isDuplicate) {
@@ -300,9 +300,9 @@ function addGameEntry(gameEntry: ILoadOrderGameInfo) {
     return;
   }
 
-  SUPPORTED_GAMES.push(gameEntry);
+  gameSupport.push(gameEntry);
 }
 
 function findGameEntry(gameId: string): ILoadOrderGameInfo {
-  return SUPPORTED_GAMES.find(game => game.gameId === gameId);
+  return gameSupport.find(game => game.gameId === gameId);
 }
