@@ -33,11 +33,18 @@ type IProps = IDraggableListItemProps & IDragProps & IDropProps;
 class DraggableItem extends React.Component<IProps, {}> {
   public render(): JSX.Element {
     const { isDragging, item } = this.props;
+    // Function components cannot be assigned a refrence - in cases like these
+    //  we enhance the initial item to forward the setRef functor so that the
+    //  item renderer itself can decide which DOM node to ref.
+    const canReference = (this.props.itemRenderer.prototype?.render !== undefined);
+    const refForwardedItem = (typeof item === 'object')
+      ? { ...item, setRef: this.setRef }
+      : { item, setRef: this.setRef };
     return (
       <this.props.itemRenderer
         className={isDragging ? 'dragging' : undefined}
-        item={item}
-        ref={this.setRef}
+        item={canReference ? item : refForwardedItem}
+        ref={canReference ? this.setRef : undefined}
       />
     );
   }
