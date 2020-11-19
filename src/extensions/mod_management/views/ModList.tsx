@@ -711,9 +711,9 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         }
         return authors.join(' & ');
       },
-      customRenderer: (mod: IModWithState, detailCell: boolean, t: TFunction) => detailCell ? (
-        <Author t={t} gameId={this.props.gameMode} mod={mod} />
-      ) : (mod.attributes?.author || ''),
+      customRenderer: (mod: IModWithState, detailCell: boolean, t: TFunction) => detailCell
+        ? (<Author t={t} gameId={this.props.gameMode} mod={mod} />)
+        : (<>{mod.attributes?.author || ''}</>),
       placement: 'both',
       isToggleable: true,
       isGroupable: true,
