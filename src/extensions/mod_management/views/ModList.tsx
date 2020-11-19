@@ -719,6 +719,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       isGroupable: true,
       isDefaultVisible: false,
       isSortable: true,
+      filter: new TextFilter(true),
       sortFunc: (lhs: string, rhs: string) =>
         lhs.localeCompare(rhs, this.props.language, { caseFirst: 'false' }),
       edit: {},
