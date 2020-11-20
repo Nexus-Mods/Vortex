@@ -120,7 +120,7 @@ export interface ILoadOrderGameInfo {
    *
    *  - On deploy/purge to ensure the user hadn't modified the mod list manually
    *    or through an external tool.
-   *  @returns An object containing a deserialized map of LO entries.
+   *  @returns An object containing a deserialized array of LO entries.
    */
   deserializeLoadOrder: () => Promise<LoadOrder>;
 
@@ -136,6 +136,17 @@ export interface ILoadOrderGameInfo {
    *
    * - After deserialization to ensure any invalid user tampering or changes made through the
    *   game UI is validated and removed if necessary.
+   *
+   * @param prev the load order array state before the serialization/deserialization
+   *             functionality has been executed.
+   *
+   * @param current the load order array state we either want to serialize, or have
+   *                deserialized and want to ensure its valid.
+   *
+   * @returns a validation result specifying any invalid entries - these will be displayed
+   *          to the user in the load order page (accompanied by an error notification)
+   *          validation passes if the validate function call returns undefined, signifying
+   *          that no invalid entries have been found.
    *
    */
   validate: (prev: LoadOrder, current: LoadOrder) => Promise<IValidationResult>;
