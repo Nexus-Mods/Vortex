@@ -30,6 +30,7 @@ export interface IProps {
   onClone: (profileId: string) => void;
   onRemove: (profileId: string) => void;
   onStartEditing: (id: string) => void;
+  onCreateShortcut: (profileId: string) => void;
   onSetHighlightGameId: (gameId: string) => void;
 }
 
@@ -193,6 +194,9 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
       res.push({ icon: 'edit', title: 'Edit', action: this.startEditing });
       res.push({ icon: 'clone', title: 'Clone', action: this.cloneProfile });
     }
+    if (available && process.platform === 'win32') {
+      res.push({ icon: 'savegame', title: 'Add Shortcut', action: this.createShortcut });
+    }
     res.push({ icon: 'remove', title: 'Remove', action: this.removeProfile });
     return res;
   }
@@ -283,6 +287,11 @@ class ProfileItem extends ComponentEx<IProps, IComponentState> {
   private startEditing = () => {
     const { onStartEditing, profile } = this.props;
     onStartEditing(profile.id);
+  }
+
+  private createShortcut = () => {
+    const { onCreateShortcut, profile } = this.props;
+    onCreateShortcut(profile.id);
   }
 }
 

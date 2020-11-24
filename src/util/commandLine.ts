@@ -12,6 +12,7 @@ export interface IParameters {
   restore?: string;
   startMinimized?: boolean;
   game?: string;
+  profile?: string;
   get?: string;
   set?: string[];
   del?: string;
@@ -36,6 +37,7 @@ const ARG_COUNTS = {
   '--install': 1,
   '--start-minimized': 1,
   '--game': 1,
+  '--profile': 1,
   '--get': 1,
   '--set': 1,
   '--del': 1,
@@ -137,6 +139,7 @@ function parseCommandline(argv: string[], electronIsShitHack: boolean): IParamet
     .option('--max-memory [size in MB]', 'Maximum amount of memory Vortex may use in MB '
                                        + '(defaults to 4096)')
     .option('--inspector', 'Start Vortex with the chrome inspector opened')
+    .option('--profile [profile id]', 'Start Vortex with a specific profile active')
     // allow unknown options since they may be interpreted by electron/node
     .allowUnknownOption()
     .parse(argv || []).opts() as IParameters;
@@ -154,6 +157,7 @@ const SKIP_ARGS = {
   '-i': 1,
   '--start-minimized': 1,
   '--game': 1,
+  '--profile': 1,
   '--install': 1,
   '--restore': 1,
 };

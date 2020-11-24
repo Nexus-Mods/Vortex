@@ -607,7 +607,17 @@ function init(context: IExtensionContext): boolean {
         first = false;
         const state: IState = store.getState();
         const { commandLine } = state.session.base;
-        if (commandLine.game !== undefined) {
+        if (commandLine.profile !== undefined) {
+          const profile: IProfile = getSafe(state,
+            ['persistent', 'profiles', commandLine.profile], undefined);
+
+          if (profile !== undefined) {
+            context.api.store.dispatch(setNextProfile(profile.id));
+          } else {
+            log('warn', 'profile cmdline argument detected - but profile is missing',
+              commandLine.profile);
+          }
+        } else if (commandLine.game !== undefined) {
           // the game specified on the command line may be a game id or an extension
           // name, because at the time we download an extension we don't actually know
           // the game id yet.
