@@ -202,7 +202,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
     const { t, profiles } = this.props;
     const profile = profiles[profileId];
     const appDir = (process.env.NODE_ENV !== 'development')
-      ? remote.app.getPath('exe')
+      ? path.dirname(remote.app.getPath('exe'))
       : 'C:/Program Files/Black Tree Gaming Ltd/Vortex';
 
     const desktopLocation = remote.app.getPath('desktop');
