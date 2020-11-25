@@ -3,11 +3,11 @@ import { ILoadOrderEntry, LoadOrder } from '../types/types';
 
 // Change a specific load order entry.
 export const setLoadOrderEntry =
-  createAction('SET_LOAD_ORDER_ENTRY',
+  createAction('SET_FB_LOAD_ORDER_ENTRY',
     (profileId: string, loEntry: ILoadOrderEntry) =>
       ({ profileId, loEntry })) as any;
 
 export const setNewLoadOrder =
-  createAction('SET_NEW_LOAD_ORDER',
+  createAction('SET_FB_LOAD_ORDER',
     (profileId: string, loadOrder: LoadOrder) =>
       ({ profileId, loadOrder })) as any;
