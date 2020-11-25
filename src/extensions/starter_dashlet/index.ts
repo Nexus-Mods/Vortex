@@ -52,6 +52,7 @@ function testPrimaryTool(api: IExtensionApi): Promise<ITestResult> {
       // Make sure all the required files are still present.
       const requiredFiles = primaryTool.requiredFiles.map(file => path.join(workingDir, file));
       return Promise.each(requiredFiles, (file: string) => fs.statAsync(file))
+        .then(() => Promise.resolve(undefined))
         .catch(err => {
           notifyInvalid();
           api.store.dispatch(setPrimaryTool(gameMode, undefined));
