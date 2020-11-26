@@ -44,6 +44,24 @@ export interface IGame extends ITool {
   getModPaths?: (gamePath: string) => { [typeId: string]: string };
 
   /**
+   * intended to be used by game extensions to provide custom functionality
+   *  to resolve a game's version when the game executable's version attribute
+   *  is incorrect, which is often the case with games that are still in early
+   *  access - an example of this is Blade and Sorcery which uses a different
+   *  versioning system internally.
+   *
+   * @param gamePath path where the game is installed
+   *
+   * @returns the game's version - please note that the game extension must
+   *          provide a valid semantic version - non-semantic versions will
+   *          be ignored and Vortex will use the game executable's version
+   *          attribute instead as fallback.
+   *
+   * @memberof IGame
+   */
+  getGameVersion?: (gamePath: string) => Promise<string>;
+
+  /**
    * Determine whether the game needs to be executed via a launcher, like Steam or EpicGamesLauncher
    *
    * If this returns a value, Vortex will use appropriate code for that launcher
