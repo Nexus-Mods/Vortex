@@ -1932,6 +1932,7 @@ class ExtensionManager {
       'updater',
       'installer_fomod',
       'installer_nested_fomod',
+      'harmony_injector',
       'settings_metaserver',
       'test_runner',
       'extension_manager',
