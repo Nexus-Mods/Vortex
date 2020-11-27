@@ -1021,6 +1021,21 @@ class InstallManager {
     return new Promise<IReplaceChoice>((resolve, reject) => {
       const state: IState = api.store.getState();
       const mod: IMod = state.persistent.mods[gameId][modId];
+      if (mod === undefined) {
+        // Technically for this to happen the timing must be *perfect*,
+        //  the replace query dialog will only show if we manage to confirm that
+        //  the modId is indeed stored persistently - but if somehow the user
+        //  was able to finish removing the mod right as the replace dialog
+        //  appears the mod could be potentially missing from the state.
+        // In this case we resolve using the existing modId.
+        const currentProfile = activeProfile(api.store.getState());
+        resolve({
+          id: modId,
+          variant: '',
+          enable: getSafe(currentProfile.modState, [modId, 'enabled'], false),
+          attributes: {},
+        });
+      }
       api.store
         .dispatch(showDialog(
           'question', modName(mod, { version: false }),
@@ -1049,7 +1064,7 @@ class InstallManager {
         .then((result: IDialogResult) => {
           const currentProfile = activeProfile(api.store.getState());
           const wasEnabled = () => {
-            return (currentProfile !== undefined) && (currentProfile.gameId === gameId)
+            return (currentProfile?.gameId === gameId)
               ? getSafe(currentProfile.modState, [modId, 'enabled'], false)
               : false;
           };
