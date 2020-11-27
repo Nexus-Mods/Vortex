@@ -180,3 +180,7 @@
 	path = extensions/script-extender-installer
 	url = https://github.com/Pickysaurus/script-extender-installer
   branch = master
+[submodule "extensions/re-engine-wrapper"]
+	path = extensions/re-engine-wrapper
+	url = https://github.com/Nexus-Mods/extension-re-engine-wrapper.git
+  branch = master
