@@ -1028,6 +1028,7 @@ class InstallManager {
         //  was able to finish removing the mod right as the replace dialog
         //  appears the mod could be potentially missing from the state.
         // In this case we resolve using the existing modId.
+        // https://github.com/Nexus-Mods/Vortex/issues/7972
         const currentProfile = activeProfile(api.store.getState());
         resolve({
           id: modId,
