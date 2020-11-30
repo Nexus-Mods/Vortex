@@ -63,7 +63,7 @@ function setupAutoUpdate(api: IExtensionApi) {
 
   const queryUpdate = (version: string): Promise<void> => {
     return new Promise<void>((resolve, reject) => {
-      if (semver.satisfies(version, '^' + autoUpdater.currentVersion.version) || true) {
+      if (semver.satisfies(version, '^' + autoUpdater.currentVersion.version)) {
         // don't warn on a "compatible" update
         return resolve();
       }
@@ -243,7 +243,7 @@ function setupAutoUpdate(api: IExtensionApi) {
   ipcMain.on('set-update-channel', (event, channel) => {
     try {
       log('info', 'set channel', channel);
-      if ((channel !== 'none') && (process.env.NODE_ENV !== 'developmentx')) {
+      if ((channel !== 'none') && (process.env.NODE_ENV !== 'development')) {
         checkNow(channel);
       }
     } catch (err) {
