@@ -166,7 +166,7 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
   private translateParts(message: string, t: TFunction, parameters?: any) {
     // split by linebreak, then by tab, apply translation function, then join
     // again (replacing tabs with spaces)
-    return message
+    return (message || '')
       .split('\n')
       .map((line: string) => line
         .split('\t')
