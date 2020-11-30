@@ -168,7 +168,9 @@ export function transferPath(source: string,
         const destPath = path.join(dest, path.relative(source, entry.filePath));
         return isCancelled
           ? Promise.reject(new UserCanceled())
-          : fs.mkdirsAsync(destPath);
+          : fs.mkdirsAsync(destPath).catch(err => (err.code === 'EEXIST')
+            ? Promise.resolve()
+            : Promise.reject(err));
       })
         .then(() => null))
         .then(() => Promise.map(files, entry => {
