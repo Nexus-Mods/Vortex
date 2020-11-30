@@ -151,7 +151,9 @@ export function startDownload(api: IExtensionApi, nexus: Nexus, nxmurl: string):
           message: 'This may be a temporary issue, please try again later',
         }, { allowReport: false });
       } else if ((err.message.indexOf('DECRYPTION_FAILED_OR_BAD_RECORD_MAC') !== -1)
-              || (err.message.indexOf('WRONG_VERSION_NUMBER') !== -1)) {
+              || (err.message.indexOf('WRONG_VERSION_NUMBER') !== -1)
+              || (err.message.indexOf('BAD_SIGNATURE') !== -1)
+              || (err.message.indexOf('TLSV1_ALERT_ACCESS_DENIED') !== -1)) {
         api.showErrorNotification('Download failed', {
           error: err,
           message: 'This may be a temporary issue, please try again later',
