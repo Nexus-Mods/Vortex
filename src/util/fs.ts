@@ -591,11 +591,9 @@ function ensureDir(targetDir: string, onDirCreatedCB: (created: string) => Promi
 }
 
 function selfCopyCheck(src: string, dest: string) {
-  return PromiseBB.all([fsBB.stat(src, { bigint: true }),
+  return PromiseBB.join(fsBB.stat(src, { bigint: true }),
                         fsBB.stat(dest, { bigint: true })
-                .catch(err => (err.code === 'ENOENT')
-                  ? PromiseBB.resolve({})
-                  : PromiseBB.reject(err))])
+                .catch({ code: 'ENOENT' }, err => PromiseBB.resolve({})))
     .then((stats: fs.BigIntStats[]) => (stats[0].ino === stats[1].ino)
         ? PromiseBB.reject(new Error(
           `Source "${src}" and destination "${dest}" are the same file (id "${stats[0].ino}").`))
