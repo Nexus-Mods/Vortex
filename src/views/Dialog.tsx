@@ -228,27 +228,33 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
 
     if (content.htmlFile !== undefined) {
       controls.push((
-        <div key='dialog-content-html'>
+        <div key='dialog-content-html-file'>
           <Webview src={`file://${content.htmlFile}`} />
         </div>
       ));
-    } else if (content.htmlText !== undefined) {
+    }
+
+    if (content.htmlText !== undefined) {
       controls.push((
         <div
-          key='dialog-content-html'
+          key='dialog-content-html-text'
           className='dialog-content-html'
           dangerouslySetInnerHTML={{ __html: content.htmlText }}
         />
       ));
-    } else if (content.checkboxes !== undefined) {
+    }
+
+    if (content.checkboxes !== undefined) {
       controls.push((
-        <div key='dialog-content-choices' className='dialog-content-choices'>
+        <div key='dialog-content-checkboxes' className='dialog-content-choices'>
           <div>
             {content.checkboxes.map(this.renderCheckbox)}
           </div>
         </div>
       ));
-    } else if (content.choices !== undefined) {
+    }
+
+    if (content.choices !== undefined) {
       controls.push((
         <div key='dialog-content-choices' className='dialog-content-choices'>
           <div>
@@ -256,7 +262,9 @@ class Dialog extends ComponentEx<IProps, IComponentState> {
           </div>
         </div>
       ));
-    } else if (content.links !== undefined) {
+    }
+
+    if (content.links !== undefined) {
       controls.push((
         <div key='dialog-form-links'>
           {content.links.map(this.renderLink)}

@@ -183,6 +183,13 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         position: 5,
       },
       {
+        icon: 'delete',
+        title: 'Remove related',
+        action: this.removeRelated,
+        singleRowAction: true,
+        multiRowAction: false,
+      },
+      {
         icon: 'refresh',
         title: 'Check for Update',
         action: this.checkForUpdate,
@@ -1024,12 +1031,92 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       });
   }
 
+  private removeRelated = (modIds: string[]) => {
+    const modId = Array.isArray(modIds) ? modIds[0] : modIds;
+    const candidates: Array<{ mod: IMod, enabled: boolean }> = this.state.groupedMods[modId]
+      .map(mod => ({ mod, enabled: mod.id !== modId }));
+
+    const repoModId = this.state.modsWithState[modId].attributes?.modId?.toString?.();
+    if (repoModId !== undefined) {
+      const existing = new Set(candidates.map(cand => cand.mod.id));
+      existing.add(modId);
+      Object.keys(this.state.modsWithState)
+        .filter(iter => !existing.has(iter)
+                    && this.state.modsWithState[iter].attributes?.modId?.toString?.() === repoModId)
+        .forEach(iter => {
+          candidates.push({ mod: this.state.modsWithState[iter], enabled: false });
+        });
+    }
+
+    if (candidates.length === 0) {
+      this.context.api.showDialog('info', 'No mods to remove', {
+        text: 'There are no other versions of this file',
+      }, [{
+        label: 'Close',
+      }]);
+      return;
+    }
+
+    this.context.api.showDialog('question', 'Select mods to remove', {
+      text: 'Please select the mods to remove. This will remove them from all profiles!',
+      checkboxes: candidates.map(candidate => ({
+        id: '_' + candidate.mod.id,
+        text: modName(candidate.mod, { version: true, variant: true }),
+        value: candidate.enabled,
+      })),
+      choices: [
+        { id: 'mods-only', value: true, text: 'Remove Mod only' },
+        { id: 'mods-and-archive', value: false, text: 'Remove Mod and delete archive' },
+      ],
+    }, [
+      { label: 'Cancel' },
+      { label: 'Remove Selected' },
+    ])
+    .then(result => {
+      if (result.action === 'Remove Selected') {
+        const removeArchives = result.input['mods-and-archive'];
+        const idsToRemove = Object.keys(result.input)
+          .filter(key => key.startsWith('_'))
+          .map(key => key.slice(1));
+
+        return this.removeSelectedImpl(idsToRemove, true, removeArchives);
+      }
+    });
+
+    return true;
+  }
+
   private removeSelectedMod = (modId: string) => {
     this.removeSelected([modId]);
   }
 
+  private removeSelectedImpl(modIds: string[], removeMods: boolean, removeArchives: boolean) {
+    const { gameMode, onRemoveMod } = this.props;
+    const wereInstalled = modIds
+      .filter(key => (this.state.modsWithState[key] !== undefined)
+            && (this.state.modsWithState[key].state === 'installed'));
+
+    const archiveIds = modIds
+      .filter(key => (this.state.modsWithState[key] !== undefined)
+                  && (this.state.modsWithState[key].archiveId !== undefined))
+      .map(key => this.state.modsWithState[key].archiveId);
+
+    return (removeMods
+        ? this.removeMods(wereInstalled)
+          .then(() => wereInstalled.forEach(key => onRemoveMod(gameMode, key)))
+        : Promise.resolve())
+      .then(() => {
+        if (removeArchives) {
+          archiveIds.forEach(archiveId => {
+            this.context.api.events.emit('remove-download', archiveId);
+          });
+        }
+        return Promise.resolve();
+      });
+  }
+
   private removeSelected = (modIds: string[]) => {
-    const { t, gameMode, onRemoveMod, onShowDialog } = this.props;
+    const { t, onShowDialog } = this.props;
 
     let removeMods: boolean;
     let removeArchive: boolean;
@@ -1064,37 +1151,22 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         { id: 'archive', text: t('Delete Archive'), value: false },
       ];
 
+    const insert = ' [color=red]' + t('from all profiles') + '[/color]';
+
     onShowDialog('question', 'Confirm removal', {
-      message: t('Do you really want to remove this mod?',
-        { count: filteredIds.length, replace: { count: filteredIds.length } })
-        + '\n' + modNames.join('\n'),
+      bbcode: t('Do you really want to remove this mod{{insert}}?', {
+        count: filteredIds.length, replace: {
+          insert,
+        },
+      }),
+      message: modNames.join('\n'),
       checkboxes,
     }, [ { label: 'Cancel' }, { label: 'Remove' } ])
       .then((result: IDialogResult) => {
         removeMods = result.action === 'Remove' && result.input.mod;
         removeArchive = result.action === 'Remove' && result.input.archive;
 
-        const wereInstalled = filteredIds
-          .filter(key => (this.state.modsWithState[key] !== undefined)
-                && (this.state.modsWithState[key].state === 'installed'));
-
-        const archiveIds = filteredIds
-          .filter(key => (this.state.modsWithState[key] !== undefined)
-                      && (this.state.modsWithState[key].archiveId !== undefined))
-          .map(key => this.state.modsWithState[key].archiveId);
-
-        return (removeMods
-            ? this.removeMods(wereInstalled)
-              .then(() => wereInstalled.forEach(key => onRemoveMod(gameMode, key)))
-            : Promise.resolve())
-          .then(() => {
-            if (removeArchive) {
-              archiveIds.forEach(archiveId => {
-                this.context.api.events.emit('remove-download', archiveId);
-              });
-            }
-            return Promise.resolve();
-          });
+        return this.removeSelectedImpl(filteredIds, removeMods, removeArchive);
       })
       .catch(ProcessCanceled, err => {
         this.context.api.sendNotification({
