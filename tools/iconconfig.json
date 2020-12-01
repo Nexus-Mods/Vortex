@@ -407,6 +407,14 @@
       "path": "{nucleo}/design-development/{nucleo_simple}_palette",
       "rmFill": true
     },
+    "highlight-tool": {
+      "path": "{nucleo}/user interface/32px_configuration-tool",
+      "rmFill": true
+    },
+    "highlight-ui": {
+      "path": "{nucleo}/technology/{nucleo_simple}_desktop-screen",
+      "rmFill": true
+    },
     "transfer": {
       "path": "{nucleo}/files-folders/{nucleo_simple}_replace",
       "rmFill": true
