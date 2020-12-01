@@ -18,7 +18,7 @@ import { addDiscoveredTool, setGameParameters } from '../gamemode_management/act
 import ToolIcon from './ToolIcon';
 
 import Promise from 'bluebird';
-import { remote } from 'electron';
+import { nativeImage, remote } from 'electron';
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as PropTypes from 'prop-types';
@@ -526,7 +526,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
       defaultPath: this.state.tool.exePath,
       title: t('Select image'),
       filters: [
-        { name: 'Images', extensions: ['png'] },
+        { name: 'Images', extensions: ['png', 'jpg', 'ico'] },
         { name: 'Executables', extensions: ['exe'] },
       ],
     })
@@ -552,6 +552,10 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
     }
   }
 
+  private toPNG(inputPath: string, outputPath: string): Promise<void> {
+    return fs.writeFileAsync(outputPath, nativeImage.createFromPath(inputPath).toPNG());
+  }
+
   private useImage(filePath: string): Promise<void> {
     const { tool } = this.props;
     const destPath = tool.iconOutPath;
@@ -569,7 +573,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
       .then(() => (path.extname(filePath) === '.exe')
         ? app.getFileIcon(filePath, { size: 'normal' })
           .then(icon => fs.writeFileAsync(destPath, icon.toPNG()))
-        : fs.copyAsync(filePath, destPath))
+        : this.toPNG(filePath, destPath))
       .then(() => {
         this.clearCache();
         this.nextState.tool.iconPath = destPath;
