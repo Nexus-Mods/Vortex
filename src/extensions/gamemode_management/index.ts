@@ -1,5 +1,6 @@
 import { showDialog } from '../../actions/notifications';
 import { setDialogVisible } from '../../actions/session';
+import OptionsFilter, { ISelectOption } from '../../controls/table/OptionsFilter';
 import {
   GameInfoQuery,
   IExtensionApi,
@@ -311,11 +312,24 @@ function removeDisappearedGames(api: IExtensionApi): Promise<void> {
 }
 
 function genModTypeAttribute(api: IExtensionApi): ITableAttribute<IModWithState> {
+  const modTypes = (): ISelectOption[] => {
+    const gameMode = activeGameId(api.store.getState());
+    return getModTypeExtensions()
+      .filter((type: IModType) => type.isSupported(gameMode))
+      .map(ext => {
+        const value = ext.options?.name ?? ext.typeId;
+        return {
+          value,
+          label: value,
+        };
+      });
+  };
+
   return {
     id: 'modType',
     name: 'Mod Type',
     description: 'Type of the mod (decides where it gets deployed to)',
-    placement: 'detail',
+    placement: 'both',
     calc: mod => {
       const modType = getModTypeExtensions().find(iter => iter.typeId === mod.type);
       if (modType === undefined) {
@@ -326,6 +340,10 @@ function genModTypeAttribute(api: IExtensionApi): ITableAttribute<IModWithState>
     help: 'The mod type controls where (and maybe even how) a mod gets deployed. '
       + 'Leave empty (default) unless you know what you\'re doing.',
     supportsMultiple: true,
+    isSortable: true,
+    isDefaultVisible: false,
+    isToggleable: true,
+    filter: new OptionsFilter(modTypes, true, false),
     edit: {
       placeholder: () => api.translate('Default'),
       choices: () => {

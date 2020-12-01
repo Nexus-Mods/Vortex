@@ -165,7 +165,7 @@ class CategoryFilterComponent extends React.Component<IProps, IComponentState> {
       archiveId => this.props.downloads[archiveId] !== props.downloads[archiveId]);
 
     let customOption;
-    const customFilter = props.filter.find(filt => filt.startsWith('*'));
+    const customFilter = (props.filter ?? []).find(filt => filt.startsWith('*'));
     if (customFilter !== undefined) {
       customOption = { label: customFilter.slice(1), value: customFilter };
     }
