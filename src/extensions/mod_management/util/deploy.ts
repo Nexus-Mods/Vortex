@@ -5,7 +5,7 @@ import { INotification } from '../../../types/INotification';
 import { IProfile } from '../../../types/IState';
 import { ProcessCanceled } from '../../../util/CustomErrors';
 import { log } from '../../../util/log';
-import { activeProfile, currentGameDiscovery, lastActiveProfileForGame, profileById } from '../../../util/selectors';
+import { activeProfile, discoveryByGame, lastActiveProfileForGame, profileById } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
 import { truthy } from '../../../util/util';
 import { IModType } from '../../gamemode_management/types/IModType';
@@ -69,11 +69,11 @@ export function loadAllManifests(api: IExtensionApi,
           }), {});
 }
 
-export function purgeMods(api: IExtensionApi): Promise<void> {
+export function purgeMods(api: IExtensionApi, gameId?: string): Promise<void> {
   const state = api.store.getState();
-  const stagingPath = installPath(state);
-  const profile = activeProfile(state);
-  const gameId = profile.gameId;
+  const profile = gameId !== undefined
+    ? profileById(state, lastActiveProfileForGame(state, gameId))
+    : activeProfile(state);
 
   return getManifest(api, '', gameId)
     .then(manifest => {
@@ -81,19 +81,19 @@ export function purgeMods(api: IExtensionApi): Promise<void> {
         log('info', 'using deployment method from manifest',
             { method: manifest?.deploymentMethod });
         const deployedActivator = getActivator(manifest?.deploymentMethod);
-        return purgeModsImpl(api, deployedActivator);
+        return purgeModsImpl(api, deployedActivator, profile);
       } else {
-        return purgeModsImpl(api, undefined);
+        return purgeModsImpl(api, undefined, profile);
       }
     });
 }
 
-function purgeModsImpl(api: IExtensionApi, activator: IDeploymentMethod): Promise<void> {
+function purgeModsImpl(api: IExtensionApi, activator: IDeploymentMethod,
+                       profile: IProfile): Promise<void> {
   const state = api.store.getState();
   const stagingPath = installPath(state);
-  const profile = activeProfile(state);
   const gameId = profile.gameId;
-  const gameDiscovery = currentGameDiscovery(state);
+  const gameDiscovery = discoveryByGame(state, gameId);
   const t = api.translate;
 
   log('info', 'current deployment method is',
