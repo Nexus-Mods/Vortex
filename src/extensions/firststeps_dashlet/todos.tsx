@@ -20,6 +20,10 @@ const freeSpace: { [key: string]: { path: string, free: number } } = {};
 function minDiskSpace(required: number, key: string) {
   return props => {
     const checkPath = props[key];
+    if (checkPath === undefined) {
+      return false;
+    }
+
     if ((freeSpace[key] === undefined) || (freeSpace[key].path !== checkPath)) {
       try {
         freeSpace[key] = {
@@ -97,6 +101,9 @@ function todos(api: IExtensionApi): IToDo[] {
       text: 'Mods are staged on drive',
       value: (t: TFunction, props: any) => {
         try {
+          if (props.instPath === undefined) {
+            return t('<No staging folder>');
+          }
           return winapi.GetVolumePathName(props.instPath);
         } catch (err) {
           return t('<Invalid Drive>');
