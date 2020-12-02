@@ -98,7 +98,7 @@ class MainWindow {
     if (this.mInspector) {
       this.mWindow.webContents.openDevTools();
     }
-    this.mWindow.webContents.on('console-message' as any,
+    this.mWindow.webContents.on('console-message',
       (evt: Electron.Event, level: number, message: string) => {
         if (level !== 2) {
           // TODO: at the time of writing (electron 2.0.3) this event doesn't seem to
