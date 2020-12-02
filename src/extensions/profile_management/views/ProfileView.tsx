@@ -3,7 +3,6 @@ import { DialogActions, DialogType, IDialogContent, IDialogResult,
 import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import * as fs from '../../../util/fs';
-import getVortexPath from '../../../util/getVortexPath';
 import { log } from '../../../util/log';
 import { activeGameId } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';

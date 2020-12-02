@@ -102,7 +102,10 @@ function purgeModsImpl(api: IExtensionApi, activator: IDeploymentMethod,
     activator = getCurrentActivator(state, gameId, false);
   }
 
-  if (activator === undefined) {
+  if ((activator === undefined) || (stagingPath === undefined)) {
+    // throwing this exception on stagingPath === undefined isn't exactly
+    // accurate but the effect is the same: User has to activate the game
+    // and review settings before deployment is possible
     return Promise.reject(new NoDeployment());
   }
 

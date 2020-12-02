@@ -25,6 +25,7 @@ import { relaunch } from '../../util/commandLine';
 import { ProcessCanceled, SetupError, UserCanceled } from '../../util/CustomErrors';
 import { IRegisteredExtension } from '../../util/ExtensionManager';
 import * as fs from '../../util/fs';
+import getVortexPath from '../../util/getVortexPath';
 import { log } from '../../util/log';
 import { showError } from '../../util/message';
 import onceCB from '../../util/onceCB';
@@ -36,8 +37,10 @@ import { IExtension } from '../extension_manager/types';
 import { readExtensions } from '../extension_manager/util';
 import { getGame } from '../gamemode_management/util/getGame';
 import { ensureStagingDirectory } from '../mod_management/stagingDirectory';
+import { purgeMods } from '../mod_management/util/deploy';
+import { NoDeployment } from '../mod_management/util/exceptions';
 
-import { forgetMod, setProfile, setProfileActivated } from './actions/profiles';
+import { forgetMod, removeProfile, setProfile, setProfileActivated, willRemoveProfile } from './actions/profiles';
 import { setCurrentProfile, setNextProfile } from './actions/settings';
 import { profilesReducer } from './reducers/profiles';
 import { settingsReducer } from './reducers/settings';
@@ -62,14 +65,14 @@ const profileFiles: { [gameId: string]: string[] } = {};
 
 const profileFeatures: IProfileFeature[] = [];
 
-function profilePath(store: Redux.Store<any>, profile: IProfile): string {
+function profilePath(profile: IProfile): string {
   const app = appIn || remote.app;
 
-  return path.join(app.getPath('userData'), profile.gameId, 'profiles', profile.id);
+  return path.join(getVortexPath('userData'), profile.gameId, 'profiles', profile.id);
 }
 
 function checkProfile(store: Redux.Store<any>, currentProfile: IProfile): Promise<void> {
-  return fs.ensureDirAsync(profilePath(store, currentProfile));
+  return fs.ensureDirAsync(profilePath(currentProfile));
 }
 
 function sanitizeProfile(store: Redux.Store<any>, profile: IProfile): void {
@@ -95,7 +98,7 @@ function refreshProfile(store: Redux.Store<any>, profile: IProfile,
     return Promise.reject(new CorruptActiveProfile(profile));
   }
   return checkProfile(store, profile)
-      .then(() => profilePath(store, profile))
+      .then(() => profilePath(profile))
       .then((currentProfilePath: string) => {
         // if this is the first sync, we assume the files on disk belong
         // to the profile that was last active in Vortex. This could only be
@@ -486,6 +489,96 @@ function manageGame(api: IExtensionApi, gameId: string) {
   }
 }
 
+function removeProfileImpl(api: IExtensionApi, profileId: string) {
+  const { store } = api;
+  const state = api.getState();
+  const { profiles } = state.persistent;
+  log('info', 'user removing profile', { id: profileId });
+
+  const currentProfile = activeProfile(state);
+
+  store.dispatch(willRemoveProfile(profileId));
+  if (profileId === currentProfile.id) {
+    store.dispatch(setNextProfile(undefined));
+  }
+
+  return fs.removeAsync(profilePath(profiles[profileId]))
+    .catch(err => (err.code === 'ENOENT')
+      ? Promise.resolve()
+      : Promise.reject(err))
+    .then(() => store.dispatch(removeProfile(profileId)))
+    .catch(err => {
+      this.context.api.showErrorNotification('Failed to remove profile',
+        err, { allowReport: err.code !== 'EPERM' });
+    });
+}
+
+function removeMod(api: IExtensionApi, gameId: string, modId: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    api.events.emit('remove-mod', gameId, modId, err => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve();
+      }
+    });
+  });
+}
+
+function unmanageGame(api: IExtensionApi, gameId: string): Promise<void> {
+  const state = api.getState();
+  const game = getGame(gameId);
+
+  const { mods, profiles } = state.persistent;
+  const profileIds = Object.keys(profiles)
+    .filter(profileId => profiles[profileId].gameId === gameId);
+
+  let message: string;
+
+  if ((profileIds.length > 1)
+      || (profiles[profileIds[0]].name !== 'Default')) {
+    message = profileIds.map(id => profiles[id].name).join('\n');
+  }
+
+  return api.showDialog('info', 'Confirm Removal', {
+    bbcode: 'This will uninstall all mods managed by vortex and delete all profiles '
+          + 'for "{{gameName}}", '
+          + 'potentially including associated savegames, ini files and everything else Vortex '
+          + 'stores per-profile.<br/>'
+          + '[color=red]This is irreversible and we will not warn again, continue only if '
+          + 'you\'re sure this is what you want![/color]',
+    message,
+    parameters: {
+      gameName: game.name,
+    },
+  }, [
+    { label: 'Cancel' },
+    { label: 'Delete profiles' },
+  ])
+  .then(result => {
+    if (result.action === 'Delete profiles') {
+      return Promise.map(Object.keys(mods[gameId] ?? {}), modId => removeMod(api, gameId, modId))
+        .then(() => purgeMods(api, gameId))
+        .then(() => Promise.map(profileIds, profileId => removeProfileImpl(api, profileId)))
+        .then(() => Promise.resolve())
+        .catch(NoDeployment, () => {
+          api.showDialog('error', 'Failed to purge', {
+            text: 'Failed to purge mods deployed for this game. To ensure there are no '
+                + 'leftovers before Vortex stops managing the game, please solve any '
+                + 'setup problems for the game first.',
+          }, [
+            { label: 'Close' },
+          ]);
+        })
+        .catch(err => {
+          api.showErrorNotification('Failed to stop managing game', err);
+        });
+    } else {
+      return Promise.resolve();
+    }
+  });
+}
+
 function init(context: IExtensionContext): boolean {
   context.registerMainPage('profile', 'Profiles', ProfileView, {
     hotkey: 'P',
@@ -536,6 +629,10 @@ function init(context: IExtensionContext): boolean {
     }
     profileFiles[gameId].push(filePath);
   };
+
+  context.registerAction('game-managed-buttons', 150, 'delete', {},
+    context.api.translate('Stop managing'),
+    (instanceIds: string[]) => { unmanageGame(context.api, instanceIds[0]); });
 
   context.registerProfileFeature =
       (featureId: string, type: string, icon: string, label: string, description: string,
@@ -625,11 +722,11 @@ function init(context: IExtensionContext): boolean {
           readExtensions(false)
             .then((extensions: { [extId: string]: IExtension }) => {
               const extPathLookup = Object.values(extensions)
-                .reduce((prev, ext) => {
+                .reduce((prevExt, ext) => {
                   if (ext.path !== undefined) {
-                    prev[ext.path] = ext.name;
+                    prevExt[ext.path] = ext.name;
                   }
-                  return prev;
+                  return prevExt;
                 }, {});
 
               const game = current.find(iter =>
