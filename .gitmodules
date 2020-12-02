@@ -184,3 +184,7 @@
 	path = extensions/re-engine-wrapper
 	url = https://github.com/Nexus-Mods/extension-re-engine-wrapper.git
   branch = master
+[submodule "extensions/gamebryo-archive-check"]
+	path = extensions/gamebryo-archive-check
+	url = https://github.com/Pickysaurus/bethesda-archive-check
+	branch = master

@@ -70,6 +70,14 @@
     },
     {
       "type": "build-copy",
+      "name": "gamebryo-archive-check",
+      "path": "extensions/gamebryo-archive-check",
+      "removeModules": ["vortex-api"],
+      "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js"],
+      "copyTo": "{BUILD_DIR}/bundledPlugins/gamebryo-archive-check"
+    },
+    {
+      "type": "build-copy",
       "name": "gamebryo-archive-invalidation",
       "path": "extensions/gamebryo-archive-invalidation",
       "removeModules": ["vortex-api", "nexus-api"],
