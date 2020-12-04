@@ -1,5 +1,6 @@
 import { IExtension } from '../extensions/extension_manager/types';
 import { ILoadOrderGameInfo } from '../extensions/file_based_loadorder/types/types';
+import { IHistoryStack } from '../extensions/history_management/types';
 import { IGameLoadOrderEntry } from '../extensions/mod_load_order/types/types';
 
 import {
@@ -41,6 +42,8 @@ import { ILookupResult, IModInfo, IReference } from 'modmeta-db';
 import * as React from 'react';
 import * as Redux from 'redux';
 import { ThunkDispatch } from 'redux-thunk';
+import { ComplexActionCreator2 } from '../actions/safeCreateAction';
+import { ComplexActionCreator } from 'redux-act';
 
 export { TestSupported, IInstallResult, IInstruction, IDeployedFile, IDeploymentMethod,
          IFileChange, ILookupResult, IModInfo, IReference, InstallFunc, ISupportedResult,
@@ -177,8 +180,8 @@ export interface IOpenOptions {
   create?: boolean;
 }
 
-export type StateChangeCallback =
-  (previous: any, current: any) => void;
+export type StateChangeCallback<T = any> =
+  (previous: T, current: T) => void;
 
 /**
  * additional detail to further narrow down which file is meant
@@ -507,7 +510,7 @@ export interface IExtensionApi {
    *
    * @memberOf IExtensionApi
    */
-  onStateChange?: (path: string[], callback: StateChangeCallback) => void;
+  onStateChange?: <T = any>(path: string[], callback: StateChangeCallback<T>) => void;
 
   /**
    * registers an uri protocol to be handled by this application. If the "def"ault parameter
@@ -704,6 +707,15 @@ export class VerifierDropParent extends Error {
   }
 }
 
+export type PayloadT<Type> = Type extends ComplexActionCreator<infer X> ? X : never;
+
+export function addReducer<ActionT, StateT>(
+    action: ActionT, handler: (state: StateT, payload: PayloadT<ActionT>) => StateT) {
+  return {
+    [action as any]: handler,
+  };
+}
+
 /**
  * specification a reducer registration has to follow.
  * defaults must be an object with the same keys as
@@ -712,9 +724,9 @@ export class VerifierDropParent extends Error {
  * @export
  * @interface IReducerSpec
  */
-export interface IReducerSpec {
-  reducers: { [key: string]: (state: any, payload: any) => any };
-  defaults: { [key: string]: any };
+export interface IReducerSpec<T = { [key: string]: any }> {
+  reducers: { [key: string]: (state: T, payload: any) => T };
+  defaults: T;
   verifiers?: { [key: string]: IStateVerifier };
 }
 
@@ -1206,6 +1218,11 @@ export interface IExtensionContext {
    *  Please use this instead of registerLoadOrderPage
    */
   registerLoadOrder: (gameInfo: ILoadOrderGameInfo) => void;
+
+  /**
+   * Sets up a stack for a history of events that can be presented to the user
+   */
+  registerHistoryStack: (id: string, options: IHistoryStack) => void;
 
   /**
    * add a function to the IExtensionApi object that is made available to all other extensions

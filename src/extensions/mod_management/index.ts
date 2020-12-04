@@ -66,6 +66,7 @@ import { getAllActivators, getCurrentActivator, getSelectedActivator,
 import { NoDeployment } from './util/exceptions';
 import { dealWithExternalChanges } from './util/externalChanges';
 import { registerAttributeExtractor } from './util/filterModInfo';
+import ModHistory from './util/ModHistory';
 import renderModName from './util/modName';
 import sortMods, { CycleError } from './util/sort';
 import ActivationButton from './views/ActivationButton';
@@ -1232,7 +1233,18 @@ function init(context: IExtensionContext): boolean {
   context.registerStartHook(100, 'check-deployment',
                             input => preStartDeployHook(context.api, input));
 
-  context.once(() => once(context.api));
+  const history = new ModHistory(context.api);
+
+  context.registerHistoryStack('mods', history);
+  context.registerAction('mod-icons', 200, 'history', {}, 'History', () => {
+    context.api.ext.showHistory?.('mods');
+  });
+
+  context.once(() => {
+    once(context.api);
+
+    history.init();
+  });
 
   return true;
 }

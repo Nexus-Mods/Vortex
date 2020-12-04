@@ -360,6 +360,7 @@ class ContextProxyHandler implements ProxyHandler<any> {
       registerToolVariables: undefined,
       registerLoadOrderPage: undefined,
       registerLoadOrder: undefined,
+      registerHistoryStack: undefined,
       registerAPI: undefined,
       requireVersion: undefined,
       requireExtension: undefined,
@@ -1943,6 +1944,7 @@ class ExtensionManager {
       'recovery',
       'file_preview',
       'tool_variables_base',
+      'history_management',
     ];
 
     require('./extensionRequire').default(() => this.extensions);

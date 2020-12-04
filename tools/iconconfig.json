@@ -588,6 +588,10 @@
     "report": {
       "path": "{nucleo}/design-development/{nucleo_simple}_todo",
       "rmFill": true
+    },
+    "history": {
+      "path": "{nucleo}/design-development/{nucleo_simple}_timeline",
+      "rmFill": true
     }
   }
 }

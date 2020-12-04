@@ -823,12 +823,9 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     } else {
       // enabled and disabled toggle to each other so the toggle
       // will never remove the mod
-      if (this.state.modsWithState[modId].enabled === true) {
-        onSetModEnabled(profileId, modId, false);
-      } else {
-        onSetModEnabled(profileId, modId, true);
-      }
-      this.context.api.events.emit('mods-enabled', [modId], newValue, gameMode);
+      const nextState = this.state.modsWithState[modId].enabled !== true;
+      onSetModEnabled(profileId, modId, nextState);
+      this.context.api.events.emit('mods-enabled', [modId], nextState, gameMode);
     }
   }
 

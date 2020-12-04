@@ -206,7 +206,7 @@ export function deleteOrNop<T>(state: T, path: Array<(string | number)>): T {
   return result;
 }
 
-function setDefaultArray<T>(state: T, path: Array<(string | number)>, fallback: any[]): T {
+export function setDefaultArray<T>(state: T, path: Array<(string | number)>, fallback: any[]): T {
   const firstElement = path[0];
   const copy = Array.isArray(state)
     ? state.slice()

@@ -1,0 +1,30 @@
+#history-dialog {
+  .modal-dialog {
+    width: 60%;
+  }
+  .modal-body {
+    table {
+      width: 100%;
+    }
+    max-height: 60vh;
+    overflow: auto;
+  }
+}
+
+.history-event-line {
+  height: 2.5em;
+}
+
+.history-event-description {
+  padding: 0 1em;
+}
+
+.history-event-invalid {
+  opacity: 0.8;
+}
+
+.history-event-revert {
+  .btn {
+    width: 100%;
+  }
+}

@@ -7,6 +7,7 @@ import { IDownload } from '../extensions/download_management/types/IDownload';
 import { IAvailableExtension, IExtension } from '../extensions/extension_manager/types';
 import { IDiscoveryResult } from '../extensions/gamemode_management/types/IDiscoveryResult';
 import { IGameStored } from '../extensions/gamemode_management/types/IGameStored';
+import { IHistoryPersistent, IHistoryState } from '../extensions/history_management/reducers';
 import { IMod } from '../extensions/mod_management/types/IMod';
 import { IProfile } from '../extensions/profile_management/types/IProfile';
 import { IParameters } from '../util/commandLine';
@@ -298,6 +299,7 @@ export interface IState {
     discovery: IDiscoveryState,
     notifications: INotificationState;
     browser: IBrowserState;
+    history: IHistoryState;
     extensions: {
       available: IAvailableExtension[],
       installed: { [extId: string]: IExtension },
@@ -313,6 +315,7 @@ export interface IState {
     gameMode: IStateGameMode,
     deployment: { needToDeploy: { [gameId: string]: boolean } },
     transactions: IStateTransactions,
+    history: IHistoryPersistent;
   };
 }
 
