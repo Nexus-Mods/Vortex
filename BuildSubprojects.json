@@ -365,13 +365,5 @@
       "sources": ["src/**/*.ts", "src/**/*.tsx", "*.json", "webpack.config.js", "src/**/*.scss"],
       "copyTo": "{BUILD_DIR}/bundledPlugins/script-extender-installer"
     }
-  ], [
-    {
-      "type": "electron-rebuild",
-      "condition": "false",
-      "name": "edge-rebuild",
-      "module": "edge",
-      "sources": ["node_modules/edge/build/Release/binding.node"]
-    }
   ]
 ]
