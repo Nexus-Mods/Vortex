@@ -1,7 +1,7 @@
 [submodule "extensions\\games"]
 	path = extensions/games
 	url = https://github.com/Nexus-Mods/vortex-games.git
-	branch = bugfix_0_17_7
+	branch = master
 [submodule "extensions\\gamebryo-plugin-management"]
 	path = extensions/gamebryo-plugin-management
 	url = https://github.com/Nexus-Mods/extension-plugin-management.git
