@@ -1,5 +1,5 @@
 {
-  "asar": true,
+  "asar": false,
   "asarUnpack": [
     "7z.exe",
     "LICENSE.md",
