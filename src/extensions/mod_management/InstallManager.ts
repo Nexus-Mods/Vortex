@@ -200,8 +200,9 @@ class InstallManager {
             new ProcessCanceled('You need to select a game before installing this mod'));
         }
         if (installGameId === 'site') {
-          return Promise.reject(
-            new ProcessCanceled('Please install extensions through the extension browser'));
+          // install an already-downloaded extension
+          return api.emitAndAwait('install-extension-from-download', archiveId)
+            .then(() => Promise.reject(new UserCanceled()));
         }
         installContext = new InstallContext(gameId, api);
         installContext.startIndicator(baseName);

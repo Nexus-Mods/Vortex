@@ -211,7 +211,21 @@ function genUpdateInstalledExtensions(api: IExtensionApi) {
       .then(ext => {
         const state: IState = api.store.getState();
         if (!initial && !_.isEqual(state.session.extensions.installed, ext)) {
-          localState.reloadNecessary = true;
+          if (!localState.reloadNecessary) {
+            localState.reloadNecessary = true;
+            api.sendNotification({
+              id: 'extension-updates',
+              type: 'success',
+              message: 'Extensions installed, please restart to use them',
+              actions: [
+                {
+                  title: 'Restart now', action: () => {
+                    relaunch();
+                  },
+                },
+              ],
+            });
+          }
         }
         api.store.dispatch(setInstalledExtensions(ext));
       })
@@ -277,6 +291,22 @@ function init(context: IExtensionContext) {
             updateExtensions(false);
           }
         }));
+
+    context.api.onAsync('install-extension-from-download', (archiveId: string) => {
+      const state = context.api.getState();
+      const { modId } = state.persistent.downloads.files[archiveId].modInfo.nexus.ids;
+      const ext = state.session.extensions.available.find(iter => iter.modId === modId);
+      if ((modId !== undefined) && (ext !== undefined)) {
+        return downloadAndInstallExtension(context.api, ext)
+          .tap(success => {
+            if (success) {
+              updateExtensions(false);
+            }
+          });
+      } else {
+        return Promise.reject(new ProcessCanceled('not recognized as a Vortex extension'));
+      }
+    });
 
     context.api.events.on('show-extension-page', (modId: number) => {
       localState.preselectModId = modId;

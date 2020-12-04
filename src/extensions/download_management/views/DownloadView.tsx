@@ -11,7 +11,7 @@ import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../
 import { IState } from '../../../types/IState';
 import { ITableAttribute } from '../../../types/ITableAttribute';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
-import { ProcessCanceled, TemporaryError, UserCanceled } from '../../../util/CustomErrors';
+import { ProcessCanceled, ServiceTemporarilyUnavailable, TemporaryError, UserCanceled } from '../../../util/CustomErrors';
 import getVortexPath from '../../../util/getVortexPath';
 import { log } from '../../../util/log';
 import { showError } from '../../../util/message';
@@ -436,8 +436,18 @@ class DownloadView extends ComponentEx<IDownloadViewProps, IComponentState> {
   }
 
   private install = (downloadIds: string[]) => {
-    downloadIds.forEach((downloadId: string) => {
-      this.context.api.events.emit('start-install-download', downloadId);
+    const { api } = this.context;
+    downloadIds.forEach((dlId: string) => {
+      api.events.emit('start-install-download', dlId, undefined, (err: Error, id: string) => {
+        if (err instanceof UserCanceled) {
+          // nop
+        } else {
+          api.showErrorNotification('Failed to install', err, {
+            allowReport: !((err instanceof ProcessCanceled)
+                        || (err instanceof ServiceTemporarilyUnavailable)),
+          });
+        }
+      });
     });
   }
 

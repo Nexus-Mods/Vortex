@@ -563,9 +563,14 @@ function once(api: IExtensionApi) {
     if (api.registerProtocol('nxm', def !== false, (url: string, install: boolean) => {
       try {
         const nxmUrl = new NXMUrl(url);
-        if ((nxmUrl.gameId === SITE_ID) && install) {
-          return api.emitAndAwait('install-extension',
-            { name: 'Pending', modId: nxmUrl.modId, fileId: nxmUrl.fileId });
+        if (nxmUrl.gameId === SITE_ID) {
+          if (install) {
+            return api.emitAndAwait('install-extension',
+              { name: 'Pending', modId: nxmUrl.modId, fileId: nxmUrl.fileId });
+          } else {
+            api.events.emit('show-extension-page', nxmUrl.modId);
+            return Promise.resolve();
+          }
         }
       } catch (err) {
         api.showErrorNotification('Invalid URL', err, { allowReport: false });
