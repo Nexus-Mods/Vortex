@@ -1293,7 +1293,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
     const valFunc = (rowId: string) => typeof(groupAttribute.isGroupable) === 'function'
             ? groupAttribute.isGroupable(data[rowId], t)
-            : calculatedValues[rowId]?.[groupAttribute.id];
+            : calculatedValues[rowId]?.[groupAttribute.id] || '';
 
     const groupOptions = this.getGroupOptions(this.props, sortedRows, sortAttribute,
                                               groupAttribute, valFunc);
