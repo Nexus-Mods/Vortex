@@ -3,7 +3,7 @@
   margin-top: $half-gutter;
 
   &.toggle-disabled {
-    filter: grayscale(80%);
+    filter: brightness(0.5);
   }
 }
 
