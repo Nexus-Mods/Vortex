@@ -1240,8 +1240,9 @@ export interface IExtensionContext {
   /**
    * register a dependency on a different extension
    * @param {string} extId id of the extension that this one depends on
+   * @param {string} version a semver version range that the mod is compatible with
    */
-  requireExtension: (extId: string) => void;
+  requireExtension: (extId: string, version?: string) => void;
 
   /**
    * called once after the store has been set up and after all extensions have been initialized

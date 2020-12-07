@@ -230,7 +230,8 @@ class ContextProxyHandler implements ProxyHandler<any> {
    * remove all init calls from incompatible extensions
    */
   public unloadIncompatible(furtherAPIs: Set<string>,
-                            allExtensions: string[]): { [extId: string]: IExtensionLoadFailure[] } {
+                            allExtensions: IRegisteredExtension[])
+                            : { [extId: string]: IExtensionLoadFailure[] } {
     const addAPIs: string[] =
         this.mApiAdditions.map((addition: IApiAddition) => addition.key);
     const fullAPI = new Set([...furtherAPIs, ...this.staticAPIs, ...addAPIs]);
@@ -245,10 +246,20 @@ class ContextProxyHandler implements ProxyHandler<any> {
         .push({ id: 'unsupported-api' });
     });
 
-    const testValid = (extId: string, requiredId?: string) => {
-      if (allExtensions.indexOf(requiredId) === -1) {
+    const findExt = (id: string) => {
+      return allExtensions.find(ext => (ext.info?.name === id)
+                                    || (ext.info?.id === id)
+                                    || (ext.name === id));
+    };
+
+    const testValid = (extId: string, requiredId?: string, version?: string) => {
+      const req = findExt(requiredId);
+      if (req === undefined) {
         setdefault(incompatibleExtensions, extId, []).push(
           { id: 'dependency', args: { dependencyId: requiredId } });
+      } else if ((version !== undefined) && !semver.satisfies(req.info?.version, version)) {
+        setdefault(incompatibleExtensions, extId, []).push(
+          { id: 'dependency', args: { dependencyId: requiredId, version } });
       }
     };
 
@@ -1097,19 +1108,7 @@ class ExtensionManager {
     this.mLoadFailures = {
       ...this.mLoadFailures,
       ...this.mContextProxyHandler.unloadIncompatible(
-        ExtensionManager.sUIAPIs, this.mExtensions.reduce((prev, ext) => {
-          if (ext.info !== undefined) {
-            if (ext.info.name !== undefined) {
-              prev.push(ext.info.name);
-            }
-
-            if (ext.info.id !== undefined) {
-              prev.push(ext.info.id);
-            }
-          }
-          prev.push(ext.name);
-          return prev;
-        }, [])),
+        ExtensionManager.sUIAPIs, this.mExtensions),
     };
 
     // apply api extensions immediately after all extensions are loaded so they

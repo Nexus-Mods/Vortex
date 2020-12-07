@@ -163,7 +163,7 @@ function checkMissingDependencies(api: IExtensionApi,
       api.sendNotification({
         type: 'warning',
         message: 'Some of the installed extensions couldn\'t be loaded because '
-               + 'they have missing dependencies.',
+               + 'they have missing or incompatible dependencies.',
         actions: [
           { title: 'Fix', action: (dismiss: NotificationDismiss) => {
             Promise.map(Object.keys(missingDependencies), depId =>

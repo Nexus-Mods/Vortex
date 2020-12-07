@@ -23,7 +23,9 @@ function renderLoadFailure(t: TFunction, fail: IExtensionLoadFailure) {
   const pattern = getSafe({
     'unsupported-version': 'Not compatible with this version of Vortex',
     'unsupported-api': 'Unsupported API',
-    dependency: 'Depends on {{dependencyId}}',
+    dependency: (fail.args['version'] !== undefined)
+      ? 'Depends on "{{dependencyId}}" version "{{version}}"'
+      : 'Depends on "{{dependencyId}}"',
     exception: 'Failed to load: {{message}}',
   }, [ fail.id ], 'Unknown error');
   return t(pattern, { replace: fail.args });
