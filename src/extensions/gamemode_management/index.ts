@@ -343,6 +343,7 @@ function genModTypeAttribute(api: IExtensionApi): ITableAttribute<IModWithState>
     isSortable: true,
     isDefaultVisible: false,
     isToggleable: true,
+    isGroupable: true,
     filter: new OptionsFilter(modTypes, true, false),
     edit: {
       placeholder: () => api.translate('Default'),
