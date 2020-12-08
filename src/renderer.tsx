@@ -284,6 +284,11 @@ function errorHandler(evt: any) {
     return;
   }
 
+  if (error.message === 'Cannot read property \'parentNode\' of undefined') {
+    // thrown by packery - seemingly at random
+    return;
+  }
+
   if ((error.stack !== undefined)
       // some exceptions from foreign libraries can't be caught so we have to ignore them
       // the main offender here is electron-builder. Unfortunately newer versions that may
