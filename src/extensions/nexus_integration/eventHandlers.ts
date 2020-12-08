@@ -193,13 +193,13 @@ function downloadFile(api: IExtensionApi, nexus: Nexus,
       (downloads[downloadId]?.game || []).includes(gameId)
       && (downloads[downloadId]?.modInfo?.nexus?.ids?.modId === modId)
       && (downloads[downloadId]?.modInfo?.nexus?.ids?.fileId === fileId));
-    log('debug', 'found an existing matching download',
-      { id: existingId, data: JSON.stringify(downloads[existingId]) });
     if (existingId !== undefined) {
+      log('debug', 'found an existing matching download',
+        { id: existingId, data: JSON.stringify(downloads[existingId]) });
       return Promise.resolve(existingId);
     } else {
       // startDownload will report network errors and only reject on usage error
-      return startDownload(api, nexus, url);
+      return startDownload(api, nexus, url, 'never');
     }
 }
 

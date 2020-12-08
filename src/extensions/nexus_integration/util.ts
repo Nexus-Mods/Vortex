@@ -18,7 +18,7 @@ import { calcDuration, prettifyNodeErrorMessage, showError } from '../../util/me
 import { activeGameId } from '../../util/selectors';
 import { getSafe } from '../../util/storeHelper';
 import { truthy } from '../../util/util';
-import { DownloadIsHTML } from '../download_management/DownloadManager';
+import { DownloadIsHTML, RedownloadMode } from '../download_management/DownloadManager';
 import { SITE_ID } from '../gamemode_management/constants';
 import { gameById, knownGames } from '../gamemode_management/selectors';
 import modName from '../mod_management/util/modName';
@@ -33,7 +33,11 @@ const UPDATE_CHECK_DELAY = 60 * 60 * 1000;
 
 const app = remote !== undefined ? remote.app : appIn;
 
-export function startDownload(api: IExtensionApi, nexus: Nexus, nxmurl: string): Promise<string> {
+export function startDownload(api: IExtensionApi,
+                              nexus: Nexus,
+                              nxmurl: string,
+                              redownload?: RedownloadMode)
+                              : Promise<string> {
   let url: NXMUrl;
 
   try {
@@ -83,7 +87,8 @@ export function startDownload(api: IExtensionApi, nexus: Nexus, nxmurl: string):
         nexusFileInfo.file_name,
         (err, downloadId) => (truthy(err)
           ? reject(contextify(err))
-          : resolve(downloadId)));
+          : resolve(downloadId)),
+        redownload);
       });
     })
     .then(downloadId => {
