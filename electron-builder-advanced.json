@@ -2,7 +2,7 @@
   "directories": {
     "output": "dist_custom"
   },
-  "asar": false,
+  "asar": true,
   "asarUnpack": [
     "7z.exe",
     "LICENSE.md",
