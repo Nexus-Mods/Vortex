@@ -307,7 +307,7 @@ export function onAPIKeyChanged(api: IExtensionApi, nexus: Nexus): StateChangeCa
 }
 
 export function onCheckModsVersion(api: IExtensionApi,
-                                   nexus: Nexus): (...args: any[]) => Promise<void> {
+                                   nexus: Nexus): (...args: any[]) => Promise<string[]> {
   return (gameId, mods, forceFull) => {
     const APIKEY = getSafe(api.store.getState(),
                            ['confidential', 'account', 'nexus', 'APIKey'],
@@ -316,43 +316,50 @@ export function onCheckModsVersion(api: IExtensionApi,
       api.showErrorNotification('An error occurred checking for mod updates',
                                 'You are not logged in to Nexus Mods!',
                                 { allowReport: false });
-      return Promise.resolve();
+      return Promise.resolve([]);
     } else {
       api.store.dispatch(setUpdatingMods(gameId, true));
       const start = Date.now();
       return checkModVersionsImpl(api.store, nexus, gameId, mods, forceFull)
-        .then((errorMessages: string[]) => {
-          if (errorMessages.length !== 0) {
+        .then(({ errors, modIds }) => {
+          if (errors.length !== 0) {
             showError(api.store.dispatch,
                       'Some mods could not be checked for updates',
-                      errorMessages.join('[br][/br]'),
+                      errors.join('[br][/br]'),
                       { allowReport: false, isBBCode: true });
           }
+          return Promise.resolve(modIds);
         })
         .catch(NexusError, err => {
           showError(api.store.dispatch, 'An error occurred checking for mod updates', err, {
             allowReport: false,
           });
+          return Promise.resolve([]);
         })
         .catch(TimeoutError, err => {
           showError(api.store.dispatch, 'An error occurred checking for mod updates', err, {
             allowReport: false,
           });
+          return Promise.resolve([]);
         })
         .catch(RateLimitError, err => {
           showError(api.store.dispatch, 'Rate limit exceeded, please try again later', err, {
             allowReport: false,
           });
+          return Promise.resolve([]);
         })
         .catch(ProcessCanceled, err => {
           showError(api.store.dispatch, 'An error occurred checking for mod updates', err, {
             allowReport: false,
           });
+          return Promise.resolve([]);
         })
         .catch(err => {
           showError(api.store.dispatch, 'An error occurred checking for mod updates', err);
+          return Promise.resolve([]);
         })
-        .then(() => Promise.delay(2000 - (Date.now() - start)))
+        .then((modIds: string[]) => Promise.delay(2000 - (Date.now() - start))
+          .then(() => modIds))
         .finally(() => {
           api.store.dispatch(setUpdatingMods(gameId, false));
         });

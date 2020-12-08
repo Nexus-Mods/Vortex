@@ -613,6 +613,7 @@ export interface IExtensionApi {
   /**
    * emit an event and allow every receiver to return a Promise. This call will only return
    * after all these Promises are resolved.
+   * If the event handlers return a value, this returns an array of results
    */
   emitAndAwait: (eventName: string, ...args: any[]) => Promise<any>;
 

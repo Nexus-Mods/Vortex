@@ -452,7 +452,7 @@ export function checkModVersionsImpl(
   nexus: Nexus,
   gameId: string,
   mods: { [modId: string]: IMod },
-  forceFull: boolean | 'silent'): Promise<string[]> {
+  forceFull: boolean | 'silent'): Promise<{ errors: string[], modIds: string[] }> {
 
   const now = Date.now();
 
@@ -464,6 +464,8 @@ export function checkModVersionsImpl(
     ;
 
   log('info', '[update check] checking mods for update (nexus)', { count: modsList.length });
+
+  const updatedIds: string[] = [];
 
   return refreshEndorsements(store, nexus)
     .then(() => filterByUpdateList(store, nexus, gameId, modsList))
@@ -520,6 +522,7 @@ export function checkModVersionsImpl(
                              || (newestFileIdChanged && fileIdChanged);
 
             if (updateFound) {
+              updatedIds.push(mod.id);
               if (truthy(forceFull) && !filtered.has(mod.id)) {
                 log('warn', '[update check] Mod update would have been missed with regular check', {
                   modId: mod.id,
@@ -596,7 +599,10 @@ export function checkModVersionsImpl(
         }
       });
     })
-    .then((errorMessages: string[]): string[] => errorMessages.filter(msg => msg !== undefined));
+    .then((errorMessages: string[]): { errors: string[], modIds: string[] } => ({
+      errors: errorMessages.filter(msg => msg !== undefined),
+      modIds: updatedIds,
+    }));
 }
 
 function errorFromNexusError(err: NexusError): string {
