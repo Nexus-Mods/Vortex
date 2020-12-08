@@ -569,6 +569,7 @@ function once(api: IExtensionApi) {
               { name: 'Pending', modId: nxmUrl.modId, fileId: nxmUrl.fileId });
           } else {
             api.events.emit('show-extension-page', nxmUrl.modId);
+            bringToFront();
             return Promise.resolve();
           }
         }
