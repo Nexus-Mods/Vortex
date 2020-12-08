@@ -3,10 +3,16 @@
     width: 60%;
   }
   .modal-body {
+    .history-table-container {
+      flex: 1 1 0;
+      overflow: auto;
+    }
     table {
       width: 100%;
     }
-    max-height: 60vh;
+    display: flex;
+    flex-direction: column;
+    height: 60vh;
     overflow: auto;
   }
 }

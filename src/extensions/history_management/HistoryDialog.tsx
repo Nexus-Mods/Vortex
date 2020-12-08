@@ -84,21 +84,23 @@ function HistoryDialog(props: IDialogProps & WithTranslation) {
         <h2>{t('Event history')}</h2>
       </Modal.Header>
       <Modal.Body>
-        <table>
-          <tbody>
-            {sorted.map(evt => (
-              <HistoryItem
-                t={t}
-                key={evt.id}
-                evt={evt}
-                stack={stack}
-                stackId={stackToShow}
-                onReverted={onReverted}
-              />
-            ))}
-          </tbody>
-        </table>
-        <Usage infoId='event-history'>
+        <div className='history-table-container'>
+          <table>
+            <tbody>
+              {sorted.map(evt => (
+                <HistoryItem
+                  t={t}
+                  key={evt.id}
+                  evt={evt}
+                  stack={stack}
+                  stackId={stackToShow}
+                  onReverted={onReverted}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <Usage className='history-usage' infoId='event-history'>
           {t('Please note that this is not "Undo"! This screen allows you to revert '
              + 'specific actions but we make no promises that this actually returns '
              + 'Vortex or your game to the state before that action. Not every '
