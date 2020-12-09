@@ -1093,12 +1093,17 @@ class InstallManager {
       return Promise.resolve(undefined);
     }
     return Promise.resolve(this.mInstallers[offset].testSupported(fileList, gameId))
-      .then((testResult: ISupportedResult) => (testResult.supported === true)
-          ? Promise.resolve({
+      .then((testResult: ISupportedResult) => {
+          if (testResult === undefined) {
+            log('error', 'Buggy installer', this.mInstallers[offset].id);
+          }
+          return (testResult?.supported === true)
+            ? Promise.resolve({
               installer: this.mInstallers[offset],
               requiredFiles: testResult.requiredFiles,
             })
-          : this.getInstaller(fileList, gameId, offset + 1));
+            : this.getInstaller(fileList, gameId, offset + 1);
+      });
  }
 
   /**
