@@ -360,10 +360,12 @@ class ConnectionIPC {
       });
       proc.stderr.on('data', (dat: Buffer) => {
         const errorMessage = dat.toString().trim();
-        log('error', 'from installer:', errorMessage);
-        if (!wasConnected) {
-          onReject(new Error(errorMessage));
-          wasConnected = true;
+        if (errorMessage.length > 0) {
+          log('error', 'from installer:', errorMessage);
+          if (!wasConnected) {
+            onReject(new Error(errorMessage));
+            wasConnected = true;
+          }
         }
       });
     }
