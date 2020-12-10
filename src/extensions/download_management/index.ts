@@ -362,7 +362,7 @@ function queryReplace(api: IExtensionApi, destination: string) {
     : removeArchive(api.store, destination));
 }
 
-function move(api: IExtensionApi, source: string, destination: string): Promise<void> {
+function move(api: IExtensionApi, source: string, destination: string): Promise<string> {
   const store = api.store;
   const gameMode = selectors.activeGameId(store.getState());
 
@@ -399,11 +399,13 @@ function move(api: IExtensionApi, source: string, destination: string): Promise<
       api.dismissNotification(notiId);
       store.dispatch(downloadProgress(dlId, stats.size, stats.size, [], undefined));
       api.events.emit('did-import-download', [dlId]);
+      return dlId;
     })
     .catch(err => {
       api.dismissNotification(notiId);
       store.dispatch(removeDownload(dlId));
       log('info', 'failed to copy', {error: err.message});
+      return undefined;
     })
     .finally(() => {
       addLocalInProgress.delete(fileName);
@@ -411,7 +413,7 @@ function move(api: IExtensionApi, source: string, destination: string): Promise<
 }
 
 function genImportDownloadsHandler(api: IExtensionApi) {
-  return (downloadPaths: string[]) => {
+  return (downloadPaths: string[], cb?: (dlIds: string[]) => void) => {
     const state = api.getState();
     const gameMode = selectors.activeGameId(state);
 
@@ -430,12 +432,12 @@ function genImportDownloadsHandler(api: IExtensionApi) {
         .then(stats => {
           if (stats.isDirectory()) {
             hadDirs = true;
-            return Promise.resolve();
+            return Promise.resolve(undefined);
           } else {
             return move(api, dlPath, destination);
           }
         })
-        .then(() => {
+        .tap((dlId: string) => {
           if (hadDirs) {
             api.sendNotification({
               type: 'warning',
@@ -445,6 +447,7 @@ function genImportDownloadsHandler(api: IExtensionApi) {
             });
           }
           log('info', 'imported archives', { count: downloadPaths.length });
+          return dlId;
         })
         .catch(err => {
           api.sendNotification({
@@ -453,6 +456,8 @@ function genImportDownloadsHandler(api: IExtensionApi) {
             message: dlPath,
           });
         });
+    }).then((dlIds: string[]) => {
+      cb?.(dlIds.filter(id => id !== undefined));
     });
   };
 }

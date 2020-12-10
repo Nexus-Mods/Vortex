@@ -3,6 +3,7 @@ import FlexLayout from '../../../controls/FlexLayout';
 import Icon from '../../../controls/Icon';
 import More from '../../../controls/More';
 import Spinner from '../../../controls/Spinner';
+import Toggle from '../../../controls/Toggle';
 import { Button } from '../../../controls/TooltipControls';
 import { DialogActions, DialogType, IDialogContent, IDialogResult } from '../../../types/IDialog';
 import { IDownload, IState } from '../../../types/IState';
@@ -21,7 +22,7 @@ import { getSafe } from '../../../util/storeHelper';
 import { cleanFailedTransfer, testPathTransfer, transferPath } from '../../../util/transferPath';
 import { ciEqual, isChildPath, isPathValid, isReservedDirectory } from '../../../util/util';
 import getTextMod from '../../mod_management/texts';
-import { setDownloadPath, setMaxDownloads } from '../actions/settings';
+import { setCopyOnIFF, setDownloadPath, setMaxDownloads } from '../actions/settings';
 import { setTransferDownloads } from '../actions/transactions';
 
 import { DOWNLOADS_DIR_TAG, writeDownloadsTag } from '../util/downloadDirectory';
@@ -48,6 +49,7 @@ interface IConnectedProps {
   modsInstallPath: string;
   downloads: { [downloadId: string]: IDownload };
   instanceId: string;
+  copyOnIFF: boolean;
 }
 
 interface IActionProps {
@@ -58,6 +60,7 @@ interface IActionProps {
                  actions: DialogActions) => Promise<IDialogResult>;
   onShowError: (message: string, details: string | Error,
                 allowReport: boolean, isBBCode?: boolean) => void;
+  onSetCopyOnIFF: (enabled: boolean) => void;
 }
 
 type IProps = IActionProps & IConnectedProps;
@@ -91,7 +94,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, downloads, isPremium, parallelDownloads } = this.props;
+    const { t, copyOnIFF, downloads, isPremium, parallelDownloads } = this.props;
     const { downloadPath, progress, progressFile } = this.state;
 
     const pathPreview = getDownloadPath(downloadPath);
@@ -199,8 +202,20 @@ class Settings extends ComponentEx<IProps, IComponentState> {
             }
           </div>
         </FormGroup>
+        <FormGroup>
+          <Toggle
+            checked={copyOnIFF}
+            onToggle={this.toggleCopyOnIFF}
+          >
+            {t('Copy files when using "Install From File"')}
+          </Toggle>
+        </FormGroup>
       </form>
     );
+  }
+
+  private toggleCopyOnIFF = (newValue: boolean) => {
+    this.props.onSetCopyOnIFF(newValue);
   }
 
   private isPathSensible(input: string): boolean {
@@ -665,6 +680,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     downloads: state.persistent.downloads.files,
     modsInstallPath,
     instanceId: state.app.instanceId,
+    copyOnIFF: state.settings.downloads.copyOnIFF,
   };
 }
 
@@ -678,6 +694,7 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
     onShowError: (message: string, details: string | Error,
                   allowReport: boolean, isBBCode?: boolean): void =>
       showError(dispatch, message, details, { allowReport, isBBCode }),
+    onSetCopyOnIFF: (enabled: boolean) => dispatch(setCopyOnIFF(enabled)),
   };
 }
 

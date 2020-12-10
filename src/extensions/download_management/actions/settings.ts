@@ -6,3 +6,4 @@ export const setMaxDownloads = safeCreateAction('SET_MAX_DOWNLOADS', max => max)
 export const setDownloadPath = safeCreateAction('SET_DOWNLOAD_PATH', dlPath => dlPath);
 export const setShowDLDropzone = safeCreateAction('SET_SHOW_DL_DROPZONE', show => show);
 export const setShowDLGraph = safeCreateAction('SET_SHOW_DL_GRAPH', show => show);
+export const setCopyOnIFF = safeCreateAction('SET_COPY_ON_IFF', enabled => enabled);

@@ -1,5 +1,6 @@
 import { ButtonType } from '../../../controls/IconBar';
 import ToolbarIcon from '../../../controls/ToolbarIcon';
+import { IState } from '../../../types/IState';
 import { ComponentEx, connect, translate } from '../../../util/ComponentEx';
 import { activeGameId } from '../../../util/selectors';
 
@@ -14,6 +15,7 @@ export interface IBaseProps {
 
 interface IConnectedProps {
   gameMode: string;
+  copyOnIFF: boolean;
 }
 
 type IProps = IBaseProps & IConnectedProps;
@@ -40,17 +42,27 @@ class InstallButton extends ComponentEx<IProps, {}> {
     dialog.showOpenDialog(remote.getCurrentWindow(), options)
     .then(result => {
       const { filePaths } = result;
+      const { api } = this.context;
       if ((filePaths !== undefined) && (filePaths.length > 0)) {
-        this.context.api.events.emit('start-install', filePaths[0]);
+        if (this.props.copyOnIFF) {
+          api.events.emit('import-downloads', [filePaths[0]], (dlIds: string[]) => {
+            dlIds.forEach(dlId => {
+              api.events.emit('start-install-download', dlId);
+            });
+          });
+        } else {
+          api.events.emit('start-install', filePaths[0]);
+        }
       }
     });
   }
 }
 
-function mapStateToProps(state: any): IConnectedProps {
+function mapStateToProps(state: IState): IConnectedProps {
   const gameMode = activeGameId(state);
   return {
     gameMode,
+    copyOnIFF: state.settings.downloads.copyOnIFF,
   };
 }
 

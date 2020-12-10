@@ -200,6 +200,7 @@ export interface ISettingsDownloads {
   path: string;
   showDropzone: boolean;
   showGraph: boolean;
+  copyOnIFF: boolean;
 }
 
 export interface IStatePaths {
