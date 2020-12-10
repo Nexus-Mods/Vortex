@@ -15,6 +15,7 @@ export class TextFilterComponent extends React.Component<IFilterProps, {}> {
         type='text'
         value={filter || ''}
         onChange={this.changeFilter}
+        inputRef={this.props.domRef}
       />
     );
   }

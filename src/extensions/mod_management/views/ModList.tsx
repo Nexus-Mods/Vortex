@@ -593,6 +593,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
           this.props.onSetModAttribute(this.props.gameMode, mod.id, 'customFileName', value),
       },
       isSortable: true,
+      isDefaultFilter: true,
       isDefaultSort: true,
       filter: new TextFilter(true),
       sortFunc: (lhs: string, rhs: string, locale: string): number => {

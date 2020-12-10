@@ -137,6 +137,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private mWillSetVisibility: boolean = false;
   private mMounted: boolean = false;
   private mNoShrinkColumns: { [attributeId: string]: HeaderCell } = {};
+  private mDefaultFilterRef: HTMLElement = null;
 
   constructor(props: IProps) {
     super(props);
@@ -728,6 +729,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
             <attribute.filter.component
               filter={filt}
               attributeId={attribute.id}
+              domRef={attribute.isDefaultFilter ? this.setDefaultFilterRef : undefined}
               t={t}
               onSetFilter={this.setFilter}
             />
@@ -737,6 +739,10 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     } else {
       return null;
     }
+  }
+
+  private setDefaultFilterRef = (ref: HTMLElement)  => {
+    this.mDefaultFilterRef = ref;
   }
 
   private setHeaderCellRef = (ref: HeaderCell) => {
@@ -755,8 +761,15 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         return;
       }
 
+      if ((evt.key === 'f') && evt.ctrlKey) {
+        if (this.mDefaultFilterRef !== null) {
+          this.mDefaultFilterRef.focus();
+        }
+        return;
+      }
+
       if (this.useMultiSelect()) {
-        if ((evt.keyCode === 65) && evt.ctrlKey) {
+        if ((evt.key === 'a') && evt.ctrlKey) {
           this.selectAll();
           return;
         }

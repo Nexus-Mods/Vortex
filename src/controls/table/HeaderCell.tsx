@@ -95,6 +95,7 @@ class HeaderCell extends React.Component<IHeaderProps, {}> {
         onClick={this.setGroup}
         tooltip={t('Group the table by this attribute')}
         className={classes.join(' ')}
+        tabIndex={-1}
       />);
   }
 
