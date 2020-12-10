@@ -592,6 +592,10 @@
     "history": {
       "path": "{nucleo}/design-development/{nucleo_simple}_timeline",
       "rmFill": true
+    },
+    "merge": {
+      "path": "{nucleo}/arrows/{nucleo_simple}_merge",
+      "rmFill": true
     }
   }
 }

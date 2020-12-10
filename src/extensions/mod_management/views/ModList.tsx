@@ -32,10 +32,12 @@ import { setShowModDropzone } from '../actions/settings';
 import { IMod } from '../types/IMod';
 import { IModProps } from '../types/IModProps';
 import { IModSource } from '../types/IModSource';
+import combineMods from '../util/combine';
 import filterModInfo from '../util/filterModInfo';
 import groupMods from '../util/modGrouping';
 import modName from '../util/modName';
 import modUpdateState, { UpdateState } from '../util/modUpdateState';
+import { removeMods } from '../util/removeMods';
 import VersionFilter from '../util/VersionFilter';
 import VersionChangelogButton from '../views/VersionChangelogButton';
 import VersionIconButton from '../views/VersionIconButton';
@@ -231,6 +233,14 @@ class ModList extends ComponentEx<IProps, IComponentState> {
             : this.props.t('No associated archive.') as string;
         },
         position: 60,
+      },
+      {
+        icon: 'merge',
+        title: 'Combine',
+        action: this.combine,
+        multiRowAction: true,
+        singleRowAction: false,
+        position: 70,
       },
     ];
 
@@ -840,7 +850,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     if (value === 'uninstalled') {
       // selected "not installed"
       if (modsWithState[modId].state !== 'downloaded') {
-        this.removeMods([modId])
+        removeMods(this.context.api, gameMode, [modId])
         .then(() => null)
         .catch(UserCanceled, () => null)
         .catch(ProcessCanceled, err => {
@@ -975,60 +985,6 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     });
   }
 
-  private removeMod(modId: string): Promise<void> {
-    const { gameMode } = this.props;
-    return new Promise((resolve, reject) => {
-      this.context.api.events.emit('remove-mod', gameMode, modId, err => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve();
-        }
-      });
-    });
-  }
-
-  private removeMods(modIds: string[]): Promise<void> {
-    const { gameMode } = this.props;
-    const { modsWithState } = this.state;
-
-    if (modIds.length === 0) {
-      return Promise.resolve();
-    }
-
-    const notiParams: INotification = {
-      type: 'activity',
-      title: 'Removing mods',
-      message: '...',
-    };
-
-    notiParams.id = this.context.api.sendNotification({
-      ...notiParams,
-      progress: 0,
-    });
-
-    return Promise
-      .mapSeries(modIds, (modId: string, idx: number, length: number) => {
-        this.context.api.sendNotification({
-          ...notiParams,
-          message: modId,
-          progress: (idx * 100) / length,
-        });
-        if ((modsWithState[modId] !== undefined)
-            && (modsWithState[modId].state === 'installed')) {
-          return this.removeMod(modId);
-        } else {
-          return Promise.resolve();
-        }
-      })
-      .then(() => {
-        this.context.api.events.emit('mods-enabled', modIds, false, gameMode);
-      })
-      .finally(() => {
-        this.context.api.dismissNotification(notiParams.id);
-      });
-  }
-
   private removeRelated = (modIds: string[]) => {
     const modId = Array.isArray(modIds) ? modIds[0] : modIds;
     const candidates: Array<{ mod: IMod, enabled: boolean }> = this.state.groupedMods[modId]
@@ -1088,7 +1044,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     this.removeSelected([modId]);
   }
 
-  private removeSelectedImpl(modIds: string[], removeMods: boolean, removeArchives: boolean) {
+  private removeSelectedImpl(modIds: string[], doRemoveMods: boolean, removeArchives: boolean) {
     const { gameMode, onRemoveMod } = this.props;
     const wereInstalled = modIds
       .filter(key => (this.state.modsWithState[key] !== undefined)
@@ -1099,8 +1055,8 @@ class ModList extends ComponentEx<IProps, IComponentState> {
                   && (this.state.modsWithState[key].archiveId !== undefined))
       .map(key => this.state.modsWithState[key].archiveId);
 
-    return (removeMods
-        ? this.removeMods(wereInstalled)
+    return (doRemoveMods
+        ? removeMods(this.context.api, gameMode, wereInstalled)
           .then(() => wereInstalled.forEach(key => onRemoveMod(gameMode, key)))
         : Promise.resolve())
       .then(() => {
@@ -1116,7 +1072,7 @@ class ModList extends ComponentEx<IProps, IComponentState> {
   private removeSelected = (modIds: string[]) => {
     const { t, onShowDialog } = this.props;
 
-    let removeMods: boolean;
+    let doRemoveMods: boolean;
     let removeArchive: boolean;
 
     const filteredIds = modIds
@@ -1161,10 +1117,10 @@ class ModList extends ComponentEx<IProps, IComponentState> {
       checkboxes,
     }, [ { label: 'Cancel' }, { label: 'Remove' } ])
       .then((result: IDialogResult) => {
-        removeMods = result.action === 'Remove' && result.input.mod;
+        doRemoveMods = result.action === 'Remove' && result.input.mod;
         removeArchive = result.action === 'Remove' && result.input.archive;
 
-        return this.removeSelectedImpl(filteredIds, removeMods, removeArchive);
+        return this.removeSelectedImpl(filteredIds, doRemoveMods, removeArchive);
       })
       .catch(ProcessCanceled, err => {
         this.context.api.sendNotification({
@@ -1223,6 +1179,13 @@ class ModList extends ComponentEx<IProps, IComponentState> {
         }
       });
     }
+  }
+
+  private combine = (modIds: string[]) => {
+    const { gameMode } = this.props;
+    const { api } = this.context;
+
+    return combineMods(api, gameMode, modIds);
   }
 
   private toggleDropzone = () => {
