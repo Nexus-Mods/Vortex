@@ -624,8 +624,8 @@ export function moveRenameAsync(src: string, dest: string): PromiseBB<string> {
  * The copy function from fs-extra doesn't (at the time of writing) correctly check that a file
  * isn't copied onto itself (it fails for links or potentially on case insensitive disks),
  * so this makes a check based on the ino number.
- * Unfortunately a bug in node.js (https://github.com/nodejs/node/issues/12115) prevents this
- * check from working reliably so it can currently be disabled.
+ * A bug in older versions of node.js made it necessary this check be optional but that is
+ * resolved now so the check should always be enabled.
  * @param src file to copy
  * @param dest destination path
  * @param options copy options (see documentation for fs)

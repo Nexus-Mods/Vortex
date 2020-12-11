@@ -293,7 +293,7 @@ class ConnectionIPC {
     let proc: ChildProcess = null;
     let onResolve: () => void;
     let onReject: (err: Error) => void;
-    const connectedPromise = new Promise((resolve, reject) => {
+    const connectedPromise = new Promise<void>((resolve, reject) => {
       onResolve = resolve;
       onReject = reject;
     });
@@ -495,7 +495,7 @@ class ConnectionIPC {
 
     const written = this.mSocket.out.write(outData + '\uFFFF');
     if (!written) {
-      await new Promise(resolve => {
+      await new Promise<void>(resolve => {
         this.mOnDrained.push(resolve);
       });
     }
