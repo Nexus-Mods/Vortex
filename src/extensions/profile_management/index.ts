@@ -579,6 +579,18 @@ function unmanageGame(api: IExtensionApi, gameId: string): Promise<void> {
   });
 }
 
+function addDescriptionFeature() {
+  profileFeatures.push({
+    id: 'profile-description',
+    type: 'text',
+    icon: 'edit',
+    label: 'Description',
+    description: 'Describe your profile',
+    supported: () => true,
+    namespace: 'default',
+  });
+}
+
 function init(context: IExtensionContext): boolean {
   context.registerMainPage('profile', 'Profiles', ProfileView, {
     hotkey: 'P',
@@ -673,6 +685,8 @@ function init(context: IExtensionContext): boolean {
   // when changing the game mode
   context.once(() => {
     const store = context.api.store;
+
+    addDescriptionFeature();
 
     context.api.events.on('activate-game', (gameId: string) => {
       activateGame(store, gameId);

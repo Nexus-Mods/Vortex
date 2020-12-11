@@ -1,5 +1,16 @@
 .profile-details {
   padding: 0px 16px;
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  column-gap: 1em;
+
+  .profile-feature-name,
+  .profile-feature-value {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
   li {
     display: inline;
     list-style-type: none;

@@ -77,7 +77,7 @@ class ProfileEdit extends ComponentEx<IEditProps, IEditState> {
     const PanelX: any = Panel;
     return (
       <Panel className='profile-edit-panel'>
-        <PanelX.Body>
+        <Panel.Body>
           {profile === undefined ? t('Create a new profile') : t('Edit profile')}
           <ListGroupItem key={profileId}>
             <div className='inline-form'>
@@ -93,7 +93,7 @@ class ProfileEdit extends ComponentEx<IEditProps, IEditState> {
               {features.map(this.renderFeature)}
             </div>
           </ListGroupItem>
-        </PanelX.Body>
+        </Panel.Body>
       </Panel>
     );
   }
@@ -112,6 +112,16 @@ class ProfileEdit extends ComponentEx<IEditProps, IEditState> {
           {t(feature.description)}
         </Toggle>
       );
+    } else if (feature.type === 'text') {
+      return (
+        <FormControl
+          componentClass='textarea'
+          value={getSafe(edit, ['features', feature.id], undefined) ?? ''}
+          data-id={feature.id}
+          onChange={this.assignString}
+          placeholder={t(feature.description)}
+        />
+      );
     }
   }
 
@@ -119,8 +129,14 @@ class ProfileEdit extends ComponentEx<IEditProps, IEditState> {
     this.setState(setSafe(this.state, ['edit', 'features', dataId], ticked));
   }
 
+  private assignString = (evt: React.FormEvent<any>) => {
+    const dataId = evt.currentTarget.getAttribute('data-id');
+    const value = evt.currentTarget.value;
+    this.setState(setSafe(this.state, ['edit', 'features', dataId], value));
+  }
+
   private handleKeypress = (evt: React.KeyboardEvent<any>) => {
-    if (evt.which === 13) {
+    if (evt.key === 'Enter') {
       evt.preventDefault();
       this.saveEdit();
     }
