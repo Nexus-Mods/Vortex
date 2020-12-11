@@ -106,6 +106,10 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
         title: 'Show/Hide Empty',
         icon: 'hide',
         action: this.toggleShowEmpty,
+      }, {
+        title: 'Sort Alphabetically',
+        icon: 'loot-sort',
+        action: this.sortAlphabetically,
       },
     ];
   }
@@ -250,6 +254,25 @@ class CategoryList extends ComponentEx<IProps, IComponentState> {
     } catch (err) {
       onShowError('An error occurred hiding/showing the empty categories',
                   err, { allowReport: false });
+    }
+  }
+
+  private sortAlphabetically = () => {
+    const { t, gameMode, categories, mods, onShowError, onSetCategoryOrder } = this.props;
+
+    try {
+      const newTree: ICategoriesTree[] = createTreeDataObject(t, categories, mods,
+        (a, b) => categories[a].name.localeCompare(categories[b].name));
+
+      const newOrder = (base: ICategoriesTree[]): string[] => {
+        return [].concat(...base.map(node =>
+          [node.categoryId, ...newOrder(node.children)]));
+      };
+
+      onSetCategoryOrder(gameMode, newOrder(newTree));
+
+    } catch (err) {
+      onShowError('Failed to sort categories', err, { allowReport: false });
     }
   }
 
