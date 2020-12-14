@@ -547,7 +547,7 @@ function ensureDirInt(dirPath: string, stackErr: Error, tries: number): PromiseB
       // it but on windows, when targeting a OneDrive path (and similar?)
       // it apparently still does
       if (err.code === 'EEXIST') {
-        return PromiseBB.resolve(null);
+        return PromiseBB.resolve();
       }
       return simfail(() => errorHandler(err, stackErr, tries, undefined))
         .then(() => ensureDirInt(dirPath, stackErr, tries - 1));

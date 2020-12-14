@@ -62,6 +62,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
 
   private mQueue: Promise<void> = Promise.resolve();
   private mContext: IDeploymentContext;
+  private mDirCache: Set<string>;
 
   constructor(id: string, name: string, description: string,
               fallbackPurgeSafe: boolean, api: IExtensionApi) {
@@ -135,6 +136,8 @@ abstract class LinkingActivator implements IDeploymentMethod {
     let contentChanged: string[];
 
     let errorCount: number = 0;
+
+    this.mDirCache = new Set<string>();
 
     // unlink all files that were removed or changed
     ({added, removed, sourceChanged, contentChanged} =
@@ -268,7 +271,11 @@ abstract class LinkingActivator implements IDeploymentMethod {
             this.mContext = undefined;
             context.onComplete();
           }
-        });
+        })
+        .finally(() => {
+          this.mDirCache = undefined;
+        })
+        ;
   }
 
   public cancel(gameId: string, dataPath: string, installationPath: string) {
@@ -502,6 +509,32 @@ abstract class LinkingActivator implements IDeploymentMethod {
 
   protected statLink(filePath: string): Promise<fs.Stats> {
     return fs.lstatAsync(filePath);
+  }
+
+  protected ensureDir(dirPath: string, dirTags?: boolean): Promise<boolean> {
+    let didCreate = false;
+    const onDirCreated = (createdPath: string) => {
+      didCreate = true;
+      if (dirTags !== false) {
+        log('debug', 'created directory', createdPath);
+        return fs.writeFileAsync(
+          path.join(createdPath, LinkingActivator.NEW_TAG_NAME),
+            'This directory was created by Vortex deployment and will be removed ' +
+            'during purging if it\'s empty');
+      } else {
+        return Promise.resolve();
+      }
+    };
+
+    return ((this.mDirCache === undefined) || !this.mDirCache.has(dirPath)
+      ? fs.ensureDirAsync(dirPath, onDirCreated).then(() => {
+        if (this.mDirCache === undefined) {
+          this.mDirCache = new Set<string>();
+        }
+        this.mDirCache.add(dirPath);
+      })
+      : Promise.resolve())
+      .then(() => didCreate);
   }
 
   private removeDeployedFile(installationPath: string,

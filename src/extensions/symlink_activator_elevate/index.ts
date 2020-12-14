@@ -247,19 +247,8 @@ class DeploymentMethod extends LinkingDeployment {
 
   protected linkFile(linkPath: string, sourcePath: string, dirTags?: boolean): Promise<void> {
     const dirName = path.dirname(linkPath);
-    const onDirCreated = (created) => {
-      if ((dirTags !== false) && (created !== null)) {
-        log('debug', 'created directory', created);
-        return fs.writeFileAsync(
-          path.join(created, LinkingDeployment.NEW_TAG_NAME),
-            'This directory was created by Vortex deployment and will be removed ' +
-            'during purging if it\'s empty');
-      } else {
-        return Promise.resolve();
-      }
-    };
-    return fs.ensureDirAsync(dirName, onDirCreated)
-      .then(created => (created === null)
+    return this.ensureDir(dirName, dirTags)
+      .then(created => !created
         // if the directory did exist, there is a chance the destination file already
         // exists
         ? fs.removeAsync(linkPath)

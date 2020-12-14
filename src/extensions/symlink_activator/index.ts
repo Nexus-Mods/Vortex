@@ -143,23 +143,12 @@ class DeploymendMethod extends LinkingDeployment {
   }
 
   protected linkFile(linkPath: string, sourcePath: string, dirTags?: boolean): Promise<void> {
-    return fs.ensureDirAsync(path.dirname(linkPath))
-        .then((created: any) => {
-          let tagDir: Promise<void>;
-          if ((dirTags !== false) && (created !== null)) {
-            const tagPath = path.join(created, LinkingDeployment.NEW_TAG_NAME);
-            tagDir = Promise.resolve(fs.writeFileAsync(tagPath,
-                'This directory was created by Vortex deployment and will be removed '
-                + 'during purging if it\'s empty'));
-          } else {
-            tagDir = Promise.resolve();
-          }
-          return tagDir.then(() => fs.symlinkAsync(sourcePath, linkPath))
+    return this.ensureDir(path.dirname(linkPath), dirTags)
+        .then(() => fs.symlinkAsync(sourcePath, linkPath)
             .catch(err => (err.code !== 'EEXIST')
                 ? Promise.reject(err)
                 : fs.removeAsync(linkPath)
-                  .then(() => fs.symlinkAsync(sourcePath, linkPath)));
-        });
+                  .then(() => fs.symlinkAsync(sourcePath, linkPath))));
   }
 
   protected unlinkFile(linkPath: string): Promise<void> {

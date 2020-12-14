@@ -28,7 +28,6 @@ export class FileFound extends Error {
 class DeploymentMethod extends LinkingDeployment {
   public priority: number = 5;
 
-  private mDirCache: Set<string>;
   private mInstallationFiles: Set<number>;
 
   constructor(api: IExtensionApi) {
@@ -181,12 +180,7 @@ class DeploymentMethod extends LinkingDeployment {
                   dataPath: string,
                   installationPath: string,
                   progressCB?: (files: number, total: number) => void): Promise<IDeployedFile[]> {
-    this.mDirCache = new Set<string>();
-    return super.finalize(gameId, dataPath, installationPath, progressCB)
-    .then(files => {
-      this.mDirCache = undefined;
-      return files;
-    });
+    return super.finalize(gameId, dataPath, installationPath, progressCB);
   }
 
   public postPurge(): Promise<void> {
@@ -249,7 +243,7 @@ class DeploymentMethod extends LinkingDeployment {
 
   protected linkFile(linkPath: string, sourcePath: string, dirTags?: boolean): Promise<void> {
     return this.ensureDir(path.dirname(linkPath), dirTags)
-      .then((created: any) => fs.linkAsync(sourcePath, linkPath))
+      .then(() => fs.linkAsync(sourcePath, linkPath))
         .catch(err => (err.code !== 'EEXIST')
           ? Promise.reject(err)
           : fs.removeAsync(linkPath)
@@ -279,30 +273,6 @@ class DeploymentMethod extends LinkingDeployment {
 
   protected canRestore(): boolean {
     return true;
-  }
-
-  private ensureDir(dirPath: string, dirTags?: boolean): Promise<void> {
-    const onDirCreated = (created) => {
-      if ((dirTags !== false) && (created !== null)) {
-        log('debug', 'created directory', created);
-        return fs.writeFileAsync(
-          path.join(created, LinkingDeployment.NEW_TAG_NAME),
-            'This directory was created by Vortex deployment and will be removed ' +
-            'during purging if it\'s empty');
-      } else {
-        return Promise.resolve();
-      }
-    };
-
-    return (this.mDirCache === undefined) || !this.mDirCache.has(dirPath)
-      ? fs.ensureDirAsync(dirPath, onDirCreated).then(created => {
-        if (this.mDirCache === undefined) {
-          this.mDirCache = new Set<string>();
-        }
-        this.mDirCache.add(dirPath);
-        return created;
-      })
-      : Promise.resolve(null);
   }
 }
 

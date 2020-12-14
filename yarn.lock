@@ -12725,8 +12725,8 @@ tunnel@^0.0.6:
   integrity sha512-1h/Lnq9yajKY2PEbBadPXj3VxsDDu844OnaAo52UVmIzIvwwtBPIuNvkjuzBlTWpfJyUbG3ez0KSBibQkj4ojg==
 
 turbowalk@Nexus-Mods/node-turbowalk:
-  version "3.0.0"
-  resolved "https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/1e1220334c64264827d06a67beb83f67dc2949a1"
+  version "3.0.1"
+  resolved "https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/4ecc44063c574fd4f6fc04e9c70158524988a1bd"
   dependencies:
     fs-extra "^8.1.0"
     winapi-bindings Nexus-Mods/node-winapi-bindings
