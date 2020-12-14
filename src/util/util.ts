@@ -1,8 +1,6 @@
 import { TimeoutError } from './CustomErrors';
-import { genFSWrapperAsync } from './fs';
 import { Normalize } from './getNormalizeFunc';
 import getVortexPath from './getVortexPath';
-import { log } from './log';
 
 import Bluebird from 'bluebird';
 import { spawn } from 'child_process';

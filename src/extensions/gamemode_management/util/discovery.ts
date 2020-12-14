@@ -1,6 +1,7 @@
 import { IDiscoveredTool } from '../../../types/IDiscoveredTool';
 import { IGame } from '../../../types/IGame';
 import { ITool } from '../../../types/ITool';
+import extractExeIcon from '../../../util/exeIcon';
 import * as fs from '../../../util/fs';
 import { log } from '../../../util/log';
 import StarterInfo from '../../../util/StarterInfo';
@@ -302,8 +303,7 @@ function autoGenIcon(application: ITool, exePath: string, gameId: string): Promi
   return (application.logo === 'auto')
     ? fs.ensureDirWritableAsync(path.dirname(iconPath), () => Promise.resolve())
         .then(() => fs.statAsync(iconPath).then(() => null))
-        .catch(() => app.getFileIcon(exePath, { size: 'normal' })
-          .then(icon => fs.writeFileAsync(iconPath, icon.toPNG())))
+        .catch(() => extractExeIcon(exePath, iconPath))
       .catch(err => log('warn', 'failed to fetch exe icon', err.message))
     : Promise.resolve();
 }
@@ -334,7 +334,6 @@ function testApplicationDirValid(application: ITool, testPath: string, gameId: s
             path: exePath,
             hidden: false,
             custom: false,
-            workingDirectory: testPath,
           });
         });
       }

@@ -8,6 +8,7 @@ import { IDiscoveredTool } from '../../types/IDiscoveredTool';
 import { ComponentEx, connect, translate } from '../../util/ComponentEx';
 import { ProcessCanceled, UserCanceled } from '../../util/CustomErrors';
 import Debouncer from '../../util/Debouncer';
+import extractExeIcon from '../../util/exeIcon';
 import * as fs from '../../util/fs';
 import { TFunction } from '../../util/i18n';
 import StarterInfo, { IStarterInfo } from '../../util/StarterInfo';
@@ -571,8 +572,7 @@ class ToolEditDialog extends ComponentEx<IProps, IToolEditState> {
           : Promise.resolve())
       .then(() => fs.ensureDirAsync(path.dirname(destPath)))
       .then(() => (path.extname(filePath) === '.exe')
-        ? app.getFileIcon(filePath, { size: 'normal' })
-          .then(icon => fs.writeFileAsync(destPath, icon.toPNG()))
+        ? extractExeIcon(filePath, destPath)
         : this.toPNG(filePath, destPath))
       .then(() => {
         this.clearCache();
