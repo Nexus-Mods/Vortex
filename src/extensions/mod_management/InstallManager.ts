@@ -1031,7 +1031,7 @@ class InstallManager {
         // In this case we resolve using the existing modId.
         // https://github.com/Nexus-Mods/Vortex/issues/7972
         const currentProfile = activeProfile(api.store.getState());
-        resolve({
+        return resolve({
           id: modId,
           variant: '',
           enable: getSafe(currentProfile.modState, [modId, 'enabled'], false),
