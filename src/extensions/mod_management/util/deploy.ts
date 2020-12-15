@@ -3,7 +3,7 @@ import { IDeployedFile, IDeploymentMethod, IExtensionApi } from '../../../types/
 import { IGame } from '../../../types/IGame';
 import { INotification } from '../../../types/INotification';
 import { IProfile } from '../../../types/IState';
-import { ProcessCanceled } from '../../../util/CustomErrors';
+import { ProcessCanceled, TemporaryError } from '../../../util/CustomErrors';
 import { log } from '../../../util/log';
 import { activeProfile, discoveryByGame, lastActiveProfileForGame, profileById } from '../../../util/selectors';
 import { getSafe } from '../../../util/storeHelper';
@@ -74,6 +74,10 @@ export function purgeMods(api: IExtensionApi, gameId?: string): Promise<void> {
   const profile = gameId !== undefined
     ? profileById(state, lastActiveProfileForGame(state, gameId))
     : activeProfile(state);
+
+  if (profile === undefined) {
+    return Promise.reject(new TemporaryError('No active profile'));
+  }
 
   return getManifest(api, '', gameId)
     .then(manifest => {
