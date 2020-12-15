@@ -18,7 +18,7 @@ import getTextModManagement from '../mod_management/texts';
 import getTextProfiles from '../profile_management/texts';
 
 import { setAutoDeployment, setAutoEnable, setAutoStart, setStartMinimized } from './actions/automation';
-import { setAdvancedMode, setDesktopNotifications, setHideTopLevelCategory,
+import { setAdvancedMode, setDesktopNotifications, setForegroundDL, setHideTopLevelCategory,
          setLanguage, setProfilesVisible, setRelativeTimes } from './actions/interface';
 import { nativeCountryName, nativeLanguageName } from './languagemap';
 import getText from './texts';
@@ -60,6 +60,7 @@ interface IConnectedProps {
   relativeTimes: boolean;
   extensions: IAvailableExtension[];
   suppressedNotifications: { [id: string]: boolean };
+  foregroundDL: boolean;
 }
 
 interface IActionProps {
@@ -77,6 +78,7 @@ interface IActionProps {
   onSetHideTopLevelCategory: (hide: boolean) => void;
   onSetRelativeTimes: (enabled: boolean) => void;
   onResetNotificationSuppression: () => void;
+  onSetForegroundDL: (enabled: boolean) => void;
 }
 
 interface IComponentState {
@@ -120,8 +122,8 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
 
   public render(): JSX.Element {
     const { t, advanced, autoDeployment, autoEnable, autoStart, currentLanguage,
-            customTitlebar, desktopNotifications, profilesVisible,
-            hideTopLevelCategory, relativeTimes, startup, startMinimized,
+            customTitlebar, desktopNotifications, foregroundDL, profilesVisible,
+            hideTopLevelCategory, onSetForegroundDL, relativeTimes, startup, startMinimized,
             suppressedNotifications } = this.props;
 
     const needRestart = (customTitlebar !== this.mInitialTitlebar);
@@ -206,6 +208,14 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
                 {t('Use relative times (e.g. "3 months ago")')}
               </Toggle>
             </div>
+          </div>
+          <div>
+            <Toggle
+              checked={foregroundDL}
+              onToggle={onSetForegroundDL}
+            >
+              {t('Bring Vortex to foreground when starting downloads in browser')}
+            </Toggle>
           </div>
         </FormGroup>
         <FormGroup controlId='advanced'>
@@ -502,6 +512,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     extensions: state.session.extensions.available,
     relativeTimes: state.settings.interface.relativeTimes,
     suppressedNotifications: state.settings.notifications.suppress,
+    foregroundDL: state.settings.interface.foregroundDL,
   };
 }
 
@@ -544,6 +555,7 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
     onResetNotificationSuppression: () => {
       dispatch(resetSuppression(null));
     },
+    onSetForegroundDL: (enabled: boolean) => dispatch(setForegroundDL(enabled)),
   };
 }
 

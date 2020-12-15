@@ -572,6 +572,11 @@ function once(api: IExtensionApi) {
             bringToFront();
             return Promise.resolve();
           }
+        } else {
+          const { foregroundDL } = api.store.getState().settings.interface;
+          if (foregroundDL) {
+            bringToFront();
+          }
         }
       } catch (err) {
         api.showErrorNotification('Invalid URL', err, { allowReport: false });
