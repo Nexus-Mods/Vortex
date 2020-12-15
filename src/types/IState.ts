@@ -177,6 +177,7 @@ export interface ISettingsInterface {
 
 export interface ISettingsAutomation {
   deploy: boolean;
+  install: boolean;
   enable: boolean;
   start: boolean;
   minimized: boolean;

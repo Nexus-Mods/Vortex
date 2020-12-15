@@ -242,6 +242,10 @@ export class DownloadObserver {
             // still storing the download as successful even if we didn't manage to calculate its
             // hash
             this.mApi.store.dispatch(finishDownload(id, 'finished', undefined));
+            const state = this.mApi.getState();
+            if (state.settings.automation?.install) {
+              this.mApi.events.emit('start-install-download', id);
+            }
           });
     }
   }

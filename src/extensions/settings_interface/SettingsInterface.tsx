@@ -17,7 +17,7 @@ import { readExtensibleDir } from '../extension_manager/util';
 import getTextModManagement from '../mod_management/texts';
 import getTextProfiles from '../profile_management/texts';
 
-import { setAutoDeployment, setAutoEnable, setAutoStart, setStartMinimized } from './actions/automation';
+import { setAutoDeployment, setAutoEnable, setAutoInstall, setAutoStart, setStartMinimized } from './actions/automation';
 import { setAdvancedMode, setDesktopNotifications, setForegroundDL, setHideTopLevelCategory,
          setLanguage, setProfilesVisible, setRelativeTimes } from './actions/interface';
 import { nativeCountryName, nativeLanguageName } from './languagemap';
@@ -49,6 +49,7 @@ interface IConnectedProps {
   currentLanguage: string;
   profilesVisible: boolean;
   autoDeployment: boolean;
+  autoInstall: boolean;
   autoEnable: boolean;
   autoStart: boolean;
   startMinimized: boolean;
@@ -66,6 +67,7 @@ interface IConnectedProps {
 interface IActionProps {
   onSetLanguage: (language: string) => void;
   onSetAutoDeployment: (enabled: boolean) => void;
+  onSetAutoInstall: (enabled: boolean) => void;
   onSetAutoEnable: (enabled: boolean) => void;
   onSetAutoStart: (start: boolean) => void;
   onSetStartMinimized: (minimized: boolean) => void;
@@ -121,7 +123,7 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, advanced, autoDeployment, autoEnable, autoStart, currentLanguage,
+    const { t, autoDeployment, autoEnable, autoInstall, autoStart, currentLanguage,
             customTitlebar, desktopNotifications, foregroundDL, profilesVisible,
             hideTopLevelCategory, onSetForegroundDL, relativeTimes, startup, startMinimized,
             suppressedNotifications } = this.props;
@@ -268,6 +270,12 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
               </More>
             </Toggle>
             <Toggle
+              checked={autoInstall}
+              onToggle={this.toggleAutoInstall}
+            >
+              {t('Install Mods when downloaded')}
+            </Toggle>
+            <Toggle
               checked={autoEnable}
               onToggle={this.toggleAutoEnable}
             >
@@ -366,6 +374,11 @@ class SettingsInterface extends ComponentEx<IProps, IComponentState> {
   private toggleAutoDeployment = () => {
     const { autoDeployment, onSetAutoDeployment } = this.props;
     onSetAutoDeployment(!autoDeployment);
+  }
+
+  private toggleAutoInstall = () => {
+    const { autoInstall, onSetAutoInstall } = this.props;
+    onSetAutoInstall(!autoInstall);
   }
 
   private toggleAutoEnable = () => {
@@ -504,6 +517,7 @@ function mapStateToProps(state: IState): IConnectedProps {
     advanced: state.settings.interface.advanced,
     desktopNotifications: state.settings.interface.desktopNotifications,
     autoDeployment: state.settings.automation.deploy,
+    autoInstall: state.settings.automation.install,
     autoEnable: state.settings.automation.enable,
     autoStart: state.settings.automation.start,
     startMinimized: state.settings.automation.minimized,
@@ -523,6 +537,9 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
     },
     onSetAutoDeployment: (enabled: boolean) => {
       dispatch(setAutoDeployment(enabled));
+    },
+    onSetAutoInstall: (enabled: boolean) => {
+      dispatch(setAutoInstall(enabled));
     },
     onSetAutoEnable: (enabled: boolean) => {
       dispatch(setAutoEnable(enabled));
