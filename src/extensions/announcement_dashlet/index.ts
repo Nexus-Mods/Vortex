@@ -26,6 +26,7 @@ import { IAnnouncement, ISurveyInstance,
   ParserError } from './types';
 
 import { matchesGameMode, matchesVersion } from './util';
+import { DataInvalid } from '../../util/api';
 
 const ANNOUNCEMENT_LINK =
   'https://raw.githubusercontent.com/Nexus-Mods/Vortex/announcements/announcements.json';
@@ -100,7 +101,19 @@ function updateSurveys(store: Redux.Store<IState>) {
   return ((DEBUG_MODE)
     ? readLocalSurveysFile()
     : getHTTPData<ISurveyInstance>(SURVEYS_LINK)).then((res) => {
-      store.dispatch(setAvailableSurveys(res));
+      if (!Array.isArray(res)) {
+        return Bluebird.reject(new DataInvalid(`expected array but got ${typeof res} instead`));
+      }
+
+      // Ugly but needed.
+      const validSurveys = res.filter(iter => 
+        (!!iter.endDate) && (!!iter.id) && (!!iter.link));
+
+      if (validSurveys.length !== res.length) {
+        log('debug', 'survey array contains invalid survey instances');
+      }
+
+      store.dispatch(setAvailableSurveys(validSurveys));
       return Bluebird.resolve();
   })
   .catch(err => log('warn', 'failed to retrieve list of surveys', err));
