@@ -170,6 +170,7 @@ export interface ISettingsInterface {
   hideTopLevelCategory: boolean;
   relativeTimes: boolean;
   dashboardLayout: string[];
+  foregroundDL: boolean;
   dashletSettings: { [dashletId: string]: IDashletSettings };
   usage: { [usageId: string]: boolean };
 }
