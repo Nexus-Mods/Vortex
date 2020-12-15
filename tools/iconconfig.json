@@ -596,6 +596,10 @@
     "merge": {
       "path": "{nucleo}/arrows/{nucleo_simple}_merge",
       "rmFill": true
+    },
+    "tags": {
+      "path": "{nucleo}/shopping/{nucleo_simple}_tags-stack",
+      "rmFill": true
     }
   }
 }
