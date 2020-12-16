@@ -29,7 +29,6 @@ import * as _ from 'lodash';
 import * as React from 'react';
 import { Button } from 'react-bootstrap';
 import * as ReactDOM from 'react-dom';
-import { CSSTransition } from 'react-transition-group';
 import * as Redux from 'redux';
 import { createSelector, OutputSelector } from 'reselect';
 
@@ -1587,6 +1586,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private setFilter = (attributeId?: string, filter?: any) => {
     const { onSetAttributeFilter, tableId } = this.props;
     onSetAttributeFilter(tableId, attributeId, filter);
+    this.deselectAll();
   }
 
   private clearFilters = () => {
