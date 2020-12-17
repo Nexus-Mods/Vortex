@@ -26,6 +26,10 @@
     // use up remaining space
     width: 100%;
   }
+  .cell-tracked {
+    display: flex;
+    justify-content: center;
+  }
 }
 
 .mod-drop-container {

@@ -76,7 +76,7 @@ export type RegisterSettings =
 export type RegisterAction =
   (group: string,
    position: number,
-   iconOrComponent: string | React.ComponentClass<any> | React.StatelessComponent<any>,
+   iconOrComponent: string | React.ComponentType<any>,
    options: IActionOptions,
    titleOrProps?: string | PropsCallback,
    actionOrCondition?: (instanceIds?: string[]) => void | boolean,
@@ -86,8 +86,7 @@ export type RegisterFooter =
   (id: string, element: React.ComponentClass<any>, props?: PropsCallback) => void;
 
 export type RegisterBanner =
-  (group: string, component: React.ComponentClass<any> | React.StatelessComponent<any>,
-   options: IBannerOptions) => void;
+  (group: string, component: React.ComponentType<any>, options: IBannerOptions) => void;
 
 export interface IModSourceOptions {
   /**

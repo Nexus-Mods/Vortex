@@ -296,6 +296,8 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
           onClick={icon.action}
           placement={tooltipPlacement}
           disabled={(icon.show !== true) && (icon.show !== undefined)}
+          stroke={icon.options?.hollowIcon === true}
+          hollow={icon.options?.hollowIcon === true}
         />
       );
     } else {

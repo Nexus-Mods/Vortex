@@ -604,6 +604,10 @@
     "ghost": {
       "path": "{nucleo}/holidays/{nucleo_simple}_ghost-2",
       "rmFill": true
+    },
+    "track": {
+      "path": "{nucleo}/animals-nature/{nucleo_simple}_paw",
+      "rmFill": true
     }
   }
 }

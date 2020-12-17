@@ -36,6 +36,7 @@ import { convertNXMIdReverse, nexusGameId } from './util/convertGameId';
 import { guessFromFileName } from './util/guessModID';
 import retrieveCategoryList from './util/retrieveCategories';
 import { getPageURL } from './util/sso';
+import Tracking from './util/tracking';
 import DashboardBanner from './views/DashboardBanner';
 import GoPremiumDashlet from './views/GoPremiumDashlet';
 import LoginDialog from './views/LoginDialog';
@@ -554,7 +555,7 @@ function onceMain(api: IExtensionApi) {
   }
 }
 
-function once(api: IExtensionApi) {
+function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
   const registerFunc = (def?: boolean) => {
     if (def === undefined) {
       api.store.dispatch(setAssociatedWithNXMURLs(true));
@@ -699,6 +700,8 @@ function once(api: IExtensionApi) {
       // typically just missing the api key or a downtime
       log('info', 'failed to determine newest Vortex version', { error: err.message });
     });
+
+  callbacks.forEach(cb => cb(nexus));
 }
 
 function toolbarBanner(t: TFunction): React.StatelessComponent<any> {
@@ -851,10 +854,20 @@ function init(context: IExtensionContextExt): boolean {
     return modSource === 'nexus';
   });
 
+  const tracking = new Tracking(context.api);
+
   context.registerAction('mods-action-icons', 300, 'smart', {}, 'Guess ID',
                          instanceIds => guessIds(context.api, instanceIds));
   context.registerAction('mods-multirow-actions', 300, 'smart', {}, 'Guess IDs',
                          instanceIds => guessIds(context.api, instanceIds));
+  context.registerAction('mods-multirow-actions', 250, 'track', {}, 'Track',
+    instanceIds => {
+      tracking.trackMods(instanceIds);
+    });
+  context.registerAction('mods-multirow-actions', 250, 'track', { hollowIcon: true }, 'Untrack',
+    instanceIds => {
+      tracking.untrackMods(instanceIds);
+    });
 
   const queryCondition = (instanceIds: string[]) => {
     const state: IState = context.api.store.getState();
@@ -974,6 +987,7 @@ function init(context: IExtensionContextExt): boolean {
   context.registerTableAttribute('mods', genEndorsedAttribute(context.api,
     (gameId: string, modId: string, endorseStatus: string) =>
       endorseModImpl(context.api, nexus, gameId, modId, endorseStatus)));
+  context.registerTableAttribute('mods', tracking.attribute());
   context.registerTableAttribute('mods', genGameAttribute(context.api));
   context.registerTableAttribute('mods', genModIdAttribute(context.api));
 
@@ -1009,7 +1023,7 @@ function init(context: IExtensionContextExt): boolean {
 
   context.registerAPI('getNexusGames', () => nexusGamesProm(), {});
 
-  context.once(() => once(context.api));
+  context.once(() => once(context.api, [(nex: NexusT) => tracking.once(nex)]));
   context.onceMain(() => onceMain(context.api));
 
   return true;

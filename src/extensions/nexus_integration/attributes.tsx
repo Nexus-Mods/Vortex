@@ -1,4 +1,5 @@
 import { setModAttribute } from '../../actions';
+import { IconButton } from '../../controls/TooltipControls';
 import { IExtensionApi, IMod, ITableAttribute } from '../../types/api';
 import { laterT } from '../../util/i18n';
 import { activeGameId, currentGame, gameById, knownGames } from '../../util/selectors';
@@ -10,6 +11,7 @@ import EndorsementFilter from './views/EndorsementFilter';
 import EndorseModButton from './views/EndorseModButton';
 import NexusModIdDetail from './views/NexusModIdDetail';
 
+import Nexus from '@nexusmods/nexus-api';
 import { TFunction } from 'i18next';
 import * as React from 'react';
 import * as Redux from 'redux';
@@ -41,6 +43,7 @@ function renderNexusModIdDetail(
 }
 
 export type EndorseMod = (gameId: string, modId: string, endorsedStatus: string) => void;
+export type TrackMod = (gameId: string, modId: string, track: boolean) => void;
 
 function createEndorsedIcon(store: Redux.Store<any>,
                             mod: IMod,

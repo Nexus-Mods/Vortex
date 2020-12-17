@@ -3,6 +3,7 @@ import * as React from 'react';
 export interface IActionOptions {
   noCollapse?: boolean;
   namespace?: string;
+  hollowIcon?: boolean;
 }
 
 /**
@@ -14,7 +15,7 @@ export interface IActionOptions {
 export interface IActionDefinition {
   icon?: string;
   title?: string;
-  component?: React.ComponentClass<any> | React.StatelessComponent<any>;
+  component?: React.ComponentType<any>;
   props?: () => any;
   action?: (instanceId: string | string[]) => void;
   // condition under which the action is displayed.
