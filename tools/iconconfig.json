@@ -600,6 +600,10 @@
     "tags": {
       "path": "{nucleo}/shopping/{nucleo_simple}_tags-stack",
       "rmFill": true
+    },
+    "ghost": {
+      "path": "{nucleo}/holidays/{nucleo_simple}_ghost-2",
+      "rmFill": true
     }
   }
 }
